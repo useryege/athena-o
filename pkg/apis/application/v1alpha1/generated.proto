@@ -474,6 +474,20 @@ message WalletStatus {
   optional string status = 2;
 }
 
+message WormEventItem {
+  optional string conditionId = 1;
+
+  optional string title = 2;
+
+  optional string logo = 3;
+
+  optional bool live = 4;
+
+  optional int64 marketCount = 5;
+
+  repeated WormMarketItem markets = 6;
+}
+
 message WormMarketItem {
   optional string conditionId = 1;
 

@@ -30,8 +30,19 @@ type WormMarket struct {
 	UpdatedAt        time.Time
 }
 
-type WormMarketPage struct {
-	Items    []WormMarket
+type WormEvent struct {
+	ConditionID string
+	Title       string
+	Logo        string
+	Live        bool
+	MarketCount int64
+	Markets     []WormMarket
+	NewestAt    int64
+	FetchedAt   time.Time
+}
+
+type WormEventPage struct {
+	Items    []WormEvent
 	Total    int64
 	Page     int32
 	PageSize int32

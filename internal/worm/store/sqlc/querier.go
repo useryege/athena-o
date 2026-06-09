@@ -13,14 +13,15 @@ import (
 type Querier interface {
 	BatchInsertWormMarketPriceHistory(ctx context.Context, arg BatchInsertWormMarketPriceHistoryParams) error
 	BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWormMarketsParams) error
-	CountWormMarkets(ctx context.Context, arg CountWormMarketsParams) (int64, error)
+	CountWormEvents(ctx context.Context) (int64, error)
 	DeleteWormMarket(ctx context.Context, conditionID string) (int64, error)
 	DeleteWormMarketPriceHistoryBefore(ctx context.Context, sampledAt pgtype.Timestamptz) (int64, error)
 	DeleteWormMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	GetWormMarket(ctx context.Context, conditionID string) (WormMarket, error)
+	ListWormEventsPage(ctx context.Context, arg ListWormEventsPageParams) ([]ListWormEventsPageRow, error)
 	ListWormMarketLivePriceChanges(ctx context.Context, sampledAt pgtype.Timestamptz) ([]ListWormMarketLivePriceChangesRow, error)
 	ListWormMarkets(ctx context.Context) ([]WormMarket, error)
-	ListWormMarketsPage(ctx context.Context, arg ListWormMarketsPageParams) ([]WormMarket, error)
+	ListWormMarketsByEventConditionIDs(ctx context.Context, eventConditionIds []string) ([]WormMarket, error)
 	ListWormMarketsPendingGetMarket(ctx context.Context) ([]WormMarket, error)
 	Ping(ctx context.Context) (int32, error)
 	UpdateWormMarket(ctx context.Context, arg UpdateWormMarketParams) (WormMarket, error)

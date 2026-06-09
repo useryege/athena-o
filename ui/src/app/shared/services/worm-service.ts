@@ -18,8 +18,17 @@ export interface WormMarketItem {
     livePriceChange?: string;
 }
 
-export interface ListWormMarketsResult {
-    items: WormMarketItem[];
+export interface WormEventItem {
+    conditionId: string;
+    title: string;
+    logo?: string;
+    live: boolean;
+    marketCount: number;
+    markets: WormMarketItem[];
+}
+
+export interface ListWormEventsResult {
+    items: WormEventItem[];
     nextCursor?: string;
     fetchedAt?: number;
     stale?: boolean;
@@ -33,7 +42,7 @@ export const DEFAULT_WORM_MARKET_STATE = 'open';
 
 const isOpenWormMarket = (item: Pick<WormMarketItem, 'state'>) => item.state?.toLowerCase() === DEFAULT_WORM_MARKET_STATE;
 
-export interface ListWormMarketsOptions {
+export interface ListWormEventsOptions {
     limit?: number;
     cursor?: string;
     sortOption?: WormMarketSortOption;
@@ -52,7 +61,6 @@ const readValue = (item: any, ...names: string[]) => {
 const readString = (item: any, ...names: string[]) => String(readValue(item, ...names) || '');
 const readNumber = (item: any, ...names: string[]) => Number(readValue(item, ...names) || 0) || undefined;
 const readBoolean = (item: any, ...names: string[]) => Boolean(readValue(item, ...names));
-const isLiveWormMarket = (item: Pick<WormMarketItem, 'liveState'>) => item.liveState === 'live';
 
 const normalizeMarket = (item: any): WormMarketItem => ({
     conditionId: readString(item, 'conditionId', 'condition_id'),
@@ -72,17 +80,21 @@ const normalizeMarket = (item: any): WormMarketItem => ({
     livePriceChange: readString(item, 'livePriceChange', 'live_price_change')
 });
 
-const sortLiveFirst = (items: WormMarketItem[]) =>
-    items
-        .map((item, index) => ({item, index}))
-        .sort((left, right) => {
-            const liveDelta = Number(isLiveWormMarket(right.item)) - Number(isLiveWormMarket(left.item));
-            return liveDelta || left.index - right.index;
-        })
-        .map(entry => entry.item);
+const normalizeEvent = (item: any): WormEventItem => {
+    const markets = readValue(item, 'markets');
+    const normalizedMarkets = Array.isArray(markets) ? markets.map(normalizeMarket).filter(isOpenWormMarket) : [];
+    return {
+        conditionId: readString(item, 'conditionId', 'condition_id'),
+        title: readString(item, 'title'),
+        logo: readString(item, 'logo'),
+        live: readBoolean(item, 'live'),
+        marketCount: readNumber(item, 'marketCount', 'market_count') || normalizedMarkets.length,
+        markets: normalizedMarkets
+    };
+};
 
 export class WormService {
-    public listMarkets(options: ListWormMarketsOptions = {}): Promise<ListWormMarketsResult> & {abort?: () => void} {
+    public listEvents(options: ListWormEventsOptions = {}): Promise<ListWormEventsResult> & {abort?: () => void} {
         const query: any = {
             limit: options.limit || 20,
             cursor: options.cursor || ''
@@ -93,12 +105,12 @@ export class WormService {
         if (options.categorySlug) {
             query.category_slug = options.categorySlug;
         }
-        const req = requests.get('/worm/markets').query(query);
+        const req = requests.get('/worm/events').query(query);
         const promise = req.then(res => {
             const body = res.body || {};
-            const items = (body.items || []).map(normalizeMarket).filter(isOpenWormMarket);
+            const items = (body.items || []).map(normalizeEvent).filter((item: WormEventItem) => item.conditionId && item.markets.length > 0);
             return {
-                items: sortLiveFirst(items),
+                items,
                 nextCursor: body.nextCursor || body.next_cursor || '',
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale', 'stale')

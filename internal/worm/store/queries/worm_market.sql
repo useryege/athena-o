@@ -130,24 +130,42 @@ SELECT *
 FROM worm_market
 WHERE condition_id = @condition_id;
 
--- name: CountWormMarkets :one
-SELECT COUNT(*)::bigint
-FROM worm_market
-WHERE (sqlc.narg('condition_id')::text IS NULL OR condition_id = sqlc.narg('condition_id')::text)
-  AND (sqlc.narg('event_condition_id')::text IS NULL OR event_condition_id = sqlc.narg('event_condition_id')::text);
-
 -- name: ListWormMarkets :many
 SELECT *
 FROM worm_market
 ORDER BY (live_state = 'live') DESC, created DESC, condition_id;
 
--- name: ListWormMarketsPage :many
+-- name: CountWormEvents :one
+SELECT COUNT(DISTINCT event_condition_id)::bigint
+FROM worm_market
+WHERE event_condition_id <> '';
+
+-- name: ListWormEventsPage :many
+SELECT
+  event_condition_id,
+  COALESCE(
+    (ARRAY_AGG(event_title ORDER BY created DESC, condition_id) FILTER (WHERE event_title <> ''))[1],
+    ''
+  )::text AS event_title,
+  COALESCE(
+    (ARRAY_AGG(event_logo ORDER BY created DESC, condition_id) FILTER (WHERE event_logo <> ''))[1],
+    ''
+  )::text AS event_logo,
+  BOOL_OR(live_state = 'live')::boolean AS live,
+  COUNT(*)::bigint AS market_count,
+  MAX(created)::bigint AS newest_created,
+  MAX(fetched_at)::timestamptz AS fetched_at
+FROM worm_market
+WHERE event_condition_id <> ''
+GROUP BY event_condition_id
+ORDER BY BOOL_OR(live_state = 'live') DESC, MAX(created) DESC, event_condition_id
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: ListWormMarketsByEventConditionIDs :many
 SELECT *
 FROM worm_market
-WHERE (sqlc.narg('condition_id')::text IS NULL OR condition_id = sqlc.narg('condition_id')::text)
-  AND (sqlc.narg('event_condition_id')::text IS NULL OR event_condition_id = sqlc.narg('event_condition_id')::text)
-ORDER BY (live_state = 'live') DESC, created DESC, condition_id
-LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+WHERE event_condition_id = ANY(sqlc.arg('event_condition_ids')::text[])
+ORDER BY event_condition_id, (live_state = 'live') DESC, created DESC, condition_id;
 
 -- name: BatchInsertWormMarketPriceHistory :exec
 INSERT INTO worm_market_price_history (

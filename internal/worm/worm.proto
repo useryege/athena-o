@@ -16,17 +16,17 @@ message GetWormStatusResponse {
   string status = 2;
 }
 
-// ListWormMarketsRequest queries Worm markets for the configured browse view.
-message ListWormMarketsRequest {
+// ListWormEventsRequest queries Worm events for the configured browse view.
+message ListWormEventsRequest {
   int32 limit = 1;
   string cursor = 2;
   string sort_option = 3;
   string category_slug = 4;
 }
 
-// ListWormMarketsResponse returns Worm market rows and cursor pagination.
-message ListWormMarketsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketItem markets = 1;
+// ListWormEventsResponse returns Worm events and cursor pagination.
+message ListWormEventsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WormEventItem events = 1;
   string next_cursor = 2;
   int64 fetched_at = 3;
   bool stale = 4;
@@ -36,6 +36,6 @@ service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse);
 
-  // ListWormMarkets returns markets for the requested browse filters.
-  rpc ListWormMarkets(ListWormMarketsRequest) returns (ListWormMarketsResponse);
+  // ListWormEvents returns events for the requested browse filters.
+  rpc ListWormEvents(ListWormEventsRequest) returns (ListWormEventsResponse);
 }

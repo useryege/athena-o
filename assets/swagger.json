@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-674-g0f2f2ac-dirty"
+    "version": "v1.0.0-676-g9b06348-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1470,13 +1470,13 @@
         }
       }
     },
-    "/api/v1/worm/markets": {
+    "/api/v1/worm/events": {
       "get": {
         "tags": [
           "WormService"
         ],
-        "summary": "ListWormMarkets returns markets for the requested browse filters.",
-        "operationId": "WormService_ListWormMarkets",
+        "summary": "ListWormEvents returns events for the requested browse filters.",
+        "operationId": "WormService_ListWormEvents",
         "parameters": [
           {
             "type": "integer",
@@ -1504,7 +1504,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/wormListWormMarketsResponse"
+              "$ref": "#/definitions/wormListWormEventsResponse"
             }
           },
           "default": {
@@ -3206,6 +3206,33 @@
         }
       }
     },
+    "v1alpha1WormEventItem": {
+      "type": "object",
+      "properties": {
+        "conditionId": {
+          "type": "string"
+        },
+        "live": {
+          "type": "boolean"
+        },
+        "logo": {
+          "type": "string"
+        },
+        "marketCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "markets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1WormMarketItem"
+          }
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1WormMarketItem": {
       "type": "object",
       "properties": {
@@ -3439,8 +3466,8 @@
         }
       }
     },
-    "wormListWormMarketsResponse": {
-      "description": "ListWormMarketsResponse returns Worm market rows and cursor pagination.",
+    "wormListWormEventsResponse": {
+      "description": "ListWormEventsResponse returns Worm events and cursor pagination.",
       "type": "object",
       "properties": {
         "fetched_at": {
@@ -3450,7 +3477,7 @@
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1WormMarketItem"
+            "$ref": "#/definitions/v1alpha1WormEventItem"
           }
         },
         "next_cursor": {

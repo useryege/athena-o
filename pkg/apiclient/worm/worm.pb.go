@@ -128,8 +128,8 @@ func (m *GetWormStatusResponse) GetStatus() string {
 	return ""
 }
 
-// ListWormMarketsRequest queries the public Worm markets view.
-type ListWormMarketsRequest struct {
+// ListWormEventsRequest queries the public Worm events view.
+type ListWormEventsRequest struct {
 	Limit                int32    `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
 	Cursor               string   `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	SortOption           string   `protobuf:"bytes,3,opt,name=sort_option,json=sortOption,proto3" json:"sort_option,omitempty"`
@@ -139,18 +139,18 @@ type ListWormMarketsRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListWormMarketsRequest) Reset()         { *m = ListWormMarketsRequest{} }
-func (m *ListWormMarketsRequest) String() string { return proto.CompactTextString(m) }
-func (*ListWormMarketsRequest) ProtoMessage()    {}
-func (*ListWormMarketsRequest) Descriptor() ([]byte, []int) {
+func (m *ListWormEventsRequest) Reset()         { *m = ListWormEventsRequest{} }
+func (m *ListWormEventsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListWormEventsRequest) ProtoMessage()    {}
+func (*ListWormEventsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7c0b2f2b28aeea67, []int{2}
 }
-func (m *ListWormMarketsRequest) XXX_Unmarshal(b []byte) error {
+func (m *ListWormEventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListWormMarketsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListWormEventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ListWormMarketsRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ListWormEventsRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -160,69 +160,69 @@ func (m *ListWormMarketsRequest) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *ListWormMarketsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListWormMarketsRequest.Merge(m, src)
+func (m *ListWormEventsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListWormEventsRequest.Merge(m, src)
 }
-func (m *ListWormMarketsRequest) XXX_Size() int {
+func (m *ListWormEventsRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *ListWormMarketsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListWormMarketsRequest.DiscardUnknown(m)
+func (m *ListWormEventsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListWormEventsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListWormMarketsRequest proto.InternalMessageInfo
+var xxx_messageInfo_ListWormEventsRequest proto.InternalMessageInfo
 
-func (m *ListWormMarketsRequest) GetLimit() int32 {
+func (m *ListWormEventsRequest) GetLimit() int32 {
 	if m != nil {
 		return m.Limit
 	}
 	return 0
 }
 
-func (m *ListWormMarketsRequest) GetCursor() string {
+func (m *ListWormEventsRequest) GetCursor() string {
 	if m != nil {
 		return m.Cursor
 	}
 	return ""
 }
 
-func (m *ListWormMarketsRequest) GetSortOption() string {
+func (m *ListWormEventsRequest) GetSortOption() string {
 	if m != nil {
 		return m.SortOption
 	}
 	return ""
 }
 
-func (m *ListWormMarketsRequest) GetCategorySlug() string {
+func (m *ListWormEventsRequest) GetCategorySlug() string {
 	if m != nil {
 		return m.CategorySlug
 	}
 	return ""
 }
 
-// ListWormMarketsResponse returns Worm market rows and cursor pagination.
-type ListWormMarketsResponse struct {
-	Items                []*v1alpha1.WormMarketItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	NextCursor           string                     `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
-	FetchedAt            int64                      `protobuf:"varint,3,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
-	Stale                bool                       `protobuf:"varint,4,opt,name=stale,proto3" json:"stale,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-	XXX_unrecognized     []byte                     `json:"-"`
-	XXX_sizecache        int32                      `json:"-"`
+// ListWormEventsResponse returns Worm events and cursor pagination.
+type ListWormEventsResponse struct {
+	Items                []*v1alpha1.WormEventItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	NextCursor           string                    `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+	FetchedAt            int64                     `protobuf:"varint,3,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
+	Stale                bool                      `protobuf:"varint,4,opt,name=stale,proto3" json:"stale,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
 }
 
-func (m *ListWormMarketsResponse) Reset()         { *m = ListWormMarketsResponse{} }
-func (m *ListWormMarketsResponse) String() string { return proto.CompactTextString(m) }
-func (*ListWormMarketsResponse) ProtoMessage()    {}
-func (*ListWormMarketsResponse) Descriptor() ([]byte, []int) {
+func (m *ListWormEventsResponse) Reset()         { *m = ListWormEventsResponse{} }
+func (m *ListWormEventsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListWormEventsResponse) ProtoMessage()    {}
+func (*ListWormEventsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7c0b2f2b28aeea67, []int{3}
 }
-func (m *ListWormMarketsResponse) XXX_Unmarshal(b []byte) error {
+func (m *ListWormEventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListWormMarketsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListWormEventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ListWormMarketsResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ListWormEventsResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -232,40 +232,40 @@ func (m *ListWormMarketsResponse) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *ListWormMarketsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListWormMarketsResponse.Merge(m, src)
+func (m *ListWormEventsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListWormEventsResponse.Merge(m, src)
 }
-func (m *ListWormMarketsResponse) XXX_Size() int {
+func (m *ListWormEventsResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *ListWormMarketsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListWormMarketsResponse.DiscardUnknown(m)
+func (m *ListWormEventsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListWormEventsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListWormMarketsResponse proto.InternalMessageInfo
+var xxx_messageInfo_ListWormEventsResponse proto.InternalMessageInfo
 
-func (m *ListWormMarketsResponse) GetItems() []*v1alpha1.WormMarketItem {
+func (m *ListWormEventsResponse) GetItems() []*v1alpha1.WormEventItem {
 	if m != nil {
 		return m.Items
 	}
 	return nil
 }
 
-func (m *ListWormMarketsResponse) GetNextCursor() string {
+func (m *ListWormEventsResponse) GetNextCursor() string {
 	if m != nil {
 		return m.NextCursor
 	}
 	return ""
 }
 
-func (m *ListWormMarketsResponse) GetFetchedAt() int64 {
+func (m *ListWormEventsResponse) GetFetchedAt() int64 {
 	if m != nil {
 		return m.FetchedAt
 	}
 	return 0
 }
 
-func (m *ListWormMarketsResponse) GetStale() bool {
+func (m *ListWormEventsResponse) GetStale() bool {
 	if m != nil {
 		return m.Stale
 	}
@@ -275,46 +275,45 @@ func (m *ListWormMarketsResponse) GetStale() bool {
 func init() {
 	proto.RegisterType((*GetWormStatusRequest)(nil), "worm.GetWormStatusRequest")
 	proto.RegisterType((*GetWormStatusResponse)(nil), "worm.GetWormStatusResponse")
-	proto.RegisterType((*ListWormMarketsRequest)(nil), "worm.ListWormMarketsRequest")
-	proto.RegisterType((*ListWormMarketsResponse)(nil), "worm.ListWormMarketsResponse")
+	proto.RegisterType((*ListWormEventsRequest)(nil), "worm.ListWormEventsRequest")
+	proto.RegisterType((*ListWormEventsResponse)(nil), "worm.ListWormEventsResponse")
 }
 
 func init() { proto.RegisterFile("internal/server/worm/worm.proto", fileDescriptor_7c0b2f2b28aeea67) }
 
 var fileDescriptor_7c0b2f2b28aeea67 = []byte{
-	// 501 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x4f, 0x6f, 0xd3, 0x4c,
-	0x10, 0xc6, 0xe5, 0xa6, 0xe9, 0xdb, 0x6e, 0xde, 0x0a, 0x69, 0x49, 0x83, 0x95, 0xa6, 0x69, 0x64,
-	0x2e, 0xb9, 0xb0, 0x56, 0xca, 0x91, 0x13, 0x70, 0xa0, 0x95, 0x40, 0x48, 0xee, 0x01, 0x89, 0x03,
-	0xd1, 0xd6, 0x19, 0x36, 0xab, 0xac, 0x77, 0xcd, 0xee, 0x38, 0xd0, 0x2b, 0x67, 0x6e, 0x7c, 0x29,
-	0x6e, 0x20, 0xf1, 0x05, 0x50, 0xc4, 0x07, 0x41, 0xde, 0x8d, 0x55, 0x52, 0x82, 0xb8, 0x44, 0x99,
-	0x3f, 0x7e, 0xc6, 0xcf, 0xfc, 0xc6, 0xe4, 0x54, 0x6a, 0x04, 0xab, 0xb9, 0x4a, 0x1d, 0xd8, 0x25,
-	0xd8, 0xf4, 0xbd, 0xb1, 0x85, 0xff, 0x61, 0xa5, 0x35, 0x68, 0xe8, 0x6e, 0xfd, 0xbf, 0x7f, 0x2e,
-	0x24, 0xce, 0xab, 0x2b, 0x96, 0x9b, 0x22, 0xad, 0x1c, 0xd8, 0x6b, 0x10, 0x90, 0x72, 0x9c, 0x83,
-	0xe6, 0x69, 0xb9, 0x10, 0x29, 0x2f, 0xa5, 0x4b, 0x79, 0x59, 0x2a, 0x99, 0x73, 0x94, 0x46, 0xa7,
-	0xcb, 0x09, 0x57, 0xe5, 0x9c, 0x4f, 0x52, 0x01, 0x1a, 0x2c, 0x47, 0x98, 0x05, 0xbd, 0xfe, 0x40,
-	0x18, 0x23, 0x14, 0xd4, 0x4f, 0xa4, 0x5c, 0x6b, 0x83, 0xbe, 0xdf, 0x85, 0x6a, 0xd2, 0x23, 0xdd,
-	0x67, 0x80, 0xaf, 0x8c, 0x2d, 0x2e, 0x91, 0x63, 0xe5, 0x32, 0x78, 0x57, 0x81, 0xc3, 0xe4, 0x82,
-	0x1c, 0xdd, 0xca, 0xbb, 0xd2, 0x68, 0x07, 0x34, 0x26, 0xff, 0x39, 0xe4, 0x16, 0x61, 0x16, 0x47,
-	0xa3, 0x68, 0xbc, 0x9f, 0x35, 0x21, 0xed, 0x91, 0x3d, 0xe7, 0x7b, 0xe3, 0x9d, 0x51, 0x34, 0x3e,
-	0xc8, 0xd6, 0x51, 0xf2, 0x29, 0x22, 0xbd, 0xe7, 0xd2, 0x79, 0xb1, 0x17, 0xdc, 0x2e, 0x00, 0x9b,
-	0x29, 0xb4, 0x4b, 0xda, 0x4a, 0x16, 0x12, 0xbd, 0x54, 0x3b, 0x0b, 0x41, 0x2d, 0x94, 0x57, 0xd6,
-	0x19, 0xdb, 0x08, 0x85, 0x88, 0x9e, 0x92, 0x8e, 0x33, 0x16, 0xa7, 0xa6, 0xac, 0x1d, 0xc4, 0x2d,
-	0x5f, 0x24, 0x75, 0xea, 0xa5, 0xcf, 0xd0, 0xfb, 0xe4, 0x30, 0xe7, 0x08, 0xc2, 0xd8, 0xeb, 0xa9,
-	0x53, 0x95, 0x88, 0x77, 0x7d, 0xcb, 0xff, 0x4d, 0xf2, 0x52, 0x55, 0x22, 0xf9, 0x1a, 0x91, 0x7b,
-	0x7f, 0xbc, 0xce, 0xda, 0xdc, 0x1b, 0xd2, 0x96, 0x08, 0x85, 0x8b, 0xa3, 0x51, 0x6b, 0xdc, 0x39,
-	0x3b, 0x67, 0x37, 0x14, 0x58, 0x43, 0x81, 0x05, 0x0a, 0xac, 0x5c, 0x08, 0x56, 0x53, 0x60, 0xbf,
-	0x51, 0x60, 0x0d, 0x05, 0x76, 0xa3, 0x7e, 0x81, 0x50, 0x64, 0x41, 0xb6, 0x76, 0xa0, 0xe1, 0x03,
-	0x4e, 0x37, 0xec, 0x91, 0x3a, 0xf5, 0x34, 0x58, 0x3c, 0x21, 0xe4, 0x2d, 0x60, 0x3e, 0x87, 0xd9,
-	0x94, 0xa3, 0x77, 0xd8, 0xca, 0x0e, 0xd6, 0x99, 0xc7, 0x7e, 0x5f, 0x0e, 0xb9, 0x02, 0x6f, 0x6c,
-	0x3f, 0x0b, 0xc1, 0xd9, 0x2a, 0x22, 0x1d, 0x4f, 0x0a, 0xec, 0x52, 0xe6, 0x40, 0x81, 0x1c, 0x6e,
-	0xb0, 0xa3, 0x7d, 0xe6, 0xef, 0x6b, 0x1b, 0xe8, 0xfe, 0xf1, 0xd6, 0x5a, 0xd8, 0x47, 0x72, 0xfc,
-	0xf1, 0xfb, 0xcf, 0xcf, 0x3b, 0x47, 0xf4, 0xae, 0xbf, 0x9e, 0xe5, 0x24, 0x1c, 0x6b, 0xe0, 0x4a,
-	0x15, 0xb9, 0x73, 0x6b, 0x8f, 0x74, 0x10, 0xc4, 0xb6, 0xd3, 0xee, 0x9f, 0xfc, 0xa5, 0xba, 0x1e,
-	0x36, 0xf0, 0xc3, 0x7a, 0xb4, 0xbb, 0x31, 0xac, 0x08, 0x5d, 0x4f, 0x1e, 0x7d, 0x59, 0x0d, 0xa3,
-	0x6f, 0xab, 0x61, 0xf4, 0x63, 0x35, 0x8c, 0x5e, 0x3f, 0xf8, 0xf7, 0xe7, 0x91, 0x2b, 0x09, 0x1a,
-	0xbd, 0xc8, 0xd5, 0x9e, 0x3f, 0xf6, 0x87, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0x47, 0x3e, 0xb9,
-	0xe6, 0x7d, 0x03, 0x00, 0x00,
+	// 491 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0xcf, 0x6b, 0x13, 0x41,
+	0x14, 0xc7, 0x99, 0xa6, 0xa9, 0xed, 0xc4, 0x7a, 0x18, 0x9b, 0xb0, 0xa4, 0x35, 0x0d, 0xf1, 0x92,
+	0x8b, 0x33, 0xa4, 0x1e, 0x3d, 0xa9, 0x48, 0x2d, 0x08, 0xc2, 0xf6, 0x20, 0x08, 0x12, 0xa6, 0x9b,
+	0xe7, 0x64, 0xe8, 0xee, 0xcc, 0x3a, 0xf3, 0x36, 0xda, 0xab, 0x57, 0x8f, 0xfe, 0x53, 0x5e, 0x04,
+	0xc1, 0xbb, 0x48, 0xf0, 0x0f, 0x91, 0x9d, 0xc9, 0xaa, 0x29, 0xc1, 0x5e, 0x96, 0x7d, 0x3f, 0xf6,
+	0x3b, 0xf3, 0x7d, 0x9f, 0xb7, 0xf4, 0x58, 0x1b, 0x04, 0x67, 0x64, 0x2e, 0x3c, 0xb8, 0x05, 0x38,
+	0xf1, 0xde, 0xba, 0x22, 0x3c, 0x78, 0xe9, 0x2c, 0x5a, 0xb6, 0x5d, 0xbf, 0xf7, 0x9f, 0x2b, 0x8d,
+	0xf3, 0xea, 0x82, 0x67, 0xb6, 0x10, 0x95, 0x07, 0x77, 0x05, 0x0a, 0x84, 0xc4, 0x39, 0x18, 0x29,
+	0xca, 0x4b, 0x25, 0x64, 0xa9, 0xbd, 0x90, 0x65, 0x99, 0xeb, 0x4c, 0xa2, 0xb6, 0x46, 0x2c, 0x26,
+	0x32, 0x2f, 0xe7, 0x72, 0x22, 0x14, 0x18, 0x70, 0x12, 0x61, 0x16, 0xf5, 0xfa, 0x47, 0xca, 0x5a,
+	0x95, 0x43, 0xfd, 0x85, 0x90, 0xc6, 0x58, 0x0c, 0xfd, 0x3e, 0x56, 0x47, 0x3d, 0x7a, 0x70, 0x0a,
+	0xf8, 0xca, 0xba, 0xe2, 0x1c, 0x25, 0x56, 0x3e, 0x85, 0x77, 0x15, 0x78, 0x1c, 0x9d, 0xd1, 0xee,
+	0xb5, 0xbc, 0x2f, 0xad, 0xf1, 0xc0, 0x12, 0x7a, 0xcb, 0xa3, 0x74, 0x08, 0xb3, 0x84, 0x0c, 0xc9,
+	0x78, 0x37, 0x6d, 0x42, 0xd6, 0xa3, 0x3b, 0x3e, 0xf4, 0x26, 0x5b, 0x43, 0x32, 0xde, 0x4b, 0x57,
+	0xd1, 0xe8, 0x13, 0xa1, 0xdd, 0x17, 0xda, 0x07, 0xb1, 0x67, 0x0b, 0x30, 0xd8, 0x1c, 0xc2, 0x0e,
+	0x68, 0x3b, 0xd7, 0x85, 0xc6, 0xa0, 0xd4, 0x4e, 0x63, 0x50, 0xeb, 0x64, 0x95, 0xf3, 0xd6, 0x35,
+	0x3a, 0x31, 0x62, 0xc7, 0xb4, 0xe3, 0xad, 0xc3, 0xa9, 0x2d, 0x6b, 0x03, 0x49, 0x2b, 0x14, 0x69,
+	0x9d, 0x7a, 0x19, 0x32, 0xec, 0x3e, 0xdd, 0xcf, 0x24, 0x82, 0xb2, 0xee, 0x6a, 0xea, 0xf3, 0x4a,
+	0x25, 0xdb, 0xa1, 0xe5, 0x76, 0x93, 0x3c, 0xcf, 0x2b, 0x35, 0xfa, 0x4a, 0x68, 0xef, 0xfa, 0x6d,
+	0x56, 0xd6, 0xde, 0xd0, 0xb6, 0x46, 0x28, 0x7c, 0x42, 0x86, 0xad, 0x71, 0xe7, 0xe4, 0x94, 0xff,
+	0x65, 0xc0, 0x1b, 0x06, 0x3c, 0x32, 0xe0, 0xe5, 0xa5, 0xe2, 0x35, 0x03, 0xfe, 0x0f, 0x03, 0xde,
+	0x30, 0xe0, 0x7f, 0xc4, 0xcf, 0x10, 0x8a, 0x34, 0xaa, 0xd6, 0xf7, 0x37, 0xf0, 0x01, 0xa7, 0x6b,
+	0xe6, 0x68, 0x9d, 0x7a, 0x1a, 0x0d, 0xde, 0xa3, 0xf4, 0x2d, 0x60, 0x36, 0x87, 0xd9, 0x54, 0x62,
+	0xf0, 0xd7, 0x4a, 0xf7, 0x56, 0x99, 0xc7, 0x61, 0x5a, 0x1e, 0x65, 0x0e, 0xc1, 0xd6, 0x6e, 0x1a,
+	0x83, 0x93, 0x1f, 0x84, 0x76, 0x02, 0x26, 0x70, 0x0b, 0x9d, 0x01, 0x03, 0xba, 0xbf, 0x06, 0x8e,
+	0xf5, 0x79, 0x58, 0xae, 0x4d, 0x94, 0xfb, 0x87, 0x1b, 0x6b, 0x71, 0x1c, 0xa3, 0xc3, 0x8f, 0xdf,
+	0x7f, 0x7d, 0xde, 0xea, 0xb2, 0xbb, 0x61, 0x75, 0x16, 0x93, 0xb8, 0xa9, 0x11, 0x2a, 0x9b, 0xd3,
+	0x3b, 0xeb, 0x53, 0x64, 0x2b, 0xad, 0x8d, 0xa4, 0xfb, 0x47, 0x9b, 0x8b, 0xff, 0x3d, 0x09, 0x42,
+	0xd3, 0x93, 0x47, 0x5f, 0x96, 0x03, 0xf2, 0x6d, 0x39, 0x20, 0x3f, 0x97, 0x03, 0xf2, 0xfa, 0xc1,
+	0xcd, 0xff, 0x45, 0x96, 0x6b, 0x30, 0x18, 0x34, 0x2e, 0x76, 0xc2, 0x96, 0x3f, 0xfc, 0x1d, 0x00,
+	0x00, 0xff, 0xff, 0x5f, 0x9d, 0xc3, 0xdf, 0x76, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -331,8 +330,8 @@ const _ = grpc.SupportPackageIsVersion4
 type WormServiceClient interface {
 	// GetWormStatus returns the worm service runtime status.
 	GetWormStatus(ctx context.Context, in *GetWormStatusRequest, opts ...grpc.CallOption) (*GetWormStatusResponse, error)
-	// ListWormMarkets returns markets for the requested browse filters.
-	ListWormMarkets(ctx context.Context, in *ListWormMarketsRequest, opts ...grpc.CallOption) (*ListWormMarketsResponse, error)
+	// ListWormEvents returns events for the requested browse filters.
+	ListWormEvents(ctx context.Context, in *ListWormEventsRequest, opts ...grpc.CallOption) (*ListWormEventsResponse, error)
 }
 
 type wormServiceClient struct {
@@ -352,9 +351,9 @@ func (c *wormServiceClient) GetWormStatus(ctx context.Context, in *GetWormStatus
 	return out, nil
 }
 
-func (c *wormServiceClient) ListWormMarkets(ctx context.Context, in *ListWormMarketsRequest, opts ...grpc.CallOption) (*ListWormMarketsResponse, error) {
-	out := new(ListWormMarketsResponse)
-	err := c.cc.Invoke(ctx, "/worm.WormService/ListWormMarkets", in, out, opts...)
+func (c *wormServiceClient) ListWormEvents(ctx context.Context, in *ListWormEventsRequest, opts ...grpc.CallOption) (*ListWormEventsResponse, error) {
+	out := new(ListWormEventsResponse)
+	err := c.cc.Invoke(ctx, "/worm.WormService/ListWormEvents", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -365,8 +364,8 @@ func (c *wormServiceClient) ListWormMarkets(ctx context.Context, in *ListWormMar
 type WormServiceServer interface {
 	// GetWormStatus returns the worm service runtime status.
 	GetWormStatus(context.Context, *GetWormStatusRequest) (*GetWormStatusResponse, error)
-	// ListWormMarkets returns markets for the requested browse filters.
-	ListWormMarkets(context.Context, *ListWormMarketsRequest) (*ListWormMarketsResponse, error)
+	// ListWormEvents returns events for the requested browse filters.
+	ListWormEvents(context.Context, *ListWormEventsRequest) (*ListWormEventsResponse, error)
 }
 
 // UnimplementedWormServiceServer can be embedded to have forward compatible implementations.
@@ -376,8 +375,8 @@ type UnimplementedWormServiceServer struct {
 func (*UnimplementedWormServiceServer) GetWormStatus(ctx context.Context, req *GetWormStatusRequest) (*GetWormStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWormStatus not implemented")
 }
-func (*UnimplementedWormServiceServer) ListWormMarkets(ctx context.Context, req *ListWormMarketsRequest) (*ListWormMarketsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListWormMarkets not implemented")
+func (*UnimplementedWormServiceServer) ListWormEvents(ctx context.Context, req *ListWormEventsRequest) (*ListWormEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWormEvents not implemented")
 }
 
 func RegisterWormServiceServer(s *grpc.Server, srv WormServiceServer) {
@@ -402,20 +401,20 @@ func _WormService_GetWormStatus_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WormService_ListWormMarkets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListWormMarketsRequest)
+func _WormService_ListWormEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWormEventsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WormServiceServer).ListWormMarkets(ctx, in)
+		return srv.(WormServiceServer).ListWormEvents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/worm.WormService/ListWormMarkets",
+		FullMethod: "/worm.WormService/ListWormEvents",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WormServiceServer).ListWormMarkets(ctx, req.(*ListWormMarketsRequest))
+		return srv.(WormServiceServer).ListWormEvents(ctx, req.(*ListWormEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -429,8 +428,8 @@ var _WormService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _WormService_GetWormStatus_Handler,
 		},
 		{
-			MethodName: "ListWormMarkets",
-			Handler:    _WormService_ListWormMarkets_Handler,
+			MethodName: "ListWormEvents",
+			Handler:    _WormService_ListWormEvents_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -508,7 +507,7 @@ func (m *GetWormStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListWormMarketsRequest) Marshal() (dAtA []byte, err error) {
+func (m *ListWormEventsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -518,12 +517,12 @@ func (m *ListWormMarketsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListWormMarketsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListWormEventsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ListWormMarketsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ListWormEventsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -561,7 +560,7 @@ func (m *ListWormMarketsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ListWormMarketsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListWormEventsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -571,12 +570,12 @@ func (m *ListWormMarketsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListWormMarketsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListWormEventsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ListWormMarketsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ListWormEventsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -666,7 +665,7 @@ func (m *GetWormStatusResponse) Size() (n int) {
 	return n
 }
 
-func (m *ListWormMarketsRequest) Size() (n int) {
+func (m *ListWormEventsRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -693,7 +692,7 @@ func (m *ListWormMarketsRequest) Size() (n int) {
 	return n
 }
 
-func (m *ListWormMarketsResponse) Size() (n int) {
+func (m *ListWormEventsResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -881,7 +880,7 @@ func (m *GetWormStatusResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListWormMarketsRequest) Unmarshal(dAtA []byte) error {
+func (m *ListWormEventsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -904,10 +903,10 @@ func (m *ListWormMarketsRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListWormMarketsRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListWormEventsRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListWormMarketsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListWormEventsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1047,7 +1046,7 @@ func (m *ListWormMarketsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListWormMarketsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListWormEventsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1070,10 +1069,10 @@ func (m *ListWormMarketsResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListWormMarketsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListWormEventsResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListWormMarketsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListWormEventsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1105,7 +1104,7 @@ func (m *ListWormMarketsResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Items = append(m.Items, &v1alpha1.WormMarketItem{})
+			m.Items = append(m.Items, &v1alpha1.WormEventItem{})
 			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

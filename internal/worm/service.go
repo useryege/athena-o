@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	defaultWormMarketsLimit   = 20
-	maxWormMarketsLimit       = 100
+	defaultWormEventsLimit    = 20
+	maxWormEventsLimit        = 100
+	maxWormMarketsSyncLimit   = 100
 	wormMarketSyncInterval    = time.Minute
 	wormMarketDetailInterval  = time.Minute
 	wormLiveStateLoopInterval = time.Minute
@@ -122,13 +123,13 @@ func (s *Service) GetWormStatus(context.Context, *apiclient.GetWormStatusRequest
 	}, nil
 }
 
-func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMarketsRequest) (*apiclient.ListWormMarketsResponse, error) {
+func (s *Service) ListWormEvents(ctx context.Context, req *apiclient.ListWormEventsRequest) (*apiclient.ListWormEventsResponse, error) {
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "worm store is required")
 	}
 
-	params := wormMarketsListParams{
-		Limit:        defaultWormMarketsLimit,
+	params := wormEventsListParams{
+		Limit:        defaultWormEventsLimit,
 		SortOption:   defaultWormMarketsSortOption,
 		CategorySlug: defaultWormMarketsCategorySlug,
 		State:        defaultWormMarketsState,
@@ -141,10 +142,10 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 		params.SortOption = strings.TrimSpace(req.GetSortOption())
 		params.CategorySlug = strings.TrimSpace(req.GetCategorySlug())
 	}
-	if params.Limit < 1 || params.Limit > maxWormMarketsLimit {
-		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxWormMarketsLimit)
+	if params.Limit < 1 || params.Limit > maxWormEventsLimit {
+		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxWormEventsLimit)
 	}
-	if err := validateFixedWormMarketParams(params); err != nil {
+	if err := validateFixedWormEventParams(params); err != nil {
 		return nil, err
 	}
 	offset, err := parseWormMarketCursor(params.Cursor)
@@ -152,19 +153,19 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 		return nil, err
 	}
 	page := int32(offset/params.Limit) + 1
-	result, err := s.store.ListWormMarketsPage(ctx, "", "", page, int32(params.Limit))
+	result, err := s.store.ListWormEventsPage(ctx, page, int32(params.Limit))
 	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "failed to list worm markets: %v", err)
+		return nil, status.Errorf(codes.Unavailable, "failed to list worm events: %v", err)
 	}
-	resp := &apiclient.ListWormMarketsResponse{
-		Markets: make([]*v1alpha1.WormMarketItem, 0, len(result.Items)),
+	resp := &apiclient.ListWormEventsResponse{
+		Events: make([]*v1alpha1.WormEventItem, 0, len(result.Items)),
 	}
 	var fetchedAt time.Time
 	for _, item := range result.Items {
 		if item.FetchedAt.After(fetchedAt) {
 			fetchedAt = item.FetchedAt
 		}
-		resp.Markets = append(resp.Markets, s.wormMarketToAPIItem(item))
+		resp.Events = append(resp.Events, s.wormEventToAPIItem(item))
 	}
 	if !fetchedAt.IsZero() {
 		resp.FetchedAt = fetchedAt.Unix()
@@ -176,7 +177,22 @@ func (s *Service) ListWormMarkets(ctx context.Context, req *apiclient.ListWormMa
 	return resp, nil
 }
 
-type wormMarketsListParams struct {
+func (s *Service) wormEventToAPIItem(event wormstore.WormEvent) *v1alpha1.WormEventItem {
+	item := &v1alpha1.WormEventItem{
+		ConditionID: event.ConditionID,
+		Title:       event.Title,
+		Logo:        event.Logo,
+		Live:        event.Live,
+		MarketCount: event.MarketCount,
+		Markets:     make([]*v1alpha1.WormMarketItem, 0, len(event.Markets)),
+	}
+	for _, market := range event.Markets {
+		item.Markets = append(item.Markets, s.wormMarketToAPIItem(market))
+	}
+	return item
+}
+
+type wormEventsListParams struct {
 	Limit        int
 	Cursor       string
 	SortOption   string
@@ -184,7 +200,7 @@ type wormMarketsListParams struct {
 	State        string
 }
 
-func validateFixedWormMarketParams(params wormMarketsListParams) error {
+func validateFixedWormEventParams(params wormEventsListParams) error {
 	sortOption := strings.ToLower(strings.TrimSpace(params.SortOption))
 	if sortOption == "" {
 		sortOption = defaultWormMarketsSortOption
@@ -297,7 +313,7 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 	for {
 		markets, err := s.wormClient.ListMarkets(ctx, utilworm.ListMarketsOptions{
 			PageOptions: utilworm.PageOptions{
-				Limit:  maxWormMarketsLimit,
+				Limit:  maxWormMarketsSyncLimit,
 				Cursor: cursor,
 			},
 			State:    defaultWormMarketsState,
@@ -505,6 +521,8 @@ func parseWormMarketPrice(value string) (string, bool) {
 
 func isSyncedWormMarket(market utilworm.MarketSummary) bool {
 	return strings.TrimSpace(market.ConditionID) != "" &&
+		market.Event != nil &&
+		strings.TrimSpace(market.Event.ConditionID) != "" &&
 		strings.EqualFold(strings.TrimSpace(market.State), defaultWormMarketsState) &&
 		strings.EqualFold(strings.TrimSpace(market.Category), defaultWormMarketsCategorySlug)
 }

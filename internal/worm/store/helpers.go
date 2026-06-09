@@ -13,13 +13,6 @@ const (
 	maxPageSize     = int32(100)
 )
 
-func nullableText(value string) pgtype.Text {
-	if value == "" {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: value, Valid: true}
-}
-
 func nullableTime(value time.Time) pgtype.Timestamptz {
 	if value.IsZero() {
 		return pgtype.Timestamptz{}

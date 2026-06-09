@@ -34,14 +34,14 @@ func (s *Server) GetWormStatus(ctx context.Context, _ *wormpkg.GetWormStatusRequ
 	}, nil
 }
 
-func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarketsRequest) (*wormpkg.ListWormMarketsResponse, error) {
+func (s *Server) ListWormEvents(ctx context.Context, req *wormpkg.ListWormEventsRequest) (*wormpkg.ListWormEventsResponse, error) {
 	closer, client, err := s.wormClientSet.NewWormServiceClient()
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 
-	resp, err := client.ListWormMarkets(ctx, &wormapiclient.ListWormMarketsRequest{
+	resp, err := client.ListWormEvents(ctx, &wormapiclient.ListWormEventsRequest{
 		Limit:        req.GetLimit(),
 		Cursor:       req.GetCursor(),
 		SortOption:   req.GetSortOption(),
@@ -51,8 +51,8 @@ func (s *Server) ListWormMarkets(ctx context.Context, req *wormpkg.ListWormMarke
 		return nil, err
 	}
 
-	return &wormpkg.ListWormMarketsResponse{
-		Items:      resp.GetMarkets(),
+	return &wormpkg.ListWormEventsResponse{
+		Items:      resp.GetEvents(),
 		NextCursor: resp.GetNextCursor(),
 		FetchedAt:  resp.GetFetchedAt(),
 		Stale:      resp.GetStale(),

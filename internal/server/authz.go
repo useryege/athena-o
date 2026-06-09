@@ -162,7 +162,7 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/wallet.WalletService/ImportMnemonic":            fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
 	"/wallet.WalletService/UpdateWalletAlias":         {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
 	"/worm.WormService/GetWormStatus":                 fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/ListWormMarkets":               fixedRule(rbac.ResourceWorm, rbac.ActionGet),
+	"/worm.WormService/ListWormEvents":                fixedRule(rbac.ResourceWorm, rbac.ActionGet),
 	"/worm.WormService/BatchUpdateWormMarketsIgnored": fixedRule(rbac.ResourceWorm, rbac.ActionUpdate),
 
 	"/polymarket.PolymarketService/GetPolymarketStatus":             fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),

@@ -111,21 +111,6 @@ func (s *SQLStore) GetWormMarket(ctx context.Context, conditionID string) (*Worm
 	return mapWormMarket(row), nil
 }
 
-func (s *SQLStore) CountWormMarkets(ctx context.Context, conditionID, eventConditionID string) (int64, error) {
-	q, err := s.querier()
-	if err != nil {
-		return 0, err
-	}
-	total, err := q.CountWormMarkets(ctx, wormsqlc.CountWormMarketsParams{
-		ConditionID:      nullableText(conditionID),
-		EventConditionID: nullableText(eventConditionID),
-	})
-	if err != nil {
-		return 0, fmt.Errorf("count worm markets: %w", err)
-	}
-	return total, nil
-}
-
 func (s *SQLStore) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 	q, err := s.querier()
 	if err != nil {
@@ -138,32 +123,52 @@ func (s *SQLStore) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 	return mapWormMarkets(rows), nil
 }
 
-func (s *SQLStore) ListWormMarketsPage(ctx context.Context, conditionID, eventConditionID string, page, pageSize int32) (*WormMarketPage, error) {
+func (s *SQLStore) ListWormEventsPage(ctx context.Context, page, pageSize int32) (*WormEventPage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
 	page, pageSize, offset := normalizePage(page, pageSize)
-	conditionIDFilter := nullableText(conditionID)
-	eventConditionIDFilter := nullableText(eventConditionID)
-	total, err := q.CountWormMarkets(ctx, wormsqlc.CountWormMarketsParams{
-		ConditionID:      conditionIDFilter,
-		EventConditionID: eventConditionIDFilter,
+	total, err := q.CountWormEvents(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("count worm events: %w", err)
+	}
+	eventRows, err := q.ListWormEventsPage(ctx, wormsqlc.ListWormEventsPageParams{
+		Offset: offset,
+		Limit:  pageSize,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("count worm markets: %w", err)
+		return nil, fmt.Errorf("list worm events page: %w", err)
 	}
-	rows, err := q.ListWormMarketsPage(ctx, wormsqlc.ListWormMarketsPageParams{
-		ConditionID:      conditionIDFilter,
-		EventConditionID: eventConditionIDFilter,
-		Offset:           offset,
-		Limit:            pageSize,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("list worm markets page: %w", err)
+	eventIDs := make([]string, 0, len(eventRows))
+	for _, row := range eventRows {
+		eventIDs = append(eventIDs, row.EventConditionID)
 	}
-	return &WormMarketPage{
-		Items:    mapWormMarkets(rows),
+	marketsByEvent := make(map[string][]WormMarket, len(eventIDs))
+	if len(eventIDs) > 0 {
+		marketRows, err := q.ListWormMarketsByEventConditionIDs(ctx, eventIDs)
+		if err != nil {
+			return nil, fmt.Errorf("list worm event markets: %w", err)
+		}
+		for _, market := range mapWormMarkets(marketRows) {
+			marketsByEvent[market.EventConditionID] = append(marketsByEvent[market.EventConditionID], market)
+		}
+	}
+	items := make([]WormEvent, 0, len(eventRows))
+	for _, row := range eventRows {
+		items = append(items, WormEvent{
+			ConditionID: row.EventConditionID,
+			Title:       row.EventTitle,
+			Logo:        row.EventLogo,
+			Live:        row.Live,
+			MarketCount: row.MarketCount,
+			Markets:     marketsByEvent[row.EventConditionID],
+			NewestAt:    row.NewestCreated,
+			FetchedAt:   timeValue(row.FetchedAt),
+		})
+	}
+	return &WormEventPage{
+		Items:    items,
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

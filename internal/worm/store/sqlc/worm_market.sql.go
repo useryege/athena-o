@@ -147,20 +147,14 @@ func (q *Queries) BatchUpsertWormMarkets(ctx context.Context, arg BatchUpsertWor
 	return err
 }
 
-const countWormMarkets = `-- name: CountWormMarkets :one
-SELECT COUNT(*)::bigint
+const countWormEvents = `-- name: CountWormEvents :one
+SELECT COUNT(DISTINCT event_condition_id)::bigint
 FROM worm_market
-WHERE ($1::text IS NULL OR condition_id = $1::text)
-  AND ($2::text IS NULL OR event_condition_id = $2::text)
+WHERE event_condition_id <> ''
 `
 
-type CountWormMarketsParams struct {
-	ConditionID      pgtype.Text
-	EventConditionID pgtype.Text
-}
-
-func (q *Queries) CountWormMarkets(ctx context.Context, arg CountWormMarketsParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countWormMarkets, arg.ConditionID, arg.EventConditionID)
+func (q *Queries) CountWormEvents(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countWormEvents)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -239,6 +233,71 @@ func (q *Queries) GetWormMarket(ctx context.Context, conditionID string) (WormMa
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listWormEventsPage = `-- name: ListWormEventsPage :many
+SELECT
+  event_condition_id,
+  COALESCE(
+    (ARRAY_AGG(event_title ORDER BY created DESC, condition_id) FILTER (WHERE event_title <> ''))[1],
+    ''
+  )::text AS event_title,
+  COALESCE(
+    (ARRAY_AGG(event_logo ORDER BY created DESC, condition_id) FILTER (WHERE event_logo <> ''))[1],
+    ''
+  )::text AS event_logo,
+  BOOL_OR(live_state = 'live')::boolean AS live,
+  COUNT(*)::bigint AS market_count,
+  MAX(created)::bigint AS newest_created,
+  MAX(fetched_at)::timestamptz AS fetched_at
+FROM worm_market
+WHERE event_condition_id <> ''
+GROUP BY event_condition_id
+ORDER BY BOOL_OR(live_state = 'live') DESC, MAX(created) DESC, event_condition_id
+LIMIT $2 OFFSET $1
+`
+
+type ListWormEventsPageParams struct {
+	Offset int32
+	Limit  int32
+}
+
+type ListWormEventsPageRow struct {
+	EventConditionID string
+	EventTitle       string
+	EventLogo        string
+	Live             bool
+	MarketCount      int64
+	NewestCreated    int64
+	FetchedAt        pgtype.Timestamptz
+}
+
+func (q *Queries) ListWormEventsPage(ctx context.Context, arg ListWormEventsPageParams) ([]ListWormEventsPageRow, error) {
+	rows, err := q.db.Query(ctx, listWormEventsPage, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListWormEventsPageRow
+	for rows.Next() {
+		var i ListWormEventsPageRow
+		if err := rows.Scan(
+			&i.EventConditionID,
+			&i.EventTitle,
+			&i.EventLogo,
+			&i.Live,
+			&i.MarketCount,
+			&i.NewestCreated,
+			&i.FetchedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listWormMarketLivePriceChanges = `-- name: ListWormMarketLivePriceChanges :many
@@ -338,29 +397,15 @@ func (q *Queries) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 	return items, nil
 }
 
-const listWormMarketsPage = `-- name: ListWormMarketsPage :many
+const listWormMarketsByEventConditionIDs = `-- name: ListWormMarketsByEventConditionIDs :many
 SELECT condition_id, title, description, logo, last_trade_price, state, category, sort_option, created, event_title, event_condition_id, event_logo, margin_enabled, live_state, live_checked_at, live_price_change, get_market_data, raw, fetched_at, last_seen_at, created_at, updated_at
 FROM worm_market
-WHERE ($1::text IS NULL OR condition_id = $1::text)
-  AND ($2::text IS NULL OR event_condition_id = $2::text)
-ORDER BY (live_state = 'live') DESC, created DESC, condition_id
-LIMIT $4 OFFSET $3
+WHERE event_condition_id = ANY($1::text[])
+ORDER BY event_condition_id, (live_state = 'live') DESC, created DESC, condition_id
 `
 
-type ListWormMarketsPageParams struct {
-	ConditionID      pgtype.Text
-	EventConditionID pgtype.Text
-	Offset           int32
-	Limit            int32
-}
-
-func (q *Queries) ListWormMarketsPage(ctx context.Context, arg ListWormMarketsPageParams) ([]WormMarket, error) {
-	rows, err := q.db.Query(ctx, listWormMarketsPage,
-		arg.ConditionID,
-		arg.EventConditionID,
-		arg.Offset,
-		arg.Limit,
-	)
+func (q *Queries) ListWormMarketsByEventConditionIDs(ctx context.Context, eventConditionIds []string) ([]WormMarket, error) {
+	rows, err := q.db.Query(ctx, listWormMarketsByEventConditionIDs, eventConditionIds)
 	if err != nil {
 		return nil, err
 	}

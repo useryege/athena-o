@@ -17,3 +17,12 @@ type WormMarketItem struct {
 	LiveCheckedAt    int64  `protobuf:"varint,14,opt,name=liveCheckedAt" json:"liveCheckedAt"`
 	LivePriceChange  string `protobuf:"bytes,15,opt,name=livePriceChange" json:"livePriceChange"`
 }
+
+type WormEventItem struct {
+	ConditionID string            `protobuf:"bytes,1,opt,name=conditionId" json:"conditionId"`
+	Title       string            `protobuf:"bytes,2,opt,name=title" json:"title"`
+	Logo        string            `protobuf:"bytes,3,opt,name=logo" json:"logo"`
+	Live        bool              `protobuf:"varint,4,opt,name=live" json:"live"`
+	MarketCount int64             `protobuf:"varint,5,opt,name=marketCount" json:"marketCount"`
+	Markets     []*WormMarketItem `protobuf:"bytes,6,rep,name=markets" json:"markets"`
+}
