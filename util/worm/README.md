@@ -12,6 +12,12 @@
 
 The Go wrapper entrypoint is `NewClient(Config{})`. The default upstream API base URL is `DefaultBaseURL`.
 
+## Known Schema Drift
+
+The live market detail and search APIs return `rules` as `array<string>`. The
+upstream markdown currently describes this field as an object, so the Go client
+models the observed live response rather than that stale documentation shape.
+
 ## Sync Local Docs
 
 Worm publishes an LLM-friendly documentation index at `https://docs.worm.wtf/llms.txt`.

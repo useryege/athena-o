@@ -1,7 +1,6 @@
 package worm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -429,11 +428,16 @@ func (s *Service) updateWormMarketRules(ctx context.Context) {
 			log.Warnf("worm market rules response condition ID mismatch for %s", conditionID)
 			continue
 		}
-		if !isJSONObject(market.Rules) {
-			log.Warnf("worm market %s returned missing or invalid rules", conditionID)
+		if market.Rules == nil {
+			log.Warnf("worm market %s returned missing rules", conditionID)
 			continue
 		}
-		rowsAffected, err := s.store.SetWormMarketRulesIfMissing(ctx, conditionID, market.Rules)
+		rules, err := json.Marshal(market.Rules)
+		if err != nil {
+			log.Warnf("failed to marshal worm market %s rules: %v", conditionID, err)
+			continue
+		}
+		rowsAffected, err := s.store.SetWormMarketRulesIfMissing(ctx, conditionID, rules)
 		if err != nil {
 			if ctx.Err() == nil {
 				log.Warnf("failed to store worm market %s rules: %v", conditionID, err)
@@ -516,11 +520,6 @@ func parseWormMarketPrice(value string) (string, bool) {
 		return "", false
 	}
 	return value, true
-}
-
-func isJSONObject(value json.RawMessage) bool {
-	value = bytes.TrimSpace(value)
-	return len(value) >= 2 && value[0] == '{' && value[len(value)-1] == '}' && json.Valid(value)
 }
 
 func isSyncedWormMarket(market utilworm.MarketSummary) bool {

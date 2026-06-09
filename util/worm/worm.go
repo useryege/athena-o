@@ -430,7 +430,7 @@ type Market struct {
 	YesOutcomeLabel *string          `json:"yes_outcome_label,omitempty"`
 	NoOutcomeLabel  *string          `json:"no_outcome_label,omitempty"`
 	Outcomes        []Outcome        `json:"outcomes,omitempty"`
-	Rules           json.RawMessage  `json:"rules,omitempty"`
+	Rules           []string         `json:"rules,omitempty"`
 	ResolutionDate  *int64           `json:"resolution_date,omitempty"`
 	MakerFee        *string          `json:"maker_fee,omitempty"`
 	TakerFee        *string          `json:"taker_fee,omitempty"`
@@ -441,14 +441,14 @@ type Market struct {
 func (m *Market) UnmarshalJSON(data []byte) error {
 	var raw struct {
 		MarketSummary
-		YesOutcomeLabel *string         `json:"yes_outcome_label,omitempty"`
-		NoOutcomeLabel  *string         `json:"no_outcome_label,omitempty"`
-		Outcomes        []Outcome       `json:"outcomes,omitempty"`
-		Rules           json.RawMessage `json:"rules"`
-		ResolutionDate  *int64          `json:"resolution_date,omitempty"`
-		MakerFee        *string         `json:"maker_fee,omitempty"`
-		TakerFee        *string         `json:"taker_fee,omitempty"`
-		Config          *MarketConfig   `json:"config,omitempty"`
+		YesOutcomeLabel *string       `json:"yes_outcome_label,omitempty"`
+		NoOutcomeLabel  *string       `json:"no_outcome_label,omitempty"`
+		Outcomes        []Outcome     `json:"outcomes,omitempty"`
+		Rules           []string      `json:"rules"`
+		ResolutionDate  *int64        `json:"resolution_date,omitempty"`
+		MakerFee        *string       `json:"maker_fee,omitempty"`
+		TakerFee        *string       `json:"taker_fee,omitempty"`
+		Config          *MarketConfig `json:"config,omitempty"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -462,8 +462,8 @@ func (m *Market) UnmarshalJSON(data []byte) error {
 	m.TakerFee = raw.TakerFee
 	m.Config = raw.Config
 	m.Rules = nil
-	if len(raw.Rules) > 0 && string(raw.Rules) != "null" {
-		m.Rules = append(json.RawMessage(nil), raw.Rules...)
+	if raw.Rules != nil {
+		m.Rules = append([]string{}, raw.Rules...)
 	}
 	if raw.Config != nil {
 		var rawFields map[string]json.RawMessage
@@ -587,7 +587,7 @@ type SearchSummary struct {
 	Markets         []MarketSummary  `json:"markets,omitempty"`
 	YesOutcomeLabel *string          `json:"yes_outcome_label,omitempty"`
 	NoOutcomeLabel  *string          `json:"no_outcome_label,omitempty"`
-	Rules           json.RawMessage  `json:"rules,omitempty"`
+	Rules           []string         `json:"rules,omitempty"`
 	ResolutionDate  *int64           `json:"resolution_date,omitempty"`
 	MakerFee        *string          `json:"maker_fee,omitempty"`
 	TakerFee        *string          `json:"taker_fee,omitempty"`
@@ -602,7 +602,7 @@ func (s *SearchSummary) UnmarshalJSON(data []byte) error {
 		Markets         []MarketSummary `json:"markets,omitempty"`
 		YesOutcomeLabel *string         `json:"yes_outcome_label,omitempty"`
 		NoOutcomeLabel  *string         `json:"no_outcome_label,omitempty"`
-		Rules           json.RawMessage `json:"rules"`
+		Rules           []string        `json:"rules"`
 		ResolutionDate  *int64          `json:"resolution_date,omitempty"`
 		MakerFee        *string         `json:"maker_fee,omitempty"`
 		TakerFee        *string         `json:"taker_fee,omitempty"`
@@ -621,8 +621,8 @@ func (s *SearchSummary) UnmarshalJSON(data []byte) error {
 	s.TakerFee = raw.TakerFee
 	s.Config = raw.Config
 	s.Rules = nil
-	if len(raw.Rules) > 0 && string(raw.Rules) != "null" {
-		s.Rules = append(json.RawMessage(nil), raw.Rules...)
+	if raw.Rules != nil {
+		s.Rules = append([]string{}, raw.Rules...)
 	}
 	if raw.Config != nil {
 		var rawFields map[string]json.RawMessage

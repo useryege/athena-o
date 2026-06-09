@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS worm_market (
   CONSTRAINT worm_market_live_state_valid CHECK (live_state IN ('live', 'not_live', 'unknown')),
   CONSTRAINT worm_market_created_nonnegative CHECK (created >= 0),
   CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object'),
-  CONSTRAINT worm_market_rules_object CHECK (rules IS NULL OR jsonb_typeof(rules) = 'object')
+  CONSTRAINT worm_market_rules_array CHECK (rules IS NULL OR jsonb_typeof(rules) = 'array')
 );
 
 CREATE TABLE IF NOT EXISTS worm_market_price_history (
