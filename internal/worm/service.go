@@ -40,11 +40,20 @@ const (
 	wormMarketLiveStateNotLive = "not_live"
 	wormMarketLiveStateUnknown = "unknown"
 
-	wormMatchStartSystemPrompt = `Extract the scheduled official start time of the sports match from the provided market rules.
-Return exactly one JSON object with this shape: {"match_start_time":"RFC3339 timestamp with timezone"}.
-If the official match start time or its timezone cannot be determined reliably, return exactly {"match_start_time":null}.
-Do not use a market resolution deadline, settlement deadline, review time, or result publication time as the match start time.
-Do not return markdown, explanations, confidence scores, or additional fields.`
+	wormMatchStartSystemPrompt = `你是体育比赛时间提取器。请仅根据用户提供的市场规则提取体育比赛正式开赛时间。
+
+必须返回且只能返回一个 JSON 对象，禁止输出 Markdown、解释、置信度或任何额外字段。
+
+固定返回格式：
+- 能可靠确定开赛时间和时区时：{"match_start_time":"2026-06-10T20:00:00+08:00"}
+- 无法可靠确定开赛时间或时区时：{"match_start_time":null}
+
+要求：
+1. match_start_time 必须是包含明确时区的 RFC3339 时间。
+2. 只能提取比赛正式开赛时间。
+3. 禁止将市场结算截止时间、审核时间、结果公布时间或其他时间作为比赛开赛时间。
+4. 如果规则只提供日期但没有可靠的具体时间和时区，必须返回 null。
+5. JSON 对象中不得包含 match_start_time 以外的字段。`
 )
 
 type wormMarketClient interface {
@@ -535,14 +544,18 @@ func (s *Service) updateWormMarketMatchStarts(ctx context.Context) {
 }
 
 func (s *Service) extractWormMarketMatchStart(ctx context.Context, rules json.RawMessage) (time.Time, error) {
-	temperature := 0.0
 	response, err := s.deepSeekClient.CreateChatCompletion(ctx, deepseek.ChatCompletionRequest{
 		Messages: []deepseek.ChatMessage{
 			{Role: "system", Content: wormMatchStartSystemPrompt},
 			{Role: "user", Content: string(rules)},
 		},
-		MaxTokens:   128,
-		Temperature: &temperature,
+		MaxTokens: 256,
+		Thinking: &deepseek.ThinkingConfig{
+			Type: "disabled",
+		},
+		ResponseFormat: &deepseek.ResponseFormatConfig{
+			Type: "json_object",
+		},
 	})
 	if err != nil {
 		return time.Time{}, err

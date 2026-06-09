@@ -37,10 +37,20 @@ type Config struct {
 }
 
 type ChatCompletionRequest struct {
-	Model       string        `json:"model,omitempty"`
-	Messages    []ChatMessage `json:"messages"`
-	MaxTokens   int           `json:"max_tokens,omitempty"`
-	Temperature *float64      `json:"temperature,omitempty"`
+	Model          string                `json:"model,omitempty"`
+	Messages       []ChatMessage         `json:"messages"`
+	MaxTokens      int                   `json:"max_tokens,omitempty"`
+	Temperature    *float64              `json:"temperature,omitempty"`
+	Thinking       *ThinkingConfig       `json:"thinking,omitempty"`
+	ResponseFormat *ResponseFormatConfig `json:"response_format,omitempty"`
+}
+
+type ThinkingConfig struct {
+	Type string `json:"type"`
+}
+
+type ResponseFormatConfig struct {
+	Type string `json:"type"`
 }
 
 type ChatMessage struct {
