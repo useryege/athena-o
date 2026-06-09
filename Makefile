@@ -170,6 +170,13 @@ prod-start-local:
 prod-stop-local:
 	PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) down
 
+.PHONY: prod-destroy-local
+prod-destroy-local:
+	PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) down --remove-orphans
+	@if $(DOCKER) volume inspect $(PROD_POSTGRES_VOLUME) >/dev/null 2>&1; then \
+		$(DOCKER) volume rm $(PROD_POSTGRES_VOLUME); \
+	fi
+
 .PHONY: prod-logs-local
 prod-logs-local:
 	PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE) logs -f $(PROD_LOG_SERVICE)

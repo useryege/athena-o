@@ -105,6 +105,7 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 | --- | --- | --- |
 | `make prod-start-local` | 使用生产 compose 在本机启动服务。 | `make prod-start-local` |
 | `make prod-stop-local` | 停止本机生产 compose 服务，不删除 volume。 | `make prod-stop-local` |
+| `make prod-destroy-local` | 危险操作：停止本机生产 compose，并删除 PostgreSQL volume。 | `make prod-destroy-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
 | `make prod-deploy-remote` | 上传 compose、`.env`、PostgreSQL init 脚本和镜像到远端，并启动服务。 | `make prod-deploy-remote` |
 | `make prod-deploy-fresh-remote` | 危险操作：本地构建镜像，清空远端 Athena 容器和 PostgreSQL volume，再全新部署并迁移。 | `PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-fresh-remote` |
@@ -166,7 +167,15 @@ http://127.0.0.1:8080
 PROD_ENV_FILE=.env.prod make prod-stop-local
 ```
 
-`prod-stop-local` 只会停止并移除 compose 容器，不会删除 PostgreSQL volume。如果需要重置预演数据，需手动删除默认的 `athena-prod-postgres-data` volume，或删除启动时通过 `PROD_POSTGRES_VOLUME` 指定的 volume。
+`prod-stop-local` 只会停止并移除 compose 容器，不会删除 PostgreSQL volume。如果需要重置预演数据，请使用 `prod-destroy-local`。
+
+如需一键停止本地生产 compose，并永久删除其 PostgreSQL 数据：
+
+```bash
+PROD_ENV_FILE=.env.prod make prod-destroy-local
+```
+
+`prod-destroy-local` 会删除 compose 容器、孤立容器、网络和 `PROD_POSTGRES_VOLUME` 指定的 PostgreSQL volume，但保留本地构建的 `PROD_IMAGE` 镜像。该命令可重复执行。
 
 ### 远程部署
 
