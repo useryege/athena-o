@@ -27,12 +27,9 @@
 | `REMOTE_APP_DIR` | `/root/athena` | 远端服务器上的部署目录。 |
 | `REMOTE_USER` | `root` | SSH 登录远端服务器使用的用户。 |
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
-| `PROD_MIGRATE_MODULE` | `all` | 生产迁移目标模块。可设为 `application`、`worm`、`solidity`、`notification`、`wallet`、`polymarket` 或 `all`。 |
-| `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | 生产 PostgreSQL external volume 名称。普通部署、停止和重启不得删除该 volume。 |
-| `CONFIRM_DESTROY_PROD_DATA` | 空 | 删除生产 PostgreSQL volume 的确认开关。只有精确等于 `yes` 时 `prod-destroy-data-remote` 才会执行。 |
-| `PROD_RESET_REMOTE_DATA` | 空 | `prod-remote-deploy.sh` 内部开关。为 `yes` 时部署前停止远端 Athena compose 并删除 PostgreSQL volume。 |
-| `PROD_RUN_REMOTE_MIGRATIONS` | 空 | `prod-remote-deploy.sh` 内部开关。为 `yes` 时部署启动后自动执行远端 migration。 |
-| `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产环境通过显式迁移命令控制 schema 演进。 |
+| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `worm`、`notification`、`wallet`、`polymarket`、`token` 或 `all`。 |
+| `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
+| `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
 | `ATHENA_POSTGRES_DATA_DIR` | `/tmp/athena-local/postgres` | `clean-postgres-data` 删除的本地 PostgreSQL 数据目录。 |
 | `ATHENA_REDIS_DATA_DIR` | `/tmp/athena-local/redis` | `clean-postgres-data` 删除的本地 Redis 数据目录。 |
@@ -103,23 +100,15 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make prod-start-local` | 使用生产 compose 在本机启动服务。 | `make prod-start-local` |
-| `make prod-stop-local` | 停止本机生产 compose 服务，不删除 volume。 | `make prod-stop-local` |
-| `make prod-destroy-local` | 危险操作：停止本机生产 compose，并删除 PostgreSQL volume。 | `make prod-destroy-local` |
+| `make prod-start-local` | 创建本地 PostgreSQL volume、执行 migration 并启动生产 compose 服务。 | `make prod-start-local` |
+| `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
-| `make prod-deploy-remote` | 上传 compose、`.env`、PostgreSQL init 脚本和镜像到远端，并启动服务。 | `make prod-deploy-remote` |
-| `make prod-deploy-fresh-remote` | 危险操作：本地构建镜像，清空远端 Athena 容器和 PostgreSQL volume，再全新部署并迁移。 | `PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-fresh-remote` |
-| `make prod-start-remote` | 在远端执行生产 compose 启动。 | `make prod-start-remote` |
-| `make prod-stop-remote` | 在远端停止生产 compose 服务，不删除 volume。 | `make prod-stop-remote` |
-| `make prod-logs-remote` | 查看远端生产 compose 日志。 | `make prod-logs-remote` |
-| `make prod-migrate-remote` | 在远端手动执行 PostgreSQL migration。默认迁移全部模块。 | `make prod-migrate-remote` |
-| `make prod-migration-status-remote` | 查看远端 PostgreSQL migration 状态。默认查看全部模块。 | `make prod-migration-status-remote` |
-| `make prod-db-backup-remote` | 在远端通过 `pg_dumpall` 备份 PostgreSQL 到 `$(REMOTE_APP_DIR)/backups`。 | `make prod-db-backup-remote` |
-| `make prod-destroy-data-remote` | 危险操作：停止远端 compose 并删除生产 PostgreSQL volume。必须显式确认。 | `make prod-destroy-data-remote CONFIRM_DESTROY_PROD_DATA=yes` |
+| `make prod-deploy-remote` | 构建镜像、清空远程数据库并完成全新部署。 | `PROD_ENV_FILE=.env.prod make prod-deploy-remote` |
+| `make prod-destroy-remote` | 删除远程 Athena 运行资源和 PostgreSQL volume。 | `PROD_ENV_FILE=.env.prod make prod-destroy-remote` |
 
 ### 部署前本地预演
 
-部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 已经是本地生产 compose 启动入口，不需要再手写完整的 `docker compose up -d`。
+部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 会创建 PostgreSQL volume、启动 PostgreSQL、执行 migration，再启动其余服务。
 
 如果使用 `.env.prod` 作为预演环境文件，至少需要包含：
 
@@ -147,11 +136,7 @@ PROD_ENV_FILE=.env.prod make prod-start-local
 
 `prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为 `true`，本地生产预演仍会启用服务端认证。
 
-生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`，因此本地预演和远程部署一样，需要显式执行数据库迁移：
-
-```bash
-PROD_ENV_FILE=.env.prod docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tools run --rm athena-migrate athena up --module all
-```
+生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`。`prod-start-local` 会在启动业务服务前自动执行 `athena up --module $(PROD_MIGRATE_MODULE)`，默认迁移全部模块；迁移失败时命令会终止并保留 PostgreSQL 容器，便于排查。
 
 查看日志和访问本地服务：
 
@@ -169,15 +154,7 @@ http://127.0.0.1:8080
 PROD_ENV_FILE=.env.prod make prod-stop-local
 ```
 
-`prod-stop-local` 只会停止并移除 compose 容器，不会删除 PostgreSQL volume。如果需要重置预演数据，请使用 `prod-destroy-local`。
-
-如需一键停止本地生产 compose，并永久删除其 PostgreSQL 数据：
-
-```bash
-PROD_ENV_FILE=.env.prod make prod-destroy-local
-```
-
-`prod-destroy-local` 会删除 compose 容器、孤立容器、网络和 `PROD_POSTGRES_VOLUME` 指定的 PostgreSQL volume，但保留本地构建的 `PROD_IMAGE` 镜像。该命令可重复执行。
+`prod-stop-local` 会删除 compose 容器、孤立容器、网络和 `PROD_POSTGRES_VOLUME` 指定的 PostgreSQL volume，但保留本地构建的 `PROD_IMAGE` 镜像。下一次启动会重新创建空数据库并执行 migration。
 
 ### 远程部署
 
@@ -234,26 +211,23 @@ docker compose version
 '
 ```
 
-推荐远程部署流程：
+一键部署：
 
 ```bash
-PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-build-local
 PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-remote
-PROD_ENV_FILE=./.env.prod make prod-migrate-remote
-PROD_ENV_FILE=./.env.prod PROD_LOG_SERVICE=athena-server make prod-logs-remote
 ```
 
-`prod-deploy-remote` 会把 `$(PROD_ENV_FILE)` 上传到远端并命名为 `.env`，同时上传 `docker-compose.prod.yml`、`hack/postgres/init` 和本地 `$(PROD_IMAGE)` 镜像。
+该命令会先构建本地镜像。构建成功后，依次停止远端旧服务、删除并重建 `$(PROD_POSTGRES_VOLUME)`、上传 `docker-compose.prod.yml`、`.env` 和 PostgreSQL init 脚本、传输镜像、启动 PostgreSQL、执行 `athena up --module $(PROD_MIGRATE_MODULE)`，最后启动全部服务并输出容器状态。
 
-如果需要清空远端 Athena 数据并从零部署，可以使用一键全新部署命令：
+**每次远程部署都会永久删除已有 PostgreSQL 数据，不会自动备份。** migration 失败时不会启动业务服务，PostgreSQL 容器会保留以便排查。
+
+一键删除：
 
 ```bash
-PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-fresh-remote
+PROD_ENV_FILE=.env.prod make prod-destroy-remote
 ```
 
-`prod-deploy-fresh-remote` 会先构建本地生产镜像，然后停止远端 `$(REMOTE_APP_DIR)` 下 compose 管理的 Athena 容器、删除 `$(PROD_POSTGRES_VOLUME)` 指向的 PostgreSQL volume、重新上传部署文件和镜像、启动服务，并自动执行 `athena up --module all`。该命令名称本身即表示确认清空 Athena 数据，不需要再传 `CONFIRM_DESTROY_PROD_DATA=yes`。它不会删除远端非 Athena compose 管理的容器或其他 Docker volume。
-
-远端迁移、日志、启停目标会通过 `. $(PROD_ENV_FILE)` 读取环境变量。使用 `.env.prod` 时建议写成 `PROD_ENV_FILE=./.env.prod`，避免 `/bin/sh` 找不到不带 `/` 的 dot 文件。
+该命令会删除远端 Compose 容器、孤立容器、网络和 `$(PROD_POSTGRES_VOLUME)`。命令可重复执行，不需要额外确认参数；远端 `$(REMOTE_APP_DIR)` 内的部署文件和已加载的 `$(PROD_IMAGE)` 镜像会保留。
 
 验证远端服务：
 
@@ -276,121 +250,12 @@ http://127.0.0.1:8080
 
 如果日志出现 `ATHENA_ADMIN_PASSWORD_HASH is not set`，表示服务生成了临时 admin 密码，重启后会变化。生产环境建议配置固定的 `ATHENA_ADMIN_PASSWORD_HASH`。
 
-`prod-deploy-remote` 会执行以下操作：
-
-1. 检查远端 Docker 和 Docker Compose 是否可用。
-2. 创建远端部署目录 `$(REMOTE_APP_DIR)`。
-3. 确保生产 PostgreSQL external volume 存在，默认名为 `athena-prod-postgres-data`。
-4. 通过一次 `tar | ssh` 上传 `docker-compose.prod.yml`、`.env` 和 `hack/postgres/init`。
-5. 将本地 `$(PROD_IMAGE)` 镜像传输到远端。
-6. 执行 `docker compose up -d` 启动服务。
-
-`prod-deploy-fresh-remote` 在以上流程前会先执行远端清理，并在启动后执行 migration：
-
-1. 如果远端 `$(REMOTE_APP_DIR)/docker-compose.prod.yml` 存在，执行 `docker compose down --remove-orphans`。
-2. 删除并重新创建 `$(PROD_POSTGRES_VOLUME)`。
-3. 执行 `docker compose --profile tools run --rm athena-migrate athena up --module all`。
-
-`prod-stop-remote` 只执行 `docker compose down`，不会携带 `--volumes`，因此不会删除生产 PostgreSQL 数据。
-
-### 生产数据库安全模型
-
-生产 PostgreSQL 数据保存在 external volume 中，默认名称是：
-
-```text
-athena-prod-postgres-data
-```
-
-`docker-compose.prod.yml` 中的 `postgres-data` 指向该 external volume。日常部署、停止、重启都不应该删除它。
-
-`hack/postgres/init` 只用于 PostgreSQL 数据目录首次初始化时创建 database，例如 `application`、`wallet`、`solidity` 等。它不负责后续表结构演进。生产环境的 schema 演进由独立迁移命令控制。
-
-生产 compose 中各后端服务设置了：
-
-```env
-ATHENA_POSTGRES_AUTO_MIGRATE=false
-```
-
-因此生产服务启动时只连接数据库，不自动执行 goose migration。需要修改表结构时，必须手动运行 `prod-migrate-remote` 或底层 `athena-migrate` 命令。
-
-### 推荐生产流程
-
-普通后端代码部署：
+远端日志和状态不再提供独立 Makefile 目标，可直接使用 SSH：
 
 ```bash
-make prod-build-local
-make prod-deploy-remote
+ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.prod.yml --env-file .env ps'
+ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.prod.yml --env-file .env logs -f athena-server'
 ```
-
-包含数据库结构变更的部署：
-
-```bash
-make prod-build-local
-make prod-deploy-remote
-make prod-db-backup-remote
-make prod-migration-status-remote
-make prod-migrate-remote
-make prod-start-remote
-make prod-logs-remote
-```
-
-只迁移单个模块：
-
-```bash
-make prod-migrate-remote PROD_MIGRATE_MODULE=application
-```
-
-查看指定服务日志：
-
-```bash
-PROD_LOG_SERVICE=athena-server make prod-logs-remote
-```
-
-### 迁移命令底层说明
-
-生产迁移服务通过同一个 `athena` 镜像运行。底层使用 `ATHENA_BINARY_NAME=athena-migrate` 选择迁移命令入口。
-
-支持的命令形式：
-
-```bash
-athena up --module all
-athena up --module wallet
-athena status --module all
-```
-
-当前迁移命令覆盖以下模块：
-
-- `application`
-- `worm`
-- `solidity`
-- `notification`
-- `wallet`
-- `polymarket`
-
-远端 Makefile 目标会通过 compose 工具服务执行迁移，例如：
-
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module all
-```
-
-### 数据清理风险
-
-日常生产部署绝不清库。以下命令都不会删除生产 PostgreSQL volume：
-
-```bash
-make prod-deploy-remote
-make prod-start-remote
-make prod-stop-remote
-```
-
-允许删除生产 PostgreSQL volume 的入口有两个：
-
-```bash
-make prod-destroy-data-remote CONFIRM_DESTROY_PROD_DATA=yes
-PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-fresh-remote
-```
-
-`prod-destroy-data-remote` 会在远端停止 compose，并删除 `$(PROD_POSTGRES_VOLUME)` 指向的 Docker volume。`prod-deploy-fresh-remote` 会删除该 volume 后立即全新部署并自动迁移。默认 volume 名为 `athena-prod-postgres-data`。这些都是不可逆的危险操作，执行前必须确认已经完成备份。
 
 ## 清理
 

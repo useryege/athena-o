@@ -106,7 +106,7 @@ ssh root@47.245.181.189 'curl -sS http://127.0.0.1:8080/api/version'
 查看 `athena-server` 日志：
 
 ```bash
-PROD_ENV_FILE=./.env.prod PROD_LOG_SERVICE=athena-server make prod-logs-remote
+ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.prod.yml --env-file .env logs -f athena-server'
 ```
 
 ## 安全说明
