@@ -18,7 +18,7 @@ type chainRunnerOptions struct {
 	store                 *tokenstore.SQLStore
 	chainID               int64
 	chainName             string
-	nodeWSURL             string
+	nodeWSURLs            []string
 	nodeWSUseProxy        bool
 	pollInterval          time.Duration
 	blockFetchConcurrency int

@@ -21,8 +21,8 @@ type Server struct {
 
 type ServerOpts struct {
 	StoreSrc       func(context.Context) (*tokenstore.SQLStore, error)
-	EthNodeWSURL   string
-	BSCNodeWSURL   string
+	EthNodeWSURLs  []string
+	BSCNodeWSURLs  []string
 	NodeWSUseProxy bool
 }
 
@@ -31,7 +31,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(ServiceOpts{EthNodeWSURL: opts.EthNodeWSURL, BSCNodeWSURL: opts.BSCNodeWSURL, NodeWSUseProxy: opts.NodeWSUseProxy}),
+		service:       NewService(ServiceOpts{EthNodeWSURLs: opts.EthNodeWSURLs, BSCNodeWSURLs: opts.BSCNodeWSURLs, NodeWSUseProxy: opts.NodeWSUseProxy}),
 		healthService: healthService,
 	}, nil
 }

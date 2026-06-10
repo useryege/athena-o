@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/util/ethws"
 )
 
 const (
@@ -19,8 +20,8 @@ const (
 
 type Options struct {
 	Store             *tokenstore.SQLStore
-	EthNodeWSURL      string
-	BSCNodeWSURL      string
+	EthNodeWSURLs     []string
+	BSCNodeWSURLs     []string
 	EthAthenaContract string
 	BSCAthenaContract string
 	EthEnabled        bool
@@ -103,9 +104,9 @@ func (w *Worker) run(ctx context.Context, runner *qualifierRunner) {
 	runner.run(ctx)
 }
 
-func (w *Worker) enabledChainRuntime() ([]int64, map[int64]string, map[int64]ethcommon.Address, error) {
+func (w *Worker) enabledChainRuntime() ([]int64, map[int64][]string, map[int64]ethcommon.Address, error) {
 	chainIDs := make([]int64, 0, 2)
-	nodeWSURLs := make(map[int64]string)
+	nodeWSURLs := make(map[int64][]string)
 	athenaContracts := make(map[int64]ethcommon.Address)
 	for _, cfg := range w.chainConfigs() {
 		if !cfg.enabled {
@@ -115,7 +116,8 @@ func (w *Worker) enabledChainRuntime() ([]int64, map[int64]string, map[int64]eth
 			}).Info("token project qualifier chain disabled by runtime config")
 			continue
 		}
-		if strings.TrimSpace(cfg.nodeWSURL) == "" {
+		normalizedNodeWSURLs := ethws.NormalizeEndpoints(cfg.nodeWSURLs)
+		if len(normalizedNodeWSURLs) == 0 {
 			return nil, nil, nil, errNodeWSURLRequired(cfg.chainID)
 		}
 		athenaContract, err := parseAthenaContract(cfg.chainID, cfg.athenaContract)
@@ -123,7 +125,7 @@ func (w *Worker) enabledChainRuntime() ([]int64, map[int64]string, map[int64]eth
 			return nil, nil, nil, err
 		}
 		chainIDs = append(chainIDs, cfg.chainID)
-		nodeWSURLs[cfg.chainID] = cfg.nodeWSURL
+		nodeWSURLs[cfg.chainID] = normalizedNodeWSURLs
 		athenaContracts[cfg.chainID] = athenaContract
 	}
 	if len(chainIDs) == 0 {
@@ -149,7 +151,7 @@ func parseAthenaContract(chainID int64, value string) (ethcommon.Address, error)
 
 type chainConfig struct {
 	chainID        int64
-	nodeWSURL      string
+	nodeWSURLs     []string
 	athenaContract string
 	enabled        bool
 }
@@ -158,13 +160,13 @@ func (w *Worker) chainConfigs() []chainConfig {
 	return []chainConfig{
 		{
 			chainID:        common.ChainIDEthereumMainnet,
-			nodeWSURL:      w.opts.EthNodeWSURL,
+			nodeWSURLs:     w.opts.EthNodeWSURLs,
 			athenaContract: w.opts.EthAthenaContract,
 			enabled:        w.opts.EthEnabled,
 		},
 		{
 			chainID:        common.ChainIDBSCMainnet,
-			nodeWSURL:      w.opts.BSCNodeWSURL,
+			nodeWSURLs:     w.opts.BSCNodeWSURLs,
 			athenaContract: w.opts.BSCAthenaContract,
 			enabled:        w.opts.BSCEnabled,
 		},

@@ -14,7 +14,7 @@ import (
 type qualifierRunnerOptions struct {
 	store           *tokenstore.SQLStore
 	chainIDs        []int64
-	nodeWSURLs      map[int64]string
+	nodeWSURLs      map[int64][]string
 	athenaContracts map[int64]ethcommon.Address
 	nodeWSUseProxy  bool
 	pollInterval    time.Duration

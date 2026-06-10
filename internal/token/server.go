@@ -38,8 +38,8 @@ type Server struct {
 type ServerOpts struct {
 	Mode                string
 	StoreSrc            func(context.Context) (*tokenstore.SQLStore, error)
-	EthNodeWSURL        string
-	BSCNodeWSURL        string
+	EthNodeWSURLs       []string
+	BSCNodeWSURLs       []string
 	EthAthenaContract   string
 	BSCAthenaContract   string
 	EthEnabled          bool
@@ -101,8 +101,8 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 		s.chainWorker = chainingestor.NewWorker(chainingestor.Options{
 			Store:          store,
-			EthNodeWSURL:   s.EthNodeWSURL,
-			BSCNodeWSURL:   s.BSCNodeWSURL,
+			EthNodeWSURLs:  s.EthNodeWSURLs,
+			BSCNodeWSURLs:  s.BSCNodeWSURLs,
 			EthEnabled:     s.EthEnabled,
 			BSCEnabled:     s.BSCEnabled,
 			NodeWSUseProxy: s.NodeWSUseProxy,
@@ -122,8 +122,8 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 		s.qualifier = projectqualifier.NewWorker(projectqualifier.Options{
 			Store:             store,
-			EthNodeWSURL:      s.EthNodeWSURL,
-			BSCNodeWSURL:      s.BSCNodeWSURL,
+			EthNodeWSURLs:     s.EthNodeWSURLs,
+			BSCNodeWSURLs:     s.BSCNodeWSURLs,
 			EthAthenaContract: s.EthAthenaContract,
 			BSCAthenaContract: s.BSCAthenaContract,
 			EthEnabled:        s.EthEnabled,
@@ -145,8 +145,8 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 		s.dataCollector = projectdatacollector.NewWorker(projectdatacollector.Options{
 			Store:               store,
-			EthNodeWSURL:        s.EthNodeWSURL,
-			BSCNodeWSURL:        s.BSCNodeWSURL,
+			EthNodeWSURLs:       s.EthNodeWSURLs,
+			BSCNodeWSURLs:       s.BSCNodeWSURLs,
 			EthAthenaContract:   s.EthAthenaContract,
 			BSCAthenaContract:   s.BSCAthenaContract,
 			EthEnabled:          s.EthEnabled,

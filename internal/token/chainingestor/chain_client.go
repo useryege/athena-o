@@ -2,7 +2,6 @@ package chainingestor
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
@@ -15,23 +14,15 @@ func (r *chainRunner) ensureClient(ctx context.Context) (*ethclient.Client, erro
 	if r.client != nil {
 		return r.client, nil
 	}
-	client, err := ethws.DialContext(ctx, r.opts.nodeWSURL, r.opts.nodeWSUseProxy)
+	client, endpoint, err := ethws.DialFastestContext(ctx, r.opts.nodeWSURLs, r.opts.chainID, r.opts.nodeWSUseProxy)
 	if err != nil {
 		return nil, err
-	}
-	chainID, err := client.ChainID(ctx)
-	if err != nil {
-		client.Close()
-		return nil, err
-	}
-	if chainID == nil || chainID.Int64() != r.opts.chainID {
-		client.Close()
-		return nil, fmt.Errorf("token chain ingestor node returned chain_id %v for configured chain_id %d", chainID, r.opts.chainID)
 	}
 	r.client = client
 	log.WithFields(log.Fields{
-		"chain_id":   r.opts.chainID,
-		"chain_name": r.opts.chainName,
+		"chain_id":    r.opts.chainID,
+		"chain_name":  r.opts.chainName,
+		"node_ws_url": ethws.RedactEndpoint(endpoint),
 	}).Info("token chain ingestor connected to node websocket")
 	return client, nil
 }

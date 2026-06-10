@@ -2,11 +2,10 @@ package tokenapi
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	log "github.com/sirupsen/logrus"
 	athenacommon "github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
@@ -77,27 +76,24 @@ func (s *Service) CreateBytecodeBlacklist(ctx context.Context, req *apiclient.Cr
 }
 
 func (s *Service) fetchContractCodeHash(ctx context.Context, chainID int64, contract ethcommon.Address) (ethcommon.Hash, error) {
-	nodeWSURL, ok := s.nodeConfig(chainID)
+	nodeWSURLs, ok := s.nodeConfig(chainID)
 	if !ok {
 		return ethcommon.Hash{}, status.Errorf(codes.InvalidArgument, "source_chain_id must be %d or %d", athenacommon.ChainIDEthereumMainnet, athenacommon.ChainIDBSCMainnet)
 	}
-	nodeWSURL = strings.TrimSpace(nodeWSURL)
-	if nodeWSURL == "" {
-		return ethcommon.Hash{}, status.Errorf(codes.FailedPrecondition, "node websocket URL is not configured for %s", athenacommon.ChainName(chainID))
+	nodeWSURLs = ethws.NormalizeEndpoints(nodeWSURLs)
+	if len(nodeWSURLs) == 0 {
+		return ethcommon.Hash{}, status.Errorf(codes.FailedPrecondition, "node websocket URLs are not configured for %s", athenacommon.ChainName(chainID))
 	}
-	client, err := ethws.DialContext(ctx, nodeWSURL, s.nodeWSUseProxy())
+	client, endpoint, err := ethws.DialFastestContext(ctx, nodeWSURLs, chainID, s.nodeWSUseProxy())
 	if err != nil {
 		return ethcommon.Hash{}, status.Errorf(codes.Unavailable, "connect to %s node websocket: %v", athenacommon.ChainName(chainID), err)
 	}
 	defer client.Close()
-
-	nodeChainID, err := client.ChainID(ctx)
-	if err != nil {
-		return ethcommon.Hash{}, status.Errorf(codes.Unavailable, "get %s node chain id: %v", athenacommon.ChainName(chainID), err)
-	}
-	if nodeChainID == nil || nodeChainID.Int64() != chainID {
-		return ethcommon.Hash{}, status.Error(codes.FailedPrecondition, fmt.Sprintf("node returned chain_id %v for configured chain_id %d", nodeChainID, chainID))
-	}
+	log.WithFields(log.Fields{
+		"chain_id":    chainID,
+		"chain_name":  athenacommon.ChainName(chainID),
+		"node_ws_url": ethws.RedactEndpoint(endpoint),
+	}).Info("token API connected to node websocket")
 	code, err := client.CodeAt(ctx, contract, nil)
 	if err != nil {
 		return ethcommon.Hash{}, status.Errorf(codes.Unavailable, "fetch contract bytecode: %v", err)

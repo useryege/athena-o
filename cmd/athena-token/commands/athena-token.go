@@ -32,8 +32,8 @@ func NewCommand() *cobra.Command {
 		listenHost          string
 		listenPort          int
 		mode                string
-		ethNodeWSURL        string
-		bscNodeWSURL        string
+		ethNodeWSURLs       []string
+		bscNodeWSURLs       []string
 		ethAthenaContract   string
 		bscAthenaContract   string
 		ethEnabled          bool
@@ -68,8 +68,8 @@ func NewCommand() *cobra.Command {
 			server, err := token.NewServer(token.ServerOpts{
 				Mode:                mode,
 				StoreSrc:            tokenstore.NewSQLStoreSource(),
-				EthNodeWSURL:        ethNodeWSURL,
-				BSCNodeWSURL:        bscNodeWSURL,
+				EthNodeWSURLs:       ethNodeWSURLs,
+				BSCNodeWSURLs:       bscNodeWSURLs,
 				EthAthenaContract:   ethAthenaContract,
 				BSCAthenaContract:   bscAthenaContract,
 				EthEnabled:          ethEnabled,
@@ -120,8 +120,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_LISTEN_ADDRESS", common.DefaultAddressToken), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortToken, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier|project-data-collector")
-	command.Flags().StringVar(&ethNodeWSURL, "eth-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URL", ""), "Ethereum Mainnet node WebSocket address for worker modes")
-	command.Flags().StringVar(&bscNodeWSURL, "bsc-node-ws-url", env.StringFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URL", ""), "BSC Mainnet node WebSocket address for worker modes")
+	command.Flags().StringSliceVar(&ethNodeWSURLs, "eth-node-ws-urls", env.StringsFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URLS", nil, ","), "Ethereum Mainnet node WebSocket addresses for worker modes")
+	command.Flags().StringSliceVar(&bscNodeWSURLs, "bsc-node-ws-urls", env.StringsFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URLS", nil, ","), "BSC Mainnet node WebSocket addresses for worker modes")
 	command.Flags().StringVar(&ethAthenaContract, "eth-athena-contract", env.StringFromEnv("ATHENA_TOKEN_ETH_ATHENA_CONTRACT", ""), "Ethereum Mainnet ATHENA contract address for project-qualifier mode")
 	command.Flags().StringVar(&bscAthenaContract, "bsc-athena-contract", env.StringFromEnv("ATHENA_TOKEN_BSC_ATHENA_CONTRACT", ""), "BSC Mainnet ATHENA contract address for project-qualifier mode")
 	command.Flags().BoolVar(&ethEnabled, "eth-enabled", env.ParseBoolFromEnv("ATHENA_TOKEN_ETH_ENABLED", true), "Whether to enable Ethereum Mainnet token worker logic")

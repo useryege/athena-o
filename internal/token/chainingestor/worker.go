@@ -3,13 +3,13 @@ package chainingestor
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/util/ethws"
 )
 
 const (
@@ -22,8 +22,8 @@ const (
 
 type Options struct {
 	Store          *tokenstore.SQLStore
-	EthNodeWSURL   string
-	BSCNodeWSURL   string
+	EthNodeWSURLs  []string
+	BSCNodeWSURLs  []string
 	EthEnabled     bool
 	BSCEnabled     bool
 	NodeWSUseProxy bool
@@ -62,7 +62,8 @@ func (w *Worker) Start(ctx context.Context) error {
 			}).Info("token chain ingestor chain disabled by runtime config")
 			continue
 		}
-		if strings.TrimSpace(cfg.nodeWSURL) == "" {
+		nodeWSURLs := ethws.NormalizeEndpoints(cfg.nodeWSURLs)
+		if len(nodeWSURLs) == 0 {
 			cancel()
 			return errNodeWSURLRequired(cfg.chainID)
 		}
@@ -91,7 +92,7 @@ func (w *Worker) Start(ctx context.Context) error {
 			store:                 w.opts.Store,
 			chainID:               cfg.chainID,
 			chainName:             cfg.name,
-			nodeWSURL:             cfg.nodeWSURL,
+			nodeWSURLs:            nodeWSURLs,
 			nodeWSUseProxy:        w.opts.NodeWSUseProxy,
 			pollInterval:          cfg.pollInterval,
 			blockFetchConcurrency: cfg.blockFetchConcurrency,
@@ -173,7 +174,7 @@ func (w *Worker) run(ctx context.Context, runners map[int64]*chainRunner) {
 type chainConfig struct {
 	chainID               int64
 	name                  string
-	nodeWSURL             string
+	nodeWSURLs            []string
 	pollInterval          time.Duration
 	blockFetchConcurrency int
 	enabled               bool
@@ -184,7 +185,7 @@ func (w *Worker) chainConfigs() []chainConfig {
 		{
 			chainID:               common.ChainIDEthereumMainnet,
 			name:                  common.ChainNameEthereumMainnet,
-			nodeWSURL:             w.opts.EthNodeWSURL,
+			nodeWSURLs:            w.opts.EthNodeWSURLs,
 			pollInterval:          ethereumPollInterval,
 			blockFetchConcurrency: ethereumBlockFetchConcurrency,
 			enabled:               w.opts.EthEnabled,
@@ -192,7 +193,7 @@ func (w *Worker) chainConfigs() []chainConfig {
 		{
 			chainID:               common.ChainIDBSCMainnet,
 			name:                  common.ChainNameBSCMainnet,
-			nodeWSURL:             w.opts.BSCNodeWSURL,
+			nodeWSURLs:            w.opts.BSCNodeWSURLs,
 			pollInterval:          bscPollInterval,
 			blockFetchConcurrency: bscBlockFetchConcurrency,
 			enabled:               w.opts.BSCEnabled,

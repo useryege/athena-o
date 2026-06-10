@@ -2,7 +2,6 @@ package projectqualifier
 
 import (
 	"context"
-	"fmt"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -17,27 +16,19 @@ func (r *qualifierRunner) ensureClient(ctx context.Context, chainID int64) (*eth
 	if client := r.clients[chainID]; client != nil {
 		return client, nil
 	}
-	nodeWSURL := r.opts.nodeWSURLs[chainID]
-	if nodeWSURL == "" {
+	nodeWSURLs := r.opts.nodeWSURLs[chainID]
+	if len(nodeWSURLs) == 0 {
 		return nil, errNodeWSURLRequired(chainID)
 	}
-	client, err := ethws.DialContext(ctx, nodeWSURL, r.opts.nodeWSUseProxy)
+	client, endpoint, err := ethws.DialFastestContext(ctx, nodeWSURLs, chainID, r.opts.nodeWSUseProxy)
 	if err != nil {
 		return nil, err
-	}
-	nodeChainID, err := client.ChainID(ctx)
-	if err != nil {
-		client.Close()
-		return nil, err
-	}
-	if nodeChainID == nil || nodeChainID.Int64() != chainID {
-		client.Close()
-		return nil, fmt.Errorf("token project qualifier node returned chain_id %v for configured chain_id %d", nodeChainID, chainID)
 	}
 	r.clients[chainID] = client
 	log.WithFields(log.Fields{
-		"chain_id":   chainID,
-		"chain_name": athenacommon.ChainName(chainID),
+		"chain_id":    chainID,
+		"chain_name":  athenacommon.ChainName(chainID),
+		"node_ws_url": ethws.RedactEndpoint(endpoint),
 	}).Info("token project qualifier connected to node websocket")
 	return client, nil
 }

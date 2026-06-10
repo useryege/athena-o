@@ -12,22 +12,22 @@ type Service struct {
 	apiclient.UnimplementedTokenAPIServiceServer
 	startStopMu sync.Mutex
 	store       *tokenstore.SQLStore
-	nodeWSURLs  map[int64]string
+	nodeWSURLs  map[int64][]string
 	useProxy    bool
 }
 
 type ServiceOpts struct {
 	Store          *tokenstore.SQLStore
-	EthNodeWSURL   string
-	BSCNodeWSURL   string
+	EthNodeWSURLs  []string
+	BSCNodeWSURLs  []string
 	NodeWSUseProxy bool
 }
 
 func NewService(opts ServiceOpts) *Service {
 	s := &Service{
-		nodeWSURLs: map[int64]string{
-			athenacommon.ChainIDEthereumMainnet: opts.EthNodeWSURL,
-			athenacommon.ChainIDBSCMainnet:      opts.BSCNodeWSURL,
+		nodeWSURLs: map[int64][]string{
+			athenacommon.ChainIDEthereumMainnet: opts.EthNodeWSURLs,
+			athenacommon.ChainIDBSCMainnet:      opts.BSCNodeWSURLs,
 		},
 		useProxy: opts.NodeWSUseProxy,
 	}
@@ -61,11 +61,11 @@ func (s *Service) tokenStore() *tokenstore.SQLStore {
 	return s.store
 }
 
-func (s *Service) nodeConfig(chainID int64) (string, bool) {
+func (s *Service) nodeConfig(chainID int64) ([]string, bool) {
 	s.startStopMu.Lock()
 	defer s.startStopMu.Unlock()
-	url, ok := s.nodeWSURLs[chainID]
-	return url, ok
+	urls, ok := s.nodeWSURLs[chainID]
+	return urls, ok
 }
 
 func (s *Service) nodeWSUseProxy() bool {
