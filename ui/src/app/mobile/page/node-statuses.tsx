@@ -7,7 +7,9 @@ import {fmtNumber} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
 const displayNumber = (value?: number) => (value === undefined || value === 0 ? '-' : fmtNumber(value));
+const displayLag = (value?: number) => (value === undefined ? '-' : fmtNumber(value));
 const displayLatency = (value?: number) => (value === undefined ? '-' : `${fmtNumber(value)} ms`);
+const displaySyncing = (value?: boolean) => (value === undefined ? '-' : value ? 'Yes' : 'No');
 
 export const NodeStatusesPage = () => {
     const data = useAsyncData(() => services.tokenapi.listNodeStatuses(), []);
@@ -19,6 +21,13 @@ export const NodeStatusesPage = () => {
         {title: 'Latency', render: item => displayLatency(item.latencyMS)},
         {title: 'Reported Chain ID', render: item => displayNumber(item.reportedChainID)},
         {title: 'Latest Block', render: item => displayNumber(item.latestBlockNumber)},
+        {title: 'Reference Block', render: item => displayNumber(item.referenceBlockNumber)},
+        {title: 'Block Lag', render: item => displayLag(item.blockLag)},
+        {title: 'Latest Block Time', dataIndex: 'latestBlockTime'},
+        {
+            title: 'Syncing',
+            render: item => <StatusTag value={displaySyncing(item.syncing)} positive={item.syncing === false} negative={item.syncing === true} />
+        },
         {title: 'Checked', dataIndex: 'checkedAt'},
         {title: 'Error', render: item => <TruncatedText value={item.error} copyable={Boolean(item.error)} />}
     ];
@@ -26,11 +35,10 @@ export const NodeStatusesPage = () => {
     return (
         <AppPage
             title='Node Status'
-            subtitle='Live checks from the Token API service. Results do not represent the node currently selected by a worker.'
+            subtitle='Live health checks using the same chain, sync, freshness, and block-lag rules as worker node selection.'
             loading={data.loading}
             error={data.error}
-            onRefresh={data.reload}
-        >
+            onRefresh={data.reload}>
             {chainIDs.length === 0 && !data.loading ? (
                 <Empty description='No node endpoints configured' />
             ) : (
@@ -47,19 +55,17 @@ export const NodeStatusesPage = () => {
                                     <>
                                         <CardTitle
                                             title={<TruncatedText value={item.endpoint} copyable={true} />}
-                                            tags={
-                                                <StatusTag
-                                                    value={item.available ? 'Available' : 'Unavailable'}
-                                                    positive={item.available}
-                                                    negative={!item.available}
-                                                />
-                                            }
+                                            tags={<StatusTag value={item.available ? 'Available' : 'Unavailable'} positive={item.available} negative={!item.available} />}
                                         />
                                         <MetricRow
                                             items={[
                                                 {label: 'Latency', value: displayLatency(item.latencyMS), tone: item.available ? 'good' : 'bad'},
                                                 {label: 'Chain ID', value: displayNumber(item.reportedChainID)},
                                                 {label: 'Latest Block', value: displayNumber(item.latestBlockNumber)},
+                                                {label: 'Reference Block', value: displayNumber(item.referenceBlockNumber)},
+                                                {label: 'Block Lag', value: displayLag(item.blockLag)},
+                                                {label: 'Block Time', value: item.latestBlockTime || '-'},
+                                                {label: 'Syncing', value: displaySyncing(item.syncing), tone: item.syncing ? 'bad' : 'good'},
                                                 {label: 'Checked', value: item.checkedAt || '-'}
                                             ]}
                                         />

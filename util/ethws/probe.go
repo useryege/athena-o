@@ -3,88 +3,205 @@ package ethws
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/ethclient"
+)
+
+const (
+	ethereumMainnetChainID = 1
+	bscMainnetChainID      = 56
 )
 
 type ProbeResult struct {
-	Endpoint          string
-	Available         bool
-	Latency           time.Duration
-	ReportedChainID   int64
-	LatestBlockNumber uint64
-	CheckedAt         time.Time
-	Err               error
+	Endpoint             string
+	Available            bool
+	Latency              time.Duration
+	ReportedChainID      int64
+	LatestBlockNumber    uint64
+	ReferenceBlockNumber uint64
+	BlockLag             uint64
+	LatestBlockTime      time.Time
+	Syncing              bool
+	CheckedAt            time.Time
+	Err                  error
+}
+
+type endpointProbe struct {
+	result ProbeResult
+	client *ethclient.Client
+}
+
+type healthPolicy struct {
+	maxBlockLag uint64
+	maxBlockAge time.Duration
 }
 
 // ProbeEndpoints checks all endpoints concurrently and preserves their configured order.
 func ProbeEndpoints(ctx context.Context, endpoints []string, expectedChainID int64, useProxy bool) ([]ProbeResult, error) {
-	endpoints = NormalizeEndpoints(endpoints)
-	if len(endpoints) == 0 {
-		return []ProbeResult{}, nil
+	probes, err := probeEndpoints(ctx, endpoints, expectedChainID, useProxy)
+	if err != nil {
+		return nil, err
 	}
 
-	type indexedResult struct {
-		index  int
-		result ProbeResult
-	}
-
-	resultCh := make(chan indexedResult, len(endpoints))
-	for index, endpoint := range endpoints {
-		go func(index int, endpoint string) {
-			resultCh <- indexedResult{
-				index:  index,
-				result: probeEndpoint(ctx, endpoint, expectedChainID, useProxy),
-			}
-		}(index, endpoint)
-	}
-
-	results := make([]ProbeResult, len(endpoints))
-	for range endpoints {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case indexed := <-resultCh:
-			results[indexed.index] = indexed.result
+	results := make([]ProbeResult, len(probes))
+	for index, probe := range probes {
+		if probe.client != nil {
+			probe.client.Close()
 		}
+		results[index] = probe.result
 	}
 	return results, nil
 }
 
-func probeEndpoint(ctx context.Context, endpoint string, expectedChainID int64, useProxy bool) ProbeResult {
-	startedAt := time.Now()
+func probeEndpoints(ctx context.Context, endpoints []string, expectedChainID int64, useProxy bool) ([]endpointProbe, error) {
+	endpoints = NormalizeEndpoints(endpoints)
+	if len(endpoints) == 0 {
+		return []endpointProbe{}, nil
+	}
+
 	probeCtx, cancel := context.WithTimeout(ctx, poolDialTimeout)
 	defer cancel()
 
-	result := ProbeResult{Endpoint: RedactEndpoint(endpoint)}
-	finish := func(err error) ProbeResult {
-		result.Latency = time.Since(startedAt)
-		result.CheckedAt = time.Now().UTC()
-		result.Err = err
-		return result
+	type indexedProbe struct {
+		index int
+		probe endpointProbe
 	}
 
-	client, err := DialContext(probeCtx, endpoint, useProxy)
+	probeCh := make(chan indexedProbe, len(endpoints))
+	for index, endpoint := range endpoints {
+		go func(index int, endpoint string) {
+			probeCh <- indexedProbe{
+				index: index,
+				probe: collectEndpointProbe(probeCtx, endpoint, expectedChainID, useProxy),
+			}
+		}(index, endpoint)
+	}
+
+	probes := make([]endpointProbe, len(endpoints))
+	for range endpoints {
+		indexed := <-probeCh
+		probes[indexed.index] = indexed.probe
+	}
+	if err := ctx.Err(); err != nil {
+		closeProbeClients(probes)
+		return nil, err
+	}
+
+	evaluateEndpointProbes(probes, expectedChainID, time.Now())
+	return probes, nil
+}
+
+func collectEndpointProbe(ctx context.Context, endpoint string, expectedChainID int64, useProxy bool) endpointProbe {
+	startedAt := time.Now()
+	probe := endpointProbe{
+		result: ProbeResult{Endpoint: RedactEndpoint(endpoint)},
+	}
+	finish := func(err error) endpointProbe {
+		probe.result.Latency = time.Since(startedAt)
+		probe.result.CheckedAt = time.Now().UTC()
+		probe.result.Err = err
+		return probe
+	}
+
+	client, err := DialContext(ctx, endpoint, useProxy)
 	if err != nil {
 		return finish(fmt.Errorf("dial websocket: %w", err))
 	}
-	defer client.Close()
+	probe.client = client
 
-	chainID, err := client.ChainID(probeCtx)
+	chainID, err := client.ChainID(ctx)
 	if err != nil {
 		return finish(fmt.Errorf("get chain id: %w", err))
 	}
 	if chainID != nil {
-		result.ReportedChainID = chainID.Int64()
+		probe.result.ReportedChainID = chainID.Int64()
 	}
-	if chainID == nil || chainID.Int64() != expectedChainID {
+	if chainID == nil || chainID.Cmp(big.NewInt(expectedChainID)) != 0 {
 		return finish(fmt.Errorf("unexpected chain id: got %v, expected %d", chainID, expectedChainID))
 	}
 
-	latestBlockNumber, err := client.BlockNumber(probeCtx)
+	syncProgress, err := client.SyncProgress(ctx)
 	if err != nil {
-		return finish(fmt.Errorf("get latest block: %w", err))
+		return finish(fmt.Errorf("get sync progress: %w", err))
 	}
-	result.LatestBlockNumber = latestBlockNumber
-	result.Available = true
+	probe.result.Syncing = syncProgress != nil
+
+	latestBlockNumber, err := client.BlockNumber(ctx)
+	if err != nil {
+		return finish(fmt.Errorf("get latest block number: %w", err))
+	}
+	probe.result.LatestBlockNumber = latestBlockNumber
+
+	header, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(latestBlockNumber))
+	if err != nil {
+		return finish(fmt.Errorf("get latest block header: %w", err))
+	}
+	if header == nil {
+		return finish(fmt.Errorf("get latest block header: empty response"))
+	}
+	probe.result.LatestBlockTime = time.Unix(int64(header.Time), 0).UTC()
 	return finish(nil)
+}
+
+func evaluateEndpointProbes(probes []endpointProbe, chainID int64, now time.Time) {
+	var referenceBlockNumber uint64
+	for _, probe := range probes {
+		if probe.result.Err == nil && probe.result.LatestBlockNumber > referenceBlockNumber {
+			referenceBlockNumber = probe.result.LatestBlockNumber
+		}
+	}
+
+	policy := healthPolicyForChain(chainID)
+	for index := range probes {
+		result := &probes[index].result
+		result.ReferenceBlockNumber = referenceBlockNumber
+		if result.Err != nil {
+			continue
+		}
+		if referenceBlockNumber >= result.LatestBlockNumber {
+			result.BlockLag = referenceBlockNumber - result.LatestBlockNumber
+		}
+		switch {
+		case result.Syncing:
+			result.Err = fmt.Errorf("node is still syncing")
+		case now.Sub(result.LatestBlockTime) > policy.maxBlockAge:
+			result.Err = fmt.Errorf(
+				"latest block is stale: block_time=%s age=%s max_age=%s",
+				result.LatestBlockTime.Format(time.RFC3339),
+				now.Sub(result.LatestBlockTime).Round(time.Second),
+				policy.maxBlockAge,
+			)
+		case result.BlockLag > policy.maxBlockLag:
+			result.Err = fmt.Errorf(
+				"latest block is behind reference: block=%d reference=%d lag=%d max_lag=%d",
+				result.LatestBlockNumber,
+				referenceBlockNumber,
+				result.BlockLag,
+				policy.maxBlockLag,
+			)
+		default:
+			result.Available = true
+		}
+	}
+}
+
+func healthPolicyForChain(chainID int64) healthPolicy {
+	switch chainID {
+	case bscMainnetChainID:
+		return healthPolicy{maxBlockLag: 3, maxBlockAge: 30 * time.Second}
+	case ethereumMainnetChainID:
+		fallthrough
+	default:
+		return healthPolicy{maxBlockLag: 2, maxBlockAge: 60 * time.Second}
+	}
+}
+
+func closeProbeClients(probes []endpointProbe) {
+	for _, probe := range probes {
+		if probe.client != nil {
+			probe.client.Close()
+		}
+	}
 }

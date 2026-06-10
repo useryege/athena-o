@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-700-g3219ee9-dirty"
+    "version": "v1.0.0-704-g9c3106e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3069,6 +3069,10 @@
         "available": {
           "type": "boolean"
         },
+        "blockLag": {
+          "type": "string",
+          "format": "uint64"
+        },
         "chainId": {
           "type": "integer",
           "format": "int64"
@@ -3093,9 +3097,19 @@
           "type": "string",
           "format": "uint64"
         },
+        "latestBlockTime": {
+          "type": "string"
+        },
+        "referenceBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
         "reportedChainId": {
           "type": "integer",
           "format": "int64"
+        },
+        "syncing": {
+          "type": "boolean"
         }
       }
     },

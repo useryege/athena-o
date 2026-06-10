@@ -1444,6 +1444,25 @@ func (m *TokenAPINodeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i--
+	if m.Syncing {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x68
+	i -= len(m.LatestBlockTime)
+	copy(dAtA[i:], m.LatestBlockTime)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LatestBlockTime)))
+	i--
+	dAtA[i] = 0x62
+	i = encodeVarintGenerated(dAtA, i, uint64(m.BlockLag))
+	i--
+	dAtA[i] = 0x58
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ReferenceBlockNumber))
+	i--
+	dAtA[i] = 0x50
 	i -= len(m.Error)
 	copy(dAtA[i:], m.Error)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Error)))
@@ -2545,6 +2564,11 @@ func (m *TokenAPINodeStatus) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Error)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.ReferenceBlockNumber))
+	n += 1 + sovGenerated(uint64(m.BlockLag))
+	l = len(m.LatestBlockTime)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
 	return n
 }
 
@@ -3161,6 +3185,10 @@ func (this *TokenAPINodeStatus) String() string {
 		`LatestBlockNumber:` + fmt.Sprintf("%v", this.LatestBlockNumber) + `,`,
 		`CheckedAt:` + fmt.Sprintf("%v", this.CheckedAt) + `,`,
 		`Error:` + fmt.Sprintf("%v", this.Error) + `,`,
+		`ReferenceBlockNumber:` + fmt.Sprintf("%v", this.ReferenceBlockNumber) + `,`,
+		`BlockLag:` + fmt.Sprintf("%v", this.BlockLag) + `,`,
+		`LatestBlockTime:` + fmt.Sprintf("%v", this.LatestBlockTime) + `,`,
+		`Syncing:` + fmt.Sprintf("%v", this.Syncing) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -8807,6 +8835,96 @@ func (m *TokenAPINodeStatus) Unmarshal(dAtA []byte) error {
 			}
 			m.Error = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReferenceBlockNumber", wireType)
+			}
+			m.ReferenceBlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ReferenceBlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockLag", wireType)
+			}
+			m.BlockLag = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockLag |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LatestBlockTime", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LatestBlockTime = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Syncing", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Syncing = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

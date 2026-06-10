@@ -47,14 +47,20 @@ func (s *Service) ListNodeStatuses(ctx context.Context, _ *apiclient.ListNodeSta
 	for _, chainID := range chainIDs {
 		for _, result := range byChain[chainID] {
 			status := &applicationv1alpha1.TokenAPINodeStatus{
-				ChainID:           chainID,
-				ChainName:         athenacommon.ChainName(chainID),
-				Endpoint:          result.Endpoint,
-				Available:         result.Available,
-				LatencyMS:         result.Latency.Milliseconds(),
-				ReportedChainID:   result.ReportedChainID,
-				LatestBlockNumber: result.LatestBlockNumber,
-				CheckedAt:         result.CheckedAt.Format(time.RFC3339Nano),
+				ChainID:              chainID,
+				ChainName:            athenacommon.ChainName(chainID),
+				Endpoint:             result.Endpoint,
+				Available:            result.Available,
+				LatencyMS:            result.Latency.Milliseconds(),
+				ReportedChainID:      result.ReportedChainID,
+				LatestBlockNumber:    result.LatestBlockNumber,
+				ReferenceBlockNumber: result.ReferenceBlockNumber,
+				BlockLag:             result.BlockLag,
+				Syncing:              result.Syncing,
+				CheckedAt:            result.CheckedAt.Format(time.RFC3339Nano),
+			}
+			if !result.LatestBlockTime.IsZero() {
+				status.LatestBlockTime = result.LatestBlockTime.Format(time.RFC3339)
 			}
 			if result.Err != nil {
 				status.Error = result.Err.Error()

@@ -40,6 +40,10 @@ export interface TokenAPINodeStatus {
     latencyMS?: number;
     reportedChainID?: number;
     latestBlockNumber?: number;
+    referenceBlockNumber?: number;
+    blockLag?: number;
+    latestBlockTime?: string;
+    syncing?: boolean;
     checkedAt?: string;
     error?: string;
 }
@@ -140,6 +144,10 @@ function normalizeNodeStatus(item: any): TokenAPINodeStatus {
         latencyMS: numberValue(item.latencyMS ?? item.latencyMs ?? item.latency_ms),
         reportedChainID: numberValue(item.reportedChainID ?? item.reportedChainId ?? item.reported_chain_id),
         latestBlockNumber: numberValue(item.latestBlockNumber ?? item.latest_block_number),
+        referenceBlockNumber: numberValue(item.referenceBlockNumber ?? item.reference_block_number),
+        blockLag: numberValue(item.blockLag ?? item.block_lag),
+        latestBlockTime: item.latestBlockTime ?? item.latest_block_time,
+        syncing: item.syncing,
         checkedAt: item.checkedAt ?? item.checked_at,
         error: item.error
     };
