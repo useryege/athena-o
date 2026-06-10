@@ -30,6 +30,20 @@ func (s *Server) GetOptions(ctx context.Context, _ *tokenapipkg.GetOptionsReques
 	return &tokenapipkg.GetOptionsResponse{Options: resp.GetOptions()}, nil
 }
 
+func (s *Server) ListNodeStatuses(ctx context.Context, _ *tokenapipkg.ListNodeStatusesRequest) (*tokenapipkg.ListNodeStatusesResponse, error) {
+	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListNodeStatuses(ctx, &tokenapiapiclient.ListNodeStatusesRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &tokenapipkg.ListNodeStatusesResponse{NodeStatuses: resp.GetNodeStatuses()}, nil
+}
+
 func (s *Server) GetBytecodeBlacklist(ctx context.Context, req *tokenapipkg.GetBytecodeBlacklistRequest) (*tokenapipkg.GetBytecodeBlacklistResponse, error) {
 	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
 	if err != nil {

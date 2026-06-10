@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-688-g20bcffa-dirty"
+    "version": "v1.0.0-700-g3219ee9-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -904,6 +904,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiGetContractCodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/node-statuses": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListNodeStatuses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListNodeStatusesResponse"
             }
           },
           "default": {
@@ -2241,6 +2263,17 @@
         }
       }
     },
+    "tokenapiListNodeStatusesResponse": {
+      "type": "object",
+      "properties": {
+        "node_statuses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPINodeStatus"
+          }
+        }
+      }
+    },
     "tokenapiListProjectDataCollectionTasksResponse": {
       "type": "object",
       "properties": {
@@ -3027,6 +3060,42 @@
         },
         "sourceCodeFetchedAt": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPINodeStatus": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "chainName": {
+          "type": "string"
+        },
+        "checkedAt": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "latencyMs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "latestBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "reportedChainId": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

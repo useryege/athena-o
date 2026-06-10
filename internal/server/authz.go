@@ -173,6 +173,7 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/GetPolymarketSportsLiveSnapshot": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 
 	"/tokenapi.TokenAPIService/GetOptions":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
+	"/tokenapi.TokenAPIService/ListNodeStatuses":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),
 	"/tokenapi.TokenAPIService/GetBytecodeBlacklist":           fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "bytecode-blacklists"),
 	"/tokenapi.TokenAPIService/ListBytecodeBlacklists":         fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "bytecode-blacklists"),
 	"/tokenapi.TokenAPIService/CreateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},

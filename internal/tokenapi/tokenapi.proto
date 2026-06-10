@@ -36,6 +36,12 @@ message GetOptionsResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIOptions options = 1;
 }
 
+message ListNodeStatusesRequest {}
+
+message ListNodeStatusesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPINodeStatus node_statuses = 1;
+}
+
 message UpdateBytecodeBlacklistRequest {
   string code_hash = 1;
   string note = 2;
@@ -182,6 +188,7 @@ message ListProjectDataCollectionTasksResponse {
 
 service TokenAPIService {
   rpc GetOptions(GetOptionsRequest) returns (GetOptionsResponse);
+  rpc ListNodeStatuses(ListNodeStatusesRequest) returns (ListNodeStatusesResponse);
   rpc GetBytecodeBlacklist(GetBytecodeBlacklistRequest) returns (GetBytecodeBlacklistResponse);
   rpc ListBytecodeBlacklists(ListBytecodeBlacklistsRequest) returns (ListBytecodeBlacklistsResponse);
   rpc CreateBytecodeBlacklist(CreateBytecodeBlacklistRequest) returns (CreateBytecodeBlacklistResponse);

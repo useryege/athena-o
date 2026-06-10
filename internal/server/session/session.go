@@ -38,6 +38,7 @@ const (
 
 var uiBootstrapPermissions = []*session.ResourcePermission{
 	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "options"},
+	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "node-statuses"},
 	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "projects"},
 	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "contract-codes"},
 	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "bytecode-blacklists"},

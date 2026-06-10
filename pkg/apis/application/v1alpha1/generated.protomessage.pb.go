@@ -47,6 +47,8 @@ func (*TokenAPIChainOption) ProtoMessage() {}
 
 func (*TokenAPIContractCode) ProtoMessage() {}
 
+func (*TokenAPINodeStatus) ProtoMessage() {}
+
 func (*TokenAPIOptions) ProtoMessage() {}
 
 func (*TokenAPIProject) ProtoMessage() {}

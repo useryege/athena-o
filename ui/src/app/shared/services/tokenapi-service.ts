@@ -32,6 +32,18 @@ export interface TokenAPIOptions {
     chains: TokenAPIChainOption[];
 }
 
+export interface TokenAPINodeStatus {
+    chainID?: number;
+    chainName?: string;
+    endpoint?: string;
+    available?: boolean;
+    latencyMS?: number;
+    reportedChainID?: number;
+    latestBlockNumber?: number;
+    checkedAt?: string;
+    error?: string;
+}
+
 export interface TokenAPIContractCode {
     codeHash?: string;
     sourceCode?: string;
@@ -119,6 +131,20 @@ function normalizeChainOption(item: any): TokenAPIChainOption {
     };
 }
 
+function normalizeNodeStatus(item: any): TokenAPINodeStatus {
+    return {
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        chainName: item.chainName ?? item.chain_name,
+        endpoint: item.endpoint,
+        available: item.available,
+        latencyMS: numberValue(item.latencyMS ?? item.latencyMs ?? item.latency_ms),
+        reportedChainID: numberValue(item.reportedChainID ?? item.reportedChainId ?? item.reported_chain_id),
+        latestBlockNumber: numberValue(item.latestBlockNumber ?? item.latest_block_number),
+        checkedAt: item.checkedAt ?? item.checked_at,
+        error: item.error
+    };
+}
+
 function normalizeContractCode(item: any): TokenAPIContractCode {
     return {
         codeHash: item.codeHash ?? item.code_hash,
@@ -167,6 +193,13 @@ export class TokenAPIService {
                 chains: ((options.chains || []) as any[]).map(normalizeChainOption)
             };
         }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listNodeStatuses(): Promise<TokenAPINodeStatus[]> & {abort?: () => void} {
+        const req = requests.get('/tokenapi/node-statuses');
+        const promise = req.then(res => ((res.body?.nodeStatuses || res.body?.node_statuses || []) as any[]).map(normalizeNodeStatus)) as any;
         promise.abort = () => req.abort();
         return promise;
     }

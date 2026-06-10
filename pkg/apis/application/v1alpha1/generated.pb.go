@@ -56,6 +56,8 @@ func (m *TokenAPIChainOption) Reset() { *m = TokenAPIChainOption{} }
 
 func (m *TokenAPIContractCode) Reset() { *m = TokenAPIContractCode{} }
 
+func (m *TokenAPINodeStatus) Reset() { *m = TokenAPINodeStatus{} }
+
 func (m *TokenAPIOptions) Reset() { *m = TokenAPIOptions{} }
 
 func (m *TokenAPIProject) Reset() { *m = TokenAPIProject{} }
@@ -1422,6 +1424,69 @@ func (m *TokenAPIContractCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *TokenAPINodeStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TokenAPINodeStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TokenAPINodeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.Error)
+	copy(dAtA[i:], m.Error)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Error)))
+	i--
+	dAtA[i] = 0x4a
+	i -= len(m.CheckedAt)
+	copy(dAtA[i:], m.CheckedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CheckedAt)))
+	i--
+	dAtA[i] = 0x42
+	i = encodeVarintGenerated(dAtA, i, uint64(m.LatestBlockNumber))
+	i--
+	dAtA[i] = 0x38
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ReportedChainID))
+	i--
+	dAtA[i] = 0x30
+	i = encodeVarintGenerated(dAtA, i, uint64(m.LatencyMS))
+	i--
+	dAtA[i] = 0x28
+	i--
+	if m.Available {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x20
+	i -= len(m.Endpoint)
+	copy(dAtA[i:], m.Endpoint)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Endpoint)))
+	i--
+	dAtA[i] = 0x1a
+	i -= len(m.ChainName)
+	copy(dAtA[i:], m.ChainName)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ChainName)))
+	i--
+	dAtA[i] = 0x12
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ChainID))
+	i--
+	dAtA[i] = 0x8
+	return len(dAtA) - i, nil
+}
+
 func (m *TokenAPIOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -2461,6 +2526,28 @@ func (m *TokenAPIContractCode) Size() (n int) {
 	return n
 }
 
+func (m *TokenAPINodeStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovGenerated(uint64(m.ChainID))
+	l = len(m.ChainName)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Endpoint)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
+	n += 1 + sovGenerated(uint64(m.LatencyMS))
+	n += 1 + sovGenerated(uint64(m.ReportedChainID))
+	n += 1 + sovGenerated(uint64(m.LatestBlockNumber))
+	l = len(m.CheckedAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Error)
+	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
 func (m *TokenAPIOptions) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3056,6 +3143,24 @@ func (this *TokenAPIContractCode) String() string {
 		`SourceCodeFetchedAt:` + fmt.Sprintf("%v", this.SourceCodeFetchedAt) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`DeploymentCount:` + fmt.Sprintf("%v", this.DeploymentCount) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TokenAPINodeStatus) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TokenAPINodeStatus{`,
+		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
+		`ChainName:` + fmt.Sprintf("%v", this.ChainName) + `,`,
+		`Endpoint:` + fmt.Sprintf("%v", this.Endpoint) + `,`,
+		`Available:` + fmt.Sprintf("%v", this.Available) + `,`,
+		`LatencyMS:` + fmt.Sprintf("%v", this.LatencyMS) + `,`,
+		`ReportedChainID:` + fmt.Sprintf("%v", this.ReportedChainID) + `,`,
+		`LatestBlockNumber:` + fmt.Sprintf("%v", this.LatestBlockNumber) + `,`,
+		`CheckedAt:` + fmt.Sprintf("%v", this.CheckedAt) + `,`,
+		`Error:` + fmt.Sprintf("%v", this.Error) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -8428,6 +8533,280 @@ func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TokenAPINodeStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TokenAPINodeStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TokenAPINodeStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainID", wireType)
+			}
+			m.ChainID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Available", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Available = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LatencyMS", wireType)
+			}
+			m.LatencyMS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LatencyMS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportedChainID", wireType)
+			}
+			m.ReportedChainID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ReportedChainID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LatestBlockNumber", wireType)
+			}
+			m.LatestBlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LatestBlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CheckedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CheckedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Error = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

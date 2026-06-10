@@ -32,6 +32,18 @@ type TokenAPIOptions struct {
 	Chains []TokenAPIChainOption `protobuf:"bytes,1,rep,name=chains" json:"chains"`
 }
 
+type TokenAPINodeStatus struct {
+	ChainID           int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
+	ChainName         string `protobuf:"bytes,2,opt,name=chainName" json:"chainName"`
+	Endpoint          string `protobuf:"bytes,3,opt,name=endpoint" json:"endpoint"`
+	Available         bool   `protobuf:"varint,4,opt,name=available" json:"available"`
+	LatencyMS         int64  `protobuf:"varint,5,opt,name=latencyMs" json:"latencyMs"`
+	ReportedChainID   int64  `protobuf:"varint,6,opt,name=reportedChainId" json:"reportedChainId"`
+	LatestBlockNumber uint64 `protobuf:"varint,7,opt,name=latestBlockNumber" json:"latestBlockNumber"`
+	CheckedAt         string `protobuf:"bytes,8,opt,name=checkedAt" json:"checkedAt"`
+	Error             string `protobuf:"bytes,9,opt,name=error" json:"error"`
+}
+
 type TokenAPIContractCode struct {
 	CodeHash            string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
 	SourceCode          string `protobuf:"bytes,2,opt,name=sourceCode" json:"sourceCode"`

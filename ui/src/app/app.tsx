@@ -35,6 +35,7 @@ import {
     ContractCodesPage,
     HelpPage,
     LoginPage,
+    NodeStatusesPage,
     NotificationsDetailPage,
     NotificationsPage,
     PolymarketHotPage,
@@ -90,6 +91,7 @@ const tokenapiSubresources = {
     contractCodes: 'contract-codes',
     bytecodeBlacklists: 'bytecode-blacklists',
     walletBlacklists: 'wallet-blacklists',
+    nodeStatuses: 'node-statuses',
     chainCheckpoints: 'chain-checkpoints',
     collectionTasks: 'collection-tasks'
 };
@@ -126,6 +128,13 @@ const navItems: NavItem[] = [
                 path: '/token/wallet-blacklists',
                 icon: <WalletOutlined />,
                 permission: tokenapiPermission(tokenapiSubresources.walletBlacklists)
+            },
+            {
+                key: '/token/node-statuses',
+                label: 'Node Status',
+                path: '/token/node-statuses',
+                icon: <ApiOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.nodeStatuses)
             },
             {
                 key: '/token/chain-checkpoints',
@@ -282,6 +291,7 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />
             <Route path='/token/bytecode-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.bytecodeBlacklists), <BytecodeBlacklistsPage />)} />
             <Route path='/token/wallet-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.walletBlacklists), <WalletBlacklistsPage />)} />
+            <Route path='/token/node-statuses' element={withPermission(tokenapiPermission(tokenapiSubresources.nodeStatuses), <NodeStatusesPage />)} />
             <Route path='/token/chain-checkpoints' element={withPermission(tokenapiPermission(tokenapiSubresources.chainCheckpoints), <ChainCheckpointsPage />)} />
             <Route path='/token/collection-tasks' element={withPermission(tokenapiPermission(tokenapiSubresources.collectionTasks), <CollectionTasksPage />)} />
             <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
