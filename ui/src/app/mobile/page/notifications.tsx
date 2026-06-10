@@ -1,43 +1,44 @@
 import {SendOutlined} from '@ant-design/icons';
-import {Button, Dropdown, Select, Space, Tag} from 'antd';
+import {Button, Form, Input, Modal, Select, Space, Tag} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
-import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, SearchBar, useAsyncData, useBreakpoint} from '../components';
+import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, SearchBar, useAsyncData} from '../components';
+import {Context} from '../../shared/context';
 import {services} from '../../shared/services';
 import {NotificationDelivery} from '../../shared/services/notification-service';
 import {useKeywordParam, usePagedParams} from './shared';
-import {notificationTestTopics} from './notification-shared';
 
 export const NotificationsPage = () => {
+    const ctx = React.useContext(Context);
     const navigate = useNavigate();
-    const {isMobile} = useBreakpoint();
+    const [form] = Form.useForm();
     const {page, pageSize, setPage} = usePagedParams();
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
+    const [testOpen, setTestOpen] = React.useState(false);
+    const [testSubmitting, setTestSubmitting] = React.useState(false);
     const data = useAsyncData(() => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined}), [page, pageSize, keyword, status]);
-    const sendTest = async (topicLabel: string) => {
-        await services.notification.sendTestNotification(topicLabel);
-        data.reload();
+    const sendTest = async (values: {topicLabel: string}) => {
+        setTestSubmitting(true);
+        try {
+            await services.notification.sendTestNotification(values.topicLabel.trim());
+            setTestOpen(false);
+            form.resetFields();
+            ctx.notifications.success('Test notification queued');
+            data.reload();
+        } catch (err: any) {
+            ctx.notifications.error('Test notification failed', err?.message || 'Could not send the test notification');
+        } finally {
+            setTestSubmitting(false);
+        }
     };
-    const testNotificationActions = isMobile ? (
-        <Dropdown
-            menu={{
-                items: notificationTestTopics.map(topicLabel => ({key: topicLabel, label: topicLabel})),
-                onClick: item => void sendTest(item.key)
-            }}
-            trigger={['click']}>
-            <Button icon={<SendOutlined />}>Test</Button>
-        </Dropdown>
-    ) : (
-        <Space>
-            {notificationTestTopics.map(topicLabel => (
-                <Button key={topicLabel} icon={<SendOutlined />} onClick={() => void sendTest(topicLabel)}>
-                    {topicLabel}
-                </Button>
-            ))}
-        </Space>
-    );
+    const closeTest = () => {
+        if (!testSubmitting) {
+            setTestOpen(false);
+            form.resetFields();
+        }
+    };
     const columns: ColumnsType<NotificationDelivery> = [
         {
             title: 'Title',
@@ -59,7 +60,11 @@ export const NotificationsPage = () => {
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}
-            extra={testNotificationActions}
+            extra={
+                <Button icon={<SendOutlined />} onClick={() => setTestOpen(true)}>
+                    Test Notification
+                </Button>
+            }
             filters={
                 <Space wrap={true}>
                     <SearchBar value={keyword} onChange={setKeyword} placeholder='Keyword' />
@@ -95,6 +100,23 @@ export const NotificationsPage = () => {
                     </div>
                 )}
             />
+            <Modal open={testOpen} title='Test Notification' footer={null} closable={!testSubmitting} onCancel={closeTest}>
+                <Form form={form} layout='vertical' onFinish={sendTest}>
+                    <Form.Item
+                        name='topicLabel'
+                        label='Topic Label'
+                        rules={[
+                            {
+                                validator: (_, value) => (typeof value === 'string' && value.trim() ? Promise.resolve() : Promise.reject(new Error('Topic Label is required')))
+                            }
+                        ]}>
+                        <Input autoFocus={true} disabled={testSubmitting} />
+                    </Form.Item>
+                    <Button type='primary' htmlType='submit' icon={<SendOutlined />} loading={testSubmitting}>
+                        Send Test Notification
+                    </Button>
+                </Form>
+            </Modal>
         </AppPage>
     );
 };

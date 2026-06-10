@@ -6,7 +6,6 @@ export * from './contract-codes';
 export * from './help';
 export * from './login';
 export * from './notification-detail';
-export * from './notification-shared';
 export * from './notifications';
 export * from './polymarket';
 export * from './projects';
