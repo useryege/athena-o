@@ -22,7 +22,7 @@ The `Procfile` is used by Goreman when running Athena locally with the local too
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
-api-server: [ "$BIN_MODE" = 'true' ] && COMMAND=./dist/athena || COMMAND='go run ./cmd/main.go' && sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server $COMMAND --loglevel debug --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
+api-server: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_FAKE_IN_CLUSTER=true ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server go run ./cmd/main.go --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
 ```
 This configuration example will be used as the basis for the next steps.
 
@@ -30,7 +30,7 @@ This configuration example will be used as the basis for the next steps.
 > The Procfile for a component may change with time. Please go through the Procfile and make sure you use the latest configuration for debugging.
 
 ### Configure component env variables
-The component that you will run in your IDE for debugging (`api-server` in our case) will need env variables. Copy the env variables from `Procfile`, located in the `athena` root folder of your development branch. The env variables are located before the `$COMMAND` section in the `sh -c` section of the component run command.
+The component that you will run in your IDE for debugging (`api-server` in our case) will need env variables. Copy the env variables from `Procfile`, located in the `athena` root folder of your development branch. The env variables are located before `go run ./cmd/main.go` in the `sh -c` section of the component run command.
 You can keep them in `.env` file and then have the IDE launch configuration point to that file. Obviously, you can adjust the env variables to your needs when debugging a specific configuration.
 
 Example for an `api-server.env` file:
@@ -54,7 +54,7 @@ Using the market place / plugin manager of your IDE. The below example configura
 
 ### Configure component IDE launch configuration
 #### VSCode example
-Next, you will need to create a launch configuration, with the relevant args. Copy the args from `Procfile`, located in the `athena` root folder of your development branch. The args are located after the `$COMMAND` section in the `sh -c` section of the component run command.
+Next, you will need to create a launch configuration, with the relevant args. Copy the args from `Procfile`, located in the `athena` root folder of your development branch. The args are located after `go run ./cmd/main.go` in the `sh -c` section of the component run command.
 Example for an `api-server` launch configuration, based on our above example for `api-server` configuration in `Procfile`: 
 ``` json
     {
@@ -76,7 +76,7 @@ Example for an `api-server` launch configuration, based on our above example for
 ```
 
 #### Goland example
-Next, you will need to create a launch configuration, with the relevant parameters. Copy the parameters from `Procfile`, located in the `athena` root folder of your development branch. The parameters are located after the `$COMMAND` section in the `sh -c` section of the component run command.
+Next, you will need to create a launch configuration, with the relevant parameters. Copy the parameters from `Procfile`, located in the `athena` root folder of your development branch. The parameters are located after `go run ./cmd/main.go` in the `sh -c` section of the component run command.
 Example for an `api-server` launch configuration snippet, based on our above example for `api-server` configuration in `Procfile`: 
 ``` xml 
 <component name="ProjectRunConfigurationManager">
