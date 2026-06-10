@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,7 +28,10 @@ const (
 	DefaultRateLimitRequests = 120
 	DefaultRateLimitPeriod   = time.Minute
 
-	errorBodyLimit = 4096
+	errorBodyLimit            = 4096
+	rateLimitMaxRetries       = 3
+	rateLimitBackoffBase      = time.Second
+	rateLimitBackoffJitterMax = 250 * time.Millisecond
 
 	headerAPIKey    = "WORM-API-KEY"
 	headerTimestamp = "WORM-TIMESTAMP"
@@ -118,6 +122,7 @@ func NewClient(config Config) (Client, error) {
 		rateLimiter, err = ratelimit.New(ratelimit.Config{
 			Requests: DefaultRateLimitRequests,
 			Per:      DefaultRateLimitPeriod,
+			Burst:    1,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("create worm rate limiter: %w", err)
@@ -1288,53 +1293,103 @@ func (c *clientImpl) do(ctx context.Context, method string, path string, query u
 	}
 
 	var rawBody []byte
-	var requestBody io.Reader = http.NoBody
 	if body != nil {
 		rawBody, err = json.Marshal(body)
 		if err != nil {
 			return EnvelopeMeta{}, fmt.Errorf("failed to encode worm request body: %w", err)
 		}
-		requestBody = bytes.NewReader(rawBody)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, endpoint.String(), requestBody)
-	if err != nil {
-		return EnvelopeMeta{}, fmt.Errorf("failed to create worm request: %w", err)
-	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	if authRequired {
-		c.sign(req, method, rawBody)
-	}
+	for attempt := 0; ; attempt++ {
+		var requestBody io.Reader = http.NoBody
+		if body != nil {
+			requestBody = bytes.NewReader(rawBody)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, endpoint.String(), requestBody)
+		if err != nil {
+			return EnvelopeMeta{}, fmt.Errorf("failed to create worm request: %w", err)
+		}
+		if body != nil {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		if authRequired {
+			c.sign(req, method, rawBody)
+		}
 
-	if err := c.rateLimiter.Wait(ctx); err != nil {
-		return EnvelopeMeta{}, fmt.Errorf("wait worm rate limit: %w", err)
-	}
+		if err := c.rateLimiter.Wait(ctx); err != nil {
+			return EnvelopeMeta{}, fmt.Errorf("wait worm rate limit: %w", err)
+		}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return EnvelopeMeta{}, fmt.Errorf("failed to send worm request: %w", err)
-	}
-	defer resp.Body.Close()
+		resp, err := c.client.Do(req)
+		if err != nil {
+			return EnvelopeMeta{}, fmt.Errorf("failed to send worm request: %w", err)
+		}
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return EnvelopeMeta{}, decodeHTTPError(resp)
-	}
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+			requestErr := decodeHTTPError(resp)
+			_ = resp.Body.Close()
+			if method != http.MethodGet || resp.StatusCode != http.StatusTooManyRequests || attempt >= rateLimitMaxRetries {
+				return EnvelopeMeta{}, requestErr
+			}
+			if err := waitWithContext(ctx, c.rateLimitRetryDelay(requestErr, resp.Header, attempt)); err != nil {
+				return EnvelopeMeta{}, err
+			}
+			continue
+		}
 
-	var envelope responseEnvelope
-	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
-		return EnvelopeMeta{}, fmt.Errorf("failed to decode worm response: %w", err)
+		var envelope responseEnvelope
+		decodeErr := json.NewDecoder(resp.Body).Decode(&envelope)
+		_ = resp.Body.Close()
+		if decodeErr != nil {
+			return EnvelopeMeta{}, fmt.Errorf("failed to decode worm response: %w", decodeErr)
+		}
+		if envelope.Error != nil {
+			return EnvelopeMeta{}, envelope.Error
+		}
+		if out != nil && len(envelope.Data) > 0 && string(envelope.Data) != "null" {
+			if err := json.Unmarshal(envelope.Data, out); err != nil {
+				return EnvelopeMeta{}, fmt.Errorf("failed to decode worm response data: %w", err)
+			}
+		}
+		return envelope.Meta, nil
 	}
-	if envelope.Error != nil {
-		return EnvelopeMeta{}, envelope.Error
+}
+
+func (c *clientImpl) rateLimitRetryDelay(err error, header http.Header, attempt int) time.Duration {
+	if delay := parseRetryAfter(header.Get("Retry-After")); delay > 0 {
+		return delay
 	}
-	if out != nil && len(envelope.Data) > 0 && string(envelope.Data) != "null" {
-		if err := json.Unmarshal(envelope.Data, out); err != nil {
-			return EnvelopeMeta{}, fmt.Errorf("failed to decode worm response data: %w", err)
+	if reset := int64(parseHeaderInt(header.Get("X-RateLimit-Reset"))); reset > 0 {
+		if delay := time.Unix(reset, 0).Sub(c.config.Now()); delay > 0 {
+			return delay
 		}
 	}
-	return envelope.Meta, nil
+	var wormErr *Error
+	if errors.As(err, &wormErr) {
+		if wormErr.RetryAfter > 0 {
+			return wormErr.RetryAfter
+		}
+		if wormErr.RateLimitReset > 0 {
+			delay := time.Unix(wormErr.RateLimitReset, 0).Sub(c.config.Now())
+			if delay > 0 {
+				return delay
+			}
+		}
+	}
+	backoff := rateLimitBackoffBase << attempt
+	jitter := time.Duration(rand.Int64N(int64(rateLimitBackoffJitterMax) + 1))
+	return backoff + jitter
+}
+
+func waitWithContext(ctx context.Context, delay time.Duration) error {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func (c *clientImpl) buildURL(path string, query url.Values) (*url.URL, error) {
