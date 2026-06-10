@@ -104,6 +104,7 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 | `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
 | `make prod-deploy-remote` | 构建镜像、清空远程数据库并完成全新部署。 | `PROD_ENV_FILE=.env.prod make prod-deploy-remote` |
+| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL 数据。 | `PROD_ENV_FILE=.env.prod make prod-hot-deploy-remote` |
 | `make prod-destroy-remote` | 删除远程 Athena 运行资源和 PostgreSQL volume。 | `PROD_ENV_FILE=.env.prod make prod-destroy-remote` |
 
 ### 部署前本地预演
@@ -220,6 +221,16 @@ PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-remote
 该命令会先构建本地镜像。构建成功后，依次停止远端旧服务、删除并重建 `$(PROD_POSTGRES_VOLUME)`、上传 `docker-compose.prod.yml`、`.env` 和 PostgreSQL init 脚本、传输镜像、启动 PostgreSQL、执行 `athena up --module $(PROD_MIGRATE_MODULE)`，最后启动全部服务并输出容器状态。
 
 **每次远程部署都会永久删除已有 PostgreSQL 数据，不会自动备份。** migration 失败时不会启动业务服务，PostgreSQL 容器会保留以便排查。
+
+后端代码小幅修改时，可以保留现有数据库并热部署：
+
+```bash
+PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-hot-deploy-remote
+```
+
+该命令会构建并传输新镜像，覆盖远端 `docker-compose.prod.yml` 和 `.env`，在现有 PostgreSQL 数据上执行 migration，然后强制重建全部 Athena 后端服务并最后重建 `athena-server`。PostgreSQL、Redis 和 PostgreSQL volume 不会停止或删除；如果指定的 volume 不存在，命令会直接终止，避免意外创建空数据库。migration 失败时，当前业务容器保持运行且不会进入重建阶段。
+
+热部署会短暂重启 Athena 服务，不保证零停机。它适用于代码更新和兼容性数据库 migration，不用于修改现有 PostgreSQL 或 Redis 凭据。
 
 一键删除：
 

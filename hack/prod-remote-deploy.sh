@@ -13,8 +13,8 @@ POSTGRES_VOLUME="${PROD_POSTGRES_VOLUME:-athena-prod-postgres-data}"
 MIGRATE_MODULE="${PROD_MIGRATE_MODULE:-all}"
 ACTION="${1:-deploy}"
 
-if [[ "${ACTION}" != "deploy" && "${ACTION}" != "destroy" ]]; then
-  echo "Usage: $0 deploy|destroy"
+if [[ "${ACTION}" != "deploy" && "${ACTION}" != "hot-deploy" && "${ACTION}" != "destroy" ]]; then
+  echo "Usage: $0 deploy|hot-deploy|destroy"
   exit 1
 fi
 
@@ -80,6 +80,47 @@ trap cleanup EXIT
 echo "Preparing deployment archive..."
 cp "${COMPOSE_FILE}" "${UPLOAD_DIR}/docker-compose.prod.yml"
 cp "${ENV_FILE}" "${UPLOAD_DIR}/.env"
+
+if [[ "${ACTION}" == "hot-deploy" ]]; then
+  echo "Checking remote host and PostgreSQL volume on ${REMOTE}..."
+  ssh "${REMOTE}" "set -e
+docker --version >/dev/null
+docker compose version >/dev/null
+if ! docker volume inspect '${POSTGRES_VOLUME}' >/dev/null 2>&1; then
+  echo 'PostgreSQL volume not found: ${POSTGRES_VOLUME}. Run a full deployment first.'
+  exit 1
+fi
+mkdir -p '${REMOTE_APP_DIR}'"
+
+  echo "Uploading compose file and environment file..."
+  tar -C "${UPLOAD_DIR}" -cf - docker-compose.prod.yml .env | ssh "${REMOTE}" "set -e
+tar -C '${REMOTE_APP_DIR}' -xf -"
+
+  echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
+  docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
+
+  echo "Running Athena migrations on ${REMOTE}..."
+  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
+
+  echo "Recreating Athena backend services on ${REMOTE}..."
+  ssh "${REMOTE}" "set -e
+cd '${REMOTE_APP_DIR}'
+compose() {
+  PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env \"\$@\"
+}
+athena_services=\"\$(compose config --services | awk '/^athena-/ && \$0 != \"athena-migrate\" && \$0 != \"athena-server\" { print }')\"
+if [ -z \"\${athena_services}\" ]; then
+  echo 'No Athena backend services found in docker-compose.prod.yml.'
+  exit 1
+fi
+compose up -d --no-deps --force-recreate \${athena_services}
+compose up -d --no-deps --force-recreate athena-server
+compose ps"
+
+  echo "Remote hot deployment completed. PostgreSQL and Redis were preserved."
+  exit 0
+fi
+
 mkdir -p "${UPLOAD_DIR}/hack/postgres"
 cp -a "${REPO_ROOT}/hack/postgres/init" "${UPLOAD_DIR}/hack/postgres/init"
 
