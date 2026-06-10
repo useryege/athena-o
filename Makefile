@@ -34,9 +34,6 @@ endif
 MKDOCS_DOCKER_IMAGE?=python:3.12-alpine
 MKDOCS_RUN_ARGS?=
 
-ATHENA_POSTGRES_DATA_DIR?=/tmp/athena-local/postgres
-ATHENA_REDIS_DATA_DIR?=/tmp/athena-local/redis
-
 PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
@@ -190,8 +187,3 @@ prod-hot-deploy-remote: prod-build-local
 .PHONY: prod-destroy-remote
 prod-destroy-remote:
 	PROD_IMAGE=$(PROD_IMAGE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) bash ./hack/prod-remote-deploy.sh destroy
-
-# Delete local PostgreSQL/Redis data directories so the next run can re-init. Stop goreman first if it is running.
-.PHONY: clean-postgres-data
-clean-postgres-data:
-	sudo rm -rf "$(ATHENA_POSTGRES_DATA_DIR)" "$(ATHENA_REDIS_DATA_DIR)"

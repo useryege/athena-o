@@ -31,8 +31,6 @@
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
-| `ATHENA_POSTGRES_DATA_DIR` | `/tmp/athena-local/postgres` | `clean-postgres-data` 删除的本地 PostgreSQL 数据目录。 |
-| `ATHENA_REDIS_DATA_DIR` | `/tmp/athena-local/redis` | `clean-postgres-data` 删除的本地 Redis 数据目录。 |
 
 ## 环境与工具
 
@@ -267,11 +265,3 @@ http://127.0.0.1:8080
 ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.prod.yml --env-file .env ps'
 ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.prod.yml --env-file .env logs -f athena-server'
 ```
-
-## 清理
-
-| 命令 | 用途 | 示例 |
-| --- | --- | --- |
-| `make clean-postgres-data` | 删除本地 PostgreSQL 和 Redis 数据目录。 | `make clean-postgres-data` |
-
-注意：`make clean-postgres-data` 会执行 `sudo rm -rf "$(ATHENA_POSTGRES_DATA_DIR)" "$(ATHENA_REDIS_DATA_DIR)"`，默认会删除 `/tmp/athena-local/postgres` 和 `/tmp/athena-local/redis`。

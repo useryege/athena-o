@@ -29,24 +29,15 @@ export ATHENA_SERVER=127.0.0.1:8080
 
 ## Local Data
 
-Redis and PostgreSQL default to ephemeral data. To persist local data between runs:
-
-```bash
-export ATHENA_LOCAL_DATA_MODE=persistent
-make run
-```
+Redis and PostgreSQL run in ephemeral Docker containers. Their data is discarded whenever the containers stop.
 
 Supported variables:
 
 - `ATHENA_REDIS_PORT` default: `6379`
 - `ATHENA_REDIS_IMAGE_TAG` default: `8.2.3`
-- `ATHENA_REDIS_DATA_DIR` default: `/tmp/athena-local/redis`
 - `ATHENA_POSTGRES_PORT` default: `5432`
 - `ATHENA_POSTGRES_IMAGE_TAG` default: `16`
-- `ATHENA_POSTGRES_DATA_DIR` default: `/tmp/athena-local/postgres`
 - `ATHENA_POSTGRES_INIT_DIR` default: `hack/postgres/init`
-
-Set `ATHENA_REDIS_LOCAL=true` or `ATHENA_POSTGRES_LOCAL=true` to use locally installed Redis/PostgreSQL binaries instead of Docker containers.
 
 ## UI Changes
 

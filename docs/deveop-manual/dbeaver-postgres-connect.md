@@ -77,7 +77,3 @@ ATHENA_REDIS_PASSWORD
 ```bash
 psql -h 127.0.0.1 -p 5432 -U athena -d application
 ```
-
-如果本地持久化目录权限导致 PostgreSQL 启动失败，参考：
-
-[make run PostgreSQL 启动失败排障](./make-run-troubleshooting.md)
