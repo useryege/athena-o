@@ -100,6 +100,19 @@ type PolymarketSportsLiveMarket struct {
 	UpdatedAt        pgtype.Timestamptz
 }
 
+type PolymarketSportsLivePricePoint struct {
+	TokenID     string
+	MarketKey   string
+	EventKey    string
+	ConditionID string
+	Outcome     string
+	PriceTs     pgtype.Timestamptz
+	Price       float64
+	FetchedAt   pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
 type PolymarketSyncState struct {
 	SyncName      string
 	LastSuccessAt pgtype.Timestamptz

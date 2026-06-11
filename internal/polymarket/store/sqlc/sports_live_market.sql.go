@@ -453,6 +453,61 @@ func (q *Queries) BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUps
 	return err
 }
 
+const batchUpsertSportsLivePricePoints = `-- name: BatchUpsertSportsLivePricePoints :exec
+INSERT INTO polymarket_sports_live_price_point (
+  token_id,
+  market_key,
+  event_key,
+  condition_id,
+  outcome,
+  price_ts,
+  price,
+  fetched_at
+)
+SELECT
+  unnest($1::text[]),
+  unnest($2::text[]),
+  unnest($3::text[]),
+  unnest($4::text[]),
+  unnest($5::text[]),
+  unnest($6::timestamptz[]),
+  unnest($7::double precision[]),
+  unnest($8::timestamptz[])
+ON CONFLICT (token_id, price_ts) DO UPDATE
+SET market_key = EXCLUDED.market_key,
+  event_key = EXCLUDED.event_key,
+  condition_id = EXCLUDED.condition_id,
+  outcome = EXCLUDED.outcome,
+  price = EXCLUDED.price,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now()
+`
+
+type BatchUpsertSportsLivePricePointsParams struct {
+	TokenIds        []string
+	MarketKeys      []string
+	EventKeys       []string
+	ConditionIds    []string
+	Outcomes        []string
+	PriceTsValues   []pgtype.Timestamptz
+	PriceValues     []float64
+	FetchedAtValues []pgtype.Timestamptz
+}
+
+func (q *Queries) BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error {
+	_, err := q.db.Exec(ctx, batchUpsertSportsLivePricePoints,
+		arg.TokenIds,
+		arg.MarketKeys,
+		arg.EventKeys,
+		arg.ConditionIds,
+		arg.Outcomes,
+		arg.PriceTsValues,
+		arg.PriceValues,
+		arg.FetchedAtValues,
+	)
+	return err
+}
+
 const deleteSportsLiveEventsNotSeenSince = `-- name: DeleteSportsLiveEventsNotSeenSince :execrows
 DELETE FROM polymarket_sports_live_event
 WHERE last_seen_at < $1
@@ -576,6 +631,40 @@ func (q *Queries) ListSportsLiveEvents(ctx context.Context, limit int32) ([]List
 	return items, nil
 }
 
+const listSportsLiveLatestPricePointTimes = `-- name: ListSportsLiveLatestPricePointTimes :many
+SELECT
+  token_id,
+  MAX(price_ts)::timestamptz AS price_ts
+FROM polymarket_sports_live_price_point
+WHERE token_id = ANY($1::text[])
+GROUP BY token_id
+`
+
+type ListSportsLiveLatestPricePointTimesRow struct {
+	TokenID string
+	PriceTs pgtype.Timestamptz
+}
+
+func (q *Queries) ListSportsLiveLatestPricePointTimes(ctx context.Context, tokenIds []string) ([]ListSportsLiveLatestPricePointTimesRow, error) {
+	rows, err := q.db.Query(ctx, listSportsLiveLatestPricePointTimes, tokenIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSportsLiveLatestPricePointTimesRow
+	for rows.Next() {
+		var i ListSportsLiveLatestPricePointTimesRow
+		if err := rows.Scan(&i.TokenID, &i.PriceTs); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSportsLiveMarketsByEventKeys = `-- name: ListSportsLiveMarketsByEventKeys :many
 SELECT
   market.event_key,
@@ -642,6 +731,57 @@ func (q *Queries) ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKey
 			&i.LiquidityNum,
 			&i.VolumeNum,
 			&i.UpdatedAtGamma,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSportsLiveMoneylineMarketsForPriceHistory = `-- name: ListSportsLiveMoneylineMarketsForPriceHistory :many
+SELECT
+  market.event_key,
+  market.market_key,
+  market.condition_id,
+  market.outcomes,
+  market.clob_token_ids
+FROM polymarket_sports_live_market AS market
+JOIN polymarket_sports_live_event AS event ON event.event_key = market.event_key
+WHERE event.live = true
+  AND event.ended = false
+  AND market.closed = false
+  AND lower(market.sports_market_type) = 'moneyline'
+  AND btrim(market.clob_token_ids) <> ''
+ORDER BY event.volume DESC, market.liquidity_num DESC, market.market_key
+`
+
+type ListSportsLiveMoneylineMarketsForPriceHistoryRow struct {
+	EventKey     string
+	MarketKey    string
+	ConditionID  string
+	Outcomes     string
+	ClobTokenIds string
+}
+
+func (q *Queries) ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error) {
+	rows, err := q.db.Query(ctx, listSportsLiveMoneylineMarketsForPriceHistory)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSportsLiveMoneylineMarketsForPriceHistoryRow
+	for rows.Next() {
+		var i ListSportsLiveMoneylineMarketsForPriceHistoryRow
+		if err := rows.Scan(
+			&i.EventKey,
+			&i.MarketKey,
+			&i.ConditionID,
+			&i.Outcomes,
+			&i.ClobTokenIds,
 		); err != nil {
 			return nil, err
 		}

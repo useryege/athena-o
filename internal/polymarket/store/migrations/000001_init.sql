@@ -109,6 +109,25 @@ CREATE TABLE IF NOT EXISTS polymarket_sync_state (
   CONSTRAINT polymarket_sync_state_name_not_empty CHECK (btrim(sync_name) <> '')
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_point (
+  token_id TEXT NOT NULL,
+  market_key TEXT NOT NULL,
+  event_key TEXT NOT NULL,
+  condition_id TEXT NOT NULL DEFAULT '',
+  outcome TEXT NOT NULL DEFAULT '',
+  price_ts TIMESTAMPTZ NOT NULL,
+  price DOUBLE PRECISION NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (token_id, price_ts),
+  CONSTRAINT polymarket_sports_live_price_point_token_not_empty CHECK (btrim(token_id) <> ''),
+  CONSTRAINT polymarket_sports_live_price_point_market_not_empty CHECK (btrim(market_key) <> ''),
+  CONSTRAINT polymarket_sports_live_price_point_event_not_empty CHECK (btrim(event_key) <> ''),
+  CONSTRAINT polymarket_sports_live_price_point_market_fk
+    FOREIGN KEY (market_key) REFERENCES polymarket_sports_live_market(market_key) ON DELETE CASCADE
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS polymarket_sports_live_event_slug_idx
   ON polymarket_sports_live_event (slug)
   WHERE slug <> '';
@@ -132,8 +151,18 @@ CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_price_sort_idx
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_last_seen_idx
   ON polymarket_sports_live_market (last_seen_at);
 
+CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_point_market_ts_idx
+  ON polymarket_sports_live_price_point (market_key, price_ts DESC);
+
+CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_point_event_ts_idx
+  ON polymarket_sports_live_price_point (event_key, price_ts DESC);
+
+CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_point_fetched_idx
+  ON polymarket_sports_live_price_point (fetched_at);
+
 -- +goose Down
 
+DROP TABLE IF EXISTS polymarket_sports_live_price_point;
 DROP TABLE IF EXISTS polymarket_sync_state;
 DROP TABLE IF EXISTS polymarket_sports_live_market;
 DROP TABLE IF EXISTS polymarket_sports_live_event;

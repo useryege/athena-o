@@ -311,6 +311,59 @@ WHERE market.event_key = ANY(sqlc.arg('event_keys')::text[])
   AND lower(market.sports_market_type) = 'moneyline'
 ORDER BY market.event_key, market.liquidity_num DESC, market.volume_num DESC, market.market_key;
 
+-- name: ListSportsLiveMoneylineMarketsForPriceHistory :many
+SELECT
+  market.event_key,
+  market.market_key,
+  market.condition_id,
+  market.outcomes,
+  market.clob_token_ids
+FROM polymarket_sports_live_market AS market
+JOIN polymarket_sports_live_event AS event ON event.event_key = market.event_key
+WHERE event.live = true
+  AND event.ended = false
+  AND market.closed = false
+  AND lower(market.sports_market_type) = 'moneyline'
+  AND btrim(market.clob_token_ids) <> ''
+ORDER BY event.volume DESC, market.liquidity_num DESC, market.market_key;
+
+-- name: ListSportsLiveLatestPricePointTimes :many
+SELECT
+  token_id,
+  MAX(price_ts)::timestamptz AS price_ts
+FROM polymarket_sports_live_price_point
+WHERE token_id = ANY(sqlc.arg('token_ids')::text[])
+GROUP BY token_id;
+
+-- name: BatchUpsertSportsLivePricePoints :exec
+INSERT INTO polymarket_sports_live_price_point (
+  token_id,
+  market_key,
+  event_key,
+  condition_id,
+  outcome,
+  price_ts,
+  price,
+  fetched_at
+)
+SELECT
+  unnest(sqlc.arg('token_ids')::text[]),
+  unnest(sqlc.arg('market_keys')::text[]),
+  unnest(sqlc.arg('event_keys')::text[]),
+  unnest(sqlc.arg('condition_ids')::text[]),
+  unnest(sqlc.arg('outcomes')::text[]),
+  unnest(sqlc.arg('price_ts_values')::timestamptz[]),
+  unnest(sqlc.arg('price_values')::double precision[]),
+  unnest(sqlc.arg('fetched_at_values')::timestamptz[])
+ON CONFLICT (token_id, price_ts) DO UPDATE
+SET market_key = EXCLUDED.market_key,
+  event_key = EXCLUDED.event_key,
+  condition_id = EXCLUDED.condition_id,
+  outcome = EXCLUDED.outcome,
+  price = EXCLUDED.price,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now();
+
 -- name: GetPolymarketSyncState :one
 SELECT last_success_at
 FROM polymarket_sync_state

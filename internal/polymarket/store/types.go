@@ -131,3 +131,22 @@ type SportsLiveMarketCard struct {
 	VolumeNum        float64
 	UpdatedAtGamma   time.Time
 }
+
+type SportsLivePriceHistoryMarket struct {
+	EventKey     string
+	MarketKey    string
+	ConditionID  string
+	Outcomes     string
+	ClobTokenIDs string
+}
+
+type SportsLivePricePoint struct {
+	TokenID     string
+	MarketKey   string
+	EventKey    string
+	ConditionID string
+	Outcome     string
+	PriceTs     time.Time
+	Price       float64
+	FetchedAt   time.Time
+}

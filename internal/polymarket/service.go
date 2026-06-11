@@ -19,6 +19,7 @@ const (
 	defaultSportsLiveListLimit      = 200
 	maxSportsLiveListLimit          = 1000
 	defaultSportsLiveSyncInterval   = 10 * time.Second
+	defaultSportsLivePriceInterval  = time.Minute
 	defaultSportsLiveEventPageLimit = 500
 	defaultHotMarketListLimit       = 100
 	maxHotMarketListLimit           = 500
@@ -38,9 +39,19 @@ type sportsLiveGammaClient interface {
 	ListMarketsKeyset(context.Context, utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error)
 }
 
+type sportsLiveCLOBClient interface {
+	GetBatchPricesHistory(context.Context, utilpolymarket.CLOBBatchPricesHistoryRequest) (*utilpolymarket.CLOBBatchPricesHistoryResponse, error)
+}
+
 func WithGammaClient(client sportsLiveGammaClient) ServiceOption {
 	return func(s *Service) {
 		s.gammaClient = client
+	}
+}
+
+func WithCLOBClient(client sportsLiveCLOBClient) ServiceOption {
+	return func(s *Service) {
+		s.clobClient = client
 	}
 }
 
@@ -84,6 +95,7 @@ type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
 	store                     *polymarketstore.SQLStore
 	gammaClient               sportsLiveGammaClient
+	clobClient                sportsLiveCLOBClient
 	notificationClientset     notificationapiclient.Clientset
 	syncInterval              time.Duration
 	sportsLivePageLimit       int
@@ -149,6 +161,14 @@ func (s *Service) Start() error {
 		}
 		s.gammaClient = client
 	}
+	if s.clobClient == nil {
+		client, err := utilpolymarket.NewCLOBClient(utilpolymarket.CLOBConfig{})
+		if err != nil {
+			s.startStopMu.Unlock()
+			return status.Errorf(codes.FailedPrecondition, "failed to create polymarket clob client: %v", err)
+		}
+		s.clobClient = client
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.runCancel = cancel
 	s.started = true
@@ -156,6 +176,8 @@ func (s *Service) Start() error {
 
 	s.runWG.Add(1)
 	go s.runSportsLiveSyncLoop(ctx)
+	s.runWG.Add(1)
+	go s.runSportsLivePriceHistorySyncLoop(ctx)
 	s.runWG.Add(1)
 	go s.runHotMarketDiscoveryLoop(ctx)
 	return nil

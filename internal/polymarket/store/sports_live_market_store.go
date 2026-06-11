@@ -144,6 +144,55 @@ func (s *SQLStore) GetSportsLiveLastSuccessAt(ctx context.Context) (time.Time, e
 	return timeValue(value), nil
 }
 
+func (s *SQLStore) ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]SportsLivePriceHistoryMarket, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	rows, err := s.queries.ListSportsLiveMoneylineMarketsForPriceHistory(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list sports live moneyline markets for price history: %w", err)
+	}
+	items := make([]SportsLivePriceHistoryMarket, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, SportsLivePriceHistoryMarket{
+			EventKey:     row.EventKey,
+			MarketKey:    row.MarketKey,
+			ConditionID:  row.ConditionID,
+			Outcomes:     row.Outcomes,
+			ClobTokenIDs: row.ClobTokenIds,
+		})
+	}
+	return items, nil
+}
+
+func (s *SQLStore) ListSportsLiveLatestPricePointTimes(ctx context.Context, tokenIDs []string) (map[string]time.Time, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	rows, err := s.queries.ListSportsLiveLatestPricePointTimes(ctx, tokenIDs)
+	if err != nil {
+		return nil, fmt.Errorf("list sports live latest price point times: %w", err)
+	}
+	out := make(map[string]time.Time, len(rows))
+	for _, row := range rows {
+		out[row.TokenID] = timeValue(row.PriceTs)
+	}
+	return out, nil
+}
+
+func (s *SQLStore) BatchUpsertSportsLivePricePoints(ctx context.Context, points []SportsLivePricePoint) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if len(points) == 0 {
+		return nil
+	}
+	if err := s.queries.BatchUpsertSportsLivePricePoints(ctx, batchUpsertSportsLivePricePointsParams(points)); err != nil {
+		return fmt.Errorf("batch upsert sports live price points: %w", err)
+	}
+	return nil
+}
+
 func batchUpsertSportsLiveEventsParams(items []SportsLiveEvent) polymarketsqlc.BatchUpsertSportsLiveEventsParams {
 	params := polymarketsqlc.BatchUpsertSportsLiveEventsParams{
 		EventKeys:            make([]string, 0, len(items)),
@@ -320,6 +369,30 @@ func batchUpsertSportsLiveMarketsParams(items []SportsLiveMarket) polymarketsqlc
 		params.RawValues = append(params.RawValues, jsonBytes(item.Raw, jsonObject))
 		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
 		params.LastSeenAtValues = append(params.LastSeenAtValues, nullableTime(item.LastSeenAt))
+	}
+	return params
+}
+
+func batchUpsertSportsLivePricePointsParams(items []SportsLivePricePoint) polymarketsqlc.BatchUpsertSportsLivePricePointsParams {
+	params := polymarketsqlc.BatchUpsertSportsLivePricePointsParams{
+		TokenIds:        make([]string, 0, len(items)),
+		MarketKeys:      make([]string, 0, len(items)),
+		EventKeys:       make([]string, 0, len(items)),
+		ConditionIds:    make([]string, 0, len(items)),
+		Outcomes:        make([]string, 0, len(items)),
+		PriceTsValues:   make([]pgtype.Timestamptz, 0, len(items)),
+		PriceValues:     make([]float64, 0, len(items)),
+		FetchedAtValues: make([]pgtype.Timestamptz, 0, len(items)),
+	}
+	for _, item := range items {
+		params.TokenIds = append(params.TokenIds, item.TokenID)
+		params.MarketKeys = append(params.MarketKeys, item.MarketKey)
+		params.EventKeys = append(params.EventKeys, item.EventKey)
+		params.ConditionIds = append(params.ConditionIds, item.ConditionID)
+		params.Outcomes = append(params.Outcomes, item.Outcome)
+		params.PriceTsValues = append(params.PriceTsValues, nullableTime(item.PriceTs))
+		params.PriceValues = append(params.PriceValues, item.Price)
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
 	}
 	return params
 }

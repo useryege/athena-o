@@ -13,11 +13,14 @@ import (
 type Querier interface {
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
+	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListSportsLiveEvents(ctx context.Context, limit int32) ([]ListSportsLiveEventsRow, error)
+	ListSportsLiveLatestPricePointTimes(ctx context.Context, tokenIds []string) ([]ListSportsLiveLatestPricePointTimesRow, error)
 	ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsLiveMarketsByEventKeysRow, error)
+	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
 	Ping(ctx context.Context) (int32, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
 }
