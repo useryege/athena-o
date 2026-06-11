@@ -27,6 +27,7 @@ p, role:admin, wallets, update, *, allow
 p, role:admin, wallets, invoke, *, allow
 p, role:admin, tokenapi, get, *, allow
 p, role:admin, tokenapi, update, *, allow
+p, role:admin, service-status, get, *, allow
 
 g, role:admin, role:readonly
 g, admin, role:admin

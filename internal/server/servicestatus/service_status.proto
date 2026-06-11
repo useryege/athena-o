@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package servicestatus;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/servicestatus";
+
+message ListServiceStatusesRequest {}
+
+message ServiceStatus {
+  string name = 1;
+  string status = 2;
+  string error_message = 3;
+}
+
+message ListServiceStatusesResponse {
+  repeated ServiceStatus items = 1;
+  int64 checked_at = 2;
+}
+
+service ServiceStatusService {
+  rpc ListServiceStatuses(ListServiceStatusesRequest) returns (ListServiceStatusesResponse) {
+    option (google.api.http) = {get: "/api/v1/service-statuses"};
+  }
+}

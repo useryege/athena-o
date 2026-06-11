@@ -8,6 +8,7 @@ import {
     CodeOutlined,
     DashboardOutlined,
     FileTextOutlined,
+    HeartOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
     MoonOutlined,
@@ -45,6 +46,7 @@ import {
     ProjectReportsPage,
     ProjectsPage,
     SettingsPage,
+    ServiceStatusPage,
     UserInfoPage,
     WalletBlacklistsPage,
     WalletsPage,
@@ -79,6 +81,7 @@ const rbacResources = {
     notifications: 'notifications',
     polymarket: 'polymarket',
     tokenapi: 'tokenapi',
+    serviceStatus: 'service-status',
     wallets: 'wallets',
     worm: 'worm'
 };
@@ -100,6 +103,7 @@ const tokenapiSubresources = {
 
 const permission = (resource: string, action: string, subresource = '*'): Permission => ({resource, action, subresource});
 const tokenapiPermission = (subresource: string) => permission(rbacResources.tokenapi, rbacActions.get, subresource);
+const serviceStatusPermission = permission(rbacResources.serviceStatus, rbacActions.get);
 const permissionKey = (perm: Permission) => `${perm.resource}:${perm.action}:${perm.subresource}`;
 const hasPermission = (access: AccessState, perm?: Permission) => !perm || access?.permissions[permissionKey(perm)] === true;
 
@@ -193,6 +197,7 @@ const navItems: NavItem[] = [
     {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />, permission: permission(rbacResources.worm, rbacActions.get)},
     {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
     {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
+    {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission},
     {key: '/settings', label: 'Settings', path: '/settings', icon: <SettingOutlined />},
     {key: '/user-info', label: 'User Info', path: '/user-info', icon: <UserOutlined />},
     {key: '/help', label: 'Help', path: '/help', icon: <QuestionCircleOutlined />}
@@ -292,6 +297,7 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
+            <Route path='/service-status' element={withPermission(serviceStatusPermission, <ServiceStatusPage />)} />
             <Route path='/user-info' element={<UserInfoPage />} />
             <Route path='/help' element={<HelpPage />} />
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />

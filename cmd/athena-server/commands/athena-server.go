@@ -108,21 +108,6 @@ func NewCommand() *cobra.Command {
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
 			polymarketclientset := polymarketapiclient.NewPolymarketClientset(polymarketServerAddress)
 			tokenAPIClientset := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
-			log.Infof("waiting for athena notification grpc service at %s", notificationServerAddress)
-			errors.CheckError(notificationapiclient.WaitForNotificationService(ctx, notificationServerAddress))
-			log.Infof("athena notification grpc service is ready at %s", notificationServerAddress)
-			log.Infof("waiting for athena wallet grpc service at %s", walletServerAddress)
-			errors.CheckError(walletapiclient.WaitForWalletService(ctx, walletServerAddress))
-			log.Infof("athena wallet grpc service is ready at %s", walletServerAddress)
-			log.Infof("waiting for athena worm grpc service at %s", wormServerAddress)
-			errors.CheckError(wormapiclient.WaitForWormService(ctx, wormServerAddress))
-			log.Infof("athena worm grpc service is ready at %s", wormServerAddress)
-			log.Infof("waiting for athena polymarket grpc service at %s", polymarketServerAddress)
-			errors.CheckError(polymarketapiclient.WaitForPolymarketService(ctx, polymarketServerAddress))
-			log.Infof("athena polymarket grpc service is ready at %s", polymarketServerAddress)
-			log.Infof("waiting for athena token API grpc service at %s", tokenAPIServerAddress)
-			errors.CheckError(tokenapiapiclient.WaitForTokenAPIService(ctx, tokenAPIServerAddress))
-			log.Infof("athena token API grpc service is ready at %s", tokenAPIServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
 				ContentTypes:          contentTypesList,

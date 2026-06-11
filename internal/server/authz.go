@@ -193,6 +193,8 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/tokenapi.TokenAPIService/ListProjectReports":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "project-reports"),
 	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
 	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
+
+	"/servicestatus.ServiceStatusService/ListServiceStatuses": fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {

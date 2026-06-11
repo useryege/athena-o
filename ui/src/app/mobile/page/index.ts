@@ -13,6 +13,7 @@ export * from './project-reports';
 export * from './projects';
 export * from './settings';
 export * from './settings-shared';
+export * from './service-status';
 export * from './user-info';
 export * from './wallet-blacklists';
 export * from './wallets';

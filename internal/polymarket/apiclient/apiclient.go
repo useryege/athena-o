@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
@@ -20,6 +19,7 @@ var MaxGRPCMessageSize = env.ParseNumFromEnv(common.EnvGRPCMaxSizeMB, 100, 0, ma
 // Clientset represents polymarket api clients.
 type Clientset interface {
 	NewPolymarketServiceClient() (utilio.Closer, PolymarketServiceClient, error)
+	CheckHealth(ctx context.Context) (grpc_health_v1.HealthCheckResponse_ServingStatus, error)
 }
 
 type clientSet struct {
@@ -49,47 +49,17 @@ func NewConnection(address string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func WaitForPolymarketService(ctx context.Context, address string) error {
-	return waitForPolymarketService(ctx, address, time.Second)
-}
-
-func waitForPolymarketService(ctx context.Context, address string, retryInterval time.Duration) error {
-	for {
-		checkCtx, cancel := context.WithTimeout(ctx, retryInterval)
-		err := checkPolymarketServiceHealth(checkCtx, address)
-		cancel()
-		if err == nil {
-			return nil
-		}
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		log.WithError(err).Infof("waiting for athena polymarket grpc service at %s", address)
-
-		timer := time.NewTimer(retryInterval)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return ctx.Err()
-		case <-timer.C:
-		}
-	}
-}
-
-func checkPolymarketServiceHealth(ctx context.Context, address string) error {
-	conn, err := NewConnection(address)
+func (c *clientSet) CheckHealth(ctx context.Context) (grpc_health_v1.HealthCheckResponse_ServingStatus, error) {
+	conn, err := NewConnection(c.address)
 	if err != nil {
-		return err
+		return grpc_health_v1.HealthCheckResponse_UNKNOWN, err
 	}
 	defer utilio.Close(conn)
 
 	client := grpc_health_v1.NewHealthClient(conn)
 	resp, err := client.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 	if err != nil {
-		return err
+		return grpc_health_v1.HealthCheckResponse_UNKNOWN, err
 	}
-	if resp.GetStatus() != grpc_health_v1.HealthCheckResponse_SERVING {
-		return fmt.Errorf("polymarket grpc health status is %s", resp.GetStatus())
-	}
-	return nil
+	return resp.GetStatus(), nil
 }

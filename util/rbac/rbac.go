@@ -58,6 +58,7 @@ const (
 	ResourceWorm          = "worm"
 	ResourcePolymarket    = "polymarket"
 	ResourceTokenAPI      = "tokenapi"
+	ResourceServiceStatus = "service-status"
 
 	// please add new items to Actions
 	ActionGet    = "get"
@@ -76,6 +77,7 @@ var (
 		ResourceWorm,
 		ResourcePolymarket,
 		ResourceTokenAPI,
+		ResourceServiceStatus,
 	}
 	Actions = []string{
 		ActionGet,

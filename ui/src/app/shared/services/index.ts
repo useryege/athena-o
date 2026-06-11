@@ -2,6 +2,7 @@ import {AccountsService} from './accounts-service';
 import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
 import {PolymarketService} from './polymarket-service';
+import {ServiceStatusService} from './service-status-service';
 import {TokenAPIService} from './tokenapi-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
@@ -20,6 +21,7 @@ export interface Services {
     worm: WormService;
     polymarket: PolymarketService;
     notification: NotificationService;
+    serviceStatus: ServiceStatusService;
 }
 
 export const services: Services = {
@@ -32,7 +34,9 @@ export const services: Services = {
     wallet: new WalletService(),
     worm: new WormService(),
     polymarket: new PolymarketService(),
-    notification: new NotificationService()
+    notification: new NotificationService(),
+    serviceStatus: new ServiceStatusService()
 };
 
+export * from './service-status-service';
 export * from './view-preferences-service';

@@ -44,6 +44,7 @@ import (
 	servernotification "github.com/useryege/athena/internal/server/notification"
 	serverpolymarket "github.com/useryege/athena/internal/server/polymarket"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
+	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
@@ -54,6 +55,7 @@ import (
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
+	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/ui"
@@ -384,6 +386,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
 	polymarketpkg.RegisterPolymarketServiceServer(grpcS, server.serviceSet.PolymarketService)
 	tokenapipkg.RegisterTokenAPIServiceServer(grpcS, server.serviceSet.TokenAPIService)
+	servicestatuspkg.RegisterServiceStatusServiceServer(grpcS, server.serviceSet.ServiceStatusService)
 
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
@@ -393,16 +396,17 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 }
 
 type AthenaServiceSet struct {
-	HealthService       *health.Server
-	SessionService      *session.Server
-	SettingsService     *settings.Server
-	AccountService      *account.Server
-	VersionService      *version.Server
-	NotificationService *servernotification.Server
-	WalletService       *serverwallet.Server
-	WormService         *serverworm.Server
-	PolymarketService   *serverpolymarket.Server
-	TokenAPIService     *servertokenapi.Server
+	HealthService        *health.Server
+	SessionService       *session.Server
+	SettingsService      *settings.Server
+	AccountService       *account.Server
+	VersionService       *version.Server
+	NotificationService  *servernotification.Server
+	WalletService        *serverwallet.Server
+	WormService          *serverworm.Server
+	PolymarketService    *serverpolymarket.Server
+	TokenAPIService      *servertokenapi.Server
+	ServiceStatusService *serverservicestatus.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -430,6 +434,13 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset)
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
+	serviceStatusService := serverservicestatus.NewServer(
+		server.NotificationClientset,
+		server.WalletClientset,
+		server.WormClientset,
+		server.PolymarketClientset,
+		server.TokenAPIClientset,
+	)
 
 	// certificateService := certificate.NewServer(a.db, a.enf)
 	// gpgkeyService := gpgkey.NewServer(a.db, a.enf)
@@ -439,16 +450,17 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:       healthService,
-		SessionService:      sessionService,
-		SettingsService:     settingsService,
-		AccountService:      accountService,
-		VersionService:      versionService,
-		NotificationService: notificationService,
-		WalletService:       walletService,
-		WormService:         wormService,
-		PolymarketService:   polymarketService,
-		TokenAPIService:     tokenAPIService,
+		HealthService:        healthService,
+		SessionService:       sessionService,
+		SettingsService:      settingsService,
+		AccountService:       accountService,
+		VersionService:       versionService,
+		NotificationService:  notificationService,
+		WalletService:        walletService,
+		WormService:          wormService,
+		PolymarketService:    polymarketService,
+		TokenAPIService:      tokenAPIService,
+		ServiceStatusService: serviceStatusService,
 	}
 }
 
@@ -736,6 +748,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, polymarketpkg.RegisterPolymarketServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenAPIServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, projectpkg.RegisterProjectServiceHandler, gwmux, conn)
