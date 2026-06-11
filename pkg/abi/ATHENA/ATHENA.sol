@@ -27,14 +27,6 @@ interface IPancakeFactoryView {
  * @author yege
  */
 contract Athena {
-    struct Token {
-        bool isValidERC20;
-        string name;
-        string symbol;
-        uint8 decimals;
-        uint256 totalSupply;
-    }
-
     struct TokenValidation {
         bool isValidERC20;
         string name;
@@ -78,7 +70,7 @@ contract Athena {
     struct ProjectState {
         address tokenContract;
         uint256 updatedAt;
-        Token token;
+        TokenValidation token;
         Pair wethPair;
         Pair usdtPair;
     }
@@ -141,20 +133,7 @@ contract Athena {
     function ValidateERC20(address[] calldata tokenContracts) external view returns (TokenValidation[] memory results) {
         results = new TokenValidation[](tokenContracts.length);
         for (uint256 i = 0; i < tokenContracts.length;) {
-            Token memory token = _getToken(tokenContracts[i]);
-            results[i].isValidERC20 = token.isValidERC20;
-            results[i].name = token.name;
-            results[i].symbol = token.symbol;
-            results[i].decimals = token.decimals;
-            results[i].totalSupply = token.totalSupply;
-            if (token.isValidERC20) {
-                if (tokenContracts[i] != wethContract) {
-                    results[i].wethPair = _pairFor(tokenContracts[i], wethContract);
-                }
-                if (tokenContracts[i] != usdtContract) {
-                    results[i].usdtPair = _pairFor(tokenContracts[i], usdtContract);
-                }
-            }
+            results[i] = _getToken(tokenContracts[i]);
             unchecked {
                 i++;
             }
@@ -231,29 +210,23 @@ contract Athena {
         view
         returns (SimulationState memory state)
     {
-        Token memory token = _getToken(tokenContract);
+        TokenValidation memory token = _getToken(tokenContract);
         if (!token.isValidERC20) {
             return state;
         }
 
         (, state.deadAllowance) = _safeAllowance(tokenContract, DEAD_ADDRESS, msgCaller);
         (, state.zeroAllowance) = _safeAllowance(tokenContract, ZERO_ADDRESS, msgCaller);
-        if (tokenContract != wethContract) {
-            Pair memory wethPair = _getPairWithDefaultLockers(tokenContract, wethContract);
-            if (wethPair.isCreated) {
-                (, state.wethPairAllowance) = _safeAllowance(tokenContract, wethPair.contractAddress, msgCaller);
-            }
+        if (token.wethPair.code.length > 0) {
+            (, state.wethPairAllowance) = _safeAllowance(tokenContract, token.wethPair, msgCaller);
         }
-        if (tokenContract != usdtContract) {
-            Pair memory usdtPair = _getPairWithDefaultLockers(tokenContract, usdtContract);
-            if (usdtPair.isCreated) {
-                (, state.usdtPairAllowance) = _safeAllowance(tokenContract, usdtPair.contractAddress, msgCaller);
-            }
+        if (token.usdtPair.code.length > 0) {
+            (, state.usdtPairAllowance) = _safeAllowance(tokenContract, token.usdtPair, msgCaller);
         }
         (, state.callerBalance) = _safeBalanceOf(tokenContract, msgCaller);
     }
 
-    function _getToken(address tokenContract) private view returns (Token memory token) {
+    function _getToken(address tokenContract) private view returns (TokenValidation memory token) {
         bool nameOk;
         bool symbolOk;
         bool decimalsOk;
@@ -278,6 +251,15 @@ contract Athena {
             && bytes(token.name).length > 0
             && symbolOk
             && bytes(token.symbol).length > 0;
+
+        if (token.isValidERC20) {
+            if (tokenContract != wethContract) {
+                token.wethPair = _pairFor(tokenContract, wethContract);
+            }
+            if (tokenContract != usdtContract) {
+                token.usdtPair = _pairFor(tokenContract, usdtContract);
+            }
+        }
     }
 
     function _getWalletBalanceState(address wallet) private view returns (WalletBalanceState memory state) {
