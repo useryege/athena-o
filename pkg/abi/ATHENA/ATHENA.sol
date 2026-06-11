@@ -56,6 +56,8 @@ contract Athena {
         uint256 quoteBalance;
         // QuoteBalance transfer to usdt value
         uint256 quoteUsdtValue;
+        // quoteUsdtValue scaled by USDT decimals to integer
+        uint256 quoteUsdtValueInt;
         // Reserves of the pair
         uint112 reserve0;
         uint112 reserve1;
@@ -107,6 +109,7 @@ contract Athena {
     address private immutable factoryContract;
     address private immutable wethContract;
     address private immutable usdtContract;
+    uint8 private immutable usdtDecimals;
     bytes32 private immutable initCodePairHash;
     address private immutable v2pairFeeToAddress;
 
@@ -129,6 +132,8 @@ contract Athena {
             revert("Invalid chain id");
         }
         initCodePairHash = IPancakeFactoryView(factoryContract).INIT_CODE_PAIR_HASH();
+        (bool usdtDecimalsOk, uint8 decimals) = _safeUint8(usdtContract, IERC20View.decimals.selector);
+        usdtDecimals = usdtDecimalsOk && decimals > 0 ? decimals : (chainId == 1 ? uint8(6) : uint8(18));
     }
 
     function ValidateERC20(address[] calldata tokenContracts) external view returns (TokenValidation[] memory results) {
@@ -200,10 +205,19 @@ contract Athena {
 
         if (state.usdtPair.isCreated) {
             state.usdtPair.quoteUsdtValue = state.usdtPair.quoteBalance;
+            state.usdtPair.quoteUsdtValueInt = _toIntegerByDecimals(state.usdtPair.quoteUsdtValue, usdtDecimals);
         }
         if (state.wethPair.isCreated) {
             state.wethPair.quoteUsdtValue = _quoteToUsdtValue(state.wethPair.quoteBalance, wethContract);
+            state.wethPair.quoteUsdtValueInt = _toIntegerByDecimals(state.wethPair.quoteUsdtValue, usdtDecimals);
         }
+    }
+
+    function _toIntegerByDecimals(uint256 value, uint8 decimals) private pure returns (uint256) {
+        if (decimals == 0) {
+            return value;
+        }
+        return value / (10 ** uint256(decimals));
     }
 
     function _getWalletSimulationState(address tokenContract, address msgCaller)
