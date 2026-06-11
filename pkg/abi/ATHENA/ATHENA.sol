@@ -65,7 +65,6 @@ contract Athena {
         uint256 quoteUsdtValueInt;
         // Last swap timestamp from pair getReserves()
         uint32 lastSwapTimestamp;
-
     }
 
 
