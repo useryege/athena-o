@@ -19,15 +19,18 @@ const (
 	wormLiveEventNotificationTopic  = "[WORM] 开赛通知"
 	wormPriceAlert80Topic           = "[WORM] 80/20 赔率"
 	wormPriceAlert90Topic           = "[WORM] 90/10 赔率"
+	wormPriceAlert95Topic           = "[WORM] 95/5 赔率"
 	wormNewEventNotificationSource  = "worm.new-event"
 	wormLiveEventNotificationSource = "worm.live-event"
 	wormPriceAlert80Source          = "worm.price-alert-80-20"
 	wormPriceAlert90Source          = "worm.price-alert-90-10"
+	wormPriceAlert95Source          = "worm.price-alert-95-5"
 	wormNotificationSendTimeout     = 10 * time.Second
 
 	wormPriceAlertBandNone = "none"
 	wormPriceAlertBandA    = "a"
 	wormPriceAlertBandB    = "b"
+	wormPriceAlertBandC    = "c"
 )
 
 type wormNotification struct {
@@ -102,12 +105,18 @@ func newWormPriceAlertNotification(market wormstore.WormMarket, band string) wor
 	alertBand := "80/20 ([0.1, 0.2] or [0.8, 0.9))"
 	severity := notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING
 	titlePrefix := "Worm 80/20 price alert"
-	if band == wormPriceAlertBandB {
+	switch band {
+	case wormPriceAlertBandB:
 		topic = wormPriceAlert90Topic
 		source = wormPriceAlert90Source
-		alertBand = "90/10 ([0, 0.1) or [0.9, 1])"
-		severity = notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_CRITICAL
+		alertBand = "90/10 ((0.05, 0.1) or [0.9, 0.95))"
 		titlePrefix = "Worm 90/10 price alert"
+	case wormPriceAlertBandC:
+		topic = wormPriceAlert95Topic
+		source = wormPriceAlert95Source
+		alertBand = "95/5 ([0, 0.05] or [0.95, 1])"
+		severity = notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_CRITICAL
+		titlePrefix = "Worm 95/5 price alert"
 	}
 	body := strings.Join([]string{
 		fmt.Sprintf("Event: %s", eventTitle),

@@ -623,6 +623,8 @@ func classifyWormPriceAlertBand(value string) string {
 		return wormPriceAlertBandNone
 	}
 	switch {
+	case price <= 0.05 || price >= 0.95:
+		return wormPriceAlertBandC
 	case price < 0.1 || price >= 0.9:
 		return wormPriceAlertBandB
 	case price <= 0.2 || price >= 0.8:
