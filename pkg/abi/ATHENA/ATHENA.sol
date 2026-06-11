@@ -42,11 +42,18 @@ contract Athena {
         uint256 totalSupply;
         // Locked liquidity amount
         uint256 lockedLiquidity;
-        // Whether the pair is remove liquidity
-        bool isRemoveLiquidity;
         // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
         uint256 feeAddressHoldLiquidityBalance;
         uint256 feeAddressHoldLiquidityRatio;
+    }
+
+    struct TokenReport {
+        bool isValidERC20;
+    }
+
+    struct PairReport {
+        // Whether the pair is remove liquidity
+        bool isRemoveLiquidity;
     }
 
     struct Pair {
@@ -72,8 +79,11 @@ contract Athena {
         address tokenContract;
         uint256 updatedAt;
         Token token;
+        TokenReport tokenReport;
         Pair wethPair;
+        PairReport wethReport;
         Pair usdtPair;
+        PairReport usdtReport;
     }
 
     struct WalletAssetState {
@@ -191,6 +201,7 @@ contract Athena {
         state.tokenContract = tokenContract;
         state.updatedAt = block.timestamp;
         state.token = _getToken(tokenContract);
+        state.tokenReport = _getTokenReport(state.token);
 
         if (!state.token.isValidERC20 || tokenContract == wethContract) {
             return state;
@@ -204,10 +215,29 @@ contract Athena {
         if (state.usdtPair.isCreated) {
             state.usdtPair.quoteUsdtValue = state.usdtPair.quoteBalance;
             state.usdtPair.quoteUsdtValueInt = _toIntegerByDecimals(state.usdtPair.quoteUsdtValue, usdtDecimals);
+            state.usdtReport = _getPairReport(state.usdtPair.liquidityState);
         }
         if (state.wethPair.isCreated) {
             state.wethPair.quoteUsdtValue = _quoteToUsdtValue(state.wethPair.quoteBalance, wethContract);
             state.wethPair.quoteUsdtValueInt = _toIntegerByDecimals(state.wethPair.quoteUsdtValue, usdtDecimals);
+            state.wethReport = _getPairReport(state.wethPair.liquidityState);
+        }
+    }
+
+    function _getTokenReport(Token memory token) private pure returns (TokenReport memory report) {
+        report.isValidERC20 = token.isValidERC20;
+    }
+
+    function _getPairReport(PairLiquidityState memory liquidityState)
+        private
+        pure
+        returns (PairReport memory report)
+    {
+        if (liquidityState.totalSupply > 0) {
+            report.isRemoveLiquidity = _isRemoveLiquidity(
+                liquidityState.totalSupply,
+                liquidityState.feeAddressHoldLiquidityBalance
+            );
         }
     }
 
@@ -316,10 +346,6 @@ contract Athena {
         liquidityState.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pairContract);
         (, liquidityState.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pairContract, v2pairFeeToAddress);
         if (liquidityState.totalSupply > 0) {
-            liquidityState.isRemoveLiquidity = _isRemoveLiquidity(
-                liquidityState.totalSupply,
-                liquidityState.feeAddressHoldLiquidityBalance
-            );
             liquidityState.feeAddressHoldLiquidityRatio =
                 liquidityState.feeAddressHoldLiquidityBalance * 100 / liquidityState.totalSupply;
         }
