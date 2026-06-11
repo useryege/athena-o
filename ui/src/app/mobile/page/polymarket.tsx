@@ -275,9 +275,6 @@ const MoneylinePanel = (props: {
     }
     return (
         <div className='sports-live-moneyline'>
-            <Typography.Text className='sports-live-moneyline__title' strong={true}>
-                Moneyline
-            </Typography.Text>
             <div className='sports-live-moneyline__rows'>
                 {options.map(option => (
                     <div className='sports-live-moneyline__row' key={option.outcome}>
