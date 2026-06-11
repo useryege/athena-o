@@ -58,10 +58,8 @@ contract Athena {
         uint256 quoteUsdtValue;
         // quoteUsdtValue scaled by USDT decimals to integer
         uint256 quoteUsdtValueInt;
-        // Reserves of the pair
-        uint112 reserve0;
-        uint112 reserve1;
-        uint32 blockTimestampLast;
+        // Last swap timestamp from pair getReserves()
+        uint32 lastSwapTimestamp;
         // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
         uint256 feeAddressHoldLiquidityBalance;
         uint256 feeAddressHoldLiquidityRatio;
@@ -305,7 +303,7 @@ contract Athena {
         pair.token0 = _safeAddress(pair.pairContract, IUniswapV2PairView.token0.selector);
         pair.token1 = _safeAddress(pair.pairContract, IUniswapV2PairView.token1.selector);
         (, pair.totalSupply) = _safeUint256(pair.pairContract, IUniswapV2PairView.totalSupply.selector);
-        (pair.reserve0, pair.reserve1, pair.blockTimestampLast) = _safeReserves(pair.pairContract);
+        (, , pair.lastSwapTimestamp) = _safeReserves(pair.pairContract);
 
         (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.pairContract);
         (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.pairContract);
