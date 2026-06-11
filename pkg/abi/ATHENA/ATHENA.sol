@@ -37,11 +37,7 @@ contract Athena {
         address usdtPair;
     }
 
-    struct Pair {
-        // Address of the pair contract
-        address pairContract;
-        // Whether the pair is created
-        bool isCreated;
+    struct PairLiquidityState {
         // Total supply of the pair
         uint256 totalSupply;
         // Locked liquidity amount
@@ -51,8 +47,14 @@ contract Athena {
         // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
         uint256 feeAddressHoldLiquidityBalance;
         uint256 feeAddressHoldLiquidityRatio;
+    }
 
-
+    struct Pair {
+        // Address of the pair contract
+        address pairContract;
+        // Whether the pair is created
+        bool isCreated;
+        PairLiquidityState liquidityState;
         // BalanceOf(tokenContract, pair) baseTokenContract can only be tokenContract
         uint256 baseBalance;
         // BalanceOf(quoteTokenContract, pair)  quoteTokenContract can only be weth or usdt
@@ -299,17 +301,21 @@ contract Athena {
             return pair;
         }
 
-        (, pair.totalSupply) = _safeUint256(pair.pairContract, IUniswapV2PairView.totalSupply.selector);
+        (, pair.liquidityState.totalSupply) = _safeUint256(pair.pairContract, IUniswapV2PairView.totalSupply.selector);
         (, , pair.lastSwapTimestamp) = _safeReserves(pair.pairContract);
 
         (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.pairContract);
         (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.pairContract);
-        pair.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pair.pairContract);
+        pair.liquidityState.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pair.pairContract);
 
-        (, pair.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.pairContract, v2pairFeeToAddress);
-        if (pair.totalSupply > 0) {
-            pair.isRemoveLiquidity = _isRemoveLiquidity(pair.totalSupply, pair.feeAddressHoldLiquidityBalance);
-            pair.feeAddressHoldLiquidityRatio = pair.feeAddressHoldLiquidityBalance * 100 / pair.totalSupply;
+        (, pair.liquidityState.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.pairContract, v2pairFeeToAddress);
+        if (pair.liquidityState.totalSupply > 0) {
+            pair.liquidityState.isRemoveLiquidity = _isRemoveLiquidity(
+                pair.liquidityState.totalSupply,
+                pair.liquidityState.feeAddressHoldLiquidityBalance
+            );
+            pair.liquidityState.feeAddressHoldLiquidityRatio =
+                pair.liquidityState.feeAddressHoldLiquidityBalance * 100 / pair.liquidityState.totalSupply;
         }
     }
 
