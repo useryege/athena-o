@@ -187,3 +187,8 @@ prod-hot-deploy-remote: prod-build-local
 .PHONY: prod-destroy-remote
 prod-destroy-remote:
 	PROD_IMAGE=$(PROD_IMAGE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) bash ./hack/prod-remote-deploy.sh destroy
+
+.PHONY: cm
+cm:
+	git add .
+	git commit -m "commit"
