@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS worm_market (
   last_seen_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  price_alert_band TEXT NOT NULL DEFAULT 'none',
   CONSTRAINT worm_market_condition_id_not_empty CHECK (btrim(condition_id) <> ''),
   CONSTRAINT worm_market_state_open CHECK (state = 'open'),
   CONSTRAINT worm_market_category_sports CHECK (category = 'sports'),
@@ -31,7 +32,8 @@ CREATE TABLE IF NOT EXISTS worm_market (
   CONSTRAINT worm_market_live_state_valid CHECK (live_state IN ('live', 'not_live', 'unknown')),
   CONSTRAINT worm_market_created_nonnegative CHECK (created >= 0),
   CONSTRAINT worm_market_raw_object CHECK (jsonb_typeof(raw) = 'object'),
-  CONSTRAINT worm_market_rules_array CHECK (rules IS NULL OR jsonb_typeof(rules) = 'array')
+  CONSTRAINT worm_market_rules_array CHECK (rules IS NULL OR jsonb_typeof(rules) = 'array'),
+  CONSTRAINT worm_market_price_alert_band_valid CHECK (price_alert_band IN ('none', 'a', 'b'))
 );
 
 CREATE TABLE IF NOT EXISTS worm_market_price_history (
