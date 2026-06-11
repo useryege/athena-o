@@ -63,6 +63,7 @@ contract Athena {
         // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
         uint256 feeAddressHoldLiquidityBalance;
         uint256 feeAddressHoldLiquidityRatio;
+        // Whether the pair is remove liquidity
         bool isRemoveLiquidity;
     }
 
