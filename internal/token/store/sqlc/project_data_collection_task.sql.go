@@ -51,8 +51,48 @@ func (q *Queries) DeleteProjectDataCollectionTask(ctx context.Context, arg Delet
 	return result.RowsAffected(), nil
 }
 
+const enqueueProjectDataCollectionTask = `-- name: EnqueueProjectDataCollectionTask :one
+INSERT INTO project_data_collection_task (
+  project_id,
+  data_type
+) VALUES (
+  $1,
+  $2
+)
+ON CONFLICT (project_id, data_type) DO UPDATE
+SET status = 'pending',
+  revision = project_data_collection_task.revision + 1,
+  attempts = 0,
+  next_attempt_at = now(),
+  last_error = NULL,
+  updated_at = now()
+RETURNING project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+`
+
+type EnqueueProjectDataCollectionTaskParams struct {
+	ProjectID int64
+	DataType  string
+}
+
+func (q *Queries) EnqueueProjectDataCollectionTask(ctx context.Context, arg EnqueueProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, enqueueProjectDataCollectionTask, arg.ProjectID, arg.DataType)
+	var i ProjectDataCollectionTask
+	err := row.Scan(
+		&i.ProjectID,
+		&i.DataType,
+		&i.Status,
+		&i.Revision,
+		&i.Attempts,
+		&i.NextAttemptAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getProjectDataCollectionTask = `-- name: GetProjectDataCollectionTask :one
-SELECT project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
+SELECT project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
 FROM project_data_collection_task
 WHERE project_id = $1
   AND data_type = $2
@@ -70,6 +110,7 @@ func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, arg GetProje
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
+		&i.Revision,
 		&i.Attempts,
 		&i.NextAttemptAt,
 		&i.LastError,
@@ -79,32 +120,12 @@ func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, arg GetProje
 	return i, err
 }
 
-const insertProjectDataCollectionTaskIfNotExists = `-- name: InsertProjectDataCollectionTaskIfNotExists :exec
-INSERT INTO project_data_collection_task (
-  project_id,
-  data_type
-) VALUES (
-  $1,
-  $2
-)
-ON CONFLICT (project_id, data_type) DO NOTHING
-`
-
-type InsertProjectDataCollectionTaskIfNotExistsParams struct {
-	ProjectID int64
-	DataType  string
-}
-
-func (q *Queries) InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error {
-	_, err := q.db.Exec(ctx, insertProjectDataCollectionTaskIfNotExists, arg.ProjectID, arg.DataType)
-	return err
-}
-
 const listDueProjectDataCollectionTasks = `-- name: ListDueProjectDataCollectionTasks :many
 SELECT
   t.project_id,
   t.data_type,
   t.status,
+  t.revision,
   t.attempts,
   t.next_attempt_at,
   t.last_error,
@@ -146,6 +167,7 @@ type ListDueProjectDataCollectionTasksRow struct {
 	ProjectID        int64
 	DataType         string
 	Status           string
+	Revision         int64
 	Attempts         int32
 	NextAttemptAt    pgtype.Timestamptz
 	LastError        pgtype.Text
@@ -181,6 +203,7 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 			&i.ProjectID,
 			&i.DataType,
 			&i.Status,
+			&i.Revision,
 			&i.Attempts,
 			&i.NextAttemptAt,
 			&i.LastError,
@@ -213,7 +236,7 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 }
 
 const listProjectDataCollectionTasks = `-- name: ListProjectDataCollectionTasks :many
-SELECT project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
+SELECT project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
 FROM project_data_collection_task
 WHERE ($1::bigint IS NULL OR project_id = $1::bigint)
   AND ($2::text IS NULL OR data_type = $2::text)
@@ -249,6 +272,7 @@ func (q *Queries) ListProjectDataCollectionTasks(ctx context.Context, arg ListPr
 			&i.ProjectID,
 			&i.DataType,
 			&i.Status,
+			&i.Revision,
 			&i.Attempts,
 			&i.NextAttemptAt,
 			&i.LastError,
@@ -263,6 +287,36 @@ func (q *Queries) ListProjectDataCollectionTasks(ctx context.Context, arg ListPr
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockProjectDataCollectionTask = `-- name: LockProjectDataCollectionTask :one
+SELECT project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+FROM project_data_collection_task
+WHERE project_id = $1
+  AND data_type = $2
+FOR UPDATE
+`
+
+type LockProjectDataCollectionTaskParams struct {
+	ProjectID int64
+	DataType  string
+}
+
+func (q *Queries) LockProjectDataCollectionTask(ctx context.Context, arg LockProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, lockProjectDataCollectionTask, arg.ProjectID, arg.DataType)
+	var i ProjectDataCollectionTask
+	err := row.Scan(
+		&i.ProjectID,
+		&i.DataType,
+		&i.Status,
+		&i.Revision,
+		&i.Attempts,
+		&i.NextAttemptAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const markProjectDataCollectionTaskFailed = `-- name: MarkProjectDataCollectionTaskFailed :one
@@ -280,22 +334,31 @@ SET attempts = attempts + 1,
   updated_at = now()
 WHERE project_id = $2
   AND data_type = $3
-RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
+  AND revision = $4
+  AND status = 'pending'
+RETURNING project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
 `
 
 type MarkProjectDataCollectionTaskFailedParams struct {
 	LastError pgtype.Text
 	ProjectID int64
 	DataType  string
+	Revision  int64
 }
 
 func (q *Queries) MarkProjectDataCollectionTaskFailed(ctx context.Context, arg MarkProjectDataCollectionTaskFailedParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, markProjectDataCollectionTaskFailed, arg.LastError, arg.ProjectID, arg.DataType)
+	row := q.db.QueryRow(ctx, markProjectDataCollectionTaskFailed,
+		arg.LastError,
+		arg.ProjectID,
+		arg.DataType,
+		arg.Revision,
+	)
 	var i ProjectDataCollectionTask
 	err := row.Scan(
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
+		&i.Revision,
 		&i.Attempts,
 		&i.NextAttemptAt,
 		&i.LastError,
@@ -305,7 +368,7 @@ func (q *Queries) MarkProjectDataCollectionTaskFailed(ctx context.Context, arg M
 	return i, err
 }
 
-const markProjectDataCollectionTaskSucceeded = `-- name: MarkProjectDataCollectionTaskSucceeded :one
+const markProjectDataCollectionTaskSucceeded = `-- name: MarkProjectDataCollectionTaskSucceeded :execrows
 UPDATE project_data_collection_task
 SET status = 'succeeded',
   next_attempt_at = now(),
@@ -313,28 +376,22 @@ SET status = 'succeeded',
   updated_at = now()
 WHERE project_id = $1
   AND data_type = $2
-RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
+  AND revision = $3
+  AND status = 'pending'
 `
 
 type MarkProjectDataCollectionTaskSucceededParams struct {
 	ProjectID int64
 	DataType  string
+	Revision  int64
 }
 
-func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, markProjectDataCollectionTaskSucceeded, arg.ProjectID, arg.DataType)
-	var i ProjectDataCollectionTask
-	err := row.Scan(
-		&i.ProjectID,
-		&i.DataType,
-		&i.Status,
-		&i.Attempts,
-		&i.NextAttemptAt,
-		&i.LastError,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markProjectDataCollectionTaskSucceeded, arg.ProjectID, arg.DataType, arg.Revision)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertProjectDataCollectionTask = `-- name: UpsertProjectDataCollectionTask :one
@@ -359,7 +416,7 @@ SET status = EXCLUDED.status,
   next_attempt_at = EXCLUDED.next_attempt_at,
   last_error = EXCLUDED.last_error,
   updated_at = now()
-RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
+RETURNING project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
 `
 
 type UpsertProjectDataCollectionTaskParams struct {
@@ -385,6 +442,7 @@ func (q *Queries) UpsertProjectDataCollectionTask(ctx context.Context, arg Upser
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
+		&i.Revision,
 		&i.Attempts,
 		&i.NextAttemptAt,
 		&i.LastError,

@@ -34,6 +34,7 @@ type Querier interface {
 	DeleteProjectSimulationResultsByProject(ctx context.Context, projectID int64) (int64, error)
 	DeleteWalletAssetState(ctx context.Context, arg DeleteWalletAssetStateParams) (int64, error)
 	DeleteWalletBlacklistEntry(ctx context.Context, wallet []byte) (int64, error)
+	EnqueueProjectDataCollectionTask(ctx context.Context, arg EnqueueProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	EnqueueProjectReportEvaluationTask(ctx context.Context, projectID int64) (ProjectReportEvaluationTask, error)
 	GetBytecodeBlacklistEntry(ctx context.Context, codeHash []byte) (BytecodeBlacklist, error)
 	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
@@ -49,7 +50,6 @@ type Querier interface {
 	GetProjectSimulationResult(ctx context.Context, arg GetProjectSimulationResultParams) (ProjectSimulationResult, error)
 	GetWalletAssetState(ctx context.Context, arg GetWalletAssetStateParams) (WalletAssetState, error)
 	GetWalletBlacklistEntry(ctx context.Context, wallet []byte) (WalletBlacklist, error)
-	InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error
 	InsertProjectReportIfNotExists(ctx context.Context, projectID int64) error
 	IsBytecodeBlacklisted(ctx context.Context, codeHash []byte) (bool, error)
 	IsWalletBlacklisted(ctx context.Context, wallet []byte) (bool, error)
@@ -76,9 +76,10 @@ type Querier interface {
 	ListWalletAssetStatesByWallets(ctx context.Context, arg ListWalletAssetStatesByWalletsParams) ([]WalletAssetState, error)
 	ListWalletBlacklistEntries(ctx context.Context) ([]WalletBlacklist, error)
 	LockPendingProjectReportEvaluationTask(ctx context.Context, arg LockPendingProjectReportEvaluationTaskParams) (ProjectReportEvaluationTask, error)
+	LockProjectDataCollectionTask(ctx context.Context, arg LockProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error)
 	MarkProjectDataCollectionTaskFailed(ctx context.Context, arg MarkProjectDataCollectionTaskFailedParams) (ProjectDataCollectionTask, error)
-	MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (ProjectDataCollectionTask, error)
+	MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (int64, error)
 	MarkProjectReportEvaluationTaskFailed(ctx context.Context, arg MarkProjectReportEvaluationTaskFailedParams) (ProjectReportEvaluationTask, error)
 	MarkProjectReportEvaluationTaskSucceeded(ctx context.Context, arg MarkProjectReportEvaluationTaskSucceededParams) error
 	UpdateBytecodeBlacklistNote(ctx context.Context, arg UpdateBytecodeBlacklistNoteParams) (int64, error)

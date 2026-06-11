@@ -88,6 +88,7 @@ type ProjectDataCollectionTask struct {
 	ProjectID     int64
 	DataType      string
 	Status        string
+	Revision      int64
 	Attempts      int32
 	NextAttemptAt pgtype.Timestamptz
 	LastError     pgtype.Text

@@ -220,6 +220,7 @@ CREATE TABLE IF NOT EXISTS project_data_collection_task (
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
+  revision BIGINT NOT NULL DEFAULT 1,
   attempts INT NOT NULL DEFAULT 0,
   next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_error TEXT,
@@ -232,6 +233,8 @@ CREATE TABLE IF NOT EXISTS project_data_collection_task (
     CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
   CONSTRAINT project_data_collection_task_status_allowed
     CHECK (status IN ('pending', 'succeeded', 'failed')),
+  CONSTRAINT project_data_collection_task_revision_positive
+    CHECK (revision > 0),
   CONSTRAINT project_data_collection_task_attempts_range
     CHECK (attempts >= 0 AND attempts <= 5)
 );

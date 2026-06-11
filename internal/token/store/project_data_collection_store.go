@@ -92,64 +92,70 @@ func (s *SQLStore) ListProjectDataCollectionTasks(ctx context.Context, projectID
 	}, nil
 }
 
-func (s *SQLStore) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, projectID int64, dataType string) (*ProjectDataCollectionTask, error) {
+func (s *SQLStore) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, task ProjectDataCollectionTask) (bool, error) {
 	if s == nil || s.pool == nil {
-		return nil, fmt.Errorf("token postgres database is not configured")
+		return false, fmt.Errorf("token postgres database is not configured")
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("begin mark project data collection task succeeded transaction: %w", err)
+		return false, fmt.Errorf("begin mark project data collection task succeeded transaction: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
-	row, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
-		ProjectID: projectID,
-		DataType:  dataType,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("mark project data collection task succeeded: %w", err)
+	if err := lockProjectDataCollectionTask(ctx, q, task); err != nil {
+		return false, err
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
-		return nil, err
+	updated, err := markProjectDataCollectionTaskSucceeded(ctx, q, task)
+	if err != nil {
+		return false, err
+	}
+	if updated {
+		if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
+			return false, err
+		}
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("commit mark project data collection task succeeded transaction: %w", err)
+		return false, fmt.Errorf("commit mark project data collection task succeeded transaction: %w", err)
 	}
-	return mapProjectDataCollectionTask(row), nil
+	return updated, nil
 }
 
-func (s *SQLStore) MarkProjectDataCollectionTaskFailed(ctx context.Context, projectID int64, dataType, lastError string) (*ProjectDataCollectionTask, error) {
+func (s *SQLStore) MarkProjectDataCollectionTaskFailed(ctx context.Context, task ProjectDataCollectionTask, lastError string) (*ProjectDataCollectionTask, bool, error) {
 	if s == nil || s.pool == nil {
-		return nil, fmt.Errorf("token postgres database is not configured")
+		return nil, false, fmt.Errorf("token postgres database is not configured")
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("begin mark project data collection task failed transaction: %w", err)
+		return nil, false, fmt.Errorf("begin mark project data collection task failed transaction: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
 	row, err := q.MarkProjectDataCollectionTaskFailed(ctx, tokensqlc.MarkProjectDataCollectionTaskFailedParams{
-		ProjectID: projectID,
-		DataType:  dataType,
+		ProjectID: task.ProjectID,
+		DataType:  task.DataType,
+		Revision:  task.Revision,
 		LastError: nullableText(lastError),
 	})
-	if err != nil {
-		return nil, fmt.Errorf("mark project data collection task failed: %w", err)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
-		return nil, err
+	if err != nil {
+		return nil, false, fmt.Errorf("mark project data collection task failed: %w", err)
+	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
+		return nil, false, err
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("commit mark project data collection task failed transaction: %w", err)
+		return nil, false, fmt.Errorf("commit mark project data collection task failed transaction: %w", err)
 	}
-	return mapProjectDataCollectionTask(row), nil
+	return mapProjectDataCollectionTask(row), true, nil
 }
 
-func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, projectID int64, payload json.RawMessage, fetchedAt time.Time) (*ProjectAveData, error) {
+func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, task ProjectDataCollectionTask, payload json.RawMessage, fetchedAt time.Time) (*ProjectAveData, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -161,21 +167,21 @@ func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, project
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
+	if err := lockProjectDataCollectionTask(ctx, q, task); err != nil {
+		return nil, err
+	}
 	row, err := q.UpsertProjectAveData(ctx, tokensqlc.UpsertProjectAveDataParams{
-		ProjectID:   projectID,
+		ProjectID:   task.ProjectID,
 		AveResponse: []byte(payload),
 		FetchedAt:   nullableTime(fetchedAt),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project ave data: %w", err)
 	}
-	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
-		ProjectID: projectID,
-		DataType:  ProjectDataCollectionTypeAve,
-	}); err != nil {
-		return nil, fmt.Errorf("mark project ave data collection succeeded: %w", err)
+	if _, err := markProjectDataCollectionTaskSucceeded(ctx, q, task); err != nil {
+		return nil, err
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+	if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -184,7 +190,7 @@ func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, project
 	return mapProjectAveData(row), nil
 }
 
-func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Context, projectID int64, codeHash common.Hash, sourceCode string, fetchedAt time.Time) error {
+func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Context, task ProjectDataCollectionTask, codeHash common.Hash, sourceCode string, fetchedAt time.Time) error {
 	if s == nil || s.pool == nil {
 		return fmt.Errorf("token postgres database is not configured")
 	}
@@ -199,6 +205,9 @@ func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Conte
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
+	if err := lockProjectDataCollectionTask(ctx, q, task); err != nil {
+		return err
+	}
 	if _, err := q.UpdateContractCodeSource(ctx, tokensqlc.UpdateContractCodeSourceParams{
 		CodeHash:            codeHash.Bytes(),
 		SourceCode:          nullableText(sourceCode),
@@ -206,13 +215,10 @@ func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Conte
 	}); err != nil {
 		return fmt.Errorf("update contract code source %s: %w", codeHash.Hex(), err)
 	}
-	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
-		ProjectID: projectID,
-		DataType:  ProjectDataCollectionTypeContractCodeSource,
-	}); err != nil {
-		return fmt.Errorf("mark project contract code source collection succeeded: %w", err)
+	if _, err := markProjectDataCollectionTaskSucceeded(ctx, q, task); err != nil {
+		return err
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+	if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
 		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -221,7 +227,7 @@ func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Conte
 	return nil
 }
 
-func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, projectID int64, payload json.RawMessage, fetchedAt time.Time) (*ProjectChainStateData, error) {
+func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, task ProjectDataCollectionTask, payload json.RawMessage, fetchedAt time.Time) (*ProjectChainStateData, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -233,21 +239,21 @@ func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, proj
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
+	if err := lockProjectDataCollectionTask(ctx, q, task); err != nil {
+		return nil, err
+	}
 	row, err := q.UpsertProjectChainState(ctx, tokensqlc.UpsertProjectChainStateParams{
-		ProjectID:  projectID,
+		ProjectID:  task.ProjectID,
 		ChainState: []byte(payload),
 		FetchedAt:  nullableTime(fetchedAt),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project chain state: %w", err)
 	}
-	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
-		ProjectID: projectID,
-		DataType:  ProjectDataCollectionTypeChainState,
-	}); err != nil {
-		return nil, fmt.Errorf("mark project chain state collection succeeded: %w", err)
+	if _, err := markProjectDataCollectionTaskSucceeded(ctx, q, task); err != nil {
+		return nil, err
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+	if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -256,7 +262,7 @@ func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, proj
 	return mapProjectChainStateData(row), nil
 }
 
-func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context, projectID int64, states []WalletAssetState, fetchedAt time.Time) error {
+func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context, task ProjectDataCollectionTask, states []WalletAssetState, fetchedAt time.Time) error {
 	if s == nil || s.pool == nil {
 		return fmt.Errorf("token postgres database is not configured")
 	}
@@ -271,6 +277,9 @@ func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
+	if err := lockProjectDataCollectionTask(ctx, q, task); err != nil {
+		return err
+	}
 	for _, state := range states {
 		if state.Wallet == (common.Address{}) {
 			continue
@@ -290,13 +299,10 @@ func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context
 			return fmt.Errorf("upsert wallet asset state %s: %w", state.Wallet.Hex(), err)
 		}
 	}
-	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
-		ProjectID: projectID,
-		DataType:  ProjectDataCollectionTypeWalletAssetState,
-	}); err != nil {
-		return fmt.Errorf("mark project wallet asset state collection succeeded: %w", err)
+	if _, err := markProjectDataCollectionTaskSucceeded(ctx, q, task); err != nil {
+		return err
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+	if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
 		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -305,7 +311,7 @@ func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context
 	return nil
 }
 
-func (s *SQLStore) CompleteProjectSimulationResultCollection(ctx context.Context, projectID int64, results []ProjectSimulationResult, fetchedAt time.Time) error {
+func (s *SQLStore) CompleteProjectSimulationResultCollection(ctx context.Context, task ProjectDataCollectionTask, results []ProjectSimulationResult, fetchedAt time.Time) error {
 	if s == nil || s.pool == nil {
 		return fmt.Errorf("token postgres database is not configured")
 	}
@@ -320,12 +326,15 @@ func (s *SQLStore) CompleteProjectSimulationResultCollection(ctx context.Context
 		_ = tx.Rollback(ctx)
 	}()
 	q := tokensqlc.New(tx)
+	if err := lockProjectDataCollectionTask(ctx, q, task); err != nil {
+		return err
+	}
 	for _, result := range results {
 		if result.Wallet == (common.Address{}) {
 			continue
 		}
 		if result.ProjectID == 0 {
-			result.ProjectID = projectID
+			result.ProjectID = task.ProjectID
 		}
 		if result.FetchedAt.IsZero() {
 			result.FetchedAt = fetchedAt
@@ -344,17 +353,36 @@ func (s *SQLStore) CompleteProjectSimulationResultCollection(ctx context.Context
 			return fmt.Errorf("upsert project simulation result %s: %w", result.Wallet.Hex(), err)
 		}
 	}
-	if _, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
-		ProjectID: projectID,
-		DataType:  ProjectDataCollectionTypeSimulationResult,
-	}); err != nil {
-		return fmt.Errorf("mark project simulation result collection succeeded: %w", err)
+	if _, err := markProjectDataCollectionTaskSucceeded(ctx, q, task); err != nil {
+		return err
 	}
-	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+	if err := enqueueProjectReportEvaluationTask(ctx, q, task.ProjectID); err != nil {
 		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit project simulation result collection transaction: %w", err)
 	}
 	return nil
+}
+
+func lockProjectDataCollectionTask(ctx context.Context, q *tokensqlc.Queries, task ProjectDataCollectionTask) error {
+	if _, err := q.LockProjectDataCollectionTask(ctx, tokensqlc.LockProjectDataCollectionTaskParams{
+		ProjectID: task.ProjectID,
+		DataType:  task.DataType,
+	}); err != nil {
+		return fmt.Errorf("lock project data collection task: %w", err)
+	}
+	return nil
+}
+
+func markProjectDataCollectionTaskSucceeded(ctx context.Context, q *tokensqlc.Queries, task ProjectDataCollectionTask) (bool, error) {
+	rows, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
+		ProjectID: task.ProjectID,
+		DataType:  task.DataType,
+		Revision:  task.Revision,
+	})
+	if err != nil {
+		return false, fmt.Errorf("mark project data collection task succeeded: %w", err)
+	}
+	return rows > 0, nil
 }

@@ -52,7 +52,7 @@ func (r *dataCollectorRunner) processAveTask(ctx context.Context, item tokenstor
 		r.markTaskFailed(ctx, item.Task, fmt.Errorf("marshal ave token detail project_id=%d: %w", item.Project.ID, err))
 		return
 	}
-	if _, err := r.opts.store.CompleteProjectAveDataCollection(ctx, item.Project.ID, payload, time.Now().UTC()); err != nil {
+	if _, err := r.opts.store.CompleteProjectAveDataCollection(ctx, item.Task, payload, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, item.Task, err)
 		return
 	}

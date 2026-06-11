@@ -63,7 +63,7 @@ func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, ch
 			r.markTaskFailed(ctx, task.Task, fmt.Errorf("marshal ATHENA chain state project_id=%d: %w", task.Project.ID, err))
 			continue
 		}
-		if _, err := r.opts.store.CompleteProjectChainStateCollection(ctx, task.Project.ID, payload, time.Now().UTC()); err != nil {
+		if _, err := r.opts.store.CompleteProjectChainStateCollection(ctx, task.Task, payload, time.Now().UTC()); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			continue
 		}

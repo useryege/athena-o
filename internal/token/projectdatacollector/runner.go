@@ -86,17 +86,22 @@ func (r *dataCollectorRunner) markTaskFailed(ctx context.Context, task tokenstor
 	if err == nil {
 		return
 	}
-	updated, updateErr := r.opts.store.MarkProjectDataCollectionTaskFailed(ctx, task.ProjectID, task.DataType, err.Error())
+	updated, applied, updateErr := r.opts.store.MarkProjectDataCollectionTaskFailed(ctx, task, err.Error())
 	if updateErr != nil {
 		log.WithError(updateErr).WithFields(log.Fields{
 			"project_id": task.ProjectID,
 			"data_type":  task.DataType,
+			"revision":   task.Revision,
 		}).Error("token project data collector failed to mark task failed")
+		return
+	}
+	if !applied {
 		return
 	}
 	log.WithError(err).WithFields(log.Fields{
 		"project_id": task.ProjectID,
 		"data_type":  task.DataType,
+		"revision":   task.Revision,
 		"attempts":   updated.Attempts,
 		"status":     updated.Status,
 	}).Warn("token project data collector task failed")

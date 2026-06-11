@@ -38,7 +38,7 @@ func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, t
 		return
 	}
 	if len(wallets) == 0 {
-		if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Project.ID, nil, time.Now().UTC()); err != nil {
+		if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, nil, time.Now().UTC()); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			return
 		}
@@ -66,7 +66,7 @@ func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, t
 		return
 	}
 	states := walletAssetStatesFromAthena(task.Project.ChainID, items)
-	if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Project.ID, states, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, states, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

@@ -37,7 +37,7 @@ func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context,
 		return
 	}
 	if record != nil && !record.SourceCodeFetchedAt.IsZero() {
-		if _, err := r.opts.store.MarkProjectDataCollectionTaskSucceeded(ctx, task.Project.ID, tokenstore.ProjectDataCollectionTypeContractCodeSource); err != nil {
+		if _, err := r.opts.store.MarkProjectDataCollectionTaskSucceeded(ctx, task.Task); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			return
 		}
@@ -58,7 +58,7 @@ func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context,
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
-	if err := r.opts.store.CompleteProjectContractCodeSourceCollection(ctx, task.Project.ID, task.Project.CodeHash, sourceCode, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectContractCodeSourceCollection(ctx, task.Task, task.Project.CodeHash, sourceCode, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

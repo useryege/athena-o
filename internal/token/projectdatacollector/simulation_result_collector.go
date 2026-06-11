@@ -73,7 +73,7 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("simulate token project wallets chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
 		return
 	}
-	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Project.ID, results, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, results, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
@@ -86,7 +86,7 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 }
 
 func (r *dataCollectorRunner) completeEmptySimulationResultTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject, reason string) {
-	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Project.ID, nil, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, nil, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

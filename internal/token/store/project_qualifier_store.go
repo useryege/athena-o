@@ -63,11 +63,11 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 		return nil, fmt.Errorf("mark project candidate qualified: %w", err)
 	}
 	for _, dataType := range []string{ProjectDataCollectionTypeAve, ProjectDataCollectionTypeContractCodeSource, ProjectDataCollectionTypeChainState, ProjectDataCollectionTypeWalletAssetState, ProjectDataCollectionTypeSimulationResult} {
-		if err := q.InsertProjectDataCollectionTaskIfNotExists(ctx, tokensqlc.InsertProjectDataCollectionTaskIfNotExistsParams{
+		if _, err := q.EnqueueProjectDataCollectionTask(ctx, tokensqlc.EnqueueProjectDataCollectionTaskParams{
 			ProjectID: row.ID,
 			DataType:  dataType,
 		}); err != nil {
-			return nil, fmt.Errorf("insert project data collection task %s: %w", dataType, err)
+			return nil, fmt.Errorf("enqueue project data collection task %s: %w", dataType, err)
 		}
 	}
 	if err := q.InsertProjectReportIfNotExists(ctx, row.ID); err != nil {

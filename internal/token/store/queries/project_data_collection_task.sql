@@ -22,7 +22,7 @@ SET status = EXCLUDED.status,
   updated_at = now()
 RETURNING *;
 
--- name: InsertProjectDataCollectionTaskIfNotExists :exec
+-- name: EnqueueProjectDataCollectionTask :one
 INSERT INTO project_data_collection_task (
   project_id,
   data_type
@@ -30,7 +30,14 @@ INSERT INTO project_data_collection_task (
   @project_id,
   @data_type
 )
-ON CONFLICT (project_id, data_type) DO NOTHING;
+ON CONFLICT (project_id, data_type) DO UPDATE
+SET status = 'pending',
+  revision = project_data_collection_task.revision + 1,
+  attempts = 0,
+  next_attempt_at = now(),
+  last_error = NULL,
+  updated_at = now()
+RETURNING *;
 
 -- name: GetProjectDataCollectionTask :one
 SELECT *
@@ -59,6 +66,7 @@ SELECT
   t.project_id,
   t.data_type,
   t.status,
+  t.revision,
   t.attempts,
   t.next_attempt_at,
   t.last_error,
@@ -89,7 +97,14 @@ WHERE t.data_type = @data_type
 ORDER BY t.next_attempt_at ASC, t.created_at ASC, t.project_id ASC
 LIMIT sqlc.arg('limit');
 
--- name: MarkProjectDataCollectionTaskSucceeded :one
+-- name: LockProjectDataCollectionTask :one
+SELECT *
+FROM project_data_collection_task
+WHERE project_id = @project_id
+  AND data_type = @data_type
+FOR UPDATE;
+
+-- name: MarkProjectDataCollectionTaskSucceeded :execrows
 UPDATE project_data_collection_task
 SET status = 'succeeded',
   next_attempt_at = now(),
@@ -97,7 +112,8 @@ SET status = 'succeeded',
   updated_at = now()
 WHERE project_id = @project_id
   AND data_type = @data_type
-RETURNING *;
+  AND revision = @revision
+  AND status = 'pending';
 
 -- name: MarkProjectDataCollectionTaskFailed :one
 UPDATE project_data_collection_task
@@ -114,6 +130,8 @@ SET attempts = attempts + 1,
   updated_at = now()
 WHERE project_id = @project_id
   AND data_type = @data_type
+  AND revision = @revision
+  AND status = 'pending'
 RETURNING *;
 
 -- name: DeleteProjectDataCollectionTask :execrows
