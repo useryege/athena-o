@@ -41,6 +41,7 @@ paths:
               - OVERALL
               - POLITICS
               - SPORTS
+              - ESPORTS
               - CRYPTO
               - CULTURE
               - MENTIONS

@@ -124,7 +124,10 @@ components:
           description: Whether RFQ (Request for Quote) is enabled for this market
         itode:
           type: boolean
-          description: Whether taker order delay is enabled
+          description: >-
+            Whether taker order delay is enabled for this market. When true,
+            marketable orders are held for the 250 ms taker-delay window before
+            synchronous processing. This field is omitted when false.
         ibce:
           type: boolean
           description: Whether Blockaid check is enabled

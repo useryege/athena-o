@@ -221,6 +221,14 @@ components:
           type: string
         profileImageOptimized:
           type: string
+        isCombo:
+          type: boolean
+          description: >-
+            True when this row is part of a combinatorial (multi-market)
+            position. Flag only — combo detail is not embedded here. The row's
+            conditionId equals the combo's combo_condition_id; pass it to
+            /v1/activity/combos or /v1/positions/combos via market_id to fetch
+            legs and detail. Omitted on non-combo rows.
     ErrorResponse:
       type: object
       properties:

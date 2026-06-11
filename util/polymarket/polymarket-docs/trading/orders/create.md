@@ -608,12 +608,22 @@ A successful order placement returns:
 
 ### Statuses
 
-| Status      | Description                                                 |
-| ----------- | ----------------------------------------------------------- |
-| `live`      | Order resting on the book                                   |
-| `matched`   | Order matched immediately with a resting order              |
-| `delayed`   | Marketable order subject to a matching delay                |
-| `unmatched` | Marketable but failed to delay — placement still successful |
+| Status      | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `live`      | Order resting on the book                                     |
+| `matched`   | Order matched immediately with a resting order                |
+| `delayed`   | Marketable order accepted into an asynchronous matching delay |
+| `unmatched` | Marketable but failed to delay — placement still successful   |
+
+<Note>
+  Selected crypto and finance up/down markets apply a 250 ms taker delay to
+  marketable orders. To check a specific market, call `GET
+      https://clob.polymarket.com/clob-markets/{condition_id}` or SDK
+  `getClobMarketInfo(conditionID)` and look for `itode: true`. The API waits for
+  this short hold and returns the final order result, so these orders usually
+  return `matched`, `live`, or `unmatched` rather than `delayed`. Orders cannot
+  be canceled while they are pending in the delay window.
+</Note>
 
 ### Error Messages
 
