@@ -19,7 +19,7 @@ const (
 	defaultSportsLiveListLimit      = 200
 	maxSportsLiveListLimit          = 1000
 	defaultSportsLiveSyncInterval   = 10 * time.Second
-	defaultSportsLivePriceInterval  = time.Minute
+	defaultSportsLivePriceInterval  = 15 * time.Second
 	defaultSportsLiveEventPageLimit = 500
 	defaultHotMarketListLimit       = 100
 	maxHotMarketListLimit           = 500
