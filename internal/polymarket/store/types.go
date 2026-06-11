@@ -150,3 +150,11 @@ type SportsLivePricePoint struct {
 	Price       float64
 	FetchedAt   time.Time
 }
+
+type SportsLivePriceHistorySeries struct {
+	MarketKey  string
+	TokenID    string
+	Outcome    string
+	Timestamps []int64
+	Prices     []float64
+}

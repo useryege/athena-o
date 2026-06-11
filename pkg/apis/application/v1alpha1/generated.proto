@@ -298,6 +298,18 @@ message PolymarketSportsLiveMarketCardItem {
   optional string sportsMarketType = 14;
 }
 
+message PolymarketSportsLivePriceHistorySeriesItem {
+  optional string marketKey = 1;
+
+  optional string tokenId = 2;
+
+  optional string outcome = 3;
+
+  repeated int64 timestamps = 4;
+
+  repeated double prices = 5;
+}
+
 message PolymarketSportsLiveTeamItem {
   optional string name = 1;
 

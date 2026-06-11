@@ -71,6 +71,17 @@ message ListPolymarketSportsLiveEventsResponse {
   bool stale = 3;
 }
 
+// BatchGetPolymarketSportsLivePriceHistoryRequest queries price history for sports live moneyline markets.
+message BatchGetPolymarketSportsLivePriceHistoryRequest {
+  repeated string market_keys = 1;
+  int32 limit_per_token = 2;
+}
+
+// BatchGetPolymarketSportsLivePriceHistoryResponse returns grouped price history series.
+message BatchGetPolymarketSportsLivePriceHistoryResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLivePriceHistorySeriesItem items = 1;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus);
@@ -86,4 +97,7 @@ service PolymarketService {
 
   // ListPolymarketSportsLiveEvents returns sports live event cards.
   rpc ListPolymarketSportsLiveEvents(ListPolymarketSportsLiveEventsRequest) returns (ListPolymarketSportsLiveEventsResponse);
+
+  // BatchGetPolymarketSportsLivePriceHistory returns price history for sports live moneyline markets.
+  rpc BatchGetPolymarketSportsLivePriceHistory(BatchGetPolymarketSportsLivePriceHistoryRequest) returns (BatchGetPolymarketSportsLivePriceHistoryResponse);
 }

@@ -793,6 +793,73 @@ func (q *Queries) ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Cont
 	return items, nil
 }
 
+const listSportsLivePriceHistoryByMarketKeys = `-- name: ListSportsLivePriceHistoryByMarketKeys :many
+WITH ranked_points AS (
+  SELECT
+    point.market_key,
+    point.token_id,
+    point.outcome,
+    point.price_ts,
+    point.price,
+    row_number() OVER (
+      PARTITION BY point.market_key, point.token_id
+      ORDER BY point.price_ts DESC
+    ) AS row_num
+  FROM polymarket_sports_live_price_point AS point
+  JOIN polymarket_sports_live_market AS market ON market.market_key = point.market_key
+  WHERE point.market_key = ANY($2::text[])
+    AND lower(market.sports_market_type) = 'moneyline'
+)
+SELECT
+  market_key,
+  token_id,
+  outcome,
+  price_ts,
+  price
+FROM ranked_points
+WHERE row_num <= $1::int
+ORDER BY market_key, token_id, price_ts
+`
+
+type ListSportsLivePriceHistoryByMarketKeysParams struct {
+	LimitPerToken int32
+	MarketKeys    []string
+}
+
+type ListSportsLivePriceHistoryByMarketKeysRow struct {
+	MarketKey string
+	TokenID   string
+	Outcome   string
+	PriceTs   pgtype.Timestamptz
+	Price     float64
+}
+
+func (q *Queries) ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error) {
+	rows, err := q.db.Query(ctx, listSportsLivePriceHistoryByMarketKeys, arg.LimitPerToken, arg.MarketKeys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSportsLivePriceHistoryByMarketKeysRow
+	for rows.Next() {
+		var i ListSportsLivePriceHistoryByMarketKeysRow
+		if err := rows.Scan(
+			&i.MarketKey,
+			&i.TokenID,
+			&i.Outcome,
+			&i.PriceTs,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertPolymarketSyncState = `-- name: UpsertPolymarketSyncState :exec
 INSERT INTO polymarket_sync_state (sync_name, last_success_at)
 VALUES ($1, $2)

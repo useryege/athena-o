@@ -1,6 +1,7 @@
 import {LinkOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
 import {Button, Space, Tag, Tooltip, Typography} from 'antd';
+import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
 import {
@@ -9,6 +10,7 @@ import {
     PolymarketRealtimeMarketItem,
     PolymarketSportsLiveEventCardItem,
     PolymarketSportsLiveMarketCardItem,
+    PolymarketSportsLivePriceHistorySeriesItem,
     PolymarketSportsLiveTeamItem
 } from '../../shared/services/polymarket-service';
 import {fmt, fmtNumber} from './shared';
@@ -106,6 +108,28 @@ const isMoneylineMarket = (market: PolymarketSportsLiveMarketCardItem) => {
 
 const moneylineMarket = (item: PolymarketSportsLiveEventCardItem) => item.markets.find(isMoneylineMarket) || item.markets[0];
 
+const moneylineMarketKeys = (items: PolymarketSportsLiveEventCardItem[] = []) => {
+    const keys = new Set<string>();
+    items.forEach(item => {
+        const marketKey = moneylineMarket(item)?.marketKey;
+        if (marketKey) {
+            keys.add(marketKey);
+        }
+    });
+    return Array.from(keys);
+};
+
+const resolvedPriceHistory = (history: PolymarketSportsLivePriceHistorySeriesItem[] = [], outcome: string, index: number) => {
+    const outcomeKey = normalizedTeamKey(outcome);
+    if (outcomeKey) {
+        const matched = history.find(item => normalizedTeamKey(item.outcome) === outcomeKey);
+        if (matched) {
+            return matched;
+        }
+    }
+    return history[index];
+};
+
 const polymarketEventURL = (item: PolymarketSportsLiveEventCardItem) => {
     const slug = item.slug.trim();
     return slug ? `https://polymarket.com/event/${encodeURIComponent(slug)}` : '';
@@ -132,29 +156,64 @@ const PolymarketEventLink = (props: {item: PolymarketSportsLiveEventCardItem}) =
     );
 };
 
-const MoneylineOutcomeBlocks = (props: {market?: PolymarketSportsLiveMarketCardItem; teams?: PolymarketSportsLiveTeamItem[]}) => {
+const MoneylineSparkline = (props: {series?: PolymarketSportsLivePriceHistorySeriesItem}) => {
+    const prices = (props.series?.prices || []).filter(value => Number.isFinite(value));
+    if (prices.length < 2) {
+        return null;
+    }
+
+    const width = 104;
+    const height = 32;
+    const padding = 3;
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min;
+    const points = prices
+        .map((price, index) => {
+            const x = padding + (index / Math.max(prices.length - 1, 1)) * (width - padding * 2);
+            const normalized = range === 0 ? 0.5 : (price - min) / range;
+            const y = padding + (1 - normalized) * (height - padding * 2);
+            return `${x.toFixed(2)},${y.toFixed(2)}`;
+        })
+        .join(' ');
+
+    return (
+        <svg className='moneyline-sparkline' viewBox={`0 0 ${width} ${height}`} aria-hidden='true' focusable='false'>
+            <polyline points={points} />
+        </svg>
+    );
+};
+
+const MoneylineOutcomeBlocks = (props: {
+    market?: PolymarketSportsLiveMarketCardItem;
+    teams?: PolymarketSportsLiveTeamItem[];
+    history?: PolymarketSportsLivePriceHistorySeriesItem[];
+}) => {
     const options = moneylineOptions(props.market, props.teams);
     if (options.length === 0) {
         return <Typography.Text type='secondary'>-</Typography.Text>;
     }
     return (
         <div className='moneyline-outcomes'>
-            {options.map(option => (
+            {options.map((option, index) => (
                 <div className='moneyline-outcome' key={option.outcome}>
                     <div className='moneyline-outcome__team'>
                         {option.logo && <img className='moneyline-outcome__logo' src={option.logo} alt='' onError={event => (event.currentTarget.style.display = 'none')} />}
                         <Typography.Text className='moneyline-outcome__name'>{option.outcome}</Typography.Text>
                     </div>
-                    <Typography.Text className='moneyline-outcome__price' strong={true}>
-                        {option.price}
-                    </Typography.Text>
+                    <div className='moneyline-outcome__market'>
+                        <Typography.Text className='moneyline-outcome__price' strong={true}>
+                            {option.price}
+                        </Typography.Text>
+                        <MoneylineSparkline series={resolvedPriceHistory(props.history, option.outcome, index)} />
+                    </div>
                 </div>
             ))}
         </div>
     );
 };
 
-const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) => {
+const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
     const moneyline = moneylineMarket(props.item);
 
     return (
@@ -181,7 +240,7 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) =
                 <Typography.Text className='moneyline-outcomes-label' strong={true}>
                     Moneyline
                 </Typography.Text>
-                <MoneylineOutcomeBlocks market={moneyline} teams={props.item.teams} />
+                <MoneylineOutcomeBlocks market={moneyline} teams={props.item.teams} history={props.history} />
             </div>
         </>
     );
@@ -189,6 +248,26 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) =
 
 export const PolymarketSportsLivePage = () => {
     const events = useAsyncData(() => services.polymarket.listSportsLiveEvents(200), []);
+    const marketKeys = React.useMemo(() => moneylineMarketKeys(events.data?.items), [events.data?.items]);
+    const marketKeySignature = React.useMemo(() => marketKeys.join('|'), [marketKeys]);
+    const history = useAsyncData(() => {
+        if (marketKeys.length === 0) {
+            return Promise.resolve({items: []}) as Promise<{items: PolymarketSportsLivePriceHistorySeriesItem[]}> & {abort?: () => void};
+        }
+        return services.polymarket.batchGetSportsLivePriceHistory(marketKeys, 360);
+    }, [marketKeySignature]);
+    const historyByMarketKey = React.useMemo(() => {
+        const out = new Map<string, PolymarketSportsLivePriceHistorySeriesItem[]>();
+        if (history.error) {
+            return out;
+        }
+        (history.data?.items || []).forEach(item => {
+            const items = out.get(item.marketKey) || [];
+            items.push(item);
+            out.set(item.marketKey, items);
+        });
+        return out;
+    }, [history.data?.items, history.error]);
     const eventColumns: ColumnsType<PolymarketSportsLiveEventCardItem> = [
         {
             title: 'Event',
@@ -210,7 +289,10 @@ export const PolymarketSportsLivePage = () => {
         {title: 'Score', dataIndex: 'score'},
         {
             title: 'Moneyline',
-            render: item => <MoneylineOutcomeBlocks market={moneylineMarket(item)} teams={item.teams} />
+            render: item => {
+                const moneyline = moneylineMarket(item);
+                return <MoneylineOutcomeBlocks market={moneyline} teams={item.teams} history={historyByMarketKey.get(moneyline?.marketKey || '')} />;
+            }
         },
         {title: 'Volume', render: item => fmtNumber(item.volume)},
         {title: 'Liquidity', render: item => fmtNumber(item.liquidity)}
@@ -227,7 +309,10 @@ export const PolymarketSportsLivePage = () => {
                 items={events.data?.items || []}
                 columns={eventColumns}
                 loading={events.loading}
-                card={item => <SportsLiveEventCard item={item} />}
+                card={item => {
+                    const moneyline = moneylineMarket(item);
+                    return <SportsLiveEventCard item={item} history={historyByMarketKey.get(moneyline?.marketKey || '')} />;
+                }}
             />
         </AppPage>
     );

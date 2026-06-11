@@ -120,6 +120,14 @@ type PolymarketSportsLiveMarketCardItem struct {
 	SportsMarketType string  `protobuf:"bytes,14,opt,name=sportsMarketType" json:"sportsMarketType"`
 }
 
+type PolymarketSportsLivePriceHistorySeriesItem struct {
+	MarketKey  string    `protobuf:"bytes,1,opt,name=marketKey" json:"marketKey"`
+	TokenID    string    `protobuf:"bytes,2,opt,name=tokenId" json:"tokenId"`
+	Outcome    string    `protobuf:"bytes,3,opt,name=outcome" json:"outcome"`
+	Timestamps []int64   `protobuf:"varint,4,rep,name=timestamps" json:"timestamps"`
+	Prices     []float64 `protobuf:"fixed64,5,rep,name=prices" json:"prices"`
+}
+
 type PolymarketSportsLiveTeamItem struct {
 	Name         string `protobuf:"bytes,1,opt,name=name" json:"name"`
 	Logo         string `protobuf:"bytes,2,opt,name=logo" json:"logo"`

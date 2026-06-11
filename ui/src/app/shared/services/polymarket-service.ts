@@ -172,10 +172,22 @@ export interface PolymarketSportsLiveEventCardItem {
     teams: PolymarketSportsLiveTeamItem[];
 }
 
+export interface PolymarketSportsLivePriceHistorySeriesItem {
+    marketKey: string;
+    tokenId: string;
+    outcome: string;
+    timestamps: number[];
+    prices: number[];
+}
+
 export interface ListPolymarketSportsLiveEventsResult {
     items: PolymarketSportsLiveEventCardItem[];
     fetchedAt?: number;
     stale?: boolean;
+}
+
+export interface BatchGetPolymarketSportsLivePriceHistoryResult {
+    items: PolymarketSportsLivePriceHistorySeriesItem[];
 }
 
 const readValue = (item: any, ...names: string[]) => {
@@ -193,6 +205,13 @@ const readNumber = (item: any, ...names: string[]) => {
     return Number.isFinite(value) ? value : undefined;
 };
 const readBoolean = (item: any, ...names: string[]) => Boolean(readValue(item, ...names));
+const readNumberArray = (item: any, ...names: string[]) => {
+    const value = readValue(item, ...names);
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.map(next => Number(next)).filter(next => Number.isFinite(next));
+};
 
 const normalizeSportsLiveMarketCard = (item: any): PolymarketSportsLiveMarketCardItem => ({
     marketKey: readString(item, 'marketKey', 'market_key'),
@@ -240,6 +259,14 @@ const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardI
         teams: Array.isArray(teams) ? teams.map(normalizeSportsLiveTeam) : []
     };
 };
+
+const normalizeSportsLivePriceHistorySeries = (item: any): PolymarketSportsLivePriceHistorySeriesItem => ({
+    marketKey: readString(item, 'marketKey', 'market_key'),
+    tokenId: readString(item, 'tokenId', 'token_id'),
+    outcome: readString(item, 'outcome'),
+    timestamps: readNumberArray(item, 'timestamps'),
+    prices: readNumberArray(item, 'prices')
+});
 
 const normalizeHotMarketToken = (item: any): PolymarketHotMarketTokenItem => ({
     tokenId: readString(item, 'tokenId', 'token_id'),
@@ -419,6 +446,18 @@ export class PolymarketService {
                 items: (body.items || []).map(normalizeSportsLiveEventCard),
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public batchGetSportsLivePriceHistory(marketKeys: string[], limitPerToken = 360): Promise<BatchGetPolymarketSportsLivePriceHistoryResult> & {abort?: () => void} {
+        const req = requests.post('/polymarket/sports/live/price-history:batchGet').send({market_keys: marketKeys, limit_per_token: limitPerToken});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeSportsLivePriceHistorySeries)
             };
         }) as any;
         promise.abort = () => req.abort();

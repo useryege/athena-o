@@ -40,6 +40,10 @@ func (m *PolymarketSportsLiveEventCardItem) Reset() { *m = PolymarketSportsLiveE
 
 func (m *PolymarketSportsLiveMarketCardItem) Reset() { *m = PolymarketSportsLiveMarketCardItem{} }
 
+func (m *PolymarketSportsLivePriceHistorySeriesItem) Reset() {
+	*m = PolymarketSportsLivePriceHistorySeriesItem{}
+}
+
 func (m *PolymarketSportsLiveTeamItem) Reset() { *m = PolymarketSportsLiveTeamItem{} }
 
 func (m *PolymarketStatus) Reset() { *m = PolymarketStatus{} }
@@ -1058,6 +1062,60 @@ func (m *PolymarketSportsLiveMarketCardItem) MarshalToSizedBuffer(dAtA []byte) (
 	i -= len(m.ConditionID)
 	copy(dAtA[i:], m.ConditionID)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ConditionID)))
+	i--
+	dAtA[i] = 0x12
+	i -= len(m.MarketKey)
+	copy(dAtA[i:], m.MarketKey)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MarketKey)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *PolymarketSportsLivePriceHistorySeriesItem) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PolymarketSportsLivePriceHistorySeriesItem) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PolymarketSportsLivePriceHistorySeriesItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Prices) > 0 {
+		for iNdEx := len(m.Prices) - 1; iNdEx >= 0; iNdEx-- {
+			f2 := math.Float64bits(float64(m.Prices[iNdEx]))
+			i -= 8
+			encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(f2))
+			i--
+			dAtA[i] = 0x29
+		}
+	}
+	if len(m.Timestamps) > 0 {
+		for iNdEx := len(m.Timestamps) - 1; iNdEx >= 0; iNdEx-- {
+			i = encodeVarintGenerated(dAtA, i, uint64(m.Timestamps[iNdEx]))
+			i--
+			dAtA[i] = 0x20
+		}
+	}
+	i -= len(m.Outcome)
+	copy(dAtA[i:], m.Outcome)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Outcome)))
+	i--
+	dAtA[i] = 0x1a
+	i -= len(m.TokenID)
+	copy(dAtA[i:], m.TokenID)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenID)))
 	i--
 	dAtA[i] = 0x12
 	i -= len(m.MarketKey)
@@ -2475,6 +2533,29 @@ func (m *PolymarketSportsLiveMarketCardItem) Size() (n int) {
 	return n
 }
 
+func (m *PolymarketSportsLivePriceHistorySeriesItem) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.MarketKey)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TokenID)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Outcome)
+	n += 1 + l + sovGenerated(uint64(l))
+	if len(m.Timestamps) > 0 {
+		for _, e := range m.Timestamps {
+			n += 1 + sovGenerated(uint64(e))
+		}
+	}
+	if len(m.Prices) > 0 {
+		n += 9 * len(m.Prices)
+	}
+	return n
+}
+
 func (m *PolymarketSportsLiveTeamItem) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3130,6 +3211,20 @@ func (this *PolymarketSportsLiveMarketCardItem) String() string {
 		`VolumeNum:` + fmt.Sprintf("%v", this.VolumeNum) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`SportsMarketType:` + fmt.Sprintf("%v", this.SportsMarketType) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *PolymarketSportsLivePriceHistorySeriesItem) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&PolymarketSportsLivePriceHistorySeriesItem{`,
+		`MarketKey:` + fmt.Sprintf("%v", this.MarketKey) + `,`,
+		`TokenID:` + fmt.Sprintf("%v", this.TokenID) + `,`,
+		`Outcome:` + fmt.Sprintf("%v", this.Outcome) + `,`,
+		`Timestamps:` + fmt.Sprintf("%v", this.Timestamps) + `,`,
+		`Prices:` + fmt.Sprintf("%v", this.Prices) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -7351,6 +7446,282 @@ func (m *PolymarketSportsLiveMarketCardItem) Unmarshal(dAtA []byte) error {
 			}
 			m.SportsMarketType = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PolymarketSportsLivePriceHistorySeriesItem) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PolymarketSportsLivePriceHistorySeriesItem: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PolymarketSportsLivePriceHistorySeriesItem: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MarketKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MarketKey = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Outcome", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Outcome = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType == 0 {
+				var v int64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowGenerated
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Timestamps = append(m.Timestamps, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowGenerated
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthGenerated
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthGenerated
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.Timestamps) == 0 {
+					m.Timestamps = make([]int64, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v int64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowGenerated
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= int64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Timestamps = append(m.Timestamps, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamps", wireType)
+			}
+		case 5:
+			if wireType == 1 {
+				var v uint64
+				if (iNdEx + 8) > l {
+					return io.ErrUnexpectedEOF
+				}
+				v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+				iNdEx += 8
+				v2 := float64(math.Float64frombits(v))
+				m.Prices = append(m.Prices, v2)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowGenerated
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthGenerated
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthGenerated
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				elementCount = packedLen / 8
+				if elementCount != 0 && len(m.Prices) == 0 {
+					m.Prices = make([]float64, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint64
+					if (iNdEx + 8) > l {
+						return io.ErrUnexpectedEOF
+					}
+					v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+					iNdEx += 8
+					v2 := float64(math.Float64frombits(v))
+					m.Prices = append(m.Prices, v2)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Prices", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

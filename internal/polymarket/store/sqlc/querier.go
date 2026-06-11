@@ -21,6 +21,7 @@ type Querier interface {
 	ListSportsLiveLatestPricePointTimes(ctx context.Context, tokenIds []string) ([]ListSportsLiveLatestPricePointTimesRow, error)
 	ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsLiveMarketsByEventKeysRow, error)
 	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
+	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
 	Ping(ctx context.Context) (int32, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
 }

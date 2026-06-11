@@ -165,11 +165,12 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/worm.WormService/ListWormEvents":                fixedRule(rbac.ResourceWorm, rbac.ActionGet),
 	"/worm.WormService/BatchUpdateWormMarketsIgnored": fixedRule(rbac.ResourceWorm, rbac.ActionUpdate),
 
-	"/polymarket.PolymarketService/GetPolymarketStatus":            fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketHotMarkets":       fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketRealtimeMarkets":  fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketMovers":           fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketSportsLiveEvents": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/GetPolymarketStatus":                      fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ListPolymarketHotMarkets":                 fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ListPolymarketRealtimeMarkets":            fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ListPolymarketMovers":                     fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ListPolymarketSportsLiveEvents":           fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/BatchGetPolymarketSportsLivePriceHistory": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 
 	"/tokenapi.TokenAPIService/GetOptions":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
 	"/tokenapi.TokenAPIService/ListNodeStatuses":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),

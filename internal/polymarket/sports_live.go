@@ -17,6 +17,8 @@ import (
 
 const polymarketEsportsTagID int64 = 64
 const sportsLiveMinEventLiquidity = 10000.0
+const defaultSportsLivePriceHistoryLimitPerToken = 360
+const maxSportsLivePriceHistoryLimitPerToken = 720
 
 var (
 	sportsLiveJSONObject = json.RawMessage(`{}`)
@@ -292,6 +294,59 @@ func (s *Service) ListPolymarketSportsLiveEvents(ctx context.Context, req *apicl
 		resp.Items = append(resp.Items, item)
 	}
 	return resp, nil
+}
+
+func (s *Service) BatchGetPolymarketSportsLivePriceHistory(ctx context.Context, req *apiclient.BatchGetPolymarketSportsLivePriceHistoryRequest) (*apiclient.BatchGetPolymarketSportsLivePriceHistoryResponse, error) {
+	limitPerToken := defaultSportsLivePriceHistoryLimitPerToken
+	if req != nil && req.GetLimitPerToken() > 0 {
+		limitPerToken = int(req.GetLimitPerToken())
+	}
+	if limitPerToken < 1 || limitPerToken > maxSportsLivePriceHistoryLimitPerToken {
+		return nil, status.Errorf(codes.InvalidArgument, "limit_per_token must be between 1 and %d", maxSportsLivePriceHistoryLimitPerToken)
+	}
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "polymarket store is required")
+	}
+
+	marketKeys := uniqueNonEmptyStrings(req.GetMarketKeys())
+	if len(marketKeys) == 0 {
+		return &apiclient.BatchGetPolymarketSportsLivePriceHistoryResponse{}, nil
+	}
+	series, err := s.store.ListSportsLivePriceHistorySeries(ctx, marketKeys, int32(limitPerToken))
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to list sports live price history: %v", err)
+	}
+
+	resp := &apiclient.BatchGetPolymarketSportsLivePriceHistoryResponse{
+		Items: make([]*v1alpha1.PolymarketSportsLivePriceHistorySeriesItem, 0, len(series)),
+	}
+	for _, item := range series {
+		resp.Items = append(resp.Items, &v1alpha1.PolymarketSportsLivePriceHistorySeriesItem{
+			MarketKey:  item.MarketKey,
+			TokenID:    item.TokenID,
+			Outcome:    item.Outcome,
+			Timestamps: item.Timestamps,
+			Prices:     item.Prices,
+		})
+	}
+	return resp, nil
+}
+
+func uniqueNonEmptyStrings(values []string) []string {
+	out := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		next := strings.TrimSpace(value)
+		if next == "" {
+			continue
+		}
+		if _, ok := seen[next]; ok {
+			continue
+		}
+		seen[next] = struct{}{}
+		out = append(out, next)
+	}
+	return out
 }
 
 func sportsLiveTeamsFromRaw(raw json.RawMessage) []*v1alpha1.PolymarketSportsLiveTeamItem {

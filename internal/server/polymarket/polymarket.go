@@ -123,3 +123,23 @@ func (s *Server) ListPolymarketSportsLiveEvents(ctx context.Context, req *polyma
 		Stale:     resp.GetStale(),
 	}, nil
 }
+
+func (s *Server) BatchGetPolymarketSportsLivePriceHistory(ctx context.Context, req *polymarketpkg.BatchGetPolymarketSportsLivePriceHistoryRequest) (*polymarketpkg.BatchGetPolymarketSportsLivePriceHistoryResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.BatchGetPolymarketSportsLivePriceHistory(ctx, &polymarketapiclient.BatchGetPolymarketSportsLivePriceHistoryRequest{
+		MarketKeys:    req.GetMarketKeys(),
+		LimitPerToken: req.GetLimitPerToken(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &polymarketpkg.BatchGetPolymarketSportsLivePriceHistoryResponse{
+		Items: resp.GetItems(),
+	}, nil
+}

@@ -15,6 +15,7 @@ body,
     --athena-text: #17211d;
     --athena-muted: #64726c;
     --athena-primary: #e05f3f;
+    --athena-accent: var(--athena-primary);
     --athena-blue: #2f7df6;
     --athena-green: #19a974;
     --athena-amber: #d98b18;
@@ -32,6 +33,7 @@ body[data-theme='dark'] {
     --athena-border-strong: rgba(255, 255, 255, 0.18);
     --athena-text: #edf2ef;
     --athena-muted: #9aa7a1;
+    --athena-accent: #ff8a6b;
     --athena-shadow: 0 20px 54px rgba(0, 0, 0, 0.34);
     --athena-shadow-tight: 0 14px 34px rgba(0, 0, 0, 0.28);
 }
@@ -499,6 +501,64 @@ body[data-theme='dark'] .app-page__header {
     font-size: 16px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
+}
+
+.moneyline-outcome__market {
+    display: grid;
+    grid-template-columns: auto 104px;
+    align-items: center;
+    gap: 10px;
+    justify-self: end;
+    min-width: 150px;
+}
+
+.moneyline-sparkline {
+    width: 104px;
+    height: 32px;
+    display: block;
+    overflow: visible;
+}
+
+.moneyline-sparkline polyline {
+    fill: none;
+    stroke: var(--athena-accent);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.resource-table .moneyline-outcomes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: min(260px, 100%);
+}
+
+.resource-table .moneyline-outcome {
+    width: 100%;
+    min-width: 0;
+    max-width: 260px;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    padding: 9px 10px;
+}
+
+.resource-table .moneyline-outcome__logo {
+    width: 24px;
+    height: 24px;
+}
+
+.resource-table .moneyline-outcome__market {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: auto 88px;
+    justify-self: stretch;
+}
+
+.resource-table .moneyline-sparkline {
+    width: 88px;
 }
 
 .worm-event-grid {

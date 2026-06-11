@@ -193,6 +193,47 @@ func (s *SQLStore) BatchUpsertSportsLivePricePoints(ctx context.Context, points 
 	return nil
 }
 
+func (s *SQLStore) ListSportsLivePriceHistorySeries(ctx context.Context, marketKeys []string, limitPerToken int32) ([]SportsLivePriceHistorySeries, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if len(marketKeys) == 0 || limitPerToken <= 0 {
+		return nil, nil
+	}
+	rows, err := s.queries.ListSportsLivePriceHistoryByMarketKeys(ctx, polymarketsqlc.ListSportsLivePriceHistoryByMarketKeysParams{
+		LimitPerToken: limitPerToken,
+		MarketKeys:    marketKeys,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list sports live price history by market keys: %w", err)
+	}
+
+	items := make([]SportsLivePriceHistorySeries, 0)
+	indexByKey := make(map[string]int)
+	for _, row := range rows {
+		priceTs := timeValue(row.PriceTs)
+		if priceTs.IsZero() {
+			continue
+		}
+		key := row.MarketKey + "\x00" + row.TokenID + "\x00" + row.Outcome
+		idx, ok := indexByKey[key]
+		if !ok {
+			idx = len(items)
+			indexByKey[key] = idx
+			items = append(items, SportsLivePriceHistorySeries{
+				MarketKey:  row.MarketKey,
+				TokenID:    row.TokenID,
+				Outcome:    row.Outcome,
+				Timestamps: make([]int64, 0, limitPerToken),
+				Prices:     make([]float64, 0, limitPerToken),
+			})
+		}
+		items[idx].Timestamps = append(items[idx].Timestamps, priceTs.Unix())
+		items[idx].Prices = append(items[idx].Prices, row.Price)
+	}
+	return items, nil
+}
+
 func batchUpsertSportsLiveEventsParams(items []SportsLiveEvent) polymarketsqlc.BatchUpsertSportsLiveEventsParams {
 	params := polymarketsqlc.BatchUpsertSportsLiveEventsParams{
 		EventKeys:            make([]string, 0, len(items)),

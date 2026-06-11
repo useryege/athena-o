@@ -31,6 +31,8 @@ func (*PolymarketSportsLiveEventCardItem) ProtoMessage() {}
 
 func (*PolymarketSportsLiveMarketCardItem) ProtoMessage() {}
 
+func (*PolymarketSportsLivePriceHistorySeriesItem) ProtoMessage() {}
+
 func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
