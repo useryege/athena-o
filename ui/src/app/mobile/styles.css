@@ -467,6 +467,23 @@ body[data-theme='dark'] .app-page__header {
     background: color-mix(in srgb, var(--athena-bg-soft) 68%, var(--athena-panel-solid));
 }
 
+.moneyline-outcome__team {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.moneyline-outcome__logo {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+    border: 1px solid var(--athena-border);
+    background: var(--athena-panel-solid);
+}
+
 .moneyline-outcome__name {
     min-width: 0;
     overflow: hidden;

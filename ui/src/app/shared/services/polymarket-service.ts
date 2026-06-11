@@ -146,6 +146,13 @@ export interface PolymarketSportsLiveMarketCardItem {
     updatedAt?: string;
 }
 
+export interface PolymarketSportsLiveTeamItem {
+    name: string;
+    logo?: string;
+    abbreviation?: string;
+    alias?: string;
+}
+
 export interface PolymarketSportsLiveEventCardItem {
     eventKey: string;
     eventId: string;
@@ -162,6 +169,7 @@ export interface PolymarketSportsLiveEventCardItem {
     volume?: number;
     marketCount?: number;
     markets: PolymarketSportsLiveMarketCardItem[];
+    teams: PolymarketSportsLiveTeamItem[];
 }
 
 export interface ListPolymarketSportsLiveEventsResult {
@@ -203,8 +211,16 @@ const normalizeSportsLiveMarketCard = (item: any): PolymarketSportsLiveMarketCar
     updatedAt: readString(item, 'updatedAt', 'updated_at')
 });
 
+const normalizeSportsLiveTeam = (item: any): PolymarketSportsLiveTeamItem => ({
+    name: readString(item, 'name'),
+    logo: readString(item, 'logo'),
+    abbreviation: readString(item, 'abbreviation'),
+    alias: readString(item, 'alias')
+});
+
 const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardItem => {
     const markets = readValue(item, 'markets');
+    const teams = readValue(item, 'teams');
     return {
         eventKey: readString(item, 'eventKey', 'event_key'),
         eventId: readString(item, 'eventId', 'event_id'),
@@ -220,7 +236,8 @@ const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardI
         liquidity: readNumber(item, 'liquidity'),
         volume: readNumber(item, 'volume'),
         marketCount: readNumber(item, 'marketCount', 'market_count'),
-        markets: Array.isArray(markets) ? markets.map(normalizeSportsLiveMarketCard) : []
+        markets: Array.isArray(markets) ? markets.map(normalizeSportsLiveMarketCard) : [],
+        teams: Array.isArray(teams) ? teams.map(normalizeSportsLiveTeam) : []
     };
 };
 

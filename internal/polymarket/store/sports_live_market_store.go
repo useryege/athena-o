@@ -86,6 +86,7 @@ func (s *SQLStore) ListSportsLiveEventCards(ctx context.Context, limit int32) ([
 			Liquidity:      row.Liquidity,
 			Volume:         row.Volume,
 			MarketCount:    row.MarketCount,
+			Teams:          jsonBytes(row.Teams, jsonArray),
 			FetchedAt:      timeValue(row.FetchedAt),
 			LastSeenAt:     timeValue(row.LastSeenAt),
 		})

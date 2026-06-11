@@ -508,6 +508,7 @@ SELECT
   event.liquidity,
   event.volume,
   COUNT(market.market_key)::bigint AS market_count,
+  event.teams,
   event.fetched_at,
   event.last_seen_at
 FROM polymarket_sports_live_event AS event
@@ -532,6 +533,7 @@ type ListSportsLiveEventsRow struct {
 	Liquidity      float64
 	Volume         float64
 	MarketCount    int64
+	Teams          []byte
 	FetchedAt      pgtype.Timestamptz
 	LastSeenAt     pgtype.Timestamptz
 }
@@ -560,6 +562,7 @@ func (q *Queries) ListSportsLiveEvents(ctx context.Context, limit int32) ([]List
 			&i.Liquidity,
 			&i.Volume,
 			&i.MarketCount,
+			&i.Teams,
 			&i.FetchedAt,
 			&i.LastSeenAt,
 		); err != nil {

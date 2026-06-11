@@ -120,6 +120,13 @@ type PolymarketSportsLiveMarketCardItem struct {
 	SportsMarketType string  `protobuf:"bytes,14,opt,name=sportsMarketType" json:"sportsMarketType"`
 }
 
+type PolymarketSportsLiveTeamItem struct {
+	Name         string `protobuf:"bytes,1,opt,name=name" json:"name"`
+	Logo         string `protobuf:"bytes,2,opt,name=logo" json:"logo"`
+	Abbreviation string `protobuf:"bytes,3,opt,name=abbreviation" json:"abbreviation"`
+	Alias        string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
+}
+
 type PolymarketSportsLiveEventCardItem struct {
 	EventKey    string                                `protobuf:"bytes,1,opt,name=eventKey" json:"eventKey"`
 	EventID     string                                `protobuf:"bytes,2,opt,name=eventId" json:"eventId"`
@@ -136,4 +143,5 @@ type PolymarketSportsLiveEventCardItem struct {
 	Volume      float64                               `protobuf:"fixed64,13,opt,name=volume" json:"volume"`
 	MarketCount int32                                 `protobuf:"varint,14,opt,name=marketCount" json:"marketCount"`
 	Markets     []*PolymarketSportsLiveMarketCardItem `protobuf:"bytes,15,rep,name=markets" json:"markets"`
+	Teams       []*PolymarketSportsLiveTeamItem       `protobuf:"bytes,16,rep,name=teams" json:"teams"`
 }

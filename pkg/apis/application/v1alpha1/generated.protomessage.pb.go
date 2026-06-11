@@ -31,6 +31,8 @@ func (*PolymarketSportsLiveEventCardItem) ProtoMessage() {}
 
 func (*PolymarketSportsLiveMarketCardItem) ProtoMessage() {}
 
+func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
+
 func (*PolymarketStatus) ProtoMessage() {}
 
 func (*TokenAPIBytecodeBlacklist) ProtoMessage() {}

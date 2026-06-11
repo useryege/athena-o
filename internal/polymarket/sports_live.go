@@ -269,6 +269,7 @@ func (s *Service) ListPolymarketSportsLiveEvents(ctx context.Context, req *apicl
 			Volume:      event.Volume,
 			MarketCount: int32(event.MarketCount),
 			Markets:     make([]*v1alpha1.PolymarketSportsLiveMarketCardItem, 0, len(event.Markets)),
+			Teams:       sportsLiveTeamsFromRaw(event.Teams),
 		}
 		for _, market := range event.Markets {
 			item.Markets = append(item.Markets, &v1alpha1.PolymarketSportsLiveMarketCardItem{
@@ -291,6 +292,33 @@ func (s *Service) ListPolymarketSportsLiveEvents(ctx context.Context, req *apicl
 		resp.Items = append(resp.Items, item)
 	}
 	return resp, nil
+}
+
+func sportsLiveTeamsFromRaw(raw json.RawMessage) []*v1alpha1.PolymarketSportsLiveTeamItem {
+	type gammaTeam struct {
+		Name         *string `json:"name,omitempty"`
+		Logo         *string `json:"logo,omitempty"`
+		Abbreviation *string `json:"abbreviation,omitempty"`
+		Alias        *string `json:"alias,omitempty"`
+	}
+	var teams []gammaTeam
+	if err := json.Unmarshal(raw, &teams); err != nil {
+		return nil
+	}
+	items := make([]*v1alpha1.PolymarketSportsLiveTeamItem, 0, len(teams))
+	for _, team := range teams {
+		item := &v1alpha1.PolymarketSportsLiveTeamItem{
+			Name:         strings.TrimSpace(stringValue(team.Name)),
+			Logo:         strings.TrimSpace(stringValue(team.Logo)),
+			Abbreviation: strings.TrimSpace(stringValue(team.Abbreviation)),
+			Alias:        strings.TrimSpace(stringValue(team.Alias)),
+		}
+		if firstNonEmpty(item.Name, item.Abbreviation, item.Alias) == "" && item.Logo == "" {
+			continue
+		}
+		items = append(items, item)
+	}
+	return items
 }
 
 func firstNonEmpty(values ...string) string {

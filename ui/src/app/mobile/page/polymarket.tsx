@@ -8,7 +8,8 @@ import {
     PolymarketMoverMarketItem,
     PolymarketRealtimeMarketItem,
     PolymarketSportsLiveEventCardItem,
-    PolymarketSportsLiveMarketCardItem
+    PolymarketSportsLiveMarketCardItem,
+    PolymarketSportsLiveTeamItem
 } from '../../shared/services/polymarket-service';
 import {fmt, fmtNumber} from './shared';
 
@@ -72,7 +73,20 @@ const parseGammaList = (value?: string): string[] => {
     }
 };
 
-const moneylineOptions = (market?: PolymarketSportsLiveMarketCardItem) => {
+const normalizedTeamKey = (value?: string) => (value || '').trim().toLowerCase();
+
+const matchingTeam = (outcome: string, teams: PolymarketSportsLiveTeamItem[], index: number) => {
+    const key = normalizedTeamKey(outcome);
+    if (key) {
+        const exact = teams.find(team => [team.name, team.abbreviation, team.alias].some(value => normalizedTeamKey(value) === key));
+        if (exact) {
+            return exact;
+        }
+    }
+    return teams[index];
+};
+
+const moneylineOptions = (market?: PolymarketSportsLiveMarketCardItem, teams: PolymarketSportsLiveTeamItem[] = []) => {
     if (!market) {
         return [];
     }
@@ -80,7 +94,8 @@ const moneylineOptions = (market?: PolymarketSportsLiveMarketCardItem) => {
     const prices = parseGammaList(market.outcomePrices);
     return outcomes.slice(0, 2).map((outcome, index) => ({
         outcome,
-        price: prices[index] || '-'
+        price: prices[index] || '-',
+        logo: matchingTeam(outcome, teams, index)?.logo
     }));
 };
 
@@ -117,8 +132,8 @@ const PolymarketEventLink = (props: {item: PolymarketSportsLiveEventCardItem}) =
     );
 };
 
-const MoneylineOutcomeBlocks = (props: {market?: PolymarketSportsLiveMarketCardItem}) => {
-    const options = moneylineOptions(props.market);
+const MoneylineOutcomeBlocks = (props: {market?: PolymarketSportsLiveMarketCardItem; teams?: PolymarketSportsLiveTeamItem[]}) => {
+    const options = moneylineOptions(props.market, props.teams);
     if (options.length === 0) {
         return <Typography.Text type='secondary'>-</Typography.Text>;
     }
@@ -126,7 +141,10 @@ const MoneylineOutcomeBlocks = (props: {market?: PolymarketSportsLiveMarketCardI
         <div className='moneyline-outcomes'>
             {options.map(option => (
                 <div className='moneyline-outcome' key={option.outcome}>
-                    <Typography.Text className='moneyline-outcome__name'>{option.outcome}</Typography.Text>
+                    <div className='moneyline-outcome__team'>
+                        {option.logo && <img className='moneyline-outcome__logo' src={option.logo} alt='' onError={event => (event.currentTarget.style.display = 'none')} />}
+                        <Typography.Text className='moneyline-outcome__name'>{option.outcome}</Typography.Text>
+                    </div>
                     <Typography.Text className='moneyline-outcome__price' strong={true}>
                         {option.price}
                     </Typography.Text>
@@ -163,7 +181,7 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) =
                 <Typography.Text className='moneyline-outcomes-label' strong={true}>
                     Moneyline
                 </Typography.Text>
-                <MoneylineOutcomeBlocks market={moneyline} />
+                <MoneylineOutcomeBlocks market={moneyline} teams={props.item.teams} />
             </div>
         </>
     );
@@ -192,7 +210,7 @@ export const PolymarketSportsLivePage = () => {
         {title: 'Score', dataIndex: 'score'},
         {
             title: 'Moneyline',
-            render: item => <MoneylineOutcomeBlocks market={moneylineMarket(item)} />
+            render: item => <MoneylineOutcomeBlocks market={moneylineMarket(item)} teams={item.teams} />
         },
         {title: 'Volume', render: item => fmtNumber(item.volume)},
         {title: 'Liquidity', render: item => fmtNumber(item.liquidity)}

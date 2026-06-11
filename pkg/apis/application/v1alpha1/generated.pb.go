@@ -40,6 +40,8 @@ func (m *PolymarketSportsLiveEventCardItem) Reset() { *m = PolymarketSportsLiveE
 
 func (m *PolymarketSportsLiveMarketCardItem) Reset() { *m = PolymarketSportsLiveMarketCardItem{} }
 
+func (m *PolymarketSportsLiveTeamItem) Reset() { *m = PolymarketSportsLiveTeamItem{} }
+
 func (m *PolymarketStatus) Reset() { *m = PolymarketStatus{} }
 
 func (m *TokenAPIBytecodeBlacklist) Reset() { *m = TokenAPIBytecodeBlacklist{} }
@@ -880,6 +882,22 @@ func (m *PolymarketSportsLiveEventCardItem) MarshalToSizedBuffer(dAtA []byte) (i
 	_ = i
 	var l int
 	_ = l
+	if len(m.Teams) > 0 {
+		for iNdEx := len(m.Teams) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Teams[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x82
+		}
+	}
 	if len(m.Markets) > 0 {
 		for iNdEx := len(m.Markets) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -1045,6 +1063,49 @@ func (m *PolymarketSportsLiveMarketCardItem) MarshalToSizedBuffer(dAtA []byte) (
 	i -= len(m.MarketKey)
 	copy(dAtA[i:], m.MarketKey)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.MarketKey)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *PolymarketSportsLiveTeamItem) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PolymarketSportsLiveTeamItem) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PolymarketSportsLiveTeamItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.Alias)
+	copy(dAtA[i:], m.Alias)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Alias)))
+	i--
+	dAtA[i] = 0x22
+	i -= len(m.Abbreviation)
+	copy(dAtA[i:], m.Abbreviation)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Abbreviation)))
+	i--
+	dAtA[i] = 0x1a
+	i -= len(m.Logo)
+	copy(dAtA[i:], m.Logo)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Logo)))
+	i--
+	dAtA[i] = 0x12
+	i -= len(m.Name)
+	copy(dAtA[i:], m.Name)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Name)))
 	i--
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
@@ -2374,6 +2435,12 @@ func (m *PolymarketSportsLiveEventCardItem) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
+	if len(m.Teams) > 0 {
+		for _, e := range m.Teams {
+			l = e.Size()
+			n += 2 + l + sovGenerated(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -2404,6 +2471,23 @@ func (m *PolymarketSportsLiveMarketCardItem) Size() (n int) {
 	l = len(m.UpdatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.SportsMarketType)
+	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
+func (m *PolymarketSportsLiveTeamItem) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Logo)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Abbreviation)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Alias)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -3001,6 +3085,11 @@ func (this *PolymarketSportsLiveEventCardItem) String() string {
 		repeatedStringForMarkets += strings.Replace(f.String(), "PolymarketSportsLiveMarketCardItem", "PolymarketSportsLiveMarketCardItem", 1) + ","
 	}
 	repeatedStringForMarkets += "}"
+	repeatedStringForTeams := "[]*PolymarketSportsLiveTeamItem{"
+	for _, f := range this.Teams {
+		repeatedStringForTeams += strings.Replace(f.String(), "PolymarketSportsLiveTeamItem", "PolymarketSportsLiveTeamItem", 1) + ","
+	}
+	repeatedStringForTeams += "}"
 	s := strings.Join([]string{`&PolymarketSportsLiveEventCardItem{`,
 		`EventKey:` + fmt.Sprintf("%v", this.EventKey) + `,`,
 		`EventID:` + fmt.Sprintf("%v", this.EventID) + `,`,
@@ -3017,6 +3106,7 @@ func (this *PolymarketSportsLiveEventCardItem) String() string {
 		`Volume:` + fmt.Sprintf("%v", this.Volume) + `,`,
 		`MarketCount:` + fmt.Sprintf("%v", this.MarketCount) + `,`,
 		`Markets:` + repeatedStringForMarkets + `,`,
+		`Teams:` + repeatedStringForTeams + `,`,
 		`}`,
 	}, "")
 	return s
@@ -3040,6 +3130,19 @@ func (this *PolymarketSportsLiveMarketCardItem) String() string {
 		`VolumeNum:` + fmt.Sprintf("%v", this.VolumeNum) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`SportsMarketType:` + fmt.Sprintf("%v", this.SportsMarketType) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *PolymarketSportsLiveTeamItem) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&PolymarketSportsLiveTeamItem{`,
+		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
+		`Logo:` + fmt.Sprintf("%v", this.Logo) + `,`,
+		`Abbreviation:` + fmt.Sprintf("%v", this.Abbreviation) + `,`,
+		`Alias:` + fmt.Sprintf("%v", this.Alias) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -6842,6 +6945,40 @@ func (m *PolymarketSportsLiveEventCardItem) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Teams", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Teams = append(m.Teams, &PolymarketSportsLiveTeamItem{})
+			if err := m.Teams[len(m.Teams)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -7213,6 +7350,184 @@ func (m *PolymarketSportsLiveMarketCardItem) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SportsMarketType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PolymarketSportsLiveTeamItem) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PolymarketSportsLiveTeamItem: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PolymarketSportsLiveTeamItem: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Logo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Logo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Abbreviation", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Abbreviation = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Alias", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Alias = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

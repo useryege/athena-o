@@ -280,6 +280,7 @@ SELECT
   event.liquidity,
   event.volume,
   COUNT(market.market_key)::bigint AS market_count,
+  event.teams,
   event.fetched_at,
   event.last_seen_at
 FROM polymarket_sports_live_event AS event

@@ -264,6 +264,8 @@ message PolymarketSportsLiveEventCardItem {
   optional int32 marketCount = 14;
 
   repeated PolymarketSportsLiveMarketCardItem markets = 15;
+
+  repeated PolymarketSportsLiveTeamItem teams = 16;
 }
 
 message PolymarketSportsLiveMarketCardItem {
@@ -294,6 +296,16 @@ message PolymarketSportsLiveMarketCardItem {
   optional string updatedAt = 13;
 
   optional string sportsMarketType = 14;
+}
+
+message PolymarketSportsLiveTeamItem {
+  optional string name = 1;
+
+  optional string logo = 2;
+
+  optional string abbreviation = 3;
+
+  optional string alias = 4;
 }
 
 message PolymarketStatus {

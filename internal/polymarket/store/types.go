@@ -108,6 +108,7 @@ type SportsLiveEventCard struct {
 	Liquidity      float64
 	Volume         float64
 	MarketCount    int64
+	Teams          json.RawMessage
 	FetchedAt      time.Time
 	LastSeenAt     time.Time
 	Markets        []SportsLiveMarketCard
