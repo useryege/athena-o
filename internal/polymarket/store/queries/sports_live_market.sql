@@ -294,6 +294,7 @@ SELECT
   market.market_key,
   market.condition_id,
   market.slug,
+  market.sports_market_type,
   COALESCE(NULLIF(market.question, ''), market.title)::text AS question,
   market.outcomes,
   market.outcome_prices,
@@ -306,6 +307,7 @@ SELECT
   market.updated_at_gamma
 FROM polymarket_sports_live_market AS market
 WHERE market.event_key = ANY(sqlc.arg('event_keys')::text[])
+  AND lower(market.sports_market_type) = 'moneyline'
 ORDER BY market.event_key, market.liquidity_num DESC, market.volume_num DESC, market.market_key;
 
 -- name: GetPolymarketSyncState :one

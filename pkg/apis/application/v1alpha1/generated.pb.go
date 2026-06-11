@@ -983,6 +983,11 @@ func (m *PolymarketSportsLiveMarketCardItem) MarshalToSizedBuffer(dAtA []byte) (
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.SportsMarketType)
+	copy(dAtA[i:], m.SportsMarketType)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.SportsMarketType)))
+	i--
+	dAtA[i] = 0x72
 	i -= len(m.UpdatedAt)
 	copy(dAtA[i:], m.UpdatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
@@ -2398,6 +2403,8 @@ func (m *PolymarketSportsLiveMarketCardItem) Size() (n int) {
 	n += 9
 	l = len(m.UpdatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.SportsMarketType)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -3032,6 +3039,7 @@ func (this *PolymarketSportsLiveMarketCardItem) String() string {
 		`LiquidityNum:` + fmt.Sprintf("%v", this.LiquidityNum) + `,`,
 		`VolumeNum:` + fmt.Sprintf("%v", this.VolumeNum) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
+		`SportsMarketType:` + fmt.Sprintf("%v", this.SportsMarketType) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -7173,6 +7181,38 @@ func (m *PolymarketSportsLiveMarketCardItem) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SportsMarketType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SportsMarketType = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-738-g0f62b78-dirty"
+    "version": "v1.0.0-739-g97914f6-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2979,6 +2979,9 @@
           "type": "string"
         },
         "slug": {
+          "type": "string"
+        },
+        "sportsMarketType": {
           "type": "string"
         },
         "spread": {

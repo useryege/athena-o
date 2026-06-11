@@ -267,19 +267,20 @@ func (s *Service) ListPolymarketSportsLiveEvents(ctx context.Context, req *apicl
 		}
 		for _, market := range event.Markets {
 			item.Markets = append(item.Markets, &v1alpha1.PolymarketSportsLiveMarketCardItem{
-				MarketKey:      market.MarketKey,
-				ConditionID:    market.ConditionID,
-				Slug:           market.Slug,
-				Question:       market.Question,
-				Outcomes:       market.Outcomes,
-				OutcomePrices:  market.OutcomePrices,
-				BestBid:        market.BestBid,
-				BestAsk:        market.BestAsk,
-				LastTradePrice: market.LastTradePrice,
-				Spread:         market.Spread,
-				LiquidityNum:   market.LiquidityNum,
-				VolumeNum:      market.VolumeNum,
-				UpdatedAt:      formatTime(market.UpdatedAtGamma),
+				MarketKey:        market.MarketKey,
+				ConditionID:      market.ConditionID,
+				Slug:             market.Slug,
+				SportsMarketType: market.SportsMarketType,
+				Question:         market.Question,
+				Outcomes:         market.Outcomes,
+				OutcomePrices:    market.OutcomePrices,
+				BestBid:          market.BestBid,
+				BestAsk:          market.BestAsk,
+				LastTradePrice:   market.LastTradePrice,
+				Spread:           market.Spread,
+				LiquidityNum:     market.LiquidityNum,
+				VolumeNum:        market.VolumeNum,
+				UpdatedAt:        formatTime(market.UpdatedAtGamma),
 			})
 		}
 		resp.Items = append(resp.Items, item)

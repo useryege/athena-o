@@ -579,6 +579,7 @@ SELECT
   market.market_key,
   market.condition_id,
   market.slug,
+  market.sports_market_type,
   COALESCE(NULLIF(market.question, ''), market.title)::text AS question,
   market.outcomes,
   market.outcome_prices,
@@ -591,24 +592,26 @@ SELECT
   market.updated_at_gamma
 FROM polymarket_sports_live_market AS market
 WHERE market.event_key = ANY($1::text[])
+  AND lower(market.sports_market_type) = 'moneyline'
 ORDER BY market.event_key, market.liquidity_num DESC, market.volume_num DESC, market.market_key
 `
 
 type ListSportsLiveMarketsByEventKeysRow struct {
-	EventKey       string
-	MarketKey      string
-	ConditionID    string
-	Slug           string
-	Question       string
-	Outcomes       string
-	OutcomePrices  string
-	BestBid        float64
-	BestAsk        float64
-	LastTradePrice float64
-	Spread         float64
-	LiquidityNum   float64
-	VolumeNum      float64
-	UpdatedAtGamma pgtype.Timestamptz
+	EventKey         string
+	MarketKey        string
+	ConditionID      string
+	Slug             string
+	SportsMarketType string
+	Question         string
+	Outcomes         string
+	OutcomePrices    string
+	BestBid          float64
+	BestAsk          float64
+	LastTradePrice   float64
+	Spread           float64
+	LiquidityNum     float64
+	VolumeNum        float64
+	UpdatedAtGamma   pgtype.Timestamptz
 }
 
 func (q *Queries) ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsLiveMarketsByEventKeysRow, error) {
@@ -625,6 +628,7 @@ func (q *Queries) ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKey
 			&i.MarketKey,
 			&i.ConditionID,
 			&i.Slug,
+			&i.SportsMarketType,
 			&i.Question,
 			&i.Outcomes,
 			&i.OutcomePrices,

@@ -292,6 +292,8 @@ message PolymarketSportsLiveMarketCardItem {
   optional double volumeNum = 12;
 
   optional string updatedAt = 13;
+
+  optional string sportsMarketType = 14;
 }
 
 message PolymarketStatus {

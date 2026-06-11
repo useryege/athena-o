@@ -104,19 +104,20 @@ type PolymarketMoverMarketItem struct {
 }
 
 type PolymarketSportsLiveMarketCardItem struct {
-	MarketKey      string  `protobuf:"bytes,1,opt,name=marketKey" json:"marketKey"`
-	ConditionID    string  `protobuf:"bytes,2,opt,name=conditionId" json:"conditionId"`
-	Slug           string  `protobuf:"bytes,3,opt,name=slug" json:"slug"`
-	Question       string  `protobuf:"bytes,4,opt,name=question" json:"question"`
-	Outcomes       string  `protobuf:"bytes,5,opt,name=outcomes" json:"outcomes"`
-	OutcomePrices  string  `protobuf:"bytes,6,opt,name=outcomePrices" json:"outcomePrices"`
-	BestBid        float64 `protobuf:"fixed64,7,opt,name=bestBid" json:"bestBid"`
-	BestAsk        float64 `protobuf:"fixed64,8,opt,name=bestAsk" json:"bestAsk"`
-	LastTradePrice float64 `protobuf:"fixed64,9,opt,name=lastTradePrice" json:"lastTradePrice"`
-	Spread         float64 `protobuf:"fixed64,10,opt,name=spread" json:"spread"`
-	LiquidityNum   float64 `protobuf:"fixed64,11,opt,name=liquidityNum" json:"liquidityNum"`
-	VolumeNum      float64 `protobuf:"fixed64,12,opt,name=volumeNum" json:"volumeNum"`
-	UpdatedAt      string  `protobuf:"bytes,13,opt,name=updatedAt" json:"updatedAt"`
+	MarketKey        string  `protobuf:"bytes,1,opt,name=marketKey" json:"marketKey"`
+	ConditionID      string  `protobuf:"bytes,2,opt,name=conditionId" json:"conditionId"`
+	Slug             string  `protobuf:"bytes,3,opt,name=slug" json:"slug"`
+	Question         string  `protobuf:"bytes,4,opt,name=question" json:"question"`
+	Outcomes         string  `protobuf:"bytes,5,opt,name=outcomes" json:"outcomes"`
+	OutcomePrices    string  `protobuf:"bytes,6,opt,name=outcomePrices" json:"outcomePrices"`
+	BestBid          float64 `protobuf:"fixed64,7,opt,name=bestBid" json:"bestBid"`
+	BestAsk          float64 `protobuf:"fixed64,8,opt,name=bestAsk" json:"bestAsk"`
+	LastTradePrice   float64 `protobuf:"fixed64,9,opt,name=lastTradePrice" json:"lastTradePrice"`
+	Spread           float64 `protobuf:"fixed64,10,opt,name=spread" json:"spread"`
+	LiquidityNum     float64 `protobuf:"fixed64,11,opt,name=liquidityNum" json:"liquidityNum"`
+	VolumeNum        float64 `protobuf:"fixed64,12,opt,name=volumeNum" json:"volumeNum"`
+	UpdatedAt        string  `protobuf:"bytes,13,opt,name=updatedAt" json:"updatedAt"`
+	SportsMarketType string  `protobuf:"bytes,14,opt,name=sportsMarketType" json:"sportsMarketType"`
 }
 
 type PolymarketSportsLiveEventCardItem struct {

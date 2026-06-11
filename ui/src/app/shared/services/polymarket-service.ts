@@ -133,6 +133,7 @@ export interface PolymarketSportsLiveMarketCardItem {
     marketKey: string;
     conditionId: string;
     slug: string;
+    sportsMarketType: string;
     question: string;
     outcomes?: string;
     outcomePrices?: string;
@@ -189,6 +190,7 @@ const normalizeSportsLiveMarketCard = (item: any): PolymarketSportsLiveMarketCar
     marketKey: readString(item, 'marketKey', 'market_key'),
     conditionId: readString(item, 'conditionId', 'condition_id'),
     slug: readString(item, 'slug'),
+    sportsMarketType: readString(item, 'sportsMarketType', 'sports_market_type'),
     question: readString(item, 'question'),
     outcomes: readString(item, 'outcomes'),
     outcomePrices: readString(item, 'outcomePrices', 'outcome_prices'),

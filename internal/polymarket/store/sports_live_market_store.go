@@ -109,20 +109,21 @@ func (s *SQLStore) ListSportsLiveEventCards(ctx context.Context, limit int32) ([
 			continue
 		}
 		items[idx].Markets = append(items[idx].Markets, SportsLiveMarketCard{
-			EventKey:       row.EventKey,
-			MarketKey:      row.MarketKey,
-			ConditionID:    row.ConditionID,
-			Slug:           row.Slug,
-			Question:       row.Question,
-			Outcomes:       row.Outcomes,
-			OutcomePrices:  row.OutcomePrices,
-			BestBid:        row.BestBid,
-			BestAsk:        row.BestAsk,
-			LastTradePrice: row.LastTradePrice,
-			Spread:         row.Spread,
-			LiquidityNum:   row.LiquidityNum,
-			VolumeNum:      row.VolumeNum,
-			UpdatedAtGamma: timeValue(row.UpdatedAtGamma),
+			EventKey:         row.EventKey,
+			MarketKey:        row.MarketKey,
+			ConditionID:      row.ConditionID,
+			Slug:             row.Slug,
+			SportsMarketType: row.SportsMarketType,
+			Question:         row.Question,
+			Outcomes:         row.Outcomes,
+			OutcomePrices:    row.OutcomePrices,
+			BestBid:          row.BestBid,
+			BestAsk:          row.BestAsk,
+			LastTradePrice:   row.LastTradePrice,
+			Spread:           row.Spread,
+			LiquidityNum:     row.LiquidityNum,
+			VolumeNum:        row.VolumeNum,
+			UpdatedAtGamma:   timeValue(row.UpdatedAtGamma),
 		})
 	}
 	return items, nil

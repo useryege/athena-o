@@ -71,33 +71,53 @@ const parseGammaList = (value?: string): string[] => {
     }
 };
 
-const priceSummary = (market: PolymarketSportsLiveMarketCardItem) => {
+const moneylineSummary = (market: PolymarketSportsLiveMarketCardItem) => {
     const outcomes = parseGammaList(market.outcomes);
     const prices = parseGammaList(market.outcomePrices);
-    if (outcomes.length === 0 && prices.length === 0) {
-        return 'No outcome prices';
+    if (outcomes.length === 0) {
+        return undefined;
     }
-    return outcomes
-        .slice(0, 3)
-        .map((outcome, index) => `${outcome}: ${prices[index] || '-'}`)
-        .join(' · ');
+    return outcomes.map((outcome, index) => `${outcome}: ${prices[index] || '-'}`).join(' / ');
 };
 
-const SportsLiveMarketPreview = (props: {market: PolymarketSportsLiveMarketCardItem}) => (
-    <div style={{padding: '8px 0', borderTop: '1px solid #f0f0f0'}}>
-        <Typography.Text strong={true}>{props.market.question || props.market.slug || props.market.conditionId}</Typography.Text>
-        <br />
-        <Typography.Text type='secondary'>{priceSummary(props.market)}</Typography.Text>
-        <MetricRow
-            items={[
-                {label: 'Bid/Ask', value: `${fmt(props.market.bestBid)} / ${fmt(props.market.bestAsk)}`},
-                {label: 'Last', value: fmt(props.market.lastTradePrice)},
-                {label: 'Spread', value: fmt(props.market.spread)},
-                {label: 'Liquidity', value: fmtNumber(props.market.liquidityNum)}
-            ]}
-        />
-    </div>
-);
+const isMoneylineMarket = (market: PolymarketSportsLiveMarketCardItem) => {
+    const type = market.sportsMarketType.trim().toLowerCase();
+    return type === 'moneyline';
+};
+
+const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) => {
+    const moneyline = props.item.markets.find(isMoneylineMarket);
+    const moneylineText = moneyline ? moneylineSummary(moneyline) : undefined;
+
+    return (
+        <>
+            <CardTitle
+                title={props.item.title}
+                subtitle={[props.item.score, props.item.period, props.item.elapsed].filter(Boolean).join(' · ') || props.item.slug}
+                image={props.item.image}
+                tags={
+                    <Space wrap={true}>
+                        <Tag color='green'>Live</Tag>
+                        {props.item.gameStatus && <Tag>{props.item.gameStatus}</Tag>}
+                    </Space>
+                }
+            />
+            <MetricRow
+                items={[
+                    {label: 'Volume', value: fmtNumber(props.item.volume)},
+                    {label: 'Liquidity', value: fmtNumber(props.item.liquidity)},
+                    {label: 'Updated', value: fmt(props.item.updatedAt)}
+                ]}
+            />
+            {moneylineText && (
+                <Typography.Paragraph style={{margin: '8px 0 0'}}>
+                    <Typography.Text strong={true}>Moneyline: </Typography.Text>
+                    <Typography.Text>{moneylineText}</Typography.Text>
+                </Typography.Paragraph>
+            )}
+        </>
+    );
+};
 
 export const PolymarketSportsLivePage = () => {
     const events = useAsyncData(() => services.polymarket.listSportsLiveEvents(200), []);
@@ -136,32 +156,7 @@ export const PolymarketSportsLivePage = () => {
                 items={events.data?.items || []}
                 columns={eventColumns}
                 loading={events.loading}
-                card={item => (
-                    <>
-                        <CardTitle
-                            title={item.title}
-                            subtitle={[item.score, item.period, item.elapsed].filter(Boolean).join(' · ') || item.slug}
-                            image={item.image}
-                            tags={
-                                <Space wrap={true}>
-                                    <Tag color='green'>Live</Tag>
-                                    {item.gameStatus && <Tag>{item.gameStatus}</Tag>}
-                                </Space>
-                            }
-                        />
-                        <MetricRow
-                            items={[
-                                {label: 'Volume', value: fmtNumber(item.volume)},
-                                {label: 'Liquidity', value: fmtNumber(item.liquidity)},
-                                {label: 'Markets', value: item.marketCount || item.markets.length},
-                                {label: 'Updated', value: fmt(item.updatedAt)}
-                            ]}
-                        />
-                        {item.markets.slice(0, 3).map(market => (
-                            <SportsLiveMarketPreview key={market.marketKey} market={market} />
-                        ))}
-                    </>
-                )}
+                card={item => <SportsLiveEventCard item={item} />}
             />
         </AppPage>
     );

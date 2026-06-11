@@ -114,18 +114,19 @@ type SportsLiveEventCard struct {
 }
 
 type SportsLiveMarketCard struct {
-	EventKey       string
-	MarketKey      string
-	ConditionID    string
-	Slug           string
-	Question       string
-	Outcomes       string
-	OutcomePrices  string
-	BestBid        float64
-	BestAsk        float64
-	LastTradePrice float64
-	Spread         float64
-	LiquidityNum   float64
-	VolumeNum      float64
-	UpdatedAtGamma time.Time
+	EventKey         string
+	MarketKey        string
+	ConditionID      string
+	Slug             string
+	SportsMarketType string
+	Question         string
+	Outcomes         string
+	OutcomePrices    string
+	BestBid          float64
+	BestAsk          float64
+	LastTradePrice   float64
+	Spread           float64
+	LiquidityNum     float64
+	VolumeNum        float64
+	UpdatedAtGamma   time.Time
 }
