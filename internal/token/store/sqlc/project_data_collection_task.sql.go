@@ -52,7 +52,7 @@ func (q *Queries) DeleteProjectDataCollectionTask(ctx context.Context, arg Delet
 }
 
 const getProjectDataCollectionTask = `-- name: GetProjectDataCollectionTask :one
-SELECT project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+SELECT project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
 FROM project_data_collection_task
 WHERE project_id = $1
   AND data_type = $2
@@ -74,6 +74,7 @@ func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, arg GetProje
 		&i.NextAttemptAt,
 		&i.LastError,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -108,6 +109,7 @@ SELECT
   t.next_attempt_at,
   t.last_error,
   t.created_at,
+  t.updated_at,
   p.chain_id,
   p.contract,
   p.creator,
@@ -148,6 +150,7 @@ type ListDueProjectDataCollectionTasksRow struct {
 	NextAttemptAt    pgtype.Timestamptz
 	LastError        pgtype.Text
 	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
 	ChainID          int64
 	Contract         []byte
 	Creator          []byte
@@ -182,6 +185,7 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 			&i.NextAttemptAt,
 			&i.LastError,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 			&i.ChainID,
 			&i.Contract,
 			&i.Creator,
@@ -209,7 +213,7 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 }
 
 const listProjectDataCollectionTasks = `-- name: ListProjectDataCollectionTasks :many
-SELECT project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+SELECT project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
 FROM project_data_collection_task
 WHERE ($1::bigint IS NULL OR project_id = $1::bigint)
   AND ($2::text IS NULL OR data_type = $2::text)
@@ -249,6 +253,7 @@ func (q *Queries) ListProjectDataCollectionTasks(ctx context.Context, arg ListPr
 			&i.NextAttemptAt,
 			&i.LastError,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -271,10 +276,11 @@ SET attempts = attempts + 1,
     WHEN attempts + 1 >= 5 THEN now()
     ELSE now() + INTERVAL '1 minute'
   END,
-  last_error = $1
+  last_error = $1,
+  updated_at = now()
 WHERE project_id = $2
   AND data_type = $3
-RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
 `
 
 type MarkProjectDataCollectionTaskFailedParams struct {
@@ -294,6 +300,7 @@ func (q *Queries) MarkProjectDataCollectionTaskFailed(ctx context.Context, arg M
 		&i.NextAttemptAt,
 		&i.LastError,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -302,10 +309,11 @@ const markProjectDataCollectionTaskSucceeded = `-- name: MarkProjectDataCollecti
 UPDATE project_data_collection_task
 SET status = 'succeeded',
   next_attempt_at = now(),
-  last_error = NULL
+  last_error = NULL,
+  updated_at = now()
 WHERE project_id = $1
   AND data_type = $2
-RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
 `
 
 type MarkProjectDataCollectionTaskSucceededParams struct {
@@ -324,6 +332,7 @@ func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, ar
 		&i.NextAttemptAt,
 		&i.LastError,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -348,8 +357,9 @@ ON CONFLICT (project_id, data_type) DO UPDATE
 SET status = EXCLUDED.status,
   attempts = EXCLUDED.attempts,
   next_attempt_at = EXCLUDED.next_attempt_at,
-  last_error = EXCLUDED.last_error
-RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at
+  last_error = EXCLUDED.last_error,
+  updated_at = now()
+RETURNING project_id, data_type, status, attempts, next_attempt_at, last_error, created_at, updated_at
 `
 
 type UpsertProjectDataCollectionTaskParams struct {
@@ -379,6 +389,7 @@ func (q *Queries) UpsertProjectDataCollectionTask(ctx context.Context, arg Upser
 		&i.NextAttemptAt,
 		&i.LastError,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

@@ -18,7 +18,8 @@ ON CONFLICT (project_id, data_type) DO UPDATE
 SET status = EXCLUDED.status,
   attempts = EXCLUDED.attempts,
   next_attempt_at = EXCLUDED.next_attempt_at,
-  last_error = EXCLUDED.last_error
+  last_error = EXCLUDED.last_error,
+  updated_at = now()
 RETURNING *;
 
 -- name: InsertProjectDataCollectionTaskIfNotExists :exec
@@ -62,6 +63,7 @@ SELECT
   t.next_attempt_at,
   t.last_error,
   t.created_at,
+  t.updated_at,
   p.chain_id,
   p.contract,
   p.creator,
@@ -91,7 +93,8 @@ LIMIT sqlc.arg('limit');
 UPDATE project_data_collection_task
 SET status = 'succeeded',
   next_attempt_at = now(),
-  last_error = NULL
+  last_error = NULL,
+  updated_at = now()
 WHERE project_id = @project_id
   AND data_type = @data_type
 RETURNING *;
@@ -107,7 +110,8 @@ SET attempts = attempts + 1,
     WHEN attempts + 1 >= 5 THEN now()
     ELSE now() + INTERVAL '1 minute'
   END,
-  last_error = @last_error
+  last_error = @last_error,
+  updated_at = now()
 WHERE project_id = @project_id
   AND data_type = @data_type
 RETURNING *;

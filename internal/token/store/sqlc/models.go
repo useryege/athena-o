@@ -92,6 +92,7 @@ type ProjectDataCollectionTask struct {
 	NextAttemptAt pgtype.Timestamptz
 	LastError     pgtype.Text
 	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type ProjectInitialRecipient struct {
@@ -110,6 +111,24 @@ type ProjectRelatedWallet struct {
 	Wallet    []byte
 	Role      string
 	CreatedAt pgtype.Timestamptz
+}
+
+type ProjectReport struct {
+	ProjectID                 int64
+	IsComplete                bool
+	WethPairIsCreated         pgtype.Bool
+	WethPairIsRemoveLiquidity pgtype.Bool
+	WethPairIsMint            pgtype.Bool
+	WethPairQuoteUsdtValueInt pgtype.Numeric
+	WethPairLastSwapTimestamp pgtype.Int8
+	UsdtPairIsCreated         pgtype.Bool
+	UsdtPairIsRemoveLiquidity pgtype.Bool
+	UsdtPairIsMint            pgtype.Bool
+	UsdtPairQuoteUsdtValueInt pgtype.Numeric
+	UsdtPairLastSwapTimestamp pgtype.Int8
+	SourceUpdatedAt           pgtype.Timestamptz
+	EvaluatedAt               pgtype.Timestamptz
+	CreatedAt                 pgtype.Timestamptz
 }
 
 type ProjectSimulationResult struct {

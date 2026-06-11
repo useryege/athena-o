@@ -70,6 +70,9 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 			return nil, fmt.Errorf("insert project data collection task %s: %w", dataType, err)
 		}
 	}
+	if err := q.InsertProjectReportIfNotExists(ctx, row.ID); err != nil {
+		return nil, fmt.Errorf("insert project report: %w", err)
+	}
 	for _, wallet := range relatedWallets {
 		if wallet.Wallet == (common.Address{}) || wallet.Role == "" {
 			continue

@@ -179,6 +179,7 @@ type ProjectDataCollectionTask struct {
 	NextAttemptAt time.Time
 	LastError     string
 	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type ProjectDataCollectionTaskWithProject struct {
@@ -191,6 +192,32 @@ type ProjectDataCollectionTaskPage struct {
 	Total    int64
 	Page     int32
 	PageSize int32
+}
+
+type ProjectReport struct {
+	ProjectID                 int64
+	IsComplete                bool
+	WethPairIsCreated         *bool
+	WethPairIsRemoveLiquidity *bool
+	WethPairIsMint            *bool
+	WethPairQuoteUsdtValueInt *big.Int
+	WethPairLastSwapTimestamp *uint64
+	UsdtPairIsCreated         *bool
+	UsdtPairIsRemoveLiquidity *bool
+	UsdtPairIsMint            *bool
+	UsdtPairQuoteUsdtValueInt *big.Int
+	UsdtPairLastSwapTimestamp *uint64
+	SourceUpdatedAt           time.Time
+	EvaluatedAt               time.Time
+	CreatedAt                 time.Time
+}
+
+type ProjectReportEvaluationCandidate struct {
+	ProjectID       int64
+	IsComplete      bool
+	SourceUpdatedAt time.Time
+	HasChainState   bool
+	ChainState      json.RawMessage
 }
 
 type ProjectCandidatePage struct {

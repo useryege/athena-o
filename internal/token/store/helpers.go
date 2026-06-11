@@ -87,6 +87,21 @@ func int64Value(value pgtype.Int8) int64 {
 	return value.Int64
 }
 
+func nullableBool(value *bool) pgtype.Bool {
+	if value == nil {
+		return pgtype.Bool{}
+	}
+	return pgtype.Bool{Bool: *value, Valid: true}
+}
+
+func boolPointer(value pgtype.Bool) *bool {
+	if !value.Valid {
+		return nil
+	}
+	result := value.Bool
+	return &result
+}
+
 func int16ToUint8(field string, value int16) (uint8, error) {
 	if value < 0 || value > math.MaxUint8 {
 		return 0, fmt.Errorf("%s exceeds uint8 range", field)
@@ -99,6 +114,20 @@ func numericFromBigInt(value *big.Int) pgtype.Numeric {
 		return pgtype.Numeric{Int: new(big.Int), Exp: 0, Valid: true}
 	}
 	return pgtype.Numeric{Int: new(big.Int).Set(value), Exp: 0, Valid: true}
+}
+
+func nullableNumericFromBigInt(value *big.Int) pgtype.Numeric {
+	if value == nil {
+		return pgtype.Numeric{}
+	}
+	return numericFromBigInt(value)
+}
+
+func bigIntPointerFromNumeric(value pgtype.Numeric) *big.Int {
+	if !value.Valid {
+		return nil
+	}
+	return bigIntFromNumeric(value)
 }
 
 func bigIntFromNumeric(value pgtype.Numeric) *big.Int {
@@ -114,6 +143,28 @@ func bigIntFromNumeric(value pgtype.Numeric) *big.Int {
 	}
 	result := new(big.Int).Set(value.Int)
 	return result.Quo(result, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-value.Exp)), nil))
+}
+
+func nullableUint64(value *uint64) (pgtype.Int8, error) {
+	if value == nil {
+		return pgtype.Int8{}, nil
+	}
+	converted, err := uint64ToInt64("timestamp", *value)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+	return pgtype.Int8{Int64: converted, Valid: true}, nil
+}
+
+func uint64PointerFromInt64(field string, value pgtype.Int8) (*uint64, error) {
+	if !value.Valid {
+		return nil, nil
+	}
+	converted, err := int64ToUint64(field, value.Int64)
+	if err != nil {
+		return nil, err
+	}
+	return &converted, nil
 }
 
 func uint64ToInt64(field string, value uint64) (int64, error) {
@@ -432,6 +483,7 @@ func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) *Proj
 		NextAttemptAt: timeValue(row.NextAttemptAt),
 		LastError:     textValue(row.LastError),
 		CreatedAt:     timeValue(row.CreatedAt),
+		UpdatedAt:     timeValue(row.UpdatedAt),
 	}
 }
 
@@ -461,6 +513,7 @@ func mapDueProjectDataCollectionTask(row tokensqlc.ListDueProjectDataCollectionT
 			NextAttemptAt: timeValue(row.NextAttemptAt),
 			LastError:     textValue(row.LastError),
 			CreatedAt:     timeValue(row.CreatedAt),
+			UpdatedAt:     timeValue(row.UpdatedAt),
 		},
 		Project: Project{
 			ID:          row.ProjectID,
@@ -480,6 +533,34 @@ func mapDueProjectDataCollectionTask(row tokensqlc.ListDueProjectDataCollectionT
 			UsdtPair:    bytesToAddress(row.UsdtPair),
 			CreatedAt:   timeValue(row.ProjectCreatedAt),
 		},
+	}, nil
+}
+
+func mapProjectReport(row tokensqlc.ProjectReport) (*ProjectReport, error) {
+	wethLastSwapTimestamp, err := uint64PointerFromInt64("weth_pair_last_swap_timestamp", row.WethPairLastSwapTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	usdtLastSwapTimestamp, err := uint64PointerFromInt64("usdt_pair_last_swap_timestamp", row.UsdtPairLastSwapTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	return &ProjectReport{
+		ProjectID:                 row.ProjectID,
+		IsComplete:                row.IsComplete,
+		WethPairIsCreated:         boolPointer(row.WethPairIsCreated),
+		WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity),
+		WethPairIsMint:            boolPointer(row.WethPairIsMint),
+		WethPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt),
+		WethPairLastSwapTimestamp: wethLastSwapTimestamp,
+		UsdtPairIsCreated:         boolPointer(row.UsdtPairIsCreated),
+		UsdtPairIsRemoveLiquidity: boolPointer(row.UsdtPairIsRemoveLiquidity),
+		UsdtPairIsMint:            boolPointer(row.UsdtPairIsMint),
+		UsdtPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt),
+		UsdtPairLastSwapTimestamp: usdtLastSwapTimestamp,
+		SourceUpdatedAt:           timeValue(row.SourceUpdatedAt),
+		EvaluatedAt:               timeValue(row.EvaluatedAt),
+		CreatedAt:                 timeValue(row.CreatedAt),
 	}, nil
 }
 

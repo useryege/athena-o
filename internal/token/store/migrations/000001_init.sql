@@ -224,6 +224,7 @@ CREATE TABLE IF NOT EXISTS project_data_collection_task (
   next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_error TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (project_id, data_type),
   CONSTRAINT project_data_collection_task_project_fk
     FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
@@ -237,6 +238,34 @@ CREATE TABLE IF NOT EXISTS project_data_collection_task (
 
 CREATE INDEX IF NOT EXISTS project_data_collection_task_due_idx
   ON project_data_collection_task (status, next_attempt_at, data_type, project_id);
+
+CREATE TABLE IF NOT EXISTS project_report (
+  project_id BIGINT PRIMARY KEY,
+  is_complete BOOLEAN NOT NULL DEFAULT false,
+  weth_pair_is_created BOOLEAN,
+  weth_pair_is_remove_liquidity BOOLEAN,
+  weth_pair_is_mint BOOLEAN,
+  weth_pair_quote_usdt_value_int NUMERIC(78, 0),
+  weth_pair_last_swap_timestamp BIGINT,
+  usdt_pair_is_created BOOLEAN,
+  usdt_pair_is_remove_liquidity BOOLEAN,
+  usdt_pair_is_mint BOOLEAN,
+  usdt_pair_quote_usdt_value_int NUMERIC(78, 0),
+  usdt_pair_last_swap_timestamp BIGINT,
+  source_updated_at TIMESTAMPTZ,
+  evaluated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_report_project_fk
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_report_weth_pair_quote_usdt_value_nonnegative
+    CHECK (weth_pair_quote_usdt_value_int IS NULL OR weth_pair_quote_usdt_value_int >= 0),
+  CONSTRAINT project_report_weth_pair_last_swap_timestamp_nonnegative
+    CHECK (weth_pair_last_swap_timestamp IS NULL OR weth_pair_last_swap_timestamp >= 0),
+  CONSTRAINT project_report_usdt_pair_quote_usdt_value_nonnegative
+    CHECK (usdt_pair_quote_usdt_value_int IS NULL OR usdt_pair_quote_usdt_value_int >= 0),
+  CONSTRAINT project_report_usdt_pair_last_swap_timestamp_nonnegative
+    CHECK (usdt_pair_last_swap_timestamp IS NULL OR usdt_pair_last_swap_timestamp >= 0)
+);
 
 CREATE TABLE IF NOT EXISTS project_ave_data (
   project_id BIGINT PRIMARY KEY,
@@ -304,6 +333,7 @@ CREATE TABLE IF NOT EXISTS wallet_blacklist (
 
 DROP TABLE IF EXISTS wallet_blacklist;
 DROP TABLE IF EXISTS bytecode_blacklist;
+DROP TABLE IF EXISTS project_report;
 DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_simulation_result;
 DROP TABLE IF EXISTS project_chain_state;

@@ -49,6 +49,7 @@ type Querier interface {
 	GetWalletAssetState(ctx context.Context, arg GetWalletAssetStateParams) (WalletAssetState, error)
 	GetWalletBlacklistEntry(ctx context.Context, wallet []byte) (WalletBlacklist, error)
 	InsertProjectDataCollectionTaskIfNotExists(ctx context.Context, arg InsertProjectDataCollectionTaskIfNotExistsParams) error
+	InsertProjectReportIfNotExists(ctx context.Context, projectID int64) error
 	IsBytecodeBlacklisted(ctx context.Context, codeHash []byte) (bool, error)
 	IsWalletBlacklisted(ctx context.Context, wallet []byte) (bool, error)
 	ListBytecodeBlacklistEntries(ctx context.Context) ([]BytecodeBlacklist, error)
@@ -66,6 +67,7 @@ type Querier interface {
 	ListProjectInitialRecipientsByWallet(ctx context.Context, wallet []byte) ([]ProjectInitialRecipient, error)
 	ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]ProjectRelatedWallet, error)
 	ListProjectRelatedWalletsByWallet(ctx context.Context, wallet []byte) ([]ProjectRelatedWallet, error)
+	ListProjectReportsDueForEvaluation(ctx context.Context, limit int32) ([]ListProjectReportsDueForEvaluationRow, error)
 	ListProjectSimulationResultsByProject(ctx context.Context, projectID int64) ([]ProjectSimulationResult, error)
 	ListProjectSimulationResultsByWallet(ctx context.Context, wallet []byte) ([]ProjectSimulationResult, error)
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
@@ -78,6 +80,7 @@ type Querier interface {
 	UpdateBytecodeBlacklistNote(ctx context.Context, arg UpdateBytecodeBlacklistNoteParams) (int64, error)
 	UpdateChainIngestCheckpointStatus(ctx context.Context, arg UpdateChainIngestCheckpointStatusParams) (ChainIngestCheckpoint, error)
 	UpdateContractCodeSource(ctx context.Context, arg UpdateContractCodeSourceParams) (ContractCode, error)
+	UpdateProjectReportEvaluation(ctx context.Context, arg UpdateProjectReportEvaluationParams) (ProjectReport, error)
 	UpdateWalletBlacklistNote(ctx context.Context, arg UpdateWalletBlacklistNoteParams) (int64, error)
 	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
 	UpsertChainIngestCheckpointCursor(ctx context.Context, arg UpsertChainIngestCheckpointCursorParams) (ChainIngestCheckpoint, error)
