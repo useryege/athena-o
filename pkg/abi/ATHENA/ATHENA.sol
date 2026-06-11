@@ -27,7 +27,7 @@ interface IPancakeFactoryView {
  * @author yege
  */
 contract Athena {
-    struct TokenValidation {
+    struct Token {
         bool isValidERC20;
         string name;
         string symbol;
@@ -71,7 +71,7 @@ contract Athena {
     struct ProjectState {
         address tokenContract;
         uint256 updatedAt;
-        TokenValidation token;
+        Token token;
         Pair wethPair;
         Pair usdtPair;
     }
@@ -134,8 +134,8 @@ contract Athena {
         usdtDecimals = usdtDecimalsOk && decimals > 0 ? decimals : (chainId == 1 ? uint8(6) : uint8(18));
     }
 
-    function ValidateERC20(address[] calldata tokenContracts) external view returns (TokenValidation[] memory results) {
-        results = new TokenValidation[](tokenContracts.length);
+    function ValidateERC20(address[] calldata tokenContracts) external view returns (Token[] memory results) {
+        results = new Token[](tokenContracts.length);
         for (uint256 i = 0; i < tokenContracts.length;) {
             results[i] = _getToken(tokenContracts[i]);
             unchecked {
@@ -223,7 +223,7 @@ contract Athena {
         view
         returns (SimulationState memory state)
     {
-        TokenValidation memory token = _getToken(tokenContract);
+        Token memory token = _getToken(tokenContract);
         if (!token.isValidERC20) {
             return state;
         }
@@ -239,7 +239,7 @@ contract Athena {
         (, state.callerBalance) = _safeBalanceOf(tokenContract, msgCaller);
     }
 
-    function _getToken(address tokenContract) private view returns (TokenValidation memory token) {
+    function _getToken(address tokenContract) private view returns (Token memory token) {
         bool nameOk;
         bool symbolOk;
         bool decimalsOk;
