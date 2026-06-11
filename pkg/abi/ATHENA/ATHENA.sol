@@ -299,9 +299,17 @@ contract Athena {
 
         (, pair.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.pairContract, v2pairFeeToAddress);
         if (pair.totalSupply > 0) {
-            pair.isRemoveLiquidity = pair.feeAddressHoldLiquidityBalance * 100 >= pair.totalSupply * 90;
+            pair.isRemoveLiquidity = _isRemoveLiquidity(pair.totalSupply, pair.feeAddressHoldLiquidityBalance);
             pair.feeAddressHoldLiquidityRatio = pair.feeAddressHoldLiquidityBalance * 100 / pair.totalSupply;
         }
+    }
+
+    function _isRemoveLiquidity(uint256 totalSupply, uint256 feeAddressHoldLiquidityBalance)
+        private
+        pure
+        returns (bool)
+    {
+        return totalSupply == 1000 || feeAddressHoldLiquidityBalance * 100 >= totalSupply * 90;
     }
 
     function _quoteToUsdtValue(uint256 quoteAmount, address quoteTokenContract) private view returns (uint256) {
