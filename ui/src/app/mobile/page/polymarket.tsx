@@ -1,6 +1,6 @@
 import {LinkOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Button, Space, Tag, Tooltip, Typography} from 'antd';
+import {Button, Empty, Space, Tag, Tooltip, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
@@ -156,93 +156,180 @@ const PolymarketEventLink = (props: {item: PolymarketSportsLiveEventCardItem}) =
     );
 };
 
-const MoneylineSparkline = (props: {series?: PolymarketSportsLivePriceHistorySeriesItem}) => {
-    const prices = (props.series?.prices || []).filter(value => Number.isFinite(value));
-    if (prices.length < 2) {
-        return null;
+const chartPercent = (value?: number) => {
+    if (value === undefined || !Number.isFinite(value)) {
+        return '-';
+    }
+    return `${Math.round(value * 100)}%`;
+};
+
+const latestPrice = (series?: PolymarketSportsLivePriceHistorySeriesItem) => {
+    const prices = series?.prices || [];
+    for (let index = prices.length - 1; index >= 0; index -= 1) {
+        const value = prices[index];
+        if (Number.isFinite(value)) {
+            return value;
+        }
+    }
+    return undefined;
+};
+
+const pricePoints = (series?: PolymarketSportsLivePriceHistorySeriesItem) =>
+    (series?.prices || [])
+        .map((price, index) => ({
+            price,
+            timestamp: series?.timestamps[index] || index
+        }))
+        .filter(point => Number.isFinite(point.price) && Number.isFinite(point.timestamp));
+
+const MoneylineTrendChart = (props: {
+    options: ReturnType<typeof moneylineOptions>;
+    history?: PolymarketSportsLivePriceHistorySeriesItem[];
+}) => {
+    const series = props.options
+        .map((option, index) => {
+            const history = resolvedPriceHistory(props.history, option.outcome, index);
+            const points = pricePoints(history);
+            return {
+                option,
+                points,
+                latest: latestPrice(history),
+                tone: index === 0 ? 'blue' : 'gold'
+            };
+        })
+        .filter(item => item.points.length > 1);
+
+    const prices = series.flatMap(item => item.points.map(point => point.price));
+    const timestamps = series.flatMap(item => item.points.map(point => point.timestamp));
+
+    if (series.length === 0 || prices.length === 0 || timestamps.length === 0) {
+        return (
+            <div className='sports-live-chart sports-live-chart--empty'>
+                <Typography.Text type='secondary'>No history</Typography.Text>
+            </div>
+        );
     }
 
-    const width = 104;
-    const height = 32;
-    const padding = 3;
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const range = max - min;
-    const points = prices
-        .map((price, index) => {
-            const x = padding + (index / Math.max(prices.length - 1, 1)) * (width - padding * 2);
-            const normalized = range === 0 ? 0.5 : (price - min) / range;
-            const y = padding + (1 - normalized) * (height - padding * 2);
-            return `${x.toFixed(2)},${y.toFixed(2)}`;
-        })
-        .join(' ');
+    const width = 620;
+    const height = 220;
+    const padding = {top: 18, right: 42, bottom: 30, left: 38};
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const pricePadding = Math.max((maxPrice - minPrice) * 0.18, 0.04);
+    const yMin = Math.max(0, minPrice - pricePadding);
+    const yMax = Math.min(1, maxPrice + pricePadding);
+    const yRange = Math.max(yMax - yMin, 0.01);
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+    const xRange = Math.max(maxTs - minTs, 1);
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const yTicks = [0.7, 0.6, 0.5, 0.4, 0.3].filter(value => value >= yMin && value <= yMax);
+    const visibleTicks = yTicks.length > 1 ? yTicks : [yMax, (yMax + yMin) / 2, yMin];
+    const xFor = (timestamp: number) => padding.left + ((timestamp - minTs) / xRange) * chartWidth;
+    const yFor = (price: number) => padding.top + (1 - (price - yMin) / yRange) * chartHeight;
+    const pathFor = (points: Array<{price: number; timestamp: number}>) =>
+        points
+            .map((point, index) => `${index === 0 ? 'M' : 'L'} ${xFor(point.timestamp).toFixed(2)} ${yFor(point.price).toFixed(2)}`)
+            .join(' ');
 
     return (
-        <svg className='moneyline-sparkline' viewBox={`0 0 ${width} ${height}`} aria-hidden='true' focusable='false'>
-            <polyline points={points} />
-        </svg>
+        <div className='sports-live-chart'>
+            <svg className='sports-live-chart__svg' viewBox={`0 0 ${width} ${height}`} role='img' aria-label='Moneyline price history'>
+                {visibleTicks.map(tick => {
+                    const y = yFor(tick);
+                    return (
+                        <g className='sports-live-chart__grid' key={tick.toFixed(4)}>
+                            <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} />
+                            <text x={width - 22} y={y + 4}>
+                                {chartPercent(tick)}
+                            </text>
+                        </g>
+                    );
+                })}
+                {series.map(item => (
+                    <path className={`sports-live-chart__line sports-live-chart__line--${item.tone}`} d={pathFor(item.points)} key={item.option.outcome} />
+                ))}
+            </svg>
+            <div className='sports-live-chart__labels'>
+                {series.map(item => (
+                    <div className={`sports-live-chart__label sports-live-chart__label--${item.tone}`} key={`${item.option.outcome}-label`}>
+                        <Typography.Text className='sports-live-chart__label-name'>{item.option.outcome}</Typography.Text>
+                        <Typography.Text className='sports-live-chart__label-value' strong={true}>
+                            {chartPercent(item.latest)}
+                        </Typography.Text>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 };
 
-const MoneylineOutcomeBlocks = (props: {
+const MoneylinePanel = (props: {
     market?: PolymarketSportsLiveMarketCardItem;
     teams?: PolymarketSportsLiveTeamItem[];
-    history?: PolymarketSportsLivePriceHistorySeriesItem[];
 }) => {
     const options = moneylineOptions(props.market, props.teams);
     if (options.length === 0) {
         return <Typography.Text type='secondary'>-</Typography.Text>;
     }
     return (
-        <div className='moneyline-outcomes'>
-            {options.map((option, index) => (
-                <div className='moneyline-outcome' key={option.outcome}>
-                    <div className='moneyline-outcome__team'>
-                        {option.logo && <img className='moneyline-outcome__logo' src={option.logo} alt='' onError={event => (event.currentTarget.style.display = 'none')} />}
-                        <Typography.Text className='moneyline-outcome__name'>{option.outcome}</Typography.Text>
-                    </div>
-                    <div className='moneyline-outcome__market'>
-                        <Typography.Text className='moneyline-outcome__price' strong={true}>
+        <div className='sports-live-moneyline'>
+            <Typography.Text className='sports-live-moneyline__title' strong={true}>
+                Moneyline
+            </Typography.Text>
+            <div className='sports-live-moneyline__rows'>
+                {options.map(option => (
+                    <div className='sports-live-moneyline__row' key={option.outcome}>
+                        <div className='sports-live-moneyline__team'>
+                            {option.logo && <img className='sports-live-moneyline__logo' src={option.logo} alt='' onError={event => (event.currentTarget.style.display = 'none')} />}
+                            <Typography.Text className='sports-live-moneyline__name'>{option.outcome}</Typography.Text>
+                        </div>
+                        <Typography.Text className='sports-live-moneyline__price' strong={true}>
                             {option.price}
                         </Typography.Text>
-                        <MoneylineSparkline series={resolvedPriceHistory(props.history, option.outcome, index)} />
                     </div>
-                </div>
-            ))}
+                ))}
+            </div>
         </div>
     );
 };
 
 const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
     const moneyline = moneylineMarket(props.item);
+    const options = moneylineOptions(moneyline, props.item.teams);
+    const scoreLine = [props.item.score, props.item.period, props.item.elapsed].filter(Boolean).join(' · ');
 
     return (
-        <>
-            <CardTitle
-                title={props.item.title}
-                subtitle={[props.item.score, props.item.period, props.item.elapsed].filter(Boolean).join(' · ') || props.item.slug}
-                image={props.item.image}
-                tags={
+        <article className='sports-live-card'>
+            <div className='sports-live-card__info'>
+                <CardTitle title={props.item.title} subtitle={props.item.slug} image={props.item.image} />
+                <div className='sports-live-card__meta'>
                     <Space wrap={true}>
                         <Tag color='green'>Live</Tag>
                         {props.item.gameStatus && <Tag>{props.item.gameStatus}</Tag>}
+                        {scoreLine && <Tag>{scoreLine}</Tag>}
                         <PolymarketEventLink item={props.item} />
                     </Space>
-                }
-            />
-            <MetricRow
-                items={[
-                    {label: 'Volume', value: fmtNumber(props.item.volume)},
-                    {label: 'Liquidity', value: fmtNumber(props.item.liquidity)}
-                ]}
-            />
-            <div className='moneyline-outcomes-wrap'>
-                <Typography.Text className='moneyline-outcomes-label' strong={true}>
-                    Moneyline
-                </Typography.Text>
-                <MoneylineOutcomeBlocks market={moneyline} teams={props.item.teams} history={props.history} />
+                </div>
+                <div className='sports-live-card__stats'>
+                    <div className='sports-live-card__stat'>
+                        <Typography.Text className='sports-live-card__stat-label'>Volume</Typography.Text>
+                        <Typography.Text className='sports-live-card__stat-value' strong={true}>
+                            {fmtNumber(props.item.volume)}
+                        </Typography.Text>
+                    </div>
+                    <div className='sports-live-card__stat'>
+                        <Typography.Text className='sports-live-card__stat-label'>Liquidity</Typography.Text>
+                        <Typography.Text className='sports-live-card__stat-value' strong={true}>
+                            {fmtNumber(props.item.liquidity)}
+                        </Typography.Text>
+                    </div>
+                </div>
             </div>
-        </>
+            <MoneylineTrendChart options={options} history={props.history} />
+            <MoneylinePanel market={moneyline} teams={props.item.teams} />
+        </article>
     );
 };
 
@@ -268,35 +355,7 @@ export const PolymarketSportsLivePage = () => {
         });
         return out;
     }, [history.data?.items, history.error]);
-    const eventColumns: ColumnsType<PolymarketSportsLiveEventCardItem> = [
-        {
-            title: 'Event',
-            render: item => (
-                <CardTitle
-                    title={item.title}
-                    subtitle={item.slug}
-                    image={item.image}
-                    tags={
-                        <Space wrap={true}>
-                            <Tag color='green'>Live</Tag>
-                            {item.gameStatus && <Tag>{item.gameStatus}</Tag>}
-                            <PolymarketEventLink item={item} />
-                        </Space>
-                    }
-                />
-            )
-        },
-        {title: 'Score', dataIndex: 'score'},
-        {
-            title: 'Moneyline',
-            render: item => {
-                const moneyline = moneylineMarket(item);
-                return <MoneylineOutcomeBlocks market={moneyline} teams={item.teams} history={historyByMarketKey.get(moneyline?.marketKey || '')} />;
-            }
-        },
-        {title: 'Volume', render: item => fmtNumber(item.volume)},
-        {title: 'Liquidity', render: item => fmtNumber(item.liquidity)}
-    ];
+    const items = events.data?.items || [];
     return (
         <AppPage
             title='Sports Live'
@@ -304,16 +363,13 @@ export const PolymarketSportsLivePage = () => {
             loading={events.loading}
             error={events.error}
             onRefresh={events.reload}>
-            <ResponsiveResourceList
-                rowKey='eventKey'
-                items={events.data?.items || []}
-                columns={eventColumns}
-                loading={events.loading}
-                card={item => {
+            <div className='sports-live-list'>
+                {!events.loading && items.length === 0 && <Empty description='No data' />}
+                {items.map(item => {
                     const moneyline = moneylineMarket(item);
-                    return <SportsLiveEventCard item={item} history={historyByMarketKey.get(moneyline?.marketKey || '')} />;
-                }}
-            />
+                    return <SportsLiveEventCard item={item} history={historyByMarketKey.get(moneyline?.marketKey || '')} key={item.eventKey} />;
+                })}
+            </div>
         </AppPage>
     );
 };
