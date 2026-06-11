@@ -449,19 +449,19 @@ body[data-theme='dark'] .app-page__header {
 .moneyline-outcomes {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    min-width: 260px;
+    gap: 12px;
+    width: 100%;
 }
 
 .moneyline-outcome {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
-    min-width: 180px;
-    max-width: 260px;
-    flex: 1 1 180px;
-    padding: 8px 10px;
+    gap: 14px;
+    min-width: min(240px, 100%);
+    max-width: 360px;
+    flex: 1 1 240px;
+    padding: 11px 13px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
     background: color-mix(in srgb, var(--athena-bg-soft) 68%, var(--athena-panel-solid));
@@ -470,13 +470,13 @@ body[data-theme='dark'] .app-page__header {
 .moneyline-outcome__team {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 10px;
     min-width: 0;
 }
 
 .moneyline-outcome__logo {
-    width: 22px;
-    height: 22px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     object-fit: cover;
     flex: 0 0 auto;
@@ -490,10 +490,14 @@ body[data-theme='dark'] .app-page__header {
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--athena-text);
+    font-size: 15px;
+    font-weight: 700;
 }
 
 .moneyline-outcome__price {
     color: var(--athena-accent);
+    font-size: 16px;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
 
