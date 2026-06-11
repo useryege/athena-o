@@ -42,10 +42,6 @@ contract Athena {
         address pairContract;
         // Whether the pair is created
         bool isCreated;
-        // Address of the first token
-        address token0;
-        // Address of the second token
-        address token1;
         // Total supply of the pair
         uint256 totalSupply;
         // Locked liquidity amount
@@ -300,8 +296,6 @@ contract Athena {
             return pair;
         }
 
-        pair.token0 = _safeAddress(pair.pairContract, IUniswapV2PairView.token0.selector);
-        pair.token1 = _safeAddress(pair.pairContract, IUniswapV2PairView.token1.selector);
         (, pair.totalSupply) = _safeUint256(pair.pairContract, IUniswapV2PairView.totalSupply.selector);
         (, , pair.lastSwapTimestamp) = _safeReserves(pair.pairContract);
 
