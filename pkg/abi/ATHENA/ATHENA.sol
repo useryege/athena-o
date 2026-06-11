@@ -54,6 +54,8 @@ contract Athena {
     struct PairReport {
         // Whether the pair is remove liquidity
         bool isRemoveLiquidity;
+        // Whether pair token balance exceeds token total supply
+        bool isMint;
     }
 
     struct Pair {
@@ -215,12 +217,12 @@ contract Athena {
         if (state.usdtPair.isCreated) {
             state.usdtPair.quoteUsdtValue = state.usdtPair.quoteBalance;
             state.usdtPair.quoteUsdtValueInt = _toIntegerByDecimals(state.usdtPair.quoteUsdtValue, usdtDecimals);
-            state.usdtReport = _getPairReport(state.usdtPair.liquidityState);
+            state.usdtReport = _getPairReport(state.usdtPair, state.token.totalSupply);
         }
         if (state.wethPair.isCreated) {
             state.wethPair.quoteUsdtValue = _quoteToUsdtValue(state.wethPair.quoteBalance, wethContract);
             state.wethPair.quoteUsdtValueInt = _toIntegerByDecimals(state.wethPair.quoteUsdtValue, usdtDecimals);
-            state.wethReport = _getPairReport(state.wethPair.liquidityState);
+            state.wethReport = _getPairReport(state.wethPair, state.token.totalSupply);
         }
     }
 
@@ -228,17 +230,22 @@ contract Athena {
         report.isValidERC20 = token.isValidERC20;
     }
 
-    function _getPairReport(PairLiquidityState memory liquidityState)
+    function _getPairReport(Pair memory pair, uint256 tokenTotalSupply)
         private
         pure
         returns (PairReport memory report)
     {
-        if (liquidityState.totalSupply > 0) {
+        report.isMint = _isMint(pair.baseBalance, tokenTotalSupply);
+        if (pair.liquidityState.totalSupply > 0) {
             report.isRemoveLiquidity = _isRemoveLiquidity(
-                liquidityState.totalSupply,
-                liquidityState.feeAddressHoldLiquidityBalance
+                pair.liquidityState.totalSupply,
+                pair.liquidityState.feeAddressHoldLiquidityBalance
             );
         }
+    }
+
+    function _isMint(uint256 pairTokenBalance, uint256 tokenTotalSupply) private pure returns (bool) {
+        return pairTokenBalance > tokenTotalSupply;
     }
 
     function _toIntegerByDecimals(uint256 value, uint8 decimals) private pure returns (uint256) {
