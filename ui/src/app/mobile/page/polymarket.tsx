@@ -128,8 +128,7 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) =
             <MetricRow
                 items={[
                     {label: 'Volume', value: fmtNumber(props.item.volume)},
-                    {label: 'Liquidity', value: fmtNumber(props.item.liquidity)},
-                    {label: 'Updated', value: fmt(props.item.updatedAt)}
+                    {label: 'Liquidity', value: fmtNumber(props.item.liquidity)}
                 ]}
             />
             <div className='moneyline-outcomes-wrap'>
@@ -167,8 +166,7 @@ export const PolymarketSportsLivePage = () => {
             render: item => <MoneylineOutcomeBlocks market={moneylineMarket(item)} />
         },
         {title: 'Volume', render: item => fmtNumber(item.volume)},
-        {title: 'Liquidity', render: item => fmtNumber(item.liquidity)},
-        {title: 'Updated', dataIndex: 'updatedAt'}
+        {title: 'Liquidity', render: item => fmtNumber(item.liquidity)}
     ];
     return (
         <AppPage
