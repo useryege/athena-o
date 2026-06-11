@@ -46,6 +46,13 @@ contract Athena {
         uint256 totalSupply;
         // Locked liquidity amount
         uint256 lockedLiquidity;
+        // Whether the pair is remove liquidity
+        bool isRemoveLiquidity;
+        // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
+        uint256 feeAddressHoldLiquidityBalance;
+        uint256 feeAddressHoldLiquidityRatio;
+
+
         // BalanceOf(tokenContract, pair) baseTokenContract can only be tokenContract
         uint256 baseBalance;
         // BalanceOf(quoteTokenContract, pair)  quoteTokenContract can only be weth or usdt
@@ -56,11 +63,7 @@ contract Athena {
         uint256 quoteUsdtValueInt;
         // Last swap timestamp from pair getReserves()
         uint32 lastSwapTimestamp;
-        // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
-        uint256 feeAddressHoldLiquidityBalance;
-        uint256 feeAddressHoldLiquidityRatio;
-        // Whether the pair is remove liquidity
-        bool isRemoveLiquidity;
+
     }
 
 
