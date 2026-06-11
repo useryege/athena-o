@@ -31,6 +31,7 @@ type WormMarket struct {
 	LastSeenAt       pgtype.Timestamptz
 	CreatedAt        pgtype.Timestamptz
 	UpdatedAt        pgtype.Timestamptz
+	PriceAlertBand   string
 }
 
 type WormMarketPriceHistory struct {

@@ -17,14 +17,27 @@ import (
 const (
 	wormNewEventNotificationTopic   = "[WORM] 新比赛"
 	wormLiveEventNotificationTopic  = "[WORM] 开赛通知"
+	wormPriceAlert80Topic           = "[WORM] 80/20 赔率"
+	wormPriceAlert90Topic           = "[WORM] 90/10 赔率"
 	wormNewEventNotificationSource  = "worm.new-event"
 	wormLiveEventNotificationSource = "worm.live-event"
+	wormPriceAlert80Source          = "worm.price-alert-80-20"
+	wormPriceAlert90Source          = "worm.price-alert-90-10"
 	wormNotificationSendTimeout     = 10 * time.Second
+
+	wormPriceAlertBandNone = "none"
+	wormPriceAlertBandA    = "a"
+	wormPriceAlertBandB    = "b"
 )
 
 type wormNotification struct {
 	eventConditionID string
 	request          *notificationapiclient.SendNotificationRequest
+}
+
+type wormNotificationResult struct {
+	notification wormNotification
+	err          error
 }
 
 func newWormEventNotifications(events map[string]wormstore.WormMarket) []wormNotification {
@@ -81,6 +94,42 @@ func newWormLiveNotification(change wormstore.WormMarketLivePriceChange) wormNot
 	}
 }
 
+func newWormPriceAlertNotification(market wormstore.WormMarket, band string) wormNotification {
+	eventTitle := firstNonEmptyWormValue(market.EventTitle, market.Title, market.EventConditionID)
+	marketTitle := firstNonEmptyWormValue(market.Title, market.ConditionID)
+	topic := wormPriceAlert80Topic
+	source := wormPriceAlert80Source
+	alertBand := "80/20 ([0.1, 0.2] or [0.8, 0.9))"
+	severity := notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING
+	titlePrefix := "Worm 80/20 price alert"
+	if band == wormPriceAlertBandB {
+		topic = wormPriceAlert90Topic
+		source = wormPriceAlert90Source
+		alertBand = "90/10 ([0, 0.1) or [0.9, 1])"
+		severity = notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_CRITICAL
+		titlePrefix = "Worm 90/10 price alert"
+	}
+	body := strings.Join([]string{
+		fmt.Sprintf("Event: %s", eventTitle),
+		fmt.Sprintf("Market: %s", marketTitle),
+		fmt.Sprintf("Last trade price: %s", firstNonEmptyWormValue(market.LastTradePrice, "-")),
+		fmt.Sprintf("Alert band: %s", alertBand),
+		fmt.Sprintf("Event condition ID: %s", firstNonEmptyWormValue(market.EventConditionID, "-")),
+		fmt.Sprintf("Market condition ID: %s", market.ConditionID),
+	}, "\n")
+	return wormNotification{
+		eventConditionID: market.EventConditionID,
+		request: &notificationapiclient.SendNotificationRequest{
+			Source:     source,
+			Severity:   severity,
+			Title:      fmt.Sprintf("%s: %s", titlePrefix, marketTitle),
+			Body:       body,
+			Link:       wormMarketLink(market.ConditionID),
+			TopicLabel: topic,
+		},
+	}
+}
+
 func wormMarketLink(conditionID string) string {
 	conditionID = strings.TrimSpace(conditionID)
 	if conditionID == "" {
@@ -89,30 +138,48 @@ func wormMarketLink(conditionID string) string {
 	return "https://www.worm.wtf/market/" + url.PathEscape(conditionID)
 }
 
-func (s *Service) sendWormNotifications(ctx context.Context, notifications []wormNotification) {
-	if len(notifications) == 0 || s.notificationClientset == nil {
-		return
+func (s *Service) sendWormNotifications(ctx context.Context, notifications []wormNotification) []wormNotificationResult {
+	if len(notifications) == 0 {
+		return nil
+	}
+	results := make([]wormNotificationResult, 0, len(notifications))
+	if s.notificationClientset == nil {
+		for _, item := range notifications {
+			results = append(results, wormNotificationResult{
+				notification: item,
+				err:          fmt.Errorf("notification clientset is not configured"),
+			})
+		}
+		return results
 	}
 	closer, client, err := s.notificationClientset.NewNotificationServiceClient()
 	if err != nil {
 		log.WithError(err).Warn("failed to create worm notification client")
-		return
+		for _, item := range notifications {
+			results = append(results, wormNotificationResult{notification: item, err: err})
+		}
+		return results
 	}
 	defer utilio.Close(closer)
 
 	for _, item := range notifications {
+		result := wormNotificationResult{notification: item}
 		if item.request == nil {
+			result.err = fmt.Errorf("notification request is nil")
+			results = append(results, result)
 			continue
 		}
 		sendCtx, cancel := context.WithTimeout(ctx, wormNotificationSendTimeout)
-		_, err := client.SendNotification(sendCtx, item.request)
+		_, result.err = client.SendNotification(sendCtx, item.request)
 		cancel()
-		if err != nil {
-			log.WithError(err).
+		if result.err != nil {
+			log.WithError(result.err).
 				WithField("event_condition_id", item.eventConditionID).
 				Warn("failed to send worm notification")
 		}
+		results = append(results, result)
 	}
+	return results
 }
 
 func firstNonEmptyWormValue(values ...string) string {

@@ -426,6 +426,7 @@ func (s *Service) syncWormMarketsOnce(ctx context.Context) error {
 	if _, err := s.store.DeleteWormMarketsNotSeenSince(ctx, syncStartedAt); err != nil {
 		return err
 	}
+	s.updateWormMarketPriceAlerts(ctx)
 	if !suppressNewEventNotifications {
 		s.sendWormNotifications(ctx, newWormEventNotifications(newEvents))
 	}
@@ -570,6 +571,65 @@ func (s *Service) updateWormMarketLiveStates(ctx context.Context) {
 	}
 	s.sendWormNotifications(ctx, liveNotifications)
 	log.Debugf("updated live states for %d worm markets", len(priceChanges))
+}
+
+func (s *Service) updateWormMarketPriceAlerts(ctx context.Context) {
+	if s.store == nil {
+		return
+	}
+	markets, err := s.store.ListWormLiveMarketsForPriceAlerts(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Warnf("failed to list live worm markets for price alerts: %v", err)
+		}
+		return
+	}
+	for _, market := range markets {
+		if ctx.Err() != nil {
+			return
+		}
+		currentBand := strings.TrimSpace(market.PriceAlertBand)
+		if currentBand == "" {
+			currentBand = wormPriceAlertBandNone
+		}
+		nextBand := classifyWormPriceAlertBand(market.LastTradePrice)
+		if nextBand == currentBand {
+			continue
+		}
+		if nextBand != wormPriceAlertBandNone {
+			results := s.sendWormNotifications(ctx, []wormNotification{
+				newWormPriceAlertNotification(market, nextBand),
+			})
+			if len(results) != 1 || results[0].err != nil {
+				continue
+			}
+		}
+		updated, err := s.store.UpdateWormMarketPriceAlertBand(ctx, market.ConditionID, currentBand, nextBand)
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Warnf("failed to update worm market price alert band for %s: %v", market.ConditionID, err)
+			}
+			continue
+		}
+		if !updated && ctx.Err() == nil {
+			log.Warnf("worm market price alert band changed concurrently for %s", market.ConditionID)
+		}
+	}
+}
+
+func classifyWormPriceAlertBand(value string) string {
+	price, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+	if err != nil || math.IsNaN(price) || math.IsInf(price, 0) || price < 0 || price > 1 {
+		return wormPriceAlertBandNone
+	}
+	switch {
+	case price < 0.1 || price >= 0.9:
+		return wormPriceAlertBandB
+	case price <= 0.2 || price >= 0.8:
+		return wormPriceAlertBandA
+	default:
+		return wormPriceAlertBandNone
+	}
 }
 
 func parseWormMarketPrice(value string) (string, bool) {

@@ -146,6 +146,20 @@ SELECT *
 FROM worm_market
 ORDER BY (live_state = 'live') DESC, created DESC, condition_id;
 
+-- name: ListWormLiveMarketsForPriceAlerts :many
+SELECT *
+FROM worm_market
+WHERE live_state = 'live'
+  AND state = 'open'
+ORDER BY condition_id;
+
+-- name: UpdateWormMarketPriceAlertBand :execrows
+UPDATE worm_market
+SET price_alert_band = @price_alert_band,
+  updated_at = now()
+WHERE condition_id = @condition_id
+  AND price_alert_band = @expected_price_alert_band;
+
 -- name: ListWormMarketConditionIDsMissingRules :many
 SELECT condition_id
 FROM worm_market

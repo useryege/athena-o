@@ -21,6 +21,7 @@ type Querier interface {
 	GetWormMarket(ctx context.Context, conditionID string) (WormMarket, error)
 	ListWormEventConditionIDs(ctx context.Context) ([]string, error)
 	ListWormEventsPage(ctx context.Context, arg ListWormEventsPageParams) ([]ListWormEventsPageRow, error)
+	ListWormLiveMarketsForPriceAlerts(ctx context.Context) ([]WormMarket, error)
 	ListWormMarketConditionIDsMissingRules(ctx context.Context) ([]string, error)
 	ListWormMarketLivePriceChanges(ctx context.Context, sampledAt pgtype.Timestamptz) ([]ListWormMarketLivePriceChangesRow, error)
 	ListWormMarkets(ctx context.Context) ([]WormMarket, error)
@@ -29,6 +30,7 @@ type Querier interface {
 	SetWormMarketRulesIfMissing(ctx context.Context, arg SetWormMarketRulesIfMissingParams) (int64, error)
 	UpdateWormMarket(ctx context.Context, arg UpdateWormMarketParams) (WormMarket, error)
 	UpdateWormMarketLiveState(ctx context.Context, arg UpdateWormMarketLiveStateParams) (WormMarket, error)
+	UpdateWormMarketPriceAlertBand(ctx context.Context, arg UpdateWormMarketPriceAlertBandParams) (int64, error)
 	UpsertWormMarket(ctx context.Context, arg UpsertWormMarketParams) (WormMarket, error)
 }
 

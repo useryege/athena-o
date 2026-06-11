@@ -158,6 +158,34 @@ func (s *SQLStore) ListWormMarkets(ctx context.Context) ([]WormMarket, error) {
 	return mapWormMarkets(rows), nil
 }
 
+func (s *SQLStore) ListWormLiveMarketsForPriceAlerts(ctx context.Context) ([]WormMarket, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListWormLiveMarketsForPriceAlerts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list live worm markets for price alerts: %w", err)
+	}
+	return mapWormMarkets(rows), nil
+}
+
+func (s *SQLStore) UpdateWormMarketPriceAlertBand(ctx context.Context, conditionID, expectedBand, band string) (bool, error) {
+	q, err := s.querier()
+	if err != nil {
+		return false, err
+	}
+	rowsAffected, err := q.UpdateWormMarketPriceAlertBand(ctx, wormsqlc.UpdateWormMarketPriceAlertBandParams{
+		ConditionID:            conditionID,
+		ExpectedPriceAlertBand: expectedBand,
+		PriceAlertBand:         band,
+	})
+	if err != nil {
+		return false, fmt.Errorf("update worm market price alert band: %w", err)
+	}
+	return rowsAffected > 0, nil
+}
+
 func (s *SQLStore) ListWormMarketConditionIDsMissingRules(ctx context.Context) ([]string, error) {
 	q, err := s.querier()
 	if err != nil {
