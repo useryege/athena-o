@@ -301,21 +301,28 @@ contract Athena {
             return pair;
         }
 
-        (, pair.liquidityState.totalSupply) = _safeUint256(pair.pairContract, IUniswapV2PairView.totalSupply.selector);
         (, , pair.lastSwapTimestamp) = _safeReserves(pair.pairContract);
 
         (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.pairContract);
         (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.pairContract);
-        pair.liquidityState.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pair.pairContract);
+        pair.liquidityState = _getPairLiquidityState(pair.pairContract);
+    }
 
-        (, pair.liquidityState.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.pairContract, v2pairFeeToAddress);
-        if (pair.liquidityState.totalSupply > 0) {
-            pair.liquidityState.isRemoveLiquidity = _isRemoveLiquidity(
-                pair.liquidityState.totalSupply,
-                pair.liquidityState.feeAddressHoldLiquidityBalance
+    function _getPairLiquidityState(address pairContract)
+        private
+        view
+        returns (PairLiquidityState memory liquidityState)
+    {
+        (, liquidityState.totalSupply) = _safeUint256(pairContract, IUniswapV2PairView.totalSupply.selector);
+        liquidityState.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pairContract);
+        (, liquidityState.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pairContract, v2pairFeeToAddress);
+        if (liquidityState.totalSupply > 0) {
+            liquidityState.isRemoveLiquidity = _isRemoveLiquidity(
+                liquidityState.totalSupply,
+                liquidityState.feeAddressHoldLiquidityBalance
             );
-            pair.liquidityState.feeAddressHoldLiquidityRatio =
-                pair.liquidityState.feeAddressHoldLiquidityBalance * 100 / pair.liquidityState.totalSupply;
+            liquidityState.feeAddressHoldLiquidityRatio =
+                liquidityState.feeAddressHoldLiquidityBalance * 100 / liquidityState.totalSupply;
         }
     }
 
