@@ -39,7 +39,7 @@ contract Athena {
 
     struct Pair {
         // Address of the pair contract
-        address contractAddress;
+        address pairContract;
         // Address of the first token
         address token0;
         // Address of the second token
@@ -60,7 +60,7 @@ contract Athena {
         uint112 reserve0;
         uint112 reserve1;
         uint32 blockTimestampLast;
-        // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.contractAddress, v2pairFeeToAddress)
+        // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
         uint256 feeAddressHoldLiquidityBalance;
         bool isRemoveLiquidity;
         uint256 feeAddressHoldLiquidityRatio;
@@ -281,22 +281,22 @@ contract Athena {
         view
         returns (Pair memory pair)
     {
-        pair.contractAddress = _pairFor(baseTokenContract, quoteTokenContract);
-        pair.isCreated = pair.contractAddress.code.length > 0;
+        pair.pairContract = _pairFor(baseTokenContract, quoteTokenContract);
+        pair.isCreated = pair.pairContract.code.length > 0;
         if (!pair.isCreated) {
             return pair;
         }
 
-        pair.token0 = _safeAddress(pair.contractAddress, IUniswapV2PairView.token0.selector);
-        pair.token1 = _safeAddress(pair.contractAddress, IUniswapV2PairView.token1.selector);
-        (, pair.totalSupply) = _safeUint256(pair.contractAddress, IUniswapV2PairView.totalSupply.selector);
-        (pair.reserve0, pair.reserve1, pair.blockTimestampLast) = _safeReserves(pair.contractAddress);
+        pair.token0 = _safeAddress(pair.pairContract, IUniswapV2PairView.token0.selector);
+        pair.token1 = _safeAddress(pair.pairContract, IUniswapV2PairView.token1.selector);
+        (, pair.totalSupply) = _safeUint256(pair.pairContract, IUniswapV2PairView.totalSupply.selector);
+        (pair.reserve0, pair.reserve1, pair.blockTimestampLast) = _safeReserves(pair.pairContract);
 
-        (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.contractAddress);
-        (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.contractAddress);
-        pair.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pair.contractAddress);
+        (, pair.baseBalance) = _safeBalanceOf(baseTokenContract, pair.pairContract);
+        (, pair.quoteBalance) = _safeBalanceOf(quoteTokenContract, pair.pairContract);
+        pair.lockedLiquidity = _lockedLiquidityWithDefaultLockers(pair.pairContract);
 
-        (, pair.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.contractAddress, v2pairFeeToAddress);
+        (, pair.feeAddressHoldLiquidityBalance) = _safeBalanceOf(pair.pairContract, v2pairFeeToAddress);
         if (pair.totalSupply > 0) {
             pair.isRemoveLiquidity = pair.feeAddressHoldLiquidityBalance * 100 >= pair.totalSupply * 90;
             pair.feeAddressHoldLiquidityRatio = pair.feeAddressHoldLiquidityBalance * 100 / pair.totalSupply;
