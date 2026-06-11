@@ -115,7 +115,6 @@ type ProjectRelatedWallet struct {
 
 type ProjectReport struct {
 	ProjectID                 int64
-	IsComplete                bool
 	WethPairIsCreated         pgtype.Bool
 	WethPairIsRemoveLiquidity pgtype.Bool
 	WethPairIsMint            pgtype.Bool
@@ -129,6 +128,17 @@ type ProjectReport struct {
 	SourceUpdatedAt           pgtype.Timestamptz
 	EvaluatedAt               pgtype.Timestamptz
 	CreatedAt                 pgtype.Timestamptz
+}
+
+type ProjectReportEvaluationTask struct {
+	ProjectID     int64
+	Status        string
+	Revision      int64
+	Attempts      int32
+	NextAttemptAt pgtype.Timestamptz
+	LastError     pgtype.Text
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type ProjectSimulationResult struct {

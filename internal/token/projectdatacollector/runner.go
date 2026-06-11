@@ -74,9 +74,6 @@ func (r *dataCollectorRunner) processAvailableTasks(ctx context.Context) {
 	if err := r.processSimulationResultTasks(ctx); err != nil {
 		log.WithError(err).Error("token project data collector simulation result task loop failed")
 	}
-	if err := r.processProjectReports(ctx); err != nil {
-		log.WithError(err).Error("token project data collector project report loop failed")
-	}
 }
 
 func (r *dataCollectorRunner) failTasks(ctx context.Context, tasks []tokenstore.ProjectDataCollectionTaskWithProject, err error) {

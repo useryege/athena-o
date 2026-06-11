@@ -185,6 +185,21 @@ services:
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
     command: ["athena"]
 
+  athena-token-project-report-evaluator:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-token
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_TOKEN_MODE: project-report-evaluator
+      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+    command: ["athena"]
+
   athena-migrate:
     image: ${PROD_IMAGE:-athena:local}
     profiles:

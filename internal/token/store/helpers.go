@@ -547,7 +547,6 @@ func mapProjectReport(row tokensqlc.ProjectReport) (*ProjectReport, error) {
 	}
 	return &ProjectReport{
 		ProjectID:                 row.ProjectID,
-		IsComplete:                row.IsComplete,
 		WethPairIsCreated:         boolPointer(row.WethPairIsCreated),
 		WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity),
 		WethPairIsMint:            boolPointer(row.WethPairIsMint),
@@ -562,6 +561,19 @@ func mapProjectReport(row tokensqlc.ProjectReport) (*ProjectReport, error) {
 		EvaluatedAt:               timeValue(row.EvaluatedAt),
 		CreatedAt:                 timeValue(row.CreatedAt),
 	}, nil
+}
+
+func mapProjectReportEvaluationTask(row tokensqlc.ProjectReportEvaluationTask) *ProjectReportEvaluationTask {
+	return &ProjectReportEvaluationTask{
+		ProjectID:     row.ProjectID,
+		Status:        row.Status,
+		Revision:      row.Revision,
+		Attempts:      row.Attempts,
+		NextAttemptAt: timeValue(row.NextAttemptAt),
+		LastError:     textValue(row.LastError),
+		CreatedAt:     timeValue(row.CreatedAt),
+		UpdatedAt:     timeValue(row.UpdatedAt),
+	}
 }
 
 func mapDueProjectDataCollectionTasks(rows []tokensqlc.ListDueProjectDataCollectionTasksRow) ([]ProjectDataCollectionTaskWithProject, error) {

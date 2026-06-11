@@ -91,7 +91,7 @@ func NewCommand() *cobra.Command {
 			switch token.NormalizeMode(mode) {
 			case token.ModeGRPC:
 				return runGRPCMode(ctx, server, listenHost, listenPort)
-			case token.ModeChainIngestor, token.ModeProjectQualifier, token.ModeProjectDataCollector:
+			case token.ModeChainIngestor, token.ModeProjectQualifier, token.ModeProjectDataCollector, token.ModeProjectReportEvaluator:
 				return runWorkerMode(ctx, server)
 			default:
 				if err := server.Stop(); err != nil {
@@ -112,6 +112,9 @@ func NewCommand() *cobra.Command {
 
 			# Start the Athena Token project data collector worker
 			$ athena-token --mode project-data-collector
+
+			# Start the Athena Token project report evaluator worker
+			$ athena-token --mode project-report-evaluator
 		`),
 	}
 
@@ -119,7 +122,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_LISTEN_ADDRESS", common.DefaultAddressToken), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortToken, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier|project-data-collector")
+	command.Flags().StringVar(&mode, "mode", env.StringFromEnv("ATHENA_TOKEN_MODE", token.ModeGRPC), "Run mode: grpc|chain-ingestor|project-qualifier|project-data-collector|project-report-evaluator")
 	command.Flags().StringSliceVar(&ethNodeWSURLs, "eth-node-ws-urls", env.StringsFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URLS", nil, ","), "Ethereum Mainnet node WebSocket addresses for worker modes")
 	command.Flags().StringSliceVar(&bscNodeWSURLs, "bsc-node-ws-urls", env.StringsFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URLS", nil, ","), "BSC Mainnet node WebSocket addresses for worker modes")
 	command.Flags().StringVar(&ethAthenaContract, "eth-athena-contract", env.StringFromEnv("ATHENA_TOKEN_ETH_ATHENA_CONTRACT", ""), "Ethereum Mainnet ATHENA contract address for project-qualifier mode")

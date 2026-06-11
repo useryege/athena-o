@@ -93,10 +93,17 @@ func (s *SQLStore) ListProjectDataCollectionTasks(ctx context.Context, projectID
 }
 
 func (s *SQLStore) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, projectID int64, dataType string) (*ProjectDataCollectionTask, error) {
-	q, err := s.querier()
-	if err != nil {
-		return nil, err
+	if s == nil || s.pool == nil {
+		return nil, fmt.Errorf("token postgres database is not configured")
 	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin mark project data collection task succeeded transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	q := tokensqlc.New(tx)
 	row, err := q.MarkProjectDataCollectionTaskSucceeded(ctx, tokensqlc.MarkProjectDataCollectionTaskSucceededParams{
 		ProjectID: projectID,
 		DataType:  dataType,
@@ -104,14 +111,27 @@ func (s *SQLStore) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, p
 	if err != nil {
 		return nil, fmt.Errorf("mark project data collection task succeeded: %w", err)
 	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit mark project data collection task succeeded transaction: %w", err)
+	}
 	return mapProjectDataCollectionTask(row), nil
 }
 
 func (s *SQLStore) MarkProjectDataCollectionTaskFailed(ctx context.Context, projectID int64, dataType, lastError string) (*ProjectDataCollectionTask, error) {
-	q, err := s.querier()
-	if err != nil {
-		return nil, err
+	if s == nil || s.pool == nil {
+		return nil, fmt.Errorf("token postgres database is not configured")
 	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin mark project data collection task failed transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	q := tokensqlc.New(tx)
 	row, err := q.MarkProjectDataCollectionTaskFailed(ctx, tokensqlc.MarkProjectDataCollectionTaskFailedParams{
 		ProjectID: projectID,
 		DataType:  dataType,
@@ -119,6 +139,12 @@ func (s *SQLStore) MarkProjectDataCollectionTaskFailed(ctx context.Context, proj
 	})
 	if err != nil {
 		return nil, fmt.Errorf("mark project data collection task failed: %w", err)
+	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit mark project data collection task failed transaction: %w", err)
 	}
 	return mapProjectDataCollectionTask(row), nil
 }
@@ -148,6 +174,9 @@ func (s *SQLStore) CompleteProjectAveDataCollection(ctx context.Context, project
 		DataType:  ProjectDataCollectionTypeAve,
 	}); err != nil {
 		return nil, fmt.Errorf("mark project ave data collection succeeded: %w", err)
+	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit project ave data collection transaction: %w", err)
@@ -183,6 +212,9 @@ func (s *SQLStore) CompleteProjectContractCodeSourceCollection(ctx context.Conte
 	}); err != nil {
 		return fmt.Errorf("mark project contract code source collection succeeded: %w", err)
 	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit project contract code source collection transaction: %w", err)
 	}
@@ -214,6 +246,9 @@ func (s *SQLStore) CompleteProjectChainStateCollection(ctx context.Context, proj
 		DataType:  ProjectDataCollectionTypeChainState,
 	}); err != nil {
 		return nil, fmt.Errorf("mark project chain state collection succeeded: %w", err)
+	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit project chain state collection transaction: %w", err)
@@ -260,6 +295,9 @@ func (s *SQLStore) CompleteProjectWalletAssetStateCollection(ctx context.Context
 		DataType:  ProjectDataCollectionTypeWalletAssetState,
 	}); err != nil {
 		return fmt.Errorf("mark project wallet asset state collection succeeded: %w", err)
+	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit project wallet asset state collection transaction: %w", err)
@@ -311,6 +349,9 @@ func (s *SQLStore) CompleteProjectSimulationResultCollection(ctx context.Context
 		DataType:  ProjectDataCollectionTypeSimulationResult,
 	}); err != nil {
 		return fmt.Errorf("mark project simulation result collection succeeded: %w", err)
+	}
+	if err := enqueueProjectReportEvaluationTask(ctx, q, projectID); err != nil {
+		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit project simulation result collection transaction: %w", err)

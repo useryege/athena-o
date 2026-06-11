@@ -6,39 +6,74 @@ INSERT INTO project_report (
 )
 ON CONFLICT (project_id) DO NOTHING;
 
--- name: ListProjectReportsDueForEvaluation :many
-WITH task_state AS (
-  SELECT
-    project_id,
-    BOOL_AND(status = 'succeeded') AS is_complete,
-    BOOL_OR(data_type = 'chain_state' AND status = 'succeeded') AS chain_state_succeeded,
-    (EXTRACT(EPOCH FROM MAX(updated_at)) * 1000000)::bigint AS source_updated_at_unix_micro
-  FROM project_data_collection_task
-  GROUP BY project_id
-  HAVING COUNT(*) = 5
-    AND BOOL_AND(status IN ('succeeded', 'failed'))
-)
+-- name: ListDueProjectReportEvaluationTasks :many
 SELECT
-  report.project_id,
-  task_state.is_complete,
-  task_state.chain_state_succeeded,
-  task_state.source_updated_at_unix_micro,
+  task.project_id,
+  task.revision,
+  task.attempts,
+  (EXTRACT(EPOCH FROM COALESCE(MAX(collection_task.updated_at), task.updated_at)) * 1000000)::bigint
+    AS source_updated_at_unix_micro,
   COALESCE(chain_state.project_id, 0)::bigint AS chain_state_project_id,
   COALESCE(chain_state.chain_state, '{}'::jsonb) AS chain_state
-FROM project_report AS report
-JOIN task_state ON task_state.project_id = report.project_id
-LEFT JOIN project_chain_state AS chain_state ON chain_state.project_id = report.project_id
-WHERE report.evaluated_at IS NULL
-  OR report.source_updated_at IS NULL
-  OR task_state.source_updated_at_unix_micro
-    > (EXTRACT(EPOCH FROM report.source_updated_at) * 1000000)::bigint
-ORDER BY task_state.source_updated_at_unix_micro ASC, report.project_id ASC
+FROM project_report_evaluation_task AS task
+LEFT JOIN project_data_collection_task AS collection_task
+  ON collection_task.project_id = task.project_id
+LEFT JOIN project_chain_state AS chain_state
+  ON chain_state.project_id = task.project_id
+WHERE task.status = 'pending'
+  AND task.attempts < 5
+  AND task.next_attempt_at <= now()
+GROUP BY
+  task.project_id,
+  task.revision,
+  task.attempts,
+  task.updated_at,
+  chain_state.project_id,
+  chain_state.chain_state,
+  task.next_attempt_at,
+  task.created_at
+ORDER BY task.next_attempt_at ASC, task.created_at ASC, task.project_id ASC
 LIMIT sqlc.arg('limit');
+
+-- name: LockPendingProjectReportEvaluationTask :one
+SELECT *
+FROM project_report_evaluation_task
+WHERE project_id = @project_id
+  AND revision = @revision
+  AND status = 'pending'
+FOR UPDATE;
+
+-- name: MarkProjectReportEvaluationTaskSucceeded :exec
+UPDATE project_report_evaluation_task
+SET status = 'succeeded',
+  next_attempt_at = now(),
+  last_error = NULL,
+  updated_at = now()
+WHERE project_id = @project_id
+  AND revision = @revision
+  AND status = 'pending';
+
+-- name: MarkProjectReportEvaluationTaskFailed :one
+UPDATE project_report_evaluation_task
+SET attempts = attempts + 1,
+  status = CASE
+    WHEN attempts + 1 >= 5 THEN 'failed'
+    ELSE 'pending'
+  END,
+  next_attempt_at = CASE
+    WHEN attempts + 1 >= 5 THEN now()
+    ELSE now() + INTERVAL '1 minute'
+  END,
+  last_error = @last_error,
+  updated_at = now()
+WHERE project_id = @project_id
+  AND revision = @revision
+  AND status = 'pending'
+RETURNING *;
 
 -- name: UpdateProjectReportEvaluation :one
 UPDATE project_report
-SET is_complete = @is_complete,
-  weth_pair_is_created = sqlc.narg('weth_pair_is_created'),
+SET weth_pair_is_created = sqlc.narg('weth_pair_is_created'),
   weth_pair_is_remove_liquidity = sqlc.narg('weth_pair_is_remove_liquidity'),
   weth_pair_is_mint = sqlc.narg('weth_pair_is_mint'),
   weth_pair_quote_usdt_value_int = sqlc.narg('weth_pair_quote_usdt_value_int'),

@@ -25,7 +25,6 @@ const (
 	chainStateTaskLimit        = int32(20)
 	walletAssetTaskLimit       = int32(20)
 	simulationTaskLimit        = int32(20)
-	projectReportTaskLimit     = int32(20)
 	aveHTTPClientTimeout       = 60 * time.Second
 	defaultEtherscanAPIBaseURL = "https://api.etherscan.io/v2/api"
 	etherscanRateLimitRequests = 3

@@ -11,6 +11,7 @@ import (
 	"github.com/useryege/athena/internal/token/chainingestor"
 	"github.com/useryege/athena/internal/token/projectdatacollector"
 	"github.com/useryege/athena/internal/token/projectqualifier"
+	"github.com/useryege/athena/internal/token/projectreportevaluator"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
@@ -19,20 +20,22 @@ import (
 )
 
 const (
-	ModeGRPC                 = "grpc"
-	ModeChainIngestor        = "chain-ingestor"
-	ModeProjectQualifier     = "project-qualifier"
-	ModeProjectDataCollector = "project-data-collector"
+	ModeGRPC                   = "grpc"
+	ModeChainIngestor          = "chain-ingestor"
+	ModeProjectQualifier       = "project-qualifier"
+	ModeProjectDataCollector   = "project-data-collector"
+	ModeProjectReportEvaluator = "project-report-evaluator"
 )
 
 type Server struct {
 	ServerOpts
-	service       *Service
-	healthService *health.Server
-	store         *tokenstore.SQLStore
-	chainWorker   *chainingestor.Worker
-	qualifier     *projectqualifier.Worker
-	dataCollector *projectdatacollector.Worker
+	service         *Service
+	healthService   *health.Server
+	store           *tokenstore.SQLStore
+	chainWorker     *chainingestor.Worker
+	qualifier       *projectqualifier.Worker
+	dataCollector   *projectdatacollector.Worker
+	reportEvaluator *projectreportevaluator.Worker
 }
 
 type ServerOpts struct {
@@ -83,7 +86,7 @@ func (s *Server) CreateGRPC() *grpc.Server {
 func (s *Server) Start(ctx context.Context) error {
 	mode := NormalizeMode(s.Mode)
 	switch mode {
-	case ModeGRPC, ModeChainIngestor, ModeProjectQualifier, ModeProjectDataCollector:
+	case ModeGRPC, ModeChainIngestor, ModeProjectQualifier, ModeProjectDataCollector, ModeProjectReportEvaluator:
 	default:
 		return fmt.Errorf("unsupported athena-token mode %q", s.Mode)
 	}
@@ -164,6 +167,20 @@ func (s *Server) Start(ctx context.Context) error {
 			s.dataCollector = nil
 			return err
 		}
+	case ModeProjectReportEvaluator:
+		store, err := s.startStore(ctx, mode)
+		if err != nil {
+			_ = s.service.Stop()
+			return err
+		}
+		s.reportEvaluator = projectreportevaluator.NewWorker(projectreportevaluator.Options{Store: store})
+		if err := s.reportEvaluator.Start(ctx); err != nil {
+			_ = store.Close()
+			_ = s.service.Stop()
+			s.store = nil
+			s.reportEvaluator = nil
+			return err
+		}
 	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
 	return nil
@@ -210,6 +227,14 @@ func (s *Server) Stop() error {
 		}
 		cancel()
 		s.dataCollector = nil
+	}
+	if s.reportEvaluator != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := s.reportEvaluator.Stop(ctx); err != nil && result == nil {
+			result = err
+		}
+		cancel()
+		s.reportEvaluator = nil
 	}
 	if err := s.service.Stop(); err != nil && result == nil {
 		result = err

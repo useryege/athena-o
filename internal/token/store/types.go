@@ -196,7 +196,6 @@ type ProjectDataCollectionTaskPage struct {
 
 type ProjectReport struct {
 	ProjectID                 int64
-	IsComplete                bool
 	WethPairIsCreated         *bool
 	WethPairIsRemoveLiquidity *bool
 	WethPairIsMint            *bool
@@ -212,9 +211,15 @@ type ProjectReport struct {
 	CreatedAt                 time.Time
 }
 
-type ProjectReportEvaluationCandidate struct {
+type ProjectReportEvaluationTask struct {
 	ProjectID       int64
-	IsComplete      bool
+	Status          string
+	Revision        int64
+	Attempts        int32
+	NextAttemptAt   time.Time
+	LastError       string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 	SourceUpdatedAt time.Time
 	HasChainState   bool
 	ChainState      json.RawMessage

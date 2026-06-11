@@ -241,7 +241,6 @@ CREATE INDEX IF NOT EXISTS project_data_collection_task_due_idx
 
 CREATE TABLE IF NOT EXISTS project_report (
   project_id BIGINT PRIMARY KEY,
-  is_complete BOOLEAN NOT NULL DEFAULT false,
   weth_pair_is_created BOOLEAN,
   weth_pair_is_remove_liquidity BOOLEAN,
   weth_pair_is_mint BOOLEAN,
@@ -266,6 +265,28 @@ CREATE TABLE IF NOT EXISTS project_report (
   CONSTRAINT project_report_usdt_pair_last_swap_timestamp_nonnegative
     CHECK (usdt_pair_last_swap_timestamp IS NULL OR usdt_pair_last_swap_timestamp >= 0)
 );
+
+CREATE TABLE IF NOT EXISTS project_report_evaluation_task (
+  project_id BIGINT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'pending',
+  revision BIGINT NOT NULL DEFAULT 1,
+  attempts INT NOT NULL DEFAULT 0,
+  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_report_evaluation_task_report_fk
+    FOREIGN KEY (project_id) REFERENCES project_report(project_id) ON DELETE CASCADE,
+  CONSTRAINT project_report_evaluation_task_status_allowed
+    CHECK (status IN ('pending', 'succeeded', 'failed')),
+  CONSTRAINT project_report_evaluation_task_revision_positive
+    CHECK (revision > 0),
+  CONSTRAINT project_report_evaluation_task_attempts_range
+    CHECK (attempts >= 0 AND attempts <= 5)
+);
+
+CREATE INDEX IF NOT EXISTS project_report_evaluation_task_due_idx
+  ON project_report_evaluation_task (status, next_attempt_at, project_id);
 
 CREATE TABLE IF NOT EXISTS project_ave_data (
   project_id BIGINT PRIMARY KEY,
@@ -333,6 +354,7 @@ CREATE TABLE IF NOT EXISTS wallet_blacklist (
 
 DROP TABLE IF EXISTS wallet_blacklist;
 DROP TABLE IF EXISTS bytecode_blacklist;
+DROP TABLE IF EXISTS project_report_evaluation_task;
 DROP TABLE IF EXISTS project_report;
 DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_simulation_result;

@@ -25,58 +25,58 @@ func (q *Queries) InsertProjectReportIfNotExists(ctx context.Context, projectID 
 	return err
 }
 
-const listProjectReportsDueForEvaluation = `-- name: ListProjectReportsDueForEvaluation :many
-WITH task_state AS (
-  SELECT
-    project_id,
-    BOOL_AND(status = 'succeeded') AS is_complete,
-    BOOL_OR(data_type = 'chain_state' AND status = 'succeeded') AS chain_state_succeeded,
-    (EXTRACT(EPOCH FROM MAX(updated_at)) * 1000000)::bigint AS source_updated_at_unix_micro
-  FROM project_data_collection_task
-  GROUP BY project_id
-  HAVING COUNT(*) = 5
-    AND BOOL_AND(status IN ('succeeded', 'failed'))
-)
+const listDueProjectReportEvaluationTasks = `-- name: ListDueProjectReportEvaluationTasks :many
 SELECT
-  report.project_id,
-  task_state.is_complete,
-  task_state.chain_state_succeeded,
-  task_state.source_updated_at_unix_micro,
+  task.project_id,
+  task.revision,
+  task.attempts,
+  (EXTRACT(EPOCH FROM COALESCE(MAX(collection_task.updated_at), task.updated_at)) * 1000000)::bigint
+    AS source_updated_at_unix_micro,
   COALESCE(chain_state.project_id, 0)::bigint AS chain_state_project_id,
   COALESCE(chain_state.chain_state, '{}'::jsonb) AS chain_state
-FROM project_report AS report
-JOIN task_state ON task_state.project_id = report.project_id
-LEFT JOIN project_chain_state AS chain_state ON chain_state.project_id = report.project_id
-WHERE report.evaluated_at IS NULL
-  OR report.source_updated_at IS NULL
-  OR task_state.source_updated_at_unix_micro
-    > (EXTRACT(EPOCH FROM report.source_updated_at) * 1000000)::bigint
-ORDER BY task_state.source_updated_at_unix_micro ASC, report.project_id ASC
+FROM project_report_evaluation_task AS task
+LEFT JOIN project_data_collection_task AS collection_task
+  ON collection_task.project_id = task.project_id
+LEFT JOIN project_chain_state AS chain_state
+  ON chain_state.project_id = task.project_id
+WHERE task.status = 'pending'
+  AND task.attempts < 5
+  AND task.next_attempt_at <= now()
+GROUP BY
+  task.project_id,
+  task.revision,
+  task.attempts,
+  task.updated_at,
+  chain_state.project_id,
+  chain_state.chain_state,
+  task.next_attempt_at,
+  task.created_at
+ORDER BY task.next_attempt_at ASC, task.created_at ASC, task.project_id ASC
 LIMIT $1
 `
 
-type ListProjectReportsDueForEvaluationRow struct {
+type ListDueProjectReportEvaluationTasksRow struct {
 	ProjectID                int64
-	IsComplete               bool
-	ChainStateSucceeded      bool
+	Revision                 int64
+	Attempts                 int32
 	SourceUpdatedAtUnixMicro int64
 	ChainStateProjectID      int64
 	ChainState               []byte
 }
 
-func (q *Queries) ListProjectReportsDueForEvaluation(ctx context.Context, limit int32) ([]ListProjectReportsDueForEvaluationRow, error) {
-	rows, err := q.db.Query(ctx, listProjectReportsDueForEvaluation, limit)
+func (q *Queries) ListDueProjectReportEvaluationTasks(ctx context.Context, limit int32) ([]ListDueProjectReportEvaluationTasksRow, error) {
+	rows, err := q.db.Query(ctx, listDueProjectReportEvaluationTasks, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListProjectReportsDueForEvaluationRow
+	var items []ListDueProjectReportEvaluationTasksRow
 	for rows.Next() {
-		var i ListProjectReportsDueForEvaluationRow
+		var i ListDueProjectReportEvaluationTasksRow
 		if err := rows.Scan(
 			&i.ProjectID,
-			&i.IsComplete,
-			&i.ChainStateSucceeded,
+			&i.Revision,
+			&i.Attempts,
 			&i.SourceUpdatedAtUnixMicro,
 			&i.ChainStateProjectID,
 			&i.ChainState,
@@ -91,27 +91,117 @@ func (q *Queries) ListProjectReportsDueForEvaluation(ctx context.Context, limit 
 	return items, nil
 }
 
+const lockPendingProjectReportEvaluationTask = `-- name: LockPendingProjectReportEvaluationTask :one
+SELECT project_id, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+FROM project_report_evaluation_task
+WHERE project_id = $1
+  AND revision = $2
+  AND status = 'pending'
+FOR UPDATE
+`
+
+type LockPendingProjectReportEvaluationTaskParams struct {
+	ProjectID int64
+	Revision  int64
+}
+
+func (q *Queries) LockPendingProjectReportEvaluationTask(ctx context.Context, arg LockPendingProjectReportEvaluationTaskParams) (ProjectReportEvaluationTask, error) {
+	row := q.db.QueryRow(ctx, lockPendingProjectReportEvaluationTask, arg.ProjectID, arg.Revision)
+	var i ProjectReportEvaluationTask
+	err := row.Scan(
+		&i.ProjectID,
+		&i.Status,
+		&i.Revision,
+		&i.Attempts,
+		&i.NextAttemptAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const markProjectReportEvaluationTaskFailed = `-- name: MarkProjectReportEvaluationTaskFailed :one
+UPDATE project_report_evaluation_task
+SET attempts = attempts + 1,
+  status = CASE
+    WHEN attempts + 1 >= 5 THEN 'failed'
+    ELSE 'pending'
+  END,
+  next_attempt_at = CASE
+    WHEN attempts + 1 >= 5 THEN now()
+    ELSE now() + INTERVAL '1 minute'
+  END,
+  last_error = $1,
+  updated_at = now()
+WHERE project_id = $2
+  AND revision = $3
+  AND status = 'pending'
+RETURNING project_id, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+`
+
+type MarkProjectReportEvaluationTaskFailedParams struct {
+	LastError pgtype.Text
+	ProjectID int64
+	Revision  int64
+}
+
+func (q *Queries) MarkProjectReportEvaluationTaskFailed(ctx context.Context, arg MarkProjectReportEvaluationTaskFailedParams) (ProjectReportEvaluationTask, error) {
+	row := q.db.QueryRow(ctx, markProjectReportEvaluationTaskFailed, arg.LastError, arg.ProjectID, arg.Revision)
+	var i ProjectReportEvaluationTask
+	err := row.Scan(
+		&i.ProjectID,
+		&i.Status,
+		&i.Revision,
+		&i.Attempts,
+		&i.NextAttemptAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const markProjectReportEvaluationTaskSucceeded = `-- name: MarkProjectReportEvaluationTaskSucceeded :exec
+UPDATE project_report_evaluation_task
+SET status = 'succeeded',
+  next_attempt_at = now(),
+  last_error = NULL,
+  updated_at = now()
+WHERE project_id = $1
+  AND revision = $2
+  AND status = 'pending'
+`
+
+type MarkProjectReportEvaluationTaskSucceededParams struct {
+	ProjectID int64
+	Revision  int64
+}
+
+func (q *Queries) MarkProjectReportEvaluationTaskSucceeded(ctx context.Context, arg MarkProjectReportEvaluationTaskSucceededParams) error {
+	_, err := q.db.Exec(ctx, markProjectReportEvaluationTaskSucceeded, arg.ProjectID, arg.Revision)
+	return err
+}
+
 const updateProjectReportEvaluation = `-- name: UpdateProjectReportEvaluation :one
 UPDATE project_report
-SET is_complete = $1,
-  weth_pair_is_created = $2,
-  weth_pair_is_remove_liquidity = $3,
-  weth_pair_is_mint = $4,
-  weth_pair_quote_usdt_value_int = $5,
-  weth_pair_last_swap_timestamp = $6,
-  usdt_pair_is_created = $7,
-  usdt_pair_is_remove_liquidity = $8,
-  usdt_pair_is_mint = $9,
-  usdt_pair_quote_usdt_value_int = $10,
-  usdt_pair_last_swap_timestamp = $11,
-  source_updated_at = $12,
-  evaluated_at = $13
-WHERE project_id = $14
-RETURNING project_id, is_complete, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, source_updated_at, evaluated_at, created_at
+SET weth_pair_is_created = $1,
+  weth_pair_is_remove_liquidity = $2,
+  weth_pair_is_mint = $3,
+  weth_pair_quote_usdt_value_int = $4,
+  weth_pair_last_swap_timestamp = $5,
+  usdt_pair_is_created = $6,
+  usdt_pair_is_remove_liquidity = $7,
+  usdt_pair_is_mint = $8,
+  usdt_pair_quote_usdt_value_int = $9,
+  usdt_pair_last_swap_timestamp = $10,
+  source_updated_at = $11,
+  evaluated_at = $12
+WHERE project_id = $13
+RETURNING project_id, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, source_updated_at, evaluated_at, created_at
 `
 
 type UpdateProjectReportEvaluationParams struct {
-	IsComplete                bool
 	WethPairIsCreated         pgtype.Bool
 	WethPairIsRemoveLiquidity pgtype.Bool
 	WethPairIsMint            pgtype.Bool
@@ -129,7 +219,6 @@ type UpdateProjectReportEvaluationParams struct {
 
 func (q *Queries) UpdateProjectReportEvaluation(ctx context.Context, arg UpdateProjectReportEvaluationParams) (ProjectReport, error) {
 	row := q.db.QueryRow(ctx, updateProjectReportEvaluation,
-		arg.IsComplete,
 		arg.WethPairIsCreated,
 		arg.WethPairIsRemoveLiquidity,
 		arg.WethPairIsMint,
@@ -147,7 +236,6 @@ func (q *Queries) UpdateProjectReportEvaluation(ctx context.Context, arg UpdateP
 	var i ProjectReport
 	err := row.Scan(
 		&i.ProjectID,
-		&i.IsComplete,
 		&i.WethPairIsCreated,
 		&i.WethPairIsRemoveLiquidity,
 		&i.WethPairIsMint,

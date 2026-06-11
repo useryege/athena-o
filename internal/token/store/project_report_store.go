@@ -2,49 +2,73 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) ListProjectReportsDueForEvaluation(ctx context.Context, limit int32) ([]ProjectReportEvaluationCandidate, error) {
+const (
+	ProjectReportEvaluationStatusPending   = "pending"
+	ProjectReportEvaluationStatusSucceeded = "succeeded"
+	ProjectReportEvaluationStatusFailed    = "failed"
+)
+
+func (s *SQLStore) ListDueProjectReportEvaluationTasks(ctx context.Context, limit int32) ([]ProjectReportEvaluationTask, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.ListProjectReportsDueForEvaluation(ctx, limit)
+	rows, err := q.ListDueProjectReportEvaluationTasks(ctx, limit)
 	if err != nil {
-		return nil, fmt.Errorf("list project reports due for evaluation: %w", err)
+		return nil, fmt.Errorf("list due project report evaluation tasks: %w", err)
 	}
-	items := make([]ProjectReportEvaluationCandidate, 0, len(rows))
+	items := make([]ProjectReportEvaluationTask, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, ProjectReportEvaluationCandidate{
+		items = append(items, ProjectReportEvaluationTask{
 			ProjectID:       row.ProjectID,
-			IsComplete:      row.IsComplete,
+			Status:          ProjectReportEvaluationStatusPending,
+			Revision:        row.Revision,
+			Attempts:        row.Attempts,
 			SourceUpdatedAt: time.UnixMicro(row.SourceUpdatedAtUnixMicro).UTC(),
-			HasChainState:   row.ChainStateSucceeded && row.ChainStateProjectID != 0,
+			HasChainState:   row.ChainStateProjectID != 0,
 			ChainState:      row.ChainState,
 		})
 	}
 	return items, nil
 }
 
-func (s *SQLStore) UpdateProjectReportEvaluation(ctx context.Context, report ProjectReport) (*ProjectReport, error) {
-	q, err := s.querier()
-	if err != nil {
-		return nil, err
+func (s *SQLStore) CompleteProjectReportEvaluation(ctx context.Context, task ProjectReportEvaluationTask, report ProjectReport) (*ProjectReport, bool, error) {
+	if s == nil || s.pool == nil {
+		return nil, false, fmt.Errorf("token postgres database is not configured")
 	}
 	wethLastSwapTimestamp, err := nullableUint64(report.WethPairLastSwapTimestamp)
 	if err != nil {
-		return nil, fmt.Errorf("convert weth pair last swap timestamp: %w", err)
+		return nil, false, fmt.Errorf("convert weth pair last swap timestamp: %w", err)
 	}
 	usdtLastSwapTimestamp, err := nullableUint64(report.UsdtPairLastSwapTimestamp)
 	if err != nil {
-		return nil, fmt.Errorf("convert usdt pair last swap timestamp: %w", err)
+		return nil, false, fmt.Errorf("convert usdt pair last swap timestamp: %w", err)
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, false, fmt.Errorf("begin project report evaluation transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	q := tokensqlc.New(tx)
+	if _, err := q.LockPendingProjectReportEvaluationTask(ctx, tokensqlc.LockPendingProjectReportEvaluationTaskParams{
+		ProjectID: task.ProjectID,
+		Revision:  task.Revision,
+	}); errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, fmt.Errorf("lock project report evaluation task: %w", err)
 	}
 	row, err := q.UpdateProjectReportEvaluation(ctx, tokensqlc.UpdateProjectReportEvaluationParams{
-		IsComplete:                report.IsComplete,
 		WethPairIsCreated:         nullableBool(report.WethPairIsCreated),
 		WethPairIsRemoveLiquidity: nullableBool(report.WethPairIsRemoveLiquidity),
 		WethPairIsMint:            nullableBool(report.WethPairIsMint),
@@ -60,11 +84,46 @@ func (s *SQLStore) UpdateProjectReportEvaluation(ctx context.Context, report Pro
 		ProjectID:                 report.ProjectID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("update project report evaluation: %w", err)
+		return nil, false, fmt.Errorf("update project report evaluation: %w", err)
+	}
+	if err := q.MarkProjectReportEvaluationTaskSucceeded(ctx, tokensqlc.MarkProjectReportEvaluationTaskSucceededParams{
+		ProjectID: task.ProjectID,
+		Revision:  task.Revision,
+	}); err != nil {
+		return nil, false, fmt.Errorf("mark project report evaluation task succeeded: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, false, fmt.Errorf("commit project report evaluation transaction: %w", err)
 	}
 	mapped, err := mapProjectReport(row)
 	if err != nil {
-		return nil, fmt.Errorf("map project report: %w", err)
+		return nil, false, fmt.Errorf("map project report: %w", err)
 	}
-	return mapped, nil
+	return mapped, true, nil
+}
+
+func (s *SQLStore) MarkProjectReportEvaluationTaskFailed(ctx context.Context, projectID, revision int64, lastError string) (*ProjectReportEvaluationTask, bool, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, false, err
+	}
+	row, err := q.MarkProjectReportEvaluationTaskFailed(ctx, tokensqlc.MarkProjectReportEvaluationTaskFailedParams{
+		LastError: nullableText(lastError),
+		ProjectID: projectID,
+		Revision:  revision,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("mark project report evaluation task failed: %w", err)
+	}
+	return mapProjectReportEvaluationTask(row), true, nil
+}
+
+func enqueueProjectReportEvaluationTask(ctx context.Context, q *tokensqlc.Queries, projectID int64) error {
+	if _, err := q.EnqueueProjectReportEvaluationTask(ctx, projectID); err != nil {
+		return fmt.Errorf("enqueue project report evaluation task: %w", err)
+	}
+	return nil
 }
