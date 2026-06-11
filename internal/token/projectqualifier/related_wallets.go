@@ -30,8 +30,8 @@ func fetchProjectCreationReceipt(ctx context.Context, client *ethclient.Client, 
 	return receipt, nil
 }
 
-func extractInitialRecipientWallets(logs []*types.Log, tokenContract common.Address, limit int) []initialRecipientWallet {
-	if len(logs) == 0 || tokenContract == (common.Address{}) || limit == 0 {
+func extractInitialRecipientWallets(logs []*types.Log, tokenContract common.Address) []initialRecipientWallet {
+	if len(logs) == 0 || tokenContract == (common.Address{}) {
 		return nil
 	}
 	filterer, err := erc20contract.NewERC20Filterer(tokenContract, nil)
@@ -80,10 +80,28 @@ func extractInitialRecipientWallets(logs []*types.Log, tokenContract common.Addr
 		}
 		return bytes.Compare(recipients[i].wallet.Bytes(), recipients[j].wallet.Bytes()) < 0
 	})
-	if limit > 0 && len(recipients) > limit {
-		recipients = recipients[:limit]
-	}
 	return recipients
+}
+
+func filterInitialRecipientWallets(ctx context.Context, client *ethclient.Client, recipients []initialRecipientWallet, limit int) ([]initialRecipientWallet, error) {
+	if client == nil || len(recipients) == 0 || limit == 0 {
+		return nil, nil
+	}
+	filtered := make([]initialRecipientWallet, 0, len(recipients))
+	for _, recipient := range recipients {
+		code, err := client.CodeAt(ctx, recipient.wallet, nil)
+		if err != nil {
+			return nil, err
+		}
+		if len(code) != 0 {
+			continue
+		}
+		filtered = append(filtered, recipient)
+	}
+	if limit > 0 && len(filtered) > limit {
+		filtered = filtered[:limit]
+	}
+	return filtered, nil
 }
 
 func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.ProjectRelatedWallet {

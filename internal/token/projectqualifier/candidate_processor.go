@@ -92,7 +92,12 @@ func (r *qualifierRunner) processValidatedCandidate(ctx context.Context, client 
 		r.resetChain(candidate.ChainID)
 		return fmt.Errorf("fetch creation receipt chain_id=%d tx_hash=%s: %w", candidate.ChainID, candidate.TxHash.Hex(), err)
 	}
-	initialRecipients := extractInitialRecipientWallets(receipt.Logs, candidate.Contract, initialRecipientWalletLimit)
+	initialRecipientCandidates := extractInitialRecipientWallets(receipt.Logs, candidate.Contract)
+	initialRecipients, err := filterInitialRecipientWallets(ctx, client, initialRecipientCandidates, initialRecipientWalletLimit)
+	if err != nil {
+		r.resetChain(candidate.ChainID)
+		return fmt.Errorf("filter initial recipient contracts chain_id=%d contract=%s: %w", candidate.ChainID, candidate.Contract.Hex(), err)
+	}
 	relatedWallets := buildProjectRelatedWallets(candidate, initialRecipients)
 	walletAssetStates := buildWalletAssetStates(candidate, initialRecipients)
 	projectInitialRecipients := buildProjectInitialRecipients(candidate, initialRecipients, validation.TotalSupply)
