@@ -4,13 +4,11 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
-	"math"
 	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -36,16 +34,6 @@ func NewCommand() *cobra.Command {
 		listenPort                int
 		notificationEnabled       bool
 		notificationServerAddress string
-		moverAlertWarningScore    float64
-		moverAlertCriticalScore   float64
-		moverAlertWarning1mPP     float64
-		moverAlertWarning5mPP     float64
-		moverAlertWarning15mPP    float64
-		moverAlertCritical1mPP    float64
-		moverAlertCritical5mPP    float64
-		moverAlertMinVolume24hr   float64
-		moverAlertCooldown        time.Duration
-		moverAlertMaxPerRefresh   int
 
 		storeSrc func(context.Context) (*polymarketstore.SQLStore, error)
 	)
@@ -74,17 +62,7 @@ func NewCommand() *cobra.Command {
 			defer utilio.Close(store)
 
 			moverAlertsConfig := polymarket.MoverAlertsConfig{
-				Enabled:       notificationEnabled,
-				WarningScore:  moverAlertWarningScore,
-				CriticalScore: moverAlertCriticalScore,
-				Warning1mPP:   moverAlertWarning1mPP,
-				Warning5mPP:   moverAlertWarning5mPP,
-				Warning15mPP:  moverAlertWarning15mPP,
-				Critical1mPP:  moverAlertCritical1mPP,
-				Critical5mPP:  moverAlertCritical5mPP,
-				MinVolume24hr: moverAlertMinVolume24hr,
-				Cooldown:      moverAlertCooldown,
-				MaxPerRefresh: moverAlertMaxPerRefresh,
+				Enabled: notificationEnabled,
 			}
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
@@ -145,16 +123,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortPolymarket, "Listen on given port for incoming connections")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_POLYMARKET_NOTIFICATION_ENABLED", true), "Enable Polymarket notifications through Athena Notification")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_POLYMARKET_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Polymarket alerts")
-	command.Flags().Float64Var(&moverAlertWarningScore, "mover-alert-warning-score", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_WARNING_SCORE", 6, 0, math.MaxFloat64), "Mover alert warning score threshold")
-	command.Flags().Float64Var(&moverAlertCriticalScore, "mover-alert-critical-score", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_CRITICAL_SCORE", 12, 0, math.MaxFloat64), "Mover alert critical score threshold")
-	command.Flags().Float64Var(&moverAlertWarning1mPP, "mover-alert-warning-1m-pp", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_WARNING_1M_PP", 3, 0, math.MaxFloat64), "Mover alert warning 1m price-change threshold in percentage points")
-	command.Flags().Float64Var(&moverAlertWarning5mPP, "mover-alert-warning-5m-pp", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_WARNING_5M_PP", 5, 0, math.MaxFloat64), "Mover alert warning 5m price-change threshold in percentage points")
-	command.Flags().Float64Var(&moverAlertWarning15mPP, "mover-alert-warning-15m-pp", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_WARNING_15M_PP", 8, 0, math.MaxFloat64), "Mover alert warning 15m price-change threshold in percentage points")
-	command.Flags().Float64Var(&moverAlertCritical1mPP, "mover-alert-critical-1m-pp", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_CRITICAL_1M_PP", 8, 0, math.MaxFloat64), "Mover alert critical 1m price-change threshold in percentage points")
-	command.Flags().Float64Var(&moverAlertCritical5mPP, "mover-alert-critical-5m-pp", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_CRITICAL_5M_PP", 12, 0, math.MaxFloat64), "Mover alert critical 5m price-change threshold in percentage points")
-	command.Flags().Float64Var(&moverAlertMinVolume24hr, "mover-alert-min-volume24hr", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_MIN_VOLUME24HR", 10000, 0, math.MaxFloat64), "Minimum 24h Polymarket volume required before mover alerts are sent")
-	command.Flags().DurationVar(&moverAlertCooldown, "mover-alert-cooldown", env.ParseDurationFromEnv("ATHENA_POLYMARKET_MOVER_ALERT_COOLDOWN", 15*time.Minute, time.Second, math.MaxInt64), "Cooldown for the same Polymarket mover alert key")
-	command.Flags().IntVar(&moverAlertMaxPerRefresh, "mover-alert-max-per-refresh", env.ParseNumFromEnv("ATHENA_POLYMARKET_MOVER_ALERT_MAX_PER_REFRESH", 3, 1, math.MaxInt32), "Maximum Polymarket mover notifications sent per hot-market refresh")
 
 	storeSrc = polymarketstore.NewSQLStoreSource()
 
