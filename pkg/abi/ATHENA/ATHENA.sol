@@ -62,8 +62,8 @@ contract Athena {
         uint32 blockTimestampLast;
         // V2FeeToAddress hold balance of the pair _safeBalanceOf(pair.pairContract, v2pairFeeToAddress)
         uint256 feeAddressHoldLiquidityBalance;
-        bool isRemoveLiquidity;
         uint256 feeAddressHoldLiquidityRatio;
+        bool isRemoveLiquidity;
     }
 
 
