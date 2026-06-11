@@ -129,22 +129,42 @@ export interface ListPolymarketMoversResult {
     candidateCount?: number;
 }
 
-export interface PolymarketSportsLiveMarketItem {
+export interface PolymarketSportsLiveMarketCardItem {
+    marketKey: string;
     conditionId: string;
-    marketSlug: string;
-    eventSlug: string;
+    slug: string;
+    question: string;
+    outcomes?: string;
+    outcomePrices?: string;
+    bestBid?: number;
+    bestAsk?: number;
+    lastTradePrice?: number;
+    spread?: number;
+    liquidityNum?: number;
+    volumeNum?: number;
+    updatedAt?: string;
+}
+
+export interface PolymarketSportsLiveEventCardItem {
+    eventKey: string;
+    eventId: string;
+    slug: string;
     title: string;
     image?: string;
     score?: string;
     period?: string;
     elapsed?: string;
-    lastUpdate?: string;
-    liquidityNum?: number;
-    volumeNum?: number;
+    gameStatus?: string;
+    startTime?: string;
+    updatedAt?: string;
+    liquidity?: number;
+    volume?: number;
+    marketCount?: number;
+    markets: PolymarketSportsLiveMarketCardItem[];
 }
 
-export interface ListPolymarketSportsLiveMarketsResult {
-    items: PolymarketSportsLiveMarketItem[];
+export interface ListPolymarketSportsLiveEventsResult {
+    items: PolymarketSportsLiveEventCardItem[];
     fetchedAt?: number;
     stale?: boolean;
 }
@@ -165,19 +185,42 @@ const readNumber = (item: any, ...names: string[]) => {
 };
 const readBoolean = (item: any, ...names: string[]) => Boolean(readValue(item, ...names));
 
-const normalizeItem = (item: any): PolymarketSportsLiveMarketItem => ({
+const normalizeSportsLiveMarketCard = (item: any): PolymarketSportsLiveMarketCardItem => ({
+    marketKey: readString(item, 'marketKey', 'market_key'),
     conditionId: readString(item, 'conditionId', 'condition_id'),
-    marketSlug: readString(item, 'marketSlug', 'market_slug'),
-    eventSlug: readString(item, 'eventSlug', 'event_slug'),
-    title: readString(item, 'title'),
-    image: readString(item, 'image'),
-    score: readString(item, 'score'),
-    period: readString(item, 'period'),
-    elapsed: readString(item, 'elapsed'),
-    lastUpdate: readString(item, 'lastUpdate', 'last_update'),
+    slug: readString(item, 'slug'),
+    question: readString(item, 'question'),
+    outcomes: readString(item, 'outcomes'),
+    outcomePrices: readString(item, 'outcomePrices', 'outcome_prices'),
+    bestBid: readNumber(item, 'bestBid', 'best_bid'),
+    bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
+    lastTradePrice: readNumber(item, 'lastTradePrice', 'last_trade_price'),
+    spread: readNumber(item, 'spread'),
     liquidityNum: readNumber(item, 'liquidityNum', 'liquidity_num'),
-    volumeNum: readNumber(item, 'volumeNum', 'volume_num')
+    volumeNum: readNumber(item, 'volumeNum', 'volume_num'),
+    updatedAt: readString(item, 'updatedAt', 'updated_at')
 });
+
+const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardItem => {
+    const markets = readValue(item, 'markets');
+    return {
+        eventKey: readString(item, 'eventKey', 'event_key'),
+        eventId: readString(item, 'eventId', 'event_id'),
+        slug: readString(item, 'slug'),
+        title: readString(item, 'title'),
+        image: readString(item, 'image'),
+        score: readString(item, 'score'),
+        period: readString(item, 'period'),
+        elapsed: readString(item, 'elapsed'),
+        gameStatus: readString(item, 'gameStatus', 'game_status'),
+        startTime: readString(item, 'startTime', 'start_time'),
+        updatedAt: readString(item, 'updatedAt', 'updated_at'),
+        liquidity: readNumber(item, 'liquidity'),
+        volume: readNumber(item, 'volume'),
+        marketCount: readNumber(item, 'marketCount', 'market_count'),
+        markets: Array.isArray(markets) ? markets.map(normalizeSportsLiveMarketCard) : []
+    };
+};
 
 const normalizeHotMarketToken = (item: any): PolymarketHotMarketTokenItem => ({
     tokenId: readString(item, 'tokenId', 'token_id'),
@@ -349,12 +392,12 @@ export class PolymarketService {
         return promise;
     }
 
-    public listSportsLiveMarkets(limit = 200): Promise<ListPolymarketSportsLiveMarketsResult> & {abort?: () => void} {
-        const req = requests.get('/polymarket/sports/live/markets').query({limit});
+    public listSportsLiveEvents(limit = 200): Promise<ListPolymarketSportsLiveEventsResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/sports/live/events').query({limit});
         const promise = req.then(res => {
             const body = res.body || {};
             return {
-                items: (body.items || []).map(normalizeItem),
+                items: (body.items || []).map(normalizeSportsLiveEventCard),
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale')
             };

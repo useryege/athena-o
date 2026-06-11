@@ -103,21 +103,21 @@ func (s *Server) ListPolymarketMovers(ctx context.Context, req *polymarketpkg.Li
 	}, nil
 }
 
-func (s *Server) ListPolymarketSportsLiveMarkets(ctx context.Context, req *polymarketpkg.ListPolymarketSportsLiveMarketsRequest) (*polymarketpkg.ListPolymarketSportsLiveMarketsResponse, error) {
+func (s *Server) ListPolymarketSportsLiveEvents(ctx context.Context, req *polymarketpkg.ListPolymarketSportsLiveEventsRequest) (*polymarketpkg.ListPolymarketSportsLiveEventsResponse, error) {
 	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 
-	resp, err := client.ListPolymarketSportsLiveMarkets(ctx, &polymarketapiclient.ListPolymarketSportsLiveMarketsRequest{
+	resp, err := client.ListPolymarketSportsLiveEvents(ctx, &polymarketapiclient.ListPolymarketSportsLiveEventsRequest{
 		Limit: req.GetLimit(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &polymarketpkg.ListPolymarketSportsLiveMarketsResponse{
+	return &polymarketpkg.ListPolymarketSportsLiveEventsResponse{
 		Items:     resp.GetItems(),
 		FetchedAt: resp.GetFetchedAt(),
 		Stale:     resp.GetStale(),

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -13,26 +14,39 @@ import (
 
 const sportsLiveSyncName = "sports_live_markets"
 
-func (s *SQLStore) SyncSportsLiveMarkets(ctx context.Context, items []SportsLiveMarket, syncStartedAt, fetchedAt time.Time) error {
+var (
+	jsonObject = json.RawMessage(`{}`)
+	jsonArray  = json.RawMessage(`[]`)
+)
+
+func (s *SQLStore) SyncSportsLiveEvents(ctx context.Context, events []SportsLiveEvent, markets []SportsLiveMarket, syncStartedAt, fetchedAt time.Time) error {
 	if s == nil || s.pool == nil {
 		return fmt.Errorf("polymarket postgres database is not configured")
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin sports live market sync: %w", err)
+		return fmt.Errorf("begin sports live sync: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
 
 	queries := s.queries.WithTx(tx)
-	if len(items) > 0 {
-		if err := queries.BatchUpsertSportsLiveMarkets(ctx, batchUpsertSportsLiveMarketsParams(items)); err != nil {
+	if len(events) > 0 {
+		if err := queries.BatchUpsertSportsLiveEvents(ctx, batchUpsertSportsLiveEventsParams(events)); err != nil {
+			return fmt.Errorf("batch upsert sports live events: %w", err)
+		}
+	}
+	if len(markets) > 0 {
+		if err := queries.BatchUpsertSportsLiveMarkets(ctx, batchUpsertSportsLiveMarketsParams(markets)); err != nil {
 			return fmt.Errorf("batch upsert sports live markets: %w", err)
 		}
 	}
 	if _, err := queries.DeleteSportsLiveMarketsNotSeenSince(ctx, nullableTime(syncStartedAt)); err != nil {
 		return fmt.Errorf("delete stale sports live markets: %w", err)
+	}
+	if _, err := queries.DeleteSportsLiveEventsNotSeenSince(ctx, nullableTime(syncStartedAt)); err != nil {
+		return fmt.Errorf("delete stale sports live events: %w", err)
 	}
 	if err := queries.UpsertPolymarketSyncState(ctx, polymarketsqlc.UpsertPolymarketSyncStateParams{
 		SyncName:      sportsLiveSyncName,
@@ -41,35 +55,74 @@ func (s *SQLStore) SyncSportsLiveMarkets(ctx context.Context, items []SportsLive
 		return fmt.Errorf("update sports live sync state: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit sports live market sync: %w", err)
+		return fmt.Errorf("commit sports live sync: %w", err)
 	}
 	return nil
 }
 
-func (s *SQLStore) ListSportsLiveMarkets(ctx context.Context, limit int32) ([]SportsLiveMarket, error) {
+func (s *SQLStore) ListSportsLiveEventCards(ctx context.Context, limit int32) ([]SportsLiveEventCard, error) {
 	if s == nil || s.queries == nil {
 		return nil, fmt.Errorf("polymarket postgres database is not configured")
 	}
-	rows, err := s.queries.ListSportsLiveMarkets(ctx, limit)
+	rows, err := s.queries.ListSportsLiveEvents(ctx, limit)
 	if err != nil {
-		return nil, fmt.Errorf("list sports live markets: %w", err)
+		return nil, fmt.Errorf("list sports live events: %w", err)
 	}
-	items := make([]SportsLiveMarket, 0, len(rows))
+	items := make([]SportsLiveEventCard, 0, len(rows))
+	eventKeys := make([]string, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, SportsLiveMarket{
-			ConditionID:    row.ConditionID,
-			MarketSlug:     row.MarketSlug,
-			EventSlug:      row.EventSlug,
+		items = append(items, SportsLiveEventCard{
+			EventKey:       row.EventKey,
+			EventID:        row.EventID,
+			Slug:           row.Slug,
 			Title:          row.Title,
 			Image:          row.Image,
 			Score:          row.Score,
 			Period:         row.Period,
 			Elapsed:        row.Elapsed,
-			GammaUpdatedAt: timeValue(row.GammaUpdatedAt),
-			LiquidityNum:   row.LiquidityNum,
-			VolumeNum:      row.VolumeNum,
+			GameStatus:     row.GameStatus,
+			StartTime:      timeValue(row.StartTime),
+			UpdatedAtGamma: timeValue(row.UpdatedAtGamma),
+			Liquidity:      row.Liquidity,
+			Volume:         row.Volume,
+			MarketCount:    row.MarketCount,
 			FetchedAt:      timeValue(row.FetchedAt),
 			LastSeenAt:     timeValue(row.LastSeenAt),
+		})
+		eventKeys = append(eventKeys, row.EventKey)
+	}
+	if len(eventKeys) == 0 {
+		return items, nil
+	}
+
+	marketRows, err := s.queries.ListSportsLiveMarketsByEventKeys(ctx, eventKeys)
+	if err != nil {
+		return nil, fmt.Errorf("list sports live markets by event keys: %w", err)
+	}
+	indexByEventKey := make(map[string]int, len(items))
+	for i := range items {
+		indexByEventKey[items[i].EventKey] = i
+	}
+	for _, row := range marketRows {
+		idx, ok := indexByEventKey[row.EventKey]
+		if !ok {
+			continue
+		}
+		items[idx].Markets = append(items[idx].Markets, SportsLiveMarketCard{
+			EventKey:       row.EventKey,
+			MarketKey:      row.MarketKey,
+			ConditionID:    row.ConditionID,
+			Slug:           row.Slug,
+			Question:       row.Question,
+			Outcomes:       row.Outcomes,
+			OutcomePrices:  row.OutcomePrices,
+			BestBid:        row.BestBid,
+			BestAsk:        row.BestAsk,
+			LastTradePrice: row.LastTradePrice,
+			Spread:         row.Spread,
+			LiquidityNum:   row.LiquidityNum,
+			VolumeNum:      row.VolumeNum,
+			UpdatedAtGamma: timeValue(row.UpdatedAtGamma),
 		})
 	}
 	return items, nil
@@ -89,34 +142,180 @@ func (s *SQLStore) GetSportsLiveLastSuccessAt(ctx context.Context) (time.Time, e
 	return timeValue(value), nil
 }
 
-func batchUpsertSportsLiveMarketsParams(items []SportsLiveMarket) polymarketsqlc.BatchUpsertSportsLiveMarketsParams {
-	params := polymarketsqlc.BatchUpsertSportsLiveMarketsParams{
-		ConditionIds:         make([]string, 0, len(items)),
-		MarketSlugs:          make([]string, 0, len(items)),
-		EventSlugs:           make([]string, 0, len(items)),
+func batchUpsertSportsLiveEventsParams(items []SportsLiveEvent) polymarketsqlc.BatchUpsertSportsLiveEventsParams {
+	params := polymarketsqlc.BatchUpsertSportsLiveEventsParams{
+		EventKeys:            make([]string, 0, len(items)),
+		EventIds:             make([]string, 0, len(items)),
+		Tickers:              make([]string, 0, len(items)),
+		Slugs:                make([]string, 0, len(items)),
 		Titles:               make([]string, 0, len(items)),
+		Descriptions:         make([]string, 0, len(items)),
+		ResolutionSources:    make([]string, 0, len(items)),
+		StartDateValues:      make([]pgtype.Timestamptz, 0, len(items)),
+		CreationDateValues:   make([]pgtype.Timestamptz, 0, len(items)),
+		EndDateValues:        make([]pgtype.Timestamptz, 0, len(items)),
+		StartTimeValues:      make([]pgtype.Timestamptz, 0, len(items)),
+		CreatedAtGammaValues: make([]pgtype.Timestamptz, 0, len(items)),
+		UpdatedAtGammaValues: make([]pgtype.Timestamptz, 0, len(items)),
 		Images:               make([]string, 0, len(items)),
+		Icons:                make([]string, 0, len(items)),
+		ActiveValues:         make([]bool, 0, len(items)),
+		ClosedValues:         make([]bool, 0, len(items)),
+		ArchivedValues:       make([]bool, 0, len(items)),
+		FeaturedValues:       make([]bool, 0, len(items)),
+		RestrictedValues:     make([]bool, 0, len(items)),
+		LiveValues:           make([]bool, 0, len(items)),
+		EndedValues:          make([]bool, 0, len(items)),
+		LiquidityValues:      make([]float64, 0, len(items)),
+		VolumeValues:         make([]float64, 0, len(items)),
+		OpenInterestValues:   make([]float64, 0, len(items)),
+		Categories:           make([]string, 0, len(items)),
 		Scores:               make([]string, 0, len(items)),
 		Periods:              make([]string, 0, len(items)),
 		ElapsedValues:        make([]string, 0, len(items)),
-		GammaUpdatedAtValues: make([]pgtype.Timestamptz, 0, len(items)),
-		LiquidityNumValues:   make([]float64, 0, len(items)),
-		VolumeNumValues:      make([]float64, 0, len(items)),
+		FinishedTimestamps:   make([]string, 0, len(items)),
+		GameIDValues:         make([]int64, 0, len(items)),
+		EventDates:           make([]string, 0, len(items)),
+		GameStatuses:         make([]string, 0, len(items)),
+		CommentCountValues:   make([]int64, 0, len(items)),
+		SportValues:          make([][]byte, 0, len(items)),
+		TeamsValues:          make([][]byte, 0, len(items)),
+		TagsValues:           make([][]byte, 0, len(items)),
+		RawValues:            make([][]byte, 0, len(items)),
 		FetchedAtValues:      make([]pgtype.Timestamptz, 0, len(items)),
 		LastSeenAtValues:     make([]pgtype.Timestamptz, 0, len(items)),
 	}
 	for _, item := range items {
-		params.ConditionIds = append(params.ConditionIds, item.ConditionID)
-		params.MarketSlugs = append(params.MarketSlugs, item.MarketSlug)
-		params.EventSlugs = append(params.EventSlugs, item.EventSlug)
+		params.EventKeys = append(params.EventKeys, item.EventKey)
+		params.EventIds = append(params.EventIds, item.EventID)
+		params.Tickers = append(params.Tickers, item.Ticker)
+		params.Slugs = append(params.Slugs, item.Slug)
 		params.Titles = append(params.Titles, item.Title)
+		params.Descriptions = append(params.Descriptions, item.Description)
+		params.ResolutionSources = append(params.ResolutionSources, item.ResolutionSource)
+		params.StartDateValues = append(params.StartDateValues, nullableTime(item.StartDate))
+		params.CreationDateValues = append(params.CreationDateValues, nullableTime(item.CreationDate))
+		params.EndDateValues = append(params.EndDateValues, nullableTime(item.EndDate))
+		params.StartTimeValues = append(params.StartTimeValues, nullableTime(item.StartTime))
+		params.CreatedAtGammaValues = append(params.CreatedAtGammaValues, nullableTime(item.CreatedAtGamma))
+		params.UpdatedAtGammaValues = append(params.UpdatedAtGammaValues, nullableTime(item.UpdatedAtGamma))
 		params.Images = append(params.Images, item.Image)
+		params.Icons = append(params.Icons, item.Icon)
+		params.ActiveValues = append(params.ActiveValues, item.Active)
+		params.ClosedValues = append(params.ClosedValues, item.Closed)
+		params.ArchivedValues = append(params.ArchivedValues, item.Archived)
+		params.FeaturedValues = append(params.FeaturedValues, item.Featured)
+		params.RestrictedValues = append(params.RestrictedValues, item.Restricted)
+		params.LiveValues = append(params.LiveValues, item.Live)
+		params.EndedValues = append(params.EndedValues, item.Ended)
+		params.LiquidityValues = append(params.LiquidityValues, item.Liquidity)
+		params.VolumeValues = append(params.VolumeValues, item.Volume)
+		params.OpenInterestValues = append(params.OpenInterestValues, item.OpenInterest)
+		params.Categories = append(params.Categories, item.Category)
 		params.Scores = append(params.Scores, item.Score)
 		params.Periods = append(params.Periods, item.Period)
 		params.ElapsedValues = append(params.ElapsedValues, item.Elapsed)
-		params.GammaUpdatedAtValues = append(params.GammaUpdatedAtValues, nullableTime(item.GammaUpdatedAt))
-		params.LiquidityNumValues = append(params.LiquidityNumValues, item.LiquidityNum)
+		params.FinishedTimestamps = append(params.FinishedTimestamps, item.FinishedTimestamp)
+		params.GameIDValues = append(params.GameIDValues, item.GameID)
+		params.EventDates = append(params.EventDates, item.EventDate)
+		params.GameStatuses = append(params.GameStatuses, item.GameStatus)
+		params.CommentCountValues = append(params.CommentCountValues, item.CommentCount)
+		params.SportValues = append(params.SportValues, jsonBytes(item.Sport, jsonObject))
+		params.TeamsValues = append(params.TeamsValues, jsonBytes(item.Teams, jsonArray))
+		params.TagsValues = append(params.TagsValues, jsonBytes(item.Tags, jsonArray))
+		params.RawValues = append(params.RawValues, jsonBytes(item.Raw, jsonObject))
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
+		params.LastSeenAtValues = append(params.LastSeenAtValues, nullableTime(item.LastSeenAt))
+	}
+	return params
+}
+
+func batchUpsertSportsLiveMarketsParams(items []SportsLiveMarket) polymarketsqlc.BatchUpsertSportsLiveMarketsParams {
+	params := polymarketsqlc.BatchUpsertSportsLiveMarketsParams{
+		MarketKeys:            make([]string, 0, len(items)),
+		EventKeys:             make([]string, 0, len(items)),
+		EventIds:              make([]string, 0, len(items)),
+		EventSlugs:            make([]string, 0, len(items)),
+		MarketIds:             make([]string, 0, len(items)),
+		ConditionIds:          make([]string, 0, len(items)),
+		Slugs:                 make([]string, 0, len(items)),
+		Questions:             make([]string, 0, len(items)),
+		Titles:                make([]string, 0, len(items)),
+		Descriptions:          make([]string, 0, len(items)),
+		ResolutionSources:     make([]string, 0, len(items)),
+		SportsMarketTypes:     make([]string, 0, len(items)),
+		GroupItemTitles:       make([]string, 0, len(items)),
+		Images:                make([]string, 0, len(items)),
+		Icons:                 make([]string, 0, len(items)),
+		OutcomesValues:        make([]string, 0, len(items)),
+		OutcomePricesValues:   make([]string, 0, len(items)),
+		ClobTokenIdsValues:    make([]string, 0, len(items)),
+		ActiveValues:          make([]bool, 0, len(items)),
+		ClosedValues:          make([]bool, 0, len(items)),
+		ArchivedValues:        make([]bool, 0, len(items)),
+		RestrictedValues:      make([]bool, 0, len(items)),
+		EnableOrderBookValues: make([]bool, 0, len(items)),
+		VolumeValues:          make([]string, 0, len(items)),
+		VolumeNumValues:       make([]float64, 0, len(items)),
+		LiquidityNumValues:    make([]float64, 0, len(items)),
+		Volume24hrValues:      make([]float64, 0, len(items)),
+		Volume1wkValues:       make([]float64, 0, len(items)),
+		Volume1moValues:       make([]float64, 0, len(items)),
+		Volume1yrValues:       make([]float64, 0, len(items)),
+		SpreadValues:          make([]float64, 0, len(items)),
+		BestBidValues:         make([]float64, 0, len(items)),
+		BestAskValues:         make([]float64, 0, len(items)),
+		LastTradePriceValues:  make([]float64, 0, len(items)),
+		StartDateValues:       make([]pgtype.Timestamptz, 0, len(items)),
+		EndDateValues:         make([]pgtype.Timestamptz, 0, len(items)),
+		CreatedAtGammaValues:  make([]pgtype.Timestamptz, 0, len(items)),
+		UpdatedAtGammaValues:  make([]pgtype.Timestamptz, 0, len(items)),
+		TagsValues:            make([][]byte, 0, len(items)),
+		RawValues:             make([][]byte, 0, len(items)),
+		FetchedAtValues:       make([]pgtype.Timestamptz, 0, len(items)),
+		LastSeenAtValues:      make([]pgtype.Timestamptz, 0, len(items)),
+	}
+	for _, item := range items {
+		params.MarketKeys = append(params.MarketKeys, item.MarketKey)
+		params.EventKeys = append(params.EventKeys, item.EventKey)
+		params.EventIds = append(params.EventIds, item.EventID)
+		params.EventSlugs = append(params.EventSlugs, item.EventSlug)
+		params.MarketIds = append(params.MarketIds, item.MarketID)
+		params.ConditionIds = append(params.ConditionIds, item.ConditionID)
+		params.Slugs = append(params.Slugs, item.Slug)
+		params.Questions = append(params.Questions, item.Question)
+		params.Titles = append(params.Titles, item.Title)
+		params.Descriptions = append(params.Descriptions, item.Description)
+		params.ResolutionSources = append(params.ResolutionSources, item.ResolutionSource)
+		params.SportsMarketTypes = append(params.SportsMarketTypes, item.SportsMarketType)
+		params.GroupItemTitles = append(params.GroupItemTitles, item.GroupItemTitle)
+		params.Images = append(params.Images, item.Image)
+		params.Icons = append(params.Icons, item.Icon)
+		params.OutcomesValues = append(params.OutcomesValues, item.Outcomes)
+		params.OutcomePricesValues = append(params.OutcomePricesValues, item.OutcomePrices)
+		params.ClobTokenIdsValues = append(params.ClobTokenIdsValues, item.ClobTokenIDs)
+		params.ActiveValues = append(params.ActiveValues, item.Active)
+		params.ClosedValues = append(params.ClosedValues, item.Closed)
+		params.ArchivedValues = append(params.ArchivedValues, item.Archived)
+		params.RestrictedValues = append(params.RestrictedValues, item.Restricted)
+		params.EnableOrderBookValues = append(params.EnableOrderBookValues, item.EnableOrderBook)
+		params.VolumeValues = append(params.VolumeValues, item.Volume)
 		params.VolumeNumValues = append(params.VolumeNumValues, item.VolumeNum)
+		params.LiquidityNumValues = append(params.LiquidityNumValues, item.LiquidityNum)
+		params.Volume24hrValues = append(params.Volume24hrValues, item.Volume24hr)
+		params.Volume1wkValues = append(params.Volume1wkValues, item.Volume1wk)
+		params.Volume1moValues = append(params.Volume1moValues, item.Volume1mo)
+		params.Volume1yrValues = append(params.Volume1yrValues, item.Volume1yr)
+		params.SpreadValues = append(params.SpreadValues, item.Spread)
+		params.BestBidValues = append(params.BestBidValues, item.BestBid)
+		params.BestAskValues = append(params.BestAskValues, item.BestAsk)
+		params.LastTradePriceValues = append(params.LastTradePriceValues, item.LastTradePrice)
+		params.StartDateValues = append(params.StartDateValues, nullableTime(item.StartDate))
+		params.EndDateValues = append(params.EndDateValues, nullableTime(item.EndDate))
+		params.CreatedAtGammaValues = append(params.CreatedAtGammaValues, nullableTime(item.CreatedAtGamma))
+		params.UpdatedAtGammaValues = append(params.UpdatedAtGammaValues, nullableTime(item.UpdatedAtGamma))
+		params.TagsValues = append(params.TagsValues, jsonBytes(item.Tags, jsonArray))
+		params.RawValues = append(params.RawValues, jsonBytes(item.Raw, jsonObject))
 		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
 		params.LastSeenAtValues = append(params.LastSeenAtValues, nullableTime(item.LastSeenAt))
 	}
@@ -135,4 +334,11 @@ func timeValue(value pgtype.Timestamptz) time.Time {
 		return time.Time{}
 	}
 	return value.Time
+}
+
+func jsonBytes(value json.RawMessage, fallback json.RawMessage) []byte {
+	if json.Valid(value) {
+		return []byte(value)
+	}
+	return []byte(fallback)
 }

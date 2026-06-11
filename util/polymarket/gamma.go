@@ -433,6 +433,28 @@ type Event struct {
 	Raw               json.RawMessage   `json:"-"`
 }
 
+func (m *Market) UnmarshalJSON(data []byte) error {
+	type marketAlias Market
+	var decoded marketAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*m = Market(decoded)
+	m.Raw = append(m.Raw[:0], data...)
+	return nil
+}
+
+func (e *Event) UnmarshalJSON(data []byte) error {
+	type eventAlias Event
+	var decoded eventAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*e = Event(decoded)
+	e.Raw = append(e.Raw[:0], data...)
+	return nil
+}
+
 type MarketKeysetResponse struct {
 	Markets    []Market `json:"markets"`
 	NextCursor *string  `json:"next_cursor,omitempty"`

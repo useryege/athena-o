@@ -160,37 +160,37 @@ func local_request_PolymarketService_ListPolymarketMovers_0(ctx context.Context,
 }
 
 var (
-	filter_PolymarketService_ListPolymarketSportsLiveMarkets_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_PolymarketService_ListPolymarketSportsLiveEvents_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_PolymarketService_ListPolymarketSportsLiveMarkets_0(ctx context.Context, marshaler runtime.Marshaler, client PolymarketServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListPolymarketSportsLiveMarketsRequest
+func request_PolymarketService_ListPolymarketSportsLiveEvents_0(ctx context.Context, marshaler runtime.Marshaler, client PolymarketServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListPolymarketSportsLiveEventsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_PolymarketService_ListPolymarketSportsLiveMarkets_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_PolymarketService_ListPolymarketSportsLiveEvents_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.ListPolymarketSportsLiveMarkets(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListPolymarketSportsLiveEvents(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_PolymarketService_ListPolymarketSportsLiveMarkets_0(ctx context.Context, marshaler runtime.Marshaler, server PolymarketServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListPolymarketSportsLiveMarketsRequest
+func local_request_PolymarketService_ListPolymarketSportsLiveEvents_0(ctx context.Context, marshaler runtime.Marshaler, server PolymarketServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListPolymarketSportsLiveEventsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_PolymarketService_ListPolymarketSportsLiveMarkets_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_PolymarketService_ListPolymarketSportsLiveEvents_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.ListPolymarketSportsLiveMarkets(ctx, &protoReq)
+	msg, err := server.ListPolymarketSportsLiveEvents(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -293,7 +293,7 @@ func RegisterPolymarketServiceHandlerServer(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("GET", pattern_PolymarketService_ListPolymarketSportsLiveMarkets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_PolymarketService_ListPolymarketSportsLiveEvents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -304,7 +304,7 @@ func RegisterPolymarketServiceHandlerServer(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolymarketService_ListPolymarketSportsLiveMarkets_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolymarketService_ListPolymarketSportsLiveEvents_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -312,7 +312,7 @@ func RegisterPolymarketServiceHandlerServer(ctx context.Context, mux *runtime.Se
 			return
 		}
 
-		forward_PolymarketService_ListPolymarketSportsLiveMarkets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolymarketService_ListPolymarketSportsLiveEvents_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -437,7 +437,7 @@ func RegisterPolymarketServiceHandlerClient(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("GET", pattern_PolymarketService_ListPolymarketSportsLiveMarkets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_PolymarketService_ListPolymarketSportsLiveEvents_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -446,14 +446,14 @@ func RegisterPolymarketServiceHandlerClient(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PolymarketService_ListPolymarketSportsLiveMarkets_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolymarketService_ListPolymarketSportsLiveEvents_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_PolymarketService_ListPolymarketSportsLiveMarkets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolymarketService_ListPolymarketSportsLiveEvents_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -469,7 +469,7 @@ var (
 
 	pattern_PolymarketService_ListPolymarketMovers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "polymarket", "movers"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_PolymarketService_ListPolymarketSportsLiveMarkets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5}, []string{"api", "v1", "polymarket", "sports", "live", "markets"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_PolymarketService_ListPolymarketSportsLiveEvents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5}, []string{"api", "v1", "polymarket", "sports", "live", "events"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -481,5 +481,5 @@ var (
 
 	forward_PolymarketService_ListPolymarketMovers_0 = runtime.ForwardResponseMessage
 
-	forward_PolymarketService_ListPolymarketSportsLiveMarkets_0 = runtime.ForwardResponseMessage
+	forward_PolymarketService_ListPolymarketSportsLiveEvents_0 = runtime.ForwardResponseMessage
 )

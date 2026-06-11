@@ -11,19 +11,264 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const batchUpsertSportsLiveMarkets = `-- name: BatchUpsertSportsLiveMarkets :exec
-INSERT INTO polymarket_sports_live_market (
-  condition_id,
-  market_slug,
-  event_slug,
+const batchUpsertSportsLiveEvents = `-- name: BatchUpsertSportsLiveEvents :exec
+INSERT INTO polymarket_sports_live_event (
+  event_key,
+  event_id,
+  ticker,
+  slug,
   title,
+  description,
+  resolution_source,
+  start_date,
+  creation_date,
+  end_date,
+  start_time,
+  created_at_gamma,
+  updated_at_gamma,
   image,
+  icon,
+  active,
+  closed,
+  archived,
+  featured,
+  restricted,
+  live,
+  ended,
+  liquidity,
+  volume,
+  open_interest,
+  category,
   score,
   period,
   elapsed,
-  gamma_updated_at,
-  liquidity_num,
+  finished_timestamp,
+  game_id,
+  event_date,
+  game_status,
+  comment_count,
+  sport,
+  teams,
+  tags,
+  raw,
+  fetched_at,
+  last_seen_at
+)
+SELECT
+  unnest($1::text[]),
+  unnest($2::text[]),
+  unnest($3::text[]),
+  unnest($4::text[]),
+  unnest($5::text[]),
+  unnest($6::text[]),
+  unnest($7::text[]),
+  unnest($8::timestamptz[]),
+  unnest($9::timestamptz[]),
+  unnest($10::timestamptz[]),
+  unnest($11::timestamptz[]),
+  unnest($12::timestamptz[]),
+  unnest($13::timestamptz[]),
+  unnest($14::text[]),
+  unnest($15::text[]),
+  unnest($16::boolean[]),
+  unnest($17::boolean[]),
+  unnest($18::boolean[]),
+  unnest($19::boolean[]),
+  unnest($20::boolean[]),
+  unnest($21::boolean[]),
+  unnest($22::boolean[]),
+  unnest($23::double precision[]),
+  unnest($24::double precision[]),
+  unnest($25::double precision[]),
+  unnest($26::text[]),
+  unnest($27::text[]),
+  unnest($28::text[]),
+  unnest($29::text[]),
+  unnest($30::text[]),
+  unnest($31::bigint[]),
+  unnest($32::text[]),
+  unnest($33::text[]),
+  unnest($34::bigint[]),
+  unnest($35::jsonb[]),
+  unnest($36::jsonb[]),
+  unnest($37::jsonb[]),
+  unnest($38::jsonb[]),
+  unnest($39::timestamptz[]),
+  unnest($40::timestamptz[])
+ON CONFLICT (event_key) DO UPDATE
+SET event_id = EXCLUDED.event_id,
+  ticker = EXCLUDED.ticker,
+  slug = EXCLUDED.slug,
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  resolution_source = EXCLUDED.resolution_source,
+  start_date = EXCLUDED.start_date,
+  creation_date = EXCLUDED.creation_date,
+  end_date = EXCLUDED.end_date,
+  start_time = EXCLUDED.start_time,
+  created_at_gamma = EXCLUDED.created_at_gamma,
+  updated_at_gamma = EXCLUDED.updated_at_gamma,
+  image = EXCLUDED.image,
+  icon = EXCLUDED.icon,
+  active = EXCLUDED.active,
+  closed = EXCLUDED.closed,
+  archived = EXCLUDED.archived,
+  featured = EXCLUDED.featured,
+  restricted = EXCLUDED.restricted,
+  live = EXCLUDED.live,
+  ended = EXCLUDED.ended,
+  liquidity = EXCLUDED.liquidity,
+  volume = EXCLUDED.volume,
+  open_interest = EXCLUDED.open_interest,
+  category = EXCLUDED.category,
+  score = EXCLUDED.score,
+  period = EXCLUDED.period,
+  elapsed = EXCLUDED.elapsed,
+  finished_timestamp = EXCLUDED.finished_timestamp,
+  game_id = EXCLUDED.game_id,
+  event_date = EXCLUDED.event_date,
+  game_status = EXCLUDED.game_status,
+  comment_count = EXCLUDED.comment_count,
+  sport = EXCLUDED.sport,
+  teams = EXCLUDED.teams,
+  tags = EXCLUDED.tags,
+  raw = EXCLUDED.raw,
+  fetched_at = EXCLUDED.fetched_at,
+  last_seen_at = EXCLUDED.last_seen_at,
+  updated_at = now()
+`
+
+type BatchUpsertSportsLiveEventsParams struct {
+	EventKeys            []string
+	EventIds             []string
+	Tickers              []string
+	Slugs                []string
+	Titles               []string
+	Descriptions         []string
+	ResolutionSources    []string
+	StartDateValues      []pgtype.Timestamptz
+	CreationDateValues   []pgtype.Timestamptz
+	EndDateValues        []pgtype.Timestamptz
+	StartTimeValues      []pgtype.Timestamptz
+	CreatedAtGammaValues []pgtype.Timestamptz
+	UpdatedAtGammaValues []pgtype.Timestamptz
+	Images               []string
+	Icons                []string
+	ActiveValues         []bool
+	ClosedValues         []bool
+	ArchivedValues       []bool
+	FeaturedValues       []bool
+	RestrictedValues     []bool
+	LiveValues           []bool
+	EndedValues          []bool
+	LiquidityValues      []float64
+	VolumeValues         []float64
+	OpenInterestValues   []float64
+	Categories           []string
+	Scores               []string
+	Periods              []string
+	ElapsedValues        []string
+	FinishedTimestamps   []string
+	GameIDValues         []int64
+	EventDates           []string
+	GameStatuses         []string
+	CommentCountValues   []int64
+	SportValues          [][]byte
+	TeamsValues          [][]byte
+	TagsValues           [][]byte
+	RawValues            [][]byte
+	FetchedAtValues      []pgtype.Timestamptz
+	LastSeenAtValues     []pgtype.Timestamptz
+}
+
+func (q *Queries) BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error {
+	_, err := q.db.Exec(ctx, batchUpsertSportsLiveEvents,
+		arg.EventKeys,
+		arg.EventIds,
+		arg.Tickers,
+		arg.Slugs,
+		arg.Titles,
+		arg.Descriptions,
+		arg.ResolutionSources,
+		arg.StartDateValues,
+		arg.CreationDateValues,
+		arg.EndDateValues,
+		arg.StartTimeValues,
+		arg.CreatedAtGammaValues,
+		arg.UpdatedAtGammaValues,
+		arg.Images,
+		arg.Icons,
+		arg.ActiveValues,
+		arg.ClosedValues,
+		arg.ArchivedValues,
+		arg.FeaturedValues,
+		arg.RestrictedValues,
+		arg.LiveValues,
+		arg.EndedValues,
+		arg.LiquidityValues,
+		arg.VolumeValues,
+		arg.OpenInterestValues,
+		arg.Categories,
+		arg.Scores,
+		arg.Periods,
+		arg.ElapsedValues,
+		arg.FinishedTimestamps,
+		arg.GameIDValues,
+		arg.EventDates,
+		arg.GameStatuses,
+		arg.CommentCountValues,
+		arg.SportValues,
+		arg.TeamsValues,
+		arg.TagsValues,
+		arg.RawValues,
+		arg.FetchedAtValues,
+		arg.LastSeenAtValues,
+	)
+	return err
+}
+
+const batchUpsertSportsLiveMarkets = `-- name: BatchUpsertSportsLiveMarkets :exec
+INSERT INTO polymarket_sports_live_market (
+  market_key,
+  event_key,
+  event_id,
+  event_slug,
+  market_id,
+  condition_id,
+  slug,
+  question,
+  title,
+  description,
+  resolution_source,
+  sports_market_type,
+  group_item_title,
+  image,
+  icon,
+  outcomes,
+  outcome_prices,
+  clob_token_ids,
+  active,
+  closed,
+  archived,
+  restricted,
+  enable_order_book,
+  volume,
   volume_num,
+  liquidity_num,
+  volume_24hr,
+  volume_1wk,
+  volume_1mo,
+  volume_1yr,
+  spread,
+  best_bid,
+  best_ask,
+  last_trade_price,
+  start_date,
+  end_date,
+  created_at_gamma,
+  updated_at_gamma,
+  tags,
+  raw,
   fetched_at,
   last_seen_at
 )
@@ -36,60 +281,189 @@ SELECT
   unnest($6::text[]),
   unnest($7::text[]),
   unnest($8::text[]),
-  unnest($9::timestamptz[]),
-  unnest($10::double precision[]),
-  unnest($11::double precision[]),
-  unnest($12::timestamptz[]),
-  unnest($13::timestamptz[])
-ON CONFLICT (condition_id) DO UPDATE
-SET market_slug = EXCLUDED.market_slug,
+  unnest($9::text[]),
+  unnest($10::text[]),
+  unnest($11::text[]),
+  unnest($12::text[]),
+  unnest($13::text[]),
+  unnest($14::text[]),
+  unnest($15::text[]),
+  unnest($16::text[]),
+  unnest($17::text[]),
+  unnest($18::text[]),
+  unnest($19::boolean[]),
+  unnest($20::boolean[]),
+  unnest($21::boolean[]),
+  unnest($22::boolean[]),
+  unnest($23::boolean[]),
+  unnest($24::text[]),
+  unnest($25::double precision[]),
+  unnest($26::double precision[]),
+  unnest($27::double precision[]),
+  unnest($28::double precision[]),
+  unnest($29::double precision[]),
+  unnest($30::double precision[]),
+  unnest($31::double precision[]),
+  unnest($32::double precision[]),
+  unnest($33::double precision[]),
+  unnest($34::double precision[]),
+  unnest($35::timestamptz[]),
+  unnest($36::timestamptz[]),
+  unnest($37::timestamptz[]),
+  unnest($38::timestamptz[]),
+  unnest($39::jsonb[]),
+  unnest($40::jsonb[]),
+  unnest($41::timestamptz[]),
+  unnest($42::timestamptz[])
+ON CONFLICT (market_key) DO UPDATE
+SET event_key = EXCLUDED.event_key,
+  event_id = EXCLUDED.event_id,
   event_slug = EXCLUDED.event_slug,
+  market_id = EXCLUDED.market_id,
+  condition_id = EXCLUDED.condition_id,
+  slug = EXCLUDED.slug,
+  question = EXCLUDED.question,
   title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  resolution_source = EXCLUDED.resolution_source,
+  sports_market_type = EXCLUDED.sports_market_type,
+  group_item_title = EXCLUDED.group_item_title,
   image = EXCLUDED.image,
-  score = EXCLUDED.score,
-  period = EXCLUDED.period,
-  elapsed = EXCLUDED.elapsed,
-  gamma_updated_at = EXCLUDED.gamma_updated_at,
-  liquidity_num = EXCLUDED.liquidity_num,
+  icon = EXCLUDED.icon,
+  outcomes = EXCLUDED.outcomes,
+  outcome_prices = EXCLUDED.outcome_prices,
+  clob_token_ids = EXCLUDED.clob_token_ids,
+  active = EXCLUDED.active,
+  closed = EXCLUDED.closed,
+  archived = EXCLUDED.archived,
+  restricted = EXCLUDED.restricted,
+  enable_order_book = EXCLUDED.enable_order_book,
+  volume = EXCLUDED.volume,
   volume_num = EXCLUDED.volume_num,
+  liquidity_num = EXCLUDED.liquidity_num,
+  volume_24hr = EXCLUDED.volume_24hr,
+  volume_1wk = EXCLUDED.volume_1wk,
+  volume_1mo = EXCLUDED.volume_1mo,
+  volume_1yr = EXCLUDED.volume_1yr,
+  spread = EXCLUDED.spread,
+  best_bid = EXCLUDED.best_bid,
+  best_ask = EXCLUDED.best_ask,
+  last_trade_price = EXCLUDED.last_trade_price,
+  start_date = EXCLUDED.start_date,
+  end_date = EXCLUDED.end_date,
+  created_at_gamma = EXCLUDED.created_at_gamma,
+  updated_at_gamma = EXCLUDED.updated_at_gamma,
+  tags = EXCLUDED.tags,
+  raw = EXCLUDED.raw,
   fetched_at = EXCLUDED.fetched_at,
   last_seen_at = EXCLUDED.last_seen_at,
   updated_at = now()
 `
 
 type BatchUpsertSportsLiveMarketsParams struct {
-	ConditionIds         []string
-	MarketSlugs          []string
-	EventSlugs           []string
-	Titles               []string
-	Images               []string
-	Scores               []string
-	Periods              []string
-	ElapsedValues        []string
-	GammaUpdatedAtValues []pgtype.Timestamptz
-	LiquidityNumValues   []float64
-	VolumeNumValues      []float64
-	FetchedAtValues      []pgtype.Timestamptz
-	LastSeenAtValues     []pgtype.Timestamptz
+	MarketKeys            []string
+	EventKeys             []string
+	EventIds              []string
+	EventSlugs            []string
+	MarketIds             []string
+	ConditionIds          []string
+	Slugs                 []string
+	Questions             []string
+	Titles                []string
+	Descriptions          []string
+	ResolutionSources     []string
+	SportsMarketTypes     []string
+	GroupItemTitles       []string
+	Images                []string
+	Icons                 []string
+	OutcomesValues        []string
+	OutcomePricesValues   []string
+	ClobTokenIdsValues    []string
+	ActiveValues          []bool
+	ClosedValues          []bool
+	ArchivedValues        []bool
+	RestrictedValues      []bool
+	EnableOrderBookValues []bool
+	VolumeValues          []string
+	VolumeNumValues       []float64
+	LiquidityNumValues    []float64
+	Volume24hrValues      []float64
+	Volume1wkValues       []float64
+	Volume1moValues       []float64
+	Volume1yrValues       []float64
+	SpreadValues          []float64
+	BestBidValues         []float64
+	BestAskValues         []float64
+	LastTradePriceValues  []float64
+	StartDateValues       []pgtype.Timestamptz
+	EndDateValues         []pgtype.Timestamptz
+	CreatedAtGammaValues  []pgtype.Timestamptz
+	UpdatedAtGammaValues  []pgtype.Timestamptz
+	TagsValues            [][]byte
+	RawValues             [][]byte
+	FetchedAtValues       []pgtype.Timestamptz
+	LastSeenAtValues      []pgtype.Timestamptz
 }
 
 func (q *Queries) BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error {
 	_, err := q.db.Exec(ctx, batchUpsertSportsLiveMarkets,
-		arg.ConditionIds,
-		arg.MarketSlugs,
+		arg.MarketKeys,
+		arg.EventKeys,
+		arg.EventIds,
 		arg.EventSlugs,
+		arg.MarketIds,
+		arg.ConditionIds,
+		arg.Slugs,
+		arg.Questions,
 		arg.Titles,
+		arg.Descriptions,
+		arg.ResolutionSources,
+		arg.SportsMarketTypes,
+		arg.GroupItemTitles,
 		arg.Images,
-		arg.Scores,
-		arg.Periods,
-		arg.ElapsedValues,
-		arg.GammaUpdatedAtValues,
-		arg.LiquidityNumValues,
+		arg.Icons,
+		arg.OutcomesValues,
+		arg.OutcomePricesValues,
+		arg.ClobTokenIdsValues,
+		arg.ActiveValues,
+		arg.ClosedValues,
+		arg.ArchivedValues,
+		arg.RestrictedValues,
+		arg.EnableOrderBookValues,
+		arg.VolumeValues,
 		arg.VolumeNumValues,
+		arg.LiquidityNumValues,
+		arg.Volume24hrValues,
+		arg.Volume1wkValues,
+		arg.Volume1moValues,
+		arg.Volume1yrValues,
+		arg.SpreadValues,
+		arg.BestBidValues,
+		arg.BestAskValues,
+		arg.LastTradePriceValues,
+		arg.StartDateValues,
+		arg.EndDateValues,
+		arg.CreatedAtGammaValues,
+		arg.UpdatedAtGammaValues,
+		arg.TagsValues,
+		arg.RawValues,
 		arg.FetchedAtValues,
 		arg.LastSeenAtValues,
 	)
 	return err
+}
+
+const deleteSportsLiveEventsNotSeenSince = `-- name: DeleteSportsLiveEventsNotSeenSince :execrows
+DELETE FROM polymarket_sports_live_event
+WHERE last_seen_at < $1
+`
+
+func (q *Queries) DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteSportsLiveEventsNotSeenSince, lastSeenAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteSportsLiveMarketsNotSeenSince = `-- name: DeleteSportsLiveMarketsNotSeenSince :execrows
@@ -118,38 +492,149 @@ func (q *Queries) GetPolymarketSyncState(ctx context.Context, syncName string) (
 	return last_success_at, err
 }
 
-const listSportsLiveMarkets = `-- name: ListSportsLiveMarkets :many
-SELECT condition_id, market_slug, event_slug, title, image, score, period, elapsed, gamma_updated_at, liquidity_num, volume_num, fetched_at, last_seen_at, created_at, updated_at
-FROM polymarket_sports_live_market
-ORDER BY gamma_updated_at DESC NULLS LAST, liquidity_num DESC, condition_id
+const listSportsLiveEvents = `-- name: ListSportsLiveEvents :many
+SELECT
+  event.event_key,
+  event.event_id,
+  event.slug,
+  event.title,
+  COALESCE(NULLIF(event.image, ''), event.icon)::text AS image,
+  event.score,
+  event.period,
+  event.elapsed,
+  event.game_status,
+  event.start_time,
+  event.updated_at_gamma,
+  event.liquidity,
+  event.volume,
+  COUNT(market.market_key)::bigint AS market_count,
+  event.fetched_at,
+  event.last_seen_at
+FROM polymarket_sports_live_event AS event
+LEFT JOIN polymarket_sports_live_market AS market ON market.event_key = event.event_key
+GROUP BY event.event_key
+ORDER BY event.live DESC, event.updated_at_gamma DESC NULLS LAST, event.liquidity DESC, event.event_key
 LIMIT $1
 `
 
-func (q *Queries) ListSportsLiveMarkets(ctx context.Context, limit int32) ([]PolymarketSportsLiveMarket, error) {
-	rows, err := q.db.Query(ctx, listSportsLiveMarkets, limit)
+type ListSportsLiveEventsRow struct {
+	EventKey       string
+	EventID        string
+	Slug           string
+	Title          string
+	Image          string
+	Score          string
+	Period         string
+	Elapsed        string
+	GameStatus     string
+	StartTime      pgtype.Timestamptz
+	UpdatedAtGamma pgtype.Timestamptz
+	Liquidity      float64
+	Volume         float64
+	MarketCount    int64
+	FetchedAt      pgtype.Timestamptz
+	LastSeenAt     pgtype.Timestamptz
+}
+
+func (q *Queries) ListSportsLiveEvents(ctx context.Context, limit int32) ([]ListSportsLiveEventsRow, error) {
+	rows, err := q.db.Query(ctx, listSportsLiveEvents, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []PolymarketSportsLiveMarket
+	var items []ListSportsLiveEventsRow
 	for rows.Next() {
-		var i PolymarketSportsLiveMarket
+		var i ListSportsLiveEventsRow
 		if err := rows.Scan(
-			&i.ConditionID,
-			&i.MarketSlug,
-			&i.EventSlug,
+			&i.EventKey,
+			&i.EventID,
+			&i.Slug,
 			&i.Title,
 			&i.Image,
 			&i.Score,
 			&i.Period,
 			&i.Elapsed,
-			&i.GammaUpdatedAt,
-			&i.LiquidityNum,
-			&i.VolumeNum,
+			&i.GameStatus,
+			&i.StartTime,
+			&i.UpdatedAtGamma,
+			&i.Liquidity,
+			&i.Volume,
+			&i.MarketCount,
 			&i.FetchedAt,
 			&i.LastSeenAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSportsLiveMarketsByEventKeys = `-- name: ListSportsLiveMarketsByEventKeys :many
+SELECT
+  market.event_key,
+  market.market_key,
+  market.condition_id,
+  market.slug,
+  COALESCE(NULLIF(market.question, ''), market.title)::text AS question,
+  market.outcomes,
+  market.outcome_prices,
+  market.best_bid,
+  market.best_ask,
+  market.last_trade_price,
+  market.spread,
+  market.liquidity_num,
+  market.volume_num,
+  market.updated_at_gamma
+FROM polymarket_sports_live_market AS market
+WHERE market.event_key = ANY($1::text[])
+ORDER BY market.event_key, market.liquidity_num DESC, market.volume_num DESC, market.market_key
+`
+
+type ListSportsLiveMarketsByEventKeysRow struct {
+	EventKey       string
+	MarketKey      string
+	ConditionID    string
+	Slug           string
+	Question       string
+	Outcomes       string
+	OutcomePrices  string
+	BestBid        float64
+	BestAsk        float64
+	LastTradePrice float64
+	Spread         float64
+	LiquidityNum   float64
+	VolumeNum      float64
+	UpdatedAtGamma pgtype.Timestamptz
+}
+
+func (q *Queries) ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsLiveMarketsByEventKeysRow, error) {
+	rows, err := q.db.Query(ctx, listSportsLiveMarketsByEventKeys, eventKeys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSportsLiveMarketsByEventKeysRow
+	for rows.Next() {
+		var i ListSportsLiveMarketsByEventKeysRow
+		if err := rows.Scan(
+			&i.EventKey,
+			&i.MarketKey,
+			&i.ConditionID,
+			&i.Slug,
+			&i.Question,
+			&i.Outcomes,
+			&i.OutcomePrices,
+			&i.BestBid,
+			&i.BestAsk,
+			&i.LastTradePrice,
+			&i.Spread,
+			&i.LiquidityNum,
+			&i.VolumeNum,
+			&i.UpdatedAtGamma,
 		); err != nil {
 			return nil, err
 		}

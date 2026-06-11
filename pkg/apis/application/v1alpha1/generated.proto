@@ -234,12 +234,12 @@ message PolymarketRealtimeWindowItem {
   optional int32 sampleCount = 4;
 }
 
-message PolymarketSportsLiveMarketItem {
-  optional string conditionId = 1;
+message PolymarketSportsLiveEventCardItem {
+  optional string eventKey = 1;
 
-  optional string marketSlug = 2;
+  optional string eventId = 2;
 
-  optional string eventSlug = 3;
+  optional string slug = 3;
 
   optional string title = 4;
 
@@ -251,11 +251,47 @@ message PolymarketSportsLiveMarketItem {
 
   optional string elapsed = 8;
 
-  optional string lastUpdate = 9;
+  optional string gameStatus = 9;
 
-  optional double liquidityNum = 10;
+  optional string startTime = 10;
 
-  optional double volumeNum = 11;
+  optional string updatedAt = 11;
+
+  optional double liquidity = 12;
+
+  optional double volume = 13;
+
+  optional int32 marketCount = 14;
+
+  repeated PolymarketSportsLiveMarketCardItem markets = 15;
+}
+
+message PolymarketSportsLiveMarketCardItem {
+  optional string marketKey = 1;
+
+  optional string conditionId = 2;
+
+  optional string slug = 3;
+
+  optional string question = 4;
+
+  optional string outcomes = 5;
+
+  optional string outcomePrices = 6;
+
+  optional double bestBid = 7;
+
+  optional double bestAsk = 8;
+
+  optional double lastTradePrice = 9;
+
+  optional double spread = 10;
+
+  optional double liquidityNum = 11;
+
+  optional double volumeNum = 12;
+
+  optional string updatedAt = 13;
 }
 
 message PolymarketStatus {

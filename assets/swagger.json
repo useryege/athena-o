@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-737-gf4c4bb5-dirty"
+    "version": "v1.0.0-738-g0f62b78-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -416,13 +416,13 @@
         }
       }
     },
-    "/api/v1/polymarket/sports/live/markets": {
+    "/api/v1/polymarket/sports/live/events": {
       "get": {
         "tags": [
           "PolymarketService"
         ],
-        "summary": "ListPolymarketSportsLiveMarkets returns sports live market rows.",
-        "operationId": "PolymarketService_ListPolymarketSportsLiveMarkets",
+        "summary": "ListPolymarketSportsLiveEvents returns sports live event cards.",
+        "operationId": "PolymarketService_ListPolymarketSportsLiveEvents",
         "parameters": [
           {
             "type": "integer",
@@ -435,7 +435,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketSportsLiveMarketsResponse"
+              "$ref": "#/definitions/polymarketListPolymarketSportsLiveEventsResponse"
             }
           },
           "default": {
@@ -2018,8 +2018,8 @@
         }
       }
     },
-    "polymarketListPolymarketSportsLiveMarketsResponse": {
-      "description": "ListPolymarketSportsLiveMarketsResponse returns sports live market rows.",
+    "polymarketListPolymarketSportsLiveEventsResponse": {
+      "description": "ListPolymarketSportsLiveEventsResponse returns sports live event cards.",
       "type": "object",
       "properties": {
         "fetched_at": {
@@ -2029,7 +2029,7 @@
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketItem"
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveEventCardItem"
           }
         },
         "stale": {
@@ -2888,30 +2888,37 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsLiveMarketItem": {
+    "v1alpha1PolymarketSportsLiveEventCardItem": {
       "type": "object",
       "properties": {
-        "conditionId": {
-          "type": "string"
-        },
         "elapsed": {
           "type": "string"
         },
-        "eventSlug": {
+        "eventId": {
+          "type": "string"
+        },
+        "eventKey": {
+          "type": "string"
+        },
+        "gameStatus": {
           "type": "string"
         },
         "image": {
           "type": "string"
         },
-        "lastUpdate": {
-          "type": "string"
-        },
-        "liquidityNum": {
+        "liquidity": {
           "type": "number",
           "format": "double"
         },
-        "marketSlug": {
-          "type": "string"
+        "marketCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "markets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketCardItem"
+          }
         },
         "period": {
           "type": "string"
@@ -2919,7 +2926,66 @@
         "score": {
           "type": "string"
         },
+        "slug": {
+          "type": "string"
+        },
+        "startTime": {
+          "type": "string"
+        },
         "title": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1alpha1PolymarketSportsLiveMarketCardItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketKey": {
+          "type": "string"
+        },
+        "outcomePrices": {
+          "type": "string"
+        },
+        "outcomes": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "updatedAt": {
           "type": "string"
         },
         "volumeNum": {

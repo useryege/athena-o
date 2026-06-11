@@ -59,14 +59,14 @@ message ListPolymarketMoversResponse {
   int32 candidate_count = 8;
 }
 
-// ListPolymarketSportsLiveMarketsRequest queries sports live market rows.
-message ListPolymarketSportsLiveMarketsRequest {
+// ListPolymarketSportsLiveEventsRequest queries sports live event cards.
+message ListPolymarketSportsLiveEventsRequest {
   int32 limit = 1;
 }
 
-// ListPolymarketSportsLiveMarketsResponse returns sports live market rows.
-message ListPolymarketSportsLiveMarketsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLiveMarketItem items = 1;
+// ListPolymarketSportsLiveEventsResponse returns sports live event cards.
+message ListPolymarketSportsLiveEventsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLiveEventCardItem items = 1;
   int64 fetched_at = 2;
   bool stale = 3;
 }
@@ -84,6 +84,6 @@ service PolymarketService {
   // ListPolymarketMovers returns price mover market rows.
   rpc ListPolymarketMovers(ListPolymarketMoversRequest) returns (ListPolymarketMoversResponse);
 
-  // ListPolymarketSportsLiveMarkets returns sports live market rows.
-  rpc ListPolymarketSportsLiveMarkets(ListPolymarketSportsLiveMarketsRequest) returns (ListPolymarketSportsLiveMarketsResponse);
+  // ListPolymarketSportsLiveEvents returns sports live event cards.
+  rpc ListPolymarketSportsLiveEvents(ListPolymarketSportsLiveEventsRequest) returns (ListPolymarketSportsLiveEventsResponse);
 }
