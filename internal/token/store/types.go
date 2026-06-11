@@ -212,6 +212,25 @@ type ProjectReport struct {
 	CreatedAt                 time.Time
 }
 
+type ProjectReportListItem struct {
+	Report              ProjectReport
+	ChainID             int64
+	Name                string
+	Symbol              string
+	Contract            common.Address
+	EvaluationStatus    string
+	EvaluationAttempts  int32
+	EvaluationLastError string
+	EvaluationUpdatedAt time.Time
+}
+
+type ProjectReportPage struct {
+	Items    []ProjectReportListItem
+	Total    int64
+	Page     int32
+	PageSize int32
+}
+
 type ProjectReportEvaluationTask struct {
 	ProjectID       int64
 	Status          string

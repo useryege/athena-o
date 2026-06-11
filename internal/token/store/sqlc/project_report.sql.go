@@ -11,6 +11,41 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countProjectReports = `-- name: CountProjectReports :one
+SELECT COUNT(*)::bigint
+FROM project_report AS report
+JOIN project
+  ON project.id = report.project_id
+LEFT JOIN project_report_evaluation_task AS task
+  ON task.project_id = report.project_id
+WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
+  AND ($2::bigint = 0 OR project.id = $2::bigint)
+  AND ($3::bytea IS NULL OR project.contract = $3::bytea)
+  AND (
+    $4::text = ''
+    OR COALESCE(task.status, 'not_started') = $4::text
+  )
+`
+
+type CountProjectReportsParams struct {
+	ChainID          int64
+	ProjectID        int64
+	Contract         []byte
+	EvaluationStatus string
+}
+
+func (q *Queries) CountProjectReports(ctx context.Context, arg CountProjectReportsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countProjectReports,
+		arg.ChainID,
+		arg.ProjectID,
+		arg.Contract,
+		arg.EvaluationStatus,
+	)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const insertProjectReportIfNotExists = `-- name: InsertProjectReportIfNotExists :exec
 INSERT INTO project_report (
   project_id
@@ -80,6 +115,121 @@ func (q *Queries) ListDueProjectReportEvaluationTasks(ctx context.Context, limit
 			&i.SourceUpdatedAtUnixMicro,
 			&i.ChainStateProjectID,
 			&i.ChainState,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProjectReports = `-- name: ListProjectReports :many
+SELECT
+  report.project_id, report.weth_pair_is_created, report.weth_pair_is_remove_liquidity, report.weth_pair_is_mint, report.weth_pair_quote_usdt_value_int, report.weth_pair_last_swap_timestamp, report.usdt_pair_is_created, report.usdt_pair_is_remove_liquidity, report.usdt_pair_is_mint, report.usdt_pair_quote_usdt_value_int, report.usdt_pair_last_swap_timestamp, report.source_updated_at, report.evaluated_at, report.created_at,
+  project.chain_id,
+  project.name,
+  project.symbol,
+  project.contract,
+  COALESCE(task.status, 'not_started')::text AS evaluation_status,
+  COALESCE(task.attempts, 0)::int AS evaluation_attempts,
+  COALESCE(task.last_error, '')::text AS evaluation_last_error,
+  task.updated_at AS evaluation_updated_at
+FROM project_report AS report
+JOIN project
+  ON project.id = report.project_id
+LEFT JOIN project_report_evaluation_task AS task
+  ON task.project_id = report.project_id
+WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
+  AND ($2::bigint = 0 OR project.id = $2::bigint)
+  AND ($3::bytea IS NULL OR project.contract = $3::bytea)
+  AND (
+    $4::text = ''
+    OR COALESCE(task.status, 'not_started') = $4::text
+  )
+ORDER BY
+  report.evaluated_at DESC NULLS LAST,
+  task.updated_at DESC NULLS LAST,
+  report.created_at DESC,
+  report.project_id DESC
+LIMIT $6 OFFSET $5
+`
+
+type ListProjectReportsParams struct {
+	ChainID          int64
+	ProjectID        int64
+	Contract         []byte
+	EvaluationStatus string
+	Offset           int32
+	Limit            int32
+}
+
+type ListProjectReportsRow struct {
+	ProjectID                 int64
+	WethPairIsCreated         pgtype.Bool
+	WethPairIsRemoveLiquidity pgtype.Bool
+	WethPairIsMint            pgtype.Bool
+	WethPairQuoteUsdtValueInt pgtype.Numeric
+	WethPairLastSwapTimestamp pgtype.Int8
+	UsdtPairIsCreated         pgtype.Bool
+	UsdtPairIsRemoveLiquidity pgtype.Bool
+	UsdtPairIsMint            pgtype.Bool
+	UsdtPairQuoteUsdtValueInt pgtype.Numeric
+	UsdtPairLastSwapTimestamp pgtype.Int8
+	SourceUpdatedAt           pgtype.Timestamptz
+	EvaluatedAt               pgtype.Timestamptz
+	CreatedAt                 pgtype.Timestamptz
+	ChainID                   int64
+	Name                      string
+	Symbol                    string
+	Contract                  []byte
+	EvaluationStatus          string
+	EvaluationAttempts        int32
+	EvaluationLastError       string
+	EvaluationUpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) ListProjectReports(ctx context.Context, arg ListProjectReportsParams) ([]ListProjectReportsRow, error) {
+	rows, err := q.db.Query(ctx, listProjectReports,
+		arg.ChainID,
+		arg.ProjectID,
+		arg.Contract,
+		arg.EvaluationStatus,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListProjectReportsRow
+	for rows.Next() {
+		var i ListProjectReportsRow
+		if err := rows.Scan(
+			&i.ProjectID,
+			&i.WethPairIsCreated,
+			&i.WethPairIsRemoveLiquidity,
+			&i.WethPairIsMint,
+			&i.WethPairQuoteUsdtValueInt,
+			&i.WethPairLastSwapTimestamp,
+			&i.UsdtPairIsCreated,
+			&i.UsdtPairIsRemoveLiquidity,
+			&i.UsdtPairIsMint,
+			&i.UsdtPairQuoteUsdtValueInt,
+			&i.UsdtPairLastSwapTimestamp,
+			&i.SourceUpdatedAt,
+			&i.EvaluatedAt,
+			&i.CreatedAt,
+			&i.ChainID,
+			&i.Name,
+			&i.Symbol,
+			&i.Contract,
+			&i.EvaluationStatus,
+			&i.EvaluationAttempts,
+			&i.EvaluationLastError,
+			&i.EvaluationUpdatedAt,
 		); err != nil {
 			return nil, err
 		}

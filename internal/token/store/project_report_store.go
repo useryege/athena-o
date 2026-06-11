@@ -6,15 +6,56 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
 const (
-	ProjectReportEvaluationStatusPending   = "pending"
-	ProjectReportEvaluationStatusSucceeded = "succeeded"
-	ProjectReportEvaluationStatusFailed    = "failed"
+	ProjectReportEvaluationStatusNotStarted = "not_started"
+	ProjectReportEvaluationStatusPending    = "pending"
+	ProjectReportEvaluationStatusSucceeded  = "succeeded"
+	ProjectReportEvaluationStatusFailed     = "failed"
 )
+
+func (s *SQLStore) ListProjectReportsPage(ctx context.Context, chainID, projectID int64, contract common.Address, evaluationStatus string, page, pageSize int32) (*ProjectReportPage, error) {
+	q, err := s.querier()
+	if err != nil {
+		return nil, err
+	}
+	page, pageSize, offset := normalizePage(page, pageSize)
+	params := tokensqlc.CountProjectReportsParams{
+		ChainID:          chainID,
+		ProjectID:        projectID,
+		Contract:         optionalAddressBytes(contract),
+		EvaluationStatus: evaluationStatus,
+	}
+	total, err := q.CountProjectReports(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("count project reports: %w", err)
+	}
+	rows, err := q.ListProjectReports(ctx, tokensqlc.ListProjectReportsParams{
+		ChainID:          params.ChainID,
+		ProjectID:        params.ProjectID,
+		Contract:         params.Contract,
+		EvaluationStatus: params.EvaluationStatus,
+		Offset:           offset,
+		Limit:            pageSize,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list project reports: %w", err)
+	}
+	items, err := mapProjectReportListItems(rows)
+	if err != nil {
+		return nil, fmt.Errorf("map project reports: %w", err)
+	}
+	return &ProjectReportPage{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
 
 func (s *SQLStore) ListDueProjectReportEvaluationTasks(ctx context.Context, limit int32) ([]ProjectReportEvaluationTask, error) {
 	q, err := s.querier()

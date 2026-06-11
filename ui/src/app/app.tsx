@@ -42,6 +42,7 @@ import {
     PolymarketMoversPage,
     PolymarketRealtimePage,
     PolymarketSportsLivePage,
+    ProjectReportsPage,
     ProjectsPage,
     SettingsPage,
     UserInfoPage,
@@ -88,6 +89,7 @@ const rbacActions = {
 
 const tokenapiSubresources = {
     projects: 'projects',
+    projectReports: 'project-reports',
     contractCodes: 'contract-codes',
     bytecodeBlacklists: 'bytecode-blacklists',
     walletBlacklists: 'wallet-blacklists',
@@ -108,6 +110,13 @@ const navItems: NavItem[] = [
         icon: <DashboardOutlined />,
         children: [
             {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />, permission: tokenapiPermission(tokenapiSubresources.projects)},
+            {
+                key: '/token/project-reports',
+                label: 'Project Reports',
+                path: '/token/project-reports',
+                icon: <FileTextOutlined />,
+                permission: tokenapiPermission(tokenapiSubresources.projectReports)
+            },
             {
                 key: '/token/contract-codes',
                 label: 'Contract Codes',
@@ -287,6 +296,7 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/help' element={<HelpPage />} />
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />
             <Route path='/token/projects' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectsPage />)} />
+            <Route path='/token/project-reports' element={withPermission(tokenapiPermission(tokenapiSubresources.projectReports), <ProjectReportsPage />)} />
             <Route path='/token/contract-codes' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodesPage />)} />
             <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />
             <Route path='/token/bytecode-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.bytecodeBlacklists), <BytecodeBlacklistsPage />)} />

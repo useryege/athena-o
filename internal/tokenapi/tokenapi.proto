@@ -161,6 +161,22 @@ message ListProjectsResponse {
   int32 page_size = 4;
 }
 
+message ListProjectReportsRequest {
+  int64 chain_id = 1;
+  int64 project_id = 2;
+  string contract = 3;
+  string evaluation_status = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListProjectReportsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenAPIProjectReport project_reports = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
 message GetProjectDataCollectionTaskRequest {
   int64 project_id = 1;
   string data_type = 2;
@@ -205,6 +221,7 @@ service TokenAPIService {
   rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
   rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse);
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc ListProjectReports(ListProjectReportsRequest) returns (ListProjectReportsResponse);
   rpc GetProjectDataCollectionTask(GetProjectDataCollectionTaskRequest) returns (GetProjectDataCollectionTaskResponse);
   rpc ListProjectDataCollectionTasks(ListProjectDataCollectionTasksRequest) returns (ListProjectDataCollectionTasksResponse);
 }

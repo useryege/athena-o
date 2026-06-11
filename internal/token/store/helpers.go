@@ -565,6 +565,51 @@ func mapProjectReport(row tokensqlc.ProjectReport) (*ProjectReport, error) {
 	}, nil
 }
 
+func mapProjectReportListItem(row tokensqlc.ListProjectReportsRow) (*ProjectReportListItem, error) {
+	report, err := mapProjectReport(tokensqlc.ProjectReport{
+		ProjectID:                 row.ProjectID,
+		WethPairIsCreated:         row.WethPairIsCreated,
+		WethPairIsRemoveLiquidity: row.WethPairIsRemoveLiquidity,
+		WethPairIsMint:            row.WethPairIsMint,
+		WethPairQuoteUsdtValueInt: row.WethPairQuoteUsdtValueInt,
+		WethPairLastSwapTimestamp: row.WethPairLastSwapTimestamp,
+		UsdtPairIsCreated:         row.UsdtPairIsCreated,
+		UsdtPairIsRemoveLiquidity: row.UsdtPairIsRemoveLiquidity,
+		UsdtPairIsMint:            row.UsdtPairIsMint,
+		UsdtPairQuoteUsdtValueInt: row.UsdtPairQuoteUsdtValueInt,
+		UsdtPairLastSwapTimestamp: row.UsdtPairLastSwapTimestamp,
+		SourceUpdatedAt:           row.SourceUpdatedAt,
+		EvaluatedAt:               row.EvaluatedAt,
+		CreatedAt:                 row.CreatedAt,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &ProjectReportListItem{
+		Report:              *report,
+		ChainID:             row.ChainID,
+		Name:                row.Name,
+		Symbol:              row.Symbol,
+		Contract:            bytesToAddress(row.Contract),
+		EvaluationStatus:    row.EvaluationStatus,
+		EvaluationAttempts:  row.EvaluationAttempts,
+		EvaluationLastError: row.EvaluationLastError,
+		EvaluationUpdatedAt: timeValue(row.EvaluationUpdatedAt),
+	}, nil
+}
+
+func mapProjectReportListItems(rows []tokensqlc.ListProjectReportsRow) ([]ProjectReportListItem, error) {
+	items := make([]ProjectReportListItem, 0, len(rows))
+	for _, row := range rows {
+		item, err := mapProjectReportListItem(row)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, *item)
+	}
+	return items, nil
+}
+
 func mapProjectReportEvaluationTask(row tokensqlc.ProjectReportEvaluationTask) *ProjectReportEvaluationTask {
 	return &ProjectReportEvaluationTask{
 		ProjectID:     row.ProjectID,

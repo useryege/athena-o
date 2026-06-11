@@ -71,6 +71,32 @@ export interface TokenAPIProject {
     createdAt?: string;
 }
 
+export interface TokenAPIProjectReport {
+    projectID?: number;
+    chainID?: number;
+    name?: string;
+    symbol?: string;
+    contract?: string;
+    evaluationStatus?: string;
+    evaluationAttempts?: number;
+    evaluationLastError?: string;
+    evaluationUpdatedAt?: string;
+    reportDataAvailable?: boolean;
+    wethPairIsCreated?: boolean;
+    wethPairIsRemoveLiquidity?: boolean;
+    wethPairIsMint?: boolean;
+    wethPairQuoteUsdtValueInt?: string;
+    wethPairLastSwapAt?: string;
+    usdtPairIsCreated?: boolean;
+    usdtPairIsRemoveLiquidity?: boolean;
+    usdtPairIsMint?: boolean;
+    usdtPairQuoteUsdtValueInt?: string;
+    usdtPairLastSwapAt?: string;
+    sourceUpdatedAt?: string;
+    evaluatedAt?: string;
+    createdAt?: string;
+}
+
 export interface TokenAPIProjectDataCollectionTask {
     projectID?: number;
     dataType?: string;
@@ -176,6 +202,41 @@ function normalizeProject(item: any): TokenAPIProject {
         blockNumber: numberValue(item.blockNumber ?? item.block_number),
         blockTime: numberValue(item.blockTime ?? item.block_time),
         codeHash: item.codeHash ?? item.code_hash,
+        createdAt: item.createdAt ?? item.created_at
+    };
+}
+
+function normalizeProjectReport(item: any): TokenAPIProjectReport {
+    const reportDataAvailable = item.reportDataAvailable ?? item.report_data_available ?? false;
+    const reportBoolean = (camel: string, snake: string) => {
+        if (!reportDataAvailable) {
+            return undefined;
+        }
+        return item[camel] ?? item[snake] ?? false;
+    };
+    return {
+        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        name: item.name,
+        symbol: item.symbol,
+        contract: item.contract,
+        evaluationStatus: item.evaluationStatus ?? item.evaluation_status,
+        evaluationAttempts: numberValue(item.evaluationAttempts ?? item.evaluation_attempts),
+        evaluationLastError: item.evaluationLastError ?? item.evaluation_last_error,
+        evaluationUpdatedAt: item.evaluationUpdatedAt ?? item.evaluation_updated_at,
+        reportDataAvailable,
+        wethPairIsCreated: reportBoolean('wethPairIsCreated', 'weth_pair_is_created'),
+        wethPairIsRemoveLiquidity: reportBoolean('wethPairIsRemoveLiquidity', 'weth_pair_is_remove_liquidity'),
+        wethPairIsMint: reportBoolean('wethPairIsMint', 'weth_pair_is_mint'),
+        wethPairQuoteUsdtValueInt: item.wethPairQuoteUsdtValueInt ?? item.weth_pair_quote_usdt_value_int,
+        wethPairLastSwapAt: item.wethPairLastSwapAt ?? item.weth_pair_last_swap_at,
+        usdtPairIsCreated: reportBoolean('usdtPairIsCreated', 'usdt_pair_is_created'),
+        usdtPairIsRemoveLiquidity: reportBoolean('usdtPairIsRemoveLiquidity', 'usdt_pair_is_remove_liquidity'),
+        usdtPairIsMint: reportBoolean('usdtPairIsMint', 'usdt_pair_is_mint'),
+        usdtPairQuoteUsdtValueInt: item.usdtPairQuoteUsdtValueInt ?? item.usdt_pair_quote_usdt_value_int,
+        usdtPairLastSwapAt: item.usdtPairLastSwapAt ?? item.usdt_pair_last_swap_at,
+        sourceUpdatedAt: item.sourceUpdatedAt ?? item.source_updated_at,
+        evaluatedAt: item.evaluatedAt ?? item.evaluated_at,
         createdAt: item.createdAt ?? item.created_at
     };
 }
@@ -337,6 +398,30 @@ export class TokenAPIService {
             const body = res.body || {};
             return {
                 items: ((body.projects || []) as any[]).map(normalizeProject),
+                total: numberValue(body.total) || 0,
+                page: numberValue(body.page) || options.page || 1,
+                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listProjectReports(
+        options: {page?: number; pageSize?: number; chainID?: number; projectID?: number; contract?: string; evaluationStatus?: string} = {}
+    ): Promise<PagedResponse<TokenAPIProjectReport>> & {abort?: () => void} {
+        const req = requests.get('/tokenapi/project-reports').query({
+            chain_id: options.chainID,
+            project_id: options.projectID,
+            contract: options.contract || undefined,
+            evaluation_status: options.evaluationStatus || undefined,
+            page: options.page,
+            page_size: options.pageSize
+        });
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: ((body.projectReports || body.project_reports || []) as any[]).map(normalizeProjectReport),
                 total: numberValue(body.total) || 0,
                 page: numberValue(body.page) || options.page || 1,
                 pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20

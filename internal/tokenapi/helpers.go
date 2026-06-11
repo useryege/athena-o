@@ -3,6 +3,7 @@ package tokenapi
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -124,6 +125,27 @@ func validateProjectDataCollectionStatus(value string) error {
 	}
 }
 
+func validateProjectReportEvaluationStatus(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	switch value {
+	case tokenstore.ProjectReportEvaluationStatusNotStarted,
+		tokenstore.ProjectReportEvaluationStatusPending,
+		tokenstore.ProjectReportEvaluationStatusSucceeded,
+		tokenstore.ProjectReportEvaluationStatusFailed:
+		return nil
+	default:
+		return status.Errorf(codes.InvalidArgument, "evaluation_status must be one of %q, %q, %q, or %q",
+			tokenstore.ProjectReportEvaluationStatusNotStarted,
+			tokenstore.ProjectReportEvaluationStatusPending,
+			tokenstore.ProjectReportEvaluationStatusSucceeded,
+			tokenstore.ProjectReportEvaluationStatusFailed,
+		)
+	}
+}
+
 func grpcStoreError(err error) error {
 	if err == nil {
 		return nil
@@ -221,6 +243,67 @@ func mapProjects(items []tokenstore.Project) []*v1alpha1.TokenAPIProject {
 	results := make([]*v1alpha1.TokenAPIProject, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapProject(item))
+	}
+	return results
+}
+
+func formatUnixTime(value *uint64) string {
+	if value == nil || *value == 0 {
+		return ""
+	}
+	return time.Unix(int64(*value), 0).UTC().Format(time.RFC3339)
+}
+
+func formatBigInt(value *big.Int) string {
+	if value == nil {
+		return ""
+	}
+	return value.String()
+}
+
+func mapProjectReport(item tokenstore.ProjectReportListItem) *v1alpha1.TokenAPIProjectReport {
+	report := item.Report
+	dataAvailable := report.WethPairIsCreated != nil &&
+		report.WethPairIsRemoveLiquidity != nil &&
+		report.WethPairIsMint != nil &&
+		report.UsdtPairIsCreated != nil &&
+		report.UsdtPairIsRemoveLiquidity != nil &&
+		report.UsdtPairIsMint != nil
+	result := &v1alpha1.TokenAPIProjectReport{
+		ProjectID:           report.ProjectID,
+		ChainID:             item.ChainID,
+		Name:                item.Name,
+		Symbol:              item.Symbol,
+		Contract:            item.Contract.Hex(),
+		EvaluationStatus:    item.EvaluationStatus,
+		EvaluationAttempts:  item.EvaluationAttempts,
+		EvaluationLastError: item.EvaluationLastError,
+		EvaluationUpdatedAt: formatTime(item.EvaluationUpdatedAt),
+		ReportDataAvailable: dataAvailable,
+		SourceUpdatedAt:     formatTime(report.SourceUpdatedAt),
+		EvaluatedAt:         formatTime(report.EvaluatedAt),
+		CreatedAt:           formatTime(report.CreatedAt),
+	}
+	if !dataAvailable {
+		return result
+	}
+	result.WethPairIsCreated = *report.WethPairIsCreated
+	result.WethPairIsRemoveLiquidity = *report.WethPairIsRemoveLiquidity
+	result.WethPairIsMint = *report.WethPairIsMint
+	result.WethPairQuoteUsdtValueInt = formatBigInt(report.WethPairQuoteUsdtValueInt)
+	result.WethPairLastSwapAt = formatUnixTime(report.WethPairLastSwapTimestamp)
+	result.UsdtPairIsCreated = *report.UsdtPairIsCreated
+	result.UsdtPairIsRemoveLiquidity = *report.UsdtPairIsRemoveLiquidity
+	result.UsdtPairIsMint = *report.UsdtPairIsMint
+	result.UsdtPairQuoteUsdtValueInt = formatBigInt(report.UsdtPairQuoteUsdtValueInt)
+	result.UsdtPairLastSwapAt = formatUnixTime(report.UsdtPairLastSwapTimestamp)
+	return result
+}
+
+func mapProjectReports(items []tokenstore.ProjectReportListItem) []*v1alpha1.TokenAPIProjectReport {
+	results := make([]*v1alpha1.TokenAPIProjectReport, 0, len(items))
+	for _, item := range items {
+		results = append(results, mapProjectReport(item))
 	}
 	return results
 }

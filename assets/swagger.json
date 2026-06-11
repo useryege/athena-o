@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-704-g9c3106e-dirty"
+    "version": "v1.0.0-735-g3e2cc54-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1037,6 +1037,64 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiGetProjectDataCollectionTaskResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokenapi/project-reports": {
+      "get": {
+        "tags": [
+          "TokenAPIService"
+        ],
+        "operationId": "TokenAPIService_ListProjectReports",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "contract",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "evaluation_status",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListProjectReportsResponse"
             }
           },
           "default": {
@@ -2297,6 +2355,29 @@
         }
       }
     },
+    "tokenapiListProjectReportsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "project_reports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAPIProjectReport"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "tokenapiListProjectsResponse": {
       "type": "object",
       "properties": {
@@ -3194,6 +3275,83 @@
           "format": "int64"
         },
         "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAPIProjectReport": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "evaluatedAt": {
+          "type": "string"
+        },
+        "evaluationAttempts": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "evaluationLastError": {
+          "type": "string"
+        },
+        "evaluationStatus": {
+          "type": "string"
+        },
+        "evaluationUpdatedAt": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "reportDataAvailable": {
+          "type": "boolean"
+        },
+        "sourceUpdatedAt": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "usdtPairIsCreated": {
+          "type": "boolean"
+        },
+        "usdtPairIsMint": {
+          "type": "boolean"
+        },
+        "usdtPairIsRemoveLiquidity": {
+          "type": "boolean"
+        },
+        "usdtPairLastSwapAt": {
+          "type": "string"
+        },
+        "usdtPairQuoteUsdtValueInt": {
+          "type": "string"
+        },
+        "wethPairIsCreated": {
+          "type": "boolean"
+        },
+        "wethPairIsMint": {
+          "type": "boolean"
+        },
+        "wethPairIsRemoveLiquidity": {
+          "type": "boolean"
+        },
+        "wethPairLastSwapAt": {
+          "type": "string"
+        },
+        "wethPairQuoteUsdtValueInt": {
           "type": "string"
         }
       }

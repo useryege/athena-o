@@ -330,6 +330,32 @@ func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjects
 	}, nil
 }
 
+func (s *Server) ListProjectReports(ctx context.Context, req *tokenapipkg.ListProjectReportsRequest) (*tokenapipkg.ListProjectReportsResponse, error) {
+	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListProjectReports(ctx, &tokenapiapiclient.ListProjectReportsRequest{
+		ChainId:          req.GetChainId(),
+		ProjectId:        req.GetProjectId(),
+		Contract:         req.GetContract(),
+		EvaluationStatus: req.GetEvaluationStatus(),
+		Page:             req.GetPage(),
+		PageSize:         req.GetPageSize(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &tokenapipkg.ListProjectReportsResponse{
+		ProjectReports: resp.GetProjectReports(),
+		Total:          resp.GetTotal(),
+		Page:           resp.GetPage(),
+		PageSize:       resp.GetPageSize(),
+	}, nil
+}
+
 func (s *Server) GetProjectDataCollectionTask(ctx context.Context, req *tokenapipkg.GetProjectDataCollectionTaskRequest) (*tokenapipkg.GetProjectDataCollectionTaskResponse, error) {
 	closer, client, err := s.tokenAPIClientSet.NewTokenAPIServiceClient()
 	if err != nil {

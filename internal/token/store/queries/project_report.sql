@@ -6,6 +6,51 @@ INSERT INTO project_report (
 )
 ON CONFLICT (project_id) DO NOTHING;
 
+-- name: CountProjectReports :one
+SELECT COUNT(*)::bigint
+FROM project_report AS report
+JOIN project
+  ON project.id = report.project_id
+LEFT JOIN project_report_evaluation_task AS task
+  ON task.project_id = report.project_id
+WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id')::bigint)
+  AND (sqlc.arg('project_id')::bigint = 0 OR project.id = sqlc.arg('project_id')::bigint)
+  AND (sqlc.narg('contract')::bytea IS NULL OR project.contract = sqlc.narg('contract')::bytea)
+  AND (
+    sqlc.arg('evaluation_status')::text = ''
+    OR COALESCE(task.status, 'not_started') = sqlc.arg('evaluation_status')::text
+  );
+
+-- name: ListProjectReports :many
+SELECT
+  report.*,
+  project.chain_id,
+  project.name,
+  project.symbol,
+  project.contract,
+  COALESCE(task.status, 'not_started')::text AS evaluation_status,
+  COALESCE(task.attempts, 0)::int AS evaluation_attempts,
+  COALESCE(task.last_error, '')::text AS evaluation_last_error,
+  task.updated_at AS evaluation_updated_at
+FROM project_report AS report
+JOIN project
+  ON project.id = report.project_id
+LEFT JOIN project_report_evaluation_task AS task
+  ON task.project_id = report.project_id
+WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id')::bigint)
+  AND (sqlc.arg('project_id')::bigint = 0 OR project.id = sqlc.arg('project_id')::bigint)
+  AND (sqlc.narg('contract')::bytea IS NULL OR project.contract = sqlc.narg('contract')::bytea)
+  AND (
+    sqlc.arg('evaluation_status')::text = ''
+    OR COALESCE(task.status, 'not_started') = sqlc.arg('evaluation_status')::text
+  )
+ORDER BY
+  report.evaluated_at DESC NULLS LAST,
+  task.updated_at DESC NULLS LAST,
+  report.created_at DESC,
+  report.project_id DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
 -- name: ListDueProjectReportEvaluationTasks :many
 SELECT
   task.project_id,

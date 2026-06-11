@@ -448,6 +448,54 @@ message TokenAPIProjectDataCollectionTask {
   optional string createdAt = 7;
 }
 
+message TokenAPIProjectReport {
+  optional int64 projectId = 1;
+
+  optional int64 chainId = 2;
+
+  optional string name = 3;
+
+  optional string symbol = 4;
+
+  optional string contract = 5;
+
+  optional string evaluationStatus = 6;
+
+  optional int32 evaluationAttempts = 7;
+
+  optional string evaluationLastError = 8;
+
+  optional string evaluationUpdatedAt = 9;
+
+  optional bool reportDataAvailable = 10;
+
+  optional bool wethPairIsCreated = 11;
+
+  optional bool wethPairIsRemoveLiquidity = 12;
+
+  optional bool wethPairIsMint = 13;
+
+  optional string wethPairQuoteUsdtValueInt = 14;
+
+  optional string wethPairLastSwapAt = 15;
+
+  optional bool usdtPairIsCreated = 16;
+
+  optional bool usdtPairIsRemoveLiquidity = 17;
+
+  optional bool usdtPairIsMint = 18;
+
+  optional string usdtPairQuoteUsdtValueInt = 19;
+
+  optional string usdtPairLastSwapAt = 20;
+
+  optional string sourceUpdatedAt = 21;
+
+  optional string evaluatedAt = 22;
+
+  optional string createdAt = 23;
+}
+
 message TokenAPIWalletBlacklist {
   optional string wallet = 1;
 

@@ -9,6 +9,7 @@ export * from './node-statuses';
 export * from './notification-detail';
 export * from './notifications';
 export * from './polymarket';
+export * from './project-reports';
 export * from './projects';
 export * from './settings';
 export * from './settings-shared';
