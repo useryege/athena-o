@@ -16,6 +16,7 @@ import (
 )
 
 const polymarketEsportsTagID int64 = 64
+const sportsLiveMinEventLiquidity = 10000.0
 
 var (
 	sportsLiveJSONObject = json.RawMessage(`{}`)
@@ -62,6 +63,7 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context, fetchedAt time.Time
 
 	eventsByKey := make(map[string]polymarketstore.SportsLiveEvent)
 	marketsByKey := make(map[string]polymarketstore.SportsLiveMarket)
+	minLiquidity := sportsLiveMinEventLiquidity
 	cursor := ""
 	live := true
 	closed := false
@@ -72,6 +74,7 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context, fetchedAt time.Time
 			Ascending:    ptrBool(true),
 			Live:         ptrBool(live),
 			Closed:       ptrBool(closed),
+			LiquidityMin: &minLiquidity,
 			TagSlug:      "sports",
 			ExcludeTagID: []int64{polymarketEsportsTagID},
 		}
