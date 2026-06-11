@@ -1,10 +1,8 @@
-import {Select, Tag} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
-import {PolymarketHotMarketItem, PolymarketMoverMarketItem, PolymarketRealtimeMarketItem, PolymarketSportsLiveEventItem, PolymarketSportsLiveMarketItem} from '../../shared/services/polymarket-service';
-import {boolTag, fmt, fmtNumber} from './shared';
+import {PolymarketHotMarketItem, PolymarketMoverMarketItem, PolymarketRealtimeMarketItem, PolymarketSportsLiveMarketItem} from '../../shared/services/polymarket-service';
+import {fmt, fmtNumber} from './shared';
 
 const PolymarketListPage = <T extends PolymarketHotMarketItem | PolymarketRealtimeMarketItem | PolymarketMoverMarketItem>(props: {
     title: string;
@@ -52,15 +50,7 @@ export const PolymarketRealtimePage = () => <PolymarketListPage title='Polymarke
 export const PolymarketMoversPage = () => <PolymarketListPage title='Polymarket Movers' load={() => services.polymarket.listMovers(100)} />;
 
 export const PolymarketSportsLivePage = () => {
-    const [view, setView] = React.useState<'events' | 'markets'>('events');
-    const events = useAsyncData(() => services.polymarket.getSportsLiveSnapshot(30), []);
     const markets = useAsyncData(() => services.polymarket.listSportsLiveMarkets(200), []);
-    const eventColumns: ColumnsType<PolymarketSportsLiveEventItem> = [
-        {title: 'Event', render: item => <CardTitle title={item.title} subtitle={item.gameStatus || item.period} image={item.image} />},
-        {title: 'Score', dataIndex: 'score'},
-        {title: 'Live', render: item => boolTag(item.live)},
-        {title: 'Markets', render: item => item.markets?.reduce((sum: number, group: {markets: unknown[]}) => sum + group.markets.length, 0)}
-    ];
     const marketColumns: ColumnsType<PolymarketSportsLiveMarketItem> = [
         {title: 'Market', render: item => <CardTitle title={item.title} subtitle={item.eventSlug} image={item.image} />},
         {title: 'Score', dataIndex: 'score'},
@@ -70,65 +60,27 @@ export const PolymarketSportsLivePage = () => {
     return (
         <AppPage
             title='Sports Live'
-            loading={events.loading || markets.loading}
-            error={events.error || markets.error}
-            onRefresh={() => {
-                events.reload();
-                markets.reload();
-            }}
-            filters={
-                <Select
-                    value={view}
-                    style={{width: 160}}
-                    onChange={setView}
-                    options={[
-                        {value: 'events', label: 'Events'},
-                        {value: 'markets', label: 'Markets'}
-                    ]}
-                />
-            }>
-            {view === 'events' ? (
-                <ResponsiveResourceList
-                    rowKey='eventSlug'
-                    items={events.data?.events || []}
-                    columns={eventColumns}
-                    loading={events.loading}
-                    card={item => (
-                        <>
-                            <CardTitle
-                                title={item.title}
-                                subtitle={item.score || item.gameStatus}
-                                image={item.image}
-                                tags={item.live ? <Tag color='red'>Live</Tag> : <Tag>{item.period}</Tag>}
-                            />
-                            <MetricRow
-                                items={[
-                                    {label: 'Elapsed', value: item.elapsed},
-                                    {label: 'Markets', value: item.markets?.length || 0}
-                                ]}
-                            />
-                        </>
-                    )}
-                />
-            ) : (
-                <ResponsiveResourceList
-                    rowKey='conditionId'
-                    items={markets.data?.items || []}
-                    columns={marketColumns}
-                    loading={markets.loading}
-                    card={item => (
-                        <>
-                            <CardTitle title={item.title} subtitle={item.score || item.eventSlug} image={item.image} />
-                            <MetricRow
-                                items={[
-                                    {label: 'Volume', value: fmtNumber(item.volumeNum)},
-                                    {label: 'Liquidity', value: fmtNumber(item.liquidityNum)}
-                                ]}
-                            />
-                        </>
-                    )}
-                />
-            )}
+            subtitle={`Fetched ${fmt(markets.data?.fetchedAt)} ${markets.data?.stale ? '(stale)' : ''}`}
+            loading={markets.loading}
+            error={markets.error}
+            onRefresh={markets.reload}>
+            <ResponsiveResourceList
+                rowKey='conditionId'
+                items={markets.data?.items || []}
+                columns={marketColumns}
+                loading={markets.loading}
+                card={item => (
+                    <>
+                        <CardTitle title={item.title} subtitle={item.score || item.eventSlug} image={item.image} />
+                        <MetricRow
+                            items={[
+                                {label: 'Volume', value: fmtNumber(item.volumeNum)},
+                                {label: 'Liquidity', value: fmtNumber(item.liquidityNum)}
+                            ]}
+                        />
+                    </>
+                )}
+            />
         </AppPage>
     );
 };

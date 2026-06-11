@@ -2,44 +2,24 @@ package polymarket
 
 import (
 	"context"
-	"sort"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/polymarket/apiclient"
+	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilpolymarket "github.com/useryege/athena/util/polymarket"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-type sportsLiveMarket struct {
-	ConditionID  string
-	MarketSlug   string
-	EventSlug    string
-	Title        string
-	Image        string
-	LiquidityNum float64
-	VolumeNum    float64
-}
+const polymarketEsportsTagID int64 = 64
 
-type sportsLiveWSState struct {
-	HasLive    bool
-	Live       bool
-	HasEnded   bool
-	Ended      bool
-	Score      string
-	Period     string
-	Elapsed    string
-	LastUpdate string
-}
-
-func (s *Service) runFullSyncLoop(ctx context.Context) {
+func (s *Service) runSportsLiveSyncLoop(ctx context.Context) {
 	defer s.runWG.Done()
-	if err := s.refreshSportsLiveSnapshot(ctx); err != nil {
+	if err := s.syncSportsLiveMarkets(ctx); err != nil {
 		log.WithError(err).Warn("initial polymarket sports live sync failed")
-	}
-	if err := s.refreshSportsLiveEventSnapshot(ctx); err != nil {
-		log.WithError(err).Warn("initial polymarket sports live event sync failed")
 	}
 	ticker := time.NewTicker(s.syncInterval)
 	defer ticker.Stop()
@@ -48,72 +28,33 @@ func (s *Service) runFullSyncLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := s.refreshSportsLiveSnapshot(ctx); err != nil {
+			if err := s.syncSportsLiveMarkets(ctx); err != nil {
 				log.WithError(err).Warn("periodic polymarket sports live sync failed")
 			}
-			if err := s.refreshSportsLiveEventSnapshot(ctx); err != nil {
-				log.WithError(err).Warn("periodic polymarket sports live event sync failed")
-			}
 		}
 	}
 }
 
-func (s *Service) runSportsWSLoop(ctx context.Context) {
-	defer s.runWG.Done()
-	if s.sportsWSClient == nil {
-		return
+func (s *Service) syncSportsLiveMarkets(ctx context.Context) error {
+	syncStartedAt := s.now().UTC()
+	markets, err := s.fetchSportsLiveMarkets(ctx, syncStartedAt)
+	if err != nil {
+		return err
 	}
-	err := s.sportsWSClient.Run(ctx, utilpolymarket.SportsWSHandler{
-		OnUpdate: s.applySportsWSUpdate,
-		OnError: func(err error) {
-			if err != nil {
-				log.WithError(err).Debug("polymarket sports ws update error")
-			}
-		},
-	})
-	if err != nil && ctx.Err() == nil {
-		log.WithError(err).Warn("polymarket sports ws loop exited unexpectedly")
-	}
+	return s.store.SyncSportsLiveMarkets(ctx, markets, syncStartedAt, s.now().UTC())
 }
 
-func (s *Service) refreshSportsLiveSnapshot(ctx context.Context) error {
-	var alerts []sportsKickoffAlertCandidate
-	_, err, _ := s.syncGroup.Do("sports-live-snapshot", func() (any, error) {
-		markets, fetchErr := s.fetchSportsLiveMarkets(ctx)
-		if fetchErr != nil {
-			s.cacheMu.Lock()
-			if len(s.baseMarkets) > 0 {
-				s.snapshotStale = true
-			}
-			s.cacheMu.Unlock()
-			return nil, fetchErr
-		}
-		s.cacheMu.Lock()
-		s.baseMarkets = markets
-		s.snapshotFetched = s.nowUnix()
-		s.snapshotStale = false
-		s.rebuildSnapshotLocked()
-		alerts = s.collectSportsKickoffAlertsLocked(s.snapshotItems, s.snapshotFetched)
-		s.cacheMu.Unlock()
-		return nil, nil
-	})
-	if err == nil {
-		s.sendSportsKickoffAlerts(ctx, alerts)
-	}
-	return err
-}
-
-func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarket, error) {
+func (s *Service) fetchSportsLiveMarkets(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.SportsLiveMarket, error) {
 	if s.gammaClient == nil {
-		return nil, errNoSportsLiveSnapshot()
+		return nil, status.Error(codes.FailedPrecondition, "polymarket gamma client is required")
 	}
 
-	limit := s.eventPageLimit
+	limit := s.sportsLivePageLimit
 	if limit <= 0 {
 		limit = defaultSportsLiveEventPageLimit
 	}
 
-	items := make([]sportsLiveMarket, 0, limit)
+	itemsByConditionID := make(map[string]polymarketstore.SportsLiveMarket)
 	cursor := ""
 	live := true
 	closed := false
@@ -123,7 +64,7 @@ func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarke
 			Live:         ptrBool(live),
 			Closed:       ptrBool(closed),
 			TagSlug:      "sports",
-			ExcludeTagID: []int64{utilpolymarket.PolymarketEsportsTagID},
+			ExcludeTagID: []int64{polymarketEsportsTagID},
 		}
 		if cursor != "" {
 			opts.AfterCursor = cursor
@@ -137,7 +78,7 @@ func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarke
 		}
 		for i := range resp.Events {
 			event := resp.Events[i]
-			if boolValue(event.Ended) || (event.Live != nil && !boolValue(event.Live)) {
+			if !boolValue(event.Live) || boolValue(event.Ended) {
 				continue
 			}
 			eventSlug := strings.TrimSpace(stringValue(event.Slug))
@@ -149,6 +90,10 @@ func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarke
 				strings.TrimSpace(stringValue(event.Image)),
 				strings.TrimSpace(stringValue(event.Icon)),
 			)
+			eventUpdatedAt := time.Time{}
+			if event.UpdatedAt != nil {
+				eventUpdatedAt = event.UpdatedAt.UTC()
+			}
 			for j := range event.Markets {
 				market := event.Markets[j]
 				if boolValue(market.Closed) {
@@ -159,131 +104,95 @@ func (s *Service) fetchSportsLiveMarkets(ctx context.Context) ([]sportsLiveMarke
 				if conditionID == "" || marketSlug == "" {
 					continue
 				}
-				title := firstNonEmpty(
-					strings.TrimSpace(stringValue(market.Question)),
-					eventTitle,
-				)
-				image := firstNonEmpty(
-					strings.TrimSpace(stringValue(market.Image)),
-					strings.TrimSpace(stringValue(market.Icon)),
-					eventImage,
-				)
-				items = append(items, sportsLiveMarket{
-					ConditionID:  conditionID,
-					MarketSlug:   marketSlug,
-					EventSlug:    eventSlug,
-					Title:        title,
-					Image:        image,
-					LiquidityNum: float64Value(market.LiquidityNum),
-					VolumeNum:    float64Value(market.VolumeNum),
-				})
+				itemsByConditionID[conditionID] = polymarketstore.SportsLiveMarket{
+					ConditionID: conditionID,
+					MarketSlug:  marketSlug,
+					EventSlug:   eventSlug,
+					Title: firstNonEmpty(
+						strings.TrimSpace(stringValue(market.Question)),
+						eventTitle,
+					),
+					Image: firstNonEmpty(
+						strings.TrimSpace(stringValue(market.Image)),
+						strings.TrimSpace(stringValue(market.Icon)),
+						eventImage,
+					),
+					Score:          strings.TrimSpace(stringValue(event.Score)),
+					Period:         strings.TrimSpace(stringValue(event.Period)),
+					Elapsed:        strings.TrimSpace(stringValue(event.Elapsed)),
+					GammaUpdatedAt: eventUpdatedAt,
+					LiquidityNum:   float64Value(market.LiquidityNum),
+					VolumeNum:      float64Value(market.VolumeNum),
+					FetchedAt:      fetchedAt,
+					LastSeenAt:     fetchedAt,
+				}
 			}
 		}
-		if resp.NextCursor == nil || strings.TrimSpace(*resp.NextCursor) == "" {
+		if resp.NextCursor == nil {
 			break
 		}
-		cursor = strings.TrimSpace(*resp.NextCursor)
+		nextCursor := strings.TrimSpace(*resp.NextCursor)
+		if nextCursor == "" || nextCursor == cursor {
+			break
+		}
+		cursor = nextCursor
+	}
+
+	items := make([]polymarketstore.SportsLiveMarket, 0, len(itemsByConditionID))
+	for _, item := range itemsByConditionID {
+		items = append(items, item)
 	}
 	return items, nil
 }
 
-func (s *Service) applySportsWSUpdate(update utilpolymarket.SportsWSUpdate) {
-	slug := strings.TrimSpace(update.Slug)
-	if slug == "" {
-		return
+func (s *Service) ListPolymarketSportsLiveMarkets(ctx context.Context, req *apiclient.ListPolymarketSportsLiveMarketsRequest) (*apiclient.ListPolymarketSportsLiveMarketsResponse, error) {
+	limit := defaultSportsLiveListLimit
+	if req != nil && req.GetLimit() > 0 {
+		limit = int(req.GetLimit())
+	}
+	if limit < 1 || limit > maxSportsLiveListLimit {
+		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxSportsLiveListLimit)
+	}
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "polymarket store is required")
 	}
 
-	s.cacheMu.Lock()
-	state := s.sportsWSState[slug]
-	if update.Live != nil {
-		state.HasLive = true
-		state.Live = *update.Live
+	markets, err := s.store.ListSportsLiveMarkets(ctx, int32(limit))
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to list sports live markets: %v", err)
 	}
-	if update.Ended != nil {
-		state.HasEnded = true
-		state.Ended = *update.Ended
+	lastSuccessAt, err := s.store.GetSportsLiveLastSuccessAt(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to read sports live sync state: %v", err)
 	}
-	if update.Score != nil {
-		state.Score = strings.TrimSpace(*update.Score)
-	}
-	if update.Period != nil {
-		state.Period = strings.TrimSpace(*update.Period)
-	}
-	if update.Elapsed != nil {
-		state.Elapsed = strings.TrimSpace(*update.Elapsed)
-	}
-	if update.LastUpdate != nil {
-		state.LastUpdate = strings.TrimSpace(*update.LastUpdate)
-	}
-	s.sportsWSState[slug] = state
-	s.rebuildSnapshotLocked()
-	s.cacheMu.Unlock()
-}
 
-func (s *Service) rebuildSnapshotLocked() {
-	items := make([]*v1alpha1.PolymarketSportsLiveMarketItem, 0, len(s.baseMarkets))
-	for i := range s.baseMarkets {
-		base := s.baseMarkets[i]
-		state := s.sportsWSState[base.EventSlug]
-		if state.HasEnded && state.Ended {
-			continue
+	resp := &apiclient.ListPolymarketSportsLiveMarketsResponse{
+		Items: make([]*v1alpha1.PolymarketSportsLiveMarketItem, 0, len(markets)),
+		Stale: lastSuccessAt.IsZero() || s.now().Sub(lastSuccessAt) > 2*s.syncInterval,
+	}
+	if !lastSuccessAt.IsZero() {
+		resp.FetchedAt = lastSuccessAt.Unix()
+	}
+	for _, market := range markets {
+		lastUpdate := ""
+		if !market.GammaUpdatedAt.IsZero() {
+			lastUpdate = market.GammaUpdatedAt.UTC().Format(time.RFC3339)
 		}
-		if state.HasLive && !state.Live {
-			continue
-		}
-		items = append(items, &v1alpha1.PolymarketSportsLiveMarketItem{
-			ConditionID:  base.ConditionID,
-			MarketSlug:   base.MarketSlug,
-			EventSlug:    base.EventSlug,
-			Title:        base.Title,
-			Image:        base.Image,
-			Score:        state.Score,
-			Period:       state.Period,
-			Elapsed:      state.Elapsed,
-			LastUpdate:   state.LastUpdate,
-			LiquidityNum: base.LiquidityNum,
-			VolumeNum:    base.VolumeNum,
+		resp.Items = append(resp.Items, &v1alpha1.PolymarketSportsLiveMarketItem{
+			ConditionID:  market.ConditionID,
+			MarketSlug:   market.MarketSlug,
+			EventSlug:    market.EventSlug,
+			Title:        market.Title,
+			Image:        market.Image,
+			Score:        market.Score,
+			Period:       market.Period,
+			Elapsed:      market.Elapsed,
+			LastUpdate:   lastUpdate,
+			LiquidityNum: market.LiquidityNum,
+			VolumeNum:    market.VolumeNum,
 		})
 	}
-	sort.SliceStable(items, func(i, j int) bool {
-		leftTs := parseRFC3339Unix(items[i].LastUpdate)
-		rightTs := parseRFC3339Unix(items[j].LastUpdate)
-		if leftTs != rightTs {
-			return leftTs > rightTs
-		}
-		if items[i].LiquidityNum != items[j].LiquidityNum {
-			return items[i].LiquidityNum > items[j].LiquidityNum
-		}
-		return items[i].ConditionID < items[j].ConditionID
-	})
-	s.snapshotItems = items
-}
-
-func (s *Service) hasSnapshot() bool {
-	s.cacheMu.RLock()
-	defer s.cacheMu.RUnlock()
-	return len(s.baseMarkets) > 0 || s.snapshotFetched > 0
-}
-
-func (s *Service) currentSportsLiveResponse(limit int) *apiclient.ListPolymarketSportsLiveMarketsResponse {
-	s.cacheMu.RLock()
-	defer s.cacheMu.RUnlock()
-	if len(s.snapshotItems) == 0 && s.snapshotFetched == 0 {
-		return nil
-	}
-	if limit > len(s.snapshotItems) {
-		limit = len(s.snapshotItems)
-	}
-	result := make([]*v1alpha1.PolymarketSportsLiveMarketItem, 0, limit)
-	for i := 0; i < limit; i++ {
-		item := *s.snapshotItems[i]
-		result = append(result, &item)
-	}
-	return &apiclient.ListPolymarketSportsLiveMarketsResponse{
-		Items:     result,
-		FetchedAt: s.snapshotFetched,
-		Stale:     s.snapshotStale,
-	}
+	return resp, nil
 }
 
 func firstNonEmpty(values ...string) string {
@@ -314,16 +223,4 @@ func float64Value(value *float64) float64 {
 		return 0
 	}
 	return *value
-}
-
-func parseRFC3339Unix(value string) int64 {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return 0
-	}
-	t, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return 0
-	}
-	return t.Unix()
 }

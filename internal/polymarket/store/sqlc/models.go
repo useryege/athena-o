@@ -3,3 +3,31 @@
 //   sqlc v1.30.0
 
 package sqlc
+
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type PolymarketSportsLiveMarket struct {
+	ConditionID    string
+	MarketSlug     string
+	EventSlug      string
+	Title          string
+	Image          string
+	Score          string
+	Period         string
+	Elapsed        string
+	GammaUpdatedAt pgtype.Timestamptz
+	LiquidityNum   float64
+	VolumeNum      float64
+	FetchedAt      pgtype.Timestamptz
+	LastSeenAt     pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type PolymarketSyncState struct {
+	SyncName      string
+	LastSuccessAt pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -341,6 +342,14 @@ func formatMoverSignedPP(value float64) string {
 func polymarketMoverLink(item *v1alpha1.PolymarketMoverMarketItem) string {
 	slug := firstNonEmpty(item.EventSlug, item.MarketSlug)
 	return polymarketEventLink(slug)
+}
+
+func polymarketEventLink(slug string) string {
+	slug = strings.TrimSpace(slug)
+	if slug == "" {
+		return ""
+	}
+	return polymarketEventBaseURL + url.PathEscape(slug)
 }
 
 func truncateRunes(value string, maxRunes int) string {

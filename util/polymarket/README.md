@@ -18,8 +18,6 @@
     are implemented via POST body endpoints under the hood.
 - `CLOBMarketWSClient` (`wss://ws-subscriptions-clob.polymarket.com/ws/market`)
   - Real-time market stream (read-only): book, price_change, last_trade_price, tick_size_change, best_bid_ask, new_market, market_resolved
-- `SportsWSClient` (`wss://sports-api.polymarket.com/ws`)
-  - Real-time sports result stream (read-only)
 
 This stage intentionally does not include `/ws/user`, `trade/*`, or write paths under `relayer/*`.
 
@@ -30,7 +28,6 @@ gammaClient, err := polymarket.NewGammaClient(polymarket.GammaConfig{})
 dataClient, err := polymarket.NewDataClient(polymarket.DataConfig{})
 clobClient, err := polymarket.NewCLOBClient(polymarket.CLOBConfig{})
 clobMarketWSClient, err := polymarket.NewCLOBMarketWSClient(polymarket.CLOBMarketWSConfig{})
-sportsWSClient, err := polymarket.NewSportsWSClient(polymarket.SportsWSConfig{})
 ```
 
 Gamma naming was hard-switched: `Client/Config/NewClient` were replaced with `GammaClient/GammaConfig/NewGammaClient`.
@@ -63,8 +60,6 @@ Gates:
 - `POLYMARKET_CLOB_MARKETS_INTEGRATION_LOG_RESPONSE=1`
 - `POLYMARKET_CLOB_MARKET_WSS_INTEGRATION=1`
 - `POLYMARKET_CLOB_MARKET_WSS_INTEGRATION_LOG_RESPONSE=1`
-- `POLYMARKET_SPORTS_WSS_INTEGRATION=1`
-- `POLYMARKET_SPORTS_WSS_INTEGRATION_LOG_RESPONSE=1`
 
 ### Gamma only
 
@@ -95,22 +90,9 @@ POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
 go test -v ./util/polymarket -run '^TestIntegrationGamma$'
 ```
 
-### Gamma Sports Live subtests (console logs)
+### Gamma Sports Live fields (console logs)
 
 Use `go test -v` with `POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1` to print integration logs in real time to the terminal.
-
-Run both Sports Live subtests together:
-
-```bash
-POLYMARKET_GAMMA_INTEGRATION=1 \
-POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
-POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
-POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
-go test -v ./util/polymarket \
-  -run 'TestIntegrationGamma/(Events/ListEventsKeysetSportsLiveFields|Sports/BuildSportsLiveSnapshot)$'
-```
-
-Run each subtest individually (optional):
 
 ```bash
 POLYMARKET_GAMMA_INTEGRATION=1 \
@@ -118,14 +100,6 @@ POLYMARKET_GAMMA_INTEGRATION_EVENTS=1 \
 POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
 go test -v ./util/polymarket \
   -run 'TestIntegrationGamma/Events/ListEventsKeysetSportsLiveFields$'
-```
-
-```bash
-POLYMARKET_GAMMA_INTEGRATION=1 \
-POLYMARKET_GAMMA_INTEGRATION_SPORTS=1 \
-POLYMARKET_GAMMA_INTEGRATION_LOG_RESPONSE=1 \
-go test -v ./util/polymarket \
-  -run 'TestIntegrationGamma/Sports/BuildSportsLiveSnapshot$'
 ```
 
 ### Data only
@@ -198,25 +172,6 @@ POLYMARKET_CLOB_MARKET_WSS_INTEGRATION_LOG_RESPONSE=1 \
 go test -v ./util/polymarket -run '^TestIntegrationCLOBMarketWSS$'
 ```
 
-### Sports WSS only
-
-`TestIntegrationSportsWSS` waits for the first incoming update/heartbeat, then collects and logs Sports WSS traffic for 30 seconds.
-
-Basic mode:
-
-```bash
-POLYMARKET_SPORTS_WSS_INTEGRATION=1 \
-go test -v ./util/polymarket -run '^TestIntegrationSportsWSS$'
-```
-
-Log mode:
-
-```bash
-POLYMARKET_SPORTS_WSS_INTEGRATION=1 \
-POLYMARKET_SPORTS_WSS_INTEGRATION_LOG_RESPONSE=1 \
-go test -v ./util/polymarket -run '^TestIntegrationSportsWSS$'
-```
-
 ### All modules together
 
 ```bash
@@ -236,9 +191,7 @@ POLYMARKET_CLOB_MARKETS_INTEGRATION=1 \
 POLYMARKET_CLOB_MARKETS_INTEGRATION_LOG_RESPONSE=1 \
 POLYMARKET_CLOB_MARKET_WSS_INTEGRATION=1 \
 POLYMARKET_CLOB_MARKET_WSS_INTEGRATION_LOG_RESPONSE=1 \
-POLYMARKET_SPORTS_WSS_INTEGRATION=1 \
-POLYMARKET_SPORTS_WSS_INTEGRATION_LOG_RESPONSE=1 \
-go test -v ./util/polymarket -run '^(TestIntegrationGamma|TestIntegrationData|TestIntegrationCLOBMarketData|TestIntegrationCLOBMarkets|TestIntegrationCLOBMarketWSS|TestIntegrationSportsWSS)$'
+go test -v ./util/polymarket -run '^(TestIntegrationGamma|TestIntegrationData|TestIntegrationCLOBMarketData|TestIntegrationCLOBMarkets|TestIntegrationCLOBMarketWSS)$'
 ```
 
 Integration tests are read-only and skipped by default.

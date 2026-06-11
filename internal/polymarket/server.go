@@ -19,7 +19,6 @@ type Server struct {
 
 type ServerOpts struct {
 	Store                 *polymarketstore.SQLStore
-	WSUseProxy            bool
 	NotificationClientset notificationapiclient.Clientset
 	MoverAlertsConfig     MoverAlertsConfig
 }
@@ -29,7 +28,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
 		ServerOpts:    opts,
-		service:       NewService(opts.Store, WithWSUseProxy(opts.WSUseProxy), WithNotificationClientset(opts.NotificationClientset), WithMoverAlertsConfig(opts.MoverAlertsConfig)),
+		service:       NewService(opts.Store, WithNotificationClientset(opts.NotificationClientset), WithMoverAlertsConfig(opts.MoverAlertsConfig)),
 		healthService: healthService,
 	}, nil
 }

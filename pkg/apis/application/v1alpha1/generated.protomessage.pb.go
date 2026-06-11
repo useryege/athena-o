@@ -27,15 +27,7 @@ func (*PolymarketRealtimeTokenItem) ProtoMessage() {}
 
 func (*PolymarketRealtimeWindowItem) ProtoMessage() {}
 
-func (*PolymarketSportsLiveEventItem) ProtoMessage() {}
-
-func (*PolymarketSportsLiveMarketGroupItem) ProtoMessage() {}
-
 func (*PolymarketSportsLiveMarketItem) ProtoMessage() {}
-
-func (*PolymarketSportsLiveMarketOptionItem) ProtoMessage() {}
-
-func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
 

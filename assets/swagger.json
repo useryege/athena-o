@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-736-gb6856d6-dirty"
+    "version": "v1.0.0-737-gf4c4bb5-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -436,37 +436,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/polymarketListPolymarketSportsLiveMarketsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/live/snapshot": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "GetPolymarketSportsLiveSnapshot returns sports live event cards.",
-        "operationId": "PolymarketService_GetPolymarketSportsLiveSnapshot",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketGetPolymarketSportsLiveSnapshotResponse"
             }
           },
           "default": {
@@ -1942,25 +1911,6 @@
         }
       }
     },
-    "polymarketGetPolymarketSportsLiveSnapshotResponse": {
-      "description": "GetPolymarketSportsLiveSnapshotResponse returns sports live event cards.",
-      "type": "object",
-      "properties": {
-        "events": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveEventItem"
-          }
-        },
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "stale": {
-          "type": "boolean"
-        }
-      }
-    },
     "polymarketListPolymarketHotMarketsResponse": {
       "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
       "type": "object",
@@ -2938,73 +2888,6 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsLiveEventItem": {
-      "type": "object",
-      "properties": {
-        "elapsed": {
-          "type": "string"
-        },
-        "ended": {
-          "type": "boolean"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "gameStatus": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "lastUpdate": {
-          "type": "string"
-        },
-        "live": {
-          "type": "boolean"
-        },
-        "markets": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketGroupItem"
-          }
-        },
-        "period": {
-          "type": "string"
-        },
-        "score": {
-          "type": "string"
-        },
-        "startTime": {
-          "type": "string"
-        },
-        "teams": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
-          }
-        },
-        "title": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketSportsLiveMarketGroupItem": {
-      "type": "object",
-      "properties": {
-        "markets": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketOptionItem"
-          }
-        },
-        "title": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
     "v1alpha1PolymarketSportsLiveMarketItem": {
       "type": "object",
       "properties": {
@@ -3042,66 +2925,6 @@
         "volumeNum": {
           "type": "number",
           "format": "double"
-        }
-      }
-    },
-    "v1alpha1PolymarketSportsLiveMarketOptionItem": {
-      "type": "object",
-      "properties": {
-        "bestAsk": {
-          "type": "number",
-          "format": "double"
-        },
-        "bestBid": {
-          "type": "number",
-          "format": "double"
-        },
-        "conditionId": {
-          "type": "string"
-        },
-        "lastTradePrice": {
-          "type": "number",
-          "format": "double"
-        },
-        "liquidityNum": {
-          "type": "number",
-          "format": "double"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "outcomePrices": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "outcomes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "question": {
-          "type": "string"
-        },
-        "volumeNum": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
-    "v1alpha1PolymarketSportsLiveTeamItem": {
-      "type": "object",
-      "properties": {
-        "logo": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "ordering": {
-          "type": "string"
         }
       }
     },

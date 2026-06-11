@@ -6,10 +6,17 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
+	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
+	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
+	ListSportsLiveMarkets(ctx context.Context, limit int32) ([]PolymarketSportsLiveMarket, error)
 	Ping(ctx context.Context) (int32, error)
+	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
 }
 
 var _ Querier = (*Queries)(nil)

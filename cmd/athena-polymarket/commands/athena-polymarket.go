@@ -34,7 +34,6 @@ func NewCommand() *cobra.Command {
 	var (
 		listenHost                string
 		listenPort                int
-		wsUseProxy                bool
 		notificationEnabled       bool
 		notificationServerAddress string
 		moverAlertWarningScore    float64
@@ -94,7 +93,6 @@ func NewCommand() *cobra.Command {
 
 			server, err := polymarket.NewServer(polymarket.ServerOpts{
 				Store:                 store,
-				WSUseProxy:            wsUseProxy,
 				NotificationClientset: notificationClientset,
 				MoverAlertsConfig:     moverAlertsConfig,
 			})
@@ -145,7 +143,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_POLYMARKET_LISTEN_ADDRESS", common.DefaultAddressPolymarket), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortPolymarket, "Listen on given port for incoming connections")
-	command.Flags().BoolVar(&wsUseProxy, "ws-use-proxy", env.ParseBoolFromEnv("ATHENA_POLYMARKET_WS_USE_PROXY", true), "Whether to use proxy environment variables for Polymarket WebSocket connections")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_POLYMARKET_NOTIFICATION_ENABLED", true), "Enable Polymarket notifications through Athena Notification")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_POLYMARKET_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Polymarket alerts")
 	command.Flags().Float64Var(&moverAlertWarningScore, "mover-alert-warning-score", env.ParseFloat64FromEnv("ATHENA_POLYMARKET_MOVER_ALERT_WARNING_SCORE", 6, 0, math.MaxFloat64), "Mover alert warning score threshold")
