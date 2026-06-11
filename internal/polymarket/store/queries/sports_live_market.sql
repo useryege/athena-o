@@ -285,7 +285,7 @@ SELECT
 FROM polymarket_sports_live_event AS event
 LEFT JOIN polymarket_sports_live_market AS market ON market.event_key = event.event_key
 GROUP BY event.event_key
-ORDER BY event.live DESC, event.updated_at_gamma DESC NULLS LAST, event.liquidity DESC, event.event_key
+ORDER BY event.volume DESC, event.liquidity DESC, event.updated_at_gamma DESC NULLS LAST, event.event_key
 LIMIT sqlc.arg('limit');
 
 -- name: ListSportsLiveMarketsByEventKeys :many
