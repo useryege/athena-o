@@ -68,6 +68,8 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context, fetchedAt time.Time
 	for {
 		opts := utilpolymarket.ListEventsKeysetOptions{
 			Limit:        &limit,
+			Order:        "id",
+			Ascending:    ptrBool(true),
 			Live:         ptrBool(live),
 			Closed:       ptrBool(closed),
 			TagSlug:      "sports",
