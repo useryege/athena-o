@@ -40,6 +40,8 @@ contract Athena {
     struct Pair {
         // Address of the pair contract
         address pairContract;
+        // Whether the pair is created
+        bool isCreated;
         // Address of the first token
         address token0;
         // Address of the second token
@@ -54,8 +56,6 @@ contract Athena {
         uint256 quoteBalance;
         // QuoteBalance transfer to usdt value
         uint256 quoteUsdtValue;
-        // Whether the pair is created
-        bool isCreated;
         // Reserves of the pair
         uint112 reserve0;
         uint112 reserve1;
