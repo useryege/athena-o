@@ -1,5 +1,6 @@
+import {LinkOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Space, Tag, Typography} from 'antd';
+import {Button, Space, Tag, Tooltip, Typography} from 'antd';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
 import {
@@ -90,6 +91,32 @@ const isMoneylineMarket = (market: PolymarketSportsLiveMarketCardItem) => {
 
 const moneylineMarket = (item: PolymarketSportsLiveEventCardItem) => item.markets.find(isMoneylineMarket) || item.markets[0];
 
+const polymarketEventURL = (item: PolymarketSportsLiveEventCardItem) => {
+    const slug = item.slug.trim();
+    return slug ? `https://polymarket.com/event/${encodeURIComponent(slug)}` : '';
+};
+
+const PolymarketEventLink = (props: {item: PolymarketSportsLiveEventCardItem}) => {
+    const url = polymarketEventURL(props.item);
+    if (!url) {
+        return null;
+    }
+    return (
+        <Tooltip title='Open Polymarket'>
+            <Button
+                aria-label='Open Polymarket'
+                href={url}
+                icon={<LinkOutlined />}
+                rel='noopener noreferrer'
+                size='small'
+                target='_blank'
+                type='text'
+                onClick={event => event.stopPropagation()}
+            />
+        </Tooltip>
+    );
+};
+
 const MoneylineOutcomeBlocks = (props: {market?: PolymarketSportsLiveMarketCardItem}) => {
     const options = moneylineOptions(props.market);
     if (options.length === 0) {
@@ -122,6 +149,7 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem}) =
                     <Space wrap={true}>
                         <Tag color='green'>Live</Tag>
                         {props.item.gameStatus && <Tag>{props.item.gameStatus}</Tag>}
+                        <PolymarketEventLink item={props.item} />
                     </Space>
                 }
             />
@@ -155,6 +183,7 @@ export const PolymarketSportsLivePage = () => {
                         <Space wrap={true}>
                             <Tag color='green'>Live</Tag>
                             {item.gameStatus && <Tag>{item.gameStatus}</Tag>}
+                            <PolymarketEventLink item={item} />
                         </Space>
                     }
                 />
