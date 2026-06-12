@@ -714,10 +714,12 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
 	gwHeaderOpts := runtime.WithIncomingHeaderMatcher(athenaIncomingHeaderMatcher)
 	gwMetadataOpts := runtime.WithMetadata(func(_ context.Context, r *http.Request) metadata.MD {
+		md := metadata.Pairs("athena-http-gateway", "true")
 		if r.RemoteAddr == "" {
-			return nil
+			return md
 		}
-		return metadata.Pairs("athena-remote-addr", r.RemoteAddr)
+		md.Append("athena-remote-addr", r.RemoteAddr)
+		return md
 	})
 	gwCookieOpts := runtime.WithForwardResponseOption(server.translateGrpcCookieHeader)
 	gwmux := runtime.NewServeMux(gwMuxOpts, gwHeaderOpts, gwMetadataOpts, gwCookieOpts)

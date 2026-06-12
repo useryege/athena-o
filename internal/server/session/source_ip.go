@@ -15,7 +15,19 @@ const (
 	metadataXRealIP       = "x-real-ip"
 	metadataForwarded     = "forwarded"
 	metadataRemoteAddr    = "athena-remote-addr"
+	metadataHTTPGateway   = "athena-http-gateway"
 )
+
+func isHTTPGatewayRequest(ctx context.Context) bool {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		for _, value := range md.Get(metadataHTTPGateway) {
+			if strings.EqualFold(value, "true") {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func clientIPFromContext(ctx context.Context) string {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {

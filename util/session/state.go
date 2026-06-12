@@ -230,6 +230,35 @@ func (storage *userStateStorage) ClearLoginFailures(ctx context.Context, rules [
 	return storage.redis.Del(ctx, keys...).Err()
 }
 
+func (storage *userStateStorage) SaveCaptcha(ctx context.Context, id, answer string, ttl time.Duration) error {
+	if storage.redis == nil {
+		return errLoginRateLimited
+	}
+	return storage.redis.Set(ctx, captchaKeyPrefix+id, strings.ToUpper(answer), ttl).Err()
+}
+
+func (storage *userStateStorage) ConsumeCaptcha(ctx context.Context, id string) (string, error) {
+	if storage.redis == nil {
+		return "", errLoginRateLimited
+	}
+	const script = `
+local value = redis.call("GET", KEYS[1])
+if value then
+  redis.call("DEL", KEYS[1])
+end
+return value
+`
+	value, err := storage.redis.Eval(ctx, script, []string{captchaKeyPrefix + id}).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return "", nil
+		}
+		return "", err
+	}
+	answer, _ := value.(string)
+	return answer, nil
+}
+
 func activeLoginRateLimitRules(rules []loginRateLimitRule) []loginRateLimitRule {
 	activeRules := make([]loginRateLimitRule, 0, len(rules))
 	for _, rule := range rules {
@@ -250,4 +279,6 @@ type UserStateStorage interface {
 	CheckLoginRateLimit(ctx context.Context, rules []loginRateLimitRule) error
 	RecordLoginFailure(ctx context.Context, rules []loginRateLimitRule) error
 	ClearLoginFailures(ctx context.Context, rules []loginRateLimitRule) error
+	SaveCaptcha(ctx context.Context, id, answer string, ttl time.Duration) error
+	ConsumeCaptcha(ctx context.Context, id string) (string, error)
 }

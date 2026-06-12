@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-750-g1b36747-dirty"
+    "version": "v1.0.0-772-g5fe4a1f-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -568,6 +568,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/sessionSessionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/session/captcha": {
+      "get": {
+        "tags": [
+          "SessionService"
+        ],
+        "summary": "GetCaptcha returns a fresh login captcha for web login.",
+        "operationId": "SessionService_GetCaptcha",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sessionCaptchaResponse"
             }
           },
           "default": {
@@ -2160,6 +2183,22 @@
         }
       }
     },
+    "sessionCaptchaResponse": {
+      "description": "CaptchaResponse returns a one-time login captcha challenge.",
+      "type": "object",
+      "properties": {
+        "captcha_id": {
+          "type": "string"
+        },
+        "expires_in": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "image_data_url": {
+          "type": "string"
+        }
+      }
+    },
     "sessionGetUserInfoResponse": {
       "type": "object",
       "title": "The current user's userInfo info",
@@ -2205,6 +2244,12 @@
       "description": "SessionCreateRequest is for logging in.",
       "type": "object",
       "properties": {
+        "captcha_answer": {
+          "type": "string"
+        },
+        "captcha_id": {
+          "type": "string"
+        },
         "password": {
           "type": "string"
         },

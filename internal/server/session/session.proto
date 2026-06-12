@@ -14,6 +14,8 @@ message SessionCreateRequest {
   string username = 1;
   string password = 2;
   string token = 3;
+  string captcha_id = 4;
+  string captcha_answer = 5;
 }
 
 // SessionDeleteRequest is for logging out.
@@ -26,6 +28,16 @@ message SessionResponse {
 
 // Get the current user's userInfo info
 message GetUserInfoRequest {}
+
+// CaptchaRequest requests a fresh login captcha.
+message CaptchaRequest {}
+
+// CaptchaResponse returns a one-time login captcha challenge.
+message CaptchaResponse {
+  string captcha_id = 1;
+  string image_data_url = 2;
+  int32 expires_in = 3;
+}
 
 message ResourcePermission {
   string resource = 1;
@@ -47,6 +59,11 @@ service SessionService {
   // Get the current user's info
   rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {
     option (google.api.http).get = "/api/v1/session/userinfo";
+  }
+
+  // GetCaptcha returns a fresh login captcha for web login.
+  rpc GetCaptcha(CaptchaRequest) returns (CaptchaResponse) {
+    option (google.api.http).get = "/api/v1/session/captcha";
   }
 
   // Create a new JWT for authentication and set a cookie if using HTTP

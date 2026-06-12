@@ -135,6 +135,7 @@ var publicGRPCMethods = map[string]bool{
 	"/grpc.health.v1.Health/Watch": true,
 
 	"/session.SessionService/GetUserInfo": true,
+	"/session.SessionService/GetCaptcha":  true,
 	"/session.SessionService/Create":      true,
 	"/session.SessionService/Delete":      true,
 

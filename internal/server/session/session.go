@@ -85,6 +85,13 @@ func (s *Server) Create(ctx context.Context, q *session.SessionCreateRequest) (*
 		return nil, sessionmgr.InvalidLoginErr
 	}
 
+	if isHTTPGatewayRequest(ctx) {
+		if err := s.mgr.VerifyCaptcha(ctx, q.CaptchaId, q.CaptchaAnswer); err != nil {
+			s.mgr.IncLoginRequestCounter(failure)
+			return nil, err
+		}
+	}
+
 	// verify the username and password
 	err := s.mgr.VerifyLogin(ctx, q.Username, q.Password, clientIPFromContext(ctx))
 	if err != nil {
@@ -118,6 +125,18 @@ func (s *Server) Create(ctx context.Context, q *session.SessionCreateRequest) (*
 	s.mgr.IncLoginRequestCounter(success)
 	// return the JWT token for the session
 	return &session.SessionResponse{Token: jwtToken}, nil
+}
+
+func (s *Server) GetCaptcha(ctx context.Context, _ *session.CaptchaRequest) (*session.CaptchaResponse, error) {
+	challenge, err := s.mgr.NewCaptcha(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create captcha")
+	}
+	return &session.CaptchaResponse{
+		CaptchaId:    challenge.ID,
+		ImageDataUrl: challenge.ImageDataURL,
+		ExpiresIn:    challenge.ExpiresIn,
+	}, nil
 }
 
 // Delete an authentication cookie from the client.  This makes sense only for the Web client.

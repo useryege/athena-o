@@ -1223,6 +1223,26 @@ body[data-theme='dark'] .metric {
     font-weight: 900;
 }
 
+.login-captcha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 132px;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.login-captcha__image {
+    height: 40px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.login-captcha__image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .mobile-only {
     display: none;
 }
