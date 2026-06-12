@@ -95,6 +95,9 @@ func (s *Service) fetchSportsLiveEvents(ctx context.Context, fetchedAt time.Time
 			if !boolValue(event.Live) || boolValue(event.Ended) {
 				continue
 			}
+			if isSportsLiveDerivativeEvent(event) {
+				continue
+			}
 			eventKey := firstNonEmpty(event.ID, stringValue(event.Slug))
 			if eventKey == "" {
 				continue
@@ -374,6 +377,10 @@ func sportsLiveTeamsFromRaw(raw json.RawMessage) []*v1alpha1.PolymarketSportsLiv
 		items = append(items, item)
 	}
 	return items
+}
+
+func isSportsLiveDerivativeEvent(event utilpolymarket.Event) bool {
+	return strings.Contains(strings.TrimSpace(stringValue(event.Title)), " - ")
 }
 
 func firstNonEmpty(values ...string) string {
