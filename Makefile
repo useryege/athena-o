@@ -128,6 +128,11 @@ service-password:
 prod-reset-secrets:
 	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)
 
+.PHONY: auto-clicker
+auto-clicker:
+	@mkdir -p ${DIST_DIR}
+	@GOOS=windows GOARCH=amd64 go build -o ${DIST_DIR}/auto-clicker.exe ./tools/auto-clicker
+
 .PHONY: mod-download-local
 mod-download-local:
 	go mod download && go mod tidy
