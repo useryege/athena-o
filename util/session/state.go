@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,10 +19,9 @@ const (
 )
 
 type userStateStorage struct {
-	redis               *redis.Client            // db
-	attempts            map[string]LoginAttempts // login attempts
-	revokedTokens       map[string]bool          // revoked tokens
-	recentRevokedTokens map[string]bool          // recent revoked tokens
+	redis               *redis.Client   // db
+	revokedTokens       map[string]bool // revoked tokens
+	recentRevokedTokens map[string]bool // recent revoked tokens
 	lock                sync.RWMutex
 	resyncDuration      time.Duration // resync duration
 }
@@ -30,7 +30,6 @@ var _ UserStateStorage = &userStateStorage{}
 
 func NewUserStateStorage(redis *redis.Client) *userStateStorage {
 	return &userStateStorage{
-		attempts:            map[string]LoginAttempts{},
 		revokedTokens:       map[string]bool{},
 		recentRevokedTokens: map[string]bool{},
 		resyncDuration:      time.Second * 15, // every 15 seconds to resync the revoked tokens
@@ -111,15 +110,6 @@ func (storage *userStateStorage) loadRevokedTokens() error {
 	return nil
 }
 
-func (storage *userStateStorage) GetLoginAttempts() map[string]LoginAttempts {
-	return storage.attempts
-}
-
-func (storage *userStateStorage) SetLoginAttempts(attempts map[string]LoginAttempts) error {
-	storage.attempts = attempts
-	return nil
-}
-
 func (storage *userStateStorage) RevokeToken(ctx context.Context, id string, expiringAt time.Duration) error {
 	storage.lock.Lock()
 	storage.revokedTokens[id] = true
@@ -137,20 +127,127 @@ func (storage *userStateStorage) IsTokenRevoked(id string) bool {
 	return storage.revokedTokens[id]
 }
 
-func (storage *userStateStorage) GetLockObject() *sync.RWMutex {
-	return &storage.lock
+func (storage *userStateStorage) CheckLoginRateLimit(ctx context.Context, rules []loginRateLimitRule) error {
+	activeRules := activeLoginRateLimitRules(rules)
+	if len(activeRules) == 0 {
+		return nil
+	}
+	if storage.redis == nil {
+		return errLoginRateLimited
+	}
+
+	pipe := storage.redis.TxPipeline()
+	existsCommands := make([]*redis.IntCmd, 0, len(activeRules))
+	counterKeys := make([]string, 0, len(activeRules))
+	for _, rule := range activeRules {
+		existsCommands = append(existsCommands, pipe.Exists(ctx, rule.LockKey))
+		counterKeys = append(counterKeys, rule.CounterKey)
+	}
+	counterCommand := pipe.MGet(ctx, counterKeys...)
+	if _, err := pipe.Exec(ctx); err != nil {
+		return err
+	}
+	for _, cmd := range existsCommands {
+		if cmd.Val() > 0 {
+			return errLoginRateLimited
+		}
+	}
+	for i, value := range counterCommand.Val() {
+		count, ok := redisCounterValue(value)
+		if ok && count > int64(activeRules[i].MaxFailures) {
+			return errLoginRateLimited
+		}
+	}
+	return nil
+}
+
+func redisCounterValue(value any) (int64, bool) {
+	switch typedValue := value.(type) {
+	case nil:
+		return 0, false
+	case int64:
+		return typedValue, true
+	case string:
+		count, err := strconv.ParseInt(typedValue, 10, 64)
+		return count, err == nil
+	case []byte:
+		count, err := strconv.ParseInt(string(typedValue), 10, 64)
+		return count, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func (storage *userStateStorage) RecordLoginFailure(ctx context.Context, rules []loginRateLimitRule) error {
+	activeRules := activeLoginRateLimitRules(rules)
+	if len(activeRules) == 0 {
+		return nil
+	}
+	if storage.redis == nil {
+		return errLoginRateLimited
+	}
+
+	pipe := storage.redis.TxPipeline()
+	incrCommands := make([]*redis.IntCmd, 0, len(activeRules))
+	for _, rule := range activeRules {
+		incrCommands = append(incrCommands, pipe.Incr(ctx, rule.CounterKey))
+		if rule.Window > 0 {
+			pipe.Expire(ctx, rule.CounterKey, rule.Window)
+		}
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		return err
+	}
+
+	lockPipe := storage.redis.TxPipeline()
+	locked := false
+	for i, cmd := range incrCommands {
+		if int(cmd.Val()) >= activeRules[i].MaxFailures {
+			lockPipe.Set(ctx, activeRules[i].LockKey, "1", activeRules[i].LockFor)
+			locked = true
+		}
+	}
+	if !locked {
+		return nil
+	}
+	_, err := lockPipe.Exec(ctx)
+	return err
+}
+
+func (storage *userStateStorage) ClearLoginFailures(ctx context.Context, rules []loginRateLimitRule) error {
+	activeRules := activeLoginRateLimitRules(rules)
+	if len(activeRules) == 0 {
+		return nil
+	}
+	if storage.redis == nil {
+		return errLoginRateLimited
+	}
+
+	keys := make([]string, 0, len(activeRules)*2)
+	for _, rule := range activeRules {
+		keys = append(keys, rule.CounterKey, rule.LockKey)
+	}
+	return storage.redis.Del(ctx, keys...).Err()
+}
+
+func activeLoginRateLimitRules(rules []loginRateLimitRule) []loginRateLimitRule {
+	activeRules := make([]loginRateLimitRule, 0, len(rules))
+	for _, rule := range rules {
+		if rule.MaxFailures <= 0 || rule.LockFor <= 0 {
+			continue
+		}
+		activeRules = append(activeRules, rule)
+	}
+	return activeRules
 }
 
 type UserStateStorage interface {
 	Init(ctx context.Context)
-	// GetLoginAttempts return number of concurrent login attempts
-	GetLoginAttempts() map[string]LoginAttempts
-	// SetLoginAttempts sets number of concurrent login attempts
-	SetLoginAttempts(attempts map[string]LoginAttempts) error
 	// RevokeToken revokes token with given id (information about revocation expires after specified timeout)
 	RevokeToken(ctx context.Context, id string, expiringAt time.Duration) error
 	// IsTokenRevoked checks if given token is revoked
 	IsTokenRevoked(id string) bool
-	// GetLockObject returns a lock used by the storage
-	GetLockObject() *sync.RWMutex
+	CheckLoginRateLimit(ctx context.Context, rules []loginRateLimitRule) error
+	RecordLoginFailure(ctx context.Context, rules []loginRateLimitRule) error
+	ClearLoginFailures(ctx context.Context, rules []loginRateLimitRule) error
 }

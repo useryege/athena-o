@@ -60,7 +60,7 @@ func NewServer(mgr *sessionmgr.SessionManager, settingsMgr *settings.SettingsMan
 
 // Create generates a JWT token signed by Athena intended for web/CLI logins of the admin user
 // using username/password
-func (s *Server) Create(_ context.Context, q *session.SessionCreateRequest) (*session.SessionResponse, error) {
+func (s *Server) Create(ctx context.Context, q *session.SessionCreateRequest) (*session.SessionResponse, error) {
 	// try to get a rate limiter if it is set
 	if s.limitLoginAttempts != nil {
 		closer, err := s.limitLoginAttempts()
@@ -82,11 +82,11 @@ func (s *Server) Create(_ context.Context, q *session.SessionCreateRequest) (*se
 	// if no username or password is provided, increment the login request counter and return an error
 	if q.Username == "" || q.Password == "" {
 		s.mgr.IncLoginRequestCounter(failure)
-		return nil, status.Errorf(codes.Unauthenticated, "no credentials supplied")
+		return nil, sessionmgr.InvalidLoginErr
 	}
 
 	// verify the username and password
-	err := s.mgr.VerifyUsernamePassword(q.Username, q.Password)
+	err := s.mgr.VerifyLogin(ctx, q.Username, q.Password, clientIPFromContext(ctx))
 	if err != nil {
 		s.mgr.IncLoginRequestCounter(failure)
 		return nil, err

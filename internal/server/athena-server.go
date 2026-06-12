@@ -495,6 +495,15 @@ func (server *AthenaServer) setTokenCookie(token string, w http.ResponseWriter) 
 	return httputil.SetTokenCookie(token, server.BaseHRef, !server.DisableAuth, w)
 }
 
+func athenaIncomingHeaderMatcher(key string) (string, bool) {
+	switch strings.ToLower(key) {
+	case "x-forwarded-for", "x-real-ip", "forwarded":
+		return strings.ToLower(key), true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
+}
+
 func compressHandler(handler http.Handler) http.Handler {
 	compr := handlers.CompressHandler(handler)
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -703,8 +712,15 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// time.Time, but does not support custom UnmarshalJSON() and MarshalJSON() methods. Therefore
 	// we use our own Marshaler
 	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
+	gwHeaderOpts := runtime.WithIncomingHeaderMatcher(athenaIncomingHeaderMatcher)
+	gwMetadataOpts := runtime.WithMetadata(func(_ context.Context, r *http.Request) metadata.MD {
+		if r.RemoteAddr == "" {
+			return nil
+		}
+		return metadata.Pairs("athena-remote-addr", r.RemoteAddr)
+	})
 	gwCookieOpts := runtime.WithForwardResponseOption(server.translateGrpcCookieHeader)
-	gwmux := runtime.NewServeMux(gwMuxOpts, gwCookieOpts)
+	gwmux := runtime.NewServeMux(gwMuxOpts, gwHeaderOpts, gwMetadataOpts, gwCookieOpts)
 
 	var handler http.Handler = gwmux
 	if server.EnableGZip {
