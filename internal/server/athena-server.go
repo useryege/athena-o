@@ -98,7 +98,6 @@ import (
 const (
 	maxConcurrentLoginRequestsCountEnv = "ATHENA_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT"
 	replicasCountEnv                   = "ATHENA_API_SERVER_REPLICAS"
-	renewTokenKey                      = "renew-token"
 )
 
 // ErrNoSession indicates no auth token was supplied as part of a request
@@ -481,17 +480,12 @@ func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // translateGrpcCookieHeader conditionally sets a cookie on the response.
-func (server *AthenaServer) translateGrpcCookieHeader(ctx context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
+func (server *AthenaServer) translateGrpcCookieHeader(_ context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
 	if sessionResp, ok := resp.(*sessionpkg.SessionResponse); ok {
 		token := sessionResp.Token
 		err := server.setTokenCookie(token, w)
 		if err != nil {
 			return fmt.Errorf("error setting token cookie from session response: %w", err)
-		}
-	} else if md, ok := runtime.ServerMetadataFromContext(ctx); ok {
-		renewToken := md.HeaderMD[renewTokenKey]
-		if len(renewToken) > 0 {
-			return server.setTokenCookie(renewToken[0], w)
 		}
 	}
 	return nil
@@ -969,19 +963,11 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 		return withDisabledAuthClaims(ctx), nil
 	}
 
-	claims, newToken, claimsErr := server.getClaims(ctx)
+	claims, _, claimsErr := server.getClaims(ctx)
 	if claims != nil {
 		// Add claims to the context to inspect for RBAC
 		//nolint:staticcheck
 		ctx = context.WithValue(ctx, "claims", claims) // ctx {data:data, claims:claims}
-		if newToken != "" {
-			// Session tokens that are expiring soon should be regenerated if user stays active.
-			// The renewed token is stored in outgoing ServerMetadata. Metadata is available to grpc-gateway
-			// response forwarder that will translate it into Set-Cookie header.
-			if err := grpc.SendHeader(ctx, metadata.New(map[string]string{renewTokenKey: newToken})); err != nil {
-				log.Warnf("Failed to set %s header", renewTokenKey)
-			}
-		}
 	}
 	if claimsErr != nil {
 		//nolint:staticcheck
@@ -991,7 +977,7 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 	return ctx, claimsErr
 }
 
-// getClaims extracts, validates and refreshes a JWT token from an incoming request context.
+// getClaims extracts and validates a JWT token from an incoming request context.
 func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

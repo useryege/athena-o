@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,12 +53,11 @@ const (
 	AuthErrorCtxKey            = "auth-error"
 
 	// invalidLoginError, for security purposes, doesn't say whether the username or password was invalid.  This does not mitigate the potential for timing attacks to determine which is which.
-	invalidLoginError           = "Invalid username or password"
-	blankPasswordError          = "Blank passwords are not allowed"
-	accountDisabled             = "Account %s is disabled"
-	usernameTooLongError        = "Username is too long (%d bytes max)"
-	userDoesNotHaveCapability   = "Account %s does not have %s capability"
-	autoRegenerateTokenDuration = time.Minute * 5
+	invalidLoginError         = "Invalid username or password"
+	blankPasswordError        = "Blank passwords are not allowed"
+	accountDisabled           = "Account %s is disabled"
+	usernameTooLongError      = "Username is too long (%d bytes max)"
+	userDoesNotHaveCapability = "Account %s does not have %s capability"
 )
 
 const (
@@ -244,20 +242,7 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 		return nil, "", errors.New("account password has changed since token issued")
 	}
 
-	newToken := ""
-	if exp, err := jwtutil.ExpirationTime(claims); err == nil {
-		tokenExpDuration := exp.Sub(issuedAt)
-		remainingDuration := time.Until(exp)
-
-		if remainingDuration < autoRegenerateTokenDuration && capability == settings.AccountCapabilityLogin {
-			if uniqueId, err := uuid.NewRandom(); err == nil {
-				if val, err := mgr.Create(fmt.Sprintf("%s:%s", subject, settings.AccountCapabilityLogin), int64(tokenExpDuration.Seconds()), uniqueId.String()); err == nil {
-					newToken = val
-				}
-			}
-		}
-	}
-	return token.Claims, newToken, nil
+	return token.Claims, "", nil
 }
 
 // GetLoginFailures retrieves the login failure information from the cache. Any modifications to the LoginAttemps map must be done in a thread-safe manner.
