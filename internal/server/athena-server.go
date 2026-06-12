@@ -496,6 +496,7 @@ func (server *AthenaServer) translateGrpcCookieHeader(ctx context.Context, w htt
 	}
 	return nil
 }
+
 func (server *AthenaServer) setTokenCookie(token string, w http.ResponseWriter) error {
 	return httputil.SetTokenCookie(token, server.BaseHRef, false, w)
 }
