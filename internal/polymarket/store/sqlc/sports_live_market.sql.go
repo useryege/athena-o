@@ -567,7 +567,8 @@ SELECT
   event.fetched_at,
   event.last_seen_at
 FROM polymarket_sports_live_event AS event
-LEFT JOIN polymarket_sports_live_market AS market ON market.event_key = event.event_key
+JOIN polymarket_sports_live_market AS market ON market.event_key = event.event_key
+  AND lower(market.sports_market_type) = 'moneyline'
 GROUP BY event.event_key
 ORDER BY event.volume DESC, event.liquidity DESC, event.updated_at_gamma DESC NULLS LAST, event.event_key
 LIMIT $1
