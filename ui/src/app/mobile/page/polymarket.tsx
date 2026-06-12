@@ -295,17 +295,25 @@ const MoneylinePanel = (props: {
 const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
     const moneyline = moneylineMarket(props.item);
     const options = moneylineOptions(moneyline, props.item.teams);
-    const scoreLine = [props.item.score, props.item.period, props.item.elapsed].filter(Boolean).join(' · ');
+    const scoreMeta = [props.item.period, props.item.elapsed, props.item.gameStatus].filter(Boolean).join(' · ');
 
     return (
         <article className='sports-live-card'>
             <div className='sports-live-card__info'>
                 <CardTitle title={props.item.title} subtitle={props.item.slug} image={props.item.image} />
+                {props.item.score && (
+                    <div className='sports-live-scoreboard'>
+                        <Typography.Text className='sports-live-scoreboard__label'>Score</Typography.Text>
+                        <Typography.Text className='sports-live-scoreboard__value' strong={true}>
+                            {props.item.score}
+                        </Typography.Text>
+                        {scoreMeta && <Typography.Text className='sports-live-scoreboard__meta'>{scoreMeta}</Typography.Text>}
+                    </div>
+                )}
                 <div className='sports-live-card__meta'>
                     <Space wrap={true}>
                         <Tag color='green'>Live</Tag>
                         {props.item.gameStatus && <Tag>{props.item.gameStatus}</Tag>}
-                        {scoreLine && <Tag>{scoreLine}</Tag>}
                         <PolymarketEventLink item={props.item} />
                     </Space>
                 </div>
