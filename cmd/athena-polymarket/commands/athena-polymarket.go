@@ -64,15 +64,19 @@ func NewCommand() *cobra.Command {
 			moverAlertsConfig := polymarket.MoverAlertsConfig{
 				Enabled: notificationEnabled,
 			}
+			sportsLivePriceAlertsConfig := polymarket.SportsLivePriceAlertsConfig{
+				Enabled: notificationEnabled,
+			}
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
 				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
 			}
 
 			server, err := polymarket.NewServer(polymarket.ServerOpts{
-				Store:                 store,
-				NotificationClientset: notificationClientset,
-				MoverAlertsConfig:     moverAlertsConfig,
+				Store:                       store,
+				NotificationClientset:       notificationClientset,
+				MoverAlertsConfig:           moverAlertsConfig,
+				SportsLivePriceAlertsConfig: sportsLivePriceAlertsConfig,
 			})
 			if err != nil {
 				return err

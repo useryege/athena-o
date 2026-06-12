@@ -18,12 +18,14 @@ type Querier interface {
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListSportsLiveEvents(ctx context.Context, limit int32) ([]ListSportsLiveEventsRow, error)
+	ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]ListSportsLiveLatestPriceAlertTokensRow, error)
 	ListSportsLiveLatestPricePointTimes(ctx context.Context, tokenIds []string) ([]ListSportsLiveLatestPricePointTimesRow, error)
 	ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsLiveMarketsByEventKeysRow, error)
 	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
 	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
 	Ping(ctx context.Context) (int32, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
+	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error
 }
 
 var _ Querier = (*Queries)(nil)

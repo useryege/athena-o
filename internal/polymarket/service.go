@@ -91,51 +91,59 @@ func WithMoverAlertsConfig(config MoverAlertsConfig) ServiceOption {
 	}
 }
 
+func WithSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) ServiceOption {
+	return func(s *Service) {
+		s.sportsLivePriceAlertsConfig = normalizeSportsLivePriceAlertsConfig(config)
+	}
+}
+
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
-	store                     *polymarketstore.SQLStore
-	gammaClient               sportsLiveGammaClient
-	clobClient                sportsLiveCLOBClient
-	notificationClientset     notificationapiclient.Clientset
-	syncInterval              time.Duration
-	sportsLivePageLimit       int
-	hotMarketRefreshInterval  time.Duration
-	moverAlertsConfig         MoverAlertsConfig
-	nowFn                     func() time.Time
-	startStopMu               sync.Mutex
-	started                   bool
-	runCancel                 context.CancelFunc
-	runWG                     sync.WaitGroup
-	cacheMu                   sync.RWMutex
-	hotMarketItems            []*v1alpha1.PolymarketHotMarketItem
-	hotMarketMissing          map[string]int
-	realtimeStates            map[string]*realtimeTokenState
-	realtimeSamples           map[string][]realtimeSample
-	hotMarketFetched          int64
-	hotMarketStale            bool
-	hotMarketCandidateCount   int32
-	realtimeFetched           int64
-	realtimeStale             bool
-	realtimeConnected         bool
-	realtimeLastEventAt       int64
-	realtimeSubscribedMarkets int32
-	realtimeSubscribedTokens  int32
-	moverAlertStates          map[string]moverAlertState
-	syncGroup                 singleflight.Group
+	store                       *polymarketstore.SQLStore
+	gammaClient                 sportsLiveGammaClient
+	clobClient                  sportsLiveCLOBClient
+	notificationClientset       notificationapiclient.Clientset
+	syncInterval                time.Duration
+	sportsLivePageLimit         int
+	hotMarketRefreshInterval    time.Duration
+	moverAlertsConfig           MoverAlertsConfig
+	sportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
+	nowFn                       func() time.Time
+	startStopMu                 sync.Mutex
+	started                     bool
+	runCancel                   context.CancelFunc
+	runWG                       sync.WaitGroup
+	cacheMu                     sync.RWMutex
+	hotMarketItems              []*v1alpha1.PolymarketHotMarketItem
+	hotMarketMissing            map[string]int
+	realtimeStates              map[string]*realtimeTokenState
+	realtimeSamples             map[string][]realtimeSample
+	hotMarketFetched            int64
+	hotMarketStale              bool
+	hotMarketCandidateCount     int32
+	realtimeFetched             int64
+	realtimeStale               bool
+	realtimeConnected           bool
+	realtimeLastEventAt         int64
+	realtimeSubscribedMarkets   int32
+	realtimeSubscribedTokens    int32
+	moverAlertStates            map[string]moverAlertState
+	syncGroup                   singleflight.Group
 }
 
 func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service {
 	s := &Service{
-		store:                    store,
-		syncInterval:             defaultSportsLiveSyncInterval,
-		sportsLivePageLimit:      defaultSportsLiveEventPageLimit,
-		hotMarketRefreshInterval: defaultHotMarketRefreshInterval,
-		moverAlertsConfig:        defaultMoverAlertsConfig(),
-		nowFn:                    time.Now,
-		hotMarketMissing:         make(map[string]int),
-		realtimeStates:           make(map[string]*realtimeTokenState),
-		realtimeSamples:          make(map[string][]realtimeSample),
-		moverAlertStates:         make(map[string]moverAlertState),
+		store:                       store,
+		syncInterval:                defaultSportsLiveSyncInterval,
+		sportsLivePageLimit:         defaultSportsLiveEventPageLimit,
+		hotMarketRefreshInterval:    defaultHotMarketRefreshInterval,
+		moverAlertsConfig:           defaultMoverAlertsConfig(),
+		sportsLivePriceAlertsConfig: defaultSportsLivePriceAlertsConfig(),
+		nowFn:                       time.Now,
+		hotMarketMissing:            make(map[string]int),
+		realtimeStates:              make(map[string]*realtimeTokenState),
+		realtimeSamples:             make(map[string][]realtimeSample),
+		moverAlertStates:            make(map[string]moverAlertState),
 	}
 	for _, opt := range opts {
 		opt(s)

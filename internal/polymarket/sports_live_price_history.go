@@ -107,6 +107,7 @@ func (s *Service) syncSportsLivePriceHistory(ctx context.Context) error {
 			s.syncSportsLivePriceHistoryBatch(ctx, group[offset:end], tokens, start, now)
 		}
 	}
+	s.updateSportsLivePriceAlerts(ctx)
 	return nil
 }
 

@@ -362,6 +362,77 @@ FROM ranked_points
 WHERE row_num <= sqlc.arg('limit_per_token')::int
 ORDER BY market_key, token_id, price_ts;
 
+-- name: ListSportsLiveLatestPriceAlertTokens :many
+WITH latest_points AS (
+  SELECT DISTINCT ON (point.token_id)
+    point.token_id,
+    point.market_key,
+    point.event_key,
+    point.condition_id,
+    point.outcome,
+    point.price_ts,
+    point.price
+  FROM polymarket_sports_live_price_point AS point
+  JOIN polymarket_sports_live_market AS market ON market.market_key = point.market_key
+  JOIN polymarket_sports_live_event AS event ON event.event_key = point.event_key
+  WHERE event.live = true
+    AND event.ended = false
+    AND market.closed = false
+    AND lower(market.sports_market_type) = 'moneyline'
+  ORDER BY point.token_id, point.price_ts DESC
+)
+SELECT
+  latest.token_id,
+  latest.market_key,
+  latest.event_key,
+  latest.condition_id,
+  latest.outcome,
+  latest.price_ts,
+  latest.price,
+  COALESCE(state.alert_band, 'none')::text AS alert_band,
+  event.slug AS event_slug,
+  COALESCE(NULLIF(event.title, ''), event.slug, latest.event_key)::text AS event_title,
+  COALESCE(NULLIF(market.question, ''), NULLIF(market.title, ''), market.market_key)::text AS market_title
+FROM latest_points AS latest
+JOIN polymarket_sports_live_market AS market ON market.market_key = latest.market_key
+JOIN polymarket_sports_live_event AS event ON event.event_key = latest.event_key
+LEFT JOIN polymarket_sports_live_price_alert_state AS state ON state.token_id = latest.token_id
+ORDER BY event.volume DESC, market.liquidity_num DESC, latest.market_key, latest.token_id;
+
+-- name: UpsertSportsLivePriceAlertState :exec
+INSERT INTO polymarket_sports_live_price_alert_state (
+  token_id,
+  market_key,
+  event_key,
+  condition_id,
+  outcome,
+  alert_band,
+  last_price,
+  last_price_ts,
+  last_notified_at
+)
+VALUES (
+  @token_id,
+  @market_key,
+  @event_key,
+  @condition_id,
+  @outcome,
+  @alert_band,
+  @last_price,
+  @last_price_ts,
+  @last_notified_at
+)
+ON CONFLICT (token_id) DO UPDATE
+SET market_key = EXCLUDED.market_key,
+  event_key = EXCLUDED.event_key,
+  condition_id = EXCLUDED.condition_id,
+  outcome = EXCLUDED.outcome,
+  alert_band = EXCLUDED.alert_band,
+  last_price = EXCLUDED.last_price,
+  last_price_ts = EXCLUDED.last_price_ts,
+  last_notified_at = EXCLUDED.last_notified_at,
+  updated_at = now();
+
 -- name: BatchUpsertSportsLivePricePoints :exec
 INSERT INTO polymarket_sports_live_price_point (
   token_id,

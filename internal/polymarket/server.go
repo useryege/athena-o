@@ -18,17 +18,23 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store                 *polymarketstore.SQLStore
-	NotificationClientset notificationapiclient.Clientset
-	MoverAlertsConfig     MoverAlertsConfig
+	Store                       *polymarketstore.SQLStore
+	NotificationClientset       notificationapiclient.Clientset
+	MoverAlertsConfig           MoverAlertsConfig
+	SportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
 	healthService := health.NewServer()
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
-		ServerOpts:    opts,
-		service:       NewService(opts.Store, WithNotificationClientset(opts.NotificationClientset), WithMoverAlertsConfig(opts.MoverAlertsConfig)),
+		ServerOpts: opts,
+		service: NewService(
+			opts.Store,
+			WithNotificationClientset(opts.NotificationClientset),
+			WithMoverAlertsConfig(opts.MoverAlertsConfig),
+			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
+		),
 		healthService: healthService,
 	}, nil
 }
