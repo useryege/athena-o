@@ -463,8 +463,30 @@ body[data-theme='dark'] .app-page__header {
     gap: 12px;
 }
 
-.sports-live-card__meta {
+.sports-live-card__title-line {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
     min-width: 0;
+    max-width: 100%;
+    gap: 6px;
+    vertical-align: top;
+}
+
+.sports-live-card .card-title__main > .ant-typography:first-child {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+.sports-live-card__title-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.sports-live-card__title-line .ant-btn {
+    flex: 0 0 auto;
 }
 
 .sports-live-scoreboard {

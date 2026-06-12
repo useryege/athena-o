@@ -1,6 +1,6 @@
 import {LinkOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Button, Empty, Space, Tag, Tooltip, Typography} from 'antd';
+import {Button, Empty, Tooltip, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
@@ -296,11 +296,17 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; hi
     const moneyline = moneylineMarket(props.item);
     const options = moneylineOptions(moneyline, props.item.teams);
     const scoreMeta = [props.item.period, props.item.elapsed, props.item.gameStatus].filter(Boolean).join(' · ');
+    const title = (
+        <span className='sports-live-card__title-line'>
+            <span className='sports-live-card__title-text'>{props.item.title}</span>
+            <PolymarketEventLink item={props.item} />
+        </span>
+    );
 
     return (
         <article className='sports-live-card'>
             <div className='sports-live-card__info'>
-                <CardTitle title={props.item.title} subtitle={props.item.slug} image={props.item.image} />
+                <CardTitle title={title} subtitle={props.item.slug} image={props.item.image} />
                 {props.item.score && (
                     <div className='sports-live-scoreboard'>
                         <Typography.Text className='sports-live-scoreboard__label'>Score</Typography.Text>
@@ -310,13 +316,6 @@ const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; hi
                         {scoreMeta && <Typography.Text className='sports-live-scoreboard__meta'>{scoreMeta}</Typography.Text>}
                     </div>
                 )}
-                <div className='sports-live-card__meta'>
-                    <Space wrap={true}>
-                        <Tag color='green'>Live</Tag>
-                        {props.item.gameStatus && <Tag>{props.item.gameStatus}</Tag>}
-                        <PolymarketEventLink item={props.item} />
-                    </Space>
-                </div>
                 <div className='sports-live-card__stats'>
                     <div className='sports-live-card__stat'>
                         <Typography.Text className='sports-live-card__stat-label'>Volume</Typography.Text>
