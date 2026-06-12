@@ -38,6 +38,7 @@
 | --- | --- | --- |
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
+| `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
 
 生成本地账号密码 hash：
 
@@ -56,6 +57,25 @@ go run tools/password-hash/main.go -password 'Yudian#2026!'
 
 ```bash
 ATHENA_ACCOUNT_LINGJIE_PASSWORD_HASH='$2a$10$...'
+```
+
+生成 HS256 JWT secret：
+
+```bash
+# 默认生成 base64 编码的 32 字节随机密钥
+make jwt-secret
+
+# 也可直接运行
+go run tools/jwt-secret/main.go
+
+# 如需 hex 格式
+go run tools/jwt-secret/main.go -format hex
+```
+
+输出为一行 secret。写入 `.env` 或 `.env.prod`：
+
+```bash
+ATHENA_JWT_SECRET='<generated-secret>'
 ```
 
 ## 代码生成

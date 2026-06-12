@@ -116,6 +116,10 @@ else
 	go run tools/password-hash/main.go -password '$(PASSWORD)'
 endif
 
+.PHONY: jwt-secret
+jwt-secret:
+	@go run tools/jwt-secret/main.go
+
 .PHONY: mod-download-local
 mod-download-local:
 	go mod download && go mod tidy
