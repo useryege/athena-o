@@ -120,6 +120,10 @@ endif
 jwt-secret:
 	@go run tools/jwt-secret/main.go
 
+.PHONY: service-password
+service-password:
+	@go run tools/service-password/main.go
+
 .PHONY: mod-download-local
 mod-download-local:
 	go mod download && go mod tidy

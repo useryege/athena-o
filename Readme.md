@@ -39,6 +39,7 @@
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
+| `make service-password` | 生成可用于 `POSTGRES_PASSWORD` / `REDIS_PASSWORD` 的随机密码。 | `make service-password` |
 
 生成本地账号密码 hash：
 
@@ -76,6 +77,26 @@ go run tools/jwt-secret/main.go -format hex
 
 ```bash
 ATHENA_JWT_SECRET='<generated-secret>'
+```
+
+生成数据库和 Redis 密码：
+
+```bash
+# 默认生成 32 位字母数字密码
+make service-password
+
+# 也可直接运行
+go run tools/service-password/main.go
+
+# 如需更长密码
+go run tools/service-password/main.go -length 48
+```
+
+输出为一行仅包含大小写字母和数字的密码，可直接写入 `.env` 或 `.env.prod`：
+
+```bash
+POSTGRES_PASSWORD='<generated-password>'
+REDIS_PASSWORD='<generated-password>'
 ```
 
 ## 代码生成
