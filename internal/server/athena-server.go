@@ -498,7 +498,7 @@ func (server *AthenaServer) translateGrpcCookieHeader(ctx context.Context, w htt
 }
 
 func (server *AthenaServer) setTokenCookie(token string, w http.ResponseWriter) error {
-	return httputil.SetTokenCookie(token, server.BaseHRef, false, w)
+	return httputil.SetTokenCookie(token, server.BaseHRef, !server.DisableAuth, w)
 }
 
 func compressHandler(handler http.Handler) http.Handler {
