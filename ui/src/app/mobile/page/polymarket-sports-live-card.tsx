@@ -140,7 +140,8 @@ const pricePoints = (series?: PolymarketSportsLivePriceHistorySeriesItem) =>
         .filter(point => Number.isFinite(point.price) && Number.isFinite(point.timestamp));
 
 const SportsLiveEventInfoSection = (props: {item: PolymarketSportsLiveEventCardItem}) => {
-    const scoreMeta = [props.item.period, props.item.elapsed, props.item.gameStatus].filter(Boolean).join(' · ');
+    const stageValue = props.item.period || props.item.gameStatus || props.item.elapsed;
+    const stageMeta = [props.item.elapsed, props.item.gameStatus].filter(value => value && value !== stageValue).join(' · ');
     const title = (
         <span className='sports-live-card__title-line'>
             <span className='sports-live-card__title-text'>{props.item.title}</span>
@@ -151,13 +152,21 @@ const SportsLiveEventInfoSection = (props: {item: PolymarketSportsLiveEventCardI
     return (
         <div className='sports-live-card__info'>
             <CardTitle title={title} subtitle={props.item.slug} image={props.item.image} />
+            {stageValue && (
+                <div className='sports-live-stage'>
+                    <Typography.Text className='sports-live-stage__label'>Live Stage</Typography.Text>
+                    <Typography.Text className='sports-live-stage__value' strong={true}>
+                        {stageValue}
+                    </Typography.Text>
+                    {stageMeta && <Typography.Text className='sports-live-stage__meta'>{stageMeta}</Typography.Text>}
+                </div>
+            )}
             {props.item.score && (
                 <div className='sports-live-scoreboard'>
                     <Typography.Text className='sports-live-scoreboard__label'>Score</Typography.Text>
                     <Typography.Text className='sports-live-scoreboard__value' strong={true}>
                         {props.item.score}
                     </Typography.Text>
-                    {scoreMeta && <Typography.Text className='sports-live-scoreboard__meta'>{scoreMeta}</Typography.Text>}
                 </div>
             )}
             <div className='sports-live-card__stats'>
