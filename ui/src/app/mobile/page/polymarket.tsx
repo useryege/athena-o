@@ -57,6 +57,8 @@ export const PolymarketHotPage = () => <PolymarketListPage title='Polymarket Hot
 export const PolymarketRealtimePage = () => <PolymarketListPage title='Polymarket Realtime' load={() => services.polymarket.listRealtimeMarkets(100)} />;
 export const PolymarketMoversPage = () => <PolymarketListPage title='Polymarket Movers' load={() => services.polymarket.listMovers(100)} />;
 
+const sportsLiveRefreshIntervalMs = 3000;
+
 export const PolymarketSportsLivePage = () => {
     const events = useAsyncData(() => services.polymarket.listSportsLiveEvents(200), []);
     const marketKeys = React.useMemo(() => moneylineMarketKeys(events.data?.items), [events.data?.items]);
@@ -67,6 +69,24 @@ export const PolymarketSportsLivePage = () => {
         }
         return services.polymarket.batchGetSportsLivePriceHistory(marketKeys, 360);
     }, [marketKeySignature]);
+    const eventsReloadRef = React.useRef(events.reload);
+    const historyReloadRef = React.useRef(history.reload);
+    const marketKeyCountRef = React.useRef(marketKeys.length);
+    eventsReloadRef.current = events.reload;
+    historyReloadRef.current = history.reload;
+    marketKeyCountRef.current = marketKeys.length;
+    const reloadAll = React.useCallback(() => {
+        eventsReloadRef.current();
+        if (marketKeyCountRef.current > 0) {
+            historyReloadRef.current();
+        }
+    }, []);
+
+    React.useEffect(() => {
+        const timer = window.setInterval(reloadAll, sportsLiveRefreshIntervalMs);
+        return () => window.clearInterval(timer);
+    }, [reloadAll]);
+
     const historyByMarketKey = React.useMemo(() => {
         const out = new Map<string, PolymarketSportsLivePriceHistorySeriesItem[]>();
         if (history.error) {
@@ -86,7 +106,7 @@ export const PolymarketSportsLivePage = () => {
             subtitle={`Fetched ${fmt(events.data?.fetchedAt)} ${events.data?.stale ? '(stale)' : ''}`}
             loading={events.loading}
             error={events.error}
-            onRefresh={events.reload}>
+            onRefresh={reloadAll}>
             <div className='sports-live-list'>
                 {!events.loading && items.length === 0 && <Empty description='No data' />}
                 {items.map(item => {
