@@ -38,7 +38,7 @@ PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
-PROD_ENV_FILE?=./.env
+PROD_ENV_FILE?=.env.prod
 REMOTE_APP_DIR?=/root/athena
 REMOTE_USER?=root
 PROD_LOG_SERVICE?=
@@ -124,6 +124,10 @@ jwt-secret:
 service-password:
 	@go run tools/service-password/main.go
 
+.PHONY: prod-reset-secrets
+prod-reset-secrets:
+	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)
+
 .PHONY: mod-download-local
 mod-download-local:
 	go mod download && go mod tidy
@@ -185,7 +189,7 @@ prod-logs-local:
 # ssh -L 8080:127.0.0.1:8080 root@47.245.181.189
 # use http://127.0.0.1:8080
 .PHONY: prod-deploy-remote
-prod-deploy-remote: prod-build-local
+prod-deploy-remote: prod-reset-secrets prod-build-local
 	PROD_IMAGE=$(PROD_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_MIGRATE_MODULE=$(PROD_MIGRATE_MODULE) bash ./hack/prod-remote-deploy.sh deploy
 
 .PHONY: prod-hot-deploy-remote

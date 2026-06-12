@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | `PROD_IMAGE` | `athena:local` | 生产部署使用的镜像名。 |
 | `PROD_COMPOSE_FILE` | `docker-compose.prod.yml` | 生产 compose 文件路径。 |
-| `PROD_ENV_FILE` | `./.env` | 生产部署读取的环境变量文件。 |
+| `PROD_ENV_FILE` | `.env.prod` | 生产部署读取的环境变量文件。 |
 | `REMOTE_APP_DIR` | `/root/athena` | 远端服务器上的部署目录。 |
 | `REMOTE_USER` | `root` | SSH 登录远端服务器使用的用户。 |
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
@@ -142,9 +142,10 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 | `make prod-start-local` | 创建本地 PostgreSQL volume、执行 migration 并启动生产 compose 服务。 | `make prod-start-local` |
 | `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
-| `make prod-deploy-remote` | 构建镜像、清空远程数据库并完成全新部署。 | `PROD_ENV_FILE=.env.prod make prod-deploy-remote` |
-| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL 数据。 | `PROD_ENV_FILE=.env.prod make prod-hot-deploy-remote` |
-| `make prod-destroy-remote` | 删除远程 Athena 运行资源和 PostgreSQL volume。 | `PROD_ENV_FILE=.env.prod make prod-destroy-remote` |
+| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis 和 JWT secret。 | `make prod-reset-secrets` |
+| `make prod-deploy-remote` | 自动轮换凭据、构建镜像、清空远程数据库并完成全新部署。 | `make prod-deploy-remote` |
+| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL 数据。 | `make prod-hot-deploy-remote` |
+| `make prod-destroy-remote` | 删除远程 Athena 运行资源和 PostgreSQL volume。 | `make prod-destroy-remote` |
 
 ### 部署前本地预演
 
@@ -170,8 +171,8 @@ openssl rand -hex 32
 推荐预演流程：
 
 ```bash
-PROD_ENV_FILE=.env.prod make prod-build-local
-PROD_ENV_FILE=.env.prod make prod-start-local
+make prod-build-local
+make prod-start-local
 ```
 
 `prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为 `true`，本地生产预演仍会启用服务端认证。
@@ -181,7 +182,7 @@ PROD_ENV_FILE=.env.prod make prod-start-local
 查看日志和访问本地服务：
 
 ```bash
-PROD_ENV_FILE=.env.prod make prod-logs-local
+make prod-logs-local
 ```
 
 ```text
@@ -191,7 +192,7 @@ http://127.0.0.1:8080
 停止本地预演：
 
 ```bash
-PROD_ENV_FILE=.env.prod make prod-stop-local
+make prod-stop-local
 ```
 
 `prod-stop-local` 会删除 compose 容器、孤立容器、网络和 `PROD_POSTGRES_VOLUME` 指定的 PostgreSQL volume，但保留本地构建的 `PROD_IMAGE` 镜像。下一次启动会重新创建空数据库并执行 migration。
@@ -254,27 +255,33 @@ docker compose version
 一键部署：
 
 ```bash
-PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-deploy-remote
+make prod-deploy-remote
 ```
 
-该命令会先构建本地镜像。构建成功后，依次停止远端旧服务、删除并重建 `$(PROD_POSTGRES_VOLUME)`、上传 `docker-compose.prod.yml`、`.env` 和 PostgreSQL init 脚本、传输镜像、启动 PostgreSQL、执行 `athena up --module $(PROD_MIGRATE_MODULE)`，最后启动全部服务并输出容器状态。
+该命令会先更新 `$(PROD_ENV_FILE)` 中的 `POSTGRES_PASSWORD`、`REDIS_PASSWORD` 和 `ATHENA_JWT_SECRET`，再构建本地镜像。构建成功后，依次停止远端旧服务、删除并重建 `$(PROD_POSTGRES_VOLUME)`、上传 `docker-compose.prod.yml`、`.env` 和 PostgreSQL init 脚本、传输镜像、启动 PostgreSQL、执行 `athena up --module $(PROD_MIGRATE_MODULE)`，最后启动全部服务并输出容器状态。
 
-**每次远程部署都会永久删除已有 PostgreSQL 数据，不会自动备份。** migration 失败时不会启动业务服务，PostgreSQL 容器会保留以便排查。
+**每次远程部署都会永久删除已有 PostgreSQL 数据，并轮换 PostgreSQL、Redis 和 JWT secret，不会自动备份。** JWT secret 轮换后旧登录 Token 会失效。migration 失败时不会启动业务服务，PostgreSQL 容器会保留以便排查。
+
+如需只手动更新生产凭据文件而不部署：
+
+```bash
+make prod-reset-secrets
+```
 
 后端代码小幅修改时，可以保留现有数据库并热部署：
 
 ```bash
-PROD_ENV_FILE=.env.prod PROD_IMAGE=athena:local make prod-hot-deploy-remote
+make prod-hot-deploy-remote
 ```
 
 该命令会构建并传输新镜像，覆盖远端 `docker-compose.prod.yml` 和 `.env`，在现有 PostgreSQL 数据上执行 migration，然后强制重建全部 Athena 后端服务并最后重建 `athena-server`。PostgreSQL、Redis 和 PostgreSQL volume 不会停止或删除；如果指定的 volume 不存在，命令会直接终止，避免意外创建空数据库。migration 失败时，当前业务容器保持运行且不会进入重建阶段。
 
-热部署会短暂重启 Athena 服务，不保证零停机。它适用于代码更新和兼容性数据库 migration，不用于修改现有 PostgreSQL 或 Redis 凭据。
+热部署不会自动轮换 PostgreSQL、Redis 或 JWT secret。它会短暂重启 Athena 服务，不保证零停机；适用于代码更新和兼容性数据库 migration，不用于修改现有 PostgreSQL 或 Redis 凭据。
 
 一键删除：
 
 ```bash
-PROD_ENV_FILE=.env.prod make prod-destroy-remote
+make prod-destroy-remote
 ```
 
 该命令会删除远端 Compose 容器、孤立容器、网络和 `$(PROD_POSTGRES_VOLUME)`。命令可重复执行，不需要额外确认参数；远端 `$(REMOTE_APP_DIR)` 内的部署文件和已加载的 `$(PROD_IMAGE)` 镜像会保留。

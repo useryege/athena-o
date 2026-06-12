@@ -1,0 +1,136 @@
+package main
+
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"flag"
+	"fmt"
+	"math/big"
+	"os"
+	"strings"
+)
+
+const servicePasswordAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+var targetKeys = []string{
+	"POSTGRES_PASSWORD",
+	"REDIS_PASSWORD",
+	"ATHENA_JWT_SECRET",
+}
+
+func main() {
+	envFile := flag.String("env-file", ".env.prod", "production env file to update")
+	flag.Parse()
+
+	replacements, err := newSecretValues()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error generating secrets: %v\n", err)
+		os.Exit(1)
+	}
+
+	data, err := os.ReadFile(*envFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error reading %s: %v\n", *envFile, err)
+		os.Exit(1)
+	}
+
+	updated := updateEnv(string(data), replacements)
+	if err := os.WriteFile(*envFile, []byte(updated), 0o600); err != nil {
+		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", *envFile, err)
+		os.Exit(1)
+	}
+
+	fmt.Fprintf(os.Stderr, "updated %s: %s\n", *envFile, strings.Join(targetKeys, ", "))
+}
+
+func newSecretValues() (map[string]string, error) {
+	postgresPassword, err := randomString(32, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
+	redisPassword, err := randomString(32, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
+	jwtSecretBytes := make([]byte, 32)
+	if _, err := rand.Read(jwtSecretBytes); err != nil {
+		return nil, err
+	}
+
+	return map[string]string{
+		"POSTGRES_PASSWORD": postgresPassword,
+		"REDIS_PASSWORD":    redisPassword,
+		"ATHENA_JWT_SECRET": base64.StdEncoding.EncodeToString(jwtSecretBytes),
+	}, nil
+}
+
+func randomString(length int, alphabet string) (string, error) {
+	out := make([]byte, length)
+	max := big.NewInt(int64(len(alphabet)))
+	for i := range out {
+		n, err := rand.Int(rand.Reader, max)
+		if err != nil {
+			return "", err
+		}
+		out[i] = alphabet[n.Int64()]
+	}
+	return string(out), nil
+}
+
+func updateEnv(input string, replacements map[string]string) string {
+	hadTrailingNewline := strings.HasSuffix(input, "\n")
+	lines := []string{}
+	if input != "" {
+		lines = strings.Split(strings.TrimSuffix(input, "\n"), "\n")
+	}
+	seen := map[string]bool{}
+
+	for i, line := range lines {
+		key, ok := envLineKey(line)
+		if !ok {
+			continue
+		}
+		value, shouldReplace := replacements[key]
+		if !shouldReplace {
+			continue
+		}
+		lines[i] = fmt.Sprintf("%s='%s'", key, value)
+		seen[key] = true
+	}
+
+	for _, key := range targetKeys {
+		if seen[key] {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("%s='%s'", key, replacements[key]))
+	}
+
+	output := strings.Join(lines, "\n")
+	if hadTrailingNewline || output != "" {
+		output += "\n"
+	}
+	return output
+}
+
+func envLineKey(line string) (string, bool) {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "export ") {
+		return "", false
+	}
+
+	key, _, ok := strings.Cut(trimmed, "=")
+	if !ok {
+		return "", false
+	}
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return "", false
+	}
+	for _, r := range key {
+		if (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' {
+			continue
+		}
+		return "", false
+	}
+	return key, true
+}
