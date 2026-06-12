@@ -7,6 +7,7 @@
   - [No Historical Compatibility](#no-historical-compatibility)
   - [No Tests](#no-tests)
   - [Chinese Plans](#chinese-plans)
+  - [UI Layout Review](#ui-layout-review)
 
 ## Rules
 
@@ -31,3 +32,10 @@ Do not plan, propose, add, or run tests (unit tests, integration tests, end-to-e
 
 When outlining or listing a plan (implementation steps, task breakdown, approach summary, etc.), write the plan in Chinese (简体中文).
 
+### UI Layout Review
+
+When a task involves UI design, page layout, interaction structure, visual hierarchy, or other frontend interface changes, generate a Markdown layout diagram first and submit it to the user for review before implementation.
+
+- The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
+- Begin code implementation only after the user confirms the layout diagram.
+- Minor style tweaks, copy changes, or non-visual logic changes do not require a layout diagram unless the user explicitly asks for one.
