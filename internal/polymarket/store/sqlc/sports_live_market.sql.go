@@ -661,7 +661,13 @@ SELECT
   COALESCE(state.alert_band, 'none')::text AS alert_band,
   event.slug AS event_slug,
   COALESCE(NULLIF(event.title, ''), event.slug, latest.event_key)::text AS event_title,
-  COALESCE(NULLIF(market.question, ''), NULLIF(market.title, ''), market.market_key)::text AS market_title
+  COALESCE(NULLIF(market.question, ''), NULLIF(market.title, ''), market.market_key)::text AS market_title,
+  event.score,
+  event.period,
+  event.elapsed,
+  event.game_status,
+  event.volume,
+  event.liquidity
 FROM latest_points AS latest
 JOIN polymarket_sports_live_market AS market ON market.market_key = latest.market_key
 JOIN polymarket_sports_live_event AS event ON event.event_key = latest.event_key
@@ -681,6 +687,12 @@ type ListSportsLiveLatestPriceAlertTokensRow struct {
 	EventSlug   string
 	EventTitle  string
 	MarketTitle string
+	Score       string
+	Period      string
+	Elapsed     string
+	GameStatus  string
+	Volume      float64
+	Liquidity   float64
 }
 
 func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]ListSportsLiveLatestPriceAlertTokensRow, error) {
@@ -704,6 +716,12 @@ func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]L
 			&i.EventSlug,
 			&i.EventTitle,
 			&i.MarketTitle,
+			&i.Score,
+			&i.Period,
+			&i.Elapsed,
+			&i.GameStatus,
+			&i.Volume,
+			&i.Liquidity,
 		); err != nil {
 			return nil, err
 		}

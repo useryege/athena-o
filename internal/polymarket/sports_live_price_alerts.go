@@ -162,23 +162,48 @@ func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePric
 	eventTitle := firstNonEmpty(token.EventTitle, token.EventKey)
 	marketTitle := firstNonEmpty(token.MarketTitle, token.MarketKey)
 	outcome := firstNonEmpty(token.Outcome, "Outcome")
-	body := strings.Join([]string{
+	bodyLines := []string{
 		fmt.Sprintf("Event: %s", eventTitle),
 		fmt.Sprintf("Market: %s", marketTitle),
 		fmt.Sprintf("Outcome: %s", outcome),
 		fmt.Sprintf("Latest sampled price: %.2f%%", token.Price*100),
 		fmt.Sprintf("Alert band: %s", alertBand),
 		fmt.Sprintf("Sampled at: %s", token.PriceTs.UTC().Format(time.RFC3339)),
+	}
+	if score := strings.TrimSpace(token.Score); score != "" {
+		bodyLines = append(bodyLines, fmt.Sprintf("Score: %s", score))
+	}
+	if gameStatus := sportsLivePriceAlertGameStatus(token); gameStatus != "" {
+		bodyLines = append(bodyLines, fmt.Sprintf("Game status: %s", gameStatus))
+	}
+	bodyLines = append(bodyLines,
+		fmt.Sprintf("Volume: %.2f", token.Volume),
+		fmt.Sprintf("Liquidity: %.2f", token.Liquidity),
 		fmt.Sprintf("Condition ID: %s", firstNonEmpty(token.ConditionID, "-")),
 		fmt.Sprintf("Token ID: %s", token.TokenID),
-	}, "\n")
+	)
 
 	return &notificationapiclient.SendNotificationRequest{
 		Source:     source,
 		Severity:   severity,
 		Title:      fmt.Sprintf("%s: %s %.2f%%", titlePrefix, outcome, token.Price*100),
-		Body:       body,
+		Body:       strings.Join(bodyLines, "\n"),
 		Link:       polymarketEventLink(token.EventSlug),
 		TopicLabel: topic,
 	}
+}
+
+func sportsLivePriceAlertGameStatus(token polymarketstore.SportsLivePriceAlertToken) string {
+	parts := []string{
+		strings.TrimSpace(token.Period),
+		strings.TrimSpace(token.Elapsed),
+		strings.TrimSpace(token.GameStatus),
+	}
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return strings.Join(out, " · ")
 }

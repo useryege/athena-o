@@ -219,6 +219,12 @@ func (s *SQLStore) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]
 			EventSlug:   row.EventSlug,
 			EventTitle:  row.EventTitle,
 			MarketTitle: row.MarketTitle,
+			Score:       row.Score,
+			Period:      row.Period,
+			Elapsed:     row.Elapsed,
+			GameStatus:  row.GameStatus,
+			Volume:      row.Volume,
+			Liquidity:   row.Liquidity,
 		})
 	}
 	return items, nil
