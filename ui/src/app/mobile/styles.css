@@ -586,7 +586,7 @@ body[data-theme='dark'] .app-page__header {
 }
 
 .sports-live-chart__grid line {
-    stroke: color-mix(in srgb, var(--athena-muted) 28%, transparent);
+    stroke: color-mix(in srgb, var(--athena-muted) 20%, transparent);
     stroke-dasharray: 2 6;
     stroke-width: 1;
 }

@@ -213,12 +213,16 @@ const MoneylineTrendChart = (props: {
 
     const width = 720;
     const height = 220;
-    const padding = {top: 18, right: 190, bottom: 28, left: 16};
+    const padding = {top: 18, right: 16, bottom: 28, left: 16};
+    const axisLabelX = width - 8;
+    const axisGuideEnd = width - 30;
+    const endpointLabelX = width - 168;
+    const plotRight = endpointLabelX - 18;
     const yTicks = [1, 0.75, 0.5, 0.25, 0];
     const minTs = Math.min(...timestamps);
     const maxTs = Math.max(...timestamps);
     const xRange = Math.max(maxTs - minTs, 1);
-    const chartWidth = width - padding.left - padding.right;
+    const chartWidth = plotRight - padding.left;
     const chartHeight = height - padding.top - padding.bottom;
     const xFor = (timestamp: number) => padding.left + ((timestamp - minTs) / xRange) * chartWidth;
     const yFor = (price: number) => padding.top + (1 - Math.min(1, Math.max(0, price))) * chartHeight;
@@ -249,8 +253,8 @@ const MoneylineTrendChart = (props: {
                     const y = yFor(tick);
                     return (
                         <g className='sports-live-chart__grid' key={tick.toFixed(4)}>
-                            <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} />
-                            <text x={width - 8} y={y + 4}>
+                            <line x1={padding.left} x2={axisGuideEnd} y1={y} y2={y} />
+                            <text x={axisLabelX} y={y + 4}>
                                 {chartPercent(tick)}
                             </text>
                         </g>
@@ -260,10 +264,10 @@ const MoneylineTrendChart = (props: {
                     <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={item.option.outcome}>
                         <path className='sports-live-chart__line' d={pathFor(item.points)} />
                         <circle className='sports-live-chart__dot' cx={xFor(item.lastPoint.timestamp)} cy={yFor(item.lastPoint.price)} r='5' />
-                        <text className='sports-live-chart__endpoint-name' x={xFor(item.lastPoint.timestamp) + 18} y={item.labelY - 4}>
+                        <text className='sports-live-chart__endpoint-name' x={endpointLabelX} y={item.labelY - 4}>
                             {chartOutcomeLabel(item.option.outcome)}
                         </text>
-                        <text className='sports-live-chart__endpoint-value' x={xFor(item.lastPoint.timestamp) + 18} y={item.labelY + 32}>
+                        <text className='sports-live-chart__endpoint-value' x={endpointLabelX} y={item.labelY + 32}>
                             {chartPercent(item.latest)}
                         </text>
                     </g>
