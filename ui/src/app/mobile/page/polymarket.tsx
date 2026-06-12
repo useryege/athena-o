@@ -163,6 +163,8 @@ const chartPercent = (value?: number) => {
     return `${Math.round(value * 100)}%`;
 };
 
+const chartOutcomeLabel = (value: string) => (value.length > 16 ? `${value.slice(0, 15)}...` : value);
+
 const latestPrice = (series?: PolymarketSportsLivePriceHistorySeriesItem) => {
     const prices = series?.prices || [];
     for (let index = prices.length - 1; index >= 0; index -= 1) {
@@ -199,10 +201,9 @@ const MoneylineTrendChart = (props: {
         })
         .filter(item => item.points.length > 1);
 
-    const prices = series.flatMap(item => item.points.map(point => point.price));
     const timestamps = series.flatMap(item => item.points.map(point => point.timestamp));
 
-    if (series.length === 0 || prices.length === 0 || timestamps.length === 0) {
+    if (series.length === 0 || timestamps.length === 0) {
         return (
             <div className='sports-live-chart sports-live-chart--empty'>
                 <Typography.Text type='secondary'>No history</Typography.Text>
@@ -210,57 +211,64 @@ const MoneylineTrendChart = (props: {
         );
     }
 
-    const width = 620;
+    const width = 720;
     const height = 220;
-    const padding = {top: 18, right: 42, bottom: 30, left: 38};
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const pricePadding = Math.max((maxPrice - minPrice) * 0.18, 0.04);
-    const yMin = Math.max(0, minPrice - pricePadding);
-    const yMax = Math.min(1, maxPrice + pricePadding);
-    const yRange = Math.max(yMax - yMin, 0.01);
+    const padding = {top: 18, right: 190, bottom: 28, left: 16};
+    const yTicks = [1, 0.75, 0.5, 0.25, 0];
     const minTs = Math.min(...timestamps);
     const maxTs = Math.max(...timestamps);
     const xRange = Math.max(maxTs - minTs, 1);
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
-    const yTicks = [0.7, 0.6, 0.5, 0.4, 0.3].filter(value => value >= yMin && value <= yMax);
-    const visibleTicks = yTicks.length > 1 ? yTicks : [yMax, (yMax + yMin) / 2, yMin];
     const xFor = (timestamp: number) => padding.left + ((timestamp - minTs) / xRange) * chartWidth;
-    const yFor = (price: number) => padding.top + (1 - (price - yMin) / yRange) * chartHeight;
+    const yFor = (price: number) => padding.top + (1 - Math.min(1, Math.max(0, price))) * chartHeight;
+    const labelYFor = (price: number) => Math.min(height - padding.bottom - 30, Math.max(padding.top + 16, yFor(price)));
     const pathFor = (points: Array<{price: number; timestamp: number}>) =>
         points
             .map((point, index) => `${index === 0 ? 'M' : 'L'} ${xFor(point.timestamp).toFixed(2)} ${yFor(point.price).toFixed(2)}`)
             .join(' ');
+    const endpointItems = series.map(item => {
+        const lastPoint = item.points[item.points.length - 1];
+        const latest = item.latest ?? lastPoint.price;
+        return {
+            ...item,
+            lastPoint,
+            latest,
+            labelY: labelYFor(latest)
+        };
+    });
+    if (endpointItems.length === 2 && Math.abs(endpointItems[0].labelY - endpointItems[1].labelY) < 48) {
+        endpointItems[0].labelY = Math.max(padding.top + 16, endpointItems[0].labelY - 24);
+        endpointItems[1].labelY = Math.min(height - padding.bottom - 30, endpointItems[1].labelY + 24);
+    }
 
     return (
         <div className='sports-live-chart'>
             <svg className='sports-live-chart__svg' viewBox={`0 0 ${width} ${height}`} role='img' aria-label='Moneyline price history'>
-                {visibleTicks.map(tick => {
+                {yTicks.map(tick => {
                     const y = yFor(tick);
                     return (
                         <g className='sports-live-chart__grid' key={tick.toFixed(4)}>
                             <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} />
-                            <text x={width - 22} y={y + 4}>
+                            <text x={width - 8} y={y + 4}>
                                 {chartPercent(tick)}
                             </text>
                         </g>
                     );
                 })}
-                {series.map(item => (
-                    <path className={`sports-live-chart__line sports-live-chart__line--${item.tone}`} d={pathFor(item.points)} key={item.option.outcome} />
+                {endpointItems.map(item => (
+                    <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={item.option.outcome}>
+                        <path className='sports-live-chart__line' d={pathFor(item.points)} />
+                        <circle className='sports-live-chart__dot' cx={xFor(item.lastPoint.timestamp)} cy={yFor(item.lastPoint.price)} r='5' />
+                        <text className='sports-live-chart__endpoint-name' x={xFor(item.lastPoint.timestamp) + 18} y={item.labelY - 4}>
+                            {chartOutcomeLabel(item.option.outcome)}
+                        </text>
+                        <text className='sports-live-chart__endpoint-value' x={xFor(item.lastPoint.timestamp) + 18} y={item.labelY + 32}>
+                            {chartPercent(item.latest)}
+                        </text>
+                    </g>
                 ))}
             </svg>
-            <div className='sports-live-chart__labels'>
-                {series.map(item => (
-                    <div className={`sports-live-chart__label sports-live-chart__label--${item.tone}`} key={`${item.option.outcome}-label`}>
-                        <Typography.Text className='sports-live-chart__label-name'>{item.option.outcome}</Typography.Text>
-                        <Typography.Text className='sports-live-chart__label-value' strong={true}>
-                            {chartPercent(item.latest)}
-                        </Typography.Text>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };
