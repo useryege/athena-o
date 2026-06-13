@@ -93,6 +93,18 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 
 		state := sportsLivePriceAlertState(token, nextBand, time.Time{})
 		now := s.now().UTC()
+		if shouldSuppressSportsLivePriceAlert97Repeat(nextBand, token.LastNotifiedAt, now, config.DowngradeCooldown) {
+			state.LastNotifiedAt = token.LastNotifiedAt
+			if err := s.store.UpsertSportsLivePriceAlertState(ctx, state); err != nil {
+				if ctx.Err() == nil {
+					log.WithError(err).
+						WithField("token_id", token.TokenID).
+						WithField("condition_id", token.ConditionID).
+						Warn("failed to update polymarket sports live price alert state")
+				}
+			}
+			continue
+		}
 		if isSportsLivePriceAlertDowngrade(currentBand, nextBand) && !token.LastNotifiedAt.IsZero() && now.Sub(token.LastNotifiedAt) < config.DowngradeCooldown {
 			state.AlertBand = currentBand
 			state.LastNotifiedAt = token.LastNotifiedAt
@@ -129,6 +141,12 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func shouldSuppressSportsLivePriceAlert97Repeat(nextBand string, lastNotifiedAt, now time.Time, cooldown time.Duration) bool {
+	return nextBand == sportsLivePriceAlertBandD &&
+		!lastNotifiedAt.IsZero() &&
+		now.Sub(lastNotifiedAt) < cooldown
 }
 
 func isSportsLivePriceAlertDowngrade(currentBand, nextBand string) bool {
