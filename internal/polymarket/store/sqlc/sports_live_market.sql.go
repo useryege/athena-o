@@ -659,8 +659,6 @@ SELECT
   latest.outcome,
   latest.price_ts,
   latest.price,
-  COALESCE(state.alert_band, 'none')::text AS alert_band,
-  state.last_notified_at,
   event.slug AS event_slug,
   COALESCE(NULLIF(event.title, ''), event.slug, latest.event_key)::text AS event_title,
   COALESCE(NULLIF(market.question, ''), NULLIF(market.title, ''), market.market_key)::text AS market_title,
@@ -673,29 +671,26 @@ SELECT
 FROM latest_points AS latest
 JOIN polymarket_sports_live_market AS market ON market.market_key = latest.market_key
 JOIN polymarket_sports_live_event AS event ON event.event_key = latest.event_key
-LEFT JOIN polymarket_sports_live_price_alert_state AS state ON state.token_id = latest.token_id
 ORDER BY event.volume DESC, market.liquidity_num DESC, latest.market_key, latest.token_id
 `
 
 type ListSportsLiveLatestPriceAlertTokensRow struct {
-	TokenID        string
-	MarketKey      string
-	EventKey       string
-	ConditionID    string
-	Outcome        string
-	PriceTs        pgtype.Timestamptz
-	Price          float64
-	AlertBand      string
-	LastNotifiedAt pgtype.Timestamptz
-	EventSlug      string
-	EventTitle     string
-	MarketTitle    string
-	Score          string
-	Period         string
-	Elapsed        string
-	GameStatus     string
-	Volume         float64
-	Liquidity      float64
+	TokenID     string
+	MarketKey   string
+	EventKey    string
+	ConditionID string
+	Outcome     string
+	PriceTs     pgtype.Timestamptz
+	Price       float64
+	EventSlug   string
+	EventTitle  string
+	MarketTitle string
+	Score       string
+	Period      string
+	Elapsed     string
+	GameStatus  string
+	Volume      float64
+	Liquidity   float64
 }
 
 func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]ListSportsLiveLatestPriceAlertTokensRow, error) {
@@ -715,8 +710,6 @@ func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]L
 			&i.Outcome,
 			&i.PriceTs,
 			&i.Price,
-			&i.AlertBand,
-			&i.LastNotifiedAt,
 			&i.EventSlug,
 			&i.EventTitle,
 			&i.MarketTitle,
@@ -981,67 +974,5 @@ type UpsertPolymarketSyncStateParams struct {
 
 func (q *Queries) UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error {
 	_, err := q.db.Exec(ctx, upsertPolymarketSyncState, arg.SyncName, arg.LastSuccessAt)
-	return err
-}
-
-const upsertSportsLivePriceAlertState = `-- name: UpsertSportsLivePriceAlertState :exec
-INSERT INTO polymarket_sports_live_price_alert_state (
-  token_id,
-  market_key,
-  event_key,
-  condition_id,
-  outcome,
-  alert_band,
-  last_price,
-  last_price_ts,
-  last_notified_at
-)
-VALUES (
-  $1,
-  $2,
-  $3,
-  $4,
-  $5,
-  $6,
-  $7,
-  $8,
-  $9
-)
-ON CONFLICT (token_id) DO UPDATE
-SET market_key = EXCLUDED.market_key,
-  event_key = EXCLUDED.event_key,
-  condition_id = EXCLUDED.condition_id,
-  outcome = EXCLUDED.outcome,
-  alert_band = EXCLUDED.alert_band,
-  last_price = EXCLUDED.last_price,
-  last_price_ts = EXCLUDED.last_price_ts,
-  last_notified_at = EXCLUDED.last_notified_at,
-  updated_at = now()
-`
-
-type UpsertSportsLivePriceAlertStateParams struct {
-	TokenID        string
-	MarketKey      string
-	EventKey       string
-	ConditionID    string
-	Outcome        string
-	AlertBand      string
-	LastPrice      float64
-	LastPriceTs    pgtype.Timestamptz
-	LastNotifiedAt pgtype.Timestamptz
-}
-
-func (q *Queries) UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error {
-	_, err := q.db.Exec(ctx, upsertSportsLivePriceAlertState,
-		arg.TokenID,
-		arg.MarketKey,
-		arg.EventKey,
-		arg.ConditionID,
-		arg.Outcome,
-		arg.AlertBand,
-		arg.LastPrice,
-		arg.LastPriceTs,
-		arg.LastNotifiedAt,
-	)
 	return err
 }

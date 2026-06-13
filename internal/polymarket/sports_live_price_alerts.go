@@ -27,20 +27,17 @@ const (
 	sportsLivePriceAlertBandC    = "c"
 	sportsLivePriceAlertBandD    = "d"
 
-	defaultSportsLivePriceAlertSendTimeout       = 10 * time.Second
-	defaultSportsLivePriceAlertDowngradeCooldown = 3 * time.Minute
+	defaultSportsLivePriceAlertSendTimeout = 10 * time.Second
 )
 
 type SportsLivePriceAlertsConfig struct {
-	Enabled           bool
-	SendTimeout       time.Duration
-	DowngradeCooldown time.Duration
+	Enabled     bool
+	SendTimeout time.Duration
 }
 
 func defaultSportsLivePriceAlertsConfig() SportsLivePriceAlertsConfig {
 	return SportsLivePriceAlertsConfig{
-		SendTimeout:       defaultSportsLivePriceAlertSendTimeout,
-		DowngradeCooldown: defaultSportsLivePriceAlertDowngradeCooldown,
+		SendTimeout: defaultSportsLivePriceAlertSendTimeout,
 	}
 }
 
@@ -48,9 +45,6 @@ func normalizeSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) Sp
 	defaults := defaultSportsLivePriceAlertsConfig()
 	if config.SendTimeout <= 0 {
 		config.SendTimeout = defaults.SendTimeout
-	}
-	if config.DowngradeCooldown <= 0 {
-		config.DowngradeCooldown = defaults.DowngradeCooldown
 	}
 	return config
 }
@@ -82,89 +76,19 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		currentBand := strings.TrimSpace(token.AlertBand)
-		if currentBand == "" {
-			currentBand = sportsLivePriceAlertBandNone
-		}
-		nextBand := classifySportsLivePriceAlertBand(token.Price)
-		if nextBand == currentBand {
+		band := classifySportsLivePriceAlertBand(token.Price)
+		if band == sportsLivePriceAlertBandNone {
 			continue
 		}
 
-		state := sportsLivePriceAlertState(token, nextBand, time.Time{})
-		now := s.now().UTC()
-		if shouldSuppressSportsLivePriceAlert97Repeat(nextBand, token.LastNotifiedAt, now, config.DowngradeCooldown) {
-			state.LastNotifiedAt = token.LastNotifiedAt
-			if err := s.store.UpsertSportsLivePriceAlertState(ctx, state); err != nil {
-				if ctx.Err() == nil {
-					log.WithError(err).
-						WithField("token_id", token.TokenID).
-						WithField("condition_id", token.ConditionID).
-						Warn("failed to update polymarket sports live price alert state")
-				}
-			}
-			continue
-		}
-		if isSportsLivePriceAlertDowngrade(currentBand, nextBand) && !token.LastNotifiedAt.IsZero() && now.Sub(token.LastNotifiedAt) < config.DowngradeCooldown {
-			state.AlertBand = currentBand
-			state.LastNotifiedAt = token.LastNotifiedAt
-			if err := s.store.UpsertSportsLivePriceAlertState(ctx, state); err != nil {
-				if ctx.Err() == nil {
-					log.WithError(err).
-						WithField("token_id", token.TokenID).
-						WithField("condition_id", token.ConditionID).
-						Warn("failed to update polymarket sports live price alert state")
-				}
-			}
-			continue
-		}
-		if nextBand != sportsLivePriceAlertBandNone {
-			if err := s.sendSportsLivePriceAlert(ctx, client, config, token, nextBand); err != nil {
-				if ctx.Err() == nil {
-					log.WithError(err).
-						WithField("token_id", token.TokenID).
-						WithField("condition_id", token.ConditionID).
-						Warn("failed to send polymarket sports live price alert")
-				}
-				continue
-			}
-			state.LastNotifiedAt = now
-		} else {
-			state.LastNotifiedAt = token.LastNotifiedAt
-		}
-		if err := s.store.UpsertSportsLivePriceAlertState(ctx, state); err != nil {
+		if err := s.sendSportsLivePriceAlert(ctx, client, config, token, band); err != nil {
 			if ctx.Err() == nil {
 				log.WithError(err).
 					WithField("token_id", token.TokenID).
 					WithField("condition_id", token.ConditionID).
-					Warn("failed to update polymarket sports live price alert state")
+					Warn("failed to send polymarket sports live price alert")
 			}
 		}
-	}
-}
-
-func shouldSuppressSportsLivePriceAlert97Repeat(nextBand string, lastNotifiedAt, now time.Time, cooldown time.Duration) bool {
-	return nextBand == sportsLivePriceAlertBandD &&
-		!lastNotifiedAt.IsZero() &&
-		now.Sub(lastNotifiedAt) < cooldown
-}
-
-func isSportsLivePriceAlertDowngrade(currentBand, nextBand string) bool {
-	currentRank := sportsLivePriceAlertBandRank(currentBand)
-	nextRank := sportsLivePriceAlertBandRank(nextBand)
-	return currentRank > 0 && nextRank > 0 && nextRank < currentRank
-}
-
-func sportsLivePriceAlertBandRank(band string) int {
-	switch band {
-	case sportsLivePriceAlertBandB:
-		return 1
-	case sportsLivePriceAlertBandC:
-		return 2
-	case sportsLivePriceAlertBandD:
-		return 3
-	default:
-		return 0
 	}
 }
 
@@ -177,20 +101,6 @@ func (s *Service) sendSportsLivePriceAlert(ctx context.Context, client notificat
 	defer cancel()
 	_, err := client.SendNotification(sendCtx, request)
 	return err
-}
-
-func sportsLivePriceAlertState(token polymarketstore.SportsLivePriceAlertToken, band string, notifiedAt time.Time) polymarketstore.SportsLivePriceAlertState {
-	return polymarketstore.SportsLivePriceAlertState{
-		TokenID:        strings.TrimSpace(token.TokenID),
-		MarketKey:      strings.TrimSpace(token.MarketKey),
-		EventKey:       strings.TrimSpace(token.EventKey),
-		ConditionID:    strings.TrimSpace(token.ConditionID),
-		Outcome:        strings.TrimSpace(token.Outcome),
-		AlertBand:      band,
-		LastPrice:      token.Price,
-		LastPriceTs:    token.PriceTs,
-		LastNotifiedAt: notifiedAt,
-	}
 }
 
 func classifySportsLivePriceAlertBand(price float64) string {

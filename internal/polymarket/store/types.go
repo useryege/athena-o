@@ -152,36 +152,22 @@ type SportsLivePricePoint struct {
 }
 
 type SportsLivePriceAlertToken struct {
-	TokenID        string
-	MarketKey      string
-	EventKey       string
-	ConditionID    string
-	Outcome        string
-	PriceTs        time.Time
-	Price          float64
-	AlertBand      string
-	LastNotifiedAt time.Time
-	EventSlug      string
-	EventTitle     string
-	MarketTitle    string
-	Score          string
-	Period         string
-	Elapsed        string
-	GameStatus     string
-	Volume         float64
-	Liquidity      float64
-}
-
-type SportsLivePriceAlertState struct {
-	TokenID        string
-	MarketKey      string
-	EventKey       string
-	ConditionID    string
-	Outcome        string
-	AlertBand      string
-	LastPrice      float64
-	LastPriceTs    time.Time
-	LastNotifiedAt time.Time
+	TokenID     string
+	MarketKey   string
+	EventKey    string
+	ConditionID string
+	Outcome     string
+	PriceTs     time.Time
+	Price       float64
+	EventSlug   string
+	EventTitle  string
+	MarketTitle string
+	Score       string
+	Period      string
+	Elapsed     string
+	GameStatus  string
+	Volume      float64
+	Liquidity   float64
 }
 
 type SportsLivePriceHistorySeries struct {

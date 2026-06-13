@@ -25,7 +25,6 @@ type Querier interface {
 	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
 	Ping(ctx context.Context) (int32, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
-	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error
 }
 
 var _ Querier = (*Queries)(nil)
