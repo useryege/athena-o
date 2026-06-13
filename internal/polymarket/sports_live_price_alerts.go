@@ -16,13 +16,16 @@ import (
 const (
 	sportsLivePriceAlert90Topic = "[POLY] Sports Live 90/10"
 	sportsLivePriceAlert95Topic = "[POLY] Sports Live 95/5"
+	sportsLivePriceAlert97Topic = "[POLY] Sports Live 97/3"
 
 	sportsLivePriceAlert90Source = "polymarket.sports-live-price-alert-90-10"
 	sportsLivePriceAlert95Source = "polymarket.sports-live-price-alert-95-5"
+	sportsLivePriceAlert97Source = "polymarket.sports-live-price-alert-97-3"
 
 	sportsLivePriceAlertBandNone = "none"
 	sportsLivePriceAlertBandB    = "b"
 	sportsLivePriceAlertBandC    = "c"
+	sportsLivePriceAlertBandD    = "d"
 
 	defaultSportsLivePriceAlertSendTimeout       = 10 * time.Second
 	defaultSportsLivePriceAlertDowngradeCooldown = time.Minute
@@ -140,6 +143,8 @@ func sportsLivePriceAlertBandRank(band string) int {
 		return 1
 	case sportsLivePriceAlertBandC:
 		return 2
+	case sportsLivePriceAlertBandD:
+		return 3
 	default:
 		return 0
 	}
@@ -175,6 +180,8 @@ func classifySportsLivePriceAlertBand(price float64) string {
 		return sportsLivePriceAlertBandNone
 	}
 	switch {
+	case price < 0.03:
+		return sportsLivePriceAlertBandD
 	case price < 0.05:
 		return sportsLivePriceAlertBandC
 	case price < 0.1:
@@ -191,6 +198,12 @@ func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePric
 	alertBand := "< 0.1"
 	titlePrefix := "Polymarket sports live 90/10 price alert"
 	switch band {
+	case sportsLivePriceAlertBandD:
+		topic = sportsLivePriceAlert97Topic
+		source = sportsLivePriceAlert97Source
+		severity = notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_CRITICAL
+		alertBand = "< 0.03"
+		titlePrefix = "Polymarket sports live 97/3 price alert"
 	case sportsLivePriceAlertBandC:
 		topic = sportsLivePriceAlert95Topic
 		source = sportsLivePriceAlert95Source
