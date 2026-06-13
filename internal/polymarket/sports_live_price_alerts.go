@@ -14,16 +14,13 @@ import (
 )
 
 const (
-	sportsLivePriceAlert85Topic = "[POLY] Sports Live 85/15"
 	sportsLivePriceAlert90Topic = "[POLY] Sports Live 90/10"
 	sportsLivePriceAlert95Topic = "[POLY] Sports Live 95/5"
 
-	sportsLivePriceAlert85Source = "polymarket.sports-live-price-alert-85-15"
 	sportsLivePriceAlert90Source = "polymarket.sports-live-price-alert-90-10"
 	sportsLivePriceAlert95Source = "polymarket.sports-live-price-alert-95-5"
 
 	sportsLivePriceAlertBandNone = "none"
-	sportsLivePriceAlertBandA    = "a"
 	sportsLivePriceAlertBandB    = "b"
 	sportsLivePriceAlertBandC    = "c"
 
@@ -93,18 +90,6 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 
 		state := sportsLivePriceAlertState(token, nextBand, time.Time{})
 		now := s.now().UTC()
-		if shouldSuppressSportsLivePriceAlertEntry(currentBand, nextBand, token.LastNotifiedAt, now, config.DowngradeCooldown) {
-			state.LastNotifiedAt = token.LastNotifiedAt
-			if err := s.store.UpsertSportsLivePriceAlertState(ctx, state); err != nil {
-				if ctx.Err() == nil {
-					log.WithError(err).
-						WithField("token_id", token.TokenID).
-						WithField("condition_id", token.ConditionID).
-						Warn("failed to update polymarket sports live price alert state")
-				}
-			}
-			continue
-		}
 		if isSportsLivePriceAlertDowngrade(currentBand, nextBand) && !token.LastNotifiedAt.IsZero() && now.Sub(token.LastNotifiedAt) < config.DowngradeCooldown {
 			state.AlertBand = currentBand
 			state.LastNotifiedAt = token.LastNotifiedAt
@@ -143,13 +128,6 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 	}
 }
 
-func shouldSuppressSportsLivePriceAlertEntry(currentBand, nextBand string, lastNotifiedAt, now time.Time, cooldown time.Duration) bool {
-	return currentBand == sportsLivePriceAlertBandNone &&
-		nextBand == sportsLivePriceAlertBandA &&
-		!lastNotifiedAt.IsZero() &&
-		now.Sub(lastNotifiedAt) < cooldown
-}
-
 func isSportsLivePriceAlertDowngrade(currentBand, nextBand string) bool {
 	currentRank := sportsLivePriceAlertBandRank(currentBand)
 	nextRank := sportsLivePriceAlertBandRank(nextBand)
@@ -158,12 +136,10 @@ func isSportsLivePriceAlertDowngrade(currentBand, nextBand string) bool {
 
 func sportsLivePriceAlertBandRank(band string) int {
 	switch band {
-	case sportsLivePriceAlertBandA:
-		return 1
 	case sportsLivePriceAlertBandB:
-		return 2
+		return 1
 	case sportsLivePriceAlertBandC:
-		return 3
+		return 2
 	default:
 		return 0
 	}
@@ -203,8 +179,6 @@ func classifySportsLivePriceAlertBand(price float64) string {
 		return sportsLivePriceAlertBandC
 	case price < 0.1:
 		return sportsLivePriceAlertBandB
-	case price < 0.15:
-		return sportsLivePriceAlertBandA
 	default:
 		return sportsLivePriceAlertBandNone
 	}
@@ -223,11 +197,6 @@ func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePric
 		severity = notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_CRITICAL
 		alertBand = "< 0.05"
 		titlePrefix = "Polymarket sports live 95/5 price alert"
-	case sportsLivePriceAlertBandA:
-		topic = sportsLivePriceAlert85Topic
-		source = sportsLivePriceAlert85Source
-		alertBand = "< 0.15"
-		titlePrefix = "Polymarket sports live 85/15 price alert"
 	case sportsLivePriceAlertBandB:
 		topic = sportsLivePriceAlert90Topic
 		source = sportsLivePriceAlert90Source
