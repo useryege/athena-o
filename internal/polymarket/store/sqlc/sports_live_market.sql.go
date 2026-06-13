@@ -534,6 +534,16 @@ func (q *Queries) DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastS
 	return result.RowsAffected(), nil
 }
 
+const deleteSportsLivePriceAlertState = `-- name: DeleteSportsLivePriceAlertState :exec
+DELETE FROM polymarket_sports_live_price_alert_state
+WHERE token_id = $1
+`
+
+func (q *Queries) DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error {
+	_, err := q.db.Exec(ctx, deleteSportsLivePriceAlertState, tokenID)
+	return err
+}
+
 const getPolymarketSyncState = `-- name: GetPolymarketSyncState :one
 SELECT last_success_at
 FROM polymarket_sync_state
@@ -667,30 +677,35 @@ SELECT
   event.elapsed,
   event.game_status,
   event.volume,
-  event.liquidity
+  event.liquidity,
+  COALESCE(state.alert_band, '')::text AS last_alert_band,
+  state.last_alerted_at
 FROM latest_points AS latest
 JOIN polymarket_sports_live_market AS market ON market.market_key = latest.market_key
 JOIN polymarket_sports_live_event AS event ON event.event_key = latest.event_key
+LEFT JOIN polymarket_sports_live_price_alert_state AS state ON state.token_id = latest.token_id
 ORDER BY event.volume DESC, market.liquidity_num DESC, latest.market_key, latest.token_id
 `
 
 type ListSportsLiveLatestPriceAlertTokensRow struct {
-	TokenID     string
-	MarketKey   string
-	EventKey    string
-	ConditionID string
-	Outcome     string
-	PriceTs     pgtype.Timestamptz
-	Price       float64
-	EventSlug   string
-	EventTitle  string
-	MarketTitle string
-	Score       string
-	Period      string
-	Elapsed     string
-	GameStatus  string
-	Volume      float64
-	Liquidity   float64
+	TokenID       string
+	MarketKey     string
+	EventKey      string
+	ConditionID   string
+	Outcome       string
+	PriceTs       pgtype.Timestamptz
+	Price         float64
+	EventSlug     string
+	EventTitle    string
+	MarketTitle   string
+	Score         string
+	Period        string
+	Elapsed       string
+	GameStatus    string
+	Volume        float64
+	Liquidity     float64
+	LastAlertBand string
+	LastAlertedAt pgtype.Timestamptz
 }
 
 func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]ListSportsLiveLatestPriceAlertTokensRow, error) {
@@ -719,6 +734,8 @@ func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]L
 			&i.GameStatus,
 			&i.Volume,
 			&i.Liquidity,
+			&i.LastAlertBand,
+			&i.LastAlertedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -974,5 +991,67 @@ type UpsertPolymarketSyncStateParams struct {
 
 func (q *Queries) UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error {
 	_, err := q.db.Exec(ctx, upsertPolymarketSyncState, arg.SyncName, arg.LastSuccessAt)
+	return err
+}
+
+const upsertSportsLivePriceAlertState = `-- name: UpsertSportsLivePriceAlertState :exec
+INSERT INTO polymarket_sports_live_price_alert_state (
+  token_id,
+  market_key,
+  event_key,
+  condition_id,
+  outcome,
+  alert_band,
+  last_alerted_at,
+  last_price_ts,
+  last_price
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9
+)
+ON CONFLICT (token_id) DO UPDATE
+SET market_key = EXCLUDED.market_key,
+  event_key = EXCLUDED.event_key,
+  condition_id = EXCLUDED.condition_id,
+  outcome = EXCLUDED.outcome,
+  alert_band = EXCLUDED.alert_band,
+  last_alerted_at = EXCLUDED.last_alerted_at,
+  last_price_ts = EXCLUDED.last_price_ts,
+  last_price = EXCLUDED.last_price,
+  updated_at = now()
+`
+
+type UpsertSportsLivePriceAlertStateParams struct {
+	TokenID       string
+	MarketKey     string
+	EventKey      string
+	ConditionID   string
+	Outcome       string
+	AlertBand     string
+	LastAlertedAt pgtype.Timestamptz
+	LastPriceTs   pgtype.Timestamptz
+	LastPrice     float64
+}
+
+func (q *Queries) UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error {
+	_, err := q.db.Exec(ctx, upsertSportsLivePriceAlertState,
+		arg.TokenID,
+		arg.MarketKey,
+		arg.EventKey,
+		arg.ConditionID,
+		arg.Outcome,
+		arg.AlertBand,
+		arg.LastAlertedAt,
+		arg.LastPriceTs,
+		arg.LastPrice,
+	)
 	return err
 }

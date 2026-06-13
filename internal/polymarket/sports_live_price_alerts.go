@@ -28,21 +28,27 @@ const (
 	sportsLivePriceAlertBandD    = "d"
 
 	defaultSportsLivePriceAlertSendTimeout = 10 * time.Second
+	defaultSportsLivePriceAlertCooldown    = 15 * time.Minute
 )
 
 type SportsLivePriceAlertsConfig struct {
 	Enabled     bool
+	Cooldown    time.Duration
 	SendTimeout time.Duration
 }
 
 func defaultSportsLivePriceAlertsConfig() SportsLivePriceAlertsConfig {
 	return SportsLivePriceAlertsConfig{
+		Cooldown:    defaultSportsLivePriceAlertCooldown,
 		SendTimeout: defaultSportsLivePriceAlertSendTimeout,
 	}
 }
 
 func normalizeSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) SportsLivePriceAlertsConfig {
 	defaults := defaultSportsLivePriceAlertsConfig()
+	if config.Cooldown <= 0 {
+		config.Cooldown = defaults.Cooldown
+	}
 	if config.SendTimeout <= 0 {
 		config.SendTimeout = defaults.SendTimeout
 	}
@@ -51,7 +57,7 @@ func normalizeSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) Sp
 
 func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 	config := normalizeSportsLivePriceAlertsConfig(s.sportsLivePriceAlertsConfig)
-	if !config.Enabled || s.notificationClientset == nil || s.store == nil {
+	if !config.Enabled || s.store == nil {
 		return
 	}
 	tokens, err := s.store.ListSportsLiveLatestPriceAlertTokens(ctx)
@@ -65,6 +71,32 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 		return
 	}
 
+	alertedAt := s.now().UTC()
+	candidates := make([]struct {
+		token polymarketstore.SportsLivePriceAlertToken
+		band  string
+	}, 0)
+	for _, token := range tokens {
+		if ctx.Err() != nil {
+			return
+		}
+		band := classifySportsLivePriceAlertBand(token.Price)
+		if band == sportsLivePriceAlertBandNone {
+			s.clearSportsLivePriceAlertState(ctx, token)
+			continue
+		}
+		if !shouldSendSportsLivePriceAlert(token, band, config, alertedAt) {
+			continue
+		}
+		candidates = append(candidates, struct {
+			token polymarketstore.SportsLivePriceAlertToken
+			band  string
+		}{token: token, band: band})
+	}
+	if len(candidates) == 0 || s.notificationClientset == nil {
+		return
+	}
+
 	closer, client, err := s.notificationClientset.NewNotificationServiceClient()
 	if err != nil {
 		log.WithError(err).Warn("failed to create polymarket sports live price alert notification client")
@@ -72,15 +104,12 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 	}
 	defer utilio.Close(closer)
 
-	for _, token := range tokens {
+	for _, candidate := range candidates {
+		token := candidate.token
+		band := candidate.band
 		if ctx.Err() != nil {
 			return
 		}
-		band := classifySportsLivePriceAlertBand(token.Price)
-		if band == sportsLivePriceAlertBandNone {
-			continue
-		}
-
 		if err := s.sendSportsLivePriceAlert(ctx, client, config, token, band); err != nil {
 			if ctx.Err() == nil {
 				log.WithError(err).
@@ -88,7 +117,38 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 					WithField("condition_id", token.ConditionID).
 					Warn("failed to send polymarket sports live price alert")
 			}
+			continue
 		}
+		if err := s.store.UpsertSportsLivePriceAlertState(ctx, polymarketstore.SportsLivePriceAlertState{
+			TokenID:       token.TokenID,
+			MarketKey:     token.MarketKey,
+			EventKey:      token.EventKey,
+			ConditionID:   token.ConditionID,
+			Outcome:       token.Outcome,
+			AlertBand:     band,
+			LastAlertedAt: alertedAt,
+			LastPriceTs:   token.PriceTs,
+			LastPrice:     token.Price,
+		}); err != nil {
+			if ctx.Err() == nil {
+				log.WithError(err).
+					WithField("token_id", token.TokenID).
+					WithField("condition_id", token.ConditionID).
+					Warn("failed to update polymarket sports live price alert state")
+			}
+		}
+	}
+}
+
+func (s *Service) clearSportsLivePriceAlertState(ctx context.Context, token polymarketstore.SportsLivePriceAlertToken) {
+	if token.LastAlertedAt.IsZero() && strings.TrimSpace(token.LastAlertBand) == "" {
+		return
+	}
+	if err := s.store.DeleteSportsLivePriceAlertState(ctx, token.TokenID); err != nil && ctx.Err() == nil {
+		log.WithError(err).
+			WithField("token_id", token.TokenID).
+			WithField("condition_id", token.ConditionID).
+			Warn("failed to clear polymarket sports live price alert state")
 	}
 }
 
@@ -101,6 +161,20 @@ func (s *Service) sendSportsLivePriceAlert(ctx context.Context, client notificat
 	defer cancel()
 	_, err := client.SendNotification(sendCtx, request)
 	return err
+}
+
+func shouldSendSportsLivePriceAlert(token polymarketstore.SportsLivePriceAlertToken, band string, config SportsLivePriceAlertsConfig, now time.Time) bool {
+	lastBand := strings.TrimSpace(token.LastAlertBand)
+	if token.LastAlertedAt.IsZero() || lastBand == "" {
+		return true
+	}
+	if sportsLivePriceAlertBandRank(band) > sportsLivePriceAlertBandRank(lastBand) {
+		return true
+	}
+	if band == lastBand && !now.Before(token.LastAlertedAt.UTC().Add(config.Cooldown)) {
+		return true
+	}
+	return false
 }
 
 func classifySportsLivePriceAlertBand(price float64) string {
@@ -116,6 +190,19 @@ func classifySportsLivePriceAlertBand(price float64) string {
 		return sportsLivePriceAlertBandB
 	default:
 		return sportsLivePriceAlertBandNone
+	}
+}
+
+func sportsLivePriceAlertBandRank(band string) int {
+	switch band {
+	case sportsLivePriceAlertBandD:
+		return 3
+	case sportsLivePriceAlertBandC:
+		return 2
+	case sportsLivePriceAlertBandB:
+		return 1
+	default:
+		return 0
 	}
 }
 

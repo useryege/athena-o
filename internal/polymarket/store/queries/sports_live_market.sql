@@ -398,11 +398,52 @@ SELECT
   event.elapsed,
   event.game_status,
   event.volume,
-  event.liquidity
+  event.liquidity,
+  COALESCE(state.alert_band, '')::text AS last_alert_band,
+  state.last_alerted_at
 FROM latest_points AS latest
 JOIN polymarket_sports_live_market AS market ON market.market_key = latest.market_key
 JOIN polymarket_sports_live_event AS event ON event.event_key = latest.event_key
+LEFT JOIN polymarket_sports_live_price_alert_state AS state ON state.token_id = latest.token_id
 ORDER BY event.volume DESC, market.liquidity_num DESC, latest.market_key, latest.token_id;
+
+-- name: UpsertSportsLivePriceAlertState :exec
+INSERT INTO polymarket_sports_live_price_alert_state (
+  token_id,
+  market_key,
+  event_key,
+  condition_id,
+  outcome,
+  alert_band,
+  last_alerted_at,
+  last_price_ts,
+  last_price
+)
+VALUES (
+  @token_id,
+  @market_key,
+  @event_key,
+  @condition_id,
+  @outcome,
+  @alert_band,
+  @last_alerted_at,
+  @last_price_ts,
+  @last_price
+)
+ON CONFLICT (token_id) DO UPDATE
+SET market_key = EXCLUDED.market_key,
+  event_key = EXCLUDED.event_key,
+  condition_id = EXCLUDED.condition_id,
+  outcome = EXCLUDED.outcome,
+  alert_band = EXCLUDED.alert_band,
+  last_alerted_at = EXCLUDED.last_alerted_at,
+  last_price_ts = EXCLUDED.last_price_ts,
+  last_price = EXCLUDED.last_price,
+  updated_at = now();
+
+-- name: DeleteSportsLivePriceAlertState :exec
+DELETE FROM polymarket_sports_live_price_alert_state
+WHERE token_id = @token_id;
 
 -- name: BatchUpsertSportsLivePricePoints :exec
 INSERT INTO polymarket_sports_live_price_point (

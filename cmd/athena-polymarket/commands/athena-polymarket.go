@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -30,10 +31,11 @@ const cliName = "athena-polymarket"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost                string
-		listenPort                int
-		notificationEnabled       bool
-		notificationServerAddress string
+		listenHost                   string
+		listenPort                   int
+		notificationEnabled          bool
+		notificationServerAddress    string
+		sportsLivePriceAlertCooldown time.Duration
 
 		storeSrc func(context.Context) (*polymarketstore.SQLStore, error)
 	)
@@ -65,7 +67,8 @@ func NewCommand() *cobra.Command {
 				Enabled: notificationEnabled,
 			}
 			sportsLivePriceAlertsConfig := polymarket.SportsLivePriceAlertsConfig{
-				Enabled: notificationEnabled,
+				Enabled:  notificationEnabled,
+				Cooldown: sportsLivePriceAlertCooldown,
 			}
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
@@ -127,6 +130,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortPolymarket, "Listen on given port for incoming connections")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_POLYMARKET_NOTIFICATION_ENABLED", true), "Enable Polymarket notifications through Athena Notification")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_POLYMARKET_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Polymarket alerts")
+	command.Flags().DurationVar(&sportsLivePriceAlertCooldown, "sports-live-price-alert-cooldown", env.ParseDurationFromEnv("ATHENA_POLYMARKET_SPORTS_LIVE_PRICE_ALERT_COOLDOWN", 15*time.Minute, time.Second, 24*time.Hour), "Cooldown between repeated Polymarket sports live price alerts for the same token and band")
 
 	storeSrc = polymarketstore.NewSQLStoreSource()
 

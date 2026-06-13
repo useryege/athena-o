@@ -128,6 +128,27 @@ CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_point (
     FOREIGN KEY (market_key) REFERENCES polymarket_sports_live_market(market_key) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_alert_state (
+  token_id TEXT PRIMARY KEY,
+  market_key TEXT NOT NULL,
+  event_key TEXT NOT NULL,
+  condition_id TEXT NOT NULL DEFAULT '',
+  outcome TEXT NOT NULL DEFAULT '',
+  alert_band TEXT NOT NULL,
+  last_alerted_at TIMESTAMPTZ NOT NULL,
+  last_price_ts TIMESTAMPTZ NOT NULL,
+  last_price DOUBLE PRECISION NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT polymarket_sports_live_price_alert_state_token_not_empty CHECK (btrim(token_id) <> ''),
+  CONSTRAINT polymarket_sports_live_price_alert_state_market_not_empty CHECK (btrim(market_key) <> ''),
+  CONSTRAINT polymarket_sports_live_price_alert_state_event_not_empty CHECK (btrim(event_key) <> ''),
+  CONSTRAINT polymarket_sports_live_price_alert_state_band CHECK (alert_band IN ('b', 'c', 'd')),
+  CONSTRAINT polymarket_sports_live_price_alert_state_price CHECK (last_price >= 0 AND last_price <= 1),
+  CONSTRAINT polymarket_sports_live_price_alert_state_market_fk
+    FOREIGN KEY (market_key) REFERENCES polymarket_sports_live_market(market_key) ON DELETE CASCADE
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS polymarket_sports_live_event_slug_idx
   ON polymarket_sports_live_event (slug)
   WHERE slug <> '';
@@ -160,8 +181,12 @@ CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_point_event_ts_idx
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_point_fetched_idx
   ON polymarket_sports_live_price_point (fetched_at);
 
+CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_alert_state_alerted_idx
+  ON polymarket_sports_live_price_alert_state (last_alerted_at);
+
 -- +goose Down
 
+DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
 DROP TABLE IF EXISTS polymarket_sync_state;
 DROP TABLE IF EXISTS polymarket_sports_live_market;

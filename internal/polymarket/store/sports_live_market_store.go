@@ -208,25 +208,57 @@ func (s *SQLStore) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]
 			continue
 		}
 		items = append(items, SportsLivePriceAlertToken{
-			TokenID:     row.TokenID,
-			MarketKey:   row.MarketKey,
-			EventKey:    row.EventKey,
-			ConditionID: row.ConditionID,
-			Outcome:     row.Outcome,
-			PriceTs:     priceTs,
-			Price:       row.Price,
-			EventSlug:   row.EventSlug,
-			EventTitle:  row.EventTitle,
-			MarketTitle: row.MarketTitle,
-			Score:       row.Score,
-			Period:      row.Period,
-			Elapsed:     row.Elapsed,
-			GameStatus:  row.GameStatus,
-			Volume:      row.Volume,
-			Liquidity:   row.Liquidity,
+			TokenID:       row.TokenID,
+			MarketKey:     row.MarketKey,
+			EventKey:      row.EventKey,
+			ConditionID:   row.ConditionID,
+			Outcome:       row.Outcome,
+			PriceTs:       priceTs,
+			Price:         row.Price,
+			EventSlug:     row.EventSlug,
+			EventTitle:    row.EventTitle,
+			MarketTitle:   row.MarketTitle,
+			Score:         row.Score,
+			Period:        row.Period,
+			Elapsed:       row.Elapsed,
+			GameStatus:    row.GameStatus,
+			Volume:        row.Volume,
+			Liquidity:     row.Liquidity,
+			LastAlertBand: row.LastAlertBand,
+			LastAlertedAt: timeValue(row.LastAlertedAt),
 		})
 	}
 	return items, nil
+}
+
+func (s *SQLStore) UpsertSportsLivePriceAlertState(ctx context.Context, state SportsLivePriceAlertState) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpsertSportsLivePriceAlertState(ctx, polymarketsqlc.UpsertSportsLivePriceAlertStateParams{
+		TokenID:       state.TokenID,
+		MarketKey:     state.MarketKey,
+		EventKey:      state.EventKey,
+		ConditionID:   state.ConditionID,
+		Outcome:       state.Outcome,
+		AlertBand:     state.AlertBand,
+		LastAlertedAt: nullableTime(state.LastAlertedAt),
+		LastPriceTs:   nullableTime(state.LastPriceTs),
+		LastPrice:     state.LastPrice,
+	}); err != nil {
+		return fmt.Errorf("upsert sports live price alert state: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.DeleteSportsLivePriceAlertState(ctx, tokenID); err != nil {
+		return fmt.Errorf("delete sports live price alert state: %w", err)
+	}
+	return nil
 }
 
 func (s *SQLStore) ListSportsLivePriceHistorySeries(ctx context.Context, marketKeys []string, limitPerToken int32) ([]SportsLivePriceHistorySeries, error) {
