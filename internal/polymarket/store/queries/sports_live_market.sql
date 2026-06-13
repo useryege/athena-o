@@ -391,6 +391,7 @@ SELECT
   latest.price_ts,
   latest.price,
   COALESCE(state.alert_band, 'none')::text AS alert_band,
+  state.last_notified_at,
   event.slug AS event_slug,
   COALESCE(NULLIF(event.title, ''), event.slug, latest.event_key)::text AS event_title,
   COALESCE(NULLIF(market.question, ''), NULLIF(market.title, ''), market.market_key)::text AS market_title,

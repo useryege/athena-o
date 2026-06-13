@@ -660,6 +660,7 @@ SELECT
   latest.price_ts,
   latest.price,
   COALESCE(state.alert_band, 'none')::text AS alert_band,
+  state.last_notified_at,
   event.slug AS event_slug,
   COALESCE(NULLIF(event.title, ''), event.slug, latest.event_key)::text AS event_title,
   COALESCE(NULLIF(market.question, ''), NULLIF(market.title, ''), market.market_key)::text AS market_title,
@@ -677,23 +678,24 @@ ORDER BY event.volume DESC, market.liquidity_num DESC, latest.market_key, latest
 `
 
 type ListSportsLiveLatestPriceAlertTokensRow struct {
-	TokenID     string
-	MarketKey   string
-	EventKey    string
-	ConditionID string
-	Outcome     string
-	PriceTs     pgtype.Timestamptz
-	Price       float64
-	AlertBand   string
-	EventSlug   string
-	EventTitle  string
-	MarketTitle string
-	Score       string
-	Period      string
-	Elapsed     string
-	GameStatus  string
-	Volume      float64
-	Liquidity   float64
+	TokenID        string
+	MarketKey      string
+	EventKey       string
+	ConditionID    string
+	Outcome        string
+	PriceTs        pgtype.Timestamptz
+	Price          float64
+	AlertBand      string
+	LastNotifiedAt pgtype.Timestamptz
+	EventSlug      string
+	EventTitle     string
+	MarketTitle    string
+	Score          string
+	Period         string
+	Elapsed        string
+	GameStatus     string
+	Volume         float64
+	Liquidity      float64
 }
 
 func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]ListSportsLiveLatestPriceAlertTokensRow, error) {
@@ -714,6 +716,7 @@ func (q *Queries) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]L
 			&i.PriceTs,
 			&i.Price,
 			&i.AlertBand,
+			&i.LastNotifiedAt,
 			&i.EventSlug,
 			&i.EventTitle,
 			&i.MarketTitle,
