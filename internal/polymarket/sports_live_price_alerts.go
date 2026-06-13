@@ -28,7 +28,7 @@ const (
 	sportsLivePriceAlertBandD    = "d"
 
 	defaultSportsLivePriceAlertSendTimeout       = 10 * time.Second
-	defaultSportsLivePriceAlertDowngradeCooldown = time.Minute
+	defaultSportsLivePriceAlertDowngradeCooldown = 3 * time.Minute
 )
 
 type SportsLivePriceAlertsConfig struct {
