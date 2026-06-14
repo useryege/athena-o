@@ -18,17 +18,20 @@ const (
 	sportsLivePriceAlert90Topic = "[POLY] Sports Live 90/10"
 	sportsLivePriceAlert95Topic = "[POLY] Sports Live 95/5"
 	sportsLivePriceAlert97Topic = "[POLY] Sports Live 97/3"
+	sportsLivePriceAlert99Topic = "[POLY] Sports Live 99/1"
 
 	sportsLivePriceAlert85Source = "polymarket.sports-live-price-alert-85-15"
 	sportsLivePriceAlert90Source = "polymarket.sports-live-price-alert-90-10"
 	sportsLivePriceAlert95Source = "polymarket.sports-live-price-alert-95-5"
 	sportsLivePriceAlert97Source = "polymarket.sports-live-price-alert-97-3"
+	sportsLivePriceAlert99Source = "polymarket.sports-live-price-alert-99-1"
 
 	sportsLivePriceAlertBandNone = "none"
 	sportsLivePriceAlertBandA    = "a"
 	sportsLivePriceAlertBandB    = "b"
 	sportsLivePriceAlertBandC    = "c"
 	sportsLivePriceAlertBandD    = "d"
+	sportsLivePriceAlertBandE    = "e"
 
 	defaultSportsLivePriceAlertSendTimeout = 10 * time.Second
 	defaultSportsLivePriceAlertCooldown    = 15 * time.Minute
@@ -185,6 +188,8 @@ func classifySportsLivePriceAlertBand(price float64) string {
 		return sportsLivePriceAlertBandNone
 	}
 	switch {
+	case price < 0.01:
+		return sportsLivePriceAlertBandE
 	case price < 0.03:
 		return sportsLivePriceAlertBandD
 	case price < 0.05:
@@ -200,6 +205,8 @@ func classifySportsLivePriceAlertBand(price float64) string {
 
 func sportsLivePriceAlertBandRank(band string) int {
 	switch band {
+	case sportsLivePriceAlertBandE:
+		return 5
 	case sportsLivePriceAlertBandD:
 		return 4
 	case sportsLivePriceAlertBandC:
@@ -220,6 +227,12 @@ func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePric
 	alertBand := "< 0.15"
 	titlePrefix := "Polymarket sports live 85/15 price alert"
 	switch band {
+	case sportsLivePriceAlertBandE:
+		topic = sportsLivePriceAlert99Topic
+		source = sportsLivePriceAlert99Source
+		severity = notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_CRITICAL
+		alertBand = "< 0.01"
+		titlePrefix = "Polymarket sports live 99/1 price alert"
 	case sportsLivePriceAlertBandD:
 		topic = sportsLivePriceAlert97Topic
 		source = sportsLivePriceAlert97Source
