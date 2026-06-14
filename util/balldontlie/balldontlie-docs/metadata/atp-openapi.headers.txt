@@ -1,0 +1,17 @@
+HTTP/1.1 200 Connection established
+
+HTTP/2 200 
+date: Sun, 14 Jun 2026 14:59:34 GMT
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, s-maxage=300
+cf-cache-status: EXPIRED
+last-modified: Thu, 11 Jun 2026 21:02:15 UTC
+rndr-id: a930b1d3-54d8-4496
+server: cloudflare
+vary: Accept-Encoding
+vary: Accept-Encoding
+x-content-type-options: nosniff
+etag: W/"d43bf372a4be55de754454aa0b1c7843"
+cf-ray: a0ba331d3e18b178-HKG
+alt-svc: h3=":443"; ma=86400
+
