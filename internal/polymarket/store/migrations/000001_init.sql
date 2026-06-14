@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_alert_state (
   CONSTRAINT polymarket_sports_live_price_alert_state_token_not_empty CHECK (btrim(token_id) <> ''),
   CONSTRAINT polymarket_sports_live_price_alert_state_market_not_empty CHECK (btrim(market_key) <> ''),
   CONSTRAINT polymarket_sports_live_price_alert_state_event_not_empty CHECK (btrim(event_key) <> ''),
-  CONSTRAINT polymarket_sports_live_price_alert_state_band CHECK (alert_band IN ('b', 'c', 'd')),
+  CONSTRAINT polymarket_sports_live_price_alert_state_band CHECK (alert_band IN ('a', 'b', 'c', 'd')),
   CONSTRAINT polymarket_sports_live_price_alert_state_price CHECK (last_price >= 0 AND last_price <= 1),
   CONSTRAINT polymarket_sports_live_price_alert_state_market_fk
     FOREIGN KEY (market_key) REFERENCES polymarket_sports_live_market(market_key) ON DELETE CASCADE

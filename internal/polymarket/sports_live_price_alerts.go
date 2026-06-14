@@ -14,15 +14,18 @@ import (
 )
 
 const (
+	sportsLivePriceAlert85Topic = "[POLY] Sports Live 85/15"
 	sportsLivePriceAlert90Topic = "[POLY] Sports Live 90/10"
 	sportsLivePriceAlert95Topic = "[POLY] Sports Live 95/5"
 	sportsLivePriceAlert97Topic = "[POLY] Sports Live 97/3"
 
+	sportsLivePriceAlert85Source = "polymarket.sports-live-price-alert-85-15"
 	sportsLivePriceAlert90Source = "polymarket.sports-live-price-alert-90-10"
 	sportsLivePriceAlert95Source = "polymarket.sports-live-price-alert-95-5"
 	sportsLivePriceAlert97Source = "polymarket.sports-live-price-alert-97-3"
 
 	sportsLivePriceAlertBandNone = "none"
+	sportsLivePriceAlertBandA    = "a"
 	sportsLivePriceAlertBandB    = "b"
 	sportsLivePriceAlertBandC    = "c"
 	sportsLivePriceAlertBandD    = "d"
@@ -188,6 +191,8 @@ func classifySportsLivePriceAlertBand(price float64) string {
 		return sportsLivePriceAlertBandC
 	case price < 0.1:
 		return sportsLivePriceAlertBandB
+	case price < 0.15:
+		return sportsLivePriceAlertBandA
 	default:
 		return sportsLivePriceAlertBandNone
 	}
@@ -196,10 +201,12 @@ func classifySportsLivePriceAlertBand(price float64) string {
 func sportsLivePriceAlertBandRank(band string) int {
 	switch band {
 	case sportsLivePriceAlertBandD:
-		return 3
+		return 4
 	case sportsLivePriceAlertBandC:
-		return 2
+		return 3
 	case sportsLivePriceAlertBandB:
+		return 2
+	case sportsLivePriceAlertBandA:
 		return 1
 	default:
 		return 0
@@ -207,11 +214,11 @@ func sportsLivePriceAlertBandRank(band string) int {
 }
 
 func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePriceAlertToken, band string) *notificationapiclient.SendNotificationRequest {
-	topic := sportsLivePriceAlert90Topic
-	source := sportsLivePriceAlert90Source
+	topic := sportsLivePriceAlert85Topic
+	source := sportsLivePriceAlert85Source
 	severity := notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING
-	alertBand := "< 0.1"
-	titlePrefix := "Polymarket sports live 90/10 price alert"
+	alertBand := "< 0.15"
+	titlePrefix := "Polymarket sports live 85/15 price alert"
 	switch band {
 	case sportsLivePriceAlertBandD:
 		topic = sportsLivePriceAlert97Topic
@@ -230,6 +237,11 @@ func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePric
 		source = sportsLivePriceAlert90Source
 		alertBand = "< 0.1"
 		titlePrefix = "Polymarket sports live 90/10 price alert"
+	case sportsLivePriceAlertBandA:
+		topic = sportsLivePriceAlert85Topic
+		source = sportsLivePriceAlert85Source
+		alertBand = "< 0.15"
+		titlePrefix = "Polymarket sports live 85/15 price alert"
 	}
 
 	eventTitle := firstNonEmpty(token.EventTitle, token.EventKey)
