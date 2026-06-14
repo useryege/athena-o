@@ -1,8 +1,8 @@
 # BALLDONTLIE Docs
 
-`util/balldontlie` stores local snapshots of BALLDONTLIE documentation used as source material for future ATHENA integration work.
+`util/balldontlie` stores local snapshots of BALLDONTLIE documentation and a typed Go client for BALLDONTLIE APIs used by future ATHENA integration work.
 
-This stage only syncs documentation. It does not add a Go client, ATHENA service code, proto definitions, SQL, runtime wiring, or UI.
+This package does not add ATHENA service code, proto definitions, SQL, runtime wiring, or UI.
 
 ## Official Sources
 
@@ -41,3 +41,56 @@ The OpenAPI spec is the machine-readable source of truth for these ATP endpoints
 - Betting odds
 
 Free and paid tier differences are documented by BALLDONTLIE, but this directory does not implement entitlement behavior.
+
+## Go Client
+
+The Go wrapper entrypoint is `NewClient(Config{})`. The default upstream API base URL is `DefaultBaseURL`.
+
+```go
+client, err := balldontlie.NewClient(balldontlie.Config{
+	APIKey: "YOUR_API_KEY",
+})
+if err != nil {
+	return err
+}
+
+players, err := client.ListPlayers(ctx, balldontlie.ListPlayersOptions{
+	Search: "Alcaraz",
+})
+if err != nil {
+	return err
+}
+_ = players
+```
+
+Head-to-head lookup:
+
+```go
+h2h, err := client.GetHeadToHead(ctx, balldontlie.HeadToHeadOptions{
+	Player1ID: 1,
+	Player2ID: 2,
+})
+if err != nil {
+	return err
+}
+_ = h2h
+```
+
+The client includes all 12 ATP GET endpoints from the local OpenAPI document:
+
+- `ListPlayers`
+- `GetPlayer`
+- `ListTournaments`
+- `GetTournament`
+- `ListRankings`
+- `ListMatches`
+- `GetMatch`
+- `ListATPRace`
+- `ListMatchStats`
+- `ListPlayerCareerStats`
+- `GetHeadToHead`
+- `ListOdds`
+
+Every request sends the configured API key in the `Authorization` header. Endpoints that require a paid BALLDONTLIE tier are still exposed by the client; insufficient account access is returned as `*APIError` with status code `401`.
+
+By default, the client creates a conservative `5 req/min` limiter for free/trial usage. Paid-tier callers can pass a custom `RateLimiter` in `Config`.
