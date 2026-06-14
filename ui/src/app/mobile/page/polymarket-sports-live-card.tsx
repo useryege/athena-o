@@ -9,10 +9,14 @@ import {
 } from '../../shared/services/polymarket-service';
 import {fmtNumber} from './shared';
 
-type MoneylineOption = {
-    outcome: string;
+type SportsLiveDisplayOption = {
+    marketKey: string;
+    historyOutcome: string;
+    label: string;
     price: string;
     logo?: string;
+    kind: 'team' | 'draw' | 'market';
+    sortOrder: number;
 };
 
 const parseGammaList = (value?: string): string[] => {
@@ -32,6 +36,62 @@ const parseGammaList = (value?: string): string[] => {
 
 const normalizedTeamKey = (value?: string) => (value || '').trim().toLowerCase();
 
+export const sportsLiveSectionKey = (item: PolymarketSportsLiveEventCardItem) => {
+    const key = item.slug.trim().split('-')[0]?.trim().toLowerCase();
+    return key || 'other';
+};
+
+export const isFifwcSportsLiveEvent = (item: PolymarketSportsLiveEventCardItem) => sportsLiveSectionKey(item) === 'fifwc';
+
+const isMoneylineMarket = (market: PolymarketSportsLiveMarketCardItem) => {
+    const type = market.sportsMarketType.trim().toLowerCase();
+    return type === 'moneyline';
+};
+
+const moneylineMarkets = (item: PolymarketSportsLiveEventCardItem) => {
+    const markets = item.markets.filter(isMoneylineMarket);
+    return markets.length > 0 ? markets : item.markets.slice(0, 1);
+};
+
+export const legacyMoneylineMarket = (item: PolymarketSportsLiveEventCardItem) => moneylineMarkets(item)[0];
+
+export const moneylineMarketKeys = (items: PolymarketSportsLiveEventCardItem[] = []) => {
+    const keys = new Set<string>();
+    items.forEach(item => {
+        const markets = isFifwcSportsLiveEvent(item) ? moneylineMarkets(item) : [legacyMoneylineMarket(item)];
+        markets.forEach(market => {
+            if (market?.marketKey) {
+                keys.add(market.marketKey);
+            }
+        });
+    });
+    return Array.from(keys);
+};
+
+const marketSlugTail = (eventSlug: string, marketSlug: string) => {
+    const eventKey = normalizedTeamKey(eventSlug);
+    const marketKey = normalizedTeamKey(marketSlug);
+    if (!marketKey) {
+        return '';
+    }
+    if (eventKey && marketKey.startsWith(`${eventKey}-`)) {
+        return marketKey.slice(eventKey.length + 1);
+    }
+    const parts = marketKey.split('-').filter(Boolean);
+    return parts[parts.length - 1] || '';
+};
+
+const marketIsDraw = (eventSlug: string, market: PolymarketSportsLiveMarketCardItem) => {
+    const tail = marketSlugTail(eventSlug, market.slug);
+    const question = normalizedTeamKey(market.question);
+    return tail === 'draw' || question.includes('draw');
+};
+
+const questionTeamLabel = (question: string) => {
+    const matched = question.trim().match(/^will\s+(.+?)\s+win\b/i);
+    return matched?.[1]?.trim() || '';
+};
+
 const matchingTeam = (outcome: string, teams: PolymarketSportsLiveTeamItem[], index: number) => {
     const key = normalizedTeamKey(outcome);
     if (key) {
@@ -43,46 +103,76 @@ const matchingTeam = (outcome: string, teams: PolymarketSportsLiveTeamItem[], in
     return teams[index];
 };
 
-const moneylineOptions = (market?: PolymarketSportsLiveMarketCardItem, teams: PolymarketSportsLiveTeamItem[] = []): MoneylineOption[] => {
+const teamKeys = (team: PolymarketSportsLiveTeamItem) => [team.name, team.abbreviation, team.alias].map(value => normalizedTeamKey(value)).filter(Boolean);
+
+const matchingMoneylineTeam = (item: PolymarketSportsLiveEventCardItem, market: PolymarketSportsLiveMarketCardItem) => {
+    const tail = marketSlugTail(item.slug, market.slug);
+    const questionTeam = normalizedTeamKey(questionTeamLabel(market.question));
+    const question = normalizedTeamKey(market.question);
+    for (let index = 0; index < item.teams.length; index += 1) {
+        const team = item.teams[index];
+        const keys = teamKeys(team);
+        if (keys.some(key => key === tail || key === questionTeam)) {
+            return {team, index};
+        }
+        const name = normalizedTeamKey(team.name);
+        if (name && question.includes(name)) {
+            return {team, index};
+        }
+    }
+    return undefined;
+};
+
+const legacyMoneylineOptions = (item: PolymarketSportsLiveEventCardItem): SportsLiveDisplayOption[] => {
+    const market = legacyMoneylineMarket(item);
     if (!market) {
         return [];
     }
     const outcomes = parseGammaList(market.outcomes);
     const prices = parseGammaList(market.outcomePrices);
     return outcomes.slice(0, 2).map((outcome, index) => ({
-        outcome,
+        marketKey: market.marketKey,
+        historyOutcome: outcome,
+        label: outcome,
         price: prices[index] || '-',
-        logo: matchingTeam(outcome, teams, index)?.logo
+        logo: matchingTeam(outcome, item.teams, index)?.logo,
+        kind: 'market',
+        sortOrder: index
     }));
 };
 
-const isMoneylineMarket = (market: PolymarketSportsLiveMarketCardItem) => {
-    const type = market.sportsMarketType.trim().toLowerCase();
-    return type === 'moneyline';
-};
+const fifwcMoneylineOutcomeOptions = (item: PolymarketSportsLiveEventCardItem): SportsLiveDisplayOption[] =>
+    moneylineMarkets(item)
+        .map((market, index) => {
+            const outcomes = parseGammaList(market.outcomes);
+            const prices = parseGammaList(market.outcomePrices);
+            const yesIndex = outcomes.findIndex(outcome => normalizedTeamKey(outcome) === 'yes');
+            const priceIndex = yesIndex >= 0 ? yesIndex : 0;
+            const historyOutcome = outcomes[priceIndex] || 'Yes';
+            const matched = matchingMoneylineTeam(item, market);
+            const isDraw = marketIsDraw(item.slug, market);
+            const fallbackLabel = questionTeamLabel(market.question) || historyOutcome || market.question || market.slug || 'Market';
+            return {
+                marketKey: market.marketKey,
+                historyOutcome,
+                label: isDraw ? 'DRAW' : matched?.team.name || fallbackLabel,
+                price: prices[priceIndex] || '-',
+                logo: isDraw ? undefined : matched?.team.logo,
+                kind: isDraw ? ('draw' as const) : matched ? ('team' as const) : ('market' as const),
+                sortOrder: isDraw ? 2 : matched ? matched.index : 100 + index
+            };
+        })
+        .sort((left, right) => left.sortOrder - right.sortOrder);
 
-export const moneylineMarket = (item: PolymarketSportsLiveEventCardItem) => item.markets.find(isMoneylineMarket) || item.markets[0];
-
-export const moneylineMarketKeys = (items: PolymarketSportsLiveEventCardItem[] = []) => {
-    const keys = new Set<string>();
-    items.forEach(item => {
-        const marketKey = moneylineMarket(item)?.marketKey;
-        if (marketKey) {
-            keys.add(marketKey);
-        }
-    });
-    return Array.from(keys);
-};
-
-const resolvedPriceHistory = (history: PolymarketSportsLivePriceHistorySeriesItem[] = [], outcome: string, index: number) => {
-    const outcomeKey = normalizedTeamKey(outcome);
-    if (outcomeKey) {
-        const matched = history.find(item => normalizedTeamKey(item.outcome) === outcomeKey);
-        if (matched) {
-            return matched;
-        }
+const resolvedPriceHistory = (history: PolymarketSportsLivePriceHistorySeriesItem[] = [], option: SportsLiveDisplayOption, index: number) => {
+    const marketKey = normalizedTeamKey(option.marketKey);
+    const outcomeKey = normalizedTeamKey(option.historyOutcome);
+    const matched = history.find(item => normalizedTeamKey(item.marketKey) === marketKey && normalizedTeamKey(item.outcome) === outcomeKey);
+    if (matched) {
+        return matched;
     }
-    return history[index];
+    const marketMatched = history.find(item => normalizedTeamKey(item.marketKey) === marketKey);
+    return marketMatched || history[index];
 };
 
 const polymarketEventURL = (item: PolymarketSportsLiveEventCardItem) => {
@@ -119,6 +209,8 @@ const chartPercent = (value?: number) => {
 };
 
 const chartOutcomeLabel = (value: string) => (value.length > 16 ? `${value.slice(0, 15)}...` : value);
+const chartTones = ['blue', 'gold', 'red', 'green'];
+const displayOptionKey = (option: SportsLiveDisplayOption) => `${option.marketKey}:${option.historyOutcome}:${option.label}`;
 
 const latestPrice = (series?: PolymarketSportsLivePriceHistorySeriesItem) => {
     const prices = series?.prices || [];
@@ -138,6 +230,11 @@ const pricePoints = (series?: PolymarketSportsLivePriceHistorySeriesItem) =>
             timestamp: series?.timestamps[index] || index
         }))
         .filter(point => Number.isFinite(point.price) && Number.isFinite(point.timestamp));
+
+export const sportsLiveCardHistory = (item: PolymarketSportsLiveEventCardItem, historyByMarketKey: Map<string, PolymarketSportsLivePriceHistorySeriesItem[]>) => {
+    const markets = isFifwcSportsLiveEvent(item) ? moneylineMarkets(item) : [legacyMoneylineMarket(item)];
+    return markets.flatMap(market => (market?.marketKey ? historyByMarketKey.get(market.marketKey) || [] : []));
+};
 
 const SportsLiveEventInfoSection = (props: {item: PolymarketSportsLiveEventCardItem}) => {
     const stageValue = props.item.period || props.item.gameStatus || props.item.elapsed;
@@ -187,19 +284,16 @@ const SportsLiveEventInfoSection = (props: {item: PolymarketSportsLiveEventCardI
     );
 };
 
-const SportsLiveTrendSection = (props: {
-    options: MoneylineOption[];
-    history?: PolymarketSportsLivePriceHistorySeriesItem[];
-}) => {
+const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
     const series = props.options
         .map((option, index) => {
-            const history = resolvedPriceHistory(props.history, option.outcome, index);
+            const history = resolvedPriceHistory(props.history, option, index);
             const points = pricePoints(history);
             return {
                 option,
                 points,
                 latest: latestPrice(history),
-                tone: index === 0 ? 'blue' : 'gold'
+                tone: chartTones[index % chartTones.length]
             };
         })
         .filter(item => item.points.length > 1);
@@ -231,9 +325,7 @@ const SportsLiveTrendSection = (props: {
     const yFor = (price: number) => padding.top + (1 - Math.min(1, Math.max(0, price))) * chartHeight;
     const labelYFor = (price: number) => Math.min(height - padding.bottom - 30, Math.max(padding.top + 16, yFor(price)));
     const pathFor = (points: Array<{price: number; timestamp: number}>) =>
-        points
-            .map((point, index) => `${index === 0 ? 'M' : 'L'} ${xFor(point.timestamp).toFixed(2)} ${yFor(point.price).toFixed(2)}`)
-            .join(' ');
+        points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${xFor(point.timestamp).toFixed(2)} ${yFor(point.price).toFixed(2)}`).join(' ');
     const endpointItems = series.map(item => {
         const lastPoint = item.points[item.points.length - 1];
         const latest = item.latest ?? lastPoint.price;
@@ -244,9 +336,21 @@ const SportsLiveTrendSection = (props: {
             labelY: labelYFor(latest)
         };
     });
-    if (endpointItems.length === 2 && Math.abs(endpointItems[0].labelY - endpointItems[1].labelY) < 48) {
-        endpointItems[0].labelY = Math.max(padding.top + 16, endpointItems[0].labelY - 24);
-        endpointItems[1].labelY = Math.min(height - padding.bottom - 30, endpointItems[1].labelY + 24);
+    if (endpointItems.length > 1) {
+        const minGap = 38;
+        const minY = padding.top + 16;
+        const maxY = height - padding.bottom - 30;
+        const sorted = [...endpointItems].sort((left, right) => left.labelY - right.labelY);
+        sorted[0].labelY = Math.max(minY, sorted[0].labelY);
+        for (let index = 1; index < sorted.length; index += 1) {
+            sorted[index].labelY = Math.max(sorted[index].labelY, sorted[index - 1].labelY + minGap);
+        }
+        const overflow = sorted[sorted.length - 1].labelY - maxY;
+        if (overflow > 0) {
+            sorted.forEach(item => {
+                item.labelY = Math.max(minY, item.labelY - overflow);
+            });
+        }
     }
 
     return (
@@ -264,11 +368,11 @@ const SportsLiveTrendSection = (props: {
                     );
                 })}
                 {endpointItems.map(item => (
-                    <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={item.option.outcome}>
+                    <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={displayOptionKey(item.option)}>
                         <path className='sports-live-chart__line' d={pathFor(item.points)} />
                         <circle className='sports-live-chart__dot' cx={xFor(item.lastPoint.timestamp)} cy={yFor(item.lastPoint.price)} r='5' />
                         <text className='sports-live-chart__endpoint-name' x={endpointLabelX} y={item.labelY - 4}>
-                            {chartOutcomeLabel(item.option.outcome)}
+                            {chartOutcomeLabel(item.option.label)}
                         </text>
                         <text className='sports-live-chart__endpoint-value' x={endpointLabelX} y={item.labelY + 32}>
                             {chartPercent(item.latest)}
@@ -280,7 +384,7 @@ const SportsLiveTrendSection = (props: {
     );
 };
 
-const SportsLiveMoneylineSection = (props: {options: MoneylineOption[]}) => {
+const SportsLiveMoneylineSection = (props: {options: SportsLiveDisplayOption[]}) => {
     if (props.options.length === 0) {
         return <Typography.Text type='secondary'>-</Typography.Text>;
     }
@@ -288,10 +392,13 @@ const SportsLiveMoneylineSection = (props: {options: MoneylineOption[]}) => {
         <div className='sports-live-moneyline'>
             <div className='sports-live-moneyline__rows'>
                 {props.options.map(option => (
-                    <div className='sports-live-moneyline__row' key={option.outcome}>
+                    <div className='sports-live-moneyline__row' key={displayOptionKey(option)}>
                         <div className='sports-live-moneyline__team'>
-                            {option.logo && <img className='sports-live-moneyline__logo' src={option.logo} alt='' onError={event => (event.currentTarget.style.display = 'none')} />}
-                            <Typography.Text className='sports-live-moneyline__name'>{option.outcome}</Typography.Text>
+                            {option.logo && (
+                                <img className='sports-live-moneyline__logo' src={option.logo} alt='' onError={event => (event.currentTarget.style.display = 'none')} />
+                            )}
+                            {!option.logo && option.kind === 'draw' && <span className='sports-live-moneyline__badge'>D</span>}
+                            <Typography.Text className='sports-live-moneyline__name'>{option.label}</Typography.Text>
                         </div>
                         <Typography.Text className='sports-live-moneyline__price' strong={true}>
                             {option.price}
@@ -303,15 +410,25 @@ const SportsLiveMoneylineSection = (props: {options: MoneylineOption[]}) => {
     );
 };
 
-export const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
-    const moneyline = moneylineMarket(props.item);
-    const options = moneylineOptions(moneyline, props.item.teams);
+const SportsLiveEventCardFrame = (props: {item: PolymarketSportsLiveEventCardItem; options: SportsLiveDisplayOption[]; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => (
+    <article className='sports-live-card'>
+        <SportsLiveEventInfoSection item={props.item} />
+        <SportsLiveTrendSection options={props.options} history={props.history} />
+        <SportsLiveMoneylineSection options={props.options} />
+    </article>
+);
 
-    return (
-        <article className='sports-live-card'>
-            <SportsLiveEventInfoSection item={props.item} />
-            <SportsLiveTrendSection options={options} history={props.history} />
-            <SportsLiveMoneylineSection options={options} />
-        </article>
-    );
+export const FifwcSportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => (
+    <SportsLiveEventCardFrame item={props.item} options={fifwcMoneylineOutcomeOptions(props.item)} history={props.history} />
+);
+
+export const LegacySportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => (
+    <SportsLiveEventCardFrame item={props.item} options={legacyMoneylineOptions(props.item)} history={props.history} />
+);
+
+export const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
+    if (isFifwcSportsLiveEvent(props.item)) {
+        return <FifwcSportsLiveEventCard item={props.item} history={props.history} />;
+    }
+    return <LegacySportsLiveEventCard item={props.item} history={props.history} />;
 };

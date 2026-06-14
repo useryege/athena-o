@@ -1,5 +1,5 @@
 import type {ColumnsType} from 'antd/es/table';
-import {Empty} from 'antd';
+import {Empty, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
@@ -7,9 +7,17 @@ import {
     PolymarketHotMarketItem,
     PolymarketMoverMarketItem,
     PolymarketRealtimeMarketItem,
+    PolymarketSportsLiveEventCardItem,
     PolymarketSportsLivePriceHistorySeriesItem
 } from '../../shared/services/polymarket-service';
-import {SportsLiveEventCard, moneylineMarket, moneylineMarketKeys} from './polymarket-sports-live-card';
+import {
+    FifwcSportsLiveEventCard,
+    LegacySportsLiveEventCard,
+    isFifwcSportsLiveEvent,
+    moneylineMarketKeys,
+    sportsLiveCardHistory,
+    sportsLiveSectionKey
+} from './polymarket-sports-live-card';
 import {fmt, fmtNumber} from './shared';
 
 const PolymarketListPage = <T extends PolymarketHotMarketItem | PolymarketRealtimeMarketItem | PolymarketMoverMarketItem>(props: {
@@ -59,6 +67,30 @@ export const PolymarketMoversPage = () => <PolymarketListPage title='Polymarket 
 
 const sportsLiveRefreshIntervalMs = 3000;
 
+type SportsLiveSection = {
+    key: string;
+    title: string;
+    items: PolymarketSportsLiveEventCardItem[];
+};
+
+const sportsLiveSectionTitle = (key: string) => key.toUpperCase();
+
+const sportsLiveSections = (items: PolymarketSportsLiveEventCardItem[] = []): SportsLiveSection[] => {
+    const sections: SportsLiveSection[] = [];
+    const sectionByKey = new Map<string, SportsLiveSection>();
+    items.forEach(item => {
+        const key = sportsLiveSectionKey(item);
+        let section = sectionByKey.get(key);
+        if (!section) {
+            section = {key, title: sportsLiveSectionTitle(key), items: []};
+            sectionByKey.set(key, section);
+            sections.push(section);
+        }
+        section.items.push(item);
+    });
+    return sections;
+};
+
 export const PolymarketSportsLivePage = () => {
     const events = useAsyncData(() => services.polymarket.listSportsLiveEvents(200), []);
     const marketKeys = React.useMemo(() => moneylineMarketKeys(events.data?.items), [events.data?.items]);
@@ -100,6 +132,7 @@ export const PolymarketSportsLivePage = () => {
         return out;
     }, [history.data?.items, history.error]);
     const items = events.data?.items || [];
+    const sections = React.useMemo(() => sportsLiveSections(items), [items]);
     return (
         <AppPage
             title='Sports Live'
@@ -107,12 +140,24 @@ export const PolymarketSportsLivePage = () => {
             loading={events.loading}
             error={events.error}
             onRefresh={reloadAll}>
-            <div className='sports-live-list'>
+            <div className='sports-live-sections'>
                 {!events.loading && items.length === 0 && <Empty description='No data' />}
-                {items.map(item => {
-                    const moneyline = moneylineMarket(item);
-                    return <SportsLiveEventCard item={item} history={historyByMarketKey.get(moneyline?.marketKey || '')} key={item.eventKey} />;
-                })}
+                {sections.map(section => (
+                    <section className='sports-live-section' key={section.key}>
+                        <div className='sports-live-section__header'>
+                            <Typography.Title level={5}>{section.title}</Typography.Title>
+                            <Typography.Text className='sports-live-section__count' type='secondary'>
+                                {section.items.length} events
+                            </Typography.Text>
+                        </div>
+                        <div className='sports-live-section__body'>
+                            {section.items.map(item => {
+                                const Card = isFifwcSportsLiveEvent(item) ? FifwcSportsLiveEventCard : LegacySportsLiveEventCard;
+                                return <Card item={item} history={sportsLiveCardHistory(item, historyByMarketKey)} key={item.eventKey} />;
+                            })}
+                        </div>
+                    </section>
+                ))}
             </div>
         </AppPage>
     );

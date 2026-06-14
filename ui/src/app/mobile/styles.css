@@ -442,6 +442,47 @@ body[data-theme='dark'] .app-page__header {
     gap: 14px;
 }
 
+.sports-live-sections {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+.sports-live-section {
+    min-width: 0;
+}
+
+.sports-live-section__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    padding: 0 2px 10px;
+}
+
+.sports-live-section__header h5 {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--athena-text);
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.sports-live-section__count {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.sports-live-section__body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
 .sports-live-card {
     display: grid;
     grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.35fr) minmax(300px, 0.85fr);
@@ -641,12 +682,28 @@ body[data-theme='dark'] .app-page__header {
     color: #c49a10;
 }
 
+.sports-live-chart__series--red {
+    color: #d84a35;
+}
+
+.sports-live-chart__series--green {
+    color: #087f5b;
+}
+
 .sports-live-chart__series--blue .sports-live-chart__line {
     stroke: #075aa6;
 }
 
 .sports-live-chart__series--gold .sports-live-chart__line {
     stroke: #c49a10;
+}
+
+.sports-live-chart__series--red .sports-live-chart__line {
+    stroke: #d84a35;
+}
+
+.sports-live-chart__series--green .sports-live-chart__line {
+    stroke: #087f5b;
 }
 
 .sports-live-chart__dot {
@@ -673,7 +730,7 @@ body[data-theme='dark'] .app-page__header {
 
 .sports-live-moneyline__rows {
     display: grid;
-    gap: 16px;
+    gap: 14px;
     min-width: 0;
 }
 
@@ -697,6 +754,21 @@ body[data-theme='dark'] .app-page__header {
     height: 44px;
     object-fit: contain;
     flex: 0 0 auto;
+}
+
+.sports-live-moneyline__badge {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, #d84a35 45%, var(--athena-border));
+    border-radius: 8px;
+    background: color-mix(in srgb, #d84a35 12%, var(--athena-panel-solid));
+    color: #d84a35;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
 }
 
 .sports-live-moneyline__name {
@@ -728,6 +800,10 @@ body[data-theme='dark'] .app-page__header {
 }
 
 @media (max-width: 767px) {
+    .sports-live-section__header {
+        align-items: flex-start;
+    }
+
     .sports-live-card {
         grid-template-columns: minmax(0, 1fr);
         gap: 14px;
@@ -759,6 +835,11 @@ body[data-theme='dark'] .app-page__header {
     }
 
     .sports-live-moneyline__logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .sports-live-moneyline__badge {
         width: 40px;
         height: 40px;
     }
