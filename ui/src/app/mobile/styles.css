@@ -681,6 +681,8 @@ body[data-theme='dark'] .app-page__header {
     height: auto;
     display: block;
     overflow: hidden;
+    cursor: crosshair;
+    touch-action: pan-y;
 }
 
 .sports-live-chart__grid line {
@@ -738,6 +740,58 @@ body[data-theme='dark'] .app-page__header {
 
 .sports-live-chart__dot {
     fill: currentColor;
+}
+
+.sports-live-chart__selection {
+    pointer-events: none;
+}
+
+.sports-live-chart__selection-guide {
+    stroke: color-mix(in srgb, var(--athena-muted) 62%, transparent);
+    stroke-dasharray: 4 5;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.sports-live-chart__selection-time {
+    fill: var(--athena-muted);
+    font-size: 13px;
+    font-weight: 800;
+    text-anchor: middle;
+}
+
+.sports-live-chart__selection-connector {
+    stroke: currentColor;
+    stroke-width: 1.5;
+    opacity: 0.55;
+    vector-effect: non-scaling-stroke;
+}
+
+.sports-live-chart__selection-halo {
+    fill: color-mix(in srgb, currentColor 22%, transparent);
+    stroke: color-mix(in srgb, var(--athena-panel-solid) 84%, transparent);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.sports-live-chart__selection-dot {
+    fill: currentColor;
+    stroke: var(--athena-panel-solid);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+}
+
+.sports-live-chart__selection-name {
+    fill: currentColor;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.sports-live-chart__selection-price {
+    fill: currentColor;
+    font-size: 27px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
 }
 
 .sports-live-chart__endpoint-name {
