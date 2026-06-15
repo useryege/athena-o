@@ -544,9 +544,11 @@ const SportsLiveEventCardFrame = (props: {
     className?: string;
 }) => (
     <article className={`sports-live-card ${props.className || ''}`.trim()}>
-        {props.info || <SportsLiveEventInfoSection item={props.item} />}
+        <div className='sports-live-card__info-column'>
+            {props.info || <SportsLiveEventInfoSection item={props.item} />}
+            <SportsLiveMoneylineSection options={props.options} />
+        </div>
         <SportsLiveTrendSection options={props.options} history={props.history} />
-        <SportsLiveMoneylineSection options={props.options} />
     </article>
 );
 
