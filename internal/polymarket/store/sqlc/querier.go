@@ -11,13 +11,22 @@ import (
 )
 
 type Querier interface {
+	BatchUpsertSportsHistoryEvents(ctx context.Context, arg BatchUpsertSportsHistoryEventsParams) error
+	BatchUpsertSportsHistoryMarkets(ctx context.Context, arg BatchUpsertSportsHistoryMarketsParams) error
+	BatchUpsertSportsHistoryPricePoints(ctx context.Context, arg BatchUpsertSportsHistoryPricePointsParams) error
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
 	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
+	DeleteSportsHistoryEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
+	DeleteSportsHistoryMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
+	ListSportsHistoryEvents(ctx context.Context, limit int32) ([]ListSportsHistoryEventsRow, error)
+	ListSportsHistoryMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsHistoryMarketsByEventKeysRow, error)
+	ListSportsHistoryMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsHistoryMoneylineMarketsForPriceHistoryRow, error)
+	ListSportsHistoryPriceHistoryByMarketKeys(ctx context.Context, arg ListSportsHistoryPriceHistoryByMarketKeysParams) ([]ListSportsHistoryPriceHistoryByMarketKeysRow, error)
 	ListSportsLiveEvents(ctx context.Context, limit int32) ([]ListSportsLiveEventsRow, error)
 	ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]ListSportsLiveLatestPriceAlertTokensRow, error)
 	ListSportsLiveLatestPricePointTimes(ctx context.Context, tokenIds []string) ([]ListSportsLiveLatestPricePointTimesRow, error)

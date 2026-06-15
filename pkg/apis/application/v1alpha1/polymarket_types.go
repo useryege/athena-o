@@ -153,3 +153,24 @@ type PolymarketSportsLiveEventCardItem struct {
 	Markets     []*PolymarketSportsLiveMarketCardItem `protobuf:"bytes,15,rep,name=markets" json:"markets"`
 	Teams       []*PolymarketSportsLiveTeamItem       `protobuf:"bytes,16,rep,name=teams" json:"teams"`
 }
+
+type PolymarketSportsHistoryEventCardItem struct {
+	EventKey    string                                `protobuf:"bytes,1,opt,name=eventKey" json:"eventKey"`
+	EventID     string                                `protobuf:"bytes,2,opt,name=eventId" json:"eventId"`
+	League      string                                `protobuf:"bytes,3,opt,name=league" json:"league"`
+	Slug        string                                `protobuf:"bytes,4,opt,name=slug" json:"slug"`
+	Title       string                                `protobuf:"bytes,5,opt,name=title" json:"title"`
+	Image       string                                `protobuf:"bytes,6,opt,name=image" json:"image"`
+	Score       string                                `protobuf:"bytes,7,opt,name=score" json:"score"`
+	Period      string                                `protobuf:"bytes,8,opt,name=period" json:"period"`
+	Elapsed     string                                `protobuf:"bytes,9,opt,name=elapsed" json:"elapsed"`
+	GameStatus  string                                `protobuf:"bytes,10,opt,name=gameStatus" json:"gameStatus"`
+	StartTime   string                                `protobuf:"bytes,11,opt,name=startTime" json:"startTime"`
+	FinishedAt  string                                `protobuf:"bytes,12,opt,name=finishedAt" json:"finishedAt"`
+	UpdatedAt   string                                `protobuf:"bytes,13,opt,name=updatedAt" json:"updatedAt"`
+	Liquidity   float64                               `protobuf:"fixed64,14,opt,name=liquidity" json:"liquidity"`
+	Volume      float64                               `protobuf:"fixed64,15,opt,name=volume" json:"volume"`
+	MarketCount int32                                 `protobuf:"varint,16,opt,name=marketCount" json:"marketCount"`
+	Markets     []*PolymarketSportsLiveMarketCardItem `protobuf:"bytes,17,rep,name=markets" json:"markets"`
+	Teams       []*PolymarketSportsLiveTeamItem       `protobuf:"bytes,18,rep,name=teams" json:"teams"`
+}

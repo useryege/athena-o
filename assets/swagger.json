@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-772-g5fe4a1f-dirty"
+    "version": "v1.0.0-796-g3b9e5a6-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -405,6 +405,68 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/polymarketListPolymarketRealtimeMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/sports/history/events": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_ListPolymarketSportsHistoryEvents",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketSportsHistoryEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/sports/history/price-history:batchGet": {
+      "post": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_BatchGetPolymarketSportsHistoryPriceHistory",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/polymarketBatchGetPolymarketSportsHistoryPriceHistoryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketBatchGetPolymarketSportsHistoryPriceHistoryResponse"
             }
           },
           "default": {
@@ -1967,6 +2029,32 @@
         }
       }
     },
+    "polymarketBatchGetPolymarketSportsHistoryPriceHistoryRequest": {
+      "type": "object",
+      "properties": {
+        "limit_per_token": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "market_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "polymarketBatchGetPolymarketSportsHistoryPriceHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLivePriceHistorySeriesItem"
+          }
+        }
+      }
+    },
     "polymarketBatchGetPolymarketSportsLivePriceHistoryRequest": {
       "description": "BatchGetPolymarketSportsLivePriceHistoryRequest queries price history for sports live moneyline markets.",
       "type": "object",
@@ -2099,6 +2187,24 @@
         "subscribed_tokens": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "polymarketListPolymarketSportsHistoryEventsResponse": {
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsHistoryEventCardItem"
+          }
+        },
+        "stale": {
+          "type": "boolean"
         }
       }
     },
@@ -2991,6 +3097,74 @@
         },
         "window": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketSportsHistoryEventCardItem": {
+      "type": "object",
+      "properties": {
+        "elapsed": {
+          "type": "string"
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "eventKey": {
+          "type": "string"
+        },
+        "finishedAt": {
+          "type": "string"
+        },
+        "gameStatus": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "league": {
+          "type": "string"
+        },
+        "liquidity": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "markets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketCardItem"
+          }
+        },
+        "period": {
+          "type": "string"
+        },
+        "score": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "startTime": {
+          "type": "string"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "number",
+          "format": "double"
         }
       }
     },

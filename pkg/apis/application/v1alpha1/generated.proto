@@ -234,6 +234,44 @@ message PolymarketRealtimeWindowItem {
   optional int32 sampleCount = 4;
 }
 
+message PolymarketSportsHistoryEventCardItem {
+  optional string eventKey = 1;
+
+  optional string eventId = 2;
+
+  optional string league = 3;
+
+  optional string slug = 4;
+
+  optional string title = 5;
+
+  optional string image = 6;
+
+  optional string score = 7;
+
+  optional string period = 8;
+
+  optional string elapsed = 9;
+
+  optional string gameStatus = 10;
+
+  optional string startTime = 11;
+
+  optional string finishedAt = 12;
+
+  optional string updatedAt = 13;
+
+  optional double liquidity = 14;
+
+  optional double volume = 15;
+
+  optional int32 marketCount = 16;
+
+  repeated PolymarketSportsLiveMarketCardItem markets = 17;
+
+  repeated PolymarketSportsLiveTeamItem teams = 18;
+}
+
 message PolymarketSportsLiveEventCardItem {
   optional string eventKey = 1;
 

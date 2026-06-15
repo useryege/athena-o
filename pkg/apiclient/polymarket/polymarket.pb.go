@@ -738,6 +738,232 @@ func (m *BatchGetPolymarketSportsLivePriceHistoryResponse) GetItems() []*v1alpha
 	return nil
 }
 
+type ListPolymarketSportsHistoryEventsRequest struct {
+	Limit                int32    `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListPolymarketSportsHistoryEventsRequest) Reset() {
+	*m = ListPolymarketSportsHistoryEventsRequest{}
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketSportsHistoryEventsRequest) ProtoMessage()    {}
+func (*ListPolymarketSportsHistoryEventsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{11}
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketSportsHistoryEventsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketSportsHistoryEventsRequest.Merge(m, src)
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketSportsHistoryEventsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketSportsHistoryEventsRequest proto.InternalMessageInfo
+
+func (m *ListPolymarketSportsHistoryEventsRequest) GetLimit() int32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
+type ListPolymarketSportsHistoryEventsResponse struct {
+	Items                []*v1alpha1.PolymarketSportsHistoryEventCardItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	FetchedAt            int64                                            `protobuf:"varint,2,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
+	Stale                bool                                             `protobuf:"varint,3,opt,name=stale,proto3" json:"stale,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                         `json:"-"`
+	XXX_unrecognized     []byte                                           `json:"-"`
+	XXX_sizecache        int32                                            `json:"-"`
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) Reset() {
+	*m = ListPolymarketSportsHistoryEventsResponse{}
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ListPolymarketSportsHistoryEventsResponse) ProtoMessage() {}
+func (*ListPolymarketSportsHistoryEventsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{12}
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketSportsHistoryEventsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketSportsHistoryEventsResponse.Merge(m, src)
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketSportsHistoryEventsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketSportsHistoryEventsResponse proto.InternalMessageInfo
+
+func (m *ListPolymarketSportsHistoryEventsResponse) GetItems() []*v1alpha1.PolymarketSportsHistoryEventCardItem {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) GetFetchedAt() int64 {
+	if m != nil {
+		return m.FetchedAt
+	}
+	return 0
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) GetStale() bool {
+	if m != nil {
+		return m.Stale
+	}
+	return false
+}
+
+type BatchGetPolymarketSportsHistoryPriceHistoryRequest struct {
+	MarketKeys           []string `protobuf:"bytes,1,rep,name=market_keys,json=marketKeys,proto3" json:"market_keys,omitempty"`
+	LimitPerToken        int32    `protobuf:"varint,2,opt,name=limit_per_token,json=limitPerToken,proto3" json:"limit_per_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) Reset() {
+	*m = BatchGetPolymarketSportsHistoryPriceHistoryRequest{}
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*BatchGetPolymarketSportsHistoryPriceHistoryRequest) ProtoMessage() {}
+func (*BatchGetPolymarketSportsHistoryPriceHistoryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{13}
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryRequest.Merge(m, src)
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryRequest proto.InternalMessageInfo
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) GetMarketKeys() []string {
+	if m != nil {
+		return m.MarketKeys
+	}
+	return nil
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) GetLimitPerToken() int32 {
+	if m != nil {
+		return m.LimitPerToken
+	}
+	return 0
+}
+
+type BatchGetPolymarketSportsHistoryPriceHistoryResponse struct {
+	Items                []*v1alpha1.PolymarketSportsLivePriceHistorySeriesItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                               `json:"-"`
+	XXX_unrecognized     []byte                                                 `json:"-"`
+	XXX_sizecache        int32                                                  `json:"-"`
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) Reset() {
+	*m = BatchGetPolymarketSportsHistoryPriceHistoryResponse{}
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*BatchGetPolymarketSportsHistoryPriceHistoryResponse) ProtoMessage() {}
+func (*BatchGetPolymarketSportsHistoryPriceHistoryResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{14}
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryResponse.Merge(m, src)
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchGetPolymarketSportsHistoryPriceHistoryResponse proto.InternalMessageInfo
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) GetItems() []*v1alpha1.PolymarketSportsLivePriceHistorySeriesItem {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*GetPolymarketStatusRequest)(nil), "polymarket.GetPolymarketStatusRequest")
 	proto.RegisterType((*ListPolymarketHotMarketsRequest)(nil), "polymarket.ListPolymarketHotMarketsRequest")
@@ -750,6 +976,10 @@ func init() {
 	proto.RegisterType((*ListPolymarketSportsLiveEventsResponse)(nil), "polymarket.ListPolymarketSportsLiveEventsResponse")
 	proto.RegisterType((*BatchGetPolymarketSportsLivePriceHistoryRequest)(nil), "polymarket.BatchGetPolymarketSportsLivePriceHistoryRequest")
 	proto.RegisterType((*BatchGetPolymarketSportsLivePriceHistoryResponse)(nil), "polymarket.BatchGetPolymarketSportsLivePriceHistoryResponse")
+	proto.RegisterType((*ListPolymarketSportsHistoryEventsRequest)(nil), "polymarket.ListPolymarketSportsHistoryEventsRequest")
+	proto.RegisterType((*ListPolymarketSportsHistoryEventsResponse)(nil), "polymarket.ListPolymarketSportsHistoryEventsResponse")
+	proto.RegisterType((*BatchGetPolymarketSportsHistoryPriceHistoryRequest)(nil), "polymarket.BatchGetPolymarketSportsHistoryPriceHistoryRequest")
+	proto.RegisterType((*BatchGetPolymarketSportsHistoryPriceHistoryResponse)(nil), "polymarket.BatchGetPolymarketSportsHistoryPriceHistoryResponse")
 }
 
 func init() {
@@ -757,65 +987,73 @@ func init() {
 }
 
 var fileDescriptor_c24b13cfba0d1246 = []byte{
-	// 922 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x97, 0xcf, 0x6f, 0x1b, 0x45,
-	0x14, 0xc7, 0x35, 0x71, 0x9d, 0x26, 0x2f, 0x2a, 0x69, 0x86, 0x1e, 0xcc, 0x36, 0x75, 0xcd, 0x42,
-	0x12, 0x83, 0xc9, 0x6e, 0x93, 0x08, 0x21, 0x85, 0x22, 0x91, 0x56, 0x88, 0x00, 0xad, 0x14, 0x36,
-	0x88, 0x03, 0x1c, 0xac, 0xf1, 0xfa, 0x61, 0x8f, 0xbc, 0xde, 0xd9, 0xce, 0x8c, 0x2d, 0xb9, 0x37,
-	0x38, 0x73, 0x41, 0x9c, 0xf9, 0x0f, 0x10, 0x12, 0x17, 0xee, 0xdc, 0x7a, 0xac, 0xc4, 0x3f, 0x80,
-	0x22, 0x24, 0xfe, 0x0d, 0xe4, 0xd9, 0xb5, 0xbd, 0xdb, 0xae, 0xb3, 0x0e, 0xf5, 0xcd, 0x7e, 0x33,
-	0x6f, 0xde, 0xf7, 0xfb, 0x3e, 0x9e, 0x1f, 0x86, 0x06, 0x0f, 0x35, 0xca, 0x90, 0x05, 0xae, 0x42,
-	0x39, 0x44, 0xe9, 0x46, 0x22, 0x18, 0xf5, 0x99, 0xec, 0xa1, 0x4e, 0x7d, 0x74, 0x22, 0x29, 0xb4,
-	0xa0, 0x30, 0x8b, 0x58, 0xa7, 0x1d, 0xae, 0xbb, 0x83, 0x96, 0xe3, 0x8b, 0xbe, 0x3b, 0x50, 0x28,
-	0x47, 0xd8, 0x41, 0x97, 0xe9, 0x2e, 0x86, 0xcc, 0x8d, 0x7a, 0x1d, 0x97, 0x45, 0x5c, 0xb9, 0x2c,
-	0x8a, 0x02, 0xee, 0x33, 0xcd, 0x45, 0xe8, 0x0e, 0x0f, 0x58, 0x10, 0x75, 0xd9, 0x81, 0xdb, 0xc1,
-	0x10, 0x25, 0xd3, 0xd8, 0x8e, 0x57, 0xb5, 0xb6, 0x3b, 0x42, 0x74, 0x02, 0x1c, 0x67, 0xb8, 0x2c,
-	0x0c, 0x85, 0x36, 0xf3, 0x55, 0x3c, 0x6a, 0x6f, 0x83, 0xf5, 0x29, 0xea, 0xb3, 0x69, 0xe1, 0x73,
-	0xcd, 0xf4, 0x40, 0x79, 0xf8, 0x64, 0x80, 0x4a, 0xdb, 0x1f, 0xc0, 0xdd, 0x47, 0x5c, 0xa5, 0x86,
-	0x4f, 0x85, 0x7e, 0x6c, 0x3e, 0x4c, 0xa6, 0xd0, 0x5b, 0x50, 0x0e, 0x78, 0x9f, 0xeb, 0x0a, 0xa9,
-	0x91, 0x7a, 0xd9, 0x8b, 0xbf, 0xd8, 0x7f, 0xae, 0x40, 0x6d, 0x7e, 0xa6, 0x8a, 0x44, 0xa8, 0x90,
-	0x76, 0xa0, 0xcc, 0x35, 0xf6, 0x55, 0x85, 0xd4, 0x4a, 0xf5, 0x8d, 0xc3, 0x2f, 0x9d, 0x99, 0x67,
-	0x67, 0xe2, 0xd9, 0x89, 0x3d, 0x3b, 0x51, 0xaf, 0xe3, 0x8c, 0x3d, 0x3b, 0x29, 0xcf, 0xce, 0xc4,
-	0xb3, 0x93, 0x53, 0xe6, 0x33, 0x8d, 0x7d, 0x2f, 0x5e, 0x9f, 0xde, 0x01, 0xf8, 0x0e, 0xb5, 0xdf,
-	0xc5, 0x76, 0x93, 0xe9, 0xca, 0x4a, 0x8d, 0xd4, 0x4b, 0xde, 0x7a, 0x12, 0x39, 0x31, 0x16, 0x94,
-	0x66, 0x01, 0x56, 0x4a, 0x35, 0x52, 0x5f, 0xf3, 0xe2, 0x2f, 0xb4, 0x01, 0x5b, 0x7d, 0x11, 0x72,
-	0x2d, 0x24, 0xb6, 0x9b, 0xf1, 0xe2, 0xaa, 0x72, 0xcd, 0x98, 0xbc, 0x39, 0x1d, 0x48, 0x2c, 0xd1,
-	0x77, 0x60, 0x16, 0x6b, 0x6a, 0xd1, 0xc3, 0x50, 0x55, 0xca, 0x66, 0xee, 0xe6, 0x34, 0xfe, 0x95,
-	0x09, 0xd3, 0x3d, 0xd8, 0xf4, 0x59, 0xd8, 0xe6, 0x6d, 0xa6, 0xb1, 0xe9, 0x8b, 0x41, 0xa8, 0x2b,
-	0xab, 0x66, 0xe6, 0x6b, 0xd3, 0xf0, 0xc3, 0x71, 0xd4, 0xbe, 0x0f, 0x6f, 0x67, 0x5b, 0xe8, 0x21,
-	0x0b, 0x34, 0xef, 0xe3, 0x42, 0x04, 0x7e, 0x2a, 0xc1, 0x4e, 0x41, 0x7a, 0x82, 0x21, 0xc8, 0x62,
-	0xf8, 0x7a, 0x19, 0x18, 0xb2, 0xb5, 0x5e, 0x99, 0xc5, 0x3e, 0x50, 0x35, 0x68, 0x29, 0x5f, 0xf2,
-	0xd6, 0x4b, 0x30, 0xb6, 0x66, 0x23, 0x13, 0x1a, 0x0d, 0x48, 0x05, 0xb3, 0x38, 0x6e, 0xce, 0x06,
-	0x12, 0x1e, 0xdb, 0xb0, 0xee, 0x8b, 0x30, 0x44, 0x5f, 0x63, 0xdb, 0x90, 0x58, 0xf3, 0x66, 0x01,
-	0x6a, 0xc3, 0x8d, 0x80, 0x29, 0xdd, 0xc4, 0x21, 0x86, 0x7a, 0xac, 0xf8, 0xba, 0x51, 0xbc, 0x31,
-	0x0e, 0x7e, 0x32, 0x8e, 0x9d, 0xe8, 0x3c, 0xa2, 0x6b, 0xb9, 0x44, 0x8f, 0xe0, 0x76, 0x16, 0xc9,
-	0x63, 0x31, 0x44, 0x59, 0x00, 0xf2, 0xfb, 0x12, 0x6c, 0xe7, 0x67, 0x25, 0xfc, 0x78, 0x96, 0xdf,
-	0xf9, 0x32, 0xf8, 0x99, 0x12, 0x4b, 0x82, 0x97, 0x69, 0xf0, 0xb5, 0xc2, 0x06, 0x97, 0x5f, 0x6e,
-	0x70, 0xee, 0x56, 0x5c, 0xbd, 0xc2, 0x56, 0xbc, 0xbe, 0xf0, 0x56, 0xcc, 0x07, 0xf7, 0xd1, 0x8b,
-	0x7b, 0xe9, 0x3c, 0x12, 0x52, 0xab, 0x47, 0x7c, 0x88, 0x46, 0x63, 0x01, 0xc2, 0xe7, 0x04, 0x76,
-	0x8b, 0xf2, 0x13, 0x98, 0x4f, 0xb2, 0x30, 0xbf, 0x5d, 0x06, 0xcc, 0x17, 0x8a, 0x3d, 0x64, 0xb2,
-	0xfd, 0xaa, 0x50, 0xed, 0xa7, 0xe0, 0x3e, 0x60, 0xda, 0xef, 0x66, 0x2f, 0x8f, 0x69, 0xa1, 0x33,
-	0xc9, 0x7d, 0x3c, 0xe5, 0x4a, 0x0b, 0x39, 0x9a, 0xf4, 0xe6, 0x2e, 0x6c, 0xc4, 0xd3, 0x9a, 0x3d,
-	0x1c, 0xc5, 0x06, 0xd7, 0x3d, 0x88, 0x43, 0x5f, 0xe0, 0x48, 0xd1, 0x5d, 0xd8, 0x34, 0xfd, 0x6a,
-	0x46, 0x28, 0x63, 0x72, 0x46, 0x4d, 0xd9, 0xbb, 0x61, 0xc2, 0x67, 0x28, 0x0d, 0x37, 0xfb, 0x37,
-	0x02, 0xf7, 0x16, 0x2f, 0x9e, 0x34, 0xf6, 0x69, 0xb6, 0xb1, 0xed, 0xe5, 0x36, 0x36, 0x5d, 0xf2,
-	0x1c, 0x25, 0x47, 0x95, 0xea, 0xf0, 0xe1, 0xb3, 0x35, 0xd8, 0x4a, 0x65, 0xa1, 0x1c, 0x72, 0x1f,
-	0xe9, 0xaf, 0x04, 0x5e, 0xcf, 0xb9, 0x7b, 0xe9, 0xae, 0x93, 0x7a, 0x19, 0xcc, 0xbf, 0x9c, 0xad,
-	0xcf, 0x97, 0x62, 0xc1, 0x2c, 0x69, 0xbf, 0xf9, 0xc3, 0x5f, 0xff, 0xfc, 0xbc, 0x72, 0x9b, 0xbe,
-	0x61, 0x9e, 0x09, 0xc3, 0x83, 0xf4, 0x3b, 0x45, 0xc5, 0xb2, 0x7e, 0x21, 0x50, 0x99, 0x77, 0xa5,
-	0xd3, 0x46, 0x5a, 0x73, 0xc1, 0x93, 0xc1, 0x7a, 0x6f, 0xb1, 0xc9, 0x31, 0x38, 0x7b, 0xd7, 0x48,
-	0xab, 0xd1, 0x6a, 0x8e, 0xb4, 0xae, 0xd0, 0xfb, 0xc9, 0x79, 0x40, 0x7f, 0x27, 0x70, 0xe7, 0xd2,
-	0x0b, 0x8f, 0xde, 0x9b, 0x5f, 0x37, 0xff, 0x6a, 0xb5, 0x0e, 0xae, 0x90, 0x91, 0xc8, 0x6d, 0x18,
-	0xb9, 0x3b, 0xf4, 0xad, 0x1c, 0xb9, 0x32, 0xc9, 0x99, 0x6a, 0xfe, 0x91, 0xc0, 0xad, 0xbc, 0xb3,
-	0x9d, 0xee, 0xcd, 0x2f, 0x9c, 0xb9, 0x33, 0xac, 0x7a, 0xf1, 0xc4, 0x44, 0xd8, 0x65, 0x88, 0xfb,
-	0x71, 0xd5, 0x3f, 0x08, 0x54, 0x2f, 0x3f, 0xa7, 0xe8, 0x25, 0x1d, 0x99, 0x73, 0x26, 0x5a, 0x87,
-	0x57, 0x49, 0x49, 0xc4, 0xee, 0x1b, 0xb1, 0x7b, 0x74, 0x27, 0xef, 0xf7, 0x68, 0x92, 0xdc, 0x80,
-	0x0f, 0xd1, 0xc5, 0x58, 0xd5, 0xbf, 0x04, 0xea, 0x8b, 0x9e, 0x08, 0xf4, 0xc3, 0xb4, 0x9e, 0x2b,
-	0x1e, 0x62, 0xd6, 0xfd, 0xff, 0x97, 0x9c, 0xd8, 0xfa, 0xd8, 0xd8, 0x3a, 0xb6, 0xdf, 0x2f, 0xb0,
-	0x15, 0x8d, 0x93, 0xf7, 0xbb, 0x71, 0xf6, 0x71, 0x2b, 0x29, 0x73, 0x4c, 0xde, 0x7d, 0x70, 0xf2,
-	0xec, 0xa2, 0x4a, 0x9e, 0x5f, 0x54, 0xc9, 0xdf, 0x17, 0x55, 0xf2, 0xcd, 0x51, 0xf1, 0xbf, 0x04,
-	0x3f, 0xe0, 0x18, 0xa6, 0xff, 0x6c, 0xb4, 0x56, 0xcd, 0xcb, 0xff, 0xe8, 0xbf, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0x5b, 0x77, 0x19, 0xc0, 0x9c, 0x0c, 0x00, 0x00,
+	// 1041 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x98, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xc7, 0x35, 0x49, 0x9d, 0x26, 0x2f, 0x94, 0x34, 0x43, 0x0f, 0x66, 0x9b, 0xa6, 0xee, 0x42,
+	0x12, 0xb7, 0x26, 0xbb, 0xf9, 0x41, 0x05, 0x0a, 0x2d, 0x34, 0x8d, 0x10, 0x01, 0x5a, 0x29, 0x38,
+	0x88, 0x03, 0x48, 0x58, 0x93, 0xf5, 0xc3, 0x1e, 0x79, 0xbd, 0xbb, 0xdd, 0x19, 0x5b, 0x72, 0x25,
+	0x0e, 0xc0, 0x95, 0x0b, 0xe2, 0xcc, 0x7f, 0x80, 0x90, 0x7a, 0xe1, 0x0e, 0x27, 0x8e, 0x95, 0x90,
+	0x38, 0xa3, 0x08, 0x89, 0x3f, 0x80, 0x7f, 0x00, 0x79, 0x76, 0x6c, 0xef, 0xb6, 0xbb, 0x59, 0xbb,
+	0x35, 0xe2, 0xe6, 0x7d, 0x33, 0x6f, 0xde, 0xfb, 0xbe, 0xcf, 0xac, 0xdf, 0xd3, 0x42, 0x85, 0x7b,
+	0x12, 0x43, 0x8f, 0xb9, 0xb6, 0xc0, 0xb0, 0x8b, 0xa1, 0x1d, 0xf8, 0x6e, 0xaf, 0xcd, 0xc2, 0x16,
+	0xca, 0xd8, 0x4f, 0x2b, 0x08, 0x7d, 0xe9, 0x53, 0x18, 0x59, 0x8c, 0xc3, 0x06, 0x97, 0xcd, 0xce,
+	0x89, 0xe5, 0xf8, 0x6d, 0xbb, 0x23, 0x30, 0xec, 0x61, 0x03, 0x6d, 0x26, 0x9b, 0xe8, 0x31, 0x3b,
+	0x68, 0x35, 0x6c, 0x16, 0x70, 0x61, 0xb3, 0x20, 0x70, 0xb9, 0xc3, 0x24, 0xf7, 0x3d, 0xbb, 0xbb,
+	0xcd, 0xdc, 0xa0, 0xc9, 0xb6, 0xed, 0x06, 0x7a, 0x18, 0x32, 0x89, 0xf5, 0xe8, 0x54, 0x63, 0xa5,
+	0xe1, 0xfb, 0x0d, 0x17, 0xfb, 0x1e, 0x36, 0xf3, 0x3c, 0x5f, 0xaa, 0xfd, 0x22, 0x5a, 0x35, 0x57,
+	0xc0, 0x78, 0x0f, 0xe5, 0xd1, 0x30, 0xf0, 0xb1, 0x64, 0xb2, 0x23, 0xaa, 0xf8, 0xa0, 0x83, 0x42,
+	0x9a, 0x6f, 0xc0, 0xd5, 0x7b, 0x5c, 0xc4, 0x96, 0x0f, 0x7d, 0x79, 0x5f, 0xfd, 0x18, 0x6c, 0xa1,
+	0x97, 0xa0, 0xe0, 0xf2, 0x36, 0x97, 0x45, 0x52, 0x22, 0xe5, 0x42, 0x35, 0x7a, 0x30, 0x7f, 0x99,
+	0x81, 0x52, 0xb6, 0xa7, 0x08, 0x7c, 0x4f, 0x20, 0x6d, 0x40, 0x81, 0x4b, 0x6c, 0x8b, 0x22, 0x29,
+	0xcd, 0x96, 0x17, 0x77, 0x3e, 0xb2, 0x46, 0x9a, 0xad, 0x81, 0x66, 0x2b, 0xd2, 0x6c, 0x05, 0xad,
+	0x86, 0xd5, 0xd7, 0x6c, 0xc5, 0x34, 0x5b, 0x03, 0xcd, 0x56, 0x4a, 0x98, 0xf7, 0x25, 0xb6, 0xab,
+	0xd1, 0xf9, 0xf4, 0x0a, 0xc0, 0x17, 0x28, 0x9d, 0x26, 0xd6, 0x6b, 0x4c, 0x16, 0x67, 0x4a, 0xa4,
+	0x3c, 0x5b, 0x5d, 0xd0, 0x96, 0x7d, 0x25, 0x41, 0x48, 0xe6, 0x62, 0x71, 0xb6, 0x44, 0xca, 0xf3,
+	0xd5, 0xe8, 0x81, 0x56, 0x60, 0xb9, 0xed, 0x7b, 0x5c, 0xfa, 0x21, 0xd6, 0x6b, 0xd1, 0xe1, 0xa2,
+	0x78, 0x4e, 0x89, 0xbc, 0x38, 0x5c, 0xd0, 0x92, 0xe8, 0x75, 0x18, 0xd9, 0x6a, 0xd2, 0x6f, 0xa1,
+	0x27, 0x8a, 0x05, 0xb5, 0x77, 0x69, 0x68, 0xff, 0x58, 0x99, 0xe9, 0x06, 0x2c, 0x39, 0xcc, 0xab,
+	0xf3, 0x3a, 0x93, 0x58, 0x73, 0xfc, 0x8e, 0x27, 0x8b, 0x73, 0x6a, 0xe7, 0x8b, 0x43, 0xf3, 0x41,
+	0xdf, 0x6a, 0xde, 0x82, 0x57, 0x93, 0x25, 0xac, 0x22, 0x73, 0x25, 0x6f, 0xe3, 0x58, 0x04, 0xbe,
+	0x9b, 0x85, 0xb5, 0x1c, 0x77, 0x8d, 0xc1, 0x4d, 0x62, 0xf8, 0x64, 0x1a, 0x18, 0x92, 0xb1, 0x9e,
+	0x9b, 0xc5, 0x26, 0x50, 0xd1, 0x39, 0x11, 0x4e, 0xc8, 0x4f, 0x9e, 0x82, 0xb1, 0x3c, 0x5a, 0x19,
+	0xd0, 0xa8, 0x40, 0xcc, 0x98, 0xc4, 0x71, 0x71, 0xb4, 0xa0, 0x79, 0xac, 0xc0, 0x82, 0xe3, 0x7b,
+	0x1e, 0x3a, 0x12, 0xeb, 0x8a, 0xc4, 0x7c, 0x75, 0x64, 0xa0, 0x26, 0x5c, 0x70, 0x99, 0x90, 0x35,
+	0xec, 0xa2, 0x27, 0xfb, 0x19, 0x9f, 0x57, 0x19, 0x2f, 0xf6, 0x8d, 0xef, 0xf6, 0x6d, 0xfb, 0x32,
+	0x8d, 0xe8, 0x7c, 0x2a, 0xd1, 0x5d, 0xb8, 0x9c, 0x44, 0x72, 0xdf, 0xef, 0x62, 0x98, 0x03, 0xf2,
+	0xab, 0x59, 0x58, 0x49, 0xf7, 0xd2, 0xfc, 0x78, 0x92, 0xdf, 0xf1, 0x34, 0xf8, 0xa9, 0x10, 0x53,
+	0x82, 0x97, 0x28, 0xf0, 0xb9, 0xdc, 0x02, 0x17, 0x9e, 0x2e, 0x70, 0xea, 0xab, 0x38, 0x37, 0xc1,
+	0xab, 0x78, 0x7e, 0xec, 0x57, 0x31, 0x1d, 0xdc, 0xed, 0x27, 0xdf, 0xa5, 0xe3, 0xc0, 0x0f, 0xa5,
+	0xb8, 0xc7, 0xbb, 0xa8, 0x72, 0xcc, 0x41, 0xf8, 0x98, 0xc0, 0x7a, 0x9e, 0xbf, 0x86, 0xf9, 0x20,
+	0x09, 0xf3, 0xb3, 0x69, 0xc0, 0x7c, 0x22, 0xd8, 0x01, 0x0b, 0xeb, 0xcf, 0x0b, 0xd5, 0x7c, 0x08,
+	0xf6, 0x5d, 0x26, 0x9d, 0x66, 0xb2, 0x79, 0x0c, 0x03, 0x1d, 0x85, 0xdc, 0xc1, 0x43, 0x2e, 0xa4,
+	0x1f, 0xf6, 0x06, 0xb5, 0xb9, 0x0a, 0x8b, 0xd1, 0xb6, 0x5a, 0x0b, 0x7b, 0x91, 0xc0, 0x85, 0x2a,
+	0x44, 0xa6, 0x0f, 0xb1, 0x27, 0xe8, 0x3a, 0x2c, 0xa9, 0x7a, 0xd5, 0x02, 0x0c, 0x23, 0x72, 0x2a,
+	0x9b, 0x42, 0xf5, 0x82, 0x32, 0x1f, 0x61, 0xa8, 0xb8, 0x99, 0x3f, 0x11, 0xd8, 0x1a, 0x3f, 0xb8,
+	0x2e, 0xec, 0xc3, 0x64, 0x61, 0xeb, 0xd3, 0x2d, 0x6c, 0x3c, 0xe4, 0x31, 0x86, 0x1c, 0x45, 0xac,
+	0xc2, 0xe6, 0x1d, 0x28, 0xa7, 0xe1, 0xd7, 0xfb, 0xc7, 0xb9, 0x41, 0x7f, 0x10, 0xb8, 0x3e, 0xc6,
+	0x11, 0x5a, 0xab, 0x4c, 0x6a, 0xfd, 0x7c, 0x7a, 0x5a, 0xe3, 0xf1, 0xa6, 0x72, 0x8f, 0xbe, 0x84,
+	0x9d, 0x2c, 0x94, 0x3a, 0xd6, 0x7f, 0x7a, 0x95, 0x1e, 0x11, 0xd8, 0x9d, 0x28, 0xfe, 0xff, 0x7f,
+	0x9b, 0x76, 0xbe, 0x79, 0x01, 0x96, 0x63, 0x5e, 0x18, 0x76, 0xb9, 0x83, 0xf4, 0x47, 0x02, 0x2f,
+	0xa5, 0x4c, 0x72, 0x74, 0xdd, 0x8a, 0xcd, 0x99, 0xd9, 0xa3, 0x9e, 0xf1, 0xc1, 0x54, 0x24, 0xa8,
+	0x23, 0xcd, 0x6b, 0x5f, 0xff, 0xfe, 0xd7, 0xf7, 0x33, 0x97, 0xe9, 0xcb, 0x6a, 0xe8, 0xec, 0x6e,
+	0xc7, 0xa7, 0x5e, 0x11, 0xa5, 0xf5, 0x03, 0x81, 0x62, 0xd6, 0x80, 0x48, 0x2b, 0xf1, 0x9c, 0x73,
+	0x06, 0x50, 0xe3, 0xb5, 0xf1, 0x36, 0x47, 0xe0, 0xcc, 0x75, 0x95, 0x5a, 0x89, 0xae, 0xa6, 0xa4,
+	0xd6, 0xf4, 0xe5, 0xa6, 0xee, 0x2e, 0xf4, 0x11, 0x81, 0x2b, 0x67, 0x8e, 0x4f, 0x74, 0x2b, 0x3b,
+	0x6e, 0xfa, 0xa0, 0x66, 0x6c, 0x4f, 0xe0, 0xa1, 0xd3, 0xad, 0xa8, 0x74, 0xd7, 0xe8, 0x2b, 0x29,
+	0xe9, 0x86, 0xda, 0x67, 0x98, 0xf3, 0xb7, 0x04, 0x2e, 0xa5, 0x4d, 0x0a, 0x74, 0x23, 0x3b, 0x70,
+	0x62, 0x02, 0x31, 0xca, 0xf9, 0x1b, 0x75, 0x62, 0x67, 0x21, 0x6e, 0x47, 0x51, 0x7f, 0x26, 0xb0,
+	0x7a, 0x76, 0xd7, 0xa3, 0x67, 0x54, 0x24, 0xa3, 0xc3, 0x1a, 0x3b, 0x93, 0xb8, 0xe8, 0x64, 0x37,
+	0x55, 0xb2, 0x1b, 0x74, 0x2d, 0xed, 0x3e, 0x2a, 0x27, 0xdb, 0xe5, 0x5d, 0xb4, 0x31, 0xca, 0xea,
+	0x6f, 0x02, 0xe5, 0x71, 0xfb, 0x0b, 0x7d, 0x2b, 0x9e, 0xcf, 0x84, 0x2d, 0xd1, 0xb8, 0xf5, 0x6c,
+	0xce, 0x5a, 0xd6, 0x1d, 0x25, 0x6b, 0xcf, 0xbc, 0x99, 0x23, 0x2b, 0xe8, 0x3b, 0x6f, 0x36, 0x23,
+	0xef, 0xbd, 0x13, 0x1d, 0x66, 0x8f, 0xdc, 0xa0, 0xbf, 0x12, 0xb8, 0x96, 0xdb, 0x56, 0xe8, 0xeb,
+	0x79, 0x25, 0x4f, 0x6b, 0x64, 0xc6, 0xcd, 0x09, 0xbd, 0xb4, 0xa8, 0x2d, 0x25, 0xea, 0x06, 0x2d,
+	0x67, 0x8b, 0xd2, 0x4a, 0x06, 0xb8, 0xfe, 0x21, 0x50, 0x99, 0xe0, 0x3f, 0x9c, 0xbe, 0x3d, 0x4e,
+	0xd1, 0xb3, 0x9b, 0x8f, 0xf1, 0xce, 0x33, 0xfb, 0x6b, 0x89, 0x07, 0x4a, 0xe2, 0x6d, 0xf3, 0xcd,
+	0x7c, 0x89, 0x99, 0xe8, 0xee, 0xee, 0xff, 0x76, 0xba, 0x4a, 0x1e, 0x9f, 0xae, 0x92, 0x3f, 0x4f,
+	0x57, 0xc9, 0xa7, 0xbb, 0xf9, 0x9f, 0x0b, 0x1c, 0x97, 0xa3, 0x17, 0xff, 0xea, 0x70, 0x32, 0xa7,
+	0x3e, 0x01, 0xec, 0xfe, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xf0, 0x0f, 0x86, 0xca, 0xa5, 0x10, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -842,6 +1080,8 @@ type PolymarketServiceClient interface {
 	ListPolymarketSportsLiveEvents(ctx context.Context, in *ListPolymarketSportsLiveEventsRequest, opts ...grpc.CallOption) (*ListPolymarketSportsLiveEventsResponse, error)
 	// BatchGetPolymarketSportsLivePriceHistory returns price history for sports live moneyline markets.
 	BatchGetPolymarketSportsLivePriceHistory(ctx context.Context, in *BatchGetPolymarketSportsLivePriceHistoryRequest, opts ...grpc.CallOption) (*BatchGetPolymarketSportsLivePriceHistoryResponse, error)
+	ListPolymarketSportsHistoryEvents(ctx context.Context, in *ListPolymarketSportsHistoryEventsRequest, opts ...grpc.CallOption) (*ListPolymarketSportsHistoryEventsResponse, error)
+	BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context, in *BatchGetPolymarketSportsHistoryPriceHistoryRequest, opts ...grpc.CallOption) (*BatchGetPolymarketSportsHistoryPriceHistoryResponse, error)
 }
 
 type polymarketServiceClient struct {
@@ -906,6 +1146,24 @@ func (c *polymarketServiceClient) BatchGetPolymarketSportsLivePriceHistory(ctx c
 	return out, nil
 }
 
+func (c *polymarketServiceClient) ListPolymarketSportsHistoryEvents(ctx context.Context, in *ListPolymarketSportsHistoryEventsRequest, opts ...grpc.CallOption) (*ListPolymarketSportsHistoryEventsResponse, error) {
+	out := new(ListPolymarketSportsHistoryEventsResponse)
+	err := c.cc.Invoke(ctx, "/polymarket.PolymarketService/ListPolymarketSportsHistoryEvents", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *polymarketServiceClient) BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context, in *BatchGetPolymarketSportsHistoryPriceHistoryRequest, opts ...grpc.CallOption) (*BatchGetPolymarketSportsHistoryPriceHistoryResponse, error) {
+	out := new(BatchGetPolymarketSportsHistoryPriceHistoryResponse)
+	err := c.cc.Invoke(ctx, "/polymarket.PolymarketService/BatchGetPolymarketSportsHistoryPriceHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PolymarketServiceServer is the server API for PolymarketService service.
 type PolymarketServiceServer interface {
 	// GetPolymarketStatus returns the polymarket service runtime status.
@@ -920,6 +1178,8 @@ type PolymarketServiceServer interface {
 	ListPolymarketSportsLiveEvents(context.Context, *ListPolymarketSportsLiveEventsRequest) (*ListPolymarketSportsLiveEventsResponse, error)
 	// BatchGetPolymarketSportsLivePriceHistory returns price history for sports live moneyline markets.
 	BatchGetPolymarketSportsLivePriceHistory(context.Context, *BatchGetPolymarketSportsLivePriceHistoryRequest) (*BatchGetPolymarketSportsLivePriceHistoryResponse, error)
+	ListPolymarketSportsHistoryEvents(context.Context, *ListPolymarketSportsHistoryEventsRequest) (*ListPolymarketSportsHistoryEventsResponse, error)
+	BatchGetPolymarketSportsHistoryPriceHistory(context.Context, *BatchGetPolymarketSportsHistoryPriceHistoryRequest) (*BatchGetPolymarketSportsHistoryPriceHistoryResponse, error)
 }
 
 // UnimplementedPolymarketServiceServer can be embedded to have forward compatible implementations.
@@ -943,6 +1203,12 @@ func (*UnimplementedPolymarketServiceServer) ListPolymarketSportsLiveEvents(ctx 
 }
 func (*UnimplementedPolymarketServiceServer) BatchGetPolymarketSportsLivePriceHistory(ctx context.Context, req *BatchGetPolymarketSportsLivePriceHistoryRequest) (*BatchGetPolymarketSportsLivePriceHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchGetPolymarketSportsLivePriceHistory not implemented")
+}
+func (*UnimplementedPolymarketServiceServer) ListPolymarketSportsHistoryEvents(ctx context.Context, req *ListPolymarketSportsHistoryEventsRequest) (*ListPolymarketSportsHistoryEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPolymarketSportsHistoryEvents not implemented")
+}
+func (*UnimplementedPolymarketServiceServer) BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context, req *BatchGetPolymarketSportsHistoryPriceHistoryRequest) (*BatchGetPolymarketSportsHistoryPriceHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchGetPolymarketSportsHistoryPriceHistory not implemented")
 }
 
 func RegisterPolymarketServiceServer(s *grpc.Server, srv PolymarketServiceServer) {
@@ -1057,6 +1323,42 @@ func _PolymarketService_BatchGetPolymarketSportsLivePriceHistory_Handler(srv int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PolymarketService_ListPolymarketSportsHistoryEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPolymarketSportsHistoryEventsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolymarketServiceServer).ListPolymarketSportsHistoryEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/polymarket.PolymarketService/ListPolymarketSportsHistoryEvents",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolymarketServiceServer).ListPolymarketSportsHistoryEvents(ctx, req.(*ListPolymarketSportsHistoryEventsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PolymarketService_BatchGetPolymarketSportsHistoryPriceHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchGetPolymarketSportsHistoryPriceHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolymarketServiceServer).BatchGetPolymarketSportsHistoryPriceHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/polymarket.PolymarketService/BatchGetPolymarketSportsHistoryPriceHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolymarketServiceServer).BatchGetPolymarketSportsHistoryPriceHistory(ctx, req.(*BatchGetPolymarketSportsHistoryPriceHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _PolymarketService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "polymarket.PolymarketService",
 	HandlerType: (*PolymarketServiceServer)(nil),
@@ -1084,6 +1386,14 @@ var _PolymarketService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchGetPolymarketSportsLivePriceHistory",
 			Handler:    _PolymarketService_BatchGetPolymarketSportsLivePriceHistory_Handler,
+		},
+		{
+			MethodName: "ListPolymarketSportsHistoryEvents",
+			Handler:    _PolymarketService_ListPolymarketSportsHistoryEvents_Handler,
+		},
+		{
+			MethodName: "BatchGetPolymarketSportsHistoryPriceHistory",
+			Handler:    _PolymarketService_BatchGetPolymarketSportsHistoryPriceHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1626,6 +1936,176 @@ func (m *BatchGetPolymarketSportsLivePriceHistoryResponse) MarshalToSizedBuffer(
 	return len(dAtA) - i, nil
 }
 
+func (m *ListPolymarketSportsHistoryEventsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketSportsHistoryEventsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketSportsHistoryEventsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Limit != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Limit))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Stale {
+		i--
+		if m.Stale {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.FetchedAt != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.FetchedAt))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintPolymarket(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.LimitPerToken != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.LimitPerToken))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.MarketKeys) > 0 {
+		for iNdEx := len(m.MarketKeys) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.MarketKeys[iNdEx])
+			copy(dAtA[i:], m.MarketKeys[iNdEx])
+			i = encodeVarintPolymarket(dAtA, i, uint64(len(m.MarketKeys[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintPolymarket(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintPolymarket(dAtA []byte, offset int, v uint64) int {
 	offset -= sovPolymarket(v)
 	base := offset
@@ -1866,6 +2346,84 @@ func (m *BatchGetPolymarketSportsLivePriceHistoryRequest) Size() (n int) {
 }
 
 func (m *BatchGetPolymarketSportsLivePriceHistoryResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovPolymarket(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketSportsHistoryEventsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Limit != 0 {
+		n += 1 + sovPolymarket(uint64(m.Limit))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketSportsHistoryEventsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovPolymarket(uint64(l))
+		}
+	}
+	if m.FetchedAt != 0 {
+		n += 1 + sovPolymarket(uint64(m.FetchedAt))
+	}
+	if m.Stale {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.MarketKeys) > 0 {
+		for _, s := range m.MarketKeys {
+			l = len(s)
+			n += 1 + l + sovPolymarket(uint64(l))
+		}
+	}
+	if m.LimitPerToken != 0 {
+		n += 1 + sovPolymarket(uint64(m.LimitPerToken))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3094,6 +3652,387 @@ func (m *BatchGetPolymarketSportsLivePriceHistoryResponse) Unmarshal(dAtA []byte
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: BatchGetPolymarketSportsLivePriceHistoryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.PolymarketSportsLivePriceHistorySeriesItem{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketSportsHistoryEventsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketSportsHistoryEventsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketSportsHistoryEventsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Limit", wireType)
+			}
+			m.Limit = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Limit |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketSportsHistoryEventsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketSportsHistoryEventsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketSportsHistoryEventsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.PolymarketSportsHistoryEventCardItem{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FetchedAt", wireType)
+			}
+			m.FetchedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FetchedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stale", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Stale = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BatchGetPolymarketSportsHistoryPriceHistoryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BatchGetPolymarketSportsHistoryPriceHistoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MarketKeys", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MarketKeys = append(m.MarketKeys, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LimitPerToken", wireType)
+			}
+			m.LimitPerToken = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LimitPerToken |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BatchGetPolymarketSportsHistoryPriceHistoryResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BatchGetPolymarketSportsHistoryPriceHistoryResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BatchGetPolymarketSportsHistoryPriceHistoryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

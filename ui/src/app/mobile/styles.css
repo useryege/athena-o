@@ -630,6 +630,36 @@ body[data-theme='dark'] .app-page__header {
     font-variant-numeric: tabular-nums;
 }
 
+.sports-history-times {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.sports-history-time {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+    padding: 9px 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 40%, var(--athena-panel-solid));
+}
+
+.sports-history-time__value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--athena-text);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.sports-history-status {
+    border-left-color: var(--athena-accent);
+    background: color-mix(in srgb, var(--athena-accent) 10%, var(--athena-panel-solid));
+}
+
 .sports-live-chart {
     display: grid;
     align-items: center;
@@ -842,6 +872,10 @@ body[data-theme='dark'] .app-page__header {
     .sports-live-moneyline__badge {
         width: 40px;
         height: 40px;
+    }
+
+    .sports-history-times {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

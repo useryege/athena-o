@@ -7,12 +7,14 @@ import {
     PolymarketHotMarketItem,
     PolymarketMoverMarketItem,
     PolymarketRealtimeMarketItem,
+    PolymarketSportsHistoryEventCardItem,
     PolymarketSportsLiveEventCardItem,
     PolymarketSportsLivePriceHistorySeriesItem
 } from '../../shared/services/polymarket-service';
 import {
     FifwcSportsLiveEventCard,
     LegacySportsLiveEventCard,
+    SportsHistoryEventCard,
     isFifwcSportsLiveEvent,
     moneylineMarketKeys,
     sportsLiveCardHistory,
@@ -158,6 +160,86 @@ export const PolymarketSportsLivePage = () => {
                         </div>
                     </section>
                 ))}
+            </div>
+        </AppPage>
+    );
+};
+
+const sportsHistoryLeagues = ['ATP', 'WTA'];
+
+export const PolymarketSportsHistoryPage = () => {
+    const events = useAsyncData(() => services.polymarket.listSportsHistoryEvents(200), []);
+    const marketKeys = React.useMemo(() => moneylineMarketKeys(events.data?.items), [events.data?.items]);
+    const marketKeySignature = React.useMemo(() => marketKeys.join('|'), [marketKeys]);
+    const history = useAsyncData(() => {
+        if (marketKeys.length === 0) {
+            return Promise.resolve({items: []}) as Promise<{items: PolymarketSportsLivePriceHistorySeriesItem[]}> & {abort?: () => void};
+        }
+        return services.polymarket.batchGetSportsHistoryPriceHistory(marketKeys, 360);
+    }, [marketKeySignature]);
+    const historyByMarketKey = React.useMemo(() => {
+        const out = new Map<string, PolymarketSportsLivePriceHistorySeriesItem[]>();
+        if (history.error) {
+            return out;
+        }
+        (history.data?.items || []).forEach(item => {
+            const items = out.get(item.marketKey) || [];
+            items.push(item);
+            out.set(item.marketKey, items);
+        });
+        return out;
+    }, [history.data?.items, history.error]);
+    const items = events.data?.items || [];
+    const byLeague = React.useMemo(() => {
+        const groups = new Map<string, PolymarketSportsHistoryEventCardItem[]>();
+        sportsHistoryLeagues.forEach(league => groups.set(league, []));
+        items.forEach(item => {
+            const league = item.league.toUpperCase();
+            const group = groups.get(league);
+            if (group) {
+                group.push(item);
+            }
+        });
+        groups.forEach(group => group.sort((left, right) => (right.startTime || '').localeCompare(left.startTime || '')));
+        return groups;
+    }, [items]);
+    const reloadAll = React.useCallback(() => {
+        events.reload();
+        if (marketKeys.length > 0) {
+            history.reload();
+        }
+    }, [events.reload, history.reload, marketKeys.length]);
+
+    return (
+        <AppPage
+            title='Sports History'
+            subtitle={`Last 72 hours · Fetched ${fmt(events.data?.fetchedAt)} ${events.data?.stale ? '(stale)' : ''}`}
+            loading={events.loading}
+            error={events.error}
+            onRefresh={reloadAll}>
+            <div className='sports-live-sections sports-history-sections'>
+                {!events.loading && items.length === 0 && <Empty description='No data' />}
+                {sportsHistoryLeagues.map(league => {
+                    const leagueItems = byLeague.get(league) || [];
+                    if (leagueItems.length === 0) {
+                        return null;
+                    }
+                    return (
+                        <section className='sports-live-section' key={league}>
+                            <div className='sports-live-section__header'>
+                                <Typography.Title level={5}>{league}</Typography.Title>
+                                <Typography.Text className='sports-live-section__count' type='secondary'>
+                                    {leagueItems.length} events
+                                </Typography.Text>
+                            </div>
+                            <div className='sports-live-section__body'>
+                                {leagueItems.map(item => (
+                                    <SportsHistoryEventCard item={item} history={sportsLiveCardHistory(item, historyByMarketKey)} key={item.eventKey} />
+                                ))}
+                            </div>
+                        </section>
+                    );
+                })}
             </div>
         </AppPage>
     );

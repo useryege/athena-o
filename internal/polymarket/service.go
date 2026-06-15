@@ -127,6 +127,7 @@ type Service struct {
 	realtimeLastEventAt         int64
 	realtimeSubscribedMarkets   int32
 	realtimeSubscribedTokens    int32
+	sportsHistoryStale          bool
 	moverAlertStates            map[string]moverAlertState
 	syncGroup                   singleflight.Group
 }
@@ -144,6 +145,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		realtimeStates:              make(map[string]*realtimeTokenState),
 		realtimeSamples:             make(map[string][]realtimeSample),
 		moverAlertStates:            make(map[string]moverAlertState),
+		sportsHistoryStale:          true,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -186,6 +188,8 @@ func (s *Service) Start() error {
 	go s.runSportsLiveSyncLoop(ctx)
 	s.runWG.Add(1)
 	go s.runSportsLivePriceHistorySyncLoop(ctx)
+	s.runWG.Add(1)
+	go s.runSportsHistorySync(ctx)
 	s.runWG.Add(1)
 	go s.runHotMarketDiscoveryLoop(ctx)
 	return nil

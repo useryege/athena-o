@@ -172,6 +172,11 @@ export interface PolymarketSportsLiveEventCardItem {
     teams: PolymarketSportsLiveTeamItem[];
 }
 
+export interface PolymarketSportsHistoryEventCardItem extends PolymarketSportsLiveEventCardItem {
+    league: string;
+    finishedAt?: string;
+}
+
 export interface PolymarketSportsLivePriceHistorySeriesItem {
     marketKey: string;
     tokenId: string;
@@ -188,6 +193,12 @@ export interface ListPolymarketSportsLiveEventsResult {
 
 export interface BatchGetPolymarketSportsLivePriceHistoryResult {
     items: PolymarketSportsLivePriceHistorySeriesItem[];
+}
+
+export interface ListPolymarketSportsHistoryEventsResult {
+    items: PolymarketSportsHistoryEventCardItem[];
+    fetchedAt?: number;
+    stale?: boolean;
 }
 
 const readValue = (item: any, ...names: string[]) => {
@@ -259,6 +270,12 @@ const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardI
         teams: Array.isArray(teams) ? teams.map(normalizeSportsLiveTeam) : []
     };
 };
+
+const normalizeSportsHistoryEventCard = (item: any): PolymarketSportsHistoryEventCardItem => ({
+    ...normalizeSportsLiveEventCard(item),
+    league: readString(item, 'league'),
+    finishedAt: readString(item, 'finishedAt', 'finished_at')
+});
 
 const normalizeSportsLivePriceHistorySeries = (item: any): PolymarketSportsLivePriceHistorySeriesItem => ({
     marketKey: readString(item, 'marketKey', 'market_key'),
@@ -454,6 +471,32 @@ export class PolymarketService {
 
     public batchGetSportsLivePriceHistory(marketKeys: string[], limitPerToken = 360): Promise<BatchGetPolymarketSportsLivePriceHistoryResult> & {abort?: () => void} {
         const req = requests.post('/polymarket/sports/live/price-history:batchGet').send({market_keys: marketKeys, limit_per_token: limitPerToken});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeSportsLivePriceHistorySeries)
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listSportsHistoryEvents(limit = 200): Promise<ListPolymarketSportsHistoryEventsResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/sports/history/events').query({limit});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeSportsHistoryEventCard),
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
+                stale: readBoolean(body, 'stale')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public batchGetSportsHistoryPriceHistory(marketKeys: string[], limitPerToken = 360): Promise<BatchGetPolymarketSportsLivePriceHistoryResult> & {abort?: () => void} {
+        const req = requests.post('/polymarket/sports/history/price-history:batchGet').send({market_keys: marketKeys, limit_per_token: limitPerToken});
         const promise = req.then(res => {
             const body = res.body || {};
             return {

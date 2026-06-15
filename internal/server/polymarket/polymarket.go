@@ -143,3 +143,42 @@ func (s *Server) BatchGetPolymarketSportsLivePriceHistory(ctx context.Context, r
 		Items: resp.GetItems(),
 	}, nil
 }
+
+func (s *Server) ListPolymarketSportsHistoryEvents(ctx context.Context, req *polymarketpkg.ListPolymarketSportsHistoryEventsRequest) (*polymarketpkg.ListPolymarketSportsHistoryEventsResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketSportsHistoryEvents(ctx, &polymarketapiclient.ListPolymarketSportsHistoryEventsRequest{
+		Limit: req.GetLimit(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.ListPolymarketSportsHistoryEventsResponse{
+		Items:     resp.GetItems(),
+		FetchedAt: resp.GetFetchedAt(),
+		Stale:     resp.GetStale(),
+	}, nil
+}
+
+func (s *Server) BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context, req *polymarketpkg.BatchGetPolymarketSportsHistoryPriceHistoryRequest) (*polymarketpkg.BatchGetPolymarketSportsHistoryPriceHistoryResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.BatchGetPolymarketSportsHistoryPriceHistory(ctx, &polymarketapiclient.BatchGetPolymarketSportsHistoryPriceHistoryRequest{
+		MarketKeys:    req.GetMarketKeys(),
+		LimitPerToken: req.GetLimitPerToken(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.BatchGetPolymarketSportsHistoryPriceHistoryResponse{
+		Items: resp.GetItems(),
+	}, nil
+}

@@ -85,6 +85,25 @@ message BatchGetPolymarketSportsLivePriceHistoryResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLivePriceHistorySeriesItem items = 1;
 }
 
+message ListPolymarketSportsHistoryEventsRequest {
+  int32 limit = 1;
+}
+
+message ListPolymarketSportsHistoryEventsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsHistoryEventCardItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+}
+
+message BatchGetPolymarketSportsHistoryPriceHistoryRequest {
+  repeated string market_keys = 1;
+  int32 limit_per_token = 2;
+}
+
+message BatchGetPolymarketSportsHistoryPriceHistoryResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLivePriceHistorySeriesItem items = 1;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus) {
@@ -115,6 +134,17 @@ service PolymarketService {
   rpc BatchGetPolymarketSportsLivePriceHistory(BatchGetPolymarketSportsLivePriceHistoryRequest) returns (BatchGetPolymarketSportsLivePriceHistoryResponse) {
     option (google.api.http) = {
       post: "/api/v1/polymarket/sports/live/price-history:batchGet"
+      body: "*"
+    };
+  }
+
+  rpc ListPolymarketSportsHistoryEvents(ListPolymarketSportsHistoryEventsRequest) returns (ListPolymarketSportsHistoryEventsResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/sports/history/events"};
+  }
+
+  rpc BatchGetPolymarketSportsHistoryPriceHistory(BatchGetPolymarketSportsHistoryPriceHistoryRequest) returns (BatchGetPolymarketSportsHistoryPriceHistoryResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/polymarket/sports/history/price-history:batchGet"
       body: "*"
     };
   }

@@ -8,6 +8,68 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type PolymarketSportsHistoryEvent struct {
+	EventKey       string
+	EventID        string
+	League         string
+	Slug           string
+	Title          string
+	Image          string
+	Icon           string
+	Score          string
+	Period         string
+	Elapsed        string
+	GameStatus     string
+	StartTime      pgtype.Timestamptz
+	FinishedAt     pgtype.Timestamptz
+	UpdatedAtGamma pgtype.Timestamptz
+	Liquidity      float64
+	Volume         float64
+	Teams          []byte
+	Raw            []byte
+	FetchedAt      pgtype.Timestamptz
+	LastSeenAt     pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type PolymarketSportsHistoryMarket struct {
+	MarketKey        string
+	EventKey         string
+	ConditionID      string
+	Slug             string
+	Question         string
+	SportsMarketType string
+	Outcomes         string
+	OutcomePrices    string
+	ClobTokenIds     string
+	BestBid          float64
+	BestAsk          float64
+	LastTradePrice   float64
+	Spread           float64
+	LiquidityNum     float64
+	VolumeNum        float64
+	UpdatedAtGamma   pgtype.Timestamptz
+	Raw              []byte
+	FetchedAt        pgtype.Timestamptz
+	LastSeenAt       pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+}
+
+type PolymarketSportsHistoryPricePoint struct {
+	TokenID     string
+	MarketKey   string
+	EventKey    string
+	ConditionID string
+	Outcome     string
+	PriceTs     pgtype.Timestamptz
+	Price       float64
+	FetchedAt   pgtype.Timestamptz
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
 type PolymarketSportsLiveEvent struct {
 	EventKey          string
 	EventID           string

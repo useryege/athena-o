@@ -1,8 +1,10 @@
 import {LinkOutlined} from '@ant-design/icons';
 import {Button, Tooltip, Typography} from 'antd';
+import * as React from 'react';
 import {CardTitle} from '../components';
 import {
     PolymarketSportsLiveEventCardItem,
+    PolymarketSportsHistoryEventCardItem,
     PolymarketSportsLiveMarketCardItem,
     PolymarketSportsLivePriceHistorySeriesItem,
     PolymarketSportsLiveTeamItem
@@ -410,9 +412,15 @@ const SportsLiveMoneylineSection = (props: {options: SportsLiveDisplayOption[]})
     );
 };
 
-const SportsLiveEventCardFrame = (props: {item: PolymarketSportsLiveEventCardItem; options: SportsLiveDisplayOption[]; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => (
-    <article className='sports-live-card'>
-        <SportsLiveEventInfoSection item={props.item} />
+const SportsLiveEventCardFrame = (props: {
+    item: PolymarketSportsLiveEventCardItem;
+    options: SportsLiveDisplayOption[];
+    history?: PolymarketSportsLivePriceHistorySeriesItem[];
+    info?: React.ReactNode;
+    className?: string;
+}) => (
+    <article className={`sports-live-card ${props.className || ''}`.trim()}>
+        {props.info || <SportsLiveEventInfoSection item={props.item} />}
         <SportsLiveTrendSection options={props.options} history={props.history} />
         <SportsLiveMoneylineSection options={props.options} />
     </article>
@@ -432,3 +440,77 @@ export const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardI
     }
     return <LegacySportsLiveEventCard item={props.item} history={props.history} />;
 };
+
+const sportsHistoryTime = (value?: string) => {
+    if (!value) {
+        return '-';
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+};
+
+const SportsHistoryEventInfoSection = (props: {item: PolymarketSportsHistoryEventCardItem}) => {
+    const title = (
+        <span className='sports-live-card__title-line'>
+            <span className='sports-live-card__title-text'>{props.item.title}</span>
+            <PolymarketEventLink item={props.item} />
+        </span>
+    );
+    return (
+        <div className='sports-live-card__info'>
+            <CardTitle title={title} subtitle={props.item.slug} image={props.item.image} />
+            <div className='sports-history-times'>
+                <div className='sports-history-time'>
+                    <Typography.Text className='sports-live-card__stat-label'>Started</Typography.Text>
+                    <Typography.Text className='sports-history-time__value' strong={true}>
+                        {sportsHistoryTime(props.item.startTime)}
+                    </Typography.Text>
+                </div>
+                <div className='sports-history-time'>
+                    <Typography.Text className='sports-live-card__stat-label'>Finished</Typography.Text>
+                    <Typography.Text className='sports-history-time__value' strong={true}>
+                        {sportsHistoryTime(props.item.finishedAt)}
+                    </Typography.Text>
+                </div>
+            </div>
+            <div className='sports-live-stage sports-history-status'>
+                <Typography.Text className='sports-live-stage__label'>Final Status</Typography.Text>
+                <Typography.Text className='sports-live-stage__value' strong={true}>
+                    {props.item.gameStatus || props.item.period || 'Finished'}
+                </Typography.Text>
+            </div>
+            {props.item.score && (
+                <div className='sports-live-scoreboard'>
+                    <Typography.Text className='sports-live-scoreboard__label'>Final Score</Typography.Text>
+                    <Typography.Text className='sports-live-scoreboard__value' strong={true}>
+                        {props.item.score}
+                    </Typography.Text>
+                </div>
+            )}
+            <div className='sports-live-card__stats'>
+                <div className='sports-live-card__stat'>
+                    <Typography.Text className='sports-live-card__stat-label'>Volume</Typography.Text>
+                    <Typography.Text className='sports-live-card__stat-value' strong={true}>
+                        {fmtNumber(props.item.volume)}
+                    </Typography.Text>
+                </div>
+                <div className='sports-live-card__stat'>
+                    <Typography.Text className='sports-live-card__stat-label'>Liquidity</Typography.Text>
+                    <Typography.Text className='sports-live-card__stat-value' strong={true}>
+                        {fmtNumber(props.item.liquidity)}
+                    </Typography.Text>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const SportsHistoryEventCard = (props: {item: PolymarketSportsHistoryEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => (
+    <SportsLiveEventCardFrame
+        className='sports-history-card'
+        item={props.item}
+        options={legacyMoneylineOptions(props.item)}
+        history={props.history}
+        info={<SportsHistoryEventInfoSection item={props.item} />}
+    />
+);
