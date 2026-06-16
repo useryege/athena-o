@@ -194,7 +194,11 @@ After each request, inspect `client.last_response` for rate-limit headers and re
 
 ## Next steps
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
+  <Card title="Worm MCP" icon="robot" href="/api-reference/worm-mcp">
+    Use Worm from AI agents in Cursor, Claude, and other MCP clients.
+  </Card>
+
   <Card title="Authentication" icon="key" href="/api-reference/authentication">
     HMAC payload format and manual key bootstrap.
   </Card>

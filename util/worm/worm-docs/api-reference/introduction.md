@@ -9,7 +9,7 @@
 Worm provides one unified HTTP API with both public data endpoints and authenticated trading/account endpoints.
 
 <Tip>
-  For Python integrations, start with the official **[Python SDK](/api-reference/clients-sdks)** ([GitHub](https://github.com/wormwtf/worm-sdk), [PyPI](https://pypi.org/project/worm-sdk/)). It covers the full API with typed models, HMAC auth, and optional wallet signing.
+  For integrations, use the official **[Python SDK](/api-reference/clients-sdks)** ([GitHub](https://github.com/wormwtf/worm-sdk), [PyPI](https://pypi.org/project/worm-sdk/)) or the **[Worm MCP](/api-reference/worm-mcp)** server ([PyPI](https://pypi.org/project/worm-mcp/)) for AI agents in Cursor, Claude, and other MCP clients.
 </Tip>
 
 ## Base URL
@@ -51,12 +51,16 @@ Browse endpoint groups directly from the API Reference sidebar.
 
 ## Next Steps
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Authentication" icon="key" href="/api-reference/authentication">
     Implement HMAC signing and API key bootstrap.
   </Card>
 
   <Card title="Python SDK" icon="terminal" href="/api-reference/clients-sdks">
     Install worm-sdk and integrate with typed client helpers.
+  </Card>
+
+  <Card title="Worm MCP" icon="robot" href="/api-reference/worm-mcp">
+    Connect AI agents to Worm via MCP.
   </Card>
 </CardGroup>
