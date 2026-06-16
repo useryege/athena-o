@@ -163,6 +163,23 @@ components:
           type: string
         entry_cost_usdc:
           type: string
+          description: >-
+            REMAINING cost basis (entry_avg_price × shares_balance). Reads ~0
+            after a winning combo is redeemed — use total_cost_usdc to display
+            what was paid on closed positions.
+        realized_payout_usdc:
+          type: string
+          description: >-
+            Gross redemption proceeds (winning combo shares redeem 1:1 at $1).
+            "0.00" while OPEN / unredeemed / RESOLVED_LOSS; accumulates under
+            PARTIAL. Gross payout, not net PnL — net = realized_payout_usdc −
+            total_cost_usdc.
+        total_cost_usdc:
+          type: string
+          description: >-
+            Original cost basis = entry_avg_price × (shares_balance +
+            realized_payout). Survives redemption burning the shares; equals
+            entry_cost_usdc while OPEN.
         status:
           type: string
           enum:

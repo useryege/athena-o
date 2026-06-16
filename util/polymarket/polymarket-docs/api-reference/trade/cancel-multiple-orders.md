@@ -4,7 +4,7 @@
 
 # Cancel multiple orders
 
-> Cancels multiple orders by their IDs. Maximum 3000 orders per request.
+> Cancels multiple orders by their IDs. Maximum 1000 orders per request.
 Duplicate order IDs in the request are automatically ignored.
 Works even in cancel-only mode.
 
@@ -48,7 +48,7 @@ paths:
         - Trade
       summary: Cancel multiple orders
       description: |
-        Cancels multiple orders by their IDs. Maximum 3000 orders per request.
+        Cancels multiple orders by their IDs. Maximum 1000 orders per request.
         Duplicate order IDs in the request are automatically ignored.
         Works even in cancel-only mode.
       operationId: cancelOrders
@@ -60,7 +60,7 @@ paths:
               type: array
               items:
                 type: string
-              maxItems: 3000
+              maxItems: 1000
             example:
               - '0xabcdef1234567890abcdef1234567890abcdef12'
               - '0xfedcba0987654321fedcba0987654321fedcba09'
@@ -115,7 +115,7 @@ paths:
                 too_many_orders:
                   summary: Too many orders
                   value:
-                    error: 'Too many orders in payload, max allowed: 3000'
+                    error: 'Too many orders in payload, max allowed: 1000'
         '401':
           description: Unauthorized - Invalid API key or authentication failed
           content:

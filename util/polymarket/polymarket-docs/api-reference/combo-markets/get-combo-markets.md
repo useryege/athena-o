@@ -129,7 +129,7 @@ paths:
                       - sports
                       - soccer
                       - games
-                      - fifa-world-cup
+                      - world-cup
                 next_cursor: Mg
         '400':
           $ref: '#/components/responses/BadRequest'

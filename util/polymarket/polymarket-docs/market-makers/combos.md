@@ -1282,6 +1282,8 @@ fresh outside the quote path.
           "shares_balance": "10",
           "entry_avg_price_usdc": "0.45",
           "entry_cost_usdc": "4.5",
+          "realized_payout_usdc": "0.00",
+          "total_cost_usdc": "4.50",
           "status": "OPEN",
           "first_entry_at": "2026-06-08T00:00:00Z",
           "resolved_at": null,
@@ -1312,6 +1314,20 @@ fresh outside the quote path.
     ```
   </Tab>
 </Tabs>
+
+<Note>
+  **Displaying closed (redeemed) positions.** `entry_cost_usdc` is the
+  *remaining* cost basis (`entry_avg_price × shares_balance`), so it reads `~0`
+  once a winning combo is redeemed — and `shares_balance` does too. Two fields
+  carry the closed-position economics instead:
+
+  * `realized_payout_usdc` — gross redemption proceeds (winning shares redeem
+    1:1 at \$1; accumulates under `PARTIAL`)
+  * `total_cost_usdc` — original cost basis, reconstructed as
+    `entry_avg_price × (shares_balance + realized_payout)`
+
+  Net result of a finished combo = `realized_payout_usdc − total_cost_usdc`.
+</Note>
 
 ### Inventory Management
 
@@ -2026,7 +2042,7 @@ Combo legs. Markets are ordered by volume descending.
           "outcome_prices": ["0.685", "0.315"],
           "image": "https://...",
           "volume": 330327.7128580074,
-          "tags": ["sports", "soccer", "games", "fifa-world-cup"]
+          "tags": ["sports", "soccer", "games", "world-cup"]
         }
       ],
       "next_cursor": "Mg"
@@ -2836,16 +2852,19 @@ In this section, we will talk you through how to handle errors with the RFQ syst
 
     Common error codes include:
 
-    | Code                       | Meaning                                                  |
-    | -------------------------- | -------------------------------------------------------- |
-    | `INVALID_MESSAGE`          | Message JSON or message type is invalid                  |
-    | `UNKNOWN_RFQ`              | RFQ ID is not active or no longer exists                 |
-    | `EXPIRED_RFQ`              | RFQ has expired                                          |
-    | `SUBMISSION_WINDOW_CLOSED` | Quote arrived after the submission window closed         |
-    | `INVALID_QUOTE`            | Quote payload or signed order is invalid                 |
-    | `INVALID_RFQ_STATE`        | RFQ is not in a state that accepts the requested command |
-    | `INVALID_CONFIRMATION`     | Last Look confirmation payload is invalid                |
-    | `SERVICE_UNAVAILABLE`      | RFQ service dependency is temporarily unavailable        |
+    | Code                                       | Meaning                                                  |
+    | ------------------------------------------ | -------------------------------------------------------- |
+    | `INVALID_MESSAGE`                          | Message JSON or message type is invalid                  |
+    | `UNKNOWN_RFQ`                              | RFQ ID is not active or no longer exists                 |
+    | `EXPIRED_RFQ`                              | RFQ has expired                                          |
+    | `SUBMISSION_WINDOW_CLOSED`                 | Quote arrived after the submission window closed         |
+    | `ALLOWANCE_VALIDATION_FAILED`              | Maker allowance is insufficient for the quoted order     |
+    | `BALANCE_VALIDATION_FAILED`                | Maker balance is insufficient for the quoted order       |
+    | `PRE_EXECUTION_BALANCE_RESERVATION_FAILED` | Balance reservation failed before execution              |
+    | `INVALID_QUOTE`                            | Quote payload or signed order is invalid                 |
+    | `INVALID_RFQ_STATE`                        | RFQ is not in a state that accepts the requested command |
+    | `INVALID_CONFIRMATION`                     | Last Look confirmation payload is invalid                |
+    | `SERVICE_UNAVAILABLE`                      | RFQ service dependency is temporarily unavailable        |
 
     Treat these errors as command-level failures. Keep the WebSocket session alive
     unless the connection itself closes or authentication fails.
