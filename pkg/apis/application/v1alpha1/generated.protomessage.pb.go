@@ -11,6 +11,10 @@ func (*NotificationDeliveryItem) ProtoMessage() {}
 
 func (*NotificationStatus) ProtoMessage() {}
 
+func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
+
+func (*PolymarketFIFAMoneylineOptionItem) ProtoMessage() {}
+
 func (*PolymarketHotMarketItem) ProtoMessage() {}
 
 func (*PolymarketHotMarketTokenItem) ProtoMessage() {}

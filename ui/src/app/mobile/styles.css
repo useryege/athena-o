@@ -1448,6 +1448,71 @@ body[data-theme='dark'] .metric {
     object-fit: cover;
 }
 
+.fifa-query {
+    width: min(720px, 100%);
+}
+
+.fifa-query .ant-input {
+    min-width: 280px;
+}
+
+.fifa-page {
+    display: grid;
+    gap: 14px;
+}
+
+.fifa-event-summary {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-tight);
+}
+
+.fifa-event-summary__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fifa-moneyline-options {
+    align-items: stretch;
+}
+
+.fifa-moneyline-options .ant-col {
+    display: flex;
+}
+
+.fifa-moneyline-option {
+    width: 100%;
+    border-color: var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-tight);
+}
+
+.fifa-moneyline-option .ant-card-body {
+    display: grid;
+    gap: 12px;
+}
+
+.fifa-moneyline-option__header {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.fifa-moneyline-option__header h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 850;
+}
+
 .mobile-only {
     display: none;
 }
@@ -1517,6 +1582,21 @@ body[data-theme='dark'] .metric {
 
     .inline-actions {
         justify-content: flex-start;
+    }
+
+    .fifa-query,
+    .fifa-query .ant-input,
+    .fifa-query .ant-btn {
+        width: 100%;
+    }
+
+    .fifa-event-summary {
+        padding: 12px;
+    }
+
+    .fifa-event-summary__title {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .mobile-only {

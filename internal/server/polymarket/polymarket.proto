@@ -104,6 +104,15 @@ message BatchGetPolymarketSportsHistoryPriceHistoryResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLivePriceHistorySeriesItem items = 1;
 }
 
+message GetPolymarketFIFAMoneylineEventRequest {
+  string event_ref = 1;
+}
+
+message GetPolymarketFIFAMoneylineEventResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAMoneylineEventItem item = 1;
+  int64 fetched_at = 2;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus) {
@@ -147,5 +156,9 @@ service PolymarketService {
       post: "/api/v1/polymarket/sports/history/price-history:batchGet"
       body: "*"
     };
+  }
+
+  rpc GetPolymarketFIFAMoneylineEvent(GetPolymarketFIFAMoneylineEventRequest) returns (GetPolymarketFIFAMoneylineEventResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/fifa/moneyline-event"};
   }
 }

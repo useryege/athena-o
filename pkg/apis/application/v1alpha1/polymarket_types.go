@@ -135,6 +135,47 @@ type PolymarketSportsLiveTeamItem struct {
 	Alias        string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
 }
 
+type PolymarketFIFAMoneylineOptionItem struct {
+	OutcomeKey      string  `protobuf:"bytes,1,opt,name=outcomeKey" json:"outcomeKey"`
+	OutcomeLabel    string  `protobuf:"bytes,2,opt,name=outcomeLabel" json:"outcomeLabel"`
+	MarketID        string  `protobuf:"bytes,3,opt,name=marketId" json:"marketId"`
+	MarketSlug      string  `protobuf:"bytes,4,opt,name=marketSlug" json:"marketSlug"`
+	Question        string  `protobuf:"bytes,5,opt,name=question" json:"question"`
+	ConditionID     string  `protobuf:"bytes,6,opt,name=conditionId" json:"conditionId"`
+	YesTokenID      string  `protobuf:"bytes,7,opt,name=yesTokenId" json:"yesTokenId"`
+	NoTokenID       string  `protobuf:"bytes,8,opt,name=noTokenId" json:"noTokenId"`
+	OutcomePrice    float64 `protobuf:"fixed64,9,opt,name=outcomePrice" json:"outcomePrice"`
+	MidPrice        float64 `protobuf:"fixed64,10,opt,name=midPrice" json:"midPrice"`
+	BestBid         float64 `protobuf:"fixed64,11,opt,name=bestBid" json:"bestBid"`
+	BestAsk         float64 `protobuf:"fixed64,12,opt,name=bestAsk" json:"bestAsk"`
+	LastTradePrice  float64 `protobuf:"fixed64,13,opt,name=lastTradePrice" json:"lastTradePrice"`
+	Spread          float64 `protobuf:"fixed64,14,opt,name=spread" json:"spread"`
+	OrderMinSize    float64 `protobuf:"fixed64,15,opt,name=orderMinSize" json:"orderMinSize"`
+	TickSize        float64 `protobuf:"fixed64,16,opt,name=tickSize" json:"tickSize"`
+	EnableOrderBook bool    `protobuf:"varint,17,opt,name=enableOrderBook" json:"enableOrderBook"`
+	AcceptingOrders bool    `protobuf:"varint,18,opt,name=acceptingOrders" json:"acceptingOrders"`
+	NegRisk         bool    `protobuf:"varint,19,opt,name=negRisk" json:"negRisk"`
+}
+
+type PolymarketFIFAMoneylineEventItem struct {
+	EventID       string                               `protobuf:"bytes,1,opt,name=eventId" json:"eventId"`
+	EventSlug     string                               `protobuf:"bytes,2,opt,name=eventSlug" json:"eventSlug"`
+	Title         string                               `protobuf:"bytes,3,opt,name=title" json:"title"`
+	Image         string                               `protobuf:"bytes,4,opt,name=image" json:"image"`
+	Sport         string                               `protobuf:"bytes,5,opt,name=sport" json:"sport"`
+	Score         string                               `protobuf:"bytes,6,opt,name=score" json:"score"`
+	GameStatus    string                               `protobuf:"bytes,7,opt,name=gameStatus" json:"gameStatus"`
+	StartTime     string                               `protobuf:"bytes,8,opt,name=startTime" json:"startTime"`
+	UpdatedAt     string                               `protobuf:"bytes,9,opt,name=updatedAt" json:"updatedAt"`
+	PolymarketURL string                               `protobuf:"bytes,10,opt,name=polymarketUrl" json:"polymarketUrl"`
+	Active        bool                                 `protobuf:"varint,11,opt,name=active" json:"active"`
+	Closed        bool                                 `protobuf:"varint,12,opt,name=closed" json:"closed"`
+	Live          bool                                 `protobuf:"varint,13,opt,name=live" json:"live"`
+	Ended         bool                                 `protobuf:"varint,14,opt,name=ended" json:"ended"`
+	Teams         []*PolymarketSportsLiveTeamItem      `protobuf:"bytes,15,rep,name=teams" json:"teams"`
+	Options       []*PolymarketFIFAMoneylineOptionItem `protobuf:"bytes,16,rep,name=options" json:"options"`
+}
+
 type PolymarketSportsLiveEventCardItem struct {
 	EventKey    string                                `protobuf:"bytes,1,opt,name=eventKey" json:"eventKey"`
 	EventID     string                                `protobuf:"bytes,2,opt,name=eventId" json:"eventId"`

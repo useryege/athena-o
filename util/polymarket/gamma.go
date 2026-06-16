@@ -371,6 +371,7 @@ type Market struct {
 	Restricted            *bool           `json:"restricted,omitempty"`
 	QuestionID            *string         `json:"questionID,omitempty"`
 	EnableOrderBook       *bool           `json:"enableOrderBook,omitempty"`
+	AcceptingOrders       *bool           `json:"acceptingOrders,omitempty"`
 	OrderPriceMinTickSize *float64        `json:"orderPriceMinTickSize,omitempty"`
 	OrderMinSize          *float64        `json:"orderMinSize,omitempty"`
 	VolumeNum             *float64        `json:"volumeNum,omitempty"`

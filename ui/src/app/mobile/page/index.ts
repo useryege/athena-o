@@ -3,6 +3,7 @@ export * from './chain-checkpoints';
 export * from './collection-tasks';
 export * from './contract-code-detail';
 export * from './contract-codes';
+export * from './fifa';
 export * from './help';
 export * from './login';
 export * from './node-statuses';

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-796-g3b9e5a6-dirty"
+    "version": "v1.0.0-802-g19db5d8-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -312,6 +312,35 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/fifa/moneyline-event": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_GetPolymarketFIFAMoneylineEvent",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "event_ref",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketGetPolymarketFIFAMoneylineEventResponse"
             }
           },
           "default": {
@@ -2083,6 +2112,18 @@
         }
       }
     },
+    "polymarketGetPolymarketFIFAMoneylineEventResponse": {
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "item": {
+          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineEventItem"
+        }
+      }
+    },
     "polymarketListPolymarketHotMarketsResponse": {
       "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
       "type": "object",
@@ -2785,6 +2826,135 @@
           "type": "boolean"
         },
         "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketFIFAMoneylineEventItem": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "ended": {
+          "type": "boolean"
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "gameStatus": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "live": {
+          "type": "boolean"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineOptionItem"
+          }
+        },
+        "polymarketUrl": {
+          "type": "string"
+        },
+        "score": {
+          "type": "string"
+        },
+        "sport": {
+          "type": "string"
+        },
+        "startTime": {
+          "type": "string"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketFIFAMoneylineOptionItem": {
+      "type": "object",
+      "properties": {
+        "acceptingOrders": {
+          "type": "boolean"
+        },
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "enableOrderBook": {
+          "type": "boolean"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "midPrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "negRisk": {
+          "type": "boolean"
+        },
+        "noTokenId": {
+          "type": "string"
+        },
+        "orderMinSize": {
+          "type": "number",
+          "format": "double"
+        },
+        "outcomeKey": {
+          "type": "string"
+        },
+        "outcomeLabel": {
+          "type": "string"
+        },
+        "outcomePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "question": {
+          "type": "string"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tickSize": {
+          "type": "number",
+          "format": "double"
+        },
+        "yesTokenId": {
           "type": "string"
         }
       }

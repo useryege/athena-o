@@ -182,3 +182,22 @@ func (s *Server) BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context
 		Items: resp.GetItems(),
 	}, nil
 }
+
+func (s *Server) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *polymarketpkg.GetPolymarketFIFAMoneylineEventRequest) (*polymarketpkg.GetPolymarketFIFAMoneylineEventResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetPolymarketFIFAMoneylineEvent(ctx, &polymarketapiclient.GetPolymarketFIFAMoneylineEventRequest{
+		EventRef: req.GetEventRef(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.GetPolymarketFIFAMoneylineEventResponse{
+		Item:      resp.GetItem(),
+		FetchedAt: resp.GetFetchedAt(),
+	}, nil
+}

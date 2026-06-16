@@ -70,6 +70,80 @@ message NotificationStatus {
   optional string status = 2;
 }
 
+message PolymarketFIFAMoneylineEventItem {
+  optional string eventId = 1;
+
+  optional string eventSlug = 2;
+
+  optional string title = 3;
+
+  optional string image = 4;
+
+  optional string sport = 5;
+
+  optional string score = 6;
+
+  optional string gameStatus = 7;
+
+  optional string startTime = 8;
+
+  optional string updatedAt = 9;
+
+  optional string polymarketUrl = 10;
+
+  optional bool active = 11;
+
+  optional bool closed = 12;
+
+  optional bool live = 13;
+
+  optional bool ended = 14;
+
+  repeated PolymarketSportsLiveTeamItem teams = 15;
+
+  repeated PolymarketFIFAMoneylineOptionItem options = 16;
+}
+
+message PolymarketFIFAMoneylineOptionItem {
+  optional string outcomeKey = 1;
+
+  optional string outcomeLabel = 2;
+
+  optional string marketId = 3;
+
+  optional string marketSlug = 4;
+
+  optional string question = 5;
+
+  optional string conditionId = 6;
+
+  optional string yesTokenId = 7;
+
+  optional string noTokenId = 8;
+
+  optional double outcomePrice = 9;
+
+  optional double midPrice = 10;
+
+  optional double bestBid = 11;
+
+  optional double bestAsk = 12;
+
+  optional double lastTradePrice = 13;
+
+  optional double spread = 14;
+
+  optional double orderMinSize = 15;
+
+  optional double tickSize = 16;
+
+  optional bool enableOrderBook = 17;
+
+  optional bool acceptingOrders = 18;
+
+  optional bool negRisk = 19;
+}
+
 message PolymarketHotMarketItem {
   optional string conditionId = 1;
 

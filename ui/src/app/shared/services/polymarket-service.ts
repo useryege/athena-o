@@ -153,6 +153,52 @@ export interface PolymarketSportsLiveTeamItem {
     alias?: string;
 }
 
+export interface PolymarketFIFAMoneylineOptionItem {
+    outcomeKey: string;
+    outcomeLabel: string;
+    marketId: string;
+    marketSlug: string;
+    question: string;
+    conditionId: string;
+    yesTokenId: string;
+    noTokenId?: string;
+    outcomePrice?: number;
+    midPrice?: number;
+    bestBid?: number;
+    bestAsk?: number;
+    lastTradePrice?: number;
+    spread?: number;
+    orderMinSize?: number;
+    tickSize?: number;
+    enableOrderBook?: boolean;
+    acceptingOrders?: boolean;
+    negRisk?: boolean;
+}
+
+export interface PolymarketFIFAMoneylineEventItem {
+    eventId: string;
+    eventSlug: string;
+    title: string;
+    image?: string;
+    sport?: string;
+    score?: string;
+    gameStatus?: string;
+    startTime?: string;
+    updatedAt?: string;
+    polymarketUrl?: string;
+    active?: boolean;
+    closed?: boolean;
+    live?: boolean;
+    ended?: boolean;
+    teams: PolymarketSportsLiveTeamItem[];
+    options: PolymarketFIFAMoneylineOptionItem[];
+}
+
+export interface GetPolymarketFIFAMoneylineEventResult {
+    item?: PolymarketFIFAMoneylineEventItem;
+    fetchedAt?: number;
+}
+
 export interface PolymarketSportsLiveEventCardItem {
     eventKey: string;
     eventId: string;
@@ -247,6 +293,51 @@ const normalizeSportsLiveTeam = (item: any): PolymarketSportsLiveTeamItem => ({
     abbreviation: readString(item, 'abbreviation'),
     alias: readString(item, 'alias')
 });
+
+const normalizeFIFAMoneylineOption = (item: any): PolymarketFIFAMoneylineOptionItem => ({
+    outcomeKey: readString(item, 'outcomeKey', 'outcome_key'),
+    outcomeLabel: readString(item, 'outcomeLabel', 'outcome_label'),
+    marketId: readString(item, 'marketId', 'market_id'),
+    marketSlug: readString(item, 'marketSlug', 'market_slug'),
+    question: readString(item, 'question'),
+    conditionId: readString(item, 'conditionId', 'condition_id'),
+    yesTokenId: readString(item, 'yesTokenId', 'yes_token_id'),
+    noTokenId: readString(item, 'noTokenId', 'no_token_id'),
+    outcomePrice: readNumber(item, 'outcomePrice', 'outcome_price'),
+    midPrice: readNumber(item, 'midPrice', 'mid_price'),
+    bestBid: readNumber(item, 'bestBid', 'best_bid'),
+    bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
+    lastTradePrice: readNumber(item, 'lastTradePrice', 'last_trade_price'),
+    spread: readNumber(item, 'spread'),
+    orderMinSize: readNumber(item, 'orderMinSize', 'order_min_size'),
+    tickSize: readNumber(item, 'tickSize', 'tick_size'),
+    enableOrderBook: readBoolean(item, 'enableOrderBook', 'enable_order_book'),
+    acceptingOrders: readBoolean(item, 'acceptingOrders', 'accepting_orders'),
+    negRisk: readBoolean(item, 'negRisk', 'neg_risk')
+});
+
+const normalizeFIFAMoneylineEvent = (item: any): PolymarketFIFAMoneylineEventItem => {
+    const teams = readValue(item, 'teams');
+    const options = readValue(item, 'options');
+    return {
+        eventId: readString(item, 'eventId', 'event_id'),
+        eventSlug: readString(item, 'eventSlug', 'event_slug'),
+        title: readString(item, 'title'),
+        image: readString(item, 'image'),
+        sport: readString(item, 'sport'),
+        score: readString(item, 'score'),
+        gameStatus: readString(item, 'gameStatus', 'game_status'),
+        startTime: readString(item, 'startTime', 'start_time'),
+        updatedAt: readString(item, 'updatedAt', 'updated_at'),
+        polymarketUrl: readString(item, 'polymarketUrl', 'polymarket_url'),
+        active: readBoolean(item, 'active'),
+        closed: readBoolean(item, 'closed'),
+        live: readBoolean(item, 'live'),
+        ended: readBoolean(item, 'ended'),
+        teams: Array.isArray(teams) ? teams.map(normalizeSportsLiveTeam) : [],
+        options: Array.isArray(options) ? options.map(normalizeFIFAMoneylineOption) : []
+    };
+};
 
 const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardItem => {
     const markets = readValue(item, 'markets');
@@ -501,6 +592,19 @@ export class PolymarketService {
             const body = res.body || {};
             return {
                 items: (body.items || []).map(normalizeSportsLivePriceHistorySeries)
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getFIFAMoneylineEvent(eventRef: string): Promise<GetPolymarketFIFAMoneylineEventResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/fifa/moneyline-event').query({event_ref: eventRef});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                item: body.item ? normalizeFIFAMoneylineEvent(body.item) : undefined,
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
             };
         }) as any;
         promise.abort = () => req.abort();

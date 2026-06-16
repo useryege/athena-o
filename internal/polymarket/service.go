@@ -37,10 +37,13 @@ type ServiceOption func(*Service)
 type sportsLiveGammaClient interface {
 	ListEventsKeyset(context.Context, utilpolymarket.ListEventsKeysetOptions) (*utilpolymarket.EventKeysetResponse, error)
 	ListMarketsKeyset(context.Context, utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error)
+	GetEventByID(context.Context, int64, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
+	GetEventBySlug(context.Context, string, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
 }
 
 type sportsLiveCLOBClient interface {
 	GetBatchPricesHistory(context.Context, utilpolymarket.CLOBBatchPricesHistoryRequest) (*utilpolymarket.CLOBBatchPricesHistoryResponse, error)
+	GetMidpointPrices(context.Context, []string) (map[string]string, error)
 }
 
 func WithGammaClient(client sportsLiveGammaClient) ServiceOption {

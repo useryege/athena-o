@@ -15,6 +15,7 @@ import {
     QuestionCircleOutlined,
     SettingOutlined,
     SunOutlined,
+    TrophyOutlined,
     UserOutlined,
     WalletOutlined
 } from '@ant-design/icons';
@@ -34,6 +35,7 @@ import {
     CollectionTasksPage,
     ContractCodeDetailPage,
     ContractCodesPage,
+    FIFAPage,
     HelpPage,
     LoginPage,
     NodeStatusesPage,
@@ -202,6 +204,7 @@ const navItems: NavItem[] = [
             }
         ]
     },
+    {key: '/FIFA', label: 'FIFA', path: '/FIFA', icon: <TrophyOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
     {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />, permission: permission(rbacResources.worm, rbacActions.get)},
     {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
     {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
@@ -303,6 +306,7 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />
             <Route path='/polymarket/sports-live' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsLivePage />)} />
             <Route path='/polymarket/sports-history' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsHistoryPage />)} />
+            <Route path='/FIFA' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <FIFAPage />)} />
             <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
