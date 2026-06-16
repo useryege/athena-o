@@ -1,5 +1,0 @@
-{
-  "endpoint_key": "get_clob.polymarket.com_markets_by_token_token_id",
-  "doc_source": "util/polymarket/polymarket-docs/api-reference/markets/get-market-by-token.md",
-  "result": "pass"
-}

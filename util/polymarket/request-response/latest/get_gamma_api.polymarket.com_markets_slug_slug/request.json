@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://gamma-api.polymarket.com/markets/slug/new-rhianna-album-before-gta-vi-926",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:27.44237982Z"
-}

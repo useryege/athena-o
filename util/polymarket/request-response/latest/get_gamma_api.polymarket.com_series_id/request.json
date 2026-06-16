@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://gamma-api.polymarket.com/series/1",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:28.550651232Z"
-}

@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://gamma-api.polymarket.com/tags/slug/product-marekt-fit/related-tags",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:30.841813731Z"
-}

@@ -1,6 +1,0 @@
-{
-  "endpoint_key": "get_clob.polymarket.com_midpoints",
-  "doc_source": "util/polymarket/polymarket-docs/api-reference/market-data/get-midpoint-prices-query-parameters.md",
-  "result": "fail",
-  "error": "http 400"
-}

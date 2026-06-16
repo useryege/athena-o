@@ -1,5 +1,0 @@
-{
-  "endpoint_key": "get_data_api.polymarket.com_closed_positions",
-  "doc_source": "util/polymarket/polymarket-docs/api-reference/core/get-closed-positions-for-a-user.md",
-  "result": "pass"
-}

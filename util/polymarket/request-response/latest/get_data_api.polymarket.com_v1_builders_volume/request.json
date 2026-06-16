@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://data-api.polymarket.com/v1/builders/volume",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:20.958594469Z"
-}

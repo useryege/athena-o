@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://clob.polymarket.com/simplified-markets",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:13.19378301Z"
-}

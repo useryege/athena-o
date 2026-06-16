@@ -1,5 +1,0 @@
-{
-  "endpoint_key": "get_data_api.polymarket.com_v1_market_positions",
-  "doc_source": "util/polymarket/polymarket-docs/api-reference/core/get-positions-for-a-market.md",
-  "result": "pass"
-}

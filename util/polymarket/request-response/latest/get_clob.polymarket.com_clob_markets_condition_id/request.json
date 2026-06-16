@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://clob.polymarket.com/clob-markets/0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:06.196166513Z"
-}

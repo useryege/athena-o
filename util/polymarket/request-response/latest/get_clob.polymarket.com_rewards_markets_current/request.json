@@ -1,8 +1,0 @@
-{
-  "method": "GET",
-  "url": "https://clob.polymarket.com/rewards/markets/current",
-  "headers": {
-    "Accept": "application/json"
-  },
-  "started_at": "2026-06-01T22:13:10.745836742Z"
-}

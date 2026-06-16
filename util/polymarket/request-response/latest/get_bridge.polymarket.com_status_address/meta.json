@@ -1,6 +1,0 @@
-{
-  "endpoint_key": "get_bridge.polymarket.com_status_address",
-  "doc_source": "util/polymarket/polymarket-docs/api-reference/bridge/get-transaction-status.md",
-  "result": "fail",
-  "error": "http 500"
-}
