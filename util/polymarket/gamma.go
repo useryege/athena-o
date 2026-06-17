@@ -374,6 +374,7 @@ type Market struct {
 	AcceptingOrders       *bool           `json:"acceptingOrders,omitempty"`
 	OrderPriceMinTickSize *float64        `json:"orderPriceMinTickSize,omitempty"`
 	OrderMinSize          *float64        `json:"orderMinSize,omitempty"`
+	UMAResolutionStatus   *string         `json:"umaResolutionStatus,omitempty"`
 	VolumeNum             *float64        `json:"volumeNum,omitempty"`
 	LiquidityNum          *float64        `json:"liquidityNum,omitempty"`
 	EndDateIso            *string         `json:"endDateIso,omitempty"`
@@ -388,6 +389,7 @@ type Market struct {
 	LastTradePrice        *float64        `json:"lastTradePrice,omitempty"`
 	BestBid               *float64        `json:"bestBid,omitempty"`
 	BestAsk               *float64        `json:"bestAsk,omitempty"`
+	UMAResolutionStatuses *string         `json:"umaResolutionStatuses,omitempty"`
 	Events                []Event         `json:"events,omitempty"`
 	Tags                  []Tag           `json:"tags,omitempty"`
 	Raw                   json.RawMessage `json:"-"`

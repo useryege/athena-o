@@ -11,12 +11,14 @@ import (
 )
 
 type Querier interface {
+	BatchUpsertDisputedMarkets(ctx context.Context, arg BatchUpsertDisputedMarketsParams) error
 	BatchUpsertSportsHistoryEvents(ctx context.Context, arg BatchUpsertSportsHistoryEventsParams) error
 	BatchUpsertSportsHistoryMarkets(ctx context.Context, arg BatchUpsertSportsHistoryMarketsParams) error
 	BatchUpsertSportsHistoryPricePoints(ctx context.Context, arg BatchUpsertSportsHistoryPricePointsParams) error
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
 	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
+	DeleteDisputedMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsHistoryEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsHistoryMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)

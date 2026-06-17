@@ -16,20 +16,22 @@ import (
 )
 
 const (
-	defaultSportsLiveListLimit      = 200
-	maxSportsLiveListLimit          = 1000
-	defaultSportsLiveSyncInterval   = 10 * time.Second
-	defaultSportsLivePriceInterval  = 15 * time.Second
-	defaultSportsLiveEventPageLimit = 500
-	defaultHotMarketListLimit       = 100
-	maxHotMarketListLimit           = 500
-	defaultHotMarketRefreshInterval = time.Minute
-	defaultHotMarketInitialSyncWait = 15 * time.Second
-	defaultRealtimeListLimit        = 100
-	maxRealtimeListLimit            = 500
-	defaultRealtimeInitialSyncWait  = 15 * time.Second
-	defaultMoverListLimit           = 100
-	maxMoverListLimit               = 500
+	defaultSportsLiveListLimit           = 200
+	maxSportsLiveListLimit               = 1000
+	defaultSportsLiveSyncInterval        = 10 * time.Second
+	defaultSportsLivePriceInterval       = 15 * time.Second
+	defaultSportsLiveEventPageLimit      = 500
+	defaultHotMarketListLimit            = 100
+	maxHotMarketListLimit                = 500
+	defaultHotMarketRefreshInterval      = time.Minute
+	defaultHotMarketInitialSyncWait      = 15 * time.Second
+	defaultDisputedMarketRefreshInterval = time.Minute
+	defaultDisputedMarketPageLimit       = 100
+	defaultRealtimeListLimit             = 100
+	maxRealtimeListLimit                 = 500
+	defaultRealtimeInitialSyncWait       = 15 * time.Second
+	defaultMoverListLimit                = 100
+	maxMoverListLimit                    = 500
 )
 
 type ServiceOption func(*Service)
@@ -82,6 +84,14 @@ func WithHotMarketRefreshInterval(interval time.Duration) ServiceOption {
 	}
 }
 
+func WithDisputedMarketRefreshInterval(interval time.Duration) ServiceOption {
+	return func(s *Service) {
+		if interval > 0 {
+			s.disputedMarketRefreshInterval = interval
+		}
+	}
+}
+
 func WithNotificationClientset(clientset notificationapiclient.Clientset) ServiceOption {
 	return func(s *Service) {
 		s.notificationClientset = clientset
@@ -102,53 +112,55 @@ func WithSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) Service
 
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
-	store                       *polymarketstore.SQLStore
-	gammaClient                 sportsLiveGammaClient
-	clobClient                  sportsLiveCLOBClient
-	notificationClientset       notificationapiclient.Clientset
-	syncInterval                time.Duration
-	sportsLivePageLimit         int
-	hotMarketRefreshInterval    time.Duration
-	moverAlertsConfig           MoverAlertsConfig
-	sportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
-	nowFn                       func() time.Time
-	startStopMu                 sync.Mutex
-	started                     bool
-	runCancel                   context.CancelFunc
-	runWG                       sync.WaitGroup
-	cacheMu                     sync.RWMutex
-	hotMarketItems              []*v1alpha1.PolymarketHotMarketItem
-	hotMarketMissing            map[string]int
-	realtimeStates              map[string]*realtimeTokenState
-	realtimeSamples             map[string][]realtimeSample
-	hotMarketFetched            int64
-	hotMarketStale              bool
-	hotMarketCandidateCount     int32
-	realtimeFetched             int64
-	realtimeStale               bool
-	realtimeConnected           bool
-	realtimeLastEventAt         int64
-	realtimeSubscribedMarkets   int32
-	realtimeSubscribedTokens    int32
-	sportsHistoryStale          bool
-	moverAlertStates            map[string]moverAlertState
-	syncGroup                   singleflight.Group
+	store                         *polymarketstore.SQLStore
+	gammaClient                   sportsLiveGammaClient
+	clobClient                    sportsLiveCLOBClient
+	notificationClientset         notificationapiclient.Clientset
+	syncInterval                  time.Duration
+	sportsLivePageLimit           int
+	hotMarketRefreshInterval      time.Duration
+	disputedMarketRefreshInterval time.Duration
+	moverAlertsConfig             MoverAlertsConfig
+	sportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
+	nowFn                         func() time.Time
+	startStopMu                   sync.Mutex
+	started                       bool
+	runCancel                     context.CancelFunc
+	runWG                         sync.WaitGroup
+	cacheMu                       sync.RWMutex
+	hotMarketItems                []*v1alpha1.PolymarketHotMarketItem
+	hotMarketMissing              map[string]int
+	realtimeStates                map[string]*realtimeTokenState
+	realtimeSamples               map[string][]realtimeSample
+	hotMarketFetched              int64
+	hotMarketStale                bool
+	hotMarketCandidateCount       int32
+	realtimeFetched               int64
+	realtimeStale                 bool
+	realtimeConnected             bool
+	realtimeLastEventAt           int64
+	realtimeSubscribedMarkets     int32
+	realtimeSubscribedTokens      int32
+	sportsHistoryStale            bool
+	moverAlertStates              map[string]moverAlertState
+	syncGroup                     singleflight.Group
 }
 
 func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service {
 	s := &Service{
-		store:                       store,
-		syncInterval:                defaultSportsLiveSyncInterval,
-		sportsLivePageLimit:         defaultSportsLiveEventPageLimit,
-		hotMarketRefreshInterval:    defaultHotMarketRefreshInterval,
-		moverAlertsConfig:           defaultMoverAlertsConfig(),
-		sportsLivePriceAlertsConfig: defaultSportsLivePriceAlertsConfig(),
-		nowFn:                       time.Now,
-		hotMarketMissing:            make(map[string]int),
-		realtimeStates:              make(map[string]*realtimeTokenState),
-		realtimeSamples:             make(map[string][]realtimeSample),
-		moverAlertStates:            make(map[string]moverAlertState),
-		sportsHistoryStale:          true,
+		store:                         store,
+		syncInterval:                  defaultSportsLiveSyncInterval,
+		sportsLivePageLimit:           defaultSportsLiveEventPageLimit,
+		hotMarketRefreshInterval:      defaultHotMarketRefreshInterval,
+		disputedMarketRefreshInterval: defaultDisputedMarketRefreshInterval,
+		moverAlertsConfig:             defaultMoverAlertsConfig(),
+		sportsLivePriceAlertsConfig:   defaultSportsLivePriceAlertsConfig(),
+		nowFn:                         time.Now,
+		hotMarketMissing:              make(map[string]int),
+		realtimeStates:                make(map[string]*realtimeTokenState),
+		realtimeSamples:               make(map[string][]realtimeSample),
+		moverAlertStates:              make(map[string]moverAlertState),
+		sportsHistoryStale:            true,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -195,6 +207,8 @@ func (s *Service) Start() error {
 	go s.runSportsHistorySync(ctx)
 	s.runWG.Add(1)
 	go s.runHotMarketDiscoveryLoop(ctx)
+	s.runWG.Add(1)
+	go s.runDisputedMarketSyncLoop(ctx)
 	return nil
 }
 

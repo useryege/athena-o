@@ -8,6 +8,47 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type PolymarketDisputedMarket struct {
+	MarketKey             string
+	MarketID              string
+	ConditionID           string
+	Slug                  string
+	EventID               string
+	EventSlug             string
+	Question              string
+	Description           string
+	ResolutionSource      string
+	Image                 string
+	Icon                  string
+	UmaResolutionStatus   string
+	UmaResolutionStatuses string
+	Outcomes              string
+	OutcomePrices         string
+	ClobTokenIds          string
+	Active                bool
+	Closed                bool
+	Archived              bool
+	Restricted            bool
+	EnableOrderBook       bool
+	Volume                string
+	VolumeNum             float64
+	LiquidityNum          float64
+	Volume24hr            float64
+	Volume1wk             float64
+	Volume1mo             float64
+	Volume1yr             float64
+	Spread                float64
+	BestBid               float64
+	BestAsk               float64
+	LastTradePrice        float64
+	Tags                  []byte
+	Raw                   []byte
+	FetchedAt             pgtype.Timestamptz
+	LastSeenAt            pgtype.Timestamptz
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+}
+
 type PolymarketSportsHistoryEvent struct {
 	EventKey       string
 	EventID        string
