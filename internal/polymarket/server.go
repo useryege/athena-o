@@ -22,6 +22,7 @@ type ServerOpts struct {
 	NotificationClientset       notificationapiclient.Clientset
 	MoverAlertsConfig           MoverAlertsConfig
 	SportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
+	UMAResolutionAlertsConfig   UMAResolutionAlertsConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -34,6 +35,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 			WithNotificationClientset(opts.NotificationClientset),
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
+			WithUMAResolutionAlertsConfig(opts.UMAResolutionAlertsConfig),
 		),
 		healthService: healthService,
 	}, nil

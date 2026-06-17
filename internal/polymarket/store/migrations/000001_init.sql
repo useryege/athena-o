@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS polymarket_sports_live_market (
     FOREIGN KEY (event_key) REFERENCES polymarket_sports_live_event(event_key) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS polymarket_disputed_market (
+CREATE TABLE IF NOT EXISTS polymarket_uma_resolution_market (
   market_key TEXT PRIMARY KEY,
   market_id TEXT NOT NULL DEFAULT '',
   condition_id TEXT NOT NULL DEFAULT '',
@@ -141,9 +141,30 @@ CREATE TABLE IF NOT EXISTS polymarket_disputed_market (
   last_seen_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT polymarket_disputed_market_key_not_empty CHECK (btrim(market_key) <> ''),
-  CONSTRAINT polymarket_disputed_market_raw_object CHECK (jsonb_typeof(raw) = 'object'),
-  CONSTRAINT polymarket_disputed_market_tags_array CHECK (jsonb_typeof(tags) = 'array')
+  CONSTRAINT polymarket_uma_resolution_market_key_not_empty CHECK (btrim(market_key) <> ''),
+  CONSTRAINT polymarket_uma_resolution_market_status CHECK (uma_resolution_status IN ('proposed', 'disputed')),
+  CONSTRAINT polymarket_uma_resolution_market_raw_object CHECK (jsonb_typeof(raw) = 'object'),
+  CONSTRAINT polymarket_uma_resolution_market_tags_array CHECK (jsonb_typeof(tags) = 'array')
+);
+
+CREATE TABLE IF NOT EXISTS polymarket_uma_resolution_notification_state (
+  market_key TEXT NOT NULL,
+  uma_resolution_status TEXT NOT NULL,
+  condition_id TEXT NOT NULL DEFAULT '',
+  slug TEXT NOT NULL DEFAULT '',
+  event_slug TEXT NOT NULL DEFAULT '',
+  question TEXT NOT NULL DEFAULT '',
+  first_seen_at TIMESTAMPTZ NOT NULL,
+  last_seen_at TIMESTAMPTZ NOT NULL,
+  baseline_at TIMESTAMPTZ,
+  notified_at TIMESTAMPTZ,
+  notification_id BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (market_key, uma_resolution_status),
+  CONSTRAINT polymarket_uma_resolution_notification_state_market_not_empty CHECK (btrim(market_key) <> ''),
+  CONSTRAINT polymarket_uma_resolution_notification_state_status CHECK (uma_resolution_status IN ('proposed', 'disputed')),
+  CONSTRAINT polymarket_uma_resolution_notification_state_seen_order CHECK (last_seen_at >= first_seen_at)
 );
 
 CREATE TABLE IF NOT EXISTS polymarket_sync_state (
@@ -293,18 +314,21 @@ CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_price_sort_idx
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_last_seen_idx
   ON polymarket_sports_live_market (last_seen_at);
 
-CREATE UNIQUE INDEX IF NOT EXISTS polymarket_disputed_market_condition_idx
-  ON polymarket_disputed_market (condition_id)
+CREATE UNIQUE INDEX IF NOT EXISTS polymarket_uma_resolution_market_condition_idx
+  ON polymarket_uma_resolution_market (condition_id)
   WHERE condition_id <> '';
 
-CREATE INDEX IF NOT EXISTS polymarket_disputed_market_volume_sort_idx
-  ON polymarket_disputed_market (volume_24hr DESC, volume_num DESC, market_key);
+CREATE INDEX IF NOT EXISTS polymarket_uma_resolution_market_volume_sort_idx
+  ON polymarket_uma_resolution_market (volume_24hr DESC, volume_num DESC, market_key);
 
-CREATE INDEX IF NOT EXISTS polymarket_disputed_market_status_idx
-  ON polymarket_disputed_market (uma_resolution_status);
+CREATE INDEX IF NOT EXISTS polymarket_uma_resolution_market_status_idx
+  ON polymarket_uma_resolution_market (uma_resolution_status);
 
-CREATE INDEX IF NOT EXISTS polymarket_disputed_market_last_seen_idx
-  ON polymarket_disputed_market (last_seen_at);
+CREATE INDEX IF NOT EXISTS polymarket_uma_resolution_market_last_seen_idx
+  ON polymarket_uma_resolution_market (last_seen_at);
+
+CREATE INDEX IF NOT EXISTS polymarket_uma_resolution_notification_state_notified_idx
+  ON polymarket_uma_resolution_notification_state (notified_at);
 
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_price_point_market_ts_idx
   ON polymarket_sports_live_price_point (market_key, price_ts DESC);
@@ -341,6 +365,7 @@ DROP TABLE IF EXISTS polymarket_sports_history_event;
 DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
 DROP TABLE IF EXISTS polymarket_sync_state;
-DROP TABLE IF EXISTS polymarket_disputed_market;
+DROP TABLE IF EXISTS polymarket_uma_resolution_notification_state;
+DROP TABLE IF EXISTS polymarket_uma_resolution_market;
 DROP TABLE IF EXISTS polymarket_sports_live_market;
 DROP TABLE IF EXISTS polymarket_sports_live_event;

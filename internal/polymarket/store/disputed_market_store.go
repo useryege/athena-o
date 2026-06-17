@@ -11,39 +11,77 @@ import (
 	polymarketsqlc "github.com/useryege/athena/internal/polymarket/store/sqlc"
 )
 
-const disputedMarketsSyncName = "disputed_markets"
+const umaResolutionMarketsSyncName = "uma_resolution_markets"
 
-func (s *SQLStore) SyncDisputedMarkets(ctx context.Context, markets []DisputedMarket, syncStartedAt, fetchedAt time.Time) error {
+func (s *SQLStore) SyncUMAResolutionMarkets(ctx context.Context, markets []UMAResolutionMarket, syncStartedAt, fetchedAt time.Time) ([]UMAResolutionNotificationCandidate, error) {
 	if s == nil || s.pool == nil {
-		return fmt.Errorf("polymarket postgres database is not configured")
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin disputed markets sync: %w", err)
+		return nil, fmt.Errorf("begin uma resolution markets sync: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
 
 	queries := s.queries.WithTx(tx)
+	lastSuccessAt, err := queries.GetPolymarketSyncState(ctx, umaResolutionMarketsSyncName)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("get uma resolution markets sync state: %w", err)
+	}
+	firstSync := errors.Is(err, pgx.ErrNoRows) || timeValue(lastSuccessAt).IsZero()
 	if len(markets) > 0 {
-		if err := queries.BatchUpsertDisputedMarkets(ctx, batchUpsertDisputedMarketsParams(markets)); err != nil {
-			return fmt.Errorf("batch upsert disputed markets: %w", err)
+		if err := queries.BatchUpsertUMAResolutionMarkets(ctx, batchUpsertUMAResolutionMarketsParams(markets)); err != nil {
+			return nil, fmt.Errorf("batch upsert uma resolution markets: %w", err)
 		}
 	}
-	if _, err := queries.DeleteDisputedMarketsNotSeenSince(ctx, nullableTime(syncStartedAt)); err != nil {
-		return fmt.Errorf("delete stale disputed markets: %w", err)
+	if _, err := queries.DeleteUMAResolutionMarketsNotSeenSince(ctx, nullableTime(syncStartedAt)); err != nil {
+		return nil, fmt.Errorf("delete stale uma resolution markets: %w", err)
+	}
+
+	var candidates []UMAResolutionNotificationCandidate
+	if firstSync {
+		if err := queries.UpsertUMAResolutionNotificationBaselines(ctx, nullableTime(fetchedAt)); err != nil {
+			return nil, fmt.Errorf("upsert uma resolution notification baselines: %w", err)
+		}
+	} else {
+		rows, err := queries.ListPendingUMAResolutionNotificationCandidates(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list pending uma resolution notification candidates: %w", err)
+		}
+		candidates = make([]UMAResolutionNotificationCandidate, 0, len(rows))
+		for _, row := range rows {
+			candidates = append(candidates, UMAResolutionNotificationCandidate{
+				MarketKey:             row.MarketKey,
+				ConditionID:           row.ConditionID,
+				Slug:                  row.Slug,
+				EventSlug:             row.EventSlug,
+				Question:              row.Question,
+				UMAResolutionStatus:   row.UmaResolutionStatus,
+				UMAResolutionStatuses: row.UmaResolutionStatuses,
+				Volume24hr:            row.Volume24hr,
+				LiquidityNum:          row.LiquidityNum,
+				FetchedAt:             timeValue(row.FetchedAt),
+				LastSeenAt:            timeValue(row.LastSeenAt),
+			})
+		}
 	}
 	if err := queries.UpsertPolymarketSyncState(ctx, polymarketsqlc.UpsertPolymarketSyncStateParams{
-		SyncName:      disputedMarketsSyncName,
+		SyncName:      umaResolutionMarketsSyncName,
 		LastSuccessAt: nullableTime(fetchedAt),
 	}); err != nil {
-		return fmt.Errorf("update disputed markets sync state: %w", err)
+		return nil, fmt.Errorf("update uma resolution markets sync state: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit disputed markets sync: %w", err)
+		return nil, fmt.Errorf("commit uma resolution markets sync: %w", err)
 	}
-	return nil
+	return candidates, nil
+}
+
+func (s *SQLStore) SyncDisputedMarkets(ctx context.Context, markets []DisputedMarket, syncStartedAt, fetchedAt time.Time) error {
+	_, err := s.SyncUMAResolutionMarkets(ctx, markets, syncStartedAt, fetchedAt)
+	return err
 }
 
 func (s *SQLStore) ListDisputedMarkets(ctx context.Context, limit int32) ([]DisputedMarket, error) {
@@ -89,7 +127,7 @@ func (s *SQLStore) GetDisputedMarketsLastSuccessAt(ctx context.Context) (time.Ti
 	if s == nil || s.queries == nil {
 		return time.Time{}, fmt.Errorf("polymarket postgres database is not configured")
 	}
-	value, err := s.queries.GetPolymarketSyncState(ctx, disputedMarketsSyncName)
+	value, err := s.queries.GetPolymarketSyncState(ctx, umaResolutionMarketsSyncName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, nil
 	}
@@ -99,8 +137,29 @@ func (s *SQLStore) GetDisputedMarketsLastSuccessAt(ctx context.Context) (time.Ti
 	return timeValue(value), nil
 }
 
-func batchUpsertDisputedMarketsParams(items []DisputedMarket) polymarketsqlc.BatchUpsertDisputedMarketsParams {
-	params := polymarketsqlc.BatchUpsertDisputedMarketsParams{
+func (s *SQLStore) MarkUMAResolutionNotificationSent(ctx context.Context, candidate UMAResolutionNotificationCandidate, notificationID int64, notifiedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpsertUMAResolutionNotificationSent(ctx, polymarketsqlc.UpsertUMAResolutionNotificationSentParams{
+		MarketKey:           candidate.MarketKey,
+		UmaResolutionStatus: candidate.UMAResolutionStatus,
+		ConditionID:         candidate.ConditionID,
+		Slug:                candidate.Slug,
+		EventSlug:           candidate.EventSlug,
+		Question:            candidate.Question,
+		FirstSeenAt:         nullableTime(candidate.LastSeenAt),
+		LastSeenAt:          nullableTime(candidate.LastSeenAt),
+		NotifiedAt:          nullableTime(notifiedAt),
+		NotificationID:      notificationID,
+	}); err != nil {
+		return fmt.Errorf("upsert uma resolution notification state: %w", err)
+	}
+	return nil
+}
+
+func batchUpsertUMAResolutionMarketsParams(items []UMAResolutionMarket) polymarketsqlc.BatchUpsertUMAResolutionMarketsParams {
+	params := polymarketsqlc.BatchUpsertUMAResolutionMarketsParams{
 		MarketKeys:                  make([]string, 0, len(items)),
 		MarketIds:                   make([]string, 0, len(items)),
 		ConditionIds:                make([]string, 0, len(items)),
@@ -177,6 +236,10 @@ func batchUpsertDisputedMarketsParams(items []DisputedMarket) polymarketsqlc.Bat
 		params.LastSeenAtValues = append(params.LastSeenAtValues, nullableTime(item.LastSeenAt))
 	}
 	return params
+}
+
+func batchUpsertDisputedMarketsParams(items []DisputedMarket) polymarketsqlc.BatchUpsertUMAResolutionMarketsParams {
+	return batchUpsertUMAResolutionMarketsParams(items)
 }
 
 func firstNonEmptyText(values ...string) string {

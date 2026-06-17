@@ -11,21 +11,22 @@ import (
 )
 
 type Querier interface {
-	BatchUpsertDisputedMarkets(ctx context.Context, arg BatchUpsertDisputedMarketsParams) error
 	BatchUpsertSportsHistoryEvents(ctx context.Context, arg BatchUpsertSportsHistoryEventsParams) error
 	BatchUpsertSportsHistoryMarkets(ctx context.Context, arg BatchUpsertSportsHistoryMarketsParams) error
 	BatchUpsertSportsHistoryPricePoints(ctx context.Context, arg BatchUpsertSportsHistoryPricePointsParams) error
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
 	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
-	DeleteDisputedMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
+	BatchUpsertUMAResolutionMarkets(ctx context.Context, arg BatchUpsertUMAResolutionMarketsParams) error
 	DeleteSportsHistoryEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsHistoryMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error
+	DeleteUMAResolutionMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListDisputedMarkets(ctx context.Context, limit int32) ([]ListDisputedMarketsRow, error)
+	ListPendingUMAResolutionNotificationCandidates(ctx context.Context) ([]ListPendingUMAResolutionNotificationCandidatesRow, error)
 	ListSportsHistoryEvents(ctx context.Context, limit int32) ([]ListSportsHistoryEventsRow, error)
 	ListSportsHistoryMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsHistoryMarketsByEventKeysRow, error)
 	ListSportsHistoryMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsHistoryMoneylineMarketsForPriceHistoryRow, error)
@@ -39,6 +40,8 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
 	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error
+	UpsertUMAResolutionNotificationBaselines(ctx context.Context, baselineAt pgtype.Timestamptz) error
+	UpsertUMAResolutionNotificationSent(ctx context.Context, arg UpsertUMAResolutionNotificationSentParams) error
 }
 
 var _ Querier = (*Queries)(nil)

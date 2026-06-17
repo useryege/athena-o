@@ -1,5 +1,5 @@
--- name: BatchUpsertDisputedMarkets :exec
-INSERT INTO polymarket_disputed_market (
+-- name: BatchUpsertUMAResolutionMarkets :exec
+INSERT INTO polymarket_uma_resolution_market (
   market_key,
   market_id,
   condition_id,
@@ -112,8 +112,8 @@ SET market_id = EXCLUDED.market_id,
   last_seen_at = EXCLUDED.last_seen_at,
   updated_at = now();
 
--- name: DeleteDisputedMarketsNotSeenSince :execrows
-DELETE FROM polymarket_disputed_market
+-- name: DeleteUMAResolutionMarketsNotSeenSince :execrows
+DELETE FROM polymarket_uma_resolution_market
 WHERE last_seen_at < @last_seen_at;
 
 -- name: ListDisputedMarkets :many
@@ -141,6 +141,99 @@ SELECT
   last_trade_price,
   fetched_at,
   last_seen_at
-FROM polymarket_disputed_market
+FROM polymarket_uma_resolution_market
+WHERE uma_resolution_status = 'disputed'
 ORDER BY volume_24hr DESC, volume_num DESC, market_key
 LIMIT sqlc.arg('limit');
+
+-- name: ListPendingUMAResolutionNotificationCandidates :many
+SELECT
+  m.market_key,
+  m.condition_id,
+  m.slug,
+  m.event_slug,
+  m.question,
+  m.uma_resolution_status,
+  m.uma_resolution_statuses,
+  m.volume_24hr,
+  m.liquidity_num,
+  m.fetched_at,
+  m.last_seen_at
+FROM polymarket_uma_resolution_market AS m
+LEFT JOIN polymarket_uma_resolution_notification_state AS state
+  ON state.market_key = m.market_key
+    AND state.uma_resolution_status = m.uma_resolution_status
+WHERE state.market_key IS NULL
+ORDER BY
+  CASE m.uma_resolution_status WHEN 'disputed' THEN 0 ELSE 1 END,
+  m.volume_24hr DESC,
+  m.market_key;
+
+-- name: UpsertUMAResolutionNotificationBaselines :exec
+INSERT INTO polymarket_uma_resolution_notification_state (
+  market_key,
+  uma_resolution_status,
+  condition_id,
+  slug,
+  event_slug,
+  question,
+  first_seen_at,
+  last_seen_at,
+  baseline_at
+)
+SELECT
+  m.market_key,
+  m.uma_resolution_status,
+  m.condition_id,
+  m.slug,
+  m.event_slug,
+  m.question,
+  m.last_seen_at,
+  m.last_seen_at,
+  sqlc.arg('baseline_at')::timestamptz
+FROM polymarket_uma_resolution_market AS m
+ON CONFLICT (market_key, uma_resolution_status) DO UPDATE
+SET condition_id = EXCLUDED.condition_id,
+  slug = EXCLUDED.slug,
+  event_slug = EXCLUDED.event_slug,
+  question = EXCLUDED.question,
+  last_seen_at = EXCLUDED.last_seen_at,
+  baseline_at = COALESCE(polymarket_uma_resolution_notification_state.baseline_at, EXCLUDED.baseline_at),
+  updated_at = now();
+
+-- name: UpsertUMAResolutionNotificationSent :exec
+INSERT INTO polymarket_uma_resolution_notification_state (
+  market_key,
+  uma_resolution_status,
+  condition_id,
+  slug,
+  event_slug,
+  question,
+  first_seen_at,
+  last_seen_at,
+  notified_at,
+  notification_id
+) VALUES (
+  @market_key,
+  @uma_resolution_status,
+  @condition_id,
+  @slug,
+  @event_slug,
+  @question,
+  @first_seen_at,
+  @last_seen_at,
+  @notified_at,
+  @notification_id
+)
+ON CONFLICT (market_key, uma_resolution_status) DO UPDATE
+SET condition_id = EXCLUDED.condition_id,
+  slug = EXCLUDED.slug,
+  event_slug = EXCLUDED.event_slug,
+  question = EXCLUDED.question,
+  last_seen_at = EXCLUDED.last_seen_at,
+  notified_at = COALESCE(polymarket_uma_resolution_notification_state.notified_at, EXCLUDED.notified_at),
+  notification_id = CASE
+    WHEN polymarket_uma_resolution_notification_state.notification_id <> 0 THEN polymarket_uma_resolution_notification_state.notification_id
+    ELSE EXCLUDED.notification_id
+  END,
+  updated_at = now();

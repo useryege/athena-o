@@ -93,7 +93,7 @@ type SportsLiveMarket struct {
 	LastSeenAt       time.Time
 }
 
-type DisputedMarket struct {
+type UMAResolutionMarket struct {
 	MarketKey             string
 	MarketID              string
 	ConditionID           string
@@ -128,6 +128,22 @@ type DisputedMarket struct {
 	LastTradePrice        float64
 	Tags                  json.RawMessage
 	Raw                   json.RawMessage
+	FetchedAt             time.Time
+	LastSeenAt            time.Time
+}
+
+type DisputedMarket = UMAResolutionMarket
+
+type UMAResolutionNotificationCandidate struct {
+	MarketKey             string
+	ConditionID           string
+	Slug                  string
+	EventSlug             string
+	Question              string
+	UMAResolutionStatus   string
+	UMAResolutionStatuses string
+	Volume24hr            float64
+	LiquidityNum          float64
 	FetchedAt             time.Time
 	LastSeenAt            time.Time
 }

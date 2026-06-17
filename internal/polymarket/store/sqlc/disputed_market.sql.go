@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const batchUpsertDisputedMarkets = `-- name: BatchUpsertDisputedMarkets :exec
-INSERT INTO polymarket_disputed_market (
+const batchUpsertUMAResolutionMarkets = `-- name: BatchUpsertUMAResolutionMarkets :exec
+INSERT INTO polymarket_uma_resolution_market (
   market_key,
   market_id,
   condition_id,
@@ -126,7 +126,7 @@ SET market_id = EXCLUDED.market_id,
   updated_at = now()
 `
 
-type BatchUpsertDisputedMarketsParams struct {
+type BatchUpsertUMAResolutionMarketsParams struct {
 	MarketKeys                  []string
 	MarketIds                   []string
 	ConditionIds                []string
@@ -165,8 +165,8 @@ type BatchUpsertDisputedMarketsParams struct {
 	LastSeenAtValues            []pgtype.Timestamptz
 }
 
-func (q *Queries) BatchUpsertDisputedMarkets(ctx context.Context, arg BatchUpsertDisputedMarketsParams) error {
-	_, err := q.db.Exec(ctx, batchUpsertDisputedMarkets,
+func (q *Queries) BatchUpsertUMAResolutionMarkets(ctx context.Context, arg BatchUpsertUMAResolutionMarketsParams) error {
+	_, err := q.db.Exec(ctx, batchUpsertUMAResolutionMarkets,
 		arg.MarketKeys,
 		arg.MarketIds,
 		arg.ConditionIds,
@@ -207,13 +207,13 @@ func (q *Queries) BatchUpsertDisputedMarkets(ctx context.Context, arg BatchUpser
 	return err
 }
 
-const deleteDisputedMarketsNotSeenSince = `-- name: DeleteDisputedMarketsNotSeenSince :execrows
-DELETE FROM polymarket_disputed_market
+const deleteUMAResolutionMarketsNotSeenSince = `-- name: DeleteUMAResolutionMarketsNotSeenSince :execrows
+DELETE FROM polymarket_uma_resolution_market
 WHERE last_seen_at < $1
 `
 
-func (q *Queries) DeleteDisputedMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteDisputedMarketsNotSeenSince, lastSeenAt)
+func (q *Queries) DeleteUMAResolutionMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUMAResolutionMarketsNotSeenSince, lastSeenAt)
 	if err != nil {
 		return 0, err
 	}
@@ -245,7 +245,8 @@ SELECT
   last_trade_price,
   fetched_at,
   last_seen_at
-FROM polymarket_disputed_market
+FROM polymarket_uma_resolution_market
+WHERE uma_resolution_status = 'disputed'
 ORDER BY volume_24hr DESC, volume_num DESC, market_key
 LIMIT $1
 `
@@ -318,4 +319,179 @@ func (q *Queries) ListDisputedMarkets(ctx context.Context, limit int32) ([]ListD
 		return nil, err
 	}
 	return items, nil
+}
+
+const listPendingUMAResolutionNotificationCandidates = `-- name: ListPendingUMAResolutionNotificationCandidates :many
+SELECT
+  m.market_key,
+  m.condition_id,
+  m.slug,
+  m.event_slug,
+  m.question,
+  m.uma_resolution_status,
+  m.uma_resolution_statuses,
+  m.volume_24hr,
+  m.liquidity_num,
+  m.fetched_at,
+  m.last_seen_at
+FROM polymarket_uma_resolution_market AS m
+LEFT JOIN polymarket_uma_resolution_notification_state AS state
+  ON state.market_key = m.market_key
+    AND state.uma_resolution_status = m.uma_resolution_status
+WHERE state.market_key IS NULL
+ORDER BY
+  CASE m.uma_resolution_status WHEN 'disputed' THEN 0 ELSE 1 END,
+  m.volume_24hr DESC,
+  m.market_key
+`
+
+type ListPendingUMAResolutionNotificationCandidatesRow struct {
+	MarketKey             string
+	ConditionID           string
+	Slug                  string
+	EventSlug             string
+	Question              string
+	UmaResolutionStatus   string
+	UmaResolutionStatuses string
+	Volume24hr            float64
+	LiquidityNum          float64
+	FetchedAt             pgtype.Timestamptz
+	LastSeenAt            pgtype.Timestamptz
+}
+
+func (q *Queries) ListPendingUMAResolutionNotificationCandidates(ctx context.Context) ([]ListPendingUMAResolutionNotificationCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, listPendingUMAResolutionNotificationCandidates)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPendingUMAResolutionNotificationCandidatesRow
+	for rows.Next() {
+		var i ListPendingUMAResolutionNotificationCandidatesRow
+		if err := rows.Scan(
+			&i.MarketKey,
+			&i.ConditionID,
+			&i.Slug,
+			&i.EventSlug,
+			&i.Question,
+			&i.UmaResolutionStatus,
+			&i.UmaResolutionStatuses,
+			&i.Volume24hr,
+			&i.LiquidityNum,
+			&i.FetchedAt,
+			&i.LastSeenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const upsertUMAResolutionNotificationBaselines = `-- name: UpsertUMAResolutionNotificationBaselines :exec
+INSERT INTO polymarket_uma_resolution_notification_state (
+  market_key,
+  uma_resolution_status,
+  condition_id,
+  slug,
+  event_slug,
+  question,
+  first_seen_at,
+  last_seen_at,
+  baseline_at
+)
+SELECT
+  m.market_key,
+  m.uma_resolution_status,
+  m.condition_id,
+  m.slug,
+  m.event_slug,
+  m.question,
+  m.last_seen_at,
+  m.last_seen_at,
+  $1::timestamptz
+FROM polymarket_uma_resolution_market AS m
+ON CONFLICT (market_key, uma_resolution_status) DO UPDATE
+SET condition_id = EXCLUDED.condition_id,
+  slug = EXCLUDED.slug,
+  event_slug = EXCLUDED.event_slug,
+  question = EXCLUDED.question,
+  last_seen_at = EXCLUDED.last_seen_at,
+  baseline_at = COALESCE(polymarket_uma_resolution_notification_state.baseline_at, EXCLUDED.baseline_at),
+  updated_at = now()
+`
+
+func (q *Queries) UpsertUMAResolutionNotificationBaselines(ctx context.Context, baselineAt pgtype.Timestamptz) error {
+	_, err := q.db.Exec(ctx, upsertUMAResolutionNotificationBaselines, baselineAt)
+	return err
+}
+
+const upsertUMAResolutionNotificationSent = `-- name: UpsertUMAResolutionNotificationSent :exec
+INSERT INTO polymarket_uma_resolution_notification_state (
+  market_key,
+  uma_resolution_status,
+  condition_id,
+  slug,
+  event_slug,
+  question,
+  first_seen_at,
+  last_seen_at,
+  notified_at,
+  notification_id
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10
+)
+ON CONFLICT (market_key, uma_resolution_status) DO UPDATE
+SET condition_id = EXCLUDED.condition_id,
+  slug = EXCLUDED.slug,
+  event_slug = EXCLUDED.event_slug,
+  question = EXCLUDED.question,
+  last_seen_at = EXCLUDED.last_seen_at,
+  notified_at = COALESCE(polymarket_uma_resolution_notification_state.notified_at, EXCLUDED.notified_at),
+  notification_id = CASE
+    WHEN polymarket_uma_resolution_notification_state.notification_id <> 0 THEN polymarket_uma_resolution_notification_state.notification_id
+    ELSE EXCLUDED.notification_id
+  END,
+  updated_at = now()
+`
+
+type UpsertUMAResolutionNotificationSentParams struct {
+	MarketKey           string
+	UmaResolutionStatus string
+	ConditionID         string
+	Slug                string
+	EventSlug           string
+	Question            string
+	FirstSeenAt         pgtype.Timestamptz
+	LastSeenAt          pgtype.Timestamptz
+	NotifiedAt          pgtype.Timestamptz
+	NotificationID      int64
+}
+
+func (q *Queries) UpsertUMAResolutionNotificationSent(ctx context.Context, arg UpsertUMAResolutionNotificationSentParams) error {
+	_, err := q.db.Exec(ctx, upsertUMAResolutionNotificationSent,
+		arg.MarketKey,
+		arg.UmaResolutionStatus,
+		arg.ConditionID,
+		arg.Slug,
+		arg.EventSlug,
+		arg.Question,
+		arg.FirstSeenAt,
+		arg.LastSeenAt,
+		arg.NotifiedAt,
+		arg.NotificationID,
+	)
+	return err
 }

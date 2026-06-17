@@ -112,6 +112,12 @@ func WithSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) Service
 	}
 }
 
+func WithUMAResolutionAlertsConfig(config UMAResolutionAlertsConfig) ServiceOption {
+	return func(s *Service) {
+		s.umaResolutionAlertsConfig = normalizeUMAResolutionAlertsConfig(config)
+	}
+}
+
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
 	store                         *polymarketstore.SQLStore
@@ -124,6 +130,7 @@ type Service struct {
 	disputedMarketRefreshInterval time.Duration
 	moverAlertsConfig             MoverAlertsConfig
 	sportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
+	umaResolutionAlertsConfig     UMAResolutionAlertsConfig
 	nowFn                         func() time.Time
 	startStopMu                   sync.Mutex
 	started                       bool
@@ -157,6 +164,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		disputedMarketRefreshInterval: defaultDisputedMarketRefreshInterval,
 		moverAlertsConfig:             defaultMoverAlertsConfig(),
 		sportsLivePriceAlertsConfig:   defaultSportsLivePriceAlertsConfig(),
+		umaResolutionAlertsConfig:     defaultUMAResolutionAlertsConfig(),
 		nowFn:                         time.Now,
 		hotMarketMissing:              make(map[string]int),
 		realtimeStates:                make(map[string]*realtimeTokenState),

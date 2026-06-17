@@ -31,11 +31,12 @@ const cliName = "athena-polymarket"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost                   string
-		listenPort                   int
-		notificationEnabled          bool
-		notificationServerAddress    string
-		sportsLivePriceAlertCooldown time.Duration
+		listenHost                    string
+		listenPort                    int
+		notificationEnabled           bool
+		notificationServerAddress     string
+		sportsLivePriceAlertCooldown  time.Duration
+		umaResolutionAlertSendTimeout time.Duration
 
 		storeSrc func(context.Context) (*polymarketstore.SQLStore, error)
 	)
@@ -70,6 +71,10 @@ func NewCommand() *cobra.Command {
 				Enabled:  notificationEnabled,
 				Cooldown: sportsLivePriceAlertCooldown,
 			}
+			umaResolutionAlertsConfig := polymarket.UMAResolutionAlertsConfig{
+				Enabled:     notificationEnabled,
+				SendTimeout: umaResolutionAlertSendTimeout,
+			}
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
 				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
@@ -80,6 +85,7 @@ func NewCommand() *cobra.Command {
 				NotificationClientset:       notificationClientset,
 				MoverAlertsConfig:           moverAlertsConfig,
 				SportsLivePriceAlertsConfig: sportsLivePriceAlertsConfig,
+				UMAResolutionAlertsConfig:   umaResolutionAlertsConfig,
 			})
 			if err != nil {
 				return err
@@ -131,6 +137,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_POLYMARKET_NOTIFICATION_ENABLED", true), "Enable Polymarket notifications through Athena Notification")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_POLYMARKET_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Polymarket alerts")
 	command.Flags().DurationVar(&sportsLivePriceAlertCooldown, "sports-live-price-alert-cooldown", env.ParseDurationFromEnv("ATHENA_POLYMARKET_SPORTS_LIVE_PRICE_ALERT_COOLDOWN", 15*time.Minute, time.Second, 24*time.Hour), "Cooldown between repeated Polymarket sports live price alerts for the same token and band")
+	command.Flags().DurationVar(&umaResolutionAlertSendTimeout, "uma-resolution-alert-send-timeout", env.ParseDurationFromEnv("ATHENA_POLYMARKET_UMA_RESOLUTION_ALERT_SEND_TIMEOUT", 10*time.Second, time.Second, time.Minute), "Timeout for sending one Polymarket UMA resolution notification")
 
 	storeSrc = polymarketstore.NewSQLStoreSource()
 

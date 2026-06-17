@@ -36,11 +36,16 @@ func (s *Service) runDisputedMarketSyncLoop(ctx context.Context) {
 
 func (s *Service) syncDisputedMarkets(ctx context.Context) error {
 	syncStartedAt := s.now().UTC()
-	markets, err := s.fetchDisputedMarkets(ctx, syncStartedAt)
+	markets, err := s.fetchUMAResolutionMarkets(ctx, syncStartedAt)
 	if err != nil {
 		return err
 	}
-	return s.store.SyncDisputedMarkets(ctx, markets, syncStartedAt, s.now().UTC())
+	candidates, err := s.store.SyncUMAResolutionMarkets(ctx, markets, syncStartedAt, s.now().UTC())
+	if err != nil {
+		return err
+	}
+	s.sendUMAResolutionAlerts(ctx, candidates)
+	return nil
 }
 
 func (s *Service) ListPolymarketDisputedMarkets(ctx context.Context, req *apiclient.ListPolymarketDisputedMarketsRequest) (*apiclient.ListPolymarketDisputedMarketsResponse, error) {
@@ -99,16 +104,35 @@ func (s *Service) ListPolymarketDisputedMarkets(ctx context.Context, req *apicli
 	return resp, nil
 }
 
-func (s *Service) fetchDisputedMarkets(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.DisputedMarket, error) {
+func (s *Service) fetchUMAResolutionMarkets(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.UMAResolutionMarket, error) {
 	if s.gammaClient == nil {
 		return nil, status.Error(codes.FailedPrecondition, "polymarket gamma client is required")
 	}
 
-	marketsByKey := make(map[string]polymarketstore.DisputedMarket)
+	marketsByKey := make(map[string]polymarketstore.UMAResolutionMarket)
+	for _, statusValue := range []string{umaResolutionStatusProposed, umaResolutionStatusDisputed} {
+		markets, err := s.fetchUMAResolutionMarketsByStatus(ctx, fetchedAt, statusValue)
+		if err != nil {
+			return nil, err
+		}
+		for _, market := range markets {
+			marketsByKey[market.MarketKey] = market
+		}
+	}
+
+	markets := make([]polymarketstore.UMAResolutionMarket, 0, len(marketsByKey))
+	for _, market := range marketsByKey {
+		markets = append(markets, market)
+	}
+	return markets, nil
+}
+
+func (s *Service) fetchUMAResolutionMarketsByStatus(ctx context.Context, fetchedAt time.Time, statusValue string) ([]polymarketstore.UMAResolutionMarket, error) {
 	limit := defaultDisputedMarketPageLimit
 	cursor := ""
 	closed := false
 	ascending := false
+	marketsByKey := make(map[string]polymarketstore.UMAResolutionMarket)
 	for {
 		opts := utilpolymarket.ListMarketsKeysetOptions{
 			Limit:               &limit,
@@ -116,7 +140,7 @@ func (s *Service) fetchDisputedMarkets(ctx context.Context, fetchedAt time.Time)
 			Ascending:           &ascending,
 			AfterCursor:         cursor,
 			Closed:              &closed,
-			UMAResolutionStatus: "disputed",
+			UMAResolutionStatus: statusValue,
 		}
 		resp, err := s.gammaClient.ListMarketsKeyset(ctx, opts)
 		if err != nil {
@@ -126,7 +150,7 @@ func (s *Service) fetchDisputedMarkets(ctx context.Context, fetchedAt time.Time)
 			break
 		}
 		for i := range resp.Markets {
-			market, ok := disputedMarketFromGamma(resp.Markets[i], fetchedAt)
+			market, ok := umaResolutionMarketFromGamma(resp.Markets[i], fetchedAt)
 			if !ok {
 				continue
 			}
@@ -142,18 +166,18 @@ func (s *Service) fetchDisputedMarkets(ctx context.Context, fetchedAt time.Time)
 		cursor = nextCursor
 	}
 
-	markets := make([]polymarketstore.DisputedMarket, 0, len(marketsByKey))
+	markets := make([]polymarketstore.UMAResolutionMarket, 0, len(marketsByKey))
 	for _, market := range marketsByKey {
 		markets = append(markets, market)
 	}
 	return markets, nil
 }
 
-func disputedMarketFromGamma(market utilpolymarket.Market, fetchedAt time.Time) (polymarketstore.DisputedMarket, bool) {
-	umaStatus := strings.TrimSpace(stringValue(market.UMAResolutionStatus))
+func umaResolutionMarketFromGamma(market utilpolymarket.Market, fetchedAt time.Time) (polymarketstore.UMAResolutionMarket, bool) {
 	umaStatuses := strings.TrimSpace(stringValue(market.UMAResolutionStatuses))
-	if !hasDisputedUMAStatus(umaStatus, umaStatuses) {
-		return polymarketstore.DisputedMarket{}, false
+	umaStatus := canonicalUMAResolutionStatus(stringValue(market.UMAResolutionStatus), umaStatuses)
+	if !isTrackedUMAResolutionStatus(umaStatus) {
+		return polymarketstore.UMAResolutionMarket{}, false
 	}
 
 	conditionID := strings.TrimSpace(stringValue(market.ConditionID))
@@ -161,11 +185,11 @@ func disputedMarketFromGamma(market utilpolymarket.Market, fetchedAt time.Time) 
 	slug := strings.TrimSpace(stringValue(market.Slug))
 	marketKey := firstNonEmpty(conditionID, marketID, slug)
 	if marketKey == "" {
-		return polymarketstore.DisputedMarket{}, false
+		return polymarketstore.UMAResolutionMarket{}, false
 	}
 
-	eventID, eventSlug := disputedMarketEventRefs(market)
-	return polymarketstore.DisputedMarket{
+	eventID, eventSlug := umaResolutionMarketEventRefs(market)
+	return polymarketstore.UMAResolutionMarket{
 		MarketKey:             marketKey,
 		MarketID:              marketID,
 		ConditionID:           conditionID,
@@ -205,23 +229,46 @@ func disputedMarketFromGamma(market utilpolymarket.Market, fetchedAt time.Time) 
 	}, true
 }
 
-func hasDisputedUMAStatus(statusValue, statusesValue string) bool {
-	if strings.EqualFold(strings.TrimSpace(statusValue), "disputed") {
-		return true
+func canonicalUMAResolutionStatus(statusValue, statusesValue string) string {
+	if status := normalizeUMAResolutionStatus(statusValue); status != "" {
+		return status
 	}
 	var statuses []string
 	if err := json.Unmarshal([]byte(statusesValue), &statuses); err == nil {
-		for i := range statuses {
-			if strings.EqualFold(strings.TrimSpace(statuses[i]), "disputed") {
-				return true
+		for i := len(statuses) - 1; i >= 0; i-- {
+			if status := normalizeUMAResolutionStatus(statuses[i]); status != "" {
+				return status
 			}
 		}
-		return false
+		return ""
 	}
-	return strings.Contains(strings.ToLower(statusesValue), `"disputed"`)
+	trail := parseUMAResolutionStatusTrail(statusesValue)
+	for i := len(trail) - 1; i >= 0; i-- {
+		if status := normalizeUMAResolutionStatus(trail[i]); status != "" {
+			return status
+		}
+	}
+	return ""
 }
 
-func disputedMarketEventRefs(market utilpolymarket.Market) (string, string) {
+func normalizeUMAResolutionStatus(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if isTrackedUMAResolutionStatus(value) {
+		return value
+	}
+	return ""
+}
+
+func isTrackedUMAResolutionStatus(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case umaResolutionStatusProposed, umaResolutionStatusDisputed:
+		return true
+	default:
+		return false
+	}
+}
+
+func umaResolutionMarketEventRefs(market utilpolymarket.Market) (string, string) {
 	for i := range market.Events {
 		eventID := strings.TrimSpace(market.Events[i].ID)
 		eventSlug := strings.TrimSpace(stringValue(market.Events[i].Slug))
