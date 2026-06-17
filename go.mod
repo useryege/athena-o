@@ -50,6 +50,7 @@ require (
 	golang.org/x/crypto v0.51.0
 	golang.org/x/net v0.53.0
 	golang.org/x/sync v0.20.0
+	golang.org/x/sys v0.44.0
 	golang.org/x/term v0.43.0
 	golang.org/x/time v0.14.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516
@@ -212,7 +213,6 @@ require (
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect

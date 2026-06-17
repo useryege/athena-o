@@ -115,3 +115,32 @@ SET market_id = EXCLUDED.market_id,
 -- name: DeleteDisputedMarketsNotSeenSince :execrows
 DELETE FROM polymarket_disputed_market
 WHERE last_seen_at < @last_seen_at;
+
+-- name: ListDisputedMarkets :many
+SELECT
+  market_key,
+  market_id,
+  condition_id,
+  slug,
+  event_id,
+  event_slug,
+  question,
+  image,
+  icon,
+  uma_resolution_status,
+  uma_resolution_statuses,
+  active,
+  closed,
+  enable_order_book,
+  volume_num,
+  liquidity_num,
+  volume_24hr,
+  spread,
+  best_bid,
+  best_ask,
+  last_trade_price,
+  fetched_at,
+  last_seen_at
+FROM polymarket_disputed_market
+ORDER BY volume_24hr DESC, volume_num DESC, market_key
+LIMIT sqlc.arg('limit');

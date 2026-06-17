@@ -7,7 +7,9 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/polymarket/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
+	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilpolymarket "github.com/useryege/athena/util/polymarket"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,6 +41,62 @@ func (s *Service) syncDisputedMarkets(ctx context.Context) error {
 		return err
 	}
 	return s.store.SyncDisputedMarkets(ctx, markets, syncStartedAt, s.now().UTC())
+}
+
+func (s *Service) ListPolymarketDisputedMarkets(ctx context.Context, req *apiclient.ListPolymarketDisputedMarketsRequest) (*apiclient.ListPolymarketDisputedMarketsResponse, error) {
+	limit := defaultDisputedMarketListLimit
+	if req != nil && req.GetLimit() > 0 {
+		limit = int(req.GetLimit())
+	}
+	if limit < 1 || limit > maxDisputedMarketListLimit {
+		return nil, status.Errorf(codes.InvalidArgument, "limit must be between 1 and %d", maxDisputedMarketListLimit)
+	}
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "polymarket store is required")
+	}
+	markets, err := s.store.ListDisputedMarkets(ctx, int32(limit))
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to list disputed markets: %v", err)
+	}
+	lastSuccessAt, err := s.store.GetDisputedMarketsLastSuccessAt(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to read disputed markets sync state: %v", err)
+	}
+
+	resp := &apiclient.ListPolymarketDisputedMarketsResponse{
+		Items: make([]*v1alpha1.PolymarketDisputedMarketItem, 0, len(markets)),
+		Stale: lastSuccessAt.IsZero() || s.now().Sub(lastSuccessAt) > 2*s.disputedMarketRefreshInterval,
+	}
+	if !lastSuccessAt.IsZero() {
+		resp.FetchedAt = lastSuccessAt.Unix()
+	}
+	for _, market := range markets {
+		resp.Items = append(resp.Items, &v1alpha1.PolymarketDisputedMarketItem{
+			MarketKey:             market.MarketKey,
+			MarketID:              market.MarketID,
+			ConditionID:           market.ConditionID,
+			MarketSlug:            market.Slug,
+			EventID:               market.EventID,
+			EventSlug:             market.EventSlug,
+			Question:              market.Question,
+			Image:                 market.Image,
+			UMAResolutionStatus:   market.UMAResolutionStatus,
+			UMAResolutionStatuses: market.UMAResolutionStatuses,
+			Volume24hr:            market.Volume24hr,
+			VolumeNum:             market.VolumeNum,
+			LiquidityNum:          market.LiquidityNum,
+			Spread:                market.Spread,
+			BestBid:               market.BestBid,
+			BestAsk:               market.BestAsk,
+			LastTradePrice:        market.LastTradePrice,
+			Active:                market.Active,
+			Closed:                market.Closed,
+			EnableOrderBook:       market.EnableOrderBook,
+			FetchedAt:             formatTime(market.FetchedAt),
+			LastSeenAt:            formatTime(market.LastSeenAt),
+		})
+	}
+	return resp, nil
 }
 
 func (s *Service) fetchDisputedMarkets(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.DisputedMarket, error) {

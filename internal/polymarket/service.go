@@ -27,6 +27,8 @@ const (
 	defaultHotMarketInitialSyncWait      = 15 * time.Second
 	defaultDisputedMarketRefreshInterval = time.Minute
 	defaultDisputedMarketPageLimit       = 100
+	defaultDisputedMarketListLimit       = 100
+	maxDisputedMarketListLimit           = 500
 	defaultRealtimeListLimit             = 100
 	maxRealtimeListLimit                 = 500
 	defaultRealtimeInitialSyncWait       = 15 * time.Second

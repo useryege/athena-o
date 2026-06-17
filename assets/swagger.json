@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-802-g19db5d8-dirty"
+    "version": "v1.0.0-804-gba9038f-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -312,6 +312,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/disputed-markets": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "summary": "ListPolymarketDisputedMarkets returns current disputed market rows.",
+        "operationId": "PolymarketService_ListPolymarketDisputedMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketDisputedMarketsResponse"
             }
           },
           "default": {
@@ -2124,6 +2155,25 @@
         }
       }
     },
+    "polymarketListPolymarketDisputedMarketsResponse": {
+      "description": "ListPolymarketDisputedMarketsResponse returns current disputed market rows.",
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketDisputedMarketItem"
+          }
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
+    },
     "polymarketListPolymarketHotMarketsResponse": {
       "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
       "type": "object",
@@ -2827,6 +2877,84 @@
         },
         "status": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketDisputedMarketItem": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "enableOrderBook": {
+          "type": "boolean"
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "lastSeenAt": {
+          "type": "string"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "marketKey": {
+          "type": "string"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "umaResolutionStatus": {
+          "type": "string"
+        },
+        "umaResolutionStatuses": {
+          "type": "string"
+        },
+        "volume24hr": {
+          "type": "number",
+          "format": "double"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
         }
       }
     },

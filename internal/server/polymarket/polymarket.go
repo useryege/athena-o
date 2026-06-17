@@ -103,6 +103,27 @@ func (s *Server) ListPolymarketMovers(ctx context.Context, req *polymarketpkg.Li
 	}, nil
 }
 
+func (s *Server) ListPolymarketDisputedMarkets(ctx context.Context, req *polymarketpkg.ListPolymarketDisputedMarketsRequest) (*polymarketpkg.ListPolymarketDisputedMarketsResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketDisputedMarkets(ctx, &polymarketapiclient.ListPolymarketDisputedMarketsRequest{
+		Limit: req.GetLimit(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &polymarketpkg.ListPolymarketDisputedMarketsResponse{
+		Items:     resp.GetItems(),
+		FetchedAt: resp.GetFetchedAt(),
+		Stale:     resp.GetStale(),
+	}, nil
+}
+
 func (s *Server) ListPolymarketSportsLiveEvents(ctx context.Context, req *polymarketpkg.ListPolymarketSportsLiveEventsRequest) (*polymarketpkg.ListPolymarketSportsLiveEventsResponse, error) {
 	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
 	if err != nil {

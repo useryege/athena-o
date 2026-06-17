@@ -219,3 +219,103 @@ func (q *Queries) DeleteDisputedMarketsNotSeenSince(ctx context.Context, lastSee
 	}
 	return result.RowsAffected(), nil
 }
+
+const listDisputedMarkets = `-- name: ListDisputedMarkets :many
+SELECT
+  market_key,
+  market_id,
+  condition_id,
+  slug,
+  event_id,
+  event_slug,
+  question,
+  image,
+  icon,
+  uma_resolution_status,
+  uma_resolution_statuses,
+  active,
+  closed,
+  enable_order_book,
+  volume_num,
+  liquidity_num,
+  volume_24hr,
+  spread,
+  best_bid,
+  best_ask,
+  last_trade_price,
+  fetched_at,
+  last_seen_at
+FROM polymarket_disputed_market
+ORDER BY volume_24hr DESC, volume_num DESC, market_key
+LIMIT $1
+`
+
+type ListDisputedMarketsRow struct {
+	MarketKey             string
+	MarketID              string
+	ConditionID           string
+	Slug                  string
+	EventID               string
+	EventSlug             string
+	Question              string
+	Image                 string
+	Icon                  string
+	UmaResolutionStatus   string
+	UmaResolutionStatuses string
+	Active                bool
+	Closed                bool
+	EnableOrderBook       bool
+	VolumeNum             float64
+	LiquidityNum          float64
+	Volume24hr            float64
+	Spread                float64
+	BestBid               float64
+	BestAsk               float64
+	LastTradePrice        float64
+	FetchedAt             pgtype.Timestamptz
+	LastSeenAt            pgtype.Timestamptz
+}
+
+func (q *Queries) ListDisputedMarkets(ctx context.Context, limit int32) ([]ListDisputedMarketsRow, error) {
+	rows, err := q.db.Query(ctx, listDisputedMarkets, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDisputedMarketsRow
+	for rows.Next() {
+		var i ListDisputedMarketsRow
+		if err := rows.Scan(
+			&i.MarketKey,
+			&i.MarketID,
+			&i.ConditionID,
+			&i.Slug,
+			&i.EventID,
+			&i.EventSlug,
+			&i.Question,
+			&i.Image,
+			&i.Icon,
+			&i.UmaResolutionStatus,
+			&i.UmaResolutionStatuses,
+			&i.Active,
+			&i.Closed,
+			&i.EnableOrderBook,
+			&i.VolumeNum,
+			&i.LiquidityNum,
+			&i.Volume24hr,
+			&i.Spread,
+			&i.BestBid,
+			&i.BestAsk,
+			&i.LastTradePrice,
+			&i.FetchedAt,
+			&i.LastSeenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

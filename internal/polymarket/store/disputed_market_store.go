@@ -2,9 +2,11 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	polymarketsqlc "github.com/useryege/athena/internal/polymarket/store/sqlc"
 )
@@ -42,6 +44,59 @@ func (s *SQLStore) SyncDisputedMarkets(ctx context.Context, markets []DisputedMa
 		return fmt.Errorf("commit disputed markets sync: %w", err)
 	}
 	return nil
+}
+
+func (s *SQLStore) ListDisputedMarkets(ctx context.Context, limit int32) ([]DisputedMarket, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	rows, err := s.queries.ListDisputedMarkets(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list disputed markets: %w", err)
+	}
+	items := make([]DisputedMarket, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, DisputedMarket{
+			MarketKey:             row.MarketKey,
+			MarketID:              row.MarketID,
+			ConditionID:           row.ConditionID,
+			Slug:                  row.Slug,
+			EventID:               row.EventID,
+			EventSlug:             row.EventSlug,
+			Question:              row.Question,
+			Image:                 firstNonEmptyText(row.Image, row.Icon),
+			Icon:                  row.Icon,
+			UMAResolutionStatus:   row.UmaResolutionStatus,
+			UMAResolutionStatuses: row.UmaResolutionStatuses,
+			Active:                row.Active,
+			Closed:                row.Closed,
+			EnableOrderBook:       row.EnableOrderBook,
+			VolumeNum:             row.VolumeNum,
+			LiquidityNum:          row.LiquidityNum,
+			Volume24hr:            row.Volume24hr,
+			Spread:                row.Spread,
+			BestBid:               row.BestBid,
+			BestAsk:               row.BestAsk,
+			LastTradePrice:        row.LastTradePrice,
+			FetchedAt:             timeValue(row.FetchedAt),
+			LastSeenAt:            timeValue(row.LastSeenAt),
+		})
+	}
+	return items, nil
+}
+
+func (s *SQLStore) GetDisputedMarketsLastSuccessAt(ctx context.Context) (time.Time, error) {
+	if s == nil || s.queries == nil {
+		return time.Time{}, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	value, err := s.queries.GetPolymarketSyncState(ctx, disputedMarketsSyncName)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, fmt.Errorf("get disputed markets sync state: %w", err)
+	}
+	return timeValue(value), nil
 }
 
 func batchUpsertDisputedMarketsParams(items []DisputedMarket) polymarketsqlc.BatchUpsertDisputedMarketsParams {
@@ -122,4 +177,13 @@ func batchUpsertDisputedMarketsParams(items []DisputedMarket) polymarketsqlc.Bat
 		params.LastSeenAtValues = append(params.LastSeenAtValues, nullableTime(item.LastSeenAt))
 	}
 	return params
+}
+
+func firstNonEmptyText(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
