@@ -43,6 +43,7 @@ type sportsLiveGammaClient interface {
 	ListMarketsKeyset(context.Context, utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error)
 	GetEventByID(context.Context, int64, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
 	GetEventBySlug(context.Context, string, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
+	GetTagBySlug(context.Context, string, utilpolymarket.GetTagOptions) (*utilpolymarket.Tag, error)
 }
 
 type sportsLiveCLOBClient interface {
@@ -152,6 +153,7 @@ type Service struct {
 	realtimeSubscribedTokens      int32
 	sportsHistoryStale            bool
 	moverAlertStates              map[string]moverAlertState
+	umaResolutionProposedTagIDs   map[string]int64
 	syncGroup                     singleflight.Group
 }
 
@@ -170,6 +172,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		realtimeStates:                make(map[string]*realtimeTokenState),
 		realtimeSamples:               make(map[string][]realtimeSample),
 		moverAlertStates:              make(map[string]moverAlertState),
+		umaResolutionProposedTagIDs:   make(map[string]int64),
 		sportsHistoryStale:            true,
 	}
 	for _, opt := range opts {

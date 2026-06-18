@@ -3,6 +3,7 @@ package polymarket
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var umaResolutionProposedFilterTagSlugs = []string{"politics", "iran", "geopolitics"}
+
+var umaResolutionProposedFilterValues = map[string]struct{}{
+	"politics":    {},
+	"iran":        {},
+	"geopolitics": {},
+}
 
 func (s *Service) runDisputedMarketSyncLoop(ctx context.Context) {
 	defer s.runWG.Done()
@@ -110,10 +119,55 @@ func (s *Service) fetchUMAResolutionMarkets(ctx context.Context, fetchedAt time.
 	}
 
 	marketsByKey := make(map[string]polymarketstore.UMAResolutionMarket)
-	for _, statusValue := range []string{umaResolutionStatusProposed, umaResolutionStatusDisputed} {
-		markets, err := s.fetchUMAResolutionMarketsByStatus(ctx, fetchedAt, statusValue)
+	proposedMarkets, err := s.fetchUMAResolutionProposedMarkets(ctx, fetchedAt)
+	if err != nil {
+		return nil, err
+	}
+	for _, market := range proposedMarkets {
+		marketsByKey[market.MarketKey] = market
+	}
+
+	disputedMarkets, err := s.fetchUMAResolutionMarketsByStatus(ctx, fetchedAt, umaResolutionStatusDisputed)
+	if err != nil {
+		return nil, err
+	}
+	for _, market := range disputedMarkets {
+		marketsByKey[market.MarketKey] = market
+	}
+
+	markets := make([]polymarketstore.UMAResolutionMarket, 0, len(marketsByKey))
+	for _, market := range marketsByKey {
+		markets = append(markets, market)
+	}
+	return markets, nil
+}
+
+func (s *Service) fetchUMAResolutionMarketsByStatus(ctx context.Context, fetchedAt time.Time, statusValue string) ([]polymarketstore.UMAResolutionMarket, error) {
+	return s.fetchUMAResolutionMarketsByStatusAndTagID(ctx, fetchedAt, statusValue, 0, false, nil)
+}
+
+func (s *Service) fetchUMAResolutionProposedMarkets(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.UMAResolutionMarket, error) {
+	tagIDs := s.loadUMAResolutionProposedTagIDs(ctx)
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	if len(tagIDs) == 0 {
+		log.WithField("tag_slugs", strings.Join(umaResolutionProposedFilterTagSlugs, ",")).
+			Warn("no polymarket uma proposed filter tags resolved; suppressing proposed alerts")
+		return nil, nil
+	}
+
+	marketsByKey := make(map[string]polymarketstore.UMAResolutionMarket)
+	for _, tagID := range tagIDs {
+		markets, err := s.fetchUMAResolutionMarketsByStatusAndTagID(ctx, fetchedAt, umaResolutionStatusProposed, tagID, true, umaResolutionMarketMatchesProposedFilter)
 		if err != nil {
-			return nil, err
+			if ctx.Err() != nil {
+				return nil, err
+			}
+			log.WithError(err).
+				WithField("tag_id", tagID).
+				Warn("failed to fetch polymarket uma proposed markets by filter tag; suppressing this tag")
+			continue
 		}
 		for _, market := range markets {
 			marketsByKey[market.MarketKey] = market
@@ -127,11 +181,26 @@ func (s *Service) fetchUMAResolutionMarkets(ctx context.Context, fetchedAt time.
 	return markets, nil
 }
 
-func (s *Service) fetchUMAResolutionMarketsByStatus(ctx context.Context, fetchedAt time.Time, statusValue string) ([]polymarketstore.UMAResolutionMarket, error) {
+func (s *Service) fetchUMAResolutionMarketsByStatusAndTagID(
+	ctx context.Context,
+	fetchedAt time.Time,
+	statusValue string,
+	tagID int64,
+	includeTag bool,
+	filter func(utilpolymarket.Market) bool,
+) ([]polymarketstore.UMAResolutionMarket, error) {
 	limit := defaultDisputedMarketPageLimit
 	cursor := ""
 	closed := false
 	ascending := false
+	var tagIDs []int64
+	if tagID > 0 {
+		tagIDs = []int64{tagID}
+	}
+	var includeTagPtr *bool
+	if includeTag {
+		includeTagPtr = &includeTag
+	}
 	marketsByKey := make(map[string]polymarketstore.UMAResolutionMarket)
 	for {
 		opts := utilpolymarket.ListMarketsKeysetOptions{
@@ -140,6 +209,8 @@ func (s *Service) fetchUMAResolutionMarketsByStatus(ctx context.Context, fetched
 			Ascending:           &ascending,
 			AfterCursor:         cursor,
 			Closed:              &closed,
+			TagID:               tagIDs,
+			IncludeTag:          includeTagPtr,
 			UMAResolutionStatus: statusValue,
 		}
 		resp, err := s.gammaClient.ListMarketsKeyset(ctx, opts)
@@ -150,6 +221,9 @@ func (s *Service) fetchUMAResolutionMarketsByStatus(ctx context.Context, fetched
 			break
 		}
 		for i := range resp.Markets {
+			if filter != nil && !filter(resp.Markets[i]) {
+				continue
+			}
 			market, ok := umaResolutionMarketFromGamma(resp.Markets[i], fetchedAt)
 			if !ok {
 				continue
@@ -227,6 +301,74 @@ func umaResolutionMarketFromGamma(market utilpolymarket.Market, fetchedAt time.T
 		FetchedAt:             fetchedAt,
 		LastSeenAt:            fetchedAt,
 	}, true
+}
+
+func (s *Service) loadUMAResolutionProposedTagIDs(ctx context.Context) []int64 {
+	if s.umaResolutionProposedTagIDs == nil {
+		s.umaResolutionProposedTagIDs = make(map[string]int64)
+	}
+	tagIDs := make([]int64, 0, len(umaResolutionProposedFilterTagSlugs))
+	for _, slug := range umaResolutionProposedFilterTagSlugs {
+		if tagID, ok := s.umaResolutionProposedTagIDs[slug]; ok {
+			tagIDs = append(tagIDs, tagID)
+			continue
+		}
+		tag, err := s.gammaClient.GetTagBySlug(ctx, slug, utilpolymarket.GetTagOptions{})
+		if err != nil {
+			if ctx.Err() != nil {
+				return tagIDs
+			}
+			log.WithError(err).
+				WithField("tag_slug", slug).
+				Warn("failed to resolve polymarket uma proposed filter tag")
+			continue
+		}
+		if tag == nil {
+			log.WithField("tag_slug", slug).Warn("polymarket uma proposed filter tag resolved to nil")
+			continue
+		}
+		tagID, err := strconv.ParseInt(strings.TrimSpace(tag.ID), 10, 64)
+		if err != nil || tagID <= 0 {
+			log.WithError(err).
+				WithField("tag_slug", slug).
+				WithField("tag_id", tag.ID).
+				Warn("polymarket uma proposed filter tag has invalid id")
+			continue
+		}
+		s.umaResolutionProposedTagIDs[slug] = tagID
+		tagIDs = append(tagIDs, tagID)
+	}
+	return tagIDs
+}
+
+func umaResolutionMarketMatchesProposedFilter(market utilpolymarket.Market) bool {
+	for _, tag := range market.Tags {
+		if umaResolutionTagMatchesProposedFilter(tag) {
+			return true
+		}
+	}
+	for _, event := range market.Events {
+		if umaResolutionProposedFilterValueAllowed(stringValue(event.Category)) {
+			return true
+		}
+		for _, tag := range event.Tags {
+			if umaResolutionTagMatchesProposedFilter(tag) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func umaResolutionTagMatchesProposedFilter(tag utilpolymarket.Tag) bool {
+	return umaResolutionProposedFilterValueAllowed(stringValue(tag.Slug)) ||
+		umaResolutionProposedFilterValueAllowed(stringValue(tag.Label))
+}
+
+func umaResolutionProposedFilterValueAllowed(value string) bool {
+	value = strings.ToLower(strings.TrimSpace(value))
+	_, ok := umaResolutionProposedFilterValues[value]
+	return ok
 }
 
 func canonicalUMAResolutionStatus(statusValue, statusesValue string) string {
