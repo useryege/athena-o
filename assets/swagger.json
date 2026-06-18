@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-804-gba9038f-dirty"
+    "version": "v1.0.0-810-g5cba389-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -372,6 +372,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/polymarketGetPolymarketFIFAMoneylineEventResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/fifa/wallet-balances": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_ListPolymarketFIFAWalletBalances",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketFIFAWalletBalancesResponse"
             }
           },
           "default": {
@@ -2174,6 +2196,21 @@
         }
       }
     },
+    "polymarketListPolymarketFIFAWalletBalancesResponse": {
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketFIFAWalletBalanceItem"
+          }
+        }
+      }
+    },
     "polymarketListPolymarketHotMarketsResponse": {
       "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
       "type": "object",
@@ -3083,6 +3120,45 @@
           "format": "double"
         },
         "yesTokenId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketFIFAWalletBalanceItem": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "explorerUrl": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "rawAmount": {
+          "type": "string"
+        },
+        "tokenAddress": {
+          "type": "string"
+        },
+        "tokenSymbol": {
+          "type": "string"
+        },
+        "walletAddress": {
           "type": "string"
         }
       }

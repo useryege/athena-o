@@ -17,6 +17,8 @@ func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
 
 func (*PolymarketFIFAMoneylineOptionItem) ProtoMessage() {}
 
+func (*PolymarketFIFAWalletBalanceItem) ProtoMessage() {}
+
 func (*PolymarketHotMarketItem) ProtoMessage() {}
 
 func (*PolymarketHotMarketTokenItem) ProtoMessage() {}

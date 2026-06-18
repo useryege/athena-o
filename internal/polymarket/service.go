@@ -34,9 +34,17 @@ const (
 	defaultRealtimeInitialSyncWait       = 15 * time.Second
 	defaultMoverListLimit                = 100
 	maxMoverListLimit                    = 500
+	defaultFIFAWalletBalanceCacheTTL     = 8 * time.Second
+	defaultFIFAPolygonRPCURL             = "https://polygon-rpc.com"
+	defaultFIFASolanaRPCURL              = "https://api.mainnet-beta.solana.com"
 )
 
 type ServiceOption func(*Service)
+
+type FIFAWalletBalanceConfig struct {
+	PolygonRPCURL string
+	SolanaRPCURL  string
+}
 
 type sportsLiveGammaClient interface {
 	ListEventsKeyset(context.Context, utilpolymarket.ListEventsKeysetOptions) (*utilpolymarket.EventKeysetResponse, error)
@@ -119,6 +127,17 @@ func WithUMAResolutionAlertsConfig(config UMAResolutionAlertsConfig) ServiceOpti
 	}
 }
 
+func WithFIFAWalletBalanceConfig(config FIFAWalletBalanceConfig) ServiceOption {
+	return func(s *Service) {
+		if config.PolygonRPCURL != "" {
+			s.fifaPolygonRPCURL = config.PolygonRPCURL
+		}
+		if config.SolanaRPCURL != "" {
+			s.fifaSolanaRPCURL = config.SolanaRPCURL
+		}
+	}
+}
+
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
 	store                         *polymarketstore.SQLStore
@@ -129,6 +148,8 @@ type Service struct {
 	sportsLivePageLimit           int
 	hotMarketRefreshInterval      time.Duration
 	disputedMarketRefreshInterval time.Duration
+	fifaPolygonRPCURL             string
+	fifaSolanaRPCURL              string
 	moverAlertsConfig             MoverAlertsConfig
 	sportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
 	umaResolutionAlertsConfig     UMAResolutionAlertsConfig
@@ -154,6 +175,9 @@ type Service struct {
 	sportsHistoryStale            bool
 	moverAlertStates              map[string]moverAlertState
 	umaResolutionProposedTagIDs   map[string]int64
+	fifaWalletBalances            []*v1alpha1.PolymarketFIFAWalletBalanceItem
+	fifaWalletBalancesFetched     int64
+	fifaWalletBalancesCachedAt    time.Time
 	syncGroup                     singleflight.Group
 }
 
@@ -164,6 +188,8 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		sportsLivePageLimit:           defaultSportsLiveEventPageLimit,
 		hotMarketRefreshInterval:      defaultHotMarketRefreshInterval,
 		disputedMarketRefreshInterval: defaultDisputedMarketRefreshInterval,
+		fifaPolygonRPCURL:             defaultFIFAPolygonRPCURL,
+		fifaSolanaRPCURL:              defaultFIFASolanaRPCURL,
 		moverAlertsConfig:             defaultMoverAlertsConfig(),
 		sportsLivePriceAlertsConfig:   defaultSportsLivePriceAlertsConfig(),
 		umaResolutionAlertsConfig:     defaultUMAResolutionAlertsConfig(),

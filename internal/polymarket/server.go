@@ -23,6 +23,7 @@ type ServerOpts struct {
 	MoverAlertsConfig           MoverAlertsConfig
 	SportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
 	UMAResolutionAlertsConfig   UMAResolutionAlertsConfig
+	FIFAWalletBalanceConfig     FIFAWalletBalanceConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -36,6 +37,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
 			WithUMAResolutionAlertsConfig(opts.UMAResolutionAlertsConfig),
+			WithFIFAWalletBalanceConfig(opts.FIFAWalletBalanceConfig),
 		),
 		healthService: healthService,
 	}, nil

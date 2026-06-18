@@ -122,6 +122,13 @@ message GetPolymarketFIFAMoneylineEventResponse {
   int64 fetched_at = 2;
 }
 
+message ListPolymarketFIFAWalletBalancesRequest {}
+
+message ListPolymarketFIFAWalletBalancesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAWalletBalanceItem items = 1;
+  int64 fetched_at = 2;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus);
@@ -149,4 +156,6 @@ service PolymarketService {
   rpc BatchGetPolymarketSportsHistoryPriceHistory(BatchGetPolymarketSportsHistoryPriceHistoryRequest) returns (BatchGetPolymarketSportsHistoryPriceHistoryResponse);
 
   rpc GetPolymarketFIFAMoneylineEvent(GetPolymarketFIFAMoneylineEventRequest) returns (GetPolymarketFIFAMoneylineEventResponse);
+
+  rpc ListPolymarketFIFAWalletBalances(ListPolymarketFIFAWalletBalancesRequest) returns (ListPolymarketFIFAWalletBalancesResponse);
 }

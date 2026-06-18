@@ -190,6 +190,30 @@ message PolymarketFIFAMoneylineOptionItem {
   optional bool negRisk = 19;
 }
 
+message PolymarketFIFAWalletBalanceItem {
+  optional string chain = 1;
+
+  optional string label = 2;
+
+  optional string walletAddress = 3;
+
+  optional string tokenAddress = 4;
+
+  optional string tokenSymbol = 5;
+
+  optional int32 decimals = 6;
+
+  optional string rawAmount = 7;
+
+  optional string amount = 8;
+
+  optional string explorerUrl = 9;
+
+  optional bool ok = 10;
+
+  optional string errorMessage = 11;
+}
+
 message PolymarketHotMarketItem {
   optional string conditionId = 1;
 

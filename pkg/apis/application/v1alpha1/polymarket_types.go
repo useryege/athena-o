@@ -201,6 +201,20 @@ type PolymarketFIFAMoneylineEventItem struct {
 	Options       []*PolymarketFIFAMoneylineOptionItem `protobuf:"bytes,16,rep,name=options" json:"options"`
 }
 
+type PolymarketFIFAWalletBalanceItem struct {
+	Chain         string `protobuf:"bytes,1,opt,name=chain" json:"chain"`
+	Label         string `protobuf:"bytes,2,opt,name=label" json:"label"`
+	WalletAddress string `protobuf:"bytes,3,opt,name=walletAddress" json:"walletAddress"`
+	TokenAddress  string `protobuf:"bytes,4,opt,name=tokenAddress" json:"tokenAddress"`
+	TokenSymbol   string `protobuf:"bytes,5,opt,name=tokenSymbol" json:"tokenSymbol"`
+	Decimals      int32  `protobuf:"varint,6,opt,name=decimals" json:"decimals"`
+	RawAmount     string `protobuf:"bytes,7,opt,name=rawAmount" json:"rawAmount"`
+	Amount        string `protobuf:"bytes,8,opt,name=amount" json:"amount"`
+	ExplorerURL   string `protobuf:"bytes,9,opt,name=explorerUrl" json:"explorerUrl"`
+	OK            bool   `protobuf:"varint,10,opt,name=ok" json:"ok"`
+	ErrorMessage  string `protobuf:"bytes,11,opt,name=errorMessage" json:"errorMessage"`
+}
+
 type PolymarketSportsLiveEventCardItem struct {
 	EventKey    string                                `protobuf:"bytes,1,opt,name=eventKey" json:"eventKey"`
 	EventID     string                                `protobuf:"bytes,2,opt,name=eventId" json:"eventId"`

@@ -230,6 +230,25 @@ export interface GetPolymarketFIFAMoneylineEventResult {
     fetchedAt?: number;
 }
 
+export interface PolymarketFIFAWalletBalanceItem {
+    chain: string;
+    label: string;
+    walletAddress: string;
+    tokenAddress: string;
+    tokenSymbol: string;
+    decimals?: number;
+    rawAmount: string;
+    amount: string;
+    explorerUrl: string;
+    ok?: boolean;
+    errorMessage?: string;
+}
+
+export interface ListPolymarketFIFAWalletBalancesResult {
+    items: PolymarketFIFAWalletBalanceItem[];
+    fetchedAt?: number;
+}
+
 export interface PolymarketSportsLiveEventCardItem {
     eventKey: string;
     eventId: string;
@@ -369,6 +388,20 @@ const normalizeFIFAMoneylineEvent = (item: any): PolymarketFIFAMoneylineEventIte
         options: Array.isArray(options) ? options.map(normalizeFIFAMoneylineOption) : []
     };
 };
+
+const normalizeFIFAWalletBalance = (item: any): PolymarketFIFAWalletBalanceItem => ({
+    chain: readString(item, 'chain'),
+    label: readString(item, 'label'),
+    walletAddress: readString(item, 'walletAddress', 'wallet_address'),
+    tokenAddress: readString(item, 'tokenAddress', 'token_address'),
+    tokenSymbol: readString(item, 'tokenSymbol', 'token_symbol'),
+    decimals: readNumber(item, 'decimals'),
+    rawAmount: readString(item, 'rawAmount', 'raw_amount'),
+    amount: readString(item, 'amount'),
+    explorerUrl: readString(item, 'explorerUrl', 'explorer_url'),
+    ok: readBoolean(item, 'ok'),
+    errorMessage: readString(item, 'errorMessage', 'error_message')
+});
 
 const normalizeSportsLiveEventCard = (item: any): PolymarketSportsLiveEventCardItem => {
     const markets = readValue(item, 'markets');
@@ -674,6 +707,19 @@ export class PolymarketService {
             const body = res.body || {};
             return {
                 item: body.item ? normalizeFIFAMoneylineEvent(body.item) : undefined,
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listFIFAWalletBalances(): Promise<ListPolymarketFIFAWalletBalancesResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/fifa/wallet-balances');
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeFIFAWalletBalance),
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
             };
         }) as any;

@@ -222,3 +222,20 @@ func (s *Server) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *polym
 		FetchedAt: resp.GetFetchedAt(),
 	}, nil
 }
+
+func (s *Server) ListPolymarketFIFAWalletBalances(ctx context.Context, _ *polymarketpkg.ListPolymarketFIFAWalletBalancesRequest) (*polymarketpkg.ListPolymarketFIFAWalletBalancesResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketFIFAWalletBalances(ctx, &polymarketapiclient.ListPolymarketFIFAWalletBalancesRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.ListPolymarketFIFAWalletBalancesResponse{
+		Items:     resp.GetItems(),
+		FetchedAt: resp.GetFetchedAt(),
+	}, nil
+}
