@@ -170,6 +170,7 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/ListPolymarketHotMarkets":                    fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketRealtimeMarkets":               fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketMovers":                        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ListPolymarketDisputedMarkets":               fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketSportsLiveEvents":              fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/BatchGetPolymarketSportsLivePriceHistory":    fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketSportsHistoryEvents":           fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
