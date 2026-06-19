@@ -97,15 +97,84 @@ SET block_number = EXCLUDED.block_number,
   fetched_at = EXCLUDED.fetched_at,
   updated_at = now();
 
+-- name: BatchUpsertManagedOODisputePriceLogs :exec
+INSERT INTO polymarket_managed_oo_dispute_price_log (
+  tx_hash,
+  log_index,
+  block_number,
+  block_hash,
+  tx_index,
+  contract_address,
+  topic,
+  requester,
+  proposer,
+  disputer,
+  identifier,
+  request_timestamp,
+  ancillary_data_hex,
+  ancillary_data_text,
+  market_id,
+  proposed_price,
+  raw_topics,
+  raw_data,
+  fetched_at
+)
+SELECT
+  unnest(sqlc.arg('tx_hashes')::text[]),
+  unnest(sqlc.arg('log_indexes')::bigint[]),
+  unnest(sqlc.arg('block_numbers')::bigint[]),
+  unnest(sqlc.arg('block_hashes')::text[]),
+  unnest(sqlc.arg('tx_indexes')::bigint[]),
+  unnest(sqlc.arg('contract_addresses')::text[]),
+  unnest(sqlc.arg('topics')::text[]),
+  unnest(sqlc.arg('requesters')::text[]),
+  unnest(sqlc.arg('proposers')::text[]),
+  unnest(sqlc.arg('disputers')::text[]),
+  unnest(sqlc.arg('identifiers')::text[]),
+  unnest(sqlc.arg('request_timestamps')::bigint[]),
+  unnest(sqlc.arg('ancillary_data_hex_values')::text[]),
+  unnest(sqlc.arg('ancillary_data_text_values')::text[]),
+  unnest(sqlc.arg('market_ids')::text[]),
+  unnest(sqlc.arg('proposed_prices')::text[]),
+  unnest(sqlc.arg('raw_topics_values')::jsonb[]),
+  unnest(sqlc.arg('raw_data_values')::text[]),
+  unnest(sqlc.arg('fetched_at_values')::timestamptz[])
+ON CONFLICT (tx_hash, log_index) DO UPDATE
+SET block_number = EXCLUDED.block_number,
+  block_hash = EXCLUDED.block_hash,
+  tx_index = EXCLUDED.tx_index,
+  contract_address = EXCLUDED.contract_address,
+  topic = EXCLUDED.topic,
+  requester = EXCLUDED.requester,
+  proposer = EXCLUDED.proposer,
+  disputer = EXCLUDED.disputer,
+  identifier = EXCLUDED.identifier,
+  request_timestamp = EXCLUDED.request_timestamp,
+  ancillary_data_hex = EXCLUDED.ancillary_data_hex,
+  ancillary_data_text = EXCLUDED.ancillary_data_text,
+  market_id = EXCLUDED.market_id,
+  proposed_price = EXCLUDED.proposed_price,
+  raw_topics = EXCLUDED.raw_topics,
+  raw_data = EXCLUDED.raw_data,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now();
+
 -- name: ListManagedOOMarketIDsMissingData :many
-SELECT DISTINCT log.market_id
-FROM polymarket_managed_oo_propose_price_log AS log
+WITH event_market_ids AS (
+  SELECT market_id
+  FROM polymarket_managed_oo_propose_price_log
+  UNION
+  SELECT market_id
+  FROM polymarket_managed_oo_dispute_price_log
+)
+SELECT DISTINCT event_market_ids.market_id
+FROM event_market_ids
 LEFT JOIN polymarket_managed_oo_market AS market
-  ON market.market_id = log.market_id
-WHERE log.market_id <> ''
-  AND log.market_id ~ '^[0-9]+$'
+  ON market.market_id = event_market_ids.market_id
+WHERE event_market_ids.market_id <> ''
+  AND event_market_ids.market_id ~ '^[0-9]+$'
   AND market.market_id IS NULL
-ORDER BY log.market_id
+ORDER BY event_market_ids.market_id
 LIMIT @limit_value;
 
 -- name: UpsertManagedOOMarket :exec
@@ -322,6 +391,59 @@ LIMIT @limit_value;
 
 -- name: UpsertManagedOOProposePriceAlertState :exec
 INSERT INTO polymarket_managed_oo_propose_price_alert_state (
+  tx_hash,
+  log_index,
+  notification_id,
+  notified_at
+) VALUES (
+  @tx_hash,
+  @log_index,
+  @notification_id,
+  @notified_at
+)
+ON CONFLICT (tx_hash, log_index) DO UPDATE
+SET notification_id = EXCLUDED.notification_id,
+  notified_at = EXCLUDED.notified_at,
+  updated_at = now();
+
+-- name: ListManagedOODisputePriceAlertCandidates :many
+WITH matched_labels AS (
+  SELECT
+    market_id,
+    string_agg(label, ', ' ORDER BY position) AS labels
+  FROM polymarket_managed_oo_market_label
+  WHERE label IN ('Politics', 'Iran', 'Geopolitics')
+  GROUP BY market_id
+)
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.market_id,
+  log.requester,
+  log.proposer,
+  log.disputer,
+  log.proposed_price,
+  log.request_timestamp,
+  log.ancillary_data_text,
+  market.condition_id,
+  market.slug,
+  market.question,
+  matched_labels.labels AS matched_labels
+FROM polymarket_managed_oo_dispute_price_log AS log
+JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+JOIN matched_labels
+  ON matched_labels.market_id = log.market_id
+LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
+  ON state.tx_hash = log.tx_hash
+  AND state.log_index = log.log_index
+WHERE state.tx_hash IS NULL
+ORDER BY log.block_number ASC, log.log_index ASC
+LIMIT @limit_value;
+
+-- name: UpsertManagedOODisputePriceAlertState :exec
+INSERT INTO polymarket_managed_oo_dispute_price_alert_state (
   tx_hash,
   log_index,
   notification_id,

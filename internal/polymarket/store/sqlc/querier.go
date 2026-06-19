@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BatchUpsertManagedOODisputePriceLogs(ctx context.Context, arg BatchUpsertManagedOODisputePriceLogsParams) error
 	BatchUpsertManagedOOMarketLabels(ctx context.Context, arg BatchUpsertManagedOOMarketLabelsParams) error
 	BatchUpsertManagedOOProposePriceLogs(ctx context.Context, arg BatchUpsertManagedOOProposePriceLogsParams) error
 	BatchUpsertSportsHistoryEvents(ctx context.Context, arg BatchUpsertSportsHistoryEventsParams) error
@@ -27,6 +28,7 @@ type Querier interface {
 	DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error
 	GetPolymarketChainLogCursor(ctx context.Context, syncName string) (PolymarketChainLogCursor, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
+	ListManagedOODisputePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOODisputePriceAlertCandidatesRow, error)
 	ListManagedOOMarketIDsMissingData(ctx context.Context, limitValue int32) ([]string, error)
 	ListManagedOOProposePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOOProposePriceAlertCandidatesRow, error)
 	ListSportsHistoryEvents(ctx context.Context, limit int32) ([]ListSportsHistoryEventsRow, error)
@@ -40,6 +42,7 @@ type Querier interface {
 	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
 	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
 	Ping(ctx context.Context) (int32, error)
+	UpsertManagedOODisputePriceAlertState(ctx context.Context, arg UpsertManagedOODisputePriceAlertStateParams) error
 	UpsertManagedOOMarket(ctx context.Context, arg UpsertManagedOOMarketParams) error
 	UpsertManagedOOMarketNotFound(ctx context.Context, arg UpsertManagedOOMarketNotFoundParams) error
 	UpsertManagedOOProposePriceAlertState(ctx context.Context, arg UpsertManagedOOProposePriceAlertStateParams) error

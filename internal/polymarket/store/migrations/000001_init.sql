@@ -162,6 +162,43 @@ CREATE TABLE IF NOT EXISTS polymarket_managed_oo_propose_price_log (
   CONSTRAINT polymarket_managed_oo_propose_price_log_raw_topics_array CHECK (jsonb_typeof(raw_topics) = 'array')
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_managed_oo_dispute_price_log (
+  tx_hash TEXT NOT NULL,
+  log_index BIGINT NOT NULL,
+  block_number BIGINT NOT NULL,
+  block_hash TEXT NOT NULL,
+  tx_index BIGINT NOT NULL,
+  contract_address TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  requester TEXT NOT NULL,
+  proposer TEXT NOT NULL,
+  disputer TEXT NOT NULL,
+  identifier TEXT NOT NULL,
+  request_timestamp BIGINT NOT NULL,
+  ancillary_data_hex TEXT NOT NULL,
+  ancillary_data_text TEXT NOT NULL DEFAULT '',
+  market_id TEXT NOT NULL DEFAULT '',
+  proposed_price TEXT NOT NULL,
+  raw_topics JSONB NOT NULL DEFAULT '[]'::jsonb,
+  raw_data TEXT NOT NULL DEFAULT '',
+  fetched_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tx_hash, log_index),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_hash_not_empty CHECK (btrim(tx_hash) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_index_nonnegative CHECK (log_index >= 0),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_block_nonnegative CHECK (block_number >= 0),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_tx_index_nonnegative CHECK (tx_index >= 0),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_contract_not_empty CHECK (btrim(contract_address) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_topic_not_empty CHECK (btrim(topic) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_requester_not_empty CHECK (btrim(requester) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_proposer_not_empty CHECK (btrim(proposer) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_disputer_not_empty CHECK (btrim(disputer) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_identifier_not_empty CHECK (btrim(identifier) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_request_ts_nonnegative CHECK (request_timestamp >= 0),
+  CONSTRAINT polymarket_managed_oo_dispute_price_log_raw_topics_array CHECK (jsonb_typeof(raw_topics) = 'array')
+);
+
 CREATE TABLE IF NOT EXISTS polymarket_managed_oo_market (
   market_id TEXT PRIMARY KEY,
   condition_id TEXT NOT NULL DEFAULT '',
@@ -242,6 +279,21 @@ CREATE TABLE IF NOT EXISTS polymarket_managed_oo_propose_price_alert_state (
   CONSTRAINT polymarket_managed_oo_propose_price_alert_state_notification_nonnegative CHECK (notification_id >= 0),
   CONSTRAINT polymarket_managed_oo_propose_price_alert_state_log_fk
     FOREIGN KEY (tx_hash, log_index) REFERENCES polymarket_managed_oo_propose_price_log(tx_hash, log_index) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS polymarket_managed_oo_dispute_price_alert_state (
+  tx_hash TEXT NOT NULL,
+  log_index BIGINT NOT NULL,
+  notification_id BIGINT NOT NULL DEFAULT 0,
+  notified_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tx_hash, log_index),
+  CONSTRAINT polymarket_managed_oo_dispute_price_alert_state_hash_not_empty CHECK (btrim(tx_hash) <> ''),
+  CONSTRAINT polymarket_managed_oo_dispute_price_alert_state_index_nonnegative CHECK (log_index >= 0),
+  CONSTRAINT polymarket_managed_oo_dispute_price_alert_state_notification_nonnegative CHECK (notification_id >= 0),
+  CONSTRAINT polymarket_managed_oo_dispute_price_alert_state_log_fk
+    FOREIGN KEY (tx_hash, log_index) REFERENCES polymarket_managed_oo_dispute_price_log(tx_hash, log_index) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_point (
@@ -384,6 +436,16 @@ CREATE INDEX IF NOT EXISTS polymarket_managed_oo_propose_price_log_market_idx
   ON polymarket_managed_oo_propose_price_log (market_id)
   WHERE market_id <> '';
 
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_dispute_price_log_block_idx
+  ON polymarket_managed_oo_dispute_price_log (block_number DESC, log_index DESC);
+
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_dispute_price_log_request_idx
+  ON polymarket_managed_oo_dispute_price_log (requester, identifier, request_timestamp);
+
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_dispute_price_log_market_idx
+  ON polymarket_managed_oo_dispute_price_log (market_id)
+  WHERE market_id <> '';
+
 CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_condition_idx
   ON polymarket_managed_oo_market (condition_id)
   WHERE condition_id <> '';
@@ -406,6 +468,9 @@ CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_label_tag_idx
 
 CREATE INDEX IF NOT EXISTS polymarket_managed_oo_propose_price_alert_state_notified_idx
   ON polymarket_managed_oo_propose_price_alert_state (notified_at DESC);
+
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_dispute_price_alert_state_notified_idx
+  ON polymarket_managed_oo_dispute_price_alert_state (notified_at DESC);
 
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_event_idx
   ON polymarket_sports_live_market (event_key);
@@ -454,9 +519,11 @@ DROP TABLE IF EXISTS polymarket_sports_history_market;
 DROP TABLE IF EXISTS polymarket_sports_history_event;
 DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
+DROP TABLE IF EXISTS polymarket_managed_oo_dispute_price_alert_state;
 DROP TABLE IF EXISTS polymarket_managed_oo_propose_price_alert_state;
 DROP TABLE IF EXISTS polymarket_managed_oo_market_label;
 DROP TABLE IF EXISTS polymarket_managed_oo_market;
+DROP TABLE IF EXISTS polymarket_managed_oo_dispute_price_log;
 DROP TABLE IF EXISTS polymarket_managed_oo_propose_price_log;
 DROP TABLE IF EXISTS polymarket_chain_log_cursor;
 DROP TABLE IF EXISTS polymarket_sync_state;

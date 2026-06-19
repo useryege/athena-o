@@ -225,6 +225,28 @@ type ManagedOOProposePriceLog struct {
 	FetchedAt           time.Time
 }
 
+type ManagedOODisputePriceLog struct {
+	TxHash            string
+	LogIndex          uint
+	BlockNumber       uint64
+	BlockHash         string
+	TxIndex           uint
+	ContractAddress   string
+	Topic             string
+	Requester         string
+	Proposer          string
+	Disputer          string
+	Identifier        string
+	RequestTimestamp  uint64
+	AncillaryDataHex  string
+	AncillaryDataText string
+	MarketID          string
+	ProposedPrice     string
+	RawTopics         json.RawMessage
+	RawData           string
+	FetchedAt         time.Time
+}
+
 type ManagedOOMarket struct {
 	MarketID         string
 	ConditionID      string
@@ -290,6 +312,23 @@ type ManagedOOProposePriceAlertCandidate struct {
 	Slug                string
 	Question            string
 	MatchedLabels       string
+}
+
+type ManagedOODisputePriceAlertCandidate struct {
+	TxHash            string
+	LogIndex          int64
+	BlockNumber       int64
+	MarketID          string
+	Requester         string
+	Proposer          string
+	Disputer          string
+	ProposedPrice     string
+	RequestTimestamp  int64
+	AncillaryDataText string
+	ConditionID       string
+	Slug              string
+	Question          string
+	MatchedLabels     string
 }
 
 type SportsHistoryEvent struct {

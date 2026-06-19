@@ -75,6 +75,9 @@ func NewCommand() *cobra.Command {
 			managedOOProposedAlertsConfig := polymarket.ManagedOOProposedAlertsConfig{
 				Enabled: notificationEnabled,
 			}
+			managedOODisputedAlertsConfig := polymarket.ManagedOODisputedAlertsConfig{
+				Enabled: notificationEnabled,
+			}
 			fifaWalletBalanceConfig := polymarket.FIFAWalletBalanceConfig{
 				PolygonRPCURL: fifaPolygonRPCURL,
 				SolanaRPCURL:  fifaSolanaRPCURL,
@@ -90,6 +93,7 @@ func NewCommand() *cobra.Command {
 				MoverAlertsConfig:             moverAlertsConfig,
 				SportsLivePriceAlertsConfig:   sportsLivePriceAlertsConfig,
 				ManagedOOProposedAlertsConfig: managedOOProposedAlertsConfig,
+				ManagedOODisputedAlertsConfig: managedOODisputedAlertsConfig,
 				FIFAWalletBalanceConfig:       fifaWalletBalanceConfig,
 			})
 			if err != nil {

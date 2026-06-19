@@ -115,6 +115,12 @@ func WithManagedOOProposedAlertsConfig(config ManagedOOProposedAlertsConfig) Ser
 	}
 }
 
+func WithManagedOODisputedAlertsConfig(config ManagedOODisputedAlertsConfig) ServiceOption {
+	return func(s *Service) {
+		s.managedOODisputedAlertsConfig = normalizeManagedOODisputedAlertsConfig(config)
+	}
+}
+
 func WithFIFAWalletBalanceConfig(config FIFAWalletBalanceConfig) ServiceOption {
 	return func(s *Service) {
 		if config.PolygonRPCURL != "" {
@@ -140,6 +146,7 @@ type Service struct {
 	moverAlertsConfig             MoverAlertsConfig
 	sportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
 	managedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
+	managedOODisputedAlertsConfig ManagedOODisputedAlertsConfig
 	nowFn                         func() time.Time
 	startStopMu                   sync.Mutex
 	started                       bool
@@ -178,6 +185,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		moverAlertsConfig:             defaultMoverAlertsConfig(),
 		sportsLivePriceAlertsConfig:   defaultSportsLivePriceAlertsConfig(),
 		managedOOProposedAlertsConfig: defaultManagedOOProposedAlertsConfig(),
+		managedOODisputedAlertsConfig: defaultManagedOODisputedAlertsConfig(),
 		nowFn:                         time.Now,
 		hotMarketMissing:              make(map[string]int),
 		realtimeStates:                make(map[string]*realtimeTokenState),

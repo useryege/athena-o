@@ -18,6 +18,39 @@ type PolymarketChainLogCursor struct {
 	UpdatedAt       pgtype.Timestamptz
 }
 
+type PolymarketManagedOoDisputePriceAlertState struct {
+	TxHash         string
+	LogIndex       int64
+	NotificationID int64
+	NotifiedAt     pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type PolymarketManagedOoDisputePriceLog struct {
+	TxHash            string
+	LogIndex          int64
+	BlockNumber       int64
+	BlockHash         string
+	TxIndex           int64
+	ContractAddress   string
+	Topic             string
+	Requester         string
+	Proposer          string
+	Disputer          string
+	Identifier        string
+	RequestTimestamp  int64
+	AncillaryDataHex  string
+	AncillaryDataText string
+	MarketID          string
+	ProposedPrice     string
+	RawTopics         []byte
+	RawData           string
+	FetchedAt         pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
 type PolymarketManagedOoMarket struct {
 	MarketID         string
 	ConditionID      string

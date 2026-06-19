@@ -23,6 +23,7 @@ type ServerOpts struct {
 	MoverAlertsConfig             MoverAlertsConfig
 	SportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
 	ManagedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
+	ManagedOODisputedAlertsConfig ManagedOODisputedAlertsConfig
 	FIFAWalletBalanceConfig       FIFAWalletBalanceConfig
 }
 
@@ -37,6 +38,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
 			WithManagedOOProposedAlertsConfig(opts.ManagedOOProposedAlertsConfig),
+			WithManagedOODisputedAlertsConfig(opts.ManagedOODisputedAlertsConfig),
 			WithFIFAWalletBalanceConfig(opts.FIFAWalletBalanceConfig),
 		),
 		healthService: healthService,

@@ -11,6 +11,116 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const batchUpsertManagedOODisputePriceLogs = `-- name: BatchUpsertManagedOODisputePriceLogs :exec
+INSERT INTO polymarket_managed_oo_dispute_price_log (
+  tx_hash,
+  log_index,
+  block_number,
+  block_hash,
+  tx_index,
+  contract_address,
+  topic,
+  requester,
+  proposer,
+  disputer,
+  identifier,
+  request_timestamp,
+  ancillary_data_hex,
+  ancillary_data_text,
+  market_id,
+  proposed_price,
+  raw_topics,
+  raw_data,
+  fetched_at
+)
+SELECT
+  unnest($1::text[]),
+  unnest($2::bigint[]),
+  unnest($3::bigint[]),
+  unnest($4::text[]),
+  unnest($5::bigint[]),
+  unnest($6::text[]),
+  unnest($7::text[]),
+  unnest($8::text[]),
+  unnest($9::text[]),
+  unnest($10::text[]),
+  unnest($11::text[]),
+  unnest($12::bigint[]),
+  unnest($13::text[]),
+  unnest($14::text[]),
+  unnest($15::text[]),
+  unnest($16::text[]),
+  unnest($17::jsonb[]),
+  unnest($18::text[]),
+  unnest($19::timestamptz[])
+ON CONFLICT (tx_hash, log_index) DO UPDATE
+SET block_number = EXCLUDED.block_number,
+  block_hash = EXCLUDED.block_hash,
+  tx_index = EXCLUDED.tx_index,
+  contract_address = EXCLUDED.contract_address,
+  topic = EXCLUDED.topic,
+  requester = EXCLUDED.requester,
+  proposer = EXCLUDED.proposer,
+  disputer = EXCLUDED.disputer,
+  identifier = EXCLUDED.identifier,
+  request_timestamp = EXCLUDED.request_timestamp,
+  ancillary_data_hex = EXCLUDED.ancillary_data_hex,
+  ancillary_data_text = EXCLUDED.ancillary_data_text,
+  market_id = EXCLUDED.market_id,
+  proposed_price = EXCLUDED.proposed_price,
+  raw_topics = EXCLUDED.raw_topics,
+  raw_data = EXCLUDED.raw_data,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now()
+`
+
+type BatchUpsertManagedOODisputePriceLogsParams struct {
+	TxHashes                []string
+	LogIndexes              []int64
+	BlockNumbers            []int64
+	BlockHashes             []string
+	TxIndexes               []int64
+	ContractAddresses       []string
+	Topics                  []string
+	Requesters              []string
+	Proposers               []string
+	Disputers               []string
+	Identifiers             []string
+	RequestTimestamps       []int64
+	AncillaryDataHexValues  []string
+	AncillaryDataTextValues []string
+	MarketIds               []string
+	ProposedPrices          []string
+	RawTopicsValues         [][]byte
+	RawDataValues           []string
+	FetchedAtValues         []pgtype.Timestamptz
+}
+
+func (q *Queries) BatchUpsertManagedOODisputePriceLogs(ctx context.Context, arg BatchUpsertManagedOODisputePriceLogsParams) error {
+	_, err := q.db.Exec(ctx, batchUpsertManagedOODisputePriceLogs,
+		arg.TxHashes,
+		arg.LogIndexes,
+		arg.BlockNumbers,
+		arg.BlockHashes,
+		arg.TxIndexes,
+		arg.ContractAddresses,
+		arg.Topics,
+		arg.Requesters,
+		arg.Proposers,
+		arg.Disputers,
+		arg.Identifiers,
+		arg.RequestTimestamps,
+		arg.AncillaryDataHexValues,
+		arg.AncillaryDataTextValues,
+		arg.MarketIds,
+		arg.ProposedPrices,
+		arg.RawTopicsValues,
+		arg.RawDataValues,
+		arg.FetchedAtValues,
+	)
+	return err
+}
+
 const batchUpsertManagedOOMarketLabels = `-- name: BatchUpsertManagedOOMarketLabels :exec
 INSERT INTO polymarket_managed_oo_market_label (
   market_id,
@@ -209,15 +319,111 @@ func (q *Queries) GetPolymarketChainLogCursor(ctx context.Context, syncName stri
 	return i, err
 }
 
-const listManagedOOMarketIDsMissingData = `-- name: ListManagedOOMarketIDsMissingData :many
-SELECT DISTINCT log.market_id
-FROM polymarket_managed_oo_propose_price_log AS log
-LEFT JOIN polymarket_managed_oo_market AS market
+const listManagedOODisputePriceAlertCandidates = `-- name: ListManagedOODisputePriceAlertCandidates :many
+WITH matched_labels AS (
+  SELECT
+    market_id,
+    string_agg(label, ', ' ORDER BY position) AS labels
+  FROM polymarket_managed_oo_market_label
+  WHERE label IN ('Politics', 'Iran', 'Geopolitics')
+  GROUP BY market_id
+)
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.market_id,
+  log.requester,
+  log.proposer,
+  log.disputer,
+  log.proposed_price,
+  log.request_timestamp,
+  log.ancillary_data_text,
+  market.condition_id,
+  market.slug,
+  market.question,
+  matched_labels.labels AS matched_labels
+FROM polymarket_managed_oo_dispute_price_log AS log
+JOIN polymarket_managed_oo_market AS market
   ON market.market_id = log.market_id
-WHERE log.market_id <> ''
-  AND log.market_id ~ '^[0-9]+$'
+JOIN matched_labels
+  ON matched_labels.market_id = log.market_id
+LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
+  ON state.tx_hash = log.tx_hash
+  AND state.log_index = log.log_index
+WHERE state.tx_hash IS NULL
+ORDER BY log.block_number ASC, log.log_index ASC
+LIMIT $1
+`
+
+type ListManagedOODisputePriceAlertCandidatesRow struct {
+	TxHash            string
+	LogIndex          int64
+	BlockNumber       int64
+	MarketID          string
+	Requester         string
+	Proposer          string
+	Disputer          string
+	ProposedPrice     string
+	RequestTimestamp  int64
+	AncillaryDataText string
+	ConditionID       string
+	Slug              string
+	Question          string
+	MatchedLabels     []byte
+}
+
+func (q *Queries) ListManagedOODisputePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOODisputePriceAlertCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, listManagedOODisputePriceAlertCandidates, limitValue)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListManagedOODisputePriceAlertCandidatesRow
+	for rows.Next() {
+		var i ListManagedOODisputePriceAlertCandidatesRow
+		if err := rows.Scan(
+			&i.TxHash,
+			&i.LogIndex,
+			&i.BlockNumber,
+			&i.MarketID,
+			&i.Requester,
+			&i.Proposer,
+			&i.Disputer,
+			&i.ProposedPrice,
+			&i.RequestTimestamp,
+			&i.AncillaryDataText,
+			&i.ConditionID,
+			&i.Slug,
+			&i.Question,
+			&i.MatchedLabels,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listManagedOOMarketIDsMissingData = `-- name: ListManagedOOMarketIDsMissingData :many
+WITH event_market_ids AS (
+  SELECT market_id
+  FROM polymarket_managed_oo_propose_price_log
+  UNION
+  SELECT market_id
+  FROM polymarket_managed_oo_dispute_price_log
+)
+SELECT DISTINCT event_market_ids.market_id
+FROM event_market_ids
+LEFT JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = event_market_ids.market_id
+WHERE event_market_ids.market_id <> ''
+  AND event_market_ids.market_id ~ '^[0-9]+$'
   AND market.market_id IS NULL
-ORDER BY log.market_id
+ORDER BY event_market_ids.market_id
 LIMIT $1
 `
 
@@ -325,6 +531,41 @@ func (q *Queries) ListManagedOOProposePriceAlertCandidates(ctx context.Context, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertManagedOODisputePriceAlertState = `-- name: UpsertManagedOODisputePriceAlertState :exec
+INSERT INTO polymarket_managed_oo_dispute_price_alert_state (
+  tx_hash,
+  log_index,
+  notification_id,
+  notified_at
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4
+)
+ON CONFLICT (tx_hash, log_index) DO UPDATE
+SET notification_id = EXCLUDED.notification_id,
+  notified_at = EXCLUDED.notified_at,
+  updated_at = now()
+`
+
+type UpsertManagedOODisputePriceAlertStateParams struct {
+	TxHash         string
+	LogIndex       int64
+	NotificationID int64
+	NotifiedAt     pgtype.Timestamptz
+}
+
+func (q *Queries) UpsertManagedOODisputePriceAlertState(ctx context.Context, arg UpsertManagedOODisputePriceAlertStateParams) error {
+	_, err := q.db.Exec(ctx, upsertManagedOODisputePriceAlertState,
+		arg.TxHash,
+		arg.LogIndex,
+		arg.NotificationID,
+		arg.NotifiedAt,
+	)
+	return err
 }
 
 const upsertManagedOOMarket = `-- name: UpsertManagedOOMarket :exec

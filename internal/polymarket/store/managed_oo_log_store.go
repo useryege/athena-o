@@ -84,6 +84,41 @@ func (s *SQLStore) IngestManagedOOProposePriceLogs(ctx context.Context, cursor C
 	return nil
 }
 
+func (s *SQLStore) IngestManagedOODisputePriceLogs(ctx context.Context, cursor ChainLogCursor, logs []ManagedOODisputePriceLog) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo dispute price log sync: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if len(logs) > 0 {
+		params, err := batchUpsertManagedOODisputePriceLogsParams(logs)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOODisputePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo dispute price logs: %w", err)
+		}
+	}
+	cursorParams, err := upsertPolymarketChainLogCursorParams(cursor)
+	if err != nil {
+		return err
+	}
+	if _, err := queries.UpsertPolymarketChainLogCursor(ctx, cursorParams); err != nil {
+		return fmt.Errorf("upsert managed oo dispute price cursor: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo dispute price log sync: %w", err)
+	}
+	return nil
+}
+
 func (s *SQLStore) ListManagedOOMarketIDsMissingData(ctx context.Context, limit int32) ([]string, error) {
 	if s == nil || s.queries == nil {
 		return nil, fmt.Errorf("polymarket postgres database is not configured")
@@ -202,6 +237,54 @@ func (s *SQLStore) UpsertManagedOOProposePriceAlertState(ctx context.Context, tx
 		NotifiedAt:     nullableTime(notifiedAt),
 	}); err != nil {
 		return fmt.Errorf("upsert managed oo propose price alert state: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ListManagedOODisputePriceAlertCandidates(ctx context.Context, limit int32) ([]ManagedOODisputePriceAlertCandidate, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if limit <= 0 {
+		return nil, nil
+	}
+	rows, err := s.queries.ListManagedOODisputePriceAlertCandidates(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list managed oo dispute price alert candidates: %w", err)
+	}
+	out := make([]ManagedOODisputePriceAlertCandidate, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, ManagedOODisputePriceAlertCandidate{
+			TxHash:            row.TxHash,
+			LogIndex:          row.LogIndex,
+			BlockNumber:       row.BlockNumber,
+			MarketID:          row.MarketID,
+			Requester:         row.Requester,
+			Proposer:          row.Proposer,
+			Disputer:          row.Disputer,
+			ProposedPrice:     row.ProposedPrice,
+			RequestTimestamp:  row.RequestTimestamp,
+			AncillaryDataText: row.AncillaryDataText,
+			ConditionID:       row.ConditionID,
+			Slug:              row.Slug,
+			Question:          row.Question,
+			MatchedLabels:     string(row.MatchedLabels),
+		})
+	}
+	return out, nil
+}
+
+func (s *SQLStore) UpsertManagedOODisputePriceAlertState(ctx context.Context, txHash string, logIndex int64, notificationID int64, notifiedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOODisputePriceAlertState(ctx, polymarketsqlc.UpsertManagedOODisputePriceAlertStateParams{
+		TxHash:         txHash,
+		LogIndex:       logIndex,
+		NotificationID: notificationID,
+		NotifiedAt:     nullableTime(notifiedAt),
+	}); err != nil {
+		return fmt.Errorf("upsert managed oo dispute price alert state: %w", err)
 	}
 	return nil
 }
@@ -361,6 +444,68 @@ func batchUpsertManagedOOProposePriceLogsParams(logs []ManagedOOProposePriceLog)
 		params.ProposedPrices = append(params.ProposedPrices, item.ProposedPrice)
 		params.ExpirationTimestamps = append(params.ExpirationTimestamps, expirationTimestamp)
 		params.Currencies = append(params.Currencies, item.Currency)
+		params.RawTopicsValues = append(params.RawTopicsValues, jsonBytes(item.RawTopics, jsonArray))
+		params.RawDataValues = append(params.RawDataValues, item.RawData)
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
+	}
+	return params, nil
+}
+
+func batchUpsertManagedOODisputePriceLogsParams(logs []ManagedOODisputePriceLog) (polymarketsqlc.BatchUpsertManagedOODisputePriceLogsParams, error) {
+	params := polymarketsqlc.BatchUpsertManagedOODisputePriceLogsParams{
+		TxHashes:                make([]string, 0, len(logs)),
+		LogIndexes:              make([]int64, 0, len(logs)),
+		BlockNumbers:            make([]int64, 0, len(logs)),
+		BlockHashes:             make([]string, 0, len(logs)),
+		TxIndexes:               make([]int64, 0, len(logs)),
+		ContractAddresses:       make([]string, 0, len(logs)),
+		Topics:                  make([]string, 0, len(logs)),
+		Requesters:              make([]string, 0, len(logs)),
+		Proposers:               make([]string, 0, len(logs)),
+		Disputers:               make([]string, 0, len(logs)),
+		Identifiers:             make([]string, 0, len(logs)),
+		RequestTimestamps:       make([]int64, 0, len(logs)),
+		AncillaryDataHexValues:  make([]string, 0, len(logs)),
+		AncillaryDataTextValues: make([]string, 0, len(logs)),
+		MarketIds:               make([]string, 0, len(logs)),
+		ProposedPrices:          make([]string, 0, len(logs)),
+		RawTopicsValues:         make([][]byte, 0, len(logs)),
+		RawDataValues:           make([]string, 0, len(logs)),
+		FetchedAtValues:         make([]pgtype.Timestamptz, 0, len(logs)),
+	}
+	for _, item := range logs {
+		logIndex, err := uintToInt64("log_index", item.LogIndex)
+		if err != nil {
+			return params, err
+		}
+		blockNumber, err := uint64ToInt64("block_number", item.BlockNumber)
+		if err != nil {
+			return params, err
+		}
+		txIndex, err := uintToInt64("tx_index", item.TxIndex)
+		if err != nil {
+			return params, err
+		}
+		requestTimestamp, err := uint64ToInt64("request_timestamp", item.RequestTimestamp)
+		if err != nil {
+			return params, err
+		}
+		params.TxHashes = append(params.TxHashes, item.TxHash)
+		params.LogIndexes = append(params.LogIndexes, logIndex)
+		params.BlockNumbers = append(params.BlockNumbers, blockNumber)
+		params.BlockHashes = append(params.BlockHashes, item.BlockHash)
+		params.TxIndexes = append(params.TxIndexes, txIndex)
+		params.ContractAddresses = append(params.ContractAddresses, item.ContractAddress)
+		params.Topics = append(params.Topics, item.Topic)
+		params.Requesters = append(params.Requesters, item.Requester)
+		params.Proposers = append(params.Proposers, item.Proposer)
+		params.Disputers = append(params.Disputers, item.Disputer)
+		params.Identifiers = append(params.Identifiers, item.Identifier)
+		params.RequestTimestamps = append(params.RequestTimestamps, requestTimestamp)
+		params.AncillaryDataHexValues = append(params.AncillaryDataHexValues, item.AncillaryDataHex)
+		params.AncillaryDataTextValues = append(params.AncillaryDataTextValues, item.AncillaryDataText)
+		params.MarketIds = append(params.MarketIds, item.MarketID)
+		params.ProposedPrices = append(params.ProposedPrices, item.ProposedPrice)
 		params.RawTopicsValues = append(params.RawTopicsValues, jsonBytes(item.RawTopics, jsonArray))
 		params.RawDataValues = append(params.RawDataValues, item.RawData)
 		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))

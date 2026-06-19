@@ -25,8 +25,10 @@ import (
 
 const (
 	managedOOProposePriceSyncName          = "managed_oo_propose_price"
+	managedOODisputePriceSyncName          = "managed_oo_dispute_price"
 	managedOOContractAddress               = "0x2C0367a9DB231dDeBd88a94b4f6461a6e47C58B1"
 	managedOOProposePriceTopic             = "0x6e51dd00371aabffa82cd401592f76ed51e98a9ea4b58751c70463a2c78b5ca1"
+	managedOODisputePriceTopic             = "0x5165909c3d1c01c5d1e121ac6f6d01dda1ba24bc9e1f975b5a375339c15be7f3"
 	managedOOLogPollInterval               = 2 * time.Second
 	managedOOLogQueryTimeout               = 20 * time.Second
 	managedOOMarketDataQueryTimeout        = 20 * time.Second
@@ -35,6 +37,7 @@ const (
 )
 
 var managedOOProposePriceABI = mustManagedOOProposePriceABI()
+var managedOODisputePriceABI = mustManagedOODisputePriceABI()
 var managedOOMarketIDPattern = regexp.MustCompile(`(?i)market_id\s*:\s*([^\s,]+)`)
 
 func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
@@ -57,11 +60,16 @@ func (s *Service) syncManagedOOProposePriceLogsMarketsAndAlerts(ctx context.Cont
 		log.WithError(err).Warnf("%s polymarket managed oo propose price log sync failed", phase)
 		return
 	}
+	if err := s.syncManagedOODisputePriceLogs(ctx); err != nil {
+		log.WithError(err).Warnf("%s polymarket managed oo dispute price log sync failed", phase)
+		return
+	}
 	if err := s.syncManagedOOMarketData(ctx); err != nil {
 		log.WithError(err).Warnf("%s polymarket managed oo market data sync failed", phase)
 		return
 	}
 	s.sendManagedOOProposePriceAlerts(ctx)
+	s.sendManagedOODisputePriceAlerts(ctx)
 }
 
 func (s *Service) syncManagedOOProposePriceLogs(ctx context.Context) error {
@@ -161,6 +169,116 @@ func (s *Service) fetchManagedOOProposePriceLogs(ctx context.Context, client *et
 		}
 		for _, item := range logs {
 			parsed, err := managedOOProposePriceLogFromEthereumLog(item, fetchedAt)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, parsed)
+		}
+		if end == toBlock {
+			break
+		}
+		start = end + 1
+	}
+	return out, nil
+}
+
+func (s *Service) syncManagedOODisputePriceLogs(ctx context.Context) error {
+	if strings.TrimSpace(s.fifaPolygonRPCURL) == "" {
+		return fmt.Errorf("polymarket polygon rpc url is required")
+	}
+	queryCtx, cancel := context.WithTimeout(ctx, managedOOLogQueryTimeout)
+	defer cancel()
+
+	client, err := ethclient.DialContext(queryCtx, s.fifaPolygonRPCURL)
+	if err != nil {
+		return fmt.Errorf("dial polygon rpc for managed oo dispute logs: %w", err)
+	}
+	defer client.Close()
+
+	latest, err := client.BlockNumber(queryCtx)
+	if err != nil {
+		return fmt.Errorf("get polygon latest block for managed oo dispute logs: %w", err)
+	}
+	now := s.now().UTC()
+	cursor, err := s.store.GetPolymarketChainLogCursor(ctx, managedOODisputePriceSyncName)
+	if err != nil {
+		return err
+	}
+	if cursor == nil {
+		_, err := s.store.UpsertPolymarketChainLogCursor(ctx, polymarketstore.ChainLogCursor{
+			SyncName:        managedOODisputePriceSyncName,
+			ContractAddress: managedOOContractAddress,
+			Topic:           managedOODisputePriceTopic,
+			LastBlockNumber: latest,
+			LastPolledAt:    now,
+		})
+		if err != nil {
+			return err
+		}
+		log.WithFields(log.Fields{
+			"sync_name":    managedOODisputePriceSyncName,
+			"block_number": latest,
+		}).Info("initialized polymarket managed oo dispute price log cursor")
+		return nil
+	}
+
+	if latest <= cursor.LastBlockNumber {
+		_, err := s.store.UpsertPolymarketChainLogCursor(ctx, polymarketstore.ChainLogCursor{
+			SyncName:        managedOODisputePriceSyncName,
+			ContractAddress: managedOOContractAddress,
+			Topic:           managedOODisputePriceTopic,
+			LastBlockNumber: cursor.LastBlockNumber,
+			LastPolledAt:    now,
+		})
+		return err
+	}
+
+	fromBlock := cursor.LastBlockNumber + 1
+	items, err := s.fetchManagedOODisputePriceLogs(ctx, client, fromBlock, latest, now)
+	if err != nil {
+		return err
+	}
+	if err := s.store.IngestManagedOODisputePriceLogs(ctx, polymarketstore.ChainLogCursor{
+		SyncName:        managedOODisputePriceSyncName,
+		ContractAddress: managedOOContractAddress,
+		Topic:           managedOODisputePriceTopic,
+		LastBlockNumber: latest,
+		LastPolledAt:    now,
+	}, items); err != nil {
+		return err
+	}
+	log.WithFields(log.Fields{
+		"sync_name":    managedOODisputePriceSyncName,
+		"from_block":   fromBlock,
+		"to_block":     latest,
+		"log_count":    len(items),
+		"rpc_endpoint": sanitizedRPCURL(s.fifaPolygonRPCURL),
+	}).Debug("synced polymarket managed oo dispute price logs")
+	return nil
+}
+
+func (s *Service) fetchManagedOODisputePriceLogs(ctx context.Context, client *ethclient.Client, fromBlock, toBlock uint64, fetchedAt time.Time) ([]polymarketstore.ManagedOODisputePriceLog, error) {
+	contractAddress := ethcommon.HexToAddress(managedOOContractAddress)
+	topic := ethcommon.HexToHash(managedOODisputePriceTopic)
+	out := make([]polymarketstore.ManagedOODisputePriceLog, 0)
+	for start := fromBlock; start <= toBlock; {
+		end := start + managedOOLogMaxBlockRange - 1
+		if end > toBlock {
+			end = toBlock
+		}
+		queryCtx, cancel := context.WithTimeout(ctx, managedOOLogQueryTimeout)
+		logs, err := client.FilterLogs(queryCtx, ethereum.FilterQuery{
+			FromBlock: new(big.Int).SetUint64(start),
+			ToBlock:   new(big.Int).SetUint64(end),
+			Addresses: []ethcommon.Address{contractAddress},
+			Topics:    [][]ethcommon.Hash{{topic}},
+		})
+		cancel()
+		if err != nil {
+			return nil, fmt.Errorf("filter managed oo dispute price logs %d-%d: %w", start, end, err)
+		}
+		for _, item := range logs {
+			parsed, err := managedOODisputePriceLogFromEthereumLog(item, fetchedAt)
 			if err != nil {
 				return nil, err
 			}
@@ -292,6 +410,62 @@ func managedOOProposePriceLogFromEthereumLog(item types.Log, fetchedAt time.Time
 	}, nil
 }
 
+func managedOODisputePriceLogFromEthereumLog(item types.Log, fetchedAt time.Time) (polymarketstore.ManagedOODisputePriceLog, error) {
+	if len(item.Topics) < 4 {
+		return polymarketstore.ManagedOODisputePriceLog{}, fmt.Errorf("managed oo dispute price log has %d topics", len(item.Topics))
+	}
+	values, err := managedOODisputePriceABI.Unpack("DisputePrice", item.Data)
+	if err != nil {
+		return polymarketstore.ManagedOODisputePriceLog{}, fmt.Errorf("unpack managed oo dispute price log %s/%d: %w", item.TxHash.Hex(), item.Index, err)
+	}
+	if len(values) != 4 {
+		return polymarketstore.ManagedOODisputePriceLog{}, fmt.Errorf("managed oo dispute price log %s/%d returned %d values", item.TxHash.Hex(), item.Index, len(values))
+	}
+	identifier, ok := values[0].([32]byte)
+	if !ok {
+		return polymarketstore.ManagedOODisputePriceLog{}, fmt.Errorf("managed oo dispute price log %s/%d has invalid identifier", item.TxHash.Hex(), item.Index)
+	}
+	requestTimestamp, err := abiUint64(values[1], "request timestamp", item)
+	if err != nil {
+		return polymarketstore.ManagedOODisputePriceLog{}, err
+	}
+	ancillaryData, ok := values[2].([]byte)
+	if !ok {
+		return polymarketstore.ManagedOODisputePriceLog{}, fmt.Errorf("managed oo dispute price log %s/%d has invalid ancillary data", item.TxHash.Hex(), item.Index)
+	}
+	proposedPrice, ok := values[3].(*big.Int)
+	if !ok || proposedPrice == nil {
+		return polymarketstore.ManagedOODisputePriceLog{}, fmt.Errorf("managed oo dispute price log %s/%d has invalid proposed price", item.TxHash.Hex(), item.Index)
+	}
+	rawTopics, err := marshalLogTopics(item.Topics)
+	if err != nil {
+		return polymarketstore.ManagedOODisputePriceLog{}, err
+	}
+	ancillaryText := ancillaryDataText(ancillaryData)
+
+	return polymarketstore.ManagedOODisputePriceLog{
+		TxHash:            item.TxHash.Hex(),
+		LogIndex:          item.Index,
+		BlockNumber:       item.BlockNumber,
+		BlockHash:         item.BlockHash.Hex(),
+		TxIndex:           item.TxIndex,
+		ContractAddress:   item.Address.Hex(),
+		Topic:             item.Topics[0].Hex(),
+		Requester:         ethcommon.BytesToAddress(item.Topics[1].Bytes()).Hex(),
+		Proposer:          ethcommon.BytesToAddress(item.Topics[2].Bytes()).Hex(),
+		Disputer:          ethcommon.BytesToAddress(item.Topics[3].Bytes()).Hex(),
+		Identifier:        ethcommon.BytesToHash(identifier[:]).Hex(),
+		RequestTimestamp:  requestTimestamp,
+		AncillaryDataHex:  hexutil.Encode(ancillaryData),
+		AncillaryDataText: ancillaryText,
+		MarketID:          marketIDFromAncillaryDataText(ancillaryText),
+		ProposedPrice:     proposedPrice.String(),
+		RawTopics:         rawTopics,
+		RawData:           hexutil.Encode(item.Data),
+		FetchedAt:         fetchedAt,
+	}, nil
+}
+
 func managedOOMarketFromGamma(marketID string, market utilpolymarket.Market, fetchedAt time.Time) polymarketstore.ManagedOOMarket {
 	return polymarketstore.ManagedOOMarket{
 		MarketID:         strings.TrimSpace(marketID),
@@ -373,10 +547,18 @@ func mustManagedOOProposePriceABI() abi.ABI {
 	return parsed
 }
 
+func mustManagedOODisputePriceABI() abi.ABI {
+	parsed, err := abi.JSON(strings.NewReader(`[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"requester","type":"address"},{"indexed":true,"internalType":"address","name":"proposer","type":"address"},{"indexed":true,"internalType":"address","name":"disputer","type":"address"},{"indexed":false,"internalType":"bytes32","name":"identifier","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"timestamp","type":"uint256"},{"indexed":false,"internalType":"bytes","name":"ancillaryData","type":"bytes"},{"indexed":false,"internalType":"int256","name":"proposedPrice","type":"int256"}],"name":"DisputePrice","type":"event"}]`))
+	if err != nil {
+		panic(err)
+	}
+	return parsed
+}
+
 func abiUint64(value any, label string, item types.Log) (uint64, error) {
 	raw, ok := value.(*big.Int)
 	if !ok || raw == nil || raw.Sign() < 0 || !raw.IsUint64() {
-		return 0, fmt.Errorf("managed oo propose price log %s/%d has invalid %s", item.TxHash.Hex(), item.Index, label)
+		return 0, fmt.Errorf("managed oo log %s/%d has invalid %s", item.TxHash.Hex(), item.Index, label)
 	}
 	return raw.Uint64(), nil
 }
