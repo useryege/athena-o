@@ -241,6 +241,92 @@ func (q *Queries) ListManagedOOMarketIDsMissingData(ctx context.Context, limitVa
 	return items, nil
 }
 
+const listManagedOOProposePriceAlertCandidates = `-- name: ListManagedOOProposePriceAlertCandidates :many
+WITH matched_labels AS (
+  SELECT
+    market_id,
+    string_agg(label, ', ' ORDER BY position) AS labels
+  FROM polymarket_managed_oo_market_label
+  WHERE label IN ('Politics', 'Iran', 'Geopolitics')
+  GROUP BY market_id
+)
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.market_id,
+  log.proposer,
+  log.proposed_price,
+  log.request_timestamp,
+  log.expiration_timestamp,
+  log.ancillary_data_text,
+  market.condition_id,
+  market.slug,
+  market.question,
+  matched_labels.labels AS matched_labels
+FROM polymarket_managed_oo_propose_price_log AS log
+JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+JOIN matched_labels
+  ON matched_labels.market_id = log.market_id
+LEFT JOIN polymarket_managed_oo_propose_price_alert_state AS state
+  ON state.tx_hash = log.tx_hash
+  AND state.log_index = log.log_index
+WHERE state.tx_hash IS NULL
+ORDER BY log.block_number ASC, log.log_index ASC
+LIMIT $1
+`
+
+type ListManagedOOProposePriceAlertCandidatesRow struct {
+	TxHash              string
+	LogIndex            int64
+	BlockNumber         int64
+	MarketID            string
+	Proposer            string
+	ProposedPrice       string
+	RequestTimestamp    int64
+	ExpirationTimestamp int64
+	AncillaryDataText   string
+	ConditionID         string
+	Slug                string
+	Question            string
+	MatchedLabels       []byte
+}
+
+func (q *Queries) ListManagedOOProposePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOOProposePriceAlertCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, listManagedOOProposePriceAlertCandidates, limitValue)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListManagedOOProposePriceAlertCandidatesRow
+	for rows.Next() {
+		var i ListManagedOOProposePriceAlertCandidatesRow
+		if err := rows.Scan(
+			&i.TxHash,
+			&i.LogIndex,
+			&i.BlockNumber,
+			&i.MarketID,
+			&i.Proposer,
+			&i.ProposedPrice,
+			&i.RequestTimestamp,
+			&i.ExpirationTimestamp,
+			&i.AncillaryDataText,
+			&i.ConditionID,
+			&i.Slug,
+			&i.Question,
+			&i.MatchedLabels,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertManagedOOMarket = `-- name: UpsertManagedOOMarket :exec
 INSERT INTO polymarket_managed_oo_market (
   market_id,
@@ -491,6 +577,41 @@ func (q *Queries) UpsertManagedOOMarketNotFound(ctx context.Context, arg UpsertM
 		arg.LastError,
 		arg.LastErrorAt,
 		arg.FetchedAt,
+	)
+	return err
+}
+
+const upsertManagedOOProposePriceAlertState = `-- name: UpsertManagedOOProposePriceAlertState :exec
+INSERT INTO polymarket_managed_oo_propose_price_alert_state (
+  tx_hash,
+  log_index,
+  notification_id,
+  notified_at
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4
+)
+ON CONFLICT (tx_hash, log_index) DO UPDATE
+SET notification_id = EXCLUDED.notification_id,
+  notified_at = EXCLUDED.notified_at,
+  updated_at = now()
+`
+
+type UpsertManagedOOProposePriceAlertStateParams struct {
+	TxHash         string
+	LogIndex       int64
+	NotificationID int64
+	NotifiedAt     pgtype.Timestamptz
+}
+
+func (q *Queries) UpsertManagedOOProposePriceAlertState(ctx context.Context, arg UpsertManagedOOProposePriceAlertStateParams) error {
+	_, err := q.db.Exec(ctx, upsertManagedOOProposePriceAlertState,
+		arg.TxHash,
+		arg.LogIndex,
+		arg.NotificationID,
+		arg.NotifiedAt,
 	)
 	return err
 }

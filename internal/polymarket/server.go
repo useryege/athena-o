@@ -18,11 +18,12 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store                       *polymarketstore.SQLStore
-	NotificationClientset       notificationapiclient.Clientset
-	MoverAlertsConfig           MoverAlertsConfig
-	SportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
-	FIFAWalletBalanceConfig     FIFAWalletBalanceConfig
+	Store                         *polymarketstore.SQLStore
+	NotificationClientset         notificationapiclient.Clientset
+	MoverAlertsConfig             MoverAlertsConfig
+	SportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
+	ManagedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
+	FIFAWalletBalanceConfig       FIFAWalletBalanceConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -35,6 +36,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 			WithNotificationClientset(opts.NotificationClientset),
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
+			WithManagedOOProposedAlertsConfig(opts.ManagedOOProposedAlertsConfig),
 			WithFIFAWalletBalanceConfig(opts.FIFAWalletBalanceConfig),
 		),
 		healthService: healthService,

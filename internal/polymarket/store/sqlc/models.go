@@ -75,6 +75,15 @@ type PolymarketManagedOoMarketLabel struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
+type PolymarketManagedOoProposePriceAlertState struct {
+	TxHash         string
+	LogIndex       int64
+	NotificationID int64
+	NotifiedAt     pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
 type PolymarketManagedOoProposePriceLog struct {
 	TxHash              string
 	LogIndex            int64

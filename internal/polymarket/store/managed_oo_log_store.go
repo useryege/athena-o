@@ -159,6 +159,53 @@ func (s *SQLStore) UpsertManagedOOMarketNotFound(ctx context.Context, marketID, 
 	return nil
 }
 
+func (s *SQLStore) ListManagedOOProposePriceAlertCandidates(ctx context.Context, limit int32) ([]ManagedOOProposePriceAlertCandidate, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if limit <= 0 {
+		return nil, nil
+	}
+	rows, err := s.queries.ListManagedOOProposePriceAlertCandidates(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list managed oo propose price alert candidates: %w", err)
+	}
+	out := make([]ManagedOOProposePriceAlertCandidate, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, ManagedOOProposePriceAlertCandidate{
+			TxHash:              row.TxHash,
+			LogIndex:            row.LogIndex,
+			BlockNumber:         row.BlockNumber,
+			MarketID:            row.MarketID,
+			Proposer:            row.Proposer,
+			ProposedPrice:       row.ProposedPrice,
+			RequestTimestamp:    row.RequestTimestamp,
+			ExpirationTimestamp: row.ExpirationTimestamp,
+			AncillaryDataText:   row.AncillaryDataText,
+			ConditionID:         row.ConditionID,
+			Slug:                row.Slug,
+			Question:            row.Question,
+			MatchedLabels:       string(row.MatchedLabels),
+		})
+	}
+	return out, nil
+}
+
+func (s *SQLStore) UpsertManagedOOProposePriceAlertState(ctx context.Context, txHash string, logIndex int64, notificationID int64, notifiedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOOProposePriceAlertState(ctx, polymarketsqlc.UpsertManagedOOProposePriceAlertStateParams{
+		TxHash:         txHash,
+		LogIndex:       logIndex,
+		NotificationID: notificationID,
+		NotifiedAt:     nullableTime(notifiedAt),
+	}); err != nil {
+		return fmt.Errorf("upsert managed oo propose price alert state: %w", err)
+	}
+	return nil
+}
+
 func upsertPolymarketChainLogCursorParams(cursor ChainLogCursor) (polymarketsqlc.UpsertPolymarketChainLogCursorParams, error) {
 	lastBlockNumber, err := uint64ToInt64("last_block_number", cursor.LastBlockNumber)
 	if err != nil {

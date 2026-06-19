@@ -39,11 +39,7 @@ var managedOOMarketIDPattern = regexp.MustCompile(`(?i)market_id\s*:\s*([^\s,]+)
 
 func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
 	defer s.runWG.Done()
-	if err := s.syncManagedOOProposePriceLogs(ctx); err != nil {
-		log.WithError(err).Warn("initial polymarket managed oo propose price log sync failed")
-	} else if err := s.syncManagedOOMarketData(ctx); err != nil {
-		log.WithError(err).Warn("initial polymarket managed oo market data sync failed")
-	}
+	s.syncManagedOOProposePriceLogsMarketsAndAlerts(ctx, "initial")
 	ticker := time.NewTicker(managedOOLogPollInterval)
 	defer ticker.Stop()
 	for {
@@ -51,13 +47,21 @@ func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := s.syncManagedOOProposePriceLogs(ctx); err != nil {
-				log.WithError(err).Warn("periodic polymarket managed oo propose price log sync failed")
-			} else if err := s.syncManagedOOMarketData(ctx); err != nil {
-				log.WithError(err).Warn("periodic polymarket managed oo market data sync failed")
-			}
+			s.syncManagedOOProposePriceLogsMarketsAndAlerts(ctx, "periodic")
 		}
 	}
+}
+
+func (s *Service) syncManagedOOProposePriceLogsMarketsAndAlerts(ctx context.Context, phase string) {
+	if err := s.syncManagedOOProposePriceLogs(ctx); err != nil {
+		log.WithError(err).Warnf("%s polymarket managed oo propose price log sync failed", phase)
+		return
+	}
+	if err := s.syncManagedOOMarketData(ctx); err != nil {
+		log.WithError(err).Warnf("%s polymarket managed oo market data sync failed", phase)
+		return
+	}
+	s.sendManagedOOProposePriceAlerts(ctx)
 }
 
 func (s *Service) syncManagedOOProposePriceLogs(ctx context.Context) error {

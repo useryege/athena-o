@@ -28,6 +28,7 @@ type Querier interface {
 	GetPolymarketChainLogCursor(ctx context.Context, syncName string) (PolymarketChainLogCursor, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListManagedOOMarketIDsMissingData(ctx context.Context, limitValue int32) ([]string, error)
+	ListManagedOOProposePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOOProposePriceAlertCandidatesRow, error)
 	ListSportsHistoryEvents(ctx context.Context, limit int32) ([]ListSportsHistoryEventsRow, error)
 	ListSportsHistoryMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsHistoryMarketsByEventKeysRow, error)
 	ListSportsHistoryMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsHistoryMoneylineMarketsForPriceHistoryRow, error)
@@ -41,6 +42,7 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	UpsertManagedOOMarket(ctx context.Context, arg UpsertManagedOOMarketParams) error
 	UpsertManagedOOMarketNotFound(ctx context.Context, arg UpsertManagedOOMarketNotFoundParams) error
+	UpsertManagedOOProposePriceAlertState(ctx context.Context, arg UpsertManagedOOProposePriceAlertStateParams) error
 	UpsertPolymarketChainLogCursor(ctx context.Context, arg UpsertPolymarketChainLogCursorParams) (PolymarketChainLogCursor, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
 	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error

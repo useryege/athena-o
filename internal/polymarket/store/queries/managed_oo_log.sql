@@ -284,3 +284,55 @@ SET fetch_status = EXCLUDED.fetch_status,
   last_error_at = EXCLUDED.last_error_at,
   fetched_at = EXCLUDED.fetched_at,
   updated_at = now();
+
+-- name: ListManagedOOProposePriceAlertCandidates :many
+WITH matched_labels AS (
+  SELECT
+    market_id,
+    string_agg(label, ', ' ORDER BY position) AS labels
+  FROM polymarket_managed_oo_market_label
+  WHERE label IN ('Politics', 'Iran', 'Geopolitics')
+  GROUP BY market_id
+)
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.market_id,
+  log.proposer,
+  log.proposed_price,
+  log.request_timestamp,
+  log.expiration_timestamp,
+  log.ancillary_data_text,
+  market.condition_id,
+  market.slug,
+  market.question,
+  matched_labels.labels AS matched_labels
+FROM polymarket_managed_oo_propose_price_log AS log
+JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+JOIN matched_labels
+  ON matched_labels.market_id = log.market_id
+LEFT JOIN polymarket_managed_oo_propose_price_alert_state AS state
+  ON state.tx_hash = log.tx_hash
+  AND state.log_index = log.log_index
+WHERE state.tx_hash IS NULL
+ORDER BY log.block_number ASC, log.log_index ASC
+LIMIT @limit_value;
+
+-- name: UpsertManagedOOProposePriceAlertState :exec
+INSERT INTO polymarket_managed_oo_propose_price_alert_state (
+  tx_hash,
+  log_index,
+  notification_id,
+  notified_at
+) VALUES (
+  @tx_hash,
+  @log_index,
+  @notification_id,
+  @notified_at
+)
+ON CONFLICT (tx_hash, log_index) DO UPDATE
+SET notification_id = EXCLUDED.notification_id,
+  notified_at = EXCLUDED.notified_at,
+  updated_at = now();

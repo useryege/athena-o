@@ -229,6 +229,21 @@ CREATE TABLE IF NOT EXISTS polymarket_managed_oo_market_label (
     FOREIGN KEY (market_id) REFERENCES polymarket_managed_oo_market(market_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_managed_oo_propose_price_alert_state (
+  tx_hash TEXT NOT NULL,
+  log_index BIGINT NOT NULL,
+  notification_id BIGINT NOT NULL DEFAULT 0,
+  notified_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tx_hash, log_index),
+  CONSTRAINT polymarket_managed_oo_propose_price_alert_state_hash_not_empty CHECK (btrim(tx_hash) <> ''),
+  CONSTRAINT polymarket_managed_oo_propose_price_alert_state_index_nonnegative CHECK (log_index >= 0),
+  CONSTRAINT polymarket_managed_oo_propose_price_alert_state_notification_nonnegative CHECK (notification_id >= 0),
+  CONSTRAINT polymarket_managed_oo_propose_price_alert_state_log_fk
+    FOREIGN KEY (tx_hash, log_index) REFERENCES polymarket_managed_oo_propose_price_log(tx_hash, log_index) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_point (
   token_id TEXT NOT NULL,
   market_key TEXT NOT NULL,
@@ -389,6 +404,9 @@ CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_label_tag_idx
   ON polymarket_managed_oo_market_label (tag_id)
   WHERE tag_id <> '';
 
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_propose_price_alert_state_notified_idx
+  ON polymarket_managed_oo_propose_price_alert_state (notified_at DESC);
+
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_event_idx
   ON polymarket_sports_live_market (event_key);
 
@@ -436,6 +454,7 @@ DROP TABLE IF EXISTS polymarket_sports_history_market;
 DROP TABLE IF EXISTS polymarket_sports_history_event;
 DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
+DROP TABLE IF EXISTS polymarket_managed_oo_propose_price_alert_state;
 DROP TABLE IF EXISTS polymarket_managed_oo_market_label;
 DROP TABLE IF EXISTS polymarket_managed_oo_market;
 DROP TABLE IF EXISTS polymarket_managed_oo_propose_price_log;

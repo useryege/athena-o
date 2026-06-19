@@ -276,6 +276,22 @@ type ManagedOOMarketLabel struct {
 	FetchedAt time.Time
 }
 
+type ManagedOOProposePriceAlertCandidate struct {
+	TxHash              string
+	LogIndex            int64
+	BlockNumber         int64
+	MarketID            string
+	Proposer            string
+	ProposedPrice       string
+	RequestTimestamp    int64
+	ExpirationTimestamp int64
+	AncillaryDataText   string
+	ConditionID         string
+	Slug                string
+	Question            string
+	MatchedLabels       string
+}
+
 type SportsHistoryEvent struct {
 	EventKey       string
 	EventID        string

@@ -72,6 +72,9 @@ func NewCommand() *cobra.Command {
 				Enabled:  notificationEnabled,
 				Cooldown: sportsLivePriceAlertCooldown,
 			}
+			managedOOProposedAlertsConfig := polymarket.ManagedOOProposedAlertsConfig{
+				Enabled: notificationEnabled,
+			}
 			fifaWalletBalanceConfig := polymarket.FIFAWalletBalanceConfig{
 				PolygonRPCURL: fifaPolygonRPCURL,
 				SolanaRPCURL:  fifaSolanaRPCURL,
@@ -82,11 +85,12 @@ func NewCommand() *cobra.Command {
 			}
 
 			server, err := polymarket.NewServer(polymarket.ServerOpts{
-				Store:                       store,
-				NotificationClientset:       notificationClientset,
-				MoverAlertsConfig:           moverAlertsConfig,
-				SportsLivePriceAlertsConfig: sportsLivePriceAlertsConfig,
-				FIFAWalletBalanceConfig:     fifaWalletBalanceConfig,
+				Store:                         store,
+				NotificationClientset:         notificationClientset,
+				MoverAlertsConfig:             moverAlertsConfig,
+				SportsLivePriceAlertsConfig:   sportsLivePriceAlertsConfig,
+				ManagedOOProposedAlertsConfig: managedOOProposedAlertsConfig,
+				FIFAWalletBalanceConfig:       fifaWalletBalanceConfig,
 			})
 			if err != nil {
 				return err
