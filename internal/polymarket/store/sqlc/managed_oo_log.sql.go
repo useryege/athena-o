@@ -11,6 +11,51 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const batchUpsertManagedOOMarketLabels = `-- name: BatchUpsertManagedOOMarketLabels :exec
+INSERT INTO polymarket_managed_oo_market_label (
+  market_id,
+  label,
+  tag_id,
+  slug,
+  position,
+  fetched_at
+)
+SELECT
+  unnest($1::text[]),
+  unnest($2::text[]),
+  unnest($3::text[]),
+  unnest($4::text[]),
+  unnest($5::bigint[]),
+  unnest($6::timestamptz[])
+ON CONFLICT (market_id, label) DO UPDATE
+SET tag_id = EXCLUDED.tag_id,
+  slug = EXCLUDED.slug,
+  position = EXCLUDED.position,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now()
+`
+
+type BatchUpsertManagedOOMarketLabelsParams struct {
+	MarketIds       []string
+	Labels          []string
+	TagIds          []string
+	Slugs           []string
+	Positions       []int64
+	FetchedAtValues []pgtype.Timestamptz
+}
+
+func (q *Queries) BatchUpsertManagedOOMarketLabels(ctx context.Context, arg BatchUpsertManagedOOMarketLabelsParams) error {
+	_, err := q.db.Exec(ctx, batchUpsertManagedOOMarketLabels,
+		arg.MarketIds,
+		arg.Labels,
+		arg.TagIds,
+		arg.Slugs,
+		arg.Positions,
+		arg.FetchedAtValues,
+	)
+	return err
+}
+
 const batchUpsertManagedOOProposePriceLogs = `-- name: BatchUpsertManagedOOProposePriceLogs :exec
 INSERT INTO polymarket_managed_oo_propose_price_log (
   tx_hash,
@@ -123,6 +168,16 @@ func (q *Queries) BatchUpsertManagedOOProposePriceLogs(ctx context.Context, arg 
 		arg.RawDataValues,
 		arg.FetchedAtValues,
 	)
+	return err
+}
+
+const deleteManagedOOMarketLabelsByMarketID = `-- name: DeleteManagedOOMarketLabelsByMarketID :exec
+DELETE FROM polymarket_managed_oo_market_label
+WHERE market_id = $1
+`
+
+func (q *Queries) DeleteManagedOOMarketLabelsByMarketID(ctx context.Context, marketID string) error {
+	_, err := q.db.Exec(ctx, deleteManagedOOMarketLabelsByMarketID, marketID)
 	return err
 }
 

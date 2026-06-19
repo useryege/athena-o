@@ -237,6 +237,33 @@ SET condition_id = EXCLUDED.condition_id,
   fetched_at = EXCLUDED.fetched_at,
   updated_at = now();
 
+-- name: DeleteManagedOOMarketLabelsByMarketID :exec
+DELETE FROM polymarket_managed_oo_market_label
+WHERE market_id = @market_id;
+
+-- name: BatchUpsertManagedOOMarketLabels :exec
+INSERT INTO polymarket_managed_oo_market_label (
+  market_id,
+  label,
+  tag_id,
+  slug,
+  position,
+  fetched_at
+)
+SELECT
+  unnest(sqlc.arg('market_ids')::text[]),
+  unnest(sqlc.arg('labels')::text[]),
+  unnest(sqlc.arg('tag_ids')::text[]),
+  unnest(sqlc.arg('slugs')::text[]),
+  unnest(sqlc.arg('positions')::bigint[]),
+  unnest(sqlc.arg('fetched_at_values')::timestamptz[])
+ON CONFLICT (market_id, label) DO UPDATE
+SET tag_id = EXCLUDED.tag_id,
+  slug = EXCLUDED.slug,
+  position = EXCLUDED.position,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now();
+
 -- name: UpsertManagedOOMarketNotFound :exec
 INSERT INTO polymarket_managed_oo_market (
   market_id,

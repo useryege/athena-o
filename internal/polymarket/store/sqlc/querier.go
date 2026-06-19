@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BatchUpsertManagedOOMarketLabels(ctx context.Context, arg BatchUpsertManagedOOMarketLabelsParams) error
 	BatchUpsertManagedOOProposePriceLogs(ctx context.Context, arg BatchUpsertManagedOOProposePriceLogsParams) error
 	BatchUpsertSportsHistoryEvents(ctx context.Context, arg BatchUpsertSportsHistoryEventsParams) error
 	BatchUpsertSportsHistoryMarkets(ctx context.Context, arg BatchUpsertSportsHistoryMarketsParams) error
@@ -18,6 +19,7 @@ type Querier interface {
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
 	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
+	DeleteManagedOOMarketLabelsByMarketID(ctx context.Context, marketID string) error
 	DeleteSportsHistoryEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsHistoryMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)

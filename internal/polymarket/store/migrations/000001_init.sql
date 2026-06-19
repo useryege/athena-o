@@ -212,6 +212,23 @@ CREATE TABLE IF NOT EXISTS polymarket_managed_oo_market (
   CONSTRAINT polymarket_managed_oo_market_fetch_status CHECK (fetch_status IN ('ok', 'not_found'))
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_managed_oo_market_label (
+  market_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  tag_id TEXT NOT NULL DEFAULT '',
+  slug TEXT NOT NULL DEFAULT '',
+  position BIGINT NOT NULL DEFAULT 0,
+  fetched_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (market_id, label),
+  CONSTRAINT polymarket_managed_oo_market_label_market_not_empty CHECK (btrim(market_id) <> ''),
+  CONSTRAINT polymarket_managed_oo_market_label_label_not_empty CHECK (btrim(label) <> ''),
+  CONSTRAINT polymarket_managed_oo_market_label_position_nonnegative CHECK (position >= 0),
+  CONSTRAINT polymarket_managed_oo_market_label_market_fk
+    FOREIGN KEY (market_id) REFERENCES polymarket_managed_oo_market(market_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_point (
   token_id TEXT NOT NULL,
   market_key TEXT NOT NULL,
@@ -360,6 +377,18 @@ CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_slug_idx
   ON polymarket_managed_oo_market (slug)
   WHERE slug <> '';
 
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_label_label_idx
+  ON polymarket_managed_oo_market_label (label)
+  WHERE label <> '';
+
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_label_slug_idx
+  ON polymarket_managed_oo_market_label (slug)
+  WHERE slug <> '';
+
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_label_tag_idx
+  ON polymarket_managed_oo_market_label (tag_id)
+  WHERE tag_id <> '';
+
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_event_idx
   ON polymarket_sports_live_market (event_key);
 
@@ -407,6 +436,7 @@ DROP TABLE IF EXISTS polymarket_sports_history_market;
 DROP TABLE IF EXISTS polymarket_sports_history_event;
 DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
+DROP TABLE IF EXISTS polymarket_managed_oo_market_label;
 DROP TABLE IF EXISTS polymarket_managed_oo_market;
 DROP TABLE IF EXISTS polymarket_managed_oo_propose_price_log;
 DROP TABLE IF EXISTS polymarket_chain_log_cursor;

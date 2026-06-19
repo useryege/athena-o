@@ -328,7 +328,32 @@ func managedOOMarketFromGamma(marketID string, market utilpolymarket.Market, fet
 		Tags:             marshalArrayOrFallback(market.Tags),
 		Raw:              rawObjectOrMarshal(market.Raw, market),
 		FetchedAt:        fetchedAt,
+		Labels:           managedOOMarketLabelsFromGamma(marketID, market.Tags, fetchedAt),
 	}
+}
+
+func managedOOMarketLabelsFromGamma(marketID string, tags []utilpolymarket.Tag, fetchedAt time.Time) []polymarketstore.ManagedOOMarketLabel {
+	out := make([]polymarketstore.ManagedOOMarketLabel, 0, len(tags))
+	seen := make(map[string]struct{}, len(tags))
+	for i := range tags {
+		label := strings.TrimSpace(stringValue(tags[i].Label))
+		if label == "" {
+			continue
+		}
+		if _, ok := seen[label]; ok {
+			continue
+		}
+		seen[label] = struct{}{}
+		out = append(out, polymarketstore.ManagedOOMarketLabel{
+			MarketID:  strings.TrimSpace(marketID),
+			Label:     label,
+			TagID:     strings.TrimSpace(tags[i].ID),
+			Slug:      strings.TrimSpace(stringValue(tags[i].Slug)),
+			Position:  int64(i),
+			FetchedAt: fetchedAt,
+		})
+	}
+	return out
 }
 
 func isPolymarketAPIStatus(err error, statusCode int) bool {

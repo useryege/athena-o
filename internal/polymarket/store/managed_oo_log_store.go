@@ -99,11 +99,47 @@ func (s *SQLStore) ListManagedOOMarketIDsMissingData(ctx context.Context, limit 
 }
 
 func (s *SQLStore) UpsertManagedOOMarket(ctx context.Context, market ManagedOOMarket) error {
-	if s == nil || s.queries == nil {
+	if s == nil || s.pool == nil {
 		return fmt.Errorf("polymarket postgres database is not configured")
 	}
-	if err := s.queries.UpsertManagedOOMarket(ctx, upsertManagedOOMarketParams(market)); err != nil {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo market upsert: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if err := queries.UpsertManagedOOMarket(ctx, upsertManagedOOMarketParams(market)); err != nil {
 		return fmt.Errorf("upsert managed oo market: %w", err)
+	}
+	if err := replaceManagedOOMarketLabels(ctx, queries, market.MarketID, market.Labels); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo market upsert: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ReplaceManagedOOMarketLabels(ctx context.Context, marketID string, labels []ManagedOOMarketLabel) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo market label replace: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	if err := replaceManagedOOMarketLabels(ctx, s.queries.WithTx(tx), marketID, labels); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo market label replace: %w", err)
 	}
 	return nil
 }
@@ -135,6 +171,19 @@ func upsertPolymarketChainLogCursorParams(cursor ChainLogCursor) (polymarketsqlc
 		LastBlockNumber: lastBlockNumber,
 		LastPolledAt:    nullableTime(cursor.LastPolledAt),
 	}, nil
+}
+
+func replaceManagedOOMarketLabels(ctx context.Context, queries *polymarketsqlc.Queries, marketID string, labels []ManagedOOMarketLabel) error {
+	if err := queries.DeleteManagedOOMarketLabelsByMarketID(ctx, marketID); err != nil {
+		return fmt.Errorf("delete managed oo market labels: %w", err)
+	}
+	if len(labels) == 0 {
+		return nil
+	}
+	if err := queries.BatchUpsertManagedOOMarketLabels(ctx, batchUpsertManagedOOMarketLabelsParams(marketID, labels)); err != nil {
+		return fmt.Errorf("batch upsert managed oo market labels: %w", err)
+	}
+	return nil
 }
 
 func upsertManagedOOMarketParams(market ManagedOOMarket) polymarketsqlc.UpsertManagedOOMarketParams {
@@ -178,6 +227,30 @@ func upsertManagedOOMarketParams(market ManagedOOMarket) polymarketsqlc.UpsertMa
 		Raw:              jsonBytes(market.Raw, jsonObject),
 		FetchedAt:        nullableTime(market.FetchedAt),
 	}
+}
+
+func batchUpsertManagedOOMarketLabelsParams(marketID string, labels []ManagedOOMarketLabel) polymarketsqlc.BatchUpsertManagedOOMarketLabelsParams {
+	params := polymarketsqlc.BatchUpsertManagedOOMarketLabelsParams{
+		MarketIds:       make([]string, 0, len(labels)),
+		Labels:          make([]string, 0, len(labels)),
+		TagIds:          make([]string, 0, len(labels)),
+		Slugs:           make([]string, 0, len(labels)),
+		Positions:       make([]int64, 0, len(labels)),
+		FetchedAtValues: make([]pgtype.Timestamptz, 0, len(labels)),
+	}
+	for _, label := range labels {
+		labelMarketID := label.MarketID
+		if labelMarketID == "" {
+			labelMarketID = marketID
+		}
+		params.MarketIds = append(params.MarketIds, labelMarketID)
+		params.Labels = append(params.Labels, label.Label)
+		params.TagIds = append(params.TagIds, label.TagID)
+		params.Slugs = append(params.Slugs, label.Slug)
+		params.Positions = append(params.Positions, label.Position)
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(label.FetchedAt))
+	}
+	return params
 }
 
 func batchUpsertManagedOOProposePriceLogsParams(logs []ManagedOOProposePriceLog) (polymarketsqlc.BatchUpsertManagedOOProposePriceLogsParams, error) {

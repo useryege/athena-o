@@ -64,6 +64,17 @@ type PolymarketManagedOoMarket struct {
 	UpdatedAt        pgtype.Timestamptz
 }
 
+type PolymarketManagedOoMarketLabel struct {
+	MarketID  string
+	Label     string
+	TagID     string
+	Slug      string
+	Position  int64
+	FetchedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
 type PolymarketManagedOoProposePriceLog struct {
 	TxHash              string
 	LogIndex            int64

@@ -264,6 +264,16 @@ type ManagedOOMarket struct {
 	Tags             json.RawMessage
 	Raw              json.RawMessage
 	FetchedAt        time.Time
+	Labels           []ManagedOOMarketLabel
+}
+
+type ManagedOOMarketLabel struct {
+	MarketID  string
+	Label     string
+	TagID     string
+	Slug      string
+	Position  int64
+	FetchedAt time.Time
 }
 
 type SportsHistoryEvent struct {
