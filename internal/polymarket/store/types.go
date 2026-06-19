@@ -192,6 +192,38 @@ type SportsLivePriceHistorySeries struct {
 	Prices     []float64
 }
 
+type ChainLogCursor struct {
+	SyncName        string
+	ContractAddress string
+	Topic           string
+	LastBlockNumber uint64
+	LastPolledAt    time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type ManagedOOProposePriceLog struct {
+	TxHash              string
+	LogIndex            uint
+	BlockNumber         uint64
+	BlockHash           string
+	TxIndex             uint
+	ContractAddress     string
+	Topic               string
+	Requester           string
+	Proposer            string
+	Identifier          string
+	RequestTimestamp    uint64
+	AncillaryDataHex    string
+	AncillaryDataText   string
+	ProposedPrice       string
+	ExpirationTimestamp uint64
+	Currency            string
+	RawTopics           json.RawMessage
+	RawData             string
+	FetchedAt           time.Time
+}
+
 type SportsHistoryEvent struct {
 	EventKey       string
 	EventID        string

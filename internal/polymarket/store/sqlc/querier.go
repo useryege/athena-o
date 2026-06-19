@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BatchUpsertManagedOOProposePriceLogs(ctx context.Context, arg BatchUpsertManagedOOProposePriceLogsParams) error
 	BatchUpsertSportsHistoryEvents(ctx context.Context, arg BatchUpsertSportsHistoryEventsParams) error
 	BatchUpsertSportsHistoryMarkets(ctx context.Context, arg BatchUpsertSportsHistoryMarketsParams) error
 	BatchUpsertSportsHistoryPricePoints(ctx context.Context, arg BatchUpsertSportsHistoryPricePointsParams) error
@@ -22,6 +23,7 @@ type Querier interface {
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error
+	GetPolymarketChainLogCursor(ctx context.Context, syncName string) (PolymarketChainLogCursor, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListSportsHistoryEvents(ctx context.Context, limit int32) ([]ListSportsHistoryEventsRow, error)
 	ListSportsHistoryMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsHistoryMarketsByEventKeysRow, error)
@@ -34,6 +36,7 @@ type Querier interface {
 	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
 	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
 	Ping(ctx context.Context) (int32, error)
+	UpsertPolymarketChainLogCursor(ctx context.Context, arg UpsertPolymarketChainLogCursorParams) (PolymarketChainLogCursor, error)
 	UpsertPolymarketSyncState(ctx context.Context, arg UpsertPolymarketSyncStateParams) error
 	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error
 }

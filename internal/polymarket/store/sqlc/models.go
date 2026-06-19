@@ -8,6 +8,40 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type PolymarketChainLogCursor struct {
+	SyncName        string
+	ContractAddress string
+	Topic           string
+	LastBlockNumber int64
+	LastPolledAt    pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+type PolymarketManagedOoProposePriceLog struct {
+	TxHash              string
+	LogIndex            int64
+	BlockNumber         int64
+	BlockHash           string
+	TxIndex             int64
+	ContractAddress     string
+	Topic               string
+	Requester           string
+	Proposer            string
+	Identifier          string
+	RequestTimestamp    int64
+	AncillaryDataHex    string
+	AncillaryDataText   string
+	ProposedPrice       string
+	ExpirationTimestamp int64
+	Currency            string
+	RawTopics           []byte
+	RawData             string
+	FetchedAt           pgtype.Timestamptz
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+}
+
 type PolymarketSportsHistoryEvent struct {
 	EventKey       string
 	EventID        string

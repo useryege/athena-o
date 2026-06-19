@@ -221,6 +221,8 @@ func (s *Service) Start() error {
 	go s.runSportsHistorySync(ctx)
 	s.runWG.Add(1)
 	go s.runHotMarketDiscoveryLoop(ctx)
+	s.runWG.Add(1)
+	go s.runManagedOOProposePriceLogSyncLoop(ctx)
 	return nil
 }
 
