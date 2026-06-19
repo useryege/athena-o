@@ -129,37 +129,6 @@ export interface ListPolymarketMoversResult {
     candidateCount?: number;
 }
 
-export interface PolymarketDisputedMarketItem {
-    marketKey: string;
-    marketId: string;
-    conditionId: string;
-    marketSlug: string;
-    eventId: string;
-    eventSlug: string;
-    question: string;
-    image?: string;
-    umaResolutionStatus: string;
-    umaResolutionStatuses: string;
-    volume24hr?: number;
-    volumeNum?: number;
-    liquidityNum?: number;
-    spread?: number;
-    bestBid?: number;
-    bestAsk?: number;
-    lastTradePrice?: number;
-    active?: boolean;
-    closed?: boolean;
-    enableOrderBook?: boolean;
-    fetchedAt?: string;
-    lastSeenAt?: string;
-}
-
-export interface ListPolymarketDisputedMarketsResult {
-    items: PolymarketDisputedMarketItem[];
-    fetchedAt?: number;
-    stale?: boolean;
-}
-
 export interface PolymarketSportsLiveMarketCardItem {
     marketKey: string;
     conditionId: string;
@@ -554,31 +523,6 @@ const normalizeMoverMarket = (item: any): PolymarketMoverMarketItem => {
     };
 };
 
-const normalizeDisputedMarket = (item: any): PolymarketDisputedMarketItem => ({
-    marketKey: readString(item, 'marketKey', 'market_key'),
-    marketId: readString(item, 'marketId', 'market_id'),
-    conditionId: readString(item, 'conditionId', 'condition_id'),
-    marketSlug: readString(item, 'marketSlug', 'market_slug'),
-    eventId: readString(item, 'eventId', 'event_id'),
-    eventSlug: readString(item, 'eventSlug', 'event_slug'),
-    question: readString(item, 'question'),
-    image: readString(item, 'image'),
-    umaResolutionStatus: readString(item, 'umaResolutionStatus', 'uma_resolution_status'),
-    umaResolutionStatuses: readString(item, 'umaResolutionStatuses', 'uma_resolution_statuses'),
-    volume24hr: readNumber(item, 'volume24hr', 'volume_24hr'),
-    volumeNum: readNumber(item, 'volumeNum', 'volume_num'),
-    liquidityNum: readNumber(item, 'liquidityNum', 'liquidity_num'),
-    spread: readNumber(item, 'spread'),
-    bestBid: readNumber(item, 'bestBid', 'best_bid'),
-    bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
-    lastTradePrice: readNumber(item, 'lastTradePrice', 'last_trade_price'),
-    active: readBoolean(item, 'active'),
-    closed: readBoolean(item, 'closed'),
-    enableOrderBook: readBoolean(item, 'enableOrderBook', 'enable_order_book'),
-    fetchedAt: readString(item, 'fetchedAt', 'fetched_at'),
-    lastSeenAt: readString(item, 'lastSeenAt', 'last_seen_at')
-});
-
 export class PolymarketService {
     public listHotMarkets(limit = 100): Promise<ListPolymarketHotMarketsResult> & {abort?: () => void} {
         const req = requests.get('/polymarket/hot-markets').query({limit});
@@ -629,20 +573,6 @@ export class PolymarketService {
                 monitoredMarkets: readNumber(body, 'monitoredMarkets', 'monitored_markets'),
                 monitoredTokens: readNumber(body, 'monitoredTokens', 'monitored_tokens'),
                 candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listDisputedMarkets(limit = 100): Promise<ListPolymarketDisputedMarketsResult> & {abort?: () => void} {
-        const req = requests.get('/polymarket/disputed-markets').query({limit});
-        const promise = req.then(res => {
-            const body = res.body || {};
-            return {
-                items: (body.items || []).map(normalizeDisputedMarket),
-                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
-                stale: readBoolean(body, 'stale')
             };
         }) as any;
         promise.abort = () => req.abort();

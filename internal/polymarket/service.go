@@ -16,27 +16,23 @@ import (
 )
 
 const (
-	defaultSportsLiveListLimit           = 200
-	maxSportsLiveListLimit               = 1000
-	defaultSportsLiveSyncInterval        = 10 * time.Second
-	defaultSportsLivePriceInterval       = 15 * time.Second
-	defaultSportsLiveEventPageLimit      = 500
-	defaultHotMarketListLimit            = 100
-	maxHotMarketListLimit                = 500
-	defaultHotMarketRefreshInterval      = time.Minute
-	defaultHotMarketInitialSyncWait      = 15 * time.Second
-	defaultDisputedMarketRefreshInterval = time.Minute
-	defaultDisputedMarketPageLimit       = 100
-	defaultDisputedMarketListLimit       = 100
-	maxDisputedMarketListLimit           = 500
-	defaultRealtimeListLimit             = 100
-	maxRealtimeListLimit                 = 500
-	defaultRealtimeInitialSyncWait       = 15 * time.Second
-	defaultMoverListLimit                = 100
-	maxMoverListLimit                    = 500
-	defaultFIFAWalletBalanceCacheTTL     = 8 * time.Second
-	defaultFIFAPolygonRPCURL             = "https://polygon-rpc.com"
-	defaultFIFASolanaRPCURL              = "https://api.mainnet-beta.solana.com"
+	defaultSportsLiveListLimit       = 200
+	maxSportsLiveListLimit           = 1000
+	defaultSportsLiveSyncInterval    = 10 * time.Second
+	defaultSportsLivePriceInterval   = 15 * time.Second
+	defaultSportsLiveEventPageLimit  = 500
+	defaultHotMarketListLimit        = 100
+	maxHotMarketListLimit            = 500
+	defaultHotMarketRefreshInterval  = time.Minute
+	defaultHotMarketInitialSyncWait  = 15 * time.Second
+	defaultRealtimeListLimit         = 100
+	maxRealtimeListLimit             = 500
+	defaultRealtimeInitialSyncWait   = 15 * time.Second
+	defaultMoverListLimit            = 100
+	maxMoverListLimit                = 500
+	defaultFIFAWalletBalanceCacheTTL = 8 * time.Second
+	defaultFIFAPolygonRPCURL         = "https://polygon-rpc.com"
+	defaultFIFASolanaRPCURL          = "https://api.mainnet-beta.solana.com"
 )
 
 type ServiceOption func(*Service)
@@ -51,7 +47,6 @@ type sportsLiveGammaClient interface {
 	ListMarketsKeyset(context.Context, utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error)
 	GetEventByID(context.Context, int64, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
 	GetEventBySlug(context.Context, string, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
-	GetTagBySlug(context.Context, string, utilpolymarket.GetTagOptions) (*utilpolymarket.Tag, error)
 }
 
 type sportsLiveCLOBClient interface {
@@ -95,14 +90,6 @@ func WithHotMarketRefreshInterval(interval time.Duration) ServiceOption {
 	}
 }
 
-func WithDisputedMarketRefreshInterval(interval time.Duration) ServiceOption {
-	return func(s *Service) {
-		if interval > 0 {
-			s.disputedMarketRefreshInterval = interval
-		}
-	}
-}
-
 func WithNotificationClientset(clientset notificationapiclient.Clientset) ServiceOption {
 	return func(s *Service) {
 		s.notificationClientset = clientset
@@ -121,12 +108,6 @@ func WithSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) Service
 	}
 }
 
-func WithUMAResolutionAlertsConfig(config UMAResolutionAlertsConfig) ServiceOption {
-	return func(s *Service) {
-		s.umaResolutionAlertsConfig = normalizeUMAResolutionAlertsConfig(config)
-	}
-}
-
 func WithFIFAWalletBalanceConfig(config FIFAWalletBalanceConfig) ServiceOption {
 	return func(s *Service) {
 		if config.PolygonRPCURL != "" {
@@ -140,66 +121,60 @@ func WithFIFAWalletBalanceConfig(config FIFAWalletBalanceConfig) ServiceOption {
 
 type Service struct {
 	apiclient.UnimplementedPolymarketServiceServer
-	store                         *polymarketstore.SQLStore
-	gammaClient                   sportsLiveGammaClient
-	clobClient                    sportsLiveCLOBClient
-	notificationClientset         notificationapiclient.Clientset
-	syncInterval                  time.Duration
-	sportsLivePageLimit           int
-	hotMarketRefreshInterval      time.Duration
-	disputedMarketRefreshInterval time.Duration
-	fifaPolygonRPCURL             string
-	fifaSolanaRPCURL              string
-	moverAlertsConfig             MoverAlertsConfig
-	sportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
-	umaResolutionAlertsConfig     UMAResolutionAlertsConfig
-	nowFn                         func() time.Time
-	startStopMu                   sync.Mutex
-	started                       bool
-	runCancel                     context.CancelFunc
-	runWG                         sync.WaitGroup
-	cacheMu                       sync.RWMutex
-	hotMarketItems                []*v1alpha1.PolymarketHotMarketItem
-	hotMarketMissing              map[string]int
-	realtimeStates                map[string]*realtimeTokenState
-	realtimeSamples               map[string][]realtimeSample
-	hotMarketFetched              int64
-	hotMarketStale                bool
-	hotMarketCandidateCount       int32
-	realtimeFetched               int64
-	realtimeStale                 bool
-	realtimeConnected             bool
-	realtimeLastEventAt           int64
-	realtimeSubscribedMarkets     int32
-	realtimeSubscribedTokens      int32
-	sportsHistoryStale            bool
-	moverAlertStates              map[string]moverAlertState
-	umaResolutionProposedTagIDs   map[string]int64
-	fifaWalletBalances            []*v1alpha1.PolymarketFIFAWalletBalanceItem
-	fifaWalletBalancesFetched     int64
-	fifaWalletBalancesCachedAt    time.Time
-	syncGroup                     singleflight.Group
+	store                       *polymarketstore.SQLStore
+	gammaClient                 sportsLiveGammaClient
+	clobClient                  sportsLiveCLOBClient
+	notificationClientset       notificationapiclient.Clientset
+	syncInterval                time.Duration
+	sportsLivePageLimit         int
+	hotMarketRefreshInterval    time.Duration
+	fifaPolygonRPCURL           string
+	fifaSolanaRPCURL            string
+	moverAlertsConfig           MoverAlertsConfig
+	sportsLivePriceAlertsConfig SportsLivePriceAlertsConfig
+	nowFn                       func() time.Time
+	startStopMu                 sync.Mutex
+	started                     bool
+	runCancel                   context.CancelFunc
+	runWG                       sync.WaitGroup
+	cacheMu                     sync.RWMutex
+	hotMarketItems              []*v1alpha1.PolymarketHotMarketItem
+	hotMarketMissing            map[string]int
+	realtimeStates              map[string]*realtimeTokenState
+	realtimeSamples             map[string][]realtimeSample
+	hotMarketFetched            int64
+	hotMarketStale              bool
+	hotMarketCandidateCount     int32
+	realtimeFetched             int64
+	realtimeStale               bool
+	realtimeConnected           bool
+	realtimeLastEventAt         int64
+	realtimeSubscribedMarkets   int32
+	realtimeSubscribedTokens    int32
+	sportsHistoryStale          bool
+	moverAlertStates            map[string]moverAlertState
+	fifaWalletBalances          []*v1alpha1.PolymarketFIFAWalletBalanceItem
+	fifaWalletBalancesFetched   int64
+	fifaWalletBalancesCachedAt  time.Time
+	syncGroup                   singleflight.Group
 }
 
 func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service {
 	s := &Service{
-		store:                         store,
-		syncInterval:                  defaultSportsLiveSyncInterval,
-		sportsLivePageLimit:           defaultSportsLiveEventPageLimit,
-		hotMarketRefreshInterval:      defaultHotMarketRefreshInterval,
-		disputedMarketRefreshInterval: defaultDisputedMarketRefreshInterval,
-		fifaPolygonRPCURL:             defaultFIFAPolygonRPCURL,
-		fifaSolanaRPCURL:              defaultFIFASolanaRPCURL,
-		moverAlertsConfig:             defaultMoverAlertsConfig(),
-		sportsLivePriceAlertsConfig:   defaultSportsLivePriceAlertsConfig(),
-		umaResolutionAlertsConfig:     defaultUMAResolutionAlertsConfig(),
-		nowFn:                         time.Now,
-		hotMarketMissing:              make(map[string]int),
-		realtimeStates:                make(map[string]*realtimeTokenState),
-		realtimeSamples:               make(map[string][]realtimeSample),
-		moverAlertStates:              make(map[string]moverAlertState),
-		umaResolutionProposedTagIDs:   make(map[string]int64),
-		sportsHistoryStale:            true,
+		store:                       store,
+		syncInterval:                defaultSportsLiveSyncInterval,
+		sportsLivePageLimit:         defaultSportsLiveEventPageLimit,
+		hotMarketRefreshInterval:    defaultHotMarketRefreshInterval,
+		fifaPolygonRPCURL:           defaultFIFAPolygonRPCURL,
+		fifaSolanaRPCURL:            defaultFIFASolanaRPCURL,
+		moverAlertsConfig:           defaultMoverAlertsConfig(),
+		sportsLivePriceAlertsConfig: defaultSportsLivePriceAlertsConfig(),
+		nowFn:                       time.Now,
+		hotMarketMissing:            make(map[string]int),
+		realtimeStates:              make(map[string]*realtimeTokenState),
+		realtimeSamples:             make(map[string][]realtimeSample),
+		moverAlertStates:            make(map[string]moverAlertState),
+		sportsHistoryStale:          true,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -246,8 +221,6 @@ func (s *Service) Start() error {
 	go s.runSportsHistorySync(ctx)
 	s.runWG.Add(1)
 	go s.runHotMarketDiscoveryLoop(ctx)
-	s.runWG.Add(1)
-	go s.runDisputedMarketSyncLoop(ctx)
 	return nil
 }
 

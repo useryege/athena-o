@@ -41,7 +41,6 @@ import {
     NodeStatusesPage,
     NotificationsDetailPage,
     NotificationsPage,
-    PolymarketDisputedPage,
     PolymarketHotPage,
     PolymarketMoversPage,
     PolymarketRealtimePage,
@@ -190,13 +189,6 @@ const navItems: NavItem[] = [
                 permission: permission(rbacResources.polymarket, rbacActions.get)
             },
             {
-                key: '/polymarket/disputed',
-                label: 'Disputed',
-                path: '/polymarket/disputed',
-                icon: <DashboardOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            },
-            {
                 key: '/polymarket/sports-live',
                 label: 'Sports Live',
                 path: '/polymarket/sports-live',
@@ -312,7 +304,6 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/polymarket' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketHotPage />)} />
             <Route path='/polymarket/realtime' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketRealtimePage />)} />
             <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />
-            <Route path='/polymarket/disputed' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketDisputedPage />)} />
             <Route path='/polymarket/sports-live' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsLivePage />)} />
             <Route path='/polymarket/sports-history' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsHistoryPage />)} />
             <Route path='/FIFA' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <FIFAPage />)} />

@@ -11,8 +11,6 @@ func (*NotificationDeliveryItem) ProtoMessage() {}
 
 func (*NotificationStatus) ProtoMessage() {}
 
-func (*PolymarketDisputedMarketItem) ProtoMessage() {}
-
 func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
 
 func (*PolymarketFIFAMoneylineOptionItem) ProtoMessage() {}

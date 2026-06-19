@@ -28,31 +28,6 @@ type PolymarketHotMarketItem struct {
 	EventSlug      string                          `protobuf:"bytes,14,opt,name=eventSlug" json:"eventSlug"`
 }
 
-type PolymarketDisputedMarketItem struct {
-	MarketKey             string  `protobuf:"bytes,1,opt,name=marketKey" json:"marketKey"`
-	MarketID              string  `protobuf:"bytes,2,opt,name=marketId" json:"marketId"`
-	ConditionID           string  `protobuf:"bytes,3,opt,name=conditionId" json:"conditionId"`
-	MarketSlug            string  `protobuf:"bytes,4,opt,name=marketSlug" json:"marketSlug"`
-	EventID               string  `protobuf:"bytes,5,opt,name=eventId" json:"eventId"`
-	EventSlug             string  `protobuf:"bytes,6,opt,name=eventSlug" json:"eventSlug"`
-	Question              string  `protobuf:"bytes,7,opt,name=question" json:"question"`
-	Image                 string  `protobuf:"bytes,8,opt,name=image" json:"image"`
-	UMAResolutionStatus   string  `protobuf:"bytes,9,opt,name=umaResolutionStatus" json:"umaResolutionStatus"`
-	UMAResolutionStatuses string  `protobuf:"bytes,10,opt,name=umaResolutionStatuses" json:"umaResolutionStatuses"`
-	Volume24hr            float64 `protobuf:"fixed64,11,opt,name=volume24hr" json:"volume24hr"`
-	VolumeNum             float64 `protobuf:"fixed64,12,opt,name=volumeNum" json:"volumeNum"`
-	LiquidityNum          float64 `protobuf:"fixed64,13,opt,name=liquidityNum" json:"liquidityNum"`
-	Spread                float64 `protobuf:"fixed64,14,opt,name=spread" json:"spread"`
-	BestBid               float64 `protobuf:"fixed64,15,opt,name=bestBid" json:"bestBid"`
-	BestAsk               float64 `protobuf:"fixed64,16,opt,name=bestAsk" json:"bestAsk"`
-	LastTradePrice        float64 `protobuf:"fixed64,17,opt,name=lastTradePrice" json:"lastTradePrice"`
-	Active                bool    `protobuf:"varint,18,opt,name=active" json:"active"`
-	Closed                bool    `protobuf:"varint,19,opt,name=closed" json:"closed"`
-	EnableOrderBook       bool    `protobuf:"varint,20,opt,name=enableOrderBook" json:"enableOrderBook"`
-	FetchedAt             string  `protobuf:"bytes,21,opt,name=fetchedAt" json:"fetchedAt"`
-	LastSeenAt            string  `protobuf:"bytes,22,opt,name=lastSeenAt" json:"lastSeenAt"`
-}
-
 type PolymarketRealtimeWindowItem struct {
 	Window        string  `protobuf:"bytes,1,opt,name=window" json:"window"`
 	PriceChangePp float64 `protobuf:"fixed64,2,opt,name=priceChangePp" json:"priceChangePp"`

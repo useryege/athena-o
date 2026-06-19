@@ -1,11 +1,9 @@
-import {LinkOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Button, Empty, Space, Tag, Typography} from 'antd';
+import {Empty, Space, Typography} from 'antd';
 import * as React from 'react';
-import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, SearchBar, StatusTag, useAsyncData} from '../components';
+import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';
 import {
-    PolymarketDisputedMarketItem,
     PolymarketHotMarketItem,
     PolymarketMoverMarketItem,
     PolymarketRealtimeMarketItem,
@@ -22,7 +20,7 @@ import {
     sportsLiveCardHistory,
     sportsLiveSectionKey
 } from './polymarket-sports-live-card';
-import {boolTag, fmt, fmtNumber, useKeywordParam} from './shared';
+import {fmt, fmtNumber} from './shared';
 
 const PolymarketListPage = <T extends PolymarketHotMarketItem | PolymarketRealtimeMarketItem | PolymarketMoverMarketItem>(props: {
     title: string;
@@ -68,120 +66,6 @@ const PolymarketListPage = <T extends PolymarketHotMarketItem | PolymarketRealti
 export const PolymarketHotPage = () => <PolymarketListPage title='Polymarket Hot Markets' load={() => services.polymarket.listHotMarkets(100)} />;
 export const PolymarketRealtimePage = () => <PolymarketListPage title='Polymarket Realtime' load={() => services.polymarket.listRealtimeMarkets(100)} />;
 export const PolymarketMoversPage = () => <PolymarketListPage title='Polymarket Movers' load={() => services.polymarket.listMovers(100)} />;
-
-const disputedStatusTrail = (value?: string) => {
-    const raw = String(value || '').trim();
-    if (!raw) {
-        return [];
-    }
-    try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-            return parsed.map(item => String(item || '').trim()).filter(Boolean);
-        }
-    } catch {
-        // fall through to plain text fallback
-    }
-    return raw
-        .replace(/^\[/, '')
-        .replace(/\]$/, '')
-        .split(',')
-        .map(item => item.replace(/^"+|"+$/g, '').trim())
-        .filter(Boolean);
-};
-
-const disputedMarketURL = (item: PolymarketDisputedMarketItem) => {
-    const marketSlug = item.marketSlug.trim();
-    const eventSlug = item.eventSlug.trim();
-    if (eventSlug && marketSlug && eventSlug !== marketSlug) {
-        return `https://polymarket.com/event/${encodeURIComponent(eventSlug)}/${encodeURIComponent(marketSlug)}`;
-    }
-    const slug = marketSlug || eventSlug;
-    return slug ? `https://polymarket.com/event/${encodeURIComponent(slug)}` : '';
-};
-
-const DisputedStatus = (props: {item: PolymarketDisputedMarketItem}) => {
-    const trail = disputedStatusTrail(props.item.umaResolutionStatuses);
-    return (
-        <Space orientation='vertical' size={2}>
-            <Tag color='red'>{props.item.umaResolutionStatus || 'disputed'}</Tag>
-            {trail.length > 0 && <Typography.Text type='secondary'>{trail.join(' > ')}</Typography.Text>}
-        </Space>
-    );
-};
-
-const DisputedOpenButton = (props: {item: PolymarketDisputedMarketItem}) => {
-    const url = disputedMarketURL(props.item);
-    return <Button aria-label='Open Polymarket' disabled={!url} href={url || undefined} icon={<LinkOutlined />} rel='noreferrer' size='small' target='_blank' type='text' />;
-};
-
-export const PolymarketDisputedPage = () => {
-    const data = useAsyncData(() => services.polymarket.listDisputedMarkets(100), []);
-    const [keyword, setKeyword] = useKeywordParam('q');
-    const items = data.data?.items || [];
-    const filteredItems = React.useMemo(() => {
-        const query = keyword.trim().toLowerCase();
-        if (!query) {
-            return items;
-        }
-        return items.filter(item =>
-            [item.question, item.marketSlug, item.eventSlug, item.conditionId, item.marketKey].map(value => String(value || '').toLowerCase()).some(value => value.includes(query))
-        );
-    }, [items, keyword]);
-    const columns: ColumnsType<PolymarketDisputedMarketItem> = [
-        {title: 'Market', render: item => <CardTitle title={item.question} subtitle={item.eventSlug || item.marketSlug} image={item.image} />},
-        {title: 'UMA', render: item => <DisputedStatus item={item} />},
-        {title: 'Volume 24h', render: item => fmtNumber(item.volume24hr || item.volumeNum)},
-        {title: 'Liquidity', render: item => fmtNumber(item.liquidityNum)},
-        {title: 'Spread', render: item => fmt(item.spread)},
-        {
-            title: 'State',
-            render: item => (
-                <Space size={4} wrap={true}>
-                    {boolTag(item.active)}
-                    <StatusTag value={item.closed ? 'Closed' : 'Open'} positive={!item.closed} negative={item.closed} />
-                </Space>
-            )
-        },
-        {title: 'Last Seen', dataIndex: 'lastSeenAt'},
-        {title: 'Open', render: item => <DisputedOpenButton item={item} />}
-    ];
-    return (
-        <AppPage
-            title='Polymarket Disputed'
-            subtitle={`Fetched ${fmt(data.data?.fetchedAt)} · ${items.length} markets ${data.data?.stale ? '(stale)' : ''}`}
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}
-            filters={<SearchBar value={keyword} placeholder='Search disputed markets' onChange={setKeyword} />}>
-            <ResponsiveResourceList
-                rowKey='marketKey'
-                items={filteredItems}
-                columns={columns}
-                loading={data.loading}
-                card={item => (
-                    <>
-                        <CardTitle title={item.question} subtitle={item.eventSlug || item.marketSlug} image={item.image} tags={<DisputedOpenButton item={item} />} />
-                        <Space size={6} wrap={true}>
-                            <DisputedStatus item={item} />
-                            {boolTag(item.active)}
-                            <StatusTag value={item.closed ? 'Closed' : 'Open'} positive={!item.closed} negative={item.closed} />
-                            <StatusTag value='Order Book' positive={item.enableOrderBook} negative={!item.enableOrderBook} />
-                        </Space>
-                        <MetricRow
-                            items={[
-                                {label: 'Volume 24h', value: fmtNumber(item.volume24hr || item.volumeNum)},
-                                {label: 'Liquidity', value: fmtNumber(item.liquidityNum)},
-                                {label: 'Spread', value: fmt(item.spread)},
-                                {label: 'Last Trade', value: fmt(item.lastTradePrice)}
-                            ]}
-                        />
-                    </>
-                )}
-            />
-        </AppPage>
-    );
-};
 
 const sportsLiveRefreshIntervalMs = 3000;
 
