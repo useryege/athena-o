@@ -352,6 +352,15 @@ func polymarketEventLink(slug string) string {
 	return polymarketEventBaseURL + url.PathEscape(slug)
 }
 
+func polymarketEventMarketLink(eventSlug, marketSlug string) string {
+	eventSlug = strings.TrimSpace(eventSlug)
+	marketSlug = strings.TrimSpace(marketSlug)
+	if eventSlug == "" || marketSlug == "" {
+		return ""
+	}
+	return polymarketEventBaseURL + url.PathEscape(eventSlug) + "/" + url.PathEscape(marketSlug)
+}
+
 func truncateRunes(value string, maxRunes int) string {
 	value = strings.TrimSpace(value)
 	if maxRunes <= 0 {

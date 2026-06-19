@@ -471,6 +471,7 @@ func managedOOMarketFromGamma(marketID string, market utilpolymarket.Market, fet
 		MarketID:         strings.TrimSpace(marketID),
 		ConditionID:      strings.TrimSpace(stringValue(market.ConditionID)),
 		Slug:             strings.TrimSpace(stringValue(market.Slug)),
+		EventSlug:        managedOOMarketEventSlugFromGamma(market.Events),
 		Question:         strings.TrimSpace(stringValue(market.Question)),
 		Description:      strings.TrimSpace(stringValue(market.Description)),
 		ResolutionSource: strings.TrimSpace(stringValue(market.ResolutionSource)),
@@ -508,6 +509,15 @@ func managedOOMarketFromGamma(marketID string, market utilpolymarket.Market, fet
 		FetchedAt:        fetchedAt,
 		Labels:           managedOOMarketLabelsFromGamma(marketID, market.Tags, fetchedAt),
 	}
+}
+
+func managedOOMarketEventSlugFromGamma(events []utilpolymarket.Event) string {
+	for i := range events {
+		if slug := strings.TrimSpace(stringValue(events[i].Slug)); slug != "" {
+			return slug
+		}
+	}
+	return ""
 }
 
 func managedOOMarketLabelsFromGamma(marketID string, tags []utilpolymarket.Tag, fetchedAt time.Time) []polymarketstore.ManagedOOMarketLabel {

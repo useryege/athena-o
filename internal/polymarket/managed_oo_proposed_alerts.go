@@ -120,7 +120,7 @@ func renderManagedOOProposePriceAlertNotification(candidate polymarketstore.Mana
 		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:      fmt.Sprintf("UMA Proposed: %s", truncateRunes(titleSubject, defaultManagedOOProposedAlertTitleQuestionRunes)),
 		Body:       strings.Join(bodyLines, "\n"),
-		Link:       polymarketEventLink(candidate.Slug),
+		Link:       polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug),
 		TopicLabel: managedOOProposedAlertTopic,
 	}
 }

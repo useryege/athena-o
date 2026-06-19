@@ -203,6 +203,7 @@ CREATE TABLE IF NOT EXISTS polymarket_managed_oo_market (
   market_id TEXT PRIMARY KEY,
   condition_id TEXT NOT NULL DEFAULT '',
   slug TEXT NOT NULL DEFAULT '',
+  event_slug TEXT NOT NULL DEFAULT '',
   question TEXT NOT NULL DEFAULT '',
   description TEXT NOT NULL DEFAULT '',
   resolution_source TEXT NOT NULL DEFAULT '',

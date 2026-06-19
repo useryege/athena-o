@@ -121,7 +121,7 @@ func renderManagedOODisputePriceAlertNotification(candidate polymarketstore.Mana
 		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:      fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
 		Body:       strings.Join(bodyLines, "\n"),
-		Link:       polymarketEventLink(candidate.Slug),
+		Link:       polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug),
 		TopicLabel: managedOODisputedAlertTopic,
 	}
 }

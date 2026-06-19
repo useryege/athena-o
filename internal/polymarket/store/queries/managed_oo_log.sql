@@ -182,6 +182,7 @@ INSERT INTO polymarket_managed_oo_market (
   market_id,
   condition_id,
   slug,
+  event_slug,
   question,
   description,
   resolution_source,
@@ -224,6 +225,7 @@ INSERT INTO polymarket_managed_oo_market (
   @market_id,
   @condition_id,
   @slug,
+  @event_slug,
   @question,
   @description,
   @resolution_source,
@@ -266,6 +268,7 @@ INSERT INTO polymarket_managed_oo_market (
 ON CONFLICT (market_id) DO UPDATE
 SET condition_id = EXCLUDED.condition_id,
   slug = EXCLUDED.slug,
+  event_slug = EXCLUDED.event_slug,
   question = EXCLUDED.question,
   description = EXCLUDED.description,
   resolution_source = EXCLUDED.resolution_source,
@@ -374,7 +377,8 @@ SELECT
   log.expiration_timestamp,
   log.ancillary_data_text,
   market.condition_id,
-  market.slug,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  market.slug AS market_slug,
   market.question,
   matched_labels.labels AS matched_labels
 FROM polymarket_managed_oo_propose_price_log AS log
@@ -427,7 +431,8 @@ SELECT
   log.request_timestamp,
   log.ancillary_data_text,
   market.condition_id,
-  market.slug,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  market.slug AS market_slug,
   market.question,
   matched_labels.labels AS matched_labels
 FROM polymarket_managed_oo_dispute_price_log AS log

@@ -340,7 +340,8 @@ SELECT
   log.request_timestamp,
   log.ancillary_data_text,
   market.condition_id,
-  market.slug,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  market.slug AS market_slug,
   market.question,
   matched_labels.labels AS matched_labels
 FROM polymarket_managed_oo_dispute_price_log AS log
@@ -368,7 +369,8 @@ type ListManagedOODisputePriceAlertCandidatesRow struct {
 	RequestTimestamp  int64
 	AncillaryDataText string
 	ConditionID       string
-	Slug              string
+	EventSlug         string
+	MarketSlug        string
 	Question          string
 	MatchedLabels     []byte
 }
@@ -394,7 +396,8 @@ func (q *Queries) ListManagedOODisputePriceAlertCandidates(ctx context.Context, 
 			&i.RequestTimestamp,
 			&i.AncillaryDataText,
 			&i.ConditionID,
-			&i.Slug,
+			&i.EventSlug,
+			&i.MarketSlug,
 			&i.Question,
 			&i.MatchedLabels,
 		); err != nil {
@@ -467,7 +470,8 @@ SELECT
   log.expiration_timestamp,
   log.ancillary_data_text,
   market.condition_id,
-  market.slug,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  market.slug AS market_slug,
   market.question,
   matched_labels.labels AS matched_labels
 FROM polymarket_managed_oo_propose_price_log AS log
@@ -494,7 +498,8 @@ type ListManagedOOProposePriceAlertCandidatesRow struct {
 	ExpirationTimestamp int64
 	AncillaryDataText   string
 	ConditionID         string
-	Slug                string
+	EventSlug           string
+	MarketSlug          string
 	Question            string
 	MatchedLabels       []byte
 }
@@ -519,7 +524,8 @@ func (q *Queries) ListManagedOOProposePriceAlertCandidates(ctx context.Context, 
 			&i.ExpirationTimestamp,
 			&i.AncillaryDataText,
 			&i.ConditionID,
-			&i.Slug,
+			&i.EventSlug,
+			&i.MarketSlug,
 			&i.Question,
 			&i.MatchedLabels,
 		); err != nil {
@@ -573,6 +579,7 @@ INSERT INTO polymarket_managed_oo_market (
   market_id,
   condition_id,
   slug,
+  event_slug,
   question,
   description,
   resolution_source,
@@ -649,14 +656,16 @@ INSERT INTO polymarket_managed_oo_market (
   $35,
   $36,
   $37,
+  $38,
   'ok',
   '',
   NULL,
-  $38
+  $39
 )
 ON CONFLICT (market_id) DO UPDATE
 SET condition_id = EXCLUDED.condition_id,
   slug = EXCLUDED.slug,
+  event_slug = EXCLUDED.event_slug,
   question = EXCLUDED.question,
   description = EXCLUDED.description,
   resolution_source = EXCLUDED.resolution_source,
@@ -702,6 +711,7 @@ type UpsertManagedOOMarketParams struct {
 	MarketID         string
 	ConditionID      string
 	Slug             string
+	EventSlug        string
 	Question         string
 	Description      string
 	ResolutionSource string
@@ -744,6 +754,7 @@ func (q *Queries) UpsertManagedOOMarket(ctx context.Context, arg UpsertManagedOO
 		arg.MarketID,
 		arg.ConditionID,
 		arg.Slug,
+		arg.EventSlug,
 		arg.Question,
 		arg.Description,
 		arg.ResolutionSource,

@@ -55,6 +55,7 @@ type PolymarketManagedOoMarket struct {
 	MarketID         string
 	ConditionID      string
 	Slug             string
+	EventSlug        string
 	Question         string
 	Description      string
 	ResolutionSource string

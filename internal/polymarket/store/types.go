@@ -251,6 +251,7 @@ type ManagedOOMarket struct {
 	MarketID         string
 	ConditionID      string
 	Slug             string
+	EventSlug        string
 	Question         string
 	Description      string
 	ResolutionSource string
@@ -309,7 +310,8 @@ type ManagedOOProposePriceAlertCandidate struct {
 	ExpirationTimestamp int64
 	AncillaryDataText   string
 	ConditionID         string
-	Slug                string
+	EventSlug           string
+	MarketSlug          string
 	Question            string
 	MatchedLabels       string
 }
@@ -326,7 +328,8 @@ type ManagedOODisputePriceAlertCandidate struct {
 	RequestTimestamp  int64
 	AncillaryDataText string
 	ConditionID       string
-	Slug              string
+	EventSlug         string
+	MarketSlug        string
 	Question          string
 	MatchedLabels     string
 }
