@@ -3,9 +3,11 @@ package polymarket
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -18,15 +20,18 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
+	utilpolymarket "github.com/useryege/athena/util/polymarket"
 )
 
 const (
-	managedOOProposePriceSyncName        = "managed_oo_propose_price"
-	managedOOContractAddress             = "0x2C0367a9DB231dDeBd88a94b4f6461a6e47C58B1"
-	managedOOProposePriceTopic           = "0x6e51dd00371aabffa82cd401592f76ed51e98a9ea4b58751c70463a2c78b5ca1"
-	managedOOLogPollInterval             = 10 * time.Second
-	managedOOLogQueryTimeout             = 20 * time.Second
-	managedOOLogMaxBlockRange     uint64 = 2000
+	managedOOProposePriceSyncName          = "managed_oo_propose_price"
+	managedOOContractAddress               = "0x2C0367a9DB231dDeBd88a94b4f6461a6e47C58B1"
+	managedOOProposePriceTopic             = "0x6e51dd00371aabffa82cd401592f76ed51e98a9ea4b58751c70463a2c78b5ca1"
+	managedOOLogPollInterval               = 10 * time.Second
+	managedOOLogQueryTimeout               = 20 * time.Second
+	managedOOMarketDataQueryTimeout        = 20 * time.Second
+	managedOOMarketDataMissingLimit        = 100
+	managedOOLogMaxBlockRange       uint64 = 2000
 )
 
 var managedOOProposePriceABI = mustManagedOOProposePriceABI()
@@ -36,6 +41,8 @@ func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
 	defer s.runWG.Done()
 	if err := s.syncManagedOOProposePriceLogs(ctx); err != nil {
 		log.WithError(err).Warn("initial polymarket managed oo propose price log sync failed")
+	} else if err := s.syncManagedOOMarketData(ctx); err != nil {
+		log.WithError(err).Warn("initial polymarket managed oo market data sync failed")
 	}
 	ticker := time.NewTicker(managedOOLogPollInterval)
 	defer ticker.Stop()
@@ -46,6 +53,8 @@ func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
 		case <-ticker.C:
 			if err := s.syncManagedOOProposePriceLogs(ctx); err != nil {
 				log.WithError(err).Warn("periodic polymarket managed oo propose price log sync failed")
+			} else if err := s.syncManagedOOMarketData(ctx); err != nil {
+				log.WithError(err).Warn("periodic polymarket managed oo market data sync failed")
 			}
 		}
 	}
@@ -161,6 +170,59 @@ func (s *Service) fetchManagedOOProposePriceLogs(ctx context.Context, client *et
 	return out, nil
 }
 
+func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
+	if s.gammaClient == nil {
+		return fmt.Errorf("polymarket gamma client is required")
+	}
+	marketIDs, err := s.store.ListManagedOOMarketIDsMissingData(ctx, managedOOMarketDataMissingLimit)
+	if err != nil {
+		return err
+	}
+	if len(marketIDs) == 0 {
+		return nil
+	}
+
+	fetched := 0
+	notFound := 0
+	for _, marketID := range marketIDs {
+		gammaID, err := strconv.ParseInt(strings.TrimSpace(marketID), 10, 64)
+		if err != nil {
+			continue
+		}
+
+		fetchedAt := s.now().UTC()
+		queryCtx, cancel := context.WithTimeout(ctx, managedOOMarketDataQueryTimeout)
+		market, err := s.gammaClient.GetMarketByID(queryCtx, gammaID, utilpolymarket.GetMarketOptions{
+			IncludeTag: ptrBool(true),
+		})
+		cancel()
+		if err != nil {
+			if isPolymarketAPIStatus(err, 404) {
+				if storeErr := s.store.UpsertManagedOOMarketNotFound(ctx, marketID, err.Error(), fetchedAt); storeErr != nil {
+					return storeErr
+				}
+				notFound++
+				continue
+			}
+			return fmt.Errorf("fetch managed oo gamma market %s: %w", marketID, err)
+		}
+		if market == nil {
+			return fmt.Errorf("fetch managed oo gamma market %s: empty response", marketID)
+		}
+		if err := s.store.UpsertManagedOOMarket(ctx, managedOOMarketFromGamma(marketID, *market, fetchedAt)); err != nil {
+			return err
+		}
+		fetched++
+	}
+
+	log.WithFields(log.Fields{
+		"requested": len(marketIDs),
+		"fetched":   fetched,
+		"not_found": notFound,
+	}).Debug("synced polymarket managed oo market data")
+	return nil
+}
+
 func managedOOProposePriceLogFromEthereumLog(item types.Log, fetchedAt time.Time) (polymarketstore.ManagedOOProposePriceLog, error) {
 	if len(item.Topics) < 3 {
 		return polymarketstore.ManagedOOProposePriceLog{}, fmt.Errorf("managed oo propose price log has %d topics", len(item.Topics))
@@ -224,6 +286,54 @@ func managedOOProposePriceLogFromEthereumLog(item types.Log, fetchedAt time.Time
 		RawData:             hexutil.Encode(item.Data),
 		FetchedAt:           fetchedAt,
 	}, nil
+}
+
+func managedOOMarketFromGamma(marketID string, market utilpolymarket.Market, fetchedAt time.Time) polymarketstore.ManagedOOMarket {
+	return polymarketstore.ManagedOOMarket{
+		MarketID:         strings.TrimSpace(marketID),
+		ConditionID:      strings.TrimSpace(stringValue(market.ConditionID)),
+		Slug:             strings.TrimSpace(stringValue(market.Slug)),
+		Question:         strings.TrimSpace(stringValue(market.Question)),
+		Description:      strings.TrimSpace(stringValue(market.Description)),
+		ResolutionSource: strings.TrimSpace(stringValue(market.ResolutionSource)),
+		QuestionID:       strings.TrimSpace(stringValue(market.QuestionID)),
+		SportsMarketType: strings.TrimSpace(stringValue(market.SportsMarketType)),
+		GroupItemTitle:   strings.TrimSpace(stringValue(market.GroupItemTitle)),
+		Image:            strings.TrimSpace(stringValue(market.Image)),
+		Icon:             strings.TrimSpace(stringValue(market.Icon)),
+		Outcomes:         strings.TrimSpace(stringValue(market.Outcomes)),
+		OutcomePrices:    strings.TrimSpace(stringValue(market.OutcomePrices)),
+		ClobTokenIDs:     strings.TrimSpace(stringValue(market.ClobTokenIDs)),
+		Active:           boolValue(market.Active),
+		Closed:           boolValue(market.Closed),
+		Archived:         boolValue(market.Archived),
+		Restricted:       boolValue(market.Restricted),
+		EnableOrderBook:  boolValue(market.EnableOrderBook),
+		AcceptingOrders:  boolValue(market.AcceptingOrders),
+		Volume:           strings.TrimSpace(stringValue(market.Volume)),
+		VolumeNum:        float64Value(market.VolumeNum),
+		LiquidityNum:     float64Value(market.LiquidityNum),
+		Volume24hr:       float64Value(market.Volume24hr),
+		Volume1wk:        float64Value(market.Volume1wk),
+		Volume1mo:        float64Value(market.Volume1mo),
+		Volume1yr:        float64Value(market.Volume1yr),
+		Spread:           float64Value(market.Spread),
+		BestBid:          float64Value(market.BestBid),
+		BestAsk:          float64Value(market.BestAsk),
+		LastTradePrice:   float64Value(market.LastTradePrice),
+		StartDate:        timePtrValue(market.StartDate),
+		EndDate:          timePtrValue(market.EndDate),
+		CreatedAtGamma:   timePtrValue(market.CreatedAt),
+		UpdatedAtGamma:   timePtrValue(market.UpdatedAt),
+		Tags:             marshalArrayOrFallback(market.Tags),
+		Raw:              rawObjectOrMarshal(market.Raw, market),
+		FetchedAt:        fetchedAt,
+	}
+}
+
+func isPolymarketAPIStatus(err error, statusCode int) bool {
+	var apiErr *utilpolymarket.APIError
+	return errors.As(err, &apiErr) && apiErr.StatusCode == statusCode
 }
 
 func mustManagedOOProposePriceABI() abi.ABI {

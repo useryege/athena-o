@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -83,6 +84,45 @@ func (s *SQLStore) IngestManagedOOProposePriceLogs(ctx context.Context, cursor C
 	return nil
 }
 
+func (s *SQLStore) ListManagedOOMarketIDsMissingData(ctx context.Context, limit int32) ([]string, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if limit <= 0 {
+		return nil, nil
+	}
+	ids, err := s.queries.ListManagedOOMarketIDsMissingData(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list managed oo market ids missing data: %w", err)
+	}
+	return ids, nil
+}
+
+func (s *SQLStore) UpsertManagedOOMarket(ctx context.Context, market ManagedOOMarket) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOOMarket(ctx, upsertManagedOOMarketParams(market)); err != nil {
+		return fmt.Errorf("upsert managed oo market: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) UpsertManagedOOMarketNotFound(ctx context.Context, marketID, lastError string, fetchedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOOMarketNotFound(ctx, polymarketsqlc.UpsertManagedOOMarketNotFoundParams{
+		MarketID:    marketID,
+		LastError:   lastError,
+		LastErrorAt: nullableTime(fetchedAt),
+		FetchedAt:   nullableTime(fetchedAt),
+	}); err != nil {
+		return fmt.Errorf("upsert managed oo market not found: %w", err)
+	}
+	return nil
+}
+
 func upsertPolymarketChainLogCursorParams(cursor ChainLogCursor) (polymarketsqlc.UpsertPolymarketChainLogCursorParams, error) {
 	lastBlockNumber, err := uint64ToInt64("last_block_number", cursor.LastBlockNumber)
 	if err != nil {
@@ -95,6 +135,49 @@ func upsertPolymarketChainLogCursorParams(cursor ChainLogCursor) (polymarketsqlc
 		LastBlockNumber: lastBlockNumber,
 		LastPolledAt:    nullableTime(cursor.LastPolledAt),
 	}, nil
+}
+
+func upsertManagedOOMarketParams(market ManagedOOMarket) polymarketsqlc.UpsertManagedOOMarketParams {
+	return polymarketsqlc.UpsertManagedOOMarketParams{
+		MarketID:         market.MarketID,
+		ConditionID:      market.ConditionID,
+		Slug:             market.Slug,
+		Question:         market.Question,
+		Description:      market.Description,
+		ResolutionSource: market.ResolutionSource,
+		QuestionID:       market.QuestionID,
+		SportsMarketType: market.SportsMarketType,
+		GroupItemTitle:   market.GroupItemTitle,
+		Image:            market.Image,
+		Icon:             market.Icon,
+		Outcomes:         market.Outcomes,
+		OutcomePrices:    market.OutcomePrices,
+		ClobTokenIds:     market.ClobTokenIDs,
+		Active:           market.Active,
+		Closed:           market.Closed,
+		Archived:         market.Archived,
+		Restricted:       market.Restricted,
+		EnableOrderBook:  market.EnableOrderBook,
+		AcceptingOrders:  market.AcceptingOrders,
+		Volume:           market.Volume,
+		VolumeNum:        market.VolumeNum,
+		LiquidityNum:     market.LiquidityNum,
+		Volume24hr:       market.Volume24hr,
+		Volume1wk:        market.Volume1wk,
+		Volume1mo:        market.Volume1mo,
+		Volume1yr:        market.Volume1yr,
+		Spread:           market.Spread,
+		BestBid:          market.BestBid,
+		BestAsk:          market.BestAsk,
+		LastTradePrice:   market.LastTradePrice,
+		StartDate:        nullableTime(market.StartDate),
+		EndDate:          nullableTime(market.EndDate),
+		CreatedAtGamma:   nullableTime(market.CreatedAtGamma),
+		UpdatedAtGamma:   nullableTime(market.UpdatedAtGamma),
+		Tags:             jsonBytes(market.Tags, jsonArray),
+		Raw:              jsonBytes(market.Raw, jsonObject),
+		FetchedAt:        nullableTime(market.FetchedAt),
+	}
 }
 
 func batchUpsertManagedOOProposePriceLogsParams(logs []ManagedOOProposePriceLog) (polymarketsqlc.BatchUpsertManagedOOProposePriceLogsParams, error) {

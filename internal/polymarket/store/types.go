@@ -225,6 +225,47 @@ type ManagedOOProposePriceLog struct {
 	FetchedAt           time.Time
 }
 
+type ManagedOOMarket struct {
+	MarketID         string
+	ConditionID      string
+	Slug             string
+	Question         string
+	Description      string
+	ResolutionSource string
+	QuestionID       string
+	SportsMarketType string
+	GroupItemTitle   string
+	Image            string
+	Icon             string
+	Outcomes         string
+	OutcomePrices    string
+	ClobTokenIDs     string
+	Active           bool
+	Closed           bool
+	Archived         bool
+	Restricted       bool
+	EnableOrderBook  bool
+	AcceptingOrders  bool
+	Volume           string
+	VolumeNum        float64
+	LiquidityNum     float64
+	Volume24hr       float64
+	Volume1wk        float64
+	Volume1mo        float64
+	Volume1yr        float64
+	Spread           float64
+	BestBid          float64
+	BestAsk          float64
+	LastTradePrice   float64
+	StartDate        time.Time
+	EndDate          time.Time
+	CreatedAtGamma   time.Time
+	UpdatedAtGamma   time.Time
+	Tags             json.RawMessage
+	Raw              json.RawMessage
+	FetchedAt        time.Time
+}
+
 type SportsHistoryEvent struct {
 	EventKey       string
 	EventID        string

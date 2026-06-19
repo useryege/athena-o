@@ -18,6 +18,52 @@ type PolymarketChainLogCursor struct {
 	UpdatedAt       pgtype.Timestamptz
 }
 
+type PolymarketManagedOoMarket struct {
+	MarketID         string
+	ConditionID      string
+	Slug             string
+	Question         string
+	Description      string
+	ResolutionSource string
+	QuestionID       string
+	SportsMarketType string
+	GroupItemTitle   string
+	Image            string
+	Icon             string
+	Outcomes         string
+	OutcomePrices    string
+	ClobTokenIds     string
+	Active           bool
+	Closed           bool
+	Archived         bool
+	Restricted       bool
+	EnableOrderBook  bool
+	AcceptingOrders  bool
+	Volume           string
+	VolumeNum        float64
+	LiquidityNum     float64
+	Volume24hr       float64
+	Volume1wk        float64
+	Volume1mo        float64
+	Volume1yr        float64
+	Spread           float64
+	BestBid          float64
+	BestAsk          float64
+	LastTradePrice   float64
+	StartDate        pgtype.Timestamptz
+	EndDate          pgtype.Timestamptz
+	CreatedAtGamma   pgtype.Timestamptz
+	UpdatedAtGamma   pgtype.Timestamptz
+	Tags             []byte
+	Raw              []byte
+	FetchStatus      string
+	LastError        string
+	LastErrorAt      pgtype.Timestamptz
+	FetchedAt        pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+}
+
 type PolymarketManagedOoProposePriceLog struct {
 	TxHash              string
 	LogIndex            int64

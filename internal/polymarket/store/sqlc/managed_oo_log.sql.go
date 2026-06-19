@@ -154,6 +154,292 @@ func (q *Queries) GetPolymarketChainLogCursor(ctx context.Context, syncName stri
 	return i, err
 }
 
+const listManagedOOMarketIDsMissingData = `-- name: ListManagedOOMarketIDsMissingData :many
+SELECT DISTINCT log.market_id
+FROM polymarket_managed_oo_propose_price_log AS log
+LEFT JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+WHERE log.market_id <> ''
+  AND log.market_id ~ '^[0-9]+$'
+  AND market.market_id IS NULL
+ORDER BY log.market_id
+LIMIT $1
+`
+
+func (q *Queries) ListManagedOOMarketIDsMissingData(ctx context.Context, limitValue int32) ([]string, error) {
+	rows, err := q.db.Query(ctx, listManagedOOMarketIDsMissingData, limitValue)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var market_id string
+		if err := rows.Scan(&market_id); err != nil {
+			return nil, err
+		}
+		items = append(items, market_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const upsertManagedOOMarket = `-- name: UpsertManagedOOMarket :exec
+INSERT INTO polymarket_managed_oo_market (
+  market_id,
+  condition_id,
+  slug,
+  question,
+  description,
+  resolution_source,
+  question_id,
+  sports_market_type,
+  group_item_title,
+  image,
+  icon,
+  outcomes,
+  outcome_prices,
+  clob_token_ids,
+  active,
+  closed,
+  archived,
+  restricted,
+  enable_order_book,
+  accepting_orders,
+  volume,
+  volume_num,
+  liquidity_num,
+  volume_24hr,
+  volume_1wk,
+  volume_1mo,
+  volume_1yr,
+  spread,
+  best_bid,
+  best_ask,
+  last_trade_price,
+  start_date,
+  end_date,
+  created_at_gamma,
+  updated_at_gamma,
+  tags,
+  raw,
+  fetch_status,
+  last_error,
+  last_error_at,
+  fetched_at
+) VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  $14,
+  $15,
+  $16,
+  $17,
+  $18,
+  $19,
+  $20,
+  $21,
+  $22,
+  $23,
+  $24,
+  $25,
+  $26,
+  $27,
+  $28,
+  $29,
+  $30,
+  $31,
+  $32,
+  $33,
+  $34,
+  $35,
+  $36,
+  $37,
+  'ok',
+  '',
+  NULL,
+  $38
+)
+ON CONFLICT (market_id) DO UPDATE
+SET condition_id = EXCLUDED.condition_id,
+  slug = EXCLUDED.slug,
+  question = EXCLUDED.question,
+  description = EXCLUDED.description,
+  resolution_source = EXCLUDED.resolution_source,
+  question_id = EXCLUDED.question_id,
+  sports_market_type = EXCLUDED.sports_market_type,
+  group_item_title = EXCLUDED.group_item_title,
+  image = EXCLUDED.image,
+  icon = EXCLUDED.icon,
+  outcomes = EXCLUDED.outcomes,
+  outcome_prices = EXCLUDED.outcome_prices,
+  clob_token_ids = EXCLUDED.clob_token_ids,
+  active = EXCLUDED.active,
+  closed = EXCLUDED.closed,
+  archived = EXCLUDED.archived,
+  restricted = EXCLUDED.restricted,
+  enable_order_book = EXCLUDED.enable_order_book,
+  accepting_orders = EXCLUDED.accepting_orders,
+  volume = EXCLUDED.volume,
+  volume_num = EXCLUDED.volume_num,
+  liquidity_num = EXCLUDED.liquidity_num,
+  volume_24hr = EXCLUDED.volume_24hr,
+  volume_1wk = EXCLUDED.volume_1wk,
+  volume_1mo = EXCLUDED.volume_1mo,
+  volume_1yr = EXCLUDED.volume_1yr,
+  spread = EXCLUDED.spread,
+  best_bid = EXCLUDED.best_bid,
+  best_ask = EXCLUDED.best_ask,
+  last_trade_price = EXCLUDED.last_trade_price,
+  start_date = EXCLUDED.start_date,
+  end_date = EXCLUDED.end_date,
+  created_at_gamma = EXCLUDED.created_at_gamma,
+  updated_at_gamma = EXCLUDED.updated_at_gamma,
+  tags = EXCLUDED.tags,
+  raw = EXCLUDED.raw,
+  fetch_status = EXCLUDED.fetch_status,
+  last_error = EXCLUDED.last_error,
+  last_error_at = EXCLUDED.last_error_at,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now()
+`
+
+type UpsertManagedOOMarketParams struct {
+	MarketID         string
+	ConditionID      string
+	Slug             string
+	Question         string
+	Description      string
+	ResolutionSource string
+	QuestionID       string
+	SportsMarketType string
+	GroupItemTitle   string
+	Image            string
+	Icon             string
+	Outcomes         string
+	OutcomePrices    string
+	ClobTokenIds     string
+	Active           bool
+	Closed           bool
+	Archived         bool
+	Restricted       bool
+	EnableOrderBook  bool
+	AcceptingOrders  bool
+	Volume           string
+	VolumeNum        float64
+	LiquidityNum     float64
+	Volume24hr       float64
+	Volume1wk        float64
+	Volume1mo        float64
+	Volume1yr        float64
+	Spread           float64
+	BestBid          float64
+	BestAsk          float64
+	LastTradePrice   float64
+	StartDate        pgtype.Timestamptz
+	EndDate          pgtype.Timestamptz
+	CreatedAtGamma   pgtype.Timestamptz
+	UpdatedAtGamma   pgtype.Timestamptz
+	Tags             []byte
+	Raw              []byte
+	FetchedAt        pgtype.Timestamptz
+}
+
+func (q *Queries) UpsertManagedOOMarket(ctx context.Context, arg UpsertManagedOOMarketParams) error {
+	_, err := q.db.Exec(ctx, upsertManagedOOMarket,
+		arg.MarketID,
+		arg.ConditionID,
+		arg.Slug,
+		arg.Question,
+		arg.Description,
+		arg.ResolutionSource,
+		arg.QuestionID,
+		arg.SportsMarketType,
+		arg.GroupItemTitle,
+		arg.Image,
+		arg.Icon,
+		arg.Outcomes,
+		arg.OutcomePrices,
+		arg.ClobTokenIds,
+		arg.Active,
+		arg.Closed,
+		arg.Archived,
+		arg.Restricted,
+		arg.EnableOrderBook,
+		arg.AcceptingOrders,
+		arg.Volume,
+		arg.VolumeNum,
+		arg.LiquidityNum,
+		arg.Volume24hr,
+		arg.Volume1wk,
+		arg.Volume1mo,
+		arg.Volume1yr,
+		arg.Spread,
+		arg.BestBid,
+		arg.BestAsk,
+		arg.LastTradePrice,
+		arg.StartDate,
+		arg.EndDate,
+		arg.CreatedAtGamma,
+		arg.UpdatedAtGamma,
+		arg.Tags,
+		arg.Raw,
+		arg.FetchedAt,
+	)
+	return err
+}
+
+const upsertManagedOOMarketNotFound = `-- name: UpsertManagedOOMarketNotFound :exec
+INSERT INTO polymarket_managed_oo_market (
+  market_id,
+  fetch_status,
+  last_error,
+  last_error_at,
+  fetched_at
+) VALUES (
+  $1,
+  'not_found',
+  $2,
+  $3,
+  $4
+)
+ON CONFLICT (market_id) DO UPDATE
+SET fetch_status = EXCLUDED.fetch_status,
+  last_error = EXCLUDED.last_error,
+  last_error_at = EXCLUDED.last_error_at,
+  fetched_at = EXCLUDED.fetched_at,
+  updated_at = now()
+`
+
+type UpsertManagedOOMarketNotFoundParams struct {
+	MarketID    string
+	LastError   string
+	LastErrorAt pgtype.Timestamptz
+	FetchedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) UpsertManagedOOMarketNotFound(ctx context.Context, arg UpsertManagedOOMarketNotFoundParams) error {
+	_, err := q.db.Exec(ctx, upsertManagedOOMarketNotFound,
+		arg.MarketID,
+		arg.LastError,
+		arg.LastErrorAt,
+		arg.FetchedAt,
+	)
+	return err
+}
+
 const upsertPolymarketChainLogCursor = `-- name: UpsertPolymarketChainLogCursor :one
 INSERT INTO polymarket_chain_log_cursor (
   sync_name,

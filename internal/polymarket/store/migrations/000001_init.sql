@@ -162,6 +162,56 @@ CREATE TABLE IF NOT EXISTS polymarket_managed_oo_propose_price_log (
   CONSTRAINT polymarket_managed_oo_propose_price_log_raw_topics_array CHECK (jsonb_typeof(raw_topics) = 'array')
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_managed_oo_market (
+  market_id TEXT PRIMARY KEY,
+  condition_id TEXT NOT NULL DEFAULT '',
+  slug TEXT NOT NULL DEFAULT '',
+  question TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  resolution_source TEXT NOT NULL DEFAULT '',
+  question_id TEXT NOT NULL DEFAULT '',
+  sports_market_type TEXT NOT NULL DEFAULT '',
+  group_item_title TEXT NOT NULL DEFAULT '',
+  image TEXT NOT NULL DEFAULT '',
+  icon TEXT NOT NULL DEFAULT '',
+  outcomes TEXT NOT NULL DEFAULT '',
+  outcome_prices TEXT NOT NULL DEFAULT '',
+  clob_token_ids TEXT NOT NULL DEFAULT '',
+  active BOOLEAN NOT NULL DEFAULT false,
+  closed BOOLEAN NOT NULL DEFAULT false,
+  archived BOOLEAN NOT NULL DEFAULT false,
+  restricted BOOLEAN NOT NULL DEFAULT false,
+  enable_order_book BOOLEAN NOT NULL DEFAULT false,
+  accepting_orders BOOLEAN NOT NULL DEFAULT false,
+  volume TEXT NOT NULL DEFAULT '',
+  volume_num DOUBLE PRECISION NOT NULL DEFAULT 0,
+  liquidity_num DOUBLE PRECISION NOT NULL DEFAULT 0,
+  volume_24hr DOUBLE PRECISION NOT NULL DEFAULT 0,
+  volume_1wk DOUBLE PRECISION NOT NULL DEFAULT 0,
+  volume_1mo DOUBLE PRECISION NOT NULL DEFAULT 0,
+  volume_1yr DOUBLE PRECISION NOT NULL DEFAULT 0,
+  spread DOUBLE PRECISION NOT NULL DEFAULT 0,
+  best_bid DOUBLE PRECISION NOT NULL DEFAULT 0,
+  best_ask DOUBLE PRECISION NOT NULL DEFAULT 0,
+  last_trade_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
+  created_at_gamma TIMESTAMPTZ,
+  updated_at_gamma TIMESTAMPTZ,
+  tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  raw JSONB NOT NULL DEFAULT '{}'::jsonb,
+  fetch_status TEXT NOT NULL DEFAULT 'ok',
+  last_error TEXT NOT NULL DEFAULT '',
+  last_error_at TIMESTAMPTZ,
+  fetched_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT polymarket_managed_oo_market_id_not_empty CHECK (btrim(market_id) <> ''),
+  CONSTRAINT polymarket_managed_oo_market_tags_array CHECK (jsonb_typeof(tags) = 'array'),
+  CONSTRAINT polymarket_managed_oo_market_raw_object CHECK (jsonb_typeof(raw) = 'object'),
+  CONSTRAINT polymarket_managed_oo_market_fetch_status CHECK (fetch_status IN ('ok', 'not_found'))
+);
+
 CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_point (
   token_id TEXT NOT NULL,
   market_key TEXT NOT NULL,
@@ -302,6 +352,14 @@ CREATE INDEX IF NOT EXISTS polymarket_managed_oo_propose_price_log_market_idx
   ON polymarket_managed_oo_propose_price_log (market_id)
   WHERE market_id <> '';
 
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_condition_idx
+  ON polymarket_managed_oo_market (condition_id)
+  WHERE condition_id <> '';
+
+CREATE INDEX IF NOT EXISTS polymarket_managed_oo_market_slug_idx
+  ON polymarket_managed_oo_market (slug)
+  WHERE slug <> '';
+
 CREATE INDEX IF NOT EXISTS polymarket_sports_live_market_event_idx
   ON polymarket_sports_live_market (event_key);
 
@@ -349,6 +407,7 @@ DROP TABLE IF EXISTS polymarket_sports_history_market;
 DROP TABLE IF EXISTS polymarket_sports_history_event;
 DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
+DROP TABLE IF EXISTS polymarket_managed_oo_market;
 DROP TABLE IF EXISTS polymarket_managed_oo_propose_price_log;
 DROP TABLE IF EXISTS polymarket_chain_log_cursor;
 DROP TABLE IF EXISTS polymarket_sync_state;
