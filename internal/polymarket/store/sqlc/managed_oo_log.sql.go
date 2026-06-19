@@ -26,6 +26,7 @@ INSERT INTO polymarket_managed_oo_propose_price_log (
   request_timestamp,
   ancillary_data_hex,
   ancillary_data_text,
+  market_id,
   proposed_price,
   expiration_timestamp,
   currency,
@@ -48,11 +49,12 @@ SELECT
   unnest($12::text[]),
   unnest($13::text[]),
   unnest($14::text[]),
-  unnest($15::bigint[]),
-  unnest($16::text[]),
-  unnest($17::jsonb[]),
-  unnest($18::text[]),
-  unnest($19::timestamptz[])
+  unnest($15::text[]),
+  unnest($16::bigint[]),
+  unnest($17::text[]),
+  unnest($18::jsonb[]),
+  unnest($19::text[]),
+  unnest($20::timestamptz[])
 ON CONFLICT (tx_hash, log_index) DO UPDATE
 SET block_number = EXCLUDED.block_number,
   block_hash = EXCLUDED.block_hash,
@@ -65,6 +67,7 @@ SET block_number = EXCLUDED.block_number,
   request_timestamp = EXCLUDED.request_timestamp,
   ancillary_data_hex = EXCLUDED.ancillary_data_hex,
   ancillary_data_text = EXCLUDED.ancillary_data_text,
+  market_id = EXCLUDED.market_id,
   proposed_price = EXCLUDED.proposed_price,
   expiration_timestamp = EXCLUDED.expiration_timestamp,
   currency = EXCLUDED.currency,
@@ -88,6 +91,7 @@ type BatchUpsertManagedOOProposePriceLogsParams struct {
 	RequestTimestamps       []int64
 	AncillaryDataHexValues  []string
 	AncillaryDataTextValues []string
+	MarketIds               []string
 	ProposedPrices          []string
 	ExpirationTimestamps    []int64
 	Currencies              []string
@@ -111,6 +115,7 @@ func (q *Queries) BatchUpsertManagedOOProposePriceLogs(ctx context.Context, arg 
 		arg.RequestTimestamps,
 		arg.AncillaryDataHexValues,
 		arg.AncillaryDataTextValues,
+		arg.MarketIds,
 		arg.ProposedPrices,
 		arg.ExpirationTimestamps,
 		arg.Currencies,

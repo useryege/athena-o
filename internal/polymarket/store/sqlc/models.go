@@ -32,6 +32,7 @@ type PolymarketManagedOoProposePriceLog struct {
 	RequestTimestamp    int64
 	AncillaryDataHex    string
 	AncillaryDataText   string
+	MarketID            string
 	ProposedPrice       string
 	ExpirationTimestamp int64
 	Currency            string

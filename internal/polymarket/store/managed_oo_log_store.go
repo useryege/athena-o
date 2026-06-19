@@ -112,6 +112,7 @@ func batchUpsertManagedOOProposePriceLogsParams(logs []ManagedOOProposePriceLog)
 		RequestTimestamps:       make([]int64, 0, len(logs)),
 		AncillaryDataHexValues:  make([]string, 0, len(logs)),
 		AncillaryDataTextValues: make([]string, 0, len(logs)),
+		MarketIds:               make([]string, 0, len(logs)),
 		ProposedPrices:          make([]string, 0, len(logs)),
 		ExpirationTimestamps:    make([]int64, 0, len(logs)),
 		Currencies:              make([]string, 0, len(logs)),
@@ -153,6 +154,7 @@ func batchUpsertManagedOOProposePriceLogsParams(logs []ManagedOOProposePriceLog)
 		params.RequestTimestamps = append(params.RequestTimestamps, requestTimestamp)
 		params.AncillaryDataHexValues = append(params.AncillaryDataHexValues, item.AncillaryDataHex)
 		params.AncillaryDataTextValues = append(params.AncillaryDataTextValues, item.AncillaryDataText)
+		params.MarketIds = append(params.MarketIds, item.MarketID)
 		params.ProposedPrices = append(params.ProposedPrices, item.ProposedPrice)
 		params.ExpirationTimestamps = append(params.ExpirationTimestamps, expirationTimestamp)
 		params.Currencies = append(params.Currencies, item.Currency)

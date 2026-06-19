@@ -216,6 +216,7 @@ type ManagedOOProposePriceLog struct {
 	RequestTimestamp    uint64
 	AncillaryDataHex    string
 	AncillaryDataText   string
+	MarketID            string
 	ProposedPrice       string
 	ExpirationTimestamp uint64
 	Currency            string

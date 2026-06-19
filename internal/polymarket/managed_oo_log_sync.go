@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -29,6 +30,7 @@ const (
 )
 
 var managedOOProposePriceABI = mustManagedOOProposePriceABI()
+var managedOOMarketIDPattern = regexp.MustCompile(`(?i)market_id\s*:\s*([^\s,]+)`)
 
 func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
 	defer s.runWG.Done()
@@ -198,6 +200,7 @@ func managedOOProposePriceLogFromEthereumLog(item types.Log, fetchedAt time.Time
 	if err != nil {
 		return polymarketstore.ManagedOOProposePriceLog{}, err
 	}
+	ancillaryText := ancillaryDataText(ancillaryData)
 
 	return polymarketstore.ManagedOOProposePriceLog{
 		TxHash:              item.TxHash.Hex(),
@@ -212,7 +215,8 @@ func managedOOProposePriceLogFromEthereumLog(item types.Log, fetchedAt time.Time
 		Identifier:          ethcommon.BytesToHash(identifier[:]).Hex(),
 		RequestTimestamp:    requestTimestamp,
 		AncillaryDataHex:    hexutil.Encode(ancillaryData),
-		AncillaryDataText:   ancillaryDataText(ancillaryData),
+		AncillaryDataText:   ancillaryText,
+		MarketID:            marketIDFromAncillaryDataText(ancillaryText),
 		ProposedPrice:       proposedPrice.String(),
 		ExpirationTimestamp: expirationTimestamp,
 		Currency:            currency.Hex(),
@@ -255,6 +259,14 @@ func ancillaryDataText(value []byte) string {
 		return ""
 	}
 	return string(value)
+}
+
+func marketIDFromAncillaryDataText(value string) string {
+	matches := managedOOMarketIDPattern.FindStringSubmatch(value)
+	if len(matches) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(matches[1])
 }
 
 func sanitizedRPCURL(value string) string {
