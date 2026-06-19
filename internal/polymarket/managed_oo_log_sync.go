@@ -27,7 +27,7 @@ const (
 	managedOOProposePriceSyncName          = "managed_oo_propose_price"
 	managedOOContractAddress               = "0x2C0367a9DB231dDeBd88a94b4f6461a6e47C58B1"
 	managedOOProposePriceTopic             = "0x6e51dd00371aabffa82cd401592f76ed51e98a9ea4b58751c70463a2c78b5ca1"
-	managedOOLogPollInterval               = 10 * time.Second
+	managedOOLogPollInterval               = 1 * time.Second
 	managedOOLogQueryTimeout               = 20 * time.Second
 	managedOOMarketDataQueryTimeout        = 20 * time.Second
 	managedOOMarketDataMissingLimit        = 100
