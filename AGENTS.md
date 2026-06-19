@@ -39,3 +39,4 @@ When a task involves UI design, page layout, interaction structure, visual hiera
 - The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
 - Begin code implementation only after the user confirms the layout diagram.
 - Minor style tweaks, copy changes, or non-visual logic changes do not require a layout diagram unless the user explicitly asks for one.
+
