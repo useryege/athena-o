@@ -816,7 +816,7 @@ export class PolymarketService {
     }
 
     public updateFIFAEventConfig(config: PolymarketFIFAEventConfig): Promise<PolymarketFIFAEventConfig> & {abort?: () => void} {
-        const req = requests.put('/polymarket/fifa/event-config').send({worm_event_id: config.wormEventId, event_ref: config.eventRef});
+        const req = requests.put('/polymarket/fifa/event-config').send({wormEventId: config.wormEventId, eventRef: config.eventRef});
         const promise = req.then(res => normalizeFIFAEventConfig(res.body?.config || {})) as any;
         promise.abort = () => req.abort();
         return promise;
