@@ -46,6 +46,8 @@ import {
     PolymarketRealtimePage,
     PolymarketSportsLivePage,
     PolymarketSportsHistoryPage,
+    PolymarketUMADisputedPage,
+    PolymarketUMAProposedPage,
     ProjectReportsPage,
     ProjectsPage,
     SettingsPage,
@@ -90,7 +92,8 @@ const rbacResources = {
 };
 
 const rbacActions = {
-    get: 'get'
+    get: 'get',
+    invoke: 'invoke'
 };
 
 const tokenapiSubresources = {
@@ -201,6 +204,20 @@ const navItems: NavItem[] = [
                 path: '/polymarket/sports-history',
                 icon: <DashboardOutlined />,
                 permission: permission(rbacResources.polymarket, rbacActions.get)
+            },
+            {
+                key: '/polymarket/uma-proposed',
+                label: 'UMA Proposed',
+                path: '/polymarket/uma-proposed',
+                icon: <ApiOutlined />,
+                permission: permission(rbacResources.polymarket, rbacActions.get)
+            },
+            {
+                key: '/polymarket/uma-disputed',
+                label: 'UMA Disputed',
+                path: '/polymarket/uma-disputed',
+                icon: <ApiOutlined />,
+                permission: permission(rbacResources.polymarket, rbacActions.get)
             }
         ]
     },
@@ -306,6 +323,20 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />
             <Route path='/polymarket/sports-live' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsLivePage />)} />
             <Route path='/polymarket/sports-history' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsHistoryPage />)} />
+            <Route
+                path='/polymarket/uma-proposed'
+                element={withPermission(
+                    permission(rbacResources.polymarket, rbacActions.get),
+                    <PolymarketUMAProposedPage canScan={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
+                )}
+            />
+            <Route
+                path='/polymarket/uma-disputed'
+                element={withPermission(
+                    permission(rbacResources.polymarket, rbacActions.get),
+                    <PolymarketUMADisputedPage canScan={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
+                )}
+            />
             <Route path='/FIFA' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <FIFAPage />)} />
             <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />

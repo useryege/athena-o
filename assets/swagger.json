@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-812-g85c4493-dirty"
+    "version": "v1.0.0-828-g545fff2-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -605,6 +605,121 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1alpha1PolymarketStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/uma/blocks/{block_number}:scan": {
+      "post": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_ScanPolymarketManagedOOBlock",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketScanPolymarketManagedOOBlockResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/uma/disputes": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_ListPolymarketUMADisputes",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketUMADisputesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/uma/proposals": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_ListPolymarketUMAProposals",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketUMAProposalsResponse"
             }
           },
           "default": {
@@ -2305,6 +2420,69 @@
         }
       }
     },
+    "polymarketListPolymarketUMADisputesResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketUMADisputeItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "polymarketListPolymarketUMAProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketUMAProposalItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "polymarketScanPolymarketManagedOOBlockResponse": {
+      "type": "object",
+      "properties": {
+        "block_number": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "dispute_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "proposal_count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -3582,6 +3760,172 @@
         },
         "status": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketUMADisputeItem": {
+      "type": "object",
+      "properties": {
+        "ancillaryDataHex": {
+          "type": "string"
+        },
+        "ancillaryDataText": {
+          "type": "string"
+        },
+        "blockHash": {
+          "type": "string"
+        },
+        "blockNumber": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "contractAddress": {
+          "type": "string"
+        },
+        "disputer": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "logIndex": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "polymarketUrl": {
+          "type": "string"
+        },
+        "proposedPrice": {
+          "type": "string"
+        },
+        "proposer": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "rawData": {
+          "type": "string"
+        },
+        "rawTopics": {
+          "type": "string"
+        },
+        "requestTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "requester": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1PolymarketUMAProposalItem": {
+      "type": "object",
+      "properties": {
+        "ancillaryDataHex": {
+          "type": "string"
+        },
+        "ancillaryDataText": {
+          "type": "string"
+        },
+        "blockHash": {
+          "type": "string"
+        },
+        "blockNumber": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "contractAddress": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "logIndex": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "polymarketUrl": {
+          "type": "string"
+        },
+        "proposedPrice": {
+          "type": "string"
+        },
+        "proposer": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "rawData": {
+          "type": "string"
+        },
+        "rawTopics": {
+          "type": "string"
+        },
+        "requestTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "requester": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

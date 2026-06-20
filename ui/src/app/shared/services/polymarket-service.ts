@@ -218,6 +218,54 @@ export interface ListPolymarketFIFAWalletBalancesResult {
     fetchedAt?: number;
 }
 
+export interface PolymarketUMABaseItem {
+    txHash: string;
+    logIndex: number;
+    blockNumber: number;
+    blockHash: string;
+    txIndex: number;
+    contractAddress: string;
+    topic: string;
+    requester: string;
+    proposer: string;
+    identifier: string;
+    requestTimestamp: number;
+    ancillaryDataHex: string;
+    ancillaryDataText: string;
+    marketId: string;
+    proposedPrice: string;
+    rawTopics: string;
+    rawData: string;
+    fetchedAt: string;
+    conditionId: string;
+    eventSlug: string;
+    marketSlug: string;
+    question: string;
+    polymarketUrl: string;
+}
+
+export interface PolymarketUMAProposalItem extends PolymarketUMABaseItem {
+    expirationTimestamp: number;
+    currency: string;
+}
+
+export interface PolymarketUMADisputeItem extends PolymarketUMABaseItem {
+    disputer: string;
+}
+
+export interface ListPolymarketUMAResult<T extends PolymarketUMABaseItem> {
+    items: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export interface ScanPolymarketManagedOOBlockResult {
+    blockNumber: number;
+    proposalCount: number;
+    disputeCount: number;
+}
+
 export interface PolymarketSportsLiveEventCardItem {
     eventKey: string;
     eventId: string;
@@ -409,6 +457,43 @@ const normalizeSportsLivePriceHistorySeries = (item: any): PolymarketSportsLiveP
     prices: readNumberArray(item, 'prices')
 });
 
+const normalizeUMABase = (item: any): PolymarketUMABaseItem => ({
+    txHash: readString(item, 'txHash', 'tx_hash'),
+    logIndex: readNumber(item, 'logIndex', 'log_index') || 0,
+    blockNumber: readNumber(item, 'blockNumber', 'block_number') || 0,
+    blockHash: readString(item, 'blockHash', 'block_hash'),
+    txIndex: readNumber(item, 'txIndex', 'tx_index') || 0,
+    contractAddress: readString(item, 'contractAddress', 'contract_address'),
+    topic: readString(item, 'topic'),
+    requester: readString(item, 'requester'),
+    proposer: readString(item, 'proposer'),
+    identifier: readString(item, 'identifier'),
+    requestTimestamp: readNumber(item, 'requestTimestamp', 'request_timestamp') || 0,
+    ancillaryDataHex: readString(item, 'ancillaryDataHex', 'ancillary_data_hex'),
+    ancillaryDataText: readString(item, 'ancillaryDataText', 'ancillary_data_text'),
+    marketId: readString(item, 'marketId', 'market_id'),
+    proposedPrice: readString(item, 'proposedPrice', 'proposed_price'),
+    rawTopics: readString(item, 'rawTopics', 'raw_topics'),
+    rawData: readString(item, 'rawData', 'raw_data'),
+    fetchedAt: readString(item, 'fetchedAt', 'fetched_at'),
+    conditionId: readString(item, 'conditionId', 'condition_id'),
+    eventSlug: readString(item, 'eventSlug', 'event_slug'),
+    marketSlug: readString(item, 'marketSlug', 'market_slug'),
+    question: readString(item, 'question'),
+    polymarketUrl: readString(item, 'polymarketUrl', 'polymarket_url')
+});
+
+const normalizeUMAProposal = (item: any): PolymarketUMAProposalItem => ({
+    ...normalizeUMABase(item),
+    expirationTimestamp: readNumber(item, 'expirationTimestamp', 'expiration_timestamp') || 0,
+    currency: readString(item, 'currency')
+});
+
+const normalizeUMADispute = (item: any): PolymarketUMADisputeItem => ({
+    ...normalizeUMABase(item),
+    disputer: readString(item, 'disputer')
+});
+
 const normalizeHotMarketToken = (item: any): PolymarketHotMarketTokenItem => ({
     tokenId: readString(item, 'tokenId', 'token_id'),
     outcome: readString(item, 'outcome'),
@@ -524,6 +609,53 @@ const normalizeMoverMarket = (item: any): PolymarketMoverMarketItem => {
 };
 
 export class PolymarketService {
+    public scanManagedOOBlock(blockNumber: number): Promise<ScanPolymarketManagedOOBlockResult> & {abort?: () => void} {
+        const req = requests.post(`/polymarket/uma/blocks/${blockNumber}:scan`).send({});
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                blockNumber: readNumber(body, 'blockNumber', 'block_number') || blockNumber,
+                proposalCount: readNumber(body, 'proposalCount', 'proposal_count') || 0,
+                disputeCount: readNumber(body, 'disputeCount', 'dispute_count') || 0
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listUMAProposals(page = 1, pageSize = 20, blockNumber?: number): Promise<ListPolymarketUMAResult<PolymarketUMAProposalItem>> & {abort?: () => void} {
+        return this.listUMA('/polymarket/uma/proposals', normalizeUMAProposal, page, pageSize, blockNumber);
+    }
+
+    public listUMADisputes(page = 1, pageSize = 20, blockNumber?: number): Promise<ListPolymarketUMAResult<PolymarketUMADisputeItem>> & {abort?: () => void} {
+        return this.listUMA('/polymarket/uma/disputes', normalizeUMADispute, page, pageSize, blockNumber);
+    }
+
+    private listUMA<T extends PolymarketUMABaseItem>(
+        path: string,
+        normalize: (item: any) => T,
+        page: number,
+        pageSize: number,
+        blockNumber?: number
+    ): Promise<ListPolymarketUMAResult<T>> & {abort?: () => void} {
+        const query: Record<string, number> = {page, page_size: pageSize};
+        if (blockNumber) {
+            query.block_number = blockNumber;
+        }
+        const req = requests.get(path).query(query);
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalize),
+                total: readNumber(body, 'total') || 0,
+                page: readNumber(body, 'page') || page,
+                pageSize: readNumber(body, 'pageSize', 'page_size') || pageSize
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
     public listHotMarkets(limit = 100): Promise<ListPolymarketHotMarketsResult> & {abort?: () => void} {
         const req = requests.get('/polymarket/hot-markets').query({limit});
         const promise = req.then(res => {

@@ -1168,6 +1168,384 @@ func (m *ListPolymarketFIFAWalletBalancesResponse) GetFetchedAt() int64 {
 	return 0
 }
 
+type ScanPolymarketManagedOOBlockRequest struct {
+	BlockNumber          uint64   `protobuf:"varint,1,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ScanPolymarketManagedOOBlockRequest) Reset()         { *m = ScanPolymarketManagedOOBlockRequest{} }
+func (m *ScanPolymarketManagedOOBlockRequest) String() string { return proto.CompactTextString(m) }
+func (*ScanPolymarketManagedOOBlockRequest) ProtoMessage()    {}
+func (*ScanPolymarketManagedOOBlockRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{19}
+}
+func (m *ScanPolymarketManagedOOBlockRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ScanPolymarketManagedOOBlockRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ScanPolymarketManagedOOBlockRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ScanPolymarketManagedOOBlockRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScanPolymarketManagedOOBlockRequest.Merge(m, src)
+}
+func (m *ScanPolymarketManagedOOBlockRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ScanPolymarketManagedOOBlockRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScanPolymarketManagedOOBlockRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScanPolymarketManagedOOBlockRequest proto.InternalMessageInfo
+
+func (m *ScanPolymarketManagedOOBlockRequest) GetBlockNumber() uint64 {
+	if m != nil {
+		return m.BlockNumber
+	}
+	return 0
+}
+
+type ScanPolymarketManagedOOBlockResponse struct {
+	BlockNumber          uint64   `protobuf:"varint,1,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	ProposalCount        int32    `protobuf:"varint,2,opt,name=proposal_count,json=proposalCount,proto3" json:"proposal_count,omitempty"`
+	DisputeCount         int32    `protobuf:"varint,3,opt,name=dispute_count,json=disputeCount,proto3" json:"dispute_count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) Reset()         { *m = ScanPolymarketManagedOOBlockResponse{} }
+func (m *ScanPolymarketManagedOOBlockResponse) String() string { return proto.CompactTextString(m) }
+func (*ScanPolymarketManagedOOBlockResponse) ProtoMessage()    {}
+func (*ScanPolymarketManagedOOBlockResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{20}
+}
+func (m *ScanPolymarketManagedOOBlockResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ScanPolymarketManagedOOBlockResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ScanPolymarketManagedOOBlockResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ScanPolymarketManagedOOBlockResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScanPolymarketManagedOOBlockResponse.Merge(m, src)
+}
+func (m *ScanPolymarketManagedOOBlockResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ScanPolymarketManagedOOBlockResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScanPolymarketManagedOOBlockResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScanPolymarketManagedOOBlockResponse proto.InternalMessageInfo
+
+func (m *ScanPolymarketManagedOOBlockResponse) GetBlockNumber() uint64 {
+	if m != nil {
+		return m.BlockNumber
+	}
+	return 0
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) GetProposalCount() int32 {
+	if m != nil {
+		return m.ProposalCount
+	}
+	return 0
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) GetDisputeCount() int32 {
+	if m != nil {
+		return m.DisputeCount
+	}
+	return 0
+}
+
+type ListPolymarketUMAProposalsRequest struct {
+	Page                 int32    `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32    `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	BlockNumber          uint64   `protobuf:"varint,3,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListPolymarketUMAProposalsRequest) Reset()         { *m = ListPolymarketUMAProposalsRequest{} }
+func (m *ListPolymarketUMAProposalsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketUMAProposalsRequest) ProtoMessage()    {}
+func (*ListPolymarketUMAProposalsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{21}
+}
+func (m *ListPolymarketUMAProposalsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketUMAProposalsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketUMAProposalsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketUMAProposalsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketUMAProposalsRequest.Merge(m, src)
+}
+func (m *ListPolymarketUMAProposalsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketUMAProposalsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketUMAProposalsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketUMAProposalsRequest proto.InternalMessageInfo
+
+func (m *ListPolymarketUMAProposalsRequest) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMAProposalsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMAProposalsRequest) GetBlockNumber() uint64 {
+	if m != nil {
+		return m.BlockNumber
+	}
+	return 0
+}
+
+type ListPolymarketUMAProposalsResponse struct {
+	Items                []*v1alpha1.PolymarketUMAProposalItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total                int64                                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int32                                 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32                                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
+	XXX_unrecognized     []byte                                `json:"-"`
+	XXX_sizecache        int32                                 `json:"-"`
+}
+
+func (m *ListPolymarketUMAProposalsResponse) Reset()         { *m = ListPolymarketUMAProposalsResponse{} }
+func (m *ListPolymarketUMAProposalsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketUMAProposalsResponse) ProtoMessage()    {}
+func (*ListPolymarketUMAProposalsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{22}
+}
+func (m *ListPolymarketUMAProposalsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketUMAProposalsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketUMAProposalsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketUMAProposalsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketUMAProposalsResponse.Merge(m, src)
+}
+func (m *ListPolymarketUMAProposalsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketUMAProposalsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketUMAProposalsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketUMAProposalsResponse proto.InternalMessageInfo
+
+func (m *ListPolymarketUMAProposalsResponse) GetItems() []*v1alpha1.PolymarketUMAProposalItem {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListPolymarketUMAProposalsResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMAProposalsResponse) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMAProposalsResponse) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+type ListPolymarketUMADisputesRequest struct {
+	Page                 int32    `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32    `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	BlockNumber          uint64   `protobuf:"varint,3,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListPolymarketUMADisputesRequest) Reset()         { *m = ListPolymarketUMADisputesRequest{} }
+func (m *ListPolymarketUMADisputesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketUMADisputesRequest) ProtoMessage()    {}
+func (*ListPolymarketUMADisputesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{23}
+}
+func (m *ListPolymarketUMADisputesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketUMADisputesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketUMADisputesRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketUMADisputesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketUMADisputesRequest.Merge(m, src)
+}
+func (m *ListPolymarketUMADisputesRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketUMADisputesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketUMADisputesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketUMADisputesRequest proto.InternalMessageInfo
+
+func (m *ListPolymarketUMADisputesRequest) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMADisputesRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMADisputesRequest) GetBlockNumber() uint64 {
+	if m != nil {
+		return m.BlockNumber
+	}
+	return 0
+}
+
+type ListPolymarketUMADisputesResponse struct {
+	Items                []*v1alpha1.PolymarketUMADisputeItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total                int64                                `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page                 int32                                `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32                                `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
+	XXX_unrecognized     []byte                               `json:"-"`
+	XXX_sizecache        int32                                `json:"-"`
+}
+
+func (m *ListPolymarketUMADisputesResponse) Reset()         { *m = ListPolymarketUMADisputesResponse{} }
+func (m *ListPolymarketUMADisputesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListPolymarketUMADisputesResponse) ProtoMessage()    {}
+func (*ListPolymarketUMADisputesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c24b13cfba0d1246, []int{24}
+}
+func (m *ListPolymarketUMADisputesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListPolymarketUMADisputesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListPolymarketUMADisputesResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListPolymarketUMADisputesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPolymarketUMADisputesResponse.Merge(m, src)
+}
+func (m *ListPolymarketUMADisputesResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListPolymarketUMADisputesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPolymarketUMADisputesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPolymarketUMADisputesResponse proto.InternalMessageInfo
+
+func (m *ListPolymarketUMADisputesResponse) GetItems() []*v1alpha1.PolymarketUMADisputeItem {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+func (m *ListPolymarketUMADisputesResponse) GetTotal() int64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMADisputesResponse) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListPolymarketUMADisputesResponse) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*GetPolymarketStatusRequest)(nil), "polymarket.GetPolymarketStatusRequest")
 	proto.RegisterType((*ListPolymarketHotMarketsRequest)(nil), "polymarket.ListPolymarketHotMarketsRequest")
@@ -1188,6 +1566,12 @@ func init() {
 	proto.RegisterType((*GetPolymarketFIFAMoneylineEventResponse)(nil), "polymarket.GetPolymarketFIFAMoneylineEventResponse")
 	proto.RegisterType((*ListPolymarketFIFAWalletBalancesRequest)(nil), "polymarket.ListPolymarketFIFAWalletBalancesRequest")
 	proto.RegisterType((*ListPolymarketFIFAWalletBalancesResponse)(nil), "polymarket.ListPolymarketFIFAWalletBalancesResponse")
+	proto.RegisterType((*ScanPolymarketManagedOOBlockRequest)(nil), "polymarket.ScanPolymarketManagedOOBlockRequest")
+	proto.RegisterType((*ScanPolymarketManagedOOBlockResponse)(nil), "polymarket.ScanPolymarketManagedOOBlockResponse")
+	proto.RegisterType((*ListPolymarketUMAProposalsRequest)(nil), "polymarket.ListPolymarketUMAProposalsRequest")
+	proto.RegisterType((*ListPolymarketUMAProposalsResponse)(nil), "polymarket.ListPolymarketUMAProposalsResponse")
+	proto.RegisterType((*ListPolymarketUMADisputesRequest)(nil), "polymarket.ListPolymarketUMADisputesRequest")
+	proto.RegisterType((*ListPolymarketUMADisputesResponse)(nil), "polymarket.ListPolymarketUMADisputesResponse")
 }
 
 func init() {
@@ -1195,83 +1579,103 @@ func init() {
 }
 
 var fileDescriptor_c24b13cfba0d1246 = []byte{
-	// 1216 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x58, 0x41, 0x6f, 0x1b, 0x45,
-	0x14, 0xd6, 0x24, 0x71, 0x9a, 0x4c, 0x54, 0xd2, 0x0c, 0x3d, 0x98, 0x4d, 0x9a, 0xb8, 0x0b, 0x89,
-	0x9d, 0x1a, 0xef, 0x26, 0x76, 0x2b, 0x50, 0x68, 0xa1, 0x49, 0xd4, 0x92, 0x42, 0x23, 0x05, 0x07,
-	0x81, 0x28, 0x12, 0xd6, 0x78, 0xfd, 0x62, 0x8f, 0xb2, 0xde, 0xdd, 0xee, 0x8e, 0x8d, 0x5c, 0x89,
-	0x03, 0x3d, 0x73, 0x41, 0x9c, 0xf9, 0x07, 0x08, 0xa9, 0x17, 0x84, 0x40, 0x42, 0x82, 0x13, 0xc7,
-	0x4a, 0x48, 0x9c, 0x51, 0x84, 0xc4, 0x0f, 0xe0, 0x0f, 0x20, 0xcf, 0x8e, 0xed, 0xdd, 0x64, 0x37,
-	0x6b, 0xb7, 0x46, 0xea, 0xcd, 0x7e, 0xfb, 0xde, 0x7c, 0xef, 0x7b, 0xdf, 0x9b, 0x9d, 0x37, 0x8b,
-	0xf3, 0xcc, 0xe2, 0xe0, 0x5a, 0xd4, 0xd4, 0x3d, 0x70, 0xdb, 0xe0, 0xea, 0x8e, 0x6d, 0x76, 0x9a,
-	0xd4, 0x3d, 0x06, 0x1e, 0xf8, 0xa9, 0x39, 0xae, 0xcd, 0x6d, 0x82, 0x07, 0x16, 0x65, 0xaf, 0xce,
-	0x78, 0xa3, 0x55, 0xd5, 0x0c, 0xbb, 0xa9, 0xb7, 0x3c, 0x70, 0x3b, 0x50, 0x07, 0x9d, 0xf2, 0x06,
-	0x58, 0x54, 0x77, 0x8e, 0xeb, 0x3a, 0x75, 0x98, 0xa7, 0x53, 0xc7, 0x31, 0x99, 0x41, 0x39, 0xb3,
-	0x2d, 0xbd, 0xbd, 0x49, 0x4d, 0xa7, 0x41, 0x37, 0xf5, 0x3a, 0x58, 0xe0, 0x52, 0x0e, 0x35, 0x7f,
-	0x55, 0x65, 0xa9, 0x6e, 0xdb, 0x75, 0x13, 0xba, 0x11, 0x3a, 0xb5, 0x2c, 0x9b, 0x0b, 0x7f, 0xcf,
-	0x7f, 0xaa, 0x2e, 0x61, 0xe5, 0x5d, 0xe0, 0x07, 0x7d, 0xe0, 0x43, 0x4e, 0x79, 0xcb, 0x2b, 0xc3,
-	0xc3, 0x16, 0x78, 0x5c, 0x7d, 0x03, 0xaf, 0xdc, 0x67, 0x5e, 0xe0, 0xf1, 0x9e, 0xcd, 0xf7, 0xc5,
-	0x8f, 0x9e, 0x0b, 0xb9, 0x8c, 0x53, 0x26, 0x6b, 0x32, 0x9e, 0x46, 0x19, 0x94, 0x4b, 0x95, 0xfd,
-	0x3f, 0xea, 0xaf, 0x13, 0x38, 0x13, 0x1f, 0xe9, 0x39, 0xb6, 0xe5, 0x01, 0xa9, 0xe3, 0x14, 0xe3,
-	0xd0, 0xf4, 0xd2, 0x28, 0x33, 0x99, 0x9b, 0x2b, 0x7e, 0xa0, 0x0d, 0x38, 0x6b, 0x3d, 0xce, 0x9a,
-	0xcf, 0x59, 0x73, 0x8e, 0xeb, 0x5a, 0x97, 0xb3, 0x16, 0xe0, 0xac, 0xf5, 0x38, 0x6b, 0x11, 0x30,
-	0xf7, 0x38, 0x34, 0xcb, 0xfe, 0xfa, 0xe4, 0x0a, 0xc6, 0x47, 0xc0, 0x8d, 0x06, 0xd4, 0x2a, 0x94,
-	0xa7, 0x27, 0x32, 0x28, 0x37, 0x59, 0x9e, 0x95, 0x96, 0x6d, 0x41, 0xc1, 0xe3, 0xd4, 0x84, 0xf4,
-	0x64, 0x06, 0xe5, 0x66, 0xca, 0xfe, 0x1f, 0x92, 0xc7, 0x0b, 0x4d, 0xdb, 0x62, 0xdc, 0x76, 0xa1,
-	0x56, 0xf1, 0x17, 0xf7, 0xd2, 0x53, 0x82, 0xe4, 0xa5, 0xfe, 0x03, 0x49, 0x89, 0xac, 0xe3, 0x81,
-	0xad, 0xc2, 0xed, 0x63, 0xb0, 0xbc, 0x74, 0x4a, 0xf8, 0xce, 0xf7, 0xed, 0x1f, 0x0a, 0x33, 0xc9,
-	0xe2, 0x79, 0x83, 0x5a, 0x35, 0x56, 0xa3, 0x1c, 0x2a, 0x86, 0xdd, 0xb2, 0x78, 0x7a, 0x5a, 0x78,
-	0xbe, 0xd4, 0x37, 0xef, 0x76, 0xad, 0xea, 0x4d, 0xfc, 0x5a, 0xb8, 0x84, 0x65, 0xa0, 0x26, 0x67,
-	0x4d, 0x18, 0x4a, 0x81, 0xaf, 0x27, 0xf1, 0x6a, 0x42, 0xb8, 0x94, 0xc1, 0x0c, 0xcb, 0xf0, 0xd1,
-	0x38, 0x64, 0x08, 0x63, 0x3d, 0xb7, 0x16, 0x05, 0x4c, 0xbc, 0x56, 0xd5, 0x33, 0x5c, 0x56, 0x3d,
-	0x23, 0xc6, 0xc2, 0xe0, 0x49, 0x4f, 0x8d, 0x3c, 0x0e, 0x18, 0xc3, 0x72, 0x5c, 0x1a, 0x3c, 0x90,
-	0x7a, 0x2c, 0xe1, 0x59, 0xc3, 0xb6, 0x2c, 0x30, 0x38, 0xd4, 0x84, 0x12, 0x33, 0xe5, 0x81, 0x81,
-	0xa8, 0xf8, 0xa2, 0x49, 0x3d, 0x5e, 0x81, 0x36, 0x58, 0xbc, 0x9b, 0xf1, 0x05, 0x91, 0xf1, 0x5c,
-	0xd7, 0x78, 0xa7, 0x6b, 0xdb, 0xe6, 0x51, 0x8a, 0xce, 0x44, 0x2a, 0x5a, 0xc2, 0x8b, 0x61, 0x49,
-	0xf6, 0xed, 0x36, 0xb8, 0x09, 0x42, 0x7e, 0x39, 0x89, 0x97, 0xa2, 0xa3, 0xa4, 0x7e, 0x2c, 0xac,
-	0xdf, 0xe1, 0x38, 0xf4, 0x13, 0x10, 0x63, 0x12, 0x2f, 0x54, 0xe0, 0xa9, 0xc4, 0x02, 0xa7, 0xce,
-	0x16, 0x38, 0x72, 0x2b, 0x4e, 0x8f, 0xb0, 0x15, 0x2f, 0x0c, 0xbd, 0x15, 0xa3, 0x85, 0xbb, 0x75,
-	0x7a, 0x2f, 0x1d, 0x3a, 0xb6, 0xcb, 0xbd, 0xfb, 0xac, 0x0d, 0x22, 0xc7, 0x04, 0x09, 0x9f, 0x22,
-	0xbc, 0x96, 0x14, 0x2f, 0xc5, 0x7c, 0x18, 0x16, 0xf3, 0xd3, 0x71, 0x88, 0x79, 0x0a, 0x6c, 0x97,
-	0xba, 0xb5, 0xe7, 0x15, 0x55, 0x7d, 0x84, 0xf5, 0x1d, 0xca, 0x8d, 0x46, 0xf8, 0xf0, 0xe8, 0x03,
-	0x1d, 0xb8, 0xcc, 0x80, 0x3d, 0xe6, 0x71, 0xdb, 0xed, 0xf4, 0x6a, 0xb3, 0x82, 0xe7, 0x7c, 0xb7,
-	0xca, 0x31, 0x74, 0x7c, 0x82, 0xb3, 0x65, 0xec, 0x9b, 0xde, 0x87, 0x8e, 0x47, 0xd6, 0xf0, 0xbc,
-	0xa8, 0x57, 0xc5, 0x01, 0xd7, 0x57, 0x4e, 0x64, 0x93, 0x2a, 0x5f, 0x14, 0xe6, 0x03, 0x70, 0x85,
-	0x6e, 0xea, 0xf7, 0x08, 0x6f, 0x0c, 0x0f, 0x2e, 0x0b, 0xfb, 0x28, 0x5c, 0xd8, 0xda, 0x78, 0x0b,
-	0x1b, 0x84, 0x3c, 0x04, 0x97, 0x81, 0x17, 0xa8, 0xb0, 0x7a, 0x1b, 0xe7, 0xa2, 0xe4, 0x97, 0xfe,
-	0xc3, 0x74, 0xd0, 0x9f, 0x08, 0xaf, 0x0f, 0xb1, 0x84, 0xe4, 0xca, 0xc3, 0x5c, 0x3f, 0x1b, 0x1f,
-	0xd7, 0x20, 0xde, 0x58, 0xfa, 0xe8, 0x0b, 0x5c, 0x8c, 0x93, 0x52, 0x62, 0xfd, 0xaf, 0xad, 0xf4,
-	0x04, 0xe1, 0xd2, 0x48, 0xf8, 0x2f, 0x40, 0x37, 0xdd, 0xc1, 0x6b, 0xa1, 0x6c, 0xef, 0xde, 0xbb,
-	0xbb, 0xbd, 0x6f, 0x5b, 0xd0, 0x31, 0x99, 0xe5, 0xef, 0xf0, 0x5e, 0x99, 0x16, 0xf1, 0xac, 0xff,
-	0x5a, 0x75, 0xe1, 0x48, 0xf4, 0xd3, 0x6c, 0x79, 0x06, 0x7c, 0x87, 0x23, 0xf5, 0x47, 0x84, 0xb3,
-	0x89, 0xeb, 0x48, 0xba, 0x16, 0x9e, 0xea, 0x62, 0x8b, 0x35, 0xe6, 0x8a, 0x0f, 0xc6, 0xc1, 0xf6,
-	0x2c, 0x9a, 0xe0, 0x28, 0x70, 0x12, 0x5a, 0x49, 0x5d, 0xc7, 0xd9, 0xf0, 0x66, 0xe8, 0x2e, 0xf6,
-	0x31, 0x35, 0x4d, 0xe0, 0x3b, 0xd4, 0xa4, 0x96, 0x01, 0xfd, 0x09, 0xf6, 0x27, 0x74, 0x7a, 0xef,
-	0x45, 0xf9, 0x4a, 0x9a, 0x76, 0x58, 0xd5, 0x4f, 0xc6, 0xc5, 0x33, 0x04, 0x37, 0xfc, 0x96, 0x29,
-	0x3e, 0x9e, 0xc7, 0x0b, 0x81, 0xfe, 0x00, 0xb7, 0xcd, 0x0c, 0x20, 0xdf, 0x21, 0xfc, 0x72, 0xc4,
-	0xcc, 0x4e, 0xd6, 0xb4, 0xc0, 0x8d, 0x22, 0x7e, 0xa8, 0x57, 0xde, 0x1b, 0x4b, 0xb3, 0x8a, 0x25,
-	0xd5, 0xab, 0x8f, 0xff, 0xf8, 0xfb, 0x9b, 0x89, 0x45, 0xf2, 0x8a, 0xb8, 0x5e, 0xb4, 0x37, 0x83,
-	0xf7, 0x1b, 0xcf, 0x4f, 0xeb, 0x5b, 0x84, 0xd3, 0x71, 0x57, 0x01, 0x92, 0x0f, 0xe6, 0x9c, 0x70,
-	0xd5, 0x50, 0x5e, 0x1f, 0xce, 0xd9, 0x17, 0x53, 0x5d, 0x13, 0xa9, 0x65, 0xc8, 0x72, 0x44, 0x6a,
-	0x0d, 0x9b, 0x17, 0xe4, 0x1c, 0x41, 0x9e, 0x20, 0x7c, 0xe5, 0xdc, 0x41, 0x99, 0x6c, 0xc4, 0xe3,
-	0x46, 0x8f, 0xe4, 0xca, 0xe6, 0x08, 0x11, 0x32, 0xdd, 0xbc, 0x48, 0x77, 0x95, 0xbc, 0x1a, 0x91,
-	0xae, 0x2b, 0x63, 0xfa, 0x39, 0x7f, 0x85, 0xf0, 0xe5, 0xa8, 0x99, 0x90, 0x64, 0xe3, 0x81, 0x43,
-	0xb3, 0xa6, 0x92, 0x4b, 0x76, 0x94, 0x89, 0x9d, 0x27, 0x71, 0xd3, 0x47, 0xfd, 0x01, 0xe1, 0xe5,
-	0xf3, 0xe7, 0x1b, 0x72, 0x4e, 0x45, 0x62, 0x66, 0x29, 0xa5, 0x38, 0x4a, 0x88, 0x4c, 0xb6, 0x20,
-	0x92, 0xcd, 0x92, 0xd5, 0xa8, 0x7e, 0x14, 0x41, 0xba, 0xc9, 0xda, 0xa0, 0x83, 0x9f, 0xd5, 0x3f,
-	0x08, 0xe7, 0x86, 0x9d, 0x24, 0xc8, 0x5b, 0xc1, 0x7c, 0x46, 0x1c, 0x7e, 0x94, 0x9b, 0xcf, 0x16,
-	0x2c, 0x69, 0xdd, 0x16, 0xb4, 0xb6, 0xd4, 0x1b, 0x09, 0xb4, 0x9c, 0x6e, 0x70, 0xa1, 0xe1, 0x47,
-	0x6f, 0x55, 0x25, 0xcc, 0x16, 0xba, 0x46, 0x7e, 0x43, 0xf8, 0x6a, 0xe2, 0x00, 0x41, 0xae, 0x27,
-	0x95, 0x3c, 0x6a, 0x64, 0x51, 0x6e, 0x8c, 0x18, 0x25, 0x49, 0x6d, 0x08, 0x52, 0xd7, 0x48, 0x2e,
-	0x9e, 0x94, 0x64, 0xd2, 0x93, 0xeb, 0x5f, 0x84, 0xf3, 0x23, 0x9c, 0xd6, 0xe4, 0xed, 0x61, 0x8a,
-	0x1e, 0x3f, 0x66, 0x28, 0xef, 0x3c, 0x73, 0xbc, 0xa4, 0xb8, 0x2b, 0x28, 0xde, 0x52, 0xdf, 0x4c,
-	0xa6, 0x18, 0x2f, 0xdd, 0xcf, 0x08, 0xaf, 0x24, 0x1c, 0xd4, 0xa4, 0x18, 0xfb, 0xee, 0x8f, 0x9d,
-	0x0e, 0x94, 0xd2, 0x48, 0x31, 0x92, 0x91, 0x2e, 0x18, 0xad, 0x93, 0x6c, 0x04, 0xa3, 0x23, 0x76,
-	0x44, 0xf5, 0x66, 0x2f, 0xae, 0x20, 0x44, 0x23, 0xbf, 0xa0, 0xd3, 0x5f, 0x82, 0xce, 0x1e, 0xc0,
-	0xa4, 0x14, 0xdf, 0x41, 0xb1, 0x47, 0xbb, 0x72, 0x7d, 0xb4, 0xa0, 0x61, 0x09, 0x7c, 0x2e, 0xe2,
-	0x0a, 0x55, 0x19, 0xb8, 0xb3, 0xfd, 0xfb, 0xc9, 0x32, 0x7a, 0x7a, 0xb2, 0x8c, 0xfe, 0x3a, 0x59,
-	0x46, 0x0f, 0x4a, 0xc9, 0xdf, 0xe5, 0x0c, 0x93, 0x81, 0x15, 0xfc, 0xbc, 0x57, 0x9d, 0x16, 0xdf,
-	0xda, 0x4a, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0xb7, 0xa8, 0x19, 0x44, 0x0e, 0x14, 0x00, 0x00,
+	// 1523 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x59, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xd6, 0xd4, 0x71, 0x9b, 0xbc, 0xf4, 0xe7, 0xb4, 0x07, 0x77, 0x9b, 0x26, 0xce, 0xb6, 0x89,
+	0x9d, 0xa6, 0xf6, 0x26, 0x71, 0x2b, 0x20, 0xb4, 0xd0, 0xa4, 0xb4, 0xa4, 0xd0, 0xd0, 0xe0, 0x50,
+	0x10, 0x45, 0xc2, 0x1a, 0xaf, 0x27, 0xf6, 0x2a, 0xeb, 0xdd, 0xed, 0xee, 0xd8, 0x55, 0x82, 0x7a,
+	0x80, 0x33, 0x1c, 0x10, 0xe2, 0xc8, 0x81, 0x03, 0x37, 0x84, 0xd4, 0x0b, 0x42, 0x80, 0x90, 0xe0,
+	0xc4, 0xb1, 0x12, 0xa8, 0x67, 0x54, 0x21, 0xf1, 0x07, 0xf0, 0x0f, 0x20, 0xcf, 0x8e, 0xed, 0xdd,
+	0x78, 0xd7, 0xbb, 0x6e, 0x1d, 0x89, 0x53, 0xec, 0xb7, 0xef, 0xcd, 0xfb, 0xbe, 0xf7, 0xcd, 0xec,
+	0xbc, 0x17, 0xc3, 0xbc, 0x66, 0x30, 0x6a, 0x1b, 0x44, 0x57, 0x1c, 0x6a, 0x37, 0xa9, 0xad, 0x58,
+	0xa6, 0xbe, 0x53, 0x27, 0xf6, 0x36, 0x65, 0x9e, 0x8f, 0x79, 0xcb, 0x36, 0x99, 0x89, 0xa1, 0x6b,
+	0x91, 0xd6, 0xaa, 0x1a, 0xab, 0x35, 0xca, 0x79, 0xd5, 0xac, 0x2b, 0x0d, 0x87, 0xda, 0x3b, 0xb4,
+	0x4a, 0x15, 0xc2, 0x6a, 0xd4, 0x20, 0x8a, 0xb5, 0x5d, 0x55, 0x88, 0xa5, 0x39, 0x0a, 0xb1, 0x2c,
+	0x5d, 0x53, 0x09, 0xd3, 0x4c, 0x43, 0x69, 0x2e, 0x12, 0xdd, 0xaa, 0x91, 0x45, 0xa5, 0x4a, 0x0d,
+	0x6a, 0x13, 0x46, 0x2b, 0xee, 0xaa, 0xd2, 0x44, 0xd5, 0x34, 0xab, 0x3a, 0x6d, 0x45, 0x28, 0xc4,
+	0x30, 0x4c, 0xc6, 0xfd, 0x1d, 0xf7, 0xa9, 0x3c, 0x01, 0xd2, 0xeb, 0x94, 0x6d, 0x74, 0x12, 0x6f,
+	0x32, 0xc2, 0x1a, 0x4e, 0x91, 0xde, 0x6f, 0x50, 0x87, 0xc9, 0x2f, 0xc0, 0xd4, 0x6d, 0xcd, 0xf1,
+	0x3c, 0x5e, 0x33, 0xd9, 0x3a, 0xff, 0xd0, 0x76, 0xc1, 0xa7, 0x20, 0xa9, 0x6b, 0x75, 0x8d, 0xa5,
+	0x50, 0x1a, 0x65, 0x93, 0x45, 0xf7, 0x8b, 0xfc, 0xeb, 0x01, 0x48, 0x87, 0x47, 0x3a, 0x96, 0x69,
+	0x38, 0x14, 0x57, 0x21, 0xa9, 0x31, 0x5a, 0x77, 0x52, 0x28, 0x9d, 0xc8, 0x8e, 0x2f, 0xbd, 0x9d,
+	0xef, 0x72, 0xce, 0xb7, 0x39, 0xe7, 0x5d, 0xce, 0x79, 0x6b, 0xbb, 0x9a, 0x6f, 0x71, 0xce, 0x7b,
+	0x38, 0xe7, 0xdb, 0x9c, 0xf3, 0x01, 0x69, 0x6e, 0x31, 0x5a, 0x2f, 0xba, 0xeb, 0xe3, 0xb3, 0x00,
+	0x5b, 0x94, 0xa9, 0x35, 0x5a, 0x29, 0x11, 0x96, 0x3a, 0x90, 0x46, 0xd9, 0x44, 0x71, 0x4c, 0x58,
+	0x56, 0x38, 0x05, 0x87, 0x11, 0x9d, 0xa6, 0x12, 0x69, 0x94, 0x1d, 0x2d, 0xba, 0x5f, 0xf0, 0x3c,
+	0x9c, 0xa8, 0x9b, 0x86, 0xc6, 0x4c, 0x9b, 0x56, 0x4a, 0xee, 0xe2, 0x4e, 0x6a, 0x84, 0x93, 0x3c,
+	0xde, 0x79, 0x20, 0x28, 0xe1, 0x39, 0xe8, 0xda, 0x4a, 0xcc, 0xdc, 0xa6, 0x86, 0x93, 0x4a, 0x72,
+	0xdf, 0x63, 0x1d, 0xfb, 0x3b, 0xdc, 0x8c, 0x33, 0x70, 0x4c, 0x25, 0x46, 0x45, 0xab, 0x10, 0x46,
+	0x4b, 0xaa, 0xd9, 0x30, 0x58, 0xea, 0x20, 0xf7, 0x3c, 0xda, 0x31, 0x5f, 0x6f, 0x59, 0xe5, 0x2b,
+	0x70, 0xde, 0x5f, 0xc2, 0x22, 0x25, 0x3a, 0xd3, 0xea, 0x34, 0x96, 0x02, 0x9f, 0x27, 0x60, 0x26,
+	0x22, 0x5c, 0xc8, 0xa0, 0xfb, 0x65, 0x78, 0x77, 0x18, 0x32, 0xf8, 0x73, 0x3d, 0xb7, 0x16, 0x39,
+	0xc0, 0x4e, 0xa3, 0xec, 0xa8, 0xb6, 0x56, 0xee, 0x11, 0xe3, 0x44, 0xf7, 0x49, 0x5b, 0x8d, 0x79,
+	0xf0, 0x18, 0xfd, 0x72, 0x1c, 0xef, 0x3e, 0x10, 0x7a, 0x4c, 0xc0, 0x98, 0x6a, 0x1a, 0x06, 0x55,
+	0x19, 0xad, 0x70, 0x25, 0x46, 0x8b, 0x5d, 0x03, 0x96, 0xe1, 0x88, 0x4e, 0x1c, 0x56, 0xa2, 0x4d,
+	0x6a, 0xb0, 0x16, 0xe2, 0x43, 0x1c, 0xf1, 0x78, 0xcb, 0x78, 0xa3, 0x65, 0x5b, 0x61, 0x41, 0x8a,
+	0x8e, 0x06, 0x2a, 0x5a, 0x80, 0x33, 0x7e, 0x49, 0xd6, 0xcd, 0x26, 0xb5, 0x23, 0x84, 0xfc, 0x38,
+	0x01, 0x13, 0xc1, 0x51, 0x42, 0x3f, 0xcd, 0xaf, 0xdf, 0xe6, 0x30, 0xf4, 0xe3, 0x29, 0x86, 0x24,
+	0x9e, 0xaf, 0xc0, 0x23, 0x91, 0x05, 0x4e, 0xf6, 0x16, 0x38, 0xf0, 0x28, 0x1e, 0x1c, 0xe0, 0x28,
+	0x1e, 0x8a, 0x7d, 0x14, 0x83, 0x85, 0xbb, 0xba, 0xf7, 0x2c, 0x6d, 0x5a, 0xa6, 0xcd, 0x9c, 0xdb,
+	0x5a, 0x93, 0x72, 0x8c, 0x11, 0x12, 0x3e, 0x46, 0x30, 0x1b, 0x15, 0x2f, 0xc4, 0xbc, 0xef, 0x17,
+	0xf3, 0x83, 0x61, 0x88, 0xb9, 0x27, 0xd9, 0x75, 0x62, 0x57, 0x9e, 0x57, 0x54, 0x79, 0x17, 0x94,
+	0x55, 0xc2, 0xd4, 0x9a, 0xff, 0xf2, 0xe8, 0x24, 0xda, 0xb0, 0x35, 0x95, 0xae, 0x69, 0x0e, 0x33,
+	0xed, 0x9d, 0x76, 0x6d, 0xa6, 0x60, 0xdc, 0x75, 0x2b, 0x6d, 0xd3, 0x1d, 0x97, 0xe0, 0x58, 0x11,
+	0x5c, 0xd3, 0x9b, 0x74, 0xc7, 0xc1, 0xb3, 0x70, 0x8c, 0xd7, 0xab, 0x64, 0x51, 0xdb, 0x55, 0x8e,
+	0xa3, 0x49, 0x16, 0x8f, 0x70, 0xf3, 0x06, 0xb5, 0xb9, 0x6e, 0xf2, 0x77, 0x08, 0x16, 0xe2, 0x27,
+	0x17, 0x85, 0xdd, 0xf5, 0x17, 0xb6, 0x32, 0xdc, 0xc2, 0x7a, 0x53, 0x6e, 0x52, 0x5b, 0xa3, 0x8e,
+	0xa7, 0xc2, 0xf2, 0x35, 0xc8, 0x06, 0xc9, 0x2f, 0xfc, 0xe3, 0xec, 0xa0, 0x27, 0x08, 0xe6, 0x62,
+	0x2c, 0x21, 0xb8, 0x32, 0x3f, 0xd7, 0x0f, 0x87, 0xc7, 0xd5, 0x9b, 0x6f, 0x28, 0xfb, 0xe8, 0x21,
+	0x2c, 0x85, 0x49, 0x29, 0x72, 0xed, 0xeb, 0x56, 0x7a, 0x84, 0xa0, 0x30, 0x50, 0xfe, 0xff, 0xc1,
+	0x6e, 0xba, 0x01, 0xb3, 0x3e, 0xb4, 0x37, 0x6f, 0xdd, 0x5c, 0x59, 0x37, 0x0d, 0xba, 0xa3, 0x6b,
+	0x86, 0x7b, 0xc2, 0xdb, 0x65, 0x3a, 0x03, 0x63, 0xee, 0x6b, 0xd5, 0xa6, 0x5b, 0x7c, 0x3f, 0x8d,
+	0x15, 0x47, 0xa9, 0xeb, 0xb0, 0x25, 0xff, 0x80, 0x20, 0x13, 0xb9, 0x8e, 0xa0, 0x6b, 0xc0, 0x48,
+	0x2b, 0x37, 0x5f, 0x63, 0x7c, 0xe9, 0xde, 0x30, 0xd8, 0xf6, 0x66, 0xe3, 0x1c, 0x79, 0x9e, 0x88,
+	0xad, 0x24, 0xcf, 0x41, 0xc6, 0x7f, 0x18, 0x5a, 0x8b, 0xbd, 0x47, 0x74, 0x9d, 0xb2, 0x55, 0xa2,
+	0x13, 0x43, 0xa5, 0x9d, 0x0e, 0xf6, 0x47, 0xb4, 0xf7, 0xec, 0x05, 0xf9, 0x0a, 0x9a, 0xa6, 0x5f,
+	0xd5, 0xf7, 0x87, 0xc5, 0xd3, 0x97, 0x2e, 0xfe, 0x91, 0x91, 0xd7, 0xe0, 0xdc, 0xa6, 0x4a, 0x0c,
+	0xcf, 0xb5, 0x4c, 0x0c, 0x52, 0xa5, 0x95, 0x3b, 0x77, 0x56, 0x75, 0x53, 0xdd, 0x6e, 0xcb, 0x3c,
+	0x0d, 0x87, 0xcb, 0xad, 0xef, 0x25, 0xa3, 0x51, 0x2f, 0x53, 0x9b, 0xab, 0x34, 0x52, 0x1c, 0xe7,
+	0xb6, 0xb7, 0xb8, 0x49, 0xfe, 0x12, 0xc1, 0xf9, 0xfe, 0x4b, 0x89, 0x12, 0x44, 0xaf, 0x85, 0x67,
+	0xe0, 0xa8, 0x65, 0x9b, 0x96, 0xe9, 0x10, 0x5d, 0x5c, 0x9a, 0xe2, 0x68, 0xb5, 0xad, 0xfc, 0xce,
+	0xc4, 0xe7, 0xe0, 0x48, 0x45, 0x73, 0xac, 0x46, 0xe7, 0x6a, 0x4d, 0x70, 0xaf, 0xc3, 0xc2, 0xe8,
+	0x5e, 0xac, 0x0f, 0x60, 0xda, 0xaf, 0xce, 0xdd, 0xf5, 0x95, 0x0d, 0xb1, 0x4c, 0xe7, 0x95, 0x88,
+	0x61, 0xc4, 0x22, 0x55, 0x2a, 0xde, 0x88, 0xfc, 0x73, 0x6b, 0x6b, 0xb7, 0xfe, 0x96, 0x1c, 0x6d,
+	0x97, 0x8a, 0xfc, 0xa3, 0x2d, 0xc3, 0xa6, 0xb6, 0xdb, 0x4b, 0x22, 0xd1, 0x5b, 0x90, 0x27, 0x08,
+	0xe4, 0x7e, 0x99, 0xf7, 0xb1, 0xb7, 0xf2, 0x24, 0xf2, 0xee, 0x85, 0x53, 0x90, 0x64, 0x26, 0x23,
+	0xba, 0xd8, 0x06, 0xee, 0x97, 0x0e, 0xf7, 0x44, 0x18, 0xf7, 0x11, 0x3f, 0x77, 0xb9, 0xb9, 0x77,
+	0xf0, 0xba, 0xbb, 0xbe, 0xf2, 0x9a, 0x5b, 0xf2, 0x7d, 0x2d, 0xe8, 0x9f, 0x28, 0x40, 0xca, 0x6e,
+	0x62, 0x51, 0xcf, 0x9a, 0xbf, 0x9e, 0xc5, 0x21, 0xd5, 0x53, 0xe4, 0x19, 0x7e, 0x39, 0x97, 0x3e,
+	0x3b, 0x09, 0x27, 0x3c, 0xaf, 0x68, 0x6a, 0x37, 0x35, 0x95, 0xe2, 0x6f, 0x11, 0x9c, 0x0c, 0x18,
+	0x9b, 0xf1, 0x6c, 0xde, 0x33, 0xd4, 0x87, 0xcf, 0xd5, 0xd2, 0x1b, 0x43, 0xb9, 0x2f, 0xf8, 0x92,
+	0xf2, 0xf4, 0x27, 0x7f, 0xfc, 0xfd, 0xc5, 0x81, 0x33, 0xf8, 0x34, 0x9f, 0xf0, 0x9b, 0x8b, 0xde,
+	0x7f, 0x31, 0x38, 0x2e, 0xac, 0xaf, 0x10, 0xa4, 0xc2, 0xa6, 0x71, 0x3c, 0xef, 0xc5, 0x1c, 0x31,
+	0xed, 0x4b, 0x17, 0xe3, 0x39, 0xbb, 0x6a, 0xcb, 0xb3, 0x1c, 0x5a, 0x1a, 0x4f, 0x06, 0x40, 0xab,
+	0x99, 0x2c, 0x27, 0x5a, 0x79, 0xfc, 0x08, 0xc1, 0xd9, 0xbe, 0xb3, 0x2a, 0x5e, 0x08, 0xcf, 0x1b,
+	0x3c, 0x15, 0x4b, 0x8b, 0x03, 0x44, 0x08, 0xb8, 0xf3, 0x1c, 0xee, 0x0c, 0x3e, 0x17, 0x00, 0xd7,
+	0x16, 0x31, 0x1d, 0xcc, 0x9f, 0x22, 0x38, 0x15, 0x34, 0x96, 0xe1, 0x4c, 0x78, 0x62, 0xdf, 0xb8,
+	0x27, 0x65, 0xa3, 0x1d, 0x05, 0xb0, 0x7e, 0x12, 0xd7, 0xdd, 0xac, 0xdf, 0x23, 0x98, 0xec, 0x3f,
+	0x62, 0xe0, 0x3e, 0x15, 0x09, 0x19, 0x67, 0xa4, 0xa5, 0x41, 0x42, 0x04, 0xd8, 0x1c, 0x07, 0x9b,
+	0xc1, 0x33, 0x41, 0xfb, 0x91, 0x07, 0x29, 0xba, 0xd6, 0xa4, 0x0a, 0x75, 0x51, 0xfd, 0x83, 0x20,
+	0x1b, 0xb7, 0x99, 0xc7, 0x2f, 0x7b, 0xf1, 0x0c, 0x38, 0x7f, 0x48, 0x57, 0x9e, 0x2d, 0x58, 0xd0,
+	0xba, 0xc6, 0x69, 0x2d, 0xcb, 0x97, 0x23, 0x68, 0x59, 0xad, 0xe0, 0x5c, 0xcd, 0x8d, 0x5e, 0x2e,
+	0x8b, 0x34, 0xcb, 0xe8, 0x02, 0xfe, 0xad, 0xe7, 0x0d, 0x19, 0xd0, 0xc3, 0xe3, 0x4b, 0x51, 0x25,
+	0x0f, 0x9a, 0x1a, 0xa4, 0xcb, 0x03, 0x46, 0x09, 0x52, 0x0b, 0x9c, 0xd4, 0x05, 0x9c, 0x0d, 0x27,
+	0x25, 0x98, 0xb4, 0xe5, 0xfa, 0x17, 0xc1, 0xfc, 0x00, 0x0d, 0x33, 0x7e, 0x25, 0x4e, 0xd1, 0xc3,
+	0x3b, 0x7d, 0xe9, 0xd5, 0x67, 0x8e, 0x17, 0x14, 0xaf, 0x73, 0x8a, 0x57, 0xe5, 0x17, 0xa3, 0x29,
+	0x86, 0x4b, 0xf7, 0x13, 0x82, 0xa9, 0x88, 0x5e, 0x19, 0x2f, 0x85, 0xbe, 0xfb, 0x43, 0x1b, 0x74,
+	0xa9, 0x30, 0x50, 0x8c, 0x60, 0xa4, 0x70, 0x46, 0x73, 0x38, 0x13, 0xc0, 0x68, 0x4b, 0xdb, 0x22,
+	0x4a, 0xbd, 0x1d, 0x97, 0xe3, 0xa2, 0xe1, 0x5f, 0xd0, 0xde, 0x9e, 0xa0, 0xb7, 0x07, 0xc6, 0x85,
+	0xf0, 0x1d, 0x14, 0xda, 0x5d, 0x4b, 0x97, 0x06, 0x0b, 0x8a, 0x4b, 0xe0, 0x01, 0x8f, 0xcb, 0x95,
+	0xdb, 0xd8, 0x7e, 0x46, 0x30, 0xd1, 0xaf, 0x7b, 0xc5, 0x8a, 0x17, 0x47, 0x8c, 0x96, 0x59, 0x5a,
+	0x88, 0x1f, 0x20, 0x40, 0xbf, 0xc4, 0x41, 0x17, 0xe4, 0xc5, 0x00, 0xd0, 0x8d, 0x3a, 0x51, 0x78,
+	0x2f, 0xe4, 0x28, 0x1f, 0x79, 0xfb, 0xa4, 0x87, 0xcb, 0x8e, 0x4a, 0x0c, 0xfc, 0x0d, 0x02, 0x29,
+	0xbc, 0xd7, 0xc4, 0xb9, 0xf0, 0x22, 0x06, 0x74, 0xc3, 0x52, 0x3e, 0xae, 0xbb, 0x00, 0x9e, 0xe5,
+	0xc0, 0x65, 0x9c, 0x0e, 0x01, 0x6e, 0x75, 0x80, 0x7c, 0x8d, 0xe0, 0x74, 0x68, 0x0b, 0x87, 0x2f,
+	0xf6, 0xcd, 0xbb, 0xa7, 0xc5, 0x94, 0x72, 0x31, 0xbd, 0x05, 0xc8, 0x0c, 0x07, 0x39, 0x8d, 0xa7,
+	0x42, 0x40, 0x8a, 0xa1, 0xc1, 0x59, 0x5d, 0xf9, 0xfd, 0xe9, 0x24, 0x7a, 0xfc, 0x74, 0x12, 0xfd,
+	0xf5, 0x74, 0x12, 0xdd, 0x2b, 0x44, 0xff, 0x4a, 0xa2, 0xea, 0x1a, 0x35, 0xbc, 0x3f, 0xb6, 0x94,
+	0x0f, 0xf2, 0x5f, 0x3e, 0x0a, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0xbc, 0xd4, 0xcc, 0x76, 0x9c,
+	0x19, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1302,6 +1706,9 @@ type PolymarketServiceClient interface {
 	BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context, in *BatchGetPolymarketSportsHistoryPriceHistoryRequest, opts ...grpc.CallOption) (*BatchGetPolymarketSportsHistoryPriceHistoryResponse, error)
 	GetPolymarketFIFAMoneylineEvent(ctx context.Context, in *GetPolymarketFIFAMoneylineEventRequest, opts ...grpc.CallOption) (*GetPolymarketFIFAMoneylineEventResponse, error)
 	ListPolymarketFIFAWalletBalances(ctx context.Context, in *ListPolymarketFIFAWalletBalancesRequest, opts ...grpc.CallOption) (*ListPolymarketFIFAWalletBalancesResponse, error)
+	ScanPolymarketManagedOOBlock(ctx context.Context, in *ScanPolymarketManagedOOBlockRequest, opts ...grpc.CallOption) (*ScanPolymarketManagedOOBlockResponse, error)
+	ListPolymarketUMAProposals(ctx context.Context, in *ListPolymarketUMAProposalsRequest, opts ...grpc.CallOption) (*ListPolymarketUMAProposalsResponse, error)
+	ListPolymarketUMADisputes(ctx context.Context, in *ListPolymarketUMADisputesRequest, opts ...grpc.CallOption) (*ListPolymarketUMADisputesResponse, error)
 }
 
 type polymarketServiceClient struct {
@@ -1402,6 +1809,33 @@ func (c *polymarketServiceClient) ListPolymarketFIFAWalletBalances(ctx context.C
 	return out, nil
 }
 
+func (c *polymarketServiceClient) ScanPolymarketManagedOOBlock(ctx context.Context, in *ScanPolymarketManagedOOBlockRequest, opts ...grpc.CallOption) (*ScanPolymarketManagedOOBlockResponse, error) {
+	out := new(ScanPolymarketManagedOOBlockResponse)
+	err := c.cc.Invoke(ctx, "/polymarket.PolymarketService/ScanPolymarketManagedOOBlock", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *polymarketServiceClient) ListPolymarketUMAProposals(ctx context.Context, in *ListPolymarketUMAProposalsRequest, opts ...grpc.CallOption) (*ListPolymarketUMAProposalsResponse, error) {
+	out := new(ListPolymarketUMAProposalsResponse)
+	err := c.cc.Invoke(ctx, "/polymarket.PolymarketService/ListPolymarketUMAProposals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *polymarketServiceClient) ListPolymarketUMADisputes(ctx context.Context, in *ListPolymarketUMADisputesRequest, opts ...grpc.CallOption) (*ListPolymarketUMADisputesResponse, error) {
+	out := new(ListPolymarketUMADisputesResponse)
+	err := c.cc.Invoke(ctx, "/polymarket.PolymarketService/ListPolymarketUMADisputes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PolymarketServiceServer is the server API for PolymarketService service.
 type PolymarketServiceServer interface {
 	// GetPolymarketStatus returns the polymarket service runtime status.
@@ -1420,6 +1854,9 @@ type PolymarketServiceServer interface {
 	BatchGetPolymarketSportsHistoryPriceHistory(context.Context, *BatchGetPolymarketSportsHistoryPriceHistoryRequest) (*BatchGetPolymarketSportsHistoryPriceHistoryResponse, error)
 	GetPolymarketFIFAMoneylineEvent(context.Context, *GetPolymarketFIFAMoneylineEventRequest) (*GetPolymarketFIFAMoneylineEventResponse, error)
 	ListPolymarketFIFAWalletBalances(context.Context, *ListPolymarketFIFAWalletBalancesRequest) (*ListPolymarketFIFAWalletBalancesResponse, error)
+	ScanPolymarketManagedOOBlock(context.Context, *ScanPolymarketManagedOOBlockRequest) (*ScanPolymarketManagedOOBlockResponse, error)
+	ListPolymarketUMAProposals(context.Context, *ListPolymarketUMAProposalsRequest) (*ListPolymarketUMAProposalsResponse, error)
+	ListPolymarketUMADisputes(context.Context, *ListPolymarketUMADisputesRequest) (*ListPolymarketUMADisputesResponse, error)
 }
 
 // UnimplementedPolymarketServiceServer can be embedded to have forward compatible implementations.
@@ -1455,6 +1892,15 @@ func (*UnimplementedPolymarketServiceServer) GetPolymarketFIFAMoneylineEvent(ctx
 }
 func (*UnimplementedPolymarketServiceServer) ListPolymarketFIFAWalletBalances(ctx context.Context, req *ListPolymarketFIFAWalletBalancesRequest) (*ListPolymarketFIFAWalletBalancesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPolymarketFIFAWalletBalances not implemented")
+}
+func (*UnimplementedPolymarketServiceServer) ScanPolymarketManagedOOBlock(ctx context.Context, req *ScanPolymarketManagedOOBlockRequest) (*ScanPolymarketManagedOOBlockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ScanPolymarketManagedOOBlock not implemented")
+}
+func (*UnimplementedPolymarketServiceServer) ListPolymarketUMAProposals(ctx context.Context, req *ListPolymarketUMAProposalsRequest) (*ListPolymarketUMAProposalsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPolymarketUMAProposals not implemented")
+}
+func (*UnimplementedPolymarketServiceServer) ListPolymarketUMADisputes(ctx context.Context, req *ListPolymarketUMADisputesRequest) (*ListPolymarketUMADisputesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPolymarketUMADisputes not implemented")
 }
 
 func RegisterPolymarketServiceServer(s *grpc.Server, srv PolymarketServiceServer) {
@@ -1641,6 +2087,60 @@ func _PolymarketService_ListPolymarketFIFAWalletBalances_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PolymarketService_ScanPolymarketManagedOOBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScanPolymarketManagedOOBlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolymarketServiceServer).ScanPolymarketManagedOOBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/polymarket.PolymarketService/ScanPolymarketManagedOOBlock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolymarketServiceServer).ScanPolymarketManagedOOBlock(ctx, req.(*ScanPolymarketManagedOOBlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PolymarketService_ListPolymarketUMAProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPolymarketUMAProposalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolymarketServiceServer).ListPolymarketUMAProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/polymarket.PolymarketService/ListPolymarketUMAProposals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolymarketServiceServer).ListPolymarketUMAProposals(ctx, req.(*ListPolymarketUMAProposalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PolymarketService_ListPolymarketUMADisputes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPolymarketUMADisputesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolymarketServiceServer).ListPolymarketUMADisputes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/polymarket.PolymarketService/ListPolymarketUMADisputes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolymarketServiceServer).ListPolymarketUMADisputes(ctx, req.(*ListPolymarketUMADisputesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _PolymarketService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "polymarket.PolymarketService",
 	HandlerType: (*PolymarketServiceServer)(nil),
@@ -1684,6 +2184,18 @@ var _PolymarketService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPolymarketFIFAWalletBalances",
 			Handler:    _PolymarketService_ListPolymarketFIFAWalletBalances_Handler,
+		},
+		{
+			MethodName: "ScanPolymarketManagedOOBlock",
+			Handler:    _PolymarketService_ScanPolymarketManagedOOBlock_Handler,
+		},
+		{
+			MethodName: "ListPolymarketUMAProposals",
+			Handler:    _PolymarketService_ListPolymarketUMAProposals_Handler,
+		},
+		{
+			MethodName: "ListPolymarketUMADisputes",
+			Handler:    _PolymarketService_ListPolymarketUMADisputes_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -2547,6 +3059,276 @@ func (m *ListPolymarketFIFAWalletBalancesResponse) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
+func (m *ScanPolymarketManagedOOBlockRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ScanPolymarketManagedOOBlockRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ScanPolymarketManagedOOBlockRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.BlockNumber != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.BlockNumber))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.DisputeCount != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.DisputeCount))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.ProposalCount != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.ProposalCount))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.BlockNumber != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.BlockNumber))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketUMAProposalsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketUMAProposalsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketUMAProposalsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.BlockNumber != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.BlockNumber))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Page != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketUMAProposalsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketUMAProposalsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketUMAProposalsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintPolymarket(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketUMADisputesRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketUMADisputesRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketUMADisputesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.BlockNumber != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.BlockNumber))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Page != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListPolymarketUMADisputesResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListPolymarketUMADisputesResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListPolymarketUMADisputesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Page != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Total != 0 {
+		i = encodeVarintPolymarket(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintPolymarket(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintPolymarket(dAtA []byte, offset int, v uint64) int {
 	offset -= sovPolymarket(v)
 	base := offset
@@ -2943,6 +3725,138 @@ func (m *ListPolymarketFIFAWalletBalancesResponse) Size() (n int) {
 	}
 	if m.FetchedAt != 0 {
 		n += 1 + sovPolymarket(uint64(m.FetchedAt))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ScanPolymarketManagedOOBlockRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BlockNumber != 0 {
+		n += 1 + sovPolymarket(uint64(m.BlockNumber))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ScanPolymarketManagedOOBlockResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BlockNumber != 0 {
+		n += 1 + sovPolymarket(uint64(m.BlockNumber))
+	}
+	if m.ProposalCount != 0 {
+		n += 1 + sovPolymarket(uint64(m.ProposalCount))
+	}
+	if m.DisputeCount != 0 {
+		n += 1 + sovPolymarket(uint64(m.DisputeCount))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketUMAProposalsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Page != 0 {
+		n += 1 + sovPolymarket(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovPolymarket(uint64(m.PageSize))
+	}
+	if m.BlockNumber != 0 {
+		n += 1 + sovPolymarket(uint64(m.BlockNumber))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketUMAProposalsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovPolymarket(uint64(l))
+		}
+	}
+	if m.Total != 0 {
+		n += 1 + sovPolymarket(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovPolymarket(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovPolymarket(uint64(m.PageSize))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketUMADisputesRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Page != 0 {
+		n += 1 + sovPolymarket(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovPolymarket(uint64(m.PageSize))
+	}
+	if m.BlockNumber != 0 {
+		n += 1 + sovPolymarket(uint64(m.BlockNumber))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListPolymarketUMADisputesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovPolymarket(uint64(l))
+		}
+	}
+	if m.Total != 0 {
+		n += 1 + sovPolymarket(uint64(m.Total))
+	}
+	if m.Page != 0 {
+		n += 1 + sovPolymarket(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovPolymarket(uint64(m.PageSize))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4918,6 +5832,684 @@ func (m *ListPolymarketFIFAWalletBalancesResponse) Unmarshal(dAtA []byte) error 
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.FetchedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ScanPolymarketManagedOOBlockRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScanPolymarketManagedOOBlockRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScanPolymarketManagedOOBlockRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockNumber", wireType)
+			}
+			m.BlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ScanPolymarketManagedOOBlockResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScanPolymarketManagedOOBlockResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScanPolymarketManagedOOBlockResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockNumber", wireType)
+			}
+			m.BlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposalCount", wireType)
+			}
+			m.ProposalCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ProposalCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisputeCount", wireType)
+			}
+			m.DisputeCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DisputeCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketUMAProposalsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketUMAProposalsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketUMAProposalsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockNumber", wireType)
+			}
+			m.BlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketUMAProposalsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketUMAProposalsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketUMAProposalsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.PolymarketUMAProposalItem{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketUMADisputesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketUMADisputesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketUMADisputesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockNumber", wireType)
+			}
+			m.BlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipPolymarket(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListPolymarketUMADisputesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowPolymarket
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListPolymarketUMADisputesResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListPolymarketUMADisputesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthPolymarket
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &v1alpha1.PolymarketUMADisputeItem{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowPolymarket
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

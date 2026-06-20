@@ -9,6 +9,7 @@ import (
 	"github.com/useryege/athena/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
+	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	"github.com/useryege/athena/util/rbac"
@@ -116,6 +117,15 @@ func walletObject(req any) string {
 	}
 }
 
+func polymarketObject(req any) string {
+	switch r := req.(type) {
+	case *polymarketpkg.ScanPolymarketManagedOOBlockRequest:
+		return fmt.Sprintf("%d", r.GetBlockNumber())
+	default:
+		return "*"
+	}
+}
+
 func nonEmptyObject(value string) string {
 	if value == "" {
 		return "*"
@@ -176,6 +186,9 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/BatchGetPolymarketSportsHistoryPriceHistory": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/GetPolymarketFIFAMoneylineEvent":             fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketFIFAWalletBalances":            fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ScanPolymarketManagedOOBlock":                {resource: rbac.ResourcePolymarket, action: rbac.ActionInvoke, object: polymarketObject},
+	"/polymarket.PolymarketService/ListPolymarketUMAProposals":                  fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/ListPolymarketUMADisputes":                   fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 
 	"/tokenapi.TokenAPIService/GetOptions":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
 	"/tokenapi.TokenAPIService/ListNodeStatuses":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),

@@ -462,6 +462,108 @@ message PolymarketStatus {
   optional string status = 2;
 }
 
+message PolymarketUMADisputeItem {
+  optional string txHash = 1;
+
+  optional int64 logIndex = 2;
+
+  optional int64 blockNumber = 3;
+
+  optional string blockHash = 4;
+
+  optional int64 txIndex = 5;
+
+  optional string contractAddress = 6;
+
+  optional string topic = 7;
+
+  optional string requester = 8;
+
+  optional string proposer = 9;
+
+  optional string disputer = 10;
+
+  optional string identifier = 11;
+
+  optional int64 requestTimestamp = 12;
+
+  optional string ancillaryDataHex = 13;
+
+  optional string ancillaryDataText = 14;
+
+  optional string marketId = 15;
+
+  optional string proposedPrice = 16;
+
+  optional string rawTopics = 17;
+
+  optional string rawData = 18;
+
+  optional string fetchedAt = 19;
+
+  optional string conditionId = 20;
+
+  optional string eventSlug = 21;
+
+  optional string marketSlug = 22;
+
+  optional string question = 23;
+
+  optional string polymarketUrl = 24;
+}
+
+message PolymarketUMAProposalItem {
+  optional string txHash = 1;
+
+  optional int64 logIndex = 2;
+
+  optional int64 blockNumber = 3;
+
+  optional string blockHash = 4;
+
+  optional int64 txIndex = 5;
+
+  optional string contractAddress = 6;
+
+  optional string topic = 7;
+
+  optional string requester = 8;
+
+  optional string proposer = 9;
+
+  optional string identifier = 10;
+
+  optional int64 requestTimestamp = 11;
+
+  optional string ancillaryDataHex = 12;
+
+  optional string ancillaryDataText = 13;
+
+  optional string marketId = 14;
+
+  optional string proposedPrice = 15;
+
+  optional int64 expirationTimestamp = 16;
+
+  optional string currency = 17;
+
+  optional string rawTopics = 18;
+
+  optional string rawData = 19;
+
+  optional string fetchedAt = 20;
+
+  optional string conditionId = 21;
+
+  optional string eventSlug = 22;
+
+  optional string marketSlug = 23;
+
+  optional string question = 24;
+
+  optional string polymarketUrl = 25;
+}
+
 message TokenAPIBytecodeBlacklist {
   optional string codeHash = 1;
 

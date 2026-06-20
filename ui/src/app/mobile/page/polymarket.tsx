@@ -1,5 +1,5 @@
 import type {ColumnsType} from 'antd/es/table';
-import {Empty, Space, Typography} from 'antd';
+import {Empty, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {services} from '../../shared/services';

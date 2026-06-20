@@ -218,3 +218,59 @@ func (s *Server) ListPolymarketFIFAWalletBalances(ctx context.Context, _ *polyma
 		FetchedAt: resp.GetFetchedAt(),
 	}, nil
 }
+
+func (s *Server) ScanPolymarketManagedOOBlock(ctx context.Context, req *polymarketpkg.ScanPolymarketManagedOOBlockRequest) (*polymarketpkg.ScanPolymarketManagedOOBlockResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ScanPolymarketManagedOOBlock(ctx, &polymarketapiclient.ScanPolymarketManagedOOBlockRequest{
+		BlockNumber: req.GetBlockNumber(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.ScanPolymarketManagedOOBlockResponse{
+		BlockNumber:   resp.GetBlockNumber(),
+		ProposalCount: resp.GetProposalCount(),
+		DisputeCount:  resp.GetDisputeCount(),
+	}, nil
+}
+
+func (s *Server) ListPolymarketUMAProposals(ctx context.Context, req *polymarketpkg.ListPolymarketUMAProposalsRequest) (*polymarketpkg.ListPolymarketUMAProposalsResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketUMAProposals(ctx, &polymarketapiclient.ListPolymarketUMAProposalsRequest{
+		Page: req.GetPage(), PageSize: req.GetPageSize(), BlockNumber: req.GetBlockNumber(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.ListPolymarketUMAProposalsResponse{
+		Items: resp.GetItems(), Total: resp.GetTotal(), Page: resp.GetPage(), PageSize: resp.GetPageSize(),
+	}, nil
+}
+
+func (s *Server) ListPolymarketUMADisputes(ctx context.Context, req *polymarketpkg.ListPolymarketUMADisputesRequest) (*polymarketpkg.ListPolymarketUMADisputesResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketUMADisputes(ctx, &polymarketapiclient.ListPolymarketUMADisputesRequest{
+		Page: req.GetPage(), PageSize: req.GetPageSize(), BlockNumber: req.GetBlockNumber(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.ListPolymarketUMADisputesResponse{
+		Items: resp.GetItems(), Total: resp.GetTotal(), Page: resp.GetPage(), PageSize: resp.GetPageSize(),
+	}, nil
+}

@@ -5,6 +5,61 @@ type PolymarketStatus struct {
 	Status  string `protobuf:"bytes,2,opt,name=status" json:"status"`
 }
 
+type PolymarketUMAProposalItem struct {
+	TxHash              string `protobuf:"bytes,1,opt,name=txHash" json:"txHash"`
+	LogIndex            int64  `protobuf:"varint,2,opt,name=logIndex" json:"logIndex"`
+	BlockNumber         int64  `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	BlockHash           string `protobuf:"bytes,4,opt,name=blockHash" json:"blockHash"`
+	TxIndex             int64  `protobuf:"varint,5,opt,name=txIndex" json:"txIndex"`
+	ContractAddress     string `protobuf:"bytes,6,opt,name=contractAddress" json:"contractAddress"`
+	Topic               string `protobuf:"bytes,7,opt,name=topic" json:"topic"`
+	Requester           string `protobuf:"bytes,8,opt,name=requester" json:"requester"`
+	Proposer            string `protobuf:"bytes,9,opt,name=proposer" json:"proposer"`
+	Identifier          string `protobuf:"bytes,10,opt,name=identifier" json:"identifier"`
+	RequestTimestamp    int64  `protobuf:"varint,11,opt,name=requestTimestamp" json:"requestTimestamp"`
+	AncillaryDataHex    string `protobuf:"bytes,12,opt,name=ancillaryDataHex" json:"ancillaryDataHex"`
+	AncillaryDataText   string `protobuf:"bytes,13,opt,name=ancillaryDataText" json:"ancillaryDataText"`
+	MarketID            string `protobuf:"bytes,14,opt,name=marketId" json:"marketId"`
+	ProposedPrice       string `protobuf:"bytes,15,opt,name=proposedPrice" json:"proposedPrice"`
+	ExpirationTimestamp int64  `protobuf:"varint,16,opt,name=expirationTimestamp" json:"expirationTimestamp"`
+	Currency            string `protobuf:"bytes,17,opt,name=currency" json:"currency"`
+	RawTopics           string `protobuf:"bytes,18,opt,name=rawTopics" json:"rawTopics"`
+	RawData             string `protobuf:"bytes,19,opt,name=rawData" json:"rawData"`
+	FetchedAt           string `protobuf:"bytes,20,opt,name=fetchedAt" json:"fetchedAt"`
+	ConditionID         string `protobuf:"bytes,21,opt,name=conditionId" json:"conditionId"`
+	EventSlug           string `protobuf:"bytes,22,opt,name=eventSlug" json:"eventSlug"`
+	MarketSlug          string `protobuf:"bytes,23,opt,name=marketSlug" json:"marketSlug"`
+	Question            string `protobuf:"bytes,24,opt,name=question" json:"question"`
+	PolymarketURL       string `protobuf:"bytes,25,opt,name=polymarketUrl" json:"polymarketUrl"`
+}
+
+type PolymarketUMADisputeItem struct {
+	TxHash            string `protobuf:"bytes,1,opt,name=txHash" json:"txHash"`
+	LogIndex          int64  `protobuf:"varint,2,opt,name=logIndex" json:"logIndex"`
+	BlockNumber       int64  `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	BlockHash         string `protobuf:"bytes,4,opt,name=blockHash" json:"blockHash"`
+	TxIndex           int64  `protobuf:"varint,5,opt,name=txIndex" json:"txIndex"`
+	ContractAddress   string `protobuf:"bytes,6,opt,name=contractAddress" json:"contractAddress"`
+	Topic             string `protobuf:"bytes,7,opt,name=topic" json:"topic"`
+	Requester         string `protobuf:"bytes,8,opt,name=requester" json:"requester"`
+	Proposer          string `protobuf:"bytes,9,opt,name=proposer" json:"proposer"`
+	Disputer          string `protobuf:"bytes,10,opt,name=disputer" json:"disputer"`
+	Identifier        string `protobuf:"bytes,11,opt,name=identifier" json:"identifier"`
+	RequestTimestamp  int64  `protobuf:"varint,12,opt,name=requestTimestamp" json:"requestTimestamp"`
+	AncillaryDataHex  string `protobuf:"bytes,13,opt,name=ancillaryDataHex" json:"ancillaryDataHex"`
+	AncillaryDataText string `protobuf:"bytes,14,opt,name=ancillaryDataText" json:"ancillaryDataText"`
+	MarketID          string `protobuf:"bytes,15,opt,name=marketId" json:"marketId"`
+	ProposedPrice     string `protobuf:"bytes,16,opt,name=proposedPrice" json:"proposedPrice"`
+	RawTopics         string `protobuf:"bytes,17,opt,name=rawTopics" json:"rawTopics"`
+	RawData           string `protobuf:"bytes,18,opt,name=rawData" json:"rawData"`
+	FetchedAt         string `protobuf:"bytes,19,opt,name=fetchedAt" json:"fetchedAt"`
+	ConditionID       string `protobuf:"bytes,20,opt,name=conditionId" json:"conditionId"`
+	EventSlug         string `protobuf:"bytes,21,opt,name=eventSlug" json:"eventSlug"`
+	MarketSlug        string `protobuf:"bytes,22,opt,name=marketSlug" json:"marketSlug"`
+	Question          string `protobuf:"bytes,23,opt,name=question" json:"question"`
+	PolymarketURL     string `protobuf:"bytes,24,opt,name=polymarketUrl" json:"polymarketUrl"`
+}
+
 type PolymarketHotMarketTokenItem struct {
 	TokenID string  `protobuf:"bytes,1,opt,name=tokenId" json:"tokenId"`
 	Outcome string  `protobuf:"bytes,2,opt,name=outcome" json:"outcome"`

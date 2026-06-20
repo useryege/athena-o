@@ -20,6 +20,8 @@ type Querier interface {
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
 	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
+	CountManagedOODisputePriceLogs(ctx context.Context, blockNumber int64) (int64, error)
+	CountManagedOOProposePriceLogs(ctx context.Context, blockNumber int64) (int64, error)
 	DeleteManagedOOMarketLabelsByMarketID(ctx context.Context, marketID string) error
 	DeleteSportsHistoryEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsHistoryMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
@@ -29,8 +31,10 @@ type Querier interface {
 	GetPolymarketChainLogCursor(ctx context.Context, syncName string) (PolymarketChainLogCursor, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListManagedOODisputePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOODisputePriceAlertCandidatesRow, error)
-	ListManagedOOMarketIDsMissingData(ctx context.Context, limitValue int32) ([]string, error)
+	ListManagedOODisputePriceLogs(ctx context.Context, arg ListManagedOODisputePriceLogsParams) ([]ListManagedOODisputePriceLogsRow, error)
+	ListManagedOOMarketIDsNeedingRefresh(ctx context.Context, arg ListManagedOOMarketIDsNeedingRefreshParams) ([]string, error)
 	ListManagedOOProposePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOOProposePriceAlertCandidatesRow, error)
+	ListManagedOOProposePriceLogs(ctx context.Context, arg ListManagedOOProposePriceLogsParams) ([]ListManagedOOProposePriceLogsRow, error)
 	ListSportsHistoryEvents(ctx context.Context, limit int32) ([]ListSportsHistoryEventsRow, error)
 	ListSportsHistoryMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsHistoryMarketsByEventKeysRow, error)
 	ListSportsHistoryMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsHistoryMoneylineMarketsForPriceHistoryRow, error)

@@ -281,6 +281,32 @@ func (q *Queries) BatchUpsertManagedOOProposePriceLogs(ctx context.Context, arg 
 	return err
 }
 
+const countManagedOODisputePriceLogs = `-- name: CountManagedOODisputePriceLogs :one
+SELECT COUNT(*)::bigint
+FROM polymarket_managed_oo_dispute_price_log
+WHERE $1::bigint = 0 OR block_number = $1
+`
+
+func (q *Queries) CountManagedOODisputePriceLogs(ctx context.Context, blockNumber int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countManagedOODisputePriceLogs, blockNumber)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const countManagedOOProposePriceLogs = `-- name: CountManagedOOProposePriceLogs :one
+SELECT COUNT(*)::bigint
+FROM polymarket_managed_oo_propose_price_log
+WHERE $1::bigint = 0 OR block_number = $1
+`
+
+func (q *Queries) CountManagedOOProposePriceLogs(ctx context.Context, blockNumber int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countManagedOOProposePriceLogs, blockNumber)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const deleteManagedOOMarketLabelsByMarketID = `-- name: DeleteManagedOOMarketLabelsByMarketID :exec
 DELETE FROM polymarket_managed_oo_market_label
 WHERE market_id = $1
@@ -353,6 +379,12 @@ LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
+  AND btrim(market.slug) <> ''
+  AND COALESCE(
+    NULLIF(btrim(market.event_slug), ''),
+    NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
+    ''
+  ) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT $1
 `
@@ -411,7 +443,116 @@ func (q *Queries) ListManagedOODisputePriceAlertCandidates(ctx context.Context, 
 	return items, nil
 }
 
-const listManagedOOMarketIDsMissingData = `-- name: ListManagedOOMarketIDsMissingData :many
+const listManagedOODisputePriceLogs = `-- name: ListManagedOODisputePriceLogs :many
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.block_hash,
+  log.tx_index,
+  log.contract_address,
+  log.topic,
+  log.requester,
+  log.proposer,
+  log.disputer,
+  log.identifier,
+  log.request_timestamp,
+  log.ancillary_data_hex,
+  log.ancillary_data_text,
+  log.market_id,
+  log.proposed_price,
+  log.raw_topics,
+  log.raw_data,
+  log.fetched_at,
+  COALESCE(market.condition_id, '')::text AS condition_id,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  COALESCE(market.slug, '')::text AS market_slug,
+  COALESCE(market.question, '')::text AS question
+FROM polymarket_managed_oo_dispute_price_log AS log
+LEFT JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+WHERE $1::bigint = 0 OR log.block_number = $1
+ORDER BY log.block_number DESC, log.log_index DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListManagedOODisputePriceLogsParams struct {
+	BlockNumber int64
+	OffsetValue int32
+	LimitValue  int32
+}
+
+type ListManagedOODisputePriceLogsRow struct {
+	TxHash            string
+	LogIndex          int64
+	BlockNumber       int64
+	BlockHash         string
+	TxIndex           int64
+	ContractAddress   string
+	Topic             string
+	Requester         string
+	Proposer          string
+	Disputer          string
+	Identifier        string
+	RequestTimestamp  int64
+	AncillaryDataHex  string
+	AncillaryDataText string
+	MarketID          string
+	ProposedPrice     string
+	RawTopics         []byte
+	RawData           string
+	FetchedAt         pgtype.Timestamptz
+	ConditionID       string
+	EventSlug         string
+	MarketSlug        string
+	Question          string
+}
+
+func (q *Queries) ListManagedOODisputePriceLogs(ctx context.Context, arg ListManagedOODisputePriceLogsParams) ([]ListManagedOODisputePriceLogsRow, error) {
+	rows, err := q.db.Query(ctx, listManagedOODisputePriceLogs, arg.BlockNumber, arg.OffsetValue, arg.LimitValue)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListManagedOODisputePriceLogsRow
+	for rows.Next() {
+		var i ListManagedOODisputePriceLogsRow
+		if err := rows.Scan(
+			&i.TxHash,
+			&i.LogIndex,
+			&i.BlockNumber,
+			&i.BlockHash,
+			&i.TxIndex,
+			&i.ContractAddress,
+			&i.Topic,
+			&i.Requester,
+			&i.Proposer,
+			&i.Disputer,
+			&i.Identifier,
+			&i.RequestTimestamp,
+			&i.AncillaryDataHex,
+			&i.AncillaryDataText,
+			&i.MarketID,
+			&i.ProposedPrice,
+			&i.RawTopics,
+			&i.RawData,
+			&i.FetchedAt,
+			&i.ConditionID,
+			&i.EventSlug,
+			&i.MarketSlug,
+			&i.Question,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listManagedOOMarketIDsNeedingRefresh = `-- name: ListManagedOOMarketIDsNeedingRefresh :many
 WITH event_market_ids AS (
   SELECT market_id
   FROM polymarket_managed_oo_propose_price_log
@@ -425,13 +566,32 @@ LEFT JOIN polymarket_managed_oo_market AS market
   ON market.market_id = event_market_ids.market_id
 WHERE event_market_ids.market_id <> ''
   AND event_market_ids.market_id ~ '^[0-9]+$'
-  AND market.market_id IS NULL
+  AND (
+    market.market_id IS NULL
+    OR (
+      market.fetched_at <= $1
+      AND (
+        market.fetch_status <> 'ok'
+        OR btrim(market.slug) = ''
+        OR COALESCE(
+          NULLIF(btrim(market.event_slug), ''),
+          NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
+          ''
+        ) = ''
+      )
+    )
+  )
 ORDER BY event_market_ids.market_id
-LIMIT $1
+LIMIT $2
 `
 
-func (q *Queries) ListManagedOOMarketIDsMissingData(ctx context.Context, limitValue int32) ([]string, error) {
-	rows, err := q.db.Query(ctx, listManagedOOMarketIDsMissingData, limitValue)
+type ListManagedOOMarketIDsNeedingRefreshParams struct {
+	RetryBefore pgtype.Timestamptz
+	LimitValue  int32
+}
+
+func (q *Queries) ListManagedOOMarketIDsNeedingRefresh(ctx context.Context, arg ListManagedOOMarketIDsNeedingRefreshParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listManagedOOMarketIDsNeedingRefresh, arg.RetryBefore, arg.LimitValue)
 	if err != nil {
 		return nil, err
 	}
@@ -483,6 +643,12 @@ LEFT JOIN polymarket_managed_oo_propose_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
+  AND btrim(market.slug) <> ''
+  AND COALESCE(
+    NULLIF(btrim(market.event_slug), ''),
+    NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
+    ''
+  ) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT $1
 `
@@ -528,6 +694,118 @@ func (q *Queries) ListManagedOOProposePriceAlertCandidates(ctx context.Context, 
 			&i.MarketSlug,
 			&i.Question,
 			&i.MatchedLabels,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listManagedOOProposePriceLogs = `-- name: ListManagedOOProposePriceLogs :many
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.block_hash,
+  log.tx_index,
+  log.contract_address,
+  log.topic,
+  log.requester,
+  log.proposer,
+  log.identifier,
+  log.request_timestamp,
+  log.ancillary_data_hex,
+  log.ancillary_data_text,
+  log.market_id,
+  log.proposed_price,
+  log.expiration_timestamp,
+  log.currency,
+  log.raw_topics,
+  log.raw_data,
+  log.fetched_at,
+  COALESCE(market.condition_id, '')::text AS condition_id,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  COALESCE(market.slug, '')::text AS market_slug,
+  COALESCE(market.question, '')::text AS question
+FROM polymarket_managed_oo_propose_price_log AS log
+LEFT JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+WHERE $1::bigint = 0 OR log.block_number = $1
+ORDER BY log.block_number DESC, log.log_index DESC
+LIMIT $3 OFFSET $2
+`
+
+type ListManagedOOProposePriceLogsParams struct {
+	BlockNumber int64
+	OffsetValue int32
+	LimitValue  int32
+}
+
+type ListManagedOOProposePriceLogsRow struct {
+	TxHash              string
+	LogIndex            int64
+	BlockNumber         int64
+	BlockHash           string
+	TxIndex             int64
+	ContractAddress     string
+	Topic               string
+	Requester           string
+	Proposer            string
+	Identifier          string
+	RequestTimestamp    int64
+	AncillaryDataHex    string
+	AncillaryDataText   string
+	MarketID            string
+	ProposedPrice       string
+	ExpirationTimestamp int64
+	Currency            string
+	RawTopics           []byte
+	RawData             string
+	FetchedAt           pgtype.Timestamptz
+	ConditionID         string
+	EventSlug           string
+	MarketSlug          string
+	Question            string
+}
+
+func (q *Queries) ListManagedOOProposePriceLogs(ctx context.Context, arg ListManagedOOProposePriceLogsParams) ([]ListManagedOOProposePriceLogsRow, error) {
+	rows, err := q.db.Query(ctx, listManagedOOProposePriceLogs, arg.BlockNumber, arg.OffsetValue, arg.LimitValue)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListManagedOOProposePriceLogsRow
+	for rows.Next() {
+		var i ListManagedOOProposePriceLogsRow
+		if err := rows.Scan(
+			&i.TxHash,
+			&i.LogIndex,
+			&i.BlockNumber,
+			&i.BlockHash,
+			&i.TxIndex,
+			&i.ContractAddress,
+			&i.Topic,
+			&i.Requester,
+			&i.Proposer,
+			&i.Identifier,
+			&i.RequestTimestamp,
+			&i.AncillaryDataHex,
+			&i.AncillaryDataText,
+			&i.MarketID,
+			&i.ProposedPrice,
+			&i.ExpirationTimestamp,
+			&i.Currency,
+			&i.RawTopics,
+			&i.RawData,
+			&i.FetchedAt,
+			&i.ConditionID,
+			&i.EventSlug,
+			&i.MarketSlug,
+			&i.Question,
 		); err != nil {
 			return nil, err
 		}

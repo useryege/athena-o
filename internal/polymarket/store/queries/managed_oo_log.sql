@@ -159,7 +159,82 @@ SET block_number = EXCLUDED.block_number,
   fetched_at = EXCLUDED.fetched_at,
   updated_at = now();
 
--- name: ListManagedOOMarketIDsMissingData :many
+-- name: CountManagedOOProposePriceLogs :one
+SELECT COUNT(*)::bigint
+FROM polymarket_managed_oo_propose_price_log
+WHERE @block_number::bigint = 0 OR block_number = @block_number;
+
+-- name: ListManagedOOProposePriceLogs :many
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.block_hash,
+  log.tx_index,
+  log.contract_address,
+  log.topic,
+  log.requester,
+  log.proposer,
+  log.identifier,
+  log.request_timestamp,
+  log.ancillary_data_hex,
+  log.ancillary_data_text,
+  log.market_id,
+  log.proposed_price,
+  log.expiration_timestamp,
+  log.currency,
+  log.raw_topics,
+  log.raw_data,
+  log.fetched_at,
+  COALESCE(market.condition_id, '')::text AS condition_id,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  COALESCE(market.slug, '')::text AS market_slug,
+  COALESCE(market.question, '')::text AS question
+FROM polymarket_managed_oo_propose_price_log AS log
+LEFT JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+WHERE @block_number::bigint = 0 OR log.block_number = @block_number
+ORDER BY log.block_number DESC, log.log_index DESC
+LIMIT @limit_value OFFSET @offset_value;
+
+-- name: CountManagedOODisputePriceLogs :one
+SELECT COUNT(*)::bigint
+FROM polymarket_managed_oo_dispute_price_log
+WHERE @block_number::bigint = 0 OR block_number = @block_number;
+
+-- name: ListManagedOODisputePriceLogs :many
+SELECT
+  log.tx_hash,
+  log.log_index,
+  log.block_number,
+  log.block_hash,
+  log.tx_index,
+  log.contract_address,
+  log.topic,
+  log.requester,
+  log.proposer,
+  log.disputer,
+  log.identifier,
+  log.request_timestamp,
+  log.ancillary_data_hex,
+  log.ancillary_data_text,
+  log.market_id,
+  log.proposed_price,
+  log.raw_topics,
+  log.raw_data,
+  log.fetched_at,
+  COALESCE(market.condition_id, '')::text AS condition_id,
+  COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
+  COALESCE(market.slug, '')::text AS market_slug,
+  COALESCE(market.question, '')::text AS question
+FROM polymarket_managed_oo_dispute_price_log AS log
+LEFT JOIN polymarket_managed_oo_market AS market
+  ON market.market_id = log.market_id
+WHERE @block_number::bigint = 0 OR log.block_number = @block_number
+ORDER BY log.block_number DESC, log.log_index DESC
+LIMIT @limit_value OFFSET @offset_value;
+
+-- name: ListManagedOOMarketIDsNeedingRefresh :many
 WITH event_market_ids AS (
   SELECT market_id
   FROM polymarket_managed_oo_propose_price_log
@@ -173,7 +248,21 @@ LEFT JOIN polymarket_managed_oo_market AS market
   ON market.market_id = event_market_ids.market_id
 WHERE event_market_ids.market_id <> ''
   AND event_market_ids.market_id ~ '^[0-9]+$'
-  AND market.market_id IS NULL
+  AND (
+    market.market_id IS NULL
+    OR (
+      market.fetched_at <= @retry_before
+      AND (
+        market.fetch_status <> 'ok'
+        OR btrim(market.slug) = ''
+        OR COALESCE(
+          NULLIF(btrim(market.event_slug), ''),
+          NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
+          ''
+        ) = ''
+      )
+    )
+  )
 ORDER BY event_market_ids.market_id
 LIMIT @limit_value;
 
@@ -390,6 +479,12 @@ LEFT JOIN polymarket_managed_oo_propose_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
+  AND btrim(market.slug) <> ''
+  AND COALESCE(
+    NULLIF(btrim(market.event_slug), ''),
+    NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
+    ''
+  ) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT @limit_value;
 
@@ -444,6 +539,12 @@ LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
+  AND btrim(market.slug) <> ''
+  AND COALESCE(
+    NULLIF(btrim(market.event_slug), ''),
+    NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
+    ''
+  ) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT @limit_value;
 

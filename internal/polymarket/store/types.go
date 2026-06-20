@@ -247,6 +247,12 @@ type ManagedOODisputePriceLog struct {
 	FetchedAt         time.Time
 }
 
+type ListManagedOOLogsOptions struct {
+	Page        int
+	PageSize    int
+	BlockNumber uint64
+}
+
 type ManagedOOMarket struct {
 	MarketID         string
 	ConditionID      string

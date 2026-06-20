@@ -24,16 +24,17 @@ import (
 )
 
 const (
-	managedOOProposePriceSyncName          = "managed_oo_propose_price"
-	managedOODisputePriceSyncName          = "managed_oo_dispute_price"
-	managedOOContractAddress               = "0x2C0367a9DB231dDeBd88a94b4f6461a6e47C58B1"
-	managedOOProposePriceTopic             = "0x6e51dd00371aabffa82cd401592f76ed51e98a9ea4b58751c70463a2c78b5ca1"
-	managedOODisputePriceTopic             = "0x5165909c3d1c01c5d1e121ac6f6d01dda1ba24bc9e1f975b5a375339c15be7f3"
-	managedOOLogPollInterval               = 2 * time.Second
-	managedOOLogQueryTimeout               = 20 * time.Second
-	managedOOMarketDataQueryTimeout        = 20 * time.Second
-	managedOOMarketDataMissingLimit        = 100
-	managedOOLogMaxBlockRange       uint64 = 2000
+	managedOOProposePriceSyncName           = "managed_oo_propose_price"
+	managedOODisputePriceSyncName           = "managed_oo_dispute_price"
+	managedOOContractAddress                = "0x2C0367a9DB231dDeBd88a94b4f6461a6e47C58B1"
+	managedOOProposePriceTopic              = "0x6e51dd00371aabffa82cd401592f76ed51e98a9ea4b58751c70463a2c78b5ca1"
+	managedOODisputePriceTopic              = "0x5165909c3d1c01c5d1e121ac6f6d01dda1ba24bc9e1f975b5a375339c15be7f3"
+	managedOOLogPollInterval                = 2 * time.Second
+	managedOOLogQueryTimeout                = 20 * time.Second
+	managedOOMarketDataQueryTimeout         = 20 * time.Second
+	managedOOMarketDataRetryInterval        = time.Minute
+	managedOOMarketDataRefreshLimit         = 100
+	managedOOLogMaxBlockRange        uint64 = 2000
 )
 
 var managedOOProposePriceABI = mustManagedOOProposePriceABI()
@@ -56,6 +57,9 @@ func (s *Service) runManagedOOProposePriceLogSyncLoop(ctx context.Context) {
 }
 
 func (s *Service) syncManagedOOProposePriceLogsMarketsAndAlerts(ctx context.Context, phase string) {
+	s.managedOOPipelineMu.Lock()
+	defer s.managedOOPipelineMu.Unlock()
+
 	if err := s.syncManagedOOProposePriceLogs(ctx); err != nil {
 		log.WithError(err).Warnf("%s polymarket managed oo propose price log sync failed", phase)
 		return
@@ -296,7 +300,8 @@ func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
 	if s.gammaClient == nil {
 		return fmt.Errorf("polymarket gamma client is required")
 	}
-	marketIDs, err := s.store.ListManagedOOMarketIDsMissingData(ctx, managedOOMarketDataMissingLimit)
+	retryBefore := s.now().UTC().Add(-managedOOMarketDataRetryInterval)
+	marketIDs, err := s.store.ListManagedOOMarketIDsNeedingRefresh(ctx, retryBefore, managedOOMarketDataRefreshLimit)
 	if err != nil {
 		return err
 	}
@@ -313,8 +318,11 @@ func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
 		}
 
 		fetchedAt := s.now().UTC()
+		limit := 1
 		queryCtx, cancel := context.WithTimeout(ctx, managedOOMarketDataQueryTimeout)
-		market, err := s.gammaClient.GetMarketByID(queryCtx, gammaID, utilpolymarket.GetMarketOptions{
+		response, err := s.gammaClient.ListMarketsKeyset(queryCtx, utilpolymarket.ListMarketsKeysetOptions{
+			Limit:      &limit,
+			ID:         []int64{gammaID},
 			IncludeTag: ptrBool(true),
 		})
 		cancel()
@@ -328,8 +336,13 @@ func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
 			}
 			return fmt.Errorf("fetch managed oo gamma market %s: %w", marketID, err)
 		}
+		market := managedOOMarketByID(response, marketID)
 		if market == nil {
-			return fmt.Errorf("fetch managed oo gamma market %s: empty response", marketID)
+			if err := s.store.UpsertManagedOOMarketNotFound(ctx, marketID, "gamma market not found", fetchedAt); err != nil {
+				return err
+			}
+			notFound++
+			continue
 		}
 		if err := s.store.UpsertManagedOOMarket(ctx, managedOOMarketFromGamma(marketID, *market, fetchedAt)); err != nil {
 			return err
@@ -342,6 +355,19 @@ func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
 		"fetched":   fetched,
 		"not_found": notFound,
 	}).Debug("synced polymarket managed oo market data")
+	return nil
+}
+
+func managedOOMarketByID(response *utilpolymarket.MarketKeysetResponse, marketID string) *utilpolymarket.Market {
+	if response == nil {
+		return nil
+	}
+	marketID = strings.TrimSpace(marketID)
+	for i := range response.Markets {
+		if strings.TrimSpace(response.Markets[i].ID) == marketID {
+			return &response.Markets[i]
+		}
+	}
 	return nil
 }
 

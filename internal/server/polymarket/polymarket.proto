@@ -120,6 +120,42 @@ message ListPolymarketFIFAWalletBalancesResponse {
   int64 fetched_at = 2;
 }
 
+message ScanPolymarketManagedOOBlockRequest {
+  uint64 block_number = 1;
+}
+
+message ScanPolymarketManagedOOBlockResponse {
+  uint64 block_number = 1;
+  int32 proposal_count = 2;
+  int32 dispute_count = 3;
+}
+
+message ListPolymarketUMAProposalsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  uint64 block_number = 3;
+}
+
+message ListPolymarketUMAProposalsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketUMAProposalItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListPolymarketUMADisputesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  uint64 block_number = 3;
+}
+
+message ListPolymarketUMADisputesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketUMADisputeItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
 service PolymarketService {
   // GetPolymarketStatus returns the polymarket service runtime status.
   rpc GetPolymarketStatus(GetPolymarketStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketStatus) {
@@ -171,5 +207,17 @@ service PolymarketService {
 
   rpc ListPolymarketFIFAWalletBalances(ListPolymarketFIFAWalletBalancesRequest) returns (ListPolymarketFIFAWalletBalancesResponse) {
     option (google.api.http) = {get: "/api/v1/polymarket/fifa/wallet-balances"};
+  }
+
+  rpc ScanPolymarketManagedOOBlock(ScanPolymarketManagedOOBlockRequest) returns (ScanPolymarketManagedOOBlockResponse) {
+    option (google.api.http) = {post: "/api/v1/polymarket/uma/blocks/{block_number}:scan"};
+  }
+
+  rpc ListPolymarketUMAProposals(ListPolymarketUMAProposalsRequest) returns (ListPolymarketUMAProposalsResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/uma/proposals"};
+  }
+
+  rpc ListPolymarketUMADisputes(ListPolymarketUMADisputesRequest) returns (ListPolymarketUMADisputesResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/uma/disputes"};
   }
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	polymarketsqlc "github.com/useryege/athena/internal/polymarket/store/sqlc"
+	v1alpha1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
 func (s *SQLStore) GetPolymarketChainLogCursor(ctx context.Context, syncName string) (*ChainLogCursor, error) {
@@ -119,16 +120,133 @@ func (s *SQLStore) IngestManagedOODisputePriceLogs(ctx context.Context, cursor C
 	return nil
 }
 
-func (s *SQLStore) ListManagedOOMarketIDsMissingData(ctx context.Context, limit int32) ([]string, error) {
+func (s *SQLStore) UpsertManagedOOBlockLogs(ctx context.Context, proposals []ManagedOOProposePriceLog, disputes []ManagedOODisputePriceLog) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo block log upsert: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if len(proposals) > 0 {
+		params, err := batchUpsertManagedOOProposePriceLogsParams(proposals)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOOProposePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo propose price logs: %w", err)
+		}
+	}
+	if len(disputes) > 0 {
+		params, err := batchUpsertManagedOODisputePriceLogsParams(disputes)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOODisputePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo dispute price logs: %w", err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo block log upsert: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ListManagedOOProposals(ctx context.Context, opts ListManagedOOLogsOptions) ([]*v1alpha1.PolymarketUMAProposalItem, int64, error) {
+	if s == nil || s.queries == nil {
+		return nil, 0, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	blockNumber, err := uint64ToInt64("block_number", opts.BlockNumber)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.queries.CountManagedOOProposePriceLogs(ctx, blockNumber)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count managed oo propose price logs: %w", err)
+	}
+	rows, err := s.queries.ListManagedOOProposePriceLogs(ctx, polymarketsqlc.ListManagedOOProposePriceLogsParams{
+		BlockNumber: blockNumber,
+		OffsetValue: int32((opts.Page - 1) * opts.PageSize),
+		LimitValue:  int32(opts.PageSize),
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("list managed oo propose price logs: %w", err)
+	}
+	items := make([]*v1alpha1.PolymarketUMAProposalItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, &v1alpha1.PolymarketUMAProposalItem{
+			TxHash: row.TxHash, LogIndex: row.LogIndex, BlockNumber: row.BlockNumber,
+			BlockHash: row.BlockHash, TxIndex: row.TxIndex, ContractAddress: row.ContractAddress,
+			Topic: row.Topic, Requester: row.Requester, Proposer: row.Proposer,
+			Identifier: row.Identifier, RequestTimestamp: row.RequestTimestamp,
+			AncillaryDataHex: row.AncillaryDataHex, AncillaryDataText: row.AncillaryDataText,
+			MarketID: row.MarketID, ProposedPrice: row.ProposedPrice,
+			ExpirationTimestamp: row.ExpirationTimestamp, Currency: row.Currency,
+			RawTopics: string(row.RawTopics), RawData: row.RawData,
+			FetchedAt:   timeValue(row.FetchedAt).UTC().Format(time.RFC3339),
+			ConditionID: row.ConditionID, EventSlug: row.EventSlug,
+			MarketSlug: row.MarketSlug, Question: row.Question,
+		})
+	}
+	return items, total, nil
+}
+
+func (s *SQLStore) ListManagedOODisputes(ctx context.Context, opts ListManagedOOLogsOptions) ([]*v1alpha1.PolymarketUMADisputeItem, int64, error) {
+	if s == nil || s.queries == nil {
+		return nil, 0, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	blockNumber, err := uint64ToInt64("block_number", opts.BlockNumber)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.queries.CountManagedOODisputePriceLogs(ctx, blockNumber)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count managed oo dispute price logs: %w", err)
+	}
+	rows, err := s.queries.ListManagedOODisputePriceLogs(ctx, polymarketsqlc.ListManagedOODisputePriceLogsParams{
+		BlockNumber: blockNumber,
+		OffsetValue: int32((opts.Page - 1) * opts.PageSize),
+		LimitValue:  int32(opts.PageSize),
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("list managed oo dispute price logs: %w", err)
+	}
+	items := make([]*v1alpha1.PolymarketUMADisputeItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, &v1alpha1.PolymarketUMADisputeItem{
+			TxHash: row.TxHash, LogIndex: row.LogIndex, BlockNumber: row.BlockNumber,
+			BlockHash: row.BlockHash, TxIndex: row.TxIndex, ContractAddress: row.ContractAddress,
+			Topic: row.Topic, Requester: row.Requester, Proposer: row.Proposer, Disputer: row.Disputer,
+			Identifier: row.Identifier, RequestTimestamp: row.RequestTimestamp,
+			AncillaryDataHex: row.AncillaryDataHex, AncillaryDataText: row.AncillaryDataText,
+			MarketID: row.MarketID, ProposedPrice: row.ProposedPrice,
+			RawTopics: string(row.RawTopics), RawData: row.RawData,
+			FetchedAt:   timeValue(row.FetchedAt).UTC().Format(time.RFC3339),
+			ConditionID: row.ConditionID, EventSlug: row.EventSlug,
+			MarketSlug: row.MarketSlug, Question: row.Question,
+		})
+	}
+	return items, total, nil
+}
+
+func (s *SQLStore) ListManagedOOMarketIDsNeedingRefresh(ctx context.Context, retryBefore time.Time, limit int32) ([]string, error) {
 	if s == nil || s.queries == nil {
 		return nil, fmt.Errorf("polymarket postgres database is not configured")
 	}
 	if limit <= 0 {
 		return nil, nil
 	}
-	ids, err := s.queries.ListManagedOOMarketIDsMissingData(ctx, limit)
+	ids, err := s.queries.ListManagedOOMarketIDsNeedingRefresh(ctx, polymarketsqlc.ListManagedOOMarketIDsNeedingRefreshParams{
+		RetryBefore: nullableTime(retryBefore),
+		LimitValue:  limit,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("list managed oo market ids missing data: %w", err)
+		return nil, fmt.Errorf("list managed oo market ids needing refresh: %w", err)
 	}
 	return ids, nil
 }

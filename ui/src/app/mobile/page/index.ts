@@ -10,6 +10,7 @@ export * from './node-statuses';
 export * from './notification-detail';
 export * from './notifications';
 export * from './polymarket';
+export * from './polymarket-uma';
 export * from './project-reports';
 export * from './projects';
 export * from './settings';

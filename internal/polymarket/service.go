@@ -45,7 +45,6 @@ type FIFAWalletBalanceConfig struct {
 type sportsLiveGammaClient interface {
 	ListEventsKeyset(context.Context, utilpolymarket.ListEventsKeysetOptions) (*utilpolymarket.EventKeysetResponse, error)
 	ListMarketsKeyset(context.Context, utilpolymarket.ListMarketsKeysetOptions) (*utilpolymarket.MarketKeysetResponse, error)
-	GetMarketByID(context.Context, int64, utilpolymarket.GetMarketOptions) (*utilpolymarket.Market, error)
 	GetEventByID(context.Context, int64, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
 	GetEventBySlug(context.Context, string, utilpolymarket.GetEventOptions) (*utilpolymarket.Event, error)
 }
@@ -149,6 +148,7 @@ type Service struct {
 	managedOODisputedAlertsConfig ManagedOODisputedAlertsConfig
 	nowFn                         func() time.Time
 	startStopMu                   sync.Mutex
+	managedOOPipelineMu           sync.Mutex
 	started                       bool
 	runCancel                     context.CancelFunc
 	runWG                         sync.WaitGroup

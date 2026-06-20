@@ -45,6 +45,10 @@ func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
 
 func (*PolymarketStatus) ProtoMessage() {}
 
+func (*PolymarketUMADisputeItem) ProtoMessage() {}
+
+func (*PolymarketUMAProposalItem) ProtoMessage() {}
+
 func (*TokenAPIBytecodeBlacklist) ProtoMessage() {}
 
 func (*TokenAPIChainIngestCheckpoint) ProtoMessage() {}
