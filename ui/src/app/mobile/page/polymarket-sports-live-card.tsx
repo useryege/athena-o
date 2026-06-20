@@ -295,8 +295,17 @@ const SportsLiveEventInfoSection = (props: {item: PolymarketSportsLiveEventCardI
     );
 };
 
-const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => {
+const SportsLiveTrendSection = (props: {
+    options: SportsLiveDisplayOption[];
+    history?: PolymarketSportsLivePriceHistorySeriesItem[];
+    scratchMode?: boolean;
+    scratchResetVersion?: number;
+}) => {
     const [selectedTimestamp, setSelectedTimestamp] = React.useState<number>();
+    const [scratchRevealX, setScratchRevealX] = React.useState(0);
+    const chartId = React.useId().replace(/:/g, '');
+    const scratchClipId = `sports-live-chart-scratch-${chartId}`;
+    const scratchActive = props.scratchMode === true;
     const series = props.options
         .map((option, index) => {
             const history = resolvedPriceHistory(props.history, option, index);
@@ -312,6 +321,13 @@ const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; hist
         .filter(item => item.points.length > 1);
 
     const timestamps = series.flatMap(item => item.points.map(point => point.timestamp));
+
+    React.useEffect(() => {
+        if (scratchActive) {
+            setScratchRevealX(0);
+            setSelectedTimestamp(undefined);
+        }
+    }, [scratchActive, props.scratchResetVersion]);
 
     if (series.length === 0 || timestamps.length === 0) {
         return (
@@ -339,13 +355,29 @@ const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; hist
     const labelYFor = (price: number) => Math.min(height - padding.bottom - 30, Math.max(padding.top + 16, yFor(price)));
     const pathFor = (points: Array<{price: number; timestamp: number}>) =>
         points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${xFor(point.timestamp).toFixed(2)} ${yFor(point.price).toFixed(2)}`).join(' ');
-    const selectNearestTime = (element: SVGSVGElement, clientX: number, clientY: number) => {
+    const chartPointerPosition = (element: SVGSVGElement, clientX: number, clientY: number) => {
         const bounds = element.getBoundingClientRect();
         if (bounds.width <= 0 || bounds.height <= 0) {
-            return;
+            return undefined;
         }
         const pointerX = ((clientX - bounds.left) / bounds.width) * width;
         const pointerY = ((clientY - bounds.top) / bounds.height) * height;
+        return {pointerX, pointerY};
+    };
+    const revealScratchAt = (element: SVGSVGElement, clientX: number, clientY: number) => {
+        const position = chartPointerPosition(element, clientX, clientY);
+        if (!position || position.pointerY < 0 || position.pointerY > height) {
+            return;
+        }
+        const nextX = Math.min(width, Math.max(0, position.pointerX));
+        setScratchRevealX(current => Math.max(current, nextX));
+    };
+    const selectNearestTime = (element: SVGSVGElement, clientX: number, clientY: number) => {
+        const position = chartPointerPosition(element, clientX, clientY);
+        if (!position) {
+            return;
+        }
+        const {pointerX, pointerY} = position;
         if (pointerX < padding.left || pointerX > plotRight || pointerY < padding.top || pointerY > height - padding.bottom) {
             setSelectedTimestamp(undefined);
             return;
@@ -387,7 +419,8 @@ const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; hist
         }
     }
     const selectedX = selectedTimestamp === undefined ? 0 : xFor(selectedTimestamp);
-    const labelsOnLeft = selectedX > plotRight - 184;
+    const scratchCanLabelLeft = scratchActive && selectedX > padding.left + 180;
+    const labelsOnLeft = scratchCanLabelLeft || (!scratchActive && selectedX > plotRight - 184);
     const selectionLabelX = labelsOnLeft ? selectedX - 16 : selectedX + 16;
     const selectionTextAnchor = labelsOnLeft ? ('end' as const) : ('start' as const);
     const selectionItems =
@@ -428,17 +461,32 @@ const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; hist
         }
     }
     const selectionTimeX = Math.min(width - 76, Math.max(76, selectedX));
+    const scratchRevealWidth = scratchActive ? Math.min(width, Math.max(0, scratchRevealX)) : width;
+    const scratchCoverWidth = Math.max(0, width - scratchRevealWidth);
+    const chartClassName = `sports-live-chart ${scratchActive ? 'sports-live-chart--scratch' : ''}`.trim();
+    const revealAndSelect = (element: SVGSVGElement, clientX: number, clientY: number) => {
+        if (scratchActive) {
+            revealScratchAt(element, clientX, clientY);
+        }
+        selectNearestTime(element, clientX, clientY);
+    };
 
     return (
-        <div className='sports-live-chart'>
+        <div className={chartClassName}>
             <svg
                 className='sports-live-chart__svg'
                 viewBox={`0 0 ${width} ${height}`}
                 role='img'
                 aria-label='Moneyline price history'
+                onPointerDown={event => {
+                    if (scratchActive) {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        revealAndSelect(event.currentTarget, event.clientX, event.clientY);
+                    }
+                }}
                 onPointerMove={event => {
-                    if (event.pointerType !== 'touch') {
-                        selectNearestTime(event.currentTarget, event.clientX, event.clientY);
+                    if (scratchActive || event.pointerType !== 'touch') {
+                        revealAndSelect(event.currentTarget, event.clientX, event.clientY);
                     }
                 }}
                 onPointerLeave={event => {
@@ -447,10 +495,21 @@ const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; hist
                     }
                 }}
                 onPointerUp={event => {
-                    if (event.pointerType === 'touch') {
-                        selectNearestTime(event.currentTarget, event.clientX, event.clientY);
+                    if (scratchActive || event.pointerType === 'touch') {
+                        revealAndSelect(event.currentTarget, event.clientX, event.clientY);
+                    }
+                    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                        event.currentTarget.releasePointerCapture(event.pointerId);
                     }
                 }}>
+                <defs>
+                    <clipPath id={scratchClipId}>
+                        <rect x='0' y='0' width={scratchRevealWidth} height={height} />
+                    </clipPath>
+                </defs>
+                {scratchActive && scratchCoverWidth > 0 && (
+                    <rect className='sports-live-chart__scratch-cover' x={scratchRevealWidth} y='0' width={scratchCoverWidth} height={height} />
+                )}
                 {yTicks.map(tick => {
                     const y = yFor(tick);
                     return (
@@ -462,48 +521,53 @@ const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; hist
                         </g>
                     );
                 })}
-                {endpointItems.map(item => (
-                    <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={displayOptionKey(item.option)}>
-                        <path className='sports-live-chart__line' d={pathFor(item.points)} />
-                        <circle className='sports-live-chart__dot' cx={xFor(item.lastPoint.timestamp)} cy={yFor(item.lastPoint.price)} r='5' />
-                        {selectedTimestamp === undefined && (
-                            <>
-                                <text className='sports-live-chart__endpoint-name' x={endpointLabelX} y={item.labelY - 4}>
-                                    {chartOutcomeLabel(item.option.label)}
-                                </text>
-                                <text className='sports-live-chart__endpoint-value' x={endpointLabelX} y={item.labelY + 32}>
-                                    {chartPercent(item.latest)}
-                                </text>
-                            </>
-                        )}
-                    </g>
-                ))}
-                {selectedTimestamp !== undefined && (
-                    <g className='sports-live-chart__selection'>
-                        <line className='sports-live-chart__selection-guide' x1={selectedX} x2={selectedX} y1={padding.top} y2={height - padding.bottom} />
-                        <text className='sports-live-chart__selection-time' x={selectionTimeX} y='14'>
-                            {chartSelectionTime(selectedTimestamp)}
-                        </text>
-                        {selectionItems.map(item => (
-                            <g className={`sports-live-chart__selection-item sports-live-chart__series--${item.tone}`} key={item.key}>
-                                <line
-                                    className='sports-live-chart__selection-connector'
-                                    x1={selectedX + (labelsOnLeft ? -7 : 7)}
-                                    x2={selectionLabelX + (labelsOnLeft ? 5 : -5)}
-                                    y1={item.pointY}
-                                    y2={item.labelY + 7}
-                                />
-                                <circle className='sports-live-chart__selection-halo' cx={selectedX} cy={item.pointY} r='9' />
-                                <circle className='sports-live-chart__selection-dot' cx={selectedX} cy={item.pointY} r='4.5' />
-                                <text className='sports-live-chart__selection-name' textAnchor={selectionTextAnchor} x={selectionLabelX} y={item.labelY}>
-                                    {chartSelectionLabel(item.option.label)}
-                                </text>
-                                <text className='sports-live-chart__selection-price' textAnchor={selectionTextAnchor} x={selectionLabelX} y={item.labelY + 27}>
-                                    {chartSelectionPercent(item.point.price)}
-                                </text>
-                            </g>
-                        ))}
-                    </g>
+                <g clipPath={scratchActive ? `url(#${scratchClipId})` : undefined}>
+                    {endpointItems.map(item => (
+                        <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={displayOptionKey(item.option)}>
+                            <path className='sports-live-chart__line' d={pathFor(item.points)} />
+                            <circle className='sports-live-chart__dot' cx={xFor(item.lastPoint.timestamp)} cy={yFor(item.lastPoint.price)} r='5' />
+                            {selectedTimestamp === undefined && (
+                                <>
+                                    <text className='sports-live-chart__endpoint-name' x={endpointLabelX} y={item.labelY - 4}>
+                                        {chartOutcomeLabel(item.option.label)}
+                                    </text>
+                                    <text className='sports-live-chart__endpoint-value' x={endpointLabelX} y={item.labelY + 32}>
+                                        {chartPercent(item.latest)}
+                                    </text>
+                                </>
+                            )}
+                        </g>
+                    ))}
+                    {selectedTimestamp !== undefined && (
+                        <g className='sports-live-chart__selection'>
+                            <line className='sports-live-chart__selection-guide' x1={selectedX} x2={selectedX} y1={padding.top} y2={height - padding.bottom} />
+                            <text className='sports-live-chart__selection-time' x={selectionTimeX} y='14'>
+                                {chartSelectionTime(selectedTimestamp)}
+                            </text>
+                            {selectionItems.map(item => (
+                                <g className={`sports-live-chart__selection-item sports-live-chart__series--${item.tone}`} key={item.key}>
+                                    <line
+                                        className='sports-live-chart__selection-connector'
+                                        x1={selectedX + (labelsOnLeft ? -7 : 7)}
+                                        x2={selectionLabelX + (labelsOnLeft ? 5 : -5)}
+                                        y1={item.pointY}
+                                        y2={item.labelY + 7}
+                                    />
+                                    <circle className='sports-live-chart__selection-halo' cx={selectedX} cy={item.pointY} r='9' />
+                                    <circle className='sports-live-chart__selection-dot' cx={selectedX} cy={item.pointY} r='4.5' />
+                                    <text className='sports-live-chart__selection-name' textAnchor={selectionTextAnchor} x={selectionLabelX} y={item.labelY}>
+                                        {chartSelectionLabel(item.option.label)}
+                                    </text>
+                                    <text className='sports-live-chart__selection-price' textAnchor={selectionTextAnchor} x={selectionLabelX} y={item.labelY + 27}>
+                                        {chartSelectionPercent(item.point.price)}
+                                    </text>
+                                </g>
+                            ))}
+                        </g>
+                    )}
+                </g>
+                {scratchActive && scratchRevealWidth > 0 && scratchRevealWidth < width && (
+                    <line className='sports-live-chart__scratch-edge' x1={scratchRevealWidth} x2={scratchRevealWidth} y1='0' y2={height} />
                 )}
             </svg>
         </div>
@@ -540,6 +604,8 @@ const SportsLiveEventCardFrame = (props: {
     item: PolymarketSportsLiveEventCardItem;
     options: SportsLiveDisplayOption[];
     history?: PolymarketSportsLivePriceHistorySeriesItem[];
+    scratchMode?: boolean;
+    scratchResetVersion?: number;
     info?: React.ReactNode;
     className?: string;
 }) => (
@@ -548,7 +614,7 @@ const SportsLiveEventCardFrame = (props: {
             {props.info || <SportsLiveEventInfoSection item={props.item} />}
             <SportsLiveMoneylineSection options={props.options} />
         </div>
-        <SportsLiveTrendSection options={props.options} history={props.history} />
+        <SportsLiveTrendSection options={props.options} history={props.history} scratchMode={props.scratchMode} scratchResetVersion={props.scratchResetVersion} />
     </article>
 );
 
@@ -631,12 +697,19 @@ const SportsHistoryEventInfoSection = (props: {item: PolymarketSportsHistoryEven
     );
 };
 
-export const SportsHistoryEventCard = (props: {item: PolymarketSportsHistoryEventCardItem; history?: PolymarketSportsLivePriceHistorySeriesItem[]}) => (
+export const SportsHistoryEventCard = (props: {
+    item: PolymarketSportsHistoryEventCardItem;
+    history?: PolymarketSportsLivePriceHistorySeriesItem[];
+    scratchMode?: boolean;
+    scratchResetVersion?: number;
+}) => (
     <SportsLiveEventCardFrame
         className='sports-history-card'
         item={props.item}
         options={legacyMoneylineOptions(props.item)}
         history={props.history}
+        scratchMode={props.scratchMode}
+        scratchResetVersion={props.scratchResetVersion}
         info={<SportsHistoryEventInfoSection item={props.item} />}
     />
 );

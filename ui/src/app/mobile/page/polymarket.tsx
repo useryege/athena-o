@@ -1,6 +1,6 @@
 import {LoadingOutlined, ReloadOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Button, Empty, Space, Tag, Typography} from 'antd';
+import {Button, Empty, Space, Switch, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
 import {Context} from '../../shared/context';
@@ -205,6 +205,8 @@ export const PolymarketSportsHistoryPage = (props: {canRefresh: boolean}) => {
     const events = useAsyncData(() => services.polymarket.listSportsHistoryEvents(200), []);
     const syncStatus = useAsyncData(() => services.polymarket.getSportsHistorySyncStatus(), []);
     const [refreshing, setRefreshing] = React.useState(false);
+    const [scratchMode, setScratchMode] = React.useState(false);
+    const [scratchResetVersion, setScratchResetVersion] = React.useState(0);
     const marketKeys = React.useMemo(() => moneylineMarketKeys(events.data?.items), [events.data?.items]);
     const marketKeySignature = React.useMemo(() => marketKeys.join('|'), [marketKeys]);
     const history = useAsyncData(() => {
@@ -270,6 +272,13 @@ export const PolymarketSportsHistoryPage = (props: {canRefresh: boolean}) => {
             reloadAll();
         }
     }, [ctx.notifications, reloadAll, syncStatus.reload]);
+    const toggleScratchMode = React.useCallback((checked: boolean) => {
+        setScratchMode(checked);
+        if (checked) {
+            setScratchResetVersion(version => version + 1);
+        }
+    }, []);
+    const resetScratch = React.useCallback(() => setScratchResetVersion(version => version + 1), []);
 
     return (
         <AppPage
@@ -278,11 +287,17 @@ export const PolymarketSportsHistoryPage = (props: {canRefresh: boolean}) => {
             loading={events.loading}
             error={events.error || syncStatus.error}
             extra={
-                props.canRefresh ? (
-                    <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
-                        Refresh data
+                <Space className='sports-history-actions' wrap={true}>
+                    <Switch checked={scratchMode} checkedChildren='Scratch' unCheckedChildren='Scratch' onChange={toggleScratchMode} />
+                    <Button icon={<ReloadOutlined />} disabled={!scratchMode} onClick={resetScratch}>
+                        Reset
                     </Button>
-                ) : undefined
+                    {props.canRefresh && (
+                        <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
+                            Refresh data
+                        </Button>
+                    )}
+                </Space>
             }>
             <SportsHistorySyncStatusBar status={syncStatus.data} refreshing={refreshing} />
             <div className='sports-live-sections sports-history-sections'>
@@ -302,7 +317,13 @@ export const PolymarketSportsHistoryPage = (props: {canRefresh: boolean}) => {
                             </div>
                             <div className='sports-live-section__body'>
                                 {leagueItems.map(item => (
-                                    <SportsHistoryEventCard item={item} history={sportsLiveCardHistory(item, historyByMarketKey)} key={item.eventKey} />
+                                    <SportsHistoryEventCard
+                                        item={item}
+                                        history={sportsLiveCardHistory(item, historyByMarketKey)}
+                                        scratchMode={scratchMode}
+                                        scratchResetVersion={scratchResetVersion}
+                                        key={`${item.eventKey}:${scratchMode ? scratchResetVersion : 'direct'}`}
+                                    />
                                 ))}
                             </div>
                         </section>
