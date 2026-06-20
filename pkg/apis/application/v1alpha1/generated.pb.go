@@ -44,6 +44,8 @@ func (m *PolymarketRealtimeWindowItem) Reset() { *m = PolymarketRealtimeWindowIt
 
 func (m *PolymarketSportsHistoryEventCardItem) Reset() { *m = PolymarketSportsHistoryEventCardItem{} }
 
+func (m *PolymarketSportsHistorySyncStatus) Reset() { *m = PolymarketSportsHistorySyncStatus{} }
+
 func (m *PolymarketSportsLiveEventCardItem) Reset() { *m = PolymarketSportsLiveEventCardItem{} }
 
 func (m *PolymarketSportsLiveMarketCardItem) Reset() { *m = PolymarketSportsLiveMarketCardItem{} }
@@ -1347,6 +1349,48 @@ func (m *PolymarketSportsHistoryEventCardItem) MarshalToSizedBuffer(dAtA []byte)
 	i -= len(m.EventKey)
 	copy(dAtA[i:], m.EventKey)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.EventKey)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *PolymarketSportsHistorySyncStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PolymarketSportsHistorySyncStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PolymarketSportsHistorySyncStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.ErrorMessage)
+	copy(dAtA[i:], m.ErrorMessage)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ErrorMessage)))
+	i--
+	dAtA[i] = 0x2a
+	i = encodeVarintGenerated(dAtA, i, uint64(m.LastSuccessAt))
+	i--
+	dAtA[i] = 0x20
+	i = encodeVarintGenerated(dAtA, i, uint64(m.CompletedAt))
+	i--
+	dAtA[i] = 0x18
+	i = encodeVarintGenerated(dAtA, i, uint64(m.StartedAt))
+	i--
+	dAtA[i] = 0x10
+	i -= len(m.State)
+	copy(dAtA[i:], m.State)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.State)))
 	i--
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
@@ -3413,6 +3457,22 @@ func (m *PolymarketSportsHistoryEventCardItem) Size() (n int) {
 	return n
 }
 
+func (m *PolymarketSportsHistorySyncStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.State)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.StartedAt))
+	n += 1 + sovGenerated(uint64(m.CompletedAt))
+	n += 1 + sovGenerated(uint64(m.LastSuccessAt))
+	l = len(m.ErrorMessage)
+	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
 func (m *PolymarketSportsLiveEventCardItem) Size() (n int) {
 	if m == nil {
 		return 0
@@ -4337,6 +4397,20 @@ func (this *PolymarketSportsHistoryEventCardItem) String() string {
 		`MarketCount:` + fmt.Sprintf("%v", this.MarketCount) + `,`,
 		`Markets:` + repeatedStringForMarkets + `,`,
 		`Teams:` + repeatedStringForTeams + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *PolymarketSportsHistorySyncStatus) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&PolymarketSportsHistorySyncStatus{`,
+		`State:` + fmt.Sprintf("%v", this.State) + `,`,
+		`StartedAt:` + fmt.Sprintf("%v", this.StartedAt) + `,`,
+		`CompletedAt:` + fmt.Sprintf("%v", this.CompletedAt) + `,`,
+		`LastSuccessAt:` + fmt.Sprintf("%v", this.LastSuccessAt) + `,`,
+		`ErrorMessage:` + fmt.Sprintf("%v", this.ErrorMessage) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -9737,6 +9811,177 @@ func (m *PolymarketSportsHistoryEventCardItem) Unmarshal(dAtA []byte) error {
 			if err := m.Teams[len(m.Teams)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PolymarketSportsHistorySyncStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PolymarketSportsHistorySyncStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PolymarketSportsHistorySyncStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.State = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			m.StartedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StartedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompletedAt", wireType)
+			}
+			m.CompletedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CompletedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastSuccessAt", wireType)
+			}
+			m.LastSuccessAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LastSuccessAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

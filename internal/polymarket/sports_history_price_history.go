@@ -2,12 +2,12 @@ package polymarket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	utilpolymarket "github.com/useryege/athena/util/polymarket"
 )
@@ -57,6 +57,7 @@ func (s *Service) syncSportsHistoryPriceHistory(ctx context.Context) error {
 		}
 		return keys[i].start < keys[j].start
 	})
+	var batchErrors []error
 	for _, key := range keys {
 		tokenIDs := grouped[key]
 		sort.Strings(tokenIDs)
@@ -65,10 +66,12 @@ func (s *Service) syncSportsHistoryPriceHistory(ctx context.Context) error {
 			if end > len(tokenIDs) {
 				end = len(tokenIDs)
 			}
-			s.syncSportsHistoryPriceHistoryBatch(ctx, tokenIDs[offset:end], tokens, key.start, key.end)
+			if err := s.syncSportsHistoryPriceHistoryBatch(ctx, tokenIDs[offset:end], tokens, key.start, key.end); err != nil {
+				batchErrors = append(batchErrors, err)
+			}
 		}
 	}
-	return nil
+	return errors.Join(batchErrors...)
 }
 
 func sportsHistoryPriceHistoryTokens(markets []polymarketstore.SportsHistoryPriceHistoryMarket) map[string]sportsHistoryPriceHistoryToken {
@@ -103,9 +106,9 @@ func sportsHistoryPriceHistoryTokens(markets []polymarketstore.SportsHistoryPric
 	return out
 }
 
-func (s *Service) syncSportsHistoryPriceHistoryBatch(ctx context.Context, tokenIDs []string, tokenByID map[string]sportsHistoryPriceHistoryToken, start, end int64) {
+func (s *Service) syncSportsHistoryPriceHistoryBatch(ctx context.Context, tokenIDs []string, tokenByID map[string]sportsHistoryPriceHistoryToken, start, end int64) error {
 	if len(tokenIDs) == 0 || end < start {
-		return
+		return nil
 	}
 	startTs := float64(start)
 	endTs := float64(end)
@@ -117,11 +120,10 @@ func (s *Service) syncSportsHistoryPriceHistoryBatch(ctx context.Context, tokenI
 		Fidelity: &fidelity,
 	})
 	if err != nil {
-		log.WithError(err).WithField("token_count", len(tokenIDs)).Warn("failed to fetch polymarket sports history price batch")
-		return
+		return fmt.Errorf("fetch sports history price batch for %d tokens: %w", len(tokenIDs), err)
 	}
 	if resp == nil || len(resp.History) == 0 {
-		return
+		return nil
 	}
 	fetchedAt := s.now().UTC()
 	pointsByKey := make(map[sportsLivePriceHistoryPointKey]polymarketstore.SportsLivePricePoint)
@@ -149,6 +151,7 @@ func (s *Service) syncSportsHistoryPriceHistoryBatch(ctx context.Context, tokenI
 		points = append(points, point)
 	}
 	if err := s.store.BatchUpsertSportsHistoryPricePoints(ctx, points); err != nil {
-		log.WithError(err).WithField("point_count", len(points)).Warn("failed to upsert polymarket sports history price batch")
+		return fmt.Errorf("upsert sports history price batch with %d points: %w", len(points), err)
 	}
+	return nil
 }

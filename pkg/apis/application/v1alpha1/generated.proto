@@ -370,6 +370,18 @@ message PolymarketSportsHistoryEventCardItem {
   repeated PolymarketSportsLiveTeamItem teams = 18;
 }
 
+message PolymarketSportsHistorySyncStatus {
+  optional string state = 1;
+
+  optional int64 startedAt = 2;
+
+  optional int64 completedAt = 3;
+
+  optional int64 lastSuccessAt = 4;
+
+  optional string errorMessage = 5;
+}
+
 message PolymarketSportsLiveEventCardItem {
   optional string eventKey = 1;
 

@@ -167,6 +167,7 @@ type Service struct {
 	realtimeSubscribedMarkets     int32
 	realtimeSubscribedTokens      int32
 	sportsHistoryStale            bool
+	sportsHistorySyncStatus       *v1alpha1.PolymarketSportsHistorySyncStatus
 	moverAlertStates              map[string]moverAlertState
 	fifaWalletBalances            []*v1alpha1.PolymarketFIFAWalletBalanceItem
 	fifaWalletBalancesFetched     int64
@@ -192,6 +193,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		realtimeSamples:               make(map[string][]realtimeSample),
 		moverAlertStates:              make(map[string]moverAlertState),
 		sportsHistoryStale:            true,
+		sportsHistorySyncStatus:       &v1alpha1.PolymarketSportsHistorySyncStatus{State: sportsHistorySyncStateIdle},
 	}
 	for _, opt := range opts {
 		opt(s)

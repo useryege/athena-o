@@ -183,6 +183,34 @@ func (s *Server) BatchGetPolymarketSportsHistoryPriceHistory(ctx context.Context
 	}, nil
 }
 
+func (s *Server) GetPolymarketSportsHistorySyncStatus(ctx context.Context, _ *polymarketpkg.GetPolymarketSportsHistorySyncStatusRequest) (*polymarketpkg.GetPolymarketSportsHistorySyncStatusResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetPolymarketSportsHistorySyncStatus(ctx, &polymarketapiclient.GetPolymarketSportsHistorySyncStatusRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.GetPolymarketSportsHistorySyncStatusResponse{Status: resp.GetStatus()}, nil
+}
+
+func (s *Server) RefreshPolymarketSportsHistory(ctx context.Context, _ *polymarketpkg.RefreshPolymarketSportsHistoryRequest) (*polymarketpkg.RefreshPolymarketSportsHistoryResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.RefreshPolymarketSportsHistory(ctx, &polymarketapiclient.RefreshPolymarketSportsHistoryRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.RefreshPolymarketSportsHistoryResponse{Status: resp.GetStatus()}, nil
+}
+
 func (s *Server) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *polymarketpkg.GetPolymarketFIFAMoneylineEventRequest) (*polymarketpkg.GetPolymarketFIFAMoneylineEventResponse, error) {
 	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
 	if err != nil {

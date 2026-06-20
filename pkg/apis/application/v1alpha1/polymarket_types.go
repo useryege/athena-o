@@ -284,3 +284,11 @@ type PolymarketSportsHistoryEventCardItem struct {
 	Markets     []*PolymarketSportsLiveMarketCardItem `protobuf:"bytes,17,rep,name=markets" json:"markets"`
 	Teams       []*PolymarketSportsLiveTeamItem       `protobuf:"bytes,18,rep,name=teams" json:"teams"`
 }
+
+type PolymarketSportsHistorySyncStatus struct {
+	State         string `protobuf:"bytes,1,opt,name=state" json:"state"`
+	StartedAt     int64  `protobuf:"varint,2,opt,name=startedAt" json:"startedAt"`
+	CompletedAt   int64  `protobuf:"varint,3,opt,name=completedAt" json:"completedAt"`
+	LastSuccessAt int64  `protobuf:"varint,4,opt,name=lastSuccessAt" json:"lastSuccessAt"`
+	ErrorMessage  string `protobuf:"bytes,5,opt,name=errorMessage" json:"errorMessage"`
+}

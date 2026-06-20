@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-828-g545fff2-dirty"
+    "version": "v1.0.0-832-geb2520d-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -518,6 +518,60 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/polymarketBatchGetPolymarketSportsHistoryPriceHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/sports/history/sync-status": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_GetPolymarketSportsHistorySyncStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketGetPolymarketSportsHistorySyncStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/sports/history:refresh": {
+      "post": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_RefreshPolymarketSportsHistory",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/polymarketRefreshPolymarketSportsHistoryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketRefreshPolymarketSportsHistoryResponse"
             }
           },
           "default": {
@@ -2261,6 +2315,14 @@
         }
       }
     },
+    "polymarketGetPolymarketSportsHistorySyncStatusResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1alpha1PolymarketSportsHistorySyncStatus"
+        }
+      }
+    },
     "polymarketListPolymarketFIFAWalletBalancesResponse": {
       "type": "object",
       "properties": {
@@ -2463,6 +2525,17 @@
         "total": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "polymarketRefreshPolymarketSportsHistoryRequest": {
+      "type": "object"
+    },
+    "polymarketRefreshPolymarketSportsHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1alpha1PolymarketSportsHistorySyncStatus"
         }
       }
     },
@@ -3589,6 +3662,29 @@
         "volume": {
           "type": "number",
           "format": "double"
+        }
+      }
+    },
+    "v1alpha1PolymarketSportsHistorySyncStatus": {
+      "type": "object",
+      "properties": {
+        "completedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "lastSuccessAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "startedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "state": {
+          "type": "string"
         }
       }
     },

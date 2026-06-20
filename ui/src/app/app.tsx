@@ -322,7 +322,13 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/polymarket/realtime' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketRealtimePage />)} />
             <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />
             <Route path='/polymarket/sports-live' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsLivePage />)} />
-            <Route path='/polymarket/sports-history' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsHistoryPage />)} />
+            <Route
+                path='/polymarket/sports-history'
+                element={withPermission(
+                    permission(rbacResources.polymarket, rbacActions.get),
+                    <PolymarketSportsHistoryPage canRefresh={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
+                )}
+            />
             <Route
                 path='/polymarket/uma-proposed'
                 element={withPermission(

@@ -448,6 +448,33 @@ body[data-theme='dark'] .app-page__header {
     gap: 18px;
 }
 
+.sports-history-sync {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border: 1px solid var(--athena-border);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-tight);
+}
+
+.sports-history-sync--syncing {
+    border-left-color: #1677ff;
+    background: color-mix(in srgb, #1677ff 7%, var(--athena-panel-solid));
+}
+
+.sports-history-sync--succeeded {
+    border-left-color: #19a974;
+    background: color-mix(in srgb, #19a974 7%, var(--athena-panel-solid));
+}
+
+.sports-history-sync--failed {
+    border-left-color: #e05f3f;
+    background: color-mix(in srgb, #e05f3f 7%, var(--athena-panel-solid));
+}
+
 .sports-live-section {
     min-width: 0;
 }

@@ -104,6 +104,18 @@ message BatchGetPolymarketSportsHistoryPriceHistoryResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsLivePriceHistorySeriesItem items = 1;
 }
 
+message GetPolymarketSportsHistorySyncStatusRequest {}
+
+message GetPolymarketSportsHistorySyncStatusResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsHistorySyncStatus status = 1;
+}
+
+message RefreshPolymarketSportsHistoryRequest {}
+
+message RefreshPolymarketSportsHistoryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsHistorySyncStatus status = 1;
+}
+
 message GetPolymarketFIFAMoneylineEventRequest {
   string event_ref = 1;
 }
@@ -197,6 +209,17 @@ service PolymarketService {
   rpc BatchGetPolymarketSportsHistoryPriceHistory(BatchGetPolymarketSportsHistoryPriceHistoryRequest) returns (BatchGetPolymarketSportsHistoryPriceHistoryResponse) {
     option (google.api.http) = {
       post: "/api/v1/polymarket/sports/history/price-history:batchGet"
+      body: "*"
+    };
+  }
+
+  rpc GetPolymarketSportsHistorySyncStatus(GetPolymarketSportsHistorySyncStatusRequest) returns (GetPolymarketSportsHistorySyncStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/sports/history/sync-status"};
+  }
+
+  rpc RefreshPolymarketSportsHistory(RefreshPolymarketSportsHistoryRequest) returns (RefreshPolymarketSportsHistoryResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/polymarket/sports/history:refresh"
       body: "*"
     };
   }

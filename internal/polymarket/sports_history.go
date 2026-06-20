@@ -20,29 +20,116 @@ const (
 	maxSportsHistoryListLimit             = 1000
 	defaultSportsHistoryPriceHistoryLimit = 360
 	maxSportsHistoryPriceHistoryLimit     = 720
+	sportsHistorySyncStateIdle            = "idle"
+	sportsHistorySyncStateSyncing         = "syncing"
+	sportsHistorySyncStateSucceeded       = "succeeded"
+	sportsHistorySyncStateFailed          = "failed"
+	sportsHistorySyncKey                  = "sports-history"
 )
 
 func (s *Service) runSportsHistorySync(ctx context.Context) {
 	defer s.runWG.Done()
-	if err := s.syncSportsHistory(ctx); err != nil {
+	if _, err := s.refreshSportsHistory(ctx); err != nil {
 		log.WithError(err).Warn("initial polymarket sports history sync failed")
-		return
-	}
-	s.cacheMu.Lock()
-	s.sportsHistoryStale = false
-	s.cacheMu.Unlock()
-	if err := s.syncSportsHistoryPriceHistory(ctx); err != nil {
-		log.WithError(err).Warn("initial polymarket sports history price sync failed")
 	}
 }
 
-func (s *Service) syncSportsHistory(ctx context.Context) error {
+func (s *Service) refreshSportsHistory(ctx context.Context) (*v1alpha1.PolymarketSportsHistorySyncStatus, error) {
+	value, err, _ := s.syncGroup.Do(sportsHistorySyncKey, func() (any, error) {
+		s.markSportsHistorySyncStarted()
+
+		lastSuccessAt, syncErr := s.syncSportsHistory(ctx)
+		if syncErr == nil {
+			s.cacheMu.Lock()
+			s.sportsHistoryStale = false
+			s.cacheMu.Unlock()
+			syncErr = s.syncSportsHistoryPriceHistory(ctx)
+		} else {
+			s.cacheMu.Lock()
+			s.sportsHistoryStale = true
+			s.cacheMu.Unlock()
+		}
+
+		statusValue := s.markSportsHistorySyncCompleted(lastSuccessAt, syncErr)
+		return statusValue, syncErr
+	})
+	if value == nil {
+		return s.currentSportsHistorySyncStatus(), err
+	}
+	return value.(*v1alpha1.PolymarketSportsHistorySyncStatus), err
+}
+
+func (s *Service) syncSportsHistory(ctx context.Context) (time.Time, error) {
+	if s.store == nil {
+		return time.Time{}, status.Error(codes.FailedPrecondition, "polymarket store is required")
+	}
 	syncStartedAt := s.now().UTC()
 	events, markets, err := s.fetchSportsHistoryEvents(ctx, syncStartedAt)
 	if err != nil {
-		return err
+		return time.Time{}, err
 	}
-	return s.store.SyncSportsHistory(ctx, events, markets, syncStartedAt, s.now().UTC())
+	fetchedAt := s.now().UTC()
+	if err := s.store.SyncSportsHistory(ctx, events, markets, syncStartedAt, fetchedAt); err != nil {
+		return time.Time{}, err
+	}
+	return fetchedAt, nil
+}
+
+func (s *Service) markSportsHistorySyncStarted() {
+	startedAt := s.now().UTC().Unix()
+	s.cacheMu.Lock()
+	lastSuccessAt := int64(0)
+	if s.sportsHistorySyncStatus != nil {
+		lastSuccessAt = s.sportsHistorySyncStatus.LastSuccessAt
+	}
+	s.sportsHistorySyncStatus = &v1alpha1.PolymarketSportsHistorySyncStatus{
+		State:         sportsHistorySyncStateSyncing,
+		StartedAt:     startedAt,
+		LastSuccessAt: lastSuccessAt,
+	}
+	s.cacheMu.Unlock()
+}
+
+func (s *Service) markSportsHistorySyncCompleted(lastSuccessAt time.Time, syncErr error) *v1alpha1.PolymarketSportsHistorySyncStatus {
+	completedAt := s.now().UTC().Unix()
+	s.cacheMu.Lock()
+	statusValue := &v1alpha1.PolymarketSportsHistorySyncStatus{
+		State:       sportsHistorySyncStateSucceeded,
+		CompletedAt: completedAt,
+	}
+	if s.sportsHistorySyncStatus != nil {
+		statusValue.StartedAt = s.sportsHistorySyncStatus.StartedAt
+		statusValue.LastSuccessAt = s.sportsHistorySyncStatus.LastSuccessAt
+	}
+	if !lastSuccessAt.IsZero() {
+		statusValue.LastSuccessAt = lastSuccessAt.Unix()
+	}
+	if syncErr != nil {
+		statusValue.State = sportsHistorySyncStateFailed
+		statusValue.ErrorMessage = syncErr.Error()
+	}
+	s.sportsHistorySyncStatus = statusValue
+	result := cloneSportsHistorySyncStatus(statusValue)
+	s.cacheMu.Unlock()
+	return result
+}
+
+func (s *Service) currentSportsHistorySyncStatus() *v1alpha1.PolymarketSportsHistorySyncStatus {
+	s.cacheMu.RLock()
+	result := cloneSportsHistorySyncStatus(s.sportsHistorySyncStatus)
+	s.cacheMu.RUnlock()
+	if result == nil {
+		return &v1alpha1.PolymarketSportsHistorySyncStatus{State: sportsHistorySyncStateIdle}
+	}
+	return result
+}
+
+func cloneSportsHistorySyncStatus(value *v1alpha1.PolymarketSportsHistorySyncStatus) *v1alpha1.PolymarketSportsHistorySyncStatus {
+	if value == nil {
+		return nil
+	}
+	result := *value
+	return &result
 }
 
 func (s *Service) fetchSportsHistoryEvents(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.SportsHistoryEvent, []polymarketstore.SportsHistoryMarket, error) {
@@ -242,6 +329,29 @@ func sportsHistoryMarketsFromGamma(eventKey string, event utilpolymarket.Event, 
 		})
 	}
 	return items
+}
+
+func (s *Service) GetPolymarketSportsHistorySyncStatus(ctx context.Context, _ *apiclient.GetPolymarketSportsHistorySyncStatusRequest) (*apiclient.GetPolymarketSportsHistorySyncStatusResponse, error) {
+	if s.store == nil {
+		return nil, status.Error(codes.FailedPrecondition, "polymarket store is required")
+	}
+	lastSuccessAt, err := s.store.GetSportsHistoryLastSuccessAt(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to read sports history sync state: %v", err)
+	}
+	statusValue := s.currentSportsHistorySyncStatus()
+	if !lastSuccessAt.IsZero() {
+		statusValue.LastSuccessAt = lastSuccessAt.Unix()
+	}
+	return &apiclient.GetPolymarketSportsHistorySyncStatusResponse{Status: statusValue}, nil
+}
+
+func (s *Service) RefreshPolymarketSportsHistory(ctx context.Context, _ *apiclient.RefreshPolymarketSportsHistoryRequest) (*apiclient.RefreshPolymarketSportsHistoryResponse, error) {
+	statusValue, err := s.refreshSportsHistory(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "refresh sports history: %v", err)
+	}
+	return &apiclient.RefreshPolymarketSportsHistoryResponse{Status: statusValue}, nil
 }
 
 func (s *Service) ListPolymarketSportsHistoryEvents(ctx context.Context, req *apiclient.ListPolymarketSportsHistoryEventsRequest) (*apiclient.ListPolymarketSportsHistoryEventsResponse, error) {

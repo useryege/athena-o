@@ -314,6 +314,16 @@ export interface ListPolymarketSportsHistoryEventsResult {
     stale?: boolean;
 }
 
+export type PolymarketSportsHistorySyncState = 'idle' | 'syncing' | 'succeeded' | 'failed';
+
+export interface PolymarketSportsHistorySyncStatus {
+    state: PolymarketSportsHistorySyncState;
+    startedAt?: number;
+    completedAt?: number;
+    lastSuccessAt?: number;
+    errorMessage?: string;
+}
+
 const readValue = (item: any, ...names: string[]) => {
     for (const name of names) {
         if (item?.[name] !== undefined && item?.[name] !== null) {
@@ -448,6 +458,17 @@ const normalizeSportsHistoryEventCard = (item: any): PolymarketSportsHistoryEven
     league: readString(item, 'league'),
     finishedAt: readString(item, 'finishedAt', 'finished_at')
 });
+
+const normalizeSportsHistorySyncStatus = (item: any): PolymarketSportsHistorySyncStatus => {
+    const state = readString(item, 'state').toLowerCase();
+    return {
+        state: state === 'syncing' || state === 'succeeded' || state === 'failed' ? state : 'idle',
+        startedAt: readNumber(item, 'startedAt', 'started_at'),
+        completedAt: readNumber(item, 'completedAt', 'completed_at'),
+        lastSuccessAt: readNumber(item, 'lastSuccessAt', 'last_success_at'),
+        errorMessage: readString(item, 'errorMessage', 'error_message')
+    };
+};
 
 const normalizeSportsLivePriceHistorySeries = (item: any): PolymarketSportsLivePriceHistorySeriesItem => ({
     marketKey: readString(item, 'marketKey', 'market_key'),
@@ -759,6 +780,20 @@ export class PolymarketService {
                 items: (body.items || []).map(normalizeSportsLivePriceHistorySeries)
             };
         }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getSportsHistorySyncStatus(): Promise<PolymarketSportsHistorySyncStatus> & {abort?: () => void} {
+        const req = requests.get('/polymarket/sports/history/sync-status');
+        const promise = req.then(res => normalizeSportsHistorySyncStatus(res.body?.status || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public refreshSportsHistory(): Promise<PolymarketSportsHistorySyncStatus> & {abort?: () => void} {
+        const req = requests.post('/polymarket/sports/history:refresh').send({});
+        const promise = req.then(res => normalizeSportsHistorySyncStatus(res.body?.status || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }

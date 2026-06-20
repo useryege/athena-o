@@ -1,13 +1,16 @@
+import {LoadingOutlined, ReloadOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Empty, Typography} from 'antd';
+import {Button, Empty, Space, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, MetricRow, ResponsiveResourceList, useAsyncData} from '../components';
+import {Context} from '../../shared/context';
 import {services} from '../../shared/services';
 import {
     PolymarketHotMarketItem,
     PolymarketMoverMarketItem,
     PolymarketRealtimeMarketItem,
     PolymarketSportsHistoryEventCardItem,
+    PolymarketSportsHistorySyncStatus,
     PolymarketSportsLiveEventCardItem,
     PolymarketSportsLivePriceHistorySeriesItem
 } from '../../shared/services/polymarket-service';
@@ -166,9 +169,42 @@ export const PolymarketSportsLivePage = () => {
 };
 
 const sportsHistoryLeagues = ['ATP', 'WTA'];
+const sportsHistorySyncPollingIdleMs = 10000;
+const sportsHistorySyncPollingActiveMs = 2000;
 
-export const PolymarketSportsHistoryPage = () => {
+const sportsHistorySyncTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : 'Not available');
+
+const SportsHistorySyncStatusBar = (props: {status?: PolymarketSportsHistorySyncStatus; refreshing: boolean}) => {
+    const state = props.refreshing ? 'syncing' : props.status?.state || 'idle';
+    const labels = {idle: 'Idle', syncing: 'Syncing', succeeded: 'Succeeded', failed: 'Failed'};
+    const colors = {idle: 'default', syncing: 'blue', succeeded: 'green', failed: 'red'} as const;
+    let detail = props.refreshing ? 'Starting synchronization' : `Last successful ${sportsHistorySyncTime(props.status?.lastSuccessAt)}`;
+    if (!props.refreshing && state === 'syncing') {
+        detail = `Started ${sportsHistorySyncTime(props.status?.startedAt)}`;
+    } else if (state === 'succeeded') {
+        detail = `Completed ${sportsHistorySyncTime(props.status?.completedAt)}`;
+    } else if (state === 'failed') {
+        detail = `Failed ${sportsHistorySyncTime(props.status?.completedAt)}`;
+    }
+    return (
+        <div className={`sports-history-sync sports-history-sync--${state}`}>
+            <Space size={8} wrap={true}>
+                <Typography.Text strong={true}>Sync</Typography.Text>
+                <Tag color={colors[state]} icon={state === 'syncing' ? <LoadingOutlined spin={true} /> : undefined}>
+                    {labels[state]}
+                </Tag>
+                <Typography.Text type='secondary'>{detail}</Typography.Text>
+            </Space>
+            {state === 'failed' && props.status?.errorMessage && <Typography.Text type='danger'>{props.status.errorMessage}</Typography.Text>}
+        </div>
+    );
+};
+
+export const PolymarketSportsHistoryPage = (props: {canRefresh: boolean}) => {
+    const ctx = React.useContext(Context);
     const events = useAsyncData(() => services.polymarket.listSportsHistoryEvents(200), []);
+    const syncStatus = useAsyncData(() => services.polymarket.getSportsHistorySyncStatus(), []);
+    const [refreshing, setRefreshing] = React.useState(false);
     const marketKeys = React.useMemo(() => moneylineMarketKeys(events.data?.items), [events.data?.items]);
     const marketKeySignature = React.useMemo(() => marketKeys.join('|'), [marketKeys]);
     const history = useAsyncData(() => {
@@ -209,14 +245,46 @@ export const PolymarketSportsHistoryPage = () => {
             history.reload();
         }
     }, [events.reload, history.reload, marketKeys.length]);
+    const syncStatusReloadRef = React.useRef(syncStatus.reload);
+    syncStatusReloadRef.current = syncStatus.reload;
+    const serverSyncing = syncStatus.data?.state === 'syncing';
+    const pollingActive = refreshing || serverSyncing;
+
+    React.useEffect(() => {
+        const interval = pollingActive ? sportsHistorySyncPollingActiveMs : sportsHistorySyncPollingIdleMs;
+        const timer = window.setInterval(() => syncStatusReloadRef.current(), interval);
+        return () => window.clearInterval(timer);
+    }, [pollingActive]);
+
+    const refresh = React.useCallback(async () => {
+        setRefreshing(true);
+        syncStatus.reload();
+        try {
+            await services.polymarket.refreshSportsHistory();
+            ctx.notifications.success('Sports history refreshed');
+        } catch (err: any) {
+            ctx.notifications.error('Sports history refresh failed', err?.message || 'Could not refresh sports history data.');
+        } finally {
+            setRefreshing(false);
+            syncStatus.reload();
+            reloadAll();
+        }
+    }, [ctx.notifications, reloadAll, syncStatus.reload]);
 
     return (
         <AppPage
             title='Sports History'
             subtitle={`Last 72 hours · Fetched ${fmt(events.data?.fetchedAt)} ${events.data?.stale ? '(stale)' : ''}`}
             loading={events.loading}
-            error={events.error}
-            onRefresh={reloadAll}>
+            error={events.error || syncStatus.error}
+            extra={
+                props.canRefresh ? (
+                    <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
+                        Refresh data
+                    </Button>
+                ) : undefined
+            }>
+            <SportsHistorySyncStatusBar status={syncStatus.data} refreshing={refreshing} />
             <div className='sports-live-sections sports-history-sections'>
                 {!events.loading && items.length === 0 && <Empty description='No data' />}
                 {sportsHistoryLeagues.map(league => {
