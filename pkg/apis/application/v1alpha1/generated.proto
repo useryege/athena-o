@@ -808,6 +808,12 @@ message WormEventItem {
   optional int64 marketCount = 5;
 
   repeated WormMarketItem markets = 6;
+
+  optional string description = 7;
+
+  optional string category = 8;
+
+  optional int64 created = 9;
 }
 
 message WormMarketItem {

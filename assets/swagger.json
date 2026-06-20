@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-832-geb2520d-dirty"
+    "version": "v1.0.0-834-gc01e0ff-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1914,6 +1914,37 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/wormListWormEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/worm/events/{condition_id}": {
+      "get": {
+        "tags": [
+          "WormService"
+        ],
+        "summary": "GetWormEvent returns one event and related market summaries by condition id.",
+        "operationId": "WormService_GetWormEvent",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "condition_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormGetWormEventResponse"
             }
           },
           "default": {
@@ -4410,7 +4441,17 @@
     "v1alpha1WormEventItem": {
       "type": "object",
       "properties": {
+        "category": {
+          "type": "string"
+        },
         "conditionId": {
+          "type": "string"
+        },
+        "created": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": {
           "type": "string"
         },
         "live": {
@@ -4652,6 +4693,19 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1WalletItem"
+        }
+      }
+    },
+    "wormGetWormEventResponse": {
+      "description": "GetWormEventResponse returns one Worm event and related market summaries.",
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "item": {
+          "$ref": "#/definitions/v1alpha1WormEventItem"
         }
       }
     },

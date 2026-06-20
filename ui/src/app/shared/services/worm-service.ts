@@ -21,10 +21,18 @@ export interface WormMarketItem {
 export interface WormEventItem {
     conditionId: string;
     title: string;
+    description?: string;
     logo?: string;
+    category?: string;
+    created?: number;
     live: boolean;
     marketCount: number;
     markets: WormMarketItem[];
+}
+
+export interface GetWormEventResult {
+    item?: WormEventItem;
+    fetchedAt?: number;
 }
 
 export interface ListWormEventsResult {
@@ -80,13 +88,16 @@ const normalizeMarket = (item: any): WormMarketItem => ({
     livePriceChange: readString(item, 'livePriceChange', 'live_price_change')
 });
 
-const normalizeEvent = (item: any): WormEventItem => {
+const normalizeEvent = (item: any, filterOpenMarkets = true): WormEventItem => {
     const markets = readValue(item, 'markets');
-    const normalizedMarkets = Array.isArray(markets) ? markets.map(normalizeMarket).filter(isOpenWormMarket) : [];
+    const normalizedMarkets = Array.isArray(markets) ? markets.map(normalizeMarket).filter((market: WormMarketItem) => !filterOpenMarkets || isOpenWormMarket(market)) : [];
     return {
         conditionId: readString(item, 'conditionId', 'condition_id'),
         title: readString(item, 'title'),
+        description: readString(item, 'description'),
         logo: readString(item, 'logo'),
+        category: readString(item, 'category'),
+        created: readNumber(item, 'created'),
         live: readBoolean(item, 'live'),
         marketCount: readNumber(item, 'marketCount', 'market_count') || normalizedMarkets.length,
         markets: normalizedMarkets
@@ -94,6 +105,20 @@ const normalizeEvent = (item: any): WormEventItem => {
 };
 
 export class WormService {
+    public getEvent(conditionId: string): Promise<GetWormEventResult> & {abort?: () => void} {
+        const req = requests.get(`/worm/events/${encodeURIComponent(conditionId)}`);
+        const promise = req.then(res => {
+            const body = res.body || {};
+            const item = body.item || body.event;
+            return {
+                item: item ? normalizeEvent(item, false) : undefined,
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
     public listEvents(options: ListWormEventsOptions = {}): Promise<ListWormEventsResult> & {abort?: () => void} {
         const query: any = {
             limit: options.limit || 20,
@@ -108,7 +133,7 @@ export class WormService {
         const req = requests.get('/worm/events').query(query);
         const promise = req.then(res => {
             const body = res.body || {};
-            const items = (body.items || []).map(normalizeEvent).filter((item: WormEventItem) => item.conditionId && item.markets.length > 0);
+            const items = (body.items || []).map((item: any) => normalizeEvent(item)).filter((item: WormEventItem) => item.conditionId && item.markets.length > 0);
             return {
                 items,
                 nextCursor: body.nextCursor || body.next_cursor || '',

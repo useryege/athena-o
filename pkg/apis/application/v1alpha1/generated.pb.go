@@ -2862,6 +2862,19 @@ func (m *WormEventItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Created))
+	i--
+	dAtA[i] = 0x48
+	i -= len(m.Category)
+	copy(dAtA[i:], m.Category)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Category)))
+	i--
+	dAtA[i] = 0x42
+	i -= len(m.Description)
+	copy(dAtA[i:], m.Description)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Description)))
+	i--
+	dAtA[i] = 0x3a
 	if len(m.Markets) > 0 {
 		for iNdEx := len(m.Markets) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -4010,6 +4023,11 @@ func (m *WormEventItem) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
+	l = len(m.Description)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Category)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.Created))
 	return n
 }
 
@@ -4813,6 +4831,9 @@ func (this *WormEventItem) String() string {
 		`Live:` + fmt.Sprintf("%v", this.Live) + `,`,
 		`MarketCount:` + fmt.Sprintf("%v", this.MarketCount) + `,`,
 		`Markets:` + repeatedStringForMarkets + `,`,
+		`Description:` + fmt.Sprintf("%v", this.Description) + `,`,
+		`Category:` + fmt.Sprintf("%v", this.Category) + `,`,
+		`Created:` + fmt.Sprintf("%v", this.Created) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -16517,6 +16538,89 @@ func (m *WormEventItem) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Category", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Category = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Created", wireType)
+			}
+			m.Created = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Created |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

@@ -34,6 +34,26 @@ func (s *Server) GetWormStatus(ctx context.Context, _ *wormpkg.GetWormStatusRequ
 	}, nil
 }
 
+func (s *Server) GetWormEvent(ctx context.Context, req *wormpkg.GetWormEventRequest) (*wormpkg.GetWormEventResponse, error) {
+	closer, client, err := s.wormClientSet.NewWormServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetWormEvent(ctx, &wormapiclient.GetWormEventRequest{
+		ConditionId: req.GetConditionId(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &wormpkg.GetWormEventResponse{
+		Item:      resp.GetEvent(),
+		FetchedAt: resp.GetFetchedAt(),
+	}, nil
+}
+
 func (s *Server) ListWormEvents(ctx context.Context, req *wormpkg.ListWormEventsRequest) (*wormpkg.ListWormEventsResponse, error) {
 	closer, client, err := s.wormClientSet.NewWormServiceClient()
 	if err != nil {

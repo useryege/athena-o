@@ -25,4 +25,7 @@ type WormEventItem struct {
 	Live        bool              `protobuf:"varint,4,opt,name=live" json:"live"`
 	MarketCount int64             `protobuf:"varint,5,opt,name=marketCount" json:"marketCount"`
 	Markets     []*WormMarketItem `protobuf:"bytes,6,rep,name=markets" json:"markets"`
+	Description string            `protobuf:"bytes,7,opt,name=description" json:"description"`
+	Category    string            `protobuf:"bytes,8,opt,name=category" json:"category"`
+	Created     int64             `protobuf:"varint,9,opt,name=created" json:"created"`
 }

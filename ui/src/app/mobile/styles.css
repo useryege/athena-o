@@ -39,25 +39,28 @@ body[data-theme='dark'] {
 }
 
 body {
-    background:
-        linear-gradient(135deg, rgba(224, 95, 63, 0.07), transparent 28%),
-        linear-gradient(225deg, rgba(25, 169, 116, 0.08), transparent 32%),
-        linear-gradient(90deg, rgba(47, 125, 246, 0.05) 0 1px, transparent 1px 100%),
-        linear-gradient(0deg, rgba(47, 125, 246, 0.04) 0 1px, transparent 1px 100%),
-        var(--athena-bg);
-    background-size: auto, auto, 36px 36px, 36px 36px, auto;
+    background: linear-gradient(135deg, rgba(224, 95, 63, 0.07), transparent 28%), linear-gradient(225deg, rgba(25, 169, 116, 0.08), transparent 32%),
+        linear-gradient(90deg, rgba(47, 125, 246, 0.05) 0 1px, transparent 1px 100%), linear-gradient(0deg, rgba(47, 125, 246, 0.04) 0 1px, transparent 1px 100%), var(--athena-bg);
+    background-size:
+        auto,
+        auto,
+        36px 36px,
+        36px 36px,
+        auto;
     color: var(--athena-text);
     text-rendering: optimizeLegibility;
 }
 
 body[data-theme='dark'] {
-    background:
-        linear-gradient(135deg, rgba(224, 95, 63, 0.1), transparent 30%),
-        linear-gradient(225deg, rgba(25, 169, 116, 0.08), transparent 34%),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 100%),
-        linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 100%),
+    background: linear-gradient(135deg, rgba(224, 95, 63, 0.1), transparent 30%), linear-gradient(225deg, rgba(25, 169, 116, 0.08), transparent 34%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 100%),
         var(--athena-bg);
-    background-size: auto, auto, 40px 40px, 40px 40px, auto;
+    background-size:
+        auto,
+        auto,
+        40px 40px,
+        40px 40px,
+        auto;
 }
 
 * {
@@ -148,9 +151,7 @@ body[data-theme='dark'] .athena-shell__sider {
     flex: 0 0 auto;
     border: 1px solid color-mix(in srgb, var(--athena-primary) 46%, var(--athena-border));
     border-radius: 8px;
-    background:
-        linear-gradient(135deg, rgba(224, 95, 63, 0.2), transparent 48%),
-        linear-gradient(225deg, rgba(25, 169, 116, 0.16), transparent 52%),
+    background: linear-gradient(135deg, rgba(224, 95, 63, 0.2), transparent 48%), linear-gradient(225deg, rgba(25, 169, 116, 0.16), transparent 52%),
         color-mix(in srgb, var(--athena-panel-solid) 86%, transparent);
     color: var(--athena-text);
     font-weight: 900;
@@ -181,9 +182,7 @@ body[data-theme='dark'] .athena-shell__sider {
 }
 
 body[data-theme='dark'] .brand-mark {
-    background:
-        linear-gradient(135deg, rgba(224, 95, 63, 0.24), transparent 48%),
-        linear-gradient(225deg, rgba(25, 169, 116, 0.18), transparent 52%),
+    background: linear-gradient(135deg, rgba(224, 95, 63, 0.24), transparent 48%), linear-gradient(225deg, rgba(25, 169, 116, 0.18), transparent 52%),
         color-mix(in srgb, var(--athena-panel-solid) 82%, #000000);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
 }
@@ -275,17 +274,13 @@ body[data-theme='dark'] .brand-mark {
     padding: 18px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
-    background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.56)),
-        linear-gradient(90deg, rgba(224, 95, 63, 0.08), rgba(25, 169, 116, 0.06));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.56)), linear-gradient(90deg, rgba(224, 95, 63, 0.08), rgba(25, 169, 116, 0.06));
     box-shadow: var(--athena-shadow-tight);
     backdrop-filter: blur(16px) saturate(135%);
 }
 
 body[data-theme='dark'] .app-page__header {
-    background:
-        linear-gradient(135deg, rgba(23, 27, 29, 0.88), rgba(23, 27, 29, 0.64)),
-        linear-gradient(90deg, rgba(224, 95, 63, 0.12), rgba(25, 169, 116, 0.08));
+    background: linear-gradient(135deg, rgba(23, 27, 29, 0.88), rgba(23, 27, 29, 0.64)), linear-gradient(90deg, rgba(224, 95, 63, 0.12), rgba(25, 169, 116, 0.08));
 }
 
 .app-page__heading {
@@ -1190,18 +1185,14 @@ body[data-theme='dark'] .app-page__header {
     padding: 10px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.58), transparent),
-        rgba(100, 114, 108, 0.05);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), transparent), rgba(100, 114, 108, 0.05);
     display: grid;
     align-content: center;
     gap: 3px;
 }
 
 body[data-theme='dark'] .metric {
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
-        rgba(255, 255, 255, 0.04);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent), rgba(255, 255, 255, 0.04);
 }
 
 .metric span {
@@ -1258,9 +1249,7 @@ body[data-theme='dark'] .metric {
     gap: 12px;
     padding: 12px 14px;
     border-bottom: 1px solid var(--athena-border);
-    background:
-        linear-gradient(90deg, rgba(224, 95, 63, 0.08), rgba(25, 169, 116, 0.05)),
-        rgba(100, 114, 108, 0.035);
+    background: linear-gradient(90deg, rgba(224, 95, 63, 0.08), rgba(25, 169, 116, 0.05)), rgba(100, 114, 108, 0.035);
 }
 
 .section-panel__header h5 {
@@ -1328,10 +1317,7 @@ body[data-theme='dark'] .metric {
     border: 1px solid var(--athena-border);
     border-radius: 8px;
     padding: 14px;
-    background:
-        linear-gradient(90deg, rgba(47, 125, 246, 0.05) 0 1px, transparent 1px 100%),
-        linear-gradient(0deg, rgba(47, 125, 246, 0.04) 0 1px, transparent 1px 100%),
-        #111416;
+    background: linear-gradient(90deg, rgba(47, 125, 246, 0.05) 0 1px, transparent 1px 100%), linear-gradient(0deg, rgba(47, 125, 246, 0.04) 0 1px, transparent 1px 100%), #111416;
     background-size: 28px 28px;
     color: #d9f1e4;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -1448,13 +1434,14 @@ body[data-theme='dark'] .metric {
     display: grid;
     place-items: center;
     padding: 18px;
-    background:
-        linear-gradient(135deg, rgba(224, 95, 63, 0.12), transparent 32%),
-        linear-gradient(225deg, rgba(25, 169, 116, 0.12), transparent 36%),
-        linear-gradient(90deg, rgba(47, 125, 246, 0.07) 0 1px, transparent 1px 100%),
-        linear-gradient(0deg, rgba(47, 125, 246, 0.05) 0 1px, transparent 1px 100%),
-        var(--athena-bg);
-    background-size: auto, auto, 38px 38px, 38px 38px, auto;
+    background: linear-gradient(135deg, rgba(224, 95, 63, 0.12), transparent 32%), linear-gradient(225deg, rgba(25, 169, 116, 0.12), transparent 36%),
+        linear-gradient(90deg, rgba(47, 125, 246, 0.07) 0 1px, transparent 1px 100%), linear-gradient(0deg, rgba(47, 125, 246, 0.05) 0 1px, transparent 1px 100%), var(--athena-bg);
+    background-size:
+        auto,
+        auto,
+        38px 38px,
+        38px 38px,
+        auto;
 }
 
 .login-panel {
@@ -1506,6 +1493,10 @@ body[data-theme='dark'] .metric {
     width: min(720px, 100%);
 }
 
+.fifa-query-stack {
+    width: min(720px, 100%);
+}
+
 .fifa-query .ant-input {
     min-width: 280px;
 }
@@ -1513,6 +1504,107 @@ body[data-theme='dark'] .metric {
 .fifa-page {
     display: grid;
     gap: 14px;
+}
+
+.fifa-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.fifa-panel {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+}
+
+.fifa-panel__title {
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fifa-info-grid {
+    --fifa-info-cols: 2;
+    display: grid;
+    grid-template-columns: repeat(var(--fifa-info-cols), minmax(0, 1fr));
+    gap: 8px;
+}
+
+.fifa-info-grid--cols-1 {
+    --fifa-info-cols: 1;
+}
+
+.fifa-info-grid--cols-2 {
+    --fifa-info-cols: 2;
+}
+
+.fifa-info-grid--cols-3 {
+    --fifa-info-cols: 3;
+}
+
+.fifa-info-grid--cols-4 {
+    --fifa-info-cols: 4;
+}
+
+.fifa-info-grid__item {
+    min-width: 0;
+    min-height: 58px;
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    padding: 8px 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-panel-solid) 92%, transparent);
+}
+
+.fifa-info-grid__label {
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.fifa-info-grid__value {
+    min-width: 0;
+    color: var(--athena-text);
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.35;
+}
+
+.fifa-info-grid__value-wrap {
+    min-width: 0;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fifa-info-grid__value-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.fifa-info-grid__copy {
+    flex: 0 0 22px;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0;
+    color: var(--athena-muted);
 }
 
 .fifa-wallet-balances {
@@ -1588,6 +1680,77 @@ body[data-theme='dark'] .metric {
 
 .fifa-moneyline-options .ant-col {
     display: flex;
+}
+
+.fifa-worm-markets {
+    align-items: stretch;
+}
+
+.fifa-worm-markets .ant-col {
+    display: flex;
+}
+
+.fifa-worm-market {
+    width: 100%;
+    border-color: var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-tight);
+}
+
+.fifa-worm-market .ant-card-body {
+    min-height: 100%;
+    display: grid;
+    gap: 12px;
+    align-content: start;
+}
+
+.fifa-worm-market .metric-row .ant-col,
+.fifa-moneyline-option .metric-row .ant-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+.fifa-worm-market .metric-row .ant-col:nth-child(3) {
+    flex-basis: 100%;
+    max-width: 100%;
+}
+
+.fifa-worm-market .metric,
+.fifa-moneyline-option .metric {
+    width: 100%;
+    min-width: 0;
+}
+
+.fifa-worm-market .metric strong,
+.fifa-moneyline-option .metric strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fifa-worm-market__header {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.fifa-worm-market__header h5 {
+    margin: 0;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+}
+
+.fifa-worm-event-description,
+.fifa-worm-market__description {
+    margin: 0;
+    color: var(--athena-muted);
+    overflow-wrap: anywhere;
 }
 
 .fifa-moneyline-option {
@@ -1689,9 +1852,28 @@ body[data-theme='dark'] .metric {
     }
 
     .fifa-query,
+    .fifa-query-stack,
     .fifa-query .ant-input,
     .fifa-query .ant-btn {
         width: 100%;
+    }
+
+    .fifa-dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fifa-panel {
+        padding: 12px;
+    }
+
+    .fifa-panel__title {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .fifa-info-grid {
+        --fifa-info-cols: 1;
     }
 
     .fifa-event-summary {

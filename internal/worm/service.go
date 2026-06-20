@@ -3,8 +3,10 @@ package worm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -42,6 +44,7 @@ const (
 type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
 	GetMarket(context.Context, string) (*utilworm.Market, error)
+	GetEvent(context.Context, string) (*utilworm.Event, error)
 }
 
 type Service struct {
@@ -133,6 +136,33 @@ func (s *Service) GetWormStatus(context.Context, *apiclient.GetWormStatusRequest
 	return &apiclient.GetWormStatusResponse{
 		Started: started,
 		Status:  statusText,
+	}, nil
+}
+
+func (s *Service) GetWormEvent(ctx context.Context, req *apiclient.GetWormEventRequest) (*apiclient.GetWormEventResponse, error) {
+	if s.wormClient == nil {
+		return nil, status.Error(codes.FailedPrecondition, "worm API client is required")
+	}
+	conditionID := ""
+	if req != nil {
+		conditionID = strings.TrimSpace(req.GetConditionId())
+	}
+	if conditionID == "" {
+		return nil, status.Error(codes.InvalidArgument, "condition_id is required")
+	}
+	event, err := s.wormClient.GetEvent(ctx, conditionID)
+	if err != nil {
+		if isWormStatusCode(err, http.StatusNotFound) {
+			return nil, status.Errorf(codes.NotFound, "worm event %q was not found", conditionID)
+		}
+		return nil, status.Errorf(codes.Unavailable, "failed to get worm event: %v", err)
+	}
+	if event == nil || strings.TrimSpace(event.ConditionID) == "" {
+		return nil, status.Errorf(codes.NotFound, "worm event %q was not found", conditionID)
+	}
+	return &apiclient.GetWormEventResponse{
+		Event:     s.toAPIEvent(event),
+		FetchedAt: time.Now().Unix(),
 	}, nil
 }
 
@@ -248,6 +278,26 @@ func (s *Service) toAPIMarketSummary(market utilworm.MarketSummary) *v1alpha1.Wo
 		item.EventTitle = market.Event.Title
 		item.EventConditionID = market.Event.ConditionID
 		item.EventLogo = s.normalizeAssetURL(stringValue(market.Event.Logo))
+	}
+	return item
+}
+
+func (s *Service) toAPIEvent(event *utilworm.Event) *v1alpha1.WormEventItem {
+	if event == nil {
+		return nil
+	}
+	item := &v1alpha1.WormEventItem{
+		ConditionID: event.ConditionID,
+		Title:       event.Title,
+		Description: stringValue(event.Description),
+		Logo:        s.normalizeAssetURL(stringValue(event.Logo)),
+		Category:    event.Category,
+		Created:     int64Value(event.Created),
+		MarketCount: int64(len(event.Markets)),
+		Markets:     make([]*v1alpha1.WormMarketItem, 0, len(event.Markets)),
+	}
+	for _, market := range event.Markets {
+		item.Markets = append(item.Markets, s.toAPIMarketSummary(market))
 	}
 	return item
 }
@@ -682,4 +732,9 @@ func unixTime(value time.Time) int64 {
 		return 0
 	}
 	return value.Unix()
+}
+
+func isWormStatusCode(err error, statusCode int) bool {
+	var wormErr *utilworm.Error
+	return errors.As(err, &wormErr) && wormErr.StatusCode == statusCode
 }

@@ -19,6 +19,17 @@ message GetWormStatusResponse {
   string status = 2;
 }
 
+// GetWormEventRequest queries one public Worm event by condition id.
+message GetWormEventRequest {
+  string condition_id = 1;
+}
+
+// GetWormEventResponse returns one Worm event and related market summaries.
+message GetWormEventResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WormEventItem item = 1;
+  int64 fetched_at = 2;
+}
+
 // ListWormEventsRequest queries the public Worm events view.
 message ListWormEventsRequest {
   int32 limit = 1;
@@ -39,6 +50,11 @@ service WormService {
   // GetWormStatus returns the worm service runtime status.
   rpc GetWormStatus(GetWormStatusRequest) returns (GetWormStatusResponse) {
     option (google.api.http) = {get: "/api/v1/worm/status"};
+  }
+
+  // GetWormEvent returns one event and related market summaries by condition id.
+  rpc GetWormEvent(GetWormEventRequest) returns (GetWormEventResponse) {
+    option (google.api.http) = {get: "/api/v1/worm/events/{condition_id}"};
   }
 
   // ListWormEvents returns events for the requested browse filters.
