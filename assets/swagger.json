@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-834-gc01e0ff-dirty"
+    "version": "v1.0.0-835-g4ed9a05-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -312,6 +312,58 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/fifa/event-config": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_GetPolymarketFIFAEventConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketGetPolymarketFIFAEventConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_UpdatePolymarketFIFAEventConfig",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1PolymarketFIFAEventConfig"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketUpdatePolymarketFIFAEventConfigResponse"
             }
           },
           "default": {
@@ -2334,6 +2386,14 @@
         }
       }
     },
+    "polymarketGetPolymarketFIFAEventConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1alpha1PolymarketFIFAEventConfig"
+        }
+      }
+    },
     "polymarketGetPolymarketFIFAMoneylineEventResponse": {
       "type": "object",
       "properties": {
@@ -2584,6 +2644,14 @@
         "proposal_count": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "polymarketUpdatePolymarketFIFAEventConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1alpha1PolymarketFIFAEventConfig"
         }
       }
     },
@@ -3145,6 +3213,17 @@
           "type": "boolean"
         },
         "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketFIFAEventConfig": {
+      "type": "object",
+      "properties": {
+        "eventRef": {
+          "type": "string"
+        },
+        "wormEventId": {
           "type": "string"
         }
       }

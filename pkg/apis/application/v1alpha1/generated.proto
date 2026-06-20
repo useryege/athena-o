@@ -70,6 +70,12 @@ message NotificationStatus {
   optional string status = 2;
 }
 
+message PolymarketFIFAEventConfig {
+  optional string wormEventId = 1;
+
+  optional string eventRef = 2;
+}
+
 message PolymarketFIFAMoneylineEventItem {
   optional string eventId = 1;
 

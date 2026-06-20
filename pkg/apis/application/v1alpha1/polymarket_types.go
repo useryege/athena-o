@@ -190,6 +190,11 @@ type PolymarketSportsLiveTeamItem struct {
 	Alias        string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
 }
 
+type PolymarketFIFAEventConfig struct {
+	WormEventID string `protobuf:"bytes,1,opt,name=wormEventId" json:"wormEventId"`
+	EventRef    string `protobuf:"bytes,2,opt,name=eventRef" json:"eventRef"`
+}
+
 type PolymarketFIFAMoneylineOptionItem struct {
 	OutcomeKey      string  `protobuf:"bytes,1,opt,name=outcomeKey" json:"outcomeKey"`
 	OutcomeLabel    string  `protobuf:"bytes,2,opt,name=outcomeLabel" json:"outcomeLabel"`

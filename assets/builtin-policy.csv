@@ -22,6 +22,7 @@ p, role:admin, accounts, update, *, allow
 p, role:admin, projects, update, *, allow
 p, role:admin, projects, invoke, *, allow
 p, role:admin, notifications, invoke, *, allow
+p, role:admin, polymarket, update, *, allow
 p, role:admin, wallets, get, *, allow
 p, role:admin, wallets, update, *, allow
 p, role:admin, wallets, invoke, *, allow

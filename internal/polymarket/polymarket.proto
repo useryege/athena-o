@@ -113,6 +113,20 @@ message RefreshPolymarketSportsHistoryResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsHistorySyncStatus status = 1;
 }
 
+message GetPolymarketFIFAEventConfigRequest {}
+
+message GetPolymarketFIFAEventConfigResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
+}
+
+message UpdatePolymarketFIFAEventConfigRequest {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
+}
+
+message UpdatePolymarketFIFAEventConfigResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
+}
+
 message GetPolymarketFIFAMoneylineEventRequest {
   string event_ref = 1;
 }
@@ -191,6 +205,10 @@ service PolymarketService {
   rpc GetPolymarketSportsHistorySyncStatus(GetPolymarketSportsHistorySyncStatusRequest) returns (GetPolymarketSportsHistorySyncStatusResponse);
 
   rpc RefreshPolymarketSportsHistory(RefreshPolymarketSportsHistoryRequest) returns (RefreshPolymarketSportsHistoryResponse);
+
+  rpc GetPolymarketFIFAEventConfig(GetPolymarketFIFAEventConfigRequest) returns (GetPolymarketFIFAEventConfigResponse);
+
+  rpc UpdatePolymarketFIFAEventConfig(UpdatePolymarketFIFAEventConfigRequest) returns (UpdatePolymarketFIFAEventConfigResponse);
 
   rpc GetPolymarketFIFAMoneylineEvent(GetPolymarketFIFAMoneylineEventRequest) returns (GetPolymarketFIFAMoneylineEventResponse);
 

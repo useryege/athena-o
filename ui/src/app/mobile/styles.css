@@ -1489,21 +1489,44 @@ body[data-theme='dark'] .metric {
     object-fit: cover;
 }
 
-.fifa-query {
-    width: min(720px, 100%);
-}
-
-.fifa-query-stack {
-    width: min(720px, 100%);
-}
-
-.fifa-query .ant-input {
-    min-width: 280px;
-}
-
 .fifa-page {
     display: grid;
     gap: 14px;
+}
+
+.fifa-event-config {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+}
+
+.fifa-event-config__header {
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.fifa-event-config__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.fifa-event-config__field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.fifa-event-config__actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .fifa-dashboard-grid {
@@ -1851,10 +1874,16 @@ body[data-theme='dark'] .metric {
         justify-content: flex-start;
     }
 
-    .fifa-query,
-    .fifa-query-stack,
-    .fifa-query .ant-input,
-    .fifa-query .ant-btn {
+    .fifa-event-config {
+        padding: 12px;
+    }
+
+    .fifa-event-config__fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fifa-event-config__actions,
+    .fifa-event-config__actions .ant-btn {
         width: 100%;
     }
 

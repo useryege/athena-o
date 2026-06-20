@@ -187,6 +187,8 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/BatchGetPolymarketSportsHistoryPriceHistory": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/GetPolymarketSportsHistorySyncStatus":        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/RefreshPolymarketSportsHistory":              fixedRule(rbac.ResourcePolymarket, rbac.ActionInvoke),
+	"/polymarket.PolymarketService/GetPolymarketFIFAEventConfig":                fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/polymarket.PolymarketService/UpdatePolymarketFIFAEventConfig":             fixedRule(rbac.ResourcePolymarket, rbac.ActionUpdate),
 	"/polymarket.PolymarketService/GetPolymarketFIFAMoneylineEvent":             fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketFIFAWalletBalances":            fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ScanPolymarketManagedOOBlock":                {resource: rbac.ResourcePolymarket, action: rbac.ActionInvoke, object: polymarketObject},

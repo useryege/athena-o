@@ -153,6 +153,11 @@ export interface PolymarketSportsLiveTeamItem {
     alias?: string;
 }
 
+export interface PolymarketFIFAEventConfig {
+    wormEventId: string;
+    eventRef: string;
+}
+
 export interface PolymarketFIFAMoneylineOptionItem {
     outcomeKey: string;
     outcomeLabel: string;
@@ -369,6 +374,11 @@ const normalizeSportsLiveTeam = (item: any): PolymarketSportsLiveTeamItem => ({
     logo: readString(item, 'logo'),
     abbreviation: readString(item, 'abbreviation'),
     alias: readString(item, 'alias')
+});
+
+const normalizeFIFAEventConfig = (item: any): PolymarketFIFAEventConfig => ({
+    wormEventId: readString(item, 'wormEventId', 'worm_event_id'),
+    eventRef: readString(item, 'eventRef', 'event_ref')
 });
 
 const normalizeFIFAMoneylineOption = (item: any): PolymarketFIFAMoneylineOptionItem => ({
@@ -794,6 +804,20 @@ export class PolymarketService {
     public refreshSportsHistory(): Promise<PolymarketSportsHistorySyncStatus> & {abort?: () => void} {
         const req = requests.post('/polymarket/sports/history:refresh').send({});
         const promise = req.then(res => normalizeSportsHistorySyncStatus(res.body?.status || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getFIFAEventConfig(): Promise<PolymarketFIFAEventConfig> & {abort?: () => void} {
+        const req = requests.get('/polymarket/fifa/event-config');
+        const promise = req.then(res => normalizeFIFAEventConfig(res.body?.config || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public updateFIFAEventConfig(config: PolymarketFIFAEventConfig): Promise<PolymarketFIFAEventConfig> & {abort?: () => void} {
+        const req = requests.put('/polymarket/fifa/event-config').send({worm_event_id: config.wormEventId, event_ref: config.eventRef});
+        const promise = req.then(res => normalizeFIFAEventConfig(res.body?.config || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }

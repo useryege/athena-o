@@ -414,6 +414,25 @@ CREATE TABLE IF NOT EXISTS polymarket_sports_history_price_point (
     FOREIGN KEY (market_key) REFERENCES polymarket_sports_history_market(market_key) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_fifa_event_config (
+  singleton BOOLEAN PRIMARY KEY DEFAULT true,
+  worm_event_id TEXT NOT NULL,
+  event_ref TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT polymarket_fifa_event_config_singleton CHECK (singleton),
+  CONSTRAINT polymarket_fifa_event_config_worm_event_id_not_empty CHECK (btrim(worm_event_id) <> ''),
+  CONSTRAINT polymarket_fifa_event_config_event_ref_not_empty CHECK (btrim(event_ref) <> '')
+);
+
+INSERT INTO polymarket_fifa_event_config (singleton, worm_event_id, event_ref)
+VALUES (
+  true,
+  '87UM8qJ3BwL9ZJA4HvqtcTLgMtipBxgwPU29V3LWkD89',
+  'fifwc-ecu-kor-2026-06-20'
+)
+ON CONFLICT (singleton) DO NOTHING;
+
 CREATE UNIQUE INDEX IF NOT EXISTS polymarket_sports_live_event_slug_idx
   ON polymarket_sports_live_event (slug)
   WHERE slug <> '';
@@ -515,6 +534,7 @@ CREATE INDEX IF NOT EXISTS polymarket_sports_history_price_point_market_ts_idx
 
 -- +goose Down
 
+DROP TABLE IF EXISTS polymarket_fifa_event_config;
 DROP TABLE IF EXISTS polymarket_sports_history_price_point;
 DROP TABLE IF EXISTS polymarket_sports_history_market;
 DROP TABLE IF EXISTS polymarket_sports_history_event;

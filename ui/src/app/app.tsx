@@ -93,6 +93,7 @@ const rbacResources = {
 
 const rbacActions = {
     get: 'get',
+    update: 'update',
     invoke: 'invoke'
 };
 
@@ -343,7 +344,13 @@ const AppRoutes = (props: {access: AccessState}) => {
                     <PolymarketUMADisputedPage canScan={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
                 )}
             />
-            <Route path='/FIFA' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <FIFAPage />)} />
+            <Route
+                path='/FIFA'
+                element={withPermission(
+                    permission(rbacResources.polymarket, rbacActions.get),
+                    <FIFAPage canEdit={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.update))} />
+                )}
+            />
             <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />

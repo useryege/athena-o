@@ -116,6 +116,20 @@ message RefreshPolymarketSportsHistoryResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsHistorySyncStatus status = 1;
 }
 
+message GetPolymarketFIFAEventConfigRequest {}
+
+message GetPolymarketFIFAEventConfigResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
+}
+
+message UpdatePolymarketFIFAEventConfigRequest {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
+}
+
+message UpdatePolymarketFIFAEventConfigResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
+}
+
 message GetPolymarketFIFAMoneylineEventRequest {
   string event_ref = 1;
 }
@@ -221,6 +235,17 @@ service PolymarketService {
     option (google.api.http) = {
       post: "/api/v1/polymarket/sports/history:refresh"
       body: "*"
+    };
+  }
+
+  rpc GetPolymarketFIFAEventConfig(GetPolymarketFIFAEventConfigRequest) returns (GetPolymarketFIFAEventConfigResponse) {
+    option (google.api.http) = {get: "/api/v1/polymarket/fifa/event-config"};
+  }
+
+  rpc UpdatePolymarketFIFAEventConfig(UpdatePolymarketFIFAEventConfigRequest) returns (UpdatePolymarketFIFAEventConfigResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/polymarket/fifa/event-config"
+      body: "config"
     };
   }
 

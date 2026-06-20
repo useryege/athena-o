@@ -211,6 +211,34 @@ func (s *Server) RefreshPolymarketSportsHistory(ctx context.Context, _ *polymark
 	return &polymarketpkg.RefreshPolymarketSportsHistoryResponse{Status: resp.GetStatus()}, nil
 }
 
+func (s *Server) GetPolymarketFIFAEventConfig(ctx context.Context, _ *polymarketpkg.GetPolymarketFIFAEventConfigRequest) (*polymarketpkg.GetPolymarketFIFAEventConfigResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.GetPolymarketFIFAEventConfig(ctx, &polymarketapiclient.GetPolymarketFIFAEventConfigRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.GetPolymarketFIFAEventConfigResponse{Config: resp.GetConfig()}, nil
+}
+
+func (s *Server) UpdatePolymarketFIFAEventConfig(ctx context.Context, req *polymarketpkg.UpdatePolymarketFIFAEventConfigRequest) (*polymarketpkg.UpdatePolymarketFIFAEventConfigResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.UpdatePolymarketFIFAEventConfig(ctx, &polymarketapiclient.UpdatePolymarketFIFAEventConfigRequest{Config: req.GetConfig()})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.UpdatePolymarketFIFAEventConfigResponse{Config: resp.GetConfig()}, nil
+}
+
 func (s *Server) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *polymarketpkg.GetPolymarketFIFAMoneylineEventRequest) (*polymarketpkg.GetPolymarketFIFAMoneylineEventResponse, error) {
 	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
 	if err != nil {
