@@ -1,4 +1,4 @@
-import {CopyOutlined, LinkOutlined} from '@ant-design/icons';
+import {CopyOutlined, DownOutlined, LinkOutlined} from '@ant-design/icons';
 import {Button, Card, Col, Empty, Input, Row, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
@@ -139,7 +139,7 @@ const FIFAMoneylineOptionCard = (props: {option: PolymarketFIFAMoneylineOptionIt
     );
 };
 
-const FIFAWalletBalanceCard = (props: {item: PolymarketFIFAWalletBalanceItem; loading?: boolean}) => {
+const FIFAWalletBalanceCard = (props: {item: PolymarketFIFAWalletBalanceItem; loading?: boolean; detailsVisible?: boolean}) => {
     const item = props.item;
     const statusText = props.loading ? 'Refreshing' : item.ok ? 'Live' : item.errorMessage ? 'Error' : 'Pending';
     const statusColor = props.loading ? 'blue' : item.ok ? 'green' : item.errorMessage ? 'red' : 'default';
@@ -147,41 +147,56 @@ const FIFAWalletBalanceCard = (props: {item: PolymarketFIFAWalletBalanceItem; lo
         <Card className='fifa-wallet-balance' size='small'>
             <div className='fifa-wallet-balance__header'>
                 <Typography.Title level={5}>{item.label}</Typography.Title>
-                <Tag color={statusColor}>{statusText}</Tag>
+                {props.detailsVisible && <Tag color={statusColor}>{statusText}</Tag>}
             </div>
             <div className='fifa-wallet-balance__amount'>{balanceValue(item)}</div>
-            <FIFAInfoGrid
-                columns={1}
-                items={[
-                    {label: 'Wallet', value: item.walletAddress, copyText: item.walletAddress},
-                    {label: 'Token', value: item.tokenAddress, copyText: item.tokenAddress},
-                    {label: 'Raw', value: item.rawAmount, copyText: item.rawAmount}
-                ]}
-            />
             {item.errorMessage && <Typography.Text type='danger'>{item.errorMessage}</Typography.Text>}
-            <Button href={item.explorerUrl} target='_blank' rel='noreferrer' icon={<LinkOutlined />}>
-                Explorer
-            </Button>
+            {props.detailsVisible && (
+                <>
+                    <FIFAInfoGrid
+                        columns={1}
+                        items={[
+                            {label: 'Wallet', value: item.walletAddress, copyText: item.walletAddress},
+                            {label: 'Token', value: item.tokenAddress, copyText: item.tokenAddress},
+                            {label: 'Raw', value: item.rawAmount, copyText: item.rawAmount}
+                        ]}
+                    />
+                    <Button href={item.explorerUrl} target='_blank' rel='noreferrer' icon={<LinkOutlined />}>
+                        Explorer
+                    </Button>
+                </>
+            )}
         </Card>
     );
 };
 
 const FIFAWalletBalancesPanel = (props: {items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number; loading?: boolean; error?: Error}) => {
+    const [detailsVisible, setDetailsVisible] = React.useState(false);
     const itemsByChain = new Map((props.items || []).map(item => [item.chain, item]));
     const items = walletBalancePlaceholders.map(placeholder => ({...placeholder, ...(itemsByChain.get(placeholder.chain) || {})}));
     return (
         <section className='fifa-panel fifa-wallet-balances'>
             <div className='fifa-wallet-balances__title'>
                 <Typography.Text strong={true}>Wallet Balances</Typography.Text>
-                <Typography.Text type='secondary'>Fetched {fmt(props.fetchedAt)}</Typography.Text>
+                <Button
+                    aria-controls='fifa-wallet-balance-details'
+                    aria-expanded={detailsVisible}
+                    className={`fifa-wallet-balances__toggle${detailsVisible ? ' fifa-wallet-balances__toggle--expanded' : ''}`}
+                    size='small'
+                    type='text'
+                    onClick={() => setDetailsVisible(visible => !visible)}>
+                    <span>{detailsVisible ? 'Hide details' : 'Show details'}</span>
+                    <DownOutlined />
+                </Button>
             </div>
-            <Row gutter={[12, 12]}>
+            <Row id='fifa-wallet-balance-details' gutter={[12, 12]}>
                 {items.map(item => (
                     <Col key={item.chain} xs={24} md={12}>
-                        <FIFAWalletBalanceCard item={item} loading={props.loading} />
+                        <FIFAWalletBalanceCard item={item} loading={props.loading} detailsVisible={detailsVisible} />
                     </Col>
                 ))}
             </Row>
+            {detailsVisible && <Typography.Text type='secondary'>Fetched {fmt(props.fetchedAt)}</Typography.Text>}
             {props.error && <Typography.Text type='danger'>{props.error.message}</Typography.Text>}
         </section>
     );

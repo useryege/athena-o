@@ -1642,6 +1642,22 @@ body[data-theme='dark'] .metric {
     gap: 12px;
 }
 
+.fifa-wallet-balances__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--athena-muted);
+}
+
+.fifa-wallet-balances__toggle .anticon {
+    font-size: 11px;
+    transition: transform 220ms ease;
+}
+
+.fifa-wallet-balances__toggle--expanded .anticon {
+    transform: rotate(180deg);
+}
+
 .fifa-wallet-balance {
     height: 100%;
     border-color: var(--athena-border);
@@ -1930,12 +1946,6 @@ body[data-theme='dark'] .metric {
     .fifa-event-summary__title {
         align-items: flex-start;
         flex-direction: column;
-    }
-
-    .fifa-wallet-balances__title {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 4px;
     }
 
     .mobile-only {
