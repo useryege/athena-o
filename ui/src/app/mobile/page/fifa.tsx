@@ -16,6 +16,7 @@ import {GetWormEventResult, WormMarketItem} from '../../shared/services/worm-ser
 import {boolTag, fmt, fmtNumber} from './shared';
 
 const walletRefreshIntervalMs = 10000;
+const eventRefreshIntervalMs = 1000;
 
 const walletBalancePlaceholders: PolymarketFIFAWalletBalanceItem[] = [
     {
@@ -321,7 +322,9 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
 
     const loadWorm = React.useCallback((nextID: string) => {
         const normalized = nextID.trim();
-        wormRequestRef.current?.abort?.();
+        if (wormRequestRef.current) {
+            return;
+        }
         if (!normalized) {
             setWormData(null);
             setWormError(null);
@@ -329,16 +332,17 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
             return;
         }
         setWormLoading(true);
-        setWormError(null);
         const req = services.worm.getEvent(normalized);
         wormRequestRef.current = req;
         req.then(nextData => {
             if (wormRequestRef.current === req) {
+                setWormError(null);
                 setWormData(nextData);
             }
         })
             .catch(err => {
                 if (wormRequestRef.current === req) {
+                    setWormData(null);
                     setWormError(err instanceof Error ? err : new Error(String(err)));
                 }
             })
@@ -352,7 +356,9 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
 
     const load = React.useCallback((nextRef: string) => {
         const normalized = nextRef.trim();
-        eventRequestRef.current?.abort?.();
+        if (eventRequestRef.current) {
+            return;
+        }
         if (!normalized) {
             setData(null);
             setError(null);
@@ -360,16 +366,17 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
             return;
         }
         setLoading(true);
-        setError(null);
         const req = services.polymarket.getFIFAMoneylineEvent(normalized);
         eventRequestRef.current = req;
         req.then(nextData => {
             if (eventRequestRef.current === req) {
+                setError(null);
                 setData(nextData);
             }
         })
             .catch(err => {
                 if (eventRequestRef.current === req) {
+                    setData(null);
                     setError(err instanceof Error ? err : new Error(String(err)));
                 }
             })
@@ -392,10 +399,8 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
             if (window.location.search.replace(/^\?/, '') !== nextParams.toString()) {
                 setParams(nextParams, {replace: true});
             }
-            loadWorm(nextConfig.wormEventId);
-            load(nextConfig.eventRef);
         },
-        [load, loadWorm, setParams]
+        [setParams]
     );
 
     const loadConfig = React.useCallback(() => {
@@ -411,6 +416,9 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
         })
             .catch(err => {
                 if (configRequestRef.current === req) {
+                    setConfig(null);
+                    setWormData(null);
+                    setData(null);
                     setConfigError(err instanceof Error ? err : new Error(String(err)));
                 }
             })
@@ -426,16 +434,47 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
         loadConfig();
         return () => {
             const configReq = configRequestRef.current;
-            const wormReq = wormRequestRef.current;
-            const eventReq = eventRequestRef.current;
             configRequestRef.current = null;
-            wormRequestRef.current = null;
-            eventRequestRef.current = null;
             configReq?.abort?.();
-            wormReq?.abort?.();
-            eventReq?.abort?.();
         };
     }, [loadConfig]);
+
+    const configuredWormEventID = config?.wormEventId || '';
+    const configuredEventRef = config?.eventRef || '';
+    React.useEffect(() => {
+        const wormReq = wormRequestRef.current;
+        const eventReq = eventRequestRef.current;
+        wormRequestRef.current = null;
+        eventRequestRef.current = null;
+        wormReq?.abort?.();
+        eventReq?.abort?.();
+
+        setWormData(null);
+        setWormError(null);
+        setData(null);
+        setError(null);
+        if (!configuredWormEventID || !configuredEventRef) {
+            setWormLoading(false);
+            setLoading(false);
+            return undefined;
+        }
+
+        const refreshEvents = () => {
+            loadWorm(configuredWormEventID);
+            load(configuredEventRef);
+        };
+        refreshEvents();
+        const timer = window.setInterval(refreshEvents, eventRefreshIntervalMs);
+        return () => {
+            window.clearInterval(timer);
+            const currentWormReq = wormRequestRef.current;
+            const currentEventReq = eventRequestRef.current;
+            wormRequestRef.current = null;
+            eventRequestRef.current = null;
+            currentWormReq?.abort?.();
+            currentEventReq?.abort?.();
+        };
+    }, [configuredEventRef, configuredWormEventID, load, loadWorm]);
 
     React.useEffect(() => {
         balancesMountedRef.current = true;

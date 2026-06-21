@@ -4,6 +4,7 @@ import (
 	"context"
 
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
+	serverfifa "github.com/useryege/athena/internal/server/fifa"
 	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
@@ -11,10 +12,11 @@ import (
 type Server struct {
 	polymarketpkg.UnimplementedPolymarketServiceServer
 	polymarketClientSet polymarketapiclient.Clientset
+	fifaCache           *serverfifa.Cache
 }
 
-func NewServer(polymarketClientSet polymarketapiclient.Clientset) *Server {
-	return &Server{polymarketClientSet: polymarketClientSet}
+func NewServer(polymarketClientSet polymarketapiclient.Clientset, fifaCache *serverfifa.Cache) *Server {
+	return &Server{polymarketClientSet: polymarketClientSet, fifaCache: fifaCache}
 }
 
 func (s *Server) GetPolymarketStatus(ctx context.Context, _ *polymarketpkg.GetPolymarketStatusRequest) (*v1alpha1.PolymarketStatus, error) {
@@ -222,6 +224,7 @@ func (s *Server) GetPolymarketFIFAEventConfig(ctx context.Context, _ *polymarket
 	if err != nil {
 		return nil, err
 	}
+	s.fifaCache.NotifyConfig(resp.GetConfig())
 	return &polymarketpkg.GetPolymarketFIFAEventConfigResponse{Config: resp.GetConfig()}, nil
 }
 
@@ -236,25 +239,18 @@ func (s *Server) UpdatePolymarketFIFAEventConfig(ctx context.Context, req *polym
 	if err != nil {
 		return nil, err
 	}
+	s.fifaCache.NotifyConfig(resp.GetConfig())
 	return &polymarketpkg.UpdatePolymarketFIFAEventConfigResponse{Config: resp.GetConfig()}, nil
 }
 
-func (s *Server) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *polymarketpkg.GetPolymarketFIFAMoneylineEventRequest) (*polymarketpkg.GetPolymarketFIFAMoneylineEventResponse, error) {
-	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetPolymarketFIFAMoneylineEvent(ctx, &polymarketapiclient.GetPolymarketFIFAMoneylineEventRequest{
-		EventRef: req.GetEventRef(),
-	})
+func (s *Server) GetPolymarketFIFAMoneylineEvent(_ context.Context, req *polymarketpkg.GetPolymarketFIFAMoneylineEventRequest) (*polymarketpkg.GetPolymarketFIFAMoneylineEventResponse, error) {
+	item, fetchedAt, err := s.fifaCache.GetPolymarketEvent(req.GetEventRef())
 	if err != nil {
 		return nil, err
 	}
 	return &polymarketpkg.GetPolymarketFIFAMoneylineEventResponse{
-		Item:      resp.GetItem(),
-		FetchedAt: resp.GetFetchedAt(),
+		Item:      item,
+		FetchedAt: fetchedAt,
 	}, nil
 }
 

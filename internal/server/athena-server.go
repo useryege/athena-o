@@ -40,6 +40,7 @@ import (
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	serverfifa "github.com/useryege/athena/internal/server/fifa"
 	"github.com/useryege/athena/internal/server/logout"
 	servernotification "github.com/useryege/athena/internal/server/notification"
 	serverpolymarket "github.com/useryege/athena/internal/server/polymarket"
@@ -404,6 +405,7 @@ type AthenaServiceSet struct {
 	WalletService        *serverwallet.Server
 	WormService          *serverworm.Server
 	PolymarketService    *serverpolymarket.Server
+	FIFAEventCache       *serverfifa.Cache
 	TokenAPIService      *servertokenapi.Server
 	ServiceStatusService *serverservicestatus.Server
 }
@@ -427,10 +429,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
 	walletService := serverwallet.NewServer(server.WalletClientset)
+	// FIFA event cache
+	fifaEventCache := serverfifa.NewCache(server.WormClientset, server.PolymarketClientset)
 	// worm service
-	wormService := serverworm.NewServer(server.WormClientset)
+	wormService := serverworm.NewServer(server.WormClientset, fifaEventCache)
 	// polymarket service
-	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset)
+	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset, fifaEventCache)
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
 	serviceStatusService := serverservicestatus.NewServer(
@@ -458,6 +462,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		WalletService:        walletService,
 		WormService:          wormService,
 		PolymarketService:    polymarketService,
+		FIFAEventCache:       fifaEventCache,
 		TokenAPIService:      tokenAPIService,
 		ServiceStatusService: serviceStatusService,
 	}
@@ -866,6 +871,9 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	// set the service set to the server
 	server.serviceSet = svcSet
+	cacheCtx, stopFIFAEventCache := context.WithCancel(ctx)
+	defer stopFIFAEventCache()
+	go svcSet.FIFAEventCache.Run(cacheCtx)
 	// create a new gRPC server
 	grpcS := server.newGRPCServer()
 	// wrap the gRPC server l(grpc server => http handler)
@@ -894,6 +902,7 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	shutdownFunc := func() {
 		log.Info("API Server shutdown initiated. Shutting down servers...")
+		stopFIFAEventCache()
 		server.available.Store(false)
 		shutdownCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()

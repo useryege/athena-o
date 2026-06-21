@@ -3,6 +3,7 @@ package worm
 import (
 	"context"
 
+	serverfifa "github.com/useryege/athena/internal/server/fifa"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
 )
@@ -10,10 +11,11 @@ import (
 type Server struct {
 	wormpkg.UnimplementedWormServiceServer
 	wormClientSet wormapiclient.Clientset
+	fifaCache     *serverfifa.Cache
 }
 
-func NewServer(wormClientSet wormapiclient.Clientset) *Server {
-	return &Server{wormClientSet: wormClientSet}
+func NewServer(wormClientSet wormapiclient.Clientset, fifaCache *serverfifa.Cache) *Server {
+	return &Server{wormClientSet: wormClientSet, fifaCache: fifaCache}
 }
 
 func (s *Server) GetWormStatus(ctx context.Context, _ *wormpkg.GetWormStatusRequest) (*wormpkg.GetWormStatusResponse, error) {
@@ -34,23 +36,15 @@ func (s *Server) GetWormStatus(ctx context.Context, _ *wormpkg.GetWormStatusRequ
 	}, nil
 }
 
-func (s *Server) GetWormEvent(ctx context.Context, req *wormpkg.GetWormEventRequest) (*wormpkg.GetWormEventResponse, error) {
-	closer, client, err := s.wormClientSet.NewWormServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetWormEvent(ctx, &wormapiclient.GetWormEventRequest{
-		ConditionId: req.GetConditionId(),
-	})
+func (s *Server) GetWormEvent(_ context.Context, req *wormpkg.GetWormEventRequest) (*wormpkg.GetWormEventResponse, error) {
+	item, fetchedAt, err := s.fifaCache.GetWormEvent(req.GetConditionId())
 	if err != nil {
 		return nil, err
 	}
 
 	return &wormpkg.GetWormEventResponse{
-		Item:      resp.GetEvent(),
-		FetchedAt: resp.GetFetchedAt(),
+		Item:      item,
+		FetchedAt: fetchedAt,
 	}, nil
 }
 
