@@ -2,6 +2,16 @@
 
 `util/worm` contains the ATHENA Go client for the Worm API.
 
+> [!WARNING]
+> Worm's published documentation has significant drift, especially around
+> authentication, orders, and margin position write flows. Do not treat the
+> documentation as the authoritative runtime protocol. Verify behavior in this
+> order:
+>
+> 1. Repeatable live API requests and responses.
+> 2. The current Worm web application implementation.
+> 3. The published documentation.
+
 ## Current Module
 
 - `Client` (`https://api.worm.wtf`)
@@ -53,7 +63,9 @@ This rebuilds `worm-docs/` from the markdown URLs in `llms.txt`.
 
 ## Public Read Snapshot Scope
 
-Future public-read snapshots should treat `worm-docs/api-reference/**/*.md` as the source of truth.
+Use `worm-docs/api-reference/**/*.md` as an endpoint inventory for future
+public-read snapshots, then verify request and response contracts against live
+API behavior.
 
 Include public read endpoints such as search, sports catalog, market discovery, market details, market prices, orderbook snapshots, candles, market trades, public margin activity, events, and read-only margin estimates.
 
