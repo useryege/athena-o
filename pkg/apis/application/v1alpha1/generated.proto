@@ -822,6 +822,32 @@ message WormEventItem {
   optional int64 created = 9;
 }
 
+message WormMarginPositionEstimateItem {
+  optional string funds = 1;
+
+  optional bool isYes = 2;
+
+  optional string leverage = 3;
+
+  optional string averagePrice = 4;
+
+  optional string totalShares = 5;
+
+  optional string totalCost = 6;
+
+  optional string bestAsk = 7;
+
+  optional string worstFillPrice = 8;
+
+  optional bool isFullyFilled = 9;
+
+  optional string feeAmount = 10;
+
+  optional string userFundsNeeded = 11;
+
+  optional string liquidationPrice = 12;
+}
+
 message WormMarketItem {
   optional string conditionId = 1;
 
@@ -852,5 +878,27 @@ message WormMarketItem {
   optional int64 liveCheckedAt = 14;
 
   optional string livePriceChange = 15;
+
+  optional string configKind = 16;
+
+  optional string maxLeverageYes = 17;
+
+  optional string maxLeverageNo = 18;
+
+  optional string openingFee = 19;
+
+  optional string closingFee = 20;
+
+  optional string annualFeeRate = 21;
+
+  optional string orderMinSize = 22;
+
+  optional int32 priceDecimals = 23;
+
+  optional int32 sharesDecimals = 24;
+
+  optional WormMarginPositionEstimateItem estimate = 25;
+
+  optional string tradingDataError = 26;
 }
 

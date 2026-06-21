@@ -31,6 +31,7 @@ const (
 	wormMarketRulesInterval   = time.Minute
 	wormLiveStateLoopInterval = time.Minute
 	wormLivePriceWindow       = 30 * time.Minute
+	wormFIFAMarginFunds       = "200"
 
 	defaultWormMarketsCategorySlug = "sports"
 	defaultWormMarketsSortOption   = "leverage"
@@ -45,6 +46,7 @@ type wormMarketClient interface {
 	ListMarkets(context.Context, utilworm.ListMarketsOptions) (*utilworm.ListMarketsResponse, error)
 	GetMarket(context.Context, string) (*utilworm.Market, error)
 	GetEvent(context.Context, string) (*utilworm.Event, error)
+	EstimateMarginPosition(context.Context, utilworm.EstimateMarginPositionOptions) (*utilworm.MarginPositionEstimate, error)
 }
 
 type Service struct {
@@ -160,8 +162,10 @@ func (s *Service) GetWormEvent(ctx context.Context, req *apiclient.GetWormEventR
 	if event == nil || strings.TrimSpace(event.ConditionID) == "" {
 		return nil, status.Errorf(codes.NotFound, "worm event %q was not found", conditionID)
 	}
+	item := s.toAPIEvent(event)
+	s.enrichWormEventTradingData(ctx, item)
 	return &apiclient.GetWormEventResponse{
-		Event:     s.toAPIEvent(event),
+		Event:     item,
 		FetchedAt: time.Now().Unix(),
 	}, nil
 }
@@ -299,6 +303,117 @@ func (s *Service) toAPIEvent(event *utilworm.Event) *v1alpha1.WormEventItem {
 	for _, market := range event.Markets {
 		item.Markets = append(item.Markets, s.toAPIMarketSummary(market))
 	}
+	return item
+}
+
+func (s *Service) enrichWormEventTradingData(ctx context.Context, event *v1alpha1.WormEventItem) {
+	if event == nil || s.wormClient == nil || len(event.Markets) == 0 {
+		return
+	}
+	var wg sync.WaitGroup
+	for _, market := range event.Markets {
+		if market == nil || strings.TrimSpace(market.ConditionID) == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(market *v1alpha1.WormMarketItem) {
+			defer wg.Done()
+			s.enrichWormMarketTradingData(ctx, market)
+		}(market)
+	}
+	wg.Wait()
+}
+
+func (s *Service) enrichWormMarketTradingData(ctx context.Context, item *v1alpha1.WormMarketItem) {
+	if item == nil || ctx.Err() != nil {
+		return
+	}
+	conditionID := strings.TrimSpace(item.ConditionID)
+	if conditionID == "" {
+		return
+	}
+	market, err := s.wormClient.GetMarket(ctx, conditionID)
+	if err != nil {
+		if ctx.Err() == nil {
+			item.TradingDataError = fmt.Sprintf("get market detail: %v", err)
+		}
+		return
+	}
+	if market == nil || strings.TrimSpace(market.ConditionID) != conditionID {
+		item.TradingDataError = "market detail condition id mismatch"
+		return
+	}
+
+	item.MarginEnabled = market.MarginEnabled
+	applyWormMarketConfig(item, market.Config)
+	if !market.MarginEnabled {
+		item.TradingDataError = "margin trading is not enabled"
+		return
+	}
+	if market.Config == nil {
+		item.TradingDataError = "market trading config is missing"
+		return
+	}
+	leverageText := strings.TrimSpace(item.MaxLeverageYes)
+	if leverageText == "" {
+		item.TradingDataError = "max_leverage_yes is missing"
+		return
+	}
+	leverage, err := strconv.ParseFloat(leverageText, 64)
+	if err != nil || leverage <= 0 || math.IsNaN(leverage) || math.IsInf(leverage, 0) {
+		item.TradingDataError = fmt.Sprintf("max_leverage_yes is invalid: %s", leverageText)
+		return
+	}
+
+	isYes := true
+	estimate, err := s.wormClient.EstimateMarginPosition(ctx, utilworm.EstimateMarginPositionOptions{
+		MarketConditionID: conditionID,
+		Funds:             wormFIFAMarginFunds,
+		IsYes:             &isYes,
+		Leverage:          &leverage,
+	})
+	if err != nil {
+		if ctx.Err() == nil {
+			item.TradingDataError = fmt.Sprintf("estimate margin position: %v", err)
+		}
+		return
+	}
+	item.Estimate = toAPIWormMarginPositionEstimate(estimate, wormFIFAMarginFunds, isYes, leverageText)
+}
+
+func applyWormMarketConfig(item *v1alpha1.WormMarketItem, config *utilworm.MarketConfig) {
+	if item == nil || config == nil {
+		return
+	}
+	item.ConfigKind = strings.TrimSpace(config.Kind)
+	item.MaxLeverageYes = stringValue(config.MaxLeverageYes)
+	item.MaxLeverageNo = stringValue(config.MaxLeverageNo)
+	item.OpeningFee = stringValue(config.OpeningFee)
+	item.ClosingFee = stringValue(config.ClosingFee)
+	item.AnnualFeeRate = stringValue(config.AnnualFeeRate)
+	item.OrderMinSize = stringValue(config.OrderMinSize)
+	item.PriceDecimals = int32Value(config.PriceDecimals)
+	item.SharesDecimals = int32Value(config.SharesDecimals)
+}
+
+func toAPIWormMarginPositionEstimate(estimate *utilworm.MarginPositionEstimate, funds string, isYes bool, leverage string) *v1alpha1.WormMarginPositionEstimateItem {
+	item := &v1alpha1.WormMarginPositionEstimateItem{
+		Funds:    funds,
+		IsYes:    isYes,
+		Leverage: leverage,
+	}
+	if estimate == nil {
+		return item
+	}
+	item.AveragePrice = estimate.AveragePrice
+	item.TotalShares = estimate.TotalShares
+	item.TotalCost = estimate.TotalCost
+	item.BestAsk = estimate.BestAsk
+	item.WorstFillPrice = estimate.WorstFillPrice
+	item.IsFullyFilled = estimate.IsFullyFilled
+	item.FeeAmount = estimate.FeeAmount
+	item.UserFundsNeeded = estimate.UserFundsNeeded
+	item.LiquidationPrice = stringValue(estimate.LiquidationPrice)
 	return item
 }
 
@@ -725,6 +840,13 @@ func int64Value(value *int64) int64 {
 		return 0
 	}
 	return *value
+}
+
+func int32Value(value *int) int32 {
+	if value == nil {
+		return 0
+	}
+	return int32(*value)
 }
 
 func unixTime(value time.Time) int64 {

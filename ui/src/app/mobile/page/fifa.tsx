@@ -187,8 +187,11 @@ const FIFAWalletBalancesBar = (props: {items?: PolymarketFIFAWalletBalanceItem[]
     );
 };
 
+const leverageValue = (value?: string) => (value ? `${value}x` : '-');
+
 const WormMarketCard = (props: {item: WormMarketItem}) => {
     const item = props.item;
+    const estimate = item.estimate;
     return (
         <Card className='fifa-worm-market' size='small'>
             <div className='fifa-worm-market__header'>
@@ -198,10 +201,48 @@ const WormMarketCard = (props: {item: WormMarketItem}) => {
             <MetricRow
                 items={[
                     {label: 'Price', value: item.lastTradePrice || '-'},
-                    {label: 'Margin', value: item.marginEnabled ? 'Yes' : 'No'},
-                    {label: 'Created', value: unixTime(item.created)}
+                    {label: 'YES Lev', value: leverageValue(item.maxLeverageYes)},
+                    {label: 'Liq', value: estimate?.liquidationPrice || '-'}
                 ]}
             />
+            <section className='fifa-worm-market__section'>
+                <Typography.Text className='fifa-worm-market__section-title' strong={true}>
+                    Leverage Estimate
+                </Typography.Text>
+                <FIFAInfoGrid
+                    items={[
+                        {label: 'Funds', value: estimate?.funds || '-'},
+                        {label: 'Leverage', value: leverageValue(estimate?.leverage || item.maxLeverageYes)},
+                        {label: 'Avg', value: estimate?.averagePrice || '-'},
+                        {label: 'Best Ask', value: estimate?.bestAsk || '-'},
+                        {label: 'Worst Fill', value: estimate?.worstFillPrice || '-'},
+                        {label: 'Shares', value: estimate?.totalShares || '-'},
+                        {label: 'Cost', value: estimate?.totalCost || '-'},
+                        {label: 'Fee', value: estimate?.feeAmount || '-'},
+                        {label: 'Funds Needed', value: estimate?.userFundsNeeded || '-'},
+                        {label: 'Fully Filled', value: estimate ? boolTag(estimate.isFullyFilled) : '-'}
+                    ]}
+                />
+            </section>
+            <section className='fifa-worm-market__section'>
+                <Typography.Text className='fifa-worm-market__section-title' strong={true}>
+                    Trading Config
+                </Typography.Text>
+                <FIFAInfoGrid
+                    items={[
+                        {label: 'Kind', value: fmt(item.configKind)},
+                        {label: 'Margin', value: boolTag(item.marginEnabled)},
+                        {label: 'Max YES', value: leverageValue(item.maxLeverageYes)},
+                        {label: 'Max NO', value: leverageValue(item.maxLeverageNo)},
+                        {label: 'Opening Fee', value: fmt(item.openingFee)},
+                        {label: 'Closing Fee', value: fmt(item.closingFee)},
+                        {label: 'Annual Fee', value: fmt(item.annualFeeRate)},
+                        {label: 'Min Size', value: fmt(item.orderMinSize)},
+                        {label: 'Price Decimals', value: fmt(item.priceDecimals)},
+                        {label: 'Shares Decimals', value: fmt(item.sharesDecimals)}
+                    ]}
+                />
+            </section>
             <FIFAInfoGrid
                 columns={1}
                 items={[
@@ -210,6 +251,7 @@ const WormMarketCard = (props: {item: WormMarketItem}) => {
                     {label: 'Event', value: item.eventConditionId, copyText: item.eventConditionId}
                 ]}
             />
+            {item.tradingDataError && <Typography.Text type='danger'>{item.tradingDataError}</Typography.Text>}
             {item.description && <Typography.Paragraph className='fifa-worm-market__description'>{item.description}</Typography.Paragraph>}
             <Button href={wormMarketURL(item.conditionId)} target='_blank' rel='noreferrer' icon={<LinkOutlined />}>
                 Worm

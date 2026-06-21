@@ -1728,15 +1728,14 @@ body[data-theme='dark'] .metric {
     align-content: start;
 }
 
-.fifa-worm-market .metric-row .ant-col,
 .fifa-moneyline-option .metric-row .ant-col {
     flex: 0 0 50%;
     max-width: 50%;
 }
 
-.fifa-worm-market .metric-row .ant-col:nth-child(3) {
-    flex-basis: 100%;
-    max-width: 100%;
+.fifa-worm-market .metric-row .ant-col {
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
 }
 
 .fifa-worm-market .metric,
@@ -1767,6 +1766,25 @@ body[data-theme='dark'] .metric {
     font-size: 15px;
     font-weight: 850;
     overflow-wrap: anywhere;
+}
+
+.fifa-worm-market__section {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+    padding-top: 2px;
+}
+
+.fifa-worm-market__section + .fifa-worm-market__section,
+.fifa-worm-market__section + .fifa-info-grid {
+    padding-top: 10px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.fifa-worm-market__section-title {
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.25;
 }
 
 .fifa-worm-event-description,

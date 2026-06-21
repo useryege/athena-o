@@ -81,4 +81,6 @@ func (*WalletStatus) ProtoMessage() {}
 
 func (*WormEventItem) ProtoMessage() {}
 
+func (*WormMarginPositionEstimateItem) ProtoMessage() {}
+
 func (*WormMarketItem) ProtoMessage() {}

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-836-gff05cc6-dirty"
+    "version": "v1.0.0-839-g30955e6-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -4554,13 +4554,63 @@
         }
       }
     },
+    "v1alpha1WormMarginPositionEstimateItem": {
+      "type": "object",
+      "properties": {
+        "averagePrice": {
+          "type": "string"
+        },
+        "bestAsk": {
+          "type": "string"
+        },
+        "feeAmount": {
+          "type": "string"
+        },
+        "funds": {
+          "type": "string"
+        },
+        "isFullyFilled": {
+          "type": "boolean"
+        },
+        "isYes": {
+          "type": "boolean"
+        },
+        "leverage": {
+          "type": "string"
+        },
+        "liquidationPrice": {
+          "type": "string"
+        },
+        "totalCost": {
+          "type": "string"
+        },
+        "totalShares": {
+          "type": "string"
+        },
+        "userFundsNeeded": {
+          "type": "string"
+        },
+        "worstFillPrice": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1WormMarketItem": {
       "type": "object",
       "properties": {
+        "annualFeeRate": {
+          "type": "string"
+        },
         "category": {
           "type": "string"
         },
+        "closingFee": {
+          "type": "string"
+        },
         "conditionId": {
+          "type": "string"
+        },
+        "configKind": {
           "type": "string"
         },
         "created": {
@@ -4569,6 +4619,9 @@
         },
         "description": {
           "type": "string"
+        },
+        "estimate": {
+          "$ref": "#/definitions/v1alpha1WormMarginPositionEstimateItem"
         },
         "eventConditionId": {
           "type": "string"
@@ -4598,10 +4651,33 @@
         "marginEnabled": {
           "type": "boolean"
         },
+        "maxLeverageNo": {
+          "type": "string"
+        },
+        "maxLeverageYes": {
+          "type": "string"
+        },
+        "openingFee": {
+          "type": "string"
+        },
+        "orderMinSize": {
+          "type": "string"
+        },
+        "priceDecimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sharesDecimals": {
+          "type": "integer",
+          "format": "int32"
+        },
         "state": {
           "type": "string"
         },
         "title": {
+          "type": "string"
+        },
+        "tradingDataError": {
           "type": "string"
         }
       }
