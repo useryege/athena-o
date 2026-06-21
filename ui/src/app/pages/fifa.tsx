@@ -256,40 +256,52 @@ const WormMarketCard = (props: {item: WormMarketItem}) => {
                 className='fifa-card-collapse'
                 items={[
                     {
-                        key: 'trading-config',
-                        label: 'Trading Config',
+                        key: 'details',
+                        label: 'Details',
                         children: (
-                            <FIFAInfoGrid
-                                items={[
-                                    {label: 'Kind', value: fmt(item.configKind)},
-                                    {label: 'Margin', value: boolTag(item.marginEnabled)},
-                                    {label: 'Max YES', value: leverageValue(item.maxLeverageYes)},
-                                    {label: 'Max NO', value: leverageValue(item.maxLeverageNo)},
-                                    {label: 'Opening Fee', value: fmt(item.openingFee)},
-                                    {label: 'Closing Fee', value: fmt(item.closingFee)},
-                                    {label: 'Annual Fee', value: fmt(item.annualFeeRate)},
-                                    {label: 'Min Size', value: fmt(item.orderMinSize)},
-                                    {label: 'Price Decimals', value: fmt(item.priceDecimals)},
-                                    {label: 'Shares Decimals', value: fmt(item.sharesDecimals)}
-                                ]}
-                            />
+                            <>
+                                <section className='fifa-worm-market__section'>
+                                    <Typography.Text className='fifa-worm-market__section-title' strong={true}>
+                                        Trading Config
+                                    </Typography.Text>
+                                    <FIFAInfoGrid
+                                        items={[
+                                            {label: 'Kind', value: fmt(item.configKind)},
+                                            {label: 'Margin', value: boolTag(item.marginEnabled)},
+                                            {label: 'Max YES', value: leverageValue(item.maxLeverageYes)},
+                                            {label: 'Max NO', value: leverageValue(item.maxLeverageNo)},
+                                            {label: 'Opening Fee', value: fmt(item.openingFee)},
+                                            {label: 'Closing Fee', value: fmt(item.closingFee)},
+                                            {label: 'Annual Fee', value: fmt(item.annualFeeRate)},
+                                            {label: 'Min Size', value: fmt(item.orderMinSize)},
+                                            {label: 'Price Decimals', value: fmt(item.priceDecimals)},
+                                            {label: 'Shares Decimals', value: fmt(item.sharesDecimals)}
+                                        ]}
+                                    />
+                                </section>
+                                <section className='fifa-worm-market__section'>
+                                    <Typography.Text className='fifa-worm-market__section-title' strong={true}>
+                                        IDs
+                                    </Typography.Text>
+                                    <FIFAInfoGrid
+                                        columns={1}
+                                        items={[
+                                            {label: 'Condition', value: item.conditionId, copyText: item.conditionId},
+                                            {label: 'Category', value: fmt(item.category)},
+                                            {label: 'Event', value: item.eventConditionId, copyText: item.eventConditionId}
+                                        ]}
+                                    />
+                                </section>
+                                {item.tradingDataError && <Typography.Text type='danger'>{item.tradingDataError}</Typography.Text>}
+                                {item.description && <Typography.Paragraph className='fifa-worm-market__description'>{item.description}</Typography.Paragraph>}
+                                <Button href={wormMarketURL(item.conditionId)} target='_blank' rel='noreferrer' icon={<LinkOutlined />}>
+                                    Worm
+                                </Button>
+                            </>
                         )
                     }
                 ]}
             />
-            <FIFAInfoGrid
-                columns={1}
-                items={[
-                    {label: 'Condition', value: item.conditionId, copyText: item.conditionId},
-                    {label: 'Category', value: fmt(item.category)},
-                    {label: 'Event', value: item.eventConditionId, copyText: item.eventConditionId}
-                ]}
-            />
-            {item.tradingDataError && <Typography.Text type='danger'>{item.tradingDataError}</Typography.Text>}
-            {item.description && <Typography.Paragraph className='fifa-worm-market__description'>{item.description}</Typography.Paragraph>}
-            <Button href={wormMarketURL(item.conditionId)} target='_blank' rel='noreferrer' icon={<LinkOutlined />}>
-                Worm
-            </Button>
         </Card>
     );
 };

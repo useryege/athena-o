@@ -1670,8 +1670,7 @@ body[data-theme='dark'] .metric {
     border-top: 1px solid var(--athena-border);
 }
 
-.fifa-worm-market__section + .fifa-card-collapse,
-.fifa-card-collapse + .fifa-info-grid {
+.fifa-worm-market__section + .fifa-card-collapse {
     padding-top: 10px;
     border-top: 1px solid var(--athena-border);
 }
