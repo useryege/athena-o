@@ -31,13 +31,14 @@ const cliName = "athena-polymarket"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost                   string
-		listenPort                   int
-		notificationEnabled          bool
-		notificationServerAddress    string
-		sportsLivePriceAlertCooldown time.Duration
-		fifaPolygonRPCURL            string
-		fifaSolanaRPCURL             string
+		listenHost                       string
+		listenPort                       int
+		notificationEnabled              bool
+		notificationServerAddress        string
+		sportsLivePriceAlertCooldown     time.Duration
+		fifaPolygonRPCURL                string
+		fifaSolanaRPCURL                 string
+		fifaWalletBalanceRefreshInterval time.Duration
 
 		storeSrc func(context.Context) (*polymarketstore.SQLStore, error)
 	)
@@ -79,8 +80,9 @@ func NewCommand() *cobra.Command {
 				Enabled: notificationEnabled,
 			}
 			fifaWalletBalanceConfig := polymarket.FIFAWalletBalanceConfig{
-				PolygonRPCURL: fifaPolygonRPCURL,
-				SolanaRPCURL:  fifaSolanaRPCURL,
+				PolygonRPCURL:   fifaPolygonRPCURL,
+				SolanaRPCURL:    fifaSolanaRPCURL,
+				RefreshInterval: fifaWalletBalanceRefreshInterval,
 			}
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
@@ -148,6 +150,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().DurationVar(&sportsLivePriceAlertCooldown, "sports-live-price-alert-cooldown", env.ParseDurationFromEnv("ATHENA_POLYMARKET_SPORTS_LIVE_PRICE_ALERT_COOLDOWN", 15*time.Minute, time.Second, 24*time.Hour), "Cooldown between repeated Polymarket sports live price alerts for the same token and band")
 	command.Flags().StringVar(&fifaPolygonRPCURL, "fifa-polygon-rpc-url", env.StringFromEnv("ATHENA_POLYMARKET_POLYGON_RPC_URL", "https://polygon-rpc.com"), "Polygon JSON-RPC URL for FIFA wallet balances")
 	command.Flags().StringVar(&fifaSolanaRPCURL, "fifa-solana-rpc-url", env.StringFromEnv("ATHENA_POLYMARKET_SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com"), "Solana JSON-RPC URL for FIFA wallet balances")
+	command.Flags().DurationVar(&fifaWalletBalanceRefreshInterval, "fifa-wallet-balance-refresh-interval", env.ParseDurationFromEnv("ATHENA_POLYMARKET_FIFA_WALLET_BALANCE_REFRESH_INTERVAL", 3*time.Second, time.Second, time.Hour), "Refresh interval for cached FIFA wallet balances")
 
 	storeSrc = polymarketstore.NewSQLStoreSource()
 

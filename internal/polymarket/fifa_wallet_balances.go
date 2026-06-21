@@ -40,45 +40,48 @@ type fifaWalletBalancesResult struct {
 }
 
 func (s *Service) ListPolymarketFIFAWalletBalances(ctx context.Context, _ *apiclient.ListPolymarketFIFAWalletBalancesRequest) (*apiclient.ListPolymarketFIFAWalletBalancesResponse, error) {
-	if items, fetchedAt, ok := s.cachedFIFAWalletBalances(); ok {
-		return &apiclient.ListPolymarketFIFAWalletBalancesResponse{
-			Items:     items,
-			FetchedAt: fetchedAt,
-		}, nil
-	}
-
-	value, err, _ := s.syncGroup.Do("fifa-wallet-balances", func() (any, error) {
-		return s.loadFIFAWalletBalances(ctx), nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	result := value.(fifaWalletBalancesResult)
+	items, fetchedAt := s.currentFIFAWalletBalances()
 	return &apiclient.ListPolymarketFIFAWalletBalancesResponse{
-		Items:     cloneFIFAWalletBalanceItems(result.items),
-		FetchedAt: result.fetchedAt,
+		Items:     items,
+		FetchedAt: fetchedAt,
 	}, nil
 }
 
-func (s *Service) cachedFIFAWalletBalances() ([]*v1alpha1.PolymarketFIFAWalletBalanceItem, int64, bool) {
-	now := s.nowTime()
+func (s *Service) runFIFAWalletBalanceRefreshLoop(ctx context.Context) {
+	defer s.runWG.Done()
+	s.loadFIFAWalletBalances(ctx)
+
+	interval := s.fifaWalletBalanceRefreshInterval
+	if interval <= 0 {
+		interval = defaultFIFAWalletBalanceRefreshInterval
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.loadFIFAWalletBalances(ctx)
+		}
+	}
+}
+
+func (s *Service) currentFIFAWalletBalances() ([]*v1alpha1.PolymarketFIFAWalletBalanceItem, int64) {
 	s.cacheMu.RLock()
 	defer s.cacheMu.RUnlock()
-	if len(s.fifaWalletBalances) == 0 || s.fifaWalletBalancesCachedAt.IsZero() {
-		return nil, 0, false
+	if len(s.fifaWalletBalances) == 0 {
+		return initialFIFAWalletBalanceItems(), 0
 	}
-	if now.Sub(s.fifaWalletBalancesCachedAt) > defaultFIFAWalletBalanceCacheTTL {
-		return nil, 0, false
-	}
-	return cloneFIFAWalletBalanceItems(s.fifaWalletBalances), s.fifaWalletBalancesFetched, true
+	return cloneFIFAWalletBalanceItems(s.fifaWalletBalances), s.fifaWalletBalancesFetched
 }
 
 func (s *Service) loadFIFAWalletBalances(ctx context.Context) fifaWalletBalancesResult {
-	fetchedAt := s.nowUnix()
 	items := []*v1alpha1.PolymarketFIFAWalletBalanceItem{
 		s.getFIFAPolygonPUSDBalance(ctx),
 		s.getFIFASolanaUSDCBalance(ctx),
 	}
+	fetchedAt := s.nowUnix()
 
 	s.cacheMu.Lock()
 	s.fifaWalletBalances = cloneFIFAWalletBalanceItems(items)
@@ -87,6 +90,30 @@ func (s *Service) loadFIFAWalletBalances(ctx context.Context) fifaWalletBalances
 	s.cacheMu.Unlock()
 
 	return fifaWalletBalancesResult{items: items, fetchedAt: fetchedAt}
+}
+
+func initialFIFAWalletBalanceItems() []*v1alpha1.PolymarketFIFAWalletBalanceItem {
+	message := fmt.Errorf("wallet balance refresh has not completed yet")
+	return []*v1alpha1.PolymarketFIFAWalletBalanceItem{
+		markFIFAWalletBalanceError(baseFIFAWalletBalanceItem(
+			fifaPolygonChain,
+			fifaPolygonPUSDLabel,
+			fifaPolygonWallet,
+			fifaPolygonPUSDToken,
+			fifaDefaultPUSDSymbol,
+			0,
+			fifaPolygonExplorerURL(),
+		), message),
+		markFIFAWalletBalanceError(baseFIFAWalletBalanceItem(
+			fifaSolanaChain,
+			fifaSolanaUSDCLabel,
+			fifaSolanaUSDCToken,
+			fifaSolanaUSDCMint,
+			fifaDefaultUSDCSymbol,
+			fifaDefaultUSDCDecimal,
+			fifaSolanaExplorerURL(),
+		), message),
+	}
 }
 
 func (s *Service) getFIFAPolygonPUSDBalance(ctx context.Context) *v1alpha1.PolymarketFIFAWalletBalanceItem {

@@ -15,7 +15,7 @@ import {
 import {GetWormEventResult, WormMarketItem} from '../shared/services/worm-service';
 import {boolTag, fmt, fmtNumber} from './shared';
 
-const walletRefreshIntervalMs = 10000;
+const walletRefreshIntervalMs = 3000;
 const eventRefreshIntervalMs = 1000;
 
 const walletBalancePlaceholders: PolymarketFIFAWalletBalanceItem[] = [
