@@ -318,25 +318,10 @@ func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
 		}
 
 		fetchedAt := s.now().UTC()
-		limit := 1
-		queryCtx, cancel := context.WithTimeout(ctx, managedOOMarketDataQueryTimeout)
-		response, err := s.gammaClient.ListMarketsKeyset(queryCtx, utilpolymarket.ListMarketsKeysetOptions{
-			Limit:      &limit,
-			ID:         []int64{gammaID},
-			IncludeTag: ptrBool(true),
-		})
-		cancel()
+		market, err := s.fetchManagedOOMarketByID(ctx, marketID, gammaID)
 		if err != nil {
-			if isPolymarketAPIStatus(err, 404) {
-				if storeErr := s.store.UpsertManagedOOMarketNotFound(ctx, marketID, err.Error(), fetchedAt); storeErr != nil {
-					return storeErr
-				}
-				notFound++
-				continue
-			}
-			return fmt.Errorf("fetch managed oo gamma market %s: %w", marketID, err)
+			return err
 		}
-		market := managedOOMarketByID(response, marketID)
 		if market == nil {
 			if err := s.store.UpsertManagedOOMarketNotFound(ctx, marketID, "gamma market not found", fetchedAt); err != nil {
 				return err
@@ -356,6 +341,39 @@ func (s *Service) syncManagedOOMarketData(ctx context.Context) error {
 		"not_found": notFound,
 	}).Debug("synced polymarket managed oo market data")
 	return nil
+}
+
+func (s *Service) fetchManagedOOMarketByID(ctx context.Context, marketID string, gammaID int64) (*utilpolymarket.Market, error) {
+	limit := 1
+	queryCtx, cancel := context.WithTimeout(ctx, managedOOMarketDataQueryTimeout)
+	response, err := s.gammaClient.ListMarketsKeyset(queryCtx, utilpolymarket.ListMarketsKeysetOptions{
+		Limit:      &limit,
+		ID:         []int64{gammaID},
+		IncludeTag: ptrBool(true),
+	})
+	cancel()
+	if err != nil && !isPolymarketAPIStatus(err, 404) {
+		return nil, fmt.Errorf("fetch managed oo gamma market %s: %w", marketID, err)
+	}
+	if err == nil {
+		if market := managedOOMarketByID(response, marketID); market != nil {
+			return market, nil
+		}
+	}
+
+	queryCtx, cancel = context.WithTimeout(ctx, managedOOMarketDataQueryTimeout)
+	market, err := s.gammaClient.GetMarketByID(queryCtx, gammaID, utilpolymarket.GetMarketOptions{IncludeTag: ptrBool(true)})
+	cancel()
+	if err != nil {
+		if isPolymarketAPIStatus(err, 404) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("fetch managed oo gamma market by id %s: %w", marketID, err)
+	}
+	if market == nil || strings.TrimSpace(market.ID) != strings.TrimSpace(marketID) {
+		return nil, nil
+	}
+	return market, nil
 }
 
 func managedOOMarketByID(response *utilpolymarket.MarketKeysetResponse, marketID string) *utilpolymarket.Market {

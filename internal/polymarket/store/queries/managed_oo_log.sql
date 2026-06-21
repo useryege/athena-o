@@ -524,13 +524,13 @@ SELECT
   log.proposed_price,
   log.request_timestamp,
   log.ancillary_data_text,
-  market.condition_id,
+  COALESCE(market.condition_id, '')::text AS condition_id,
   COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
-  market.slug AS market_slug,
-  market.question,
+  COALESCE(market.slug, '')::text AS market_slug,
+  COALESCE(market.question, '')::text AS question,
   COALESCE(matched_labels.labels, '')::text AS matched_labels
 FROM polymarket_managed_oo_dispute_price_log AS log
-JOIN polymarket_managed_oo_market AS market
+LEFT JOIN polymarket_managed_oo_market AS market
   ON market.market_id = log.market_id
 LEFT JOIN matched_labels
   ON matched_labels.market_id = log.market_id
@@ -538,12 +538,6 @@ LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
-  AND btrim(market.slug) <> ''
-  AND COALESCE(
-    NULLIF(btrim(market.event_slug), ''),
-    NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
-    ''
-  ) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT @limit_value;
 

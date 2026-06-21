@@ -102,10 +102,11 @@ func (s *Service) sendManagedOODisputePriceAlerts(ctx context.Context) {
 }
 
 func renderManagedOODisputePriceAlertNotification(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
-	titleSubject := firstNonEmpty(candidate.Question, candidate.MarketID)
+	question := firstNonEmpty(candidate.Question, managedOOAncillaryTitle(candidate.AncillaryDataText))
+	titleSubject := firstNonEmpty(question, candidate.MarketID, candidate.TxHash)
 	bodyLines := []string{
 		fmt.Sprintf("Market ID: %s", firstNonEmpty(candidate.MarketID, "-")),
-		fmt.Sprintf("Question: %s", firstNonEmpty(truncateRunes(candidate.Question, defaultManagedOODisputedAlertQuestionMaxRunes), "-")),
+		fmt.Sprintf("Question: %s", firstNonEmpty(truncateRunes(question, defaultManagedOODisputedAlertQuestionMaxRunes), "-")),
 		fmt.Sprintf("Matched labels: %s", firstNonEmpty(candidate.MatchedLabels, "-")),
 		fmt.Sprintf("Requester: %s", firstNonEmpty(candidate.Requester, "-")),
 		fmt.Sprintf("Proposer: %s", firstNonEmpty(candidate.Proposer, "-")),
@@ -121,7 +122,36 @@ func renderManagedOODisputePriceAlertNotification(candidate polymarketstore.Mana
 		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:      fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
 		Body:       strings.Join(bodyLines, "\n"),
-		Link:       polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug),
+		Link:       managedOODisputePriceAlertLink(candidate),
 		TopicLabel: managedOODisputedAlertTopic,
 	}
+}
+
+func managedOODisputePriceAlertLink(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) string {
+	if link := polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug); link != "" {
+		return link
+	}
+	return polymarketMarketLink(candidate.MarketSlug)
+}
+
+func managedOOAncillaryTitle(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	lower := strings.ToLower(value)
+	start := strings.Index(lower, "title:")
+	if start < 0 {
+		return ""
+	}
+
+	title := strings.TrimSpace(value[start+len("title:"):])
+	lowerTitle := strings.ToLower(title)
+	end := len(title)
+	for _, marker := range []string{", description:", "\ndescription:", " description:", " market_id:"} {
+		if idx := strings.Index(lowerTitle, marker); idx >= 0 && idx < end {
+			end = idx
+		}
+	}
+	return strings.TrimSpace(strings.Trim(strings.TrimSpace(title[:end]), ","))
 }

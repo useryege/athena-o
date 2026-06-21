@@ -22,6 +22,7 @@ const (
 	moverAlertSeverityWarning  = "warning"
 	moverAlertSeverityCritical = "critical"
 	polymarketEventBaseURL     = "https://polymarket.com/event/"
+	polymarketMarketBaseURL    = "https://polymarket.com/market/"
 
 	defaultMoverAlertWarningScore       = 6
 	defaultMoverAlertCriticalScore      = 12
@@ -359,6 +360,14 @@ func polymarketEventMarketLink(eventSlug, marketSlug string) string {
 		return ""
 	}
 	return polymarketEventBaseURL + url.PathEscape(eventSlug) + "/" + url.PathEscape(marketSlug)
+}
+
+func polymarketMarketLink(marketSlug string) string {
+	marketSlug = strings.TrimSpace(marketSlug)
+	if marketSlug == "" {
+		return ""
+	}
+	return polymarketMarketBaseURL + url.PathEscape(marketSlug)
 }
 
 func truncateRunes(value string, maxRunes int) string {
