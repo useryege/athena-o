@@ -47,6 +47,24 @@ const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleStr
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
 type FIFAInfoGridItem = {label: React.ReactNode; value: React.ReactNode; copyText?: string};
 
+const normalizedWormMarketTitle = (value?: string) => (value || '').trim().toLowerCase();
+
+const orderedWormMarkets = (eventTitle: string, markets: WormMarketItem[]) => {
+    const match = eventTitle.trim().match(/^(.+?)\s+vs\.?\s+(.+)$/i);
+    if (!match) {
+        return [...markets];
+    }
+    const titleOrder = new Map([
+        [normalizedWormMarketTitle(match[1]), 0],
+        ['draw', 1],
+        [normalizedWormMarketTitle(match[2]), 2]
+    ]);
+    return markets
+        .map((market, index) => ({market, index, order: titleOrder.get(normalizedWormMarketTitle(market.title)) ?? 3}))
+        .sort((left, right) => left.order - right.order || left.index - right.index)
+        .map(({market}) => market);
+};
+
 const copyText = (value?: string) => {
     if (!value || !navigator.clipboard) {
         return;
@@ -202,6 +220,7 @@ const WormMarketCard = (props: {item: WormMarketItem}) => {
 
 const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; error?: Error}) => {
     const item = props.data?.item;
+    const markets = item ? orderedWormMarkets(item.title, item.markets) : [];
     return (
         <section className='fifa-panel fifa-panel--worm'>
             <div className='fifa-panel__title'>
@@ -227,8 +246,8 @@ const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; er
                         {item.description && <Typography.Paragraph className='fifa-worm-event-description'>{item.description}</Typography.Paragraph>}
                     </section>
                     <Row className='fifa-worm-markets' gutter={[12, 12]}>
-                        {item.markets.map(market => (
-                            <Col key={market.conditionId} xs={24} xxl={12}>
+                        {markets.map(market => (
+                            <Col key={market.conditionId} xs={24} xl={12} xxl={8}>
                                 <WormMarketCard item={market} />
                             </Col>
                         ))}
