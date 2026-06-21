@@ -388,7 +388,7 @@ func (s *SQLStore) ListManagedOODisputePriceAlertCandidates(ctx context.Context,
 			EventSlug:         row.EventSlug,
 			MarketSlug:        row.MarketSlug,
 			Question:          row.Question,
-			MatchedLabels:     string(row.MatchedLabels),
+			MatchedLabels:     row.MatchedLabels,
 		})
 	}
 	return out, nil

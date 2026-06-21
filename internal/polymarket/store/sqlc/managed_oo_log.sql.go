@@ -351,7 +351,6 @@ WITH matched_labels AS (
     market_id,
     string_agg(label, ', ' ORDER BY position) AS labels
   FROM polymarket_managed_oo_market_label
-  WHERE label IN ('Politics', 'Iran', 'Geopolitics')
   GROUP BY market_id
 )
 SELECT
@@ -369,11 +368,11 @@ SELECT
   COALESCE(NULLIF(market.event_slug, ''), NULLIF(market.raw #>> '{events,0,slug}', ''), '')::text AS event_slug,
   market.slug AS market_slug,
   market.question,
-  matched_labels.labels AS matched_labels
+  COALESCE(matched_labels.labels, '')::text AS matched_labels
 FROM polymarket_managed_oo_dispute_price_log AS log
 JOIN polymarket_managed_oo_market AS market
   ON market.market_id = log.market_id
-JOIN matched_labels
+LEFT JOIN matched_labels
   ON matched_labels.market_id = log.market_id
 LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
@@ -404,7 +403,7 @@ type ListManagedOODisputePriceAlertCandidatesRow struct {
 	EventSlug         string
 	MarketSlug        string
 	Question          string
-	MatchedLabels     []byte
+	MatchedLabels     string
 }
 
 func (q *Queries) ListManagedOODisputePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOODisputePriceAlertCandidatesRow, error) {
