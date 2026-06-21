@@ -166,11 +166,11 @@ const FIFAWalletBalanceCard = (props: {item: PolymarketFIFAWalletBalanceItem; lo
     );
 };
 
-const FIFAWalletBalancesBar = (props: {items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number; loading?: boolean; error?: Error}) => {
+const FIFAWalletBalancesPanel = (props: {items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number; loading?: boolean; error?: Error}) => {
     const itemsByChain = new Map((props.items || []).map(item => [item.chain, item]));
     const items = walletBalancePlaceholders.map(placeholder => ({...placeholder, ...(itemsByChain.get(placeholder.chain) || {})}));
     return (
-        <section className='fifa-wallet-balances'>
+        <section className='fifa-panel fifa-wallet-balances'>
             <div className='fifa-wallet-balances__title'>
                 <Typography.Text strong={true}>Wallet Balances</Typography.Text>
                 <Typography.Text type='secondary'>Fetched {fmt(props.fetchedAt)}</Typography.Text>
@@ -635,6 +635,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
             onRefresh={refresh}>
             <div className='fifa-page'>
                 {configPanel}
+                <FIFAWalletBalancesPanel items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={balancesLoading} error={balancesError} />
                 <div className='fifa-dashboard-grid'>
                     <WormEventPanel data={wormData} loading={wormLoading} error={wormError} />
                     <section className='fifa-panel fifa-panel--polymarket'>
@@ -642,7 +643,6 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                             <Typography.Text strong={true}>Polymarket</Typography.Text>
                             <Typography.Text type='secondary'>Fetched {unixTime(data?.fetchedAt)}</Typography.Text>
                         </div>
-                        <FIFAWalletBalancesBar items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={balancesLoading} error={balancesError} />
                         {!item && !loading && <Empty description='No Polymarket event loaded' />}
                         {item && (
                             <>
