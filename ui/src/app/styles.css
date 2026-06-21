@@ -1670,6 +1670,43 @@ body[data-theme='dark'] .metric {
     border-top: 1px solid var(--athena-border);
 }
 
+.fifa-worm-market__section + .fifa-card-collapse,
+.fifa-card-collapse + .fifa-info-grid {
+    padding-top: 10px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.fifa-card-collapse {
+    min-width: 0;
+    background: transparent;
+}
+
+.fifa-card-collapse .ant-collapse-item {
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-panel-solid) 92%, transparent);
+    overflow: hidden;
+}
+
+.fifa-card-collapse .ant-collapse-header {
+    min-height: 40px;
+    align-items: center !important;
+    padding: 8px 10px !important;
+    color: var(--athena-text) !important;
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1.25;
+}
+
+.fifa-card-collapse .ant-collapse-content {
+    border-top: 1px solid var(--athena-border);
+    background: transparent;
+}
+
+.fifa-card-collapse .ant-collapse-content-box {
+    padding: 10px !important;
+}
+
 .fifa-worm-market__section-title {
     min-width: 0;
     font-size: 13px;

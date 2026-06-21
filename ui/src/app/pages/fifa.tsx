@@ -1,5 +1,5 @@
 import {CopyOutlined, DownOutlined, LinkOutlined} from '@ant-design/icons';
-import {Button, Card, Col, Empty, Input, Row, Tag, Typography} from 'antd';
+import {Button, Card, Col, Collapse, Empty, Input, Row, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {AppPage, CardTitle, MetricRow, TruncatedText} from '../components';
@@ -124,15 +124,27 @@ const FIFAMoneylineOptionCard = (props: {option: PolymarketFIFAMoneylineOptionIt
                     {label: 'Spread', value: price(option.spread)}
                 ]}
             />
-            <FIFAInfoGrid
-                columns={1}
+            <Collapse
+                bordered={false}
+                className='fifa-card-collapse'
                 items={[
-                    {label: 'Market', value: option.marketSlug, copyText: option.marketSlug},
-                    {label: 'Condition', value: option.conditionId, copyText: option.conditionId},
-                    {label: 'Yes Token', value: option.yesTokenId, copyText: option.yesTokenId},
-                    {label: 'Min Size', value: fmtNumber(option.orderMinSize)},
-                    {label: 'Tick', value: price(option.tickSize)},
-                    {label: 'Neg Risk', value: boolTag(option.negRisk)}
+                    {
+                        key: 'details',
+                        label: 'Details',
+                        children: (
+                            <FIFAInfoGrid
+                                columns={1}
+                                items={[
+                                    {label: 'Market', value: option.marketSlug, copyText: option.marketSlug},
+                                    {label: 'Condition', value: option.conditionId, copyText: option.conditionId},
+                                    {label: 'Yes Token', value: option.yesTokenId, copyText: option.yesTokenId},
+                                    {label: 'Min Size', value: fmtNumber(option.orderMinSize)},
+                                    {label: 'Tick', value: price(option.tickSize)},
+                                    {label: 'Neg Risk', value: boolTag(option.negRisk)}
+                                ]}
+                            />
+                        )
+                    }
                 ]}
             />
         </Card>
@@ -239,25 +251,32 @@ const WormMarketCard = (props: {item: WormMarketItem}) => {
                     ]}
                 />
             </section>
-            <section className='fifa-worm-market__section'>
-                <Typography.Text className='fifa-worm-market__section-title' strong={true}>
-                    Trading Config
-                </Typography.Text>
-                <FIFAInfoGrid
-                    items={[
-                        {label: 'Kind', value: fmt(item.configKind)},
-                        {label: 'Margin', value: boolTag(item.marginEnabled)},
-                        {label: 'Max YES', value: leverageValue(item.maxLeverageYes)},
-                        {label: 'Max NO', value: leverageValue(item.maxLeverageNo)},
-                        {label: 'Opening Fee', value: fmt(item.openingFee)},
-                        {label: 'Closing Fee', value: fmt(item.closingFee)},
-                        {label: 'Annual Fee', value: fmt(item.annualFeeRate)},
-                        {label: 'Min Size', value: fmt(item.orderMinSize)},
-                        {label: 'Price Decimals', value: fmt(item.priceDecimals)},
-                        {label: 'Shares Decimals', value: fmt(item.sharesDecimals)}
-                    ]}
-                />
-            </section>
+            <Collapse
+                bordered={false}
+                className='fifa-card-collapse'
+                items={[
+                    {
+                        key: 'trading-config',
+                        label: 'Trading Config',
+                        children: (
+                            <FIFAInfoGrid
+                                items={[
+                                    {label: 'Kind', value: fmt(item.configKind)},
+                                    {label: 'Margin', value: boolTag(item.marginEnabled)},
+                                    {label: 'Max YES', value: leverageValue(item.maxLeverageYes)},
+                                    {label: 'Max NO', value: leverageValue(item.maxLeverageNo)},
+                                    {label: 'Opening Fee', value: fmt(item.openingFee)},
+                                    {label: 'Closing Fee', value: fmt(item.closingFee)},
+                                    {label: 'Annual Fee', value: fmt(item.annualFeeRate)},
+                                    {label: 'Min Size', value: fmt(item.orderMinSize)},
+                                    {label: 'Price Decimals', value: fmt(item.priceDecimals)},
+                                    {label: 'Shares Decimals', value: fmt(item.sharesDecimals)}
+                                ]}
+                            />
+                        )
+                    }
+                ]}
+            />
             <FIFAInfoGrid
                 columns={1}
                 items={[
@@ -304,7 +323,7 @@ const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; er
                     </section>
                     <Row className='fifa-worm-markets' gutter={[12, 12]}>
                         {markets.map(market => (
-                            <Col key={market.conditionId} span={12}>
+                            <Col key={market.conditionId} span={8}>
                                 <WormMarketCard item={market} />
                             </Col>
                         ))}
@@ -664,7 +683,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                                 <FIFAEventSummary item={item} />
                                 <Row className='fifa-moneyline-options' gutter={[12, 12]}>
                                     {item.options.map(option => (
-                                        <Col key={option.outcomeKey} span={12}>
+                                        <Col key={option.outcomeKey} span={8}>
                                             <FIFAMoneylineOptionCard option={option} />
                                         </Col>
                                     ))}
