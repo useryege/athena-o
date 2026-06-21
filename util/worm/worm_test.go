@@ -2,8 +2,10 @@ package worm
 
 import (
 	"context"
-	"crypto/ed25519"
+	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -18,14 +20,15 @@ const (
 	livePositionPrivateKeyEnv  = "ATHENA_WORM_PRIVATE_KEY"
 	livePositionBaseURLEnv     = "ATHENA_WORM_API_BASE_URL"
 
-	liveSpainEventConditionID  = "DhuB8Qdh7GTCU5cwLAG5LL8jJistoPmrePatRL7wxqSR"
-	liveSpainMarketConditionID = "4zzkSGY7btrwXxS1yesufd3znkpsyRJmV4TPXCVxxGhA"
+	liveSpainEventConditionID  = "CiPGTY2jcxDBbicstS9bN7xVynVhT1E6SD3YgTfZ3yDN"
+	liveSpainMarketConditionID = "6iabtaiF6FrGgX11gGSnTcADTM375z2vxt4eXhZtH2kd"
 	liveSpainFunds             = "5"
 	liveSpainLeverage          = 2.0
-	liveSpainExpectedOutcome   = "spain"
+	liveSpainExpectedOutcome   = "belgium"
 
 	livePositionActiveRequestStates       = "created,funding_processing,processing,order_placed,refund_processing"
 	livePositionActiveRequestLimit        = 20
+	livePositionShareAssetLimit           = 100
 	livePositionRequestTimeout            = 3 * time.Minute
 	livePositionRequestPollInterval       = 3 * time.Second
 	livePositionPostSubmitErrorPolls      = 5
@@ -49,11 +52,6 @@ func TestLiveCreateAndSubmitSpainMarginPosition(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), livePositionRequestTimeout)
 	defer cancel()
-
-	privateKey, err := parseSolanaPrivateKey(privateKeyText)
-	if err != nil {
-		t.Fatalf("parse %s: %v", livePositionPrivateKeyEnv, err)
-	}
 
 	bootstrapClient, err := NewClient(Config{BaseURL: baseURL})
 	if err != nil {
@@ -154,6 +152,7 @@ func TestLiveCreateAndSubmitSpainMarginPosition(t *testing.T) {
 		t.Fatalf("estimate did not fully fill requested notional funds=%s leverage=%.2f; skip live create to avoid unstable market position request", liveSpainFunds, liveSpainLeverage)
 	}
 
+	logLiveAccountDiagnostics(ctx, t, client)
 	requireNoLiveActivePositionRequests(ctx, t, client, isYes, leverage)
 
 	draft, err := client.CreatePositionRequest(ctx, CreatePositionRequestRequest{
@@ -172,51 +171,72 @@ func TestLiveCreateAndSubmitSpainMarginPosition(t *testing.T) {
 	if strings.TrimSpace(draft.Pubkey) == "" {
 		t.Fatalf("create Spain YES position request returned empty pubkey")
 	}
-	if draft.Message == nil || strings.TrimSpace(*draft.Message) == "" {
-		t.Fatalf("create Spain YES position request %s returned empty message", draft.Pubkey)
-	}
 	t.Logf("created position request pubkey=%s state=%s market_title=%q", draft.Pubkey, draft.State, market.Title)
+	logLivePositionRequest(t, "created", draft)
 
-	current, err := refreshLivePositionRequest(ctx, client, draft.Pubkey)
-	if err != nil {
-		t.Fatalf("refresh created Spain YES position request %s: %v", draft.Pubkey, err)
-	}
-	logLivePositionRequest(t, "created", current)
-
-	message := livePositionRequestMessage(current)
-	if message == "" {
-		t.Fatalf("created Spain YES position request %s returned empty refreshed message; request=%s", draft.Pubkey, formatLivePositionRequest(current))
-	}
-
-	switch livePositionRequestState(current) {
-	case "created", "funding_processing":
+	switch livePositionRequestState(draft) {
 	case "processing", "order_placed", "completed":
-		finalRequest, err := waitForLivePositionRequestCompleted(ctx, client, current.Pubkey)
+		finalRequest, err := waitForLivePositionRequestCompleted(ctx, client, draft.Pubkey)
 		if err != nil {
-			t.Fatalf("position request %s advanced before submit but did not complete: %v", current.Pubkey, err)
+			t.Fatalf("position request %s advanced before local submit but did not complete: %v", draft.Pubkey, err)
 		}
 		logLivePositionRequest(t, "completed", finalRequest)
 		return
 	case "failed", "cancelled", "refund_processing":
-		t.Fatalf("position request reached terminal state before submit: %s", formatLivePositionRequest(current))
-	default:
-		t.Fatalf("position request reached unexpected state before submit: %s", formatLivePositionRequest(current))
+		t.Fatalf("position request reached terminal state before submit: %s", formatLivePositionRequest(draft))
 	}
 
-	signature := ed25519.Sign(privateKey, []byte(message))
-	submitted, err := client.SubmitPositionRequest(ctx, current.Pubkey, SubmitSignatureRequest{
-		Signature: hex.EncodeToString(signature),
+	draftMessage := livePositionRequestRawMessage(draft)
+	if strings.TrimSpace(draftMessage) == "" {
+		cancelLivePositionRequest(t, client, draft)
+		t.Fatalf("create Spain YES position request %s returned empty message; request=%s", draft.Pubkey, formatLivePositionRequest(draft))
+	}
+	signedMessage, err := signPositionRequestMessage(privateKeyText, draftMessage)
+	if err != nil {
+		cancelLivePositionRequest(t, client, draft)
+		t.Fatalf(
+			"sign Spain YES position request %s: %v; create_message=%s request=%s",
+			draft.Pubkey,
+			err,
+			formatLiveMessageFingerprint(draftMessage),
+			formatLivePositionRequest(draft),
+		)
+	}
+	t.Logf(
+		"signed position request transaction version=%s required_signatures=%d signer_index=%d signer=%s create_message=%s",
+		signedMessage.transactionVersion,
+		signedMessage.requiredSignatures,
+		signedMessage.signerIndex,
+		signedMessage.signerPublicKey,
+		formatLiveMessageFingerprint(draftMessage),
+	)
+
+	submitted, err := client.SubmitPositionRequest(ctx, draft.Pubkey, SubmitSignatureRequest{
+		Signature: signedMessage.signatureHex,
 	})
 	if err != nil {
-		latest, refreshErr := waitForLivePositionRequestPostSubmitError(ctx, client, current.Pubkey)
+		latest, refreshErr := waitForLivePositionRequestPostSubmitError(ctx, client, draft.Pubkey)
 		if refreshErr != nil {
-			t.Fatalf("submit Spain YES position request %s: %v; failed to refresh latest request state: %v", current.Pubkey, err, refreshErr)
+			t.Fatalf(
+				"submit Spain YES position request %s: %s; failed to refresh latest request state: %v; create_message=%s",
+				draft.Pubkey,
+				formatWormError(err),
+				refreshErr,
+				formatLiveMessageFingerprint(draftMessage),
+			)
 		}
 		logLivePositionRequest(t, "after submit error", latest)
 		if shouldContinueAfterSubmitError(latest) {
 			finalRequest, waitErr := waitForLivePositionRequestCompleted(ctx, client, latest.Pubkey)
 			if waitErr != nil {
-				t.Fatalf("submit Spain YES position request %s returned error %v, but request advanced; final wait failed: %v", latest.Pubkey, err, waitErr)
+				t.Fatalf(
+					"submit Spain YES position request %s returned error %s, but request advanced; final wait failed: %v; create_message=%s latest=%s",
+					latest.Pubkey,
+					formatWormError(err),
+					waitErr,
+					formatLiveMessageFingerprint(draftMessage),
+					formatLivePositionRequest(latest),
+				)
 			}
 			logLivePositionRequest(t, "completed", finalRequest)
 			return
@@ -224,16 +244,22 @@ func TestLiveCreateAndSubmitSpainMarginPosition(t *testing.T) {
 		if shouldCancelAfterSubmitError(latest) {
 			cancelLivePositionRequest(t, client, latest)
 		}
-		t.Fatalf("submit Spain YES position request %s: %v; latest=%s", current.Pubkey, err, formatLivePositionRequest(latest))
+		t.Fatalf(
+			"submit Spain YES position request %s: %s; create_message=%s latest=%s",
+			draft.Pubkey,
+			formatWormError(err),
+			formatLiveMessageFingerprint(draftMessage),
+			formatLivePositionRequest(latest),
+		)
 	}
 	if submitted == nil {
-		t.Fatalf("submit Spain YES position request %s returned nil", current.Pubkey)
+		t.Fatalf("submit Spain YES position request %s returned nil", draft.Pubkey)
 	}
 	logLivePositionRequest(t, "submitted", submitted)
 
-	finalRequest, err := waitForLivePositionRequestCompleted(ctx, client, current.Pubkey)
+	finalRequest, err := waitForLivePositionRequestCompleted(ctx, client, draft.Pubkey)
 	if err != nil {
-		t.Fatalf("position request %s did not complete: %v", current.Pubkey, err)
+		t.Fatalf("position request %s did not complete: %v", draft.Pubkey, err)
 	}
 	t.Logf(
 		"completed position request pubkey=%s state=%s funds=%s price=%s shares=%s",
@@ -281,6 +307,35 @@ func marketYesSideMentions(market *Market, expected string) bool {
 		}
 	}
 	return false
+}
+
+func logLiveAccountDiagnostics(ctx context.Context, t *testing.T, client Client) {
+	t.Helper()
+
+	summary, err := client.GetAccountSummary(ctx)
+	if err != nil {
+		t.Fatalf("get Worm account summary before live position request: %v", err)
+	}
+	if summary == nil {
+		t.Fatalf("get Worm account summary before live position request returned nil")
+	}
+	t.Logf("account summary %s", formatLiveAccountSummary(summary))
+
+	assets, err := client.ListAccountAssets(ctx, ListAccountAssetsOptions{
+		PageOptions: PageOptions{
+			Limit: livePositionShareAssetLimit,
+		},
+	})
+	if err != nil {
+		t.Logf("list Worm share assets before live position request failed: %v", err)
+		return
+	}
+	if assets == nil {
+		t.Logf("share assets response is nil before live position request")
+		return
+	}
+
+	t.Logf("share assets count=%d assets=%s", len(assets.Assets), formatLiveAccountAssets(assets.Assets))
 }
 
 func requireNoLiveActivePositionRequests(ctx context.Context, t *testing.T, client Client, isYes bool, leverage float64) {
@@ -432,6 +487,13 @@ func optionalString(value *string) string {
 	return *value
 }
 
+func optionalInt64(value *int64) string {
+	if value == nil {
+		return "-"
+	}
+	return strconv.FormatInt(*value, 10)
+}
+
 func livePositionRequestState(request *PositionRequest) string {
 	if request == nil {
 		return ""
@@ -439,11 +501,11 @@ func livePositionRequestState(request *PositionRequest) string {
 	return strings.ToLower(strings.TrimSpace(request.State))
 }
 
-func livePositionRequestMessage(request *PositionRequest) string {
+func livePositionRequestRawMessage(request *PositionRequest) string {
 	if request == nil || request.Message == nil {
 		return ""
 	}
-	return strings.TrimSpace(*request.Message)
+	return *request.Message
 }
 
 func shouldContinueAfterSubmitError(request *PositionRequest) bool {
@@ -451,7 +513,7 @@ func shouldContinueAfterSubmitError(request *PositionRequest) bool {
 	case "processing", "order_placed", "completed":
 		return true
 	default:
-		return hasLivePositionRequestTx(request)
+		return hasLivePositionRequestTx(request) || hasLivePositionRequestOrderProgress(request)
 	}
 }
 
@@ -459,6 +521,18 @@ func shouldCancelAfterSubmitError(request *PositionRequest) bool {
 	switch livePositionRequestState(request) {
 	case "created", "funding_processing":
 		return !hasLivePositionRequestTx(request)
+	default:
+		return false
+	}
+}
+
+func hasLivePositionRequestOrderProgress(request *PositionRequest) bool {
+	if request == nil || request.OrderState == nil {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(*request.OrderState)) {
+	case "created", "open", "opened", "partially_filled", "filled":
+		return true
 	default:
 		return false
 	}
@@ -475,21 +549,115 @@ func hasOptionalString(value *string) bool {
 	return value != nil && strings.TrimSpace(*value) != ""
 }
 
+func positionRequestMarketConditionID(request *PositionRequest) string {
+	if request == nil || request.Market == nil || strings.TrimSpace(request.Market.ConditionID) == "" {
+		return "-"
+	}
+	return request.Market.ConditionID
+}
+
 func formatLivePositionRequest(request *PositionRequest) string {
 	if request == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"pubkey=%s type=%s state=%s funding_txid=%s refund_txid=%s message_present=%t funds=%s price=%s shares=%s",
+		"pubkey=%s type=%s state=%s order_state=%s market_condition_id=%s is_yes=%t leverage=%s funding_txid=%s refund_txid=%s message_present=%t funds=%s price=%s shares=%s created=%s",
 		request.Pubkey,
 		request.Type,
 		request.State,
+		optionalString(request.OrderState),
+		positionRequestMarketConditionID(request),
+		request.IsYes,
+		request.Leverage,
 		optionalString(request.FundingTxID),
 		optionalString(request.RefundTxID),
 		request.Message != nil && strings.TrimSpace(*request.Message) != "",
 		request.Funds,
 		optionalString(request.Price),
 		optionalString(request.Shares),
+		optionalInt64(request.Created),
+	)
+}
+
+func formatLiveAccountSummary(summary *AccountSummary) string {
+	if summary == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf(
+		"username=%s twitter=%s joined_at=%s",
+		summary.Username,
+		optionalString(summary.TwitterUsername),
+		optionalInt64(summary.JoinedAt),
+	)
+}
+
+func formatLiveAccountAssets(assets []AccountAsset) string {
+	if len(assets) == 0 {
+		return "[]"
+	}
+
+	const limit = 12
+	formatted := make([]string, 0, min(len(assets), limit))
+	for i, asset := range assets {
+		if i >= limit {
+			formatted = append(formatted, fmt.Sprintf("...(+%d more)", len(assets)-limit))
+			break
+		}
+		formatted = append(formatted, formatLiveAccountAsset(asset))
+	}
+	return "[" + strings.Join(formatted, " ") + "]"
+}
+
+func formatLiveAccountAsset(asset AccountAsset) string {
+	return fmt.Sprintf(
+		"{symbol=%s kind=%s available=%s locked=%s total=%s value_usdt=%s value_basis=%s}",
+		asset.Token.Symbol,
+		asset.AssetKind,
+		asset.Amounts.Available,
+		asset.Amounts.Locked,
+		asset.Amounts.Total,
+		asset.Value.USDT,
+		asset.Value.Basis,
+	)
+}
+
+func formatLiveMessageFingerprint(message string) string {
+	sum := sha256.Sum256([]byte(message))
+	digest := hex.EncodeToString(sum[:])
+	if len(digest) > 16 {
+		digest = digest[:16]
+	}
+	return fmt.Sprintf("len=%d sha256=%s", len(message), digest)
+}
+
+func formatWormError(err error) string {
+	if err == nil {
+		return "<nil>"
+	}
+
+	var wormErr *Error
+	if !errors.As(err, &wormErr) {
+		return err.Error()
+	}
+
+	details := "-"
+	if len(wormErr.Details) > 0 {
+		rawDetails, marshalErr := json.Marshal(wormErr.Details)
+		if marshalErr != nil {
+			details = fmt.Sprintf("marshal_error=%v", marshalErr)
+		} else {
+			details = string(rawDetails)
+		}
+	}
+
+	return fmt.Sprintf(
+		"status=%s status_code=%d code=%d slug=%s message=%q details=%s",
+		wormErr.Status,
+		wormErr.StatusCode,
+		wormErr.Code,
+		wormErr.Slug,
+		wormErr.Message,
+		details,
 	)
 }
 

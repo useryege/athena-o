@@ -791,6 +791,7 @@ type PositionRequest struct {
 	Pubkey          string         `json:"pubkey"`
 	Type            string         `json:"type"`
 	State           string         `json:"state"`
+	OrderState      *string        `json:"order_state"`
 	Message         *string        `json:"message"`
 	FundingTxID     *string        `json:"funding_txid"`
 	RefundTxID      *string        `json:"refund_txid"`

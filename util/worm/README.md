@@ -18,6 +18,21 @@ The live market detail and search APIs return `rules` as `array<string>`. The
 upstream markdown currently describes this field as an object, so the Go client
 models the observed live response rather than that stale documentation shape.
 
+### Margin position signing
+
+The public HMAC API documents a create, sign, and submit flow under
+`/margin/positions/requests/`. The live Worm web application currently uses a
+separate JWT-authenticated `/api/margin/positions/open/` flow, but its signing
+behavior reveals that the returned `message` is a hex-encoded Solana
+transaction. Wallets deserialize that transaction and sign its canonical
+message bytes; signing the UTF-8 hex text itself produces a different and
+invalid signature.
+
+`SignPositionRequestMessage` follows the observed transaction format while the
+client continues to use the public HMAC endpoints. For write-flow drift, prefer
+repeatable live responses first, the current Worm web implementation second,
+and the published markdown contract third.
+
 ## Sync Local Docs
 
 Worm publishes an LLM-friendly documentation index at `https://docs.worm.wtf/llms.txt`.
