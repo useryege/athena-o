@@ -1,6 +1,6 @@
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'antd/dist/reset.css';
-import './mobile/styles.css';
+import './styles.css';
 
 import {
     ApiOutlined,
@@ -19,7 +19,7 @@ import {
     UserOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {App as AntApp, Button, ConfigProvider, Drawer, Dropdown, Layout as AntLayout, Menu, Result, Space, theme as antTheme, Typography} from 'antd';
+import {App as AntApp, Button, ConfigProvider, Dropdown, Layout as AntLayout, Menu, Result, Space, theme as antTheme, Typography} from 'antd';
 import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
@@ -28,7 +28,7 @@ import {AuthSettingsCtx, Provider} from './shared/context';
 import {AuthSettings, Permission, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests from './shared/services/requests';
-import {BrandMark} from './mobile/components';
+import {BrandMark} from './components';
 import {
     BytecodeBlacklistsPage,
     ChainCheckpointsPage,
@@ -56,7 +56,7 @@ import {
     WalletBlacklistsPage,
     WalletsPage,
     WormPage
-} from './mobile/page';
+} from './pages';
 
 services.viewPreferences.init();
 
@@ -376,15 +376,14 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const navigate = useNavigate();
     const location = useLocation();
     const ant = AntApp.useApp();
-    const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
-    const [desktopCollapsed, setDesktopCollapsed] = React.useState(props.pref.hideSidebar);
+    const [sidebarCollapsed, setSidebarCollapsed] = React.useState(props.pref.hideSidebar);
     const isLoginPath = location.pathname.startsWith('/login');
     const locationKey = `${location.pathname}${location.search}`;
     const [authorizedLocationKey, setAuthorizedLocationKey] = React.useState(isLoginPath ? locationKey : '');
     const [access, setAccess] = React.useState<AccessState>(null);
 
     React.useEffect(() => {
-        setDesktopCollapsed(props.pref.hideSidebar);
+        setSidebarCollapsed(props.pref.hideSidebar);
     }, [props.pref.hideSidebar]);
 
     React.useEffect(() => {
@@ -453,7 +452,6 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         const target = flattenNav(visibleNavItems).find(navItem => navItem.key === item.key);
         if (target?.path) {
             navigate(target.path);
-            setMobileNavOpen(false);
         }
     };
 
@@ -500,10 +498,10 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         routes
     ) : (
         <AntLayout className='athena-shell'>
-            <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={desktopCollapsed} trigger={null} width={248}>
+            <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={sidebarCollapsed} trigger={null} width={248}>
                 <div className='athena-brand' onClick={() => navigate('/user-info')}>
                     <BrandMark size='small' />
-                    {!desktopCollapsed && <span>Athena</span>}
+                    {!sidebarCollapsed && <span>Athena</span>}
                 </div>
                 {menu}
             </AntLayout.Sider>
@@ -511,16 +509,15 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                 <AntLayout.Header className='athena-shell__header'>
                     <div className='athena-shell__header-left'>
                         <Button
-                            className='athena-shell__desktop-toggle'
+                            className='athena-shell__sidebar-toggle'
                             type='text'
-                            icon={desktopCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                             onClick={() => {
-                                const next = !desktopCollapsed;
-                                setDesktopCollapsed(next);
+                                const next = !sidebarCollapsed;
+                                setSidebarCollapsed(next);
                                 services.viewPreferences.updatePreferences({...props.pref, hideSidebar: next});
                             }}
                         />
-                        <Button className='athena-shell__mobile-menu' type='text' icon={<MenuUnfoldOutlined />} onClick={() => setMobileNavOpen(true)} />
                         <Typography.Title level={4}>{pageTitle(location.pathname)}</Typography.Title>
                     </div>
                     <div className='athena-shell__header-actions'>
@@ -541,9 +538,6 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                     </Provider>
                 </AntLayout.Content>
             </AntLayout>
-            <Drawer title='Athena' placement='left' open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} size={312}>
-                {menu}
-            </Drawer>
         </AntLayout>
     );
 
