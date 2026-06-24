@@ -159,7 +159,7 @@ func (s *Service) clearSportsLivePriceAlertState(ctx context.Context, token poly
 }
 
 func (s *Service) sendSportsLivePriceAlert(ctx context.Context, client notificationapiclient.NotificationServiceClient, config SportsLivePriceAlertsConfig, token polymarketstore.SportsLivePriceAlertToken, band string) error {
-	request := renderSportsLivePriceAlertNotification(token, band)
+	request := s.renderSportsLivePriceAlertNotification(token, band)
 	if request == nil {
 		return fmt.Errorf("notification request is nil")
 	}
@@ -220,7 +220,7 @@ func sportsLivePriceAlertBandRank(band string) int {
 	}
 }
 
-func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePriceAlertToken, band string) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePriceAlertToken, band string) *notificationapiclient.SendNotificationRequest {
 	topic := sportsLivePriceAlert85Topic
 	source := sportsLivePriceAlert85Source
 	severity := notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING
@@ -286,7 +286,7 @@ func renderSportsLivePriceAlertNotification(token polymarketstore.SportsLivePric
 		Severity:   severity,
 		Title:      fmt.Sprintf("%s: %s %.2f%%", titlePrefix, outcome, token.Price*100),
 		Body:       strings.Join(bodyLines, "\n"),
-		Link:       polymarketEventLink(token.EventSlug),
+		Link:       s.polymarketNotificationLink(polymarketEventLink(token.EventSlug)),
 		TopicLabel: topic,
 	}
 }

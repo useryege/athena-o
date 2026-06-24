@@ -72,7 +72,7 @@ func (s *Service) sendManagedOODisputePriceAlerts(ctx context.Context) {
 	defer utilio.Close(closer)
 
 	for _, candidate := range candidates {
-		request := renderManagedOODisputePriceAlertNotification(candidate)
+		request := s.renderManagedOODisputePriceAlertNotification(candidate)
 		sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
 		response, err := client.SendNotification(sendCtx, request)
 		cancel()
@@ -101,7 +101,7 @@ func (s *Service) sendManagedOODisputePriceAlerts(ctx context.Context) {
 	}
 }
 
-func renderManagedOODisputePriceAlertNotification(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderManagedOODisputePriceAlertNotification(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
 	question := firstNonEmpty(candidate.Question, managedOOAncillaryTitle(candidate.AncillaryDataText))
 	titleSubject := firstNonEmpty(question, candidate.MarketID, candidate.TxHash)
 	bodyLines := []string{
@@ -122,16 +122,16 @@ func renderManagedOODisputePriceAlertNotification(candidate polymarketstore.Mana
 		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:      fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
 		Body:       strings.Join(bodyLines, "\n"),
-		Link:       managedOODisputePriceAlertLink(candidate),
+		Link:       s.managedOODisputePriceAlertLink(candidate),
 		TopicLabel: managedOODisputedAlertTopic,
 	}
 }
 
-func managedOODisputePriceAlertLink(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) string {
+func (s *Service) managedOODisputePriceAlertLink(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) string {
 	if link := polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug); link != "" {
-		return link
+		return s.polymarketNotificationLink(link)
 	}
-	return polymarketMarketLink(candidate.MarketSlug)
+	return s.polymarketNotificationLink(polymarketMarketLink(candidate.MarketSlug))
 }
 
 func managedOOAncillaryTitle(value string) string {

@@ -72,7 +72,7 @@ func (s *Service) sendManagedOOProposePriceAlerts(ctx context.Context) {
 	defer utilio.Close(closer)
 
 	for _, candidate := range candidates {
-		request := renderManagedOOProposePriceAlertNotification(candidate)
+		request := s.renderManagedOOProposePriceAlertNotification(candidate)
 		sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
 		response, err := client.SendNotification(sendCtx, request)
 		cancel()
@@ -101,7 +101,7 @@ func (s *Service) sendManagedOOProposePriceAlerts(ctx context.Context) {
 	}
 }
 
-func renderManagedOOProposePriceAlertNotification(candidate polymarketstore.ManagedOOProposePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderManagedOOProposePriceAlertNotification(candidate polymarketstore.ManagedOOProposePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
 	titleSubject := firstNonEmpty(candidate.Question, candidate.MarketID)
 	bodyLines := []string{
 		fmt.Sprintf("Market ID: %s", firstNonEmpty(candidate.MarketID, "-")),
@@ -120,7 +120,7 @@ func renderManagedOOProposePriceAlertNotification(candidate polymarketstore.Mana
 		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:      fmt.Sprintf("UMA Proposed: %s", truncateRunes(titleSubject, defaultManagedOOProposedAlertTitleQuestionRunes)),
 		Body:       strings.Join(bodyLines, "\n"),
-		Link:       polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug),
+		Link:       s.polymarketNotificationLink(polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug)),
 		TopicLabel: managedOOProposedAlertTopic,
 	}
 }

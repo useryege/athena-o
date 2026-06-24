@@ -98,6 +98,12 @@ func WithNotificationClientset(clientset notificationapiclient.Clientset) Servic
 	}
 }
 
+func WithNotificationInviteCode(inviteCode string) ServiceOption {
+	return func(s *Service) {
+		s.notificationInviteCode = inviteCode
+	}
+}
+
 func WithMoverAlertsConfig(config MoverAlertsConfig) ServiceOption {
 	return func(s *Service) {
 		s.moverAlertsConfig = normalizeMoverAlertsConfig(config)
@@ -142,6 +148,7 @@ type Service struct {
 	gammaClient                      sportsLiveGammaClient
 	clobClient                       sportsLiveCLOBClient
 	notificationClientset            notificationapiclient.Clientset
+	notificationInviteCode           string
 	syncInterval                     time.Duration
 	sportsLivePageLimit              int
 	hotMarketRefreshInterval         time.Duration

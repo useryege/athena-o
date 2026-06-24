@@ -200,7 +200,7 @@ func (s *Service) moverAlertCandidateLocked(item *v1alpha1.PolymarketMoverMarket
 		severity:  severity,
 		score:     item.Score,
 		change1m:  moverWindowAbsChange(leader, "1m"),
-		request:   renderMoverAlertNotification(item, severity),
+		request:   s.renderMoverAlertNotification(item, severity),
 		condition: item.ConditionID,
 	}, true
 }
@@ -243,7 +243,7 @@ func moverAlertKey(item *v1alpha1.PolymarketMoverMarketItem, leader *v1alpha1.Po
 	return conditionID + ":" + tokenID + ":" + direction
 }
 
-func renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, severity string) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, severity string) *notificationapiclient.SendNotificationRequest {
 	leader := item.Leader
 	title := fmt.Sprintf("Polymarket mover %s %s %.1f%%: %s",
 		strings.ToUpper(leader.Direction),
@@ -273,7 +273,7 @@ func renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMarketItem, seve
 		Severity:   notificationSeverityForMoverAlert(severity),
 		Title:      title,
 		Body:       body,
-		Link:       polymarketMoverLink(item),
+		Link:       s.polymarketNotificationLink(polymarketMoverLink(item)),
 		TopicLabel: moverAlertNotificationTopicLabel,
 	}
 }

@@ -20,6 +20,7 @@ type Server struct {
 type ServerOpts struct {
 	Store                         *polymarketstore.SQLStore
 	NotificationClientset         notificationapiclient.Clientset
+	NotificationInviteCode        string
 	MoverAlertsConfig             MoverAlertsConfig
 	SportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
 	ManagedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
@@ -35,6 +36,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		service: NewService(
 			opts.Store,
 			WithNotificationClientset(opts.NotificationClientset),
+			WithNotificationInviteCode(opts.NotificationInviteCode),
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
 			WithManagedOOProposedAlertsConfig(opts.ManagedOOProposedAlertsConfig),
