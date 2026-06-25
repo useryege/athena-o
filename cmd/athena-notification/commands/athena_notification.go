@@ -16,7 +16,6 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
-	"github.com/useryege/athena/assets"
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/notification"
@@ -35,13 +34,8 @@ const (
 	defaultTelegramBotProfileName             = "ATHENA"
 	defaultTelegramBotProfileShortDescription = "ATHENA operational alerts"
 	defaultTelegramBotProfileDescription      = "ATHENA notification bot for operational alerts and system updates."
-	defaultTelegramBotProfilePhotoPath        = "telegram-bot-avatar.jpg"
-	defaultTelegramChatProfileTitle           = "ATHENA Notifications"
-	defaultTelegramChatProfileDescription     = "ATHENA notification group for operational alerts and system updates."
-	defaultTelegramChatProfilePhotoPath       = "telegram-group-avatar.jpg"
 	telegramTestChatIDEnv                     = "ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID"
 	telegramProdChatIDEnv                     = "ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID"
-	telegramInitAvatarsEnv                    = "ATHENA_NOTIFICATION_TELEGRAM_INIT_AVATARS"
 )
 
 func NewCommand() *cobra.Command {
@@ -85,21 +79,13 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			initAvatars := telegramInitAvatarsFromEnv()
-			profileConfig, err := defaultTelegramBotProfileConfig(initAvatars)
-			if err != nil {
-				return err
-			}
-			chatProfileConfig, err := defaultTelegramChatProfileConfig(initAvatars)
-			if err != nil {
-				return err
-			}
+			profileConfig := defaultTelegramBotProfileConfig()
 			sender := notification.NewTelegramSender(telegramClients)
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:         store,
 				Sender:        sender,
-				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClients, profileConfig, chatProfileConfig),
+				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClients, profileConfig),
 				WorkerConfig: notification.WorkerConfig{
 					SendInterval: workerSendInterval,
 					PollInterval: workerPollInterval,
@@ -200,43 +186,10 @@ func defaultTelegramClients() (map[string]utiltelegram.Client, error) {
 	return clients, nil
 }
 
-func defaultTelegramBotProfileConfig(initAvatar bool) (utiltelegram.BotProfileConfig, error) {
-	config := utiltelegram.BotProfileConfig{
+func defaultTelegramBotProfileConfig() utiltelegram.BotProfileConfig {
+	return utiltelegram.BotProfileConfig{
 		Name:             env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME", defaultTelegramBotProfileName),
 		ShortDescription: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION", defaultTelegramBotProfileShortDescription),
 		Description:      env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION", defaultTelegramBotProfileDescription),
 	}
-	if initAvatar {
-		photo, err := assets.Embedded.ReadFile(defaultTelegramBotProfilePhotoPath)
-		if err != nil {
-			return utiltelegram.BotProfileConfig{}, fmt.Errorf("failed to read default telegram bot avatar: %w", err)
-		}
-		config.ProfilePhoto = utiltelegram.SetMyProfilePhotoRequest{
-			Filename: defaultTelegramBotProfilePhotoPath,
-			Data:     photo,
-		}
-	}
-	return config, nil
-}
-
-func telegramInitAvatarsFromEnv() bool {
-	return env.ParseBoolFromEnv(telegramInitAvatarsEnv, false)
-}
-
-func defaultTelegramChatProfileConfig(initAvatar bool) (utiltelegram.ChatProfileConfig, error) {
-	config := utiltelegram.ChatProfileConfig{
-		Title:       env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_TITLE", defaultTelegramChatProfileTitle),
-		Description: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_DESCRIPTION", defaultTelegramChatProfileDescription),
-	}
-	if initAvatar {
-		photo, err := assets.Embedded.ReadFile(defaultTelegramChatProfilePhotoPath)
-		if err != nil {
-			return utiltelegram.ChatProfileConfig{}, fmt.Errorf("failed to read default telegram chat avatar: %w", err)
-		}
-		config.Photo = utiltelegram.SetChatPhotoRequest{
-			Filename: defaultTelegramChatProfilePhotoPath,
-			Data:     photo,
-		}
-	}
-	return config, nil
 }

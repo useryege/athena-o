@@ -13,8 +13,6 @@ const (
 	TelegramChatProd = "prod"
 )
 
-var supportedTelegramChats = []string{TelegramChatTest, TelegramChatProd}
-
 func telegramChatFromEnum(value apiclient.TelegramChat) (string, error) {
 	switch value {
 	case apiclient.TelegramChat_TELEGRAM_CHAT_TEST:
