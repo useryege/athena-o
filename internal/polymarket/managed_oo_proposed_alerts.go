@@ -111,8 +111,6 @@ func (s *Service) renderManagedOOProposePriceAlertNotification(candidate polymar
 		fmt.Sprintf("Proposed price: %s", firstNonEmpty(candidate.ProposedPrice, "-")),
 		fmt.Sprintf("Request timestamp: %s", formatManagedOOAlertTimestamp(candidate.RequestTimestamp)),
 		fmt.Sprintf("Expiration timestamp: %s", formatManagedOOAlertTimestamp(candidate.ExpirationTimestamp)),
-		fmt.Sprintf("Tx hash: %s", firstNonEmpty(candidate.TxHash, "-")),
-		fmt.Sprintf("Condition ID: %s", firstNonEmpty(candidate.ConditionID, "-")),
 	}
 
 	return &notificationapiclient.SendNotificationRequest{

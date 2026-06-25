@@ -277,8 +277,6 @@ func (s *Service) renderSportsLivePriceAlertNotification(token polymarketstore.S
 	bodyLines = append(bodyLines,
 		fmt.Sprintf("Volume: %.2f", token.Volume),
 		fmt.Sprintf("Liquidity: %.2f", token.Liquidity),
-		fmt.Sprintf("Condition ID: %s", firstNonEmpty(token.ConditionID, "-")),
-		fmt.Sprintf("Token ID: %s", token.TokenID),
 	)
 
 	return &notificationapiclient.SendNotificationRequest{

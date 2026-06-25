@@ -113,8 +113,6 @@ func (s *Service) renderManagedOODisputePriceAlertNotification(candidate polymar
 		fmt.Sprintf("Disputer: %s", firstNonEmpty(candidate.Disputer, "-")),
 		fmt.Sprintf("Proposed price: %s", firstNonEmpty(candidate.ProposedPrice, "-")),
 		fmt.Sprintf("Request timestamp: %s", formatManagedOOAlertTimestamp(candidate.RequestTimestamp)),
-		fmt.Sprintf("Tx hash: %s", firstNonEmpty(candidate.TxHash, "-")),
-		fmt.Sprintf("Condition ID: %s", firstNonEmpty(candidate.ConditionID, "-")),
 	}
 
 	return &notificationapiclient.SendNotificationRequest{

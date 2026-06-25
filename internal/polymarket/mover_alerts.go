@@ -264,8 +264,6 @@ func (s *Service) renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMar
 		),
 		fmt.Sprintf("24h volume: %.2f", item.Volume24hr),
 		fmt.Sprintf("Liquidity: %.2f", item.LiquidityNum),
-		fmt.Sprintf("Condition ID: %s", item.ConditionID),
-		fmt.Sprintf("Token ID: %s", leader.TokenID),
 	}, "\n")
 
 	return &notificationapiclient.SendNotificationRequest{
