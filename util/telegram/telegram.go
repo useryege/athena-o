@@ -48,8 +48,10 @@ type Config struct {
 }
 
 type SendMessageRequest struct {
-	Text            string
-	MessageThreadID int
+	Text               string
+	MessageThreadID    int
+	ParseMode          models.ParseMode
+	DisableLinkPreview bool
 }
 
 type SendMessageResponse struct {
@@ -184,11 +186,18 @@ func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest
 		return nil, errors.New("telegram message text is required")
 	}
 
-	message, err := c.bot.SendMessage(ctx, &tgbot.SendMessageParams{
+	params := &tgbot.SendMessageParams{
 		ChatID:          c.config.ChatID,
 		Text:            text,
 		MessageThreadID: request.MessageThreadID,
-	})
+		ParseMode:       request.ParseMode,
+	}
+	if request.DisableLinkPreview {
+		disabled := true
+		params.LinkPreviewOptions = &models.LinkPreviewOptions{IsDisabled: &disabled}
+	}
+
+	message, err := c.bot.SendMessage(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send telegram message: %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tgbot "github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 	utiltelegram "github.com/useryege/athena/util/telegram"
 )
 
@@ -70,7 +71,12 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string,
 	if request.MessageThreadID <= 0 {
 		return "", fmt.Errorf("telegram message thread id is required")
 	}
-	resp, err := client.SendMessage(ctx, utiltelegram.SendMessageRequest{Text: request.Text, MessageThreadID: request.MessageThreadID})
+	resp, err := client.SendMessage(ctx, utiltelegram.SendMessageRequest{
+		Text:               request.Text,
+		MessageThreadID:    request.MessageThreadID,
+		ParseMode:          models.ParseModeHTML,
+		DisableLinkPreview: true,
+	})
 	if err != nil {
 		var rateLimitErr *tgbot.TooManyRequestsError
 		if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {

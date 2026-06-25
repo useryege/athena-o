@@ -3,6 +3,7 @@ package notification
 import (
 	"context"
 	"fmt"
+	"html"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -114,8 +115,8 @@ func (s *Service) SendNotification(ctx context.Context, req *apiclient.SendNotif
 	if err != nil {
 		return nil, err
 	}
-	text := renderNotificationText(params)
-	if utf8.RuneCountInString(text) > maxTelegramTextLength {
+	message := renderNotificationMessage(params)
+	if utf8.RuneCountInString(message.VisibleText) > maxTelegramTextLength {
 		return nil, status.Errorf(codes.InvalidArgument, "telegram notification text must be at most %d characters", maxTelegramTextLength)
 	}
 	if _, err := s.store.EnsureTopic(ctx, params.telegramChat, params.topicLabel, func(createCtx context.Context) (int, error) {
@@ -220,6 +221,11 @@ type sendNotificationParams struct {
 	topicLabel   string
 }
 
+type renderedNotificationMessage struct {
+	Text        string
+	VisibleText string
+}
+
 func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (sendNotificationParams, error) {
 	if req == nil {
 		return sendNotificationParams{}, status.Error(codes.InvalidArgument, "notification request is required")
@@ -299,16 +305,29 @@ func normalizeDeliveryStatusFilter(value string) (string, error) {
 	}
 }
 
-func renderNotificationText(params sendNotificationParams) string {
-	lines := []string{}
+func renderNotificationMessage(params sendNotificationParams) renderedNotificationMessage {
+	htmlLines := []string{}
+	visibleLines := []string{}
+	link := strings.TrimSpace(params.link)
 	if params.title != "" {
-		lines = append(lines, params.title)
+		visibleLines = append(visibleLines, params.title)
+		if link != "" {
+			htmlLines = append(htmlLines, fmt.Sprintf(`<a href="%s">%s</a>`, html.EscapeString(link), html.EscapeString(params.title)))
+		} else {
+			htmlLines = append(htmlLines, html.EscapeString(params.title))
+		}
+	} else if link != "" {
+		visibleLines = append(visibleLines, "Open Link")
+		htmlLines = append(htmlLines, fmt.Sprintf(`<a href="%s">Open Link</a>`, html.EscapeString(link)))
 	}
-	lines = append(lines, fmt.Sprintf("Source: %s", params.source))
-	lines = append(lines, fmt.Sprintf("Severity: %s", strings.ToUpper(params.severity)))
-	if params.link != "" {
-		lines = append(lines, fmt.Sprintf("Link: %s", params.link))
+
+	sourceLine := fmt.Sprintf("Source: %s", params.source)
+	severityLine := fmt.Sprintf("Severity: %s", strings.ToUpper(params.severity))
+	visibleLines = append(visibleLines, sourceLine, severityLine, "", params.body)
+	htmlLines = append(htmlLines, html.EscapeString(sourceLine), html.EscapeString(severityLine), "", html.EscapeString(params.body))
+
+	return renderedNotificationMessage{
+		Text:        strings.TrimSpace(strings.Join(htmlLines, "\n")),
+		VisibleText: strings.TrimSpace(strings.Join(visibleLines, "\n")),
 	}
-	lines = append(lines, "", params.body)
-	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
