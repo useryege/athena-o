@@ -121,7 +121,7 @@ func (s *Service) renderManagedOODisputePriceAlertNotification(candidate polymar
 		Title:        fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
 		Body:         strings.Join(bodyLines, "\n"),
 		Link:         s.managedOODisputePriceAlertLink(candidate),
-		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_PROD,
 		TopicLabel:   managedOODisputedAlertTopic,
 	}
 }
