@@ -72,10 +72,9 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string,
 		return "", fmt.Errorf("telegram message thread id is required")
 	}
 	resp, err := client.SendMessage(ctx, utiltelegram.SendMessageRequest{
-		Text:               request.Text,
-		MessageThreadID:    request.MessageThreadID,
-		ParseMode:          models.ParseModeHTML,
-		DisableLinkPreview: true,
+		Text:            request.Text,
+		MessageThreadID: request.MessageThreadID,
+		ParseMode:       models.ParseModeHTML,
 	})
 	if err != nil {
 		var rateLimitErr *tgbot.TooManyRequestsError

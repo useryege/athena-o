@@ -48,10 +48,9 @@ type Config struct {
 }
 
 type SendMessageRequest struct {
-	Text               string
-	MessageThreadID    int
-	ParseMode          models.ParseMode
-	DisableLinkPreview bool
+	Text            string
+	MessageThreadID int
+	ParseMode       models.ParseMode
 }
 
 type SendMessageResponse struct {
@@ -191,10 +190,6 @@ func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest
 		Text:            text,
 		MessageThreadID: request.MessageThreadID,
 		ParseMode:       request.ParseMode,
-	}
-	if request.DisableLinkPreview {
-		disabled := true
-		params.LinkPreviewOptions = &models.LinkPreviewOptions{IsDisabled: &disabled}
 	}
 
 	message, err := c.bot.SendMessage(ctx, params)
