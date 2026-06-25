@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-839-g30955e6-dirty"
+    "version": "v1.0.0-857-ge3c2dea-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -241,6 +241,11 @@
           {
             "type": "string",
             "name": "topic_label",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "telegram_chat",
             "in": "query"
           }
         ],
@@ -3153,6 +3158,9 @@
         "status": {
           "type": "string"
         },
+        "telegram_chat": {
+          "type": "string"
+        },
         "title": {
           "type": "string"
         },
@@ -3196,6 +3204,9 @@
           "type": "string"
         },
         "status": {
+          "type": "string"
+        },
+        "telegram_chat": {
           "type": "string"
         },
         "title": {

@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -38,6 +39,8 @@ const (
 	defaultTelegramChatProfileTitle           = "ATHENA Notifications"
 	defaultTelegramChatProfileDescription     = "ATHENA notification group for operational alerts and system updates."
 	defaultTelegramChatProfilePhotoPath       = "telegram-group-avatar.jpg"
+	telegramTestChatIDEnv                     = "ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID"
+	telegramProdChatIDEnv                     = "ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID"
 	telegramInitAvatarsEnv                    = "ATHENA_NOTIFICATION_TELEGRAM_INIT_AVATARS"
 )
 
@@ -77,12 +80,7 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
-			telegramClient, err := utiltelegram.NewClient(utiltelegram.Config{
-				BotToken: env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN", ""),
-				ChatID:   env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_CHAT_ID", ""),
-				BaseURL:  env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_API_URL", utiltelegram.DefaultBaseURL),
-				Timeout:  time.Duration(env.ParseNumFromEnv("ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS", int(utiltelegram.DefaultTimeout/time.Second), 1, 300)) * time.Second,
-			})
+			telegramClients, err := defaultTelegramClients()
 			if err != nil {
 				return err
 			}
@@ -96,12 +94,12 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			sender := notification.NewTelegramSender(telegramClient)
+			sender := notification.NewTelegramSender(telegramClients)
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:         store,
 				Sender:        sender,
-				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClient, profileConfig, chatProfileConfig),
+				ProfileSyncer: notification.NewTelegramProfileSyncer(telegramClients, profileConfig, chatProfileConfig),
 				WorkerConfig: notification.WorkerConfig{
 					SendInterval: workerSendInterval,
 					PollInterval: workerPollInterval,
@@ -167,6 +165,39 @@ func NewCommand() *cobra.Command {
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
+}
+
+func defaultTelegramClients() (map[string]utiltelegram.Client, error) {
+	botToken := strings.TrimSpace(env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN", ""))
+	if botToken == "" {
+		return nil, fmt.Errorf("ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN is required")
+	}
+	baseURL := env.StringFromEnv("ATHENA_NOTIFICATION_TELEGRAM_API_URL", utiltelegram.DefaultBaseURL)
+	timeout := time.Duration(env.ParseNumFromEnv("ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS", int(utiltelegram.DefaultTimeout/time.Second), 1, 300)) * time.Second
+	clients := make(map[string]utiltelegram.Client, 2)
+	for _, item := range []struct {
+		telegramChat string
+		envName      string
+	}{
+		{telegramChat: notification.TelegramChatTest, envName: telegramTestChatIDEnv},
+		{telegramChat: notification.TelegramChatProd, envName: telegramProdChatIDEnv},
+	} {
+		chatID := strings.TrimSpace(env.StringFromEnv(item.envName, ""))
+		if chatID == "" {
+			return nil, fmt.Errorf("%s is required", item.envName)
+		}
+		client, err := utiltelegram.NewClient(utiltelegram.Config{
+			BotToken: botToken,
+			ChatID:   chatID,
+			BaseURL:  baseURL,
+			Timeout:  timeout,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create %s telegram client: %w", item.telegramChat, err)
+		}
+		clients[item.telegramChat] = client
+	}
+	return clients, nil
 }
 
 func defaultTelegramBotProfileConfig(initAvatar bool) (utiltelegram.BotProfileConfig, error) {

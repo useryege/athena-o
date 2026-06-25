@@ -16,9 +16,13 @@ export const NotificationsPage = () => {
     const {page, pageSize, setPage} = usePagedParams();
     const [keyword, setKeyword] = useKeywordParam('keyword');
     const [status, setStatus] = React.useState('');
+    const [telegramChat, setTelegramChat] = React.useState('');
     const [testOpen, setTestOpen] = React.useState(false);
     const [testSubmitting, setTestSubmitting] = React.useState(false);
-    const data = useAsyncData(() => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined}), [page, pageSize, keyword, status]);
+    const data = useAsyncData(
+        () => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined, telegramChat: telegramChat || undefined}),
+        [page, pageSize, keyword, status, telegramChat]
+    );
     const sendTest = async (values: {topicLabel: string}) => {
         setTestSubmitting(true);
         try {
@@ -50,6 +54,7 @@ export const NotificationsPage = () => {
         },
         {title: 'Severity', dataIndex: 'severity'},
         {title: 'Topic', dataIndex: 'topicLabel'},
+        {title: 'Telegram Chat', dataIndex: 'telegramChat'},
         {title: 'Status', dataIndex: 'status'},
         {title: 'Channel', dataIndex: 'channel'},
         {title: 'Created', dataIndex: 'createdAt'}
@@ -75,6 +80,14 @@ export const NotificationsPage = () => {
                         placeholder='Status'
                         onChange={value => setStatus(value || '')}
                         options={['pending', 'sent', 'failed'].map(value => ({value, label: value}))}
+                    />
+                    <Select
+                        allowClear={true}
+                        value={telegramChat || undefined}
+                        style={{width: 150}}
+                        placeholder='Telegram Chat'
+                        onChange={value => setTelegramChat(value || '')}
+                        options={['test', 'prod'].map(value => ({value, label: value}))}
                     />
                 </Space>
             }>

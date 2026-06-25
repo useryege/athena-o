@@ -116,6 +116,11 @@ func (m *NotificationDeliveryDetail) MarshalToSizedBuffer(dAtA []byte) (int, err
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.TelegramChat)
+	copy(dAtA[i:], m.TelegramChat)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TelegramChat)))
+	i--
+	dAtA[i] = 0x72
 	i -= len(m.TopicLabel)
 	copy(dAtA[i:], m.TopicLabel)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TopicLabel)))
@@ -202,6 +207,11 @@ func (m *NotificationDeliveryItem) MarshalToSizedBuffer(dAtA []byte) (int, error
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.TelegramChat)
+	copy(dAtA[i:], m.TelegramChat)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TelegramChat)))
+	i--
+	dAtA[i] = 0x72
 	i -= len(m.TopicLabel)
 	copy(dAtA[i:], m.TopicLabel)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TopicLabel)))
@@ -3263,6 +3273,8 @@ func (m *NotificationDeliveryDetail) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.TopicLabel)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TelegramChat)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -3296,6 +3308,8 @@ func (m *NotificationDeliveryItem) Size() (n int) {
 	l = len(m.SentAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.TopicLabel)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TelegramChat)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -4363,6 +4377,7 @@ func (this *NotificationDeliveryDetail) String() string {
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`SentAt:` + fmt.Sprintf("%v", this.SentAt) + `,`,
 		`TopicLabel:` + fmt.Sprintf("%v", this.TopicLabel) + `,`,
+		`TelegramChat:` + fmt.Sprintf("%v", this.TelegramChat) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -4385,6 +4400,7 @@ func (this *NotificationDeliveryItem) String() string {
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`SentAt:` + fmt.Sprintf("%v", this.SentAt) + `,`,
 		`TopicLabel:` + fmt.Sprintf("%v", this.TopicLabel) + `,`,
+		`TelegramChat:` + fmt.Sprintf("%v", this.TelegramChat) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5617,6 +5633,38 @@ func (m *NotificationDeliveryDetail) Unmarshal(dAtA []byte) error {
 			}
 			m.TopicLabel = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TelegramChat", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TelegramChat = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -6069,6 +6117,38 @@ func (m *NotificationDeliveryItem) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.TopicLabel = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TelegramChat", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TelegramChat = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

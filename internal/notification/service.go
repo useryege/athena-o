@@ -118,21 +118,22 @@ func (s *Service) SendNotification(ctx context.Context, req *apiclient.SendNotif
 	if utf8.RuneCountInString(text) > maxTelegramTextLength {
 		return nil, status.Errorf(codes.InvalidArgument, "telegram notification text must be at most %d characters", maxTelegramTextLength)
 	}
-	if _, err := s.store.EnsureTopic(ctx, params.topicLabel, func(createCtx context.Context) (int, error) {
-		return s.sender.CreateTopic(createCtx, params.topicLabel)
+	if _, err := s.store.EnsureTopic(ctx, params.telegramChat, params.topicLabel, func(createCtx context.Context) (int, error) {
+		return s.sender.CreateTopic(createCtx, params.telegramChat, params.topicLabel)
 	}); err != nil {
 		return nil, status.Errorf(codes.Unavailable, "failed to ensure notification topic: %v", err)
 	}
 
 	delivery, err := s.store.CreateDelivery(ctx, notificationstore.CreateDeliveryRequest{
-		Source:     params.source,
-		Severity:   params.severity,
-		Title:      params.title,
-		Body:       params.body,
-		Link:       params.link,
-		Channel:    notificationChannelTelegram,
-		Status:     notificationStatusPending,
-		TopicLabel: params.topicLabel,
+		Source:       params.source,
+		Severity:     params.severity,
+		Title:        params.title,
+		Body:         params.body,
+		Link:         params.link,
+		Channel:      notificationChannelTelegram,
+		Status:       notificationStatusPending,
+		TelegramChat: params.telegramChat,
+		TopicLabel:   params.topicLabel,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create notification delivery: %v", err)
@@ -167,14 +168,19 @@ func (s *Service) ListNotificationDeliveries(ctx context.Context, req *apiclient
 	if err != nil {
 		return nil, err
 	}
+	telegramChatFilter, err := normalizeTelegramChatFilter(req.GetTelegramChat())
+	if err != nil {
+		return nil, err
+	}
 	items, total, err := s.store.ListDeliveries(ctx, notificationstore.ListDeliveriesOptions{
-		Page:       page,
-		PageSize:   pageSize,
-		Status:     statusFilter,
-		Severity:   severityFilter,
-		Source:     strings.TrimSpace(req.GetSource()),
-		TopicLabel: strings.TrimSpace(req.GetTopicLabel()),
-		Keyword:    strings.TrimSpace(req.GetKeyword()),
+		Page:         page,
+		PageSize:     pageSize,
+		Status:       statusFilter,
+		Severity:     severityFilter,
+		Source:       strings.TrimSpace(req.GetSource()),
+		TelegramChat: telegramChatFilter,
+		TopicLabel:   strings.TrimSpace(req.GetTopicLabel()),
+		Keyword:      strings.TrimSpace(req.GetKeyword()),
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list notification deliveries: %v", err)
@@ -205,12 +211,13 @@ func (s *Service) GetNotificationDelivery(ctx context.Context, req *apiclient.Ge
 }
 
 type sendNotificationParams struct {
-	source     string
-	severity   string
-	title      string
-	body       string
-	link       string
-	topicLabel string
+	source       string
+	severity     string
+	title        string
+	body         string
+	link         string
+	telegramChat string
+	topicLabel   string
 }
 
 func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (sendNotificationParams, error) {
@@ -236,13 +243,18 @@ func normalizeSendNotificationRequest(req *apiclient.SendNotificationRequest) (s
 	if err != nil {
 		return sendNotificationParams{}, status.Error(codes.InvalidArgument, err.Error())
 	}
+	telegramChat, err := telegramChatFromEnum(req.GetTelegramChat())
+	if err != nil {
+		return sendNotificationParams{}, err
+	}
 	return sendNotificationParams{
-		source:     source,
-		severity:   severity,
-		title:      strings.TrimSpace(req.GetTitle()),
-		body:       body,
-		link:       strings.TrimSpace(req.GetLink()),
-		topicLabel: topicLabel,
+		source:       source,
+		severity:     severity,
+		title:        strings.TrimSpace(req.GetTitle()),
+		body:         body,
+		link:         strings.TrimSpace(req.GetLink()),
+		telegramChat: telegramChat,
+		topicLabel:   topicLabel,
 	}, nil
 }
 

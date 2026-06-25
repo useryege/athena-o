@@ -2,9 +2,11 @@
 -- +goose Up
 
 CREATE TABLE IF NOT EXISTS notification_topics (
-  label TEXT PRIMARY KEY,
+  telegram_chat TEXT NOT NULL,
+  label TEXT NOT NULL,
   message_thread_id INT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (telegram_chat, label)
 );
 
 CREATE TABLE IF NOT EXISTS notification_deliveries (
@@ -20,19 +22,24 @@ CREATE TABLE IF NOT EXISTS notification_deliveries (
   error_message TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   sent_at TIMESTAMPTZ,
-  topic_label TEXT NOT NULL REFERENCES notification_topics (label),
+  telegram_chat TEXT NOT NULL,
+  topic_label TEXT NOT NULL,
   attempts INT NOT NULL DEFAULT 0,
   next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_attempt_at TIMESTAMPTZ,
   locked_at TIMESTAMPTZ,
-  locked_by TEXT
+  locked_by TEXT,
+  CONSTRAINT notification_deliveries_topic_fk
+    FOREIGN KEY (telegram_chat, topic_label)
+    REFERENCES notification_topics (telegram_chat, label)
 );
 
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_created_at ON notification_deliveries (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_status ON notification_deliveries (status);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_severity ON notification_deliveries (severity);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_source ON notification_deliveries (source);
-CREATE INDEX IF NOT EXISTS idx_notification_deliveries_topic_label ON notification_deliveries (topic_label);
+CREATE INDEX IF NOT EXISTS idx_notification_deliveries_telegram_chat ON notification_deliveries (telegram_chat);
+CREATE INDEX IF NOT EXISTS idx_notification_deliveries_topic_label ON notification_deliveries (telegram_chat, topic_label);
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_pending_ready
   ON notification_deliveries (status, next_attempt_at, id);
 

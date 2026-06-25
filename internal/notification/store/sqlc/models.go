@@ -21,6 +21,7 @@ type NotificationDelivery struct {
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
+	TelegramChat      string
 	TopicLabel        string
 	Attempts          int32
 	NextAttemptAt     pgtype.Timestamptz
@@ -30,6 +31,7 @@ type NotificationDelivery struct {
 }
 
 type NotificationTopic struct {
+	TelegramChat    string
 	Label           string
 	MessageThreadID int32
 	CreatedAt       pgtype.Timestamptz

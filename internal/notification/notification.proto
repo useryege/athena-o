@@ -27,6 +27,13 @@ enum NotificationDeliveryStatus {
   NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
 }
 
+// TelegramChat selects the Telegram chat that receives the notification.
+enum TelegramChat {
+  TELEGRAM_CHAT_UNSPECIFIED = 0;
+  TELEGRAM_CHAT_TEST = 1;
+  TELEGRAM_CHAT_PROD = 2;
+}
+
 // SendNotificationRequest enqueues one notification for the configured channel.
 message SendNotificationRequest {
   string topic_label = 1;
@@ -35,6 +42,7 @@ message SendNotificationRequest {
   string title = 4;
   string body = 5;
   string link = 6;
+  TelegramChat telegram_chat = 7;
 }
 
 // SendNotificationResponse returns the persisted delivery queued for processing.
@@ -54,6 +62,7 @@ message ListNotificationDeliveriesRequest {
   string source = 5;
   string keyword = 6;
   string topic_label = 7;
+  string telegram_chat = 8;
 }
 
 // ListNotificationDeliveriesResponse returns persisted notification deliveries.

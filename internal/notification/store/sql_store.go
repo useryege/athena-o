@@ -30,24 +30,26 @@ type SQLStore struct {
 }
 
 type CreateDeliveryRequest struct {
-	Source     string
-	Severity   string
-	Title      string
-	Body       string
-	Link       string
-	Channel    string
-	Status     string
-	TopicLabel string
+	Source       string
+	Severity     string
+	Title        string
+	Body         string
+	Link         string
+	Channel      string
+	Status       string
+	TelegramChat string
+	TopicLabel   string
 }
 
 type ListDeliveriesOptions struct {
-	Page       int
-	PageSize   int
-	Status     string
-	Severity   string
-	Source     string
-	TopicLabel string
-	Keyword    string
+	Page         int
+	PageSize     int
+	Status       string
+	Severity     string
+	Source       string
+	TelegramChat string
+	TopicLabel   string
+	Keyword      string
 }
 
 type ClaimDeliveriesOptions struct {
@@ -65,6 +67,7 @@ type ClaimedDelivery struct {
 	Link            string
 	Channel         string
 	Status          string
+	TelegramChat    string
 	TopicLabel      string
 	MessageThreadID int
 	Attempts        int
@@ -111,30 +114,32 @@ func (s *SQLStore) CreateDelivery(ctx context.Context, req CreateDeliveryRequest
 		return nil, fmt.Errorf("notification postgres database is not configured")
 	}
 	row, err := s.queries.CreateDelivery(ctx, notificationsqlc.CreateDeliveryParams{
-		Source:     req.Source,
-		Severity:   req.Severity,
-		Title:      textValue(req.Title),
-		Body:       req.Body,
-		Link:       textValue(req.Link),
-		Channel:    req.Channel,
-		Status:     req.Status,
-		TopicLabel: req.TopicLabel,
+		Source:       req.Source,
+		Severity:     req.Severity,
+		Title:        textValue(req.Title),
+		Body:         req.Body,
+		Link:         textValue(req.Link),
+		Channel:      req.Channel,
+		Status:       req.Status,
+		TelegramChat: req.TelegramChat,
+		TopicLabel:   req.TopicLabel,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create notification delivery: %w", err)
 	}
 	item := deliveryDetailFromRow(deliveryRow{
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		Status: row.Status, TelegramChat: row.TelegramChat, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 	})
 	return item, nil
 }
 
-func (s *SQLStore) EnsureTopic(ctx context.Context, label string, create func(context.Context) (int, error)) (int, error) {
+func (s *SQLStore) EnsureTopic(ctx context.Context, telegramChat string, label string, create func(context.Context) (int, error)) (int, error) {
 	if s.pool == nil || s.queries == nil {
 		return 0, fmt.Errorf("notification postgres database is not configured")
 	}
-	topic, err := s.queries.GetTopic(ctx, label)
+	topicParams := notificationsqlc.GetTopicParams{TelegramChat: telegramChat, Label: label}
+	topic, err := s.queries.GetTopic(ctx, topicParams)
 	if err == nil {
 		return int(topic.MessageThreadID), nil
 	}
@@ -151,10 +156,10 @@ func (s *SQLStore) EnsureTopic(ctx context.Context, label string, create func(co
 	}()
 
 	queries := notificationsqlc.New(tx)
-	if err := queries.LockTopicLabel(ctx, label); err != nil {
+	if err := queries.LockTopic(ctx, notificationsqlc.LockTopicParams{TelegramChat: textValue(telegramChat), Label: textValue(label)}); err != nil {
 		return 0, fmt.Errorf("failed to lock notification topic label: %w", err)
 	}
-	topic, err = queries.GetTopic(ctx, label)
+	topic, err = queries.GetTopic(ctx, topicParams)
 	if err == nil {
 		if err := tx.Commit(ctx); err != nil {
 			return 0, fmt.Errorf("failed to commit notification topic lookup: %w", err)
@@ -173,6 +178,7 @@ func (s *SQLStore) EnsureTopic(ctx context.Context, label string, create func(co
 		return 0, fmt.Errorf("notification topic returned invalid message thread id")
 	}
 	if _, err := queries.CreateTopic(ctx, notificationsqlc.CreateTopicParams{
+		TelegramChat:    telegramChat,
 		Label:           label,
 		MessageThreadID: int32(messageThreadID),
 	}); err != nil {
@@ -215,6 +221,7 @@ func (s *SQLStore) ClaimPendingDeliveries(ctx context.Context, opts ClaimDeliver
 			Link:            row.Link,
 			Channel:         row.Channel,
 			Status:          row.Status,
+			TelegramChat:    row.TelegramChat,
 			TopicLabel:      row.TopicLabel,
 			MessageThreadID: int(row.MessageThreadID),
 			Attempts:        int(row.Attempts),
@@ -263,11 +270,12 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 	}
 	params := deliveryFilterParams(opts)
 	total, err := s.queries.CountDeliveries(ctx, notificationsqlc.CountDeliveriesParams{
-		Status:     params.Status,
-		Severity:   params.Severity,
-		Source:     params.Source,
-		TopicLabel: params.TopicLabel,
-		Keyword:    params.Keyword,
+		Status:       params.Status,
+		Severity:     params.Severity,
+		Source:       params.Source,
+		TelegramChat: params.TelegramChat,
+		TopicLabel:   params.TopicLabel,
+		Keyword:      params.Keyword,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count notification deliveries: %w", err)
@@ -282,13 +290,14 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 		pageSize = 20
 	}
 	rows, err := s.queries.ListDeliveries(ctx, notificationsqlc.ListDeliveriesParams{
-		Limit:      int32(pageSize),
-		Offset:     int32((page - 1) * pageSize),
-		Status:     params.Status,
-		Severity:   params.Severity,
-		Source:     params.Source,
-		TopicLabel: params.TopicLabel,
-		Keyword:    params.Keyword,
+		Limit:        int32(pageSize),
+		Offset:       int32((page - 1) * pageSize),
+		Status:       params.Status,
+		Severity:     params.Severity,
+		Source:       params.Source,
+		TelegramChat: params.TelegramChat,
+		TopicLabel:   params.TopicLabel,
+		Keyword:      params.Keyword,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list notification deliveries: %w", err)
@@ -298,7 +307,7 @@ func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOption
 	for _, row := range rows {
 		items = append(items, deliveryItemFromRow(deliveryRow{
 			ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-			Status: row.Status, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+			Status: row.Status, TelegramChat: row.TelegramChat, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 		}))
 	}
 	return items, total, nil
@@ -317,25 +326,27 @@ func (s *SQLStore) GetDelivery(ctx context.Context, id int64) (*v1alpha1.Notific
 	}
 	return deliveryDetailFromRow(deliveryRow{
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		Status: row.Status, TelegramChat: row.TelegramChat, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
 	}), nil
 }
 
 type deliveryFilter struct {
-	Status     pgtype.Text
-	Severity   pgtype.Text
-	Source     pgtype.Text
-	TopicLabel pgtype.Text
-	Keyword    pgtype.Text
+	Status       pgtype.Text
+	Severity     pgtype.Text
+	Source       pgtype.Text
+	TelegramChat pgtype.Text
+	TopicLabel   pgtype.Text
+	Keyword      pgtype.Text
 }
 
 func deliveryFilterParams(opts ListDeliveriesOptions) deliveryFilter {
 	return deliveryFilter{
-		Status:     nullableText(strings.TrimSpace(opts.Status)),
-		Severity:   nullableText(strings.TrimSpace(opts.Severity)),
-		Source:     nullableText(strings.TrimSpace(opts.Source)),
-		TopicLabel: nullableText(strings.TrimSpace(opts.TopicLabel)),
-		Keyword:    nullableKeyword(opts.Keyword),
+		Status:       nullableText(strings.TrimSpace(opts.Status)),
+		Severity:     nullableText(strings.TrimSpace(opts.Severity)),
+		Source:       nullableText(strings.TrimSpace(opts.Source)),
+		TelegramChat: nullableText(strings.TrimSpace(opts.TelegramChat)),
+		TopicLabel:   nullableText(strings.TrimSpace(opts.TopicLabel)),
+		Keyword:      nullableKeyword(opts.Keyword),
 	}
 }
 
@@ -348,6 +359,7 @@ type deliveryRow struct {
 	Link              string
 	Channel           string
 	Status            string
+	TelegramChat      string
 	TopicLabel        string
 	ProviderMessageID pgtype.Text
 	ErrorMessage      pgtype.Text
@@ -365,6 +377,7 @@ func deliveryItemFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryItem {
 		Link:              row.Link,
 		Channel:           row.Channel,
 		Status:            row.Status,
+		TelegramChat:      row.TelegramChat,
 		TopicLabel:        row.TopicLabel,
 		ProviderMessageID: row.ProviderMessageID.String,
 		ErrorMessage:      row.ErrorMessage.String,
@@ -387,6 +400,7 @@ func deliveryDetailFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryDetail
 		Link:              item.Link,
 		Channel:           item.Channel,
 		Status:            item.Status,
+		TelegramChat:      item.TelegramChat,
 		TopicLabel:        item.TopicLabel,
 		ProviderMessageID: item.ProviderMessageID,
 		ErrorMessage:      item.ErrorMessage,

@@ -116,12 +116,13 @@ func (s *Service) renderManagedOOProposePriceAlertNotification(candidate polymar
 	}
 
 	return &notificationapiclient.SendNotificationRequest{
-		Source:     managedOOProposedAlertSource,
-		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
-		Title:      fmt.Sprintf("UMA Proposed: %s", truncateRunes(titleSubject, defaultManagedOOProposedAlertTitleQuestionRunes)),
-		Body:       strings.Join(bodyLines, "\n"),
-		Link:       s.polymarketNotificationLink(polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug)),
-		TopicLabel: managedOOProposedAlertTopic,
+		Source:       managedOOProposedAlertSource,
+		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
+		Title:        fmt.Sprintf("UMA Proposed: %s", truncateRunes(titleSubject, defaultManagedOOProposedAlertTitleQuestionRunes)),
+		Body:         strings.Join(bodyLines, "\n"),
+		Link:         s.polymarketNotificationLink(polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug)),
+		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+		TopicLabel:   managedOOProposedAlertTopic,
 	}
 }
 

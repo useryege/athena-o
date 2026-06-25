@@ -269,12 +269,13 @@ func (s *Service) renderMoverAlertNotification(item *v1alpha1.PolymarketMoverMar
 	}, "\n")
 
 	return &notificationapiclient.SendNotificationRequest{
-		Source:     moverAlertSource,
-		Severity:   notificationSeverityForMoverAlert(severity),
-		Title:      title,
-		Body:       body,
-		Link:       s.polymarketNotificationLink(polymarketMoverLink(item)),
-		TopicLabel: moverAlertNotificationTopicLabel,
+		Source:       moverAlertSource,
+		Severity:     notificationSeverityForMoverAlert(severity),
+		Title:        title,
+		Body:         body,
+		Link:         s.polymarketNotificationLink(polymarketMoverLink(item)),
+		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+		TopicLabel:   moverAlertNotificationTopicLabel,
 	}
 }
 

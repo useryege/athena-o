@@ -22,6 +22,7 @@ message ListNotificationDeliveriesRequest {
   string source = 5;
   string keyword = 6;
   string topic_label = 7;
+  string telegram_chat = 8;
 }
 
 // ListNotificationDeliveriesResponse returns a page of notification delivery records.

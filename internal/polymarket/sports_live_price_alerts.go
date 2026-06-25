@@ -282,12 +282,13 @@ func (s *Service) renderSportsLivePriceAlertNotification(token polymarketstore.S
 	)
 
 	return &notificationapiclient.SendNotificationRequest{
-		Source:     source,
-		Severity:   severity,
-		Title:      fmt.Sprintf("%s: %s %.2f%%", titlePrefix, outcome, token.Price*100),
-		Body:       strings.Join(bodyLines, "\n"),
-		Link:       s.polymarketNotificationLink(polymarketEventLink(token.EventSlug)),
-		TopicLabel: topic,
+		Source:       source,
+		Severity:     severity,
+		Title:        fmt.Sprintf("%s: %s %.2f%%", titlePrefix, outcome, token.Price*100),
+		Body:         strings.Join(bodyLines, "\n"),
+		Link:         s.polymarketNotificationLink(polymarketEventLink(token.EventSlug)),
+		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+		TopicLabel:   topic,
 	}
 }
 

@@ -118,12 +118,13 @@ func (s *Service) renderManagedOODisputePriceAlertNotification(candidate polymar
 	}
 
 	return &notificationapiclient.SendNotificationRequest{
-		Source:     managedOODisputedAlertSource,
-		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
-		Title:      fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
-		Body:       strings.Join(bodyLines, "\n"),
-		Link:       s.managedOODisputePriceAlertLink(candidate),
-		TopicLabel: managedOODisputedAlertTopic,
+		Source:       managedOODisputedAlertSource,
+		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
+		Title:        fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
+		Body:         strings.Join(bodyLines, "\n"),
+		Link:         s.managedOODisputePriceAlertLink(candidate),
+		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+		TopicLabel:   managedOODisputedAlertTopic,
 	}
 }
 

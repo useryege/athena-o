@@ -63,12 +63,13 @@ func newWormEventNotifications(events map[string]wormstore.WormMarket) []wormNot
 		notifications = append(notifications, wormNotification{
 			eventConditionID: eventConditionID,
 			request: &notificationapiclient.SendNotificationRequest{
-				Source:     wormNewEventNotificationSource,
-				Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-				Title:      fmt.Sprintf("Worm new event: %s", eventTitle),
-				Body:       body,
-				Link:       wormMarketLink(market.ConditionID),
-				TopicLabel: wormNewEventNotificationTopic,
+				Source:       wormNewEventNotificationSource,
+				Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+				Title:        fmt.Sprintf("Worm new event: %s", eventTitle),
+				Body:         body,
+				Link:         wormMarketLink(market.ConditionID),
+				TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+				TopicLabel:   wormNewEventNotificationTopic,
 			},
 		})
 	}
@@ -87,12 +88,13 @@ func newWormLiveNotification(change wormstore.WormMarketLivePriceChange) wormNot
 	return wormNotification{
 		eventConditionID: change.EventConditionID,
 		request: &notificationapiclient.SendNotificationRequest{
-			Source:     wormLiveEventNotificationSource,
-			Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-			Title:      fmt.Sprintf("Worm event is live: %s", eventTitle),
-			Body:       body,
-			Link:       wormMarketLink(change.ConditionID),
-			TopicLabel: wormLiveEventNotificationTopic,
+			Source:       wormLiveEventNotificationSource,
+			Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+			Title:        fmt.Sprintf("Worm event is live: %s", eventTitle),
+			Body:         body,
+			Link:         wormMarketLink(change.ConditionID),
+			TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+			TopicLabel:   wormLiveEventNotificationTopic,
 		},
 	}
 }
@@ -129,12 +131,13 @@ func newWormPriceAlertNotification(market wormstore.WormMarket, band string) wor
 	return wormNotification{
 		eventConditionID: market.EventConditionID,
 		request: &notificationapiclient.SendNotificationRequest{
-			Source:     source,
-			Severity:   severity,
-			Title:      fmt.Sprintf("%s: %s", titlePrefix, marketTitle),
-			Body:       body,
-			Link:       wormMarketLink(market.ConditionID),
-			TopicLabel: topic,
+			Source:       source,
+			Severity:     severity,
+			Title:        fmt.Sprintf("%s: %s", titlePrefix, marketTitle),
+			Body:         body,
+			Link:         wormMarketLink(market.ConditionID),
+			TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
+			TopicLabel:   topic,
 		},
 	}
 }

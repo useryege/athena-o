@@ -10,6 +10,7 @@ export interface NotificationDelivery {
     link: string;
     channel: string;
     status: string;
+    telegramChat: string;
     providerMessageId: string;
     errorMessage: string;
     createdAt: string;
@@ -21,6 +22,7 @@ export interface ListNotificationsOptions {
     pageSize?: number;
     status?: string;
     severity?: string;
+    telegramChat?: string;
     topicLabel?: string;
     source?: string;
     keyword?: string;
@@ -62,6 +64,7 @@ const normalizeDelivery = (item: any = {}): NotificationDelivery => ({
     link: readString(item, 'link'),
     channel: readString(item, 'channel'),
     status: readString(item, 'status'),
+    telegramChat: readString(item, 'telegramChat', 'telegram_chat'),
     providerMessageId: readString(item, 'providerMessageId', 'provider_message_id'),
     errorMessage: readString(item, 'errorMessage', 'error_message'),
     createdAt: readString(item, 'createdAt', 'created_at'),
@@ -79,6 +82,9 @@ export class NotificationService {
         }
         if (options.severity) {
             query.severity = options.severity;
+        }
+        if (options.telegramChat) {
+            query.telegram_chat = options.telegramChat;
         }
         if (options.topicLabel) {
             query.topic_label = options.topicLabel;

@@ -19,6 +19,7 @@ type NotificationDeliveryItem struct {
 	CreatedAt         string `protobuf:"bytes,11,opt,name=created_at,json=createdAt" json:"createdAt"`
 	SentAt            string `protobuf:"bytes,12,opt,name=sent_at,json=sentAt" json:"sentAt"`
 	TopicLabel        string `protobuf:"bytes,13,opt,name=topic_label,json=topicLabel" json:"topicLabel"`
+	TelegramChat      string `protobuf:"bytes,14,opt,name=telegram_chat,json=telegramChat" json:"telegramChat"`
 }
 
 type NotificationDeliveryDetail struct {
@@ -35,4 +36,5 @@ type NotificationDeliveryDetail struct {
 	CreatedAt         string `protobuf:"bytes,11,opt,name=created_at,json=createdAt" json:"createdAt"`
 	SentAt            string `protobuf:"bytes,12,opt,name=sent_at,json=sentAt" json:"sentAt"`
 	TopicLabel        string `protobuf:"bytes,13,opt,name=topic_label,json=topicLabel" json:"topicLabel"`
+	TelegramChat      string `protobuf:"bytes,14,opt,name=telegram_chat,json=telegramChat" json:"telegramChat"`
 }

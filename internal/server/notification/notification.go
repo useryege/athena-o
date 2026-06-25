@@ -43,13 +43,14 @@ func (s *Server) ListNotificationDeliveries(ctx context.Context, req *notificati
 	defer closer.Close()
 
 	resp, err := client.ListNotificationDeliveries(ctx, &notificationapiclient.ListNotificationDeliveriesRequest{
-		Page:       req.GetPage(),
-		PageSize:   req.GetPageSize(),
-		Status:     req.GetStatus(),
-		Severity:   req.GetSeverity(),
-		Source:     req.GetSource(),
-		Keyword:    req.GetKeyword(),
-		TopicLabel: req.GetTopicLabel(),
+		Page:         req.GetPage(),
+		PageSize:     req.GetPageSize(),
+		Status:       req.GetStatus(),
+		Severity:     req.GetSeverity(),
+		Source:       req.GetSource(),
+		Keyword:      req.GetKeyword(),
+		TopicLabel:   req.GetTopicLabel(),
+		TelegramChat: req.GetTelegramChat(),
 	})
 	if err != nil {
 		return nil, err
@@ -89,11 +90,12 @@ func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.
 	defer closer.Close()
 
 	resp, err := client.SendNotification(ctx, &notificationapiclient.SendNotificationRequest{
-		TopicLabel: topicLabel,
-		Source:     testNotificationSource,
-		Severity:   notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-		Title:      "ATHENA " + topicLabel + " test notification",
-		Body:       "Manual " + topicLabel + " test notification sent from ATHENA UI at " + time.Now().UTC().Format(time.RFC3339),
+		TopicLabel:   topicLabel,
+		Source:       testNotificationSource,
+		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
+		Title:        "ATHENA " + topicLabel + " test notification",
+		Body:         "Manual " + topicLabel + " test notification sent from ATHENA UI at " + time.Now().UTC().Format(time.RFC3339),
+		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
 	})
 	if err != nil {
 		return nil, err

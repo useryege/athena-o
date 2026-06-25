@@ -14,9 +14,9 @@ type Querier interface {
 	CreateDelivery(ctx context.Context, arg CreateDeliveryParams) (CreateDeliveryRow, error)
 	CreateTopic(ctx context.Context, arg CreateTopicParams) (NotificationTopic, error)
 	GetDelivery(ctx context.Context, id int64) (GetDeliveryRow, error)
-	GetTopic(ctx context.Context, label string) (NotificationTopic, error)
+	GetTopic(ctx context.Context, arg GetTopicParams) (NotificationTopic, error)
 	ListDeliveries(ctx context.Context, arg ListDeliveriesParams) ([]ListDeliveriesRow, error)
-	LockTopicLabel(ctx context.Context, hashtextextended string) error
+	LockTopic(ctx context.Context, arg LockTopicParams) error
 	MarkDeliveryFailed(ctx context.Context, arg MarkDeliveryFailedParams) error
 	MarkDeliverySent(ctx context.Context, arg MarkDeliverySentParams) error
 	ScheduleDeliveryRetry(ctx context.Context, arg ScheduleDeliveryRetryParams) error
