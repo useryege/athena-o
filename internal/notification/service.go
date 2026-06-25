@@ -324,10 +324,56 @@ func renderNotificationMessage(params sendNotificationParams) renderedNotificati
 	sourceLine := fmt.Sprintf("Source: %s", params.source)
 	severityLine := fmt.Sprintf("Severity: %s", strings.ToUpper(params.severity))
 	visibleLines = append(visibleLines, sourceLine, severityLine, "", params.body)
-	htmlLines = append(htmlLines, html.EscapeString(sourceLine), html.EscapeString(severityLine), "", html.EscapeString(params.body))
+	htmlLines = append(htmlLines,
+		renderNotificationHTMLField("Source", params.source),
+		renderNotificationHTMLField("Severity", strings.ToUpper(params.severity)),
+		"",
+	)
+	htmlLines = append(htmlLines, renderNotificationHTMLBodyLines(params.body)...)
 
 	return renderedNotificationMessage{
 		Text:        strings.TrimSpace(strings.Join(htmlLines, "\n")),
 		VisibleText: strings.TrimSpace(strings.Join(visibleLines, "\n")),
 	}
+}
+
+func renderNotificationHTMLBodyLines(body string) []string {
+	lines := strings.Split(body, "\n")
+	htmlLines := make([]string, 0, len(lines))
+	for _, line := range lines {
+		htmlLines = append(htmlLines, renderNotificationHTMLBodyLine(line))
+	}
+	return htmlLines
+}
+
+func renderNotificationHTMLBodyLine(line string) string {
+	label, value, ok := splitNotificationBodyFieldLine(line)
+	if !ok {
+		return html.EscapeString(line)
+	}
+	return renderNotificationHTMLFieldWithRawValue(label, value)
+}
+
+func splitNotificationBodyFieldLine(line string) (string, string, bool) {
+	separator := strings.Index(line, ":")
+	if separator <= 0 {
+		return "", "", false
+	}
+	valueStart := separator + 1
+	if valueStart < len(line) && line[valueStart] != ' ' && line[valueStart] != '\t' {
+		return "", "", false
+	}
+	label := strings.TrimSpace(line[:separator])
+	if label == "" {
+		return "", "", false
+	}
+	return label, line[valueStart:], true
+}
+
+func renderNotificationHTMLField(label string, value string) string {
+	return renderNotificationHTMLFieldWithRawValue(label, " "+value)
+}
+
+func renderNotificationHTMLFieldWithRawValue(label string, value string) string {
+	return fmt.Sprintf("<b>%s:</b>%s", html.EscapeString(label), html.EscapeString(value))
 }
