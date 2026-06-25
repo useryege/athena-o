@@ -9,6 +9,11 @@ CREATE TABLE IF NOT EXISTS notification_topics (
   PRIMARY KEY (telegram_chat, label)
 );
 
+INSERT INTO notification_topics (telegram_chat, label, message_thread_id)
+VALUES ('prod', '[POLY] UMA Disputed', 559)
+ON CONFLICT (telegram_chat, label) DO UPDATE
+SET message_thread_id = EXCLUDED.message_thread_id;
+
 CREATE TABLE IF NOT EXISTS notification_deliveries (
   id BIGSERIAL PRIMARY KEY,
   source TEXT NOT NULL,
