@@ -46,6 +46,9 @@ const balanceValue = (item: PolymarketFIFAWalletBalanceItem) => (item.amount && 
 const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
 type FIFAInfoGridItem = {label: React.ReactNode; value: React.ReactNode; copyText?: string};
+type FIFAOutcomeKey = 'home' | 'draw' | 'away';
+
+const fifaOutcomeKeys: FIFAOutcomeKey[] = ['home', 'draw', 'away'];
 
 const normalizedWormMarketTitle = (value?: string) => (value || '').trim().toLowerCase();
 
@@ -108,10 +111,10 @@ const optionTitle = (option: PolymarketFIFAMoneylineOptionItem) => {
     return option.outcomeLabel || option.outcomeKey;
 };
 
-const FIFAMoneylineOptionCard = (props: {option: PolymarketFIFAMoneylineOptionItem}) => {
+const FIFAMoneylineOptionCard = (props: {option: PolymarketFIFAMoneylineOptionItem; related?: boolean}) => {
     const option = props.option;
     return (
-        <Card className='fifa-moneyline-option' size='small'>
+        <Card className={`fifa-moneyline-option${props.related ? ' fifa-moneyline-option--related' : ''}`} size='small'>
             <div className='fifa-moneyline-option__header'>
                 <Typography.Title level={5}>{optionTitle(option)}</Typography.Title>
                 <Tag color={outcomeTone(option)}>{option.enableOrderBook && option.acceptingOrders ? 'Open' : 'Unavailable'}</Tag>
@@ -216,11 +219,42 @@ const FIFAWalletBalancesPanel = (props: {items?: PolymarketFIFAWalletBalanceItem
 
 const leverageValue = (value?: string) => (value ? `${value}x` : '-');
 
-const WormMarketCard = (props: {item: WormMarketItem}) => {
+const isInteractiveCardTarget = (target: EventTarget | null, currentTarget: EventTarget) => {
+    if (!(target instanceof HTMLElement) || !(currentTarget instanceof HTMLElement)) {
+        return false;
+    }
+    const interactive = target.closest('a, button, input, textarea, select, [role="button"]');
+    return Boolean(interactive && interactive !== currentTarget);
+};
+
+const WormMarketCard = (props: {item: WormMarketItem; selected?: boolean; onSelect?: () => void}) => {
     const item = props.item;
     const estimate = item.estimate;
+    const selectable = Boolean(props.onSelect);
+    const onClick = (event: React.MouseEvent) => {
+        if (!selectable || isInteractiveCardTarget(event.target, event.currentTarget)) {
+            return;
+        }
+        props.onSelect();
+    };
+    const onKeyDown = (event: React.KeyboardEvent) => {
+        if (!selectable || isInteractiveCardTarget(event.target, event.currentTarget)) {
+            return;
+        }
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            props.onSelect();
+        }
+    };
     return (
-        <Card className='fifa-worm-market' size='small'>
+        <Card
+            aria-pressed={selectable ? props.selected : undefined}
+            className={`fifa-worm-market${selectable ? ' fifa-worm-market--selectable' : ''}${props.selected ? ' fifa-worm-market--selected' : ''}`}
+            role={selectable ? 'button' : undefined}
+            size='small'
+            tabIndex={selectable ? 0 : undefined}
+            onClick={onClick}
+            onKeyDown={onKeyDown}>
             <div className='fifa-worm-market__header'>
                 <Typography.Title level={5}>{item.title || '-'}</Typography.Title>
                 <Tag color={item.state === 'open' ? 'green' : 'default'}>{item.state || '-'}</Tag>
@@ -306,7 +340,7 @@ const WormMarketCard = (props: {item: WormMarketItem}) => {
     );
 };
 
-const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; error?: Error}) => {
+const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; error?: Error; selectedConditionId?: string; onSelectMarket?: (conditionId: string) => void}) => {
     const item = props.data?.item;
     const markets = item ? orderedWormMarkets(item.title, item.markets) : [];
     return (
@@ -334,9 +368,13 @@ const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; er
                         {item.description && <Typography.Paragraph className='fifa-worm-event-description'>{item.description}</Typography.Paragraph>}
                     </section>
                     <Row className='fifa-worm-markets' gutter={[12, 12]}>
-                        {markets.map(market => (
+                        {markets.map((market, index) => (
                             <Col key={market.conditionId} span={8}>
-                                <WormMarketCard item={market} />
+                                <WormMarketCard
+                                    item={market}
+                                    selected={market.conditionId === props.selectedConditionId}
+                                    onSelect={fifaOutcomeKeys[index] ? () => props.onSelectMarket?.(market.conditionId) : undefined}
+                                />
                             </Col>
                         ))}
                     </Row>
@@ -344,6 +382,15 @@ const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; er
             )}
         </section>
     );
+};
+
+const selectedWormOutcomeKey = (data?: GetWormEventResult, selectedConditionId?: string): FIFAOutcomeKey | undefined => {
+    const item = data?.item;
+    if (!item || !selectedConditionId) {
+        return undefined;
+    }
+    const index = orderedWormMarkets(item.title, item.markets).findIndex(market => market.conditionId === selectedConditionId);
+    return index >= 0 ? fifaOutcomeKeys[index] : undefined;
 };
 
 const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
@@ -393,6 +440,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
     const [balancesLoading, setBalancesLoading] = React.useState(false);
     const [balancesError, setBalancesError] = React.useState<Error>(null);
     const [balancesData, setBalancesData] = React.useState<{items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number}>(null);
+    const [selectedWormConditionId, setSelectedWormConditionId] = React.useState('');
     const configRequestRef = React.useRef<(Promise<PolymarketFIFAEventConfig> & {abort?: () => void}) | null>(null);
     const wormRequestRef = React.useRef<(Promise<GetWormEventResult> & {abort?: () => void}) | null>(null);
     const eventRequestRef = React.useRef<(Promise<GetPolymarketFIFAMoneylineEventResult> & {abort?: () => void}) | null>(null);
@@ -594,6 +642,17 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
         };
     }, [loadBalances]);
 
+    React.useEffect(() => {
+        if (!selectedWormConditionId) {
+            return;
+        }
+        const item = wormData?.item;
+        const selectedStillExists = Boolean(item?.markets.some(market => market.conditionId === selectedWormConditionId));
+        if (!selectedStillExists) {
+            setSelectedWormConditionId('');
+        }
+    }, [selectedWormConditionId, wormData]);
+
     const saveConfig = async () => {
         const wormEventId = draftWormEventID.trim();
         const eventRef = draftEventRef.trim();
@@ -668,6 +727,10 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
     );
 
     const item = data?.item;
+    const selectedOutcomeKey = selectedWormOutcomeKey(wormData, selectedWormConditionId);
+    const selectWormMarket = React.useCallback((conditionId: string) => {
+        setSelectedWormConditionId(current => (current === conditionId ? '' : conditionId));
+    }, []);
     const refresh = React.useCallback(() => {
         loadConfig();
         loadBalances();
@@ -683,7 +746,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                 {configPanel}
                 <FIFAWalletBalancesPanel items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={balancesLoading} error={balancesError} />
                 <div className='fifa-dashboard-grid'>
-                    <WormEventPanel data={wormData} loading={wormLoading} error={wormError} />
+                    <WormEventPanel data={wormData} loading={wormLoading} error={wormError} selectedConditionId={selectedWormConditionId} onSelectMarket={selectWormMarket} />
                     <section className='fifa-panel fifa-panel--polymarket'>
                         <div className='fifa-panel__title'>
                             <Typography.Text strong={true}>Polymarket</Typography.Text>
@@ -696,7 +759,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                                 <Row className='fifa-moneyline-options' gutter={[12, 12]}>
                                     {item.options.map(option => (
                                         <Col key={option.outcomeKey} span={8}>
-                                            <FIFAMoneylineOptionCard option={option} />
+                                            <FIFAMoneylineOptionCard option={option} related={Boolean(selectedOutcomeKey && option.outcomeKey !== selectedOutcomeKey)} />
                                         </Col>
                                     ))}
                                 </Row>

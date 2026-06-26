@@ -1610,6 +1610,32 @@ body[data-theme='dark'] .metric {
     box-shadow: var(--athena-shadow-tight);
 }
 
+.fifa-worm-market--selectable {
+    cursor: pointer;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.fifa-worm-market--selectable:hover {
+    border-color: color-mix(in srgb, var(--athena-primary) 42%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-primary) 6%, var(--athena-panel));
+}
+
+.fifa-worm-market--selectable:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--athena-blue) 72%, transparent);
+    outline-offset: 3px;
+}
+
+.fifa-worm-market--selected {
+    border-color: color-mix(in srgb, var(--athena-primary) 72%, var(--athena-border));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--athena-primary) 13%, transparent), transparent 58%), var(--athena-panel);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--athena-primary) 34%, transparent),
+        0 14px 34px rgba(224, 95, 63, 0.18);
+}
+
 .fifa-worm-market .ant-card-body {
     min-height: 100%;
     display: grid;
@@ -1725,6 +1751,18 @@ body[data-theme='dark'] .metric {
     border-radius: 8px;
     background: var(--athena-panel);
     box-shadow: var(--athena-shadow-tight);
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.fifa-moneyline-option--related {
+    border-color: color-mix(in srgb, var(--athena-green) 70%, var(--athena-border));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--athena-green) 12%, transparent), transparent 58%), var(--athena-panel);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--athena-green) 30%, transparent),
+        0 14px 34px rgba(25, 169, 116, 0.16);
 }
 
 .fifa-moneyline-option .ant-card-body {
