@@ -317,7 +317,16 @@ const AppRoutes = (props: {access: AccessState}) => {
         <Routes>
             <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
             <Route path='/login' element={<LoginPage />} />
-            <Route path='/wallet' element={withPermission(permission(rbacResources.wallets, rbacActions.get), <WalletsPage />)} />
+            <Route
+                path='/wallet'
+                element={withPermission(
+                    permission(rbacResources.wallets, rbacActions.get),
+                    <WalletsPage
+                        canCreate={hasPermission(props.access, permission(rbacResources.wallets, rbacActions.update))}
+                        canReveal={hasPermission(props.access, permission(rbacResources.wallets, rbacActions.invoke))}
+                    />
+                )}
+            />
             <Route path='/worm' element={withPermission(permission(rbacResources.worm, rbacActions.get), <WormPage />)} />
             <Route path='/polymarket' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketHotPage />)} />
             <Route path='/polymarket/realtime' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketRealtimePage />)} />

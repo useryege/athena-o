@@ -47,6 +47,8 @@ var uiBootstrapPermissions = []*session.ResourcePermission{
 	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "chain-checkpoints"},
 	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "collection-tasks"},
 	{Resource: rbac.ResourceWallets, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourceWallets, Action: rbac.ActionUpdate, Subresource: "*"},
+	{Resource: rbac.ResourceWallets, Action: rbac.ActionInvoke, Subresource: "*"},
 	{Resource: rbac.ResourceWorm, Action: rbac.ActionGet, Subresource: "*"},
 	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionGet, Subresource: "*"},
 	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionUpdate, Subresource: "*"},

@@ -780,6 +780,8 @@ message WalletDetail {
   optional string private_key = 9;
 
   optional string mnemonic = 10;
+
+  optional string created_by = 11;
 }
 
 message WalletItem {
@@ -798,6 +800,8 @@ message WalletItem {
   optional string created_at = 7;
 
   optional string updated_at = 8;
+
+  optional string created_by = 9;
 }
 
 message WalletStatus {

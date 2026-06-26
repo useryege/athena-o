@@ -13,6 +13,9 @@ p, role:readonly, projects, get, *, allow
 p, role:readonly, notifications, get, *, allow
 p, role:readonly, worm, get, *, allow
 p, role:readonly, polymarket, get, *, allow
+p, role:readonly, wallets, get, *, allow
+p, role:readonly, wallets, update, *, allow
+p, role:readonly, wallets, invoke, *, allow
 p, role:readonly, tokenapi, get, options, allow
 p, role:readonly, tokenapi, get, projects, allow
 p, role:readonly, tokenapi, get, chain-checkpoints, allow
@@ -23,9 +26,6 @@ p, role:admin, projects, update, *, allow
 p, role:admin, projects, invoke, *, allow
 p, role:admin, notifications, invoke, *, allow
 p, role:admin, polymarket, update, *, allow
-p, role:admin, wallets, get, *, allow
-p, role:admin, wallets, update, *, allow
-p, role:admin, wallets, invoke, *, allow
 p, role:admin, tokenapi, get, *, allow
 p, role:admin, tokenapi, update, *, allow
 p, role:admin, service-status, get, *, allow

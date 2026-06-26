@@ -11,7 +11,7 @@ import (
 type Querier interface {
 	CountWallets(ctx context.Context, arg CountWalletsParams) (int64, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (WalletPrivateKey, error)
-	GetWallet(ctx context.Context, id int64) (WalletPrivateKey, error)
+	GetWallet(ctx context.Context, arg GetWalletParams) (WalletPrivateKey, error)
 	ListWallets(ctx context.Context, arg ListWalletsParams) ([]ListWalletsRow, error)
 	UpdateWalletAlias(ctx context.Context, arg UpdateWalletAliasParams) (UpdateWalletAliasRow, error)
 }

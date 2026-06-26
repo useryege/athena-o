@@ -10,6 +10,7 @@ import (
 
 type WalletPrivateKey struct {
 	ID                   int64
+	CreatedBy            string
 	Chain                string
 	Address              string
 	AddressKey           string

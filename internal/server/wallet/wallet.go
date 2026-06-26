@@ -6,6 +6,7 @@ import (
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/session"
 )
 
 type Server struct {
@@ -35,10 +36,11 @@ func (s *Server) ListWallets(ctx context.Context, req *walletpkg.ListWalletsRequ
 	defer closer.Close()
 
 	resp, err := client.ListWallets(ctx, &walletapiclient.ListWalletsRequest{
-		Chain:    req.GetChain(),
-		Query:    req.GetQuery(),
-		Page:     req.GetPage(),
-		PageSize: req.GetPageSize(),
+		Chain:     req.GetChain(),
+		Query:     req.GetQuery(),
+		Page:      req.GetPage(),
+		PageSize:  req.GetPageSize(),
+		Requester: session.GetUserIdentifier(ctx),
 	})
 	if err != nil {
 		return nil, err
@@ -61,6 +63,7 @@ func (s *Server) GetWallet(ctx context.Context, req *walletpkg.GetWalletRequest)
 	resp, err := client.GetWallet(ctx, &walletapiclient.GetWalletRequest{
 		Id:            req.GetId(),
 		RevealSecrets: req.GetRevealSecrets(),
+		Requester:     session.GetUserIdentifier(ctx),
 	})
 	if err != nil {
 		return nil, err
@@ -76,8 +79,9 @@ func (s *Server) CreateWallet(ctx context.Context, req *walletpkg.CreateWalletRe
 	defer closer.Close()
 
 	resp, err := client.CreateWallet(ctx, &walletapiclient.CreateWalletRequest{
-		Chain: req.GetChain(),
-		Alias: req.GetAlias(),
+		Chain:     req.GetChain(),
+		Alias:     req.GetAlias(),
+		Requester: session.GetUserIdentifier(ctx),
 	})
 	if err != nil {
 		return nil, err
@@ -96,6 +100,7 @@ func (s *Server) ImportPrivateKey(ctx context.Context, req *walletpkg.ImportPriv
 		Chain:      req.GetChain(),
 		PrivateKey: req.GetPrivateKey(),
 		Alias:      req.GetAlias(),
+		Requester:  session.GetUserIdentifier(ctx),
 	})
 	if err != nil {
 		return nil, err
@@ -111,9 +116,10 @@ func (s *Server) ImportMnemonic(ctx context.Context, req *walletpkg.ImportMnemon
 	defer closer.Close()
 
 	resp, err := client.ImportMnemonic(ctx, &walletapiclient.ImportMnemonicRequest{
-		Chain:    req.GetChain(),
-		Mnemonic: req.GetMnemonic(),
-		Alias:    req.GetAlias(),
+		Chain:     req.GetChain(),
+		Mnemonic:  req.GetMnemonic(),
+		Alias:     req.GetAlias(),
+		Requester: session.GetUserIdentifier(ctx),
 	})
 	if err != nil {
 		return nil, err
@@ -129,8 +135,9 @@ func (s *Server) UpdateWalletAlias(ctx context.Context, req *walletpkg.UpdateWal
 	defer closer.Close()
 
 	resp, err := client.UpdateWalletAlias(ctx, &walletapiclient.UpdateWalletAliasRequest{
-		Id:    req.GetId(),
-		Alias: req.GetAlias(),
+		Id:        req.GetId(),
+		Alias:     req.GetAlias(),
+		Requester: session.GetUserIdentifier(ctx),
 	})
 	if err != nil {
 		return nil, err

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/wallet/apiclient"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -84,9 +85,12 @@ func (s *Service) ListWallets(ctx context.Context, req *apiclient.ListWalletsReq
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
 	}
+	requester, err := requireWalletRequester(req.GetRequester())
+	if err != nil {
+		return nil, err
+	}
 	chain := ""
 	if req.GetChain() != "" {
-		var err error
 		chain, err = normalizeWalletChain(req.GetChain())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -105,10 +109,11 @@ func (s *Service) ListWallets(ctx context.Context, req *apiclient.ListWalletsReq
 	}
 
 	items, total, err := s.store.ListWallets(ctx, walletstore.ListWalletsOptions{
-		Chain:    chain,
-		Query:    req.GetQuery(),
-		Page:     page,
-		PageSize: pageSize,
+		CreatedBy: walletCreatedByFilter(requester),
+		Chain:     chain,
+		Query:     req.GetQuery(),
+		Page:      page,
+		PageSize:  pageSize,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list wallets: %v", err)
@@ -125,7 +130,11 @@ func (s *Service) GetWallet(ctx context.Context, req *apiclient.GetWalletRequest
 	if req.GetId() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
-	record, err := s.getWalletRecord(ctx, req.GetId())
+	requester, err := requireWalletRequester(req.GetRequester())
+	if err != nil {
+		return nil, err
+	}
+	record, err := s.getWalletRecord(ctx, req.GetId(), walletCreatedByFilter(requester))
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +146,10 @@ func (s *Service) GetWallet(ctx context.Context, req *apiclient.GetWalletRequest
 }
 
 func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletRequest) (*apiclient.CreateWalletResponse, error) {
+	requester, err := requireWalletRequester(req.GetRequester())
+	if err != nil {
+		return nil, err
+	}
 	chain, err := normalizeWalletChain(req.GetChain())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -145,14 +158,21 @@ func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create wallet key: %v", err)
 	}
-	record, err := s.storeWalletMaterial(ctx, material, req.GetAlias())
+	record, err := s.storeWalletMaterial(ctx, requester, material, req.GetAlias())
 	if err != nil {
 		return nil, err
 	}
-	return &apiclient.CreateWalletResponse{Item: record.ToDetail()}, nil
+	item := record.ToDetail()
+	item.PrivateKey = material.privateKey
+	item.Mnemonic = material.mnemonic
+	return &apiclient.CreateWalletResponse{Item: item}, nil
 }
 
 func (s *Service) ImportPrivateKey(ctx context.Context, req *apiclient.ImportPrivateKeyRequest) (*apiclient.ImportPrivateKeyResponse, error) {
+	requester, err := requireWalletRequester(req.GetRequester())
+	if err != nil {
+		return nil, err
+	}
 	chain, err := normalizeWalletChain(req.GetChain())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -161,7 +181,7 @@ func (s *Service) ImportPrivateKey(ctx context.Context, req *apiclient.ImportPri
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	record, err := s.storeWalletMaterial(ctx, material, req.GetAlias())
+	record, err := s.storeWalletMaterial(ctx, requester, material, req.GetAlias())
 	if err != nil {
 		return nil, err
 	}
@@ -169,6 +189,10 @@ func (s *Service) ImportPrivateKey(ctx context.Context, req *apiclient.ImportPri
 }
 
 func (s *Service) ImportMnemonic(ctx context.Context, req *apiclient.ImportMnemonicRequest) (*apiclient.ImportMnemonicResponse, error) {
+	requester, err := requireWalletRequester(req.GetRequester())
+	if err != nil {
+		return nil, err
+	}
 	chain, err := normalizeWalletChain(req.GetChain())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -177,7 +201,7 @@ func (s *Service) ImportMnemonic(ctx context.Context, req *apiclient.ImportMnemo
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	record, err := s.storeWalletMaterial(ctx, material, req.GetAlias())
+	record, err := s.storeWalletMaterial(ctx, requester, material, req.GetAlias())
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +215,11 @@ func (s *Service) UpdateWalletAlias(ctx context.Context, req *apiclient.UpdateWa
 	if req.GetId() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
-	item, err := s.store.UpdateWalletAlias(ctx, req.GetId(), normalizeWalletAlias(req.GetAlias()))
+	requester, err := requireWalletRequester(req.GetRequester())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.store.UpdateWalletAlias(ctx, req.GetId(), walletCreatedByFilter(requester), normalizeWalletAlias(req.GetAlias()))
 	if err != nil {
 		if errors.Is(err, walletstore.ErrWalletNotFound) {
 			return nil, status.Errorf(codes.NotFound, "wallet %d not found", req.GetId())
@@ -201,11 +229,11 @@ func (s *Service) UpdateWalletAlias(ctx context.Context, req *apiclient.UpdateWa
 	return &apiclient.UpdateWalletAliasResponse{Item: item}, nil
 }
 
-func (s *Service) getWalletRecord(ctx context.Context, id int64) (*walletstore.WalletRecord, error) {
+func (s *Service) getWalletRecord(ctx context.Context, id int64, createdBy string) (*walletstore.WalletRecord, error) {
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
 	}
-	record, err := s.store.GetWallet(ctx, id)
+	record, err := s.store.GetWallet(ctx, id, createdBy)
 	if err != nil {
 		if errors.Is(err, walletstore.ErrWalletNotFound) {
 			return nil, status.Errorf(codes.NotFound, "wallet %d not found", id)
@@ -215,7 +243,7 @@ func (s *Service) getWalletRecord(ctx context.Context, id int64) (*walletstore.W
 	return record, nil
 }
 
-func (s *Service) storeWalletMaterial(ctx context.Context, material walletKeyMaterial, alias string) (*walletstore.WalletRecord, error) {
+func (s *Service) storeWalletMaterial(ctx context.Context, requester string, material walletKeyMaterial, alias string) (*walletstore.WalletRecord, error) {
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
 	}
@@ -234,6 +262,7 @@ func (s *Service) storeWalletMaterial(ctx context.Context, material walletKeyMat
 		}
 	}
 	record, err := s.store.CreateWallet(ctx, walletstore.CreateWalletRecordRequest{
+		CreatedBy:            requester,
 		Chain:                material.chain,
 		Address:              material.address,
 		AddressKey:           material.addressKey,
@@ -273,6 +302,21 @@ func (s *Service) walletDetail(record *walletstore.WalletRecord, revealSecrets b
 		item.Mnemonic = string(mnemonic)
 	}
 	return item, nil
+}
+
+func requireWalletRequester(input string) (string, error) {
+	requester := strings.TrimSpace(input)
+	if requester == "" {
+		return "", status.Error(codes.Unauthenticated, "wallet requester is required")
+	}
+	return requester, nil
+}
+
+func walletCreatedByFilter(requester string) string {
+	if requester == common.AthenaAdminUsername {
+		return ""
+	}
+	return requester
 }
 
 func normalizeWalletAlias(alias string) string {

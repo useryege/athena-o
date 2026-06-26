@@ -3,6 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS wallet_private_keys (
   id BIGSERIAL PRIMARY KEY,
+  created_by TEXT NOT NULL,
   chain TEXT NOT NULL CHECK (chain IN ('ETH', 'BSC', 'BASE', 'SOLANA')),
   address TEXT NOT NULL,
   address_key TEXT NOT NULL,
@@ -13,11 +14,12 @@ CREATE TABLE IF NOT EXISTS wallet_private_keys (
   derivation_path TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (chain, address_key)
+  UNIQUE (created_by, chain, address_key)
 );
 
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_chain ON wallet_private_keys (chain);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_at ON wallet_private_keys (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_by_created_at ON wallet_private_keys (created_by, created_at DESC);
 
 -- +goose Down
 
