@@ -8,17 +8,23 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
 
-// 59mJJLBC22xe2Bg9mTozn47fYdwfeDkwswE9t8RFnmrNmn3Lr6bf3Abo8ua4GUpFdaEnikfLhrhAfkykWWwyoejN
 const (
 	livePositionRequestGateEnv = "ATHENA_WORM_LIVE_POSITION_REQUEST"
 	livePositionPrivateKeyEnv  = "ATHENA_WORM_PRIVATE_KEY"
 	livePositionBaseURLEnv     = "ATHENA_WORM_API_BASE_URL"
+
+	liveHoldingsGateEnv          = "ATHENA_WORM_LIVE_HOLDINGS"
+	liveHoldingsEventIDEnv       = "ATHENA_WORM_HOLDINGS_EVENT_ID"
+	liveHoldingsEventConditionID = "FrYrqZ65N7QncdNexPoiGh8AzL2drrmWmdgpVHRtDd1g"
+	liveHoldingsLimit            = 100
+	liveHoldingsTimeout          = 45 * time.Second
 
 	liveSpainEventConditionID  = "CiPGTY2jcxDBbicstS9bN7xVynVhT1E6SD3YgTfZ3yDN"
 	liveSpainMarketConditionID = "6iabtaiF6FrGgX11gGSnTcADTM375z2vxt4eXhZtH2kd"
@@ -34,6 +40,104 @@ const (
 	livePositionPostSubmitErrorPolls      = 5
 	livePositionPostSubmitErrorPollPeriod = 3 * time.Second
 )
+
+func TestLiveListMarketHoldings(t *testing.T) {
+	if strings.TrimSpace(os.Getenv(liveHoldingsGateEnv)) != "1" {
+		t.Skipf("set %s=1 to run the live Worm holdings test", liveHoldingsGateEnv)
+	}
+
+	privateKeyText := strings.TrimSpace(os.Getenv(livePositionPrivateKeyEnv))
+	if privateKeyText == "" {
+		t.Fatalf("%s is required for the live Worm holdings test", livePositionPrivateKeyEnv)
+	}
+
+	baseURL := strings.TrimSpace(os.Getenv(livePositionBaseURLEnv))
+	if baseURL == "" {
+		baseURL = DefaultBaseURL
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), liveHoldingsTimeout)
+	defer cancel()
+
+	bootstrapClient, err := NewClient(Config{BaseURL: baseURL})
+	if err != nil {
+		t.Fatalf("create bootstrap client: %v", err)
+	}
+
+	creds, err := bootstrapClient.CreateAPIKeyFromPrivateKey(ctx, privateKeyText)
+	if err != nil {
+		t.Fatalf("create Worm API key from private key: %v", err)
+	}
+	if creds == nil || strings.TrimSpace(creds.APIKey) == "" || strings.TrimSpace(creds.Secret) == "" {
+		t.Fatalf("create Worm API key returned incomplete credentials")
+	}
+
+	client, err := NewClient(Config{
+		BaseURL:   baseURL,
+		APIKey:    creds.APIKey,
+		APISecret: creds.Secret,
+	})
+	if err != nil {
+		t.Fatalf("create authenticated client: %v", err)
+	}
+	defer revokeLivePositionRequestAPIKey(t, baseURL, creds)
+
+	summary, err := client.GetAccountSummary(ctx)
+	if err != nil {
+		t.Fatalf("get Worm account summary for holdings: %v", err)
+	}
+	if summary == nil {
+		t.Fatalf("get Worm account summary for holdings returned nil")
+	}
+	t.Logf("account summary %s", formatLiveAccountSummary(summary))
+
+	eventID := liveHoldingsEventID()
+	event, err := client.GetEvent(ctx, eventID)
+	if err != nil {
+		t.Fatalf("get holdings event %s: %s", eventID, formatWormError(err))
+	}
+	if event == nil {
+		t.Fatalf("get holdings event %s returned nil", eventID)
+	}
+	t.Logf("holdings event %s", formatLiveHoldingsEvent(event))
+	t.Logf("event markets count=%d markets=%s", len(event.Markets), formatLiveHoldingsEventMarkets(event.Markets))
+
+	eventMarkets := liveEventMarketsByConditionID(event)
+	if len(eventMarkets) == 0 {
+		t.Fatalf("holdings event %s returned no markets", eventID)
+	}
+
+	pnl, err := client.GetAccountPnL(ctx, GetAccountPnLOptions{
+		EventConditionID: eventID,
+	})
+	if err != nil {
+		t.Logf("get Worm account PnL for event %s failed: %s", eventID, formatWormError(err))
+	} else if pnl == nil {
+		t.Logf("get Worm account PnL for event %s returned nil", eventID)
+	} else {
+		t.Logf("event account pnl %s", formatLiveAccountPnL(pnl))
+	}
+
+	assets, err := listLiveHoldingsAssets(ctx, t, client, eventMarkets)
+	if err != nil {
+		t.Fatalf("list Worm spot share holdings for event %s: %s", eventID, formatWormError(err))
+	}
+	if len(assets) == 0 {
+		t.Logf("event spot share holdings for event %s: none", eventID)
+	} else {
+		t.Logf("event spot share holdings count=%d holdings=%s", len(assets), formatLiveHoldingsAssetsByMarket(assets, event.Markets))
+	}
+
+	positions, err := listLiveOpenMarginPositions(ctx, t, client, eventMarkets)
+	if err != nil {
+		t.Fatalf("list Worm open margin positions for event %s: %s", eventID, formatWormError(err))
+	}
+	if len(positions) == 0 {
+		t.Logf("event open margin positions for event %s: none", eventID)
+		return
+	}
+	t.Logf("event open margin positions count=%d positions=%s", len(positions), formatLiveMarginPositionsByMarket(positions, event.Markets))
+}
 
 func TestLiveCreateAndSubmitSpainMarginPosition(t *testing.T) {
 	if strings.TrimSpace(os.Getenv(livePositionRequestGateEnv)) != "1" {
@@ -338,6 +442,121 @@ func logLiveAccountDiagnostics(ctx context.Context, t *testing.T, client Client)
 	t.Logf("share assets count=%d assets=%s", len(assets.Assets), formatLiveAccountAssets(assets.Assets))
 }
 
+func liveHoldingsEventID() string {
+	if value := strings.TrimSpace(os.Getenv(liveHoldingsEventIDEnv)); value != "" {
+		return value
+	}
+	return liveHoldingsEventConditionID
+}
+
+func liveEventMarketsByConditionID(event *Event) map[string]MarketSummary {
+	markets := make(map[string]MarketSummary)
+	if event == nil {
+		return markets
+	}
+	for _, market := range event.Markets {
+		conditionID := strings.TrimSpace(market.ConditionID)
+		if conditionID != "" {
+			markets[conditionID] = market
+		}
+	}
+	return markets
+}
+
+func listLiveHoldingsAssets(ctx context.Context, t *testing.T, client Client, eventMarkets map[string]MarketSummary) ([]AccountAsset, error) {
+	t.Helper()
+
+	var filtered []AccountAsset
+	var cursor string
+	for {
+		assets, err := client.ListAccountAssets(ctx, ListAccountAssetsOptions{
+			PageOptions: PageOptions{
+				Limit:  liveHoldingsLimit,
+				Cursor: cursor,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if assets == nil {
+			return nil, fmt.Errorf("account assets response is nil")
+		}
+
+		for _, asset := range assets.Assets {
+			if liveAccountAssetMatchesEvent(asset, eventMarkets) {
+				filtered = append(filtered, asset)
+			}
+		}
+		if assets.Meta.NextCursor == nil || strings.TrimSpace(*assets.Meta.NextCursor) == "" {
+			break
+		}
+		cursor = strings.TrimSpace(*assets.Meta.NextCursor)
+	}
+	return filtered, nil
+}
+
+func listLiveOpenMarginPositions(ctx context.Context, t *testing.T, client Client, eventMarkets map[string]MarketSummary) ([]MarginPosition, error) {
+	t.Helper()
+
+	isClosed := false
+	var filtered []MarginPosition
+	var cursor string
+	for {
+		positions, err := client.ListMarginPositions(ctx, ListMarginPositionsOptions{
+			PageOptions: PageOptions{
+				Limit:  liveHoldingsLimit,
+				Cursor: cursor,
+			},
+			IsClosed: &isClosed,
+			Sort:     "-created",
+		})
+		if err != nil {
+			return nil, err
+		}
+		if positions == nil {
+			return nil, fmt.Errorf("margin positions response is nil")
+		}
+
+		for _, position := range positions.Positions {
+			if liveMarginPositionMatchesEvent(position, eventMarkets) {
+				filtered = append(filtered, position)
+			}
+		}
+		if positions.Meta.NextCursor == nil || strings.TrimSpace(*positions.Meta.NextCursor) == "" {
+			break
+		}
+		cursor = strings.TrimSpace(*positions.Meta.NextCursor)
+	}
+	return filtered, nil
+}
+
+func liveAccountAssetMatchesEvent(asset AccountAsset, eventMarkets map[string]MarketSummary) bool {
+	conditionID := liveAccountAssetMarketConditionID(asset)
+	if conditionID == "" {
+		return false
+	}
+	_, ok := eventMarkets[conditionID]
+	return ok
+}
+
+func liveAccountAssetMarketConditionID(asset AccountAsset) string {
+	if conditionID := strings.TrimSpace(asset.Position.Market.ConditionID); conditionID != "" {
+		return conditionID
+	}
+	symbol := strings.TrimSpace(asset.Token.Symbol)
+	for _, suffix := range []string{"-LPT", "-SPT"} {
+		if strings.HasSuffix(symbol, suffix) {
+			return strings.TrimSuffix(symbol, suffix)
+		}
+	}
+	return ""
+}
+
+func liveMarginPositionMatchesEvent(position MarginPosition, eventMarkets map[string]MarketSummary) bool {
+	_, ok := eventMarkets[strings.TrimSpace(position.Market.ConditionID)]
+	return ok
+}
+
 func requireNoLiveActivePositionRequests(ctx context.Context, t *testing.T, client Client, isYes bool, leverage float64) {
 	t.Helper()
 
@@ -619,6 +838,241 @@ func formatLiveAccountAsset(asset AccountAsset) string {
 		asset.Value.USDT,
 		asset.Value.Basis,
 	)
+}
+
+func formatLiveHoldingsEvent(event *Event) string {
+	if event == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf(
+		"condition_id=%s title=%q category=%s created=%s markets=%d",
+		event.ConditionID,
+		event.Title,
+		event.Category,
+		optionalInt64(event.Created),
+		len(event.Markets),
+	)
+}
+
+func formatLiveHoldingsEventMarkets(markets []MarketSummary) string {
+	if len(markets) == 0 {
+		return "[]"
+	}
+
+	formatted := make([]string, 0, len(markets))
+	for _, market := range markets {
+		formatted = append(formatted, formatLiveHoldingsMarketSummary(market))
+	}
+	return "[" + strings.Join(formatted, " ") + "]"
+}
+
+func formatLiveHoldingsMarketSummary(market MarketSummary) string {
+	return fmt.Sprintf(
+		"{condition_id=%s title=%q state=%s margin_enabled=%t last_trade_price=%s}",
+		market.ConditionID,
+		market.Title,
+		market.State,
+		market.MarginEnabled,
+		optionalString(market.LastTradePrice),
+	)
+}
+
+func formatLiveAccountPnL(pnl *AccountPnL) string {
+	if pnl == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf(
+		"margin_settlements=%s margin_unrealized=%s redeems_funds=%s active_assets_value=%s creator_fees=%s total=%s",
+		pnl.MarginPositionSettlementsPnL,
+		pnl.MarginPositionsUnrealizedPnL,
+		pnl.RedeemsFunds,
+		pnl.ActiveAssetsValue,
+		pnl.CreatorFees,
+		pnl.TotalPnL,
+	)
+}
+
+func formatLiveHoldingsAssets(assets []AccountAsset) string {
+	if len(assets) == 0 {
+		return "[]"
+	}
+
+	formatted := make([]string, 0, len(assets))
+	for _, asset := range assets {
+		formatted = append(formatted, formatLiveHoldingsAsset(asset))
+	}
+	return "[" + strings.Join(formatted, " ") + "]"
+}
+
+func formatLiveHoldingsAssetsByMarket(assets []AccountAsset, markets []MarketSummary) string {
+	if len(assets) == 0 {
+		return "[]"
+	}
+
+	groups := make(map[string][]AccountAsset)
+	for _, asset := range assets {
+		conditionID := liveAccountAssetMarketConditionID(asset)
+		groups[conditionID] = append(groups[conditionID], asset)
+	}
+
+	marketByID := liveMarketSummariesByConditionID(markets)
+	formatted := make([]string, 0, len(groups))
+	for _, conditionID := range orderedLiveHoldingMarketIDs(groups, markets) {
+		market := marketByID[conditionID]
+		formatted = append(formatted, fmt.Sprintf(
+			"{market_condition_id=%s market_title=%q assets=%s}",
+			conditionID,
+			market.Title,
+			formatLiveHoldingsAssets(groups[conditionID]),
+		))
+	}
+	return "[" + strings.Join(formatted, " ") + "]"
+}
+
+func formatLiveHoldingsAsset(asset AccountAsset) string {
+	return fmt.Sprintf(
+		"{side=%s outcome=%q final=%t available=%s locked=%s total=%s value_usdt=%s value_basis=%s avg_trade_price=%s token=%s token_address=%s created=%s}",
+		formatLiveSide(asset.Position.IsYes),
+		asset.Position.OutcomeText,
+		asset.Position.IsFinal,
+		asset.Amounts.Available,
+		asset.Amounts.Locked,
+		asset.Amounts.Total,
+		asset.Value.USDT,
+		asset.Value.Basis,
+		asset.Position.AvgTradePrice,
+		asset.Token.Symbol,
+		optionalString(asset.Token.Address),
+		optionalInt64(asset.Created),
+	)
+}
+
+func formatLiveMarginPositions(positions []MarginPosition) string {
+	if len(positions) == 0 {
+		return "[]"
+	}
+
+	formatted := make([]string, 0, len(positions))
+	for _, position := range positions {
+		formatted = append(formatted, formatLiveMarginPosition(position))
+	}
+	return "[" + strings.Join(formatted, " ") + "]"
+}
+
+func formatLiveMarginPositionsByMarket(positions []MarginPosition, markets []MarketSummary) string {
+	if len(positions) == 0 {
+		return "[]"
+	}
+
+	groups := make(map[string][]MarginPosition)
+	for _, position := range positions {
+		conditionID := strings.TrimSpace(position.Market.ConditionID)
+		groups[conditionID] = append(groups[conditionID], position)
+	}
+
+	marketByID := liveMarketSummariesByConditionID(markets)
+	formatted := make([]string, 0, len(groups))
+	for _, conditionID := range orderedLivePositionMarketIDs(groups, markets) {
+		market := marketByID[conditionID]
+		formatted = append(formatted, fmt.Sprintf(
+			"{market_condition_id=%s market_title=%q positions=%s}",
+			conditionID,
+			market.Title,
+			formatLiveMarginPositions(groups[conditionID]),
+		))
+	}
+	return "[" + strings.Join(formatted, " ") + "]"
+}
+
+func formatLiveMarginPosition(position MarginPosition) string {
+	return fmt.Sprintf(
+		"{pubkey=%s request=%s side=%s leverage=%s shares=%s avg_entry=%s liquidation=%s unrealized_pnl=%s realized_pnl=%s user_liquidity=%s total_liquidity=%s liquidated=%t claimed=%t tp_sl=%s created=%s market_title=%q}",
+		position.Pubkey,
+		optionalString(position.PositionRequestPubkey),
+		formatLiveSide(position.IsYes),
+		position.Leverage,
+		position.TotalShares,
+		position.AvgEntryPrice,
+		position.LiquidationPrice,
+		optionalString(position.UnrealizedPnL),
+		position.RealizedPnL,
+		position.UserLiquidity,
+		position.TotalLiquidity,
+		position.IsLiquidated,
+		position.IsClaimed,
+		formatLiveTPSL(position.TPSL),
+		optionalInt64(position.Created),
+		position.Market.Title,
+	)
+}
+
+func formatLiveTPSL(tpsl *TPSL) string {
+	if tpsl == nil {
+		return "-"
+	}
+	return fmt.Sprintf(
+		"{state=%s take_profit=%s stop_loss=%s trigger_type=%s triggered_price=%s triggered_at=%s}",
+		tpsl.State,
+		optionalString(tpsl.TakeProfitPrice),
+		optionalString(tpsl.StopLossPrice),
+		optionalString(tpsl.TriggerType),
+		optionalString(tpsl.TriggeredPrice),
+		optionalInt64(tpsl.TriggeredAt),
+	)
+}
+
+func formatLiveSide(isYes bool) string {
+	if isYes {
+		return "YES"
+	}
+	return "NO"
+}
+
+func liveMarketSummariesByConditionID(markets []MarketSummary) map[string]MarketSummary {
+	byID := make(map[string]MarketSummary)
+	for _, market := range markets {
+		if conditionID := strings.TrimSpace(market.ConditionID); conditionID != "" {
+			byID[conditionID] = market
+		}
+	}
+	return byID
+}
+
+func orderedLiveHoldingMarketIDs(groups map[string][]AccountAsset, markets []MarketSummary) []string {
+	seen := make(map[string]bool)
+	ordered := make([]string, 0, len(groups))
+	for _, market := range markets {
+		conditionID := strings.TrimSpace(market.ConditionID)
+		if len(groups[conditionID]) > 0 {
+			ordered = append(ordered, conditionID)
+			seen[conditionID] = true
+		}
+	}
+	return append(ordered, sortedLiveRemainingMarketIDs(groups, seen)...)
+}
+
+func orderedLivePositionMarketIDs(groups map[string][]MarginPosition, markets []MarketSummary) []string {
+	seen := make(map[string]bool)
+	ordered := make([]string, 0, len(groups))
+	for _, market := range markets {
+		conditionID := strings.TrimSpace(market.ConditionID)
+		if len(groups[conditionID]) > 0 {
+			ordered = append(ordered, conditionID)
+			seen[conditionID] = true
+		}
+	}
+	return append(ordered, sortedLiveRemainingMarketIDs(groups, seen)...)
+}
+
+func sortedLiveRemainingMarketIDs[T any](groups map[string][]T, seen map[string]bool) []string {
+	remaining := make([]string, 0, len(groups))
+	for conditionID := range groups {
+		if !seen[conditionID] {
+			remaining = append(remaining, conditionID)
+		}
+	}
+	sort.Strings(remaining)
+	return remaining
 }
 
 func formatLiveMessageFingerprint(message string) string {
