@@ -287,6 +287,7 @@ type ListPositionRequestsOptions struct {
 type ListMarginPositionsOptions struct {
 	PageOptions
 	MarketConditionID string
+	EventConditionID  string
 	IsClosed          *bool
 	Sort              string
 }
@@ -1193,6 +1194,7 @@ func (c *clientImpl) ListPositionRequests(ctx context.Context, options ListPosit
 func (c *clientImpl) ListMarginPositions(ctx context.Context, options ListMarginPositionsOptions) (*ListMarginPositionsResponse, error) {
 	query := options.pageValues()
 	setString(query, "market_condition_id", options.MarketConditionID)
+	setString(query, "event_condition_id", options.EventConditionID)
 	setBoolPtr(query, "is_closed", options.IsClosed)
 	setString(query, "sort", options.Sort)
 	var data []MarginPosition

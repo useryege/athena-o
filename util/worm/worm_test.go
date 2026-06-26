@@ -26,6 +26,10 @@ const (
 	liveHoldingsLimit            = 100
 	liveHoldingsTimeout          = 45 * time.Second
 
+	liveMarginPositionsGateEnv          = "ATHENA_WORM_LIVE_MARGIN_POSITIONS"
+	liveMarginPositionsEventIDEnv       = "ATHENA_WORM_MARGIN_POSITIONS_EVENT_ID"
+	liveMarginPositionsEventConditionID = "41g5aWdewjh43vjSwubfqTP7AZDXyw1yc2MfJuQVCnqk"
+
 	liveSpainEventConditionID  = "CiPGTY2jcxDBbicstS9bN7xVynVhT1E6SD3YgTfZ3yDN"
 	liveSpainMarketConditionID = "6iabtaiF6FrGgX11gGSnTcADTM375z2vxt4eXhZtH2kd"
 	liveSpainFunds             = "5"
@@ -131,6 +135,80 @@ func TestLiveListMarketHoldings(t *testing.T) {
 	positions, err := listLiveOpenMarginPositions(ctx, t, client, eventMarkets)
 	if err != nil {
 		t.Fatalf("list Worm open margin positions for event %s: %s", eventID, formatWormError(err))
+	}
+	if len(positions) == 0 {
+		t.Logf("event open margin positions for event %s: none", eventID)
+		return
+	}
+	t.Logf("event open margin positions count=%d positions=%s", len(positions), formatLiveMarginPositionsByMarket(positions, event.Markets))
+}
+
+func TestLiveListEventMarginPositions(t *testing.T) {
+	if strings.TrimSpace(os.Getenv(liveMarginPositionsGateEnv)) != "1" {
+		t.Skipf("set %s=1 to run the live Worm event margin positions test", liveMarginPositionsGateEnv)
+	}
+
+	privateKeyText := strings.TrimSpace(os.Getenv(livePositionPrivateKeyEnv))
+	if privateKeyText == "" {
+		t.Fatalf("%s is required for the live Worm event margin positions test", livePositionPrivateKeyEnv)
+	}
+
+	baseURL := strings.TrimSpace(os.Getenv(livePositionBaseURLEnv))
+	if baseURL == "" {
+		baseURL = DefaultBaseURL
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), liveHoldingsTimeout)
+	defer cancel()
+
+	bootstrapClient, err := NewClient(Config{BaseURL: baseURL})
+	if err != nil {
+		t.Fatalf("create bootstrap client: %v", err)
+	}
+
+	creds, err := bootstrapClient.CreateAPIKeyFromPrivateKey(ctx, privateKeyText)
+	if err != nil {
+		t.Fatalf("create Worm API key from private key: %v", err)
+	}
+	if creds == nil || strings.TrimSpace(creds.APIKey) == "" || strings.TrimSpace(creds.Secret) == "" {
+		t.Fatalf("create Worm API key returned incomplete credentials")
+	}
+
+	client, err := NewClient(Config{
+		BaseURL:   baseURL,
+		APIKey:    creds.APIKey,
+		APISecret: creds.Secret,
+	})
+	if err != nil {
+		t.Fatalf("create authenticated client: %v", err)
+	}
+	defer revokeLivePositionRequestAPIKey(t, baseURL, creds)
+
+	eventID := liveMarginPositionsEventID()
+	event, err := client.GetEvent(ctx, eventID)
+	if err != nil {
+		t.Fatalf("get margin positions event %s: %s", eventID, formatWormError(err))
+	}
+	if event == nil {
+		t.Fatalf("get margin positions event %s returned nil", eventID)
+	}
+	t.Logf("margin positions event %s", formatLiveHoldingsEvent(event))
+	t.Logf("event markets count=%d markets=%s", len(event.Markets), formatLiveHoldingsEventMarkets(event.Markets))
+
+	eventMarkets := liveEventMarketsByConditionID(event)
+	if len(eventMarkets) == 0 {
+		t.Fatalf("margin positions event %s returned no markets", eventID)
+	}
+
+	positions, err := listLiveEventMarginPositions(ctx, t, client, eventID)
+	if err != nil {
+		t.Fatalf("list Worm open margin positions for event %s: %s", eventID, formatWormError(err))
+	}
+	for _, position := range positions {
+		conditionID := strings.TrimSpace(position.Market.ConditionID)
+		if _, ok := eventMarkets[conditionID]; !ok {
+			t.Fatalf("event %s margin positions response included market %q outside event markets", eventID, conditionID)
+		}
 	}
 	if len(positions) == 0 {
 		t.Logf("event open margin positions for event %s: none", eventID)
@@ -449,6 +527,13 @@ func liveHoldingsEventID() string {
 	return liveHoldingsEventConditionID
 }
 
+func liveMarginPositionsEventID() string {
+	if value := strings.TrimSpace(os.Getenv(liveMarginPositionsEventIDEnv)); value != "" {
+		return value
+	}
+	return liveMarginPositionsEventConditionID
+}
+
 func liveEventMarketsByConditionID(event *Event) map[string]MarketSummary {
 	markets := make(map[string]MarketSummary)
 	if event == nil {
@@ -528,6 +613,38 @@ func listLiveOpenMarginPositions(ctx context.Context, t *testing.T, client Clien
 		cursor = strings.TrimSpace(*positions.Meta.NextCursor)
 	}
 	return filtered, nil
+}
+
+func listLiveEventMarginPositions(ctx context.Context, t *testing.T, client Client, eventID string) ([]MarginPosition, error) {
+	t.Helper()
+
+	isClosed := false
+	var positions []MarginPosition
+	var cursor string
+	for {
+		resp, err := client.ListMarginPositions(ctx, ListMarginPositionsOptions{
+			PageOptions: PageOptions{
+				Limit:  liveHoldingsLimit,
+				Cursor: cursor,
+			},
+			EventConditionID: eventID,
+			IsClosed:         &isClosed,
+			Sort:             "-created",
+		})
+		if err != nil {
+			return nil, err
+		}
+		if resp == nil {
+			return nil, fmt.Errorf("margin positions response is nil")
+		}
+
+		positions = append(positions, resp.Positions...)
+		if resp.Meta.NextCursor == nil || strings.TrimSpace(*resp.Meta.NextCursor) == "" {
+			break
+		}
+		cursor = strings.TrimSpace(*resp.Meta.NextCursor)
+	}
+	return positions, nil
 }
 
 func liveAccountAssetMatchesEvent(asset AccountAsset, eventMarkets map[string]MarketSummary) bool {
