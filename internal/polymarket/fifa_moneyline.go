@@ -19,6 +19,8 @@ const (
 	fifaOutcomeHome = "home"
 	fifaOutcomeDraw = "draw"
 	fifaOutcomeAway = "away"
+	clobSideBuy     = "BUY"
+	clobSideSell    = "SELL"
 )
 
 type fifaTeam struct {
@@ -53,12 +55,8 @@ func (s *Service) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *apic
 	if err != nil {
 		return nil, err
 	}
-	midpoints, err := s.clobClient.GetMidpointPrices(ctx, tokenIDs)
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "failed to query polymarket clob midpoint prices: %v", err)
-	}
-	for _, option := range options {
-		option.MidPrice = parseFloatOrZero(midpoints[option.YesTokenID])
+	if err := s.hydrateFIFAMoneylineQuotes(ctx, options, tokenIDs); err != nil {
+		return nil, err
 	}
 
 	fetchedAt := s.nowUnix()
@@ -126,7 +124,8 @@ func (s *Service) getPolymarketEvent(ctx context.Context, eventRef string) (*uti
 
 func buildFIFAMoneylineOptions(event *utilpolymarket.Event, teams []fifaTeam) ([]*v1alpha1.PolymarketFIFAMoneylineOptionItem, []string, error) {
 	optionsByKey := make(map[string]*v1alpha1.PolymarketFIFAMoneylineOptionItem, 3)
-	tokenIDs := make([]string, 0, 3)
+	tokenIDs := make([]string, 0, 6)
+	tokenIDSeen := make(map[string]bool, 6)
 	for _, market := range event.Markets {
 		if strings.ToLower(strings.TrimSpace(stringValue(market.SportsMarketType))) != "moneyline" {
 			continue
@@ -143,7 +142,8 @@ func buildFIFAMoneylineOptions(event *utilpolymarket.Event, teams []fifaTeam) ([
 			continue
 		}
 		optionsByKey[outcomeKey] = option
-		tokenIDs = append(tokenIDs, option.YesTokenID)
+		tokenIDs = appendFIFAMoneylineTokenID(tokenIDs, tokenIDSeen, option.Yes.TokenID)
+		tokenIDs = appendFIFAMoneylineTokenID(tokenIDs, tokenIDSeen, option.No.TokenID)
 	}
 
 	ordered := make([]*v1alpha1.PolymarketFIFAMoneylineOptionItem, 0, 3)
@@ -160,7 +160,6 @@ func buildFIFAMoneylineOptions(event *utilpolymarket.Event, teams []fifaTeam) ([
 func fifaMoneylineOption(market utilpolymarket.Market, teams []fifaTeam, outcomeKey string) (*v1alpha1.PolymarketFIFAMoneylineOptionItem, bool) {
 	tokenIDs := parseHotMarketStringList(market.ClobTokenIDs)
 	outcomes := parseHotMarketStringList(market.Outcomes)
-	prices := parseHotMarketStringList(market.OutcomePrices)
 	yesIndex := 0
 	for i, outcome := range outcomes {
 		if strings.EqualFold(strings.TrimSpace(outcome), "yes") {
@@ -179,10 +178,9 @@ func fifaMoneylineOption(market utilpolymarket.Market, teams []fifaTeam, outcome
 			break
 		}
 	}
-
-	outcomePrice := 0.0
-	if yesIndex < len(prices) {
-		outcomePrice = parseFloatOrZero(prices[yesIndex])
+	yesTokenID := strings.TrimSpace(tokenIDs[yesIndex])
+	if noTokenID == "" {
+		return nil, false
 	}
 
 	return &v1alpha1.PolymarketFIFAMoneylineOptionItem{
@@ -192,19 +190,72 @@ func fifaMoneylineOption(market utilpolymarket.Market, teams []fifaTeam, outcome
 		MarketSlug:      strings.TrimSpace(stringValue(market.Slug)),
 		Question:        strings.TrimSpace(stringValue(market.Question)),
 		ConditionID:     strings.TrimSpace(stringValue(market.ConditionID)),
-		YesTokenID:      strings.TrimSpace(tokenIDs[yesIndex]),
-		NoTokenID:       noTokenID,
-		OutcomePrice:    outcomePrice,
-		BestBid:         float64Value(market.BestBid),
-		BestAsk:         float64Value(market.BestAsk),
-		LastTradePrice:  float64Value(market.LastTradePrice),
-		Spread:          float64Value(market.Spread),
+		Yes:             &v1alpha1.PolymarketFIFAMoneylineDirectionItem{TokenID: yesTokenID},
+		No:              &v1alpha1.PolymarketFIFAMoneylineDirectionItem{TokenID: noTokenID},
 		OrderMinSize:    float64Value(market.OrderMinSize),
 		TickSize:        float64Value(market.OrderPriceMinTickSize),
 		EnableOrderBook: boolValue(market.EnableOrderBook),
 		AcceptingOrders: boolValue(market.AcceptingOrders),
 		NegRisk:         boolValue(market.NegRisk),
 	}, true
+}
+
+func appendFIFAMoneylineTokenID(tokenIDs []string, seen map[string]bool, tokenID string) []string {
+	tokenID = strings.TrimSpace(tokenID)
+	if tokenID == "" || seen[tokenID] {
+		return tokenIDs
+	}
+	seen[tokenID] = true
+	return append(tokenIDs, tokenID)
+}
+
+func (s *Service) hydrateFIFAMoneylineQuotes(ctx context.Context, options []*v1alpha1.PolymarketFIFAMoneylineOptionItem, tokenIDs []string) error {
+	if len(tokenIDs) == 0 {
+		return nil
+	}
+	midpoints, err := s.clobClient.GetMidpointPrices(ctx, tokenIDs)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "failed to query polymarket clob midpoint prices: %v", err)
+	}
+
+	priceTokenIDs := make([]string, 0, len(tokenIDs)*2)
+	priceSides := make([]string, 0, len(tokenIDs)*2)
+	spreadRequests := make([]utilpolymarket.CLOBBookRequest, 0, len(tokenIDs))
+	for _, tokenID := range tokenIDs {
+		priceTokenIDs = append(priceTokenIDs, tokenID, tokenID)
+		priceSides = append(priceSides, clobSideBuy, clobSideSell)
+		spreadRequests = append(spreadRequests, utilpolymarket.CLOBBookRequest{TokenID: tokenID})
+	}
+
+	prices, err := s.clobClient.GetMarketPrices(ctx, priceTokenIDs, priceSides)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "failed to query polymarket clob market prices: %v", err)
+	}
+	spreads, err := s.clobClient.GetSpreads(ctx, spreadRequests)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "failed to query polymarket clob spreads: %v", err)
+	}
+
+	for _, option := range options {
+		applyFIFAMoneylineQuote(option.Yes, midpoints, prices, spreads)
+		applyFIFAMoneylineQuote(option.No, midpoints, prices, spreads)
+	}
+	return nil
+}
+
+func applyFIFAMoneylineQuote(
+	item *v1alpha1.PolymarketFIFAMoneylineDirectionItem,
+	midpoints map[string]string,
+	prices map[string]map[string]string,
+	spreads map[string]string,
+) {
+	if item == nil {
+		return
+	}
+	item.MidPrice = parseFloatOrZero(midpoints[item.TokenID])
+	item.BestBid = parseFloatOrZero(prices[item.TokenID][clobSideBuy])
+	item.BestAsk = parseFloatOrZero(prices[item.TokenID][clobSideSell])
+	item.Spread = parseFloatOrZero(spreads[item.TokenID])
 }
 
 func fifaMoneylineOutcomeKey(market utilpolymarket.Market, teams []fifaTeam) string {

@@ -8,12 +8,13 @@ import {services} from '../shared/services';
 import {
     GetPolymarketFIFAMoneylineEventResult,
     PolymarketFIFAEventConfig,
+    PolymarketFIFAMoneylineDirectionItem,
     PolymarketFIFAMoneylineEventItem,
     PolymarketFIFAMoneylineOptionItem,
     PolymarketFIFAWalletBalanceItem
 } from '../shared/services/polymarket-service';
 import {GetWormEventResult, WormMarketItem} from '../shared/services/worm-service';
-import {boolTag, fmt, fmtNumber} from './shared';
+import {boolTag, fmt} from './shared';
 
 const walletRefreshIntervalMs = 3000;
 const eventRefreshIntervalMs = 1000;
@@ -111,45 +112,40 @@ const optionTitle = (option: PolymarketFIFAMoneylineOptionItem) => {
     return option.outcomeLabel || option.outcomeKey;
 };
 
-const FIFAMoneylineOptionCard = (props: {option: PolymarketFIFAMoneylineOptionItem; related?: boolean}) => {
+const FIFAMoneylineDirectionPanel = (props: {label: 'YES' | 'NO'; item: PolymarketFIFAMoneylineDirectionItem; selected?: boolean}) => (
+    <section className={`fifa-moneyline-direction${props.selected ? ' fifa-moneyline-direction--selected' : ''}`}>
+        <div className='fifa-moneyline-direction__header'>
+            <Tag color={props.label === 'YES' ? 'blue' : 'green'}>{props.label}</Tag>
+        </div>
+        <MetricRow
+            items={[
+                {label: 'Mid', value: price(props.item?.midPrice)},
+                {label: 'Bid', value: price(props.item?.bestBid)},
+                {label: 'Ask', value: price(props.item?.bestAsk)},
+                {label: 'Spread', value: price(props.item?.spread)}
+            ]}
+        />
+        <div className='fifa-moneyline-direction__token'>
+            <span className='fifa-moneyline-direction__token-label'>Token</span>
+            <span className='fifa-moneyline-direction__token-value'>
+                <FIFAInfoValue value={props.item?.tokenId || '-'} copyText={props.item?.tokenId} />
+            </span>
+        </div>
+    </section>
+);
+
+const FIFAMoneylineOptionCard = (props: {option: PolymarketFIFAMoneylineOptionItem; selectedNo?: boolean}) => {
     const option = props.option;
     return (
-        <Card className={`fifa-moneyline-option${props.related ? ' fifa-moneyline-option--related' : ''}`} size='small'>
+        <Card className='fifa-moneyline-option' size='small'>
             <div className='fifa-moneyline-option__header'>
                 <Typography.Title level={5}>{optionTitle(option)}</Typography.Title>
                 <Tag color={outcomeTone(option)}>{option.enableOrderBook && option.acceptingOrders ? 'Open' : 'Unavailable'}</Tag>
             </div>
-            <MetricRow
-                items={[
-                    {label: 'Mid', value: price(option.midPrice)},
-                    {label: 'Bid', value: price(option.bestBid)},
-                    {label: 'Ask', value: price(option.bestAsk)},
-                    {label: 'Spread', value: price(option.spread)}
-                ]}
-            />
-            <Collapse
-                bordered={false}
-                className='fifa-card-collapse'
-                items={[
-                    {
-                        key: 'details',
-                        label: 'Details',
-                        children: (
-                            <FIFAInfoGrid
-                                columns={1}
-                                items={[
-                                    {label: 'Market', value: option.marketSlug, copyText: option.marketSlug},
-                                    {label: 'Condition', value: option.conditionId, copyText: option.conditionId},
-                                    {label: 'Yes Token', value: option.yesTokenId, copyText: option.yesTokenId},
-                                    {label: 'Min Size', value: fmtNumber(option.orderMinSize)},
-                                    {label: 'Tick', value: price(option.tickSize)},
-                                    {label: 'Neg Risk', value: boolTag(option.negRisk)}
-                                ]}
-                            />
-                        )
-                    }
-                ]}
-            />
+            <div className='fifa-moneyline-option__directions'>
+                <FIFAMoneylineDirectionPanel label='YES' item={option.yes} />
+                <FIFAMoneylineDirectionPanel label='NO' item={option.no} selected={props.selectedNo} />
+            </div>
         </Card>
     );
 };
@@ -759,7 +755,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                                 <Row className='fifa-moneyline-options' gutter={[12, 12]}>
                                     {item.options.map(option => (
                                         <Col key={option.outcomeKey} span={8}>
-                                            <FIFAMoneylineOptionCard option={option} related={Boolean(selectedOutcomeKey && option.outcomeKey !== selectedOutcomeKey)} />
+                                            <FIFAMoneylineOptionCard option={option} selectedNo={selectedOutcomeKey === option.outcomeKey} />
                                         </Col>
                                     ))}
                                 </Row>

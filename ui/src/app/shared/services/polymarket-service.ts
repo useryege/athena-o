@@ -158,6 +158,14 @@ export interface PolymarketFIFAEventConfig {
     eventRef: string;
 }
 
+export interface PolymarketFIFAMoneylineDirectionItem {
+    tokenId: string;
+    midPrice?: number;
+    bestBid?: number;
+    bestAsk?: number;
+    spread?: number;
+}
+
 export interface PolymarketFIFAMoneylineOptionItem {
     outcomeKey: string;
     outcomeLabel: string;
@@ -165,14 +173,8 @@ export interface PolymarketFIFAMoneylineOptionItem {
     marketSlug: string;
     question: string;
     conditionId: string;
-    yesTokenId: string;
-    noTokenId?: string;
-    outcomePrice?: number;
-    midPrice?: number;
-    bestBid?: number;
-    bestAsk?: number;
-    lastTradePrice?: number;
-    spread?: number;
+    yes: PolymarketFIFAMoneylineDirectionItem;
+    no: PolymarketFIFAMoneylineDirectionItem;
     orderMinSize?: number;
     tickSize?: number;
     enableOrderBook?: boolean;
@@ -381,6 +383,14 @@ const normalizeFIFAEventConfig = (item: any): PolymarketFIFAEventConfig => ({
     eventRef: readString(item, 'eventRef', 'event_ref')
 });
 
+const normalizeFIFAMoneylineDirection = (item: any): PolymarketFIFAMoneylineDirectionItem => ({
+    tokenId: readString(item, 'tokenId', 'token_id'),
+    midPrice: readNumber(item, 'midPrice', 'mid_price'),
+    bestBid: readNumber(item, 'bestBid', 'best_bid'),
+    bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
+    spread: readNumber(item, 'spread')
+});
+
 const normalizeFIFAMoneylineOption = (item: any): PolymarketFIFAMoneylineOptionItem => ({
     outcomeKey: readString(item, 'outcomeKey', 'outcome_key'),
     outcomeLabel: readString(item, 'outcomeLabel', 'outcome_label'),
@@ -388,14 +398,8 @@ const normalizeFIFAMoneylineOption = (item: any): PolymarketFIFAMoneylineOptionI
     marketSlug: readString(item, 'marketSlug', 'market_slug'),
     question: readString(item, 'question'),
     conditionId: readString(item, 'conditionId', 'condition_id'),
-    yesTokenId: readString(item, 'yesTokenId', 'yes_token_id'),
-    noTokenId: readString(item, 'noTokenId', 'no_token_id'),
-    outcomePrice: readNumber(item, 'outcomePrice', 'outcome_price'),
-    midPrice: readNumber(item, 'midPrice', 'mid_price'),
-    bestBid: readNumber(item, 'bestBid', 'best_bid'),
-    bestAsk: readNumber(item, 'bestAsk', 'best_ask'),
-    lastTradePrice: readNumber(item, 'lastTradePrice', 'last_trade_price'),
-    spread: readNumber(item, 'spread'),
+    yes: normalizeFIFAMoneylineDirection(readValue(item, 'yes')),
+    no: normalizeFIFAMoneylineDirection(readValue(item, 'no')),
     orderMinSize: readNumber(item, 'orderMinSize', 'order_min_size'),
     tickSize: readNumber(item, 'tickSize', 'tick_size'),
     enableOrderBook: readBoolean(item, 'enableOrderBook', 'enable_order_book'),

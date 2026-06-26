@@ -294,11 +294,34 @@ func (c *clobClientImpl) GetMarketPrices(ctx context.Context, tokenIDs []string,
 }
 
 func (c *clobClientImpl) GetMarketPricesByBody(ctx context.Context, requests []CLOBBookRequest) (map[string]map[string]string, error) {
-	out := map[string]map[string]string{}
-	if err := c.doJSON(ctx, http.MethodPost, "/prices", nil, requests, &out); err != nil {
+	raw := map[string]map[string]json.RawMessage{}
+	if err := c.doJSON(ctx, http.MethodPost, "/prices", nil, requests, &raw); err != nil {
 		return nil, err
 	}
+	out := make(map[string]map[string]string, len(raw))
+	for tokenID, sides := range raw {
+		out[tokenID] = make(map[string]string, len(sides))
+		for side, value := range sides {
+			out[tokenID][side] = rawJSONNumberString(value)
+		}
+	}
 	return out, nil
+}
+
+func rawJSONNumberString(value json.RawMessage) string {
+	var text string
+	if err := json.Unmarshal(value, &text); err == nil {
+		return text
+	}
+	var number json.Number
+	if err := json.Unmarshal(value, &number); err == nil {
+		return number.String()
+	}
+	var numeric float64
+	if err := json.Unmarshal(value, &numeric); err == nil {
+		return strconv.FormatFloat(numeric, 'f', -1, 64)
+	}
+	return ""
 }
 
 func (c *clobClientImpl) GetLastTradePrice(ctx context.Context, tokenID string) (*CLOBLastTradePrice, error) {

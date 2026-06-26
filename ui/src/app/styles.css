@@ -1751,18 +1751,6 @@ body[data-theme='dark'] .metric {
     border-radius: 8px;
     background: var(--athena-panel);
     box-shadow: var(--athena-shadow-tight);
-    transition:
-        background-color 160ms ease,
-        border-color 160ms ease,
-        box-shadow 160ms ease;
-}
-
-.fifa-moneyline-option--related {
-    border-color: color-mix(in srgb, var(--athena-green) 70%, var(--athena-border));
-    background: linear-gradient(135deg, color-mix(in srgb, var(--athena-green) 12%, transparent), transparent 58%), var(--athena-panel);
-    box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--athena-green) 30%, transparent),
-        0 14px 34px rgba(25, 169, 116, 0.16);
 }
 
 .fifa-moneyline-option .ant-card-body {
@@ -1782,4 +1770,66 @@ body[data-theme='dark'] .metric {
     margin: 0;
     font-size: 15px;
     font-weight: 850;
+}
+
+.fifa-moneyline-option__directions {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.fifa-moneyline-direction {
+    display: grid;
+    gap: 9px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-panel-solid) 92%, transparent);
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.fifa-moneyline-direction--selected {
+    border-color: color-mix(in srgb, var(--athena-green) 72%, var(--athena-border));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--athena-green) 13%, transparent), transparent 58%),
+        color-mix(in srgb, var(--athena-panel-solid) 92%, transparent);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--athena-green) 32%, transparent),
+        0 12px 28px rgba(25, 169, 116, 0.16);
+}
+
+.fifa-moneyline-direction__header {
+    min-height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.fifa-moneyline-direction__token {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 8px 9px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 42%, var(--athena-panel-solid));
+}
+
+.fifa-moneyline-direction__token-label {
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.fifa-moneyline-direction__token-value {
+    min-width: 0;
+    color: var(--athena-text);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.25;
 }

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-857-ge3c2dea-dirty"
+    "version": "v1.0.0-872-g2b83ed7-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3239,6 +3239,30 @@
         }
       }
     },
+    "v1alpha1PolymarketFIFAMoneylineDirectionItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "midPrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokenId": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1PolymarketFIFAMoneylineEventItem": {
       "type": "object",
       "properties": {
@@ -3304,23 +3328,11 @@
         "acceptingOrders": {
           "type": "boolean"
         },
-        "bestAsk": {
-          "type": "number",
-          "format": "double"
-        },
-        "bestBid": {
-          "type": "number",
-          "format": "double"
-        },
         "conditionId": {
           "type": "string"
         },
         "enableOrderBook": {
           "type": "boolean"
-        },
-        "lastTradePrice": {
-          "type": "number",
-          "format": "double"
         },
         "marketId": {
           "type": "string"
@@ -3328,15 +3340,11 @@
         "marketSlug": {
           "type": "string"
         },
-        "midPrice": {
-          "type": "number",
-          "format": "double"
-        },
         "negRisk": {
           "type": "boolean"
         },
-        "noTokenId": {
-          "type": "string"
+        "no": {
+          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineDirectionItem"
         },
         "orderMinSize": {
           "type": "number",
@@ -3348,23 +3356,15 @@
         "outcomeLabel": {
           "type": "string"
         },
-        "outcomePrice": {
-          "type": "number",
-          "format": "double"
-        },
         "question": {
           "type": "string"
-        },
-        "spread": {
-          "type": "number",
-          "format": "double"
         },
         "tickSize": {
           "type": "number",
           "format": "double"
         },
-        "yesTokenId": {
-          "type": "string"
+        "yes": {
+          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineDirectionItem"
         }
       }
     },

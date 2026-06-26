@@ -80,6 +80,18 @@ message PolymarketFIFAEventConfig {
   optional string eventRef = 2;
 }
 
+message PolymarketFIFAMoneylineDirectionItem {
+  optional string tokenId = 1;
+
+  optional double midPrice = 2;
+
+  optional double bestBid = 3;
+
+  optional double bestAsk = 4;
+
+  optional double spread = 5;
+}
+
 message PolymarketFIFAMoneylineEventItem {
   optional string eventId = 1;
 
@@ -127,31 +139,19 @@ message PolymarketFIFAMoneylineOptionItem {
 
   optional string conditionId = 6;
 
-  optional string yesTokenId = 7;
+  optional PolymarketFIFAMoneylineDirectionItem yes = 7;
 
-  optional string noTokenId = 8;
+  optional PolymarketFIFAMoneylineDirectionItem no = 8;
 
-  optional double outcomePrice = 9;
+  optional double orderMinSize = 9;
 
-  optional double midPrice = 10;
+  optional double tickSize = 10;
 
-  optional double bestBid = 11;
+  optional bool enableOrderBook = 11;
 
-  optional double bestAsk = 12;
+  optional bool acceptingOrders = 12;
 
-  optional double lastTradePrice = 13;
-
-  optional double spread = 14;
-
-  optional double orderMinSize = 15;
-
-  optional double tickSize = 16;
-
-  optional bool enableOrderBook = 17;
-
-  optional bool acceptingOrders = 18;
-
-  optional bool negRisk = 19;
+  optional bool negRisk = 13;
 }
 
 message PolymarketFIFAWalletBalanceItem {

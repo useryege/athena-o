@@ -22,6 +22,8 @@ func (m *NotificationStatus) Reset() { *m = NotificationStatus{} }
 
 func (m *PolymarketFIFAEventConfig) Reset() { *m = PolymarketFIFAEventConfig{} }
 
+func (m *PolymarketFIFAMoneylineDirectionItem) Reset() { *m = PolymarketFIFAMoneylineDirectionItem{} }
+
 func (m *PolymarketFIFAMoneylineEventItem) Reset() { *m = PolymarketFIFAMoneylineEventItem{} }
 
 func (m *PolymarketFIFAMoneylineOptionItem) Reset() { *m = PolymarketFIFAMoneylineOptionItem{} }
@@ -347,6 +349,50 @@ func (m *PolymarketFIFAEventConfig) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
+func (m *PolymarketFIFAMoneylineDirectionItem) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PolymarketFIFAMoneylineDirectionItem) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *PolymarketFIFAMoneylineDirectionItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= 8
+	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Spread))))
+	i--
+	dAtA[i] = 0x29
+	i -= 8
+	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.BestAsk))))
+	i--
+	dAtA[i] = 0x21
+	i -= 8
+	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.BestBid))))
+	i--
+	dAtA[i] = 0x19
+	i -= 8
+	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.MidPrice))))
+	i--
+	dAtA[i] = 0x11
+	i -= len(m.TokenID)
+	copy(dAtA[i:], m.TokenID)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TokenID)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func (m *PolymarketFIFAMoneylineEventItem) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -509,9 +555,7 @@ func (m *PolymarketFIFAMoneylineOptionItem) MarshalToSizedBuffer(dAtA []byte) (i
 		dAtA[i] = 0
 	}
 	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x98
+	dAtA[i] = 0x68
 	i--
 	if m.AcceptingOrders {
 		dAtA[i] = 1
@@ -519,9 +563,7 @@ func (m *PolymarketFIFAMoneylineOptionItem) MarshalToSizedBuffer(dAtA []byte) (i
 		dAtA[i] = 0
 	}
 	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x90
+	dAtA[i] = 0x60
 	i--
 	if m.EnableOrderBook {
 		dAtA[i] = 1
@@ -529,53 +571,39 @@ func (m *PolymarketFIFAMoneylineOptionItem) MarshalToSizedBuffer(dAtA []byte) (i
 		dAtA[i] = 0
 	}
 	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x88
+	dAtA[i] = 0x58
 	i -= 8
 	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.TickSize))))
 	i--
-	dAtA[i] = 0x1
-	i--
-	dAtA[i] = 0x81
+	dAtA[i] = 0x51
 	i -= 8
 	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.OrderMinSize))))
 	i--
-	dAtA[i] = 0x79
-	i -= 8
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Spread))))
-	i--
-	dAtA[i] = 0x71
-	i -= 8
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.LastTradePrice))))
-	i--
-	dAtA[i] = 0x69
-	i -= 8
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.BestAsk))))
-	i--
-	dAtA[i] = 0x61
-	i -= 8
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.BestBid))))
-	i--
-	dAtA[i] = 0x59
-	i -= 8
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.MidPrice))))
-	i--
-	dAtA[i] = 0x51
-	i -= 8
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.OutcomePrice))))
-	i--
 	dAtA[i] = 0x49
-	i -= len(m.NoTokenID)
-	copy(dAtA[i:], m.NoTokenID)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.NoTokenID)))
-	i--
-	dAtA[i] = 0x42
-	i -= len(m.YesTokenID)
-	copy(dAtA[i:], m.YesTokenID)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.YesTokenID)))
-	i--
-	dAtA[i] = 0x3a
+	if m.No != nil {
+		{
+			size, err := m.No.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.Yes != nil {
+		{
+			size, err := m.Yes.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
 	i -= len(m.ConditionID)
 	copy(dAtA[i:], m.ConditionID)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ConditionID)))
@@ -1671,9 +1699,9 @@ func (m *PolymarketSportsLivePriceHistorySeriesItem) MarshalToSizedBuffer(dAtA [
 	_ = l
 	if len(m.Prices) > 0 {
 		for iNdEx := len(m.Prices) - 1; iNdEx >= 0; iNdEx-- {
-			f2 := math.Float64bits(float64(m.Prices[iNdEx]))
+			f4 := math.Float64bits(float64(m.Prices[iNdEx]))
 			i -= 8
-			encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(f2))
+			encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(f4))
 			i--
 			dAtA[i] = 0x29
 		}
@@ -3339,6 +3367,21 @@ func (m *PolymarketFIFAEventConfig) Size() (n int) {
 	return n
 }
 
+func (m *PolymarketFIFAMoneylineDirectionItem) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.TokenID)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 9
+	n += 9
+	n += 9
+	n += 9
+	return n
+}
+
 func (m *PolymarketFIFAMoneylineEventItem) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3402,21 +3445,19 @@ func (m *PolymarketFIFAMoneylineOptionItem) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.ConditionID)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.YesTokenID)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.NoTokenID)
-	n += 1 + l + sovGenerated(uint64(l))
+	if m.Yes != nil {
+		l = m.Yes.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.No != nil {
+		l = m.No.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
 	n += 9
 	n += 9
-	n += 9
-	n += 9
-	n += 9
-	n += 9
-	n += 9
-	n += 10
-	n += 3
-	n += 3
-	n += 3
+	n += 2
+	n += 2
+	n += 2
 	return n
 }
 
@@ -4427,6 +4468,20 @@ func (this *PolymarketFIFAEventConfig) String() string {
 	}, "")
 	return s
 }
+func (this *PolymarketFIFAMoneylineDirectionItem) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&PolymarketFIFAMoneylineDirectionItem{`,
+		`TokenID:` + fmt.Sprintf("%v", this.TokenID) + `,`,
+		`MidPrice:` + fmt.Sprintf("%v", this.MidPrice) + `,`,
+		`BestBid:` + fmt.Sprintf("%v", this.BestBid) + `,`,
+		`BestAsk:` + fmt.Sprintf("%v", this.BestAsk) + `,`,
+		`Spread:` + fmt.Sprintf("%v", this.Spread) + `,`,
+		`}`,
+	}, "")
+	return s
+}
 func (this *PolymarketFIFAMoneylineEventItem) String() string {
 	if this == nil {
 		return "nil"
@@ -4473,14 +4528,8 @@ func (this *PolymarketFIFAMoneylineOptionItem) String() string {
 		`MarketSlug:` + fmt.Sprintf("%v", this.MarketSlug) + `,`,
 		`Question:` + fmt.Sprintf("%v", this.Question) + `,`,
 		`ConditionID:` + fmt.Sprintf("%v", this.ConditionID) + `,`,
-		`YesTokenID:` + fmt.Sprintf("%v", this.YesTokenID) + `,`,
-		`NoTokenID:` + fmt.Sprintf("%v", this.NoTokenID) + `,`,
-		`OutcomePrice:` + fmt.Sprintf("%v", this.OutcomePrice) + `,`,
-		`MidPrice:` + fmt.Sprintf("%v", this.MidPrice) + `,`,
-		`BestBid:` + fmt.Sprintf("%v", this.BestBid) + `,`,
-		`BestAsk:` + fmt.Sprintf("%v", this.BestAsk) + `,`,
-		`LastTradePrice:` + fmt.Sprintf("%v", this.LastTradePrice) + `,`,
-		`Spread:` + fmt.Sprintf("%v", this.Spread) + `,`,
+		`Yes:` + strings.Replace(this.Yes.String(), "PolymarketFIFAMoneylineDirectionItem", "PolymarketFIFAMoneylineDirectionItem", 1) + `,`,
+		`No:` + strings.Replace(this.No.String(), "PolymarketFIFAMoneylineDirectionItem", "PolymarketFIFAMoneylineDirectionItem", 1) + `,`,
 		`OrderMinSize:` + fmt.Sprintf("%v", this.OrderMinSize) + `,`,
 		`TickSize:` + fmt.Sprintf("%v", this.TickSize) + `,`,
 		`EnableOrderBook:` + fmt.Sprintf("%v", this.EnableOrderBook) + `,`,
@@ -6387,6 +6436,132 @@ func (m *PolymarketFIFAEventConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *PolymarketFIFAMoneylineDirectionItem) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PolymarketFIFAMoneylineDirectionItem: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PolymarketFIFAMoneylineDirectionItem: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenID", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenID = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MidPrice", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.MidPrice = float64(math.Float64frombits(v))
+		case 3:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BestBid", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.BestBid = float64(math.Float64frombits(v))
+		case 4:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BestAsk", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.BestAsk = float64(math.Float64frombits(v))
+		case 5:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Spread", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.Spread = float64(math.Float64frombits(v))
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PolymarketFIFAMoneylineEventItem) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7128,9 +7303,9 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field YesTokenID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Yes", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -7140,29 +7315,33 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthGenerated
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthGenerated
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.YesTokenID = string(dAtA[iNdEx:postIndex])
+			if m.Yes == nil {
+				m.Yes = &PolymarketFIFAMoneylineDirectionItem{}
+			}
+			if err := m.Yes.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NoTokenID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field No", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -7172,91 +7351,29 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthGenerated
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthGenerated
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NoTokenID = string(dAtA[iNdEx:postIndex])
+			if m.No == nil {
+				m.No = &PolymarketFIFAMoneylineDirectionItem{}
+			}
+			if err := m.No.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 9:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OutcomePrice", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.OutcomePrice = float64(math.Float64frombits(v))
-		case 10:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MidPrice", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.MidPrice = float64(math.Float64frombits(v))
-		case 11:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BestBid", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.BestBid = float64(math.Float64frombits(v))
-		case 12:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BestAsk", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.BestAsk = float64(math.Float64frombits(v))
-		case 13:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastTradePrice", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.LastTradePrice = float64(math.Float64frombits(v))
-		case 14:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Spread", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.Spread = float64(math.Float64frombits(v))
-		case 15:
 			if wireType != 1 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OrderMinSize", wireType)
 			}
@@ -7267,7 +7384,7 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
 			m.OrderMinSize = float64(math.Float64frombits(v))
-		case 16:
+		case 10:
 			if wireType != 1 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TickSize", wireType)
 			}
@@ -7278,7 +7395,7 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
 			iNdEx += 8
 			m.TickSize = float64(math.Float64frombits(v))
-		case 17:
+		case 11:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field EnableOrderBook", wireType)
 			}
@@ -7298,7 +7415,7 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.EnableOrderBook = bool(v != 0)
-		case 18:
+		case 12:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AcceptingOrders", wireType)
 			}
@@ -7318,7 +7435,7 @@ func (m *PolymarketFIFAMoneylineOptionItem) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.AcceptingOrders = bool(v != 0)
-		case 19:
+		case 13:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NegRisk", wireType)
 			}

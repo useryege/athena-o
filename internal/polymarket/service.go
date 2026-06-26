@@ -54,6 +54,8 @@ type sportsLiveGammaClient interface {
 type sportsLiveCLOBClient interface {
 	GetBatchPricesHistory(context.Context, utilpolymarket.CLOBBatchPricesHistoryRequest) (*utilpolymarket.CLOBBatchPricesHistoryResponse, error)
 	GetMidpointPrices(context.Context, []string) (map[string]string, error)
+	GetMarketPrices(context.Context, []string, []string) (map[string]map[string]string, error)
+	GetSpreads(context.Context, []utilpolymarket.CLOBBookRequest) (map[string]string, error)
 }
 
 func WithGammaClient(client sportsLiveGammaClient) ServiceOption {

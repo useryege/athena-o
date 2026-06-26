@@ -13,6 +13,8 @@ func (*NotificationStatus) ProtoMessage() {}
 
 func (*PolymarketFIFAEventConfig) ProtoMessage() {}
 
+func (*PolymarketFIFAMoneylineDirectionItem) ProtoMessage() {}
+
 func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
 
 func (*PolymarketFIFAMoneylineOptionItem) ProtoMessage() {}

@@ -195,26 +195,28 @@ type PolymarketFIFAEventConfig struct {
 	EventRef    string `protobuf:"bytes,2,opt,name=eventRef" json:"eventRef"`
 }
 
+type PolymarketFIFAMoneylineDirectionItem struct {
+	TokenID  string  `protobuf:"bytes,1,opt,name=tokenId" json:"tokenId"`
+	MidPrice float64 `protobuf:"fixed64,2,opt,name=midPrice" json:"midPrice"`
+	BestBid  float64 `protobuf:"fixed64,3,opt,name=bestBid" json:"bestBid"`
+	BestAsk  float64 `protobuf:"fixed64,4,opt,name=bestAsk" json:"bestAsk"`
+	Spread   float64 `protobuf:"fixed64,5,opt,name=spread" json:"spread"`
+}
+
 type PolymarketFIFAMoneylineOptionItem struct {
-	OutcomeKey      string  `protobuf:"bytes,1,opt,name=outcomeKey" json:"outcomeKey"`
-	OutcomeLabel    string  `protobuf:"bytes,2,opt,name=outcomeLabel" json:"outcomeLabel"`
-	MarketID        string  `protobuf:"bytes,3,opt,name=marketId" json:"marketId"`
-	MarketSlug      string  `protobuf:"bytes,4,opt,name=marketSlug" json:"marketSlug"`
-	Question        string  `protobuf:"bytes,5,opt,name=question" json:"question"`
-	ConditionID     string  `protobuf:"bytes,6,opt,name=conditionId" json:"conditionId"`
-	YesTokenID      string  `protobuf:"bytes,7,opt,name=yesTokenId" json:"yesTokenId"`
-	NoTokenID       string  `protobuf:"bytes,8,opt,name=noTokenId" json:"noTokenId"`
-	OutcomePrice    float64 `protobuf:"fixed64,9,opt,name=outcomePrice" json:"outcomePrice"`
-	MidPrice        float64 `protobuf:"fixed64,10,opt,name=midPrice" json:"midPrice"`
-	BestBid         float64 `protobuf:"fixed64,11,opt,name=bestBid" json:"bestBid"`
-	BestAsk         float64 `protobuf:"fixed64,12,opt,name=bestAsk" json:"bestAsk"`
-	LastTradePrice  float64 `protobuf:"fixed64,13,opt,name=lastTradePrice" json:"lastTradePrice"`
-	Spread          float64 `protobuf:"fixed64,14,opt,name=spread" json:"spread"`
-	OrderMinSize    float64 `protobuf:"fixed64,15,opt,name=orderMinSize" json:"orderMinSize"`
-	TickSize        float64 `protobuf:"fixed64,16,opt,name=tickSize" json:"tickSize"`
-	EnableOrderBook bool    `protobuf:"varint,17,opt,name=enableOrderBook" json:"enableOrderBook"`
-	AcceptingOrders bool    `protobuf:"varint,18,opt,name=acceptingOrders" json:"acceptingOrders"`
-	NegRisk         bool    `protobuf:"varint,19,opt,name=negRisk" json:"negRisk"`
+	OutcomeKey      string                                `protobuf:"bytes,1,opt,name=outcomeKey" json:"outcomeKey"`
+	OutcomeLabel    string                                `protobuf:"bytes,2,opt,name=outcomeLabel" json:"outcomeLabel"`
+	MarketID        string                                `protobuf:"bytes,3,opt,name=marketId" json:"marketId"`
+	MarketSlug      string                                `protobuf:"bytes,4,opt,name=marketSlug" json:"marketSlug"`
+	Question        string                                `protobuf:"bytes,5,opt,name=question" json:"question"`
+	ConditionID     string                                `protobuf:"bytes,6,opt,name=conditionId" json:"conditionId"`
+	Yes             *PolymarketFIFAMoneylineDirectionItem `protobuf:"bytes,7,opt,name=yes" json:"yes"`
+	No              *PolymarketFIFAMoneylineDirectionItem `protobuf:"bytes,8,opt,name=no" json:"no"`
+	OrderMinSize    float64                               `protobuf:"fixed64,9,opt,name=orderMinSize" json:"orderMinSize"`
+	TickSize        float64                               `protobuf:"fixed64,10,opt,name=tickSize" json:"tickSize"`
+	EnableOrderBook bool                                  `protobuf:"varint,11,opt,name=enableOrderBook" json:"enableOrderBook"`
+	AcceptingOrders bool                                  `protobuf:"varint,12,opt,name=acceptingOrders" json:"acceptingOrders"`
+	NegRisk         bool                                  `protobuf:"varint,13,opt,name=negRisk" json:"negRisk"`
 }
 
 type PolymarketFIFAMoneylineEventItem struct {
