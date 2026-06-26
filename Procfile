@@ -7,7 +7,7 @@ polymarket: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-polyma
 # token-project-report-evaluator: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-project-report-evaluator} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token ATHENA_TOKEN_MODE=project-report-evaluator go run ./cmd/main.go"
 # token-api: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-api} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-api go run ./cmd/main.go --port ${ATHENA_TOKEN_API_PORT:-8096}"
 # notification: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-notification} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-notification go run ./cmd/main.go --port ${ATHENA_NOTIFICATION_PORT:-8086}"
-# wallet: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-wallet ATHENA_WALLET_ENCRYPTION_KEY=${ATHENA_WALLET_ENCRYPTION_KEY:-athena-local-wallet-encryption-key} go run ./cmd/main.go --port ${ATHENA_WALLET_PORT:-8088}"
+wallet: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-wallet ATHENA_WALLET_ENCRYPTION_KEY=${ATHENA_WALLET_ENCRYPTION_KEY:-athena-local-wallet-encryption-key} go run ./cmd/main.go --port ${ATHENA_WALLET_PORT:-8088}"
 redis: hack/start-redis-with-password.sh
 postgres: hack/start-postgres-with-password.sh
 ui: sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'
