@@ -43,6 +43,8 @@ const walletBalancePlaceholders: PolymarketFIFAWalletBalanceItem[] = [
 ];
 
 const price = (value?: number) => (value === undefined ? '-' : value.toFixed(3));
+const money = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : value.toFixed(2));
+const percent = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : `${(value * 100).toFixed(2)}%`);
 const balanceValue = (item: PolymarketFIFAWalletBalanceItem) => (item.amount && item.amount !== '-' ? `${item.amount} ${item.tokenSymbol || ''}`.trim() : '-');
 const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
@@ -74,6 +76,20 @@ const copyText = (value?: string) => {
         return;
     }
     navigator.clipboard.writeText(value).catch(() => undefined);
+};
+
+const numberValue = (value?: string | number) => {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : undefined;
+    }
+    const normalized = String(value || '')
+        .replace(/,/g, '')
+        .trim();
+    if (!normalized) {
+        return undefined;
+    }
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : undefined;
 };
 
 const FIFAInfoValue = (props: {value: React.ReactNode; copyText?: string}) => (
@@ -387,6 +403,111 @@ const selectedWormOutcomeKey = (data?: GetWormEventResult, selectedConditionId?:
     }
     const index = orderedWormMarkets(item.title, item.markets).findIndex(market => market.conditionId === selectedConditionId);
     return index >= 0 ? fifaOutcomeKeys[index] : undefined;
+};
+
+const selectedWormMarket = (data?: GetWormEventResult, selectedConditionId?: string) => data?.item?.markets.find(market => market.conditionId === selectedConditionId);
+
+const HedgeCalculatorMetric = (props: {label: string; value: React.ReactNode; tone?: 'positive' | 'negative' | 'neutral'}) => (
+    <div className={`fifa-hedge-calculator__metric${props.tone ? ` fifa-hedge-calculator__metric--${props.tone}` : ''}`}>
+        <span className='fifa-hedge-calculator__metric-label'>{props.label}</span>
+        <span className='fifa-hedge-calculator__metric-value'>{props.value}</span>
+    </div>
+);
+
+const HedgeCalculatorSection = (props: {title: string; children: React.ReactNode}) => (
+    <section className='fifa-hedge-calculator__section'>
+        <Typography.Text className='fifa-hedge-calculator__section-title' strong={true}>
+            {props.title}
+        </Typography.Text>
+        <div className='fifa-hedge-calculator__metrics'>{props.children}</div>
+    </section>
+);
+
+const HedgeCalculatorPanel = (props: {wormMarket?: WormMarketItem; outcomeKey?: FIFAOutcomeKey; polymarketOption?: PolymarketFIFAMoneylineOptionItem}) => {
+    const estimate = props.wormMarket?.estimate;
+    const funds = numberValue(estimate?.funds);
+    const leverage = numberValue(estimate?.leverage || props.wormMarket?.maxLeverageYes);
+    const wormTotalShares = numberValue(estimate?.totalShares);
+    const closingFeeRate = numberValue(props.wormMarket?.closingFee) ?? 0;
+    const pmNoAsk = numberValue(props.polymarketOption?.no?.bestAsk);
+    const missing: string[] = [];
+    if (props.wormMarket && !estimate) {
+        missing.push('Worm estimate');
+    }
+    if (estimate && funds === undefined) {
+        missing.push('Worm funds');
+    }
+    if (estimate && (!leverage || leverage <= 0)) {
+        missing.push('Worm leverage');
+    }
+    if (estimate && wormTotalShares === undefined) {
+        missing.push('Worm shares');
+    }
+    if (props.wormMarket && !props.polymarketOption) {
+        missing.push('Polymarket option');
+    }
+    if (props.polymarketOption && pmNoAsk === undefined) {
+        missing.push('Polymarket NO ask');
+    }
+
+    let body: React.ReactNode;
+    if (!props.wormMarket) {
+        body = <Empty description='Select a Worm market card to calculate the hedge.' />;
+    } else if (missing.length > 0) {
+        body = <Typography.Text type='secondary'>Missing data: {missing.join(', ')}</Typography.Text>;
+    } else {
+        const fundsValue = funds as number;
+        const leverageValue = leverage as number;
+        const wormTotalSharesValue = wormTotalShares as number;
+        const pmNoAskValue = pmNoAsk as number;
+        const borrowed = fundsValue * (leverageValue - 1);
+        const wormGrossIfYes = wormTotalSharesValue - borrowed;
+        const wormNetIfYes = wormGrossIfYes * (1 - closingFeeRate);
+        const hedgeShares = wormTotalSharesValue / leverageValue;
+        const pmNoCost = hedgeShares * pmNoAskValue;
+        const totalCost = fundsValue + pmNoCost;
+        const yesProfit = wormNetIfYes - totalCost;
+        const yesProfitRate = yesProfit / totalCost;
+        const noSettlement = hedgeShares;
+        const noProfit = noSettlement - totalCost;
+        body = (
+            <>
+                <HedgeCalculatorSection title='Worm Input'>
+                    <HedgeCalculatorMetric label='Funds' value={money(fundsValue)} />
+                    <HedgeCalculatorMetric label='Leverage' value={`${price(leverageValue)}x`} />
+                    <HedgeCalculatorMetric label='Total Shares' value={money(wormTotalSharesValue)} />
+                    <HedgeCalculatorMetric label='Borrowed' value={money(borrowed)} />
+                    <HedgeCalculatorMetric label='Closing Fee' value={percent(closingFeeRate)} />
+                </HedgeCalculatorSection>
+                <HedgeCalculatorSection title='Polymarket Hedge'>
+                    <HedgeCalculatorMetric label='Direction' value='NO' />
+                    <HedgeCalculatorMetric label='NO Ask' value={price(pmNoAskValue)} />
+                    <HedgeCalculatorMetric label='Hedge Shares' value={money(hedgeShares)} />
+                    <HedgeCalculatorMetric label='Hedge Cost' value={money(pmNoCost)} />
+                </HedgeCalculatorSection>
+                <HedgeCalculatorSection title='Outcome Summary'>
+                    <HedgeCalculatorMetric label='Total Cost' value={money(totalCost)} />
+                    <HedgeCalculatorMetric label='YES Settlement' value={money(wormNetIfYes)} />
+                    <HedgeCalculatorMetric label='YES Profit' value={money(yesProfit)} tone={yesProfit >= 0 ? 'positive' : 'negative'} />
+                    <HedgeCalculatorMetric label='YES Profit Rate' value={percent(yesProfitRate)} tone={yesProfitRate >= 0 ? 'positive' : 'negative'} />
+                    <HedgeCalculatorMetric label='NO Settlement' value={money(noSettlement)} />
+                    <HedgeCalculatorMetric label='NO P&L' value={money(noProfit)} tone={noProfit >= 0 ? 'positive' : 'negative'} />
+                </HedgeCalculatorSection>
+            </>
+        );
+    }
+
+    return (
+        <section className='fifa-panel fifa-hedge-calculator'>
+            <div className='fifa-panel__title'>
+                <Typography.Text strong={true}>Hedge Calculator</Typography.Text>
+                <Typography.Text type='secondary'>
+                    {props.outcomeKey ? optionTitle(props.polymarketOption || ({outcomeKey: props.outcomeKey} as PolymarketFIFAMoneylineOptionItem)) : 'No Worm selection'}
+                </Typography.Text>
+            </div>
+            {body}
+        </section>
+    );
 };
 
 const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
@@ -724,6 +845,8 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
 
     const item = data?.item;
     const selectedOutcomeKey = selectedWormOutcomeKey(wormData, selectedWormConditionId);
+    const selectedMarket = selectedWormMarket(wormData, selectedWormConditionId);
+    const selectedPolymarketOption = item?.options.find(option => option.outcomeKey === selectedOutcomeKey);
     const selectWormMarket = React.useCallback((conditionId: string) => {
         setSelectedWormConditionId(current => (current === conditionId ? '' : conditionId));
     }, []);
@@ -741,6 +864,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
             <div className='fifa-page'>
                 {configPanel}
                 <FIFAWalletBalancesPanel items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={balancesLoading} error={balancesError} />
+                <HedgeCalculatorPanel wormMarket={selectedMarket} outcomeKey={selectedOutcomeKey} polymarketOption={selectedPolymarketOption} />
                 <div className='fifa-dashboard-grid'>
                     <WormEventPanel data={wormData} loading={wormLoading} error={wormError} selectedConditionId={selectedWormConditionId} onSelectMarket={selectWormMarket} />
                     <section className='fifa-panel fifa-panel--polymarket'>

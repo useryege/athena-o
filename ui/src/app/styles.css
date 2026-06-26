@@ -1569,6 +1569,78 @@ body[data-theme='dark'] .metric {
     overflow-wrap: anywhere;
 }
 
+.fifa-hedge-calculator {
+    gap: 12px;
+}
+
+.fifa-hedge-calculator .ant-empty {
+    margin: 4px 0;
+}
+
+.fifa-hedge-calculator__section {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-panel-solid) 90%, transparent);
+}
+
+.fifa-hedge-calculator__section-title {
+    min-width: 0;
+    color: var(--athena-text);
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.fifa-hedge-calculator__metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    min-width: 0;
+}
+
+.fifa-hedge-calculator__metric {
+    min-width: 0;
+    min-height: 58px;
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    padding: 8px 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 42%, var(--athena-panel-solid));
+}
+
+.fifa-hedge-calculator__metric--positive {
+    border-color: color-mix(in srgb, var(--athena-green) 46%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-green) 9%, var(--athena-panel-solid));
+}
+
+.fifa-hedge-calculator__metric--negative {
+    border-color: color-mix(in srgb, var(--athena-red) 46%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-red) 8%, var(--athena-panel-solid));
+}
+
+.fifa-hedge-calculator__metric-label {
+    min-width: 0;
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.fifa-hedge-calculator__metric-value {
+    min-width: 0;
+    color: var(--athena-text);
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+}
+
 .fifa-event-summary {
     display: grid;
     gap: 12px;
