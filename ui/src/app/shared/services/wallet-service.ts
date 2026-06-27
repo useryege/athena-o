@@ -1,10 +1,20 @@
 import requests from './requests';
 
 export type WalletChain = 'ETH' | 'BSC' | 'BASE' | 'SOLANA';
+export type WalletType = 'worm_position' | 'polymarket_hedge' | 'polymarket_topup';
+
+export const walletTypeOptions: {value: WalletType; label: string}[] = [
+    {value: 'worm_position', label: 'Worm Position'},
+    {value: 'polymarket_hedge', label: 'Polymarket Hedge'},
+    {value: 'polymarket_topup', label: 'Polymarket Top-up'}
+];
+
+export const walletTypeLabel = (value?: string) => walletTypeOptions.find(option => option.value === value)?.label || value || '';
 
 export interface WalletItem {
     id: number;
     chain: WalletChain | string;
+    type: WalletType | string;
     address: string;
     alias?: string;
     source?: string;
@@ -21,6 +31,7 @@ export interface WalletDetail extends WalletItem {
 
 export interface ListWalletsOptions {
     chain?: WalletChain | string;
+    type?: WalletType | string;
     query?: string;
     page?: number;
     pageSize?: number;
@@ -48,6 +59,7 @@ const readNumber = (item: any, ...names: string[]) => Number(readValue(item, ...
 const normalizeWallet = (item: any = {}): WalletDetail => ({
     id: readNumber(item, 'id'),
     chain: readString(item, 'chain'),
+    type: readString(item, 'type'),
     address: readString(item, 'address'),
     alias: readString(item, 'alias'),
     source: readString(item, 'source'),
@@ -67,6 +79,9 @@ export class WalletService {
         };
         if (options.chain) {
             query.chain = options.chain;
+        }
+        if (options.type) {
+            query.type = options.type;
         }
         if (options.query) {
             query.query = options.query;
@@ -92,22 +107,22 @@ export class WalletService {
         return promise;
     }
 
-    public createWallet(chain: WalletChain | string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.post('/wallets/create').send({chain, alias});
+    public createWallet(chain: WalletChain | string, walletType: WalletType | string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
+        const req = requests.post('/wallets/create').send({chain, type: walletType, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public importPrivateKey(chain: WalletChain | string, privateKey: string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.post('/wallets/import-private-key').send({chain, private_key: privateKey, alias});
+    public importPrivateKey(chain: WalletChain | string, walletType: WalletType | string, privateKey: string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
+        const req = requests.post('/wallets/import-private-key').send({chain, type: walletType, private_key: privateKey, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public importMnemonic(chain: WalletChain | string, mnemonic: string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.post('/wallets/import-mnemonic').send({chain, mnemonic, alias});
+    public importMnemonic(chain: WalletChain | string, walletType: WalletType | string, mnemonic: string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
+        const req = requests.post('/wallets/import-mnemonic').send({chain, type: walletType, mnemonic, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;

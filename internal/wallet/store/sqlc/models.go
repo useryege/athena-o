@@ -12,6 +12,7 @@ type WalletPrivateKey struct {
 	ID                   int64
 	CreatedBy            string
 	Chain                string
+	Type                 string
 	Address              string
 	AddressKey           string
 	Alias                string

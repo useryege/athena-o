@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-878-g662e815-dirty"
+    "version": "v1.0.0-889-g61ea99b-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1741,6 +1741,11 @@
             "type": "integer",
             "format": "int32",
             "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "type",
             "in": "query"
           }
         ],
@@ -4485,6 +4490,9 @@
         "source": {
           "type": "string"
         },
+        "type": {
+          "type": "string"
+        },
         "updated_at": {
           "type": "string"
         }
@@ -4516,6 +4524,9 @@
           "format": "int64"
         },
         "source": {
+          "type": "string"
+        },
+        "type": {
           "type": "string"
         },
         "updated_at": {
@@ -4753,6 +4764,9 @@
         },
         "chain": {
           "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -4786,6 +4800,9 @@
         },
         "mnemonic": {
           "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -4809,6 +4826,9 @@
           "type": "string"
         },
         "private_key": {
+          "type": "string"
+        },
+        "type": {
           "type": "string"
         }
       }

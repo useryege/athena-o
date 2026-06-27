@@ -24,8 +24,11 @@ type Service struct {
 }
 
 const (
-	defaultWalletPageSize = 20
-	maxWalletPageSize     = 100
+	defaultWalletPageSize     = 20
+	maxWalletPageSize         = 100
+	walletTypeWormPosition    = "worm_position"
+	walletTypePolymarketHedge = "polymarket_hedge"
+	walletTypePolymarketTopup = "polymarket_topup"
 )
 
 func NewService(store *walletstore.SQLStore, encryptionKey []byte) *Service {
@@ -96,6 +99,10 @@ func (s *Service) ListWallets(ctx context.Context, req *apiclient.ListWalletsReq
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 	}
+	walletType, err := normalizeWalletType(req.GetType())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	page := int(req.GetPage())
 	if page < 1 {
 		page = 1
@@ -111,6 +118,7 @@ func (s *Service) ListWallets(ctx context.Context, req *apiclient.ListWalletsReq
 	items, total, err := s.store.ListWallets(ctx, walletstore.ListWalletsOptions{
 		CreatedBy: walletCreatedByFilter(requester),
 		Chain:     chain,
+		Type:      walletType,
 		Query:     req.GetQuery(),
 		Page:      page,
 		PageSize:  pageSize,
@@ -154,11 +162,15 @@ func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletR
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	walletType, err := requireWalletType(req.GetType())
+	if err != nil {
+		return nil, err
+	}
 	material, err := createWalletKeyMaterial(chain)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create wallet key: %v", err)
 	}
-	record, err := s.storeWalletMaterial(ctx, requester, material, req.GetAlias())
+	record, err := s.storeWalletMaterial(ctx, requester, walletType, material, req.GetAlias())
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +189,15 @@ func (s *Service) ImportPrivateKey(ctx context.Context, req *apiclient.ImportPri
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	walletType, err := requireWalletType(req.GetType())
+	if err != nil {
+		return nil, err
+	}
 	material, err := privateKeyWalletKeyMaterial(chain, req.GetPrivateKey())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	record, err := s.storeWalletMaterial(ctx, requester, material, req.GetAlias())
+	record, err := s.storeWalletMaterial(ctx, requester, walletType, material, req.GetAlias())
 	if err != nil {
 		return nil, err
 	}
@@ -197,11 +213,15 @@ func (s *Service) ImportMnemonic(ctx context.Context, req *apiclient.ImportMnemo
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	walletType, err := requireWalletType(req.GetType())
+	if err != nil {
+		return nil, err
+	}
 	material, err := mnemonicWalletKeyMaterial(chain, req.GetMnemonic(), walletSourceMnemonic)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	record, err := s.storeWalletMaterial(ctx, requester, material, req.GetAlias())
+	record, err := s.storeWalletMaterial(ctx, requester, walletType, material, req.GetAlias())
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +263,7 @@ func (s *Service) getWalletRecord(ctx context.Context, id int64, createdBy strin
 	return record, nil
 }
 
-func (s *Service) storeWalletMaterial(ctx context.Context, requester string, material walletKeyMaterial, alias string) (*walletstore.WalletRecord, error) {
+func (s *Service) storeWalletMaterial(ctx context.Context, requester string, walletType string, material walletKeyMaterial, alias string) (*walletstore.WalletRecord, error) {
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
 	}
@@ -264,6 +284,7 @@ func (s *Service) storeWalletMaterial(ctx context.Context, requester string, mat
 	record, err := s.store.CreateWallet(ctx, walletstore.CreateWalletRecordRequest{
 		CreatedBy:            requester,
 		Chain:                material.chain,
+		Type:                 walletType,
 		Address:              material.address,
 		AddressKey:           material.addressKey,
 		Alias:                normalizeWalletAlias(alias),
@@ -310,6 +331,30 @@ func requireWalletRequester(input string) (string, error) {
 		return "", status.Error(codes.Unauthenticated, "wallet requester is required")
 	}
 	return requester, nil
+}
+
+func requireWalletType(input string) (string, error) {
+	walletType, err := normalizeWalletType(input)
+	if err != nil {
+		return "", status.Error(codes.InvalidArgument, err.Error())
+	}
+	if walletType == "" {
+		return "", status.Error(codes.InvalidArgument, "type is required")
+	}
+	return walletType, nil
+}
+
+func normalizeWalletType(input string) (string, error) {
+	walletType := strings.TrimSpace(input)
+	if walletType == "" {
+		return "", nil
+	}
+	switch walletType {
+	case walletTypeWormPosition, walletTypePolymarketHedge, walletTypePolymarketTopup:
+		return walletType, nil
+	default:
+		return "", errors.New("type must be one of worm_position, polymarket_hedge, polymarket_topup")
+	}
 }
 
 func walletCreatedByFilter(requester string) string {

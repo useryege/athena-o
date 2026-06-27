@@ -38,6 +38,7 @@ var (
 type CreateWalletRecordRequest struct {
 	CreatedBy            string
 	Chain                string
+	Type                 string
 	Address              string
 	AddressKey           string
 	Alias                string
@@ -50,6 +51,7 @@ type CreateWalletRecordRequest struct {
 type ListWalletsOptions struct {
 	CreatedBy string
 	Chain     string
+	Type      string
 	Query     string
 	Page      int
 	PageSize  int
@@ -59,6 +61,7 @@ type WalletRecord struct {
 	ID                   int64
 	CreatedBy            string
 	Chain                string
+	Type                 string
 	Address              string
 	AddressKey           string
 	Alias                string
@@ -113,6 +116,7 @@ func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordReque
 	row, err := s.queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
 		CreatedBy:            req.CreatedBy,
 		Chain:                req.Chain,
+		Type:                 req.Type,
 		Address:              req.Address,
 		AddressKey:           req.AddressKey,
 		Alias:                req.Alias,
@@ -138,6 +142,7 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 	total, err := s.queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
 		CreatedBy: filters.CreatedBy,
 		Chain:     filters.Chain,
+		Type:      filters.Type,
 		Query:     filters.Query,
 	})
 	if err != nil {
@@ -157,6 +162,7 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 		Offset:    int32((page - 1) * pageSize),
 		CreatedBy: filters.CreatedBy,
 		Chain:     filters.Chain,
+		Type:      filters.Type,
 		Query:     filters.Query,
 	})
 	if err != nil {
@@ -208,6 +214,7 @@ func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, createdBy st
 type walletFilters struct {
 	CreatedBy pgtype.Text
 	Chain     pgtype.Text
+	Type      pgtype.Text
 	Query     pgtype.Text
 }
 
@@ -215,6 +222,7 @@ func walletFilterParams(opts ListWalletsOptions) walletFilters {
 	return walletFilters{
 		CreatedBy: nullableTrimmedText(opts.CreatedBy),
 		Chain:     nullableTrimmedText(opts.Chain),
+		Type:      nullableTrimmedText(opts.Type),
 		Query:     nullableKeyword(opts.Query),
 	}
 }
@@ -224,6 +232,7 @@ func walletRecordFromSQLC(row walletsqlc.WalletPrivateKey) *WalletRecord {
 		ID:                   row.ID,
 		CreatedBy:            row.CreatedBy,
 		Chain:                row.Chain,
+		Type:                 row.Type,
 		Address:              row.Address,
 		AddressKey:           row.AddressKey,
 		Alias:                row.Alias,
@@ -241,6 +250,7 @@ func walletItemFromListRow(row walletsqlc.ListWalletsRow) *v1alpha1.WalletItem {
 		ID:             row.ID,
 		CreatedBy:      row.CreatedBy,
 		Chain:          row.Chain,
+		Type:           row.Type,
 		Address:        row.Address,
 		Alias:          row.Alias,
 		Source:         row.Source,
@@ -255,6 +265,7 @@ func walletItemFromUpdateRow(row walletsqlc.UpdateWalletAliasRow) *v1alpha1.Wall
 		ID:             row.ID,
 		CreatedBy:      row.CreatedBy,
 		Chain:          row.Chain,
+		Type:           row.Type,
 		Address:        row.Address,
 		Alias:          row.Alias,
 		Source:         row.Source,
@@ -272,6 +283,7 @@ func (r *WalletRecord) ToDetail() *v1alpha1.WalletDetail {
 		ID:             r.ID,
 		CreatedBy:      r.CreatedBy,
 		Chain:          r.Chain,
+		Type:           r.Type,
 		Address:        r.Address,
 		Alias:          r.Alias,
 		Source:         r.Source,

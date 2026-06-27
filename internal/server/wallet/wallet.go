@@ -41,6 +41,7 @@ func (s *Server) ListWallets(ctx context.Context, req *walletpkg.ListWalletsRequ
 		Page:      req.GetPage(),
 		PageSize:  req.GetPageSize(),
 		Requester: session.GetUserIdentifier(ctx),
+		Type:      req.GetType(),
 	})
 	if err != nil {
 		return nil, err
@@ -82,6 +83,7 @@ func (s *Server) CreateWallet(ctx context.Context, req *walletpkg.CreateWalletRe
 		Chain:     req.GetChain(),
 		Alias:     req.GetAlias(),
 		Requester: session.GetUserIdentifier(ctx),
+		Type:      req.GetType(),
 	})
 	if err != nil {
 		return nil, err
@@ -101,6 +103,7 @@ func (s *Server) ImportPrivateKey(ctx context.Context, req *walletpkg.ImportPriv
 		PrivateKey: req.GetPrivateKey(),
 		Alias:      req.GetAlias(),
 		Requester:  session.GetUserIdentifier(ctx),
+		Type:       req.GetType(),
 	})
 	if err != nil {
 		return nil, err
@@ -120,6 +123,7 @@ func (s *Server) ImportMnemonic(ctx context.Context, req *walletpkg.ImportMnemon
 		Mnemonic:  req.GetMnemonic(),
 		Alias:     req.GetAlias(),
 		Requester: session.GetUserIdentifier(ctx),
+		Type:      req.GetType(),
 	})
 	if err != nil {
 		return nil, err

@@ -17,6 +17,7 @@ message ListWalletsRequest {
   int32 page = 3;
   int32 page_size = 4;
   string requester = 5;
+  string type = 6;
 }
 
 // ListWalletsResponse returns persisted wallet records without secret material.
@@ -44,6 +45,7 @@ message CreateWalletRequest {
   string chain = 1;
   string alias = 2;
   string requester = 3;
+  string type = 4;
 }
 
 // CreateWalletResponse returns the created wallet record.
@@ -57,6 +59,7 @@ message ImportPrivateKeyRequest {
   string private_key = 2;
   string alias = 3;
   string requester = 4;
+  string type = 5;
 }
 
 // ImportPrivateKeyResponse returns the imported wallet record.
@@ -70,6 +73,7 @@ message ImportMnemonicRequest {
   string mnemonic = 2;
   string alias = 3;
   string requester = 4;
+  string type = 5;
 }
 
 // ImportMnemonicResponse returns the imported wallet record.

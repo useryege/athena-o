@@ -5,7 +5,7 @@ import * as React from 'react';
 import {AppPage, KeyValueGrid, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
-import {WalletDetail, WalletItem} from '../shared/services/wallet-service';
+import {WalletDetail, WalletItem, walletTypeLabel, walletTypeOptions} from '../shared/services/wallet-service';
 import {useKeywordParam, usePagedParams} from './shared';
 
 const SecretInput = (props: {label: string; value?: string; onCopy: () => void}) => (
@@ -22,19 +22,23 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
     const {page, pageSize, setPage} = usePagedParams();
     const [query, setQuery] = useKeywordParam();
     const [chain, setChain] = React.useState('');
+    const [walletType, setWalletType] = React.useState('');
     const [createOpen, setCreateOpen] = React.useState(false);
     const [creating, setCreating] = React.useState(false);
     const [secret, setSecret] = React.useState<WalletDetail>(null);
     const [backupWallet, setBackupWallet] = React.useState<WalletDetail>(null);
     const [backupConfirmed, setBackupConfirmed] = React.useState(false);
-    const data = useAsyncData(() => services.wallet.listWallets({page, pageSize, query, chain: chain || undefined}), [page, pageSize, query, chain]);
+    const data = useAsyncData(
+        () => services.wallet.listWallets({page, pageSize, query, chain: chain || undefined, type: walletType || undefined}),
+        [page, pageSize, query, chain, walletType]
+    );
     const reveal = async (id: number) => {
         setSecret(await services.wallet.getWallet(id, true));
     };
-    const create = async (values: {chain: string; alias?: string}) => {
+    const create = async (values: {chain: string; type: string; alias?: string}) => {
         setCreating(true);
         try {
-            const created = await services.wallet.createWallet(values.chain, values.alias || '');
+            const created = await services.wallet.createWallet(values.chain, values.type, values.alias || '');
             setCreateOpen(false);
             setBackupConfirmed(false);
             setBackupWallet(created);
@@ -62,6 +66,7 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
     };
     const columns: ColumnsType<WalletItem> = [
         {title: 'Alias', dataIndex: 'alias'},
+        {title: 'Type', render: item => walletTypeLabel(item.type)},
         {title: 'Chain', dataIndex: 'chain'},
         {title: 'Address', render: item => <TruncatedText value={item.address} copyable={true} />},
         {title: 'Created By', dataIndex: 'createdBy'},
@@ -102,6 +107,15 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                         onChange={value => setChain(value || '')}
                         options={['ETH', 'BSC', 'BASE', 'SOLANA'].map(value => ({value, label: value}))}
                     />
+                    <Select
+                        allowClear={true}
+                        aria-label='Filter by type'
+                        value={walletType || undefined}
+                        placeholder='Type'
+                        style={{width: 210}}
+                        onChange={value => setWalletType(value || '')}
+                        options={walletTypeOptions}
+                    />
                 </Space>
             }>
             <ResourceTable
@@ -118,6 +132,9 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                 <Form layout='vertical' onFinish={create}>
                     <Form.Item name='chain' label='Chain' rules={[{required: true}]}>
                         <Select options={['ETH', 'BSC', 'BASE', 'SOLANA'].map(value => ({value, label: value}))} />
+                    </Form.Item>
+                    <Form.Item name='type' label='Type' rules={[{required: true}]}>
+                        <Select options={walletTypeOptions} />
                     </Form.Item>
                     <Form.Item name='alias' label='Alias'>
                         <Input />

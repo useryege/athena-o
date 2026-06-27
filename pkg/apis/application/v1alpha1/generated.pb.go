@@ -2769,6 +2769,11 @@ func (m *WalletDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.Type)
+	copy(dAtA[i:], m.Type)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Type)))
+	i--
+	dAtA[i] = 0x62
 	i -= len(m.CreatedBy)
 	copy(dAtA[i:], m.CreatedBy)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedBy)))
@@ -2845,6 +2850,11 @@ func (m *WalletItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.Type)
+	copy(dAtA[i:], m.Type)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Type)))
+	i--
+	dAtA[i] = 0x52
 	i -= len(m.CreatedBy)
 	copy(dAtA[i:], m.CreatedBy)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedBy)))
@@ -4250,6 +4260,8 @@ func (m *WalletDetail) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.CreatedBy)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Type)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -4275,6 +4287,8 @@ func (m *WalletItem) Size() (n int) {
 	l = len(m.UpdatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.CreatedBy)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Type)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -5146,6 +5160,7 @@ func (this *WalletDetail) String() string {
 		`PrivateKey:` + fmt.Sprintf("%v", this.PrivateKey) + `,`,
 		`Mnemonic:` + fmt.Sprintf("%v", this.Mnemonic) + `,`,
 		`CreatedBy:` + fmt.Sprintf("%v", this.CreatedBy) + `,`,
+		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5164,6 +5179,7 @@ func (this *WalletItem) String() string {
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`CreatedBy:` + fmt.Sprintf("%v", this.CreatedBy) + `,`,
+		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -16598,6 +16614,38 @@ func (m *WalletDetail) Unmarshal(dAtA []byte) error {
 			}
 			m.CreatedBy = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -16922,6 +16970,38 @@ func (m *WalletItem) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CreatedBy = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

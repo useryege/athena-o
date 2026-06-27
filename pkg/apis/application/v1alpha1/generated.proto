@@ -765,6 +765,8 @@ message WalletDetail {
 
   optional string chain = 2;
 
+  optional string type = 12;
+
   optional string address = 3;
 
   optional string alias = 4;
@@ -788,6 +790,8 @@ message WalletItem {
   optional int64 id = 1;
 
   optional string chain = 2;
+
+  optional string type = 10;
 
   optional string address = 3;
 

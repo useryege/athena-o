@@ -8,6 +8,7 @@ type WalletStatus struct {
 type WalletItem struct {
 	ID             int64  `protobuf:"varint,1,opt,name=id" json:"id"`
 	Chain          string `protobuf:"bytes,2,opt,name=chain" json:"chain"`
+	Type           string `protobuf:"bytes,10,opt,name=type" json:"type"`
 	Address        string `protobuf:"bytes,3,opt,name=address" json:"address"`
 	Alias          string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
 	Source         string `protobuf:"bytes,5,opt,name=source" json:"source"`
@@ -20,6 +21,7 @@ type WalletItem struct {
 type WalletDetail struct {
 	ID             int64  `protobuf:"varint,1,opt,name=id" json:"id"`
 	Chain          string `protobuf:"bytes,2,opt,name=chain" json:"chain"`
+	Type           string `protobuf:"bytes,12,opt,name=type" json:"type"`
 	Address        string `protobuf:"bytes,3,opt,name=address" json:"address"`
 	Alias          string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
 	Source         string `protobuf:"bytes,5,opt,name=source" json:"source"`

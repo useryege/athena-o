@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS wallet_private_keys (
   id BIGSERIAL PRIMARY KEY,
   created_by TEXT NOT NULL,
   chain TEXT NOT NULL CHECK (chain IN ('ETH', 'BSC', 'BASE', 'SOLANA')),
+  type TEXT NOT NULL CHECK (type IN ('worm_position', 'polymarket_hedge', 'polymarket_topup')),
   address TEXT NOT NULL,
   address_key TEXT NOT NULL,
   alias TEXT NOT NULL DEFAULT '',
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS wallet_private_keys (
 INSERT INTO wallet_private_keys (
   created_by,
   chain,
+  type,
   address,
   address_key,
   alias,
@@ -30,6 +32,7 @@ INSERT INTO wallet_private_keys (
 ) VALUES (
   'admin',
   'SOLANA',
+  'worm_position',
   'HYug9d9sMK6G6tf72PfMTH2NmnMfzJqPNo8kbwkyDPrC',
   'HYug9d9sMK6G6tf72PfMTH2NmnMfzJqPNo8kbwkyDPrC',
   'YEGE',
@@ -40,6 +43,7 @@ INSERT INTO wallet_private_keys (
 );
 
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_chain ON wallet_private_keys (chain);
+CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_type ON wallet_private_keys (type);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_at ON wallet_private_keys (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_by_created_at ON wallet_private_keys (created_by, created_at DESC);
 
