@@ -17,6 +17,7 @@ export const ResourceTable = <T,>(props: {
     selectedRowKeys?: React.Key[];
     onSelectionChange?: (keys: React.Key[], records: T[]) => void;
     enableHoverKeyboardSelect?: boolean;
+    label?: string;
 }) => {
     const selectedKeys = props.selectedRowKeys || [];
     const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
@@ -48,7 +49,15 @@ export const ResourceTable = <T,>(props: {
                   const click = props.onItemClick
                       ? {
                             className: 'resource-table__row--clickable',
-                            onClick: () => props.onItemClick?.(record)
+                            role: 'button',
+                            tabIndex: 0,
+                            onClick: () => props.onItemClick?.(record),
+                            onKeyDown: (event: React.KeyboardEvent) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    props.onItemClick?.(record);
+                                }
+                            }
                         }
                       : {};
                   return {...click, ...mouse};
@@ -56,9 +65,11 @@ export const ResourceTable = <T,>(props: {
             : undefined;
 
     return (
-        <div className={tableClassName}>
+        <div className={tableClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
             <Table<T>
                 className='resource-table'
+                size='small'
+                sticky={{offsetHeader: 56}}
                 rowKey={props.rowKey as any}
                 columns={props.columns as any}
                 dataSource={props.items}
@@ -66,7 +77,14 @@ export const ResourceTable = <T,>(props: {
                 rowSelection={rowSelection}
                 pagination={
                     props.total !== undefined && props.onPageChange
-                        ? {current: props.page, pageSize: props.pageSize, total: props.total, showSizeChanger: true, onChange: props.onPageChange}
+                        ? {
+                              current: props.page,
+                              pageSize: props.pageSize,
+                              total: props.total,
+                              showSizeChanger: true,
+                              showTotal: total => `${total} items`,
+                              onChange: props.onPageChange
+                          }
                         : false
                 }
                 scroll={{x: 'max-content'}}

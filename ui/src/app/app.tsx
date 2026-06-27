@@ -19,7 +19,7 @@ import {
     UserOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {App as AntApp, Button, ConfigProvider, Dropdown, Layout as AntLayout, Menu, Result, Space, theme as antTheme, Typography} from 'antd';
+import {App as AntApp, Breadcrumb, Button, ConfigProvider, Dropdown, Layout as AntLayout, Menu, Result, Space, theme as antTheme, Tooltip, Typography} from 'antd';
 import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
@@ -76,6 +76,12 @@ interface NavItem {
     permission?: Permission;
 }
 
+interface NavSection {
+    key: string;
+    label: string;
+    children: NavItem[];
+}
+
 interface AccessState {
     user: UserInfo;
     permissions: Record<string, boolean>;
@@ -112,122 +118,146 @@ const serviceStatusPermission = permission(rbacResources.serviceStatus, rbacActi
 const permissionKey = (perm: Permission) => `${perm.resource}:${perm.action}:${perm.subresource}`;
 const hasPermission = (access: AccessState, perm?: Permission) => !perm || access?.permissions[permissionKey(perm)] === true;
 
-const navItems: NavItem[] = [
+const polymarketNavItem: NavItem = {
+    key: 'polymarket',
+    label: 'Polymarket',
+    icon: <DashboardOutlined />,
+    children: [
+        {key: '/polymarket', label: 'Hot Markets', path: '/polymarket', icon: <DashboardOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
+        {
+            key: '/polymarket/realtime',
+            label: 'Realtime',
+            path: '/polymarket/realtime',
+            icon: <DashboardOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        },
+        {
+            key: '/polymarket/movers',
+            label: 'Movers',
+            path: '/polymarket/movers',
+            icon: <DashboardOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        },
+        {
+            key: '/polymarket/sports-live',
+            label: 'Sports Live',
+            path: '/polymarket/sports-live',
+            icon: <DashboardOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        },
+        {
+            key: '/polymarket/sports-history',
+            label: 'Sports History',
+            path: '/polymarket/sports-history',
+            icon: <DashboardOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        },
+        {
+            key: '/polymarket/uma-proposed',
+            label: 'UMA Proposed',
+            path: '/polymarket/uma-proposed',
+            icon: <ApiOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        },
+        {
+            key: '/polymarket/uma-disputed',
+            label: 'UMA Disputed',
+            path: '/polymarket/uma-disputed',
+            icon: <ApiOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        }
+    ]
+};
+
+const tokenNavItem: NavItem = {
+    key: 'token',
+    label: 'Token',
+    icon: <DashboardOutlined />,
+    children: [
+        {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />, permission: tokenapiPermission(tokenapiSubresources.projects)},
+        {
+            key: '/token/project-reports',
+            label: 'Project Reports',
+            path: '/token/project-reports',
+            icon: <FileTextOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.projectReports)
+        },
+        {
+            key: '/token/contract-codes',
+            label: 'Contract Codes',
+            path: '/token/contract-codes',
+            icon: <CodeOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.contractCodes)
+        },
+        {
+            key: '/token/bytecode-blacklists',
+            label: 'Bytecode Blacklists',
+            path: '/token/bytecode-blacklists',
+            icon: <ApiOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.bytecodeBlacklists)
+        },
+        {
+            key: '/token/wallet-blacklists',
+            label: 'Wallet Blacklists',
+            path: '/token/wallet-blacklists',
+            icon: <WalletOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.walletBlacklists)
+        },
+        {
+            key: '/token/node-statuses',
+            label: 'Node Status',
+            path: '/token/node-statuses',
+            icon: <ApiOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.nodeStatuses)
+        },
+        {
+            key: '/token/chain-checkpoints',
+            label: 'Chain Checkpoints',
+            path: '/token/chain-checkpoints',
+            icon: <ApiOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.chainCheckpoints)
+        },
+        {
+            key: '/token/collection-tasks',
+            label: 'Collection Tasks',
+            path: '/token/collection-tasks',
+            icon: <FileTextOutlined />,
+            permission: tokenapiPermission(tokenapiSubresources.collectionTasks)
+        }
+    ]
+};
+
+const navSections: NavSection[] = [
     {
-        key: 'token',
-        label: 'Token',
-        icon: <DashboardOutlined />,
+        key: 'markets',
+        label: 'Markets',
+        children: [polymarketNavItem, {key: '/FIFA', label: 'FIFA', path: '/FIFA', icon: <TrophyOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)}]
+    },
+    {
+        key: 'token-risk',
+        label: 'Token & Risk',
+        children: [tokenNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)}]
+    },
+    {
+        key: 'operations',
+        label: 'Operations',
         children: [
-            {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />, permission: tokenapiPermission(tokenapiSubresources.projects)},
-            {
-                key: '/token/project-reports',
-                label: 'Project Reports',
-                path: '/token/project-reports',
-                icon: <FileTextOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.projectReports)
-            },
-            {
-                key: '/token/contract-codes',
-                label: 'Contract Codes',
-                path: '/token/contract-codes',
-                icon: <CodeOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.contractCodes)
-            },
-            {
-                key: '/token/bytecode-blacklists',
-                label: 'Bytecode Blacklists',
-                path: '/token/bytecode-blacklists',
-                icon: <ApiOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.bytecodeBlacklists)
-            },
-            {
-                key: '/token/wallet-blacklists',
-                label: 'Wallet Blacklists',
-                path: '/token/wallet-blacklists',
-                icon: <WalletOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.walletBlacklists)
-            },
-            {
-                key: '/token/node-statuses',
-                label: 'Node Status',
-                path: '/token/node-statuses',
-                icon: <ApiOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.nodeStatuses)
-            },
-            {
-                key: '/token/chain-checkpoints',
-                label: 'Chain Checkpoints',
-                path: '/token/chain-checkpoints',
-                icon: <ApiOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.chainCheckpoints)
-            },
-            {
-                key: '/token/collection-tasks',
-                label: 'Collection Tasks',
-                path: '/token/collection-tasks',
-                icon: <FileTextOutlined />,
-                permission: tokenapiPermission(tokenapiSubresources.collectionTasks)
-            }
+            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
+            {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission}
         ]
     },
     {
-        key: 'polymarket',
-        label: 'Polymarket',
-        icon: <DashboardOutlined />,
+        key: 'system',
+        label: 'System',
         children: [
-            {key: '/polymarket', label: 'Hot Markets', path: '/polymarket', icon: <DashboardOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
-            {
-                key: '/polymarket/realtime',
-                label: 'Realtime',
-                path: '/polymarket/realtime',
-                icon: <DashboardOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            },
-            {
-                key: '/polymarket/movers',
-                label: 'Movers',
-                path: '/polymarket/movers',
-                icon: <DashboardOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            },
-            {
-                key: '/polymarket/sports-live',
-                label: 'Sports Live',
-                path: '/polymarket/sports-live',
-                icon: <DashboardOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            },
-            {
-                key: '/polymarket/sports-history',
-                label: 'Sports History',
-                path: '/polymarket/sports-history',
-                icon: <DashboardOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            },
-            {
-                key: '/polymarket/uma-proposed',
-                label: 'UMA Proposed',
-                path: '/polymarket/uma-proposed',
-                icon: <ApiOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            },
-            {
-                key: '/polymarket/uma-disputed',
-                label: 'UMA Disputed',
-                path: '/polymarket/uma-disputed',
-                icon: <ApiOutlined />,
-                permission: permission(rbacResources.polymarket, rbacActions.get)
-            }
+            {key: '/settings', label: 'Settings', path: '/settings', icon: <SettingOutlined />},
+            {key: '/user-info', label: 'User Info', path: '/user-info', icon: <UserOutlined />},
+            {key: '/help', label: 'Help', path: '/help', icon: <QuestionCircleOutlined />}
         ]
-    },
-    {key: '/FIFA', label: 'FIFA', path: '/FIFA', icon: <TrophyOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
-    {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
-    {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
-    {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission},
-    {key: '/settings', label: 'Settings', path: '/settings', icon: <SettingOutlined />},
-    {key: '/user-info', label: 'User Info', path: '/user-info', icon: <UserOutlined />},
-    {key: '/help', label: 'Help', path: '/help', icon: <QuestionCircleOutlined />}
+    }
 ];
+
+const navItems = navSections.flatMap(section => section.children);
 
 const flattenNav = (items: NavItem[]): NavItem[] => items.flatMap(item => [item, ...(item.children ? flattenNav(item.children) : [])]);
 
@@ -250,6 +280,17 @@ const toMenuItems = (items: NavItem[]): MenuProps['items'] =>
         children: item.children ? toMenuItems(item.children) : undefined
     }));
 
+const filterNavSections = (sections: NavSection[], access: AccessState): NavSection[] =>
+    sections.map(section => ({...section, children: filterNavItems(section.children, access)})).filter(section => section.children.length > 0);
+
+const toSectionMenuItems = (sections: NavSection[]): MenuProps['items'] =>
+    sections.map(section => ({
+        key: section.key,
+        type: 'group',
+        label: section.label,
+        children: toMenuItems(section.children)
+    }));
+
 const selectedKey = (pathname: string) => {
     const exact = flattenNav(navItems)
         .filter(item => item.path)
@@ -261,7 +302,25 @@ const selectedKey = (pathname: string) => {
 const openKeys = (pathname: string) =>
     navItems.filter(item => (item.children || []).some(child => pathname === child.path || pathname.startsWith(`${child.path}/`))).map(item => item.key);
 
-const pageTitle = (pathname: string) => flattenNav(navItems).find(item => item.key === selectedKey(pathname))?.label || 'Athena';
+const navTrail = (items: NavItem[], targetKey: string): NavItem[] => {
+    for (const item of items) {
+        if (item.key === targetKey) {
+            return [item];
+        }
+        const childTrail = item.children ? navTrail(item.children, targetKey) : [];
+        if (childTrail.length > 0) {
+            return [item, ...childTrail];
+        }
+    }
+    return [];
+};
+
+const breadcrumbItems = (pathname: string) => {
+    const targetKey = selectedKey(pathname);
+    const section = navSections.find(candidate => navTrail(candidate.children, targetKey).length > 0);
+    const trail = section ? navTrail(section.children, targetKey) : [];
+    return [section?.label, ...trail.map(item => item.label)].filter(Boolean).map(title => ({title}));
+};
 
 const usePreferences = () => {
     const [pref, setPref] = React.useState<ViewPreferences>(null);
@@ -448,10 +507,16 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     }, [isLoginPath, navigate]);
 
     React.useEffect(() => {
-        document.body.dataset.theme = props.pref.theme || 'light';
+        document.body.dataset.theme = props.pref.theme || 'dark';
     }, [props.pref.theme]);
 
-    const visibleNavItems = access ? filterNavItems(navItems, access) : [];
+    React.useEffect(() => {
+        const current = flattenNav(navItems).find(item => item.key === selectedKey(location.pathname));
+        document.title = current ? `${current.label} · Athena` : 'Athena';
+    }, [location.pathname]);
+
+    const visibleNavSections = access ? filterNavSections(navSections, access) : [];
+    const visibleNavItems = visibleNavSections.flatMap(section => section.children);
 
     const onMenuClick: MenuProps['onClick'] = item => {
         const target = flattenNav(visibleNavItems).find(navItem => navItem.key === item.key);
@@ -488,10 +553,16 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         {key: 'dark', label: 'Dark', icon: <MoonOutlined />}
     ];
 
+    const userMenu: MenuProps['items'] = [
+        {key: '/user-info', label: 'User Info', icon: <UserOutlined />},
+        {key: '/settings', label: 'Settings', icon: <SettingOutlined />},
+        {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />}
+    ];
+
     const menu = (
         <Menu
             mode='inline'
-            items={toMenuItems(visibleNavItems)}
+            items={toSectionMenuItems(visibleNavSections)}
             selectedKeys={[selectedKey(location.pathname)]}
             defaultOpenKeys={openKeys(location.pathname)}
             onClick={onMenuClick}
@@ -503,41 +574,58 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         routes
     ) : (
         <AntLayout className='athena-shell'>
-            <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={sidebarCollapsed} trigger={null} width={248}>
-                <div className='athena-brand' onClick={() => navigate('/user-info')}>
+            <a className='athena-skip-link' href='#athena-main'>
+                Skip to main content
+            </a>
+            <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={sidebarCollapsed} collapsedWidth={72} trigger={null} width={248}>
+                <button className='athena-brand' type='button' aria-label='Open Athena user information' onClick={() => navigate('/user-info')}>
                     <BrandMark size='small' />
-                    {!sidebarCollapsed && <span>Athena</span>}
-                </div>
-                {menu}
+                    {!sidebarCollapsed && (
+                        <span className='athena-brand__copy'>
+                            <strong>Athena</strong>
+                            <small>Operations Console</small>
+                        </span>
+                    )}
+                </button>
+                <nav aria-label='Primary navigation'>{menu}</nav>
             </AntLayout.Sider>
             <AntLayout>
                 <AntLayout.Header className='athena-shell__header'>
                     <div className='athena-shell__header-left'>
-                        <Button
-                            className='athena-shell__sidebar-toggle'
-                            type='text'
-                            icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                            onClick={() => {
-                                const next = !sidebarCollapsed;
-                                setSidebarCollapsed(next);
-                                services.viewPreferences.updatePreferences({...props.pref, hideSidebar: next});
-                            }}
-                        />
-                        <Typography.Title level={4}>{pageTitle(location.pathname)}</Typography.Title>
+                        <Tooltip title={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}>
+                            <Button
+                                className='athena-shell__sidebar-toggle'
+                                type='text'
+                                aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+                                icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                                onClick={() => {
+                                    const next = !sidebarCollapsed;
+                                    setSidebarCollapsed(next);
+                                    services.viewPreferences.updatePreferences({...props.pref, hideSidebar: next});
+                                }}
+                            />
+                        </Tooltip>
+                        <Breadcrumb className='athena-shell__breadcrumb' items={breadcrumbItems(location.pathname)} />
                     </div>
                     <div className='athena-shell__header-actions'>
-                        <Dropdown
-                            menu={{
-                                items: themeMenu,
-                                selectedKeys: [props.pref.theme || 'light'],
-                                onClick: item => services.viewPreferences.updatePreferences({...props.pref, theme: item.key})
-                            }}>
-                            <Button type='text' icon={(props.pref.theme || 'light') === 'dark' ? <MoonOutlined /> : <SunOutlined />} />
-                        </Dropdown>
-                        <Button type='text' icon={<UserOutlined />} onClick={() => navigate('/user-info')} />
+                        <Tooltip title='Change theme'>
+                            <Dropdown
+                                menu={{
+                                    items: themeMenu,
+                                    selectedKeys: [props.pref.theme || 'dark'],
+                                    onClick: item => services.viewPreferences.updatePreferences({...props.pref, theme: item.key as ViewPreferences['theme']})
+                                }}>
+                                <Button type='text' aria-label='Change color theme' icon={(props.pref.theme || 'dark') === 'dark' ? <MoonOutlined /> : <SunOutlined />} />
+                            </Dropdown>
+                        </Tooltip>
+                        <Tooltip title='User menu'>
+                            <Dropdown menu={{items: userMenu, onClick: item => navigate(item.key)}}>
+                                <Button type='text' aria-label='Open user menu' icon={<UserOutlined />} />
+                            </Dropdown>
+                        </Tooltip>
                     </div>
                 </AntLayout.Header>
-                <AntLayout.Content className='athena-shell__content'>
+                <AntLayout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
                     <Provider value={contextValue}>
                         <AuthSettingsCtx.Provider value={props.authSettings}>{routes}</AuthSettingsCtx.Provider>
                     </Provider>
@@ -618,22 +706,31 @@ const Bootstrap = () => {
                 algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
                 token: {
                     borderRadius: 8,
-                    colorPrimary: '#e05f3f',
-                    colorInfo: '#2f7df6',
-                    colorSuccess: '#19a974',
-                    colorWarning: '#d98b18',
-                    colorError: '#d14b57',
-                    colorLink: '#2f7df6',
-                    colorBgLayout: isDark ? '#101214' : '#f3f6f5',
-                    colorBgContainer: isDark ? '#171b1d' : '#ffffff',
-                    colorText: isDark ? '#edf2ef' : '#17211d',
-                    colorTextSecondary: isDark ? '#9aa7a1' : '#64726c',
-                    colorBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(28,45,37,0.12)',
-                    boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.34)' : '0 18px 48px rgba(26,45,38,0.10)',
+                    colorPrimary: isDark ? '#e76f51' : '#d85d42',
+                    colorInfo: isDark ? '#3b82f6' : '#2563eb',
+                    colorSuccess: isDark ? '#22c55e' : '#168a45',
+                    colorWarning: isDark ? '#f59e0b' : '#b86a00',
+                    colorError: isDark ? '#ef4444' : '#c9363e',
+                    colorLink: isDark ? '#60a5fa' : '#2563eb',
+                    colorBgBase: isDark ? '#0b0f14' : '#f4f6f8',
+                    colorBgLayout: isDark ? '#0b0f14' : '#f4f6f8',
+                    colorBgContainer: isDark ? '#111820' : '#ffffff',
+                    colorBgElevated: isDark ? '#16202a' : '#f8fafc',
+                    colorText: isDark ? '#eef3f8' : '#18212b',
+                    colorTextSecondary: isDark ? '#94a3b8' : '#637083',
+                    colorBorder: isDark ? '#263341' : '#d8e0e8',
+                    colorBorderSecondary: isDark ? '#1f2a35' : '#e4e9ef',
+                    colorSplit: isDark ? '#263341' : '#d8e0e8',
+                    colorFillSecondary: isDark ? '#1b2632' : '#edf1f5',
+                    controlOutline: isDark ? 'rgba(96,165,250,0.45)' : 'rgba(37,99,235,0.35)',
+                    boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.34)' : '0 18px 48px rgba(24,33,43,0.10)',
+                    boxShadowSecondary: isDark ? '0 12px 32px rgba(0,0,0,0.28)' : '0 12px 32px rgba(24,33,43,0.08)',
                     fontFamily: 'Inter, Heebo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                     fontSize: 14,
                     controlHeight: 36,
                     controlHeightSM: 30,
+                    motionDurationFast: '0.15s',
+                    motionDurationMid: '0.2s',
                     wireframe: false
                 }
             }}>

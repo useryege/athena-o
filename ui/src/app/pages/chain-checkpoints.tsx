@@ -25,6 +25,7 @@ export const ChainCheckpointsPage = () => {
             title: 'Actions',
             render: item => (
                 <Select
+                    aria-label={`Set status for chain ${item.chainID ?? ''}`}
                     disabled={item.chainID === undefined}
                     value={item.status}
                     style={{width: 130}}

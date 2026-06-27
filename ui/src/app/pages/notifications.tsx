@@ -75,6 +75,7 @@ export const NotificationsPage = () => {
                     <SearchBar value={keyword} onChange={setKeyword} placeholder='Keyword' />
                     <Select
                         allowClear={true}
+                        aria-label='Filter by notification status'
                         value={status || undefined}
                         style={{width: 150}}
                         placeholder='Status'
@@ -83,6 +84,7 @@ export const NotificationsPage = () => {
                     />
                     <Select
                         allowClear={true}
+                        aria-label='Filter by Telegram chat'
                         value={telegramChat || undefined}
                         style={{width: 150}}
                         placeholder='Telegram Chat'

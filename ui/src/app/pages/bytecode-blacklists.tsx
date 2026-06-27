@@ -81,13 +81,13 @@ export const BytecodeBlacklistsPage = () => {
             filters={
                 <Form form={form} layout='inline' onFinish={add}>
                     <Form.Item name='sourceChainID' rules={[{required: true}]}>
-                        <Select placeholder='Source chain' options={chainOptions} style={{minWidth: 180}} />
+                        <Select aria-label='Source chain' placeholder='Source chain' options={chainOptions} style={{minWidth: 180}} />
                     </Form.Item>
                     <Form.Item name='sourceContract' rules={[{required: true}]}>
-                        <Input placeholder='Source contract' />
+                        <Input aria-label='Source contract' placeholder='Source contract' />
                     </Form.Item>
                     <Form.Item name='note'>
-                        <Input placeholder='Note' />
+                        <Input aria-label='Bytecode note' placeholder='Note' />
                     </Form.Item>
                     <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
                         Add

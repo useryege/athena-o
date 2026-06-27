@@ -95,6 +95,7 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                     <SearchBar value={query} onChange={setQuery} placeholder='Address or alias' />
                     <Select
                         allowClear={true}
+                        aria-label='Filter by chain'
                         value={chain || undefined}
                         placeholder='Chain'
                         style={{width: 150}}

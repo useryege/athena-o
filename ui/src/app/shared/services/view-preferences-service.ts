@@ -1,6 +1,8 @@
 import deepMerge from 'deepmerge';
 import {BehaviorSubject, Observable} from 'rxjs';
 
+export type ThemeMode = 'dark' | 'light';
+
 export interface ViewPreferences {
     version: number;
     pageSizes: {[key: string]: number};
@@ -8,12 +10,12 @@ export interface ViewPreferences {
     hideBannerContent: string;
     hideSidebar: boolean;
     position: string;
-    theme: string;
+    theme: ThemeMode;
 }
 
 const VIEW_PREFERENCES_KEY = 'view_preferences';
 
-const minVer = 5;
+const minVer = 6;
 
 const DEFAULT_PREFERENCES: ViewPreferences = {
     version: minVer,
@@ -21,7 +23,7 @@ const DEFAULT_PREFERENCES: ViewPreferences = {
     hideBannerContent: '',
     hideSidebar: false,
     position: '',
-    theme: 'light'
+    theme: 'dark'
 };
 
 export class ViewPreferencesService {

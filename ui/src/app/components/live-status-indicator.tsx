@@ -5,8 +5,8 @@ export const LiveStatusIndicator = (props: {live: boolean; label?: React.ReactNo
         return null;
     }
     return (
-        <span className='live-status-indicator'>
-            <span className='live-status-indicator__dot' />
+        <span className='live-status-indicator' role='status'>
+            <span className='live-status-indicator__dot' aria-hidden='true' />
             <span>{props.label || 'Live'}</span>
         </span>
     );

@@ -39,10 +39,16 @@ export const CollectionTasksPage = () => {
             onRefresh={data.reload}
             filters={
                 <Space wrap={true}>
-                    <InputNumber value={projectID} placeholder='Project ID' onChange={value => setProjectID(typeof value === 'number' ? value : undefined)} />
-                    <Input value={dataType} placeholder='Data type' onChange={event => setDataType(event.target.value)} />
+                    <InputNumber
+                        aria-label='Filter by project ID'
+                        value={projectID}
+                        placeholder='Project ID'
+                        onChange={value => setProjectID(typeof value === 'number' ? value : undefined)}
+                    />
+                    <Input aria-label='Filter by data type' value={dataType} placeholder='Data type' onChange={event => setDataType(event.target.value)} />
                     <Select
                         allowClear={true}
+                        aria-label='Filter by status'
                         value={status || undefined}
                         placeholder='Status'
                         style={{width: 150}}

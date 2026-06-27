@@ -60,6 +60,7 @@ export const ProjectsPage = () => {
                 <Space wrap={true}>
                     <Select
                         allowClear={true}
+                        aria-label='Filter by chain'
                         value={chainID}
                         placeholder='Chain'
                         style={{width: 220}}

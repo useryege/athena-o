@@ -63,10 +63,10 @@ export const WalletBlacklistsPage = () => {
             filters={
                 <Form form={form} layout='inline' onFinish={add}>
                     <Form.Item name='wallet' rules={[{required: true}]}>
-                        <Input placeholder='Wallet' />
+                        <Input aria-label='Wallet address' placeholder='Wallet' />
                     </Form.Item>
                     <Form.Item name='note'>
-                        <Input placeholder='Note' />
+                        <Input aria-label='Wallet note' placeholder='Note' />
                     </Form.Item>
                     <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
                         Add

@@ -64,14 +64,15 @@ export const LoginPage = () => {
     };
 
     return (
-        <div className='login-screen'>
+        <main className='login-screen'>
             <Card className='login-panel'>
                 <div className='login-panel__brand'>
                     <BrandMark size='large' />
                     <Typography.Title level={3}>Athena</Typography.Title>
+                    <Typography.Text type='secondary'>Operations Console</Typography.Text>
                 </div>
                 {error && <Alert type='error' title={error} showIcon={true} />}
-                <Form form={form} layout='vertical' onFinish={submit}>
+                <Form form={form} layout='vertical' aria-label='Athena login' onFinish={submit}>
                     <Form.Item name='username' label='Username' rules={[{required: true}]}>
                         <Input autoComplete='username' />
                     </Form.Item>
@@ -83,7 +84,12 @@ export const LoginPage = () => {
                             <Form.Item name='captchaAnswer' noStyle={true} rules={[{required: true}]}>
                                 <Input autoComplete='off' maxLength={5} />
                             </Form.Item>
-                            <Button className='login-captcha__image' loading={captchaLoading} onClick={loadCaptcha} icon={!captcha ? <ReloadOutlined /> : undefined}>
+                            <Button
+                                className='login-captcha__image'
+                                aria-label='Refresh captcha'
+                                loading={captchaLoading}
+                                onClick={loadCaptcha}
+                                icon={!captcha ? <ReloadOutlined /> : undefined}>
                                 {captcha && <img src={captcha.imageDataUrl} alt='Captcha' />}
                             </Button>
                         </div>
@@ -93,6 +99,6 @@ export const LoginPage = () => {
                     </Button>
                 </Form>
             </Card>
-        </div>
+        </main>
     );
 };

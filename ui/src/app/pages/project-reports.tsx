@@ -140,6 +140,7 @@ export const ProjectReportsPage = () => {
                 <Space wrap={true}>
                     <Select
                         allowClear={true}
+                        aria-label='Filter by chain'
                         value={chainID}
                         placeholder='Chain'
                         style={{width: 220}}
@@ -149,6 +150,7 @@ export const ProjectReportsPage = () => {
                         }}
                     />
                     <InputNumber
+                        aria-label='Filter by project ID'
                         value={projectID}
                         min={1}
                         placeholder='Project ID'
@@ -159,6 +161,7 @@ export const ProjectReportsPage = () => {
                     <SearchBar value={contract} onChange={value => setFilter('contract', value)} placeholder='Contract' />
                     <Select
                         allowClear={true}
+                        aria-label='Filter by evaluation status'
                         value={evaluationStatus || undefined}
                         placeholder='Evaluation status'
                         style={{width: 190}}

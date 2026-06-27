@@ -3,7 +3,7 @@ import * as React from 'react';
 
 export const CardTitle = (props: {title: React.ReactNode; subtitle?: React.ReactNode; image?: string; tags?: React.ReactNode}) => (
     <div className='card-title'>
-        {props.image && <img src={props.image} alt='' />}
+        {props.image && <img src={props.image} alt='' onError={event => (event.currentTarget.hidden = true)} />}
         <div className='card-title__main'>
             <Typography.Text strong={true}>{props.title || '-'}</Typography.Text>
             {props.subtitle && <Typography.Text type='secondary'>{props.subtitle}</Typography.Text>}
@@ -45,6 +45,7 @@ export const SearchBar = (props: {value?: string; placeholder?: string; onChange
         allowClear={true}
         value={props.value}
         placeholder={props.placeholder || 'Search'}
+        aria-label={props.placeholder || 'Search'}
         onChange={event => props.onChange(event.target.value)}
         onSearch={props.onSearch}
     />
