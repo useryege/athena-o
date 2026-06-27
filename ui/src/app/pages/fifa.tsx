@@ -98,6 +98,14 @@ const fixedTokenAmountValue = (amount?: string, symbol?: string) => {
     return value === undefined ? '-' : `${value.toFixed(2)} ${symbol || ''}`.trim();
 };
 
+const compactWalletAddress = (value?: string) => {
+    const normalized = String(value || '').trim();
+    if (!normalized) {
+        return '-';
+    }
+    return normalized.length > 8 ? `${normalized.slice(0, 4)}...${normalized.slice(-4)}` : normalized;
+};
+
 const FIFAInfoValue = (props: {value: React.ReactNode; copyText?: string}) => (
     <span className='fifa-info-grid__value-wrap' title={typeof props.value === 'string' ? props.value : undefined}>
         <span className='fifa-info-grid__value-text'>{props.value ?? '-'}</span>
@@ -235,11 +243,9 @@ const FIFAWalletBalancesPanel = (props: {items?: PolymarketFIFAWalletBalanceItem
     );
 };
 
-const FIFAWalletHoldingCard = (props: {item: PolymarketFIFAWalletHoldingItem; loading?: boolean}) => {
+const FIFAWalletHoldingCard = (props: {item: PolymarketFIFAWalletHoldingItem}) => {
     const item = props.item;
     const title = item.alias || `Wallet #${item.walletId || '-'}`;
-    const statusText = props.loading ? 'Refreshing' : item.ok ? 'Live' : item.errorMessage ? 'Error' : 'Pending';
-    const statusColor = props.loading ? 'blue' : item.ok ? 'green' : item.errorMessage ? 'red' : 'default';
     return (
         <Card className='fifa-wallet-holding' size='small'>
             <div className='fifa-wallet-holding__row'>
@@ -247,11 +253,10 @@ const FIFAWalletHoldingCard = (props: {item: PolymarketFIFAWalletHoldingItem; lo
                     {title}
                 </Typography.Title>
                 <div className='fifa-wallet-holding__address'>
-                    <FIFAInfoValue value={item.walletAddress || '-'} copyText={item.walletAddress} />
+                    <FIFAInfoValue value={compactWalletAddress(item.walletAddress)} copyText={item.walletAddress} />
                 </div>
                 <span className='fifa-wallet-holding__amount fifa-wallet-holding__amount--sol'>{fixedTokenAmountValue(item.solAmount, 'SOL')}</span>
                 <span className='fifa-wallet-holding__amount fifa-wallet-holding__amount--usdc'>{fixedTokenAmountValue(item.usdcAmount, 'USDC')}</span>
-                <Tag color={statusColor}>{statusText}</Tag>
             </div>
             {item.errorMessage && <Typography.Text type='danger'>{item.errorMessage}</Typography.Text>}
         </Card>
@@ -273,7 +278,7 @@ const FIFAWalletHoldingsPanel = (props: {items?: PolymarketFIFAWalletHoldingItem
             <Row className='fifa-wallet-holdings__items' gutter={[12, 12]}>
                 {items.map(item => (
                     <Col key={item.walletId || item.walletAddress} span={24}>
-                        <FIFAWalletHoldingCard item={item} loading={props.loading} />
+                        <FIFAWalletHoldingCard item={item} />
                     </Col>
                 ))}
             </Row>

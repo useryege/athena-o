@@ -1563,7 +1563,7 @@ body::-webkit-scrollbar-thumb,
 .fifa-wallet-holding__row {
     min-width: 0;
     display: grid;
-    grid-template-columns: minmax(110px, 0.65fr) minmax(300px, 1.8fr) minmax(110px, 0.55fr) minmax(120px, 0.65fr) auto;
+    grid-template-columns: minmax(110px, 0.7fr) minmax(150px, 1fr) minmax(110px, 0.55fr) minmax(120px, 0.65fr);
     align-items: center;
     gap: 12px;
 }
@@ -1602,11 +1602,6 @@ body::-webkit-scrollbar-thumb,
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.fifa-wallet-holding__row .ant-tag {
-    justify-self: end;
-    margin-inline-end: 0;
 }
 
 .fifa-hedge-calculator {
@@ -1943,9 +1938,9 @@ body::-webkit-scrollbar-thumb,
 
 @media (max-width: 900px) {
     .fifa-wallet-holding__row {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-areas:
-            'alias status'
+            'alias alias'
             'address address'
             'sol usdc';
         gap: 8px 10px;
@@ -1967,9 +1962,6 @@ body::-webkit-scrollbar-thumb,
         grid-area: usdc;
     }
 
-    .fifa-wallet-holding__row .ant-tag {
-        grid-area: status;
-    }
 }
 
 @media (max-width: 1439px) {
