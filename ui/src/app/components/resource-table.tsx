@@ -18,6 +18,8 @@ export const ResourceTable = <T,>(props: {
     onSelectionChange?: (keys: React.Key[], records: T[]) => void;
     enableHoverKeyboardSelect?: boolean;
     label?: string;
+    scrollX?: number | string;
+    stickyHeader?: boolean | {offsetHeader?: number};
 }) => {
     const selectedKeys = props.selectedRowKeys || [];
     const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
@@ -63,13 +65,16 @@ export const ResourceTable = <T,>(props: {
                   return {...click, ...mouse};
               }
             : undefined;
+    const scroll = props.scrollX === undefined ? undefined : {x: props.scrollX};
+    const sticky = props.stickyHeader === true ? {offsetHeader: 56} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 56} : undefined;
+    const regionClassName = ['resource-table-region', tableClassName].filter(Boolean).join(' ');
 
     return (
-        <div className={tableClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
+        <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
             <Table<T>
                 className='resource-table'
                 size='small'
-                sticky={{offsetHeader: 56}}
+                sticky={sticky}
                 rowKey={props.rowKey as any}
                 columns={props.columns as any}
                 dataSource={props.items}
@@ -82,12 +87,12 @@ export const ResourceTable = <T,>(props: {
                               pageSize: props.pageSize,
                               total: props.total,
                               showSizeChanger: true,
-                              showTotal: total => `${total} items`,
+                              showTotal: total => `${total} ${total === 1 ? 'item' : 'items'}`,
                               onChange: props.onPageChange
                           }
                         : false
                 }
-                scroll={{x: 'max-content'}}
+                scroll={scroll}
                 onRow={tableOnRow}
             />
         </div>

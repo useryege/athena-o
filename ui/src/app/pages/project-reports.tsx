@@ -181,6 +181,7 @@ export const ProjectReportsPage = () => {
                 page={page}
                 pageSize={pageSize}
                 onPageChange={setPage}
+                scrollX={2200}
             />
         </AppPage>
     );

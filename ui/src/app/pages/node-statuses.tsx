@@ -46,7 +46,7 @@ export const NodeStatusesPage = () => {
                     const items = statuses.filter(item => item.chainID === chainID);
                     return (
                         <Section key={chainID} title={`${items[0]?.chainName || chainLabel(chainID)} Nodes`} extra={<ChainBadge chainID={chainID} />}>
-                            <ResourceTable rowKey={item => `${chainID}:${item.endpoint}`} items={items} columns={columns} loading={data.loading} />
+                            <ResourceTable rowKey={item => `${chainID}:${item.endpoint}`} items={items} columns={columns} loading={data.loading} scrollX={1500} />
                         </Section>
                     );
                 })
