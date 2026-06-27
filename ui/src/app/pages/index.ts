@@ -19,5 +19,3 @@ export * from './service-status';
 export * from './user-info';
 export * from './wallet-blacklists';
 export * from './wallets';
-export * from './worm';
-export * from './worm-shared';

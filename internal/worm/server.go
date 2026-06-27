@@ -47,9 +47,6 @@ func (s *Server) CreateGRPC() *grpc.Server {
 }
 
 func (s *Server) Start() error {
-	if err := s.service.Start(); err != nil {
-		return err
-	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
 	return nil
 }

@@ -54,8 +54,7 @@ import {
     ServiceStatusPage,
     UserInfoPage,
     WalletBlacklistsPage,
-    WalletsPage,
-    WormPage
+    WalletsPage
 } from './pages';
 
 services.viewPreferences.init();
@@ -87,8 +86,7 @@ const rbacResources = {
     polymarket: 'polymarket',
     tokenapi: 'tokenapi',
     serviceStatus: 'service-status',
-    wallets: 'wallets',
-    worm: 'worm'
+    wallets: 'wallets'
 };
 
 const rbacActions = {
@@ -223,7 +221,6 @@ const navItems: NavItem[] = [
         ]
     },
     {key: '/FIFA', label: 'FIFA', path: '/FIFA', icon: <TrophyOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
-    {key: '/worm', label: 'Worm', path: '/worm', icon: <ApiOutlined />, permission: permission(rbacResources.worm, rbacActions.get)},
     {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
     {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)},
     {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission},
@@ -327,7 +324,6 @@ const AppRoutes = (props: {access: AccessState}) => {
                     />
                 )}
             />
-            <Route path='/worm' element={withPermission(permission(rbacResources.worm, rbacActions.get), <WormPage />)} />
             <Route path='/polymarket' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketHotPage />)} />
             <Route path='/polymarket/realtime' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketRealtimePage />)} />
             <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />

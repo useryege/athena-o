@@ -61,28 +61,6 @@ export interface GetWormEventResult {
     fetchedAt?: number;
 }
 
-export interface ListWormEventsResult {
-    items: WormEventItem[];
-    nextCursor?: string;
-    fetchedAt?: number;
-    stale?: boolean;
-}
-
-export type WormMarketSortOption = 'new' | 'trending' | 'ending_soon' | 'leverage';
-export type WormMarketCategorySlug = 'all' | 'politics' | 'sports' | 'crypto' | 'tech' | 'finance' | 'wtf';
-export const DEFAULT_WORM_MARKET_SORT: WormMarketSortOption = 'leverage';
-export const DEFAULT_WORM_MARKET_CATEGORY: WormMarketCategorySlug = 'sports';
-export const DEFAULT_WORM_MARKET_STATE = 'open';
-
-const isOpenWormMarket = (item: Pick<WormMarketItem, 'state'>) => item.state?.toLowerCase() === DEFAULT_WORM_MARKET_STATE;
-
-export interface ListWormEventsOptions {
-    limit?: number;
-    cursor?: string;
-    sortOption?: WormMarketSortOption;
-    categorySlug?: WormMarketCategorySlug;
-}
-
 const readValue = (item: any, ...names: string[]) => {
     for (const name of names) {
         if (item?.[name] !== undefined && item?.[name] !== null) {
@@ -145,9 +123,9 @@ const normalizeMarket = (item: any): WormMarketItem => ({
     tradingDataError: readString(item, 'tradingDataError', 'trading_data_error')
 });
 
-const normalizeEvent = (item: any, filterOpenMarkets = true): WormEventItem => {
+const normalizeEvent = (item: any): WormEventItem => {
     const markets = readValue(item, 'markets');
-    const normalizedMarkets = Array.isArray(markets) ? markets.map(normalizeMarket).filter((market: WormMarketItem) => !filterOpenMarkets || isOpenWormMarket(market)) : [];
+    const normalizedMarkets = Array.isArray(markets) ? markets.map(normalizeMarket) : [];
     return {
         conditionId: readString(item, 'conditionId', 'condition_id'),
         title: readString(item, 'title'),
@@ -168,34 +146,8 @@ export class WormService {
             const body = res.body || {};
             const item = body.item || body.event;
             return {
-                item: item ? normalizeEvent(item, false) : undefined,
+                item: item ? normalizeEvent(item) : undefined,
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listEvents(options: ListWormEventsOptions = {}): Promise<ListWormEventsResult> & {abort?: () => void} {
-        const query: any = {
-            limit: options.limit || 20,
-            cursor: options.cursor || ''
-        };
-        if (options.sortOption) {
-            query.sort_option = options.sortOption;
-        }
-        if (options.categorySlug) {
-            query.category_slug = options.categorySlug;
-        }
-        const req = requests.get('/worm/events').query(query);
-        const promise = req.then(res => {
-            const body = res.body || {};
-            const items = (body.items || []).map((item: any) => normalizeEvent(item)).filter((item: WormEventItem) => item.conditionId && item.markets.length > 0);
-            return {
-                items,
-                nextCursor: body.nextCursor || body.next_cursor || '',
-                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
-                stale: readBoolean(body, 'stale', 'stale')
             };
         }) as any;
         promise.abort = () => req.abort();
