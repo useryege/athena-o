@@ -47,7 +47,6 @@ const price = (value?: number) => (value === undefined ? '-' : value.toFixed(3))
 const money = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : value.toFixed(2));
 const percent = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : `${(value * 100).toFixed(2)}%`);
 const balanceValue = (item: PolymarketFIFAWalletBalanceItem) => (item.amount && item.amount !== '-' ? `${item.amount} ${item.tokenSymbol || ''}`.trim() : '-');
-const tokenAmountValue = (amount?: string, symbol?: string) => (amount && amount !== '-' ? `${amount} ${symbol || ''}`.trim() : '-');
 const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
 type FIFAInfoGridItem = {label: React.ReactNode; value: React.ReactNode; copyText?: string};
@@ -92,6 +91,11 @@ const numberValue = (value?: string | number) => {
     }
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const fixedTokenAmountValue = (amount?: string, symbol?: string) => {
+    const value = numberValue(amount);
+    return value === undefined ? '-' : `${value.toFixed(2)} ${symbol || ''}`.trim();
 };
 
 const FIFAInfoValue = (props: {value: React.ReactNode; copyText?: string}) => (
@@ -238,25 +242,16 @@ const FIFAWalletHoldingCard = (props: {item: PolymarketFIFAWalletHoldingItem; lo
     const statusColor = props.loading ? 'blue' : item.ok ? 'green' : item.errorMessage ? 'red' : 'default';
     return (
         <Card className='fifa-wallet-holding' size='small'>
-            <div className='fifa-wallet-holding__header'>
-                <div className='fifa-wallet-holding__identity'>
-                    <Typography.Title level={5}>{title}</Typography.Title>
-                    <Typography.Text type='secondary'>{item.type || 'worm_position'}</Typography.Text>
+            <div className='fifa-wallet-holding__row'>
+                <Typography.Title className='fifa-wallet-holding__alias' level={5} title={title}>
+                    {title}
+                </Typography.Title>
+                <div className='fifa-wallet-holding__address'>
+                    <FIFAInfoValue value={item.walletAddress || '-'} copyText={item.walletAddress} />
                 </div>
+                <span className='fifa-wallet-holding__amount fifa-wallet-holding__amount--sol'>{fixedTokenAmountValue(item.solAmount, 'SOL')}</span>
+                <span className='fifa-wallet-holding__amount fifa-wallet-holding__amount--usdc'>{fixedTokenAmountValue(item.usdcAmount, 'USDC')}</span>
                 <Tag color={statusColor}>{statusText}</Tag>
-            </div>
-            <FIFAInfoGrid
-                columns={2}
-                items={[
-                    {label: 'SOL', value: tokenAmountValue(item.solAmount, 'SOL'), copyText: item.solRawAmount},
-                    {label: 'USDC', value: tokenAmountValue(item.usdcAmount, 'USDC'), copyText: item.usdcRawAmount}
-                ]}
-            />
-            <FIFAInfoGrid columns={1} items={[{label: 'Address', value: item.walletAddress, copyText: item.walletAddress}]} />
-            <div className='fifa-wallet-holding__actions'>
-                <Button href={item.explorerUrl} target='_blank' rel='noreferrer' icon={<LinkOutlined />} disabled={!item.explorerUrl}>
-                    Explorer
-                </Button>
             </div>
             {item.errorMessage && <Typography.Text type='danger'>{item.errorMessage}</Typography.Text>}
         </Card>

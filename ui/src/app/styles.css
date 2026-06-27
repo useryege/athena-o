@@ -1555,35 +1555,58 @@ body::-webkit-scrollbar-thumb,
 .fifa-wallet-holding .ant-card-body {
     min-height: 100%;
     display: grid;
-    gap: 12px;
-    align-content: start;
+    gap: 8px;
+    align-content: center;
+    padding: 10px 14px;
 }
 
-.fifa-wallet-holding__header {
-    min-height: 36px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.fifa-wallet-holding__identity {
+.fifa-wallet-holding__row {
     min-width: 0;
     display: grid;
-    gap: 2px;
+    grid-template-columns: minmax(110px, 0.65fr) minmax(300px, 1.8fr) minmax(110px, 0.55fr) minmax(120px, 0.65fr) auto;
+    align-items: center;
+    gap: 12px;
 }
 
-.fifa-wallet-holding__identity h5 {
+.fifa-wallet-holding__alias {
     margin: 0;
     min-width: 0;
     font-size: 15px;
     font-weight: 850;
-    overflow-wrap: anywhere;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.fifa-wallet-holding__actions {
+.fifa-wallet-holding__address {
+    min-width: 0;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.fifa-wallet-holding__address .fifa-info-grid__value-wrap {
     display: flex;
-    justify-content: flex-start;
+}
+
+.fifa-wallet-holding__amount {
+    min-width: 0;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 13px;
+    font-weight: 850;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fifa-wallet-holding__row .ant-tag {
+    justify-self: end;
+    margin-inline-end: 0;
 }
 
 .fifa-hedge-calculator {
@@ -1916,6 +1939,37 @@ body::-webkit-scrollbar-thumb,
     font-weight: 800;
     line-height: 1.25;
     font-family: var(--athena-data-font);
+}
+
+@media (max-width: 900px) {
+    .fifa-wallet-holding__row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'alias status'
+            'address address'
+            'sol usdc';
+        gap: 8px 10px;
+    }
+
+    .fifa-wallet-holding__alias {
+        grid-area: alias;
+    }
+
+    .fifa-wallet-holding__address {
+        grid-area: address;
+    }
+
+    .fifa-wallet-holding__amount--sol {
+        grid-area: sol;
+    }
+
+    .fifa-wallet-holding__amount--usdc {
+        grid-area: usdc;
+    }
+
+    .fifa-wallet-holding__row .ant-tag {
+        grid-area: status;
+    }
 }
 
 @media (max-width: 1439px) {
