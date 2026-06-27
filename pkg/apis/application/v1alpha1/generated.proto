@@ -178,6 +178,32 @@ message PolymarketFIFAWalletBalanceItem {
   optional string errorMessage = 11;
 }
 
+message PolymarketFIFAWalletHoldingItem {
+  optional int64 walletId = 1;
+
+  optional string chain = 2;
+
+  optional string type = 3;
+
+  optional string alias = 4;
+
+  optional string walletAddress = 5;
+
+  optional string solRawAmount = 6;
+
+  optional string solAmount = 7;
+
+  optional string usdcRawAmount = 8;
+
+  optional string usdcAmount = 9;
+
+  optional string explorerUrl = 10;
+
+  optional bool ok = 11;
+
+  optional string errorMessage = 12;
+}
+
 message PolymarketHotMarketItem {
   optional string conditionId = 1;
 

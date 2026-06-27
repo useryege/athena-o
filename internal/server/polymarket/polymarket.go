@@ -7,6 +7,7 @@ import (
 	serverfifa "github.com/useryege/athena/internal/server/fifa"
 	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
+	"github.com/useryege/athena/util/session"
 )
 
 type Server struct {
@@ -266,6 +267,25 @@ func (s *Server) ListPolymarketFIFAWalletBalances(ctx context.Context, _ *polyma
 		return nil, err
 	}
 	return &polymarketpkg.ListPolymarketFIFAWalletBalancesResponse{
+		Items:     resp.GetItems(),
+		FetchedAt: resp.GetFetchedAt(),
+	}, nil
+}
+
+func (s *Server) ListPolymarketFIFAWalletHoldings(ctx context.Context, _ *polymarketpkg.ListPolymarketFIFAWalletHoldingsRequest) (*polymarketpkg.ListPolymarketFIFAWalletHoldingsResponse, error) {
+	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
+	if err != nil {
+		return nil, err
+	}
+	defer closer.Close()
+
+	resp, err := client.ListPolymarketFIFAWalletHoldings(ctx, &polymarketapiclient.ListPolymarketFIFAWalletHoldingsRequest{
+		Requester: session.GetUserIdentifier(ctx),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &polymarketpkg.ListPolymarketFIFAWalletHoldingsResponse{
 		Items:     resp.GetItems(),
 		FetchedAt: resp.GetFetchedAt(),
 	}, nil

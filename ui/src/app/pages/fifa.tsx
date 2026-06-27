@@ -11,7 +11,8 @@ import {
     PolymarketFIFAMoneylineDirectionItem,
     PolymarketFIFAMoneylineEventItem,
     PolymarketFIFAMoneylineOptionItem,
-    PolymarketFIFAWalletBalanceItem
+    PolymarketFIFAWalletBalanceItem,
+    PolymarketFIFAWalletHoldingItem
 } from '../shared/services/polymarket-service';
 import {GetWormEventResult, WormMarketItem} from '../shared/services/worm-service';
 import {boolTag, fmt} from './shared';
@@ -46,6 +47,7 @@ const price = (value?: number) => (value === undefined ? '-' : value.toFixed(3))
 const money = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : value.toFixed(2));
 const percent = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : `${(value * 100).toFixed(2)}%`);
 const balanceValue = (item: PolymarketFIFAWalletBalanceItem) => (item.amount && item.amount !== '-' ? `${item.amount} ${item.tokenSymbol || ''}`.trim() : '-');
+const tokenAmountValue = (amount?: string, symbol?: string) => (amount && amount !== '-' ? `${amount} ${symbol || ''}`.trim() : '-');
 const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
 type FIFAInfoGridItem = {label: React.ReactNode; value: React.ReactNode; copyText?: string};
@@ -225,6 +227,61 @@ const FIFAWalletBalancesPanel = (props: {items?: PolymarketFIFAWalletBalanceItem
             </Row>
             {detailsVisible && <Typography.Text type='secondary'>Fetched {fmt(props.fetchedAt)}</Typography.Text>}
             {props.error && <Typography.Text type='danger'>{props.error.message}</Typography.Text>}
+        </section>
+    );
+};
+
+const FIFAWalletHoldingCard = (props: {item: PolymarketFIFAWalletHoldingItem; loading?: boolean}) => {
+    const item = props.item;
+    const title = item.alias || `Wallet #${item.walletId || '-'}`;
+    const statusText = props.loading ? 'Refreshing' : item.ok ? 'Live' : item.errorMessage ? 'Error' : 'Pending';
+    const statusColor = props.loading ? 'blue' : item.ok ? 'green' : item.errorMessage ? 'red' : 'default';
+    return (
+        <Card className='fifa-wallet-holding' size='small'>
+            <div className='fifa-wallet-holding__header'>
+                <div className='fifa-wallet-holding__identity'>
+                    <Typography.Title level={5}>{title}</Typography.Title>
+                    <Typography.Text type='secondary'>{item.type || 'worm_position'}</Typography.Text>
+                </div>
+                <Tag color={statusColor}>{statusText}</Tag>
+            </div>
+            <FIFAInfoGrid
+                columns={2}
+                items={[
+                    {label: 'SOL', value: tokenAmountValue(item.solAmount, 'SOL'), copyText: item.solRawAmount},
+                    {label: 'USDC', value: tokenAmountValue(item.usdcAmount, 'USDC'), copyText: item.usdcRawAmount}
+                ]}
+            />
+            <FIFAInfoGrid columns={1} items={[{label: 'Address', value: item.walletAddress, copyText: item.walletAddress}]} />
+            <div className='fifa-wallet-holding__actions'>
+                <Button href={item.explorerUrl} target='_blank' rel='noreferrer' icon={<LinkOutlined />} disabled={!item.explorerUrl}>
+                    Explorer
+                </Button>
+            </div>
+            {item.errorMessage && <Typography.Text type='danger'>{item.errorMessage}</Typography.Text>}
+        </Card>
+    );
+};
+
+const FIFAWalletHoldingsPanel = (props: {items?: PolymarketFIFAWalletHoldingItem[]; fetchedAt?: number; loading?: boolean; error?: Error}) => {
+    const items = props.items || [];
+    const warmingUp = !props.fetchedAt && !items.length && !props.error;
+    return (
+        <section className='fifa-panel fifa-wallet-holdings'>
+            <div className='fifa-panel__title'>
+                <Typography.Text strong={true}>Position Management</Typography.Text>
+                <Typography.Text type='secondary'>Fetched {unixTime(props.fetchedAt)}</Typography.Text>
+            </div>
+            {props.error && <Typography.Text type='danger'>{props.error.message}</Typography.Text>}
+            {warmingUp && !props.loading && <Empty description='Wallet holdings cache is warming up' />}
+            {!warmingUp && !items.length && !props.loading && <Empty description='No Worm position wallets loaded' />}
+            <Row className='fifa-wallet-holdings__items' gutter={[12, 12]}>
+                {items.map(item => (
+                    <Col key={item.walletId || item.walletAddress} span={24}>
+                        <FIFAWalletHoldingCard item={item} loading={props.loading} />
+                    </Col>
+                ))}
+            </Row>
         </section>
     );
 };
@@ -557,12 +614,17 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
     const [balancesLoading, setBalancesLoading] = React.useState(false);
     const [balancesError, setBalancesError] = React.useState<Error>(null);
     const [balancesData, setBalancesData] = React.useState<{items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number}>(null);
+    const [holdingsLoading, setHoldingsLoading] = React.useState(false);
+    const [holdingsError, setHoldingsError] = React.useState<Error>(null);
+    const [holdingsData, setHoldingsData] = React.useState<{items?: PolymarketFIFAWalletHoldingItem[]; fetchedAt?: number}>(null);
     const [selectedWormConditionId, setSelectedWormConditionId] = React.useState('');
     const configRequestRef = React.useRef<(Promise<PolymarketFIFAEventConfig> & {abort?: () => void}) | null>(null);
     const wormRequestRef = React.useRef<(Promise<GetWormEventResult> & {abort?: () => void}) | null>(null);
     const eventRequestRef = React.useRef<(Promise<GetPolymarketFIFAMoneylineEventResult> & {abort?: () => void}) | null>(null);
     const balancesRequestRef = React.useRef<{abort?: () => void}>(null);
+    const holdingsRequestRef = React.useRef<{abort?: () => void}>(null);
     const balancesMountedRef = React.useRef(true);
+    const holdingsMountedRef = React.useRef(true);
 
     const loadBalances = React.useCallback(() => {
         if (balancesRequestRef.current) {
@@ -587,6 +649,34 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                     balancesRequestRef.current = null;
                     if (balancesMountedRef.current) {
                         setBalancesLoading(false);
+                    }
+                }
+            });
+    }, []);
+
+    const loadHoldings = React.useCallback(() => {
+        if (holdingsRequestRef.current) {
+            return;
+        }
+        setHoldingsLoading(true);
+        setHoldingsError(null);
+        const req = services.polymarket.listFIFAWalletHoldings();
+        holdingsRequestRef.current = req;
+        req.then(nextData => {
+            if (holdingsMountedRef.current) {
+                setHoldingsData(nextData);
+            }
+        })
+            .catch(err => {
+                if (holdingsMountedRef.current) {
+                    setHoldingsError(err instanceof Error ? err : new Error(String(err)));
+                }
+            })
+            .finally(() => {
+                if (holdingsRequestRef.current === req) {
+                    holdingsRequestRef.current = null;
+                    if (holdingsMountedRef.current) {
+                        setHoldingsLoading(false);
                     }
                 }
             });
@@ -760,6 +850,17 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
     }, [loadBalances]);
 
     React.useEffect(() => {
+        holdingsMountedRef.current = true;
+        loadHoldings();
+        const timer = window.setInterval(loadHoldings, walletRefreshIntervalMs);
+        return () => {
+            holdingsMountedRef.current = false;
+            window.clearInterval(timer);
+            holdingsRequestRef.current?.abort?.();
+        };
+    }, [loadHoldings]);
+
+    React.useEffect(() => {
         if (!selectedWormConditionId) {
             return;
         }
@@ -853,7 +954,8 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
     const refresh = React.useCallback(() => {
         loadConfig();
         loadBalances();
-    }, [loadBalances, loadConfig]);
+        loadHoldings();
+    }, [loadBalances, loadConfig, loadHoldings]);
     return (
         <AppPage
             title='FIFA'
@@ -866,7 +968,10 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                 <FIFAWalletBalancesPanel items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={balancesLoading} error={balancesError} />
                 <HedgeCalculatorPanel wormMarket={selectedMarket} outcomeKey={selectedOutcomeKey} polymarketOption={selectedPolymarketOption} />
                 <div className='fifa-dashboard-grid'>
-                    <WormEventPanel data={wormData} loading={wormLoading} error={wormError} selectedConditionId={selectedWormConditionId} onSelectMarket={selectWormMarket} />
+                    <div className='fifa-dashboard-column fifa-dashboard-column--left'>
+                        <WormEventPanel data={wormData} loading={wormLoading} error={wormError} selectedConditionId={selectedWormConditionId} onSelectMarket={selectWormMarket} />
+                        <FIFAWalletHoldingsPanel items={holdingsData?.items} fetchedAt={holdingsData?.fetchedAt} loading={holdingsLoading} error={holdingsError} />
+                    </div>
                     <section className='fifa-panel fifa-panel--polymarket'>
                         <div className='fifa-panel__title'>
                             <Typography.Text strong={true}>Polymarket</Typography.Text>

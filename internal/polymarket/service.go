@@ -8,6 +8,7 @@ import (
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/polymarket/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilpolymarket "github.com/useryege/athena/util/polymarket"
 	"golang.org/x/sync/singleflight"
@@ -100,6 +101,12 @@ func WithNotificationClientset(clientset notificationapiclient.Clientset) Servic
 	}
 }
 
+func WithWalletClientset(clientset walletapiclient.Clientset) ServiceOption {
+	return func(s *Service) {
+		s.walletClientset = clientset
+	}
+}
+
 func WithNotificationInviteCode(inviteCode string) ServiceOption {
 	return func(s *Service) {
 		s.notificationInviteCode = inviteCode
@@ -150,6 +157,7 @@ type Service struct {
 	gammaClient                      sportsLiveGammaClient
 	clobClient                       sportsLiveCLOBClient
 	notificationClientset            notificationapiclient.Clientset
+	walletClientset                  walletapiclient.Clientset
 	notificationInviteCode           string
 	syncInterval                     time.Duration
 	sportsLivePageLimit              int
@@ -187,6 +195,7 @@ type Service struct {
 	fifaWalletBalances               []*v1alpha1.PolymarketFIFAWalletBalanceItem
 	fifaWalletBalancesFetched        int64
 	fifaWalletBalancesCachedAt       time.Time
+	fifaWalletHoldings               map[string]*fifaWalletHoldingsCacheEntry
 	syncGroup                        singleflight.Group
 }
 
@@ -208,6 +217,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		realtimeStates:                   make(map[string]*realtimeTokenState),
 		realtimeSamples:                  make(map[string][]realtimeSample),
 		moverAlertStates:                 make(map[string]moverAlertState),
+		fifaWalletHoldings:               make(map[string]*fifaWalletHoldingsCacheEntry),
 		sportsHistoryStale:               true,
 		sportsHistorySyncStatus:          &v1alpha1.PolymarketSportsHistorySyncStatus{State: sportsHistorySyncStateIdle},
 	}
@@ -260,6 +270,8 @@ func (s *Service) Start() error {
 	go s.runManagedOOProposePriceLogSyncLoop(ctx)
 	s.runWG.Add(1)
 	go s.runFIFAWalletBalanceRefreshLoop(ctx)
+	s.runWG.Add(1)
+	go s.runFIFAWalletHoldingRefreshLoop(ctx)
 	return nil
 }
 

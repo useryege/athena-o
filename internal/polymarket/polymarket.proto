@@ -143,6 +143,15 @@ message ListPolymarketFIFAWalletBalancesResponse {
   int64 fetched_at = 2;
 }
 
+message ListPolymarketFIFAWalletHoldingsRequest {
+  string requester = 1;
+}
+
+message ListPolymarketFIFAWalletHoldingsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAWalletHoldingItem items = 1;
+  int64 fetched_at = 2;
+}
+
 message ScanPolymarketManagedOOBlockRequest {
   uint64 block_number = 1;
 }
@@ -213,6 +222,8 @@ service PolymarketService {
   rpc GetPolymarketFIFAMoneylineEvent(GetPolymarketFIFAMoneylineEventRequest) returns (GetPolymarketFIFAMoneylineEventResponse);
 
   rpc ListPolymarketFIFAWalletBalances(ListPolymarketFIFAWalletBalancesRequest) returns (ListPolymarketFIFAWalletBalancesResponse);
+
+  rpc ListPolymarketFIFAWalletHoldings(ListPolymarketFIFAWalletHoldingsRequest) returns (ListPolymarketFIFAWalletHoldingsResponse);
 
   rpc ScanPolymarketManagedOOBlock(ScanPolymarketManagedOOBlockRequest) returns (ScanPolymarketManagedOOBlockResponse);
 

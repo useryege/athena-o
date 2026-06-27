@@ -1365,6 +1365,12 @@ body::-webkit-scrollbar-thumb,
     align-items: start;
 }
 
+.fifa-dashboard-column {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+}
+
 .fifa-panel {
     display: grid;
     gap: 14px;
@@ -1524,6 +1530,60 @@ body::-webkit-scrollbar-thumb,
     color: var(--athena-text);
     overflow-wrap: anywhere;
     font-family: var(--athena-data-font);
+}
+
+.fifa-wallet-holdings {
+    display: grid;
+    gap: 12px;
+}
+
+.fifa-wallet-holdings__items {
+    align-items: stretch;
+}
+
+.fifa-wallet-holdings__items .ant-col {
+    display: flex;
+}
+
+.fifa-wallet-holding {
+    width: 100%;
+    border-color: var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+}
+
+.fifa-wallet-holding .ant-card-body {
+    min-height: 100%;
+    display: grid;
+    gap: 12px;
+    align-content: start;
+}
+
+.fifa-wallet-holding__header {
+    min-height: 36px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.fifa-wallet-holding__identity {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.fifa-wallet-holding__identity h5 {
+    margin: 0;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+}
+
+.fifa-wallet-holding__actions {
+    display: flex;
+    justify-content: flex-start;
 }
 
 .fifa-hedge-calculator {

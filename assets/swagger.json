@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-889-g61ea99b-dirty"
+    "version": "v1.0.0-890-g61a1ede-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -420,6 +420,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/polymarketListPolymarketFIFAWalletBalancesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/polymarket/fifa/wallet-holdings": {
+      "get": {
+        "tags": [
+          "PolymarketService"
+        ],
+        "operationId": "PolymarketService_ListPolymarketFIFAWalletHoldings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/polymarketListPolymarketFIFAWalletHoldingsResponse"
             }
           },
           "default": {
@@ -2439,6 +2461,21 @@
         }
       }
     },
+    "polymarketListPolymarketFIFAWalletHoldingsResponse": {
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1PolymarketFIFAWalletHoldingItem"
+          }
+        }
+      }
+    },
     "polymarketListPolymarketHotMarketsResponse": {
       "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
       "type": "object",
@@ -3409,6 +3446,48 @@
         },
         "walletAddress": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1PolymarketFIFAWalletHoldingItem": {
+      "type": "object",
+      "properties": {
+        "alias": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "explorerUrl": {
+          "type": "string"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "solAmount": {
+          "type": "string"
+        },
+        "solRawAmount": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "usdcAmount": {
+          "type": "string"
+        },
+        "usdcRawAmount": {
+          "type": "string"
+        },
+        "walletAddress": {
+          "type": "string"
+        },
+        "walletId": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

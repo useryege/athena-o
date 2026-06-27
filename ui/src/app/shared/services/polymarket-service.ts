@@ -225,6 +225,26 @@ export interface ListPolymarketFIFAWalletBalancesResult {
     fetchedAt?: number;
 }
 
+export interface PolymarketFIFAWalletHoldingItem {
+    walletId: number;
+    chain: string;
+    type: string;
+    alias: string;
+    walletAddress: string;
+    solRawAmount: string;
+    solAmount: string;
+    usdcRawAmount: string;
+    usdcAmount: string;
+    explorerUrl: string;
+    ok?: boolean;
+    errorMessage?: string;
+}
+
+export interface ListPolymarketFIFAWalletHoldingsResult {
+    items: PolymarketFIFAWalletHoldingItem[];
+    fetchedAt?: number;
+}
+
 export interface PolymarketUMABaseItem {
     txHash: string;
     logIndex: number;
@@ -439,6 +459,21 @@ const normalizeFIFAWalletBalance = (item: any): PolymarketFIFAWalletBalanceItem 
     decimals: readNumber(item, 'decimals'),
     rawAmount: readString(item, 'rawAmount', 'raw_amount'),
     amount: readString(item, 'amount'),
+    explorerUrl: readString(item, 'explorerUrl', 'explorer_url'),
+    ok: readBoolean(item, 'ok'),
+    errorMessage: readString(item, 'errorMessage', 'error_message')
+});
+
+const normalizeFIFAWalletHolding = (item: any): PolymarketFIFAWalletHoldingItem => ({
+    walletId: readNumber(item, 'walletId', 'wallet_id'),
+    chain: readString(item, 'chain'),
+    type: readString(item, 'type'),
+    alias: readString(item, 'alias'),
+    walletAddress: readString(item, 'walletAddress', 'wallet_address'),
+    solRawAmount: readString(item, 'solRawAmount', 'sol_raw_amount'),
+    solAmount: readString(item, 'solAmount', 'sol_amount'),
+    usdcRawAmount: readString(item, 'usdcRawAmount', 'usdc_raw_amount'),
+    usdcAmount: readString(item, 'usdcAmount', 'usdc_amount'),
     explorerUrl: readString(item, 'explorerUrl', 'explorer_url'),
     ok: readBoolean(item, 'ok'),
     errorMessage: readString(item, 'errorMessage', 'error_message')
@@ -845,6 +880,19 @@ export class PolymarketService {
             const body = res.body || {};
             return {
                 items: (body.items || []).map(normalizeFIFAWalletBalance),
+                fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
+            };
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listFIFAWalletHoldings(): Promise<ListPolymarketFIFAWalletHoldingsResult> & {abort?: () => void} {
+        const req = requests.get('/polymarket/fifa/wallet-holdings');
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return {
+                items: (body.items || []).map(normalizeFIFAWalletHolding),
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at')
             };
         }) as any;

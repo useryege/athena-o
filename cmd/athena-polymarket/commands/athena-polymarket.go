@@ -20,6 +20,7 @@ import (
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/polymarket"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
@@ -35,6 +36,7 @@ func NewCommand() *cobra.Command {
 		listenPort                       int
 		notificationEnabled              bool
 		notificationServerAddress        string
+		walletServerAddress              string
 		notificationInviteCode           string
 		sportsLivePriceAlertCooldown     time.Duration
 		fifaPolygonRPCURL                string
@@ -89,10 +91,12 @@ func NewCommand() *cobra.Command {
 			if notificationEnabled {
 				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
 			}
+			walletClientset := walletapiclient.NewWalletClientset(walletServerAddress)
 
 			server, err := polymarket.NewServer(polymarket.ServerOpts{
 				Store:                         store,
 				NotificationClientset:         notificationClientset,
+				WalletClientset:               walletClientset,
 				NotificationInviteCode:        notificationInviteCode,
 				MoverAlertsConfig:             moverAlertsConfig,
 				SportsLivePriceAlertsConfig:   sportsLivePriceAlertsConfig,
@@ -149,6 +153,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortPolymarket, "Listen on given port for incoming connections")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_POLYMARKET_NOTIFICATION_ENABLED", true), "Enable Polymarket notifications through Athena Notification")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_POLYMARKET_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Polymarket alerts")
+	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_POLYMARKET_WALLET_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortWallet)), "Athena wallet gRPC server address for FIFA wallet holdings")
 	command.Flags().StringVar(&notificationInviteCode, "notification-invite-code", env.StringFromEnv("ATHENA_POLYMARKET_NOTIFICATION_INVITE_CODE", ""), "Polymarket invite code appended to notification links as the r query parameter")
 	command.Flags().DurationVar(&sportsLivePriceAlertCooldown, "sports-live-price-alert-cooldown", env.ParseDurationFromEnv("ATHENA_POLYMARKET_SPORTS_LIVE_PRICE_ALERT_COOLDOWN", 15*time.Minute, time.Second, 24*time.Hour), "Cooldown between repeated Polymarket sports live price alerts for the same token and band")
 	command.Flags().StringVar(&fifaPolygonRPCURL, "fifa-polygon-rpc-url", env.StringFromEnv("ATHENA_POLYMARKET_POLYGON_RPC_URL", "https://polygon-rpc.com"), "Polygon JSON-RPC URL for FIFA wallet balances")
