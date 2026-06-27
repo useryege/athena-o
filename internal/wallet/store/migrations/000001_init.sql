@@ -42,6 +42,11 @@ INSERT INTO wallet_private_keys (
   ''
 );
 
+
+
+
+
+
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_chain ON wallet_private_keys (chain);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_type ON wallet_private_keys (type);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_at ON wallet_private_keys (created_at DESC);

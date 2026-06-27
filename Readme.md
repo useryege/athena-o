@@ -40,6 +40,7 @@
 | `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
 | `make service-password` | 生成可用于 `POSTGRES_PASSWORD` / `REDIS_PASSWORD` 的随机密码。 | `make service-password` |
+| `make wallet-private-key-ciphertext` | 生成可用于 `wallet_private_keys.private_key_ciphertext` 的密文 SQL 表达式。 | `make wallet-private-key-ciphertext` |
 
 生成本地账号密码 hash：
 
@@ -97,6 +98,25 @@ go run tools/service-password/main.go -length 48
 ```bash
 POSTGRES_PASSWORD='<generated-password>'
 REDIS_PASSWORD='<generated-password>'
+```
+
+生成钱包私钥密文：
+
+```bash
+# 交互式输入私钥（推荐，私钥不回显），默认读取 ATHENA_WALLET_ENCRYPTION_KEY
+make wallet-private-key-ciphertext
+
+# 只输出 hex，方便手动拼接到 decode('<hex>', 'hex')
+make wallet-private-key-ciphertext ARGS="-format hex"
+
+# 也可直接运行
+ATHENA_WALLET_ENCRYPTION_KEY='<wallet-encryption-key>' go run tools/wallet-private-key-ciphertext/main.go
+```
+
+默认输出为一段可直接写入 SQL 的 BYTEA 表达式：
+
+```sql
+decode('<generated-ciphertext-hex>', 'hex')
 ```
 
 ## 代码生成
