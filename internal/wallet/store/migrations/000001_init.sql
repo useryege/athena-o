@@ -35,16 +35,23 @@ INSERT INTO wallet_private_keys (
   'worm_position',
   'HYug9d9sMK6G6tf72PfMTH2NmnMfzJqPNo8kbwkyDPrC',
   'HYug9d9sMK6G6tf72PfMTH2NmnMfzJqPNo8kbwkyDPrC',
-  'YEGE',
+  'YEGE_01',
   decode('d2020a3e734b93431c093acdff803b17cf6b6b3543a11d8726f2b65dd6224c4d8ea64c1b7990531e68767d8a2aa0c97aab865295fe8c85bd13b97c15d9b515ad437d6bb1bfcbaa57a029e191f384775afcaee2236ed2d131ce7150abef8ef39da5990812c73276d1c983714e2b727cd2b26d10fe', 'hex'),
   NULL,
   'private_key',
   ''
+), (
+  'admin',
+  'SOLANA',
+  'worm_position',
+  'DbYhbC6FdyNaMvy5aBPo2ntsCR6WwFqcfuatQqZNHVoT',
+  'DbYhbC6FdyNaMvy5aBPo2ntsCR6WwFqcfuatQqZNHVoT',
+  'YEGE_02',
+  decode('755bd3f2d1c6b2e9cc252675ed0f14b0bcc514082450c61ba7fe7da5af078af7c7f0d1d6093f584a5dec7eb59a86488b106b456791dbd4df2f2780847a5f7adb376bde3d696a5462dfce1d67c53d3528d0d5247ce09b2dd7bd4ccab262944c5e39da9e2afcf4dc327b0a4346a7ac3fee6d83175c', 'hex'),
+  NULL,
+  'private_key',
+  ''
 );
-
-
-
-
 
 
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_chain ON wallet_private_keys (chain);
