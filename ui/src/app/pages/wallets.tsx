@@ -164,8 +164,9 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                     </Checkbox>
                 </Space>
             </Modal>
-            <Modal open={!!secret} title='Wallet Secret' onCancel={() => setSecret(null)} footer={<Button onClick={() => setSecret(null)}>Close</Button>}>
+            <Modal open={!!secret} title='Wallet Secret' width={680} onCancel={() => setSecret(null)} footer={<Button onClick={() => setSecret(null)}>Close</Button>}>
                 <KeyValueGrid
+                    columns={1}
                     items={[
                         {label: 'Address', value: <TruncatedText value={secret?.address} copyable={true} />},
                         {label: 'Private Key', value: <TruncatedText value={secret?.privateKey} copyable={true} />},
