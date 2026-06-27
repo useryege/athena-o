@@ -1,0 +1,4 @@
+interface:
+  display_name: "Change Sync"
+  short_description: "Coordinate ATHENA repo cross-layer code changes in strict order."
+  default_prompt: "Use the change-sync workflow to implement this code change with required regeneration steps."

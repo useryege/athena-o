@@ -1,0 +1,4 @@
+interface:
+  display_name: "gRPC RPC Naming"
+  short_description: "Standardize gRPC RPC method names"
+  default_prompt: "Use $grpc-rpc-naming to name or review gRPC RPC methods in a proto service."

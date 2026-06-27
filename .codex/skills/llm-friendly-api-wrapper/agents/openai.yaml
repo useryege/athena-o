@@ -1,0 +1,4 @@
+interface:
+  display_name: "LLM API Wrapper"
+  short_description: "llms.txt 文档同步与 Go API Wrapper 标准流程"
+  default_prompt: "Use $llm-friendly-api-wrapper to scaffold and standardize a public read-first API integration with docs sync, snapshot, wrappers, and tests."

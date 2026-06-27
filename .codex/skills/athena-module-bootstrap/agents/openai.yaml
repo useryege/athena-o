@@ -1,0 +1,4 @@
+interface:
+  display_name: "ATHENA Module Bootstrap"
+  short_description: "Add new ATHENA modules using repo's cross-layer patterns."
+  default_prompt: "Use $athena-module-bootstrap to plan or implement a new ATHENA module skeleton."
