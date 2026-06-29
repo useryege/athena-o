@@ -26,6 +26,8 @@ const (
 	DefaultPortNotification = 8086
 	// Athena Wallet
 	DefaultPortWallet = 8088
+	// Athena Worm Poly
+	DefaultPortWormPoly = 8090
 	// Athena Polymarket
 	DefaultPortPolymarket = 8092
 	// Athena Token
@@ -40,6 +42,7 @@ const (
 	DefaultAddressWorm         = "0.0.0.0"
 	DefaultAddressNotification = "0.0.0.0"
 	DefaultAddressWallet       = "0.0.0.0"
+	DefaultAddressWormPoly     = "0.0.0.0"
 	DefaultAddressPolymarket   = "0.0.0.0"
 	DefaultAddressToken        = "0.0.0.0"
 	DefaultAddressTokenAPI     = "0.0.0.0"

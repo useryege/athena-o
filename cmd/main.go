@@ -14,6 +14,7 @@ import (
 	athenaTokenAPICommands "github.com/useryege/athena/cmd/athena-token-api/commands"
 	athenaTokenCommands "github.com/useryege/athena/cmd/athena-token/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
+	athenaWormPolyCommands "github.com/useryege/athena/cmd/athena-worm-poly/commands"
 	athenaWormCommands "github.com/useryege/athena/cmd/athena-worm/commands"
 	"github.com/useryege/athena/util/log"
 )
@@ -52,6 +53,8 @@ func main() {
 		command = athenaWalletCommands.NewCommand()
 	case "athena-worm":
 		command = athenaWormCommands.NewCommand()
+	case "athena-worm-poly":
+		command = athenaWormPolyCommands.NewCommand()
 	case "athena-migrate":
 		command = athenaMigrateCommands.NewCommand()
 	default:

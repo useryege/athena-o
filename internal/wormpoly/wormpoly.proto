@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// Worm Poly Service API exposes worm-poly service runtime status.
+package athena.internal.wormpoly;
+
+option go_package = "github.com/useryege/athena/internal/wormpoly/apiclient";
+
+// GetWormPolyStatusRequest queries the worm-poly service runtime status.
+message GetWormPolyStatusRequest {}
+
+// GetWormPolyStatusResponse returns the worm-poly service runtime status.
+message GetWormPolyStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+service WormPolyService {
+  // GetWormPolyStatus returns the worm-poly service runtime status.
+  rpc GetWormPolyStatus(GetWormPolyStatusRequest) returns (GetWormPolyStatusResponse);
+}
