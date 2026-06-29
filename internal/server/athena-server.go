@@ -40,7 +40,6 @@ import (
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	servercache "github.com/useryege/athena/internal/server/cache"
-	serverfifa "github.com/useryege/athena/internal/server/fifa"
 	"github.com/useryege/athena/internal/server/logout"
 	servernotification "github.com/useryege/athena/internal/server/notification"
 	serverpolymarket "github.com/useryege/athena/internal/server/polymarket"
@@ -52,9 +51,11 @@ import (
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
 	serverworm "github.com/useryege/athena/internal/server/worm"
+	serverwormpoly "github.com/useryege/athena/internal/server/wormpoly"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
+	wormpolyapiclient "github.com/useryege/athena/internal/wormpoly/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
@@ -94,6 +95,7 @@ import (
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
+	wormpolypkg "github.com/useryege/athena/pkg/apiclient/wormpoly"
 )
 
 const (
@@ -187,6 +189,7 @@ type AthenaServerOpts struct {
 	NotificationClientset notificationapiclient.Clientset
 	WalletClientset       walletapiclient.Clientset
 	WormClientset         wormapiclient.Clientset
+	WormPolyClientset     wormpolyapiclient.Clientset
 	PolymarketClientset   polymarketapiclient.Clientset
 	TokenAPIClientset     tokenapiapiclient.Clientset
 	// EnableProxyExtension  bool
@@ -384,6 +387,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
+	wormpolypkg.RegisterWormPolyServiceServer(grpcS, server.serviceSet.WormPolyService)
 	polymarketpkg.RegisterPolymarketServiceServer(grpcS, server.serviceSet.PolymarketService)
 	tokenapipkg.RegisterTokenAPIServiceServer(grpcS, server.serviceSet.TokenAPIService)
 	servicestatuspkg.RegisterServiceStatusServiceServer(grpcS, server.serviceSet.ServiceStatusService)
@@ -404,8 +408,8 @@ type AthenaServiceSet struct {
 	NotificationService  *servernotification.Server
 	WalletService        *serverwallet.Server
 	WormService          *serverworm.Server
+	WormPolyService      *serverwormpoly.Server
 	PolymarketService    *serverpolymarket.Server
-	FIFAEventCache       *serverfifa.Cache
 	TokenAPIService      *servertokenapi.Server
 	ServiceStatusService *serverservicestatus.Server
 }
@@ -429,18 +433,19 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
 	walletService := serverwallet.NewServer(server.WalletClientset)
-	// FIFA event cache
-	fifaEventCache := serverfifa.NewCache(server.WormClientset, server.PolymarketClientset)
 	// worm service
-	wormService := serverworm.NewServer(server.WormClientset, fifaEventCache)
+	wormService := serverworm.NewServer(server.WormClientset)
+	// worm-poly service
+	wormPolyService := serverwormpoly.NewServer(server.WormPolyClientset)
 	// polymarket service
-	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset, fifaEventCache)
+	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset)
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
 	serviceStatusService := serverservicestatus.NewServer(
 		server.NotificationClientset,
 		server.WalletClientset,
 		server.WormClientset,
+		server.WormPolyClientset,
 		server.PolymarketClientset,
 		server.TokenAPIClientset,
 	)
@@ -461,8 +466,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		NotificationService:  notificationService,
 		WalletService:        walletService,
 		WormService:          wormService,
+		WormPolyService:      wormPolyService,
 		PolymarketService:    polymarketService,
-		FIFAEventCache:       fifaEventCache,
 		TokenAPIService:      tokenAPIService,
 		ServiceStatusService: serviceStatusService,
 	}
@@ -764,6 +769,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, wormpolypkg.RegisterWormPolyServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, polymarketpkg.RegisterPolymarketServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenAPIServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
@@ -871,9 +877,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	// set the service set to the server
 	server.serviceSet = svcSet
-	cacheCtx, stopFIFAEventCache := context.WithCancel(ctx)
-	defer stopFIFAEventCache()
-	go svcSet.FIFAEventCache.Run(cacheCtx)
 	// create a new gRPC server
 	grpcS := server.newGRPCServer()
 	// wrap the gRPC server l(grpc server => http handler)
@@ -902,7 +905,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	shutdownFunc := func() {
 		log.Info("API Server shutdown initiated. Shutting down servers...")
-		stopFIFAEventCache()
 		server.available.Store(false)
 		shutdownCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()

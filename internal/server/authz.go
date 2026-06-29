@@ -187,13 +187,13 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/polymarket.PolymarketService/BatchGetPolymarketSportsHistoryPriceHistory": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/GetPolymarketSportsHistorySyncStatus":        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/RefreshPolymarketSportsHistory":              fixedRule(rbac.ResourcePolymarket, rbac.ActionInvoke),
-	"/polymarket.PolymarketService/GetPolymarketFIFAEventConfig":                fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/UpdatePolymarketFIFAEventConfig":             fixedRule(rbac.ResourcePolymarket, rbac.ActionUpdate),
-	"/polymarket.PolymarketService/GetPolymarketFIFAMoneylineEvent":             fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketFIFAWalletBalances":            fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ScanPolymarketManagedOOBlock":                {resource: rbac.ResourcePolymarket, action: rbac.ActionInvoke, object: polymarketObject},
 	"/polymarket.PolymarketService/ListPolymarketUMAProposals":                  fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
 	"/polymarket.PolymarketService/ListPolymarketUMADisputes":                   fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+
+	"/wormpoly.WormPolyService/GetWormPolyStatus":             fixedRule(rbac.ResourceWormPoly, rbac.ActionGet),
+	"/wormpoly.WormPolyService/GetWormPolyFIFADashboard":      fixedRule(rbac.ResourceWormPoly, rbac.ActionGet),
+	"/wormpoly.WormPolyService/UpdateWormPolyFIFAEventConfig": fixedRule(rbac.ResourceWormPoly, rbac.ActionUpdate),
 
 	"/tokenapi.TokenAPIService/GetOptions":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
 	"/tokenapi.TokenAPIService/ListNodeStatuses":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),

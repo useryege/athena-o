@@ -8,6 +8,7 @@ import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
 import {WalletService} from './wallet-service';
+import {WormPolyService} from './wormpoly-service';
 import {WormService} from './worm-service';
 
 export interface Services {
@@ -19,6 +20,7 @@ export interface Services {
     accounts: AccountsService;
     wallet: WalletService;
     worm: WormService;
+    wormpoly: WormPolyService;
     polymarket: PolymarketService;
     notification: NotificationService;
     serviceStatus: ServiceStatusService;
@@ -33,6 +35,7 @@ export const services: Services = {
     accounts: new AccountsService(),
     wallet: new WalletService(),
     worm: new WormService(),
+    wormpoly: new WormPolyService(),
     polymarket: new PolymarketService(),
     notification: new NotificationService(),
     serviceStatus: new ServiceStatusService()

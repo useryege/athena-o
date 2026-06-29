@@ -18,14 +18,6 @@ type PolymarketChainLogCursor struct {
 	UpdatedAt       pgtype.Timestamptz
 }
 
-type PolymarketFifaEventConfig struct {
-	Singleton   bool
-	WormEventID string
-	EventRef    string
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
-}
-
 type PolymarketManagedOoDisputePriceAlertState struct {
 	TxHash         string
 	LogIndex       int64

@@ -1,4 +1,4 @@
-package polymarket
+package wormpoly
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	utilpolymarket "github.com/useryege/athena/util/polymarket"
 	"google.golang.org/grpc/codes"
@@ -32,31 +31,31 @@ type fifaTeam struct {
 	League       string `json:"league,omitempty"`
 }
 
-func (s *Service) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *apiclient.GetPolymarketFIFAMoneylineEventRequest) (*apiclient.GetPolymarketFIFAMoneylineEventResponse, error) {
-	eventRef := normalizePolymarketEventRef(req.GetEventRef())
+func (s *Service) getFIFAMoneylineEvent(ctx context.Context, eventRef string) (*v1alpha1.PolymarketFIFAMoneylineEventItem, int64, error) {
+	eventRef = normalizePolymarketEventRef(eventRef)
 	if eventRef == "" {
-		return nil, status.Error(codes.InvalidArgument, "event_ref is required")
+		return nil, 0, status.Error(codes.InvalidArgument, "event_ref is required")
 	}
 	if s.gammaClient == nil || s.clobClient == nil {
-		return nil, status.Error(codes.FailedPrecondition, "polymarket clients are required")
+		return nil, 0, status.Error(codes.FailedPrecondition, "polymarket clients are required")
 	}
 
 	event, err := s.getPolymarketEvent(ctx, eventRef)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	teams := fifaTeams(event.Teams)
 	if !isFIFAEvent(event, teams) {
-		return nil, status.Error(codes.InvalidArgument, "event is not a FIFA football event")
+		return nil, 0, status.Error(codes.InvalidArgument, "event is not a FIFA football event")
 	}
 
 	options, tokenIDs, err := buildFIFAMoneylineOptions(event, teams)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if err := s.hydrateFIFAMoneylineQuotes(ctx, options, tokenIDs); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	fetchedAt := s.nowUnix()
@@ -79,10 +78,7 @@ func (s *Service) GetPolymarketFIFAMoneylineEvent(ctx context.Context, req *apic
 		PolymarketURL: polymarketEventURL(event),
 	}
 
-	return &apiclient.GetPolymarketFIFAMoneylineEventResponse{
-		Item:      item,
-		FetchedAt: fetchedAt,
-	}, nil
+	return item, fetchedAt, nil
 }
 
 func normalizePolymarketEventRef(value string) string {

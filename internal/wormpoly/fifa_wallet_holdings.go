@@ -1,4 +1,4 @@
-package polymarket
+package wormpoly
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/internal/polymarket/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"google.golang.org/grpc/codes"
@@ -41,22 +40,6 @@ type fifaWalletHoldingsCacheEntry struct {
 type fifaWalletHoldingsResult struct {
 	items     []*v1alpha1.PolymarketFIFAWalletHoldingItem
 	fetchedAt int64
-}
-
-func (s *Service) ListPolymarketFIFAWalletHoldings(ctx context.Context, req *apiclient.ListPolymarketFIFAWalletHoldingsRequest) (*apiclient.ListPolymarketFIFAWalletHoldingsResponse, error) {
-	requester := strings.TrimSpace(req.GetRequester())
-	if requester == "" {
-		return nil, status.Error(codes.InvalidArgument, "requester is required")
-	}
-
-	items, fetchedAt, needsRefresh := s.currentFIFAWalletHoldings(requester)
-	if needsRefresh {
-		s.refreshFIFAWalletHoldingsAsync(requester)
-	}
-	return &apiclient.ListPolymarketFIFAWalletHoldingsResponse{
-		Items:     items,
-		FetchedAt: fetchedAt,
-	}, nil
 }
 
 func (s *Service) runFIFAWalletHoldingRefreshLoop(ctx context.Context) {

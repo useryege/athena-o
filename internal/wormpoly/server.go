@@ -1,8 +1,13 @@
 package wormpoly
 
 import (
+	"time"
+
 	"github.com/useryege/athena/internal/server/version"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
+	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
 	"github.com/useryege/athena/internal/wormpoly/apiclient"
+	wormpolystore "github.com/useryege/athena/internal/wormpoly/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -15,14 +20,26 @@ type Server struct {
 	healthService *health.Server
 }
 
-type ServerOpts struct{}
+type ServerOpts struct {
+	Store                        *wormpolystore.SQLStore
+	WormClientset                wormapiclient.Clientset
+	WalletClientset              walletapiclient.Clientset
+	FIFADashboardRefreshInterval time.Duration
+	FIFAWalletBalanceConfig      FIFAWalletBalanceConfig
+}
 
 func NewServer(opts ServerOpts) (*Server, error) {
 	healthService := health.NewServer()
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
-		ServerOpts:    opts,
-		service:       NewService(),
+		ServerOpts: opts,
+		service: NewService(
+			opts.Store,
+			WithWormClientset(opts.WormClientset),
+			WithWalletClientset(opts.WalletClientset),
+			WithFIFADashboardRefreshInterval(opts.FIFADashboardRefreshInterval),
+			WithFIFAWalletBalanceConfig(opts.FIFAWalletBalanceConfig),
+		),
 		healthService: healthService,
 	}, nil
 }

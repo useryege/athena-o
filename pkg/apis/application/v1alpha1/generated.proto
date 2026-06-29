@@ -74,12 +74,6 @@ message NotificationStatus {
   optional string status = 2;
 }
 
-message PolymarketFIFAEventConfig {
-  optional string wormEventId = 1;
-
-  optional string eventRef = 2;
-}
-
 message PolymarketFIFAMoneylineDirectionItem {
   optional string tokenId = 1;
 
@@ -938,5 +932,41 @@ message WormMarketItem {
   optional WormMarginPositionEstimateItem estimate = 25;
 
   optional string tradingDataError = 26;
+}
+
+message WormPolyFIFADashboard {
+  optional WormPolyFIFAEventConfig config = 1;
+
+  optional WormEventItem wormEvent = 2;
+
+  optional int64 wormFetchedAt = 3;
+
+  optional string wormError = 4;
+
+  optional PolymarketFIFAMoneylineEventItem polymarketEvent = 5;
+
+  optional int64 polymarketFetchedAt = 6;
+
+  optional string polymarketError = 7;
+
+  repeated PolymarketFIFAWalletBalanceItem walletBalances = 8;
+
+  optional int64 walletBalancesFetchedAt = 9;
+
+  optional string walletBalancesError = 10;
+
+  repeated PolymarketFIFAWalletHoldingItem walletHoldings = 11;
+
+  optional int64 walletHoldingsFetchedAt = 12;
+
+  optional string walletHoldingsError = 13;
+
+  optional int64 fetchedAt = 14;
+}
+
+message WormPolyFIFAEventConfig {
+  optional string wormEventId = 1;
+
+  optional string eventRef = 2;
 }
 

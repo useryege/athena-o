@@ -56,6 +56,7 @@ const (
 	ResourceNotifications = "notifications"
 	ResourceWallets       = "wallets"
 	ResourceWorm          = "worm"
+	ResourceWormPoly      = "worm-poly"
 	ResourcePolymarket    = "polymarket"
 	ResourceTokenAPI      = "tokenapi"
 	ResourceServiceStatus = "service-status"
@@ -75,6 +76,7 @@ var (
 		ResourceNotifications,
 		ResourceWallets,
 		ResourceWorm,
+		ResourceWormPoly,
 		ResourcePolymarket,
 		ResourceTokenAPI,
 		ResourceServiceStatus,

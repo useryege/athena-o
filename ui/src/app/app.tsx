@@ -35,7 +35,6 @@ import {
     CollectionTasksPage,
     ContractCodeDetailPage,
     ContractCodesPage,
-    FIFAPage,
     HelpPage,
     LoginPage,
     NodeStatusesPage,
@@ -54,7 +53,8 @@ import {
     ServiceStatusPage,
     UserInfoPage,
     WalletBlacklistsPage,
-    WalletsPage
+    WalletsPage,
+    WormPolyPage
 } from './pages';
 
 services.viewPreferences.init();
@@ -90,6 +90,7 @@ interface AccessState {
 const rbacResources = {
     notifications: 'notifications',
     polymarket: 'polymarket',
+    wormPoly: 'worm-poly',
     tokenapi: 'tokenapi',
     serviceStatus: 'service-status',
     wallets: 'wallets'
@@ -231,7 +232,10 @@ const navSections: NavSection[] = [
     {
         key: 'markets',
         label: 'Markets',
-        children: [polymarketNavItem, {key: '/FIFA', label: 'FIFA', path: '/FIFA', icon: <TrophyOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)}]
+        children: [
+            polymarketNavItem,
+            {key: '/worm-poly', label: 'Worm Poly', path: '/worm-poly', icon: <TrophyOutlined />, permission: permission(rbacResources.wormPoly, rbacActions.get)}
+        ]
     },
     {
         key: 'token-risk',
@@ -409,10 +413,10 @@ const AppRoutes = (props: {access: AccessState}) => {
                 )}
             />
             <Route
-                path='/FIFA'
+                path='/worm-poly'
                 element={withPermission(
-                    permission(rbacResources.polymarket, rbacActions.get),
-                    <FIFAPage canEdit={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.update))} />
+                    permission(rbacResources.wormPoly, rbacActions.get),
+                    <WormPolyPage canEdit={hasPermission(props.access, permission(rbacResources.wormPoly, rbacActions.update))} />
                 )}
             />
             <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />

@@ -28,7 +28,7 @@ func (s *Service) ScanPolymarketManagedOOBlock(ctx context.Context, req *apiclie
 	if s.store == nil {
 		return nil, status.Error(codes.FailedPrecondition, "polymarket store is required")
 	}
-	if strings.TrimSpace(s.fifaPolygonRPCURL) == "" {
+	if strings.TrimSpace(s.polygonRPCURL) == "" {
 		return nil, status.Error(codes.FailedPrecondition, "polymarket polygon rpc url is required")
 	}
 
@@ -36,7 +36,7 @@ func (s *Service) ScanPolymarketManagedOOBlock(ctx context.Context, req *apiclie
 	defer s.managedOOPipelineMu.Unlock()
 
 	dialCtx, cancel := context.WithTimeout(ctx, managedOOLogQueryTimeout)
-	client, err := ethclient.DialContext(dialCtx, s.fifaPolygonRPCURL)
+	client, err := ethclient.DialContext(dialCtx, s.polygonRPCURL)
 	cancel()
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "connect to polygon rpc: %v", err)

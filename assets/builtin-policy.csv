@@ -12,6 +12,7 @@ p, role:readonly, application, get, *, allow
 p, role:readonly, projects, get, *, allow
 p, role:readonly, notifications, get, *, allow
 p, role:readonly, worm, get, *, allow
+p, role:readonly, worm-poly, get, *, allow
 p, role:readonly, polymarket, get, *, allow
 p, role:readonly, wallets, get, *, allow
 p, role:readonly, wallets, update, *, allow
@@ -25,6 +26,7 @@ p, role:admin, accounts, update, *, allow
 p, role:admin, projects, update, *, allow
 p, role:admin, projects, invoke, *, allow
 p, role:admin, notifications, invoke, *, allow
+p, role:admin, worm-poly, update, *, allow
 p, role:admin, polymarket, update, *, allow
 p, role:admin, tokenapi, get, *, allow
 p, role:admin, tokenapi, update, *, allow

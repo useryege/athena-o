@@ -11,8 +11,6 @@ func (*NotificationDeliveryItem) ProtoMessage() {}
 
 func (*NotificationStatus) ProtoMessage() {}
 
-func (*PolymarketFIFAEventConfig) ProtoMessage() {}
-
 func (*PolymarketFIFAMoneylineDirectionItem) ProtoMessage() {}
 
 func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
@@ -88,3 +86,7 @@ func (*WormEventItem) ProtoMessage() {}
 func (*WormMarginPositionEstimateItem) ProtoMessage() {}
 
 func (*WormMarketItem) ProtoMessage() {}
+
+func (*WormPolyFIFADashboard) ProtoMessage() {}
+
+func (*WormPolyFIFAEventConfig) ProtoMessage() {}

@@ -5,12 +5,6 @@ import (
 	"time"
 )
 
-type FIFAEventConfig struct {
-	WormEventID string
-	EventRef    string
-	UpdatedAt   time.Time
-}
-
 type SportsLiveEvent struct {
 	EventKey          string
 	EventID           string

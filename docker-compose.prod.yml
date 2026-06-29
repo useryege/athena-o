@@ -75,6 +75,31 @@ services:
     expose:
       - "8092"
 
+  athena-worm-poly:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      athena-worm:
+        condition: service_started
+      athena-wallet:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-worm-poly
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_WORM_POLY_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_WORM_POLY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wormpoly sslmode=disable
+      ATHENA_WORM_POLY_WORM_SERVER_ADDRESS: athena-worm:8084
+      ATHENA_WORM_POLY_WALLET_SERVER_ADDRESS: athena-wallet:8088
+      ATHENA_WORM_POLY_POLYGON_RPC_URL: ${ATHENA_WORM_POLY_POLYGON_RPC_URL:-https://polygon-rpc.com}
+      ATHENA_WORM_POLY_SOLANA_RPC_URL: ${ATHENA_WORM_POLY_SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+    command: ["athena", "--port", "8090"]
+    expose:
+      - "8090"
+
   athena-notification:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -214,6 +239,7 @@ services:
     environment:
       ATHENA_BINARY_NAME: athena-migrate
       ATHENA_WORM_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm sslmode=disable
+      ATHENA_WORM_POLY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wormpoly sslmode=disable
       ATHENA_POLYMARKET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=polymarket sslmode=disable
       ATHENA_NOTIFICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=notification sslmode=disable
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
@@ -232,6 +258,8 @@ services:
         condition: service_started
       athena-worm:
         condition: service_started
+      athena-worm-poly:
+        condition: service_started
       athena-polymarket:
         condition: service_started
       athena-token-api:
@@ -243,6 +271,7 @@ services:
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WORM_SERVER_ADDRESS: athena-worm:8084
+      ATHENA_WORM_POLY_SERVER_ADDRESS: athena-worm-poly:8090
       ATHENA_POLYMARKET_SERVER_ADDRESS: athena-polymarket:8092
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0

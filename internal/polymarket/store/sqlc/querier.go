@@ -29,7 +29,6 @@ type Querier interface {
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error
 	GetPolymarketChainLogCursor(ctx context.Context, syncName string) (PolymarketChainLogCursor, error)
-	GetPolymarketFIFAEventConfig(ctx context.Context) (GetPolymarketFIFAEventConfigRow, error)
 	GetPolymarketSyncState(ctx context.Context, syncName string) (pgtype.Timestamptz, error)
 	ListManagedOODisputePriceAlertCandidates(ctx context.Context, limitValue int32) ([]ListManagedOODisputePriceAlertCandidatesRow, error)
 	ListManagedOODisputePriceLogs(ctx context.Context, arg ListManagedOODisputePriceLogsParams) ([]ListManagedOODisputePriceLogsRow, error)
@@ -47,7 +46,6 @@ type Querier interface {
 	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
 	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
 	Ping(ctx context.Context) (int32, error)
-	UpdatePolymarketFIFAEventConfig(ctx context.Context, arg UpdatePolymarketFIFAEventConfigParams) (UpdatePolymarketFIFAEventConfigRow, error)
 	UpsertManagedOODisputePriceAlertState(ctx context.Context, arg UpsertManagedOODisputePriceAlertStateParams) error
 	UpsertManagedOOMarket(ctx context.Context, arg UpsertManagedOOMarketParams) error
 	UpsertManagedOOMarketNotFound(ctx context.Context, arg UpsertManagedOOMarketNotFoundParams) error

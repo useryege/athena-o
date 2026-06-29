@@ -77,13 +77,13 @@ func (s *Service) syncManagedOOProposePriceLogsMarketsAndAlerts(ctx context.Cont
 }
 
 func (s *Service) syncManagedOOProposePriceLogs(ctx context.Context) error {
-	if strings.TrimSpace(s.fifaPolygonRPCURL) == "" {
+	if strings.TrimSpace(s.polygonRPCURL) == "" {
 		return fmt.Errorf("polymarket polygon rpc url is required")
 	}
 	queryCtx, cancel := context.WithTimeout(ctx, managedOOLogQueryTimeout)
 	defer cancel()
 
-	client, err := ethclient.DialContext(queryCtx, s.fifaPolygonRPCURL)
+	client, err := ethclient.DialContext(queryCtx, s.polygonRPCURL)
 	if err != nil {
 		return fmt.Errorf("dial polygon rpc for managed oo logs: %w", err)
 	}
@@ -146,7 +146,7 @@ func (s *Service) syncManagedOOProposePriceLogs(ctx context.Context) error {
 		"from_block":   fromBlock,
 		"to_block":     latest,
 		"log_count":    len(items),
-		"rpc_endpoint": sanitizedRPCURL(s.fifaPolygonRPCURL),
+		"rpc_endpoint": sanitizedRPCURL(s.polygonRPCURL),
 	}).Debug("synced polymarket managed oo propose price logs")
 	return nil
 }
@@ -187,13 +187,13 @@ func (s *Service) fetchManagedOOProposePriceLogs(ctx context.Context, client *et
 }
 
 func (s *Service) syncManagedOODisputePriceLogs(ctx context.Context) error {
-	if strings.TrimSpace(s.fifaPolygonRPCURL) == "" {
+	if strings.TrimSpace(s.polygonRPCURL) == "" {
 		return fmt.Errorf("polymarket polygon rpc url is required")
 	}
 	queryCtx, cancel := context.WithTimeout(ctx, managedOOLogQueryTimeout)
 	defer cancel()
 
-	client, err := ethclient.DialContext(queryCtx, s.fifaPolygonRPCURL)
+	client, err := ethclient.DialContext(queryCtx, s.polygonRPCURL)
 	if err != nil {
 		return fmt.Errorf("dial polygon rpc for managed oo dispute logs: %w", err)
 	}
@@ -256,7 +256,7 @@ func (s *Service) syncManagedOODisputePriceLogs(ctx context.Context) error {
 		"from_block":   fromBlock,
 		"to_block":     latest,
 		"log_count":    len(items),
-		"rpc_endpoint": sanitizedRPCURL(s.fifaPolygonRPCURL),
+		"rpc_endpoint": sanitizedRPCURL(s.polygonRPCURL),
 	}).Debug("synced polymarket managed oo dispute price logs")
 	return nil
 }

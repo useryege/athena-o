@@ -116,43 +116,6 @@ message RefreshPolymarketSportsHistoryResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketSportsHistorySyncStatus status = 1;
 }
 
-message GetPolymarketFIFAEventConfigRequest {}
-
-message GetPolymarketFIFAEventConfigResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
-}
-
-message UpdatePolymarketFIFAEventConfigRequest {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
-}
-
-message UpdatePolymarketFIFAEventConfigResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAEventConfig config = 1;
-}
-
-message GetPolymarketFIFAMoneylineEventRequest {
-  string event_ref = 1;
-}
-
-message GetPolymarketFIFAMoneylineEventResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAMoneylineEventItem item = 1;
-  int64 fetched_at = 2;
-}
-
-message ListPolymarketFIFAWalletBalancesRequest {}
-
-message ListPolymarketFIFAWalletBalancesResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAWalletBalanceItem items = 1;
-  int64 fetched_at = 2;
-}
-
-message ListPolymarketFIFAWalletHoldingsRequest {}
-
-message ListPolymarketFIFAWalletHoldingsResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.PolymarketFIFAWalletHoldingItem items = 1;
-  int64 fetched_at = 2;
-}
-
 message ScanPolymarketManagedOOBlockRequest {
   uint64 block_number = 1;
 }
@@ -243,29 +206,6 @@ service PolymarketService {
       post: "/api/v1/polymarket/sports/history:refresh"
       body: "*"
     };
-  }
-
-  rpc GetPolymarketFIFAEventConfig(GetPolymarketFIFAEventConfigRequest) returns (GetPolymarketFIFAEventConfigResponse) {
-    option (google.api.http) = {get: "/api/v1/polymarket/fifa/event-config"};
-  }
-
-  rpc UpdatePolymarketFIFAEventConfig(UpdatePolymarketFIFAEventConfigRequest) returns (UpdatePolymarketFIFAEventConfigResponse) {
-    option (google.api.http) = {
-      put: "/api/v1/polymarket/fifa/event-config"
-      body: "config"
-    };
-  }
-
-  rpc GetPolymarketFIFAMoneylineEvent(GetPolymarketFIFAMoneylineEventRequest) returns (GetPolymarketFIFAMoneylineEventResponse) {
-    option (google.api.http) = {get: "/api/v1/polymarket/fifa/moneyline-event"};
-  }
-
-  rpc ListPolymarketFIFAWalletBalances(ListPolymarketFIFAWalletBalancesRequest) returns (ListPolymarketFIFAWalletBalancesResponse) {
-    option (google.api.http) = {get: "/api/v1/polymarket/fifa/wallet-balances"};
-  }
-
-  rpc ListPolymarketFIFAWalletHoldings(ListPolymarketFIFAWalletHoldingsRequest) returns (ListPolymarketFIFAWalletHoldingsResponse) {
-    option (google.api.http) = {get: "/api/v1/polymarket/fifa/wallet-holdings"};
   }
 
   rpc ScanPolymarketManagedOOBlock(ScanPolymarketManagedOOBlockRequest) returns (ScanPolymarketManagedOOBlockResponse) {

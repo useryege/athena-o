@@ -5,7 +5,6 @@ import (
 	"github.com/useryege/athena/internal/polymarket/apiclient"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	"github.com/useryege/athena/internal/server/version"
-	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -21,13 +20,12 @@ type Server struct {
 type ServerOpts struct {
 	Store                         *polymarketstore.SQLStore
 	NotificationClientset         notificationapiclient.Clientset
-	WalletClientset               walletapiclient.Clientset
 	NotificationInviteCode        string
+	PolygonRPCURL                 string
 	MoverAlertsConfig             MoverAlertsConfig
 	SportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
 	ManagedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
 	ManagedOODisputedAlertsConfig ManagedOODisputedAlertsConfig
-	FIFAWalletBalanceConfig       FIFAWalletBalanceConfig
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -38,13 +36,12 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		service: NewService(
 			opts.Store,
 			WithNotificationClientset(opts.NotificationClientset),
-			WithWalletClientset(opts.WalletClientset),
 			WithNotificationInviteCode(opts.NotificationInviteCode),
+			WithPolygonRPCURL(opts.PolygonRPCURL),
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
 			WithManagedOOProposedAlertsConfig(opts.ManagedOOProposedAlertsConfig),
 			WithManagedOODisputedAlertsConfig(opts.ManagedOODisputedAlertsConfig),
-			WithFIFAWalletBalanceConfig(opts.FIFAWalletBalanceConfig),
 		),
 		healthService: healthService,
 	}, nil

@@ -50,6 +50,8 @@ var uiBootstrapPermissions = []*session.ResourcePermission{
 	{Resource: rbac.ResourceWallets, Action: rbac.ActionUpdate, Subresource: "*"},
 	{Resource: rbac.ResourceWallets, Action: rbac.ActionInvoke, Subresource: "*"},
 	{Resource: rbac.ResourceWorm, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourceWormPoly, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourceWormPoly, Action: rbac.ActionUpdate, Subresource: "*"},
 	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionGet, Subresource: "*"},
 	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionUpdate, Subresource: "*"},
 	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionInvoke, Subresource: "*"},

@@ -20,6 +20,7 @@ import (
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
+	wormpolyapiclient "github.com/useryege/athena/internal/wormpoly/apiclient"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
@@ -55,6 +56,7 @@ func NewCommand() *cobra.Command {
 		notificationServerAddress string
 		walletServerAddress       string
 		wormServerAddress         string
+		wormPolyServerAddress     string
 		polymarketServerAddress   string
 		tokenAPIServerAddress     string
 		// hydratorEnabled        bool
@@ -106,6 +108,7 @@ func NewCommand() *cobra.Command {
 			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
 			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
 			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
+			wormPolyClientset := wormpolyapiclient.NewWormPolyClientset(wormPolyServerAddress)
 			polymarketclientset := polymarketapiclient.NewPolymarketClientset(polymarketServerAddress)
 			tokenAPIClientset := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
 
@@ -125,6 +128,7 @@ func NewCommand() *cobra.Command {
 				NotificationClientset: notificationclientset,
 				WalletClientset:       walletclientset,
 				WormClientset:         wormclientset,
+				WormPolyClientset:     wormPolyClientset,
 				PolymarketClientset:   polymarketclientset,
 				TokenAPIClientset:     tokenAPIClientset,
 				// HydratorEnabled:        hydratorEnabled,
@@ -191,6 +195,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
 	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
+	command.Flags().StringVar(&wormPolyServerAddress, "worm-poly-server-address", env.StringFromEnv("ATHENA_WORM_POLY_SERVER_ADDRESS", "localhost:8090"), "Athena worm-poly server address")
 	command.Flags().StringVar(&polymarketServerAddress, "polymarket-server-address", env.StringFromEnv("ATHENA_POLYMARKET_SERVER_ADDRESS", "localhost:8092"), "Athena polymarket server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", "localhost:8096"), "Athena token API server address")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")

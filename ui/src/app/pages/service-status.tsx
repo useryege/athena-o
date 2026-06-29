@@ -6,6 +6,7 @@ const serviceLabels: Record<string, string> = {
     'notification': 'Notification',
     'wallet': 'Wallet',
     'worm': 'Worm',
+    'worm-poly': 'Worm Poly',
     'polymarket': 'Polymarket',
     'token-api': 'Token API'
 };

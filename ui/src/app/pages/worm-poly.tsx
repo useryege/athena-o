@@ -6,19 +6,18 @@ import {AppPage, CardTitle, MetricRow, TruncatedText} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
 import {
-    GetPolymarketFIFAMoneylineEventResult,
-    PolymarketFIFAEventConfig,
     PolymarketFIFAMoneylineDirectionItem,
     PolymarketFIFAMoneylineEventItem,
     PolymarketFIFAMoneylineOptionItem,
     PolymarketFIFAWalletBalanceItem,
-    PolymarketFIFAWalletHoldingItem
-} from '../shared/services/polymarket-service';
+    PolymarketFIFAWalletHoldingItem,
+    WormPolyFIFADashboard,
+    WormPolyFIFAEventConfig
+} from '../shared/services/wormpoly-service';
 import {GetWormEventResult, WormMarketItem} from '../shared/services/worm-service';
 import {boolTag, fmt} from './shared';
 
-const walletRefreshIntervalMs = 3000;
-const eventRefreshIntervalMs = 1000;
+const dashboardRefreshIntervalMs = 1000;
 
 const walletBalancePlaceholders: PolymarketFIFAWalletBalanceItem[] = [
     {
@@ -46,7 +45,8 @@ const walletBalancePlaceholders: PolymarketFIFAWalletBalanceItem[] = [
 const price = (value?: number) => (value === undefined ? '-' : value.toFixed(3));
 const money = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : value.toFixed(2));
 const percent = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : `${(value * 100).toFixed(2)}%`);
-const balanceValue = (item: PolymarketFIFAWalletBalanceItem) => (item.amount && item.amount !== '-' ? `${item.amount} ${item.tokenSymbol || ''}`.trim() : '-');
+const balanceValue = (item: PolymarketFIFAWalletBalanceItem) =>
+    item.ok && !item.errorMessage && item.amount && item.amount !== '-' ? `${item.amount} ${item.tokenSymbol || ''}`.trim() : '-';
 const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
 type FIFAInfoGridItem = {label: React.ReactNode; value: React.ReactNode; copyText?: string};
@@ -424,7 +424,7 @@ const WormEventPanel = (props: {data?: GetWormEventResult; loading?: boolean; er
                 <>
                     <section className='fifa-event-summary'>
                         <div className='fifa-event-summary__title'>
-                            <CardTitle title={item.title} subtitle={<TruncatedText value={item.conditionId} copyable={true} />} image={item.logo} />
+                            <CardTitle title={item.title} subtitle={<TruncatedText value={item.conditionId} copyable={true} />} />
                         </div>
                         <FIFAInfoGrid
                             items={[
@@ -573,7 +573,7 @@ const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
     return (
         <section className='fifa-event-summary'>
             <div className='fifa-event-summary__title'>
-                <CardTitle title={title} subtitle={item.eventSlug} image={item.image} />
+                <CardTitle title={title} subtitle={item.eventSlug} />
                 {item.polymarketUrl && (
                     <Button href={item.polymarketUrl} target='_blank' rel='noreferrer' icon={<LinkOutlined />}>
                         Polymarket
@@ -596,163 +596,21 @@ const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
     );
 };
 
-export const FIFAPage = (props: {canEdit: boolean}) => {
+export const WormPolyPage = (props: {canEdit: boolean}) => {
     const ctx = React.useContext(Context);
     const [, setParams] = useSearchParams();
-    const [config, setConfig] = React.useState<PolymarketFIFAEventConfig>(null);
+    const [dashboard, setDashboard] = React.useState<WormPolyFIFADashboard>(null);
     const [draftWormEventID, setDraftWormEventID] = React.useState('');
     const [draftEventRef, setDraftEventRef] = React.useState('');
-    const [configLoading, setConfigLoading] = React.useState(false);
-    const [configSaving, setConfigSaving] = React.useState(false);
+    const [saving, setSaving] = React.useState(false);
     const [configError, setConfigError] = React.useState<Error>(null);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<Error>(null);
-    const [data, setData] = React.useState<{item?: PolymarketFIFAMoneylineEventItem; fetchedAt?: number}>(null);
-    const [wormLoading, setWormLoading] = React.useState(false);
-    const [wormError, setWormError] = React.useState<Error>(null);
-    const [wormData, setWormData] = React.useState<GetWormEventResult>(null);
-    const [balancesLoading, setBalancesLoading] = React.useState(false);
-    const [balancesError, setBalancesError] = React.useState<Error>(null);
-    const [balancesData, setBalancesData] = React.useState<{items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number}>(null);
-    const [holdingsLoading, setHoldingsLoading] = React.useState(false);
-    const [holdingsError, setHoldingsError] = React.useState<Error>(null);
-    const [holdingsData, setHoldingsData] = React.useState<{items?: PolymarketFIFAWalletHoldingItem[]; fetchedAt?: number}>(null);
     const [selectedWormConditionId, setSelectedWormConditionId] = React.useState('');
-    const configRequestRef = React.useRef<(Promise<PolymarketFIFAEventConfig> & {abort?: () => void}) | null>(null);
-    const wormRequestRef = React.useRef<(Promise<GetWormEventResult> & {abort?: () => void}) | null>(null);
-    const eventRequestRef = React.useRef<(Promise<GetPolymarketFIFAMoneylineEventResult> & {abort?: () => void}) | null>(null);
-    const balancesRequestRef = React.useRef<{abort?: () => void}>(null);
-    const holdingsRequestRef = React.useRef<{abort?: () => void}>(null);
-    const balancesMountedRef = React.useRef(true);
-    const holdingsMountedRef = React.useRef(true);
-
-    const loadBalances = React.useCallback(() => {
-        if (balancesRequestRef.current) {
-            return;
-        }
-        setBalancesLoading(true);
-        setBalancesError(null);
-        const req = services.polymarket.listFIFAWalletBalances();
-        balancesRequestRef.current = req;
-        req.then(nextData => {
-            if (balancesMountedRef.current) {
-                setBalancesData(nextData);
-            }
-        })
-            .catch(err => {
-                if (balancesMountedRef.current) {
-                    setBalancesError(err instanceof Error ? err : new Error(String(err)));
-                }
-            })
-            .finally(() => {
-                if (balancesRequestRef.current === req) {
-                    balancesRequestRef.current = null;
-                    if (balancesMountedRef.current) {
-                        setBalancesLoading(false);
-                    }
-                }
-            });
-    }, []);
-
-    const loadHoldings = React.useCallback(() => {
-        if (holdingsRequestRef.current) {
-            return;
-        }
-        setHoldingsLoading(true);
-        setHoldingsError(null);
-        const req = services.polymarket.listFIFAWalletHoldings();
-        holdingsRequestRef.current = req;
-        req.then(nextData => {
-            if (holdingsMountedRef.current) {
-                setHoldingsData(nextData);
-            }
-        })
-            .catch(err => {
-                if (holdingsMountedRef.current) {
-                    setHoldingsError(err instanceof Error ? err : new Error(String(err)));
-                }
-            })
-            .finally(() => {
-                if (holdingsRequestRef.current === req) {
-                    holdingsRequestRef.current = null;
-                    if (holdingsMountedRef.current) {
-                        setHoldingsLoading(false);
-                    }
-                }
-            });
-    }, []);
-
-    const loadWorm = React.useCallback((nextID: string) => {
-        const normalized = nextID.trim();
-        if (wormRequestRef.current) {
-            return;
-        }
-        if (!normalized) {
-            setWormData(null);
-            setWormError(null);
-            setWormLoading(false);
-            return;
-        }
-        setWormLoading(true);
-        const req = services.worm.getEvent(normalized);
-        wormRequestRef.current = req;
-        req.then(nextData => {
-            if (wormRequestRef.current === req) {
-                setWormError(null);
-                setWormData(nextData);
-            }
-        })
-            .catch(err => {
-                if (wormRequestRef.current === req) {
-                    setWormData(null);
-                    setWormError(err instanceof Error ? err : new Error(String(err)));
-                }
-            })
-            .finally(() => {
-                if (wormRequestRef.current === req) {
-                    wormRequestRef.current = null;
-                    setWormLoading(false);
-                }
-            });
-    }, []);
-
-    const load = React.useCallback((nextRef: string) => {
-        const normalized = nextRef.trim();
-        if (eventRequestRef.current) {
-            return;
-        }
-        if (!normalized) {
-            setData(null);
-            setError(null);
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        const req = services.polymarket.getFIFAMoneylineEvent(normalized);
-        eventRequestRef.current = req;
-        req.then(nextData => {
-            if (eventRequestRef.current === req) {
-                setError(null);
-                setData(nextData);
-            }
-        })
-            .catch(err => {
-                if (eventRequestRef.current === req) {
-                    setData(null);
-                    setError(err instanceof Error ? err : new Error(String(err)));
-                }
-            })
-            .finally(() => {
-                if (eventRequestRef.current === req) {
-                    eventRequestRef.current = null;
-                    setLoading(false);
-                }
-            });
-    }, []);
+    const dashboardRequestRef = React.useRef<(Promise<WormPolyFIFADashboard> & {abort?: () => void}) | null>(null);
 
     const applyConfig = React.useCallback(
-        (nextConfig: PolymarketFIFAEventConfig) => {
-            setConfig(nextConfig);
+        (nextConfig: WormPolyFIFAEventConfig) => {
             setDraftWormEventID(nextConfig.wormEventId);
             setDraftEventRef(nextConfig.eventRef);
             const nextParams = new URLSearchParams();
@@ -765,133 +623,106 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
         [setParams]
     );
 
-    const loadConfig = React.useCallback(() => {
-        configRequestRef.current?.abort?.();
-        setConfigLoading(true);
+    const applyDashboard = React.useCallback(
+        (nextDashboard: WormPolyFIFADashboard) => {
+            setDashboard(nextDashboard);
+            if (nextDashboard.config) {
+                applyConfig(nextDashboard.config);
+            }
+        },
+        [applyConfig]
+    );
+
+    const loadDashboard = React.useCallback(() => {
+        if (dashboardRequestRef.current) {
+            return;
+        }
+        setLoading(true);
         setConfigError(null);
-        const req = services.polymarket.getFIFAEventConfig();
-        configRequestRef.current = req;
-        req.then(nextConfig => {
-            if (configRequestRef.current === req) {
-                applyConfig(nextConfig);
+        setError(null);
+        const req = services.wormpoly.getFIFADashboard();
+        dashboardRequestRef.current = req;
+        req.then(nextDashboard => {
+            if (dashboardRequestRef.current === req) {
+                applyDashboard(nextDashboard);
             }
         })
             .catch(err => {
-                if (configRequestRef.current === req) {
-                    setConfig(null);
-                    setWormData(null);
-                    setData(null);
-                    setConfigError(err instanceof Error ? err : new Error(String(err)));
+                if (dashboardRequestRef.current === req) {
+                    setDashboard(null);
+                    setError(err instanceof Error ? err : new Error(String(err)));
                 }
             })
             .finally(() => {
-                if (configRequestRef.current === req) {
-                    configRequestRef.current = null;
-                    setConfigLoading(false);
+                if (dashboardRequestRef.current === req) {
+                    dashboardRequestRef.current = null;
+                    setLoading(false);
                 }
             });
-    }, [applyConfig]);
+    }, [applyDashboard]);
 
     React.useEffect(() => {
-        loadConfig();
-        return () => {
-            const configReq = configRequestRef.current;
-            configRequestRef.current = null;
-            configReq?.abort?.();
-        };
-    }, [loadConfig]);
-
-    const configuredWormEventID = config?.wormEventId || '';
-    const configuredEventRef = config?.eventRef || '';
-    React.useEffect(() => {
-        const wormReq = wormRequestRef.current;
-        const eventReq = eventRequestRef.current;
-        wormRequestRef.current = null;
-        eventRequestRef.current = null;
-        wormReq?.abort?.();
-        eventReq?.abort?.();
-
-        setWormData(null);
-        setWormError(null);
-        setData(null);
-        setError(null);
-        if (!configuredWormEventID || !configuredEventRef) {
-            setWormLoading(false);
-            setLoading(false);
-            return undefined;
-        }
-
-        const refreshEvents = () => {
-            loadWorm(configuredWormEventID);
-            load(configuredEventRef);
-        };
-        refreshEvents();
-        const timer = window.setInterval(refreshEvents, eventRefreshIntervalMs);
+        loadDashboard();
+        const timer = window.setInterval(loadDashboard, dashboardRefreshIntervalMs);
         return () => {
             window.clearInterval(timer);
-            const currentWormReq = wormRequestRef.current;
-            const currentEventReq = eventRequestRef.current;
-            wormRequestRef.current = null;
-            eventRequestRef.current = null;
-            currentWormReq?.abort?.();
-            currentEventReq?.abort?.();
+            const req = dashboardRequestRef.current;
+            dashboardRequestRef.current = null;
+            req?.abort?.();
         };
-    }, [configuredEventRef, configuredWormEventID, load, loadWorm]);
-
-    React.useEffect(() => {
-        balancesMountedRef.current = true;
-        loadBalances();
-        const timer = window.setInterval(loadBalances, walletRefreshIntervalMs);
-        return () => {
-            balancesMountedRef.current = false;
-            window.clearInterval(timer);
-            balancesRequestRef.current?.abort?.();
-        };
-    }, [loadBalances]);
-
-    React.useEffect(() => {
-        holdingsMountedRef.current = true;
-        loadHoldings();
-        const timer = window.setInterval(loadHoldings, walletRefreshIntervalMs);
-        return () => {
-            holdingsMountedRef.current = false;
-            window.clearInterval(timer);
-            holdingsRequestRef.current?.abort?.();
-        };
-    }, [loadHoldings]);
+    }, [loadDashboard]);
 
     React.useEffect(() => {
         if (!selectedWormConditionId) {
             return;
         }
-        const item = wormData?.item;
+        const item = dashboard?.wormEvent;
         const selectedStillExists = Boolean(item?.markets.some(market => market.conditionId === selectedWormConditionId));
         if (!selectedStillExists) {
             setSelectedWormConditionId('');
         }
-    }, [selectedWormConditionId, wormData]);
+    }, [dashboard?.wormEvent, selectedWormConditionId]);
 
     const saveConfig = async () => {
         const wormEventId = draftWormEventID.trim();
         const eventRef = draftEventRef.trim();
         if (!wormEventId || !eventRef) {
-            ctx.notifications.error('Invalid FIFA event config', 'Worm Event ID and Polymarket Event Ref are required.');
+            ctx.notifications.error('Invalid Worm Poly event config', 'Worm Event ID and Polymarket Event Ref are required.');
             return;
         }
-        setConfigSaving(true);
+        setSaving(true);
         setConfigError(null);
         try {
-            const nextConfig = await services.polymarket.updateFIFAEventConfig({wormEventId, eventRef});
+            const nextConfig = await services.wormpoly.updateFIFAEventConfig({wormEventId, eventRef});
             applyConfig(nextConfig);
-            ctx.notifications.success('FIFA event config saved');
+            setDashboard(current => ({...(current || {walletBalances: [], walletHoldings: []}), config: nextConfig}));
+            dashboardRequestRef.current?.abort?.();
+            dashboardRequestRef.current = null;
+            loadDashboard();
+            ctx.notifications.success('Worm Poly event config saved');
         } catch (err: any) {
             const nextError = err instanceof Error ? err : new Error(String(err));
             setConfigError(nextError);
-            ctx.notifications.error('FIFA event config save failed', nextError.message);
+            ctx.notifications.error('Worm Poly event config save failed', nextError.message);
         } finally {
-            setConfigSaving(false);
+            setSaving(false);
         }
     };
+
+    const config = dashboard?.config;
+    const wormData: GetWormEventResult = dashboard?.wormEvent || dashboard?.wormFetchedAt ? {item: dashboard?.wormEvent, fetchedAt: dashboard?.wormFetchedAt} : null;
+    const data: {item?: PolymarketFIFAMoneylineEventItem; fetchedAt?: number} =
+        dashboard?.polymarketEvent || dashboard?.polymarketFetchedAt ? {item: dashboard?.polymarketEvent, fetchedAt: dashboard?.polymarketFetchedAt} : null;
+    const balancesData: {items?: PolymarketFIFAWalletBalanceItem[]; fetchedAt?: number} = dashboard
+        ? {items: dashboard.walletBalances, fetchedAt: dashboard.walletBalancesFetchedAt}
+        : null;
+    const holdingsData: {items?: PolymarketFIFAWalletHoldingItem[]; fetchedAt?: number} = dashboard
+        ? {items: dashboard.walletHoldings, fetchedAt: dashboard.walletHoldingsFetchedAt}
+        : null;
+    const wormError = dashboard?.wormError ? new Error(dashboard.wormError) : null;
+    const balancesError = dashboard?.walletBalancesError ? new Error(dashboard.walletBalancesError) : null;
+    const holdingsError = dashboard?.walletHoldingsError ? new Error(dashboard.walletHoldingsError) : null;
+    const polymarketError = dashboard?.polymarketError ? new Error(dashboard.polymarketError) : null;
 
     const configPanel = (
         <section className='fifa-event-config'>
@@ -906,7 +737,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                             <Typography.Text type='secondary'>Worm Event ID</Typography.Text>
                             <Input
                                 allowClear={true}
-                                disabled={configLoading || configSaving || !config}
+                                disabled={loading || saving || !config}
                                 value={draftWormEventID}
                                 placeholder='Worm Event ID'
                                 onChange={event => setDraftWormEventID(event.target.value)}
@@ -917,7 +748,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                             <Typography.Text type='secondary'>Polymarket Event Ref</Typography.Text>
                             <Input
                                 allowClear={true}
-                                disabled={configLoading || configSaving || !config}
+                                disabled={loading || saving || !config}
                                 value={draftEventRef}
                                 placeholder='Polymarket Event ID or slug'
                                 onChange={event => setDraftEventRef(event.target.value)}
@@ -926,7 +757,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                         </label>
                     </div>
                     <div className='fifa-event-config__actions'>
-                        <Button type='primary' disabled={!config || configLoading} loading={configSaving} onClick={saveConfig}>
+                        <Button type='primary' disabled={!config || loading} loading={saving} onClick={saveConfig}>
                             Save & Load
                         </Button>
                     </div>
@@ -939,7 +770,7 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
                     ]}
                 />
             ) : (
-                <Typography.Text type='secondary'>{configLoading ? 'Loading event config…' : 'Event config unavailable'}</Typography.Text>
+                <Typography.Text type='secondary'>{loading ? 'Loading event config…' : 'Event config unavailable'}</Typography.Text>
             )}
         </section>
     );
@@ -951,32 +782,28 @@ export const FIFAPage = (props: {canEdit: boolean}) => {
     const selectWormMarket = React.useCallback((conditionId: string) => {
         setSelectedWormConditionId(current => (current === conditionId ? '' : conditionId));
     }, []);
-    const refresh = React.useCallback(() => {
-        loadConfig();
-        loadBalances();
-        loadHoldings();
-    }, [loadBalances, loadConfig, loadHoldings]);
     return (
         <AppPage
-            title='FIFA'
+            title='Worm Poly'
             subtitle={`Worm ${unixTime(wormData?.fetchedAt)} · Polymarket ${unixTime(data?.fetchedAt)}`}
-            loading={configLoading || configSaving || loading || wormLoading}
+            loading={loading || saving}
             error={configError || error}
-            onRefresh={refresh}>
+            onRefresh={loadDashboard}>
             <div className='fifa-page'>
                 {configPanel}
-                <FIFAWalletBalancesPanel items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={balancesLoading} error={balancesError} />
+                <FIFAWalletBalancesPanel items={balancesData?.items} fetchedAt={balancesData?.fetchedAt} loading={loading} error={balancesError} />
                 <HedgeCalculatorPanel wormMarket={selectedMarket} outcomeKey={selectedOutcomeKey} polymarketOption={selectedPolymarketOption} />
                 <div className='fifa-dashboard-grid'>
                     <div className='fifa-dashboard-column fifa-dashboard-column--left'>
-                        <WormEventPanel data={wormData} loading={wormLoading} error={wormError} selectedConditionId={selectedWormConditionId} onSelectMarket={selectWormMarket} />
-                        <FIFAWalletHoldingsPanel items={holdingsData?.items} fetchedAt={holdingsData?.fetchedAt} loading={holdingsLoading} error={holdingsError} />
+                        <WormEventPanel data={wormData} loading={loading} error={wormError} selectedConditionId={selectedWormConditionId} onSelectMarket={selectWormMarket} />
+                        <FIFAWalletHoldingsPanel items={holdingsData?.items} fetchedAt={holdingsData?.fetchedAt} loading={loading} error={holdingsError} />
                     </div>
                     <section className='fifa-panel fifa-panel--polymarket'>
                         <div className='fifa-panel__title'>
                             <Typography.Text strong={true}>Polymarket</Typography.Text>
                             <Typography.Text type='secondary'>Fetched {unixTime(data?.fetchedAt)}</Typography.Text>
                         </div>
+                        {polymarketError && <Typography.Text type='danger'>{polymarketError.message}</Typography.Text>}
                         {!item && !loading && <Empty description='No Polymarket event loaded' />}
                         {item && (
                             <>

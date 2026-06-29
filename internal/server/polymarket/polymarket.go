@@ -4,20 +4,17 @@ import (
 	"context"
 
 	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
-	serverfifa "github.com/useryege/athena/internal/server/fifa"
 	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	"github.com/useryege/athena/util/session"
 )
 
 type Server struct {
 	polymarketpkg.UnimplementedPolymarketServiceServer
 	polymarketClientSet polymarketapiclient.Clientset
-	fifaCache           *serverfifa.Cache
 }
 
-func NewServer(polymarketClientSet polymarketapiclient.Clientset, fifaCache *serverfifa.Cache) *Server {
-	return &Server{polymarketClientSet: polymarketClientSet, fifaCache: fifaCache}
+func NewServer(polymarketClientSet polymarketapiclient.Clientset) *Server {
+	return &Server{polymarketClientSet: polymarketClientSet}
 }
 
 func (s *Server) GetPolymarketStatus(ctx context.Context, _ *polymarketpkg.GetPolymarketStatusRequest) (*v1alpha1.PolymarketStatus, error) {
@@ -212,83 +209,6 @@ func (s *Server) RefreshPolymarketSportsHistory(ctx context.Context, _ *polymark
 		return nil, err
 	}
 	return &polymarketpkg.RefreshPolymarketSportsHistoryResponse{Status: resp.GetStatus()}, nil
-}
-
-func (s *Server) GetPolymarketFIFAEventConfig(ctx context.Context, _ *polymarketpkg.GetPolymarketFIFAEventConfigRequest) (*polymarketpkg.GetPolymarketFIFAEventConfigResponse, error) {
-	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetPolymarketFIFAEventConfig(ctx, &polymarketapiclient.GetPolymarketFIFAEventConfigRequest{})
-	if err != nil {
-		return nil, err
-	}
-	s.fifaCache.NotifyConfig(resp.GetConfig())
-	return &polymarketpkg.GetPolymarketFIFAEventConfigResponse{Config: resp.GetConfig()}, nil
-}
-
-func (s *Server) UpdatePolymarketFIFAEventConfig(ctx context.Context, req *polymarketpkg.UpdatePolymarketFIFAEventConfigRequest) (*polymarketpkg.UpdatePolymarketFIFAEventConfigResponse, error) {
-	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.UpdatePolymarketFIFAEventConfig(ctx, &polymarketapiclient.UpdatePolymarketFIFAEventConfigRequest{Config: req.GetConfig()})
-	if err != nil {
-		return nil, err
-	}
-	s.fifaCache.NotifyConfig(resp.GetConfig())
-	return &polymarketpkg.UpdatePolymarketFIFAEventConfigResponse{Config: resp.GetConfig()}, nil
-}
-
-func (s *Server) GetPolymarketFIFAMoneylineEvent(_ context.Context, req *polymarketpkg.GetPolymarketFIFAMoneylineEventRequest) (*polymarketpkg.GetPolymarketFIFAMoneylineEventResponse, error) {
-	item, fetchedAt, err := s.fifaCache.GetPolymarketEvent(req.GetEventRef())
-	if err != nil {
-		return nil, err
-	}
-	return &polymarketpkg.GetPolymarketFIFAMoneylineEventResponse{
-		Item:      item,
-		FetchedAt: fetchedAt,
-	}, nil
-}
-
-func (s *Server) ListPolymarketFIFAWalletBalances(ctx context.Context, _ *polymarketpkg.ListPolymarketFIFAWalletBalancesRequest) (*polymarketpkg.ListPolymarketFIFAWalletBalancesResponse, error) {
-	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListPolymarketFIFAWalletBalances(ctx, &polymarketapiclient.ListPolymarketFIFAWalletBalancesRequest{})
-	if err != nil {
-		return nil, err
-	}
-	return &polymarketpkg.ListPolymarketFIFAWalletBalancesResponse{
-		Items:     resp.GetItems(),
-		FetchedAt: resp.GetFetchedAt(),
-	}, nil
-}
-
-func (s *Server) ListPolymarketFIFAWalletHoldings(ctx context.Context, _ *polymarketpkg.ListPolymarketFIFAWalletHoldingsRequest) (*polymarketpkg.ListPolymarketFIFAWalletHoldingsResponse, error) {
-	closer, client, err := s.polymarketClientSet.NewPolymarketServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListPolymarketFIFAWalletHoldings(ctx, &polymarketapiclient.ListPolymarketFIFAWalletHoldingsRequest{
-		Requester: session.GetUserIdentifier(ctx),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &polymarketpkg.ListPolymarketFIFAWalletHoldingsResponse{
-		Items:     resp.GetItems(),
-		FetchedAt: resp.GetFetchedAt(),
-	}, nil
 }
 
 func (s *Server) ScanPolymarketManagedOOBlock(ctx context.Context, req *polymarketpkg.ScanPolymarketManagedOOBlockRequest) (*polymarketpkg.ScanPolymarketManagedOOBlockResponse, error) {

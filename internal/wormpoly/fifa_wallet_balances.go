@@ -1,4 +1,4 @@
-package polymarket
+package wormpoly
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/useryege/athena/internal/polymarket/apiclient"
 	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
@@ -37,14 +36,6 @@ const (
 type fifaWalletBalancesResult struct {
 	items     []*v1alpha1.PolymarketFIFAWalletBalanceItem
 	fetchedAt int64
-}
-
-func (s *Service) ListPolymarketFIFAWalletBalances(ctx context.Context, _ *apiclient.ListPolymarketFIFAWalletBalancesRequest) (*apiclient.ListPolymarketFIFAWalletBalancesResponse, error) {
-	items, fetchedAt := s.currentFIFAWalletBalances()
-	return &apiclient.ListPolymarketFIFAWalletBalancesResponse{
-		Items:     items,
-		FetchedAt: fetchedAt,
-	}, nil
 }
 
 func (s *Service) runFIFAWalletBalanceRefreshLoop(ctx context.Context) {
@@ -270,6 +261,8 @@ func baseFIFAWalletBalanceItem(chain string, label string, walletAddress string,
 
 func markFIFAWalletBalanceError(item *v1alpha1.PolymarketFIFAWalletBalanceItem, err error) *v1alpha1.PolymarketFIFAWalletBalanceItem {
 	item.OK = false
+	item.RawAmount = "-"
+	item.Amount = "-"
 	if err != nil {
 		item.ErrorMessage = err.Error()
 	}
@@ -324,11 +317,4 @@ func cloneFIFAWalletBalanceItems(items []*v1alpha1.PolymarketFIFAWalletBalanceIt
 		cloned = append(cloned, &next)
 	}
 	return cloned
-}
-
-func (s *Service) nowTime() time.Time {
-	if s.nowFn == nil {
-		return time.Now()
-	}
-	return s.nowFn()
 }

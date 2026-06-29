@@ -28,6 +28,15 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
+    schema: "internal/wormpoly/store/migrations"
+    queries: "internal/wormpoly/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/wormpoly/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+  - engine: "postgresql"
     schema: "internal/polymarket/store/migrations"
     queries: "internal/polymarket/store/queries"
     gen:

@@ -1,11 +1,14 @@
 syntax = "proto3";
 
-// Worm Poly Service API exposes worm-poly service runtime status.
-package athena.internal.wormpoly;
+// Worm Poly Service
+//
+// Worm Poly Service API returns worm-poly runtime and FIFA dashboard data.
+package wormpoly;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
 
-option go_package = "github.com/useryege/athena/internal/wormpoly/apiclient";
+option go_package = "github.com/useryege/athena/pkg/apiclient/wormpoly";
 
 // GetWormPolyStatusRequest queries the worm-poly service runtime status.
 message GetWormPolyStatusRequest {}
@@ -16,9 +19,7 @@ message GetWormPolyStatusResponse {
   string status = 2;
 }
 
-message GetWormPolyFIFADashboardRequest {
-  string requester = 1;
-}
+message GetWormPolyFIFADashboardRequest {}
 
 message GetWormPolyFIFADashboardResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WormPolyFIFADashboard dashboard = 1;
@@ -34,9 +35,18 @@ message UpdateWormPolyFIFAEventConfigResponse {
 
 service WormPolyService {
   // GetWormPolyStatus returns the worm-poly service runtime status.
-  rpc GetWormPolyStatus(GetWormPolyStatusRequest) returns (GetWormPolyStatusResponse);
+  rpc GetWormPolyStatus(GetWormPolyStatusRequest) returns (GetWormPolyStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/worm-poly/status"};
+  }
 
-  rpc GetWormPolyFIFADashboard(GetWormPolyFIFADashboardRequest) returns (GetWormPolyFIFADashboardResponse);
+  rpc GetWormPolyFIFADashboard(GetWormPolyFIFADashboardRequest) returns (GetWormPolyFIFADashboardResponse) {
+    option (google.api.http) = {get: "/api/v1/worm-poly/fifa/dashboard"};
+  }
 
-  rpc UpdateWormPolyFIFAEventConfig(UpdateWormPolyFIFAEventConfigRequest) returns (UpdateWormPolyFIFAEventConfigResponse);
+  rpc UpdateWormPolyFIFAEventConfig(UpdateWormPolyFIFAEventConfigRequest) returns (UpdateWormPolyFIFAEventConfigResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/worm-poly/fifa/event-config"
+      body: "config"
+    };
+  }
 }

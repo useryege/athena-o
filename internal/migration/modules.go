@@ -9,6 +9,7 @@ import (
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	wormstore "github.com/useryege/athena/internal/worm/store"
+	wormpolystore "github.com/useryege/athena/internal/wormpoly/store"
 )
 
 const (
@@ -25,6 +26,7 @@ type Module struct {
 
 var modules = []Module{
 	{Name: "worm", DSNEnv: "ATHENA_WORM_POSTGRES_DSN", Database: "worm", Migrations: wormstore.Migrations()},
+	{Name: "wormpoly", DSNEnv: "ATHENA_WORM_POLY_POSTGRES_DSN", Database: "wormpoly", Migrations: wormpolystore.Migrations()},
 	{Name: "notification", DSNEnv: "ATHENA_NOTIFICATION_POSTGRES_DSN", Database: "notification", Migrations: notificationstore.Migrations()},
 	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations()},
 	{Name: "polymarket", DSNEnv: "ATHENA_POLYMARKET_POSTGRES_DSN", Database: "polymarket", Migrations: polymarketstore.Migrations()},

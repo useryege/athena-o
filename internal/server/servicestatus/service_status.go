@@ -28,6 +28,7 @@ func NewServer(
 	notification healthChecker,
 	wallet healthChecker,
 	worm healthChecker,
+	wormPoly healthChecker,
 	polymarket healthChecker,
 	tokenAPI healthChecker,
 ) *Server {
@@ -35,6 +36,7 @@ func NewServer(
 		{name: "notification", checker: notification},
 		{name: "wallet", checker: wallet},
 		{name: "worm", checker: worm},
+		{name: "worm-poly", checker: wormPoly},
 		{name: "polymarket", checker: polymarket},
 		{name: "token-api", checker: tokenAPI},
 	}}
