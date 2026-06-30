@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// Pred Poly Service API exposes pred-poly service runtime status.
+package athena.internal.predpoly;
+
+option go_package = "github.com/useryege/athena/internal/predpoly/apiclient";
+
+// GetPredPolyStatusRequest queries the pred-poly service runtime status.
+message GetPredPolyStatusRequest {}
+
+// GetPredPolyStatusResponse returns the pred-poly service runtime status.
+message GetPredPolyStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+service PredPolyService {
+  // GetPredPolyStatus returns the pred-poly service runtime status.
+  rpc GetPredPolyStatus(GetPredPolyStatusRequest) returns (GetPredPolyStatusResponse);
+}

@@ -34,6 +34,8 @@ const (
 	DefaultPortToken = 8094
 	// Athena Token API
 	DefaultPortTokenAPI = 8096
+	// Athena Pred Poly
+	DefaultPortPredPoly = 8098
 )
 
 // DefaultAddressAPIServer for Athena components
@@ -46,6 +48,7 @@ const (
 	DefaultAddressPolymarket   = "0.0.0.0"
 	DefaultAddressToken        = "0.0.0.0"
 	DefaultAddressTokenAPI     = "0.0.0.0"
+	DefaultAddressPredPoly     = "0.0.0.0"
 )
 
 // Default paths on the pod's file system

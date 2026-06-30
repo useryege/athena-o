@@ -1,5 +1,6 @@
 worm: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-worm} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-worm go run ./cmd/main.go --port ${ATHENA_WORM_PORT:-8084}"
 worm-poly: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-worm-poly} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-worm-poly go run ./cmd/main.go --port ${ATHENA_WORM_POLY_PORT:-8090}"
+pred-poly: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-pred-poly} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-pred-poly go run ./cmd/main.go --port ${ATHENA_PRED_POLY_PORT:-8098}"
 polymarket: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-polymarket} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-polymarket go run ./cmd/main.go --port ${ATHENA_POLYMARKET_PORT:-8092}"
 # token: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token go run ./cmd/main.go --port ${ATHENA_TOKEN_PORT:-8094}"
 # token-chain-ingestor: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-chain-ingestor} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token ATHENA_TOKEN_MODE=chain-ingestor ATHENA_TOKEN_NODE_WS_USE_PROXY=${ATHENA_TOKEN_NODE_WS_USE_PROXY:-false} go run ./cmd/main.go"

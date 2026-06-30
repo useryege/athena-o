@@ -10,6 +10,7 @@ import (
 	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaPolymarketCommands "github.com/useryege/athena/cmd/athena-polymarket/commands"
+	athenaPredPolyCommands "github.com/useryege/athena/cmd/athena-pred-poly/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	athenaTokenAPICommands "github.com/useryege/athena/cmd/athena-token-api/commands"
 	athenaTokenCommands "github.com/useryege/athena/cmd/athena-token/commands"
@@ -45,6 +46,8 @@ func main() {
 		command = athenaNotificationCommands.NewCommand()
 	case "athena-polymarket":
 		command = athenaPolymarketCommands.NewCommand()
+	case "athena-pred-poly":
+		command = athenaPredPolyCommands.NewCommand()
 	case "athena-token":
 		command = athenaTokenCommands.NewCommand()
 	case "athena-token-api":
