@@ -277,6 +277,7 @@ func (s *SQLStore) ListSportsLiveScoreAlertCandidates(ctx context.Context) ([]Sp
 		items = append(items, SportsLiveScoreAlertCandidate{
 			EventKey:      row.EventKey,
 			Slug:          row.Slug,
+			SportType:     row.SportType,
 			Title:         row.Title,
 			PreviousScore: row.PreviousScore,
 			Score:         row.Score,

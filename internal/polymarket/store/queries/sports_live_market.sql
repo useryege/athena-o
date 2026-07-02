@@ -133,7 +133,7 @@ SELECT
   event.event_key,
   btrim(event.score)
 FROM polymarket_sports_live_event AS event
-WHERE lower(split_part(btrim(event.slug), '-', 1)) = 'fifwc'
+WHERE lower(split_part(btrim(event.slug), '-', 1)) IN ('fifwc', 'mlb')
   AND event.live = true
   AND event.ended = false
   AND btrim(event.score) <> ''
@@ -464,6 +464,7 @@ WHERE token_id = @token_id;
 SELECT
   event.event_key,
   event.slug,
+  lower(split_part(btrim(event.slug), '-', 1))::text AS sport_type,
   COALESCE(NULLIF(event.title, ''), event.slug, event.event_key)::text AS title,
   state.last_score AS previous_score,
   btrim(event.score)::text AS score,
@@ -473,7 +474,7 @@ SELECT
   event.fetched_at
 FROM polymarket_sports_live_event AS event
 JOIN polymarket_sports_live_score_alert_state AS state ON state.event_key = event.event_key
-WHERE lower(split_part(btrim(event.slug), '-', 1)) = 'fifwc'
+WHERE lower(split_part(btrim(event.slug), '-', 1)) IN ('fifwc', 'mlb')
   AND event.live = true
   AND event.ended = false
   AND btrim(event.score) <> ''

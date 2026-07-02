@@ -3,6 +3,7 @@ package polymarket
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,8 +14,10 @@ import (
 )
 
 const (
-	sportsLiveScoreAlertTopic  = "[POLY] FIFWC 比分"
-	sportsLiveScoreAlertSource = "polymarket.sports-live-score"
+	sportsLiveScoreAlertFIFWCTopic  = "[POLY] FIFWC 比分"
+	sportsLiveScoreAlertMLBTopic    = "[POLY] MLB 比分"
+	sportsLiveScoreAlertSource      = "polymarket.sports-live-score"
+	polymarketMLBSportsEventBaseURL = "https://polymarket.com/sports/mlb/"
 
 	defaultSportsLiveScoreAlertSendTimeout   = 10 * time.Second
 	defaultSportsLiveScoreAlertTitleMaxRunes = 120
@@ -104,6 +107,7 @@ func (s *Service) updateSportsLiveScoreAlerts(ctx context.Context) {
 
 func (s *Service) renderSportsLiveScoreAlertNotification(candidate polymarketstore.SportsLiveScoreAlertCandidate) *notificationapiclient.SendNotificationRequest {
 	eventTitle := firstNonEmpty(candidate.Title, candidate.Slug, candidate.EventKey)
+	sportLabel, topic, link := sportsLiveScoreAlertPresentation(candidate)
 	bodyLines := []string{
 		fmt.Sprintf("Event: %s", eventTitle),
 		fmt.Sprintf("Score: %s → %s", candidate.PreviousScore, candidate.Score),
@@ -118,10 +122,25 @@ func (s *Service) renderSportsLiveScoreAlertNotification(candidate polymarketsto
 	return &notificationapiclient.SendNotificationRequest{
 		Source:       sportsLiveScoreAlertSource,
 		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
-		Title:        truncateRunes(fmt.Sprintf("FIFWC score update: %s %s", eventTitle, candidate.Score), defaultSportsLiveScoreAlertTitleMaxRunes),
+		Title:        truncateRunes(fmt.Sprintf("%s score update: %s %s", sportLabel, eventTitle, candidate.Score), defaultSportsLiveScoreAlertTitleMaxRunes),
 		Body:         strings.Join(bodyLines, "\n"),
-		Link:         s.polymarketNotificationLink(polymarketEventLink(candidate.Slug)),
+		Link:         s.polymarketNotificationLink(link),
 		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_TEST,
-		TopicLabel:   sportsLiveScoreAlertTopic,
+		TopicLabel:   topic,
 	}
+}
+
+func sportsLiveScoreAlertPresentation(candidate polymarketstore.SportsLiveScoreAlertCandidate) (string, string, string) {
+	if strings.EqualFold(strings.TrimSpace(candidate.SportType), "mlb") {
+		return "MLB", sportsLiveScoreAlertMLBTopic, polymarketMLBSportsEventLink(candidate.Slug)
+	}
+	return "FIFWC", sportsLiveScoreAlertFIFWCTopic, polymarketEventLink(candidate.Slug)
+}
+
+func polymarketMLBSportsEventLink(slug string) string {
+	slug = strings.TrimSpace(slug)
+	if slug == "" {
+		return ""
+	}
+	return polymarketMLBSportsEventBaseURL + url.PathEscape(slug)
 }

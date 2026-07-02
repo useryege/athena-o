@@ -187,6 +187,7 @@ type SportsLivePriceAlertState struct {
 type SportsLiveScoreAlertCandidate struct {
 	EventKey      string
 	Slug          string
+	SportType     string
 	Title         string
 	PreviousScore string
 	Score         string
