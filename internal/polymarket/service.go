@@ -110,6 +110,12 @@ func WithSportsLivePriceAlertsConfig(config SportsLivePriceAlertsConfig) Service
 	}
 }
 
+func WithSportsLiveScoreAlertsConfig(config SportsLiveScoreAlertsConfig) ServiceOption {
+	return func(s *Service) {
+		s.sportsLiveScoreAlertsConfig = normalizeSportsLiveScoreAlertsConfig(config)
+	}
+}
+
 func WithManagedOOProposedAlertsConfig(config ManagedOOProposedAlertsConfig) ServiceOption {
 	return func(s *Service) {
 		s.managedOOProposedAlertsConfig = normalizeManagedOOProposedAlertsConfig(config)
@@ -143,6 +149,7 @@ type Service struct {
 	polygonRPCURL                 string
 	moverAlertsConfig             MoverAlertsConfig
 	sportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
+	sportsLiveScoreAlertsConfig   SportsLiveScoreAlertsConfig
 	managedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
 	managedOODisputedAlertsConfig ManagedOODisputedAlertsConfig
 	nowFn                         func() time.Time
@@ -180,6 +187,7 @@ func NewService(store *polymarketstore.SQLStore, opts ...ServiceOption) *Service
 		polygonRPCURL:                 defaultPolygonRPCURL,
 		moverAlertsConfig:             defaultMoverAlertsConfig(),
 		sportsLivePriceAlertsConfig:   defaultSportsLivePriceAlertsConfig(),
+		sportsLiveScoreAlertsConfig:   defaultSportsLiveScoreAlertsConfig(),
 		managedOOProposedAlertsConfig: defaultManagedOOProposedAlertsConfig(),
 		managedOODisputedAlertsConfig: defaultManagedOODisputedAlertsConfig(),
 		nowFn:                         time.Now,

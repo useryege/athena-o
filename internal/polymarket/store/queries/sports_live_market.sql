@@ -124,6 +124,21 @@ SET event_id = EXCLUDED.event_id,
   last_seen_at = EXCLUDED.last_seen_at,
   updated_at = now();
 
+-- name: SeedSportsLiveScoreAlertStates :exec
+INSERT INTO polymarket_sports_live_score_alert_state (
+  event_key,
+  last_score
+)
+SELECT
+  event.event_key,
+  btrim(event.score)
+FROM polymarket_sports_live_event AS event
+WHERE lower(split_part(btrim(event.slug), '-', 1)) = 'fifwc'
+  AND event.live = true
+  AND event.ended = false
+  AND btrim(event.score) <> ''
+ON CONFLICT (event_key) DO NOTHING;
+
 -- name: BatchUpsertSportsLiveMarkets :exec
 INSERT INTO polymarket_sports_live_market (
   market_key,
@@ -444,6 +459,34 @@ SET market_key = EXCLUDED.market_key,
 -- name: DeleteSportsLivePriceAlertState :exec
 DELETE FROM polymarket_sports_live_price_alert_state
 WHERE token_id = @token_id;
+
+-- name: ListSportsLiveScoreAlertCandidates :many
+SELECT
+  event.event_key,
+  event.slug,
+  COALESCE(NULLIF(event.title, ''), event.slug, event.event_key)::text AS title,
+  state.last_score AS previous_score,
+  btrim(event.score)::text AS score,
+  event.period,
+  event.elapsed,
+  event.game_status,
+  event.fetched_at
+FROM polymarket_sports_live_event AS event
+JOIN polymarket_sports_live_score_alert_state AS state ON state.event_key = event.event_key
+WHERE lower(split_part(btrim(event.slug), '-', 1)) = 'fifwc'
+  AND event.live = true
+  AND event.ended = false
+  AND btrim(event.score) <> ''
+  AND btrim(event.score) <> state.last_score
+ORDER BY event.volume DESC, event.event_key;
+
+-- name: UpdateSportsLiveScoreAlertState :exec
+UPDATE polymarket_sports_live_score_alert_state
+SET last_score = btrim(@score),
+  notification_id = @notification_id,
+  last_notified_at = @last_notified_at,
+  updated_at = now()
+WHERE event_key = @event_key;
 
 -- name: BatchUpsertSportsLivePricePoints :exec
 INSERT INTO polymarket_sports_live_price_point (

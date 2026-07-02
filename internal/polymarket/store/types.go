@@ -184,6 +184,25 @@ type SportsLivePriceAlertState struct {
 	LastPrice     float64
 }
 
+type SportsLiveScoreAlertCandidate struct {
+	EventKey      string
+	Slug          string
+	Title         string
+	PreviousScore string
+	Score         string
+	Period        string
+	Elapsed       string
+	GameStatus    string
+	FetchedAt     time.Time
+}
+
+type SportsLiveScoreAlertState struct {
+	EventKey       string
+	Score          string
+	NotificationID int64
+	LastNotifiedAt time.Time
+}
+
 type SportsLivePriceHistorySeries struct {
 	MarketKey  string
 	TokenID    string

@@ -337,6 +337,19 @@ CREATE TABLE IF NOT EXISTS polymarket_sports_live_price_alert_state (
     FOREIGN KEY (market_key) REFERENCES polymarket_sports_live_market(market_key) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS polymarket_sports_live_score_alert_state (
+  event_key TEXT PRIMARY KEY,
+  last_score TEXT NOT NULL,
+  notification_id BIGINT NOT NULL DEFAULT 0,
+  last_notified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT polymarket_sports_live_score_alert_state_event_not_empty CHECK (btrim(event_key) <> ''),
+  CONSTRAINT polymarket_sports_live_score_alert_state_score_not_empty CHECK (btrim(last_score) <> ''),
+  CONSTRAINT polymarket_sports_live_score_alert_state_event_fk
+    FOREIGN KEY (event_key) REFERENCES polymarket_sports_live_event(event_key) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS polymarket_sports_history_event (
   event_key TEXT PRIMARY KEY,
   event_id TEXT NOT NULL DEFAULT '',
@@ -518,6 +531,7 @@ CREATE INDEX IF NOT EXISTS polymarket_sports_history_price_point_market_ts_idx
 DROP TABLE IF EXISTS polymarket_sports_history_price_point;
 DROP TABLE IF EXISTS polymarket_sports_history_market;
 DROP TABLE IF EXISTS polymarket_sports_history_event;
+DROP TABLE IF EXISTS polymarket_sports_live_score_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_alert_state;
 DROP TABLE IF EXISTS polymarket_sports_live_price_point;
 DROP TABLE IF EXISTS polymarket_managed_oo_dispute_price_alert_state;

@@ -976,6 +976,116 @@ func (q *Queries) ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, ar
 	return items, nil
 }
 
+const listSportsLiveScoreAlertCandidates = `-- name: ListSportsLiveScoreAlertCandidates :many
+SELECT
+  event.event_key,
+  event.slug,
+  COALESCE(NULLIF(event.title, ''), event.slug, event.event_key)::text AS title,
+  state.last_score AS previous_score,
+  btrim(event.score)::text AS score,
+  event.period,
+  event.elapsed,
+  event.game_status,
+  event.fetched_at
+FROM polymarket_sports_live_event AS event
+JOIN polymarket_sports_live_score_alert_state AS state ON state.event_key = event.event_key
+WHERE lower(split_part(btrim(event.slug), '-', 1)) = 'fifwc'
+  AND event.live = true
+  AND event.ended = false
+  AND btrim(event.score) <> ''
+  AND btrim(event.score) <> state.last_score
+ORDER BY event.volume DESC, event.event_key
+`
+
+type ListSportsLiveScoreAlertCandidatesRow struct {
+	EventKey      string
+	Slug          string
+	Title         string
+	PreviousScore string
+	Score         string
+	Period        string
+	Elapsed       string
+	GameStatus    string
+	FetchedAt     pgtype.Timestamptz
+}
+
+func (q *Queries) ListSportsLiveScoreAlertCandidates(ctx context.Context) ([]ListSportsLiveScoreAlertCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, listSportsLiveScoreAlertCandidates)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSportsLiveScoreAlertCandidatesRow
+	for rows.Next() {
+		var i ListSportsLiveScoreAlertCandidatesRow
+		if err := rows.Scan(
+			&i.EventKey,
+			&i.Slug,
+			&i.Title,
+			&i.PreviousScore,
+			&i.Score,
+			&i.Period,
+			&i.Elapsed,
+			&i.GameStatus,
+			&i.FetchedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const seedSportsLiveScoreAlertStates = `-- name: SeedSportsLiveScoreAlertStates :exec
+INSERT INTO polymarket_sports_live_score_alert_state (
+  event_key,
+  last_score
+)
+SELECT
+  event.event_key,
+  btrim(event.score)
+FROM polymarket_sports_live_event AS event
+WHERE lower(split_part(btrim(event.slug), '-', 1)) = 'fifwc'
+  AND event.live = true
+  AND event.ended = false
+  AND btrim(event.score) <> ''
+ON CONFLICT (event_key) DO NOTHING
+`
+
+func (q *Queries) SeedSportsLiveScoreAlertStates(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, seedSportsLiveScoreAlertStates)
+	return err
+}
+
+const updateSportsLiveScoreAlertState = `-- name: UpdateSportsLiveScoreAlertState :exec
+UPDATE polymarket_sports_live_score_alert_state
+SET last_score = btrim($1),
+  notification_id = $2,
+  last_notified_at = $3,
+  updated_at = now()
+WHERE event_key = $4
+`
+
+type UpdateSportsLiveScoreAlertStateParams struct {
+	Score          string
+	NotificationID int64
+	LastNotifiedAt pgtype.Timestamptz
+	EventKey       string
+}
+
+func (q *Queries) UpdateSportsLiveScoreAlertState(ctx context.Context, arg UpdateSportsLiveScoreAlertStateParams) error {
+	_, err := q.db.Exec(ctx, updateSportsLiveScoreAlertState,
+		arg.Score,
+		arg.NotificationID,
+		arg.LastNotifiedAt,
+		arg.EventKey,
+	)
+	return err
+}
+
 const upsertPolymarketSyncState = `-- name: UpsertPolymarketSyncState :exec
 INSERT INTO polymarket_sync_state (sync_name, last_success_at)
 VALUES ($1, $2)

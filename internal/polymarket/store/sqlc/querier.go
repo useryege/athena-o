@@ -45,7 +45,10 @@ type Querier interface {
 	ListSportsLiveMarketsByEventKeys(ctx context.Context, eventKeys []string) ([]ListSportsLiveMarketsByEventKeysRow, error)
 	ListSportsLiveMoneylineMarketsForPriceHistory(ctx context.Context) ([]ListSportsLiveMoneylineMarketsForPriceHistoryRow, error)
 	ListSportsLivePriceHistoryByMarketKeys(ctx context.Context, arg ListSportsLivePriceHistoryByMarketKeysParams) ([]ListSportsLivePriceHistoryByMarketKeysRow, error)
+	ListSportsLiveScoreAlertCandidates(ctx context.Context) ([]ListSportsLiveScoreAlertCandidatesRow, error)
 	Ping(ctx context.Context) (int32, error)
+	SeedSportsLiveScoreAlertStates(ctx context.Context) error
+	UpdateSportsLiveScoreAlertState(ctx context.Context, arg UpdateSportsLiveScoreAlertStateParams) error
 	UpsertManagedOODisputePriceAlertState(ctx context.Context, arg UpsertManagedOODisputePriceAlertStateParams) error
 	UpsertManagedOOMarket(ctx context.Context, arg UpsertManagedOOMarketParams) error
 	UpsertManagedOOMarketNotFound(ctx context.Context, arg UpsertManagedOOMarketNotFoundParams) error

@@ -37,6 +37,9 @@ func (s *SQLStore) SyncSportsLiveEvents(ctx context.Context, events []SportsLive
 			return fmt.Errorf("batch upsert sports live events: %w", err)
 		}
 	}
+	if err := queries.SeedSportsLiveScoreAlertStates(ctx); err != nil {
+		return fmt.Errorf("seed sports live score alert states: %w", err)
+	}
 	if len(markets) > 0 {
 		if err := queries.BatchUpsertSportsLiveMarkets(ctx, batchUpsertSportsLiveMarketsParams(markets)); err != nil {
 			return fmt.Errorf("batch upsert sports live markets: %w", err)
@@ -257,6 +260,46 @@ func (s *SQLStore) DeleteSportsLivePriceAlertState(ctx context.Context, tokenID 
 	}
 	if err := s.queries.DeleteSportsLivePriceAlertState(ctx, tokenID); err != nil {
 		return fmt.Errorf("delete sports live price alert state: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ListSportsLiveScoreAlertCandidates(ctx context.Context) ([]SportsLiveScoreAlertCandidate, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("polymarket postgres database is not configured")
+	}
+	rows, err := s.queries.ListSportsLiveScoreAlertCandidates(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list sports live score alert candidates: %w", err)
+	}
+	items := make([]SportsLiveScoreAlertCandidate, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, SportsLiveScoreAlertCandidate{
+			EventKey:      row.EventKey,
+			Slug:          row.Slug,
+			Title:         row.Title,
+			PreviousScore: row.PreviousScore,
+			Score:         row.Score,
+			Period:        row.Period,
+			Elapsed:       row.Elapsed,
+			GameStatus:    row.GameStatus,
+			FetchedAt:     timeValue(row.FetchedAt),
+		})
+	}
+	return items, nil
+}
+
+func (s *SQLStore) UpdateSportsLiveScoreAlertState(ctx context.Context, state SportsLiveScoreAlertState) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("polymarket postgres database is not configured")
+	}
+	if err := s.queries.UpdateSportsLiveScoreAlertState(ctx, polymarketsqlc.UpdateSportsLiveScoreAlertStateParams{
+		EventKey:       state.EventKey,
+		Score:          state.Score,
+		NotificationID: state.NotificationID,
+		LastNotifiedAt: nullableTime(state.LastNotifiedAt),
+	}); err != nil {
+		return fmt.Errorf("update sports live score alert state: %w", err)
 	}
 	return nil
 }

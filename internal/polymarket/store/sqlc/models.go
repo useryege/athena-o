@@ -324,6 +324,15 @@ type PolymarketSportsLivePricePoint struct {
 	UpdatedAt   pgtype.Timestamptz
 }
 
+type PolymarketSportsLiveScoreAlertState struct {
+	EventKey       string
+	LastScore      string
+	NotificationID int64
+	LastNotifiedAt pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
 type PolymarketSyncState struct {
 	SyncName      string
 	LastSuccessAt pgtype.Timestamptz

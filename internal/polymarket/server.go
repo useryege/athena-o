@@ -24,6 +24,7 @@ type ServerOpts struct {
 	PolygonRPCURL                 string
 	MoverAlertsConfig             MoverAlertsConfig
 	SportsLivePriceAlertsConfig   SportsLivePriceAlertsConfig
+	SportsLiveScoreAlertsConfig   SportsLiveScoreAlertsConfig
 	ManagedOOProposedAlertsConfig ManagedOOProposedAlertsConfig
 	ManagedOODisputedAlertsConfig ManagedOODisputedAlertsConfig
 }
@@ -40,6 +41,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 			WithPolygonRPCURL(opts.PolygonRPCURL),
 			WithMoverAlertsConfig(opts.MoverAlertsConfig),
 			WithSportsLivePriceAlertsConfig(opts.SportsLivePriceAlertsConfig),
+			WithSportsLiveScoreAlertsConfig(opts.SportsLiveScoreAlertsConfig),
 			WithManagedOOProposedAlertsConfig(opts.ManagedOOProposedAlertsConfig),
 			WithManagedOODisputedAlertsConfig(opts.ManagedOODisputedAlertsConfig),
 		),

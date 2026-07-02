@@ -50,7 +50,11 @@ func (s *Service) syncSportsLiveMarkets(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return s.store.SyncSportsLiveEvents(ctx, events, markets, syncStartedAt, s.now().UTC())
+	if err := s.store.SyncSportsLiveEvents(ctx, events, markets, syncStartedAt, s.now().UTC()); err != nil {
+		return err
+	}
+	s.updateSportsLiveScoreAlerts(ctx)
+	return nil
 }
 
 func (s *Service) fetchSportsLiveEvents(ctx context.Context, fetchedAt time.Time) ([]polymarketstore.SportsLiveEvent, []polymarketstore.SportsLiveMarket, error) {

@@ -73,6 +73,9 @@ func NewCommand() *cobra.Command {
 				Enabled:  notificationEnabled,
 				Cooldown: sportsLivePriceAlertCooldown,
 			}
+			sportsLiveScoreAlertsConfig := polymarket.SportsLiveScoreAlertsConfig{
+				Enabled: notificationEnabled,
+			}
 			managedOOProposedAlertsConfig := polymarket.ManagedOOProposedAlertsConfig{
 				Enabled: notificationEnabled,
 			}
@@ -91,6 +94,7 @@ func NewCommand() *cobra.Command {
 				PolygonRPCURL:                 polygonRPCURL,
 				MoverAlertsConfig:             moverAlertsConfig,
 				SportsLivePriceAlertsConfig:   sportsLivePriceAlertsConfig,
+				SportsLiveScoreAlertsConfig:   sportsLiveScoreAlertsConfig,
 				ManagedOOProposedAlertsConfig: managedOOProposedAlertsConfig,
 				ManagedOODisputedAlertsConfig: managedOODisputedAlertsConfig,
 			})
