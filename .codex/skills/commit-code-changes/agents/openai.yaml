@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit Code Changes"
+  short_description: "Analyze and commit all workspace changes"
+  default_prompt: "Use $commit-code-changes to analyze and commit all current workspace changes."
