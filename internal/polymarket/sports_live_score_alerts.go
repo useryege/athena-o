@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	sportsLiveScoreAlertFIFWCTopic  = "[POLY] FIFWC 比分"
-	sportsLiveScoreAlertMLBTopic    = "[POLY] MLB 比分"
-	sportsLiveScoreAlertSource      = "polymarket.sports-live-score"
-	polymarketMLBSportsEventBaseURL = "https://polymarket.com/sports/mlb/"
+	sportsLiveScoreAlertFIFWCTopic = "[POLY] FIFWC 比分"
+	sportsLiveScoreAlertMLBTopic   = "[POLY] MLB 比分"
+	sportsLiveScoreAlertNHLTopic   = "[POLY] NHL 比分"
+	sportsLiveScoreAlertSource     = "polymarket.sports-live-score"
+	polymarketSportsEventBaseURL   = "https://polymarket.com/sports/"
 
 	defaultSportsLiveScoreAlertSendTimeout   = 10 * time.Second
 	defaultSportsLiveScoreAlertTitleMaxRunes = 120
@@ -131,16 +132,22 @@ func (s *Service) renderSportsLiveScoreAlertNotification(candidate polymarketsto
 }
 
 func sportsLiveScoreAlertPresentation(candidate polymarketstore.SportsLiveScoreAlertCandidate) (string, string, string) {
-	if strings.EqualFold(strings.TrimSpace(candidate.SportType), "mlb") {
-		return "MLB", sportsLiveScoreAlertMLBTopic, polymarketMLBSportsEventLink(candidate.Slug)
+	sportType := strings.ToLower(strings.TrimSpace(candidate.SportType))
+	switch sportType {
+	case "mlb":
+		return "MLB", sportsLiveScoreAlertMLBTopic, polymarketSportsEventLink(sportType, candidate.Slug)
+	case "nhl":
+		return "NHL", sportsLiveScoreAlertNHLTopic, polymarketSportsEventLink(sportType, candidate.Slug)
+	default:
+		return "FIFWC", sportsLiveScoreAlertFIFWCTopic, polymarketEventLink(candidate.Slug)
 	}
-	return "FIFWC", sportsLiveScoreAlertFIFWCTopic, polymarketEventLink(candidate.Slug)
 }
 
-func polymarketMLBSportsEventLink(slug string) string {
+func polymarketSportsEventLink(sportType, slug string) string {
+	sportType = strings.ToLower(strings.TrimSpace(sportType))
 	slug = strings.TrimSpace(slug)
-	if slug == "" {
+	if sportType == "" || slug == "" {
 		return ""
 	}
-	return polymarketMLBSportsEventBaseURL + url.PathEscape(slug)
+	return polymarketSportsEventBaseURL + url.PathEscape(sportType) + "/" + url.PathEscape(slug)
 }

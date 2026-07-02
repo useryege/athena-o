@@ -990,7 +990,7 @@ SELECT
   event.fetched_at
 FROM polymarket_sports_live_event AS event
 JOIN polymarket_sports_live_score_alert_state AS state ON state.event_key = event.event_key
-WHERE lower(split_part(btrim(event.slug), '-', 1)) IN ('fifwc', 'mlb')
+WHERE lower(split_part(btrim(event.slug), '-', 1)) IN ('fifwc', 'mlb', 'nhl')
   AND event.live = true
   AND event.ended = false
   AND btrim(event.score) <> ''
@@ -1051,7 +1051,7 @@ SELECT
   event.event_key,
   btrim(event.score)
 FROM polymarket_sports_live_event AS event
-WHERE lower(split_part(btrim(event.slug), '-', 1)) IN ('fifwc', 'mlb')
+WHERE lower(split_part(btrim(event.slug), '-', 1)) IN ('fifwc', 'mlb', 'nhl')
   AND event.live = true
   AND event.ended = false
   AND btrim(event.score) <> ''
