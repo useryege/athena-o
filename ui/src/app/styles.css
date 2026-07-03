@@ -7,6 +7,32 @@ body,
 }
 
 :root {
+    color-scheme: light;
+    --athena-bg: #f5f6f8;
+    --athena-bg-soft: #eef1f4;
+    --athena-panel: #ffffff;
+    --athena-panel-solid: #ffffff;
+    --athena-panel-elevated: #f8fafc;
+    --athena-border: #dfe4ea;
+    --athena-border-strong: #c8d0da;
+    --athena-text: #17202b;
+    --athena-muted: #5f6b7a;
+    --athena-brand: #f37430;
+    --athena-primary: #c94f2d;
+    --athena-accent: var(--athena-primary);
+    --athena-blue: #2563eb;
+    --athena-green: #168a45;
+    --athena-amber: #a85f00;
+    --athena-red: #c9363e;
+    --athena-focus: #2563eb;
+    --athena-shadow: 0 18px 48px rgba(23, 32, 43, 0.1);
+    --athena-shadow-tight: 0 8px 24px rgba(23, 32, 43, 0.08);
+    --athena-shadow-surface: 0 1px 2px rgba(23, 32, 43, 0.04);
+    --athena-sidebar-shadow: 8px 0 28px rgba(23, 32, 43, 0.05);
+    --athena-data-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+:root[data-theme='dark'] {
     color-scheme: dark;
     --athena-bg: #0b0f14;
     --athena-bg-soft: #1b2632;
@@ -17,8 +43,8 @@ body,
     --athena-border-strong: #354556;
     --athena-text: #eef3f8;
     --athena-muted: #94a3b8;
+    --athena-brand: #f37430;
     --athena-primary: #e76f51;
-    --athena-accent: var(--athena-primary);
     --athena-blue: #3b82f6;
     --athena-green: #22c55e;
     --athena-amber: #f59e0b;
@@ -26,35 +52,16 @@ body,
     --athena-focus: #60a5fa;
     --athena-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
     --athena-shadow-tight: 0 12px 28px rgba(0, 0, 0, 0.22);
-    --athena-data-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-}
-
-body[data-theme='light'] {
-    color-scheme: light;
-    --athena-bg: #f4f6f8;
-    --athena-bg-soft: #edf1f5;
-    --athena-panel: #ffffff;
-    --athena-panel-solid: #ffffff;
-    --athena-panel-elevated: #f8fafc;
-    --athena-border: #d8e0e8;
-    --athena-border-strong: #c2cdd8;
-    --athena-text: #18212b;
-    --athena-muted: #637083;
-    --athena-primary: #d85d42;
-    --athena-blue: #2563eb;
-    --athena-green: #168a45;
-    --athena-amber: #b86a00;
-    --athena-red: #c9363e;
-    --athena-focus: #2563eb;
-    --athena-shadow: 0 18px 48px rgba(24, 33, 43, 0.1);
-    --athena-shadow-tight: 0 10px 24px rgba(24, 33, 43, 0.07);
+    --athena-shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.18);
+    --athena-sidebar-shadow: 8px 0 24px rgba(0, 0, 0, 0.14);
 }
 
 body {
     background:
-        radial-gradient(circle at 84% -20%, color-mix(in srgb, var(--athena-blue) 8%, transparent), transparent 32rem),
+        radial-gradient(circle at 88% -18%, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 34rem),
         var(--athena-bg);
     color: var(--athena-text);
+    font-family: Heebo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -137,7 +144,7 @@ body::-webkit-scrollbar-thumb,
     overflow: auto;
     border-right: 1px solid var(--athena-border);
     background: var(--athena-panel) !important;
-    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.14);
+    box-shadow: var(--athena-sidebar-shadow);
 }
 
 .athena-brand {
@@ -154,11 +161,13 @@ body::-webkit-scrollbar-thumb,
     font: inherit;
     text-align: left;
     color: var(--athena-text);
-    transition: background-color 150ms ease;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
 }
 
 .athena-brand:hover {
-    background: var(--athena-bg-soft);
+    background: color-mix(in srgb, var(--athena-brand) 6%, var(--athena-panel));
 }
 
 .athena-brand__copy {
@@ -193,12 +202,12 @@ body::-webkit-scrollbar-thumb,
     display: inline-grid;
     place-items: center;
     flex: 0 0 auto;
-    border: 1px solid color-mix(in srgb, var(--athena-primary) 58%, var(--athena-border));
+    border: 1px solid color-mix(in srgb, var(--athena-brand) 58%, var(--athena-border));
     border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-primary) 16%, var(--athena-panel-elevated));
-    color: var(--athena-primary);
+    background: color-mix(in srgb, var(--athena-brand) 12%, var(--athena-panel-elevated));
+    color: var(--athena-brand);
     font-weight: 900;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--athena-primary) 8%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--athena-brand) 8%, transparent);
     overflow: hidden;
 }
 
@@ -215,18 +224,18 @@ body::-webkit-scrollbar-thumb,
 }
 
 .athena-shell__sider .ant-menu {
-    padding: 10px 8px 24px;
+    padding: 8px 10px 24px;
     background: transparent;
     border-inline-end: 0 !important;
 }
 
 .athena-shell__sider .ant-menu-item-group-title {
-    padding: 16px 12px 6px;
-    color: color-mix(in srgb, var(--athena-muted) 78%, transparent);
+    padding: 18px 12px 7px;
+    color: var(--athena-muted);
     font-size: 10px;
     font-weight: 800;
     line-height: 1.2;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
 }
 
@@ -241,9 +250,10 @@ body::-webkit-scrollbar-thumb,
 .athena-shell__sider .ant-menu-submenu-title {
     height: 40px;
     line-height: 40px;
-    margin: 2px 0;
+    margin: 3px 0;
     border-radius: 8px;
     color: var(--athena-muted);
+    font-weight: 600;
     transition:
         color 150ms ease,
         background-color 150ms ease,
@@ -252,8 +262,12 @@ body::-webkit-scrollbar-thumb,
 
 .athena-shell__sider .ant-menu-item-selected {
     color: var(--athena-text);
-    background: color-mix(in srgb, var(--athena-primary) 12%, var(--athena-panel)) !important;
+    background: color-mix(in srgb, var(--athena-primary) 10%, var(--athena-panel)) !important;
     box-shadow: inset 3px 0 0 var(--athena-primary);
+}
+
+.athena-shell__sider .ant-menu-item-selected .anticon {
+    color: var(--athena-primary);
 }
 
 .athena-shell__sider .ant-menu-item:hover,
@@ -273,6 +287,31 @@ body::-webkit-scrollbar-thumb,
     justify-content: space-between;
     background: var(--athena-panel);
     border-bottom: 1px solid var(--athena-border);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--athena-border) 45%, transparent);
+}
+
+.athena-shell__header-actions {
+    padding-left: 8px;
+    border-left: 1px solid var(--athena-border);
+}
+
+.athena-shell__header .ant-btn-text {
+    color: var(--athena-muted);
+}
+
+.athena-shell__header .ant-btn-text:hover {
+    color: var(--athena-text) !important;
+    background: var(--athena-bg-soft) !important;
+}
+
+.athena-shell__icon-button {
+    width: 36px;
+    height: 36px;
+}
+
+.athena-shell__sidebar-toggle {
+    width: 36px;
+    height: 36px;
 }
 
 .athena-shell__header-left,
@@ -291,11 +330,12 @@ body::-webkit-scrollbar-thumb,
 .athena-shell__breadcrumb .ant-breadcrumb-separator {
     color: var(--athena-muted);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .athena-shell__breadcrumb li:last-child .ant-breadcrumb-link {
     color: var(--athena-text);
+    font-weight: 700;
 }
 
 .athena-shell__header .ant-btn-text,
@@ -312,7 +352,7 @@ body::-webkit-scrollbar-thumb,
 .app-page {
     width: min(100%, 1720px);
     margin: 0 auto;
-    padding: 20px 24px 32px;
+    padding: 24px 24px 36px;
 }
 
 .app-page__header {
@@ -320,8 +360,8 @@ body::-webkit-scrollbar-thumb,
     justify-content: space-between;
     gap: 18px;
     align-items: center;
-    margin-bottom: 16px;
-    padding: 0 0 16px;
+    margin-bottom: 20px;
+    padding: 2px 2px 18px;
     border-bottom: 1px solid var(--athena-border);
 }
 
@@ -331,9 +371,10 @@ body::-webkit-scrollbar-thumb,
 
 .app-page__heading h1 {
     margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 750;
-    line-height: 1.25;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
     color: var(--athena-text);
 }
 
@@ -341,6 +382,8 @@ body::-webkit-scrollbar-thumb,
     display: block;
     max-width: 920px;
     color: var(--athena-muted);
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .app-page__actions {
@@ -353,10 +396,11 @@ body::-webkit-scrollbar-thumb,
 }
 
 .app-page__filters {
-    padding: 12px;
+    padding: 14px;
     background: var(--athena-panel);
     border: 1px solid var(--athena-border);
     border-radius: 8px;
+    box-shadow: var(--athena-shadow-surface);
 }
 
 .app-page__filters .ant-space {
@@ -365,6 +409,18 @@ body::-webkit-scrollbar-thumb,
 
 .app-page__filters .ant-form-inline {
     gap: 10px 0;
+}
+
+.sports-history-sync,
+.sports-live-card,
+.fifa-event-config,
+.fifa-panel,
+.fifa-wallet-balance,
+.fifa-wallet-holding,
+.fifa-event-summary,
+.fifa-worm-market,
+.fifa-moneyline-option {
+    box-shadow: var(--athena-shadow-surface);
 }
 
 .resource-table-region {
@@ -376,6 +432,7 @@ body::-webkit-scrollbar-thumb,
     border: 1px solid var(--athena-border);
     border-radius: 8px;
     background: var(--athena-panel-solid);
+    box-shadow: var(--athena-shadow-surface);
     overflow: visible;
 }
 
@@ -389,16 +446,19 @@ body::-webkit-scrollbar-thumb,
     background: var(--athena-panel-elevated);
     color: var(--athena-muted);
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     border-bottom-color: var(--athena-border);
 }
 
 .resource-table .ant-table-tbody > tr > td {
+    padding-top: 10px;
+    padding-bottom: 10px;
     border-color: var(--athena-border);
     background: var(--athena-panel-solid);
     font-variant-numeric: tabular-nums;
+    transition: background-color 150ms ease;
 }
 
 .resource-table .ant-table-tbody > tr:hover > td {
@@ -429,7 +489,7 @@ body::-webkit-scrollbar-thumb,
     padding: 12px;
     border-top: 1px solid var(--athena-border);
     border-radius: 0 0 8px 8px;
-    background: var(--athena-panel-elevated);
+    background: var(--athena-panel-solid);
 }
 
 .resource-table__row--clickable {
@@ -1033,24 +1093,26 @@ body::-webkit-scrollbar-thumb,
 }
 
 .metric {
-    min-height: 64px;
-    padding: 10px;
+    min-height: 68px;
+    padding: 11px 12px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
-    background: var(--athena-panel-elevated);
+    background: var(--athena-panel-solid);
     display: grid;
     align-content: center;
     gap: 3px;
+    box-shadow: var(--athena-shadow-surface);
 }
 
 .metric span {
     color: var(--athena-muted);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .metric strong {
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 700;
     overflow-wrap: anywhere;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
@@ -1081,28 +1143,29 @@ body::-webkit-scrollbar-thumb,
 }
 
 .section-panel {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
     background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
     overflow: hidden;
 }
 
 .section-panel__header {
-    min-height: 46px;
+    min-height: 48px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--athena-border);
-    background: var(--athena-panel-elevated);
+    background: color-mix(in srgb, var(--athena-panel-elevated) 72%, var(--athena-panel));
 }
 
 .section-panel__header h2 {
     margin: 0;
-    font-size: 14px;
-    font-weight: 850;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--athena-text);
 }
 
@@ -1111,12 +1174,13 @@ body::-webkit-scrollbar-thumb,
 }
 
 .section-panel__body {
-    padding: 14px;
+    padding: 16px;
 }
 
 .key-value-grid {
     overflow: hidden;
     border-radius: 8px;
+    box-shadow: var(--athena-shadow-surface);
 }
 
 .key-value-grid .ant-descriptions-view {
@@ -1126,7 +1190,7 @@ body::-webkit-scrollbar-thumb,
 .key-value-grid .ant-descriptions-item-label {
     width: 150px;
     color: var(--athena-muted);
-    font-weight: 750;
+    font-weight: 600;
     background: var(--athena-panel-elevated) !important;
 }
 
@@ -1159,7 +1223,7 @@ body::-webkit-scrollbar-thumb,
     border: 1px solid var(--athena-border);
     border-radius: 8px;
     padding: 14px;
-    background: var(--athena-panel-elevated);
+    background: color-mix(in srgb, var(--athena-bg-soft) 64%, var(--athena-panel));
     color: var(--athena-text);
     font-family: var(--athena-data-font);
     font-size: 12px;
@@ -1176,16 +1240,21 @@ body::-webkit-scrollbar-thumb,
 }
 
 .ant-btn {
-    font-weight: 700;
+    font-weight: 600;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease,
+        box-shadow 150ms ease;
 }
 
 .ant-btn-primary {
-    box-shadow: none;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--athena-primary) 28%, transparent);
 }
 
 .ant-tag {
     border-radius: 6px;
-    font-weight: 750;
+    font-weight: 600;
     border-color: var(--athena-border);
 }
 
@@ -1210,7 +1279,7 @@ body::-webkit-scrollbar-thumb,
 
 .ant-tabs .ant-tabs-tab {
     padding: 10px 0;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .ant-tabs .ant-tabs-ink-bar {
@@ -1240,6 +1309,7 @@ body::-webkit-scrollbar-thumb,
 .ant-input-number,
 .ant-select-selector {
     border-color: var(--athena-border-strong) !important;
+    background: var(--athena-panel-solid) !important;
 }
 
 .ant-input:hover,
@@ -1263,7 +1333,8 @@ body::-webkit-scrollbar-thumb,
     place-items: center;
     padding: 18px;
     background:
-        radial-gradient(circle at 50% 0, color-mix(in srgb, var(--athena-primary) 12%, transparent), transparent 28rem),
+        radial-gradient(circle at 50% 0, color-mix(in srgb, var(--athena-brand) 11%, transparent), transparent 30rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--athena-panel) 48%, transparent), transparent 44%),
         var(--athena-bg);
 }
 
@@ -1271,31 +1342,49 @@ body::-webkit-scrollbar-thumb,
     width: min(100%, 420px);
     border-radius: 8px;
     border-color: var(--athena-border);
-    background: var(--athena-panel-elevated);
+    background: var(--athena-panel);
     box-shadow: var(--athena-shadow);
 }
 
 .login-panel .ant-card-body {
-    padding: 28px;
+    padding: 32px;
 }
 
 .login-panel__brand {
     display: grid;
     place-items: center;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .login-panel__brand h3 {
     margin: 0;
-    font-weight: 900;
+    font-size: 24px;
+    font-weight: 700;
 }
 
 .login-panel__brand .ant-typography-secondary {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.login-panel .ant-alert {
+    margin-bottom: 20px;
+}
+
+.login-panel .ant-form-item {
+    margin-bottom: 20px;
+}
+
+.login-panel .ant-form-item-label > label {
+    color: var(--athena-text);
+    font-weight: 600;
+}
+
+.login-panel .ant-btn-primary {
+    height: 40px;
 }
 
 .login-captcha {

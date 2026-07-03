@@ -23,7 +23,7 @@ const DEFAULT_PREFERENCES: ViewPreferences = {
     hideBannerContent: '',
     hideSidebar: false,
     position: '',
-    theme: 'dark'
+    theme: 'light'
 };
 
 export class ViewPreferencesService {
@@ -31,9 +31,16 @@ export class ViewPreferencesService {
 
     public init() {
         if (!this.preferencesSubj) {
-            this.preferencesSubj = new BehaviorSubject(this.loadPreferences());
-            window.addEventListener('storage', () => {
-                this.preferencesSubj.next(this.loadPreferences());
+            const preferences = this.loadPreferences();
+            this.applyTheme(preferences.theme);
+            this.preferencesSubj = new BehaviorSubject(preferences);
+            window.addEventListener('storage', event => {
+                if (event.key !== null && event.key !== VIEW_PREFERENCES_KEY) {
+                    return;
+                }
+                const nextPreferences = this.loadPreferences();
+                this.applyTheme(nextPreferences.theme);
+                this.preferencesSubj.next(nextPreferences);
             });
         }
     }
@@ -45,7 +52,12 @@ export class ViewPreferencesService {
     public updatePreferences(change: Partial<ViewPreferences>) {
         const nextPref = Object.assign({}, this.preferencesSubj.getValue(), change, {version: minVer});
         window.localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify(nextPref));
+        this.applyTheme(nextPref.theme);
         this.preferencesSubj.next(nextPref);
+    }
+
+    private applyTheme(theme: ThemeMode) {
+        document.documentElement.dataset.theme = theme;
     }
 
     private loadPreferences(): ViewPreferences {

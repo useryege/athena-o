@@ -1,5 +1,6 @@
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'antd/dist/reset.css';
+import '../assets/fonts.css';
 import './styles.css';
 
 import {
@@ -511,10 +512,6 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     }, [isLoginPath, navigate]);
 
     React.useEffect(() => {
-        document.body.dataset.theme = props.pref.theme || 'dark';
-    }, [props.pref.theme]);
-
-    React.useEffect(() => {
         const current = flattenNav(navItems).find(item => item.key === selectedKey(location.pathname));
         document.title = current ? `${current.label} · Athena` : 'Athena';
     }, [location.pathname]);
@@ -552,10 +549,8 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         [ant.modal, navigate, notifications]
     );
 
-    const themeMenu: MenuProps['items'] = [
-        {key: 'light', label: 'Light', icon: <SunOutlined />},
-        {key: 'dark', label: 'Dark', icon: <MoonOutlined />}
-    ];
+    const isDark = props.pref.theme === 'dark';
+    const nextTheme: ViewPreferences['theme'] = isDark ? 'light' : 'dark';
 
     const userMenu: MenuProps['items'] = [
         {key: '/user-info', label: 'User Info', icon: <UserOutlined />},
@@ -605,26 +600,25 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                                 onClick={() => {
                                     const next = !sidebarCollapsed;
                                     setSidebarCollapsed(next);
-                                    services.viewPreferences.updatePreferences({...props.pref, hideSidebar: next});
+                                    services.viewPreferences.updatePreferences({hideSidebar: next});
                                 }}
                             />
                         </Tooltip>
                         <Breadcrumb className='athena-shell__breadcrumb' items={breadcrumbItems(location.pathname)} />
                     </div>
                     <div className='athena-shell__header-actions'>
-                        <Tooltip title='Change theme'>
-                            <Dropdown
-                                menu={{
-                                    items: themeMenu,
-                                    selectedKeys: [props.pref.theme || 'dark'],
-                                    onClick: item => services.viewPreferences.updatePreferences({...props.pref, theme: item.key as ViewPreferences['theme']})
-                                }}>
-                                <Button type='text' aria-label='Change color theme' icon={(props.pref.theme || 'dark') === 'dark' ? <MoonOutlined /> : <SunOutlined />} />
-                            </Dropdown>
+                        <Tooltip title={`Switch to ${nextTheme} theme`}>
+                            <Button
+                                className='athena-shell__icon-button'
+                                type='text'
+                                aria-label={`Switch to ${nextTheme} theme`}
+                                icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+                                onClick={() => services.viewPreferences.updatePreferences({theme: nextTheme})}
+                            />
                         </Tooltip>
                         <Tooltip title='User menu'>
                             <Dropdown menu={{items: userMenu, onClick: item => navigate(item.key)}}>
-                                <Button type='text' aria-label='Open user menu' icon={<UserOutlined />} />
+                                <Button className='athena-shell__icon-button' type='text' aria-label='Open user menu' icon={<UserOutlined />} />
                             </Dropdown>
                         </Tooltip>
                     </div>
@@ -710,26 +704,27 @@ const Bootstrap = () => {
                 algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
                 token: {
                     borderRadius: 8,
-                    colorPrimary: isDark ? '#e76f51' : '#d85d42',
+                    colorPrimary: isDark ? '#e76f51' : '#c94f2d',
                     colorInfo: isDark ? '#3b82f6' : '#2563eb',
                     colorSuccess: isDark ? '#22c55e' : '#168a45',
                     colorWarning: isDark ? '#f59e0b' : '#b86a00',
                     colorError: isDark ? '#ef4444' : '#c9363e',
                     colorLink: isDark ? '#60a5fa' : '#2563eb',
-                    colorBgBase: isDark ? '#0b0f14' : '#f4f6f8',
-                    colorBgLayout: isDark ? '#0b0f14' : '#f4f6f8',
+                    colorBgBase: isDark ? '#0b0f14' : '#f5f6f8',
+                    colorBgLayout: isDark ? '#0b0f14' : '#f5f6f8',
                     colorBgContainer: isDark ? '#111820' : '#ffffff',
                     colorBgElevated: isDark ? '#16202a' : '#f8fafc',
-                    colorText: isDark ? '#eef3f8' : '#18212b',
-                    colorTextSecondary: isDark ? '#94a3b8' : '#637083',
-                    colorBorder: isDark ? '#263341' : '#d8e0e8',
-                    colorBorderSecondary: isDark ? '#1f2a35' : '#e4e9ef',
-                    colorSplit: isDark ? '#263341' : '#d8e0e8',
-                    colorFillSecondary: isDark ? '#1b2632' : '#edf1f5',
+                    colorText: isDark ? '#eef3f8' : '#17202b',
+                    colorTextSecondary: isDark ? '#94a3b8' : '#5f6b7a',
+                    colorTextLightSolid: isDark ? '#101820' : '#ffffff',
+                    colorBorder: isDark ? '#263341' : '#dfe4ea',
+                    colorBorderSecondary: isDark ? '#1f2a35' : '#e8ecf0',
+                    colorSplit: isDark ? '#263341' : '#dfe4ea',
+                    colorFillSecondary: isDark ? '#1b2632' : '#eef1f4',
                     controlOutline: isDark ? 'rgba(96,165,250,0.45)' : 'rgba(37,99,235,0.35)',
-                    boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.34)' : '0 18px 48px rgba(24,33,43,0.10)',
-                    boxShadowSecondary: isDark ? '0 12px 32px rgba(0,0,0,0.28)' : '0 12px 32px rgba(24,33,43,0.08)',
-                    fontFamily: 'Inter, Heebo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                    boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.34)' : '0 18px 48px rgba(23,32,43,0.10)',
+                    boxShadowSecondary: isDark ? '0 12px 32px rgba(0,0,0,0.28)' : '0 8px 24px rgba(23,32,43,0.08)',
+                    fontFamily: 'Heebo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                     fontSize: 14,
                     controlHeight: 36,
                     controlHeightSM: 30,
