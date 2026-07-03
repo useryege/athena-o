@@ -83,7 +83,10 @@ func (w *Worker) Start(ctx context.Context) error {
 			}).Info("token chain ingestor chain is disabled")
 			continue
 		}
-		checkpoint.Status = tokenstore.ChainIngestStatusRunning
+		checkpoint.Status = tokenstore.ChainIngestStatusStopped
+		if cfg.autoStart {
+			checkpoint.Status = tokenstore.ChainIngestStatusRunning
+		}
 		if _, err := w.opts.Store.UpsertChainIngestCheckpoint(ctx, *checkpoint); err != nil {
 			cancel()
 			return err
@@ -104,7 +107,8 @@ func (w *Worker) Start(ctx context.Context) error {
 			"cursor_block_number": checkpoint.CursorBlockNumber,
 			"poll_interval":       cfg.pollInterval.String(),
 			"fetch_concurrency":   cfg.blockFetchConcurrency,
-		}).Info("token chain ingestor checkpoint activated")
+			"checkpoint_status":   checkpoint.Status,
+		}).Info("token chain ingestor runner started")
 	}
 	if len(runners) == 0 {
 		log.Info("token chain ingestor has no enabled chains")
@@ -178,6 +182,7 @@ type chainConfig struct {
 	pollInterval          time.Duration
 	blockFetchConcurrency int
 	enabled               bool
+	autoStart             bool
 }
 
 func (w *Worker) chainConfigs() []chainConfig {
@@ -189,6 +194,7 @@ func (w *Worker) chainConfigs() []chainConfig {
 			pollInterval:          ethereumPollInterval,
 			blockFetchConcurrency: ethereumBlockFetchConcurrency,
 			enabled:               w.opts.EthEnabled,
+			autoStart:             true,
 		},
 		{
 			chainID:               common.ChainIDBSCMainnet,
@@ -197,6 +203,7 @@ func (w *Worker) chainConfigs() []chainConfig {
 			pollInterval:          bscPollInterval,
 			blockFetchConcurrency: bscBlockFetchConcurrency,
 			enabled:               w.opts.BSCEnabled,
+			autoStart:             false,
 		},
 	}
 }
