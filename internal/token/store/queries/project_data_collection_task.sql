@@ -74,7 +74,7 @@ SELECT
   t.updated_at,
   p.chain_id,
   p.contract,
-  p.creator,
+  p.tx_sender,
   p.tx_hash,
   p.tx_index,
   p.block_number,

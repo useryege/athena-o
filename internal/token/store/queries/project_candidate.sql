@@ -2,7 +2,7 @@
 INSERT INTO project_candidate (
   chain_id,
   contract,
-  creator,
+  tx_sender,
   tx_hash,
   tx_index,
   block_number,
@@ -11,7 +11,7 @@ INSERT INTO project_candidate (
 ) VALUES (
   @chain_id,
   @contract,
-  @creator,
+  @tx_sender,
   @tx_hash,
   @tx_index,
   @block_number,
@@ -29,7 +29,7 @@ RETURNING *;
 INSERT INTO project_candidate (
   chain_id,
   contract,
-  creator,
+  tx_sender,
   tx_hash,
   tx_index,
   block_number,
@@ -39,7 +39,7 @@ INSERT INTO project_candidate (
 SELECT
   unnest(sqlc.arg('chain_ids')::bigint[]),
   unnest(sqlc.arg('contracts')::bytea[]),
-  unnest(sqlc.arg('creators')::bytea[]),
+  unnest(sqlc.arg('tx_senders')::bytea[]),
   unnest(sqlc.arg('tx_hashes')::bytea[]),
   unnest(sqlc.arg('tx_indexes')::bigint[]),
   unnest(sqlc.arg('block_numbers')::bigint[]),

@@ -58,7 +58,7 @@ type ProjectCandidate struct {
 	ID          int64
 	ChainID     int64
 	Contract    common.Address
-	Creator     common.Address
+	TxSender    common.Address
 	TxHash      common.Hash
 	TxIndex     uint64
 	BlockNumber uint64
@@ -79,7 +79,7 @@ type Project struct {
 	ID          int64
 	ChainID     int64
 	Contract    common.Address
-	Creator     common.Address
+	TxSender    common.Address
 	TxHash      common.Hash
 	TxIndex     uint64
 	BlockNumber uint64

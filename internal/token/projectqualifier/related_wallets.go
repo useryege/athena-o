@@ -106,9 +106,9 @@ func filterInitialRecipientWallets(ctx context.Context, client *ethclient.Client
 
 func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.ProjectRelatedWallet {
 	wallets := make([]tokenstore.ProjectRelatedWallet, 0, 1+len(initialRecipients))
-	if candidate.Creator != (common.Address{}) {
+	if candidate.TxSender != (common.Address{}) {
 		wallets = append(wallets, tokenstore.ProjectRelatedWallet{
-			Wallet: candidate.Creator,
+			Wallet: candidate.TxSender,
 			Role:   tokenstore.ProjectRelatedWalletRoleCreator,
 		})
 	}
@@ -128,11 +128,11 @@ func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRe
 func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.WalletAssetState {
 	wallets := make([]tokenstore.WalletAssetState, 0, 1+len(initialRecipients))
 	seen := make(map[common.Address]struct{}, 1+len(initialRecipients))
-	if candidate.Creator != (common.Address{}) {
-		seen[candidate.Creator] = struct{}{}
+	if candidate.TxSender != (common.Address{}) {
+		seen[candidate.TxSender] = struct{}{}
 		wallets = append(wallets, tokenstore.WalletAssetState{
 			ChainID: candidate.ChainID,
-			Wallet:  candidate.Creator,
+			Wallet:  candidate.TxSender,
 		})
 	}
 	for _, recipient := range initialRecipients {

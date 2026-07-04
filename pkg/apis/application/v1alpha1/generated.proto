@@ -693,7 +693,7 @@ message TokenAPIProject {
 
   optional string contract = 5;
 
-  optional string creator = 6;
+  optional string txSender = 6;
 
   optional string txHash = 7;
 

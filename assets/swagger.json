@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-898-gde459f4"
+    "version": "v1.0.0-911-g1459dca-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -4277,9 +4277,6 @@
         "createdAt": {
           "type": "string"
         },
-        "creator": {
-          "type": "string"
-        },
         "name": {
           "type": "string"
         },
@@ -4296,6 +4293,9 @@
         "txIndex": {
           "type": "string",
           "format": "uint64"
+        },
+        "txSender": {
+          "type": "string"
         }
       }
     },

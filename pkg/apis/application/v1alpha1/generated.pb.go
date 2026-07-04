@@ -2514,9 +2514,9 @@ func (m *TokenAPIProject) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TxHash)))
 	i--
 	dAtA[i] = 0x3a
-	i -= len(m.Creator)
-	copy(dAtA[i:], m.Creator)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Creator)))
+	i -= len(m.TxSender)
+	copy(dAtA[i:], m.TxSender)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TxSender)))
 	i--
 	dAtA[i] = 0x32
 	i -= len(m.Contract)
@@ -4366,7 +4366,7 @@ func (m *TokenAPIProject) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Contract)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Creator)
+	l = len(m.TxSender)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.TxHash)
 	n += 1 + l + sovGenerated(uint64(l))
@@ -5370,7 +5370,7 @@ func (this *TokenAPIProject) String() string {
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`Symbol:` + fmt.Sprintf("%v", this.Symbol) + `,`,
 		`Contract:` + fmt.Sprintf("%v", this.Contract) + `,`,
-		`Creator:` + fmt.Sprintf("%v", this.Creator) + `,`,
+		`TxSender:` + fmt.Sprintf("%v", this.TxSender) + `,`,
 		`TxHash:` + fmt.Sprintf("%v", this.TxHash) + `,`,
 		`TxIndex:` + fmt.Sprintf("%v", this.TxIndex) + `,`,
 		`BlockNumber:` + fmt.Sprintf("%v", this.BlockNumber) + `,`,
@@ -15621,7 +15621,7 @@ func (m *TokenAPIProject) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Creator", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TxSender", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -15649,7 +15649,7 @@ func (m *TokenAPIProject) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Creator = string(dAtA[iNdEx:postIndex])
+			m.TxSender = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {

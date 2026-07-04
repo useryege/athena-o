@@ -229,7 +229,7 @@ func mapProject(item tokenstore.Project) *v1alpha1.TokenAPIProject {
 		Name:        item.Name,
 		Symbol:      item.Symbol,
 		Contract:    item.Contract.Hex(),
-		Creator:     item.Creator.Hex(),
+		TxSender:    item.TxSender.Hex(),
 		TxHash:      item.TxHash.Hex(),
 		TxIndex:     item.TxIndex,
 		BlockNumber: item.BlockNumber,

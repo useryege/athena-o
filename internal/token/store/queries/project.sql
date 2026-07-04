@@ -2,7 +2,7 @@
 INSERT INTO project (
   chain_id,
   contract,
-  creator,
+  tx_sender,
   tx_hash,
   tx_index,
   block_number,
@@ -17,7 +17,7 @@ INSERT INTO project (
 ) VALUES (
   @chain_id,
   @contract,
-  @creator,
+  @tx_sender,
   @tx_hash,
   @tx_index,
   @block_number,

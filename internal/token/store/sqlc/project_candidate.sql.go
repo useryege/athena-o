@@ -15,7 +15,7 @@ const batchUpsertProjectCandidates = `-- name: BatchUpsertProjectCandidates :exe
 INSERT INTO project_candidate (
   chain_id,
   contract,
-  creator,
+  tx_sender,
   tx_hash,
   tx_index,
   block_number,
@@ -41,7 +41,7 @@ END
 type BatchUpsertProjectCandidatesParams struct {
 	ChainIds     []int64
 	Contracts    [][]byte
-	Creators     [][]byte
+	TxSenders    [][]byte
 	TxHashes     [][]byte
 	TxIndexes    []int64
 	BlockNumbers []int64
@@ -53,7 +53,7 @@ func (q *Queries) BatchUpsertProjectCandidates(ctx context.Context, arg BatchUps
 	_, err := q.db.Exec(ctx, batchUpsertProjectCandidates,
 		arg.ChainIds,
 		arg.Contracts,
-		arg.Creators,
+		arg.TxSenders,
 		arg.TxHashes,
 		arg.TxIndexes,
 		arg.BlockNumbers,
@@ -96,7 +96,7 @@ func (q *Queries) DeleteProjectCandidate(ctx context.Context, id int64) (int64, 
 }
 
 const getProjectCandidate = `-- name: GetProjectCandidate :one
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
 FROM project_candidate
 WHERE id = $1
 `
@@ -108,7 +108,7 @@ func (q *Queries) GetProjectCandidate(ctx context.Context, id int64) (ProjectCan
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,
@@ -120,7 +120,7 @@ func (q *Queries) GetProjectCandidate(ctx context.Context, id int64) (ProjectCan
 }
 
 const getProjectCandidateByContract = `-- name: GetProjectCandidateByContract :one
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
 FROM project_candidate
 WHERE chain_id = $1
   AND contract = $2
@@ -138,7 +138,7 @@ func (q *Queries) GetProjectCandidateByContract(ctx context.Context, arg GetProj
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,
@@ -150,7 +150,7 @@ func (q *Queries) GetProjectCandidateByContract(ctx context.Context, arg GetProj
 }
 
 const listProjectCandidates = `-- name: ListProjectCandidates :many
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
 FROM project_candidate
 WHERE chain_id = $1
   AND ($2::text IS NULL OR status = $2::text)
@@ -183,7 +183,7 @@ func (q *Queries) ListProjectCandidates(ctx context.Context, arg ListProjectCand
 			&i.ID,
 			&i.ChainID,
 			&i.Contract,
-			&i.Creator,
+			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
 			&i.BlockNumber,
@@ -202,7 +202,7 @@ func (q *Queries) ListProjectCandidates(ctx context.Context, arg ListProjectCand
 }
 
 const listProjectCandidatesByStatus = `-- name: ListProjectCandidatesByStatus :many
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
 FROM project_candidate
 WHERE status = $1
 ORDER BY created_at, id
@@ -227,7 +227,7 @@ func (q *Queries) ListProjectCandidatesByStatus(ctx context.Context, arg ListPro
 			&i.ID,
 			&i.ChainID,
 			&i.Contract,
-			&i.Creator,
+			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
 			&i.BlockNumber,
@@ -249,7 +249,7 @@ const markProjectCandidateStatus = `-- name: MarkProjectCandidateStatus :one
 UPDATE project_candidate
 SET status = $1
 WHERE id = $2
-RETURNING id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, status, created_at
+RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
 `
 
 type MarkProjectCandidateStatusParams struct {
@@ -264,7 +264,7 @@ func (q *Queries) MarkProjectCandidateStatus(ctx context.Context, arg MarkProjec
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,
@@ -279,7 +279,7 @@ const upsertProjectCandidate = `-- name: UpsertProjectCandidate :one
 INSERT INTO project_candidate (
   chain_id,
   contract,
-  creator,
+  tx_sender,
   tx_hash,
   tx_index,
   block_number,
@@ -300,13 +300,13 @@ SET status = CASE
   WHEN project_candidate.status = 'pending' THEN EXCLUDED.status
   ELSE project_candidate.status
 END
-RETURNING id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, status, created_at
+RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
 `
 
 type UpsertProjectCandidateParams struct {
 	ChainID     int64
 	Contract    []byte
-	Creator     []byte
+	TxSender    []byte
 	TxHash      []byte
 	TxIndex     int64
 	BlockNumber int64
@@ -318,7 +318,7 @@ func (q *Queries) UpsertProjectCandidate(ctx context.Context, arg UpsertProjectC
 	row := q.db.QueryRow(ctx, upsertProjectCandidate,
 		arg.ChainID,
 		arg.Contract,
-		arg.Creator,
+		arg.TxSender,
 		arg.TxHash,
 		arg.TxIndex,
 		arg.BlockNumber,
@@ -330,7 +330,7 @@ func (q *Queries) UpsertProjectCandidate(ctx context.Context, arg UpsertProjectC
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,

@@ -34,7 +34,7 @@ func (s *SQLStore) UpsertProjectCandidate(ctx context.Context, item ProjectCandi
 	row, err := q.UpsertProjectCandidate(ctx, tokensqlc.UpsertProjectCandidateParams{
 		ChainID:     item.ChainID,
 		Contract:    item.Contract.Bytes(),
-		Creator:     item.Creator.Bytes(),
+		TxSender:    item.TxSender.Bytes(),
 		TxHash:      item.TxHash.Bytes(),
 		TxIndex:     txIndex,
 		BlockNumber: blockNumber,
@@ -72,7 +72,7 @@ func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []Pro
 func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.BatchUpsertProjectCandidatesParams, error) {
 	chainIDs := make([]int64, 0, len(items))
 	contracts := make([][]byte, 0, len(items))
-	creators := make([][]byte, 0, len(items))
+	txSenders := make([][]byte, 0, len(items))
 	txHashes := make([][]byte, 0, len(items))
 	txIndexes := make([]int64, 0, len(items))
 	blockNumbers := make([]int64, 0, len(items))
@@ -97,7 +97,7 @@ func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.Bat
 		}
 		chainIDs = append(chainIDs, item.ChainID)
 		contracts = append(contracts, item.Contract.Bytes())
-		creators = append(creators, item.Creator.Bytes())
+		txSenders = append(txSenders, item.TxSender.Bytes())
 		txHashes = append(txHashes, item.TxHash.Bytes())
 		txIndexes = append(txIndexes, txIndex)
 		blockNumbers = append(blockNumbers, blockNumber)
@@ -107,7 +107,7 @@ func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.Bat
 	return tokensqlc.BatchUpsertProjectCandidatesParams{
 		ChainIds:     chainIDs,
 		Contracts:    contracts,
-		Creators:     creators,
+		TxSenders:    txSenders,
 		TxHashes:     txHashes,
 		TxIndexes:    txIndexes,
 		BlockNumbers: blockNumbers,

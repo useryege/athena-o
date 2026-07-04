@@ -62,7 +62,7 @@ export interface TokenAPIProject {
     name?: string;
     symbol?: string;
     contract?: string;
-    creator?: string;
+    txSender?: string;
     txHash?: string;
     txIndex?: number;
     blockNumber?: number;
@@ -196,7 +196,7 @@ function normalizeProject(item: any): TokenAPIProject {
         name: item.name,
         symbol: item.symbol,
         contract: item.contract,
-        creator: item.creator,
+        txSender: item.txSender ?? item.tx_sender,
         txHash: item.txHash ?? item.tx_hash,
         txIndex: numberValue(item.txIndex ?? item.tx_index),
         blockNumber: numberValue(item.blockNumber ?? item.block_number),

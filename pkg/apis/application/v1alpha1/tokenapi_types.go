@@ -62,7 +62,7 @@ type TokenAPIProject struct {
 	Name        string `protobuf:"bytes,3,opt,name=name" json:"name"`
 	Symbol      string `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
 	Contract    string `protobuf:"bytes,5,opt,name=contract" json:"contract"`
-	Creator     string `protobuf:"bytes,6,opt,name=creator" json:"creator"`
+	TxSender    string `protobuf:"bytes,6,opt,name=txSender" json:"txSender"`
 	TxHash      string `protobuf:"bytes,7,opt,name=txHash" json:"txHash"`
 	TxIndex     uint64 `protobuf:"varint,8,opt,name=txIndex" json:"txIndex"`
 	BlockNumber uint64 `protobuf:"varint,9,opt,name=blockNumber" json:"blockNumber"`

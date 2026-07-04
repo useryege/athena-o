@@ -46,7 +46,7 @@ func (q *Queries) DeleteProject(ctx context.Context, id int64) (int64, error) {
 }
 
 const getProject = `-- name: GetProject :one
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE id = $1
 `
@@ -58,7 +58,7 @@ func (q *Queries) GetProject(ctx context.Context, id int64) (Project, error) {
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,
@@ -76,7 +76,7 @@ func (q *Queries) GetProject(ctx context.Context, id int64) (Project, error) {
 }
 
 const getProjectByContract = `-- name: GetProjectByContract :one
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
   AND contract = $2
@@ -94,7 +94,7 @@ func (q *Queries) GetProjectByContract(ctx context.Context, arg GetProjectByCont
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,
@@ -112,7 +112,7 @@ func (q *Queries) GetProjectByContract(ctx context.Context, arg GetProjectByCont
 }
 
 const listProjects = `-- name: ListProjects :many
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
 ORDER BY block_number, tx_index, id
@@ -131,7 +131,7 @@ func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, e
 			&i.ID,
 			&i.ChainID,
 			&i.Contract,
-			&i.Creator,
+			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
 			&i.BlockNumber,
@@ -156,7 +156,7 @@ func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, e
 }
 
 const listProjectsPage = `-- name: ListProjectsPage :many
-SELECT id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
   AND ($2::bytea IS NULL OR code_hash = $2::bytea)
@@ -192,7 +192,7 @@ func (q *Queries) ListProjectsPage(ctx context.Context, arg ListProjectsPagePara
 			&i.ID,
 			&i.ChainID,
 			&i.Contract,
-			&i.Creator,
+			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
 			&i.BlockNumber,
@@ -220,7 +220,7 @@ const upsertProject = `-- name: UpsertProject :one
 INSERT INTO project (
   chain_id,
   contract,
-  creator,
+  tx_sender,
   tx_hash,
   tx_index,
   block_number,
@@ -256,13 +256,13 @@ SET code_hash = EXCLUDED.code_hash,
   total_supply = EXCLUDED.total_supply,
   weth_pair = EXCLUDED.weth_pair,
   usdt_pair = EXCLUDED.usdt_pair
-RETURNING id, chain_id, contract, creator, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 `
 
 type UpsertProjectParams struct {
 	ChainID     int64
 	Contract    []byte
-	Creator     []byte
+	TxSender    []byte
 	TxHash      []byte
 	TxIndex     int64
 	BlockNumber int64
@@ -280,7 +280,7 @@ func (q *Queries) UpsertProject(ctx context.Context, arg UpsertProjectParams) (P
 	row := q.db.QueryRow(ctx, upsertProject,
 		arg.ChainID,
 		arg.Contract,
-		arg.Creator,
+		arg.TxSender,
 		arg.TxHash,
 		arg.TxIndex,
 		arg.BlockNumber,
@@ -298,7 +298,7 @@ func (q *Queries) UpsertProject(ctx context.Context, arg UpsertProjectParams) (P
 		&i.ID,
 		&i.ChainID,
 		&i.Contract,
-		&i.Creator,
+		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
 		&i.BlockNumber,

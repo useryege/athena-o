@@ -30,7 +30,7 @@ func (s *SQLStore) UpsertProject(ctx context.Context, item Project) (*Project, e
 	row, err := q.UpsertProject(ctx, tokensqlc.UpsertProjectParams{
 		ChainID:     item.ChainID,
 		Contract:    item.Contract.Bytes(),
-		Creator:     item.Creator.Bytes(),
+		TxSender:    item.TxSender.Bytes(),
 		TxHash:      item.TxHash.Bytes(),
 		TxIndex:     txIndex,
 		BlockNumber: blockNumber,

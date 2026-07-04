@@ -133,7 +133,7 @@ SELECT
   t.updated_at,
   p.chain_id,
   p.contract,
-  p.creator,
+  p.tx_sender,
   p.tx_hash,
   p.tx_index,
   p.block_number,
@@ -175,7 +175,7 @@ type ListDueProjectDataCollectionTasksRow struct {
 	UpdatedAt        pgtype.Timestamptz
 	ChainID          int64
 	Contract         []byte
-	Creator          []byte
+	TxSender         []byte
 	TxHash           []byte
 	TxIndex          int64
 	BlockNumber      int64
@@ -211,7 +211,7 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 			&i.UpdatedAt,
 			&i.ChainID,
 			&i.Contract,
-			&i.Creator,
+			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
 			&i.BlockNumber,

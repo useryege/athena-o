@@ -18,18 +18,18 @@ func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]tokensto
 		if tx == nil || tx.To() != nil {
 			continue
 		}
-		creator, err := types.Sender(r.signer, tx)
+		txSender, err := types.Sender(r.signer, tx)
 		if err != nil {
-			return nil, fmt.Errorf("derive contract creator for tx %s: %w", tx.Hash().Hex(), err)
+			return nil, fmt.Errorf("derive transaction sender for tx %s: %w", tx.Hash().Hex(), err)
 		}
-		contract := crypto.CreateAddress(creator, tx.Nonce())
+		contract := crypto.CreateAddress(txSender, tx.Nonce())
 		if contract == (common.Address{}) {
 			continue
 		}
 		candidates = append(candidates, tokenstore.ProjectCandidate{
 			ChainID:     r.opts.chainID,
 			Contract:    contract,
-			Creator:     creator,
+			TxSender:    txSender,
 			TxHash:      tx.Hash(),
 			TxIndex:     uint64(txIndex),
 			BlockNumber: block.NumberU64(),

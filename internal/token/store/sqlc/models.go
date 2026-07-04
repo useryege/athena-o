@@ -42,7 +42,7 @@ type Project struct {
 	ID          int64
 	ChainID     int64
 	Contract    []byte
-	Creator     []byte
+	TxSender    []byte
 	TxHash      []byte
 	TxIndex     int64
 	BlockNumber int64
@@ -68,7 +68,7 @@ type ProjectCandidate struct {
 	ID          int64
 	ChainID     int64
 	Contract    []byte
-	Creator     []byte
+	TxSender    []byte
 	TxHash      []byte
 	TxIndex     int64
 	BlockNumber int64

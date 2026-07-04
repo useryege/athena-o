@@ -40,7 +40,7 @@ func (s *SQLStore) QualifyProjectCandidate(ctx context.Context, candidate Projec
 	row, err := q.UpsertProject(ctx, tokensqlc.UpsertProjectParams{
 		ChainID:     candidate.ChainID,
 		Contract:    candidate.Contract.Bytes(),
-		Creator:     candidate.Creator.Bytes(),
+		TxSender:    candidate.TxSender.Bytes(),
 		TxHash:      candidate.TxHash.Bytes(),
 		TxIndex:     txIndex,
 		BlockNumber: blockNumber,
