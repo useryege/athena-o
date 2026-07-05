@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// Ethereum API Service API exposes ethereum-api service runtime status.
+package athena.internal.ethereumapi;
+
+option go_package = "github.com/useryege/athena/internal/ethereumapi/apiclient";
+
+// GetEthereumAPIStatusRequest queries the ethereum-api service runtime status.
+message GetEthereumAPIStatusRequest {}
+
+// GetEthereumAPIStatusResponse returns the ethereum-api service runtime status.
+message GetEthereumAPIStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+service EthereumAPIService {
+  // GetEthereumAPIStatus returns the ethereum-api service runtime status.
+  rpc GetEthereumAPIStatus(GetEthereumAPIStatusRequest) returns (GetEthereumAPIStatusResponse);
+}

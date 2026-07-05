@@ -156,6 +156,7 @@ cleanup_athena_ports() {
 		"polymarket:${ATHENA_POLYMARKET_PORT:-8092}"
 		"token:${ATHENA_TOKEN_PORT:-8094}"
 		"token-api:${ATHENA_TOKEN_API_PORT:-8096}"
+		"ethereum-api:${ATHENA_ETHEREUM_API_PORT:-8100}"
 	)
 	local entry name port pid pids cmd
 

@@ -16,6 +16,9 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket')\gexec
 SELECT 'CREATE DATABASE token'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'token')\gexec
 
+SELECT 'CREATE DATABASE ethereumapi'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ethereumapi')\gexec
+
 SELECT 'CREATE DATABASE temporal'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'temporal')\gexec
 
