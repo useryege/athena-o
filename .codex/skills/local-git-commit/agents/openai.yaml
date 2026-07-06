@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Git Commit"
+  short_description: "Review changes and create a focused local commit"
+  default_prompt: "Use $local-git-commit to review current changes and create a focused local Git commit."
