@@ -135,6 +135,10 @@ wallet-private-key-ciphertext:
 prod-reset-secrets:
 	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)
 
+.PHONY: deploy-squid-vps
+deploy-squid-vps:
+	bash ./hack/deploy-squid.sh
+
 .PHONY: auto-clicker
 auto-clicker:
 	@mkdir -p ${DIST_DIR}
