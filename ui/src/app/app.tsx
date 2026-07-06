@@ -5,6 +5,7 @@ import './styles.css';
 
 import {
     ApiOutlined,
+    BarChartOutlined,
     BellOutlined,
     CodeOutlined,
     DashboardOutlined,
@@ -55,6 +56,7 @@ import {
     UserInfoPage,
     WalletBlacklistsPage,
     WalletsPage,
+    WorldCupCornersPage,
     WormPolyPage
 } from './pages';
 
@@ -152,6 +154,13 @@ const polymarketNavItem: NavItem = {
             label: 'Sports History',
             path: '/polymarket/sports-history',
             icon: <DashboardOutlined />,
+            permission: permission(rbacResources.polymarket, rbacActions.get)
+        },
+        {
+            key: '/polymarket/world-cup-corners',
+            label: 'World Cup Corners',
+            path: '/polymarket/world-cup-corners',
+            icon: <BarChartOutlined />,
             permission: permission(rbacResources.polymarket, rbacActions.get)
         },
         {
@@ -399,6 +408,7 @@ const AppRoutes = (props: {access: AccessState}) => {
                     <PolymarketSportsHistoryPage canRefresh={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
                 )}
             />
+            <Route path='/polymarket/world-cup-corners' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <WorldCupCornersPage />)} />
             <Route
                 path='/polymarket/uma-proposed'
                 element={withPermission(
