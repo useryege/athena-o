@@ -13,15 +13,17 @@ const (
 	defaultE2ETimeout         = 90 * time.Second
 	defaultQueryAddress       = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 
-	envEthereumAPIAddr         = "ATHENA_E2E_ETHEREUM_API_ADDR"
-	envEthereumAPIQueryAddress = "ATHENA_E2E_ETHEREUM_API_ADDRESS"
-	envEtherscanAPIKey         = "ATHENA_E2E_ETHERSCAN_API_KEY"
-	envEtherscanAPIKeys        = "ATHENA_E2E_ETHERSCAN_API_KEYS"
-	envEtherscanAPIKeyFallback = "ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY"
-	envEtherscanMultiKeyProbe  = "ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE"
-	envEtherscanRateLimitProbe = "ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE"
-	envE2ETimeout              = "ATHENA_E2E_TIMEOUT"
-	envE2ELive                 = "E2E_LIVE"
+	envEthereumAPIAddr             = "ATHENA_E2E_ETHEREUM_API_ADDR"
+	envEthereumAPIQueryAddress     = "ATHENA_E2E_ETHEREUM_API_ADDRESS"
+	envEtherscanAPIKey             = "ATHENA_E2E_ETHERSCAN_API_KEY"
+	envEtherscanAPIKeys            = "ATHENA_E2E_ETHERSCAN_API_KEYS"
+	envEtherscanAPIKeyFallback     = "ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY"
+	envEtherscanMultiKeyProbe      = "ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE"
+	envEtherscanProxyMultiKeyProbe = "ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_PROBE"
+	envEtherscanProxyURLs          = "ATHENA_E2E_ETHERSCAN_PROXY_URLS"
+	envEtherscanRateLimitProbe     = "ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE"
+	envE2ETimeout                  = "ATHENA_E2E_TIMEOUT"
+	envE2ELive                     = "E2E_LIVE"
 )
 
 type e2eConfig struct {
