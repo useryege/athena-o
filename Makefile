@@ -17,6 +17,9 @@ GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
 
 TARGET_ARCH?=linux/amd64
+E2E_GO_TEST_FLAGS ?= -count=1
+E2E_PACKAGES ?= $(shell go list ./e2e/tests/... 2>/dev/null | grep -v '/live/')
+E2E_LIVE_PACKAGES ?= ./e2e/tests/live/...
 
 VERSION=$(shell cat ${CURRENT_DIR}/VERSION)
 BUILD_DATE:=$(if $(BUILD_DATE),$(BUILD_DATE),$(shell date -u +'%Y-%m-%dT%H:%M:%SZ'))
@@ -163,6 +166,32 @@ athena-all: clean-debug
 .PHONY: run
 run:
 	bash ./hack/goreman-start.sh
+
+.PHONY: e2e
+e2e:
+	go test $(E2E_GO_TEST_FLAGS) $(E2E_PACKAGES)
+
+.PHONY: e2e-ethereumapi
+e2e-ethereumapi:
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/ethereumapi
+
+.PHONY: e2e-live
+e2e-live:
+	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run live E2E tests without explicit confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 make e2e-live' >&2; \
+		exit 1; \
+	fi
+	go test $(E2E_GO_TEST_FLAGS) $(E2E_LIVE_PACKAGES)
+
+.PHONY: e2e-live-ethereumapi
+e2e-live-ethereumapi:
+	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run ethereum-api live E2E tests without explicit confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 make e2e-live-ethereumapi' >&2; \
+		exit 1; \
+	fi
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi
 
 .PHONY: serve-docs-local
 serve-docs-local:
