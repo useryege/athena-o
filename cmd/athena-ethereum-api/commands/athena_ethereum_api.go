@@ -7,8 +7,10 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -21,16 +23,26 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
+	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
 	utilio "github.com/useryege/athena/util/io"
+	"github.com/useryege/athena/util/ratelimit"
 	"github.com/useryege/athena/util/templates"
 )
 
 const cliName = "athena-ethereum-api"
 
+const (
+	defaultEtherscanRateLimitRequests = 3
+	defaultEtherscanRateLimitPeriod   = time.Second
+	defaultEtherscanRateLimitBurst    = 3
+)
+
 func NewCommand() *cobra.Command {
 	var (
-		listenHost string
-		listenPort int
+		listenHost          string
+		listenPort          int
+		etherscanAPIKey     string
+		etherscanAPIBaseURL string
 
 		storeSrc func(context.Context) (*ethereumapistore.SQLStore, error)
 	)
@@ -58,7 +70,28 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
-			server, err := ethereumapi.NewServer(ethereumapi.ServerOpts{Store: store})
+			if strings.TrimSpace(etherscanAPIKey) == "" {
+				return fmt.Errorf("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY is required")
+			}
+			etherscanRateLimiter, err := ratelimit.New(ratelimit.Config{
+				Requests: defaultEtherscanRateLimitRequests,
+				Per:      defaultEtherscanRateLimitPeriod,
+				Burst:    defaultEtherscanRateLimitBurst,
+			})
+			if err != nil {
+				return fmt.Errorf("create etherscan rate limiter: %w", err)
+			}
+			etherscanClient := utilethereumapi.NewEthereumAPIWithConfig(utilethereumapi.Config{
+				BaseURL:     etherscanAPIBaseURL,
+				APIKey:      etherscanAPIKey,
+				RateLimiter: etherscanRateLimiter,
+				Timeout:     utilethereumapi.DefaultTimeout,
+			})
+
+			server, err := ethereumapi.NewServer(ethereumapi.ServerOpts{
+				Store:       store,
+				EthereumAPI: etherscanClient,
+			})
 			if err != nil {
 				return err
 			}
@@ -68,7 +101,7 @@ func NewCommand() *cobra.Command {
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
 			errors.CheckError(err)
 
-			if err := server.Start(); err != nil {
+			if err := server.Start(ctx); err != nil {
 				return err
 			}
 
@@ -106,6 +139,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_ETHEREUM_API_LISTEN_ADDRESS", common.DefaultAddressEthereumAPI), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", env.ParseNumFromEnv("ATHENA_ETHEREUM_API_PORT", common.DefaultPortEthereumAPI, 1, 65535), "Listen on given port for incoming connections")
+	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY", ""), "Etherscan API key")
+	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_BASE_URL", utilethereumapi.DefaultBaseURL), "Etherscan API base URL")
 
 	storeSrc = ethereumapistore.NewSQLStoreSource()
 

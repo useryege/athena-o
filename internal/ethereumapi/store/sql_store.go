@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
+	ethereumapisqlc "github.com/useryege/athena/internal/ethereumapi/store/sqlc"
 	"github.com/useryege/athena/util/db/postgres"
 )
 
@@ -18,11 +19,19 @@ func Migrations() embed.FS {
 }
 
 type SQLStore struct {
-	pool *pgxpool.Pool
+	pool    *pgxpool.Pool
+	queries ethereumapisqlc.Querier
 }
 
 func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
-	return &SQLStore{pool: pool}
+	if pool == nil {
+		return &SQLStore{}
+	}
+	return &SQLStore{pool: pool, queries: ethereumapisqlc.New(pool)}
+}
+
+func NewSQLStoreWithQuerier(querier ethereumapisqlc.Querier) *SQLStore {
+	return &SQLStore{queries: querier}
 }
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {

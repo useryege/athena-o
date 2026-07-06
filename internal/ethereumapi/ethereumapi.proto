@@ -14,7 +14,81 @@ message GetEthereumAPIStatusResponse {
   string status = 2;
 }
 
+// NormalTransactionSort controls transaction ordering.
+enum NormalTransactionSort {
+  NORMAL_TRANSACTION_SORT_UNSPECIFIED = 0;
+  NORMAL_TRANSACTION_SORT_ASC = 1;
+  NORMAL_TRANSACTION_SORT_DESC = 2;
+}
+
+// NormalTransactionReceiptStatus describes the transaction receipt result.
+enum NormalTransactionReceiptStatus {
+  NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED = 0;
+  NORMAL_TRANSACTION_RECEIPT_STATUS_FAILED = 1;
+  NORMAL_TRANSACTION_RECEIPT_STATUS_SUCCESS = 2;
+}
+
+// NormalTransactionBlockRange limits a query to an inclusive block range.
+message NormalTransactionBlockRange {
+  uint64 start_block = 1;
+  uint64 end_block = 2;
+}
+
+// NormalTransaction is one normal transaction returned by Etherscan.
+message NormalTransaction {
+  uint64 block_number = 1;
+  string block_hash = 2;
+  uint64 block_timestamp = 3;
+  string transaction_hash = 4;
+  uint64 nonce = 5;
+  uint64 transaction_index = 6;
+  string from_address = 7;
+  string to_address = 8;
+  string value = 9;
+  uint64 gas = 10;
+  string gas_price = 11;
+  string input = 12;
+  string method_id = 13;
+  string function_name = 14;
+  string contract_address = 15;
+  uint64 cumulative_gas_used = 16;
+  NormalTransactionReceiptStatus receipt_status = 17;
+  uint64 gas_used = 18;
+  uint64 confirmations = 19;
+  bool is_error = 20;
+}
+
+// NormalTransactionCacheMetadata describes the cache state used for a response.
+message NormalTransactionCacheMetadata {
+  bool cache_hit = 1;
+  bool stale = 2;
+  string fetched_at = 3;
+  string expires_at = 4;
+}
+
+// ListNormalTransactionsRequest queries one EVM address's normal transactions.
+message ListNormalTransactionsRequest {
+  int64 chain_id = 1;
+  string address = 2;
+  NormalTransactionBlockRange block_range = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+  NormalTransactionSort sort = 6;
+  bool force_refresh = 7;
+}
+
+// ListNormalTransactionsResponse returns one ordered transaction page.
+message ListNormalTransactionsResponse {
+  repeated NormalTransaction transactions = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  NormalTransactionCacheMetadata cache = 4;
+}
+
 service EthereumAPIService {
   // GetEthereumAPIStatus returns the ethereum-api service runtime status.
   rpc GetEthereumAPIStatus(GetEthereumAPIStatusRequest) returns (GetEthereumAPIStatusResponse);
+
+  // ListNormalTransactions returns normal transactions for one EVM address.
+  rpc ListNormalTransactions(ListNormalTransactionsRequest) returns (ListNormalTransactionsResponse);
 }

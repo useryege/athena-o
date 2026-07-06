@@ -28,6 +28,64 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// NormalTransactionSort controls transaction ordering.
+type NormalTransactionSort int32
+
+const (
+	NormalTransactionSort_NORMAL_TRANSACTION_SORT_UNSPECIFIED NormalTransactionSort = 0
+	NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC         NormalTransactionSort = 1
+	NormalTransactionSort_NORMAL_TRANSACTION_SORT_DESC        NormalTransactionSort = 2
+)
+
+var NormalTransactionSort_name = map[int32]string{
+	0: "NORMAL_TRANSACTION_SORT_UNSPECIFIED",
+	1: "NORMAL_TRANSACTION_SORT_ASC",
+	2: "NORMAL_TRANSACTION_SORT_DESC",
+}
+
+var NormalTransactionSort_value = map[string]int32{
+	"NORMAL_TRANSACTION_SORT_UNSPECIFIED": 0,
+	"NORMAL_TRANSACTION_SORT_ASC":         1,
+	"NORMAL_TRANSACTION_SORT_DESC":        2,
+}
+
+func (x NormalTransactionSort) String() string {
+	return proto.EnumName(NormalTransactionSort_name, int32(x))
+}
+
+func (NormalTransactionSort) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{0}
+}
+
+// NormalTransactionReceiptStatus describes the transaction receipt result.
+type NormalTransactionReceiptStatus int32
+
+const (
+	NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED NormalTransactionReceiptStatus = 0
+	NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_FAILED      NormalTransactionReceiptStatus = 1
+	NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_SUCCESS     NormalTransactionReceiptStatus = 2
+)
+
+var NormalTransactionReceiptStatus_name = map[int32]string{
+	0: "NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED",
+	1: "NORMAL_TRANSACTION_RECEIPT_STATUS_FAILED",
+	2: "NORMAL_TRANSACTION_RECEIPT_STATUS_SUCCESS",
+}
+
+var NormalTransactionReceiptStatus_value = map[string]int32{
+	"NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED": 0,
+	"NORMAL_TRANSACTION_RECEIPT_STATUS_FAILED":      1,
+	"NORMAL_TRANSACTION_RECEIPT_STATUS_SUCCESS":     2,
+}
+
+func (x NormalTransactionReceiptStatus) String() string {
+	return proto.EnumName(NormalTransactionReceiptStatus_name, int32(x))
+}
+
+func (NormalTransactionReceiptStatus) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{1}
+}
+
 // GetEthereumAPIStatusRequest queries the ethereum-api service runtime status.
 type GetEthereumAPIStatusRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -124,9 +182,512 @@ func (m *GetEthereumAPIStatusResponse) GetStatus() string {
 	return ""
 }
 
+// NormalTransactionBlockRange limits a query to an inclusive block range.
+type NormalTransactionBlockRange struct {
+	StartBlock           uint64   `protobuf:"varint,1,opt,name=start_block,json=startBlock,proto3" json:"start_block,omitempty"`
+	EndBlock             uint64   `protobuf:"varint,2,opt,name=end_block,json=endBlock,proto3" json:"end_block,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NormalTransactionBlockRange) Reset()         { *m = NormalTransactionBlockRange{} }
+func (m *NormalTransactionBlockRange) String() string { return proto.CompactTextString(m) }
+func (*NormalTransactionBlockRange) ProtoMessage()    {}
+func (*NormalTransactionBlockRange) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{2}
+}
+func (m *NormalTransactionBlockRange) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NormalTransactionBlockRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NormalTransactionBlockRange.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NormalTransactionBlockRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NormalTransactionBlockRange.Merge(m, src)
+}
+func (m *NormalTransactionBlockRange) XXX_Size() int {
+	return m.Size()
+}
+func (m *NormalTransactionBlockRange) XXX_DiscardUnknown() {
+	xxx_messageInfo_NormalTransactionBlockRange.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NormalTransactionBlockRange proto.InternalMessageInfo
+
+func (m *NormalTransactionBlockRange) GetStartBlock() uint64 {
+	if m != nil {
+		return m.StartBlock
+	}
+	return 0
+}
+
+func (m *NormalTransactionBlockRange) GetEndBlock() uint64 {
+	if m != nil {
+		return m.EndBlock
+	}
+	return 0
+}
+
+// NormalTransaction is one normal transaction returned by Etherscan.
+type NormalTransaction struct {
+	BlockNumber          uint64                         `protobuf:"varint,1,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
+	BlockHash            string                         `protobuf:"bytes,2,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
+	BlockTimestamp       uint64                         `protobuf:"varint,3,opt,name=block_timestamp,json=blockTimestamp,proto3" json:"block_timestamp,omitempty"`
+	TransactionHash      string                         `protobuf:"bytes,4,opt,name=transaction_hash,json=transactionHash,proto3" json:"transaction_hash,omitempty"`
+	Nonce                uint64                         `protobuf:"varint,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	TransactionIndex     uint64                         `protobuf:"varint,6,opt,name=transaction_index,json=transactionIndex,proto3" json:"transaction_index,omitempty"`
+	FromAddress          string                         `protobuf:"bytes,7,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
+	ToAddress            string                         `protobuf:"bytes,8,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
+	Value                string                         `protobuf:"bytes,9,opt,name=value,proto3" json:"value,omitempty"`
+	Gas                  uint64                         `protobuf:"varint,10,opt,name=gas,proto3" json:"gas,omitempty"`
+	GasPrice             string                         `protobuf:"bytes,11,opt,name=gas_price,json=gasPrice,proto3" json:"gas_price,omitempty"`
+	Input                string                         `protobuf:"bytes,12,opt,name=input,proto3" json:"input,omitempty"`
+	MethodId             string                         `protobuf:"bytes,13,opt,name=method_id,json=methodId,proto3" json:"method_id,omitempty"`
+	FunctionName         string                         `protobuf:"bytes,14,opt,name=function_name,json=functionName,proto3" json:"function_name,omitempty"`
+	ContractAddress      string                         `protobuf:"bytes,15,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
+	CumulativeGasUsed    uint64                         `protobuf:"varint,16,opt,name=cumulative_gas_used,json=cumulativeGasUsed,proto3" json:"cumulative_gas_used,omitempty"`
+	ReceiptStatus        NormalTransactionReceiptStatus `protobuf:"varint,17,opt,name=receipt_status,json=receiptStatus,proto3,enum=athena.internal.ethereumapi.NormalTransactionReceiptStatus" json:"receipt_status,omitempty"`
+	GasUsed              uint64                         `protobuf:"varint,18,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
+	Confirmations        uint64                         `protobuf:"varint,19,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+	IsError              bool                           `protobuf:"varint,20,opt,name=is_error,json=isError,proto3" json:"is_error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *NormalTransaction) Reset()         { *m = NormalTransaction{} }
+func (m *NormalTransaction) String() string { return proto.CompactTextString(m) }
+func (*NormalTransaction) ProtoMessage()    {}
+func (*NormalTransaction) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{3}
+}
+func (m *NormalTransaction) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NormalTransaction) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NormalTransaction.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NormalTransaction) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NormalTransaction.Merge(m, src)
+}
+func (m *NormalTransaction) XXX_Size() int {
+	return m.Size()
+}
+func (m *NormalTransaction) XXX_DiscardUnknown() {
+	xxx_messageInfo_NormalTransaction.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NormalTransaction proto.InternalMessageInfo
+
+func (m *NormalTransaction) GetBlockNumber() uint64 {
+	if m != nil {
+		return m.BlockNumber
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetBlockHash() string {
+	if m != nil {
+		return m.BlockHash
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetBlockTimestamp() uint64 {
+	if m != nil {
+		return m.BlockTimestamp
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetTransactionHash() string {
+	if m != nil {
+		return m.TransactionHash
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetNonce() uint64 {
+	if m != nil {
+		return m.Nonce
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetTransactionIndex() uint64 {
+	if m != nil {
+		return m.TransactionIndex
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetFromAddress() string {
+	if m != nil {
+		return m.FromAddress
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetToAddress() string {
+	if m != nil {
+		return m.ToAddress
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetGas() uint64 {
+	if m != nil {
+		return m.Gas
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetGasPrice() string {
+	if m != nil {
+		return m.GasPrice
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetInput() string {
+	if m != nil {
+		return m.Input
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetMethodId() string {
+	if m != nil {
+		return m.MethodId
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetFunctionName() string {
+	if m != nil {
+		return m.FunctionName
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetContractAddress() string {
+	if m != nil {
+		return m.ContractAddress
+	}
+	return ""
+}
+
+func (m *NormalTransaction) GetCumulativeGasUsed() uint64 {
+	if m != nil {
+		return m.CumulativeGasUsed
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetReceiptStatus() NormalTransactionReceiptStatus {
+	if m != nil {
+		return m.ReceiptStatus
+	}
+	return NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED
+}
+
+func (m *NormalTransaction) GetGasUsed() uint64 {
+	if m != nil {
+		return m.GasUsed
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetConfirmations() uint64 {
+	if m != nil {
+		return m.Confirmations
+	}
+	return 0
+}
+
+func (m *NormalTransaction) GetIsError() bool {
+	if m != nil {
+		return m.IsError
+	}
+	return false
+}
+
+// NormalTransactionCacheMetadata describes the cache state used for a response.
+type NormalTransactionCacheMetadata struct {
+	CacheHit             bool     `protobuf:"varint,1,opt,name=cache_hit,json=cacheHit,proto3" json:"cache_hit,omitempty"`
+	Stale                bool     `protobuf:"varint,2,opt,name=stale,proto3" json:"stale,omitempty"`
+	FetchedAt            string   `protobuf:"bytes,3,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
+	ExpiresAt            string   `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NormalTransactionCacheMetadata) Reset()         { *m = NormalTransactionCacheMetadata{} }
+func (m *NormalTransactionCacheMetadata) String() string { return proto.CompactTextString(m) }
+func (*NormalTransactionCacheMetadata) ProtoMessage()    {}
+func (*NormalTransactionCacheMetadata) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{4}
+}
+func (m *NormalTransactionCacheMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NormalTransactionCacheMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NormalTransactionCacheMetadata.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NormalTransactionCacheMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NormalTransactionCacheMetadata.Merge(m, src)
+}
+func (m *NormalTransactionCacheMetadata) XXX_Size() int {
+	return m.Size()
+}
+func (m *NormalTransactionCacheMetadata) XXX_DiscardUnknown() {
+	xxx_messageInfo_NormalTransactionCacheMetadata.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NormalTransactionCacheMetadata proto.InternalMessageInfo
+
+func (m *NormalTransactionCacheMetadata) GetCacheHit() bool {
+	if m != nil {
+		return m.CacheHit
+	}
+	return false
+}
+
+func (m *NormalTransactionCacheMetadata) GetStale() bool {
+	if m != nil {
+		return m.Stale
+	}
+	return false
+}
+
+func (m *NormalTransactionCacheMetadata) GetFetchedAt() string {
+	if m != nil {
+		return m.FetchedAt
+	}
+	return ""
+}
+
+func (m *NormalTransactionCacheMetadata) GetExpiresAt() string {
+	if m != nil {
+		return m.ExpiresAt
+	}
+	return ""
+}
+
+// ListNormalTransactionsRequest queries one EVM address's normal transactions.
+type ListNormalTransactionsRequest struct {
+	ChainId              int64                        `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Address              string                       `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	BlockRange           *NormalTransactionBlockRange `protobuf:"bytes,3,opt,name=block_range,json=blockRange,proto3" json:"block_range,omitempty"`
+	Page                 int32                        `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32                        `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Sort                 NormalTransactionSort        `protobuf:"varint,6,opt,name=sort,proto3,enum=athena.internal.ethereumapi.NormalTransactionSort" json:"sort,omitempty"`
+	ForceRefresh         bool                         `protobuf:"varint,7,opt,name=force_refresh,json=forceRefresh,proto3" json:"force_refresh,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *ListNormalTransactionsRequest) Reset()         { *m = ListNormalTransactionsRequest{} }
+func (m *ListNormalTransactionsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListNormalTransactionsRequest) ProtoMessage()    {}
+func (*ListNormalTransactionsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{5}
+}
+func (m *ListNormalTransactionsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListNormalTransactionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListNormalTransactionsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListNormalTransactionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNormalTransactionsRequest.Merge(m, src)
+}
+func (m *ListNormalTransactionsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListNormalTransactionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListNormalTransactionsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListNormalTransactionsRequest proto.InternalMessageInfo
+
+func (m *ListNormalTransactionsRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *ListNormalTransactionsRequest) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
+func (m *ListNormalTransactionsRequest) GetBlockRange() *NormalTransactionBlockRange {
+	if m != nil {
+		return m.BlockRange
+	}
+	return nil
+}
+
+func (m *ListNormalTransactionsRequest) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListNormalTransactionsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListNormalTransactionsRequest) GetSort() NormalTransactionSort {
+	if m != nil {
+		return m.Sort
+	}
+	return NormalTransactionSort_NORMAL_TRANSACTION_SORT_UNSPECIFIED
+}
+
+func (m *ListNormalTransactionsRequest) GetForceRefresh() bool {
+	if m != nil {
+		return m.ForceRefresh
+	}
+	return false
+}
+
+// ListNormalTransactionsResponse returns one ordered transaction page.
+type ListNormalTransactionsResponse struct {
+	Transactions         []*NormalTransaction            `protobuf:"bytes,1,rep,name=transactions,proto3" json:"transactions,omitempty"`
+	Page                 int32                           `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize             int32                           `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Cache                *NormalTransactionCacheMetadata `protobuf:"bytes,4,opt,name=cache,proto3" json:"cache,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
+}
+
+func (m *ListNormalTransactionsResponse) Reset()         { *m = ListNormalTransactionsResponse{} }
+func (m *ListNormalTransactionsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListNormalTransactionsResponse) ProtoMessage()    {}
+func (*ListNormalTransactionsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{6}
+}
+func (m *ListNormalTransactionsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListNormalTransactionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListNormalTransactionsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListNormalTransactionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNormalTransactionsResponse.Merge(m, src)
+}
+func (m *ListNormalTransactionsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListNormalTransactionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListNormalTransactionsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListNormalTransactionsResponse proto.InternalMessageInfo
+
+func (m *ListNormalTransactionsResponse) GetTransactions() []*NormalTransaction {
+	if m != nil {
+		return m.Transactions
+	}
+	return nil
+}
+
+func (m *ListNormalTransactionsResponse) GetPage() int32 {
+	if m != nil {
+		return m.Page
+	}
+	return 0
+}
+
+func (m *ListNormalTransactionsResponse) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
+func (m *ListNormalTransactionsResponse) GetCache() *NormalTransactionCacheMetadata {
+	if m != nil {
+		return m.Cache
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterEnum("athena.internal.ethereumapi.NormalTransactionSort", NormalTransactionSort_name, NormalTransactionSort_value)
+	proto.RegisterEnum("athena.internal.ethereumapi.NormalTransactionReceiptStatus", NormalTransactionReceiptStatus_name, NormalTransactionReceiptStatus_value)
 	proto.RegisterType((*GetEthereumAPIStatusRequest)(nil), "athena.internal.ethereumapi.GetEthereumAPIStatusRequest")
 	proto.RegisterType((*GetEthereumAPIStatusResponse)(nil), "athena.internal.ethereumapi.GetEthereumAPIStatusResponse")
+	proto.RegisterType((*NormalTransactionBlockRange)(nil), "athena.internal.ethereumapi.NormalTransactionBlockRange")
+	proto.RegisterType((*NormalTransaction)(nil), "athena.internal.ethereumapi.NormalTransaction")
+	proto.RegisterType((*NormalTransactionCacheMetadata)(nil), "athena.internal.ethereumapi.NormalTransactionCacheMetadata")
+	proto.RegisterType((*ListNormalTransactionsRequest)(nil), "athena.internal.ethereumapi.ListNormalTransactionsRequest")
+	proto.RegisterType((*ListNormalTransactionsResponse)(nil), "athena.internal.ethereumapi.ListNormalTransactionsResponse")
 }
 
 func init() {
@@ -134,22 +695,72 @@ func init() {
 }
 
 var fileDescriptor_f1c010ddcf93462f = []byte{
-	// 235 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0xcb, 0xcc, 0x2b, 0x49,
-	0x2d, 0xca, 0x4b, 0xcc, 0xd1, 0x4f, 0x2d, 0xc9, 0x48, 0x2d, 0x4a, 0x2d, 0xcd, 0x4d, 0x2c, 0xc8,
-	0x44, 0x66, 0xeb, 0x15, 0x14, 0xe5, 0x97, 0xe4, 0x0b, 0x49, 0x27, 0x96, 0x64, 0xa4, 0xe6, 0x25,
-	0xea, 0xc1, 0x94, 0xeb, 0x21, 0x29, 0x51, 0x92, 0xe5, 0x92, 0x76, 0x4f, 0x2d, 0x71, 0x85, 0x8a,
-	0x38, 0x06, 0x78, 0x06, 0x97, 0x24, 0x96, 0x94, 0x16, 0x07, 0xa5, 0x16, 0x96, 0xa6, 0x16, 0x97,
-	0x28, 0x05, 0x70, 0xc9, 0x60, 0x97, 0x2e, 0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0x92, 0xe0, 0x62,
-	0x2f, 0x2e, 0x49, 0x2c, 0x2a, 0x49, 0x4d, 0x91, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x08, 0x82, 0x71,
-	0x85, 0xc4, 0xb8, 0xd8, 0x8a, 0xc1, 0x6a, 0x25, 0x98, 0x14, 0x18, 0x35, 0x38, 0x83, 0xa0, 0x3c,
-	0xa3, 0x45, 0x8c, 0x5c, 0x42, 0xc8, 0xe6, 0xa5, 0x16, 0x95, 0x65, 0x26, 0xa7, 0x0a, 0x75, 0x33,
-	0x72, 0x89, 0x60, 0xb3, 0x49, 0xc8, 0x42, 0x0f, 0x8f, 0xf3, 0xf5, 0xf0, 0xb8, 0x5d, 0xca, 0x92,
-	0x0c, 0x9d, 0x10, 0x6f, 0x39, 0xb9, 0x9f, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83,
-	0x47, 0x72, 0x8c, 0x51, 0x96, 0xe9, 0x99, 0x25, 0x19, 0xa5, 0x49, 0x7a, 0xc9, 0xf9, 0xb9, 0xfa,
-	0xa5, 0xc5, 0xa9, 0x45, 0x95, 0xa9, 0xe9, 0xa9, 0xfa, 0x10, 0xb3, 0xf5, 0xb1, 0xc6, 0x41, 0x62,
-	0x41, 0x66, 0x72, 0x4e, 0x66, 0x6a, 0x5e, 0x49, 0x12, 0x1b, 0x38, 0x0a, 0x8c, 0x01, 0x01, 0x00,
-	0x00, 0xff, 0xff, 0xbc, 0x73, 0x2c, 0x05, 0xac, 0x01, 0x00, 0x00,
+	// 1038 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xcd, 0x52, 0x1b, 0x47,
+	0x10, 0xce, 0x0a, 0x04, 0x52, 0x8b, 0x1f, 0x31, 0x26, 0xae, 0x8d, 0x31, 0x98, 0xc8, 0xa9, 0x18,
+	0x3b, 0xb1, 0xa8, 0x28, 0x97, 0x38, 0x3e, 0xc9, 0x42, 0x60, 0x55, 0x61, 0x41, 0x66, 0xc5, 0x21,
+	0xc9, 0x61, 0x6b, 0xd8, 0x6d, 0xb4, 0x53, 0xd1, 0xee, 0x2a, 0x33, 0xb3, 0x94, 0xe3, 0x6b, 0x8e,
+	0x39, 0xf9, 0x4d, 0x72, 0xca, 0x33, 0xe4, 0x92, 0xaa, 0x3c, 0x42, 0x8a, 0x43, 0x9e, 0x21, 0xc7,
+	0xd4, 0xcc, 0xec, 0x82, 0x30, 0x02, 0x17, 0x3e, 0x69, 0xfb, 0xeb, 0x9e, 0x6f, 0xba, 0x7b, 0xfb,
+	0x6b, 0x2d, 0x7c, 0xce, 0x13, 0x85, 0x22, 0x61, 0xa3, 0x6d, 0x54, 0x11, 0x0a, 0xcc, 0x62, 0x36,
+	0xe6, 0x93, 0xcf, 0xcd, 0xb1, 0x48, 0x55, 0x4a, 0xd6, 0x98, 0x8a, 0x30, 0x61, 0xcd, 0x22, 0xbc,
+	0x39, 0x11, 0xd2, 0x58, 0x87, 0xb5, 0x3d, 0x54, 0xdd, 0x1c, 0x69, 0x1f, 0xf6, 0x3c, 0xc5, 0x54,
+	0x26, 0x29, 0xfe, 0x9c, 0xa1, 0x54, 0x8d, 0x43, 0xb8, 0x3f, 0xdd, 0x2d, 0xc7, 0x69, 0x22, 0x91,
+	0xb8, 0x30, 0x2f, 0x15, 0x13, 0x0a, 0x43, 0xd7, 0xd9, 0x74, 0xb6, 0x2a, 0xb4, 0x30, 0xc9, 0x5d,
+	0x98, 0x93, 0x26, 0xd6, 0x2d, 0x6d, 0x3a, 0x5b, 0x55, 0x9a, 0x5b, 0x8d, 0x1f, 0x61, 0xad, 0x9f,
+	0x8a, 0x98, 0x8d, 0x06, 0x82, 0x25, 0x92, 0x05, 0x8a, 0xa7, 0xc9, 0x8b, 0x51, 0x1a, 0xfc, 0x44,
+	0x59, 0x32, 0x44, 0xf2, 0x00, 0x6a, 0x86, 0xc1, 0x3f, 0xd6, 0x98, 0x21, 0x9d, 0xa5, 0x60, 0x20,
+	0x13, 0x45, 0xd6, 0xa0, 0x8a, 0x49, 0x98, 0xbb, 0x4b, 0xc6, 0x5d, 0xc1, 0x24, 0x34, 0xce, 0xc6,
+	0xbf, 0x65, 0x58, 0xb9, 0xc2, 0x4e, 0x3e, 0x85, 0x05, 0x13, 0xee, 0x27, 0x59, 0x7c, 0x8c, 0x22,
+	0x27, 0xad, 0x19, 0xac, 0x6f, 0x20, 0xb2, 0x0e, 0x60, 0x43, 0x22, 0x26, 0xa3, 0x3c, 0xe3, 0xaa,
+	0x41, 0x5e, 0x32, 0x19, 0x91, 0x47, 0xb0, 0x6c, 0xdd, 0x8a, 0xc7, 0x28, 0x15, 0x8b, 0xc7, 0xee,
+	0x8c, 0x21, 0x59, 0x32, 0xf0, 0xa0, 0x40, 0xc9, 0x63, 0xa8, 0xab, 0x8b, 0x9b, 0x2d, 0xdb, 0xac,
+	0x61, 0x5b, 0x9e, 0xc0, 0x0d, 0xe7, 0x2a, 0x94, 0x93, 0x34, 0x09, 0xd0, 0x2d, 0x1b, 0x26, 0x6b,
+	0x90, 0x2f, 0x60, 0x65, 0x92, 0x80, 0x27, 0x21, 0xbe, 0x76, 0xe7, 0x4c, 0xc4, 0x24, 0x73, 0x4f,
+	0xe3, 0xba, 0xb0, 0x13, 0x91, 0xc6, 0x3e, 0x0b, 0x43, 0x81, 0x52, 0xba, 0xf3, 0xe6, 0xa6, 0x9a,
+	0xc6, 0xda, 0x16, 0xd2, 0x85, 0xa9, 0xf4, 0x3c, 0xa0, 0x62, 0x0b, 0x53, 0x69, 0xe1, 0x5e, 0x85,
+	0xf2, 0x29, 0x1b, 0x65, 0xe8, 0x56, 0x8d, 0xc7, 0x1a, 0xa4, 0x0e, 0x33, 0x43, 0x26, 0x5d, 0x30,
+	0xd7, 0xea, 0x47, 0xdd, 0xf5, 0x21, 0x93, 0xfe, 0x58, 0xf0, 0x00, 0xdd, 0x9a, 0x89, 0xad, 0x0c,
+	0x99, 0x3c, 0xd4, 0xb6, 0x26, 0xe1, 0xc9, 0x38, 0x53, 0xee, 0x82, 0x25, 0x31, 0x86, 0x3e, 0x12,
+	0xa3, 0x8a, 0xd2, 0xd0, 0xe7, 0xa1, 0xbb, 0x68, 0x8f, 0x58, 0xa0, 0x17, 0x92, 0x87, 0xb0, 0x78,
+	0x92, 0x25, 0xb6, 0xc6, 0x84, 0xc5, 0xe8, 0x2e, 0x99, 0x80, 0x85, 0x02, 0xec, 0xb3, 0x18, 0x75,
+	0x33, 0x83, 0x34, 0x51, 0x82, 0x05, 0xea, 0xbc, 0x82, 0x65, 0xdb, 0xcc, 0x02, 0x2f, 0xea, 0x68,
+	0xc2, 0x9d, 0x20, 0x8b, 0xb3, 0x11, 0x53, 0xfc, 0x14, 0x7d, 0x9d, 0x6a, 0x26, 0x31, 0x74, 0xeb,
+	0xa6, 0x82, 0x95, 0x0b, 0xd7, 0x1e, 0x93, 0x47, 0x12, 0x43, 0x72, 0x0c, 0x4b, 0x02, 0x03, 0xe4,
+	0x63, 0xe5, 0xe7, 0x53, 0xba, 0xb2, 0xe9, 0x6c, 0x2d, 0xb5, 0x9e, 0x37, 0x6f, 0x10, 0x4b, 0xf3,
+	0xca, 0x68, 0x51, 0xcb, 0x91, 0x8b, 0x62, 0x51, 0x4c, 0x9a, 0xe4, 0x13, 0xa8, 0x9c, 0x27, 0x42,
+	0x4c, 0x22, 0xf3, 0xc3, 0xfc, 0xfa, 0xcf, 0x60, 0x31, 0x48, 0x93, 0x13, 0x2e, 0x62, 0xa6, 0x69,
+	0xa4, 0x7b, 0xc7, 0xf8, 0x2f, 0x83, 0x9a, 0x80, 0x4b, 0x1f, 0x85, 0x48, 0x85, 0xbb, 0x6a, 0xd5,
+	0xc5, 0x65, 0x57, 0x9b, 0x8d, 0xb7, 0x0e, 0x6c, 0x5c, 0xc9, 0xa6, 0xc3, 0x82, 0x08, 0x5f, 0xa1,
+	0x62, 0x21, 0x53, 0x4c, 0xf7, 0x3f, 0xd0, 0x80, 0x1f, 0x71, 0x95, 0x8b, 0xb3, 0x62, 0x80, 0x97,
+	0x5c, 0xe9, 0x57, 0x26, 0x15, 0x1b, 0xa1, 0x19, 0xf5, 0x0a, 0xb5, 0x86, 0x1e, 0x96, 0x13, 0x54,
+	0x41, 0x84, 0xa1, 0xcf, 0x94, 0x99, 0xf0, 0x2a, 0xad, 0xe6, 0x48, 0x5b, 0x69, 0x37, 0xbe, 0x1e,
+	0x73, 0x81, 0x52, 0xbb, 0xed, 0x58, 0x57, 0x73, 0xa4, 0xad, 0x1a, 0x7f, 0x95, 0x60, 0x7d, 0x9f,
+	0x4b, 0x75, 0x25, 0xaf, 0x62, 0x9b, 0xe8, 0x82, 0x82, 0x88, 0xf1, 0x44, 0x4f, 0x84, 0xce, 0x68,
+	0x86, 0xce, 0x1b, 0xbb, 0x17, 0xea, 0x45, 0x52, 0xbc, 0x62, 0xab, 0xbe, 0xc2, 0x24, 0xdf, 0x83,
+	0x55, 0xaa, 0x2f, 0xf4, 0x82, 0x30, 0x59, 0xd5, 0x5a, 0xdf, 0xdc, 0xee, 0x3d, 0x5d, 0x2c, 0x18,
+	0x6a, 0x75, 0x6e, 0x97, 0x0d, 0x81, 0xd9, 0x31, 0x1b, 0xa2, 0x29, 0xa5, 0x4c, 0xcd, 0xb3, 0x6e,
+	0x9b, 0xfe, 0xf5, 0x25, 0x7f, 0x63, 0xa5, 0x59, 0xa6, 0x15, 0x0d, 0x78, 0xfc, 0x0d, 0x92, 0x5d,
+	0x98, 0x95, 0xa9, 0x50, 0x46, 0x90, 0x4b, 0xad, 0xd6, 0xed, 0x92, 0xf0, 0x52, 0xa1, 0xa8, 0x39,
+	0x6f, 0xc6, 0x3f, 0x15, 0x01, 0xfa, 0x02, 0x4f, 0x04, 0xca, 0xc8, 0x28, 0xb7, 0x42, 0x17, 0x0c,
+	0x48, 0x2d, 0xd6, 0xf8, 0xcf, 0x81, 0x8d, 0xeb, 0xfa, 0x99, 0xaf, 0x5f, 0x0a, 0x0b, 0x13, 0x4b,
+	0x41, 0xba, 0xce, 0xe6, 0xcc, 0x56, 0xad, 0xd5, 0xbc, 0xe5, 0x10, 0x5f, 0xe2, 0x38, 0x6f, 0x4a,
+	0xe9, 0xba, 0xa6, 0xcc, 0xbc, 0xd3, 0x94, 0xef, 0xa0, 0x6c, 0xe6, 0xca, 0xb4, 0xb1, 0x76, 0x5b,
+	0x09, 0x5d, 0x1a, 0x5a, 0x6a, 0x99, 0x9e, 0xfc, 0xea, 0xc0, 0xc7, 0x53, 0xfb, 0x47, 0x1e, 0xc1,
+	0xc3, 0xfe, 0x01, 0x7d, 0xd5, 0xde, 0xf7, 0x07, 0xb4, 0xdd, 0xf7, 0xda, 0x9d, 0x41, 0xef, 0xa0,
+	0xef, 0x7b, 0x07, 0x74, 0xe0, 0x1f, 0xf5, 0xbd, 0xc3, 0x6e, 0xa7, 0xb7, 0xdb, 0xeb, 0xee, 0xd4,
+	0x3f, 0x22, 0x0f, 0x60, 0xed, 0xba, 0xc0, 0xb6, 0xd7, 0xa9, 0x3b, 0x64, 0x13, 0xee, 0x5f, 0x17,
+	0xb0, 0xd3, 0xf5, 0x3a, 0xf5, 0xd2, 0x93, 0xdf, 0xa7, 0x89, 0xec, 0x92, 0xe4, 0xc9, 0x57, 0xf0,
+	0x74, 0x0a, 0x09, 0xed, 0x76, 0xba, 0xbd, 0xc3, 0x81, 0xef, 0x0d, 0xda, 0x83, 0x23, 0xef, 0x9d,
+	0xc4, 0xbe, 0x84, 0xad, 0xf7, 0x1f, 0xd9, 0x6d, 0xf7, 0xf6, 0xbb, 0x3b, 0x75, 0x87, 0x3c, 0x85,
+	0xc7, 0xef, 0x8f, 0xf6, 0x8e, 0x3a, 0x9d, 0xae, 0xe7, 0xd5, 0x4b, 0xad, 0x3f, 0x4a, 0x40, 0x26,
+	0xff, 0xad, 0x51, 0x9c, 0xea, 0x0d, 0xfd, 0x9b, 0x03, 0xab, 0xd3, 0xfe, 0xc7, 0xc9, 0xcd, 0x3a,
+	0xba, 0xe1, 0xcb, 0xe0, 0xde, 0xb3, 0x0f, 0x38, 0x99, 0x4f, 0xed, 0x5b, 0x07, 0xee, 0x4e, 0x1f,
+	0x6c, 0xf2, 0xed, 0x8d, 0xac, 0x37, 0x6e, 0x97, 0x7b, 0xcf, 0x3f, 0xe8, 0xac, 0xcd, 0xe9, 0xc5,
+	0xde, 0x9f, 0x67, 0x1b, 0xce, 0xdf, 0x67, 0x1b, 0xce, 0x3f, 0x67, 0x1b, 0xce, 0x0f, 0xcf, 0x86,
+	0x5c, 0x45, 0xd9, 0x71, 0x33, 0x48, 0xe3, 0xed, 0x4c, 0xa2, 0xf8, 0x05, 0x87, 0xb8, 0x6d, 0xd9,
+	0xb7, 0xa7, 0x7e, 0x75, 0xb1, 0x31, 0x0f, 0x46, 0x1c, 0x13, 0x75, 0x3c, 0x67, 0x3e, 0xba, 0xbe,
+	0xfe, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x4f, 0x72, 0x1b, 0x23, 0x9e, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -166,6 +777,8 @@ const _ = grpc.SupportPackageIsVersion4
 type EthereumAPIServiceClient interface {
 	// GetEthereumAPIStatus returns the ethereum-api service runtime status.
 	GetEthereumAPIStatus(ctx context.Context, in *GetEthereumAPIStatusRequest, opts ...grpc.CallOption) (*GetEthereumAPIStatusResponse, error)
+	// ListNormalTransactions returns normal transactions for one EVM address.
+	ListNormalTransactions(ctx context.Context, in *ListNormalTransactionsRequest, opts ...grpc.CallOption) (*ListNormalTransactionsResponse, error)
 }
 
 type ethereumAPIServiceClient struct {
@@ -185,10 +798,21 @@ func (c *ethereumAPIServiceClient) GetEthereumAPIStatus(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *ethereumAPIServiceClient) ListNormalTransactions(ctx context.Context, in *ListNormalTransactionsRequest, opts ...grpc.CallOption) (*ListNormalTransactionsResponse, error) {
+	out := new(ListNormalTransactionsResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.ethereumapi.EthereumAPIService/ListNormalTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EthereumAPIServiceServer is the server API for EthereumAPIService service.
 type EthereumAPIServiceServer interface {
 	// GetEthereumAPIStatus returns the ethereum-api service runtime status.
 	GetEthereumAPIStatus(context.Context, *GetEthereumAPIStatusRequest) (*GetEthereumAPIStatusResponse, error)
+	// ListNormalTransactions returns normal transactions for one EVM address.
+	ListNormalTransactions(context.Context, *ListNormalTransactionsRequest) (*ListNormalTransactionsResponse, error)
 }
 
 // UnimplementedEthereumAPIServiceServer can be embedded to have forward compatible implementations.
@@ -197,6 +821,9 @@ type UnimplementedEthereumAPIServiceServer struct {
 
 func (*UnimplementedEthereumAPIServiceServer) GetEthereumAPIStatus(ctx context.Context, req *GetEthereumAPIStatusRequest) (*GetEthereumAPIStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEthereumAPIStatus not implemented")
+}
+func (*UnimplementedEthereumAPIServiceServer) ListNormalTransactions(ctx context.Context, req *ListNormalTransactionsRequest) (*ListNormalTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListNormalTransactions not implemented")
 }
 
 func RegisterEthereumAPIServiceServer(s *grpc.Server, srv EthereumAPIServiceServer) {
@@ -221,6 +848,24 @@ func _EthereumAPIService_GetEthereumAPIStatus_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EthereumAPIService_ListNormalTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNormalTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EthereumAPIServiceServer).ListNormalTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.ethereumapi.EthereumAPIService/ListNormalTransactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EthereumAPIServiceServer).ListNormalTransactions(ctx, req.(*ListNormalTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _EthereumAPIService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "athena.internal.ethereumapi.EthereumAPIService",
 	HandlerType: (*EthereumAPIServiceServer)(nil),
@@ -228,6 +873,10 @@ var _EthereumAPIService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEthereumAPIStatus",
 			Handler:    _EthereumAPIService_GetEthereumAPIStatus_Handler,
+		},
+		{
+			MethodName: "ListNormalTransactions",
+			Handler:    _EthereumAPIService_ListNormalTransactions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -305,6 +954,405 @@ func (m *GetEthereumAPIStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
+func (m *NormalTransactionBlockRange) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NormalTransactionBlockRange) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NormalTransactionBlockRange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.EndBlock != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.EndBlock))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.StartBlock != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.StartBlock))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NormalTransaction) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NormalTransaction) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NormalTransaction) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.IsError {
+		i--
+		if m.IsError {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa0
+	}
+	if m.Confirmations != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.Confirmations))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x98
+	}
+	if m.GasUsed != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.GasUsed))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x90
+	}
+	if m.ReceiptStatus != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.ReceiptStatus))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x88
+	}
+	if m.CumulativeGasUsed != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.CumulativeGasUsed))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x80
+	}
+	if len(m.ContractAddress) > 0 {
+		i -= len(m.ContractAddress)
+		copy(dAtA[i:], m.ContractAddress)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.ContractAddress)))
+		i--
+		dAtA[i] = 0x7a
+	}
+	if len(m.FunctionName) > 0 {
+		i -= len(m.FunctionName)
+		copy(dAtA[i:], m.FunctionName)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.FunctionName)))
+		i--
+		dAtA[i] = 0x72
+	}
+	if len(m.MethodId) > 0 {
+		i -= len(m.MethodId)
+		copy(dAtA[i:], m.MethodId)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.MethodId)))
+		i--
+		dAtA[i] = 0x6a
+	}
+	if len(m.Input) > 0 {
+		i -= len(m.Input)
+		copy(dAtA[i:], m.Input)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Input)))
+		i--
+		dAtA[i] = 0x62
+	}
+	if len(m.GasPrice) > 0 {
+		i -= len(m.GasPrice)
+		copy(dAtA[i:], m.GasPrice)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.GasPrice)))
+		i--
+		dAtA[i] = 0x5a
+	}
+	if m.Gas != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.Gas))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ToAddress) > 0 {
+		i -= len(m.ToAddress)
+		copy(dAtA[i:], m.ToAddress)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.ToAddress)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.FromAddress) > 0 {
+		i -= len(m.FromAddress)
+		copy(dAtA[i:], m.FromAddress)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.FromAddress)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.TransactionIndex != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.TransactionIndex))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.Nonce != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.Nonce))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.TransactionHash) > 0 {
+		i -= len(m.TransactionHash)
+		copy(dAtA[i:], m.TransactionHash)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.TransactionHash)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.BlockTimestamp != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.BlockTimestamp))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.BlockHash) > 0 {
+		i -= len(m.BlockHash)
+		copy(dAtA[i:], m.BlockHash)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.BlockHash)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.BlockNumber != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.BlockNumber))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NormalTransactionCacheMetadata) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NormalTransactionCacheMetadata) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NormalTransactionCacheMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ExpiresAt) > 0 {
+		i -= len(m.ExpiresAt)
+		copy(dAtA[i:], m.ExpiresAt)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.ExpiresAt)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.FetchedAt) > 0 {
+		i -= len(m.FetchedAt)
+		copy(dAtA[i:], m.FetchedAt)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.FetchedAt)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Stale {
+		i--
+		if m.Stale {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.CacheHit {
+		i--
+		if m.CacheHit {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListNormalTransactionsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListNormalTransactionsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListNormalTransactionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ForceRefresh {
+		i--
+		if m.ForceRefresh {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.Sort != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.Sort))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Page != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.BlockRange != nil {
+		{
+			size, err := m.BlockRange.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEthereumapi(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Address) > 0 {
+		i -= len(m.Address)
+		copy(dAtA[i:], m.Address)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Address)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListNormalTransactionsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListNormalTransactionsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListNormalTransactionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Cache != nil {
+		{
+			size, err := m.Cache.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEthereumapi(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.PageSize != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.PageSize))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Page != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.Page))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Transactions) > 0 {
+		for iNdEx := len(m.Transactions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Transactions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintEthereumapi(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintEthereumapi(dAtA []byte, offset int, v uint64) int {
 	offset -= sovEthereumapi(v)
 	base := offset
@@ -339,6 +1387,195 @@ func (m *GetEthereumAPIStatusResponse) Size() (n int) {
 	}
 	l = len(m.Status)
 	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NormalTransactionBlockRange) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.StartBlock != 0 {
+		n += 1 + sovEthereumapi(uint64(m.StartBlock))
+	}
+	if m.EndBlock != 0 {
+		n += 1 + sovEthereumapi(uint64(m.EndBlock))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NormalTransaction) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BlockNumber != 0 {
+		n += 1 + sovEthereumapi(uint64(m.BlockNumber))
+	}
+	l = len(m.BlockHash)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.BlockTimestamp != 0 {
+		n += 1 + sovEthereumapi(uint64(m.BlockTimestamp))
+	}
+	l = len(m.TransactionHash)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.Nonce != 0 {
+		n += 1 + sovEthereumapi(uint64(m.Nonce))
+	}
+	if m.TransactionIndex != 0 {
+		n += 1 + sovEthereumapi(uint64(m.TransactionIndex))
+	}
+	l = len(m.FromAddress)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.ToAddress)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.Gas != 0 {
+		n += 1 + sovEthereumapi(uint64(m.Gas))
+	}
+	l = len(m.GasPrice)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Input)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.MethodId)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.FunctionName)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.ContractAddress)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.CumulativeGasUsed != 0 {
+		n += 2 + sovEthereumapi(uint64(m.CumulativeGasUsed))
+	}
+	if m.ReceiptStatus != 0 {
+		n += 2 + sovEthereumapi(uint64(m.ReceiptStatus))
+	}
+	if m.GasUsed != 0 {
+		n += 2 + sovEthereumapi(uint64(m.GasUsed))
+	}
+	if m.Confirmations != 0 {
+		n += 2 + sovEthereumapi(uint64(m.Confirmations))
+	}
+	if m.IsError {
+		n += 3
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NormalTransactionCacheMetadata) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CacheHit {
+		n += 2
+	}
+	if m.Stale {
+		n += 2
+	}
+	l = len(m.FetchedAt)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.ExpiresAt)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListNormalTransactionsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovEthereumapi(uint64(m.ChainId))
+	}
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.BlockRange != nil {
+		l = m.BlockRange.Size()
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.Page != 0 {
+		n += 1 + sovEthereumapi(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovEthereumapi(uint64(m.PageSize))
+	}
+	if m.Sort != 0 {
+		n += 1 + sovEthereumapi(uint64(m.Sort))
+	}
+	if m.ForceRefresh {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListNormalTransactionsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Transactions) > 0 {
+		for _, e := range m.Transactions {
+			l = e.Size()
+			n += 1 + l + sovEthereumapi(uint64(l))
+		}
+	}
+	if m.Page != 0 {
+		n += 1 + sovEthereumapi(uint64(m.Page))
+	}
+	if m.PageSize != 0 {
+		n += 1 + sovEthereumapi(uint64(m.PageSize))
+	}
+	if m.Cache != nil {
+		l = m.Cache.Size()
 		n += 1 + l + sovEthereumapi(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -484,6 +1721,1186 @@ func (m *GetEthereumAPIStatusResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NormalTransactionBlockRange) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NormalTransactionBlockRange: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NormalTransactionBlockRange: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartBlock", wireType)
+			}
+			m.StartBlock = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StartBlock |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EndBlock", wireType)
+			}
+			m.EndBlock = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EndBlock |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NormalTransaction) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NormalTransaction: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NormalTransaction: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockNumber", wireType)
+			}
+			m.BlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BlockHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockTimestamp", wireType)
+			}
+			m.BlockTimestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockTimestamp |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransactionHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TransactionHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nonce", wireType)
+			}
+			m.Nonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Nonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransactionIndex", wireType)
+			}
+			m.TransactionIndex = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TransactionIndex |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FromAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FromAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ToAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ToAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gas", wireType)
+			}
+			m.Gas = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Gas |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GasPrice", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GasPrice = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Input", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Input = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MethodId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MethodId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FunctionName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FunctionName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContractAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CumulativeGasUsed", wireType)
+			}
+			m.CumulativeGasUsed = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CumulativeGasUsed |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReceiptStatus", wireType)
+			}
+			m.ReceiptStatus = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ReceiptStatus |= NormalTransactionReceiptStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GasUsed", wireType)
+			}
+			m.GasUsed = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.GasUsed |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 19:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Confirmations", wireType)
+			}
+			m.Confirmations = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Confirmations |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 20:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsError", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsError = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NormalTransactionCacheMetadata) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NormalTransactionCacheMetadata: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NormalTransactionCacheMetadata: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CacheHit", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.CacheHit = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stale", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Stale = bool(v != 0)
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FetchedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FetchedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpiresAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListNormalTransactionsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListNormalTransactionsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListNormalTransactionsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockRange", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BlockRange == nil {
+				m.BlockRange = &NormalTransactionBlockRange{}
+			}
+			if err := m.BlockRange.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sort", wireType)
+			}
+			m.Sort = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Sort |= NormalTransactionSort(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ForceRefresh", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ForceRefresh = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListNormalTransactionsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListNormalTransactionsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListNormalTransactionsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Transactions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Transactions = append(m.Transactions, &NormalTransaction{})
+			if err := m.Transactions[len(m.Transactions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Page", wireType)
+			}
+			m.Page = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Page |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PageSize", wireType)
+			}
+			m.PageSize = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PageSize |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cache", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Cache == nil {
+				m.Cache = &NormalTransactionCacheMetadata{}
+			}
+			if err := m.Cache.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

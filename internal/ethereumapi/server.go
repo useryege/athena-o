@@ -1,10 +1,14 @@
 package ethereumapi
 
 import (
+	"context"
+	"time"
+
 	"github.com/useryege/athena/internal/ethereumapi/apiclient"
 	ethereumapistore "github.com/useryege/athena/internal/ethereumapi/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
+	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -17,15 +21,25 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store *ethereumapistore.SQLStore
+	Store          *ethereumapistore.SQLStore
+	EthereumAPI    utilethereumapi.EthereumAPI
+	CacheTTL       time.Duration
+	CacheRetention time.Duration
+	RefreshTimeout time.Duration
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
 	healthService := health.NewServer()
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
-		ServerOpts:    opts,
-		service:       NewService(opts.Store),
+		ServerOpts: opts,
+		service: NewService(ServiceOpts{
+			Store:          opts.Store,
+			EthereumAPI:    opts.EthereumAPI,
+			CacheTTL:       opts.CacheTTL,
+			CacheRetention: opts.CacheRetention,
+			RefreshTimeout: opts.RefreshTimeout,
+		}),
 		healthService: healthService,
 	}, nil
 }
@@ -41,8 +55,8 @@ func (s *Server) CreateGRPC() *grpc.Server {
 	return server
 }
 
-func (s *Server) Start() error {
-	if err := s.service.Start(); err != nil {
+func (s *Server) Start(ctx context.Context) error {
+	if err := s.service.Start(ctx); err != nil {
 		return err
 	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)

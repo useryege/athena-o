@@ -3,18 +3,38 @@ package ethereumapi
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/useryege/athena/util/ratelimit"
+)
+
+const (
+	DefaultBaseURL = "https://api.etherscan.io/v2/api"
+	DefaultTimeout = 30 * time.Second
+
+	maxAPIErrorBodyLength = 4096
+)
+
+const (
+	APIErrorTypeAuthentication = "authentication"
+	APIErrorTypeInvalidRequest = "invalid_request"
+	APIErrorTypeMalformed      = "malformed_response"
+	APIErrorTypePlan           = "plan"
+	APIErrorTypeRateLimit      = "rate_limit"
+	APIErrorTypeUpstream       = "upstream"
 )
 
 type EthereumAPI interface {
 	GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*SourceCodeResponse, error)
 	GetABI(ctx context.Context, chainID int64, contractAddress string) (*ABIResponse, error)
+	ListNormalTransactions(ctx context.Context, opts ListNormalTransactionsOptions) (*NormalTransactionsResponse, error)
 }
 
 type ethereumAPIImpl struct {
@@ -28,6 +48,8 @@ type Config struct {
 	BaseURL     string
 	APIKey      string
 	RateLimiter ratelimit.Limiter
+	Timeout     time.Duration
+	HTTPClient  *http.Client
 }
 
 func NewEthereumAPI(baseURL string, apiKey string) EthereumAPI {
@@ -38,16 +60,95 @@ func NewEthereumAPI(baseURL string, apiKey string) EthereumAPI {
 }
 
 func NewEthereumAPIWithConfig(config Config) EthereumAPI {
+	baseURL := strings.TrimSpace(config.BaseURL)
+	if baseURL == "" {
+		baseURL = DefaultBaseURL
+	}
 	rateLimiter := config.RateLimiter
 	if rateLimiter == nil {
 		rateLimiter = ratelimit.Noop()
 	}
+	client := config.HTTPClient
+	if client == nil {
+		timeout := config.Timeout
+		if timeout <= 0 {
+			timeout = DefaultTimeout
+		}
+		client = &http.Client{Timeout: timeout}
+	}
 	return &ethereumAPIImpl{
-		baseURL:     config.BaseURL,
+		baseURL:     baseURL,
 		apiKey:      config.APIKey,
-		client:      &http.Client{},
+		client:      client,
 		rateLimiter: rateLimiter,
 	}
+}
+
+type APIError struct {
+	StatusCode int
+	Type       string
+	Message    string
+	RawBody    string
+}
+
+func (e *APIError) Error() string {
+	if e == nil {
+		return ""
+	}
+	message := strings.TrimSpace(e.Message)
+	if message == "" {
+		message = "etherscan API request failed"
+	}
+	if e.StatusCode > 0 {
+		return fmt.Sprintf("%s (status %d)", message, e.StatusCode)
+	}
+	return message
+}
+
+type NormalTransactionSort string
+
+const (
+	NormalTransactionSortASC  NormalTransactionSort = "asc"
+	NormalTransactionSortDESC NormalTransactionSort = "desc"
+)
+
+type ListNormalTransactionsOptions struct {
+	ChainID    int64
+	Address    string
+	StartBlock uint64
+	EndBlock   uint64
+	Page       int32
+	PageSize   int32
+	Sort       NormalTransactionSort
+}
+
+type NormalTransactionsResponse struct {
+	Status  string                    `json:"status"`
+	Message string                    `json:"message"`
+	Result  []NormalTransactionResult `json:"result"`
+}
+
+type NormalTransactionResult struct {
+	BlockNumber       string `json:"blockNumber"`
+	BlockHash         string `json:"blockHash"`
+	TimeStamp         string `json:"timeStamp"`
+	Hash              string `json:"hash"`
+	Nonce             string `json:"nonce"`
+	TransactionIndex  string `json:"transactionIndex"`
+	From              string `json:"from"`
+	To                string `json:"to"`
+	Value             string `json:"value"`
+	Gas               string `json:"gas"`
+	GasPrice          string `json:"gasPrice"`
+	Input             string `json:"input"`
+	MethodID          string `json:"methodId"`
+	FunctionName      string `json:"functionName"`
+	ContractAddress   string `json:"contractAddress"`
+	CumulativeGasUsed string `json:"cumulativeGasUsed"`
+	TxReceiptStatus   string `json:"txreceipt_status"`
+	GasUsed           string `json:"gasUsed"`
+	Confirmations     string `json:"confirmations"`
+	IsError           string `json:"isError"`
 }
 
 type SourceCodeResponse struct {
@@ -143,6 +244,64 @@ func (e *ethereumAPIImpl) GetABI(ctx context.Context, chainID int64, contractAdd
 	return &abiResp, nil
 }
 
+func (e *ethereumAPIImpl) ListNormalTransactions(ctx context.Context, opts ListNormalTransactionsOptions) (*NormalTransactionsResponse, error) {
+	resp, err := e.do(ctx, e.apiKey, opts.ChainID, "account", "txlist", map[string]interface{}{
+		"address":    opts.Address,
+		"startblock": opts.StartBlock,
+		"endblock":   opts.EndBlock,
+		"page":       opts.Page,
+		"offset":     opts.PageSize,
+		"sort":       opts.Sort,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if err := ensureHTTPSuccess(resp); err != nil {
+		return nil, err
+	}
+
+	var rawResp struct {
+		Status  string          `json:"status"`
+		Message string          `json:"message"`
+		Result  json.RawMessage `json:"result"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rawResp); err != nil {
+		return nil, &APIError{
+			StatusCode: http.StatusOK,
+			Type:       APIErrorTypeMalformed,
+			Message:    fmt.Sprintf("failed to decode etherscan txlist response: %v", err),
+		}
+	}
+
+	result := make([]NormalTransactionResult, 0)
+	resultErr := json.Unmarshal(rawResp.Result, &result)
+	if resultErr == nil {
+		if rawResp.Status == "1" || isNoTransactionsResponse(rawResp.Message, result) {
+			return &NormalTransactionsResponse{
+				Status:  rawResp.Status,
+				Message: rawResp.Message,
+				Result:  result,
+			}, nil
+		}
+	}
+	if rawResp.Status == "1" {
+		return nil, &APIError{
+			StatusCode: http.StatusOK,
+			Type:       APIErrorTypeMalformed,
+			Message:    fmt.Sprintf("malformed etherscan txlist result: %v", resultErr),
+			RawBody:    limitAPIErrorBody(summarizeRawJSON(rawResp.Result)),
+		}
+	}
+
+	var resultMessage string
+	if err := json.Unmarshal(rawResp.Result, &resultMessage); err != nil {
+		resultMessage = summarizeRawJSON(rawResp.Result)
+	}
+	return nil, newEnvelopeAPIError(rawResp.Message, resultMessage)
+}
+
 func (e *ethereumAPIImpl) do(ctx context.Context, apiKey string, chainID int64, module string, action string, params map[string]interface{}) (*http.Response, error) {
 	endpoint, err := url.Parse(e.baseURL)
 	if err != nil {
@@ -177,6 +336,10 @@ func (e *ethereumAPIImpl) do(ctx context.Context, apiKey string, chainID int64, 
 	}
 	resp, err := client.Do(req)
 	if err != nil {
+		var urlErr *url.Error
+		if stderrors.As(err, &urlErr) {
+			err = urlErr.Err
+		}
 		return nil, fmt.Errorf("failed to send etherscan request: %w", err)
 	}
 	return resp, nil
@@ -191,7 +354,12 @@ func ensureHTTPSuccess(resp *http.Response) error {
 	if err != nil {
 		return fmt.Errorf("etherscan http request failed with status %s and unreadable body: %w", resp.Status, err)
 	}
-	return fmt.Errorf("etherscan http request failed with status %s: %s", resp.Status, string(body))
+	return &APIError{
+		StatusCode: resp.StatusCode,
+		Type:       APIErrorTypeUpstream,
+		Message:    fmt.Sprintf("etherscan HTTP request failed with status %s", resp.Status),
+		RawBody:    limitAPIErrorBody(string(body)),
+	}
 }
 
 func summarizeRawJSON(raw json.RawMessage) string {
@@ -205,4 +373,43 @@ func summarizeRawJSON(raw json.RawMessage) string {
 		return summary
 	}
 	return summary[:maxRawJSONSummaryLength] + "..."
+}
+
+func isNoTransactionsResponse(message string, result []NormalTransactionResult) bool {
+	return len(result) == 0 && strings.Contains(strings.ToLower(message), "no transactions")
+}
+
+func newEnvelopeAPIError(message string, result string) error {
+	combined := strings.TrimSpace(strings.Join([]string{message, result}, ": "))
+	lower := strings.ToLower(combined)
+	errorType := APIErrorTypeUpstream
+	switch {
+	case strings.Contains(lower, "rate limit"):
+		errorType = APIErrorTypeRateLimit
+	case strings.Contains(lower, "invalid api key") || strings.Contains(lower, "invalid api-key"):
+		errorType = APIErrorTypeAuthentication
+	case strings.Contains(lower, "free api access") || strings.Contains(lower, "upgrade your api plan"):
+		errorType = APIErrorTypePlan
+	case strings.Contains(lower, "invalid address") ||
+		strings.Contains(lower, "unsupported chain") ||
+		strings.Contains(lower, "invalid action") ||
+		strings.Contains(lower, "missing"):
+		errorType = APIErrorTypeInvalidRequest
+	}
+	if combined == "" {
+		combined = "etherscan API request failed"
+	}
+	return &APIError{
+		StatusCode: http.StatusOK,
+		Type:       errorType,
+		Message:    combined,
+		RawBody:    limitAPIErrorBody(result),
+	}
+}
+
+func limitAPIErrorBody(body string) string {
+	if len(body) <= maxAPIErrorBodyLength {
+		return body
+	}
+	return body[:maxAPIErrorBodyLength] + "..."
 }
