@@ -46,6 +46,15 @@ ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY=your-key \
 make e2e-live-etherscan-rate-limit
 ```
 
+Run the manual Etherscan multi-key aggregate probe explicitly:
+
+```bash
+E2E_LIVE=1 \
+ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE=1 \
+ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
+make e2e-live-etherscan-multi-key-rate-limit
+```
+
 ## ethereum-api
 
 The ethereum-api tests connect to the gRPC service started by `make run`.
@@ -58,6 +67,8 @@ Environment variables:
 | `ATHENA_E2E_TIMEOUT` | `90s` | Readiness wait and RPC timeout. |
 | `ATHENA_E2E_ETHEREUM_API_ADDRESS` | `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` | Ethereum mainnet address used by live transaction queries. |
 | `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes; falls back to `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`. |
+| `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe. |
+| `ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE` | unset | Must be `1` to run the manual Etherscan multi-key aggregate probe. |
 | `ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE` | unset | Must be `1` to run the manual Etherscan rate-limit probe. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
@@ -71,6 +82,13 @@ The Etherscan rate-limit probe bypasses the local ethereum-api service and calls
 rate limiter. It intentionally sends a short burst of requests to trigger the
 upstream free-plan limit, consumes real Etherscan quota, and expects at least one
 rate-limit response. It is not included in the default live ethereum-api target.
+
+The Etherscan multi-key aggregate probe also bypasses the local ethereum-api
+service and calls Etherscan directly. It sends three concurrent requests per key
+in one short burst, redacts keys in logs to short fingerprints, and passes when
+at least 90% of the aggregate requests succeed. High rate-limit counts indicate
+that Etherscan is enforcing a higher-level limit such as account, IP, global, or
+WAF policy. This probe is also excluded from default live targets.
 
 ## Structure
 

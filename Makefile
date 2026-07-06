@@ -207,6 +207,20 @@ e2e-live-etherscan-rate-limit:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanFreePlanRateLimitProbe -v
 
+.PHONY: e2e-live-etherscan-multi-key-rate-limit
+e2e-live-etherscan-multi-key-rate-limit:
+	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run Etherscan multi-key probe without live test confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 make e2e-live-etherscan-multi-key-rate-limit' >&2; \
+		exit 1; \
+	fi
+	@if [ "$${ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to intentionally run the Etherscan multi-key probe without confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 make e2e-live-etherscan-multi-key-rate-limit' >&2; \
+		exit 1; \
+	fi
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateRateLimitProbe -v
+
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve
