@@ -15,6 +15,9 @@ const (
 
 	envEthereumAPIAddr         = "ATHENA_E2E_ETHEREUM_API_ADDR"
 	envEthereumAPIQueryAddress = "ATHENA_E2E_ETHEREUM_API_ADDRESS"
+	envEtherscanAPIKey         = "ATHENA_E2E_ETHERSCAN_API_KEY"
+	envEtherscanAPIKeyFallback = "ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY"
+	envEtherscanRateLimitProbe = "ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE"
 	envE2ETimeout              = "ATHENA_E2E_TIMEOUT"
 	envE2ELive                 = "E2E_LIVE"
 )

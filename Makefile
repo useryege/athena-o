@@ -193,6 +193,20 @@ e2e-live-ethereumapi:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi
 
+.PHONY: e2e-live-etherscan-rate-limit
+e2e-live-etherscan-rate-limit:
+	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run Etherscan rate-limit probe without live test confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE=1 make e2e-live-etherscan-rate-limit' >&2; \
+		exit 1; \
+	fi
+	@if [ "$${ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to intentionally trigger Etherscan rate limiting without probe confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE=1 make e2e-live-etherscan-rate-limit' >&2; \
+		exit 1; \
+	fi
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanFreePlanRateLimitProbe -v
+
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve

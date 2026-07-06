@@ -37,6 +37,15 @@ E2E_LIVE=1 make e2e-live
 E2E_LIVE=1 make e2e-live-ethereumapi
 ```
 
+Run the manual Etherscan rate-limit probe explicitly:
+
+```bash
+E2E_LIVE=1 \
+ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE=1 \
+ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY=your-key \
+make e2e-live-etherscan-rate-limit
+```
+
 ## ethereum-api
 
 The ethereum-api tests connect to the gRPC service started by `make run`.
@@ -48,12 +57,20 @@ Environment variables:
 | `ATHENA_E2E_ETHEREUM_API_ADDR` | `127.0.0.1:8100` | ethereum-api gRPC address. |
 | `ATHENA_E2E_TIMEOUT` | `90s` | Readiness wait and RPC timeout. |
 | `ATHENA_E2E_ETHEREUM_API_ADDRESS` | `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` | Ethereum mainnet address used by live transaction queries. |
+| `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes; falls back to `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`. |
+| `ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE` | unset | Must be `1` to run the manual Etherscan rate-limit probe. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
 The default ethereum-api tests do not call Etherscan. The live ethereum-api
 tests perform a real normal transaction query and fail directly on
 authentication failures, rate limits, network failures, Postgres failures, and
 service errors.
+
+The Etherscan rate-limit probe bypasses the local ethereum-api service and calls
+`https://api.etherscan.io/v2/api` directly without Athena's built-in Etherscan
+rate limiter. It intentionally sends a short burst of requests to trigger the
+upstream free-plan limit, consumes real Etherscan quota, and expects at least one
+rate-limit response. It is not included in the default live ethereum-api target.
 
 ## Structure
 
