@@ -135,10 +135,6 @@ wallet-private-key-ciphertext:
 prod-reset-secrets:
 	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)
 
-.PHONY: deploy-3proxy-vps
-deploy-3proxy-vps:
-	bash ./hack/deploy-3proxy.sh
-
 .PHONY: auto-clicker
 auto-clicker:
 	@mkdir -p ${DIST_DIR}
