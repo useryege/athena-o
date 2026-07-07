@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 ETHERSCAN_GATEWAY_ENV_FILE="${ETHERSCAN_GATEWAY_ENV_FILE:-${REPO_ROOT}/.env}"
-provided_host="${ETHERSCAN_GATEWAY_HOST:-}"
+provided_ips="${ETHERSCAN_GATEWAY_IPS:-}"
 provided_auth_token="${ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN:-}"
 
 if [[ -f "${ETHERSCAN_GATEWAY_ENV_FILE}" ]]; then
@@ -15,14 +15,13 @@ if [[ -f "${ETHERSCAN_GATEWAY_ENV_FILE}" ]]; then
   set +a
 fi
 
-if [[ -n "${provided_host}" ]]; then
-  ETHERSCAN_GATEWAY_HOST="${provided_host}"
+if [[ -n "${provided_ips}" ]]; then
+  ETHERSCAN_GATEWAY_IPS="${provided_ips}"
 fi
 if [[ -n "${provided_auth_token}" ]]; then
   ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN="${provided_auth_token}"
 fi
 
-ETHERSCAN_GATEWAY_HOST="${ETHERSCAN_GATEWAY_HOST:-root@47.245.183.140}"
 ETHERSCAN_GATEWAY_LISTEN_ADDRESS="0.0.0.0:6776"
 ETHERSCAN_GATEWAY_TIMEOUT="30s"
 REMOTE_BINARY="/usr/local/bin/athena-etherscan-gateway"
@@ -33,6 +32,18 @@ SERVICE_NAME="athena-etherscan-gateway"
 command -v openssl >/dev/null
 command -v scp >/dev/null
 command -v ssh >/dev/null
+
+if [[ -z "${ETHERSCAN_GATEWAY_IPS:-}" ]]; then
+  echo "ETHERSCAN_GATEWAY_IPS is required. Set it in ${ETHERSCAN_GATEWAY_ENV_FILE} or export it before running this script." >&2
+  exit 1
+fi
+
+read -r -a gateway_ips <<<"${ETHERSCAN_GATEWAY_IPS}"
+
+if ((${#gateway_ips[@]} == 0)); then
+  echo "ETHERSCAN_GATEWAY_IPS must contain at least one IP address." >&2
+  exit 1
+fi
 
 if [[ -n "${ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN:-}" ]]; then
   auth_token="${ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN}"
@@ -84,17 +95,24 @@ ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN=${auth_token}
 ATHENA_ETHERSCAN_GATEWAY_TIMEOUT=${ETHERSCAN_GATEWAY_TIMEOUT}
 EOF
 
-remote_tmp_binary="/tmp/athena-etherscan-gateway.$$"
-remote_tmp_env="/tmp/etherscan-gateway.env.$$"
+deployed_ips=()
 
-echo "Uploading gateway binary to ${ETHERSCAN_GATEWAY_HOST}..."
-scp "${REPO_ROOT}/dist/athena" "${ETHERSCAN_GATEWAY_HOST}:${remote_tmp_binary}"
+for gateway_ip in "${gateway_ips[@]}"; do
+  gateway_host="root@${gateway_ip}"
+  remote_tmp_binary="/tmp/athena-etherscan-gateway.$$"
+  remote_tmp_env="/tmp/etherscan-gateway.env.$$"
 
-echo "Uploading gateway environment file to ${ETHERSCAN_GATEWAY_HOST}..."
-scp "${env_tmp}" "${ETHERSCAN_GATEWAY_HOST}:${remote_tmp_env}"
+  echo
+  echo "Deploying Etherscan Gateway to ${gateway_host}..."
 
-echo "Installing systemd service on ${ETHERSCAN_GATEWAY_HOST}..."
-ssh "${ETHERSCAN_GATEWAY_HOST}" "set -euo pipefail
+  echo "Uploading gateway binary to ${gateway_host}..."
+  scp "${REPO_ROOT}/dist/athena" "${gateway_host}:${remote_tmp_binary}"
+
+  echo "Uploading gateway environment file to ${gateway_host}..."
+  scp "${env_tmp}" "${gateway_host}:${remote_tmp_env}"
+
+  echo "Installing systemd service on ${gateway_host}..."
+  ssh "${gateway_host}" "set -euo pipefail
 systemctl stop '${SERVICE_NAME}' >/dev/null 2>&1 || true
 install -m 0755 '${remote_tmp_binary}' '${REMOTE_BINARY}'
 rm -f '${remote_tmp_binary}'
@@ -122,29 +140,39 @@ systemctl daemon-reload
 systemctl enable --now '${SERVICE_NAME}'
 "
 
-echo "Checking remote service status..."
-active_status="$(ssh "${ETHERSCAN_GATEWAY_HOST}" "systemctl is-active '${SERVICE_NAME}'")"
-enabled_status="$(ssh "${ETHERSCAN_GATEWAY_HOST}" "systemctl is-enabled '${SERVICE_NAME}'")"
-listen_status="$(ssh "${ETHERSCAN_GATEWAY_HOST}" "ss -H -ltnp 'sport = :6776' || true")"
+  echo "Checking remote service status on ${gateway_host}..."
+  active_status="$(ssh "${gateway_host}" "systemctl is-active '${SERVICE_NAME}'" || true)"
+  enabled_status="$(ssh "${gateway_host}" "systemctl is-enabled '${SERVICE_NAME}'" || true)"
+  listen_status="$(ssh "${gateway_host}" "ss -H -ltnp 'sport = :6776' || true" || true)"
 
-if [[ "${active_status}" != "active" ]]; then
-  echo "Service is not active: ${active_status}" >&2
-  ssh "${ETHERSCAN_GATEWAY_HOST}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
-  exit 1
-fi
+  if [[ "${active_status}" != "active" ]]; then
+    echo "Service is not active on ${gateway_host}: ${active_status:-unknown}" >&2
+    ssh "${gateway_host}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
+    exit 1
+  fi
 
-if [[ -z "${listen_status}" ]]; then
-  echo "Service is active, but port 6776 is not listening." >&2
-  ssh "${ETHERSCAN_GATEWAY_HOST}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
-  exit 1
-fi
+  if [[ "${enabled_status}" != "enabled" ]]; then
+    echo "Service is not enabled on ${gateway_host}: ${enabled_status:-unknown}" >&2
+    ssh "${gateway_host}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
+    exit 1
+  fi
+
+  if [[ -z "${listen_status}" ]]; then
+    echo "Service is active on ${gateway_host}, but port 6776 is not listening." >&2
+    ssh "${gateway_host}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
+    exit 1
+  fi
+
+  echo "Etherscan Gateway deployed successfully on ${gateway_host}."
+  echo "Active: ${active_status}"
+  echo "Enabled: ${enabled_status}"
+  deployed_ips+=("${gateway_ip}")
+done
 
 echo
-echo "Etherscan Gateway deployed successfully."
-echo "Host: ${ETHERSCAN_GATEWAY_HOST}"
+echo "Etherscan Gateway deployed successfully to all hosts."
+echo "IPs: ${deployed_ips[*]}"
 echo "Service: ${SERVICE_NAME}"
-echo "Active: ${active_status}"
-echo "Enabled: ${enabled_status}"
 echo "Listen address: ${ETHERSCAN_GATEWAY_LISTEN_ADDRESS}"
 echo "Auth token: ${token_source} ($(token_fingerprint "${auth_token}"))"
-echo "Remember to allow inbound TCP 6776/6776 in the Alibaba Cloud security group."
+echo "Remember to allow inbound TCP 6776/6776 in each Alibaba Cloud security group."
