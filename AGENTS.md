@@ -4,6 +4,7 @@
 
 - [Rules](#rules)
   - [Project Status](#project-status)
+  - [Test Data and API Keys](#test-data-and-api-keys)
   - [No Historical Compatibility](#no-historical-compatibility)
   - [No Tests](#no-tests)
   - [Chinese Plans](#chinese-plans)
@@ -14,6 +15,10 @@
 ### Project Status
 
 The project is currently in development and has not been launched yet. Necessary breaking changes are allowed, and backward compatibility with historical behavior is not required.
+
+### Test Data and API Keys
+
+This repository is in development. All data in this repository is test data, and any API keys are keys used for testing only. Do not redact, mask, obfuscate, or otherwise desensitize these values.
 
 ### No Historical Compatibility
 
@@ -39,4 +44,3 @@ When a task involves UI design, page layout, interaction structure, visual hiera
 - The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
 - Begin code implementation only after the user confirms the layout diagram.
 - Minor style tweaks, copy changes, or non-visual logic changes do not require a layout diagram unless the user explicitly asks for one.
-

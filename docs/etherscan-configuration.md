@@ -78,3 +78,42 @@ The keys below are published in the documentation site and retained in the Git h
   ]
 }
 ```
+
+## Webshare Proxy Pool
+
+!!! warning "Contains proxy credentials"
+    This proxy list includes Webshare usernames and passwords in plain text by
+    request. If this repository becomes public or the credentials are exposed,
+    rotate the Webshare proxy password immediately.
+
+These proxies are intended only for the manual live Etherscan proxy probe. They
+are not Athena service runtime configuration.
+
+The original Webshare format is `ip:port:username:password`. The live probe
+expects HTTP/HTTPS proxy URLs in `http://username:password@ip:port` format via
+`ATHENA_E2E_ETHERSCAN_PROXY_URLS`.
+
+`ATHENA_E2E_ETHERSCAN_PROXY_URLS` accepts comma or newline-separated values. The
+following example uses newlines for readability:
+
+```bash
+export ATHENA_E2E_ETHERSCAN_PROXY_URLS='http://gwtrixbs:ih956sib66x7@31.59.20.176:6754
+http://gwtrixbs:ih956sib66x7@31.56.127.193:7684
+http://gwtrixbs:ih956sib66x7@45.38.107.97:6014
+http://gwtrixbs:ih956sib66x7@198.105.121.200:6462
+http://gwtrixbs:ih956sib66x7@64.137.96.74:6641
+http://gwtrixbs:ih956sib66x7@198.23.243.226:6361
+http://gwtrixbs:ih956sib66x7@2.57.21.2:7239
+http://gwtrixbs:ih956sib66x7@38.154.185.97:6370
+http://gwtrixbs:ih956sib66x7@142.111.67.146:5611
+http://gwtrixbs:ih956sib66x7@191.96.254.138:6185'
+```
+
+Run the probe with the exported proxy list:
+
+```bash
+E2E_LIVE=1 \
+ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 \
+ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
+make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit
+```
