@@ -271,6 +271,41 @@ e2e-live-etherscan-proxy-multi-key-staggered-rate-limit:
 	fi; \
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanProxyMultiKeyAggregateStaggeredRateLimitProbe -v
 
+.PHONY: e2e-live-etherscan-gateway-multi-key-staggered-success
+e2e-live-etherscan-gateway-multi-key-staggered-success:
+	@env_file="$(E2E_ENV_FILE)"; \
+	if [ ! -f "$$env_file" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan Gateway multi-key probe without an env file.' >&2; \
+		printf '%s\n' 'Run: E2E_ENV_FILE=.env E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-gateway-multi-key-staggered-success' >&2; \
+		exit 1; \
+	fi
+	@env_file="$(E2E_ENV_FILE)"; \
+	case "$$env_file" in /*|*/*) env_source="$$env_file" ;; *) env_source="./$$env_file" ;; esac; \
+	set -a; . "$$env_source"; set +a; \
+	if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan Gateway multi-key probe without live test confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-gateway-multi-key-staggered-success' >&2; \
+		exit 1; \
+	fi; \
+	if [ "$${ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to intentionally run the staggered Etherscan Gateway multi-key probe without confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-gateway-multi-key-staggered-success' >&2; \
+		exit 1; \
+	fi; \
+	if [ -z "$${ATHENA_E2E_ETHERSCAN_API_KEYS:-}" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan Gateway multi-key probe without ATHENA_E2E_ETHERSCAN_API_KEYS in the env file.' >&2; \
+		exit 1; \
+	fi; \
+	if [ -z "$${ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN:-}" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan Gateway multi-key probe without ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN in the env file.' >&2; \
+		exit 1; \
+	fi; \
+	if [ -z "$${ATHENA_E2E_ETHERSCAN_GATEWAY_ADDRS:-}" ] && [ -z "$${ETHERSCAN_GATEWAY_IPS:-}" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan Gateway multi-key probe without ATHENA_E2E_ETHERSCAN_GATEWAY_ADDRS or ETHERSCAN_GATEWAY_IPS in the env file.' >&2; \
+		exit 1; \
+	fi; \
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanGatewayMultiKeyStaggeredSuccessProbe -v
+
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve

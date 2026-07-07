@@ -14,6 +14,8 @@ import (
 
 	"github.com/useryege/athena/e2e/internal/e2etest"
 	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -476,35 +478,41 @@ const (
 )
 
 type etherscanMultiKeyProbeResult struct {
-	keyLabel    string
-	proxyLabel  string
-	startedAt   time.Time
-	err         error
-	redactError bool
+	keyLabel     string
+	proxyLabel   string
+	gatewayLabel string
+	startedAt    time.Time
+	err          error
+	redactError  bool
 }
 
 type etherscanMultiKeyProbeSummary struct {
-	keyCount       int
-	proxyCount     int
-	requestsPerKey int
-	total          int
-	success        int
-	rateLimit      int
-	authentication int
-	plan           int
-	invalidRequest int
-	malformed      int
-	upstream       int
-	other          int
-	elapsed        time.Duration
-	firstStart     time.Time
-	lastStart      time.Time
-	startSpread    time.Duration
-	samples        []string
-	perKey         map[string]*etherscanMultiKeyProbeKeySummary
-	perKeyOrder    []string
-	perProxy       map[string]*etherscanMultiKeyProbeProxySummary
-	perProxyOrder  []string
+	keyCount        int
+	proxyCount      int
+	gatewayCount    int
+	requestsPerKey  int
+	rounds          int
+	interval        time.Duration
+	total           int
+	success         int
+	rateLimit       int
+	authentication  int
+	plan            int
+	invalidRequest  int
+	malformed       int
+	upstream        int
+	other           int
+	elapsed         time.Duration
+	firstStart      time.Time
+	lastStart       time.Time
+	startSpread     time.Duration
+	samples         []string
+	perKey          map[string]*etherscanMultiKeyProbeKeySummary
+	perKeyOrder     []string
+	perProxy        map[string]*etherscanMultiKeyProbeProxySummary
+	perProxyOrder   []string
+	perGateway      map[string]*etherscanMultiKeyProbeGatewaySummary
+	perGatewayOrder []string
 }
 
 func (s *etherscanMultiKeyProbeSummary) record(result etherscanMultiKeyProbeResult) {
@@ -523,6 +531,11 @@ func (s *etherscanMultiKeyProbeSummary) record(result etherscanMultiKeyProbeResu
 	if result.proxyLabel != "" {
 		if proxySummary := s.perProxy[result.proxyLabel]; proxySummary != nil {
 			proxySummary.recordCategory(category)
+		}
+	}
+	if result.gatewayLabel != "" {
+		if gatewaySummary := s.perGateway[result.gatewayLabel]; gatewaySummary != nil {
+			gatewaySummary.recordCategory(category)
 		}
 	}
 	s.addSample(result)
@@ -557,6 +570,9 @@ func (s *etherscanMultiKeyProbeSummary) addSample(result etherscanMultiKeyProbeR
 	if result.proxyLabel != "" {
 		label = fmt.Sprintf("%s@%s", result.keyLabel, result.proxyLabel)
 	}
+	if result.gatewayLabel != "" {
+		label = fmt.Sprintf("%s@%s", label, result.gatewayLabel)
+	}
 	s.samples = append(s.samples, fmt.Sprintf("%s:%s", label, etherscanProbeErrorSample(result.err, result.redactError)))
 }
 
@@ -574,6 +590,20 @@ func (s etherscanMultiKeyProbeSummary) requiredSuccess() int {
 func (s etherscanMultiKeyProbeSummary) String() string {
 	parts := []string{
 		fmt.Sprintf("keys=%d", s.keyCount),
+	}
+	if s.proxyCount > 0 {
+		parts = append(parts, fmt.Sprintf("proxies=%d", s.proxyCount))
+	}
+	if s.gatewayCount > 0 {
+		parts = append(parts, fmt.Sprintf("gateways=%d", s.gatewayCount))
+	}
+	if s.rounds > 0 {
+		parts = append(parts, fmt.Sprintf("rounds=%d", s.rounds))
+	}
+	if s.interval > 0 {
+		parts = append(parts, fmt.Sprintf("interval=%s", s.interval))
+	}
+	parts = append(parts,
 		fmt.Sprintf("requests_per_key=%d", s.requestsPerKey),
 		fmt.Sprintf("total=%d", s.total),
 		fmt.Sprintf("required_success=%d", s.requiredSuccess()),
@@ -587,10 +617,7 @@ func (s etherscanMultiKeyProbeSummary) String() string {
 		fmt.Sprintf("malformed=%d", s.malformed),
 		fmt.Sprintf("upstream=%d", s.upstream),
 		fmt.Sprintf("other=%d", s.other),
-	}
-	if s.proxyCount > 0 {
-		parts = append([]string{parts[0], fmt.Sprintf("proxies=%d", s.proxyCount)}, parts[1:]...)
-	}
+	)
 	if len(s.samples) > 0 {
 		parts = append(parts, fmt.Sprintf("samples=%q", s.samples))
 	}
@@ -617,6 +644,18 @@ func (s etherscanMultiKeyProbeSummary) perProxySummaries() []string {
 			continue
 		}
 		lines = append(lines, proxySummary.String())
+	}
+	return lines
+}
+
+func (s etherscanMultiKeyProbeSummary) perGatewaySummaries() []string {
+	lines := make([]string, 0, len(s.perGatewayOrder))
+	for _, gatewayLabel := range s.perGatewayOrder {
+		gatewaySummary := s.perGateway[gatewayLabel]
+		if gatewaySummary == nil {
+			continue
+		}
+		lines = append(lines, gatewaySummary.String())
 	}
 	return lines
 }
@@ -687,6 +726,54 @@ type etherscanMultiKeyProbeProxySummary struct {
 	other          int
 }
 
+type etherscanMultiKeyProbeGatewaySummary struct {
+	gatewayLabel   string
+	success        int
+	rateLimit      int
+	authentication int
+	plan           int
+	invalidRequest int
+	malformed      int
+	upstream       int
+	other          int
+}
+
+func (s *etherscanMultiKeyProbeGatewaySummary) recordCategory(category etherscanProbeResultCategory) {
+	switch category {
+	case etherscanProbeResultSuccess:
+		s.success++
+	case etherscanProbeResultRateLimit:
+		s.rateLimit++
+	case etherscanProbeResultAuthentication:
+		s.authentication++
+	case etherscanProbeResultPlan:
+		s.plan++
+	case etherscanProbeResultInvalidRequest:
+		s.invalidRequest++
+	case etherscanProbeResultMalformed:
+		s.malformed++
+	case etherscanProbeResultUpstream:
+		s.upstream++
+	default:
+		s.other++
+	}
+}
+
+func (s etherscanMultiKeyProbeGatewaySummary) String() string {
+	parts := []string{
+		fmt.Sprintf("gateway=%s", s.gatewayLabel),
+		fmt.Sprintf("success=%d", s.success),
+		fmt.Sprintf("rate_limit=%d", s.rateLimit),
+		fmt.Sprintf("authentication=%d", s.authentication),
+		fmt.Sprintf("plan=%d", s.plan),
+		fmt.Sprintf("invalid_request=%d", s.invalidRequest),
+		fmt.Sprintf("malformed=%d", s.malformed),
+		fmt.Sprintf("upstream=%d", s.upstream),
+		fmt.Sprintf("other=%d", s.other),
+	}
+	return strings.Join(parts, " ")
+}
+
 func (s *etherscanMultiKeyProbeProxySummary) recordCategory(category etherscanProbeResultCategory) {
 	switch category {
 	case etherscanProbeResultSuccess:
@@ -726,6 +813,25 @@ func (s etherscanMultiKeyProbeProxySummary) String() string {
 func classifyEtherscanProbeError(err error) etherscanProbeResultCategory {
 	if err == nil {
 		return etherscanProbeResultSuccess
+	}
+
+	if grpcStatus, ok := status.FromError(err); ok {
+		switch grpcStatus.Code() {
+		case codes.OK:
+			return etherscanProbeResultSuccess
+		case codes.ResourceExhausted:
+			return etherscanProbeResultRateLimit
+		case codes.Unauthenticated:
+			return etherscanProbeResultAuthentication
+		case codes.PermissionDenied:
+			return etherscanProbeResultPlan
+		case codes.InvalidArgument:
+			return etherscanProbeResultInvalidRequest
+		case codes.DataLoss:
+			return etherscanProbeResultMalformed
+		case codes.Unavailable, codes.DeadlineExceeded, codes.Canceled:
+			return etherscanProbeResultUpstream
+		}
 	}
 
 	var apiErr *utilethereumapi.APIError
