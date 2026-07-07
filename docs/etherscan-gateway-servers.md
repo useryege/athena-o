@@ -1,10 +1,10 @@
 # Etherscan Gateway Servers
 
-本文记录 Etherscan Gateway 当前使用的三台服务器。服务器顺序与 `.env`
+本文记录 Etherscan Gateway 当前使用的四台服务器。服务器顺序与 `.env`
 中的 `ETHERSCAN_GATEWAY_IPS` 配置一一对应：
 
 ```bash
-ETHERSCAN_GATEWAY_IPS='47.245.183.140 47.245.166.57 47.245.161.139'
+ETHERSCAN_GATEWAY_IPS='47.245.183.140 47.245.166.57 47.245.161.139 47.245.181.189'
 ```
 
 ## 服务器清单
@@ -14,6 +14,7 @@ ETHERSCAN_GATEWAY_IPS='47.245.183.140 47.245.166.57 47.245.161.139'
 | 1 | LXM | `47.245.183.140` |
 | 2 | HYD | `47.245.166.57` |
 | 3 | SYY | `47.245.161.139` |
+| 4 | LXM | `47.245.181.189` |
 
 ## 部署信息
 
