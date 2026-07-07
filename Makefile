@@ -167,6 +167,10 @@ clean-debug:
 athena-all: clean-debug
 	CGO_ENABLED=${CGO_FLAG} GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -v -ldflags '${LDFLAGS}' -o ${DIST_DIR}/${BIN_NAME} ./cmd
 
+.PHONY: athena-etherscan-gateway
+athena-etherscan-gateway: clean-debug
+	CGO_ENABLED=${CGO_FLAG} GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -trimpath -v -ldflags '${LDFLAGS} -s -w' -o ${DIST_DIR}/athena-etherscan-gateway ./cmd/athena-etherscan-gateway
+
 # Run goreman start with exclude option , provide exclude env variable with list of services
 .PHONY: run
 run:

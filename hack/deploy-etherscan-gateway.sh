@@ -79,10 +79,10 @@ fi
 cd "${REPO_ROOT}"
 
 echo "Building Athena for linux/amd64..."
-GOOS=linux GOARCH=amd64 STATIC_BUILD=true make athena-all
+GOOS=linux GOARCH=amd64 STATIC_BUILD=true make athena-etherscan-gateway
 
-if [[ ! -f "${REPO_ROOT}/dist/athena" ]]; then
-  echo "Build output not found: ${REPO_ROOT}/dist/athena" >&2
+if [[ ! -f "${REPO_ROOT}/dist/athena-etherscan-gateway" ]]; then
+  echo "Build output not found: ${REPO_ROOT}/dist/athena-etherscan-gateway" >&2
   exit 1
 fi
 
@@ -106,7 +106,7 @@ for gateway_ip in "${gateway_ips[@]}"; do
   echo "Deploying Etherscan Gateway to ${gateway_host}..."
 
   echo "Uploading gateway binary to ${gateway_host}..."
-  scp "${REPO_ROOT}/dist/athena" "${gateway_host}:${remote_tmp_binary}"
+  scp -C "${REPO_ROOT}/dist/athena-etherscan-gateway" "${gateway_host}:${remote_tmp_binary}"
 
   echo "Uploading gateway environment file to ${gateway_host}..."
   scp "${env_tmp}" "${gateway_host}:${remote_tmp_env}"
