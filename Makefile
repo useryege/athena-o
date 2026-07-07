@@ -18,6 +18,7 @@ GOARCH?=$(shell go env GOARCH)
 
 TARGET_ARCH?=linux/amd64
 E2E_GO_TEST_FLAGS ?= -count=1
+E2E_ENV_FILE ?= .env
 E2E_PACKAGES ?= $(shell go list ./e2e/tests/... 2>/dev/null | grep -v '/live/')
 E2E_LIVE_PACKAGES ?= ./e2e/tests/live/...
 
@@ -241,16 +242,33 @@ e2e-live-etherscan-multi-key-staggered-rate-limit:
 
 .PHONY: e2e-live-etherscan-proxy-multi-key-staggered-rate-limit
 e2e-live-etherscan-proxy-multi-key-staggered-rate-limit:
-	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+	@env_file="$(E2E_ENV_FILE)"; \
+	if [ ! -f "$$env_file" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without an env file.' >&2; \
+		printf '%s\n' 'Run: E2E_ENV_FILE=.env E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
+		exit 1; \
+	fi
+	@env_file="$(E2E_ENV_FILE)"; \
+	case "$$env_file" in /*|*/*) env_source="$$env_file" ;; *) env_source="./$$env_file" ;; esac; \
+	set -a; . "$$env_source"; set +a; \
+	if [ "$${E2E_LIVE:-}" != "1" ]; then \
 		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without live test confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 ATHENA_E2E_ETHERSCAN_PROXY_URLS=http://user:pass@proxy:6776 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
 		exit 1; \
-	fi
-	@if [ "$${ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE:-}" != "1" ]; then \
+	fi; \
+	if [ "$${ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE:-}" != "1" ]; then \
 		printf '%s\n' 'Refusing to intentionally run the staggered Etherscan proxy multi-key probe without confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 ATHENA_E2E_ETHERSCAN_PROXY_URLS=http://user:pass@proxy:6776 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
 		exit 1; \
-	fi
+	fi; \
+	if [ -z "$${ATHENA_E2E_ETHERSCAN_API_KEYS:-}" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without ATHENA_E2E_ETHERSCAN_API_KEYS in the env file.' >&2; \
+		exit 1; \
+	fi; \
+	if [ -z "$${ATHENA_E2E_ETHERSCAN_PROXY_URLS:-}" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without ATHENA_E2E_ETHERSCAN_PROXY_URLS in the env file.' >&2; \
+		exit 1; \
+	fi; \
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanProxyMultiKeyAggregateStaggeredRateLimitProbe -v
 
 .PHONY: serve-docs-local

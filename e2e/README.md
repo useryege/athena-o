@@ -69,10 +69,13 @@ Run the manual staggered Etherscan proxy multi-key aggregate probe explicitly:
 ```bash
 E2E_LIVE=1 \
 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 \
-ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
-ATHENA_E2E_ETHERSCAN_PROXY_URLS='http://user:pass@proxy:6776' \
 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit
 ```
+
+This target loads `E2E_ENV_FILE` before running the test. The default is `.env`,
+and that file should contain `ATHENA_E2E_ETHERSCAN_API_KEYS` and
+`ATHENA_E2E_ETHERSCAN_PROXY_URLS`. Use `E2E_ENV_FILE=.env.local` to point at a
+different local secret file.
 
 ## ethereum-api
 
@@ -86,11 +89,11 @@ Environment variables:
 | `ATHENA_E2E_TIMEOUT` | `90s` | Readiness wait and RPC timeout. |
 | `ATHENA_E2E_ETHEREUM_API_ADDRESS` | `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` | Ethereum mainnet address used by live transaction queries. |
 | `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes; falls back to `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`. |
-| `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe. |
+| `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe; the proxy staggered target reads it from `E2E_ENV_FILE`. |
 | `ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE` | unset | Must be `1` to run the manual Etherscan multi-key aggregate probe. |
 | `ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE` | unset | Must be `1` to run the manual staggered Etherscan multi-key aggregate probe. |
 | `ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE` | unset | Must be `1` to run the manual staggered Etherscan proxy multi-key aggregate probe. |
-| `ATHENA_E2E_ETHERSCAN_PROXY_URLS` | unset | Comma or newline-separated HTTP/HTTPS proxy URLs for the staggered proxy multi-key probe. |
+| `ATHENA_E2E_ETHERSCAN_PROXY_URLS` | unset | Comma or newline-separated HTTP/HTTPS proxy URLs for the staggered proxy multi-key probe; read from `E2E_ENV_FILE` by default. |
 | `ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE` | unset | Must be `1` to run the manual Etherscan rate-limit probe. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
@@ -121,8 +124,8 @@ The staggered Etherscan proxy multi-key aggregate probe sends the same request
 shape through explicit HTTP/HTTPS proxy URLs. Keys are assigned to proxies in
 round-robin order, each request still starts at a fixed `10ms` interval, and the
 logs show only short key fingerprints plus proxy labels without usernames or
-passwords. Proxy URLs should only be supplied through environment variables and
-must not be written into the repository.
+passwords. Store API keys and proxy URLs in a local env file such as `.env`;
+avoid placing these live probe secrets in `.env.prod` or another tracked file.
 
 ### Observed Etherscan Rate-Limit Results
 
