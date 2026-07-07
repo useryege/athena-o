@@ -8,6 +8,7 @@ import (
 	"k8s.io/klog/v2"
 
 	athenaEthereumAPICommands "github.com/useryege/athena/cmd/athena-ethereum-api/commands"
+	athenaEtherscanGatewayCommands "github.com/useryege/athena/cmd/athena-etherscan-gateway/commands"
 	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
 	athenaPolymarketCommands "github.com/useryege/athena/cmd/athena-polymarket/commands"
@@ -43,6 +44,8 @@ func main() {
 	switch binaryName {
 	case "athena-server":
 		command = athenaServerCommands.NewCommand()
+	case "athena-etherscan-gateway":
+		command = athenaEtherscanGatewayCommands.NewCommand()
 	case "athena-ethereum-api":
 		command = athenaEthereumAPICommands.NewCommand()
 	case "athena-notification":

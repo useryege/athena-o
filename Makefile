@@ -139,6 +139,10 @@ prod-reset-secrets:
 deploy-squid-vps:
 	bash ./hack/deploy-squid.sh
 
+.PHONY: deploy-etherscan-gateway-vps
+deploy-etherscan-gateway-vps:
+	bash ./hack/deploy-etherscan-gateway.sh
+
 .PHONY: auto-clicker
 auto-clicker:
 	@mkdir -p ${DIST_DIR}

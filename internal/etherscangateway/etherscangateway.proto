@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+// Etherscan Gateway Service API exposes a narrow Etherscan RPC surface through
+// the gateway server's outbound network path.
+package etherscangateway;
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/etherscangateway";
+
+// GetEtherscanGatewayStatusRequest queries gateway runtime status.
+message GetEtherscanGatewayStatusRequest {}
+
+// GetEtherscanGatewayStatusResponse returns gateway runtime status.
+message GetEtherscanGatewayStatusResponse {
+  bool started = 1;
+  string status = 2;
+  string etherscan_base_url = 3;
+}
+
+// NormalTransactionSort controls transaction ordering.
+enum NormalTransactionSort {
+  NORMAL_TRANSACTION_SORT_UNSPECIFIED = 0;
+  NORMAL_TRANSACTION_SORT_ASC = 1;
+  NORMAL_TRANSACTION_SORT_DESC = 2;
+}
+
+// NormalTransactionReceiptStatus describes the transaction receipt result.
+enum NormalTransactionReceiptStatus {
+  NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED = 0;
+  NORMAL_TRANSACTION_RECEIPT_STATUS_FAILED = 1;
+  NORMAL_TRANSACTION_RECEIPT_STATUS_SUCCESS = 2;
+}
+
+// NormalTransactionBlockRange limits a query to an inclusive block range.
+message NormalTransactionBlockRange {
+  uint64 start_block = 1;
+  uint64 end_block = 2;
+}
+
+// NormalTransaction is one normal transaction returned by Etherscan.
+message NormalTransaction {
+  uint64 block_number = 1;
+  string block_hash = 2;
+  uint64 block_timestamp = 3;
+  string transaction_hash = 4;
+  uint64 nonce = 5;
+  uint64 transaction_index = 6;
+  string from_address = 7;
+  string to_address = 8;
+  string value = 9;
+  uint64 gas = 10;
+  string gas_price = 11;
+  string input = 12;
+  string method_id = 13;
+  string function_name = 14;
+  string contract_address = 15;
+  uint64 cumulative_gas_used = 16;
+  NormalTransactionReceiptStatus receipt_status = 17;
+  uint64 gas_used = 18;
+  uint64 confirmations = 19;
+  bool is_error = 20;
+}
+
+// ListNormalTransactionsRequest queries one EVM address's normal transactions.
+message ListNormalTransactionsRequest {
+  string api_key = 1;
+  int64 chain_id = 2;
+  string address = 3;
+  NormalTransactionBlockRange block_range = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+  NormalTransactionSort sort = 7;
+}
+
+// ListNormalTransactionsResponse returns one ordered transaction page.
+message ListNormalTransactionsResponse {
+  repeated NormalTransaction transactions = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+// SourceCode is one source-code result returned by Etherscan.
+message SourceCode {
+  string source_code = 1;
+  string abi = 2;
+  string contract_name = 3;
+  string compiler_version = 4;
+  string optimization_used = 5;
+  string runs = 6;
+  string constructor_arguments = 7;
+  string evm_version = 8;
+  string library = 9;
+  string license_type = 10;
+  string proxy = 11;
+  string implementation = 12;
+  string swarm_source = 13;
+}
+
+// GetSourceCodeRequest queries source-code metadata for one contract address.
+message GetSourceCodeRequest {
+  string api_key = 1;
+  int64 chain_id = 2;
+  string contract_address = 3;
+}
+
+// GetSourceCodeResponse returns source-code metadata.
+message GetSourceCodeResponse {
+  repeated SourceCode items = 1;
+}
+
+service EtherscanGatewayService {
+  // GetEtherscanGatewayStatus returns the gateway runtime status.
+  rpc GetEtherscanGatewayStatus(GetEtherscanGatewayStatusRequest) returns (GetEtherscanGatewayStatusResponse);
+
+  // ListNormalTransactions returns normal transactions for one EVM address.
+  rpc ListNormalTransactions(ListNormalTransactionsRequest) returns (ListNormalTransactionsResponse);
+
+  // GetSourceCode returns source-code metadata for one contract address.
+  rpc GetSourceCode(GetSourceCodeRequest) returns (GetSourceCodeResponse);
+}

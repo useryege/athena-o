@@ -38,20 +38,23 @@ const (
 	DefaultPortPredPoly = 8098
 	// Athena Ethereum API
 	DefaultPortEthereumAPI = 8100
+	// Athena Etherscan Gateway
+	DefaultPortEtherscanGateway = 8102
 )
 
 // DefaultAddressAPIServer for Athena components
 const (
-	DefaultAddressAPIServer    = "0.0.0.0"
-	DefaultAddressWorm         = "0.0.0.0"
-	DefaultAddressNotification = "0.0.0.0"
-	DefaultAddressWallet       = "0.0.0.0"
-	DefaultAddressWormPoly     = "0.0.0.0"
-	DefaultAddressPolymarket   = "0.0.0.0"
-	DefaultAddressToken        = "0.0.0.0"
-	DefaultAddressTokenAPI     = "0.0.0.0"
-	DefaultAddressPredPoly     = "0.0.0.0"
-	DefaultAddressEthereumAPI  = "0.0.0.0"
+	DefaultAddressAPIServer        = "0.0.0.0"
+	DefaultAddressWorm             = "0.0.0.0"
+	DefaultAddressNotification     = "0.0.0.0"
+	DefaultAddressWallet           = "0.0.0.0"
+	DefaultAddressWormPoly         = "0.0.0.0"
+	DefaultAddressPolymarket       = "0.0.0.0"
+	DefaultAddressToken            = "0.0.0.0"
+	DefaultAddressTokenAPI         = "0.0.0.0"
+	DefaultAddressPredPoly         = "0.0.0.0"
+	DefaultAddressEthereumAPI      = "0.0.0.0"
+	DefaultAddressEtherscanGateway = "0.0.0.0"
 )
 
 // Default paths on the pod's file system
