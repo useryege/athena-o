@@ -135,10 +135,6 @@ wallet-private-key-ciphertext:
 prod-reset-secrets:
 	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)
 
-.PHONY: deploy-squid-vps
-deploy-squid-vps:
-	bash ./hack/deploy-squid.sh
-
 .PHONY: deploy-etherscan-gateway-vps
 deploy-etherscan-gateway-vps:
 	bash ./hack/deploy-etherscan-gateway.sh
