@@ -239,6 +239,20 @@ e2e-live-etherscan-multi-key-staggered-rate-limit:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe -v
 
+.PHONY: e2e-live-etherscan-proxy-multi-key-staggered-rate-limit
+e2e-live-etherscan-proxy-multi-key-staggered-rate-limit:
+	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without live test confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 ATHENA_E2E_ETHERSCAN_PROXY_URLS=http://user:pass@proxy:6776 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
+		exit 1; \
+	fi
+	@if [ "$${ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to intentionally run the staggered Etherscan proxy multi-key probe without confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 ATHENA_E2E_ETHERSCAN_PROXY_URLS=http://user:pass@proxy:6776 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
+		exit 1; \
+	fi
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanProxyMultiKeyAggregateStaggeredRateLimitProbe -v
+
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve

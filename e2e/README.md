@@ -64,6 +64,16 @@ ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
 make e2e-live-etherscan-multi-key-staggered-rate-limit
 ```
 
+Run the manual staggered Etherscan proxy multi-key aggregate probe explicitly:
+
+```bash
+E2E_LIVE=1 \
+ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 \
+ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
+ATHENA_E2E_ETHERSCAN_PROXY_URLS='http://user:pass@proxy:6776' \
+make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit
+```
+
 ## ethereum-api
 
 The ethereum-api tests connect to the gRPC service started by `make run`.
@@ -79,6 +89,8 @@ Environment variables:
 | `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe. |
 | `ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE` | unset | Must be `1` to run the manual Etherscan multi-key aggregate probe. |
 | `ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE` | unset | Must be `1` to run the manual staggered Etherscan multi-key aggregate probe. |
+| `ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE` | unset | Must be `1` to run the manual staggered Etherscan proxy multi-key aggregate probe. |
+| `ATHENA_E2E_ETHERSCAN_PROXY_URLS` | unset | Comma or newline-separated HTTP/HTTPS proxy URLs for the staggered proxy multi-key probe. |
 | `ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE` | unset | Must be `1` to run the manual Etherscan rate-limit probe. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
@@ -104,6 +116,13 @@ The staggered Etherscan multi-key aggregate probe uses the same key set and
 request count, but starts requests at a fixed `10ms` interval. It is useful for
 checking whether a sharp burst, rather than the aggregate request volume itself,
 is the main rate-limit trigger.
+
+The staggered Etherscan proxy multi-key aggregate probe sends the same request
+shape through explicit HTTP/HTTPS proxy URLs. Keys are assigned to proxies in
+round-robin order, each request still starts at a fixed `10ms` interval, and the
+logs show only short key fingerprints plus proxy labels without usernames or
+passwords. Proxy URLs should only be supplied through environment variables and
+must not be written into the repository.
 
 ### Observed Etherscan Rate-Limit Results
 
