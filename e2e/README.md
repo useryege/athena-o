@@ -55,16 +55,6 @@ ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
 make e2e-live-etherscan-multi-key-rate-limit
 ```
 
-Run the manual Etherscan proxy multi-key aggregate probe explicitly:
-
-```bash
-E2E_LIVE=1 \
-ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_PROBE=1 \
-ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
-ATHENA_E2E_ETHERSCAN_PROXY_URLS='http://proxy1:8080,http://proxy2:8080' \
-make e2e-live-etherscan-proxy-multi-key-rate-limit
-```
-
 ## ethereum-api
 
 The ethereum-api tests connect to the gRPC service started by `make run`.
@@ -79,8 +69,6 @@ Environment variables:
 | `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes; falls back to `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`. |
 | `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe. |
 | `ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE` | unset | Must be `1` to run the manual Etherscan multi-key aggregate probe. |
-| `ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_PROBE` | unset | Must be `1` to run the manual proxy multi-key aggregate probe. |
-| `ATHENA_E2E_ETHERSCAN_PROXY_URLS` | unset | Comma or newline-separated HTTP/HTTPS proxy URLs for the manual proxy probe. |
 | `ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE` | unset | Must be `1` to run the manual Etherscan rate-limit probe. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
@@ -101,13 +89,6 @@ in one short burst, redacts keys in logs to short fingerprints, and passes when
 at least 90% of the aggregate requests succeed. High rate-limit counts indicate
 that Etherscan is enforcing a higher-level limit such as account, IP, global, or
 WAF policy. This probe is also excluded from default live targets.
-
-The Etherscan proxy multi-key aggregate probe assigns each key to one configured
-HTTP/HTTPS proxy in round-robin order and still sends only three concurrent
-requests per key. Proxy URLs must be provided through environment variables, not
-stored in the repository. Logs redact keys and proxies to short labels; many
-`other` or `upstream` results usually indicate proxy connectivity or
-authentication problems rather than an Etherscan limit result.
 
 ## Structure
 

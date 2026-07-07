@@ -225,20 +225,6 @@ e2e-live-etherscan-multi-key-rate-limit:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateRateLimitProbe -v
 
-.PHONY: e2e-live-etherscan-proxy-multi-key-rate-limit
-e2e-live-etherscan-proxy-multi-key-rate-limit:
-	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
-		printf '%s\n' 'Refusing to run Etherscan proxy multi-key probe without live test confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2 ATHENA_E2E_ETHERSCAN_PROXY_URLS=http://proxy1:8080 make e2e-live-etherscan-proxy-multi-key-rate-limit' >&2; \
-		exit 1; \
-	fi
-	@if [ "$${ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_PROBE:-}" != "1" ]; then \
-		printf '%s\n' 'Refusing to intentionally run the Etherscan proxy multi-key probe without confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2 ATHENA_E2E_ETHERSCAN_PROXY_URLS=http://proxy1:8080 make e2e-live-etherscan-proxy-multi-key-rate-limit' >&2; \
-		exit 1; \
-	fi
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanProxyMultiKeyAggregateRateLimitProbe -v
-
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve
