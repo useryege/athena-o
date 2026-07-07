@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-911-g1459dca-dirty"
+    "version": "v1.0.0-944-gdd8e766-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -164,6 +164,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/etherscan-gateway-statuses": {
+      "get": {
+        "tags": [
+          "ServiceStatusService"
+        ],
+        "operationId": "ServiceStatusService_ListEtherscanGatewayStatuses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/servicestatusListEtherscanGatewayStatusesResponse"
             }
           },
           "default": {
@@ -2626,6 +2648,52 @@
         },
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "servicestatusEtherscanGatewayStatus": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "checked_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "etherscan_base_url": {
+          "type": "string"
+        },
+        "latency_ms": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "reachable": {
+          "type": "boolean"
+        },
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "servicestatusListEtherscanGatewayStatusesResponse": {
+      "type": "object",
+      "properties": {
+        "checked_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/servicestatusEtherscanGatewayStatus"
+          }
         }
       }
     },

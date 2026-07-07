@@ -192,6 +192,8 @@ type AthenaServerOpts struct {
 	WormPolyClientset     wormpolyapiclient.Clientset
 	PolymarketClientset   polymarketapiclient.Clientset
 	TokenAPIClientset     tokenapiapiclient.Clientset
+	EtherscanGatewayIPs   string
+	EtherscanGatewayToken string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
 	// EnableK8sEvent         []string
@@ -448,6 +450,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.WormPolyClientset,
 		server.PolymarketClientset,
 		server.TokenAPIClientset,
+		server.EtherscanGatewayIPs,
+		server.EtherscanGatewayToken,
 	)
 
 	// certificateService := certificate.NewServer(a.db, a.enf)

@@ -34,3 +34,8 @@ ETHERSCAN_GATEWAY_IPS='47.245.183.140 47.245.166.57 47.245.161.139 47.245.181.18
 ```bash
 ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.183.140:6776 47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776'
 ```
+
+Athena 前端的 `/etherscan-gateways` 状态页由 `athena-server` 聚合展示。该页面读取
+`ETHERSCAN_GATEWAY_IPS` 并按默认端口 `6776` 调用各 gateway 的
+`GetEtherscanGatewayStatus` gRPC 接口；认证 token 来自
+`ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN`，不会暴露给浏览器。

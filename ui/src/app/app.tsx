@@ -37,6 +37,7 @@ import {
     CollectionTasksPage,
     ContractCodeDetailPage,
     ContractCodesPage,
+    EtherscanGatewaysPage,
     HelpPage,
     LoginPage,
     NodeStatusesPage,
@@ -257,7 +258,8 @@ const navSections: NavSection[] = [
         label: 'Operations',
         children: [
             {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
-            {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission}
+            {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission},
+            {key: '/etherscan-gateways', label: 'Etherscan Gateways', path: '/etherscan-gateways', icon: <ApiOutlined />, permission: serviceStatusPermission}
         ]
     },
     {
@@ -434,6 +436,7 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
             <Route path='/service-status' element={withPermission(serviceStatusPermission, <ServiceStatusPage />)} />
+            <Route path='/etherscan-gateways' element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage />)} />
             <Route path='/user-info' element={<UserInfoPage />} />
             <Route path='/help' element={<HelpPage />} />
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />

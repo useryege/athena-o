@@ -59,6 +59,8 @@ func NewCommand() *cobra.Command {
 		wormPolyServerAddress     string
 		polymarketServerAddress   string
 		tokenAPIServerAddress     string
+		etherscanGatewayIPs       string
+		etherscanGatewayAuthToken string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
@@ -131,6 +133,8 @@ func NewCommand() *cobra.Command {
 				WormPolyClientset:     wormPolyClientset,
 				PolymarketClientset:   polymarketclientset,
 				TokenAPIClientset:     tokenAPIClientset,
+				EtherscanGatewayIPs:   etherscanGatewayIPs,
+				EtherscanGatewayToken: etherscanGatewayAuthToken,
 				// HydratorEnabled:        hydratorEnabled,
 				// SyncWithReplaceAllowed: syncWithReplaceAllowed,
 			}
@@ -198,6 +202,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&wormPolyServerAddress, "worm-poly-server-address", env.StringFromEnv("ATHENA_WORM_POLY_SERVER_ADDRESS", "localhost:8090"), "Athena worm-poly server address")
 	command.Flags().StringVar(&polymarketServerAddress, "polymarket-server-address", env.StringFromEnv("ATHENA_POLYMARKET_SERVER_ADDRESS", "localhost:8092"), "Athena polymarket server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", "localhost:8096"), "Athena token API server address")
+	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")
+	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC status calls")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")
 

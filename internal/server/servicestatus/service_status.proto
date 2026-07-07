@@ -19,8 +19,30 @@ message ListServiceStatusesResponse {
   int64 checked_at = 2;
 }
 
+message ListEtherscanGatewayStatusesRequest {}
+
+message EtherscanGatewayStatus {
+  string address = 1;
+  bool reachable = 2;
+  bool started = 3;
+  string status = 4;
+  string etherscan_base_url = 5;
+  int64 latency_ms = 6;
+  int64 checked_at = 7;
+  string error_message = 8;
+}
+
+message ListEtherscanGatewayStatusesResponse {
+  repeated EtherscanGatewayStatus items = 1;
+  int64 checked_at = 2;
+}
+
 service ServiceStatusService {
   rpc ListServiceStatuses(ListServiceStatusesRequest) returns (ListServiceStatusesResponse) {
     option (google.api.http) = {get: "/api/v1/service-statuses"};
+  }
+
+  rpc ListEtherscanGatewayStatuses(ListEtherscanGatewayStatusesRequest) returns (ListEtherscanGatewayStatusesResponse) {
+    option (google.api.http) = {get: "/api/v1/etherscan-gateway-statuses"};
   }
 }
