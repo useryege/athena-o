@@ -8,7 +8,6 @@ import (
 	ethereumapistore "github.com/useryege/athena/internal/ethereumapi/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -22,7 +21,7 @@ type Server struct {
 
 type ServerOpts struct {
 	Store          *ethereumapistore.SQLStore
-	EthereumAPI    utilethereumapi.EthereumAPI
+	EthereumAPI    normalTransactionsClient
 	CacheTTL       time.Duration
 	CacheRetention time.Duration
 	RefreshTimeout time.Duration

@@ -38,10 +38,7 @@ func TestEtherscanFreePlanRateLimitProbe(t *testing.T) {
 	cfg := loadConfig(t)
 	apiKey := e2etest.StringFromEnv(envEtherscanAPIKey, "")
 	if apiKey == "" {
-		apiKey = e2etest.StringFromEnv(envEtherscanAPIKeyFallback, "")
-	}
-	if apiKey == "" {
-		t.Fatalf("%s or %s is required to run this live probe", envEtherscanAPIKey, envEtherscanAPIKeyFallback)
+		t.Fatalf("%s is required to run this live probe", envEtherscanAPIKey)
 	}
 
 	client := utilethereumapi.NewEthereumAPIWithConfig(utilethereumapi.Config{

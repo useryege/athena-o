@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, Postgres is ready, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY was set before startup"
+const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, Postgres is ready, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS, ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
 
 func TestEthereumAPIHealth(t *testing.T) {
 	cfg := loadConfig(t)

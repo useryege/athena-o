@@ -1,13 +1,25 @@
 # Etherscan Configuration
 
-Athena accepts a single Etherscan API key through each of these environment variables:
+Athena runtime services use Etherscan keys in two different ways:
 
 - `ATHENA_TOKEN_ETHERSCAN_API_KEY`
-- `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`
+- `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS`
 
-The application does not read the following array directly. Select one key from the pool and assign it to the environment variable required by the service you are running.
+`athena-token` still accepts one Etherscan API key. `athena-ethereum-api` now
+uses an Etherscan Gateway manager and requires a comma, space, or newline
+separated key list plus explicit gateway gRPC addresses:
 
-The keys below are published in the documentation site and retained in the Git history:
+```bash
+ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS='key1,key2,key3'
+ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.183.140:6776 47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776'
+ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN='gateway-bearer-token'
+```
+
+Each ethereum-api cache refresh picks the next API key and next gateway address
+in round-robin order. A failed gateway request is returned immediately; the
+manager does not retry with another key or gateway.
+
+The key pool below is published in the documentation site and retained in the Git history.
 
 ```json
 {

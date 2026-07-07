@@ -21,7 +21,6 @@ const (
 	envEtherscanGatewayAuthToken              = "ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN"
 	envEtherscanGatewayIPs                    = "ETHERSCAN_GATEWAY_IPS"
 	envEtherscanGatewayMultiKeyStaggeredProbe = "ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE"
-	envEtherscanAPIKeyFallback                = "ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY"
 	envEtherscanMultiKeyProbe                 = "ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE"
 	envEtherscanMultiKeyStaggeredProbe        = "ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE"
 	envEtherscanProxyMultiKeyStaggeredProbe   = "ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE"

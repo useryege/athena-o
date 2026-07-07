@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -23,26 +22,19 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
 	utilio "github.com/useryege/athena/util/io"
-	"github.com/useryege/athena/util/ratelimit"
 	"github.com/useryege/athena/util/templates"
 )
 
 const cliName = "athena-ethereum-api"
 
-const (
-	defaultEtherscanRateLimitRequests = 3
-	defaultEtherscanRateLimitPeriod   = time.Second
-	defaultEtherscanRateLimitBurst    = 3
-)
-
 func NewCommand() *cobra.Command {
 	var (
-		listenHost          string
-		listenPort          int
-		etherscanAPIKey     string
-		etherscanAPIBaseURL string
+		listenHost                string
+		listenPort                int
+		etherscanAPIKeys          string
+		etherscanGatewayAddrs     string
+		etherscanGatewayAuthToken string
 
 		storeSrc func(context.Context) (*ethereumapistore.SQLStore, error)
 	)
@@ -66,31 +58,27 @@ func NewCommand() *cobra.Command {
 
 			ctx := cmd.Context()
 
+			gatewayManager, err := ethereumapi.NewEtherscanGatewayManager(ethereumapi.EtherscanGatewayManagerOpts{
+				APIKeys:      parseListEnv(etherscanAPIKeys),
+				GatewayAddrs: parseListEnv(etherscanGatewayAddrs),
+				AuthToken:    etherscanGatewayAuthToken,
+			})
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if err := gatewayManager.Close(); err != nil {
+					log.Printf("failed to close etherscan gateway manager cleanly: %v", err)
+				}
+			}()
+
 			store, err := storeSrc(ctx)
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
-			if strings.TrimSpace(etherscanAPIKey) == "" {
-				return fmt.Errorf("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY is required")
-			}
-			etherscanRateLimiter, err := ratelimit.New(ratelimit.Config{
-				Requests: defaultEtherscanRateLimitRequests,
-				Per:      defaultEtherscanRateLimitPeriod,
-				Burst:    defaultEtherscanRateLimitBurst,
-			})
-			if err != nil {
-				return fmt.Errorf("create etherscan rate limiter: %w", err)
-			}
-			etherscanClient := utilethereumapi.NewEthereumAPIWithConfig(utilethereumapi.Config{
-				BaseURL:     etherscanAPIBaseURL,
-				APIKey:      etherscanAPIKey,
-				RateLimiter: etherscanRateLimiter,
-				Timeout:     utilethereumapi.DefaultTimeout,
-			})
-
 			server, err := ethereumapi.NewServer(ethereumapi.ServerOpts{
 				Store:       store,
-				EthereumAPI: etherscanClient,
+				EthereumAPI: gatewayManager,
 			})
 			if err != nil {
 				return err
@@ -139,11 +127,28 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_ETHEREUM_API_LISTEN_ADDRESS", common.DefaultAddressEthereumAPI), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", env.ParseNumFromEnv("ATHENA_ETHEREUM_API_PORT", common.DefaultPortEthereumAPI, 1, 65535), "Listen on given port for incoming connections")
-	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY", ""), "Etherscan API key")
-	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_BASE_URL", utilethereumapi.DefaultBaseURL), "Etherscan API base URL")
+	command.Flags().StringVar(&etherscanAPIKeys, "etherscan-api-keys", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS", ""), "Comma, space, or newline-separated Etherscan API keys")
+	command.Flags().StringVar(&etherscanGatewayAddrs, "etherscan-gateway-addrs", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS", ""), "Comma, space, or newline-separated Etherscan Gateway gRPC addresses in host:port form")
+	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC calls")
 
 	storeSrc = ethereumapistore.NewSQLStoreSource()
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
+}
+
+func parseListEnv(raw string) []string {
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == '\n' || r == '\r' || r == '\t' || r == ' '
+	})
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		value := strings.Trim(part, `"'`)
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		values = append(values, value)
+	}
+	return values
 }

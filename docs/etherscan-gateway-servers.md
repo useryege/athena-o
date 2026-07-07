@@ -27,3 +27,10 @@ ETHERSCAN_GATEWAY_IPS='47.245.183.140 47.245.166.57 47.245.161.139 47.245.181.18
 
 部署脚本会按 `ETHERSCAN_GATEWAY_IPS` 中的 IP 顺序依次发布
 `athena-etherscan-gateway`，并在每台服务器上启用 systemd 服务。
+
+`athena-ethereum-api` 运行时不直接读取 `ETHERSCAN_GATEWAY_IPS`。它使用
+显式 `host:port` 列表：
+
+```bash
+ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.183.140:6776 47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776'
+```

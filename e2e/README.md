@@ -15,7 +15,7 @@ belong in `tests/live/`.
 Start the local stack first:
 
 ```bash
-ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY=your-key make run
+make run
 ```
 
 Run the default local regression suite:
@@ -42,7 +42,7 @@ Run the manual Etherscan rate-limit probe explicitly:
 ```bash
 E2E_LIVE=1 \
 ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE=1 \
-ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY=your-key \
+ATHENA_E2E_ETHERSCAN_API_KEY=your-key \
 make e2e-live-etherscan-rate-limit
 ```
 
@@ -99,7 +99,7 @@ Environment variables:
 | `ATHENA_E2E_ETHEREUM_API_ADDR` | `127.0.0.1:8100` | ethereum-api gRPC address. |
 | `ATHENA_E2E_TIMEOUT` | `90s` | Readiness wait and RPC timeout. |
 | `ATHENA_E2E_ETHEREUM_API_ADDRESS` | `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` | Ethereum mainnet address used by live transaction queries. |
-| `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes; falls back to `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`. |
+| `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes. |
 | `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe; the proxy staggered target reads it from `E2E_ENV_FILE`. |
 | `ATHENA_E2E_ETHERSCAN_GATEWAY_ADDRS` | unset | Optional comma, space, or newline-separated `host:port` Etherscan Gateway gRPC addresses; overrides `ETHERSCAN_GATEWAY_IPS`. |
 | `ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE` | unset | Must be `1` to run the manual staggered Etherscan Gateway multi-key success probe. |
