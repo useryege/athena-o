@@ -225,6 +225,20 @@ e2e-live-etherscan-multi-key-rate-limit:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateRateLimitProbe -v
 
+.PHONY: e2e-live-etherscan-multi-key-staggered-rate-limit
+e2e-live-etherscan-multi-key-staggered-rate-limit:
+	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to run staggered Etherscan multi-key probe without live test confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 make e2e-live-etherscan-multi-key-staggered-rate-limit' >&2; \
+		exit 1; \
+	fi
+	@if [ "$${ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE:-}" != "1" ]; then \
+		printf '%s\n' 'Refusing to intentionally run the staggered Etherscan multi-key probe without confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 make e2e-live-etherscan-multi-key-staggered-rate-limit' >&2; \
+		exit 1; \
+	fi
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe -v
+
 .PHONY: serve-docs-local
 serve-docs-local:
 	mkdocs serve

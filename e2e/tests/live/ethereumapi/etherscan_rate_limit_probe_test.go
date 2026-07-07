@@ -18,6 +18,7 @@ const (
 	defaultEtherscanRateLimitProbeRequests = 8
 	etherscanRateLimitProbeCooldown        = 2 * time.Second
 	etherscanMultiKeyProbeRequestsPerKey   = 3
+	etherscanMultiKeyProbeRequestInterval  = 10 * time.Millisecond
 )
 
 var etherscanAPIKeyPattern = regexp.MustCompile(`[A-Za-z0-9]{20,}`)
@@ -94,6 +95,39 @@ func TestEtherscanMultiKeyAggregateRateLimitProbe(t *testing.T) {
 	)
 }
 
+func TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe(t *testing.T) {
+	if e2etest.StringFromEnv(envE2ELive, "") != "1" {
+		t.Skipf("%s must be 1 to run this live probe", envE2ELive)
+	}
+	if e2etest.StringFromEnv(envEtherscanMultiKeyStaggeredProbe, "") != "1" {
+		t.Skipf("%s must be 1 to intentionally run the staggered Etherscan multi-key probe", envEtherscanMultiKeyStaggeredProbe)
+	}
+
+	cfg := loadConfig(t)
+	keys := parseEtherscanAPIKeys(e2etest.StringFromEnv(envEtherscanAPIKeys, ""))
+	if len(keys) < 2 {
+		t.Fatalf("%s must contain at least two API keys", envEtherscanAPIKeys)
+	}
+
+	t.Logf("waiting %s before staggered Etherscan multi-key probe", etherscanRateLimitProbeCooldown)
+	time.Sleep(etherscanRateLimitProbeCooldown)
+
+	summary := runEtherscanMultiKeyAggregateRateLimitProbeWithInterval(t, keys, cfg, etherscanMultiKeyProbeRequestInterval)
+	t.Logf("staggered Etherscan multi-key aggregate probe summary: %s", summary)
+	for _, line := range summary.perKeySummaries() {
+		t.Logf("staggered Etherscan multi-key aggregate probe key summary: %s", line)
+	}
+
+	if summary.success >= summary.requiredSuccess() {
+		return
+	}
+	t.Fatalf(
+		"expected staggered aggregate success to reach at least 90%% of %d requests; summary: %s",
+		summary.total,
+		summary,
+	)
+}
+
 func runEtherscanRateLimitProbe(t testing.TB, client utilethereumapi.EthereumAPI, cfg e2eConfig) etherscanRateLimitProbeSummary {
 	t.Helper()
 
@@ -137,6 +171,11 @@ func runEtherscanRateLimitProbe(t testing.TB, client utilethereumapi.EthereumAPI
 
 func runEtherscanMultiKeyAggregateRateLimitProbe(t testing.TB, keys []string, cfg e2eConfig) etherscanMultiKeyProbeSummary {
 	t.Helper()
+	return runEtherscanMultiKeyAggregateRateLimitProbeWithInterval(t, keys, cfg, 0)
+}
+
+func runEtherscanMultiKeyAggregateRateLimitProbeWithInterval(t testing.TB, keys []string, cfg e2eConfig, interval time.Duration) etherscanMultiKeyProbeSummary {
+	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
@@ -155,6 +194,7 @@ func runEtherscanMultiKeyAggregateRateLimitProbe(t testing.TB, keys []string, cf
 
 	wg := sync.WaitGroup{}
 	wg.Add(totalRequests)
+	requestIndex := 0
 	for i, key := range keys {
 		keyLabel := fmt.Sprintf("%02d:%s", i+1, etherscanAPIKeyFingerprint(key))
 		summary.perKey[keyLabel] = &etherscanMultiKeyProbeKeySummary{keyLabel: keyLabel}
@@ -166,9 +206,19 @@ func runEtherscanMultiKeyAggregateRateLimitProbe(t testing.TB, keys []string, cf
 			Timeout: cfg.timeout,
 		})
 		for i := 0; i < etherscanMultiKeyProbeRequestsPerKey; i++ {
-			go func(keyLabel string, client utilethereumapi.EthereumAPI) {
+			index := requestIndex
+			requestIndex++
+			go func(keyLabel string, client utilethereumapi.EthereumAPI, requestIndex int) {
 				defer wg.Done()
 				<-start
+				if !waitEtherscanProbeRequestInterval(ctx, time.Duration(requestIndex)*interval) {
+					results <- etherscanMultiKeyProbeResult{
+						keyLabel:  keyLabel,
+						startedAt: time.Now(),
+						err:       ctx.Err(),
+					}
+					return
+				}
 				startedAt := time.Now()
 				_, err := client.ListNormalTransactions(ctx, utilethereumapi.ListNormalTransactionsOptions{
 					ChainID:  1,
@@ -182,7 +232,7 @@ func runEtherscanMultiKeyAggregateRateLimitProbe(t testing.TB, keys []string, cf
 					startedAt: startedAt,
 					err:       err,
 				}
-			}(keyLabel, client)
+			}(keyLabel, client, index)
 		}
 	}
 
@@ -197,6 +247,20 @@ func runEtherscanMultiKeyAggregateRateLimitProbe(t testing.TB, keys []string, cf
 	}
 	summary.finishStartSpread()
 	return summary
+}
+
+func waitEtherscanProbeRequestInterval(ctx context.Context, delay time.Duration) bool {
+	if delay <= 0 {
+		return true
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }
 
 type etherscanRateLimitProbeSummary struct {

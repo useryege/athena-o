@@ -55,6 +55,15 @@ ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
 make e2e-live-etherscan-multi-key-rate-limit
 ```
 
+Run the manual staggered Etherscan multi-key aggregate probe explicitly:
+
+```bash
+E2E_LIVE=1 \
+ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE=1 \
+ATHENA_E2E_ETHERSCAN_API_KEYS='key1,key2,key3' \
+make e2e-live-etherscan-multi-key-staggered-rate-limit
+```
+
 ## ethereum-api
 
 The ethereum-api tests connect to the gRPC service started by `make run`.
@@ -69,6 +78,7 @@ Environment variables:
 | `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes; falls back to `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEY`. |
 | `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probe. |
 | `ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE` | unset | Must be `1` to run the manual Etherscan multi-key aggregate probe. |
+| `ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE` | unset | Must be `1` to run the manual staggered Etherscan multi-key aggregate probe. |
 | `ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE` | unset | Must be `1` to run the manual Etherscan rate-limit probe. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
@@ -89,6 +99,30 @@ in one short burst, redacts keys in logs to short fingerprints, and passes when
 at least 90% of the aggregate requests succeed. High rate-limit counts indicate
 that Etherscan is enforcing a higher-level limit such as account, IP, global, or
 WAF policy. This probe is also excluded from default live targets.
+
+The staggered Etherscan multi-key aggregate probe uses the same key set and
+request count, but starts requests at a fixed `10ms` interval. It is useful for
+checking whether a sharp burst, rather than the aggregate request volume itself,
+is the main rate-limit trigger.
+
+### Observed Etherscan Rate-Limit Results
+
+The following live observations were collected on 2026-07-07 with real
+Etherscan API keys. Full keys were not logged; summaries use only aggregate
+counts and short key fingerprints.
+
+| Probe | Keys | Total requests | Start spread | Success | Rate limit | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Single-key free-plan burst | 1 | 8 | about 1.1s elapsed | 3 | 5 | Passed; observed the documented `3/sec` limit. |
+| Multi-key instant burst | 63 | 189 | 25ms | 26 | 163 | Failed; multi-key traffic did not scale linearly. |
+| Multi-key staggered burst | 63 | 189 | 1.88s | 119 | 70 | Failed; `10ms` staggering helped but did not eliminate rate limits. |
+
+These results suggest that Etherscan is not enforcing limits only per API key.
+The sharp burst pattern clearly contributes to rate limiting, because spreading
+requests over about two seconds raised successes from 26 to 119. However, the
+remaining 70 rate-limit responses indicate another higher-level limit is still
+active, such as outbound IP, account grouping, endpoint-level limits, global
+traffic policy, or WAF scoring.
 
 ## Structure
 
