@@ -58,14 +58,6 @@ message NormalTransaction {
   bool is_error = 20;
 }
 
-// NormalTransactionCacheMetadata describes the cache state used for a response.
-message NormalTransactionCacheMetadata {
-  bool cache_hit = 1;
-  bool stale = 2;
-  string fetched_at = 3;
-  string expires_at = 4;
-}
-
 // ListNormalTransactionsRequest queries one EVM address's normal transactions.
 message ListNormalTransactionsRequest {
   int64 chain_id = 1;
@@ -74,7 +66,6 @@ message ListNormalTransactionsRequest {
   int32 page = 4;
   int32 page_size = 5;
   NormalTransactionSort sort = 6;
-  bool force_refresh = 7;
 }
 
 // ListNormalTransactionsResponse returns one ordered transaction page.
@@ -82,7 +73,6 @@ message ListNormalTransactionsResponse {
   repeated NormalTransaction transactions = 1;
   int32 page = 2;
   int32 page_size = 3;
-  NormalTransactionCacheMetadata cache = 4;
 }
 
 // SourceCode is one source-code result returned by Etherscan.

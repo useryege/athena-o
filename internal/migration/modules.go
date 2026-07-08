@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 
-	ethereumapistore "github.com/useryege/athena/internal/ethereumapi/store"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
 	polymarketstore "github.com/useryege/athena/internal/polymarket/store"
 	tokenstore "github.com/useryege/athena/internal/token/store"
@@ -26,7 +25,6 @@ type Module struct {
 }
 
 var modules = []Module{
-	{Name: "ethereumapi", DSNEnv: "ATHENA_ETHEREUM_API_POSTGRES_DSN", Database: "ethereumapi", Migrations: ethereumapistore.Migrations()},
 	{Name: "worm", DSNEnv: "ATHENA_WORM_POSTGRES_DSN", Database: "worm", Migrations: wormstore.Migrations()},
 	{Name: "wormpoly", DSNEnv: "ATHENA_WORM_POLY_POSTGRES_DSN", Database: "wormpoly", Migrations: wormpolystore.Migrations()},
 	{Name: "notification", DSNEnv: "ATHENA_NOTIFICATION_POSTGRES_DSN", Database: "notification", Migrations: notificationstore.Migrations()},

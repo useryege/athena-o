@@ -2,10 +2,8 @@ package ethereumapi
 
 import (
 	"context"
-	"time"
 
 	"github.com/useryege/athena/internal/ethereumapi/apiclient"
-	ethereumapistore "github.com/useryege/athena/internal/ethereumapi/store"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
@@ -20,11 +18,7 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Store          *ethereumapistore.SQLStore
-	EthereumAPI    etherscanClient
-	CacheTTL       time.Duration
-	CacheRetention time.Duration
-	RefreshTimeout time.Duration
+	EthereumAPI etherscanClient
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -33,11 +27,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	return &Server{
 		ServerOpts: opts,
 		service: NewService(ServiceOpts{
-			Store:          opts.Store,
-			EthereumAPI:    opts.EthereumAPI,
-			CacheTTL:       opts.CacheTTL,
-			CacheRetention: opts.CacheRetention,
-			RefreshTimeout: opts.RefreshTimeout,
+			EthereumAPI: opts.EthereumAPI,
 		}),
 		healthService: healthService,
 	}, nil

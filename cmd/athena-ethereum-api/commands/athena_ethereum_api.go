@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	stderrors "errors"
 	"fmt"
 	"net"
@@ -18,11 +17,9 @@ import (
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/ethereumapi"
-	ethereumapistore "github.com/useryege/athena/internal/ethereumapi/store"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
-	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
 )
 
@@ -35,14 +32,12 @@ func NewCommand() *cobra.Command {
 		etherscanAPIKeys          string
 		etherscanGatewayAddrs     string
 		etherscanGatewayAuthToken string
-
-		storeSrc func(context.Context) (*ethereumapistore.SQLStore, error)
 	)
 
 	command := &cobra.Command{
 		Use:               cliName,
 		Short:             "Run the Athena Ethereum API service",
-		Long:              "The Ethereum API service provides access to persisted Ethereum API data. This command runs the service in the foreground.",
+		Long:              "The Ethereum API service provides access to live Ethereum API data. This command runs the service in the foreground.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			vers := common.GetVersion()
@@ -72,12 +67,7 @@ func NewCommand() *cobra.Command {
 				}
 			}()
 
-			store, err := storeSrc(ctx)
-			errors.CheckError(err)
-			defer utilio.Close(store)
-
 			server, err := ethereumapi.NewServer(ethereumapi.ServerOpts{
-				Store:       store,
 				EthereumAPI: gatewayManager,
 			})
 			if err != nil {
@@ -130,8 +120,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&etherscanAPIKeys, "etherscan-api-keys", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS", ""), "Comma, space, or newline-separated Etherscan API keys")
 	command.Flags().StringVar(&etherscanGatewayAddrs, "etherscan-gateway-addrs", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS", ""), "Comma, space, or newline-separated Etherscan Gateway gRPC addresses in host:port form")
 	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC calls")
-
-	storeSrc = ethereumapistore.NewSQLStoreSource()
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, Postgres is ready, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS, ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
+const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS, ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
 
 func TestEthereumAPIHealth(t *testing.T) {
 	cfg := loadConfig(t)
@@ -44,12 +44,11 @@ func TestEthereumAPIValidation(t *testing.T) {
 	defer cancel()
 
 	_, err := client.ListNormalTransactions(ctx, &apiclient.ListNormalTransactionsRequest{
-		ChainId:      1,
-		Address:      "not-an-evm-address",
-		Page:         1,
-		PageSize:     1,
-		Sort:         apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC,
-		ForceRefresh: true,
+		ChainId:  1,
+		Address:  "not-an-evm-address",
+		Page:     1,
+		PageSize: 1,
+		Sort:     apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC,
 	})
 	if got := status.Code(err); got != codes.InvalidArgument {
 		t.Fatalf("expected InvalidArgument for invalid address, got %s: %v", got, err)

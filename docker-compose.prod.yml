@@ -170,16 +170,11 @@ services:
   athena-ethereum-api:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     env_file:
       - .env
     environment:
       ATHENA_BINARY_NAME: athena-ethereum-api
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_ETHEREUM_API_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_ETHEREUM_API_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=ethereumapi sslmode=disable
       ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS: ${ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS:?ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS is required}
       ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS: ${ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS:?ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS is required}
       ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN: ${ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN:?ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN is required}
@@ -267,7 +262,6 @@ services:
       ATHENA_NOTIFICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=notification sslmode=disable
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
-      ATHENA_ETHEREUM_API_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=ethereumapi sslmode=disable
     command: ["athena", "status", "--module", "all"]
 
   athena-server:

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, Postgres is ready, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS, ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
+const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS, ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
 
 func TestEthereumAPIListNormalTransactions(t *testing.T) {
 	e2etest.RequireEnvValue(t, envE2ELive, "1")
@@ -21,12 +21,11 @@ func TestEthereumAPIListNormalTransactions(t *testing.T) {
 	defer cancel()
 
 	resp, err := client.ListNormalTransactions(ctx, &apiclient.ListNormalTransactionsRequest{
-		ChainId:      1,
-		Address:      cfg.queryAddress,
-		Page:         1,
-		PageSize:     1,
-		Sort:         apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC,
-		ForceRefresh: true,
+		ChainId:  1,
+		Address:  cfg.queryAddress,
+		Page:     1,
+		PageSize: 1,
+		Sort:     apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC,
 	})
 	if err != nil {
 		t.Fatalf("ListNormalTransactions real query failed: %v", err)
@@ -40,7 +39,6 @@ func TestEthereumAPIListNormalTransactions(t *testing.T) {
 	if len(resp.GetTransactions()) < 1 {
 		t.Fatalf("expected at least one transaction for %s", cfg.queryAddress)
 	}
-	requireCacheMetadata(t, resp.GetCache())
 	requireNormalTransactionShape(t, resp.GetTransactions()[0])
 }
 
@@ -61,16 +59,6 @@ func waitForEthereumAPI(t testing.TB, cfg e2eConfig) {
 	if err := e2etest.WaitForGRPCServing(ctx, cfg.addr, ethereumAPIReadinessHint); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func requireCacheMetadata(t testing.TB, cache *apiclient.NormalTransactionCacheMetadata) {
-	t.Helper()
-
-	if cache == nil {
-		t.Fatal("expected cache metadata")
-	}
-	e2etest.RequireRFC3339Nano(t, "cache.fetched_at", cache.GetFetchedAt())
-	e2etest.RequireRFC3339Nano(t, "cache.expires_at", cache.GetExpiresAt())
 }
 
 func requireNormalTransactionShape(t testing.TB, tx *apiclient.NormalTransaction) {
