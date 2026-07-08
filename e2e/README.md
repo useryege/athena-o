@@ -171,8 +171,8 @@ traffic policy, or WAF scoring.
 ### Observed Etherscan Gateway Results
 
 The following Etherscan Gateway observations use `63` API keys, `10ms` request
-intervals, four deployed gateway candidates, and the probe's 90% aggregate
-success threshold. The current gateway probe uses `6` rounds per key.
+intervals, deployed gateway candidates, and the probe's 90% aggregate success
+threshold. The current gateway probe uses `6` rounds per key.
 
 | Gateway count | Rounds | Success | Total requests | Required success | Success rate | Rate limit | Result | Source |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
@@ -180,6 +180,7 @@ success threshold. The current gateway probe uses `6` rounds per key.
 | 3 | 3 | 154 | 189 | 171 | 81.48% | 35 | Failed; below the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-10ms-rerun.log` |
 | 4 | 3 | 168 | 189 | 171 | 88.89% | 21 | Failed; 3 successes short of the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-4gw-10ms.log` |
 | 4 | 6 | 354 | 378 | 341 | 93.65% | 24 | Passed; 13 successes above the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-4gw-6rounds-10ms.log` |
+| 5 | 6 | 360 | 378 | 341 | 95.24% | 18 | Passed; 19 successes above the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-5gw-6rounds-10ms.log` |
 
 Adding the fourth gateway improved the observed 3-round, 10ms staggered success
 rate from 81.48% to 88.89%. Increasing the 4-gateway probe to 6 rounds raised
@@ -187,6 +188,13 @@ the observed aggregate success rate to 93.65%, with `39` keys at `6/6` success
 and `24` keys at `5/6` success. The remaining failures were still all classified
 as Etherscan `rate_limit` responses rather than authentication, malformed
 request, upstream, or gateway transport errors.
+
+Adding the fifth gateway raised the 6-round success rate from 93.65% to 95.24%.
+The 5-gateway run produced `45` keys at `6/6` success and `18` keys at `5/6`
+success. Per-gateway success rates were balanced: `47.245.183.140:6776` reached
+`74/76`, `47.245.166.57:6776` reached `71/76`, `47.245.161.139:6776` reached
+`71/76`, `47.245.181.189:6776` reached `70/75`, and `47.254.154.128:6776`
+reached `74/75`. All remaining failures were Etherscan `rate_limit` responses.
 
 ## Structure
 
