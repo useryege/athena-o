@@ -18,7 +18,7 @@ import (
 
 const (
 	etherscanGatewayDefaultPort = "6776"
-	etherscanGatewayProbeRounds = 3
+	etherscanGatewayProbeRounds = 6
 )
 
 func TestEtherscanGatewayMultiKeyStaggeredSuccessProbe(t *testing.T) {

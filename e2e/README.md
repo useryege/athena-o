@@ -144,7 +144,7 @@ avoid placing these live probe secrets in `.env.prod` or another tracked file.
 
 The staggered Etherscan Gateway multi-key success probe sends requests through
 the deployed `athena-etherscan-gateway` gRPC services. It loops through the API
-key list three times, starts each request `10ms` after the previous request, and
+key list six times, starts each request `10ms` after the previous request, and
 round-robins gateway addresses for each request. It passes when at least 90% of
 the aggregate requests succeed, and logs aggregate, per-key, and per-gateway
 success counts.
@@ -167,6 +167,26 @@ requests over about two seconds raised successes from 26 to 119. However, the
 remaining 70 rate-limit responses indicate another higher-level limit is still
 active, such as outbound IP, account grouping, endpoint-level limits, global
 traffic policy, or WAF scoring.
+
+### Observed Etherscan Gateway Results
+
+The following Etherscan Gateway observations use `63` API keys, `10ms` request
+intervals, four deployed gateway candidates, and the probe's 90% aggregate
+success threshold. The current gateway probe uses `6` rounds per key.
+
+| Gateway count | Rounds | Success | Total requests | Required success | Success rate | Rate limit | Result | Source |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 2 | 3 | unavailable | 189 | 171 | unavailable | unavailable | No preserved run log found. | Not available |
+| 3 | 3 | 154 | 189 | 171 | 81.48% | 35 | Failed; below the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-10ms-rerun.log` |
+| 4 | 3 | 168 | 189 | 171 | 88.89% | 21 | Failed; 3 successes short of the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-4gw-10ms.log` |
+| 4 | 6 | 354 | 378 | 341 | 93.65% | 24 | Passed; 13 successes above the 90% pass threshold. | `/tmp/athena-etherscan-gateway-e2e-4gw-6rounds-10ms.log` |
+
+Adding the fourth gateway improved the observed 3-round, 10ms staggered success
+rate from 81.48% to 88.89%. Increasing the 4-gateway probe to 6 rounds raised
+the observed aggregate success rate to 93.65%, with `39` keys at `6/6` success
+and `24` keys at `5/6` success. The remaining failures were still all classified
+as Etherscan `rate_limit` responses rather than authentication, malformed
+request, upstream, or gateway transport errors.
 
 ## Structure
 
