@@ -36,6 +36,10 @@ type Server struct {
 	checkers                     []namedHealthChecker
 	etherscanGatewayIPs          []string
 	etherscanGatewayAuthTokenRaw string
+	etherscanAPIKeysRaw          string
+	etherscanGatewayProbeAddress string
+	probeMu                      sync.Mutex
+	latestProbeRun               *servicestatuspkg.EtherscanGatewayProbeRun
 }
 
 func NewServer(
@@ -47,6 +51,8 @@ func NewServer(
 	tokenAPI healthChecker,
 	etherscanGatewayIPs string,
 	etherscanGatewayAuthToken string,
+	etherscanAPIKeys string,
+	etherscanGatewayProbeAddress string,
 ) *Server {
 	return &Server{
 		checkers: []namedHealthChecker{
@@ -59,6 +65,8 @@ func NewServer(
 		},
 		etherscanGatewayIPs:          normalizeList(etherscanGatewayIPs),
 		etherscanGatewayAuthTokenRaw: etherscanGatewayAuthToken,
+		etherscanAPIKeysRaw:          etherscanAPIKeys,
+		etherscanGatewayProbeAddress: strings.TrimSpace(etherscanGatewayProbeAddress),
 	}
 }
 

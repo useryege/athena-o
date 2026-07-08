@@ -37,6 +37,60 @@ message ListEtherscanGatewayStatusesResponse {
   int64 checked_at = 2;
 }
 
+message RunEtherscanGatewayProbeRequest {
+  int64 interval_ms = 1;
+  int32 requests_per_key = 2;
+}
+
+message GetEtherscanGatewayProbeRunRequest {
+  string run_id = 1;
+}
+
+message GetLatestEtherscanGatewayProbeRunRequest {}
+
+message EtherscanGatewayProbeCategoryCounts {
+  int32 success = 1;
+  int32 rate_limit = 2;
+  int32 authentication = 3;
+  int32 plan = 4;
+  int32 invalid_request = 5;
+  int32 malformed = 6;
+  int32 upstream = 7;
+  int32 other = 8;
+}
+
+message EtherscanGatewayProbeKeySummary {
+  string key_label = 1;
+  EtherscanGatewayProbeCategoryCounts counts = 2;
+}
+
+message EtherscanGatewayProbeGatewaySummary {
+  string gateway = 1;
+  EtherscanGatewayProbeCategoryCounts counts = 2;
+}
+
+message EtherscanGatewayProbeRun {
+  string run_id = 1;
+  string status = 2;
+  string result = 3;
+  int64 created_at = 4;
+  int64 started_at = 5;
+  int64 finished_at = 6;
+  int64 interval_ms = 7;
+  int32 requests_per_key = 8;
+  int32 key_count = 9;
+  int32 gateway_count = 10;
+  int32 total = 11;
+  int32 required_success = 12;
+  EtherscanGatewayProbeCategoryCounts counts = 13;
+  int64 elapsed_ms = 14;
+  int64 start_spread_ms = 15;
+  repeated EtherscanGatewayProbeKeySummary key_summaries = 16;
+  repeated EtherscanGatewayProbeGatewaySummary gateway_summaries = 17;
+  repeated string samples = 18;
+  string error_message = 19;
+}
+
 service ServiceStatusService {
   rpc ListServiceStatuses(ListServiceStatusesRequest) returns (ListServiceStatusesResponse) {
     option (google.api.http) = {get: "/api/v1/service-statuses"};
@@ -44,5 +98,20 @@ service ServiceStatusService {
 
   rpc ListEtherscanGatewayStatuses(ListEtherscanGatewayStatusesRequest) returns (ListEtherscanGatewayStatusesResponse) {
     option (google.api.http) = {get: "/api/v1/etherscan-gateway-statuses"};
+  }
+
+  rpc RunEtherscanGatewayProbe(RunEtherscanGatewayProbeRequest) returns (EtherscanGatewayProbeRun) {
+    option (google.api.http) = {
+      post: "/api/v1/etherscan-gateway-probe-runs"
+      body: "*"
+    };
+  }
+
+  rpc GetLatestEtherscanGatewayProbeRun(GetLatestEtherscanGatewayProbeRunRequest) returns (EtherscanGatewayProbeRun) {
+    option (google.api.http) = {get: "/api/v1/etherscan-gateway-probe-runs/latest"};
+  }
+
+  rpc GetEtherscanGatewayProbeRun(GetEtherscanGatewayProbeRunRequest) returns (EtherscanGatewayProbeRun) {
+    option (google.api.http) = {get: "/api/v1/etherscan-gateway-probe-runs/{run_id}"};
   }
 }

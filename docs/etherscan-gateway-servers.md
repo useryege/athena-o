@@ -40,3 +40,9 @@ Athena 前端的 `/etherscan-gateways` 状态页由 `athena-server` 聚合展示
 `ETHERSCAN_GATEWAY_IPS` 并按默认端口 `6776` 调用各 gateway 的
 `GetEtherscanGatewayStatus` gRPC 接口；认证 token 来自
 `ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN`，不会暴露给浏览器。
+
+同一页面也提供 Etherscan Gateway live probe。运维人员可设置请求启动间隔和
+每个 API key 的调用次数；`athena-server` 会读取
+`ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS`、`ETHERSCAN_GATEWAY_IPS` 和
+`ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN` 后异步执行测试，只在 UI 中返回聚合统计、
+gateway 汇总和短 API key fingerprint。该测试会消耗真实 Etherscan 请求额度。

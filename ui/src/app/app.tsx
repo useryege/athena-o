@@ -120,6 +120,7 @@ const tokenapiSubresources = {
 const permission = (resource: string, action: string, subresource = '*'): Permission => ({resource, action, subresource});
 const tokenapiPermission = (subresource: string) => permission(rbacResources.tokenapi, rbacActions.get, subresource);
 const serviceStatusPermission = permission(rbacResources.serviceStatus, rbacActions.get);
+const serviceStatusInvokePermission = permission(rbacResources.serviceStatus, rbacActions.invoke);
 const permissionKey = (perm: Permission) => `${perm.resource}:${perm.action}:${perm.subresource}`;
 const hasPermission = (access: AccessState, perm?: Permission) => !perm || access?.permissions[permissionKey(perm)] === true;
 
@@ -436,7 +437,7 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
             <Route path='/service-status' element={withPermission(serviceStatusPermission, <ServiceStatusPage />)} />
-            <Route path='/etherscan-gateways' element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage />)} />
+            <Route path='/etherscan-gateways' element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage canRunProbe={hasPermission(props.access, serviceStatusInvokePermission)} />)} />
             <Route path='/user-info' element={<UserInfoPage />} />
             <Route path='/help' element={<HelpPage />} />
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />

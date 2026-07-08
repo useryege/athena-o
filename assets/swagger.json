@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-944-gdd8e766-dirty"
+    "version": "v1.0.0-948-g2a3c98e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -164,6 +164,90 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/etherscan-gateway-probe-runs": {
+      "post": {
+        "tags": [
+          "ServiceStatusService"
+        ],
+        "operationId": "ServiceStatusService_RunEtherscanGatewayProbe",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/servicestatusRunEtherscanGatewayProbeRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/servicestatusEtherscanGatewayProbeRun"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/etherscan-gateway-probe-runs/latest": {
+      "get": {
+        "tags": [
+          "ServiceStatusService"
+        ],
+        "operationId": "ServiceStatusService_GetLatestEtherscanGatewayProbeRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/servicestatusEtherscanGatewayProbeRun"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/etherscan-gateway-probe-runs/{run_id}": {
+      "get": {
+        "tags": [
+          "ServiceStatusService"
+        ],
+        "operationId": "ServiceStatusService_GetEtherscanGatewayProbeRun",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "run_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/servicestatusEtherscanGatewayProbeRun"
             }
           },
           "default": {
@@ -2651,6 +2735,147 @@
         }
       }
     },
+    "servicestatusEtherscanGatewayProbeCategoryCounts": {
+      "type": "object",
+      "properties": {
+        "authentication": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "invalid_request": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "malformed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "other": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "plan": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "rate_limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "success": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "upstream": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "servicestatusEtherscanGatewayProbeGatewaySummary": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "$ref": "#/definitions/servicestatusEtherscanGatewayProbeCategoryCounts"
+        },
+        "gateway": {
+          "type": "string"
+        }
+      }
+    },
+    "servicestatusEtherscanGatewayProbeKeySummary": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "$ref": "#/definitions/servicestatusEtherscanGatewayProbeCategoryCounts"
+        },
+        "key_label": {
+          "type": "string"
+        }
+      }
+    },
+    "servicestatusEtherscanGatewayProbeRun": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "$ref": "#/definitions/servicestatusEtherscanGatewayProbeCategoryCounts"
+        },
+        "created_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "elapsed_ms": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "finished_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "gateway_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "gateway_summaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/servicestatusEtherscanGatewayProbeGatewaySummary"
+          }
+        },
+        "interval_ms": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "key_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "key_summaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/servicestatusEtherscanGatewayProbeKeySummary"
+          }
+        },
+        "requests_per_key": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "required_success": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "result": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "start_spread_ms": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "started_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "servicestatusEtherscanGatewayStatus": {
       "type": "object",
       "properties": {
@@ -2709,6 +2934,19 @@
           "items": {
             "$ref": "#/definitions/servicestatusServiceStatus"
           }
+        }
+      }
+    },
+    "servicestatusRunEtherscanGatewayProbeRequest": {
+      "type": "object",
+      "properties": {
+        "interval_ms": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "requests_per_key": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

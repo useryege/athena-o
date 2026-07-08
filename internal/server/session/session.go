@@ -57,6 +57,7 @@ var uiBootstrapPermissions = []*session.ResourcePermission{
 	{Resource: rbac.ResourcePolymarket, Action: rbac.ActionInvoke, Subresource: "*"},
 	{Resource: rbac.ResourceNotifications, Action: rbac.ActionGet, Subresource: "*"},
 	{Resource: rbac.ResourceServiceStatus, Action: rbac.ActionGet, Subresource: "*"},
+	{Resource: rbac.ResourceServiceStatus, Action: rbac.ActionInvoke, Subresource: "*"},
 }
 
 // NewServer returns a new instance of the Session service

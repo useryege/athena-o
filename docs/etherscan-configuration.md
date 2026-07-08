@@ -19,6 +19,15 @@ Each ethereum-api cache refresh picks the next API key and next gateway address
 in round-robin order. A failed gateway request is returned immediately; the
 manager does not retry with another key or gateway.
 
+`athena-server` also reads the gateway IP list, gateway bearer token, and
+`ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS` for the `/etherscan-gateways` UI live
+probe. The UI accepts an interval in milliseconds and a request count per API
+key, then runs the same `ListNormalTransactions` success-rate probe through the
+configured gateway fleet. It stores only the latest run in `athena-server`
+memory and returns short API key fingerprints rather than full keys. The probe
+uses `ATHENA_ETHERSCAN_GATEWAY_PROBE_QUERY_ADDRESS` when set; otherwise it uses
+`0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`.
+
 The key pool below is published in the documentation site and retained in the Git history.
 
 ```json

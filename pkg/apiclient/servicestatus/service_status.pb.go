@@ -381,6 +381,553 @@ func (m *ListEtherscanGatewayStatusesResponse) GetCheckedAt() int64 {
 	return 0
 }
 
+type RunEtherscanGatewayProbeRequest struct {
+	IntervalMs           int64    `protobuf:"varint,1,opt,name=interval_ms,json=intervalMs,proto3" json:"interval_ms,omitempty"`
+	RequestsPerKey       int32    `protobuf:"varint,2,opt,name=requests_per_key,json=requestsPerKey,proto3" json:"requests_per_key,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RunEtherscanGatewayProbeRequest) Reset()         { *m = RunEtherscanGatewayProbeRequest{} }
+func (m *RunEtherscanGatewayProbeRequest) String() string { return proto.CompactTextString(m) }
+func (*RunEtherscanGatewayProbeRequest) ProtoMessage()    {}
+func (*RunEtherscanGatewayProbeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{6}
+}
+func (m *RunEtherscanGatewayProbeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RunEtherscanGatewayProbeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RunEtherscanGatewayProbeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RunEtherscanGatewayProbeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RunEtherscanGatewayProbeRequest.Merge(m, src)
+}
+func (m *RunEtherscanGatewayProbeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RunEtherscanGatewayProbeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RunEtherscanGatewayProbeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RunEtherscanGatewayProbeRequest proto.InternalMessageInfo
+
+func (m *RunEtherscanGatewayProbeRequest) GetIntervalMs() int64 {
+	if m != nil {
+		return m.IntervalMs
+	}
+	return 0
+}
+
+func (m *RunEtherscanGatewayProbeRequest) GetRequestsPerKey() int32 {
+	if m != nil {
+		return m.RequestsPerKey
+	}
+	return 0
+}
+
+type GetEtherscanGatewayProbeRunRequest struct {
+	RunId                string   `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetEtherscanGatewayProbeRunRequest) Reset()         { *m = GetEtherscanGatewayProbeRunRequest{} }
+func (m *GetEtherscanGatewayProbeRunRequest) String() string { return proto.CompactTextString(m) }
+func (*GetEtherscanGatewayProbeRunRequest) ProtoMessage()    {}
+func (*GetEtherscanGatewayProbeRunRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{7}
+}
+func (m *GetEtherscanGatewayProbeRunRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetEtherscanGatewayProbeRunRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetEtherscanGatewayProbeRunRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetEtherscanGatewayProbeRunRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetEtherscanGatewayProbeRunRequest.Merge(m, src)
+}
+func (m *GetEtherscanGatewayProbeRunRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetEtherscanGatewayProbeRunRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetEtherscanGatewayProbeRunRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetEtherscanGatewayProbeRunRequest proto.InternalMessageInfo
+
+func (m *GetEtherscanGatewayProbeRunRequest) GetRunId() string {
+	if m != nil {
+		return m.RunId
+	}
+	return ""
+}
+
+type GetLatestEtherscanGatewayProbeRunRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetLatestEtherscanGatewayProbeRunRequest) Reset() {
+	*m = GetLatestEtherscanGatewayProbeRunRequest{}
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) String() string { return proto.CompactTextString(m) }
+func (*GetLatestEtherscanGatewayProbeRunRequest) ProtoMessage()    {}
+func (*GetLatestEtherscanGatewayProbeRunRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{8}
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetLatestEtherscanGatewayProbeRunRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetLatestEtherscanGatewayProbeRunRequest.Merge(m, src)
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetLatestEtherscanGatewayProbeRunRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetLatestEtherscanGatewayProbeRunRequest proto.InternalMessageInfo
+
+type EtherscanGatewayProbeCategoryCounts struct {
+	Success              int32    `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	RateLimit            int32    `protobuf:"varint,2,opt,name=rate_limit,json=rateLimit,proto3" json:"rate_limit,omitempty"`
+	Authentication       int32    `protobuf:"varint,3,opt,name=authentication,proto3" json:"authentication,omitempty"`
+	Plan                 int32    `protobuf:"varint,4,opt,name=plan,proto3" json:"plan,omitempty"`
+	InvalidRequest       int32    `protobuf:"varint,5,opt,name=invalid_request,json=invalidRequest,proto3" json:"invalid_request,omitempty"`
+	Malformed            int32    `protobuf:"varint,6,opt,name=malformed,proto3" json:"malformed,omitempty"`
+	Upstream             int32    `protobuf:"varint,7,opt,name=upstream,proto3" json:"upstream,omitempty"`
+	Other                int32    `protobuf:"varint,8,opt,name=other,proto3" json:"other,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) Reset()         { *m = EtherscanGatewayProbeCategoryCounts{} }
+func (m *EtherscanGatewayProbeCategoryCounts) String() string { return proto.CompactTextString(m) }
+func (*EtherscanGatewayProbeCategoryCounts) ProtoMessage()    {}
+func (*EtherscanGatewayProbeCategoryCounts) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{9}
+}
+func (m *EtherscanGatewayProbeCategoryCounts) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EtherscanGatewayProbeCategoryCounts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EtherscanGatewayProbeCategoryCounts.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EtherscanGatewayProbeCategoryCounts) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EtherscanGatewayProbeCategoryCounts.Merge(m, src)
+}
+func (m *EtherscanGatewayProbeCategoryCounts) XXX_Size() int {
+	return m.Size()
+}
+func (m *EtherscanGatewayProbeCategoryCounts) XXX_DiscardUnknown() {
+	xxx_messageInfo_EtherscanGatewayProbeCategoryCounts.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EtherscanGatewayProbeCategoryCounts proto.InternalMessageInfo
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetSuccess() int32 {
+	if m != nil {
+		return m.Success
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetRateLimit() int32 {
+	if m != nil {
+		return m.RateLimit
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetAuthentication() int32 {
+	if m != nil {
+		return m.Authentication
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetPlan() int32 {
+	if m != nil {
+		return m.Plan
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetInvalidRequest() int32 {
+	if m != nil {
+		return m.InvalidRequest
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetMalformed() int32 {
+	if m != nil {
+		return m.Malformed
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetUpstream() int32 {
+	if m != nil {
+		return m.Upstream
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) GetOther() int32 {
+	if m != nil {
+		return m.Other
+	}
+	return 0
+}
+
+type EtherscanGatewayProbeKeySummary struct {
+	KeyLabel             string                               `protobuf:"bytes,1,opt,name=key_label,json=keyLabel,proto3" json:"key_label,omitempty"`
+	Counts               *EtherscanGatewayProbeCategoryCounts `protobuf:"bytes,2,opt,name=counts,proto3" json:"counts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
+	XXX_unrecognized     []byte                               `json:"-"`
+	XXX_sizecache        int32                                `json:"-"`
+}
+
+func (m *EtherscanGatewayProbeKeySummary) Reset()         { *m = EtherscanGatewayProbeKeySummary{} }
+func (m *EtherscanGatewayProbeKeySummary) String() string { return proto.CompactTextString(m) }
+func (*EtherscanGatewayProbeKeySummary) ProtoMessage()    {}
+func (*EtherscanGatewayProbeKeySummary) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{10}
+}
+func (m *EtherscanGatewayProbeKeySummary) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EtherscanGatewayProbeKeySummary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EtherscanGatewayProbeKeySummary.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EtherscanGatewayProbeKeySummary) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EtherscanGatewayProbeKeySummary.Merge(m, src)
+}
+func (m *EtherscanGatewayProbeKeySummary) XXX_Size() int {
+	return m.Size()
+}
+func (m *EtherscanGatewayProbeKeySummary) XXX_DiscardUnknown() {
+	xxx_messageInfo_EtherscanGatewayProbeKeySummary.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EtherscanGatewayProbeKeySummary proto.InternalMessageInfo
+
+func (m *EtherscanGatewayProbeKeySummary) GetKeyLabel() string {
+	if m != nil {
+		return m.KeyLabel
+	}
+	return ""
+}
+
+func (m *EtherscanGatewayProbeKeySummary) GetCounts() *EtherscanGatewayProbeCategoryCounts {
+	if m != nil {
+		return m.Counts
+	}
+	return nil
+}
+
+type EtherscanGatewayProbeGatewaySummary struct {
+	Gateway              string                               `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
+	Counts               *EtherscanGatewayProbeCategoryCounts `protobuf:"bytes,2,opt,name=counts,proto3" json:"counts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
+	XXX_unrecognized     []byte                               `json:"-"`
+	XXX_sizecache        int32                                `json:"-"`
+}
+
+func (m *EtherscanGatewayProbeGatewaySummary) Reset()         { *m = EtherscanGatewayProbeGatewaySummary{} }
+func (m *EtherscanGatewayProbeGatewaySummary) String() string { return proto.CompactTextString(m) }
+func (*EtherscanGatewayProbeGatewaySummary) ProtoMessage()    {}
+func (*EtherscanGatewayProbeGatewaySummary) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{11}
+}
+func (m *EtherscanGatewayProbeGatewaySummary) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EtherscanGatewayProbeGatewaySummary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EtherscanGatewayProbeGatewaySummary.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EtherscanGatewayProbeGatewaySummary) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EtherscanGatewayProbeGatewaySummary.Merge(m, src)
+}
+func (m *EtherscanGatewayProbeGatewaySummary) XXX_Size() int {
+	return m.Size()
+}
+func (m *EtherscanGatewayProbeGatewaySummary) XXX_DiscardUnknown() {
+	xxx_messageInfo_EtherscanGatewayProbeGatewaySummary.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EtherscanGatewayProbeGatewaySummary proto.InternalMessageInfo
+
+func (m *EtherscanGatewayProbeGatewaySummary) GetGateway() string {
+	if m != nil {
+		return m.Gateway
+	}
+	return ""
+}
+
+func (m *EtherscanGatewayProbeGatewaySummary) GetCounts() *EtherscanGatewayProbeCategoryCounts {
+	if m != nil {
+		return m.Counts
+	}
+	return nil
+}
+
+type EtherscanGatewayProbeRun struct {
+	RunId                string                                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	Status               string                                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Result               string                                 `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
+	CreatedAt            int64                                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	StartedAt            int64                                  `protobuf:"varint,5,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	FinishedAt           int64                                  `protobuf:"varint,6,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	IntervalMs           int64                                  `protobuf:"varint,7,opt,name=interval_ms,json=intervalMs,proto3" json:"interval_ms,omitempty"`
+	RequestsPerKey       int32                                  `protobuf:"varint,8,opt,name=requests_per_key,json=requestsPerKey,proto3" json:"requests_per_key,omitempty"`
+	KeyCount             int32                                  `protobuf:"varint,9,opt,name=key_count,json=keyCount,proto3" json:"key_count,omitempty"`
+	GatewayCount         int32                                  `protobuf:"varint,10,opt,name=gateway_count,json=gatewayCount,proto3" json:"gateway_count,omitempty"`
+	Total                int32                                  `protobuf:"varint,11,opt,name=total,proto3" json:"total,omitempty"`
+	RequiredSuccess      int32                                  `protobuf:"varint,12,opt,name=required_success,json=requiredSuccess,proto3" json:"required_success,omitempty"`
+	Counts               *EtherscanGatewayProbeCategoryCounts   `protobuf:"bytes,13,opt,name=counts,proto3" json:"counts,omitempty"`
+	ElapsedMs            int64                                  `protobuf:"varint,14,opt,name=elapsed_ms,json=elapsedMs,proto3" json:"elapsed_ms,omitempty"`
+	StartSpreadMs        int64                                  `protobuf:"varint,15,opt,name=start_spread_ms,json=startSpreadMs,proto3" json:"start_spread_ms,omitempty"`
+	KeySummaries         []*EtherscanGatewayProbeKeySummary     `protobuf:"bytes,16,rep,name=key_summaries,json=keySummaries,proto3" json:"key_summaries,omitempty"`
+	GatewaySummaries     []*EtherscanGatewayProbeGatewaySummary `protobuf:"bytes,17,rep,name=gateway_summaries,json=gatewaySummaries,proto3" json:"gateway_summaries,omitempty"`
+	Samples              []string                               `protobuf:"bytes,18,rep,name=samples,proto3" json:"samples,omitempty"`
+	ErrorMessage         string                                 `protobuf:"bytes,19,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
+	XXX_unrecognized     []byte                                 `json:"-"`
+	XXX_sizecache        int32                                  `json:"-"`
+}
+
+func (m *EtherscanGatewayProbeRun) Reset()         { *m = EtherscanGatewayProbeRun{} }
+func (m *EtherscanGatewayProbeRun) String() string { return proto.CompactTextString(m) }
+func (*EtherscanGatewayProbeRun) ProtoMessage()    {}
+func (*EtherscanGatewayProbeRun) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e72c0e5f62f3d603, []int{12}
+}
+func (m *EtherscanGatewayProbeRun) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EtherscanGatewayProbeRun) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EtherscanGatewayProbeRun.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EtherscanGatewayProbeRun) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EtherscanGatewayProbeRun.Merge(m, src)
+}
+func (m *EtherscanGatewayProbeRun) XXX_Size() int {
+	return m.Size()
+}
+func (m *EtherscanGatewayProbeRun) XXX_DiscardUnknown() {
+	xxx_messageInfo_EtherscanGatewayProbeRun.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EtherscanGatewayProbeRun proto.InternalMessageInfo
+
+func (m *EtherscanGatewayProbeRun) GetRunId() string {
+	if m != nil {
+		return m.RunId
+	}
+	return ""
+}
+
+func (m *EtherscanGatewayProbeRun) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *EtherscanGatewayProbeRun) GetResult() string {
+	if m != nil {
+		return m.Result
+	}
+	return ""
+}
+
+func (m *EtherscanGatewayProbeRun) GetCreatedAt() int64 {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetStartedAt() int64 {
+	if m != nil {
+		return m.StartedAt
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetFinishedAt() int64 {
+	if m != nil {
+		return m.FinishedAt
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetIntervalMs() int64 {
+	if m != nil {
+		return m.IntervalMs
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetRequestsPerKey() int32 {
+	if m != nil {
+		return m.RequestsPerKey
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetKeyCount() int32 {
+	if m != nil {
+		return m.KeyCount
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetGatewayCount() int32 {
+	if m != nil {
+		return m.GatewayCount
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetTotal() int32 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetRequiredSuccess() int32 {
+	if m != nil {
+		return m.RequiredSuccess
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetCounts() *EtherscanGatewayProbeCategoryCounts {
+	if m != nil {
+		return m.Counts
+	}
+	return nil
+}
+
+func (m *EtherscanGatewayProbeRun) GetElapsedMs() int64 {
+	if m != nil {
+		return m.ElapsedMs
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetStartSpreadMs() int64 {
+	if m != nil {
+		return m.StartSpreadMs
+	}
+	return 0
+}
+
+func (m *EtherscanGatewayProbeRun) GetKeySummaries() []*EtherscanGatewayProbeKeySummary {
+	if m != nil {
+		return m.KeySummaries
+	}
+	return nil
+}
+
+func (m *EtherscanGatewayProbeRun) GetGatewaySummaries() []*EtherscanGatewayProbeGatewaySummary {
+	if m != nil {
+		return m.GatewaySummaries
+	}
+	return nil
+}
+
+func (m *EtherscanGatewayProbeRun) GetSamples() []string {
+	if m != nil {
+		return m.Samples
+	}
+	return nil
+}
+
+func (m *EtherscanGatewayProbeRun) GetErrorMessage() string {
+	if m != nil {
+		return m.ErrorMessage
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*ListServiceStatusesRequest)(nil), "servicestatus.ListServiceStatusesRequest")
 	proto.RegisterType((*ServiceStatus)(nil), "servicestatus.ServiceStatus")
@@ -388,6 +935,13 @@ func init() {
 	proto.RegisterType((*ListEtherscanGatewayStatusesRequest)(nil), "servicestatus.ListEtherscanGatewayStatusesRequest")
 	proto.RegisterType((*EtherscanGatewayStatus)(nil), "servicestatus.EtherscanGatewayStatus")
 	proto.RegisterType((*ListEtherscanGatewayStatusesResponse)(nil), "servicestatus.ListEtherscanGatewayStatusesResponse")
+	proto.RegisterType((*RunEtherscanGatewayProbeRequest)(nil), "servicestatus.RunEtherscanGatewayProbeRequest")
+	proto.RegisterType((*GetEtherscanGatewayProbeRunRequest)(nil), "servicestatus.GetEtherscanGatewayProbeRunRequest")
+	proto.RegisterType((*GetLatestEtherscanGatewayProbeRunRequest)(nil), "servicestatus.GetLatestEtherscanGatewayProbeRunRequest")
+	proto.RegisterType((*EtherscanGatewayProbeCategoryCounts)(nil), "servicestatus.EtherscanGatewayProbeCategoryCounts")
+	proto.RegisterType((*EtherscanGatewayProbeKeySummary)(nil), "servicestatus.EtherscanGatewayProbeKeySummary")
+	proto.RegisterType((*EtherscanGatewayProbeGatewaySummary)(nil), "servicestatus.EtherscanGatewayProbeGatewaySummary")
+	proto.RegisterType((*EtherscanGatewayProbeRun)(nil), "servicestatus.EtherscanGatewayProbeRun")
 }
 
 func init() {
@@ -395,40 +949,80 @@ func init() {
 }
 
 var fileDescriptor_e72c0e5f62f3d603 = []byte{
-	// 525 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xc1, 0x6e, 0xd3, 0x4c,
-	0x10, 0x96, 0x93, 0x36, 0x4d, 0xf6, 0xff, 0x23, 0xa1, 0x05, 0x55, 0x56, 0x08, 0x51, 0xe4, 0xb6,
-	0x52, 0xa9, 0x68, 0x2c, 0x5c, 0x89, 0x0b, 0x27, 0x2a, 0x10, 0x17, 0x7a, 0x71, 0xc5, 0x85, 0x8b,
-	0x99, 0x38, 0x23, 0xdb, 0xaa, 0xbd, 0x36, 0x3b, 0xeb, 0xa2, 0x5c, 0xfb, 0x00, 0x5c, 0xfa, 0x28,
-	0xbc, 0x04, 0x47, 0x24, 0xce, 0x48, 0x28, 0xe2, 0x41, 0x50, 0xd6, 0x76, 0xc0, 0xc6, 0x94, 0x72,
-	0x4a, 0x66, 0x76, 0x3e, 0x7f, 0x33, 0xdf, 0x37, 0xbb, 0xcc, 0x89, 0x84, 0x42, 0x29, 0x20, 0xb6,
-	0x09, 0xe5, 0x25, 0x4a, 0xfd, 0x13, 0xf9, 0x48, 0x0a, 0x54, 0x4e, 0x55, 0xe4, 0x15, 0xe1, 0x2c,
-	0x93, 0xa9, 0x4a, 0xf9, 0xb0, 0x56, 0x33, 0x1a, 0x07, 0x69, 0x1a, 0xc4, 0x68, 0x43, 0x16, 0xd9,
-	0x20, 0x44, 0xaa, 0x40, 0x45, 0xa9, 0x28, 0x8b, 0xad, 0x31, 0x1b, 0xbd, 0x8a, 0x48, 0x9d, 0x17,
-	0x90, 0x73, 0x0d, 0x41, 0x72, 0xf1, 0x5d, 0x8e, 0xa4, 0xac, 0xb7, 0x6c, 0x58, 0x3b, 0xe1, 0x9c,
-	0x6d, 0x09, 0x48, 0xd0, 0x34, 0xa6, 0xc6, 0xe1, 0xc0, 0xd5, 0xff, 0xf9, 0x2e, 0xeb, 0x15, 0x54,
-	0x66, 0x47, 0x67, 0xcb, 0x88, 0xef, 0xb1, 0x21, 0x4a, 0x99, 0x4a, 0x2f, 0x41, 0x22, 0x08, 0xd0,
-	0xec, 0xea, 0xe3, 0xff, 0x75, 0xf2, 0xac, 0xc8, 0x59, 0x19, 0xbb, 0xdf, 0xca, 0x4f, 0x59, 0x2a,
-	0x08, 0xb9, 0xc3, 0xb6, 0x23, 0x85, 0x09, 0x99, 0xc6, 0xb4, 0x7b, 0xf8, 0x9f, 0x33, 0x9e, 0xd5,
-	0x66, 0x9b, 0xd5, 0x60, 0x6e, 0x51, 0xca, 0x1f, 0x30, 0xe6, 0x87, 0xe8, 0x5f, 0xe0, 0xc2, 0x03,
-	0xa5, 0x7b, 0xea, 0xba, 0x83, 0x32, 0xf3, 0x4c, 0x59, 0x07, 0x6c, 0x6f, 0xcd, 0xf8, 0x42, 0x85,
-	0x28, 0xc9, 0x07, 0xf1, 0x12, 0x14, 0xbe, 0x87, 0x65, 0x73, 0xf4, 0xeb, 0x0e, 0xdb, 0x6d, 0xaf,
-	0xe1, 0x26, 0xdb, 0x81, 0xc5, 0x42, 0x22, 0x51, 0xa9, 0x43, 0x15, 0xf2, 0x31, 0x1b, 0x48, 0x04,
-	0x3f, 0x84, 0x79, 0x8c, 0x9a, 0xb9, 0xef, 0xfe, 0x4c, 0xac, 0x71, 0xa4, 0x40, 0x2a, 0x5c, 0x68,
-	0x29, 0xfa, 0x6e, 0x15, 0xfe, 0x22, 0xe1, 0x56, 0x4d, 0xc2, 0x47, 0x8c, 0x63, 0xd5, 0x83, 0x37,
-	0x07, 0x42, 0x2f, 0x97, 0xb1, 0xb9, 0xad, 0x6b, 0xee, 0x6c, 0x4e, 0x4e, 0x81, 0xf0, 0xb5, 0x8c,
-	0xd7, 0x83, 0xc7, 0xa0, 0x50, 0xf8, 0x4b, 0x2f, 0x21, 0xb3, 0x57, 0x0c, 0x5e, 0x66, 0xce, 0x9a,
-	0xba, 0xec, 0x34, 0x74, 0xf9, 0xdd, 0xae, 0x7e, 0x8b, 0x5d, 0x57, 0x06, 0xdb, 0xbf, 0x59, 0xbd,
-	0xd2, 0xb8, 0xa7, 0x75, 0xe3, 0x0e, 0x1a, 0xc6, 0xb5, 0xe3, 0x6f, 0xe7, 0xa0, 0xf3, 0xb5, 0xc3,
-	0xee, 0xd5, 0x9c, 0x2f, 0x03, 0xfe, 0xc1, 0x60, 0x77, 0x5b, 0xb6, 0x89, 0x3f, 0x6c, 0xb0, 0xff,
-	0x79, 0xe3, 0x47, 0x47, 0xb7, 0x29, 0x2d, 0x66, 0xb4, 0xa6, 0x57, 0x5f, 0xbe, 0x5f, 0x77, 0x46,
-	0xdc, 0xd4, 0x77, 0xeb, 0xf2, 0x71, 0x75, 0x1d, 0x8f, 0xa9, 0x22, 0xfe, 0x68, 0xb0, 0xf1, 0x4d,
-	0x72, 0x71, 0xa7, 0x85, 0xee, 0x2f, 0x9b, 0x39, 0x3a, 0xf9, 0x27, 0x4c, 0xd9, 0xeb, 0x91, 0xee,
-	0x75, 0x9f, 0x5b, 0x55, 0xaf, 0x9b, 0xed, 0x39, 0x0e, 0x0a, 0xc8, 0xa6, 0xeb, 0xd3, 0xe7, 0x9f,
-	0x56, 0x13, 0xe3, 0xf3, 0x6a, 0x62, 0x7c, 0x5b, 0x4d, 0x8c, 0x37, 0x4f, 0x82, 0x48, 0x85, 0xf9,
-	0x7c, 0xe6, 0xa7, 0x89, 0x9d, 0x13, 0xca, 0x25, 0x06, 0x68, 0x83, 0x0a, 0x51, 0x80, 0x9d, 0x5d,
-	0x04, 0xeb, 0xef, 0xf9, 0x71, 0x84, 0x42, 0xd5, 0xdf, 0xa6, 0x79, 0x4f, 0x3f, 0x30, 0x27, 0x3f,
-	0x02, 0x00, 0x00, 0xff, 0xff, 0x33, 0xa6, 0x13, 0xa8, 0xc3, 0x04, 0x00, 0x00,
+	// 1158 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0xcf, 0x6e, 0x23, 0xc5,
+	0x13, 0xd6, 0x24, 0x19, 0xc7, 0xae, 0xc4, 0x49, 0xb6, 0x37, 0xbf, 0x68, 0xe4, 0xf8, 0x97, 0x84,
+	0x49, 0x76, 0x37, 0x09, 0x24, 0xd6, 0x3a, 0x02, 0x24, 0xf6, 0x94, 0x5d, 0x50, 0x04, 0x9b, 0x48,
+	0xab, 0xb1, 0xb8, 0x70, 0x19, 0xda, 0xe3, 0x5a, 0x7b, 0xe4, 0xf9, 0x47, 0x77, 0x4f, 0x90, 0x85,
+	0xb8, 0xec, 0x11, 0x24, 0x2e, 0x2b, 0xf1, 0x04, 0x3c, 0x00, 0x12, 0x37, 0x9e, 0x80, 0x23, 0x12,
+	0x2f, 0x80, 0x22, 0x1e, 0x81, 0x07, 0x40, 0x53, 0xd3, 0x13, 0xaf, 0x1d, 0x3b, 0x31, 0x62, 0x4f,
+	0x9e, 0xfa, 0xba, 0xba, 0xab, 0xfa, 0xab, 0xaf, 0xba, 0xdb, 0xd0, 0xf4, 0x23, 0x85, 0x22, 0xe2,
+	0x41, 0x43, 0xa2, 0xb8, 0x44, 0x41, 0x3f, 0xbe, 0x87, 0x52, 0x71, 0x95, 0xca, 0xc2, 0x72, 0x73,
+	0xf3, 0x38, 0x11, 0xb1, 0x8a, 0x59, 0x75, 0xc4, 0xa7, 0x56, 0xef, 0xc6, 0x71, 0x37, 0xc0, 0x06,
+	0x4f, 0xfc, 0x06, 0x8f, 0xa2, 0x58, 0x71, 0xe5, 0xc7, 0x91, 0x76, 0xb6, 0xeb, 0x50, 0x3b, 0xf7,
+	0xa5, 0x6a, 0xe5, 0x53, 0x5a, 0x34, 0x05, 0xa5, 0x83, 0x5f, 0xa5, 0x28, 0x95, 0xfd, 0x25, 0x54,
+	0x47, 0x46, 0x18, 0x83, 0x85, 0x88, 0x87, 0x68, 0x19, 0x3b, 0xc6, 0x7e, 0xc5, 0xa1, 0x6f, 0xb6,
+	0x01, 0xa5, 0x3c, 0x94, 0x35, 0x47, 0xa8, 0xb6, 0xd8, 0x2e, 0x54, 0x51, 0x88, 0x58, 0xb8, 0x21,
+	0x4a, 0xc9, 0xbb, 0x68, 0xcd, 0xd3, 0xf0, 0x32, 0x81, 0x17, 0x39, 0x66, 0x27, 0xb0, 0x39, 0x31,
+	0xbe, 0x4c, 0xe2, 0x48, 0x22, 0x6b, 0x82, 0xe9, 0x2b, 0x0c, 0xa5, 0x65, 0xec, 0xcc, 0xef, 0x2f,
+	0x35, 0xeb, 0xc7, 0x23, 0x7b, 0x3b, 0x1e, 0x99, 0xe6, 0xe4, 0xae, 0xec, 0xff, 0x00, 0x5e, 0x0f,
+	0xbd, 0x3e, 0x76, 0x5c, 0xae, 0x28, 0xa7, 0x79, 0xa7, 0xa2, 0x91, 0x53, 0x65, 0x3f, 0x80, 0xdd,
+	0x2c, 0xe2, 0x27, 0xaa, 0x87, 0x42, 0x7a, 0x3c, 0x3a, 0xe3, 0x0a, 0xbf, 0xe6, 0x83, 0xf1, 0xad,
+	0xbf, 0x9e, 0x83, 0x8d, 0xc9, 0x3e, 0xcc, 0x82, 0x45, 0xde, 0xe9, 0x08, 0x94, 0x52, 0xf3, 0x50,
+	0x98, 0xac, 0x0e, 0x15, 0x81, 0xdc, 0xeb, 0xf1, 0x76, 0x80, 0x14, 0xb9, 0xec, 0x0c, 0x81, 0x6c,
+	0x9e, 0x54, 0x5c, 0x28, 0xec, 0x10, 0x15, 0x65, 0xa7, 0x30, 0xdf, 0xa0, 0x70, 0x61, 0x84, 0xc2,
+	0xf7, 0x80, 0x61, 0x91, 0x83, 0xdb, 0xe6, 0x12, 0xdd, 0x54, 0x04, 0x96, 0x49, 0x3e, 0x6b, 0xd7,
+	0x23, 0x4f, 0xb9, 0xc4, 0xcf, 0x45, 0x90, 0x6d, 0x3c, 0xe0, 0x0a, 0x23, 0x6f, 0xe0, 0x86, 0xd2,
+	0x2a, 0xe5, 0x1b, 0xd7, 0xc8, 0xc5, 0x38, 0x2f, 0x8b, 0x63, 0xbc, 0xdc, 0x2c, 0x57, 0x79, 0x42,
+	0xb9, 0x5e, 0x19, 0xb0, 0x77, 0x3b, 0x7b, 0xba, 0x70, 0x4f, 0x46, 0x0b, 0xf7, 0x60, 0xac, 0x70,
+	0x93, 0xe7, 0xcf, 0x58, 0xc1, 0x00, 0xb6, 0x9d, 0x34, 0x1a, 0x5f, 0xe2, 0x85, 0x88, 0xdb, 0xa8,
+	0xab, 0xc7, 0xb6, 0x61, 0x89, 0x3a, 0xe7, 0x92, 0x07, 0x6e, 0x98, 0x97, 0x69, 0xde, 0x81, 0x02,
+	0xba, 0x90, 0x6c, 0x1f, 0xd6, 0x44, 0xee, 0x2b, 0xdd, 0x04, 0x85, 0xdb, 0xc7, 0x01, 0x05, 0x32,
+	0x9d, 0x95, 0x02, 0x7f, 0x81, 0xe2, 0x39, 0x0e, 0xec, 0x27, 0x60, 0x9f, 0xa1, 0x9a, 0x1c, 0x2d,
+	0x8d, 0x8a, 0x80, 0xff, 0x83, 0x92, 0x48, 0x23, 0xd7, 0xef, 0x68, 0x49, 0x98, 0x22, 0x8d, 0x3e,
+	0xed, 0xd8, 0x87, 0xb0, 0x7f, 0x86, 0xea, 0x9c, 0x2b, 0x94, 0x77, 0x2d, 0x91, 0x29, 0x6e, 0x77,
+	0xa2, 0xcf, 0x33, 0xae, 0xb0, 0x1b, 0x8b, 0xc1, 0xb3, 0x38, 0x8d, 0x14, 0xc9, 0x4f, 0xa6, 0x9e,
+	0x57, 0xc8, 0xcf, 0x74, 0x0a, 0x33, 0xe3, 0x4d, 0x70, 0x85, 0x6e, 0xe0, 0x87, 0xbe, 0xd2, 0xdb,
+	0xa9, 0x64, 0xc8, 0x79, 0x06, 0xb0, 0x87, 0xb0, 0xc2, 0x53, 0xd5, 0xc3, 0x48, 0xf9, 0x1e, 0x1d,
+	0x02, 0x24, 0x43, 0xd3, 0x19, 0x43, 0xb3, 0x26, 0x4f, 0x02, 0x1e, 0x91, 0x16, 0x4d, 0x87, 0xbe,
+	0xd9, 0x23, 0x58, 0xf5, 0xa3, 0x4b, 0x1e, 0xf8, 0x1d, 0x57, 0xf3, 0x43, 0x32, 0x34, 0x9d, 0x15,
+	0x0d, 0x17, 0x44, 0xd4, 0xa1, 0x12, 0xf2, 0xe0, 0x65, 0x2c, 0x42, 0xec, 0x90, 0x06, 0x4d, 0x67,
+	0x08, 0xb0, 0x1a, 0x94, 0xd3, 0x44, 0x2a, 0x81, 0x3c, 0x24, 0x05, 0x9a, 0xce, 0xb5, 0xcd, 0xd6,
+	0xc1, 0x8c, 0xb3, 0xed, 0x93, 0xf0, 0x4c, 0x27, 0x37, 0xec, 0xef, 0x0c, 0xd8, 0x9e, 0xc8, 0xca,
+	0x73, 0x1c, 0xb4, 0xd2, 0x30, 0xe4, 0x62, 0xc0, 0x36, 0xa1, 0xd2, 0xc7, 0x81, 0x1b, 0xf0, 0x36,
+	0x06, 0x9a, 0xff, 0x72, 0x1f, 0x07, 0xe7, 0x99, 0xcd, 0x3e, 0x83, 0x92, 0x47, 0xc4, 0x11, 0x21,
+	0x4b, 0xcd, 0xe6, 0x1d, 0x52, 0x9c, 0x40, 0xb9, 0xa3, 0x57, 0xb0, 0xbf, 0x37, 0xa6, 0x94, 0xa8,
+	0x90, 0xb1, 0x4e, 0xc8, 0x82, 0xc5, 0x6e, 0x8e, 0x14, 0x27, 0x84, 0x36, 0xdf, 0x6a, 0x36, 0x3f,
+	0x96, 0xc0, 0x9a, 0x26, 0xaa, 0x29, 0x82, 0x9c, 0x7a, 0x58, 0x6f, 0x40, 0x49, 0xa0, 0x4c, 0x03,
+	0xa5, 0x4f, 0x69, 0x6d, 0x51, 0x2b, 0x0a, 0xe4, 0x2a, 0x6f, 0xc5, 0x05, 0xdd, 0x8a, 0x39, 0x72,
+	0x4a, 0xc3, 0xfa, 0x0c, 0xcb, 0x86, 0xcd, 0x7c, 0x58, 0x23, 0xa7, 0xd4, 0x86, 0x2f, 0xfd, 0xc8,
+	0x97, 0xbd, 0x7c, 0x3c, 0x3f, 0x92, 0xa0, 0x80, 0x4e, 0x6f, 0xf4, 0xe9, 0xe2, 0x4c, 0x7d, 0x5a,
+	0x9e, 0xd4, 0xa7, 0x85, 0x08, 0x88, 0x1b, 0xab, 0x92, 0x6b, 0xab, 0x8f, 0x39, 0x67, 0xd9, 0xe1,
+	0xa6, 0x2b, 0xa0, 0x1d, 0x80, 0x1c, 0x96, 0x35, 0x98, 0x3b, 0xad, 0x83, 0xa9, 0x62, 0xc5, 0x03,
+	0x6b, 0x29, 0x17, 0x20, 0x19, 0xec, 0x20, 0xcf, 0xc0, 0x17, 0xd8, 0x71, 0x8b, 0xbe, 0x5b, 0x26,
+	0x87, 0xd5, 0x02, 0x6f, 0xe9, 0xfe, 0x1b, 0x16, 0xb7, 0xfa, 0x5f, 0x8b, 0x9b, 0x31, 0x8b, 0x01,
+	0x4f, 0x24, 0x76, 0x32, 0x62, 0x56, 0x72, 0x66, 0x35, 0x72, 0x21, 0xd9, 0x43, 0x58, 0x25, 0x9a,
+	0x5d, 0x99, 0x08, 0xe4, 0xe4, 0xb3, 0x4a, 0x3e, 0x55, 0x82, 0x5b, 0x84, 0x5e, 0x48, 0xd6, 0x82,
+	0x6a, 0xc6, 0x8a, 0x24, 0x61, 0xfa, 0x28, 0xad, 0x35, 0x3a, 0x8f, 0x8f, 0x67, 0xc9, 0x6c, 0xd8,
+	0x61, 0xce, 0x72, 0xbf, 0xf8, 0xf6, 0x51, 0x32, 0x17, 0xee, 0x15, 0x6c, 0x0e, 0x17, 0xbe, 0x47,
+	0x0b, 0xcf, 0xb4, 0xe5, 0xd1, 0x6e, 0x71, 0xd6, 0xba, 0x6f, 0xda, 0x59, 0x80, 0xec, 0x88, 0xe3,
+	0x61, 0x12, 0xa0, 0xb4, 0xd8, 0xce, 0x7c, 0xd6, 0x3f, 0xda, 0xbc, 0x79, 0x4b, 0xdd, 0xbf, 0x79,
+	0x4b, 0x35, 0xff, 0x2e, 0xc1, 0xfa, 0xc8, 0xd3, 0x40, 0x1b, 0xec, 0x07, 0x03, 0xee, 0x4f, 0x78,
+	0x6e, 0xb0, 0x83, 0xb1, 0xac, 0xa7, 0x3f, 0x89, 0x6a, 0x87, 0xb3, 0xb8, 0xe6, 0x97, 0xa0, 0xbd,
+	0xf3, 0xea, 0x8f, 0xbf, 0x5e, 0xcf, 0xd5, 0x98, 0x45, 0x8f, 0xaf, 0xcb, 0xc7, 0xc5, 0x7b, 0xed,
+	0x48, 0x16, 0x81, 0x7f, 0x31, 0xa0, 0x7e, 0xdb, 0x7d, 0xca, 0x9a, 0x13, 0xc2, 0xdd, 0xf1, 0x74,
+	0xa9, 0x9d, 0xfc, 0xab, 0x39, 0x3a, 0xd7, 0x43, 0xca, 0x75, 0x8f, 0xd9, 0x45, 0xae, 0xd7, 0xcf,
+	0x8b, 0x23, 0x5d, 0x9e, 0x61, 0xd6, 0x3f, 0x19, 0x60, 0x4d, 0xbb, 0x81, 0xd9, 0xb8, 0xb4, 0xee,
+	0xb8, 0xaa, 0x6b, 0x8f, 0x66, 0x51, 0x8c, 0x93, 0x46, 0x76, 0x83, 0x32, 0x3c, 0xb0, 0xf7, 0xa6,
+	0x67, 0x98, 0x64, 0xbe, 0x47, 0x22, 0x8d, 0xe4, 0x47, 0xc6, 0x21, 0xfb, 0xd5, 0x80, 0x77, 0xee,
+	0xbc, 0x7d, 0xd9, 0x87, 0x63, 0xf1, 0x67, 0xbd, 0xaf, 0x67, 0x4f, 0xfc, 0x84, 0x12, 0x3f, 0x62,
+	0xef, 0xce, 0x92, 0x78, 0x23, 0xa0, 0xe0, 0xec, 0x67, 0x03, 0x36, 0x6f, 0x79, 0x77, 0xb0, 0xc7,
+	0x37, 0xd3, 0x7e, 0x6b, 0x09, 0xbf, 0x4f, 0x09, 0x37, 0xd8, 0xd1, 0x4c, 0x09, 0x7f, 0x93, 0xdf,
+	0x33, 0xdf, 0x3e, 0xfd, 0xf8, 0xb7, 0xab, 0x2d, 0xe3, 0xf7, 0xab, 0x2d, 0xe3, 0xcf, 0xab, 0x2d,
+	0xe3, 0x8b, 0x0f, 0xba, 0xbe, 0xea, 0xa5, 0xed, 0x63, 0x2f, 0x0e, 0x1b, 0xa9, 0x44, 0x31, 0xc0,
+	0x2e, 0x36, 0x78, 0xf6, 0xd0, 0xe0, 0x8d, 0xa4, 0xdf, 0xcd, 0x96, 0xf6, 0x02, 0x1f, 0x23, 0x35,
+	0xfa, 0x9f, 0xa6, 0x5d, 0xa2, 0x3f, 0x26, 0x27, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0x89, 0x3b,
+	0xb9, 0xb5, 0xfb, 0x0c, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -445,6 +1039,9 @@ const _ = grpc.SupportPackageIsVersion4
 type ServiceStatusServiceClient interface {
 	ListServiceStatuses(ctx context.Context, in *ListServiceStatusesRequest, opts ...grpc.CallOption) (*ListServiceStatusesResponse, error)
 	ListEtherscanGatewayStatuses(ctx context.Context, in *ListEtherscanGatewayStatusesRequest, opts ...grpc.CallOption) (*ListEtherscanGatewayStatusesResponse, error)
+	RunEtherscanGatewayProbe(ctx context.Context, in *RunEtherscanGatewayProbeRequest, opts ...grpc.CallOption) (*EtherscanGatewayProbeRun, error)
+	GetLatestEtherscanGatewayProbeRun(ctx context.Context, in *GetLatestEtherscanGatewayProbeRunRequest, opts ...grpc.CallOption) (*EtherscanGatewayProbeRun, error)
+	GetEtherscanGatewayProbeRun(ctx context.Context, in *GetEtherscanGatewayProbeRunRequest, opts ...grpc.CallOption) (*EtherscanGatewayProbeRun, error)
 }
 
 type serviceStatusServiceClient struct {
@@ -473,10 +1070,40 @@ func (c *serviceStatusServiceClient) ListEtherscanGatewayStatuses(ctx context.Co
 	return out, nil
 }
 
+func (c *serviceStatusServiceClient) RunEtherscanGatewayProbe(ctx context.Context, in *RunEtherscanGatewayProbeRequest, opts ...grpc.CallOption) (*EtherscanGatewayProbeRun, error) {
+	out := new(EtherscanGatewayProbeRun)
+	err := c.cc.Invoke(ctx, "/servicestatus.ServiceStatusService/RunEtherscanGatewayProbe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceStatusServiceClient) GetLatestEtherscanGatewayProbeRun(ctx context.Context, in *GetLatestEtherscanGatewayProbeRunRequest, opts ...grpc.CallOption) (*EtherscanGatewayProbeRun, error) {
+	out := new(EtherscanGatewayProbeRun)
+	err := c.cc.Invoke(ctx, "/servicestatus.ServiceStatusService/GetLatestEtherscanGatewayProbeRun", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceStatusServiceClient) GetEtherscanGatewayProbeRun(ctx context.Context, in *GetEtherscanGatewayProbeRunRequest, opts ...grpc.CallOption) (*EtherscanGatewayProbeRun, error) {
+	out := new(EtherscanGatewayProbeRun)
+	err := c.cc.Invoke(ctx, "/servicestatus.ServiceStatusService/GetEtherscanGatewayProbeRun", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ServiceStatusServiceServer is the server API for ServiceStatusService service.
 type ServiceStatusServiceServer interface {
 	ListServiceStatuses(context.Context, *ListServiceStatusesRequest) (*ListServiceStatusesResponse, error)
 	ListEtherscanGatewayStatuses(context.Context, *ListEtherscanGatewayStatusesRequest) (*ListEtherscanGatewayStatusesResponse, error)
+	RunEtherscanGatewayProbe(context.Context, *RunEtherscanGatewayProbeRequest) (*EtherscanGatewayProbeRun, error)
+	GetLatestEtherscanGatewayProbeRun(context.Context, *GetLatestEtherscanGatewayProbeRunRequest) (*EtherscanGatewayProbeRun, error)
+	GetEtherscanGatewayProbeRun(context.Context, *GetEtherscanGatewayProbeRunRequest) (*EtherscanGatewayProbeRun, error)
 }
 
 // UnimplementedServiceStatusServiceServer can be embedded to have forward compatible implementations.
@@ -488,6 +1115,15 @@ func (*UnimplementedServiceStatusServiceServer) ListServiceStatuses(ctx context.
 }
 func (*UnimplementedServiceStatusServiceServer) ListEtherscanGatewayStatuses(ctx context.Context, req *ListEtherscanGatewayStatusesRequest) (*ListEtherscanGatewayStatusesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEtherscanGatewayStatuses not implemented")
+}
+func (*UnimplementedServiceStatusServiceServer) RunEtherscanGatewayProbe(ctx context.Context, req *RunEtherscanGatewayProbeRequest) (*EtherscanGatewayProbeRun, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunEtherscanGatewayProbe not implemented")
+}
+func (*UnimplementedServiceStatusServiceServer) GetLatestEtherscanGatewayProbeRun(ctx context.Context, req *GetLatestEtherscanGatewayProbeRunRequest) (*EtherscanGatewayProbeRun, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestEtherscanGatewayProbeRun not implemented")
+}
+func (*UnimplementedServiceStatusServiceServer) GetEtherscanGatewayProbeRun(ctx context.Context, req *GetEtherscanGatewayProbeRunRequest) (*EtherscanGatewayProbeRun, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEtherscanGatewayProbeRun not implemented")
 }
 
 func RegisterServiceStatusServiceServer(s *grpc.Server, srv ServiceStatusServiceServer) {
@@ -530,6 +1166,60 @@ func _ServiceStatusService_ListEtherscanGatewayStatuses_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ServiceStatusService_RunEtherscanGatewayProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunEtherscanGatewayProbeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceStatusServiceServer).RunEtherscanGatewayProbe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/servicestatus.ServiceStatusService/RunEtherscanGatewayProbe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceStatusServiceServer).RunEtherscanGatewayProbe(ctx, req.(*RunEtherscanGatewayProbeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ServiceStatusService_GetLatestEtherscanGatewayProbeRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestEtherscanGatewayProbeRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceStatusServiceServer).GetLatestEtherscanGatewayProbeRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/servicestatus.ServiceStatusService/GetLatestEtherscanGatewayProbeRun",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceStatusServiceServer).GetLatestEtherscanGatewayProbeRun(ctx, req.(*GetLatestEtherscanGatewayProbeRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ServiceStatusService_GetEtherscanGatewayProbeRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEtherscanGatewayProbeRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceStatusServiceServer).GetEtherscanGatewayProbeRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/servicestatus.ServiceStatusService/GetEtherscanGatewayProbeRun",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceStatusServiceServer).GetEtherscanGatewayProbeRun(ctx, req.(*GetEtherscanGatewayProbeRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ServiceStatusService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "servicestatus.ServiceStatusService",
 	HandlerType: (*ServiceStatusServiceServer)(nil),
@@ -541,6 +1231,18 @@ var _ServiceStatusService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListEtherscanGatewayStatuses",
 			Handler:    _ServiceStatusService_ListEtherscanGatewayStatuses_Handler,
+		},
+		{
+			MethodName: "RunEtherscanGatewayProbe",
+			Handler:    _ServiceStatusService_RunEtherscanGatewayProbe_Handler,
+		},
+		{
+			MethodName: "GetLatestEtherscanGatewayProbeRun",
+			Handler:    _ServiceStatusService_GetLatestEtherscanGatewayProbeRun_Handler,
+		},
+		{
+			MethodName: "GetEtherscanGatewayProbeRun",
+			Handler:    _ServiceStatusService_GetEtherscanGatewayProbeRun_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -826,6 +1528,430 @@ func (m *ListEtherscanGatewayStatusesResponse) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
+func (m *RunEtherscanGatewayProbeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RunEtherscanGatewayProbeRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RunEtherscanGatewayProbeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.RequestsPerKey != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.RequestsPerKey))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.IntervalMs != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.IntervalMs))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetEtherscanGatewayProbeRunRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetEtherscanGatewayProbeRunRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetEtherscanGatewayProbeRunRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.RunId) > 0 {
+		i -= len(m.RunId)
+		copy(dAtA[i:], m.RunId)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.RunId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetLatestEtherscanGatewayProbeRunRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetLatestEtherscanGatewayProbeRunRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetLatestEtherscanGatewayProbeRunRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Other != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Other))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.Upstream != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Upstream))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.Malformed != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Malformed))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.InvalidRequest != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.InvalidRequest))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Plan != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Plan))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Authentication != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Authentication))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.RateLimit != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.RateLimit))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Success != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Success))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EtherscanGatewayProbeKeySummary) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EtherscanGatewayProbeKeySummary) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EtherscanGatewayProbeKeySummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Counts != nil {
+		{
+			size, err := m.Counts.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintServiceStatus(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.KeyLabel) > 0 {
+		i -= len(m.KeyLabel)
+		copy(dAtA[i:], m.KeyLabel)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.KeyLabel)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EtherscanGatewayProbeGatewaySummary) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EtherscanGatewayProbeGatewaySummary) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EtherscanGatewayProbeGatewaySummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Counts != nil {
+		{
+			size, err := m.Counts.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintServiceStatus(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Gateway) > 0 {
+		i -= len(m.Gateway)
+		copy(dAtA[i:], m.Gateway)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.Gateway)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EtherscanGatewayProbeRun) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EtherscanGatewayProbeRun) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EtherscanGatewayProbeRun) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ErrorMessage) > 0 {
+		i -= len(m.ErrorMessage)
+		copy(dAtA[i:], m.ErrorMessage)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.ErrorMessage)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x9a
+	}
+	if len(m.Samples) > 0 {
+		for iNdEx := len(m.Samples) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Samples[iNdEx])
+			copy(dAtA[i:], m.Samples[iNdEx])
+			i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.Samples[iNdEx])))
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x92
+		}
+	}
+	if len(m.GatewaySummaries) > 0 {
+		for iNdEx := len(m.GatewaySummaries) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.GatewaySummaries[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintServiceStatus(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x8a
+		}
+	}
+	if len(m.KeySummaries) > 0 {
+		for iNdEx := len(m.KeySummaries) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.KeySummaries[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintServiceStatus(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1
+			i--
+			dAtA[i] = 0x82
+		}
+	}
+	if m.StartSpreadMs != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.StartSpreadMs))
+		i--
+		dAtA[i] = 0x78
+	}
+	if m.ElapsedMs != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.ElapsedMs))
+		i--
+		dAtA[i] = 0x70
+	}
+	if m.Counts != nil {
+		{
+			size, err := m.Counts.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintServiceStatus(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x6a
+	}
+	if m.RequiredSuccess != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.RequiredSuccess))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.Total != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.Total))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.GatewayCount != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.GatewayCount))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.KeyCount != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.KeyCount))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.RequestsPerKey != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.RequestsPerKey))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.IntervalMs != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.IntervalMs))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.FinishedAt != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.FinishedAt))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.StartedAt != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.StartedAt))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.CreatedAt != 0 {
+		i = encodeVarintServiceStatus(dAtA, i, uint64(m.CreatedAt))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Result) > 0 {
+		i -= len(m.Result)
+		copy(dAtA[i:], m.Result)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.Result)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Status) > 0 {
+		i -= len(m.Status)
+		copy(dAtA[i:], m.Status)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.Status)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.RunId) > 0 {
+		i -= len(m.RunId)
+		copy(dAtA[i:], m.RunId)
+		i = encodeVarintServiceStatus(dAtA, i, uint64(len(m.RunId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintServiceStatus(dAtA []byte, offset int, v uint64) int {
 	offset -= sovServiceStatus(v)
 	base := offset
@@ -960,6 +2086,211 @@ func (m *ListEtherscanGatewayStatusesResponse) Size() (n int) {
 	}
 	if m.CheckedAt != 0 {
 		n += 1 + sovServiceStatus(uint64(m.CheckedAt))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *RunEtherscanGatewayProbeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.IntervalMs != 0 {
+		n += 1 + sovServiceStatus(uint64(m.IntervalMs))
+	}
+	if m.RequestsPerKey != 0 {
+		n += 1 + sovServiceStatus(uint64(m.RequestsPerKey))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetEtherscanGatewayProbeRunRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RunId)
+	if l > 0 {
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetLatestEtherscanGatewayProbeRunRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EtherscanGatewayProbeCategoryCounts) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Success != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Success))
+	}
+	if m.RateLimit != 0 {
+		n += 1 + sovServiceStatus(uint64(m.RateLimit))
+	}
+	if m.Authentication != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Authentication))
+	}
+	if m.Plan != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Plan))
+	}
+	if m.InvalidRequest != 0 {
+		n += 1 + sovServiceStatus(uint64(m.InvalidRequest))
+	}
+	if m.Malformed != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Malformed))
+	}
+	if m.Upstream != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Upstream))
+	}
+	if m.Other != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Other))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EtherscanGatewayProbeKeySummary) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.KeyLabel)
+	if l > 0 {
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.Counts != nil {
+		l = m.Counts.Size()
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EtherscanGatewayProbeGatewaySummary) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Gateway)
+	if l > 0 {
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.Counts != nil {
+		l = m.Counts.Size()
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *EtherscanGatewayProbeRun) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.RunId)
+	if l > 0 {
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	l = len(m.Status)
+	if l > 0 {
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	l = len(m.Result)
+	if l > 0 {
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.CreatedAt != 0 {
+		n += 1 + sovServiceStatus(uint64(m.CreatedAt))
+	}
+	if m.StartedAt != 0 {
+		n += 1 + sovServiceStatus(uint64(m.StartedAt))
+	}
+	if m.FinishedAt != 0 {
+		n += 1 + sovServiceStatus(uint64(m.FinishedAt))
+	}
+	if m.IntervalMs != 0 {
+		n += 1 + sovServiceStatus(uint64(m.IntervalMs))
+	}
+	if m.RequestsPerKey != 0 {
+		n += 1 + sovServiceStatus(uint64(m.RequestsPerKey))
+	}
+	if m.KeyCount != 0 {
+		n += 1 + sovServiceStatus(uint64(m.KeyCount))
+	}
+	if m.GatewayCount != 0 {
+		n += 1 + sovServiceStatus(uint64(m.GatewayCount))
+	}
+	if m.Total != 0 {
+		n += 1 + sovServiceStatus(uint64(m.Total))
+	}
+	if m.RequiredSuccess != 0 {
+		n += 1 + sovServiceStatus(uint64(m.RequiredSuccess))
+	}
+	if m.Counts != nil {
+		l = m.Counts.Size()
+		n += 1 + l + sovServiceStatus(uint64(l))
+	}
+	if m.ElapsedMs != 0 {
+		n += 1 + sovServiceStatus(uint64(m.ElapsedMs))
+	}
+	if m.StartSpreadMs != 0 {
+		n += 1 + sovServiceStatus(uint64(m.StartSpreadMs))
+	}
+	if len(m.KeySummaries) > 0 {
+		for _, e := range m.KeySummaries {
+			l = e.Size()
+			n += 2 + l + sovServiceStatus(uint64(l))
+		}
+	}
+	if len(m.GatewaySummaries) > 0 {
+		for _, e := range m.GatewaySummaries {
+			l = e.Size()
+			n += 2 + l + sovServiceStatus(uint64(l))
+		}
+	}
+	if len(m.Samples) > 0 {
+		for _, s := range m.Samples {
+			l = len(s)
+			n += 2 + l + sovServiceStatus(uint64(l))
+		}
+	}
+	l = len(m.ErrorMessage)
+	if l > 0 {
+		n += 2 + l + sovServiceStatus(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1665,6 +2996,1194 @@ func (m *ListEtherscanGatewayStatusesResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RunEtherscanGatewayProbeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RunEtherscanGatewayProbeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RunEtherscanGatewayProbeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntervalMs", wireType)
+			}
+			m.IntervalMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.IntervalMs |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestsPerKey", wireType)
+			}
+			m.RequestsPerKey = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RequestsPerKey |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetEtherscanGatewayProbeRunRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetEtherscanGatewayProbeRunRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetEtherscanGatewayProbeRunRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RunId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetLatestEtherscanGatewayProbeRunRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetLatestEtherscanGatewayProbeRunRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetLatestEtherscanGatewayProbeRunRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EtherscanGatewayProbeCategoryCounts) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeCategoryCounts: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeCategoryCounts: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Success", wireType)
+			}
+			m.Success = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Success |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RateLimit", wireType)
+			}
+			m.RateLimit = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RateLimit |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authentication", wireType)
+			}
+			m.Authentication = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Authentication |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Plan", wireType)
+			}
+			m.Plan = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Plan |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InvalidRequest", wireType)
+			}
+			m.InvalidRequest = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.InvalidRequest |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Malformed", wireType)
+			}
+			m.Malformed = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Malformed |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Upstream", wireType)
+			}
+			m.Upstream = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Upstream |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Other", wireType)
+			}
+			m.Other = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Other |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EtherscanGatewayProbeKeySummary) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeKeySummary: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeKeySummary: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyLabel", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyLabel = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Counts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Counts == nil {
+				m.Counts = &EtherscanGatewayProbeCategoryCounts{}
+			}
+			if err := m.Counts.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EtherscanGatewayProbeGatewaySummary) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeGatewaySummary: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeGatewaySummary: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Gateway = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Counts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Counts == nil {
+				m.Counts = &EtherscanGatewayProbeCategoryCounts{}
+			}
+			if err := m.Counts.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipServiceStatus(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EtherscanGatewayProbeRun) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowServiceStatus
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeRun: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EtherscanGatewayProbeRun: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RunId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Result = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			m.CreatedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CreatedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			m.StartedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StartedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FinishedAt", wireType)
+			}
+			m.FinishedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FinishedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntervalMs", wireType)
+			}
+			m.IntervalMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.IntervalMs |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestsPerKey", wireType)
+			}
+			m.RequestsPerKey = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RequestsPerKey |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyCount", wireType)
+			}
+			m.KeyCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.KeyCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayCount", wireType)
+			}
+			m.GatewayCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.GatewayCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Total", wireType)
+			}
+			m.Total = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Total |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequiredSuccess", wireType)
+			}
+			m.RequiredSuccess = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RequiredSuccess |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Counts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Counts == nil {
+				m.Counts = &EtherscanGatewayProbeCategoryCounts{}
+			}
+			if err := m.Counts.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ElapsedMs", wireType)
+			}
+			m.ElapsedMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ElapsedMs |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartSpreadMs", wireType)
+			}
+			m.StartSpreadMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StartSpreadMs |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeySummaries", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeySummaries = append(m.KeySummaries, &EtherscanGatewayProbeKeySummary{})
+			if err := m.KeySummaries[len(m.KeySummaries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewaySummaries", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GatewaySummaries = append(m.GatewaySummaries, &EtherscanGatewayProbeGatewaySummary{})
+			if err := m.GatewaySummaries[len(m.GatewaySummaries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Samples", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Samples = append(m.Samples, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowServiceStatus
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthServiceStatus
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipServiceStatus(dAtA[iNdEx:])

@@ -183,17 +183,19 @@ type AthenaServerOpts struct {
 	// RepoClientset           repoapiclient.Clientset
 	Cache *servercache.Cache
 	// RepoServerCache         *repocache.Cache
-	RedisClient           *redis.Client
-	XFrameOptions         string
-	ContentSecurityPolicy string
-	NotificationClientset notificationapiclient.Clientset
-	WalletClientset       walletapiclient.Clientset
-	WormClientset         wormapiclient.Clientset
-	WormPolyClientset     wormpolyapiclient.Clientset
-	PolymarketClientset   polymarketapiclient.Clientset
-	TokenAPIClientset     tokenapiapiclient.Clientset
-	EtherscanGatewayIPs   string
-	EtherscanGatewayToken string
+	RedisClient                       *redis.Client
+	XFrameOptions                     string
+	ContentSecurityPolicy             string
+	NotificationClientset             notificationapiclient.Clientset
+	WalletClientset                   walletapiclient.Clientset
+	WormClientset                     wormapiclient.Clientset
+	WormPolyClientset                 wormpolyapiclient.Clientset
+	PolymarketClientset               polymarketapiclient.Clientset
+	TokenAPIClientset                 tokenapiapiclient.Clientset
+	EtherscanGatewayIPs               string
+	EtherscanGatewayToken             string
+	EtherscanAPIKeys                  string
+	EtherscanGatewayProbeQueryAddress string
 	// EnableProxyExtension  bool
 	// WebhookParallelism     int
 	// EnableK8sEvent         []string
@@ -452,6 +454,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.TokenAPIClientset,
 		server.EtherscanGatewayIPs,
 		server.EtherscanGatewayToken,
+		server.EtherscanAPIKeys,
+		server.EtherscanGatewayProbeQueryAddress,
 	)
 
 	// certificateService := certificate.NewServer(a.db, a.enf)
