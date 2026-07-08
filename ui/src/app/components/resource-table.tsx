@@ -20,6 +20,7 @@ export const ResourceTable = <T,>(props: {
     label?: string;
     scrollX?: number | string;
     stickyHeader?: boolean | {offsetHeader?: number};
+    rowClassName?: (record: T, index: number) => string;
 }) => {
     const selectedKeys = props.selectedRowKeys || [];
     const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
@@ -94,6 +95,7 @@ export const ResourceTable = <T,>(props: {
                 }
                 scroll={scroll}
                 onRow={tableOnRow}
+                rowClassName={props.rowClassName}
             />
         </div>
     );

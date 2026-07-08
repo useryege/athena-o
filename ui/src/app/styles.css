@@ -1389,6 +1389,236 @@ body::-webkit-scrollbar-thumb,
     color: var(--athena-amber);
 }
 
+.etherscan-probe-stack {
+    width: 100%;
+}
+
+.etherscan-probe-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 74px;
+    min-height: 22px;
+    padding: 2px 8px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.etherscan-probe-tone--good {
+    --etherscan-probe-tone: var(--athena-green);
+    --etherscan-probe-tone-bg: color-mix(in srgb, var(--athena-green) 10%, var(--athena-panel-solid));
+    --etherscan-probe-tone-border: color-mix(in srgb, var(--athena-green) 36%, var(--athena-border));
+}
+
+.etherscan-probe-tone--bad {
+    --etherscan-probe-tone: var(--athena-red);
+    --etherscan-probe-tone-bg: color-mix(in srgb, var(--athena-red) 10%, var(--athena-panel-solid));
+    --etherscan-probe-tone-border: color-mix(in srgb, var(--athena-red) 36%, var(--athena-border));
+}
+
+.etherscan-probe-tone--warn {
+    --etherscan-probe-tone: var(--athena-amber);
+    --etherscan-probe-tone-bg: color-mix(in srgb, var(--athena-amber) 11%, var(--athena-panel-solid));
+    --etherscan-probe-tone-border: color-mix(in srgb, var(--athena-amber) 38%, var(--athena-border));
+}
+
+.etherscan-probe-tone--running {
+    --etherscan-probe-tone: var(--athena-blue);
+    --etherscan-probe-tone-bg: color-mix(in srgb, var(--athena-blue) 10%, var(--athena-panel-solid));
+    --etherscan-probe-tone-border: color-mix(in srgb, var(--athena-blue) 36%, var(--athena-border));
+}
+
+.etherscan-probe-tone--neutral {
+    --etherscan-probe-tone: var(--athena-muted);
+    --etherscan-probe-tone-bg: var(--athena-panel-elevated);
+    --etherscan-probe-tone-border: var(--athena-border);
+}
+
+.etherscan-probe-pill.etherscan-probe-tone--good,
+.etherscan-probe-pill.etherscan-probe-tone--bad,
+.etherscan-probe-pill.etherscan-probe-tone--warn,
+.etherscan-probe-pill.etherscan-probe-tone--running {
+    border-color: var(--etherscan-probe-tone-border);
+    background: var(--etherscan-probe-tone-bg);
+    color: var(--etherscan-probe-tone);
+}
+
+.etherscan-probe-hero {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--etherscan-probe-tone-border);
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: var(--etherscan-probe-tone-bg);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.etherscan-probe-hero__main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+}
+
+.etherscan-probe-hero__title {
+    color: var(--athena-text) !important;
+    font-family: var(--athena-data-font);
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.etherscan-probe-hero__delta {
+    color: var(--etherscan-probe-tone) !important;
+    font-family: var(--athena-data-font);
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.etherscan-probe-hero__meta {
+    color: var(--athena-muted) !important;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.etherscan-probe-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.etherscan-probe-kpi {
+    display: grid;
+    align-content: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 96px;
+    padding: 13px 14px;
+    border: 1px solid var(--etherscan-probe-tone-border);
+    border-radius: 8px;
+    background: var(--etherscan-probe-tone-bg);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.etherscan-probe-kpi__label,
+.etherscan-probe-breakdown__item span {
+    color: var(--athena-muted);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.etherscan-probe-kpi__value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--etherscan-probe-tone);
+    font-family: var(--athena-data-font);
+    font-size: 24px;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.etherscan-probe-kpi__detail {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.etherscan-probe-breakdown {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.etherscan-probe-breakdown__item {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid var(--etherscan-probe-tone-border);
+    border-radius: 8px;
+    background: var(--etherscan-probe-tone-bg);
+}
+
+.etherscan-probe-breakdown__item strong {
+    color: var(--etherscan-probe-tone);
+    font-family: var(--athena-data-font);
+    font-size: 17px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.etherscan-probe-timing .metric {
+    min-height: 58px;
+    background: color-mix(in srgb, var(--athena-panel-solid) 72%, var(--athena-panel-elevated));
+}
+
+.etherscan-probe-rate {
+    display: grid;
+    grid-template-columns: minmax(92px, 1fr) 64px;
+    align-items: center;
+    gap: 8px;
+    min-width: 170px;
+}
+
+.etherscan-probe-rate__value {
+    color: var(--etherscan-probe-tone) !important;
+    font-family: var(--athena-data-font);
+    font-size: 12px;
+    font-weight: 850;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.resource-table .ant-table-tbody > tr.etherscan-probe-row--bad > td {
+    background: color-mix(in srgb, var(--athena-red) 8%, var(--athena-panel-solid));
+}
+
+.resource-table .ant-table-tbody > tr.etherscan-probe-row--warn > td {
+    background: color-mix(in srgb, var(--athena-amber) 8%, var(--athena-panel-solid));
+}
+
+.resource-table .ant-table-tbody > tr.etherscan-probe-row--bad:hover > td {
+    background: color-mix(in srgb, var(--athena-red) 12%, var(--athena-panel-solid)) !important;
+}
+
+.resource-table .ant-table-tbody > tr.etherscan-probe-row--warn:hover > td {
+    background: color-mix(in srgb, var(--athena-amber) 12%, var(--athena-panel-solid)) !important;
+}
+
+.etherscan-probe-samples {
+    width: 100%;
+}
+
+.etherscan-probe-sample {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--etherscan-probe-tone-border);
+    border-radius: 8px;
+    background: var(--etherscan-probe-tone-bg);
+}
+
 .section-panel {
     margin-bottom: 16px;
     border: 1px solid var(--athena-border);
@@ -2307,6 +2537,14 @@ body::-webkit-scrollbar-thumb,
 
     .world-cup-corners-kpis {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .etherscan-probe-kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .etherscan-probe-breakdown {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .world-cup-corners-table-header {
