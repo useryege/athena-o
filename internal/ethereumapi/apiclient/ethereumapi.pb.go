@@ -678,6 +678,254 @@ func (m *ListNormalTransactionsResponse) GetCache() *NormalTransactionCacheMetad
 	return nil
 }
 
+// SourceCode is one source-code result returned by Etherscan.
+type SourceCode struct {
+	SourceCode           string   `protobuf:"bytes,1,opt,name=source_code,json=sourceCode,proto3" json:"source_code,omitempty"`
+	Abi                  string   `protobuf:"bytes,2,opt,name=abi,proto3" json:"abi,omitempty"`
+	ContractName         string   `protobuf:"bytes,3,opt,name=contract_name,json=contractName,proto3" json:"contract_name,omitempty"`
+	CompilerVersion      string   `protobuf:"bytes,4,opt,name=compiler_version,json=compilerVersion,proto3" json:"compiler_version,omitempty"`
+	OptimizationUsed     string   `protobuf:"bytes,5,opt,name=optimization_used,json=optimizationUsed,proto3" json:"optimization_used,omitempty"`
+	Runs                 string   `protobuf:"bytes,6,opt,name=runs,proto3" json:"runs,omitempty"`
+	ConstructorArguments string   `protobuf:"bytes,7,opt,name=constructor_arguments,json=constructorArguments,proto3" json:"constructor_arguments,omitempty"`
+	EvmVersion           string   `protobuf:"bytes,8,opt,name=evm_version,json=evmVersion,proto3" json:"evm_version,omitempty"`
+	Library              string   `protobuf:"bytes,9,opt,name=library,proto3" json:"library,omitempty"`
+	LicenseType          string   `protobuf:"bytes,10,opt,name=license_type,json=licenseType,proto3" json:"license_type,omitempty"`
+	Proxy                string   `protobuf:"bytes,11,opt,name=proxy,proto3" json:"proxy,omitempty"`
+	Implementation       string   `protobuf:"bytes,12,opt,name=implementation,proto3" json:"implementation,omitempty"`
+	SwarmSource          string   `protobuf:"bytes,13,opt,name=swarm_source,json=swarmSource,proto3" json:"swarm_source,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SourceCode) Reset()         { *m = SourceCode{} }
+func (m *SourceCode) String() string { return proto.CompactTextString(m) }
+func (*SourceCode) ProtoMessage()    {}
+func (*SourceCode) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{7}
+}
+func (m *SourceCode) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SourceCode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SourceCode.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SourceCode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SourceCode.Merge(m, src)
+}
+func (m *SourceCode) XXX_Size() int {
+	return m.Size()
+}
+func (m *SourceCode) XXX_DiscardUnknown() {
+	xxx_messageInfo_SourceCode.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SourceCode proto.InternalMessageInfo
+
+func (m *SourceCode) GetSourceCode() string {
+	if m != nil {
+		return m.SourceCode
+	}
+	return ""
+}
+
+func (m *SourceCode) GetAbi() string {
+	if m != nil {
+		return m.Abi
+	}
+	return ""
+}
+
+func (m *SourceCode) GetContractName() string {
+	if m != nil {
+		return m.ContractName
+	}
+	return ""
+}
+
+func (m *SourceCode) GetCompilerVersion() string {
+	if m != nil {
+		return m.CompilerVersion
+	}
+	return ""
+}
+
+func (m *SourceCode) GetOptimizationUsed() string {
+	if m != nil {
+		return m.OptimizationUsed
+	}
+	return ""
+}
+
+func (m *SourceCode) GetRuns() string {
+	if m != nil {
+		return m.Runs
+	}
+	return ""
+}
+
+func (m *SourceCode) GetConstructorArguments() string {
+	if m != nil {
+		return m.ConstructorArguments
+	}
+	return ""
+}
+
+func (m *SourceCode) GetEvmVersion() string {
+	if m != nil {
+		return m.EvmVersion
+	}
+	return ""
+}
+
+func (m *SourceCode) GetLibrary() string {
+	if m != nil {
+		return m.Library
+	}
+	return ""
+}
+
+func (m *SourceCode) GetLicenseType() string {
+	if m != nil {
+		return m.LicenseType
+	}
+	return ""
+}
+
+func (m *SourceCode) GetProxy() string {
+	if m != nil {
+		return m.Proxy
+	}
+	return ""
+}
+
+func (m *SourceCode) GetImplementation() string {
+	if m != nil {
+		return m.Implementation
+	}
+	return ""
+}
+
+func (m *SourceCode) GetSwarmSource() string {
+	if m != nil {
+		return m.SwarmSource
+	}
+	return ""
+}
+
+// GetSourceCodeRequest queries source-code metadata for one contract address.
+type GetSourceCodeRequest struct {
+	ChainId              int64    `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	ContractAddress      string   `protobuf:"bytes,2,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetSourceCodeRequest) Reset()         { *m = GetSourceCodeRequest{} }
+func (m *GetSourceCodeRequest) String() string { return proto.CompactTextString(m) }
+func (*GetSourceCodeRequest) ProtoMessage()    {}
+func (*GetSourceCodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{8}
+}
+func (m *GetSourceCodeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetSourceCodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetSourceCodeRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetSourceCodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSourceCodeRequest.Merge(m, src)
+}
+func (m *GetSourceCodeRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetSourceCodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSourceCodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSourceCodeRequest proto.InternalMessageInfo
+
+func (m *GetSourceCodeRequest) GetChainId() int64 {
+	if m != nil {
+		return m.ChainId
+	}
+	return 0
+}
+
+func (m *GetSourceCodeRequest) GetContractAddress() string {
+	if m != nil {
+		return m.ContractAddress
+	}
+	return ""
+}
+
+// GetSourceCodeResponse returns source-code metadata.
+type GetSourceCodeResponse struct {
+	Items                []*SourceCode `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *GetSourceCodeResponse) Reset()         { *m = GetSourceCodeResponse{} }
+func (m *GetSourceCodeResponse) String() string { return proto.CompactTextString(m) }
+func (*GetSourceCodeResponse) ProtoMessage()    {}
+func (*GetSourceCodeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f1c010ddcf93462f, []int{9}
+}
+func (m *GetSourceCodeResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetSourceCodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetSourceCodeResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetSourceCodeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetSourceCodeResponse.Merge(m, src)
+}
+func (m *GetSourceCodeResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetSourceCodeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetSourceCodeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetSourceCodeResponse proto.InternalMessageInfo
+
+func (m *GetSourceCodeResponse) GetItems() []*SourceCode {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("athena.internal.ethereumapi.NormalTransactionSort", NormalTransactionSort_name, NormalTransactionSort_value)
 	proto.RegisterEnum("athena.internal.ethereumapi.NormalTransactionReceiptStatus", NormalTransactionReceiptStatus_name, NormalTransactionReceiptStatus_value)
@@ -688,6 +936,9 @@ func init() {
 	proto.RegisterType((*NormalTransactionCacheMetadata)(nil), "athena.internal.ethereumapi.NormalTransactionCacheMetadata")
 	proto.RegisterType((*ListNormalTransactionsRequest)(nil), "athena.internal.ethereumapi.ListNormalTransactionsRequest")
 	proto.RegisterType((*ListNormalTransactionsResponse)(nil), "athena.internal.ethereumapi.ListNormalTransactionsResponse")
+	proto.RegisterType((*SourceCode)(nil), "athena.internal.ethereumapi.SourceCode")
+	proto.RegisterType((*GetSourceCodeRequest)(nil), "athena.internal.ethereumapi.GetSourceCodeRequest")
+	proto.RegisterType((*GetSourceCodeResponse)(nil), "athena.internal.ethereumapi.GetSourceCodeResponse")
 }
 
 func init() {
@@ -695,72 +946,89 @@ func init() {
 }
 
 var fileDescriptor_f1c010ddcf93462f = []byte{
-	// 1038 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xcd, 0x52, 0x1b, 0x47,
-	0x10, 0xce, 0x0a, 0x04, 0x52, 0x8b, 0x1f, 0x31, 0x26, 0xae, 0x8d, 0x31, 0x98, 0xc8, 0xa9, 0x18,
-	0x3b, 0xb1, 0xa8, 0x28, 0x97, 0x38, 0x3e, 0xc9, 0x42, 0x60, 0x55, 0x61, 0x41, 0x66, 0xc5, 0x21,
-	0xc9, 0x61, 0x6b, 0xd8, 0x6d, 0xb4, 0x53, 0xd1, 0xee, 0x2a, 0x33, 0xb3, 0x94, 0xe3, 0x6b, 0x8e,
-	0x39, 0xf9, 0x4d, 0x72, 0xca, 0x33, 0xe4, 0x92, 0xaa, 0x3c, 0x42, 0x8a, 0x43, 0x9e, 0x21, 0xc7,
-	0xd4, 0xcc, 0xec, 0x82, 0x30, 0x02, 0x17, 0x3e, 0x69, 0xfb, 0xeb, 0x9e, 0x6f, 0xba, 0x7b, 0xfb,
-	0x6b, 0x2d, 0x7c, 0xce, 0x13, 0x85, 0x22, 0x61, 0xa3, 0x6d, 0x54, 0x11, 0x0a, 0xcc, 0x62, 0x36,
-	0xe6, 0x93, 0xcf, 0xcd, 0xb1, 0x48, 0x55, 0x4a, 0xd6, 0x98, 0x8a, 0x30, 0x61, 0xcd, 0x22, 0xbc,
-	0x39, 0x11, 0xd2, 0x58, 0x87, 0xb5, 0x3d, 0x54, 0xdd, 0x1c, 0x69, 0x1f, 0xf6, 0x3c, 0xc5, 0x54,
-	0x26, 0x29, 0xfe, 0x9c, 0xa1, 0x54, 0x8d, 0x43, 0xb8, 0x3f, 0xdd, 0x2d, 0xc7, 0x69, 0x22, 0x91,
-	0xb8, 0x30, 0x2f, 0x15, 0x13, 0x0a, 0x43, 0xd7, 0xd9, 0x74, 0xb6, 0x2a, 0xb4, 0x30, 0xc9, 0x5d,
-	0x98, 0x93, 0x26, 0xd6, 0x2d, 0x6d, 0x3a, 0x5b, 0x55, 0x9a, 0x5b, 0x8d, 0x1f, 0x61, 0xad, 0x9f,
-	0x8a, 0x98, 0x8d, 0x06, 0x82, 0x25, 0x92, 0x05, 0x8a, 0xa7, 0xc9, 0x8b, 0x51, 0x1a, 0xfc, 0x44,
-	0x59, 0x32, 0x44, 0xf2, 0x00, 0x6a, 0x86, 0xc1, 0x3f, 0xd6, 0x98, 0x21, 0x9d, 0xa5, 0x60, 0x20,
-	0x13, 0x45, 0xd6, 0xa0, 0x8a, 0x49, 0x98, 0xbb, 0x4b, 0xc6, 0x5d, 0xc1, 0x24, 0x34, 0xce, 0xc6,
-	0xbf, 0x65, 0x58, 0xb9, 0xc2, 0x4e, 0x3e, 0x85, 0x05, 0x13, 0xee, 0x27, 0x59, 0x7c, 0x8c, 0x22,
-	0x27, 0xad, 0x19, 0xac, 0x6f, 0x20, 0xb2, 0x0e, 0x60, 0x43, 0x22, 0x26, 0xa3, 0x3c, 0xe3, 0xaa,
-	0x41, 0x5e, 0x32, 0x19, 0x91, 0x47, 0xb0, 0x6c, 0xdd, 0x8a, 0xc7, 0x28, 0x15, 0x8b, 0xc7, 0xee,
-	0x8c, 0x21, 0x59, 0x32, 0xf0, 0xa0, 0x40, 0xc9, 0x63, 0xa8, 0xab, 0x8b, 0x9b, 0x2d, 0xdb, 0xac,
-	0x61, 0x5b, 0x9e, 0xc0, 0x0d, 0xe7, 0x2a, 0x94, 0x93, 0x34, 0x09, 0xd0, 0x2d, 0x1b, 0x26, 0x6b,
-	0x90, 0x2f, 0x60, 0x65, 0x92, 0x80, 0x27, 0x21, 0xbe, 0x76, 0xe7, 0x4c, 0xc4, 0x24, 0x73, 0x4f,
-	0xe3, 0xba, 0xb0, 0x13, 0x91, 0xc6, 0x3e, 0x0b, 0x43, 0x81, 0x52, 0xba, 0xf3, 0xe6, 0xa6, 0x9a,
-	0xc6, 0xda, 0x16, 0xd2, 0x85, 0xa9, 0xf4, 0x3c, 0xa0, 0x62, 0x0b, 0x53, 0x69, 0xe1, 0x5e, 0x85,
-	0xf2, 0x29, 0x1b, 0x65, 0xe8, 0x56, 0x8d, 0xc7, 0x1a, 0xa4, 0x0e, 0x33, 0x43, 0x26, 0x5d, 0x30,
-	0xd7, 0xea, 0x47, 0xdd, 0xf5, 0x21, 0x93, 0xfe, 0x58, 0xf0, 0x00, 0xdd, 0x9a, 0x89, 0xad, 0x0c,
-	0x99, 0x3c, 0xd4, 0xb6, 0x26, 0xe1, 0xc9, 0x38, 0x53, 0xee, 0x82, 0x25, 0x31, 0x86, 0x3e, 0x12,
-	0xa3, 0x8a, 0xd2, 0xd0, 0xe7, 0xa1, 0xbb, 0x68, 0x8f, 0x58, 0xa0, 0x17, 0x92, 0x87, 0xb0, 0x78,
-	0x92, 0x25, 0xb6, 0xc6, 0x84, 0xc5, 0xe8, 0x2e, 0x99, 0x80, 0x85, 0x02, 0xec, 0xb3, 0x18, 0x75,
-	0x33, 0x83, 0x34, 0x51, 0x82, 0x05, 0xea, 0xbc, 0x82, 0x65, 0xdb, 0xcc, 0x02, 0x2f, 0xea, 0x68,
-	0xc2, 0x9d, 0x20, 0x8b, 0xb3, 0x11, 0x53, 0xfc, 0x14, 0x7d, 0x9d, 0x6a, 0x26, 0x31, 0x74, 0xeb,
-	0xa6, 0x82, 0x95, 0x0b, 0xd7, 0x1e, 0x93, 0x47, 0x12, 0x43, 0x72, 0x0c, 0x4b, 0x02, 0x03, 0xe4,
-	0x63, 0xe5, 0xe7, 0x53, 0xba, 0xb2, 0xe9, 0x6c, 0x2d, 0xb5, 0x9e, 0x37, 0x6f, 0x10, 0x4b, 0xf3,
-	0xca, 0x68, 0x51, 0xcb, 0x91, 0x8b, 0x62, 0x51, 0x4c, 0x9a, 0xe4, 0x13, 0xa8, 0x9c, 0x27, 0x42,
-	0x4c, 0x22, 0xf3, 0xc3, 0xfc, 0xfa, 0xcf, 0x60, 0x31, 0x48, 0x93, 0x13, 0x2e, 0x62, 0xa6, 0x69,
-	0xa4, 0x7b, 0xc7, 0xf8, 0x2f, 0x83, 0x9a, 0x80, 0x4b, 0x1f, 0x85, 0x48, 0x85, 0xbb, 0x6a, 0xd5,
-	0xc5, 0x65, 0x57, 0x9b, 0x8d, 0xb7, 0x0e, 0x6c, 0x5c, 0xc9, 0xa6, 0xc3, 0x82, 0x08, 0x5f, 0xa1,
-	0x62, 0x21, 0x53, 0x4c, 0xf7, 0x3f, 0xd0, 0x80, 0x1f, 0x71, 0x95, 0x8b, 0xb3, 0x62, 0x80, 0x97,
-	0x5c, 0xe9, 0x57, 0x26, 0x15, 0x1b, 0xa1, 0x19, 0xf5, 0x0a, 0xb5, 0x86, 0x1e, 0x96, 0x13, 0x54,
-	0x41, 0x84, 0xa1, 0xcf, 0x94, 0x99, 0xf0, 0x2a, 0xad, 0xe6, 0x48, 0x5b, 0x69, 0x37, 0xbe, 0x1e,
-	0x73, 0x81, 0x52, 0xbb, 0xed, 0x58, 0x57, 0x73, 0xa4, 0xad, 0x1a, 0x7f, 0x95, 0x60, 0x7d, 0x9f,
-	0x4b, 0x75, 0x25, 0xaf, 0x62, 0x9b, 0xe8, 0x82, 0x82, 0x88, 0xf1, 0x44, 0x4f, 0x84, 0xce, 0x68,
-	0x86, 0xce, 0x1b, 0xbb, 0x17, 0xea, 0x45, 0x52, 0xbc, 0x62, 0xab, 0xbe, 0xc2, 0x24, 0xdf, 0x83,
-	0x55, 0xaa, 0x2f, 0xf4, 0x82, 0x30, 0x59, 0xd5, 0x5a, 0xdf, 0xdc, 0xee, 0x3d, 0x5d, 0x2c, 0x18,
-	0x6a, 0x75, 0x6e, 0x97, 0x0d, 0x81, 0xd9, 0x31, 0x1b, 0xa2, 0x29, 0xa5, 0x4c, 0xcd, 0xb3, 0x6e,
-	0x9b, 0xfe, 0xf5, 0x25, 0x7f, 0x63, 0xa5, 0x59, 0xa6, 0x15, 0x0d, 0x78, 0xfc, 0x0d, 0x92, 0x5d,
-	0x98, 0x95, 0xa9, 0x50, 0x46, 0x90, 0x4b, 0xad, 0xd6, 0xed, 0x92, 0xf0, 0x52, 0xa1, 0xa8, 0x39,
-	0x6f, 0xc6, 0x3f, 0x15, 0x01, 0xfa, 0x02, 0x4f, 0x04, 0xca, 0xc8, 0x28, 0xb7, 0x42, 0x17, 0x0c,
-	0x48, 0x2d, 0xd6, 0xf8, 0xcf, 0x81, 0x8d, 0xeb, 0xfa, 0x99, 0xaf, 0x5f, 0x0a, 0x0b, 0x13, 0x4b,
-	0x41, 0xba, 0xce, 0xe6, 0xcc, 0x56, 0xad, 0xd5, 0xbc, 0xe5, 0x10, 0x5f, 0xe2, 0x38, 0x6f, 0x4a,
-	0xe9, 0xba, 0xa6, 0xcc, 0xbc, 0xd3, 0x94, 0xef, 0xa0, 0x6c, 0xe6, 0xca, 0xb4, 0xb1, 0x76, 0x5b,
-	0x09, 0x5d, 0x1a, 0x5a, 0x6a, 0x99, 0x9e, 0xfc, 0xea, 0xc0, 0xc7, 0x53, 0xfb, 0x47, 0x1e, 0xc1,
-	0xc3, 0xfe, 0x01, 0x7d, 0xd5, 0xde, 0xf7, 0x07, 0xb4, 0xdd, 0xf7, 0xda, 0x9d, 0x41, 0xef, 0xa0,
-	0xef, 0x7b, 0x07, 0x74, 0xe0, 0x1f, 0xf5, 0xbd, 0xc3, 0x6e, 0xa7, 0xb7, 0xdb, 0xeb, 0xee, 0xd4,
-	0x3f, 0x22, 0x0f, 0x60, 0xed, 0xba, 0xc0, 0xb6, 0xd7, 0xa9, 0x3b, 0x64, 0x13, 0xee, 0x5f, 0x17,
-	0xb0, 0xd3, 0xf5, 0x3a, 0xf5, 0xd2, 0x93, 0xdf, 0xa7, 0x89, 0xec, 0x92, 0xe4, 0xc9, 0x57, 0xf0,
-	0x74, 0x0a, 0x09, 0xed, 0x76, 0xba, 0xbd, 0xc3, 0x81, 0xef, 0x0d, 0xda, 0x83, 0x23, 0xef, 0x9d,
-	0xc4, 0xbe, 0x84, 0xad, 0xf7, 0x1f, 0xd9, 0x6d, 0xf7, 0xf6, 0xbb, 0x3b, 0x75, 0x87, 0x3c, 0x85,
-	0xc7, 0xef, 0x8f, 0xf6, 0x8e, 0x3a, 0x9d, 0xae, 0xe7, 0xd5, 0x4b, 0xad, 0x3f, 0x4a, 0x40, 0x26,
-	0xff, 0xad, 0x51, 0x9c, 0xea, 0x0d, 0xfd, 0x9b, 0x03, 0xab, 0xd3, 0xfe, 0xc7, 0xc9, 0xcd, 0x3a,
-	0xba, 0xe1, 0xcb, 0xe0, 0xde, 0xb3, 0x0f, 0x38, 0x99, 0x4f, 0xed, 0x5b, 0x07, 0xee, 0x4e, 0x1f,
-	0x6c, 0xf2, 0xed, 0x8d, 0xac, 0x37, 0x6e, 0x97, 0x7b, 0xcf, 0x3f, 0xe8, 0xac, 0xcd, 0xe9, 0xc5,
-	0xde, 0x9f, 0x67, 0x1b, 0xce, 0xdf, 0x67, 0x1b, 0xce, 0x3f, 0x67, 0x1b, 0xce, 0x0f, 0xcf, 0x86,
-	0x5c, 0x45, 0xd9, 0x71, 0x33, 0x48, 0xe3, 0xed, 0x4c, 0xa2, 0xf8, 0x05, 0x87, 0xb8, 0x6d, 0xd9,
-	0xb7, 0xa7, 0x7e, 0x75, 0xb1, 0x31, 0x0f, 0x46, 0x1c, 0x13, 0x75, 0x3c, 0x67, 0x3e, 0xba, 0xbe,
-	0xfe, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x4f, 0x72, 0x1b, 0x23, 0x9e, 0x09, 0x00, 0x00,
+	// 1307 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x57, 0xcd, 0x72, 0x13, 0x47,
+	0x10, 0xce, 0x4a, 0x16, 0x96, 0x5a, 0xb6, 0x91, 0x07, 0x43, 0x6d, 0x30, 0x18, 0x47, 0xa4, 0xc0,
+	0x90, 0x20, 0x17, 0xe2, 0x12, 0x42, 0xe5, 0x20, 0x84, 0x30, 0xaa, 0x02, 0xe1, 0xec, 0xca, 0x54,
+	0xe5, 0xa7, 0x6a, 0x6b, 0xb4, 0xdb, 0x96, 0xa6, 0xa2, 0xfd, 0xc9, 0xcc, 0xac, 0x82, 0xb9, 0xe6,
+	0x98, 0x13, 0x2f, 0x92, 0xca, 0x43, 0xe4, 0x90, 0x4b, 0xaa, 0xf2, 0x08, 0x29, 0x0e, 0x79, 0x86,
+	0x1c, 0x53, 0x33, 0xb3, 0x6b, 0xcb, 0xb6, 0x2c, 0x62, 0x4e, 0xda, 0xfe, 0xba, 0xe7, 0x9b, 0xee,
+	0x99, 0xee, 0x6f, 0x57, 0x70, 0x8b, 0x45, 0x12, 0x79, 0x44, 0xc7, 0xdb, 0x28, 0x47, 0xc8, 0x31,
+	0x0d, 0x69, 0xc2, 0xa6, 0x9f, 0x1b, 0x09, 0x8f, 0x65, 0x4c, 0xd6, 0xa9, 0x1c, 0x61, 0x44, 0x1b,
+	0x79, 0x78, 0x63, 0x2a, 0xa4, 0x7e, 0x1d, 0xd6, 0x77, 0x50, 0x76, 0x32, 0xa4, 0xb5, 0xdb, 0x75,
+	0x25, 0x95, 0xa9, 0x70, 0xf0, 0xc7, 0x14, 0x85, 0xac, 0xef, 0xc2, 0xb5, 0xd9, 0x6e, 0x91, 0xc4,
+	0x91, 0x40, 0x62, 0xc3, 0xa2, 0x90, 0x94, 0x4b, 0x0c, 0x6c, 0x6b, 0xd3, 0xda, 0x2a, 0x3b, 0xb9,
+	0x49, 0xae, 0xc0, 0x05, 0xa1, 0x63, 0xed, 0xc2, 0xa6, 0xb5, 0x55, 0x71, 0x32, 0xab, 0xfe, 0x1d,
+	0xac, 0xf7, 0x62, 0x1e, 0xd2, 0x71, 0x9f, 0xd3, 0x48, 0x50, 0x5f, 0xb2, 0x38, 0x7a, 0x3c, 0x8e,
+	0xfd, 0x1f, 0x1c, 0x1a, 0x0d, 0x91, 0xdc, 0x80, 0xaa, 0x66, 0xf0, 0x06, 0x0a, 0xd3, 0xa4, 0x0b,
+	0x0e, 0x68, 0x48, 0x47, 0x91, 0x75, 0xa8, 0x60, 0x14, 0x64, 0xee, 0x82, 0x76, 0x97, 0x31, 0x0a,
+	0xb4, 0xb3, 0xfe, 0x4f, 0x09, 0x56, 0x4f, 0xb1, 0x93, 0x4f, 0x60, 0x49, 0x87, 0x7b, 0x51, 0x1a,
+	0x0e, 0x90, 0x67, 0xa4, 0x55, 0x8d, 0xf5, 0x34, 0x44, 0xae, 0x03, 0x98, 0x90, 0x11, 0x15, 0xa3,
+	0x2c, 0xe3, 0x8a, 0x46, 0x9e, 0x51, 0x31, 0x22, 0xb7, 0xe1, 0xa2, 0x71, 0x4b, 0x16, 0xa2, 0x90,
+	0x34, 0x4c, 0xec, 0xa2, 0x26, 0x59, 0xd1, 0x70, 0x3f, 0x47, 0xc9, 0x1d, 0xa8, 0xc9, 0xa3, 0x9d,
+	0x0d, 0xdb, 0x82, 0x66, 0xbb, 0x38, 0x85, 0x6b, 0xce, 0x35, 0x28, 0x45, 0x71, 0xe4, 0xa3, 0x5d,
+	0xd2, 0x4c, 0xc6, 0x20, 0x9f, 0xc1, 0xea, 0x34, 0x01, 0x8b, 0x02, 0x7c, 0x6d, 0x5f, 0xd0, 0x11,
+	0xd3, 0xcc, 0x5d, 0x85, 0xab, 0xc2, 0xf6, 0x79, 0x1c, 0x7a, 0x34, 0x08, 0x38, 0x0a, 0x61, 0x2f,
+	0xea, 0x9d, 0xaa, 0x0a, 0x6b, 0x19, 0x48, 0x15, 0x26, 0xe3, 0xc3, 0x80, 0xb2, 0x29, 0x4c, 0xc6,
+	0xb9, 0x7b, 0x0d, 0x4a, 0x13, 0x3a, 0x4e, 0xd1, 0xae, 0x68, 0x8f, 0x31, 0x48, 0x0d, 0x8a, 0x43,
+	0x2a, 0x6c, 0xd0, 0xdb, 0xaa, 0x47, 0x75, 0xea, 0x43, 0x2a, 0xbc, 0x84, 0x33, 0x1f, 0xed, 0xaa,
+	0x8e, 0x2d, 0x0f, 0xa9, 0xd8, 0x55, 0xb6, 0x22, 0x61, 0x51, 0x92, 0x4a, 0x7b, 0xc9, 0x90, 0x68,
+	0x43, 0x2d, 0x09, 0x51, 0x8e, 0xe2, 0xc0, 0x63, 0x81, 0xbd, 0x6c, 0x96, 0x18, 0xa0, 0x1b, 0x90,
+	0x9b, 0xb0, 0xbc, 0x9f, 0x46, 0xa6, 0xc6, 0x88, 0x86, 0x68, 0xaf, 0xe8, 0x80, 0xa5, 0x1c, 0xec,
+	0xd1, 0x10, 0xd5, 0x61, 0xfa, 0x71, 0x24, 0x39, 0xf5, 0xe5, 0x61, 0x05, 0x17, 0xcd, 0x61, 0xe6,
+	0x78, 0x5e, 0x47, 0x03, 0x2e, 0xf9, 0x69, 0x98, 0x8e, 0xa9, 0x64, 0x13, 0xf4, 0x54, 0xaa, 0xa9,
+	0xc0, 0xc0, 0xae, 0xe9, 0x0a, 0x56, 0x8f, 0x5c, 0x3b, 0x54, 0xec, 0x09, 0x0c, 0xc8, 0x00, 0x56,
+	0x38, 0xfa, 0xc8, 0x12, 0xe9, 0x65, 0x5d, 0xba, 0xba, 0x69, 0x6d, 0xad, 0x34, 0x1f, 0x35, 0xe6,
+	0x0c, 0x4b, 0xe3, 0x54, 0x6b, 0x39, 0x86, 0x23, 0x1b, 0x8a, 0x65, 0x3e, 0x6d, 0x92, 0x8f, 0xa1,
+	0x7c, 0x98, 0x08, 0xd1, 0x89, 0x2c, 0x0e, 0xb3, 0xed, 0x3f, 0x85, 0x65, 0x3f, 0x8e, 0xf6, 0x19,
+	0x0f, 0xa9, 0xa2, 0x11, 0xf6, 0x25, 0xed, 0x3f, 0x0e, 0x2a, 0x02, 0x26, 0x3c, 0xe4, 0x3c, 0xe6,
+	0xf6, 0x9a, 0x99, 0x2e, 0x26, 0x3a, 0xca, 0xac, 0xbf, 0xb5, 0x60, 0xe3, 0x54, 0x36, 0x6d, 0xea,
+	0x8f, 0xf0, 0x05, 0x4a, 0x1a, 0x50, 0x49, 0xd5, 0xf9, 0xfb, 0x0a, 0xf0, 0x46, 0x4c, 0x66, 0xc3,
+	0x59, 0xd6, 0xc0, 0x33, 0x26, 0xd5, 0x95, 0x09, 0x49, 0xc7, 0xa8, 0x5b, 0xbd, 0xec, 0x18, 0x43,
+	0x35, 0xcb, 0x3e, 0x4a, 0x7f, 0x84, 0x81, 0x47, 0xa5, 0xee, 0xf0, 0x8a, 0x53, 0xc9, 0x90, 0x96,
+	0x54, 0x6e, 0x7c, 0x9d, 0x30, 0x8e, 0x42, 0xb9, 0x4d, 0x5b, 0x57, 0x32, 0xa4, 0x25, 0xeb, 0x7f,
+	0x16, 0xe0, 0xfa, 0x73, 0x26, 0xe4, 0xa9, 0xbc, 0x72, 0x35, 0x51, 0x05, 0xf9, 0x23, 0xca, 0x22,
+	0xd5, 0x11, 0x2a, 0xa3, 0xa2, 0xb3, 0xa8, 0xed, 0x6e, 0xa0, 0x84, 0x24, 0xbf, 0x62, 0x33, 0x7d,
+	0xb9, 0x49, 0xbe, 0x01, 0x33, 0xa9, 0x1e, 0x57, 0x02, 0xa1, 0xb3, 0xaa, 0x36, 0xbf, 0x38, 0xdf,
+	0x3d, 0x1d, 0x09, 0x8c, 0x63, 0xe6, 0xdc, 0x88, 0x0d, 0x81, 0x85, 0x84, 0x0e, 0x51, 0x97, 0x52,
+	0x72, 0xf4, 0xb3, 0x3a, 0x36, 0xf5, 0xeb, 0x09, 0xf6, 0xc6, 0x8c, 0x66, 0xc9, 0x29, 0x2b, 0xc0,
+	0x65, 0x6f, 0x90, 0x3c, 0x85, 0x05, 0x11, 0x73, 0xa9, 0x07, 0x72, 0xa5, 0xd9, 0x3c, 0x5f, 0x12,
+	0x6e, 0xcc, 0xa5, 0xa3, 0xd7, 0xeb, 0xf6, 0x8f, 0xb9, 0x8f, 0x1e, 0xc7, 0x7d, 0x8e, 0x62, 0xa4,
+	0x27, 0xb7, 0xec, 0x2c, 0x69, 0xd0, 0x31, 0x58, 0xfd, 0x5f, 0x0b, 0x36, 0xce, 0x3a, 0xcf, 0x4c,
+	0x7e, 0x1d, 0x58, 0x9a, 0x12, 0x05, 0x61, 0x5b, 0x9b, 0xc5, 0xad, 0x6a, 0xb3, 0x71, 0xce, 0x26,
+	0x3e, 0xc6, 0x71, 0x78, 0x28, 0x85, 0xb3, 0x0e, 0xa5, 0x78, 0xe2, 0x50, 0xbe, 0x86, 0x92, 0xee,
+	0x2b, 0x7d, 0x8c, 0xd5, 0xf3, 0x8e, 0xd0, 0xb1, 0xa6, 0x75, 0x0c, 0x53, 0xfd, 0xf7, 0x22, 0x80,
+	0x1b, 0xa7, 0xdc, 0xc7, 0x76, 0x1c, 0x98, 0x97, 0x82, 0xb6, 0x3c, 0x3f, 0x0e, 0x50, 0xb7, 0x4e,
+	0xc5, 0x01, 0x71, 0x14, 0x50, 0x83, 0x22, 0x1d, 0xb0, 0xac, 0x73, 0xd4, 0xa3, 0x3a, 0xe1, 0x43,
+	0xed, 0xd0, 0x02, 0x63, 0xba, 0x79, 0x29, 0x07, 0x8f, 0x04, 0x26, 0x4c, 0xd8, 0x18, 0xb9, 0x37,
+	0x41, 0x2e, 0x58, 0x1c, 0xe5, 0x6a, 0x9d, 0xe3, 0xaf, 0x0c, 0xac, 0x74, 0x39, 0x4e, 0x24, 0x0b,
+	0xd9, 0x1b, 0x3d, 0x9c, 0x66, 0xaa, 0x4b, 0x3a, 0xb6, 0x36, 0xed, 0xd0, 0xe3, 0x4d, 0x60, 0x81,
+	0xa7, 0x91, 0xd0, 0x6d, 0x52, 0x71, 0xf4, 0x33, 0x79, 0x00, 0x97, 0xfd, 0x38, 0x12, 0x92, 0xa7,
+	0xbe, 0x8c, 0xb9, 0x47, 0xf9, 0x30, 0x0d, 0x31, 0x92, 0xb9, 0x68, 0xaf, 0x4d, 0x39, 0x5b, 0xb9,
+	0x4f, 0x15, 0x8e, 0x93, 0xf0, 0x30, 0x37, 0x23, 0xdf, 0x80, 0x93, 0x30, 0x4f, 0xcb, 0x86, 0xc5,
+	0x31, 0x1b, 0x70, 0xca, 0x0f, 0x32, 0x05, 0xcf, 0x4d, 0xf5, 0x6e, 0x18, 0x33, 0x1f, 0x23, 0x81,
+	0x9e, 0x3c, 0x48, 0x50, 0x8b, 0x79, 0xc5, 0xa9, 0x66, 0x58, 0xff, 0x20, 0xd1, 0xba, 0x9d, 0xf0,
+	0xf8, 0xf5, 0x41, 0x26, 0xe8, 0xc6, 0x20, 0xb7, 0x60, 0x85, 0x85, 0xc9, 0x18, 0x55, 0x06, 0xba,
+	0xa4, 0x4c, 0xd6, 0x4f, 0xa0, 0x6a, 0x03, 0xf1, 0x13, 0xe5, 0xa1, 0x67, 0xee, 0x21, 0x93, 0xf8,
+	0xaa, 0xc6, 0xcc, 0xdd, 0xd5, 0xbf, 0x87, 0xb5, 0x1d, 0x94, 0x47, 0x17, 0xf9, 0x3f, 0x74, 0x60,
+	0x96, 0xe6, 0x17, 0x66, 0x6a, 0x7e, 0xfd, 0x15, 0x5c, 0x3e, 0xc1, 0x9e, 0x4d, 0xc5, 0x57, 0x50,
+	0x62, 0x12, 0xc3, 0x7c, 0x1c, 0x6e, 0xcf, 0x6d, 0xc8, 0xa9, 0xf5, 0x66, 0xd5, 0xdd, 0x9f, 0x2d,
+	0xb8, 0x3c, 0x73, 0x78, 0xc9, 0x6d, 0xb8, 0xd9, 0x7b, 0xe9, 0xbc, 0x68, 0x3d, 0xf7, 0xfa, 0x4e,
+	0xab, 0xe7, 0xb6, 0xda, 0xfd, 0xee, 0xcb, 0x9e, 0xe7, 0xbe, 0x74, 0xfa, 0xde, 0x5e, 0xcf, 0xdd,
+	0xed, 0xb4, 0xbb, 0x4f, 0xbb, 0x9d, 0x27, 0xb5, 0x8f, 0xc8, 0x0d, 0x58, 0x3f, 0x2b, 0xb0, 0xe5,
+	0xb6, 0x6b, 0x16, 0xd9, 0x84, 0x6b, 0x67, 0x05, 0x3c, 0xe9, 0xb8, 0xed, 0x5a, 0xe1, 0xee, 0x6f,
+	0xb3, 0x14, 0xfe, 0xd8, 0xfb, 0x86, 0xdc, 0x87, 0x7b, 0x33, 0x48, 0x9c, 0x4e, 0xbb, 0xd3, 0xdd,
+	0xed, 0x7b, 0x6e, 0xbf, 0xd5, 0xdf, 0x73, 0x4f, 0x24, 0xf6, 0x39, 0x6c, 0xbd, 0x7f, 0xc9, 0xd3,
+	0x56, 0xf7, 0x79, 0xe7, 0x49, 0xcd, 0x22, 0xf7, 0xe0, 0xce, 0xfb, 0xa3, 0xdd, 0xbd, 0x76, 0xbb,
+	0xe3, 0xba, 0xb5, 0x42, 0xf3, 0xd7, 0x22, 0x90, 0xe9, 0x4f, 0x45, 0xe4, 0x13, 0xf5, 0x79, 0xf0,
+	0x8b, 0xa5, 0xdb, 0xe0, 0xd4, 0x47, 0x24, 0x99, 0x2f, 0xe2, 0x73, 0x3e, 0x4b, 0xaf, 0x3e, 0xfc,
+	0x80, 0x95, 0x59, 0x73, 0xbc, 0xb5, 0xe0, 0xca, 0x6c, 0x55, 0x25, 0x5f, 0xce, 0x65, 0x9d, 0xfb,
+	0x6a, 0xbb, 0xfa, 0xe8, 0x83, 0xd6, 0x66, 0x39, 0x4d, 0x60, 0xf9, 0x58, 0x27, 0x93, 0xfb, 0xef,
+	0xab, 0xef, 0xd4, 0x4c, 0x5d, 0x6d, 0x9e, 0x67, 0x89, 0xd9, 0xf7, 0xf1, 0xce, 0x1f, 0xef, 0x36,
+	0xac, 0xbf, 0xde, 0x6d, 0x58, 0x7f, 0xbf, 0xdb, 0xb0, 0xbe, 0x7d, 0x38, 0x64, 0x72, 0x94, 0x0e,
+	0x1a, 0x7e, 0x1c, 0x6e, 0xa7, 0x02, 0xf9, 0x01, 0x0e, 0x71, 0xdb, 0x90, 0x6e, 0xcf, 0xfc, 0xab,
+	0x41, 0x13, 0xe6, 0x8f, 0x19, 0x46, 0x72, 0x70, 0x41, 0xff, 0xd3, 0x78, 0xf0, 0x5f, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0x1f, 0x0f, 0xd5, 0x30, 0x93, 0x0c, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -779,6 +1047,8 @@ type EthereumAPIServiceClient interface {
 	GetEthereumAPIStatus(ctx context.Context, in *GetEthereumAPIStatusRequest, opts ...grpc.CallOption) (*GetEthereumAPIStatusResponse, error)
 	// ListNormalTransactions returns normal transactions for one EVM address.
 	ListNormalTransactions(ctx context.Context, in *ListNormalTransactionsRequest, opts ...grpc.CallOption) (*ListNormalTransactionsResponse, error)
+	// GetSourceCode returns source-code metadata for one contract address.
+	GetSourceCode(ctx context.Context, in *GetSourceCodeRequest, opts ...grpc.CallOption) (*GetSourceCodeResponse, error)
 }
 
 type ethereumAPIServiceClient struct {
@@ -807,12 +1077,23 @@ func (c *ethereumAPIServiceClient) ListNormalTransactions(ctx context.Context, i
 	return out, nil
 }
 
+func (c *ethereumAPIServiceClient) GetSourceCode(ctx context.Context, in *GetSourceCodeRequest, opts ...grpc.CallOption) (*GetSourceCodeResponse, error) {
+	out := new(GetSourceCodeResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.ethereumapi.EthereumAPIService/GetSourceCode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EthereumAPIServiceServer is the server API for EthereumAPIService service.
 type EthereumAPIServiceServer interface {
 	// GetEthereumAPIStatus returns the ethereum-api service runtime status.
 	GetEthereumAPIStatus(context.Context, *GetEthereumAPIStatusRequest) (*GetEthereumAPIStatusResponse, error)
 	// ListNormalTransactions returns normal transactions for one EVM address.
 	ListNormalTransactions(context.Context, *ListNormalTransactionsRequest) (*ListNormalTransactionsResponse, error)
+	// GetSourceCode returns source-code metadata for one contract address.
+	GetSourceCode(context.Context, *GetSourceCodeRequest) (*GetSourceCodeResponse, error)
 }
 
 // UnimplementedEthereumAPIServiceServer can be embedded to have forward compatible implementations.
@@ -824,6 +1105,9 @@ func (*UnimplementedEthereumAPIServiceServer) GetEthereumAPIStatus(ctx context.C
 }
 func (*UnimplementedEthereumAPIServiceServer) ListNormalTransactions(ctx context.Context, req *ListNormalTransactionsRequest) (*ListNormalTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListNormalTransactions not implemented")
+}
+func (*UnimplementedEthereumAPIServiceServer) GetSourceCode(ctx context.Context, req *GetSourceCodeRequest) (*GetSourceCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSourceCode not implemented")
 }
 
 func RegisterEthereumAPIServiceServer(s *grpc.Server, srv EthereumAPIServiceServer) {
@@ -866,6 +1150,24 @@ func _EthereumAPIService_ListNormalTransactions_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EthereumAPIService_GetSourceCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSourceCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EthereumAPIServiceServer).GetSourceCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.ethereumapi.EthereumAPIService/GetSourceCode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EthereumAPIServiceServer).GetSourceCode(ctx, req.(*GetSourceCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _EthereumAPIService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "athena.internal.ethereumapi.EthereumAPIService",
 	HandlerType: (*EthereumAPIServiceServer)(nil),
@@ -877,6 +1179,10 @@ var _EthereumAPIService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListNormalTransactions",
 			Handler:    _EthereumAPIService_ListNormalTransactions_Handler,
+		},
+		{
+			MethodName: "GetSourceCode",
+			Handler:    _EthereumAPIService_GetSourceCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1353,6 +1659,204 @@ func (m *ListNormalTransactionsResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
+func (m *SourceCode) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SourceCode) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SourceCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.SwarmSource) > 0 {
+		i -= len(m.SwarmSource)
+		copy(dAtA[i:], m.SwarmSource)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.SwarmSource)))
+		i--
+		dAtA[i] = 0x6a
+	}
+	if len(m.Implementation) > 0 {
+		i -= len(m.Implementation)
+		copy(dAtA[i:], m.Implementation)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Implementation)))
+		i--
+		dAtA[i] = 0x62
+	}
+	if len(m.Proxy) > 0 {
+		i -= len(m.Proxy)
+		copy(dAtA[i:], m.Proxy)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Proxy)))
+		i--
+		dAtA[i] = 0x5a
+	}
+	if len(m.LicenseType) > 0 {
+		i -= len(m.LicenseType)
+		copy(dAtA[i:], m.LicenseType)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.LicenseType)))
+		i--
+		dAtA[i] = 0x52
+	}
+	if len(m.Library) > 0 {
+		i -= len(m.Library)
+		copy(dAtA[i:], m.Library)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Library)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.EvmVersion) > 0 {
+		i -= len(m.EvmVersion)
+		copy(dAtA[i:], m.EvmVersion)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.EvmVersion)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.ConstructorArguments) > 0 {
+		i -= len(m.ConstructorArguments)
+		copy(dAtA[i:], m.ConstructorArguments)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.ConstructorArguments)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.Runs) > 0 {
+		i -= len(m.Runs)
+		copy(dAtA[i:], m.Runs)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Runs)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.OptimizationUsed) > 0 {
+		i -= len(m.OptimizationUsed)
+		copy(dAtA[i:], m.OptimizationUsed)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.OptimizationUsed)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.CompilerVersion) > 0 {
+		i -= len(m.CompilerVersion)
+		copy(dAtA[i:], m.CompilerVersion)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.CompilerVersion)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ContractName) > 0 {
+		i -= len(m.ContractName)
+		copy(dAtA[i:], m.ContractName)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.ContractName)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Abi) > 0 {
+		i -= len(m.Abi)
+		copy(dAtA[i:], m.Abi)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.Abi)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.SourceCode) > 0 {
+		i -= len(m.SourceCode)
+		copy(dAtA[i:], m.SourceCode)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.SourceCode)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetSourceCodeRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetSourceCodeRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetSourceCodeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ContractAddress) > 0 {
+		i -= len(m.ContractAddress)
+		copy(dAtA[i:], m.ContractAddress)
+		i = encodeVarintEthereumapi(dAtA, i, uint64(len(m.ContractAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ChainId != 0 {
+		i = encodeVarintEthereumapi(dAtA, i, uint64(m.ChainId))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetSourceCodeResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetSourceCodeResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetSourceCodeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintEthereumapi(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintEthereumapi(dAtA []byte, offset int, v uint64) int {
 	offset -= sovEthereumapi(v)
 	base := offset
@@ -1577,6 +2081,107 @@ func (m *ListNormalTransactionsResponse) Size() (n int) {
 	if m.Cache != nil {
 		l = m.Cache.Size()
 		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SourceCode) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SourceCode)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Abi)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.ContractName)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.CompilerVersion)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.OptimizationUsed)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Runs)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.ConstructorArguments)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.EvmVersion)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Library)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.LicenseType)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Proxy)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.Implementation)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	l = len(m.SwarmSource)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetSourceCodeRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ChainId != 0 {
+		n += 1 + sovEthereumapi(uint64(m.ChainId))
+	}
+	l = len(m.ContractAddress)
+	if l > 0 {
+		n += 1 + l + sovEthereumapi(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetSourceCodeResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovEthereumapi(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2899,6 +3504,660 @@ func (m *ListNormalTransactionsResponse) Unmarshal(dAtA []byte) error {
 				m.Cache = &NormalTransactionCacheMetadata{}
 			}
 			if err := m.Cache.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SourceCode) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SourceCode: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SourceCode: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceCode", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceCode = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Abi", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Abi = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContractName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompilerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CompilerVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OptimizationUsed", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OptimizationUsed = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Runs", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Runs = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConstructorArguments", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ConstructorArguments = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EvmVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EvmVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Library", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Library = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LicenseType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LicenseType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Proxy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Proxy = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Implementation", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Implementation = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SwarmSource", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SwarmSource = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetSourceCodeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetSourceCodeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetSourceCodeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			m.ChainId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ContractAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEthereumapi(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetSourceCodeResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEthereumapi
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetSourceCodeResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetSourceCodeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEthereumapi
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEthereumapi
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &SourceCode{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

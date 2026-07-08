@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
+	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 )
 
@@ -49,8 +50,8 @@ func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context,
 		}).Info("token project data collector skipped contract code source because source already exists")
 		return
 	}
-	if r.opts.etherscanClient == nil {
-		r.markTaskFailed(ctx, task.Task, errEtherscanAPIKeyRequired())
+	if r.opts.ethereumAPI == nil {
+		r.markTaskFailed(ctx, task.Task, errEthereumAPIServerAddressRequired())
 		return
 	}
 	sourceCode, err := r.fetchContractSourceCode(ctx, task.Project.ChainID, task.Project.Contract)
@@ -71,12 +72,15 @@ func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context,
 }
 
 func (r *dataCollectorRunner) fetchContractSourceCode(ctx context.Context, chainID int64, contract common.Address) (string, error) {
-	response, err := r.opts.etherscanClient.GetSourceCode(ctx, chainID, contract.Hex())
+	response, err := r.opts.ethereumAPI.GetSourceCode(ctx, &ethereumapiapiclient.GetSourceCodeRequest{
+		ChainId:         chainID,
+		ContractAddress: contract.Hex(),
+	})
 	if err != nil {
-		return "", fmt.Errorf("fetch etherscan source code chain_id=%d contract=%s: %w", chainID, contract.Hex(), err)
+		return "", fmt.Errorf("fetch ethereum-api source code chain_id=%d contract=%s: %w", chainID, contract.Hex(), err)
 	}
-	if response == nil || len(response.Result) == 0 {
-		return "", fmt.Errorf("fetch etherscan source code chain_id=%d contract=%s returned empty result", chainID, contract.Hex())
+	if response == nil || len(response.GetItems()) == 0 {
+		return "", fmt.Errorf("fetch ethereum-api source code chain_id=%d contract=%s returned empty result", chainID, contract.Hex())
 	}
-	return strings.TrimSpace(response.Result[0].SourceCode), nil
+	return strings.TrimSpace(response.GetItems()[0].GetSourceCode()), nil
 }

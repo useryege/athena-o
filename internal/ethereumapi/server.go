@@ -21,7 +21,7 @@ type Server struct {
 
 type ServerOpts struct {
 	Store          *ethereumapistore.SQLStore
-	EthereumAPI    normalTransactionsClient
+	EthereumAPI    etherscanClient
 	CacheTTL       time.Duration
 	CacheRetention time.Duration
 	RefreshTimeout time.Duration

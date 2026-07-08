@@ -92,15 +92,10 @@ func (m *EtherscanGatewayManager) Close() error {
 }
 
 func (m *EtherscanGatewayManager) ListNormalTransactions(ctx context.Context, opts utilethereumapi.ListNormalTransactionsOptions) (*utilethereumapi.NormalTransactionsResponse, error) {
-	if m == nil || len(m.apiKeys) == 0 || len(m.clients) == 0 {
-		return nil, &utilethereumapi.APIError{
-			Type:    utilethereumapi.APIErrorTypeUpstream,
-			Message: "etherscan gateway manager is not configured",
-		}
+	apiKey, gatewayClient, err := m.nextGatewayClient()
+	if err != nil {
+		return nil, err
 	}
-	index := m.next.Add(1) - 1
-	apiKey := m.apiKeys[int(index%uint64(len(m.apiKeys)))]
-	gatewayClient := m.clients[int(index%uint64(len(m.clients)))]
 
 	callCtx := metadata.AppendToOutgoingContext(ctx, etherscanGatewayAuthorizationMetadataKey, "Bearer "+m.token)
 	response, err := gatewayClient.client.ListNormalTransactions(callCtx, &etherscangateway.ListNormalTransactionsRequest{
@@ -125,6 +120,44 @@ func (m *EtherscanGatewayManager) ListNormalTransactions(ctx context.Context, op
 		Message: "OK",
 		Result:  result,
 	}, nil
+}
+
+func (m *EtherscanGatewayManager) GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*utilethereumapi.SourceCodeResponse, error) {
+	apiKey, gatewayClient, err := m.nextGatewayClient()
+	if err != nil {
+		return nil, err
+	}
+
+	callCtx := metadata.AppendToOutgoingContext(ctx, etherscanGatewayAuthorizationMetadataKey, "Bearer "+m.token)
+	response, err := gatewayClient.client.GetSourceCode(callCtx, &etherscangateway.GetSourceCodeRequest{
+		ApiKey:          apiKey,
+		ChainId:         chainID,
+		ContractAddress: contractAddress,
+	})
+	if err != nil {
+		return nil, gatewayManagerAPIError(gatewayClient.addr, err)
+	}
+
+	result := make([]utilethereumapi.SourceCodeResult, 0, len(response.GetItems()))
+	for _, item := range response.GetItems() {
+		result = append(result, sourceCodeFromGateway(item))
+	}
+	return &utilethereumapi.SourceCodeResponse{
+		Status:  "1",
+		Message: "OK",
+		Result:  result,
+	}, nil
+}
+
+func (m *EtherscanGatewayManager) nextGatewayClient() (string, etherscanGatewayClient, error) {
+	if m == nil || len(m.apiKeys) == 0 || len(m.clients) == 0 {
+		return "", etherscanGatewayClient{}, &utilethereumapi.APIError{
+			Type:    utilethereumapi.APIErrorTypeUpstream,
+			Message: "etherscan gateway manager is not configured",
+		}
+	}
+	index := m.next.Add(1) - 1
+	return m.apiKeys[int(index%uint64(len(m.apiKeys)))], m.clients[int(index%uint64(len(m.clients)))], nil
 }
 
 func normalizeStringList(values []string) []string {
@@ -185,6 +218,27 @@ func normalTransactionFromGateway(item *etherscangateway.NormalTransaction) util
 		GasUsed:           formatUint(item.GetGasUsed()),
 		Confirmations:     formatUint(item.GetConfirmations()),
 		IsError:           gatewayBool(item.GetIsError()),
+	}
+}
+
+func sourceCodeFromGateway(item *etherscangateway.SourceCode) utilethereumapi.SourceCodeResult {
+	if item == nil {
+		return utilethereumapi.SourceCodeResult{}
+	}
+	return utilethereumapi.SourceCodeResult{
+		SourceCode:           item.GetSourceCode(),
+		ABI:                  item.GetAbi(),
+		ContractName:         item.GetContractName(),
+		CompilerVersion:      item.GetCompilerVersion(),
+		OptimizationUsed:     item.GetOptimizationUsed(),
+		Runs:                 item.GetRuns(),
+		ConstructorArguments: item.GetConstructorArguments(),
+		EVMVersion:           item.GetEvmVersion(),
+		Library:              item.GetLibrary(),
+		LicenseType:          item.GetLicenseType(),
+		Proxy:                item.GetProxy(),
+		Implementation:       item.GetImplementation(),
+		SwarmSource:          item.GetSwarmSource(),
 	}
 }
 

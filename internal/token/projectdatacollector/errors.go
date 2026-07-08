@@ -10,8 +10,8 @@ func errAveAPIKeyRequired() error {
 	return fmt.Errorf("token project data collector ave api key is required")
 }
 
-func errEtherscanAPIKeyRequired() error {
-	return fmt.Errorf("token project data collector etherscan api key is required")
+func errEthereumAPIServerAddressRequired() error {
+	return fmt.Errorf("token project data collector ethereum-api server address is required")
 }
 
 func errNodeWSURLRequired(chainID int64) error {

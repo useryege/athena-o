@@ -223,6 +223,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      athena-ethereum-api:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -230,6 +232,7 @@ services:
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_TOKEN_MODE: project-data-collector
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+      ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS: athena-ethereum-api:8100
     command: ["athena"]
 
   athena-token-project-report-evaluator:

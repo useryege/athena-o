@@ -10,40 +10,36 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
+	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ave"
-	"github.com/useryege/athena/util/ethereumapi"
 	"github.com/useryege/athena/util/ethws"
-	"github.com/useryege/athena/util/ratelimit"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
-	pollInterval               = 1 * time.Second
-	aveTaskLimit               = int32(20)
-	aveFetchConcurrency        = 5
-	contractCodeSourceLimit    = int32(20)
-	chainStateTaskLimit        = int32(20)
-	walletAssetTaskLimit       = int32(20)
-	simulationTaskLimit        = int32(20)
-	aveHTTPClientTimeout       = 60 * time.Second
-	defaultEtherscanAPIBaseURL = "https://api.etherscan.io/v2/api"
-	etherscanRateLimitRequests = 3
-	etherscanRateLimitPeriod   = time.Second
+	pollInterval            = 1 * time.Second
+	aveTaskLimit            = int32(20)
+	aveFetchConcurrency     = 5
+	contractCodeSourceLimit = int32(20)
+	chainStateTaskLimit     = int32(20)
+	walletAssetTaskLimit    = int32(20)
+	simulationTaskLimit     = int32(20)
+	aveHTTPClientTimeout    = 60 * time.Second
 )
 
 type Options struct {
-	Store               *tokenstore.SQLStore
-	EthNodeWSURLs       []string
-	BSCNodeWSURLs       []string
-	EthAthenaContract   string
-	BSCAthenaContract   string
-	EthEnabled          bool
-	BSCEnabled          bool
-	NodeWSUseProxy      bool
-	AveAPIKey           string
-	AveAPIBaseURL       string
-	EtherscanAPIKey     string
-	EtherscanAPIBaseURL string
+	Store              *tokenstore.SQLStore
+	EthNodeWSURLs      []string
+	BSCNodeWSURLs      []string
+	EthAthenaContract  string
+	BSCAthenaContract  string
+	EthEnabled         bool
+	BSCEnabled         bool
+	NodeWSUseProxy     bool
+	AveAPIKey          string
+	AveAPIBaseURL      string
+	EthereumAPIAddress string
 }
 
 type Worker struct {
@@ -73,13 +69,15 @@ func (w *Worker) Start(ctx context.Context) error {
 		return err
 	}
 	var aveClient ave.Client
-	var etherscanClient ethereumapi.EthereumAPI
+	var ethereumAPI ethereumapiapiclient.EthereumAPIServiceClient
+	var ethereumAPIConn utilio.Closer
 	if len(chainIDs) > 0 {
 		if strings.TrimSpace(w.opts.AveAPIKey) == "" {
 			return errAveAPIKeyRequired()
 		}
-		if strings.TrimSpace(w.opts.EtherscanAPIKey) == "" {
-			return errEtherscanAPIKeyRequired()
+		ethereumAPIAddress := strings.TrimSpace(w.opts.EthereumAPIAddress)
+		if ethereumAPIAddress == "" {
+			return errEthereumAPIServerAddressRequired()
 		}
 		aveClient, err = ave.NewClient(ave.Config{
 			BaseURL: w.opts.AveAPIBaseURL,
@@ -89,22 +87,10 @@ func (w *Worker) Start(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		etherscanAPIBaseURL := strings.TrimSpace(w.opts.EtherscanAPIBaseURL)
-		if etherscanAPIBaseURL == "" {
-			etherscanAPIBaseURL = defaultEtherscanAPIBaseURL
-		}
-		etherscanRateLimiter, err := ratelimit.New(ratelimit.Config{
-			Requests: etherscanRateLimitRequests,
-			Per:      etherscanRateLimitPeriod,
-		})
+		ethereumAPIConn, ethereumAPI, err = ethereumapiapiclient.NewEthereumAPIClientset(ethereumAPIAddress).NewEthereumAPIServiceClient()
 		if err != nil {
 			return err
 		}
-		etherscanClient = ethereumapi.NewEthereumAPIWithConfig(ethereumapi.Config{
-			BaseURL:     etherscanAPIBaseURL,
-			APIKey:      w.opts.EtherscanAPIKey,
-			RateLimiter: etherscanRateLimiter,
-		})
 	}
 	runCtx, cancel := context.WithCancel(ctx)
 	runner := newDataCollectorRunner(dataCollectorRunnerOptions{
@@ -114,7 +100,8 @@ func (w *Worker) Start(ctx context.Context) error {
 		athenaContracts: athenaContracts,
 		nodeWSUseProxy:  w.opts.NodeWSUseProxy,
 		aveClient:       aveClient,
-		etherscanClient: etherscanClient,
+		ethereumAPI:     ethereumAPI,
+		ethereumAPIConn: ethereumAPIConn,
 		pollInterval:    pollInterval,
 	})
 	w.cancel = cancel

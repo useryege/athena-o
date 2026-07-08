@@ -8,10 +8,11 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
+	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
 	tokenstore "github.com/useryege/athena/internal/token/store"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
-	"github.com/useryege/athena/util/ethereumapi"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 type dataCollectorRunnerOptions struct {
@@ -21,7 +22,8 @@ type dataCollectorRunnerOptions struct {
 	athenaContracts map[int64]ethcommon.Address
 	nodeWSUseProxy  bool
 	aveClient       ave.Client
-	etherscanClient ethereumapi.EthereumAPI
+	ethereumAPI     ethereumapiapiclient.EthereumAPIServiceClient
+	ethereumAPIConn utilio.Closer
 	pollInterval    time.Duration
 }
 

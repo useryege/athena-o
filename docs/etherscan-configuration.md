@@ -1,13 +1,11 @@
 # Etherscan Configuration
 
-Athena runtime services use Etherscan keys in two different ways:
+Athena runtime services centralize Etherscan access through `athena-ethereum-api`.
 
-- `ATHENA_TOKEN_ETHERSCAN_API_KEY`
 - `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS`
 
-`athena-token` still accepts one Etherscan API key. `athena-ethereum-api` now
-uses an Etherscan Gateway manager and requires a comma, space, or newline
-separated key list plus explicit gateway gRPC addresses:
+`athena-ethereum-api` uses an Etherscan Gateway manager and requires a comma,
+space, or newline separated key list plus explicit gateway gRPC addresses:
 
 ```bash
 ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS='key1,key2,key3'
@@ -18,6 +16,14 @@ ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN='gateway-bearer-token'
 Each ethereum-api cache refresh picks the next API key and next gateway address
 in round-robin order. A failed gateway request is returned immediately; the
 manager does not retry with another key or gateway.
+
+`athena-token` project data collector no longer reads a standalone Etherscan API
+key. It calls `athena-ethereum-api` over gRPC for contract source-code
+collection:
+
+```bash
+ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS='localhost:8100'
+```
 
 `athena-server` also reads the gateway IP list, gateway bearer token, and
 `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS` for the `/etherscan-gateways` UI live

@@ -23,20 +23,21 @@ const (
 
 type ServiceOpts struct {
 	Store          *ethereumapistore.SQLStore
-	EthereumAPI    normalTransactionsClient
+	EthereumAPI    etherscanClient
 	CacheTTL       time.Duration
 	CacheRetention time.Duration
 	RefreshTimeout time.Duration
 }
 
-type normalTransactionsClient interface {
+type etherscanClient interface {
+	GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*utilethereumapi.SourceCodeResponse, error)
 	ListNormalTransactions(ctx context.Context, opts utilethereumapi.ListNormalTransactionsOptions) (*utilethereumapi.NormalTransactionsResponse, error)
 }
 
 type Service struct {
 	apiclient.UnimplementedEthereumAPIServiceServer
 	store          *ethereumapistore.SQLStore
-	ethereumAPI    normalTransactionsClient
+	ethereumAPI    etherscanClient
 	cacheTTL       time.Duration
 	cacheRetention time.Duration
 	refreshTimeout time.Duration

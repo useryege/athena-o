@@ -29,20 +29,19 @@ const cliName = "athena-token"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost          string
-		listenPort          int
-		mode                string
-		ethNodeWSURLs       []string
-		bscNodeWSURLs       []string
-		ethAthenaContract   string
-		bscAthenaContract   string
-		ethEnabled          bool
-		bscEnabled          bool
-		nodeWSUseProxy      bool
-		aveAPIKey           string
-		aveAPIBaseURL       string
-		etherscanAPIKey     string
-		etherscanAPIBaseURL string
+		listenHost         string
+		listenPort         int
+		mode               string
+		ethNodeWSURLs      []string
+		bscNodeWSURLs      []string
+		ethAthenaContract  string
+		bscAthenaContract  string
+		ethEnabled         bool
+		bscEnabled         bool
+		nodeWSUseProxy     bool
+		aveAPIKey          string
+		aveAPIBaseURL      string
+		ethereumAPIAddress string
 	)
 
 	command := &cobra.Command{
@@ -66,19 +65,18 @@ func NewCommand() *cobra.Command {
 			ctx := cmd.Context()
 
 			server, err := token.NewServer(token.ServerOpts{
-				Mode:                mode,
-				StoreSrc:            tokenstore.NewSQLStoreSource(),
-				EthNodeWSURLs:       ethNodeWSURLs,
-				BSCNodeWSURLs:       bscNodeWSURLs,
-				EthAthenaContract:   ethAthenaContract,
-				BSCAthenaContract:   bscAthenaContract,
-				EthEnabled:          ethEnabled,
-				BSCEnabled:          bscEnabled,
-				NodeWSUseProxy:      nodeWSUseProxy,
-				AveAPIKey:           aveAPIKey,
-				AveAPIBaseURL:       aveAPIBaseURL,
-				EtherscanAPIKey:     etherscanAPIKey,
-				EtherscanAPIBaseURL: etherscanAPIBaseURL,
+				Mode:               mode,
+				StoreSrc:           tokenstore.NewSQLStoreSource(),
+				EthNodeWSURLs:      ethNodeWSURLs,
+				BSCNodeWSURLs:      bscNodeWSURLs,
+				EthAthenaContract:  ethAthenaContract,
+				BSCAthenaContract:  bscAthenaContract,
+				EthEnabled:         ethEnabled,
+				BSCEnabled:         bscEnabled,
+				NodeWSUseProxy:     nodeWSUseProxy,
+				AveAPIKey:          aveAPIKey,
+				AveAPIBaseURL:      aveAPIBaseURL,
+				EthereumAPIAddress: ethereumAPIAddress,
 			})
 			if err != nil {
 				return err
@@ -132,8 +130,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_TOKEN_AVE_API_KEY", ""), "Ave API key for project data collector mode")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_TOKEN_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL for project data collector mode")
-	command.Flags().StringVar(&etherscanAPIKey, "etherscan-api-key", env.StringFromEnv("ATHENA_TOKEN_ETHERSCAN_API_KEY", ""), "Etherscan API key for project data collector mode")
-	command.Flags().StringVar(&etherscanAPIBaseURL, "etherscan-api-base-url", env.StringFromEnv("ATHENA_TOKEN_ETHERSCAN_API_BASE_URL", "https://api.etherscan.io/v2/api"), "Etherscan API base URL for project data collector mode")
+	command.Flags().StringVar(&ethereumAPIAddress, "ethereum-api-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortEthereumAPI)), "Athena ethereum-api gRPC server address for project data collector mode")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

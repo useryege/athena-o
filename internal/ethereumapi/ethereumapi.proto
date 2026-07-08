@@ -85,10 +85,41 @@ message ListNormalTransactionsResponse {
   NormalTransactionCacheMetadata cache = 4;
 }
 
+// SourceCode is one source-code result returned by Etherscan.
+message SourceCode {
+  string source_code = 1;
+  string abi = 2;
+  string contract_name = 3;
+  string compiler_version = 4;
+  string optimization_used = 5;
+  string runs = 6;
+  string constructor_arguments = 7;
+  string evm_version = 8;
+  string library = 9;
+  string license_type = 10;
+  string proxy = 11;
+  string implementation = 12;
+  string swarm_source = 13;
+}
+
+// GetSourceCodeRequest queries source-code metadata for one contract address.
+message GetSourceCodeRequest {
+  int64 chain_id = 1;
+  string contract_address = 2;
+}
+
+// GetSourceCodeResponse returns source-code metadata.
+message GetSourceCodeResponse {
+  repeated SourceCode items = 1;
+}
+
 service EthereumAPIService {
   // GetEthereumAPIStatus returns the ethereum-api service runtime status.
   rpc GetEthereumAPIStatus(GetEthereumAPIStatusRequest) returns (GetEthereumAPIStatusResponse);
 
   // ListNormalTransactions returns normal transactions for one EVM address.
   rpc ListNormalTransactions(ListNormalTransactionsRequest) returns (ListNormalTransactionsResponse);
+
+  // GetSourceCode returns source-code metadata for one contract address.
+  rpc GetSourceCode(GetSourceCodeRequest) returns (GetSourceCodeResponse);
 }

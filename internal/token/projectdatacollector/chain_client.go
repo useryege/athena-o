@@ -9,6 +9,7 @@ import (
 	athenacommon "github.com/useryege/athena/common"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ethws"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 func (r *dataCollectorRunner) ensureClient(ctx context.Context, chainID int64) (*ethclient.Client, error) {
@@ -81,6 +82,11 @@ func (r *dataCollectorRunner) resetChain(chainID int64) {
 func (r *dataCollectorRunner) close() {
 	r.clientMu.Lock()
 	defer r.clientMu.Unlock()
+	if r.opts.ethereumAPIConn != nil {
+		utilio.Close(r.opts.ethereumAPIConn)
+		r.opts.ethereumAPIConn = nil
+	}
+	r.opts.ethereumAPI = nil
 	for chainID, client := range r.clients {
 		if client != nil {
 			client.Close()
