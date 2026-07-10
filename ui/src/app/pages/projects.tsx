@@ -30,7 +30,7 @@ export const ProjectsPage = () => {
         {
             title: 'Token',
             render: item => (
-                <Space direction='vertical' size={0}>
+                <Space orientation='vertical' size={0}>
                     <Typography.Text strong={true}>{item.symbol || '-'}</Typography.Text>
                     <Typography.Text type='secondary'>{item.name || '-'}</Typography.Text>
                 </Space>

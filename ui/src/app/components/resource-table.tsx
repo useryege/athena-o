@@ -2,6 +2,7 @@ import {Table} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import type {TableRowSelection} from 'antd/es/table/interface';
 import * as React from 'react';
+import {PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {useKeyboardPaintSelection} from './keyboard-paint-selection';
 
 export const ResourceTable = <T,>(props: {
@@ -11,6 +12,7 @@ export const ResourceTable = <T,>(props: {
     loading?: boolean;
     page?: number;
     pageSize?: number;
+    pageSizeOptions?: number[];
     total?: number;
     onPageChange?: (page: number, pageSize: number) => void;
     onItemClick?: (record: T) => void;
@@ -69,6 +71,7 @@ export const ResourceTable = <T,>(props: {
     const scroll = props.scrollX === undefined ? undefined : {x: props.scrollX};
     const sticky = props.stickyHeader === true ? {offsetHeader: 56} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 56} : undefined;
     const regionClassName = ['resource-table-region', tableClassName].filter(Boolean).join(' ');
+    const pageSizeOptions = props.pageSizeOptions || PAGE_SIZE_OPTIONS;
 
     return (
         <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
@@ -87,7 +90,9 @@ export const ResourceTable = <T,>(props: {
                               current: props.page,
                               pageSize: props.pageSize,
                               total: props.total,
-                              showSizeChanger: true,
+                              showSizeChanger: {showSearch: false},
+                              pageSizeOptions,
+                              placement: ['topEnd'],
                               showTotal: total => `${total} ${total === 1 ? 'item' : 'items'}`,
                               onChange: props.onPageChange
                           }

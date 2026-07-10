@@ -487,8 +487,8 @@ body::-webkit-scrollbar-thumb,
 .resource-table .ant-pagination {
     margin: 0 !important;
     padding: 12px;
-    border-top: 1px solid var(--athena-border);
-    border-radius: 0 0 8px 8px;
+    border-bottom: 1px solid var(--athena-border);
+    border-radius: 8px 8px 0 0;
     background: var(--athena-panel-solid);
 }
 
