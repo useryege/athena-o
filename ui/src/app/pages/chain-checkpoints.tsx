@@ -1,38 +1,71 @@
-import {Select} from 'antd';
+import {PlayCircleOutlined, StopOutlined} from '@ant-design/icons';
+import {Button, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
+import * as React from 'react';
 import {AppPage, ResourceTable, StatusTag, useAsyncData} from '../components';
 import {services} from '../shared/services';
 import {TokenAPIChainIngestCheckpoint} from '../shared/services/tokenapi-service';
 import {boolTag, fmtNumber} from './shared';
 import {ChainBadge} from './token-shared';
 
+type ChainIngestStatus = 'running' | 'stopped';
+
 export const ChainCheckpointsPage = () => {
     const data = useAsyncData(() => services.tokenapi.listChainIngestCheckpoints(), []);
-    const updateStatus = async (item: TokenAPIChainIngestCheckpoint, status: string) => {
+    const [updatingStatusByChainID, setUpdatingStatusByChainID] = React.useState<Record<number, ChainIngestStatus>>({});
+    const updateStatus = async (item: TokenAPIChainIngestCheckpoint, status: ChainIngestStatus) => {
         if (item.chainID === undefined) {
             return;
         }
-        await services.tokenapi.updateChainIngestCheckpoint(item.chainID, status);
-        data.reload();
+        const chainID = item.chainID;
+        setUpdatingStatusByChainID(current => ({...current, [chainID]: status}));
+        try {
+            await services.tokenapi.updateChainIngestCheckpoint(chainID, status);
+            data.reload();
+        } finally {
+            setUpdatingStatusByChainID(current => {
+                const next = {...current};
+                delete next[chainID];
+                return next;
+            });
+        }
     };
     const columns: ColumnsType<TokenAPIChainIngestCheckpoint> = [
         {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
         {title: 'Enabled', render: item => boolTag(item.enabled)},
         {title: 'Cursor', render: item => fmtNumber(item.cursorBlockNumber)},
-        {title: 'Status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
+        {title: 'Current Status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
         {title: 'Created', dataIndex: 'createdAt'},
         {
             title: 'Actions',
-            render: item => (
-                <Select
-                    aria-label={`Set status for chain ${item.chainID ?? ''}`}
-                    disabled={item.chainID === undefined}
-                    value={item.status}
-                    style={{width: 130}}
-                    onChange={value => void updateStatus(item, value)}
-                    options={['running', 'stopped'].map(value => ({value, label: value}))}
-                />
-            )
+            render: item => {
+                const updatingStatus = item.chainID === undefined ? undefined : updatingStatusByChainID[item.chainID];
+                const rowUpdating = updatingStatus !== undefined;
+                const actionDisabled = item.chainID === undefined || rowUpdating;
+                return (
+                    <Space.Compact>
+                        <Button
+                            size='small'
+                            icon={<PlayCircleOutlined />}
+                            disabled={actionDisabled || item.status === 'running'}
+                            loading={updatingStatus === 'running'}
+                            aria-label={`Start chain ${item.chainID ?? ''} ingest`}
+                            onClick={() => void updateStatus(item, 'running')}>
+                            Start
+                        </Button>
+                        <Button
+                            size='small'
+                            danger={true}
+                            icon={<StopOutlined />}
+                            disabled={actionDisabled || item.status === 'stopped'}
+                            loading={updatingStatus === 'stopped'}
+                            aria-label={`Stop chain ${item.chainID ?? ''} ingest`}
+                            onClick={() => void updateStatus(item, 'stopped')}>
+                            Stop
+                        </Button>
+                    </Space.Compact>
+                );
+            }
         }
     ];
     return (
