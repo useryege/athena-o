@@ -1,4 +1,4 @@
-import {Table} from 'antd';
+import {Pagination, Segmented, Table, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import type {TableRowSelection} from 'antd/es/table/interface';
 import * as React from 'react';
@@ -70,11 +70,42 @@ export const ResourceTable = <T,>(props: {
             : undefined;
     const scroll = props.scrollX === undefined ? undefined : {x: props.scrollX};
     const sticky = props.stickyHeader === true ? {offsetHeader: 56} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 56} : undefined;
-    const regionClassName = ['resource-table-region', tableClassName].filter(Boolean).join(' ');
+    const hasPagination = props.total !== undefined && props.onPageChange;
+    const regionClassName = ['resource-table-region', hasPagination ? 'resource-table-region--paginated' : undefined, tableClassName].filter(Boolean).join(' ');
     const pageSizeOptions = props.pageSizeOptions || PAGE_SIZE_OPTIONS;
+    const currentPage = props.page || 1;
+    const currentPageSize = props.pageSize || pageSizeOptions[0];
 
     return (
         <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
+            {hasPagination && (
+                <div className='resource-table-pagination' aria-label='Table pagination'>
+                    <Typography.Text className='resource-table-pagination__total' type='secondary'>
+                        {props.total} {props.total === 1 ? 'item' : 'items'}
+                    </Typography.Text>
+                    <Pagination
+                        current={currentPage}
+                        pageSize={currentPageSize}
+                        total={props.total}
+                        size='small'
+                        showLessItems={true}
+                        showSizeChanger={false}
+                        onChange={nextPage => props.onPageChange?.(nextPage, currentPageSize)}
+                    />
+                    <div className='resource-table-pagination__sizes'>
+                        <Typography.Text className='resource-table-pagination__sizes-label' type='secondary'>
+                            Per page
+                        </Typography.Text>
+                        <Segmented<number>
+                            aria-label='Items per page'
+                            size='small'
+                            value={currentPageSize}
+                            options={pageSizeOptions.map(value => ({label: String(value), value}))}
+                            onChange={nextPageSize => props.onPageChange?.(1, nextPageSize)}
+                        />
+                    </div>
+                </div>
+            )}
             <Table<T>
                 className='resource-table'
                 size='small'
@@ -84,20 +115,7 @@ export const ResourceTable = <T,>(props: {
                 dataSource={props.items}
                 loading={props.loading}
                 rowSelection={rowSelection}
-                pagination={
-                    props.total !== undefined && props.onPageChange
-                        ? {
-                              current: props.page,
-                              pageSize: props.pageSize,
-                              total: props.total,
-                              showSizeChanger: {showSearch: false},
-                              pageSizeOptions,
-                              placement: ['topEnd'],
-                              showTotal: total => `${total} ${total === 1 ? 'item' : 'items'}`,
-                              onChange: props.onPageChange
-                          }
-                        : false
-                }
+                pagination={false}
                 scroll={scroll}
                 onRow={tableOnRow}
                 rowClassName={props.rowClassName}
