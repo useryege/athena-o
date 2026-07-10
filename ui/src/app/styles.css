@@ -485,17 +485,25 @@ body::-webkit-scrollbar-thumb,
 }
 
 .resource-table-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px 14px;
-    flex-wrap: wrap;
     min-width: 0;
     padding: 12px;
     border: 1px solid var(--athena-border);
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
     background: var(--athena-panel-solid);
+}
+
+.resource-table-pagination__controls {
+    position: sticky;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px 14px;
+    flex-wrap: wrap;
+    width: max-content;
+    max-width: calc(100vw - 304px);
+    margin-left: auto;
 }
 
 .resource-table-pagination .ant-pagination {

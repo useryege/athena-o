@@ -80,29 +80,31 @@ export const ResourceTable = <T,>(props: {
         <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
             {hasPagination && (
                 <div className='resource-table-pagination' aria-label='Table pagination'>
-                    <Typography.Text className='resource-table-pagination__total' type='secondary'>
-                        {props.total} {props.total === 1 ? 'item' : 'items'}
-                    </Typography.Text>
-                    <Pagination
-                        current={currentPage}
-                        pageSize={currentPageSize}
-                        total={props.total}
-                        size='small'
-                        showLessItems={true}
-                        showSizeChanger={false}
-                        onChange={nextPage => props.onPageChange?.(nextPage, currentPageSize)}
-                    />
-                    <div className='resource-table-pagination__sizes'>
-                        <Typography.Text className='resource-table-pagination__sizes-label' type='secondary'>
-                            Per page
+                    <div className='resource-table-pagination__controls'>
+                        <Typography.Text className='resource-table-pagination__total' type='secondary'>
+                            {props.total} {props.total === 1 ? 'item' : 'items'}
                         </Typography.Text>
-                        <Segmented<number>
-                            aria-label='Items per page'
+                        <Pagination
+                            current={currentPage}
+                            pageSize={currentPageSize}
+                            total={props.total}
                             size='small'
-                            value={currentPageSize}
-                            options={pageSizeOptions.map(value => ({label: String(value), value}))}
-                            onChange={nextPageSize => props.onPageChange?.(1, nextPageSize)}
+                            showLessItems={true}
+                            showSizeChanger={false}
+                            onChange={nextPage => props.onPageChange?.(nextPage, currentPageSize)}
                         />
+                        <div className='resource-table-pagination__sizes'>
+                            <Typography.Text className='resource-table-pagination__sizes-label' type='secondary'>
+                                Per page
+                            </Typography.Text>
+                            <Segmented<number>
+                                aria-label='Items per page'
+                                size='small'
+                                value={currentPageSize}
+                                options={pageSizeOptions.map(value => ({label: String(value), value}))}
+                                onChange={nextPageSize => props.onPageChange?.(1, nextPageSize)}
+                            />
+                        </div>
                     </div>
                 </div>
             )}
