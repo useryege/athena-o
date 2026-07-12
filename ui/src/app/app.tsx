@@ -461,7 +461,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const ant = AntApp.useApp();
     const [sidebarCollapsed, setSidebarCollapsed] = React.useState(props.pref.hideSidebar);
     const isLoginPath = location.pathname.startsWith('/login');
-    const locationKey = `${location.pathname}${location.search}`;
+    const locationKey = location.pathname;
     const [authorizedLocationKey, setAuthorizedLocationKey] = React.useState(isLoginPath ? locationKey : '');
     const [access, setAccess] = React.useState<AccessState>(null);
 

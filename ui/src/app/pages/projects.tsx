@@ -1,17 +1,29 @@
-import {Select, Space, Typography} from 'antd';
+import {Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import * as React from 'react';
-import {AppPage, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
+import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
 import {TokenAPIProject} from '../shared/services/tokenapi-service';
 import {fmtNumber, useKeywordParam, usePagedParams} from './shared';
-import {ChainBadge} from './token-shared';
+import {ChainBadge, chainLabel} from './token-shared';
 
 export const ProjectsPage = () => {
-    const {page, pageSize, setPage} = usePagedParams();
-    const [chainID, setChainID] = React.useState<number>();
+    const {params, setParams, page, pageSize, setPage} = usePagedParams();
+    const chainID = Number(params.get('chainID') || params.get('chain_id')) || undefined;
     const [contract, setContract] = useKeywordParam('contract');
     const [codeHash, setCodeHash] = useKeywordParam('codeHash');
+    const setChainFilter = (value?: number | null) => {
+        const next = new URLSearchParams(params);
+        if (value === undefined || value === null) {
+            next.delete('chainID');
+        } else {
+            next.set('chainID', String(value));
+        }
+        next.delete('chain_id');
+        next.delete('page_size');
+        next.set('page', '1');
+        next.set('pageSize', String(pageSize));
+        setParams(next);
+    };
     const options = useAsyncData(() => services.tokenapi.getOptions(), []);
     const data = useAsyncData(
         () =>
@@ -43,10 +55,12 @@ export const ProjectsPage = () => {
         {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
         {title: 'Created', dataIndex: 'createdAt'}
     ];
-    const chainOptions = (options.data?.chains || []).map(item => ({
-        value: item.chainID,
-        label: `${item.chainName || item.chainID} (${item.chainID})`
-    }));
+    const chainOptions = (options.data?.chains || [])
+        .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
+        .map(item => ({
+            value: item.chainID,
+            label: chainLabel(item.chainID)
+        }));
     return (
         <AppPage
             title='Projects'
@@ -58,16 +72,12 @@ export const ProjectsPage = () => {
             }}
             filters={
                 <Space wrap={true}>
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by chain'
-                        value={chainID}
-                        placeholder='Chain'
-                        style={{width: 220}}
-                        options={chainOptions}
+                    <ChoiceGroup<number | 'all'>
+                        ariaLabel='Filter by chain'
+                        value={chainID ?? 'all'}
+                        options={[{label: 'All', value: 'all'}, ...chainOptions]}
                         onChange={value => {
-                            setChainID(value);
-                            setPage(1, pageSize);
+                            setChainFilter(value === 'all' ? undefined : value);
                         }}
                     />
                     <SearchBar value={contract} onChange={setContract} placeholder='Contract' />

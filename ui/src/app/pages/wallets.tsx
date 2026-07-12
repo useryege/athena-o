@@ -1,12 +1,15 @@
 import {CopyOutlined, EyeOutlined, PlusOutlined} from '@ant-design/icons';
-import {Alert, Button, Checkbox, Form, Input, Modal, Select, Space, Tooltip} from 'antd';
+import {Alert, Button, Checkbox, Form, Input, Modal, Space, Tooltip} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {AppPage, KeyValueGrid, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
+import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
 import {WalletDetail, WalletItem, walletTypeLabel, walletTypeOptions} from '../shared/services/wallet-service';
 import {useKeywordParam, usePagedParams} from './shared';
+
+const walletChains = ['ETH', 'BSC', 'BASE', 'SOLANA'];
+const walletChainOptions = walletChains.map(value => ({value, label: value}));
 
 const SecretInput = (props: {label: string; value?: string; onCopy: () => void}) => (
     <Space.Compact block={true}>
@@ -98,23 +101,21 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
             filters={
                 <Space wrap={true}>
                     <SearchBar value={query} onChange={setQuery} placeholder='Address or alias' />
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by chain'
-                        value={chain || undefined}
-                        placeholder='Chain'
-                        style={{width: 150}}
-                        onChange={value => setChain(value || '')}
-                        options={['ETH', 'BSC', 'BASE', 'SOLANA'].map(value => ({value, label: value}))}
+                    <ChoiceGroup<string>
+                        ariaLabel='Filter by chain'
+                        value={chain || 'all'}
+                        options={[{label: 'All', value: 'all'}, ...walletChainOptions]}
+                        onChange={value => {
+                            setChain(value === 'all' ? '' : value);
+                        }}
                     />
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by type'
-                        value={walletType || undefined}
-                        placeholder='Type'
-                        style={{width: 210}}
-                        onChange={value => setWalletType(value || '')}
-                        options={walletTypeOptions}
+                    <ChoiceGroup<string>
+                        ariaLabel='Filter by type'
+                        value={walletType || 'all'}
+                        options={[{label: 'All', value: 'all'}, ...walletTypeOptions]}
+                        onChange={value => {
+                            setWalletType(value === 'all' ? '' : value);
+                        }}
                     />
                 </Space>
             }>
@@ -131,10 +132,10 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
             <Modal destroyOnHidden={true} open={createOpen} title='Create Wallet' footer={null} onCancel={() => setCreateOpen(false)}>
                 <Form layout='vertical' onFinish={create}>
                     <Form.Item name='chain' label='Chain' rules={[{required: true}]}>
-                        <Select options={['ETH', 'BSC', 'BASE', 'SOLANA'].map(value => ({value, label: value}))} />
+                        <ChoiceGroup<string> ariaLabel='Wallet chain' className='choice-group--form' options={walletChainOptions} />
                     </Form.Item>
                     <Form.Item name='type' label='Type' rules={[{required: true}]}>
-                        <Select options={walletTypeOptions} />
+                        <ChoiceGroup<string> ariaLabel='Wallet type' className='choice-group--form' options={walletTypeOptions} />
                     </Form.Item>
                     <Form.Item name='alias' label='Alias'>
                         <Input />

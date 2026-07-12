@@ -1,7 +1,7 @@
-import {Input, InputNumber, Select, Space} from 'antd';
+import {Input, InputNumber, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {AppPage, ResourceTable, TruncatedText, useAsyncData} from '../components';
+import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
 import {TokenAPIProjectDataCollectionTask} from '../shared/services/tokenapi-service';
 import {usePagedParams} from './shared';
@@ -46,14 +46,13 @@ export const CollectionTasksPage = () => {
                         onChange={value => setProjectID(typeof value === 'number' ? value : undefined)}
                     />
                     <Input aria-label='Filter by data type' value={dataType} placeholder='Data type' onChange={event => setDataType(event.target.value)} />
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by status'
-                        value={status || undefined}
-                        placeholder='Status'
-                        style={{width: 150}}
-                        onChange={value => setStatus(value || '')}
-                        options={['pending', 'succeeded', 'failed'].map(value => ({value, label: value}))}
+                    <ChoiceGroup<string>
+                        ariaLabel='Filter by status'
+                        value={status || 'all'}
+                        options={[{label: 'All', value: 'all'}, ...['pending', 'succeeded', 'failed'].map(value => ({value, label: value}))]}
+                        onChange={value => {
+                            setStatus(value === 'all' ? '' : value);
+                        }}
                     />
                 </Space>
             }>

@@ -1,8 +1,8 @@
 import {InfoCircleOutlined, SearchOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Alert, Button, Input, Progress, Segmented, Select, Space, Tag, Typography} from 'antd';
+import {Alert, Button, Input, Progress, Space, Tag, Typography} from 'antd';
 import * as React from 'react';
-import {AppPage, ResourceTable} from '../components';
+import {AppPage, ChoiceGroup, ResourceTable} from '../components';
 import {WorldCupCornerMatch, WorldCupCornerStageKey, worldCupCornerMatches, worldCupCornerStages} from './world-cup-corners-data';
 
 type OutcomeFilter = 'all' | 'hit' | 'miss';
@@ -230,14 +230,14 @@ export const WorldCupCornersPage = () => {
                             value={search}
                             onChange={event => setSearch(event.target.value)}
                         />
-                        <Select<WorldCupCornerStageKey | 'all'>
-                            aria-label='Filter by stage'
+                        <ChoiceGroup<WorldCupCornerStageKey | 'all'>
+                            ariaLabel='Filter by stage'
                             value={stage}
+                            options={[{value: 'all', label: 'All'}, ...worldCupCornerStages.map(item => ({value: item.key, label: item.label}))]}
                             onChange={setStage}
-                            options={[{value: 'all', label: 'All stages'}, ...worldCupCornerStages.map(item => ({value: item.key, label: item.label}))]}
                         />
-                        <Segmented<OutcomeFilter>
-                            aria-label='Filter by O6.5 outcome'
+                        <ChoiceGroup<OutcomeFilter>
+                            ariaLabel='Filter by O6.5 outcome'
                             value={outcome}
                             onChange={setOutcome}
                             options={[

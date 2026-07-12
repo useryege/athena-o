@@ -411,6 +411,63 @@ body::-webkit-scrollbar-thumb,
     gap: 10px 0;
 }
 
+.choice-group.ant-radio-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px;
+    max-width: 100%;
+    padding: 3px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-bg-soft);
+    vertical-align: top;
+}
+
+.choice-group .ant-radio-button-wrapper {
+    height: 32px;
+    padding: 0 12px;
+    margin-inline-start: 0 !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent;
+    color: var(--athena-muted);
+    font-weight: 500;
+    line-height: 32px;
+    box-shadow: none !important;
+}
+
+.choice-group--small .ant-radio-button-wrapper {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 12px;
+    line-height: 26px;
+}
+
+.choice-group .ant-radio-button-wrapper::before {
+    display: none !important;
+}
+
+.choice-group .ant-radio-button-wrapper:hover {
+    background: color-mix(in srgb, var(--athena-panel-solid) 72%, transparent);
+    color: var(--athena-text);
+}
+
+.choice-group .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+    background: var(--athena-panel-solid);
+    color: var(--athena-text);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 12%) !important;
+}
+
+.choice-group .ant-radio-button-wrapper-disabled {
+    opacity: 0.56;
+}
+
+.choice-group--form {
+    padding-block: 2px;
+}
+
 .sports-history-sync,
 .sports-live-card,
 .fifa-event-config,
@@ -737,8 +794,8 @@ body::-webkit-scrollbar-thumb,
     width: 210px;
 }
 
-.world-cup-corners-filters .ant-select {
-    width: 178px;
+.world-cup-corners-filters .choice-group {
+    justify-content: flex-end;
 }
 
 .world-cup-corners-table-panel .resource-table.ant-table-wrapper,
@@ -2611,6 +2668,10 @@ body::-webkit-scrollbar-thumb,
 
     .world-cup-corners-filters {
         width: 100%;
+        justify-content: flex-start;
+    }
+
+    .world-cup-corners-filters .choice-group {
         justify-content: flex-start;
     }
 }

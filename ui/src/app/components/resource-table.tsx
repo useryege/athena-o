@@ -1,8 +1,9 @@
-import {Pagination, Segmented, Table, Typography} from 'antd';
+import {Pagination, Table, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import type {TableRowSelection} from 'antd/es/table/interface';
 import * as React from 'react';
 import {PAGE_SIZE_OPTIONS} from '../shared/pagination';
+import {ChoiceGroup} from './choice-group';
 import {useKeyboardPaintSelection} from './keyboard-paint-selection';
 
 export const ResourceTable = <T,>(props: {
@@ -97,8 +98,8 @@ export const ResourceTable = <T,>(props: {
                             <Typography.Text className='resource-table-pagination__sizes-label' type='secondary'>
                                 Per page
                             </Typography.Text>
-                            <Segmented<number>
-                                aria-label='Items per page'
+                            <ChoiceGroup<number>
+                                ariaLabel='Items per page'
                                 size='small'
                                 value={currentPageSize}
                                 options={pageSizeOptions.map(value => ({label: String(value), value}))}

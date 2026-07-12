@@ -1,9 +1,9 @@
 import {SendOutlined} from '@ant-design/icons';
-import {Button, Form, Input, Modal, Select, Space} from 'antd';
+import {Button, Form, Input, Modal, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
-import {AppPage, ResourceTable, SearchBar, useAsyncData} from '../components';
+import {AppPage, ChoiceGroup, ResourceTable, SearchBar, useAsyncData} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
 import {NotificationDelivery} from '../shared/services/notification-service';
@@ -73,23 +73,21 @@ export const NotificationsPage = () => {
             filters={
                 <Space wrap={true}>
                     <SearchBar value={keyword} onChange={setKeyword} placeholder='Keyword' />
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by notification status'
-                        value={status || undefined}
-                        style={{width: 150}}
-                        placeholder='Status'
-                        onChange={value => setStatus(value || '')}
-                        options={['pending', 'sent', 'failed'].map(value => ({value, label: value}))}
+                    <ChoiceGroup<string>
+                        ariaLabel='Filter by notification status'
+                        value={status || 'all'}
+                        options={[{label: 'All', value: 'all'}, ...['pending', 'sent', 'failed'].map(value => ({value, label: value}))]}
+                        onChange={value => {
+                            setStatus(value === 'all' ? '' : value);
+                        }}
                     />
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by Telegram chat'
-                        value={telegramChat || undefined}
-                        style={{width: 150}}
-                        placeholder='Telegram Chat'
-                        onChange={value => setTelegramChat(value || '')}
-                        options={['test', 'prod'].map(value => ({value, label: value}))}
+                    <ChoiceGroup<string>
+                        ariaLabel='Filter by Telegram chat'
+                        value={telegramChat || 'all'}
+                        options={[{label: 'All', value: 'all'}, ...['test', 'prod'].map(value => ({value, label: value}))]}
+                        onChange={value => {
+                            setTelegramChat(value === 'all' ? '' : value);
+                        }}
                     />
                 </Space>
             }>

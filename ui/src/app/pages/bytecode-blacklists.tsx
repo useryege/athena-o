@@ -1,12 +1,12 @@
 import {DeleteOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
-import {Button, Form, Input, Modal, Select, Space} from 'antd';
+import {Button, Form, Input, Modal, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {AppPage, ResourceTable, TruncatedText, useAsyncData} from '../components';
+import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
 import {TokenAPIBytecodeBlacklist} from '../shared/services/tokenapi-service';
-import {ChainBadge} from './token-shared';
+import {ChainBadge, chainLabel} from './token-shared';
 
 export const BytecodeBlacklistsPage = () => {
     const ctx = React.useContext(Context);
@@ -17,10 +17,10 @@ export const BytecodeBlacklistsPage = () => {
     const chainOptions = React.useMemo(
         () =>
             (options.data?.chains || [])
-                .filter(item => item.chainID !== undefined)
+                .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
                 .map(item => ({
                     value: item.chainID,
-                    label: <ChainBadge chainID={item.chainID} />
+                    label: chainLabel(item.chainID)
                 })),
         [options.data]
     );
@@ -80,8 +80,8 @@ export const BytecodeBlacklistsPage = () => {
             onRefresh={refresh}
             filters={
                 <Form form={form} layout='inline' onFinish={add}>
-                    <Form.Item name='sourceChainID' rules={[{required: true}]}>
-                        <Select aria-label='Source chain' placeholder='Source chain' options={chainOptions} style={{minWidth: 180}} />
+                    <Form.Item name='sourceChainID' label='Source chain' rules={[{required: true}]}>
+                        <ChoiceGroup<number> ariaLabel='Source chain' className='choice-group--form' options={chainOptions} />
                     </Form.Item>
                     <Form.Item name='sourceContract' rules={[{required: true}]}>
                         <Input aria-label='Source contract' placeholder='Source contract' />

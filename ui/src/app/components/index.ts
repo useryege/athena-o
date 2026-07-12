@@ -1,3 +1,4 @@
+export * from './choice-group';
 export * from './data';
 export * from './display';
 export * from './keyboard-paint-selection';

@@ -1,10 +1,10 @@
-import {InputNumber, Select, Space, Tag, Typography} from 'antd';
+import {InputNumber, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {AppPage, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
+import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
 import {TokenAPIProjectReport} from '../shared/services/tokenapi-service';
 import {usePagedParams} from './shared';
-import {ChainBadge} from './token-shared';
+import {ChainBadge, chainLabel} from './token-shared';
 
 const evaluationStatuses = ['not_started', 'pending', 'succeeded', 'failed'];
 
@@ -123,10 +123,12 @@ export const ProjectReportsPage = () => {
             ]
         }
     ];
-    const chainOptions = (options.data?.chains || []).map(item => ({
-        value: item.chainID,
-        label: `${item.chainName || item.chainID} (${item.chainID})`
-    }));
+    const chainOptions = (options.data?.chains || [])
+        .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
+        .map(item => ({
+            value: item.chainID,
+            label: chainLabel(item.chainID)
+        }));
     return (
         <AppPage
             title='Project Reports'
@@ -138,15 +140,12 @@ export const ProjectReportsPage = () => {
             }}
             filters={
                 <Space wrap={true}>
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by chain'
-                        value={chainID}
-                        placeholder='Chain'
-                        style={{width: 220}}
-                        options={chainOptions}
+                    <ChoiceGroup<number | 'all'>
+                        ariaLabel='Filter by chain'
+                        value={chainID ?? 'all'}
+                        options={[{label: 'All', value: 'all'}, ...chainOptions]}
                         onChange={value => {
-                            setFilter('chainID', value);
+                            setFilter('chainID', value === 'all' ? undefined : value);
                         }}
                     />
                     <InputNumber
@@ -159,15 +158,12 @@ export const ProjectReportsPage = () => {
                         }}
                     />
                     <SearchBar value={contract} onChange={value => setFilter('contract', value)} placeholder='Contract' />
-                    <Select
-                        allowClear={true}
-                        aria-label='Filter by evaluation status'
-                        value={evaluationStatus || undefined}
-                        placeholder='Evaluation status'
-                        style={{width: 190}}
-                        options={evaluationStatuses.map(value => ({value, label: value}))}
+                    <ChoiceGroup<string>
+                        ariaLabel='Filter by evaluation status'
+                        value={evaluationStatus || 'all'}
+                        options={[{label: 'All', value: 'all'}, ...evaluationStatuses.map(value => ({value, label: value}))]}
                         onChange={value => {
-                            setFilter('evaluationStatus', value || '');
+                            setFilter('evaluationStatus', value === 'all' ? '' : value);
                         }}
                     />
                 </Space>
