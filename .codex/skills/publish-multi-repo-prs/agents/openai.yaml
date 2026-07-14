@@ -1,0 +1,4 @@
+interface:
+  display_name: "Publish Multi-Repo PRs"
+  short_description: "Create, validate, and merge coordinated repository PRs"
+  default_prompt: "Use $publish-multi-repo-prs to publish coordinated PRs for the root repository and changed submodules."

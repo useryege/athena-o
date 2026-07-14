@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Summary"
+  short_description: "Review PR diffs and summarize risks"
+  default_prompt: "Use $pr-review-summary to review a pull request and summarize key findings."
