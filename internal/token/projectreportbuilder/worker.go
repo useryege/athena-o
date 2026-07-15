@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/telemetry"
 )
 
 type Store interface {
@@ -25,6 +27,7 @@ type Options struct {
 	Store        Store
 	PollInterval time.Duration
 	TaskLimit    int32
+	Telemetry    telemetry.Reporter
 }
 
 type Worker struct {
@@ -53,6 +56,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	if w.opts.Store == nil {
 		return fmt.Errorf("token report builder store is required")
 	}
+	telemetry.Register(w.opts.Telemetry, telemetry.Scope{Component: "report_builder"})
 	runCtx, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 	w.done = make(chan struct{})
@@ -81,16 +85,20 @@ func (w *Worker) Stop(ctx context.Context) error {
 
 func (w *Worker) run(ctx context.Context) {
 	defer close(w.done)
+	scope := telemetry.Scope{Component: "report_builder"}
+	telemetry.Register(w.opts.Telemetry, scope)
 	ticker := time.NewTicker(w.opts.PollInterval)
 	defer ticker.Stop()
 	for {
 		tasks, err := w.opts.Store.ClaimProjectReportBuildTasks(ctx, w.opts.TaskLimit)
 		if err != nil {
+			telemetry.Failure(w.opts.Telemetry, scope, err)
 			log.WithError(err).Error("token report builder claim failed")
 		} else {
 			for _, task := range tasks {
 				w.process(ctx, task)
 			}
+			telemetry.Success(w.opts.Telemetry, scope)
 		}
 		select {
 		case <-ctx.Done():
@@ -120,6 +128,12 @@ func (w *Worker) process(ctx context.Context, task domain.ProjectReportBuildTask
 }
 
 func buildReport(projectID int64, items []domain.ProjectObservation) (domain.ProjectReportRevision, error) {
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].DataType != items[j].DataType {
+			return items[i].DataType < items[j].DataType
+		}
+		return items[i].ID < items[j].ID
+	})
 	evidence := make([]domain.EvidenceReference, 0, len(items))
 	freshness := make([]domain.ObservationFreshness, 0, len(items))
 	observations := domain.ResearchObservationsV1{}
@@ -155,24 +169,14 @@ func buildReport(projectID int64, items []domain.ProjectObservation) (domain.Pro
 	}
 	digest := sha256.Sum256(canonical)
 	return domain.ProjectReportRevision{
-		ProjectID:                 projectID,
-		SchemaVersion:             domain.ReportSchemaVersionV1,
-		ContentHash:               common.BytesToHash(digest[:]),
-		CompletenessStatus:        completeness,
-		Evidence:                  evidence,
-		Report:                    report,
-		ObservedBlockNumber:       maxBlock,
-		WethPairIsCreated:         risk.WethPairIsCreated,
-		WethPairIsRemoveLiquidity: risk.WethPairIsRemoveLiquidity,
-		WethPairIsMint:            risk.WethPairIsMint,
-		WethPairQuoteUsdtValueInt: cloneBigInt(risk.WethPairQuoteUsdtValueInt),
-		WethPairLastSwapTimestamp: risk.WethPairLastSwapTimestamp,
-		UsdtPairIsCreated:         risk.UsdtPairIsCreated,
-		UsdtPairIsRemoveLiquidity: risk.UsdtPairIsRemoveLiquidity,
-		UsdtPairIsMint:            risk.UsdtPairIsMint,
-		UsdtPairQuoteUsdtValueInt: cloneBigInt(risk.UsdtPairQuoteUsdtValueInt),
-		UsdtPairLastSwapTimestamp: risk.UsdtPairLastSwapTimestamp,
-		BuiltAt:                   time.Now().UTC(),
+		ProjectID:           projectID,
+		SchemaVersion:       domain.ReportSchemaVersionV1,
+		ContentHash:         common.BytesToHash(digest[:]),
+		CompletenessStatus:  completeness,
+		Evidence:            evidence,
+		Report:              report,
+		ObservedBlockNumber: maxBlock,
+		BuiltAt:             time.Now().UTC(),
 	}, nil
 }
 

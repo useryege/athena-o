@@ -14,12 +14,18 @@ import (
 )
 
 func (r *dataCollectorRunner) ensureClient(ctx context.Context, dataType domain.DataCollectionType, chainID int64) (*ethclient.Client, error) {
-	r.clientMu.Lock()
-	defer r.clientMu.Unlock()
 	key := chainResourceKey{dataType: dataType, chainID: chainID}
-	if client := r.clients[key]; client != nil {
-		return client, nil
+	resource := r.chainResource(key)
+	resource.mu.Lock()
+	defer resource.mu.Unlock()
+	return r.ensureClientLocked(ctx, key, resource)
+}
+
+func (r *dataCollectorRunner) ensureClientLocked(ctx context.Context, key chainResourceKey, resource *chainResource) (*ethclient.Client, error) {
+	if resource.client != nil {
+		return resource.client, nil
 	}
+	chainID := key.chainID
 	nodeWSURLs := r.opts.nodeWSURLs[chainID]
 	if len(nodeWSURLs) == 0 {
 		return nil, errNodeWSURLRequired(chainID)
@@ -28,26 +34,25 @@ func (r *dataCollectorRunner) ensureClient(ctx context.Context, dataType domain.
 	if err != nil {
 		return nil, err
 	}
-	r.clients[key] = client
+	resource.client = client
 	log.WithFields(log.Fields{
 		"chain_id":    chainID,
 		"chain_name":  athenacommon.ChainName(chainID),
 		"node_ws_url": ethws.RedactEndpoint(endpoint),
-		"data_type":   dataType,
+		"data_type":   key.dataType,
 	}).Info("token project data collector connected to node websocket")
 	return client, nil
 }
 
 func (r *dataCollectorRunner) ensureCaller(ctx context.Context, dataType domain.DataCollectionType, chainID int64) (*athenacontract.ATHENACaller, error) {
 	key := chainResourceKey{dataType: dataType, chainID: chainID}
-	r.clientMu.Lock()
-	if caller := r.callers[key]; caller != nil {
-		r.clientMu.Unlock()
-		return caller, nil
+	resource := r.chainResource(key)
+	resource.mu.Lock()
+	defer resource.mu.Unlock()
+	if resource.caller != nil {
+		return resource.caller, nil
 	}
-	r.clientMu.Unlock()
-
-	client, err := r.ensureClient(ctx, dataType, chainID)
+	client, err := r.ensureClientLocked(ctx, key, resource)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +64,7 @@ func (r *dataCollectorRunner) ensureCaller(ctx context.Context, dataType domain.
 	if err != nil {
 		return nil, err
 	}
-	r.clientMu.Lock()
-	defer r.clientMu.Unlock()
-	if current := r.callers[key]; current != nil {
-		return current, nil
-	}
-	r.callers[key] = caller
+	resource.caller = caller
 	log.WithFields(log.Fields{
 		"chain_id":        chainID,
 		"chain_name":      athenacommon.ChainName(chainID),
@@ -75,31 +75,37 @@ func (r *dataCollectorRunner) ensureCaller(ctx context.Context, dataType domain.
 }
 
 func (r *dataCollectorRunner) resetChain(dataType domain.DataCollectionType, chainID int64) {
-	r.clientMu.Lock()
-	defer r.clientMu.Unlock()
 	key := chainResourceKey{dataType: dataType, chainID: chainID}
-	if client := r.clients[key]; client != nil {
-		client.Close()
-		delete(r.clients, key)
+	resource := r.existingChainResource(key)
+	if resource == nil {
+		return
 	}
-	delete(r.callers, key)
+	resource.mu.Lock()
+	defer resource.mu.Unlock()
+	if resource.client != nil {
+		resource.client.Close()
+		resource.client = nil
+	}
+	resource.caller = nil
 }
 
 func (r *dataCollectorRunner) close() {
-	r.clientMu.Lock()
-	defer r.clientMu.Unlock()
 	if r.opts.ethereumAPIConn != nil {
 		utilio.Close(r.opts.ethereumAPIConn)
 		r.opts.ethereumAPIConn = nil
 	}
 	r.opts.ethereumAPI = nil
-	for key, client := range r.clients {
-		if client != nil {
-			client.Close()
+	r.resourceMu.Lock()
+	resources := r.resources
+	r.resources = make(map[chainResourceKey]*chainResource)
+	r.resourceMu.Unlock()
+	for _, resource := range resources {
+		resource.mu.Lock()
+		if resource.client != nil {
+			resource.client.Close()
+			resource.client = nil
 		}
-		delete(r.clients, key)
-	}
-	for key := range r.callers {
-		delete(r.callers, key)
+		resource.caller = nil
+		resource.mu.Unlock()
 	}
 }

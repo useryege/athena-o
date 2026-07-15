@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
 	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/telemetry"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
 	utilio "github.com/useryege/athena/util/io"
@@ -25,14 +26,14 @@ type dataCollectorRunnerOptions struct {
 	ethereumAPI     ethereumapiapiclient.EthereumAPIServiceClient
 	ethereumAPIConn utilio.Closer
 	pollInterval    time.Duration
+	telemetry       telemetry.Reporter
 }
 
 type dataCollectorRunner struct {
 	opts dataCollectorRunnerOptions
 
-	clientMu sync.Mutex
-	clients  map[chainResourceKey]*ethclient.Client
-	callers  map[chainResourceKey]*athenacontract.ATHENACaller
+	resourceMu sync.Mutex
+	resources  map[chainResourceKey]*chainResource
 }
 
 type chainResourceKey struct {
@@ -40,25 +41,48 @@ type chainResourceKey struct {
 	chainID  int64
 }
 
+type chainResource struct {
+	mu     sync.Mutex
+	client *ethclient.Client
+	caller *athenacontract.ATHENACaller
+}
+
 func newDataCollectorRunner(opts dataCollectorRunnerOptions) *dataCollectorRunner {
 	return &dataCollectorRunner{
-		opts:    opts,
-		clients: make(map[chainResourceKey]*ethclient.Client),
-		callers: make(map[chainResourceKey]*athenacontract.ATHENACaller),
+		opts:      opts,
+		resources: make(map[chainResourceKey]*chainResource),
 	}
+}
+
+func (r *dataCollectorRunner) chainResource(key chainResourceKey) *chainResource {
+	r.resourceMu.Lock()
+	defer r.resourceMu.Unlock()
+	resource := r.resources[key]
+	if resource == nil {
+		resource = &chainResource{}
+		r.resources[key] = resource
+	}
+	return resource
+}
+
+func (r *dataCollectorRunner) existingChainResource(key chainResourceKey) *chainResource {
+	r.resourceMu.Lock()
+	defer r.resourceMu.Unlock()
+	return r.resources[key]
 }
 
 func (r *dataCollectorRunner) run(ctx context.Context) {
 	defer r.close()
 	loops := []struct {
-		name    string
-		process func(context.Context) error
+		name     string
+		dataType domain.DataCollectionType
+		process  func(context.Context) error
 	}{
-		{name: "ave", process: r.processAveTasks},
-		{name: "contract code source", process: r.processContractCodeSourceTasks},
-		{name: "chain state", process: r.processChainStateTasks},
-		{name: "wallet asset state", process: r.processWalletAssetStateTasks},
-		{name: "simulation result", process: r.processSimulationResultTasks},
+		{name: "ave", dataType: domain.DataCollectionTypeAve, process: r.processAveTasks},
+		{name: "contract code source", dataType: domain.DataCollectionTypeContractCodeSource, process: r.processContractCodeSourceTasks},
+		{name: "chain state", dataType: domain.DataCollectionTypeChainState, process: r.processChainStateTasks},
+		{name: "wallet asset state", dataType: domain.DataCollectionTypeWalletAssetState, process: r.processWalletAssetStateTasks},
+		{name: "simulation result", dataType: domain.DataCollectionTypeSimulationResult, process: r.processSimulationResultTasks},
 	}
 	var wg sync.WaitGroup
 	for _, loop := range loops {
@@ -66,13 +90,17 @@ func (r *dataCollectorRunner) run(ctx context.Context) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.runCollectorLoop(ctx, loop.name, loop.process)
+			r.runCollectorLoop(ctx, loop.name, loop.dataType, loop.process)
 		}()
 	}
 	wg.Wait()
 }
 
-func (r *dataCollectorRunner) runCollectorLoop(ctx context.Context, name string, process func(context.Context) error) {
+func (r *dataCollectorRunner) runCollectorLoop(ctx context.Context, name string, dataType domain.DataCollectionType, process func(context.Context) error) {
+	scope := telemetry.Scope{Component: "data_collector", DataType: string(dataType)}
+	if len(r.opts.chainIDs) > 0 {
+		telemetry.Register(r.opts.telemetry, scope)
+	}
 	for {
 		if ctx.Err() != nil {
 			return
@@ -80,7 +108,10 @@ func (r *dataCollectorRunner) runCollectorLoop(ctx context.Context, name string,
 		if len(r.opts.chainIDs) == 0 {
 			log.Debug("token project data collector has no enabled chains")
 		} else if err := process(ctx); err != nil && ctx.Err() == nil {
+			telemetry.Failure(r.opts.telemetry, scope, err)
 			log.WithError(err).WithField("collector", name).Error("token project data collector loop failed")
+		} else if ctx.Err() == nil {
+			telemetry.Success(r.opts.telemetry, scope)
 		}
 		if !sleepContext(ctx, r.opts.pollInterval) {
 			return

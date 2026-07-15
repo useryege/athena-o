@@ -59,16 +59,19 @@ type Project struct {
 }
 
 type ProjectCandidate struct {
-	ID          int64
-	ChainID     int64
-	Contract    []byte
-	TxSender    []byte
-	TxHash      []byte
-	TxIndex     int64
-	BlockNumber int64
-	BlockTime   int64
-	Status      string
-	CreatedAt   pgtype.Timestamptz
+	ID                       int64
+	ChainID                  int64
+	Contract                 []byte
+	TxSender                 []byte
+	TxHash                   []byte
+	TxIndex                  int64
+	BlockNumber              int64
+	BlockTime                int64
+	Status                   string
+	ValidationLockToken      pgtype.UUID
+	ValidationLockedAt       pgtype.Timestamptz
+	ValidationLeaseExpiresAt pgtype.Timestamptz
+	CreatedAt                pgtype.Timestamptz
 }
 
 type ProjectDataCollectionSchedule struct {

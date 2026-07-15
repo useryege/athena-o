@@ -29,7 +29,10 @@ func NewCommand() *cobra.Command {
 		ethAthenaContract, bscAthenaContract                                                                          string
 		ethEnabled, bscEnabled, nodeWSUseProxy                                                                        bool
 		aveAPIKey, aveAPIBaseURL, ethereumAPIAddress                                                                  string
+		selectionStrategyKey, selectionStrategyVersion                                                                string
+		healthListenAddress                                                                                           string
 		chainStateInterval, walletAssetInterval, simulationInterval, aveInterval, contractSourceInterval, researchTTL time.Duration
+		healthStaleAfter                                                                                              time.Duration
 	)
 	command := &cobra.Command{Use: cliName, Short: "Run Athena Token discovery or research", Long: "Runs one consolidated Token Intelligence worker process.", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
 		cli.SetLogFormat(cmdutil.LogFormat)
@@ -37,8 +40,9 @@ func NewCommand() *cobra.Command {
 		chains := token.ChainRuntimeOptions{EthNodeWSURLs: ethNodeWSURLs, BSCNodeWSURLs: bscNodeWSURLs, EthAthenaContract: ethAthenaContract, BSCAthenaContract: bscAthenaContract, EthEnabled: ethEnabled, BSCEnabled: bscEnabled, NodeWSUseProxy: nodeWSUseProxy}
 		runtime, err := token.NewRuntime(token.RuntimeOptions{
 			Mode: mode, StoreSrc: tokenstore.NewSQLStoreSource(),
+			HealthListenAddress: healthListenAddress, HealthStaleAfter: healthStaleAfter,
 			Discovery: token.DiscoveryOptions{Chains: chains},
-			Research:  token.ResearchOptions{Chains: chains, AveAPIKey: aveAPIKey, AveAPIBaseURL: aveAPIBaseURL, EthereumAPIAddress: ethereumAPIAddress, ChainStateInterval: chainStateInterval, WalletAssetInterval: walletAssetInterval, SimulationInterval: simulationInterval, AveInterval: aveInterval, ContractSourceInterval: contractSourceInterval, ResearchTTL: researchTTL},
+			Research:  token.ResearchOptions{Chains: chains, AveAPIKey: aveAPIKey, AveAPIBaseURL: aveAPIBaseURL, EthereumAPIAddress: ethereumAPIAddress, ChainStateInterval: chainStateInterval, WalletAssetInterval: walletAssetInterval, SimulationInterval: simulationInterval, AveInterval: aveInterval, ContractSourceInterval: contractSourceInterval, ResearchTTL: researchTTL, SelectionStrategyKey: selectionStrategyKey, SelectionStrategyVersion: selectionStrategyVersion},
 		})
 		if err != nil {
 			return err
@@ -82,6 +86,10 @@ func NewCommand() *cobra.Command {
 	command.Flags().DurationVar(&aveInterval, "ave-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_AVE_INTERVAL", 5*time.Minute, time.Second, 24*time.Hour), "Ave refresh interval")
 	command.Flags().DurationVar(&contractSourceInterval, "contract-source-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_CONTRACT_SOURCE_INTERVAL", 10*time.Minute, time.Second, 24*time.Hour), "Contract source retry interval")
 	command.Flags().DurationVar(&researchTTL, "research-ttl", env.ParseDurationFromEnv("ATHENA_TOKEN_RESEARCH_TTL", 168*time.Hour, time.Hour, 30*24*time.Hour), "Research expiration duration")
+	command.Flags().StringVar(&selectionStrategyKey, "selection-strategy-key", env.StringFromEnv("ATHENA_TOKEN_SELECTION_STRATEGY_KEY", "default"), "Active token selection strategy key")
+	command.Flags().StringVar(&selectionStrategyVersion, "selection-strategy-version", env.StringFromEnv("ATHENA_TOKEN_SELECTION_STRATEGY_VERSION", "1"), "Active token selection strategy version")
+	command.Flags().StringVar(&healthListenAddress, "health-listen-address", env.StringFromEnv("ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS", ""), "Token health and metrics listen address")
+	command.Flags().DurationVar(&healthStaleAfter, "health-stale-after", env.ParseDurationFromEnv("ATHENA_TOKEN_HEALTH_STALE_AFTER", 2*time.Minute, time.Minute, time.Hour), "Maximum age of a successful worker loop before readiness fails")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
 }

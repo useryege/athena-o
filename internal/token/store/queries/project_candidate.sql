@@ -83,10 +83,53 @@ WHERE status = @status
 ORDER BY created_at, id
 LIMIT @limit_count;
 
--- name: MarkProjectCandidateStatus :one
+-- name: ClaimProjectCandidateValidations :many
+WITH claimable AS (
+  SELECT candidate.id
+  FROM project_candidate AS candidate
+  WHERE candidate.chain_id = sqlc.arg('chain_id')
+    AND candidate.status = 'pending'
+    AND (
+      candidate.validation_lease_expires_at IS NULL
+      OR candidate.validation_lease_expires_at <= now()
+    )
+  ORDER BY candidate.created_at, candidate.id
+  LIMIT sqlc.arg('limit_count')
+  FOR UPDATE OF candidate SKIP LOCKED
+)
+UPDATE project_candidate AS candidate
+SET validation_lock_token = sqlc.arg('validation_lock_token')::uuid,
+  validation_locked_at = now(),
+  validation_lease_expires_at = now() + (sqlc.arg('lease_seconds')::bigint * INTERVAL '1 second')
+FROM claimable
+WHERE candidate.id = claimable.id
+RETURNING candidate.*;
+
+-- name: RenewProjectCandidateValidationClaims :execrows
 UPDATE project_candidate
-SET status = @status
-WHERE id = @id
+SET validation_lease_expires_at = now() + (sqlc.arg('lease_seconds')::bigint * INTERVAL '1 second')
+WHERE status = 'pending'
+  AND validation_lock_token = sqlc.arg('validation_lock_token')::uuid
+  AND validation_lease_expires_at > now();
+
+-- name: ReleaseProjectCandidateValidationClaims :execrows
+UPDATE project_candidate
+SET validation_lock_token = NULL,
+  validation_locked_at = NULL,
+  validation_lease_expires_at = NULL
+WHERE status = 'pending'
+  AND validation_lock_token = sqlc.arg('validation_lock_token')::uuid;
+
+-- name: CompleteProjectCandidateValidation :one
+UPDATE project_candidate
+SET status = sqlc.arg('status'),
+  validation_lock_token = NULL,
+  validation_locked_at = NULL,
+  validation_lease_expires_at = NULL
+WHERE id = sqlc.arg('id')
+  AND status = 'pending'
+  AND validation_lock_token = sqlc.arg('validation_lock_token')::uuid
+  AND validation_lease_expires_at > now()
 RETURNING *;
 
 -- name: DeleteProjectCandidate :execrows

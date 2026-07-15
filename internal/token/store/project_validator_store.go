@@ -47,7 +47,7 @@ func (s *SQLStore) ValidateProjectCandidate(ctx context.Context, candidate domai
 	if err != nil {
 		return nil, fmt.Errorf("upsert project: %w", err)
 	}
-	if _, err = q.MarkProjectCandidateStatus(ctx, tokensqlc.MarkProjectCandidateStatusParams{ID: candidate.ID, Status: string(domain.ProjectCandidateStatusValidated)}); err != nil {
+	if _, err = q.CompleteProjectCandidateValidation(ctx, tokensqlc.CompleteProjectCandidateValidationParams{ID: candidate.ID, Status: string(domain.ProjectCandidateStatusValidated), ValidationLockToken: uuidParam(candidate.ValidationLockToken)}); err != nil {
 		return nil, fmt.Errorf("mark project candidate validated: %w", err)
 	}
 	if _, err = q.CreateProjectResearchState(ctx, row.ID); err != nil {

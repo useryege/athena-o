@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
+	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/telemetry"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethws"
 	utilio "github.com/useryege/athena/util/io"
@@ -39,6 +41,7 @@ type Options struct {
 	AveAPIKey          string
 	AveAPIBaseURL      string
 	EthereumAPIAddress string
+	Telemetry          telemetry.Reporter
 }
 
 type Worker struct {
@@ -102,7 +105,13 @@ func (w *Worker) Start(ctx context.Context) error {
 		ethereumAPI:     ethereumAPI,
 		ethereumAPIConn: ethereumAPIConn,
 		pollInterval:    pollInterval,
+		telemetry:       w.opts.Telemetry,
 	})
+	if len(chainIDs) > 0 {
+		for _, dataType := range []domain.DataCollectionType{domain.DataCollectionTypeAve, domain.DataCollectionTypeContractCodeSource, domain.DataCollectionTypeChainState, domain.DataCollectionTypeWalletAssetState, domain.DataCollectionTypeSimulationResult} {
+			telemetry.Register(w.opts.Telemetry, telemetry.Scope{Component: "data_collector", DataType: string(dataType)})
+		}
+	}
 	w.cancel = cancel
 	w.done = make(chan struct{})
 	w.runner = runner

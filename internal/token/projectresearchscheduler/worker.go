@@ -8,6 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/telemetry"
 )
 
 type Store interface {
@@ -25,6 +26,7 @@ type Options struct {
 	ContractSourceInterval time.Duration
 	ResearchTTL            time.Duration
 	PollInterval           time.Duration
+	Telemetry              telemetry.Reporter
 }
 type Worker struct {
 	opts   Options
@@ -70,6 +72,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	if err := w.opts.Store.ApplyResearchPolicy(ctx, policies, w.opts.ResearchTTL); err != nil {
 		return err
 	}
+	telemetry.Register(w.opts.Telemetry, telemetry.Scope{Component: "research_scheduler"})
 	runCtx, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 	w.done = make(chan struct{})
@@ -96,16 +99,26 @@ func (w *Worker) Stop(ctx context.Context) error {
 }
 func (w *Worker) run(ctx context.Context) {
 	defer close(w.done)
+	scope := telemetry.Scope{Component: "research_scheduler"}
+	telemetry.Register(w.opts.Telemetry, scope)
 	ticker := time.NewTicker(w.opts.PollInterval)
 	defer ticker.Stop()
 	for {
+		iterationFailed := false
 		if err := w.opts.Store.MaintainResearchLifecycle(ctx); err != nil {
+			iterationFailed = true
+			telemetry.Failure(w.opts.Telemetry, scope, err)
 			log.WithError(err).Error("token research lifecycle maintenance failed")
 		}
 		if n, err := w.opts.Store.ScheduleDueProjectDataCollectionTasks(ctx, 100); err != nil {
+			iterationFailed = true
+			telemetry.Failure(w.opts.Telemetry, scope, err)
 			log.WithError(err).Error("token research scheduler failed")
 		} else if n > 0 {
 			log.WithField("task_count", n).Debug("token research scheduler created tasks")
+		}
+		if !iterationFailed {
+			telemetry.Success(w.opts.Telemetry, scope)
 		}
 		select {
 		case <-ctx.Done():

@@ -6,6 +6,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -13,9 +15,11 @@ type Querier interface {
 	ApplyProjectDataCollectionSchedulePolicy(ctx context.Context, arg ApplyProjectDataCollectionSchedulePolicyParams) (int64, error)
 	ApplyProjectResearchTTL(ctx context.Context, ttlSeconds int64) (int64, error)
 	BatchUpsertProjectCandidates(ctx context.Context, arg BatchUpsertProjectCandidatesParams) error
+	ClaimProjectCandidateValidations(ctx context.Context, arg ClaimProjectCandidateValidationsParams) ([]ProjectCandidate, error)
 	ClaimProjectDataCollectionTasks(ctx context.Context, arg ClaimProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
 	ClaimProjectReportBuildTasks(ctx context.Context, arg ClaimProjectReportBuildTasksParams) ([]ProjectReportBuildTask, error)
 	ClaimProjectSelectionEvaluationTasks(ctx context.Context, arg ClaimProjectSelectionEvaluationTasksParams) ([]ProjectSelectionEvaluationTask, error)
+	CompleteProjectCandidateValidation(ctx context.Context, arg CompleteProjectCandidateValidationParams) (ProjectCandidate, error)
 	CompleteProjectDataCollectionSchedule(ctx context.Context, arg CompleteProjectDataCollectionScheduleParams) (int64, error)
 	CountContractCodes(ctx context.Context, codeHash []byte) (int64, error)
 	CountCurrentProjectReports(ctx context.Context, arg CountCurrentProjectReportsParams) (int64, error)
@@ -74,6 +78,7 @@ type Querier interface {
 	ListCurrentProjectObservations(ctx context.Context, projectID int64) ([]ListCurrentProjectObservationsRow, error)
 	ListCurrentProjectReports(ctx context.Context, arg ListCurrentProjectReportsParams) ([]ListCurrentProjectReportsRow, error)
 	ListDueProjectDataCollectionSchedules(ctx context.Context, limit int32) ([]ProjectDataCollectionSchedule, error)
+	ListPipelineQueueMetrics(ctx context.Context) ([]ListPipelineQueueMetricsRow, error)
 	ListProjectCandidates(ctx context.Context, arg ListProjectCandidatesParams) ([]ProjectCandidate, error)
 	ListProjectCandidatesByStatus(ctx context.Context, arg ListProjectCandidatesByStatusParams) ([]ProjectCandidate, error)
 	ListProjectDataCollectionTasks(ctx context.Context, arg ListProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
@@ -89,13 +94,14 @@ type Querier interface {
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	ListWalletBlocklistEntries(ctx context.Context) ([]WalletBlocklist, error)
 	LockProjectDataCollectionSchedule(ctx context.Context, arg LockProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
-	MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error)
 	MarkProjectDataCollectionScheduleFailed(ctx context.Context, arg MarkProjectDataCollectionScheduleFailedParams) (int64, error)
 	MarkProjectDataCollectionScheduleSucceeded(ctx context.Context, arg MarkProjectDataCollectionScheduleSucceededParams) (int64, error)
 	MarkProjectDataCollectionTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	MarkProjectReportBuildTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	MarkProjectSelectionEvaluationTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	PauseTerminalProjectDataCollectionSchedules(ctx context.Context) (int64, error)
+	ReleaseProjectCandidateValidationClaims(ctx context.Context, validationLockToken pgtype.UUID) (int64, error)
+	RenewProjectCandidateValidationClaims(ctx context.Context, arg RenewProjectCandidateValidationClaimsParams) (int64, error)
 	RetryProjectDataCollectionTask(ctx context.Context, arg RetryProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	RetryProjectReportBuildTask(ctx context.Context, arg RetryProjectReportBuildTaskParams) (ProjectReportBuildTask, error)
 	RetryProjectSelectionEvaluationTask(ctx context.Context, arg RetryProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error)

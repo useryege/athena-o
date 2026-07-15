@@ -275,12 +275,13 @@ func boolValue(value *bool) bool {
 
 func mapProjectReport(item tokenstore.ProjectReportListItem) *v1alpha1.TokenAPIProjectReport {
 	report := item.Report
-	dataAvailable := report.WethPairIsCreated != nil &&
-		report.WethPairIsRemoveLiquidity != nil &&
-		report.WethPairIsMint != nil &&
-		report.UsdtPairIsCreated != nil &&
-		report.UsdtPairIsRemoveLiquidity != nil &&
-		report.UsdtPairIsMint != nil
+	risk := report.Report.RiskSummary
+	dataAvailable := risk.WethPairIsCreated != nil &&
+		risk.WethPairIsRemoveLiquidity != nil &&
+		risk.WethPairIsMint != nil &&
+		risk.UsdtPairIsCreated != nil &&
+		risk.UsdtPairIsRemoveLiquidity != nil &&
+		risk.UsdtPairIsMint != nil
 	result := &v1alpha1.TokenAPIProjectReport{
 		ProjectID:           report.ProjectID,
 		ChainID:             item.ChainID,
@@ -299,16 +300,16 @@ func mapProjectReport(item tokenstore.ProjectReportListItem) *v1alpha1.TokenAPIP
 	if !dataAvailable {
 		return result
 	}
-	result.WethPairIsCreated = *report.WethPairIsCreated
-	result.WethPairIsRemoveLiquidity = *report.WethPairIsRemoveLiquidity
-	result.WethPairIsMint = *report.WethPairIsMint
-	result.WethPairQuoteUsdtValueInt = formatBigInt(report.WethPairQuoteUsdtValueInt)
-	result.WethPairLastSwapAt = formatUnixTime(report.WethPairLastSwapTimestamp)
-	result.UsdtPairIsCreated = *report.UsdtPairIsCreated
-	result.UsdtPairIsRemoveLiquidity = *report.UsdtPairIsRemoveLiquidity
-	result.UsdtPairIsMint = *report.UsdtPairIsMint
-	result.UsdtPairQuoteUsdtValueInt = formatBigInt(report.UsdtPairQuoteUsdtValueInt)
-	result.UsdtPairLastSwapAt = formatUnixTime(report.UsdtPairLastSwapTimestamp)
+	result.WethPairIsCreated = *risk.WethPairIsCreated
+	result.WethPairIsRemoveLiquidity = *risk.WethPairIsRemoveLiquidity
+	result.WethPairIsMint = *risk.WethPairIsMint
+	result.WethPairQuoteUsdtValueInt = formatBigInt(risk.WethPairQuoteUsdtValueInt)
+	result.WethPairLastSwapAt = formatUnixTime(risk.WethPairLastSwapTimestamp)
+	result.UsdtPairIsCreated = *risk.UsdtPairIsCreated
+	result.UsdtPairIsRemoveLiquidity = *risk.UsdtPairIsRemoveLiquidity
+	result.UsdtPairIsMint = *risk.UsdtPairIsMint
+	result.UsdtPairQuoteUsdtValueInt = formatBigInt(risk.UsdtPairQuoteUsdtValueInt)
+	result.UsdtPairLastSwapAt = formatUnixTime(risk.UsdtPairLastSwapTimestamp)
 	return result
 }
 
@@ -397,6 +398,7 @@ func mapProjectReportRevision(item domain.ProjectReportRevision) *v1alpha1.Token
 	if item.ObservedBlockNumber != nil {
 		block = *item.ObservedBlockNumber
 	}
+	risk := item.Report.RiskSummary
 	return &v1alpha1.TokenAPIProjectReportRevision{
 		ReportRevisionID:          item.ID,
 		ProjectID:                 item.ProjectID,
@@ -408,16 +410,16 @@ func mapProjectReportRevision(item domain.ProjectReportRevision) *v1alpha1.Token
 		EvidenceJSON:              jsonString(item.Evidence),
 		ReportJSON:                jsonString(item.Report),
 		ObservedBlockNumber:       block,
-		WethPairIsCreated:         boolValue(item.WethPairIsCreated),
-		WethPairIsRemoveLiquidity: boolValue(item.WethPairIsRemoveLiquidity),
-		WethPairIsMint:            boolValue(item.WethPairIsMint),
-		WethPairQuoteUsdtValueInt: formatBigInt(item.WethPairQuoteUsdtValueInt),
-		WethPairLastSwapAt:        formatUnixTime(item.WethPairLastSwapTimestamp),
-		UsdtPairIsCreated:         boolValue(item.UsdtPairIsCreated),
-		UsdtPairIsRemoveLiquidity: boolValue(item.UsdtPairIsRemoveLiquidity),
-		UsdtPairIsMint:            boolValue(item.UsdtPairIsMint),
-		UsdtPairQuoteUsdtValueInt: formatBigInt(item.UsdtPairQuoteUsdtValueInt),
-		UsdtPairLastSwapAt:        formatUnixTime(item.UsdtPairLastSwapTimestamp),
+		WethPairIsCreated:         boolValue(risk.WethPairIsCreated),
+		WethPairIsRemoveLiquidity: boolValue(risk.WethPairIsRemoveLiquidity),
+		WethPairIsMint:            boolValue(risk.WethPairIsMint),
+		WethPairQuoteUsdtValueInt: formatBigInt(risk.WethPairQuoteUsdtValueInt),
+		WethPairLastSwapAt:        formatUnixTime(risk.WethPairLastSwapTimestamp),
+		UsdtPairIsCreated:         boolValue(risk.UsdtPairIsCreated),
+		UsdtPairIsRemoveLiquidity: boolValue(risk.UsdtPairIsRemoveLiquidity),
+		UsdtPairIsMint:            boolValue(risk.UsdtPairIsMint),
+		UsdtPairQuoteUsdtValueInt: formatBigInt(risk.UsdtPairQuoteUsdtValueInt),
+		UsdtPairLastSwapAt:        formatUnixTime(risk.UsdtPairLastSwapTimestamp),
 		BuiltAt:                   formatTime(item.BuiltAt),
 		CreatedAt:                 formatTime(item.CreatedAt),
 	}

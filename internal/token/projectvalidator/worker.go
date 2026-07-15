@@ -9,6 +9,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/token/telemetry"
 	"github.com/useryege/athena/util/ethws"
 )
 
@@ -16,6 +17,8 @@ const (
 	pollInterval         = 3 * time.Second
 	candidateLimit       = int32(100)
 	candidateConcurrency = 10
+	candidateLease       = 5 * time.Minute
+	candidateLeaseRenew  = time.Minute
 )
 
 type Options struct {
@@ -27,6 +30,7 @@ type Options struct {
 	EthEnabled        bool
 	BSCEnabled        bool
 	NodeWSUseProxy    bool
+	Telemetry         telemetry.Reporter
 }
 
 type Worker struct {
@@ -59,6 +63,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	runners := make(map[int64]*validatorRunner, len(chainIDs))
 	for _, chainID := range chainIDs {
+		telemetry.Register(w.opts.Telemetry, telemetry.Scope{Component: "project_validator", ChainID: chainID})
 		runners[chainID] = newValidatorRunner(validatorRunnerOptions{
 			store:                w.opts.Store,
 			chainIDs:             []int64{chainID},
@@ -68,6 +73,7 @@ func (w *Worker) Start(ctx context.Context) error {
 			pollInterval:         pollInterval,
 			candidateLimit:       candidateLimit,
 			candidateConcurrency: candidateConcurrency,
+			telemetry:            w.opts.Telemetry,
 		})
 	}
 	w.cancel = cancel
@@ -81,7 +87,6 @@ func (w *Worker) Stop(ctx context.Context) error {
 	w.startStopMu.Lock()
 	cancel := w.cancel
 	done := w.done
-	runners := w.runners
 	w.cancel = nil
 	w.done = nil
 	w.runners = nil
@@ -89,9 +94,6 @@ func (w *Worker) Stop(ctx context.Context) error {
 
 	if cancel != nil {
 		cancel()
-	}
-	for _, runner := range runners {
-		runner.close()
 	}
 	if done != nil {
 		select {

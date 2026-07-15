@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/token/telemetry"
 )
 
 const maxBlocksPerBatch = uint64(100)
@@ -21,6 +22,7 @@ type chainRunnerOptions struct {
 	nodeWSUseProxy        bool
 	pollInterval          time.Duration
 	blockFetchConcurrency int
+	telemetry             telemetry.Reporter
 }
 
 type chainRunner struct {
@@ -51,12 +53,15 @@ func newChainRunner(opts chainRunnerOptions) *chainRunner {
 
 func (r *chainRunner) run(ctx context.Context) {
 	defer r.close()
+	scope := telemetry.Scope{Component: "chain_scanner", ChainID: r.opts.chainID}
+	telemetry.Register(r.opts.telemetry, scope)
 	r.startBlockFetchWorkers(ctx)
 	for {
 		if err := ctx.Err(); err != nil {
 			return
 		}
 		if err := r.processAvailableBlocks(ctx); err != nil {
+			telemetry.Failure(r.opts.telemetry, scope, err)
 			log.WithError(err).WithFields(log.Fields{
 				"chain_id":   r.opts.chainID,
 				"chain_name": r.opts.chainName,
@@ -66,6 +71,7 @@ func (r *chainRunner) run(ctx context.Context) {
 			}
 			continue
 		}
+		telemetry.Success(r.opts.telemetry, scope)
 		if !sleepContext(ctx, r.opts.pollInterval) {
 			return
 		}

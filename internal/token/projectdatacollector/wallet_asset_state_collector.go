@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -106,6 +107,7 @@ func (r *dataCollectorRunner) projectRelatedWallets(ctx context.Context, project
 		seen[item.Wallet] = struct{}{}
 		wallets = append(wallets, item.Wallet)
 	}
+	sort.Slice(wallets, func(i, j int) bool { return wallets[i].Hex() < wallets[j].Hex() })
 	return wallets, nil
 }
 
@@ -124,5 +126,6 @@ func walletAssetStatesFromAthena(chainID int64, items []athenacontract.AthenaWal
 			UsdtValue:     cloneBigIntData(item.AssetState.UsdtValue),
 		})
 	}
+	sort.Slice(states, func(i, j int) bool { return states[i].Wallet.Hex() < states[j].Wallet.Hex() })
 	return states
 }

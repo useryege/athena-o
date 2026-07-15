@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
@@ -207,12 +209,59 @@ func (s *SQLStore) ListProjectCandidates(ctx context.Context, chainID int64, sta
 	}, nil
 }
 
-func (s *SQLStore) ListPendingProjectCandidates(ctx context.Context, chainID int64, limit int32) ([]domain.ProjectCandidate, error) {
-	page, err := s.ListProjectCandidates(ctx, chainID, domain.ProjectCandidateStatusPending, 1, limit)
+func (s *SQLStore) ClaimProjectCandidateValidations(ctx context.Context, chainID int64, lockToken uuid.UUID, lease time.Duration, limit int32) ([]domain.ProjectCandidate, error) {
+	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
-	return page.Items, nil
+	if lockToken == uuid.Nil {
+		return nil, fmt.Errorf("project candidate validation lock token is required")
+	}
+	if lease <= 0 {
+		return nil, fmt.Errorf("project candidate validation lease must be positive")
+	}
+	if limit <= 0 {
+		limit = defaultPageSize
+	}
+	rows, err := q.ClaimProjectCandidateValidations(ctx, tokensqlc.ClaimProjectCandidateValidationsParams{ValidationLockToken: uuidParam(lockToken), LeaseSeconds: int64(lease / time.Second), ChainID: chainID, LimitCount: limit})
+	if err != nil {
+		return nil, fmt.Errorf("claim project candidate validations: %w", err)
+	}
+	items, err := mapProjectCandidates(rows)
+	if err != nil {
+		return nil, fmt.Errorf("map claimed project candidates: %w", err)
+	}
+	return items, nil
+}
+
+func (s *SQLStore) RenewProjectCandidateValidationClaims(ctx context.Context, lockToken uuid.UUID, lease time.Duration) error {
+	q, err := s.querier()
+	if err != nil {
+		return err
+	}
+	if lockToken == uuid.Nil || lease <= 0 {
+		return fmt.Errorf("project candidate validation lock token and lease are required")
+	}
+	_, err = q.RenewProjectCandidateValidationClaims(ctx, tokensqlc.RenewProjectCandidateValidationClaimsParams{LeaseSeconds: int64(lease / time.Second), ValidationLockToken: uuidParam(lockToken)})
+	if err != nil {
+		return fmt.Errorf("renew project candidate validation claims: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ReleaseProjectCandidateValidationClaims(ctx context.Context, lockToken uuid.UUID) error {
+	q, err := s.querier()
+	if err != nil {
+		return err
+	}
+	if lockToken == uuid.Nil {
+		return nil
+	}
+	_, err = q.ReleaseProjectCandidateValidationClaims(ctx, uuidParam(lockToken))
+	if err != nil {
+		return fmt.Errorf("release project candidate validation claims: %w", err)
+	}
+	return nil
 }
 
 func (s *SQLStore) ListProjectCandidatesByStatus(ctx context.Context, status domain.ProjectCandidateStatus, limit int32) ([]domain.ProjectCandidate, error) {
@@ -240,26 +289,23 @@ func (s *SQLStore) ListProjectCandidatesByStatus(ctx context.Context, status dom
 	return items, nil
 }
 
-func (s *SQLStore) MarkProjectCandidateStatus(ctx context.Context, id int64, status domain.ProjectCandidateStatus) (*domain.ProjectCandidate, error) {
+func (s *SQLStore) RejectProjectCandidate(ctx context.Context, candidate domain.ProjectCandidate) error {
 	q, err := s.querier()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	row, err := q.MarkProjectCandidateStatus(ctx, tokensqlc.MarkProjectCandidateStatusParams{
-		ID:     id,
-		Status: string(status),
+	_, err = q.CompleteProjectCandidateValidation(ctx, tokensqlc.CompleteProjectCandidateValidationParams{
+		ID:                  candidate.ID,
+		Status:              string(domain.ProjectCandidateStatusRejected),
+		ValidationLockToken: uuidParam(candidate.ValidationLockToken),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+		return fmt.Errorf("project candidate validation claim lost for candidate %d", candidate.ID)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("mark project candidate status: %w", err)
+		return fmt.Errorf("reject project candidate: %w", err)
 	}
-	item, err := mapProjectCandidate(row)
-	if err != nil {
-		return nil, fmt.Errorf("map project candidate: %w", err)
-	}
-	return item, nil
+	return nil
 }
 
 func (s *SQLStore) DeleteProjectCandidate(ctx context.Context, id int64) (int64, error) {

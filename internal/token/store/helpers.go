@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
@@ -23,6 +24,13 @@ func bytesToHash(v []byte) common.Hash {
 		return common.Hash{}
 	}
 	return common.BytesToHash(v)
+}
+
+func uuidParam(v uuid.UUID) pgtype.UUID {
+	if v == uuid.Nil {
+		return pgtype.UUID{}
+	}
+	return pgtype.UUID{Bytes: [16]byte(v), Valid: true}
 }
 func bytesToAddress(v []byte) common.Address {
 	if len(v) == 0 {
@@ -187,7 +195,11 @@ func mapProjectCandidate(row tokensqlc.ProjectCandidate) (*domain.ProjectCandida
 	if e != nil {
 		return nil, e
 	}
-	return &domain.ProjectCandidate{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, Status: domain.ProjectCandidateStatus(row.Status), CreatedAt: timeValue(row.CreatedAt)}, nil
+	lockToken := uuid.Nil
+	if row.ValidationLockToken.Valid {
+		lockToken = uuid.UUID(row.ValidationLockToken.Bytes)
+	}
+	return &domain.ProjectCandidate{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, Status: domain.ProjectCandidateStatus(row.Status), ValidationLockToken: lockToken, ValidationLockedAt: timeValue(row.ValidationLockedAt), ValidationLeaseExpiresAt: timeValue(row.ValidationLeaseExpiresAt), CreatedAt: timeValue(row.CreatedAt)}, nil
 }
 func mapProjectCandidates(rows []tokensqlc.ProjectCandidate) ([]domain.ProjectCandidate, error) {
 	out := make([]domain.ProjectCandidate, 0, len(rows))
@@ -340,7 +352,32 @@ func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (domain.Proje
 	if e = json.Unmarshal(row.Report, &report); e != nil {
 		return domain.ProjectReportRevision{}, fmt.Errorf("decode report: %w", e)
 	}
-	return domain.ProjectReportRevision{ID: row.ID, ProjectID: row.ProjectID, Revision: row.Revision, SchemaVersion: row.SchemaVersion, ContentHash: bytesToHash(row.ContentHash), CompletenessStatus: row.CompletenessStatus, Evidence: evidence, Report: report, ObservedBlockNumber: bn, WethPairIsCreated: boolPointer(row.WethPairIsCreated), WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity), WethPairIsMint: boolPointer(row.WethPairIsMint), WethPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt), WethPairLastSwapTimestamp: wts, UsdtPairIsCreated: boolPointer(row.UsdtPairIsCreated), UsdtPairIsRemoveLiquidity: boolPointer(row.UsdtPairIsRemoveLiquidity), UsdtPairIsMint: boolPointer(row.UsdtPairIsMint), UsdtPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt), UsdtPairLastSwapTimestamp: uts, BuiltAt: timeValue(row.BuiltAt), CreatedAt: timeValue(row.CreatedAt)}, nil
+	risk := report.RiskSummary
+	if !equalBoolPointers(risk.WethPairIsCreated, boolPointer(row.WethPairIsCreated)) ||
+		!equalBoolPointers(risk.WethPairIsRemoveLiquidity, boolPointer(row.WethPairIsRemoveLiquidity)) ||
+		!equalBoolPointers(risk.WethPairIsMint, boolPointer(row.WethPairIsMint)) ||
+		!equalBigIntPointers(risk.WethPairQuoteUsdtValueInt, bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt)) ||
+		!equalUint64Pointers(risk.WethPairLastSwapTimestamp, wts) ||
+		!equalBoolPointers(risk.UsdtPairIsCreated, boolPointer(row.UsdtPairIsCreated)) ||
+		!equalBoolPointers(risk.UsdtPairIsRemoveLiquidity, boolPointer(row.UsdtPairIsRemoveLiquidity)) ||
+		!equalBoolPointers(risk.UsdtPairIsMint, boolPointer(row.UsdtPairIsMint)) ||
+		!equalBigIntPointers(risk.UsdtPairQuoteUsdtValueInt, bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt)) ||
+		!equalUint64Pointers(risk.UsdtPairLastSwapTimestamp, uts) {
+		return domain.ProjectReportRevision{}, fmt.Errorf("project report revision %d risk projection does not match report JSON", row.ID)
+	}
+	return domain.ProjectReportRevision{ID: row.ID, ProjectID: row.ProjectID, Revision: row.Revision, SchemaVersion: row.SchemaVersion, ContentHash: bytesToHash(row.ContentHash), CompletenessStatus: row.CompletenessStatus, Evidence: evidence, Report: report, ObservedBlockNumber: bn, BuiltAt: timeValue(row.BuiltAt), CreatedAt: timeValue(row.CreatedAt)}, nil
+}
+
+func equalBoolPointers(left, right *bool) bool {
+	return (left == nil && right == nil) || (left != nil && right != nil && *left == *right)
+}
+
+func equalUint64Pointers(left, right *uint64) bool {
+	return (left == nil && right == nil) || (left != nil && right != nil && *left == *right)
+}
+
+func equalBigIntPointers(left, right *big.Int) bool {
+	return (left == nil && right == nil) || (left != nil && right != nil && left.Cmp(right) == 0)
 }
 func mapProjectSelection(row tokensqlc.ProjectSelection) domain.ProjectSelection {
 	return domain.ProjectSelection{ID: row.ID, ProjectID: row.ProjectID, Outcome: domain.SelectionOutcome(row.Outcome), StrategyKey: row.StrategyKey, StrategyVersion: row.StrategyVersion, ReportRevision: row.ReportRevision, ReasonCodes: row.ReasonCodes, ReasonDetail: row.ReasonDetail, DecidedAt: timeValue(row.DecidedAt), CreatedAt: timeValue(row.CreatedAt)}

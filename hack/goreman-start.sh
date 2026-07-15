@@ -154,7 +154,9 @@ cleanup_athena_ports() {
 		"notification:${ATHENA_NOTIFICATION_PORT:-8086}"
 		"wallet:${ATHENA_WALLET_PORT:-8088}"
 		"polymarket:${ATHENA_POLYMARKET_PORT:-8092}"
+		"token-discovery-health:8095"
 		"token-api:${ATHENA_TOKEN_API_PORT:-8096}"
+		"token-research-health:8097"
 		"ethereum-api:${ATHENA_ETHEREUM_API_PORT:-8100}"
 	)
 	local entry name port pid pids cmd

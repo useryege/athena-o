@@ -133,11 +133,12 @@ func (s *SQLStore) CompleteProjectReportBuild(ctx context.Context, task domain.P
 	if e != nil {
 		return nil, false, e
 	}
-	wethSwap, e := nullableUint64(report.WethPairLastSwapTimestamp)
+	risk := report.Report.RiskSummary
+	wethSwap, e := nullableUint64(risk.WethPairLastSwapTimestamp)
 	if e != nil {
 		return nil, false, e
 	}
-	usdtSwap, e := nullableUint64(report.UsdtPairLastSwapTimestamp)
+	usdtSwap, e := nullableUint64(risk.UsdtPairLastSwapTimestamp)
 	if e != nil {
 		return nil, false, e
 	}
@@ -149,7 +150,7 @@ func (s *SQLStore) CompleteProjectReportBuild(ctx context.Context, task domain.P
 	if e != nil {
 		return nil, false, e
 	}
-	row, e := q.InsertProjectReportRevision(ctx, tokensqlc.InsertProjectReportRevisionParams{ProjectID: task.ProjectID, Revision: revision, SchemaVersion: report.SchemaVersion, ContentHash: report.ContentHash.Bytes(), CompletenessStatus: report.CompletenessStatus, Evidence: evidenceJSON, Report: reportJSON, ObservedBlockNumber: observedBlock, WethPairIsCreated: nullableBool(report.WethPairIsCreated), WethPairIsRemoveLiquidity: nullableBool(report.WethPairIsRemoveLiquidity), WethPairIsMint: nullableBool(report.WethPairIsMint), WethPairQuoteUsdtValueInt: nullableNumericFromBigInt(report.WethPairQuoteUsdtValueInt), WethPairLastSwapTimestamp: wethSwap, UsdtPairIsCreated: nullableBool(report.UsdtPairIsCreated), UsdtPairIsRemoveLiquidity: nullableBool(report.UsdtPairIsRemoveLiquidity), UsdtPairIsMint: nullableBool(report.UsdtPairIsMint), UsdtPairQuoteUsdtValueInt: nullableNumericFromBigInt(report.UsdtPairQuoteUsdtValueInt), UsdtPairLastSwapTimestamp: usdtSwap, BuiltAt: nullableTime(report.BuiltAt)})
+	row, e := q.InsertProjectReportRevision(ctx, tokensqlc.InsertProjectReportRevisionParams{ProjectID: task.ProjectID, Revision: revision, SchemaVersion: report.SchemaVersion, ContentHash: report.ContentHash.Bytes(), CompletenessStatus: report.CompletenessStatus, Evidence: evidenceJSON, Report: reportJSON, ObservedBlockNumber: observedBlock, WethPairIsCreated: nullableBool(risk.WethPairIsCreated), WethPairIsRemoveLiquidity: nullableBool(risk.WethPairIsRemoveLiquidity), WethPairIsMint: nullableBool(risk.WethPairIsMint), WethPairQuoteUsdtValueInt: nullableNumericFromBigInt(risk.WethPairQuoteUsdtValueInt), WethPairLastSwapTimestamp: wethSwap, UsdtPairIsCreated: nullableBool(risk.UsdtPairIsCreated), UsdtPairIsRemoveLiquidity: nullableBool(risk.UsdtPairIsRemoveLiquidity), UsdtPairIsMint: nullableBool(risk.UsdtPairIsMint), UsdtPairQuoteUsdtValueInt: nullableNumericFromBigInt(risk.UsdtPairQuoteUsdtValueInt), UsdtPairLastSwapTimestamp: usdtSwap, BuiltAt: nullableTime(report.BuiltAt)})
 	if e != nil {
 		return nil, false, e
 	}

@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/telemetry"
 	"github.com/useryege/athena/util/ethws"
 )
 
@@ -27,6 +28,7 @@ type Options struct {
 	EthEnabled     bool
 	BSCEnabled     bool
 	NodeWSUseProxy bool
+	Telemetry      telemetry.Reporter
 }
 
 type Worker struct {
@@ -99,8 +101,10 @@ func (w *Worker) Start(ctx context.Context) error {
 			nodeWSUseProxy:        w.opts.NodeWSUseProxy,
 			pollInterval:          cfg.pollInterval,
 			blockFetchConcurrency: cfg.blockFetchConcurrency,
+			telemetry:             w.opts.Telemetry,
 		})
 		runners[cfg.chainID] = runner
+		telemetry.Register(w.opts.Telemetry, telemetry.Scope{Component: "chain_scanner", ChainID: cfg.chainID})
 		log.WithFields(log.Fields{
 			"chain_id":            checkpoint.ChainID,
 			"chain_name":          checkpoint.ChainName,
@@ -133,9 +137,6 @@ func (w *Worker) Stop(ctx context.Context) error {
 
 	if cancel != nil {
 		cancel()
-	}
-	for _, runner := range runners {
-		runner.close()
 	}
 	if done != nil {
 		select {

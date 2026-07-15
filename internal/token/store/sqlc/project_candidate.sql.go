@@ -63,6 +63,115 @@ func (q *Queries) BatchUpsertProjectCandidates(ctx context.Context, arg BatchUps
 	return err
 }
 
+const claimProjectCandidateValidations = `-- name: ClaimProjectCandidateValidations :many
+WITH claimable AS (
+  SELECT candidate.id
+  FROM project_candidate AS candidate
+  WHERE candidate.chain_id = $3
+    AND candidate.status = 'pending'
+    AND (
+      candidate.validation_lease_expires_at IS NULL
+      OR candidate.validation_lease_expires_at <= now()
+    )
+  ORDER BY candidate.created_at, candidate.id
+  LIMIT $4
+  FOR UPDATE OF candidate SKIP LOCKED
+)
+UPDATE project_candidate AS candidate
+SET validation_lock_token = $1::uuid,
+  validation_locked_at = now(),
+  validation_lease_expires_at = now() + ($2::bigint * INTERVAL '1 second')
+FROM claimable
+WHERE candidate.id = claimable.id
+RETURNING candidate.id, candidate.chain_id, candidate.contract, candidate.tx_sender, candidate.tx_hash, candidate.tx_index, candidate.block_number, candidate.block_time, candidate.status, candidate.validation_lock_token, candidate.validation_locked_at, candidate.validation_lease_expires_at, candidate.created_at
+`
+
+type ClaimProjectCandidateValidationsParams struct {
+	ValidationLockToken pgtype.UUID
+	LeaseSeconds        int64
+	ChainID             int64
+	LimitCount          int32
+}
+
+func (q *Queries) ClaimProjectCandidateValidations(ctx context.Context, arg ClaimProjectCandidateValidationsParams) ([]ProjectCandidate, error) {
+	rows, err := q.db.Query(ctx, claimProjectCandidateValidations,
+		arg.ValidationLockToken,
+		arg.LeaseSeconds,
+		arg.ChainID,
+		arg.LimitCount,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProjectCandidate
+	for rows.Next() {
+		var i ProjectCandidate
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChainID,
+			&i.Contract,
+			&i.TxSender,
+			&i.TxHash,
+			&i.TxIndex,
+			&i.BlockNumber,
+			&i.BlockTime,
+			&i.Status,
+			&i.ValidationLockToken,
+			&i.ValidationLockedAt,
+			&i.ValidationLeaseExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const completeProjectCandidateValidation = `-- name: CompleteProjectCandidateValidation :one
+UPDATE project_candidate
+SET status = $1,
+  validation_lock_token = NULL,
+  validation_locked_at = NULL,
+  validation_lease_expires_at = NULL
+WHERE id = $2
+  AND status = 'pending'
+  AND validation_lock_token = $3::uuid
+  AND validation_lease_expires_at > now()
+RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, validation_lock_token, validation_locked_at, validation_lease_expires_at, created_at
+`
+
+type CompleteProjectCandidateValidationParams struct {
+	Status              string
+	ID                  int64
+	ValidationLockToken pgtype.UUID
+}
+
+func (q *Queries) CompleteProjectCandidateValidation(ctx context.Context, arg CompleteProjectCandidateValidationParams) (ProjectCandidate, error) {
+	row := q.db.QueryRow(ctx, completeProjectCandidateValidation, arg.Status, arg.ID, arg.ValidationLockToken)
+	var i ProjectCandidate
+	err := row.Scan(
+		&i.ID,
+		&i.ChainID,
+		&i.Contract,
+		&i.TxSender,
+		&i.TxHash,
+		&i.TxIndex,
+		&i.BlockNumber,
+		&i.BlockTime,
+		&i.Status,
+		&i.ValidationLockToken,
+		&i.ValidationLockedAt,
+		&i.ValidationLeaseExpiresAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const countProjectCandidates = `-- name: CountProjectCandidates :one
 SELECT COUNT(*)::bigint
 FROM project_candidate
@@ -96,7 +205,7 @@ func (q *Queries) DeleteProjectCandidate(ctx context.Context, id int64) (int64, 
 }
 
 const getProjectCandidate = `-- name: GetProjectCandidate :one
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, validation_lock_token, validation_locked_at, validation_lease_expires_at, created_at
 FROM project_candidate
 WHERE id = $1
 `
@@ -114,13 +223,16 @@ func (q *Queries) GetProjectCandidate(ctx context.Context, id int64) (ProjectCan
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.Status,
+		&i.ValidationLockToken,
+		&i.ValidationLockedAt,
+		&i.ValidationLeaseExpiresAt,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getProjectCandidateByContract = `-- name: GetProjectCandidateByContract :one
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, validation_lock_token, validation_locked_at, validation_lease_expires_at, created_at
 FROM project_candidate
 WHERE chain_id = $1
   AND contract = $2
@@ -144,13 +256,16 @@ func (q *Queries) GetProjectCandidateByContract(ctx context.Context, arg GetProj
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.Status,
+		&i.ValidationLockToken,
+		&i.ValidationLockedAt,
+		&i.ValidationLeaseExpiresAt,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listProjectCandidates = `-- name: ListProjectCandidates :many
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, validation_lock_token, validation_locked_at, validation_lease_expires_at, created_at
 FROM project_candidate
 WHERE chain_id = $1
   AND ($2::text IS NULL OR status = $2::text)
@@ -189,6 +304,9 @@ func (q *Queries) ListProjectCandidates(ctx context.Context, arg ListProjectCand
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Status,
+			&i.ValidationLockToken,
+			&i.ValidationLockedAt,
+			&i.ValidationLeaseExpiresAt,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -202,7 +320,7 @@ func (q *Queries) ListProjectCandidates(ctx context.Context, arg ListProjectCand
 }
 
 const listProjectCandidatesByStatus = `-- name: ListProjectCandidatesByStatus :many
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, validation_lock_token, validation_locked_at, validation_lease_expires_at, created_at
 FROM project_candidate
 WHERE status = $1
 ORDER BY created_at, id
@@ -233,6 +351,9 @@ func (q *Queries) ListProjectCandidatesByStatus(ctx context.Context, arg ListPro
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Status,
+			&i.ValidationLockToken,
+			&i.ValidationLockedAt,
+			&i.ValidationLeaseExpiresAt,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -245,34 +366,42 @@ func (q *Queries) ListProjectCandidatesByStatus(ctx context.Context, arg ListPro
 	return items, nil
 }
 
-const markProjectCandidateStatus = `-- name: MarkProjectCandidateStatus :one
+const releaseProjectCandidateValidationClaims = `-- name: ReleaseProjectCandidateValidationClaims :execrows
 UPDATE project_candidate
-SET status = $1
-WHERE id = $2
-RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
+SET validation_lock_token = NULL,
+  validation_locked_at = NULL,
+  validation_lease_expires_at = NULL
+WHERE status = 'pending'
+  AND validation_lock_token = $1::uuid
 `
 
-type MarkProjectCandidateStatusParams struct {
-	Status string
-	ID     int64
+func (q *Queries) ReleaseProjectCandidateValidationClaims(ctx context.Context, validationLockToken pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, releaseProjectCandidateValidationClaims, validationLockToken)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
-func (q *Queries) MarkProjectCandidateStatus(ctx context.Context, arg MarkProjectCandidateStatusParams) (ProjectCandidate, error) {
-	row := q.db.QueryRow(ctx, markProjectCandidateStatus, arg.Status, arg.ID)
-	var i ProjectCandidate
-	err := row.Scan(
-		&i.ID,
-		&i.ChainID,
-		&i.Contract,
-		&i.TxSender,
-		&i.TxHash,
-		&i.TxIndex,
-		&i.BlockNumber,
-		&i.BlockTime,
-		&i.Status,
-		&i.CreatedAt,
-	)
-	return i, err
+const renewProjectCandidateValidationClaims = `-- name: RenewProjectCandidateValidationClaims :execrows
+UPDATE project_candidate
+SET validation_lease_expires_at = now() + ($1::bigint * INTERVAL '1 second')
+WHERE status = 'pending'
+  AND validation_lock_token = $2::uuid
+  AND validation_lease_expires_at > now()
+`
+
+type RenewProjectCandidateValidationClaimsParams struct {
+	LeaseSeconds        int64
+	ValidationLockToken pgtype.UUID
+}
+
+func (q *Queries) RenewProjectCandidateValidationClaims(ctx context.Context, arg RenewProjectCandidateValidationClaimsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, renewProjectCandidateValidationClaims, arg.LeaseSeconds, arg.ValidationLockToken)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertProjectCandidate = `-- name: UpsertProjectCandidate :one
@@ -300,7 +429,7 @@ SET status = CASE
   WHEN project_candidate.status = 'pending' THEN EXCLUDED.status
   ELSE project_candidate.status
 END
-RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, created_at
+RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, status, validation_lock_token, validation_locked_at, validation_lease_expires_at, created_at
 `
 
 type UpsertProjectCandidateParams struct {
@@ -336,6 +465,9 @@ func (q *Queries) UpsertProjectCandidate(ctx context.Context, arg UpsertProjectC
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.Status,
+		&i.ValidationLockToken,
+		&i.ValidationLockedAt,
+		&i.ValidationLeaseExpiresAt,
 		&i.CreatedAt,
 	)
 	return i, err

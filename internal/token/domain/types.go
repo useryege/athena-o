@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/google/uuid"
 )
 
 const (
@@ -97,16 +98,19 @@ type Chain struct {
 }
 
 type ProjectCandidate struct {
-	ID          int64
-	ChainID     int64
-	Contract    common.Address
-	TxSender    common.Address
-	TxHash      common.Hash
-	TxIndex     uint64
-	BlockNumber uint64
-	BlockTime   uint64
-	Status      ProjectCandidateStatus
-	CreatedAt   time.Time
+	ID                       int64
+	ChainID                  int64
+	Contract                 common.Address
+	TxSender                 common.Address
+	TxHash                   common.Hash
+	TxIndex                  uint64
+	BlockNumber              uint64
+	BlockTime                uint64
+	Status                   ProjectCandidateStatus
+	ValidationLockToken      uuid.UUID
+	ValidationLockedAt       time.Time
+	ValidationLeaseExpiresAt time.Time
+	CreatedAt                time.Time
 }
 
 type ContractCode struct {
@@ -261,29 +265,19 @@ type ProjectSelectionEvaluationTask struct {
 }
 
 type ProjectReportRevision struct {
-	ID                        int64
-	ProjectID                 int64
-	ChainID                   int64
-	Contract                  common.Address
-	Revision                  int64
-	SchemaVersion             int32
-	ContentHash               common.Hash
-	CompletenessStatus        string
-	Evidence                  []EvidenceReference
-	Report                    ResearchReportV1
-	ObservedBlockNumber       *uint64
-	WethPairIsCreated         *bool
-	WethPairIsRemoveLiquidity *bool
-	WethPairIsMint            *bool
-	WethPairQuoteUsdtValueInt *big.Int
-	WethPairLastSwapTimestamp *uint64
-	UsdtPairIsCreated         *bool
-	UsdtPairIsRemoveLiquidity *bool
-	UsdtPairIsMint            *bool
-	UsdtPairQuoteUsdtValueInt *big.Int
-	UsdtPairLastSwapTimestamp *uint64
-	BuiltAt                   time.Time
-	CreatedAt                 time.Time
+	ID                  int64
+	ProjectID           int64
+	ChainID             int64
+	Contract            common.Address
+	Revision            int64
+	SchemaVersion       int32
+	ContentHash         common.Hash
+	CompletenessStatus  string
+	Evidence            []EvidenceReference
+	Report              ResearchReportV1
+	ObservedBlockNumber *uint64
+	BuiltAt             time.Time
+	CreatedAt           time.Time
 }
 
 type ProjectSelection struct {

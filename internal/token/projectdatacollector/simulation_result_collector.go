@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -79,6 +80,7 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("simulate token project wallets chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
 		return
 	}
+	sort.Slice(results, func(i, j int) bool { return results[i].Wallet.Hex() < results[j].Wallet.Hex() })
 	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, domain.SimulationObservationV1{Items: results}, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return

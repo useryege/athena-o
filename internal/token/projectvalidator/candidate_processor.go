@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/domain"
 )
@@ -22,7 +24,11 @@ func (r *validatorRunner) processPendingCandidates(ctx context.Context) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		candidates, err := r.opts.store.ListPendingProjectCandidates(ctx, chainID, r.opts.candidateLimit)
+		lockToken, err := uuid.NewRandom()
+		if err != nil {
+			return fmt.Errorf("generate project candidate validation lock token: %w", err)
+		}
+		candidates, err := r.opts.store.ClaimProjectCandidateValidations(ctx, chainID, lockToken, candidateLease, r.opts.candidateLimit)
 		if err != nil {
 			return err
 		}
@@ -30,8 +36,18 @@ func (r *validatorRunner) processPendingCandidates(ctx context.Context) error {
 			continue
 		}
 		totalCandidates += len(candidates)
-		if err := r.processChainCandidates(ctx, chainID, candidates); err != nil {
-			return err
+		stopRenewal := r.renewCandidateValidationClaims(ctx, lockToken)
+		processErr := r.processChainCandidates(ctx, chainID, candidates)
+		stopRenewal()
+		releaseErr := r.opts.store.ReleaseProjectCandidateValidationClaims(ctx, lockToken)
+		if processErr != nil {
+			if releaseErr != nil {
+				log.WithError(releaseErr).WithField("validation_lock_token", lockToken.String()).Error("token project validator failed to release claims")
+			}
+			return processErr
+		}
+		if releaseErr != nil {
+			return releaseErr
 		}
 	}
 	if totalCandidates == 0 {
@@ -40,6 +56,30 @@ func (r *validatorRunner) processPendingCandidates(ctx context.Context) error {
 	}
 	log.WithField("candidate_count", totalCandidates).Debug("token project validator processed candidate batch")
 	return nil
+}
+
+func (r *validatorRunner) renewCandidateValidationClaims(ctx context.Context, lockToken uuid.UUID) func() {
+	renewCtx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(candidateLeaseRenew)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-renewCtx.Done():
+				return
+			case <-ticker.C:
+				if err := r.opts.store.RenewProjectCandidateValidationClaims(renewCtx, lockToken, candidateLease); err != nil && renewCtx.Err() == nil {
+					log.WithError(err).WithField("validation_lock_token", lockToken.String()).Error("token project validator failed to renew claims")
+				}
+			}
+		}
+	}()
+	return func() {
+		cancel()
+		<-done
+	}
 }
 
 func (r *validatorRunner) processChainCandidates(ctx context.Context, chainID int64, candidates []domain.ProjectCandidate) error {
@@ -137,7 +177,7 @@ func (r *validatorRunner) processValidatedCandidate(ctx context.Context, client 
 }
 
 func (r *validatorRunner) rejectCandidate(ctx context.Context, candidate domain.ProjectCandidate, message string) error {
-	if _, err := r.opts.store.MarkProjectCandidateStatus(ctx, candidate.ID, domain.ProjectCandidateStatusRejected); err != nil {
+	if err := r.opts.store.RejectProjectCandidate(ctx, candidate); err != nil {
 		return err
 	}
 	log.WithFields(log.Fields{

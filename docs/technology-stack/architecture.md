@@ -14,4 +14,10 @@ Token Intelligence is deployed as three coarse-grained services: `athena-token-d
 
 The worker binary accepts only `ATHENA_TOKEN_MODE=discovery` and `ATHENA_TOKEN_MODE=research`. The internal pipeline responsibilities remain separate components but are not deployed as individual microservices.
 
+Project validation uses database-backed UUID leases and `FOR UPDATE SKIP LOCKED`, allowing multiple Discovery instances to claim different candidates and recover work after a crashed worker. Research collectors keep separate chain resources for every `(data type, chain ID)`, so a slow connection or reconnect in one source does not block the other collectors.
+
+Research reports use normalized, schema-versioned observations. `ResearchReportV1.RiskSummary` is the source of truth for both immutable report JSON and database query projections. Selection strategies are registered by explicit key and version; the default `default/1` strategy always returns `deferred / strategy_not_configured`.
+
+Discovery exposes health and Prometheus metrics on `127.0.0.1:8095` by default, while Research uses `127.0.0.1:8097`. Both provide `/healthz`, `/readyz`, and `/metrics`; `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` overrides the listen address without restoring the removed Token gRPC status service.
+
 See [Token Intelligence 与交易领域边界](../open-trade-time.md) for the future handoff from `ProjectSelection` to trade execution and exit decisions.

@@ -181,8 +181,11 @@ services:
       ATHENA_BINARY_NAME: athena-token
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_TOKEN_MODE: discovery
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8095
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
     command: ["athena"]
+    expose:
+      - "8095"
 
   athena-token-research:
     image: ${PROD_IMAGE:-athena:local}
@@ -198,9 +201,12 @@ services:
       ATHENA_BINARY_NAME: athena-token
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_TOKEN_MODE: research
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8097
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
       ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS: athena-ethereum-api:8100
     command: ["athena"]
+    expose:
+      - "8097"
 
   athena-migrate:
     image: ${PROD_IMAGE:-athena:local}
