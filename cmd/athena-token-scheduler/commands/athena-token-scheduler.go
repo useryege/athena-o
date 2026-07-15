@@ -1,12 +1,17 @@
 package commands
 
 import (
+	"context"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/useryege/athena/cmd/tokenworker"
 	"github.com/useryege/athena/common"
-	"github.com/useryege/athena/internal/token/research/scheduler"
+	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
+	"github.com/useryege/athena/internal/token/research"
+	researchapp "github.com/useryege/athena/internal/token/research/application"
+	"github.com/useryege/athena/internal/token/telemetry"
+	"github.com/useryege/athena/internal/token/workerhost"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 )
@@ -17,11 +22,16 @@ func NewCommand() *cobra.Command {
 	var flags tokenworker.CommonFlags
 	var chainStateInterval, walletAssetInterval, simulationInterval, aveInterval, contractSourceInterval, researchTTL time.Duration
 	command := &cobra.Command{Use: cliName, Short: "Schedule token research collection", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
-		database, _, host, err := flags.Open(cmd.Context(), "scheduler")
+		connection, _, host, err := flags.Open(cmd.Context(), "scheduler")
 		if err != nil {
 			return err
 		}
-		host.SetWorker(scheduler.NewWorker(scheduler.Options{Store: database.Research(), ChainStateInterval: chainStateInterval, WalletAssetInterval: walletAssetInterval, SimulationInterval: simulationInterval, AveInterval: aveInterval, ContractSourceInterval: contractSourceInterval, ResearchTTL: researchTTL, Telemetry: host.Reporter()}))
+		application := researchapp.NewScheduler(tokenpostgres.NewSchedulerRepository(connection), researchapp.SchedulerOptions{Intervals: map[research.DataCollectionType]time.Duration{research.DataCollectionTypeChainState: chainStateInterval, research.DataCollectionTypeWalletAssetState: walletAssetInterval, research.DataCollectionTypeSimulationResult: simulationInterval, research.DataCollectionTypeAve: aveInterval, research.DataCollectionTypeContractCodeSource: contractSourceInterval}, TTL: researchTTL})
+		job := workerhost.PeriodicJob{Name: "research-scheduler", Interval: time.Second, Scope: telemetry.Scope{Component: "research_scheduler"}, Initialize: application.Initialize, RunOnce: func(ctx context.Context) (workerhost.JobResult, error) {
+			count, err := application.RunOnce(ctx)
+			return workerhost.JobResult{Processed: count}, err
+		}}
+		host.SetWorker(workerhost.NewPeriodicWorker([]workerhost.PeriodicJob{job}, host.Reporter()))
 		common.GetVersion().LogStartupInfo("Athena Token Scheduler", nil)
 		return host.Run(cmd.Context())
 	}}

@@ -1,11 +1,18 @@
 package commands
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/useryege/athena/cmd/tokenworker"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/token/adapters/evm"
-	"github.com/useryege/athena/internal/token/adapters/workers/validator"
+	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
+	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
+	"github.com/useryege/athena/internal/token/telemetry"
+	"github.com/useryege/athena/internal/token/workerhost"
 	"github.com/useryege/athena/util/cli"
 )
 
@@ -14,13 +21,26 @@ const cliName = "athena-token-validator"
 func NewCommand() *cobra.Command {
 	var flags tokenworker.CommonFlags
 	command := &cobra.Command{Use: cliName, Short: "Validate token project candidates", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
-		database, registry, host, err := flags.Open(cmd.Context(), "validator")
+		connection, registry, host, err := flags.Open(cmd.Context(), "validator")
 		if err != nil {
 			return err
 		}
 		clients := evm.NewChainClientRegistry(registry)
 		host.AddClose(clients.Close)
-		host.SetWorker(validator.NewWorker(validator.Options{Store: database.Discovery(), Chains: registry.Chains(), Clients: clients, Telemetry: host.Reporter()}))
+		repository := tokenpostgres.NewCandidateRepository(connection)
+		application := discoveryapp.NewValidator(repository, evm.NewCandidateInspector(registry, clients), repository, discoveryapp.ValidatorOptions{})
+		jobs := make([]workerhost.PeriodicJob, 0, len(registry.EnabledChains()))
+		for _, chain := range registry.EnabledChains() {
+			chain := chain
+			jobs = append(jobs, workerhost.PeriodicJob{Name: fmt.Sprintf("project-validator-%d", chain.ID), Interval: 3 * time.Second, Scope: telemetry.Scope{Component: "project_validator", ChainID: chain.ID}, RunOnce: func(ctx context.Context) (workerhost.JobResult, error) {
+				count, err := application.RunOnce(ctx, chain.ID)
+				return workerhost.JobResult{Processed: count}, err
+			}})
+		}
+		if len(jobs) == 0 {
+			return fmt.Errorf("token validator has no enabled chains")
+		}
+		host.SetWorker(workerhost.NewPeriodicWorker(jobs, host.Reporter()))
 		common.GetVersion().LogStartupInfo("Athena Token Validator", map[string]any{"chains": len(registry.EnabledChains())})
 		return host.Run(cmd.Context())
 	}}

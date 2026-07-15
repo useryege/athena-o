@@ -3,7 +3,7 @@ package discovery
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 type ChainIngestStatus string
@@ -41,9 +41,9 @@ type Chain struct {
 type ProjectCandidate struct {
 	ID                       int64
 	ChainID                  int64
-	Contract                 common.Address
-	TxSender                 common.Address
-	TxHash                   common.Hash
+	Contract                 shared.Address
+	TxSender                 shared.Address
+	TxHash                   shared.Hash
 	TxIndex                  uint64
 	BlockNumber              uint64
 	BlockTime                uint64

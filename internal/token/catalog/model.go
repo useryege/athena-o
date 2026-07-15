@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 type ContractCode struct {
-	CodeHash            common.Hash
+	CodeHash            shared.Hash
 	SourceCode          string
 	SourceCodeFetchedAt time.Time
 	DeploymentCount     int64
@@ -18,19 +18,19 @@ type ContractCode struct {
 type Project struct {
 	ID          int64
 	ChainID     int64
-	Contract    common.Address
-	TxSender    common.Address
-	TxHash      common.Hash
+	Contract    shared.Address
+	TxSender    shared.Address
+	TxHash      shared.Hash
 	TxIndex     uint64
 	BlockNumber uint64
 	BlockTime   uint64
-	CodeHash    common.Hash
+	CodeHash    shared.Hash
 	Name        string
 	Symbol      string
 	Decimals    uint8
 	TotalSupply *big.Int
-	WethPair    common.Address
-	UsdtPair    common.Address
+	WethPair    shared.Address
+	UsdtPair    shared.Address
 	CreatedAt   time.Time
 }
 
@@ -50,7 +50,7 @@ const (
 
 type ProjectRelatedWallet struct {
 	ProjectID int64
-	Wallet    common.Address
+	Wallet    shared.Address
 	Role      RelatedWalletRole
 	CreatedAt time.Time
 }
@@ -58,10 +58,10 @@ type ProjectRelatedWallet struct {
 type ProjectInitialRecipient struct {
 	ID                int64
 	ProjectID         int64
-	Wallet            common.Address
+	Wallet            shared.Address
 	RatioBPS          int64
 	RankIndex         int32
-	SourceTxHash      common.Hash
+	SourceTxHash      shared.Hash
 	SourceBlockNumber uint64
 	CreatedAt         time.Time
 }

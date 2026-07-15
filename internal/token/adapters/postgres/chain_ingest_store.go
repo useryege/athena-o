@@ -8,9 +8,9 @@ import (
 	"github.com/useryege/athena/internal/token/discovery"
 )
 
-func (s *Database) IngestProjectCandidateBatch(ctx context.Context, checkpoint discovery.ChainIngestCheckpoint, candidates []discovery.ProjectCandidate) (*discovery.ChainIngestCheckpoint, error) {
+func (s *ChainRepository) IngestProjectCandidateBatch(ctx context.Context, checkpoint discovery.ChainIngestCheckpoint, candidates []discovery.ProjectCandidate) (*discovery.ChainIngestCheckpoint, error) {
 	if s == nil || s.pool == nil {
-		return nil, fmt.Errorf("token postgres database is not configured")
+		return nil, fmt.Errorf("token chain repository is not configured")
 	}
 	cursorBlockNumber, err := uint64ToInt64("cursor_block_number", checkpoint.CursorBlockNumber)
 	if err != nil {

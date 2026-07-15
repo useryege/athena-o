@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
@@ -17,6 +16,7 @@ import (
 	"github.com/useryege/athena/internal/token/reporting"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/selection"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 const (
@@ -24,11 +24,11 @@ const (
 	maxPageSize     = int32(200)
 )
 
-func bytesToHash(v []byte) common.Hash {
+func bytesToHash(v []byte) shared.Hash {
 	if len(v) == 0 {
-		return common.Hash{}
+		return shared.Hash{}
 	}
-	return common.BytesToHash(v)
+	return shared.BytesToHash(v)
 }
 
 func uuidParam(v string) pgtype.UUID {
@@ -38,20 +38,20 @@ func uuidParam(v string) pgtype.UUID {
 	}
 	return pgtype.UUID{Bytes: [16]byte(parsed), Valid: true}
 }
-func bytesToAddress(v []byte) common.Address {
+func bytesToAddress(v []byte) shared.Address {
 	if len(v) == 0 {
-		return common.Address{}
+		return shared.Address{}
 	}
-	return common.BytesToAddress(v)
+	return shared.BytesToAddress(v)
 }
-func optionalHashBytes(v common.Hash) []byte {
-	if v == (common.Hash{}) {
+func optionalHashBytes(v shared.Hash) []byte {
+	if v == (shared.Hash{}) {
 		return nil
 	}
 	return v.Bytes()
 }
-func optionalAddressBytes(v common.Address) []byte {
-	if v == (common.Address{}) {
+func optionalAddressBytes(v shared.Address) []byte {
+	if v == (shared.Address{}) {
 		return nil
 	}
 	return v.Bytes()

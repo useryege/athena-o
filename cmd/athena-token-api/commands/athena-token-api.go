@@ -22,7 +22,9 @@ import (
 	"github.com/useryege/athena/internal/token/discovery"
 	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
 	policyapp "github.com/useryege/athena/internal/token/policy/application"
+	reportingapp "github.com/useryege/athena/internal/token/reporting/application"
 	researchapp "github.com/useryege/athena/internal/token/research/application"
+	selectionapp "github.com/useryege/athena/internal/token/selection/application"
 	"github.com/useryege/athena/internal/tokenapi"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -62,7 +64,7 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			database, err := tokenpostgres.NewDatabaseSource()(ctx)
+			connection, err := tokenpostgres.NewConnectionSource()(ctx)
 			if err != nil {
 				return err
 			}
@@ -70,21 +72,24 @@ func NewCommand() *cobra.Command {
 			for _, chain := range registry.Chains() {
 				chains = append(chains, discovery.Chain{ID: chain.ID, Name: chain.Name, Enabled: chain.Enabled})
 			}
-			if err := database.SyncChains(ctx, chains); err != nil {
-				_ = database.Close()
+			chainRepository := tokenpostgres.NewChainRepository(connection)
+			if err := chainRepository.SyncChains(ctx, chains); err != nil {
+				_ = connection.Close()
 				return err
 			}
 			evmRegistry := evm.NewChainClientRegistry(registry)
 			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
 				Applications: tokenapi.Applications{
-					Catalog:    catalogapp.NewQueries(database.CatalogReadModel()),
-					Research:   researchapp.NewQueries(database.ResearchReadModel()),
-					Policy:     policyapp.NewService(database.Policy(), evmRegistry),
-					Operations: discoveryapp.NewOperations(database.Operations(), evmRegistry),
+					Catalog:    catalogapp.NewQueries(tokenpostgres.NewCatalogRepository(connection)),
+					Research:   researchapp.NewQueries(tokenpostgres.NewResearchReadRepository(connection)),
+					Reporting:  reportingapp.NewQueries(tokenpostgres.NewReportingRepository(connection)),
+					Selection:  selectionapp.NewQueries(tokenpostgres.NewSelectionRepository(connection)),
+					Policy:     policyapp.NewService(tokenpostgres.NewPolicyRepository(connection), evmRegistry),
+					Operations: discoveryapp.NewOperations(chainRepository, evmRegistry),
 				},
 				Close: func() error {
 					evmErr := evmRegistry.Close()
-					databaseErr := database.Close()
+					databaseErr := connection.Close()
 					if evmErr != nil {
 						return evmErr
 					}
@@ -93,7 +98,7 @@ func NewCommand() *cobra.Command {
 			})
 			if err != nil {
 				_ = evmRegistry.Close()
-				_ = database.Close()
+				_ = connection.Close()
 				return err
 			}
 			tokenAPIGRPC := server.CreateGRPC()

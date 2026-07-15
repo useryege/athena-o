@@ -13,14 +13,14 @@ type PipelineQueueMetric struct {
 	OldestAvailableAt time.Time
 }
 
-func (s *Database) Ping(ctx context.Context) error {
+func (s *DiagnosticsRepository) Ping(ctx context.Context) error {
 	if s == nil || s.pool == nil {
-		return fmt.Errorf("token postgres database is not configured")
+		return fmt.Errorf("token diagnostics repository is not configured")
 	}
 	return s.pool.Ping(ctx)
 }
 
-func (s *Database) ListPipelineQueueMetrics(ctx context.Context) ([]PipelineQueueMetric, error) {
+func (s *DiagnosticsRepository) ListPipelineQueueMetrics(ctx context.Context) ([]PipelineQueueMetric, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err

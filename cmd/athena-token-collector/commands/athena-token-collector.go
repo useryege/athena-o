@@ -1,17 +1,22 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/useryege/athena/cmd/tokenworker"
 	"github.com/useryege/athena/common"
 	aveadapter "github.com/useryege/athena/internal/token/adapters/ave"
 	"github.com/useryege/athena/internal/token/adapters/evm"
+	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	"github.com/useryege/athena/internal/token/adapters/sourcecode"
-	"github.com/useryege/athena/internal/token/adapters/workers/collector"
 	"github.com/useryege/athena/internal/token/research"
+	researchapp "github.com/useryege/athena/internal/token/research/application"
+	"github.com/useryege/athena/internal/token/telemetry"
+	"github.com/useryege/athena/internal/token/workerhost"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -20,10 +25,8 @@ import (
 const cliName = "athena-token-collector"
 
 var collectorHealthAddresses = map[research.DataCollectionType]string{
-	research.DataCollectionTypeAve:                "127.0.0.1:8113",
-	research.DataCollectionTypeChainState:         "127.0.0.1:8114",
-	research.DataCollectionTypeWalletAssetState:   "127.0.0.1:8115",
-	research.DataCollectionTypeSimulationResult:   "127.0.0.1:8116",
+	research.DataCollectionTypeAve: "127.0.0.1:8113", research.DataCollectionTypeChainState: "127.0.0.1:8114",
+	research.DataCollectionTypeWalletAssetState: "127.0.0.1:8115", research.DataCollectionTypeSimulationResult: "127.0.0.1:8116",
 	research.DataCollectionTypeContractCodeSource: "127.0.0.1:8117",
 }
 
@@ -38,36 +41,49 @@ func NewCommand() *cobra.Command {
 		if flags.HealthListenAddress == "" {
 			flags.HealthListenAddress = collectorHealthAddresses[dataType]
 		}
-		var marketData research.MarketDataProvider
-		var sourceCodeProvider research.SourceCodeProvider
-		if dataType == research.DataCollectionTypeAve {
+		connection, registry, host, err := flags.Open(cmd.Context(), "collector-"+string(dataType))
+		if err != nil {
+			return err
+		}
+		repository := tokenpostgres.NewCollectionRepository(connection)
+		var processor researchapp.TaskProcessor
+		switch dataType {
+		case research.DataCollectionTypeAve:
 			provider, err := aveadapter.New(aveadapter.Config{APIKey: aveAPIKey, BaseURL: aveAPIBaseURL})
 			if err != nil {
 				return err
 			}
-			marketData = provider
-		}
-		if dataType == research.DataCollectionTypeContractCodeSource {
+			processor = researchapp.AveProcessor{Provider: provider}
+		case research.DataCollectionTypeContractCodeSource:
 			provider, err := sourcecode.New(ethereumAPIAddress)
 			if err != nil {
 				return err
 			}
-			defer func() { _ = provider.Close() }()
-			sourceCodeProvider = provider
-		}
-		database, registry, host, err := flags.Open(cmd.Context(), "collector-"+string(dataType))
-		if err != nil {
-			return err
-		}
-		var clients *evm.ChainClientRegistry
-		if dataType == research.DataCollectionTypeChainState || dataType == research.DataCollectionTypeWalletAssetState || dataType == research.DataCollectionTypeSimulationResult {
-			clients = evm.NewChainClientRegistry(registry)
-			host.AddClose(clients.Close)
-		}
-		if provider, ok := sourceCodeProvider.(*sourcecode.Provider); ok {
 			host.AddClose(provider.Close)
+			processor = researchapp.ContractSourceProcessor{Codes: repository, Provider: provider}
+		case research.DataCollectionTypeChainState, research.DataCollectionTypeWalletAssetState, research.DataCollectionTypeSimulationResult:
+			clients := evm.NewChainClientRegistry(registry)
+			host.AddClose(clients.Close)
+			reader := evm.NewProjectStateReader(registry, clients)
+			switch dataType {
+			case research.DataCollectionTypeChainState:
+				processor = researchapp.ChainStateProcessor{Reader: reader}
+			case research.DataCollectionTypeWalletAssetState:
+				processor = researchapp.WalletAssetStateProcessor{Reader: reader}
+			case research.DataCollectionTypeSimulationResult:
+				processor = researchapp.SimulationResultProcessor{Reader: reader}
+			}
 		}
-		host.SetWorker(collector.NewWorker(collector.Options{Store: database.Research(), Chains: registry.Chains(), Clients: clients, DataType: dataType, MarketData: marketData, SourceCode: sourceCodeProvider, Telemetry: host.Reporter()}))
+		chainIDs := make([]int64, 0, len(registry.EnabledChains()))
+		for _, chain := range registry.EnabledChains() {
+			chainIDs = append(chainIDs, chain.ID)
+		}
+		application := researchapp.NewCollector(repository, processor, researchapp.CollectorOptions{ChainIDs: chainIDs})
+		job := workerhost.PeriodicJob{Name: "data-collector-" + string(dataType), Interval: time.Second, Scope: telemetry.Scope{Component: "data_collector", DataType: string(dataType)}, RunOnce: func(ctx context.Context) (workerhost.JobResult, error) {
+			count, err := application.RunOnce(ctx)
+			return workerhost.JobResult{Processed: count}, err
+		}}
+		host.SetWorker(workerhost.NewPeriodicWorker([]workerhost.PeriodicJob{job}, host.Reporter()))
 		common.GetVersion().LogStartupInfo("Athena Token Collector", map[string]any{"data_type": dataType})
 		return host.Run(cmd.Context())
 	}}

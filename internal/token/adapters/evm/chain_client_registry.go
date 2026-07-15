@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/useryege/athena/internal/token/chainregistry"
 	"github.com/useryege/athena/internal/token/discovery"
+	"github.com/useryege/athena/internal/token/shared"
 	"github.com/useryege/athena/util/ethws"
 )
 
@@ -41,19 +42,20 @@ func (r *ChainClientRegistry) Client(ctx context.Context, chainID int64) (*ethcl
 	return client, nil
 }
 
-func (r *ChainClientRegistry) ContractCodeHash(ctx context.Context, chainID int64, contract common.Address) (common.Hash, error) {
+func (r *ChainClientRegistry) ContractCodeHash(ctx context.Context, chainID int64, contract shared.Address) (shared.Hash, error) {
 	client, err := r.Client(ctx, chainID)
 	if err != nil {
-		return common.Hash{}, err
+		return shared.Hash{}, err
 	}
-	code, err := client.CodeAt(ctx, contract, nil)
+	commonContract := common.Address(contract)
+	code, err := client.CodeAt(ctx, commonContract, nil)
 	if err != nil {
-		return common.Hash{}, err
+		return shared.Hash{}, err
 	}
 	if len(code) == 0 {
-		return common.Hash{}, fmt.Errorf("contract %s has no deployed bytecode", contract.Hex())
+		return shared.Hash{}, fmt.Errorf("contract %s has no deployed bytecode", contract.Hex())
 	}
-	return crypto.Keccak256Hash(code), nil
+	return shared.Hash(crypto.Keccak256Hash(code)), nil
 }
 
 func (r *ChainClientRegistry) Reset(chainID int64) {

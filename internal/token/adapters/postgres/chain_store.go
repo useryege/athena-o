@@ -10,7 +10,7 @@ import (
 	"github.com/useryege/athena/internal/token/discovery"
 )
 
-func (s *Database) SyncChains(ctx context.Context, items []discovery.Chain) error {
+func (s *ChainRepository) SyncChains(ctx context.Context, items []discovery.Chain) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (s *Database) SyncChains(ctx context.Context, items []discovery.Chain) erro
 	return nil
 }
 
-func (s *Database) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*discovery.ChainIngestCheckpoint, error) {
+func (s *ChainRepository) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*discovery.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (s *Database) GetChainIngestCheckpoint(ctx context.Context, chainID int64) 
 	return item, nil
 }
 
-func (s *Database) ListChainIngestCheckpoints(ctx context.Context) ([]discovery.ChainIngestCheckpoint, error) {
+func (s *ChainRepository) ListChainIngestCheckpoints(ctx context.Context) ([]discovery.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (s *Database) ListChainIngestCheckpoints(ctx context.Context) ([]discovery.
 	return items, nil
 }
 
-func (s *Database) UpsertChainIngestCheckpoint(ctx context.Context, item discovery.ChainIngestCheckpoint) (*discovery.ChainIngestCheckpoint, error) {
+func (s *ChainRepository) UpsertChainIngestCheckpoint(ctx context.Context, item discovery.ChainIngestCheckpoint) (*discovery.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (s *Database) UpsertChainIngestCheckpoint(ctx context.Context, item discove
 	return mapped, nil
 }
 
-func (s *Database) UpdateChainIngestCheckpointStatus(ctx context.Context, chainID int64, status discovery.ChainIngestStatus) (*discovery.ChainIngestCheckpoint, error) {
+func (s *ChainRepository) UpdateChainIngestCheckpointStatus(ctx context.Context, chainID int64, status discovery.ChainIngestStatus) (*discovery.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (s *Database) UpdateChainIngestCheckpointStatus(ctx context.Context, chainI
 	return item, nil
 }
 
-func (s *Database) ListChains(ctx context.Context) ([]discovery.Chain, error) {
+func (s *ChainRepository) ListChains(ctx context.Context) ([]discovery.Chain, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err

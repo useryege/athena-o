@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 const ObservationSchemaVersionV1 = int32(1)
@@ -85,9 +84,20 @@ type ProjectDataCollectionTask struct {
 	UpdatedAt      time.Time
 }
 
+type ProjectCollectionContext struct {
+	ID              int64
+	ChainID         int64
+	Contract        shared.Address
+	CodeHash        shared.Hash
+	WethPair        shared.Address
+	UsdtPair        shared.Address
+	RelatedWallets  []shared.Address
+	RefreshInterval time.Duration
+}
+
 type ProjectDataCollectionTaskWithProject struct {
 	Task    ProjectDataCollectionTask
-	Project catalog.Project
+	Project ProjectCollectionContext
 }
 
 type ProjectObservation struct {
@@ -95,7 +105,7 @@ type ProjectObservation struct {
 	ProjectID     int64
 	DataType      DataCollectionType
 	SchemaVersion int32
-	ContentHash   common.Hash
+	ContentHash   shared.Hash
 	Payload       json.RawMessage
 	BlockNumber   *uint64
 	ObservedAt    time.Time
@@ -106,7 +116,7 @@ type ProjectObservation struct {
 type ProjectResearchState struct {
 	ProjectID                   int64
 	ChainID                     int64
-	Contract                    common.Address
+	Contract                    shared.Address
 	Status                      ProjectResearchStatus
 	EvidenceRevision            int64
 	CurrentReportRevision       int64

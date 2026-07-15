@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 type AveObservationV1 struct {
@@ -15,7 +15,7 @@ type AveObservationV1 struct {
 }
 
 type AveTokenV1 struct {
-	Address          common.Address `json:"address"`
+	Address          shared.Address `json:"address"`
 	Name             string         `json:"name"`
 	Symbol           string         `json:"symbol"`
 	Decimals         int            `json:"decimals"`
@@ -43,12 +43,12 @@ type AveTokenV1 struct {
 }
 
 type AvePairV1 struct {
-	Pair          common.Address `json:"pair"`
+	Pair          shared.Address `json:"pair"`
 	ChainID       int64          `json:"chainId"`
 	AMM           string         `json:"amm"`
-	Token0Address common.Address `json:"token0Address"`
+	Token0Address shared.Address `json:"token0Address"`
 	Token0Symbol  string         `json:"token0Symbol"`
-	Token1Address common.Address `json:"token1Address"`
+	Token1Address shared.Address `json:"token1Address"`
 	Token1Symbol  string         `json:"token1Symbol"`
 	Reserve0      *Decimal       `json:"reserve0,omitempty"`
 	Reserve1      *Decimal       `json:"reserve1,omitempty"`
@@ -61,7 +61,7 @@ type AvePairV1 struct {
 }
 
 type ChainStateObservationV1 struct {
-	TokenContract common.Address     `json:"tokenContract"`
+	TokenContract shared.Address     `json:"tokenContract"`
 	UpdatedAt     *big.Int           `json:"updatedAt"`
 	Token         ChainTokenV1       `json:"token"`
 	TokenReport   ChainTokenReportV1 `json:"tokenReport"`
@@ -77,8 +77,8 @@ type ChainTokenV1 struct {
 	Symbol       string         `json:"symbol"`
 	Decimals     uint8          `json:"decimals"`
 	TotalSupply  *big.Int       `json:"totalSupply"`
-	WethPair     common.Address `json:"wethPair"`
-	UsdtPair     common.Address `json:"usdtPair"`
+	WethPair     shared.Address `json:"wethPair"`
+	UsdtPair     shared.Address `json:"usdtPair"`
 }
 
 type ChainTokenReportV1 struct {
@@ -86,7 +86,7 @@ type ChainTokenReportV1 struct {
 }
 
 type ChainPairV1 struct {
-	PairContract      common.Address            `json:"pairContract"`
+	PairContract      shared.Address            `json:"pairContract"`
 	IsCreated         bool                      `json:"isCreated"`
 	LiquidityState    ChainPairLiquidityStateV1 `json:"liquidityState"`
 	BaseBalance       *big.Int                  `json:"baseBalance"`
@@ -114,7 +114,7 @@ type WalletAssetObservationV1 struct {
 
 type WalletAssetStateV1 struct {
 	ChainID       int64          `json:"chainId"`
-	Wallet        common.Address `json:"wallet"`
+	Wallet        shared.Address `json:"wallet"`
 	WethBalance   *big.Int       `json:"wethBalance"`
 	UsdtBalance   *big.Int       `json:"usdtBalance"`
 	NativeBalance *big.Int       `json:"nativeBalance"`
@@ -127,7 +127,7 @@ type SimulationObservationV1 struct {
 
 type SimulationResultV1 struct {
 	ProjectID                          int64          `json:"projectId"`
-	Wallet                             common.Address `json:"wallet"`
+	Wallet                             shared.Address `json:"wallet"`
 	CanMintFromDeadViaTransferFrom     bool           `json:"canMintFromDeadViaTransferFrom"`
 	CanMintFromZeroViaTransferFrom     bool           `json:"canMintFromZeroViaTransferFrom"`
 	CanMintFromWethPairViaTransferFrom bool           `json:"canMintFromWethPairViaTransferFrom"`
@@ -137,6 +137,6 @@ type SimulationResultV1 struct {
 }
 
 type ContractSourceObservationV1 struct {
-	CodeHash        common.Hash `json:"codeHash"`
+	CodeHash        shared.Hash `json:"codeHash"`
 	SourceAvailable bool        `json:"sourceAvailable"`
 }

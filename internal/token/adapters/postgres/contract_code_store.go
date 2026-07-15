@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
-func (s *Database) UpsertContractCode(ctx context.Context, codeHash common.Hash) error {
+func (s *CatalogRepository) UpsertContractCode(ctx context.Context, codeHash shared.Hash) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func (s *Database) UpsertContractCode(ctx context.Context, codeHash common.Hash)
 	return nil
 }
 
-func (s *Database) GetContractCode(ctx context.Context, codeHash common.Hash) (*catalog.ContractCode, error) {
+func (s *CatalogRepository) GetContractCode(ctx context.Context, codeHash shared.Hash) (*catalog.ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (s *Database) GetContractCode(ctx context.Context, codeHash common.Hash) (*
 	return mapContractCode(row), nil
 }
 
-func (s *Database) CountContractCodes(ctx context.Context, codeHash common.Hash) (int64, error) {
+func (s *CatalogRepository) CountContractCodes(ctx context.Context, codeHash shared.Hash) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -50,7 +50,7 @@ func (s *Database) CountContractCodes(ctx context.Context, codeHash common.Hash)
 	return total, nil
 }
 
-func (s *Database) ListContractCodes(ctx context.Context, codeHash common.Hash, page, pageSize int32) (*catalog.ContractCodePage, error) {
+func (s *CatalogRepository) ListContractCodes(ctx context.Context, codeHash shared.Hash, page, pageSize int32) (*catalog.ContractCodePage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (s *Database) ListContractCodes(ctx context.Context, codeHash common.Hash, 
 	}, nil
 }
 
-func (s *Database) ListContractCodesByDeploymentCount(ctx context.Context, page, pageSize int32) (*catalog.ContractCodePage, error) {
+func (s *CatalogRepository) ListContractCodesByDeploymentCount(ctx context.Context, page, pageSize int32) (*catalog.ContractCodePage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (s *Database) ListContractCodesByDeploymentCount(ctx context.Context, page,
 	}, nil
 }
 
-func (s *Database) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, fetchedAt time.Time) (*catalog.ContractCode, error) {
+func (s *CatalogRepository) UpdateContractCodeSource(ctx context.Context, codeHash shared.Hash, sourceCode string, fetchedAt time.Time) (*catalog.ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err

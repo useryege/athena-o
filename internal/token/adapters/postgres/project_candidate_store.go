@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/discovery"
+	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
-func (s *Database) UpsertProjectCandidate(ctx context.Context, item discovery.ProjectCandidate) (*discovery.ProjectCandidate, error) {
+func (s *CandidateRepository) UpsertProjectCandidate(ctx context.Context, item discovery.ProjectCandidate) (*discovery.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -53,7 +55,7 @@ func (s *Database) UpsertProjectCandidate(ctx context.Context, item discovery.Pr
 	return mapped, nil
 }
 
-func (s *Database) BatchUpsertProjectCandidates(ctx context.Context, items []discovery.ProjectCandidate) error {
+func (s *CandidateRepository) BatchUpsertProjectCandidates(ctx context.Context, items []discovery.ProjectCandidate) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -118,7 +120,7 @@ func batchUpsertProjectCandidatesParams(items []discovery.ProjectCandidate) (tok
 	}, nil
 }
 
-func (s *Database) GetProjectCandidate(ctx context.Context, id int64) (*discovery.ProjectCandidate, error) {
+func (s *CandidateRepository) GetProjectCandidate(ctx context.Context, id int64) (*discovery.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -137,7 +139,7 @@ func (s *Database) GetProjectCandidate(ctx context.Context, id int64) (*discover
 	return item, nil
 }
 
-func (s *Database) GetProjectCandidateByContract(ctx context.Context, chainID int64, contract common.Address) (*discovery.ProjectCandidate, error) {
+func (s *CandidateRepository) GetProjectCandidateByContract(ctx context.Context, chainID int64, contract shared.Address) (*discovery.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -159,7 +161,7 @@ func (s *Database) GetProjectCandidateByContract(ctx context.Context, chainID in
 	return item, nil
 }
 
-func (s *Database) CountProjectCandidates(ctx context.Context, chainID int64, status discovery.ProjectCandidateStatus) (int64, error) {
+func (s *CandidateRepository) CountProjectCandidates(ctx context.Context, chainID int64, status discovery.ProjectCandidateStatus) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -174,7 +176,7 @@ func (s *Database) CountProjectCandidates(ctx context.Context, chainID int64, st
 	return total, nil
 }
 
-func (s *Database) ListProjectCandidates(ctx context.Context, chainID int64, status discovery.ProjectCandidateStatus, page, pageSize int32) (*discovery.CandidatePage, error) {
+func (s *CandidateRepository) ListProjectCandidates(ctx context.Context, chainID int64, status discovery.ProjectCandidateStatus, page, pageSize int32) (*discovery.CandidatePage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -208,7 +210,16 @@ func (s *Database) ListProjectCandidates(ctx context.Context, chainID int64, sta
 	}, nil
 }
 
-func (s *Database) ClaimProjectCandidateValidations(ctx context.Context, chainID int64, lockToken string, lease time.Duration, limit int32) ([]discovery.ProjectCandidate, error) {
+func (s *CandidateRepository) ClaimCandidates(ctx context.Context, chainID int64, lease time.Duration, limit int32) (*discoveryapp.CandidateLease, error) {
+	lockToken := uuid.NewString()
+	items, err := s.claimProjectCandidateValidations(ctx, chainID, lockToken, lease, limit)
+	if err != nil {
+		return nil, err
+	}
+	return &discoveryapp.CandidateLease{ID: lockToken, Candidates: items}, nil
+}
+
+func (s *CandidateRepository) claimProjectCandidateValidations(ctx context.Context, chainID int64, lockToken string, lease time.Duration, limit int32) ([]discovery.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -233,7 +244,7 @@ func (s *Database) ClaimProjectCandidateValidations(ctx context.Context, chainID
 	return items, nil
 }
 
-func (s *Database) RenewProjectCandidateValidationClaims(ctx context.Context, lockToken string, lease time.Duration) error {
+func (s *CandidateRepository) RenewCandidateLease(ctx context.Context, lockToken string, lease time.Duration) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -248,7 +259,7 @@ func (s *Database) RenewProjectCandidateValidationClaims(ctx context.Context, lo
 	return nil
 }
 
-func (s *Database) ReleaseProjectCandidateValidationClaims(ctx context.Context, lockToken string) error {
+func (s *CandidateRepository) ReleaseCandidateLease(ctx context.Context, lockToken string) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -263,7 +274,7 @@ func (s *Database) ReleaseProjectCandidateValidationClaims(ctx context.Context, 
 	return nil
 }
 
-func (s *Database) ListProjectCandidatesByStatus(ctx context.Context, status discovery.ProjectCandidateStatus, limit int32) ([]discovery.ProjectCandidate, error) {
+func (s *CandidateRepository) ListProjectCandidatesByStatus(ctx context.Context, status discovery.ProjectCandidateStatus, limit int32) ([]discovery.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -288,7 +299,7 @@ func (s *Database) ListProjectCandidatesByStatus(ctx context.Context, status dis
 	return items, nil
 }
 
-func (s *Database) RejectProjectCandidate(ctx context.Context, candidate discovery.ProjectCandidate) error {
+func (s *CandidateRepository) RejectCandidate(ctx context.Context, candidate discovery.ProjectCandidate) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -307,7 +318,7 @@ func (s *Database) RejectProjectCandidate(ctx context.Context, candidate discove
 	return nil
 }
 
-func (s *Database) DeleteProjectCandidate(ctx context.Context, id int64) (int64, error) {
+func (s *CandidateRepository) DeleteProjectCandidate(ctx context.Context, id int64) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err

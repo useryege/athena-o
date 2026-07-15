@@ -1,45 +1,76 @@
 package reporting
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 const ReportSchemaVersionV1 = int32(1)
+
+type TaskStatus string
+
+const (
+	TaskStatusPending   TaskStatus = "pending"
+	TaskStatusRunning   TaskStatus = "running"
+	TaskStatusSucceeded TaskStatus = "succeeded"
+	TaskStatusFailed    TaskStatus = "failed"
+)
+
+type DataCollectionType string
+
+const (
+	DataCollectionTypeAve                DataCollectionType = "ave"
+	DataCollectionTypeChainState         DataCollectionType = "chain_state"
+	DataCollectionTypeWalletAssetState   DataCollectionType = "wallet_asset_state"
+	DataCollectionTypeSimulationResult   DataCollectionType = "simulation_result"
+	DataCollectionTypeContractCodeSource DataCollectionType = "contract_code_source"
+)
 
 type ProjectReportBuildTask struct {
 	ID               int64
 	ProjectID        int64
 	EvidenceRevision int64
-	Status           research.TaskStatus
+	Status           TaskStatus
 	Attempts         int32
 	AvailableAt      time.Time
 	LeaseExpiresAt   time.Time
 	LastError        string
 }
 
+type ObservationSnapshot struct {
+	ID            int64
+	ProjectID     int64
+	DataType      DataCollectionType
+	SchemaVersion int32
+	ContentHash   shared.Hash
+	Payload       json.RawMessage
+	BlockNumber   *uint64
+	ObservedAt    time.Time
+	LastCheckedAt time.Time
+}
+
 type EvidenceReference struct {
-	ObservationID int64                       `json:"observationId"`
-	DataType      research.DataCollectionType `json:"dataType"`
-	SchemaVersion int32                       `json:"schemaVersion"`
-	ContentHash   string                      `json:"contentHash"`
-	BlockNumber   *uint64                     `json:"blockNumber,omitempty"`
+	ObservationID int64              `json:"observationId"`
+	DataType      DataCollectionType `json:"dataType"`
+	SchemaVersion int32              `json:"schemaVersion"`
+	ContentHash   string             `json:"contentHash"`
+	BlockNumber   *uint64            `json:"blockNumber,omitempty"`
 }
 
 type ObservationFreshness struct {
-	DataType      research.DataCollectionType `json:"dataType"`
-	LastCheckedAt time.Time                   `json:"lastCheckedAt"`
+	DataType      DataCollectionType `json:"dataType"`
+	LastCheckedAt time.Time          `json:"lastCheckedAt"`
 }
 
 type ResearchObservationsV1 struct {
-	Ave            *research.AveObservationV1            `json:"ave,omitempty"`
-	ChainState     *research.ChainStateObservationV1     `json:"chainState,omitempty"`
-	WalletAssets   *research.WalletAssetObservationV1    `json:"walletAssets,omitempty"`
-	Simulation     *research.SimulationObservationV1     `json:"simulation,omitempty"`
-	ContractSource *research.ContractSourceObservationV1 `json:"contractSource,omitempty"`
+	Ave            json.RawMessage `json:"ave,omitempty"`
+	ChainState     json.RawMessage `json:"chainState,omitempty"`
+	WalletAssets   json.RawMessage `json:"walletAssets,omitempty"`
+	Simulation     json.RawMessage `json:"simulation,omitempty"`
+	ContractSource json.RawMessage `json:"contractSource,omitempty"`
 }
 
 type ReportRiskSummary struct {
@@ -68,10 +99,10 @@ type ProjectReportRevision struct {
 	ID                  int64
 	ProjectID           int64
 	ChainID             int64
-	Contract            common.Address
+	Contract            shared.Address
 	Revision            int64
 	SchemaVersion       int32
-	ContentHash         common.Hash
+	ContentHash         shared.Hash
 	CompletenessStatus  string
 	Evidence            []EvidenceReference
 	Report              ResearchReportV1
@@ -85,7 +116,7 @@ type ProjectReportReadModel struct {
 	ChainID        int64
 	Name           string
 	Symbol         string
-	Contract       common.Address
+	Contract       shared.Address
 	BuildStatus    string
 	BuildAttempts  int32
 	BuildLastError string

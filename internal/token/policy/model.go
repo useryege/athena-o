@@ -3,19 +3,19 @@ package policy
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 type ContractCodeBlocklistEntry struct {
-	CodeHash       common.Hash
+	CodeHash       shared.Hash
 	Note           string
 	SourceChainID  int64
-	SourceContract common.Address
+	SourceContract shared.Address
 	CreatedAt      time.Time
 }
 
 type WalletBlocklistEntry struct {
-	Wallet    common.Address
+	Wallet    shared.Address
 	Note      string
 	CreatedAt time.Time
 }

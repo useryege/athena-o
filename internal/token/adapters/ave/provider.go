@@ -10,6 +10,7 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/shared"
 	"github.com/useryege/athena/util/ave"
 )
 
@@ -35,12 +36,13 @@ func New(config Config) (*Provider, error) {
 	return &Provider{client: client}, nil
 }
 
-func (p *Provider) GetMarketData(ctx context.Context, chainID int64, contract ethcommon.Address) (research.AveObservationV1, error) {
-	response, err := p.client.GetTokenDetail(ctx, contract, chainID)
+func (p *Provider) GetMarketData(ctx context.Context, chainID int64, contract shared.Address) (research.AveObservationV1, error) {
+	commonContract := ethcommon.Address(contract)
+	response, err := p.client.GetTokenDetail(ctx, commonContract, chainID)
 	if err != nil {
 		return research.AveObservationV1{}, fmt.Errorf("fetch Ave token detail chain_id=%d contract=%s: %w", chainID, contract.Hex(), err)
 	}
-	return normalizeObservation(response, contract, chainID)
+	return normalizeObservation(response, commonContract, chainID)
 }
 
 func normalizeObservation(resp *ave.TokenDetailResponse, expectedContract ethcommon.Address, chainID int64) (research.AveObservationV1, error) {
@@ -101,7 +103,7 @@ func normalizeObservation(resp *ave.TokenDetailResponse, expectedContract ethcom
 	result := research.AveObservationV1{
 		ChainID: chainID, IsAudited: resp.Data.IsAudited,
 		Token: research.AveTokenV1{
-			Address: address, Name: token.Name, Symbol: token.Symbol, Decimals: token.Decimal,
+			Address: shared.Address(address), Name: token.Name, Symbol: token.Symbol, Decimals: token.Decimal,
 			TotalSupply: totalSupply, CurrentPriceUSD: currentPriceUSD, CurrentPriceETH: currentPriceETH,
 			MarketCap: marketCap, FDV: fdv, TVL: tvl, MainPairTVL: mainPairTVL,
 			Holders: token.Holders, RiskLevel: token.RiskLevel, RiskScore: riskScore, RiskInfo: token.RiskInfo,
@@ -148,8 +150,8 @@ func normalizeObservation(resp *ave.TokenDetailResponse, expectedContract ethcom
 			return research.AveObservationV1{}, err
 		}
 		result.Pairs = append(result.Pairs, research.AvePairV1{
-			Pair: pairAddress, ChainID: chainID, AMM: pair.AMM, Token0Address: token0Address, Token0Symbol: pair.Token0Symbol,
-			Token1Address: token1Address, Token1Symbol: pair.Token1Symbol, Reserve0: reserve0, Reserve1: reserve1,
+			Pair: shared.Address(pairAddress), ChainID: chainID, AMM: pair.AMM, Token0Address: shared.Address(token0Address), Token0Symbol: pair.Token0Symbol,
+			Token1Address: shared.Address(token1Address), Token1Symbol: pair.Token1Symbol, Reserve0: reserve0, Reserve1: reserve1,
 			VolumeUSD: volumeUSD, MarketCap: pairMarketCap, FDV: pairFDV, IsFake: pair.IsFake, CreatedAt: unixTime(pair.CreatedAt), UpdatedAt: unixTime(pair.UpdatedAt),
 		})
 	}

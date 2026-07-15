@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
 	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
+	"github.com/useryege/athena/internal/token/shared"
 	utilio "github.com/useryege/athena/util/io"
 )
 
@@ -27,7 +27,7 @@ func New(address string) (*Provider, error) {
 	return &Provider{client: client, closer: closer}, nil
 }
 
-func (p *Provider) GetSourceCode(ctx context.Context, chainID int64, contract common.Address) (string, error) {
+func (p *Provider) GetSourceCode(ctx context.Context, chainID int64, contract shared.Address) (string, error) {
 	response, err := p.client.GetSourceCode(ctx, &ethereumapiapiclient.GetSourceCodeRequest{
 		ChainId:         chainID,
 		ContractAddress: contract.Hex(),

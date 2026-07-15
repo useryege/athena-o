@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) ListProjectReports(ctx context.Context, req *apiclient.ListProjectReportsRequest) (*apiclient.ListProjectReportsResponse, error) {
-	store, err := s.researchApplication()
+	store, err := s.reportingApplication()
 	if err != nil {
 		return nil, err
 	}

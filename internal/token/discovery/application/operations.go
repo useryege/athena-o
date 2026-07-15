@@ -7,15 +7,22 @@ import (
 )
 
 type Operations struct {
-	repository discovery.OperationsRepository
+	repository OperationsRepository
 	nodes      NodeStatusProvider
+}
+
+type OperationsRepository interface {
+	ListChains(context.Context) ([]discovery.Chain, error)
+	GetChainIngestCheckpoint(context.Context, int64) (*discovery.ChainIngestCheckpoint, error)
+	ListChainIngestCheckpoints(context.Context) ([]discovery.ChainIngestCheckpoint, error)
+	UpdateChainIngestCheckpointStatus(context.Context, int64, discovery.ChainIngestStatus) (*discovery.ChainIngestCheckpoint, error)
 }
 
 type NodeStatusProvider interface {
 	ListNodeStatuses(context.Context) ([]discovery.NodeStatus, error)
 }
 
-func NewOperations(repository discovery.OperationsRepository, nodes NodeStatusProvider) *Operations {
+func NewOperations(repository OperationsRepository, nodes NodeStatusProvider) *Operations {
 	return &Operations{repository: repository, nodes: nodes}
 }
 

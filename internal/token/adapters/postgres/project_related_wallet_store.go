@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
-func (s *Database) UpsertProjectRelatedWallet(ctx context.Context, item catalog.ProjectRelatedWallet) (*catalog.ProjectRelatedWallet, error) {
+func (s *CatalogRepository) UpsertProjectRelatedWallet(ctx context.Context, item catalog.ProjectRelatedWallet) (*catalog.ProjectRelatedWallet, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (s *Database) UpsertProjectRelatedWallet(ctx context.Context, item catalog.
 	return mapProjectRelatedWallet(row), nil
 }
 
-func (s *Database) ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]catalog.ProjectRelatedWallet, error) {
+func (s *CatalogRepository) ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]catalog.ProjectRelatedWallet, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (s *Database) ListProjectRelatedWalletsByProject(ctx context.Context, proje
 	return mapProjectRelatedWallets(rows), nil
 }
 
-func (s *Database) ListProjectRelatedWalletsByWallet(ctx context.Context, wallet common.Address) ([]catalog.ProjectRelatedWallet, error) {
+func (s *CatalogRepository) ListProjectRelatedWalletsByWallet(ctx context.Context, wallet shared.Address) ([]catalog.ProjectRelatedWallet, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (s *Database) ListProjectRelatedWalletsByWallet(ctx context.Context, wallet
 	return mapProjectRelatedWallets(rows), nil
 }
 
-func (s *Database) DeleteProjectRelatedWallet(ctx context.Context, projectID int64, wallet common.Address, role catalog.RelatedWalletRole) (int64, error) {
+func (s *CatalogRepository) DeleteProjectRelatedWallet(ctx context.Context, projectID int64, wallet shared.Address, role catalog.RelatedWalletRole) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -65,7 +65,7 @@ func (s *Database) DeleteProjectRelatedWallet(ctx context.Context, projectID int
 	return rowsAffected, nil
 }
 
-func (s *Database) DeleteProjectRelatedWalletsByProject(ctx context.Context, projectID int64) (int64, error) {
+func (s *CatalogRepository) DeleteProjectRelatedWalletsByProject(ctx context.Context, projectID int64) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err

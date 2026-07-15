@@ -2,18 +2,27 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 
-	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/reporting"
 )
 
-func (s *Database) ListCurrentProjectObservations(ctx context.Context, projectID int64) ([]research.ProjectObservation, error) {
-	q, e := s.querier()
-	if e != nil {
-		return nil, e
+func (repository *ReportingRepository) ListObservationSnapshots(ctx context.Context, projectID int64) ([]reporting.ObservationSnapshot, error) {
+	queries, err := repository.querier()
+	if err != nil {
+		return nil, err
 	}
-	rows, e := q.ListCurrentProjectObservations(ctx, projectID)
-	if e != nil {
-		return nil, e
+	rows, err := queries.ListCurrentProjectObservations(ctx, projectID)
+	if err != nil {
+		return nil, err
 	}
-	return mapCurrentProjectObservations(rows)
+	result := make([]reporting.ObservationSnapshot, 0, len(rows))
+	for _, row := range rows {
+		blockNumber, err := uint64PointerFromInt64("block_number", row.BlockNumber)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, reporting.ObservationSnapshot{ID: row.ID, ProjectID: row.ProjectID, DataType: reporting.DataCollectionType(row.DataType), SchemaVersion: row.SchemaVersion, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: blockNumber, ObservedAt: timeValue(row.ObservedAt), LastCheckedAt: timeValue(row.LastCheckedAt)})
+	}
+	return result, nil
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/useryege/athena/internal/token/research"
 )
 
-func (s *Database) ListProjectResearchStatesPage(ctx context.Context, chainID, projectID int64, status string, page, pageSize int32) (*research.ResearchStatePage, error) {
+func (s *ResearchReadRepository) ListProjectResearchStatesPage(ctx context.Context, chainID, projectID int64, status string, page, pageSize int32) (*research.ResearchStatePage, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e

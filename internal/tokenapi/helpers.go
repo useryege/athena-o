@@ -15,44 +15,45 @@ import (
 	"github.com/useryege/athena/internal/token/reporting"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/selection"
+	"github.com/useryege/athena/internal/token/shared"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func parseAddressField(name, value string) (common.Address, error) {
+func parseAddressField(name, value string) (shared.Address, error) {
 	value = strings.TrimSpace(value)
 	if !common.IsHexAddress(value) {
-		return common.Address{}, status.Errorf(codes.InvalidArgument, "%s must be a valid hex address", name)
+		return shared.Address{}, status.Errorf(codes.InvalidArgument, "%s must be a valid hex address", name)
 	}
-	return common.HexToAddress(value), nil
+	return shared.Address(common.HexToAddress(value)), nil
 }
 
-func parseOptionalAddressField(name, value string) (common.Address, error) {
+func parseOptionalAddressField(name, value string) (shared.Address, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return common.Address{}, nil
+		return shared.Address{}, nil
 	}
 	return parseAddressField(name, value)
 }
 
-func parseHashField(name, value string) (common.Hash, error) {
+func parseHashField(name, value string) (shared.Hash, error) {
 	value = strings.TrimSpace(value)
 	raw := strings.TrimPrefix(strings.TrimPrefix(value, "0x"), "0X")
 	if len(raw) != 64 {
-		return common.Hash{}, status.Errorf(codes.InvalidArgument, "%s must be a 32-byte hex hash", name)
+		return shared.Hash{}, status.Errorf(codes.InvalidArgument, "%s must be a 32-byte hex hash", name)
 	}
 	bytes, err := hex.DecodeString(raw)
 	if err != nil {
-		return common.Hash{}, status.Errorf(codes.InvalidArgument, "%s must be a valid hex hash", name)
+		return shared.Hash{}, status.Errorf(codes.InvalidArgument, "%s must be a valid hex hash", name)
 	}
-	return common.BytesToHash(bytes), nil
+	return shared.BytesToHash(bytes), nil
 }
 
-func parseOptionalHashField(name, value string) (common.Hash, error) {
+func parseOptionalHashField(name, value string) (shared.Hash, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return common.Hash{}, nil
+		return shared.Hash{}, nil
 	}
 	return parseHashField(name, value)
 }
@@ -172,11 +173,18 @@ func formatTime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339Nano)
 }
 
-func formatHash(value common.Hash) string {
-	if value == (common.Hash{}) {
+func formatHash(value shared.Hash) string {
+	if value.IsZero() {
 		return ""
 	}
 	return value.Hex()
+}
+
+func formatAddress(value shared.Address) string {
+	if value.IsZero() {
+		return ""
+	}
+	return common.Address(value).Hex()
 }
 
 func mapChainIngestCheckpoint(item discovery.ChainIngestCheckpoint) *v1alpha1.TokenChainCheckpoint {
@@ -233,8 +241,8 @@ func mapProject(item catalog.Project) *v1alpha1.TokenProject {
 		ChainID:     item.ChainID,
 		Name:        item.Name,
 		Symbol:      item.Symbol,
-		Contract:    item.Contract.Hex(),
-		TxSender:    item.TxSender.Hex(),
+		Contract:    formatAddress(item.Contract),
+		TxSender:    formatAddress(item.TxSender),
 		TxHash:      item.TxHash.Hex(),
 		TxIndex:     item.TxIndex,
 		BlockNumber: item.BlockNumber,
@@ -284,7 +292,7 @@ func mapProjectReport(item reporting.ProjectReportReadModel) *v1alpha1.TokenProj
 		ChainID:             item.ChainID,
 		Name:                item.Name,
 		Symbol:              item.Symbol,
-		Contract:            item.Contract.Hex(),
+		Contract:            formatAddress(item.Contract),
 		EvaluationStatus:    item.BuildStatus,
 		EvaluationAttempts:  item.BuildAttempts,
 		EvaluationLastError: item.BuildLastError,
@@ -344,8 +352,8 @@ func mapProjectDataCollectionTasks(items []research.ProjectDataCollectionTask) [
 
 func mapContractCodeBlocklistEntry(item policy.ContractCodeBlocklistEntry) *v1alpha1.TokenContractCodeBlocklistEntry {
 	sourceContract := ""
-	if item.SourceContract != (common.Address{}) {
-		sourceContract = item.SourceContract.Hex()
+	if !item.SourceContract.IsZero() {
+		sourceContract = formatAddress(item.SourceContract)
 	}
 	return &v1alpha1.TokenContractCodeBlocklistEntry{
 		CodeHash:       item.CodeHash.Hex(),
@@ -366,7 +374,7 @@ func mapContractCodeBlocklistEntries(items []policy.ContractCodeBlocklistEntry) 
 
 func mapWalletBlocklistEntry(item policy.WalletBlocklistEntry) *v1alpha1.TokenWalletBlocklistEntry {
 	return &v1alpha1.TokenWalletBlocklistEntry{
-		Wallet:    item.Wallet.Hex(),
+		Wallet:    formatAddress(item.Wallet),
 		Note:      item.Note,
 		CreatedAt: formatTime(item.CreatedAt),
 	}
@@ -381,7 +389,7 @@ func mapWalletBlocklistEntries(items []policy.WalletBlocklistEntry) []*v1alpha1.
 }
 
 func mapProjectResearchState(item research.ProjectResearchState) *v1alpha1.TokenResearchState {
-	return &v1alpha1.TokenResearchState{ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: item.Contract.Hex(), Status: string(item.Status), EvidenceRevision: item.EvidenceRevision, CurrentReportRevision: item.CurrentReportRevision, CurrentSelectionOutcome: string(item.CurrentSelectionOutcome), LastEvaluatedRevision: item.LastEvaluatedReportRevision, LastEvaluatedAt: formatTime(item.LastEvaluatedAt), ExpiresAt: formatTime(item.ExpiresAt), CreatedAt: formatTime(item.CreatedAt), UpdatedAt: formatTime(item.UpdatedAt)}
+	return &v1alpha1.TokenResearchState{ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: formatAddress(item.Contract), Status: string(item.Status), EvidenceRevision: item.EvidenceRevision, CurrentReportRevision: item.CurrentReportRevision, CurrentSelectionOutcome: string(item.CurrentSelectionOutcome), LastEvaluatedRevision: item.LastEvaluatedReportRevision, LastEvaluatedAt: formatTime(item.LastEvaluatedAt), ExpiresAt: formatTime(item.ExpiresAt), CreatedAt: formatTime(item.CreatedAt), UpdatedAt: formatTime(item.UpdatedAt)}
 }
 func mapProjectResearchStates(items []research.ProjectResearchState) []*v1alpha1.TokenResearchState {
 	out := make([]*v1alpha1.TokenResearchState, 0, len(items))
@@ -400,7 +408,7 @@ func mapProjectReportRevision(item reporting.ProjectReportRevision) *v1alpha1.To
 		ReportRevisionID:          item.ID,
 		ProjectID:                 item.ProjectID,
 		ChainID:                   item.ChainID,
-		Contract:                  item.Contract.Hex(),
+		Contract:                  formatAddress(item.Contract),
 		Revision:                  item.Revision,
 		ContentHash:               item.ContentHash.Hex(),
 		CompletenessStatus:        item.CompletenessStatus,
@@ -437,7 +445,7 @@ func mapProjectReportRevisions(items []reporting.ProjectReportRevision) []*v1alp
 	return out
 }
 func mapProjectSelection(item selection.ProjectSelection) *v1alpha1.TokenSelection {
-	return &v1alpha1.TokenSelection{SelectionID: item.ID, ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: item.Contract.Hex(), Outcome: string(item.Outcome), StrategyKey: item.StrategyKey, StrategyVersion: item.StrategyVersion, ReportRevision: item.ReportRevision, ReasonCodes: item.ReasonCodes, ReasonDetail: item.ReasonDetail, DecidedAt: formatTime(item.DecidedAt), CreatedAt: formatTime(item.CreatedAt)}
+	return &v1alpha1.TokenSelection{SelectionID: item.ID, ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: formatAddress(item.Contract), Outcome: string(item.Outcome), StrategyKey: item.StrategyKey, StrategyVersion: item.StrategyVersion, ReportRevision: item.ReportRevision, ReasonCodes: item.ReasonCodes, ReasonDetail: item.ReasonDetail, DecidedAt: formatTime(item.DecidedAt), CreatedAt: formatTime(item.CreatedAt)}
 }
 func mapProjectSelections(items []selection.ProjectSelection) []*v1alpha1.TokenSelection {
 	out := make([]*v1alpha1.TokenSelection, 0, len(items))

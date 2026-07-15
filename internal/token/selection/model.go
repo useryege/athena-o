@@ -1,11 +1,10 @@
 package selection
 
 import (
+	"encoding/json"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/internal/token/reporting"
-	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 type SelectionOutcome string
@@ -16,11 +15,20 @@ const (
 	SelectionOutcomeDeferred SelectionOutcome = "deferred"
 )
 
+type TaskStatus string
+
+const (
+	TaskStatusPending   TaskStatus = "pending"
+	TaskStatusRunning   TaskStatus = "running"
+	TaskStatusSucceeded TaskStatus = "succeeded"
+	TaskStatusFailed    TaskStatus = "failed"
+)
+
 type ProjectSelectionEvaluationTask struct {
 	ID             int64
 	ProjectID      int64
 	ReportRevision int64
-	Status         research.TaskStatus
+	Status         TaskStatus
 	Attempts       int32
 	AvailableAt    time.Time
 	LeaseExpiresAt time.Time
@@ -31,7 +39,7 @@ type ProjectSelection struct {
 	ID              int64
 	ProjectID       int64
 	ChainID         int64
-	Contract        common.Address
+	Contract        shared.Address
 	Outcome         SelectionOutcome
 	StrategyKey     string
 	StrategyVersion string
@@ -42,10 +50,18 @@ type ProjectSelection struct {
 	CreatedAt       time.Time
 }
 
+type ReportSnapshot struct {
+	ProjectID          int64
+	Revision           int64
+	SchemaVersion      int32
+	CompletenessStatus string
+	Report             json.RawMessage
+}
+
 type StrategyInput struct {
 	ProjectID      int64
 	ReportRevision int64
-	Report         reporting.ResearchReportV1
+	Report         ReportSnapshot
 }
 
 type SelectionDecision struct {

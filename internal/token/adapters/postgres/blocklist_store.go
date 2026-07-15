@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/policy"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
-func (s *Database) CreateContractCodeBlocklistEntry(ctx context.Context, item policy.ContractCodeBlocklistEntry) error {
+func (s *PolicyRepository) CreateContractCodeBlocklistEntry(ctx context.Context, item policy.ContractCodeBlocklistEntry) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -22,7 +22,7 @@ func (s *Database) CreateContractCodeBlocklistEntry(ctx context.Context, item po
 	}
 	return nil
 }
-func (s *Database) GetContractCodeBlocklistEntry(ctx context.Context, codeHash common.Hash) (*policy.ContractCodeBlocklistEntry, error) {
+func (s *PolicyRepository) GetContractCodeBlocklistEntry(ctx context.Context, codeHash shared.Hash) (*policy.ContractCodeBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -36,7 +36,7 @@ func (s *Database) GetContractCodeBlocklistEntry(ctx context.Context, codeHash c
 	}
 	return mapContractCodeBlocklistEntry(r), nil
 }
-func (s *Database) ListContractCodeBlocklistEntries(ctx context.Context) ([]policy.ContractCodeBlocklistEntry, error) {
+func (s *PolicyRepository) ListContractCodeBlocklistEntries(ctx context.Context) ([]policy.ContractCodeBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -47,7 +47,7 @@ func (s *Database) ListContractCodeBlocklistEntries(ctx context.Context) ([]poli
 	}
 	return mapContractCodeBlocklistEntries(r), nil
 }
-func (s *Database) UpdateContractCodeBlocklistEntryNote(ctx context.Context, codeHash common.Hash, note string) (int64, error) {
+func (s *PolicyRepository) UpdateContractCodeBlocklistEntryNote(ctx context.Context, codeHash shared.Hash, note string) (int64, error) {
 	q, e := s.querier()
 	if e != nil {
 		return 0, e
@@ -58,7 +58,7 @@ func (s *Database) UpdateContractCodeBlocklistEntryNote(ctx context.Context, cod
 	}
 	return n, nil
 }
-func (s *Database) DeleteContractCodeBlocklistEntry(ctx context.Context, codeHash common.Hash) (int64, error) {
+func (s *PolicyRepository) DeleteContractCodeBlocklistEntry(ctx context.Context, codeHash shared.Hash) (int64, error) {
 	q, e := s.querier()
 	if e != nil {
 		return 0, e
@@ -69,7 +69,7 @@ func (s *Database) DeleteContractCodeBlocklistEntry(ctx context.Context, codeHas
 	}
 	return n, nil
 }
-func (s *Database) IsContractCodeBlocked(ctx context.Context, codeHash common.Hash) (bool, error) {
+func (s *PolicyRepository) IsContractCodeBlocked(ctx context.Context, codeHash shared.Hash) (bool, error) {
 	q, e := s.querier()
 	if e != nil {
 		return false, e
@@ -81,7 +81,7 @@ func (s *Database) IsContractCodeBlocked(ctx context.Context, codeHash common.Ha
 	return v, nil
 }
 
-func (s *Database) CreateWalletBlocklistEntry(ctx context.Context, item policy.WalletBlocklistEntry) error {
+func (s *PolicyRepository) CreateWalletBlocklistEntry(ctx context.Context, item policy.WalletBlocklistEntry) error {
 	q, e := s.querier()
 	if e != nil {
 		return e
@@ -92,7 +92,7 @@ func (s *Database) CreateWalletBlocklistEntry(ctx context.Context, item policy.W
 	}
 	return nil
 }
-func (s *Database) GetWalletBlocklistEntry(ctx context.Context, wallet common.Address) (*policy.WalletBlocklistEntry, error) {
+func (s *PolicyRepository) GetWalletBlocklistEntry(ctx context.Context, wallet shared.Address) (*policy.WalletBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -106,7 +106,7 @@ func (s *Database) GetWalletBlocklistEntry(ctx context.Context, wallet common.Ad
 	}
 	return mapWalletBlocklistEntry(r), nil
 }
-func (s *Database) ListWalletBlocklistEntries(ctx context.Context) ([]policy.WalletBlocklistEntry, error) {
+func (s *PolicyRepository) ListWalletBlocklistEntries(ctx context.Context) ([]policy.WalletBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -117,7 +117,7 @@ func (s *Database) ListWalletBlocklistEntries(ctx context.Context) ([]policy.Wal
 	}
 	return mapWalletBlocklistEntries(r), nil
 }
-func (s *Database) UpdateWalletBlocklistEntryNote(ctx context.Context, wallet common.Address, note string) (int64, error) {
+func (s *PolicyRepository) UpdateWalletBlocklistEntryNote(ctx context.Context, wallet shared.Address, note string) (int64, error) {
 	q, e := s.querier()
 	if e != nil {
 		return 0, e
@@ -128,7 +128,7 @@ func (s *Database) UpdateWalletBlocklistEntryNote(ctx context.Context, wallet co
 	}
 	return n, nil
 }
-func (s *Database) DeleteWalletBlocklistEntry(ctx context.Context, wallet common.Address) (int64, error) {
+func (s *PolicyRepository) DeleteWalletBlocklistEntry(ctx context.Context, wallet shared.Address) (int64, error) {
 	q, e := s.querier()
 	if e != nil {
 		return 0, e
@@ -139,7 +139,7 @@ func (s *Database) DeleteWalletBlocklistEntry(ctx context.Context, wallet common
 	}
 	return n, nil
 }
-func (s *Database) IsWalletBlocked(ctx context.Context, wallet common.Address) (bool, error) {
+func (s *PolicyRepository) IsWalletBlocked(ctx context.Context, wallet shared.Address) (bool, error) {
 	q, e := s.querier()
 	if e != nil {
 		return false, e

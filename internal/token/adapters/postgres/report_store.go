@@ -8,16 +8,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/reporting"
-	"github.com/useryege/athena/internal/token/research"
+	reportingapp "github.com/useryege/athena/internal/token/reporting/application"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 const researchTaskLease = 90 * time.Second
 
-func (s *Database) ListProjectReportsPage(ctx context.Context, chainID, projectID int64, contract common.Address, buildStatus string, page, pageSize int32) (*reporting.ProjectReportPage, error) {
+func (s *ReportingRepository) ListProjectReportsPage(ctx context.Context, chainID, projectID int64, contract shared.Address, buildStatus string, page, pageSize int32) (*reporting.ProjectReportPage, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -43,7 +43,7 @@ func (s *Database) ListProjectReportsPage(ctx context.Context, chainID, projectI
 	return &reporting.ProjectReportPage{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
-func (s *Database) ListProjectReportRevisionsPage(ctx context.Context, chainID, projectID int64, page, pageSize int32) (*reporting.ReportRevisionPage, error) {
+func (s *ReportingRepository) ListProjectReportRevisionsPage(ctx context.Context, chainID, projectID int64, page, pageSize int32) (*reporting.ReportRevisionPage, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -70,7 +70,7 @@ func (s *Database) ListProjectReportRevisionsPage(ctx context.Context, chainID, 
 	}
 	return &reporting.ReportRevisionPage{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }
-func (s *Database) GetProjectReportRevision(ctx context.Context, projectID, revision int64) (*reporting.ProjectReportRevision, error) {
+func (s *ReportingRepository) GetProjectReportRevision(ctx context.Context, projectID, revision int64) (*reporting.ProjectReportRevision, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -86,7 +86,7 @@ func (s *Database) GetProjectReportRevision(ctx context.Context, projectID, revi
 	return &v, e
 }
 
-func (s *Database) ClaimProjectReportBuildTasks(ctx context.Context, limit int32) ([]reporting.ProjectReportBuildTask, error) {
+func (s *ReportingRepository) ClaimReportBuildTasks(ctx context.Context, limit int32) ([]reporting.ProjectReportBuildTask, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -97,14 +97,14 @@ func (s *Database) ClaimProjectReportBuildTasks(ctx context.Context, limit int32
 	}
 	out := make([]reporting.ProjectReportBuildTask, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, reporting.ProjectReportBuildTask{ID: r.ID, ProjectID: r.ProjectID, EvidenceRevision: r.EvidenceRevision, Status: research.TaskStatus(r.Status), Attempts: r.Attempts, AvailableAt: timeValue(r.AvailableAt), LeaseExpiresAt: timeValue(r.LeaseExpiresAt), LastError: textValue(r.LastError)})
+		out = append(out, reporting.ProjectReportBuildTask{ID: r.ID, ProjectID: r.ProjectID, EvidenceRevision: r.EvidenceRevision, Status: reporting.TaskStatus(r.Status), Attempts: r.Attempts, AvailableAt: timeValue(r.AvailableAt), LeaseExpiresAt: timeValue(r.LeaseExpiresAt), LastError: textValue(r.LastError)})
 	}
 	return out, nil
 }
 
-func (s *Database) CompleteProjectReportBuild(ctx context.Context, task reporting.ProjectReportBuildTask, report reporting.ProjectReportRevision) (*reporting.ProjectReportRevision, bool, error) {
+func (s *ReportingRepository) CommitReportAndEnqueueSelection(ctx context.Context, command reportingapp.CommitReportCommand) (*reporting.ProjectReportRevision, bool, error) {
 	if s == nil || s.pool == nil {
-		return nil, false, fmt.Errorf("token postgres database is not configured")
+		return nil, false, fmt.Errorf("token reporting repository is not configured")
 	}
 	tx, e := s.pool.Begin(ctx)
 	if e != nil {
@@ -112,6 +112,7 @@ func (s *Database) CompleteProjectReportBuild(ctx context.Context, task reportin
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	q := tokensqlc.New(tx)
+	task, report := command.Task, command.Report
 	latest, e := q.GetLatestProjectReportRevision(ctx, task.ProjectID)
 	if e == nil && bytes.Equal(latest.ContentHash, report.ContentHash.Bytes()) {
 		if _, e = q.MarkProjectReportBuildTaskSucceeded(ctx, task.ID); e != nil {
@@ -171,17 +172,23 @@ func (s *Database) CompleteProjectReportBuild(ctx context.Context, task reportin
 	return &v, true, e
 }
 
-func (s *Database) MarkProjectReportBuildTaskFailed(ctx context.Context, task reporting.ProjectReportBuildTask, lastError string) error {
+func (s *ReportingRepository) RetryReportBuildTask(ctx context.Context, command reportingapp.RetryReportTaskCommand) error {
 	q, e := s.querier()
 	if e != nil {
 		return e
 	}
-	backoff := time.Duration(1<<min(int(task.Attempts), 4)) * time.Second
-	if _, e = q.RetryProjectReportBuildTask(ctx, tokensqlc.RetryProjectReportBuildTaskParams{AvailableAt: nullableTime(time.Now().UTC().Add(backoff)), LastError: nullableText(lastError), ID: task.ID}); e == nil {
+	_, e = q.RetryProjectReportBuildTask(ctx, tokensqlc.RetryProjectReportBuildTaskParams{AvailableAt: nullableTime(command.AvailableAt), LastError: nullableText(command.LastError), ID: command.Task.ID})
+	if errors.Is(e, pgx.ErrNoRows) {
 		return nil
-	} else if !errors.Is(e, pgx.ErrNoRows) {
+	}
+	return e
+}
+
+func (s *ReportingRepository) FailReportBuildTask(ctx context.Context, command reportingapp.FailReportTaskCommand) error {
+	q, e := s.querier()
+	if e != nil {
 		return e
 	}
-	_, e = q.FailProjectReportBuildTask(ctx, tokensqlc.FailProjectReportBuildTaskParams{LastError: nullableText(lastError), ID: task.ID})
+	_, e = q.FailProjectReportBuildTask(ctx, tokensqlc.FailProjectReportBuildTaskParams{LastError: nullableText(command.LastError), ID: command.Task.ID})
 	return e
 }

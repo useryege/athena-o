@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
-func (s *Database) UpsertProject(ctx context.Context, item catalog.Project) (*catalog.Project, error) {
+func (s *CatalogRepository) UpsertProject(ctx context.Context, item catalog.Project) (*catalog.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (s *Database) UpsertProject(ctx context.Context, item catalog.Project) (*ca
 	return mapped, nil
 }
 
-func (s *Database) GetProject(ctx context.Context, id int64) (*catalog.Project, error) {
+func (s *CatalogRepository) GetProject(ctx context.Context, id int64) (*catalog.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *Database) GetProject(ctx context.Context, id int64) (*catalog.Project, 
 	return item, nil
 }
 
-func (s *Database) GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*catalog.Project, error) {
+func (s *CatalogRepository) GetProjectByContract(ctx context.Context, chainID int64, contract shared.Address) (*catalog.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (s *Database) GetProjectByContract(ctx context.Context, chainID int64, cont
 	return item, nil
 }
 
-func (s *Database) CountProjects(ctx context.Context, chainID int64, codeHash common.Hash, contract common.Address) (int64, error) {
+func (s *CatalogRepository) CountProjects(ctx context.Context, chainID int64, codeHash shared.Hash, contract shared.Address) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -111,7 +111,7 @@ func (s *Database) CountProjects(ctx context.Context, chainID int64, codeHash co
 	return total, nil
 }
 
-func (s *Database) ListProjects(ctx context.Context, chainID int64) ([]catalog.Project, error) {
+func (s *CatalogRepository) ListProjects(ctx context.Context, chainID int64) ([]catalog.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (s *Database) ListProjects(ctx context.Context, chainID int64) ([]catalog.P
 	return items, nil
 }
 
-func (s *Database) ListProjectsPage(ctx context.Context, chainID int64, codeHash common.Hash, contract common.Address, page, pageSize int32) (*catalog.ProjectPage, error) {
+func (s *CatalogRepository) ListProjectsPage(ctx context.Context, chainID int64, codeHash shared.Hash, contract shared.Address, page, pageSize int32) (*catalog.ProjectPage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func (s *Database) ListProjectsPage(ctx context.Context, chainID int64, codeHash
 	}, nil
 }
 
-func (s *Database) DeleteProject(ctx context.Context, id int64) (int64, error) {
+func (s *CatalogRepository) DeleteProject(ctx context.Context, id int64) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err

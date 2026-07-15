@@ -29,7 +29,7 @@ func (s *Service) ListResearchStates(ctx context.Context, req *apiclient.ListRes
 	return &apiclient.ListResearchStatesResponse{ResearchStates: mapProjectResearchStates(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
 }
 func (s *Service) ListReportRevisions(ctx context.Context, req *apiclient.ListReportRevisionsRequest) (*apiclient.ListReportRevisionsResponse, error) {
-	store, e := s.researchApplication()
+	store, e := s.reportingApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -46,7 +46,7 @@ func (s *Service) ListReportRevisions(ctx context.Context, req *apiclient.ListRe
 	return &apiclient.ListReportRevisionsResponse{ReportRevisions: mapProjectReportRevisions(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
 }
 func (s *Service) ListSelections(ctx context.Context, req *apiclient.ListSelectionsRequest) (*apiclient.ListSelectionsResponse, error) {
-	store, e := s.researchApplication()
+	store, e := s.selectionApplication()
 	if e != nil {
 		return nil, e
 	}

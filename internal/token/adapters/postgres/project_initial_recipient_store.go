@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
-func (s *Database) UpsertProjectInitialRecipient(ctx context.Context, item catalog.ProjectInitialRecipient) (*catalog.ProjectInitialRecipient, error) {
+func (s *CatalogRepository) UpsertProjectInitialRecipient(ctx context.Context, item catalog.ProjectInitialRecipient) (*catalog.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (s *Database) UpsertProjectInitialRecipient(ctx context.Context, item catal
 	return mapped, nil
 }
 
-func (s *Database) GetProjectInitialRecipient(ctx context.Context, projectID int64, wallet common.Address) (*catalog.ProjectInitialRecipient, error) {
+func (s *CatalogRepository) GetProjectInitialRecipient(ctx context.Context, projectID int64, wallet shared.Address) (*catalog.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (s *Database) GetProjectInitialRecipient(ctx context.Context, projectID int
 	return mapped, nil
 }
 
-func (s *Database) ListProjectInitialRecipientsByProject(ctx context.Context, projectID int64) ([]catalog.ProjectInitialRecipient, error) {
+func (s *CatalogRepository) ListProjectInitialRecipientsByProject(ctx context.Context, projectID int64) ([]catalog.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (s *Database) ListProjectInitialRecipientsByProject(ctx context.Context, pr
 	return items, nil
 }
 
-func (s *Database) ListProjectInitialRecipientsByWallet(ctx context.Context, wallet common.Address) ([]catalog.ProjectInitialRecipient, error) {
+func (s *CatalogRepository) ListProjectInitialRecipientsByWallet(ctx context.Context, wallet shared.Address) ([]catalog.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (s *Database) ListProjectInitialRecipientsByWallet(ctx context.Context, wal
 	return items, nil
 }
 
-func (s *Database) DeleteProjectInitialRecipient(ctx context.Context, projectID int64, wallet common.Address) (int64, error) {
+func (s *CatalogRepository) DeleteProjectInitialRecipient(ctx context.Context, projectID int64, wallet shared.Address) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -107,7 +107,7 @@ func (s *Database) DeleteProjectInitialRecipient(ctx context.Context, projectID 
 	return rowsAffected, nil
 }
 
-func (s *Database) DeleteProjectInitialRecipientsByProject(ctx context.Context, projectID int64) (int64, error) {
+func (s *CatalogRepository) DeleteProjectInitialRecipientsByProject(ctx context.Context, projectID int64) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err

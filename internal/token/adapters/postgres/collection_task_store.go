@@ -9,144 +9,119 @@ import (
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/research"
+	researchapp "github.com/useryege/athena/internal/token/research/application"
 )
 
 const collectionTaskLease = 90 * time.Second
 
-func (s *Database) ListDueProjectDataCollectionTasks(ctx context.Context, dataType research.DataCollectionType, chainIDs []int64, limit int32) ([]research.ProjectDataCollectionTaskWithProject, error) {
+func (repository *CollectionRepository) ClaimCollectionTasks(ctx context.Context, dataType research.DataCollectionType, chainIDs []int64, limit int32) ([]research.ProjectDataCollectionTaskWithProject, error) {
 	if len(chainIDs) == 0 {
 		return nil, nil
 	}
-	q, e := s.querier()
-	if e != nil {
-		return nil, e
+	queries, err := repository.querier()
+	if err != nil {
+		return nil, err
 	}
-	rows, e := q.ClaimProjectDataCollectionTasks(ctx, tokensqlc.ClaimProjectDataCollectionTasksParams{LeaseSeconds: int64(collectionTaskLease / time.Second), DataType: string(dataType), ChainIds: chainIDs, Limit: limit})
-	if e != nil {
-		return nil, fmt.Errorf("claim collection tasks: %w", e)
+	rows, err := queries.ClaimProjectDataCollectionTasks(ctx, tokensqlc.ClaimProjectDataCollectionTasksParams{LeaseSeconds: int64(collectionTaskLease / time.Second), DataType: string(dataType), ChainIds: chainIDs, Limit: limit})
+	if err != nil {
+		return nil, fmt.Errorf("claim collection tasks: %w", err)
 	}
-	out := make([]research.ProjectDataCollectionTaskWithProject, 0, len(rows))
+	result := make([]research.ProjectDataCollectionTaskWithProject, 0, len(rows))
 	for _, row := range rows {
-		projectRow, e := q.GetProjectForDataCollectionTask(ctx, row.ID)
-		if e != nil {
-			return nil, e
+		projectRow, err := queries.GetProjectForDataCollectionTask(ctx, row.ID)
+		if err != nil {
+			return nil, err
 		}
-		project, e := mapProject(projectRow)
-		if e != nil {
-			return nil, e
+		project, err := mapProject(projectRow)
+		if err != nil {
+			return nil, err
 		}
-		out = append(out, research.ProjectDataCollectionTaskWithProject{Task: mapProjectDataCollectionTask(row), Project: *project})
+		schedule, err := queries.GetProjectDataCollectionSchedule(ctx, tokensqlc.GetProjectDataCollectionScheduleParams{ProjectID: row.ProjectID, DataType: row.DataType})
+		if err != nil {
+			return nil, err
+		}
+		walletRows, err := queries.ListProjectRelatedWalletsByProject(ctx, row.ProjectID)
+		if err != nil {
+			return nil, err
+		}
+		contextValue := research.ProjectCollectionContext{ID: project.ID, ChainID: project.ChainID, Contract: project.Contract, CodeHash: project.CodeHash, WethPair: project.WethPair, UsdtPair: project.UsdtPair, RefreshInterval: time.Duration(schedule.RefreshIntervalSeconds) * time.Second}
+		for _, wallet := range walletRows {
+			contextValue.RelatedWallets = append(contextValue.RelatedWallets, bytesToAddress(wallet.Wallet))
+		}
+		result = append(result, research.ProjectDataCollectionTaskWithProject{Task: mapProjectDataCollectionTask(row), Project: contextValue})
 	}
-	return out, nil
+	return result, nil
 }
-func (s *Database) GetProjectDataCollectionTask(ctx context.Context, id int64) (*research.ProjectDataCollectionTask, error) {
-	q, e := s.querier()
-	if e != nil {
-		return nil, e
+
+func (repository *ResearchReadRepository) GetProjectDataCollectionTask(ctx context.Context, id int64) (*research.ProjectDataCollectionTask, error) {
+	queries, err := repository.querier()
+	if err != nil {
+		return nil, err
 	}
-	row, e := q.GetProjectDataCollectionTask(ctx, id)
-	if errors.Is(e, pgx.ErrNoRows) {
+	row, err := queries.GetProjectDataCollectionTask(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
-	if e != nil {
-		return nil, e
+	if err != nil {
+		return nil, err
 	}
-	v := mapProjectDataCollectionTask(row)
-	return &v, nil
+	value := mapProjectDataCollectionTask(row)
+	return &value, nil
 }
-func (s *Database) ListProjectDataCollectionTasks(ctx context.Context, projectID int64, dataType, status string, page, pageSize int32) (*research.CollectionTaskPage, error) {
-	q, e := s.querier()
-	if e != nil {
-		return nil, e
+
+func (repository *ResearchReadRepository) ListProjectDataCollectionTasks(ctx context.Context, projectID int64, dataType, status string, page, pageSize int32) (*research.CollectionTaskPage, error) {
+	queries, err := repository.querier()
+	if err != nil {
+		return nil, err
 	}
 	page, pageSize, offset := normalizePage(page, pageSize)
-	p := tokensqlc.CountProjectDataCollectionTasksParams{ProjectID: projectID, DataType: dataType, Status: status}
-	total, e := q.CountProjectDataCollectionTasks(ctx, p)
-	if e != nil {
-		return nil, e
+	params := tokensqlc.CountProjectDataCollectionTasksParams{ProjectID: projectID, DataType: dataType, Status: status}
+	total, err := queries.CountProjectDataCollectionTasks(ctx, params)
+	if err != nil {
+		return nil, err
 	}
-	rows, e := q.ListProjectDataCollectionTasks(ctx, tokensqlc.ListProjectDataCollectionTasksParams{ProjectID: projectID, DataType: dataType, Status: status, Offset: offset, Limit: pageSize})
-	if e != nil {
-		return nil, e
+	rows, err := queries.ListProjectDataCollectionTasks(ctx, tokensqlc.ListProjectDataCollectionTasksParams{ProjectID: projectID, DataType: dataType, Status: status, Offset: offset, Limit: pageSize})
+	if err != nil {
+		return nil, err
 	}
 	items := make([]research.ProjectDataCollectionTask, 0, len(rows))
-	for _, r := range rows {
-		items = append(items, mapProjectDataCollectionTask(r))
+	for _, row := range rows {
+		items = append(items, mapProjectDataCollectionTask(row))
 	}
 	return &research.CollectionTaskPage{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
-func (s *Database) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, task research.ProjectDataCollectionTask) (bool, error) {
-	if s == nil || s.pool == nil {
-		return false, fmt.Errorf("token postgres database is not configured")
+func (repository *CollectionRepository) RetryCollectionTask(ctx context.Context, command researchapp.RetryCollectionTaskCommand) error {
+	queries, err := repository.querier()
+	if err != nil {
+		return err
 	}
-	tx, e := s.pool.Begin(ctx)
-	if e != nil {
-		return false, e
+	_, err = queries.RetryProjectDataCollectionTask(ctx, tokensqlc.RetryProjectDataCollectionTaskParams{AvailableAt: nullableTime(command.AvailableAt), LastError: nullableText(command.LastError), ID: command.Task.ID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	q := tokensqlc.New(tx)
-	n, e := q.MarkProjectDataCollectionTaskSucceeded(ctx, task.ID)
-	if e != nil {
-		return false, e
-	}
-	if n == 0 {
-		return false, nil
-	}
-	now := time.Now().UTC()
-	if task.DataType == research.DataCollectionTypeContractCodeSource {
-		_, e = q.CompleteProjectDataCollectionSchedule(ctx, tokensqlc.CompleteProjectDataCollectionScheduleParams{LastCheckedAt: nullableTime(now), ProjectID: task.ProjectID, DataType: string(task.DataType)})
-	} else {
-		e = markScheduleSucceeded(ctx, q, task.ProjectID, task.DataType, now)
-	}
-	if e != nil {
-		return false, e
-	}
-	if e = tx.Commit(ctx); e != nil {
-		return false, e
-	}
-	return true, nil
+	return err
 }
 
-func (s *Database) MarkProjectDataCollectionTaskFailed(ctx context.Context, task research.ProjectDataCollectionTask, lastError string) (*research.ProjectDataCollectionTask, bool, error) {
-	if s == nil || s.pool == nil {
-		return nil, false, fmt.Errorf("token postgres database is not configured")
+func (repository *CollectionRepository) FailCollectionTask(ctx context.Context, command researchapp.FailCollectionTaskCommand) error {
+	if repository == nil || repository.pool == nil {
+		return fmt.Errorf("token collection repository is not configured")
 	}
-	tx, e := s.pool.Begin(ctx)
-	if e != nil {
-		return nil, false, e
+	tx, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	q := tokensqlc.New(tx)
-	backoff := time.Duration(1<<min(int(task.Attempts), 4)) * time.Second
-	row, e := q.RetryProjectDataCollectionTask(ctx, tokensqlc.RetryProjectDataCollectionTaskParams{AvailableAt: nullableTime(time.Now().UTC().Add(backoff)), LastError: nullableText(lastError), ID: task.ID})
-	if e == nil {
-		if e = tx.Commit(ctx); e != nil {
-			return nil, false, e
-		}
-		v := mapProjectDataCollectionTask(row)
-		return &v, true, nil
+	queries := tokensqlc.New(tx)
+	rows, err := queries.FailProjectDataCollectionTask(ctx, tokensqlc.FailProjectDataCollectionTaskParams{LastError: nullableText(command.LastError), ID: command.Task.ID})
+	if err != nil || rows == 0 {
+		return err
 	}
-	if !errors.Is(e, pgx.ErrNoRows) {
-		return nil, false, e
+	if err = markScheduleFailed(ctx, queries, command.Task.ProjectID, command.Task.DataType, command.LastError, command.NextRunAt); err != nil {
+		return err
 	}
-	n, e := q.FailProjectDataCollectionTask(ctx, tokensqlc.FailProjectDataCollectionTaskParams{LastError: nullableText(lastError), ID: task.ID})
-	if e != nil {
-		return nil, false, e
+	if err = tx.Commit(ctx); err != nil {
+		return err
 	}
-	if n == 0 {
-		return nil, false, nil
-	}
-	if e = markScheduleFailed(ctx, q, task.ProjectID, task.DataType, lastError, time.Now().UTC()); e != nil {
-		return nil, false, e
-	}
-	row, e = q.GetProjectDataCollectionTask(ctx, task.ID)
-	if e != nil {
-		return nil, false, e
-	}
-	if e = tx.Commit(ctx); e != nil {
-		return nil, false, e
-	}
-	v := mapProjectDataCollectionTask(row)
-	return &v, true, nil
+	return nil
 }
