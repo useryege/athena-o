@@ -55,31 +55,31 @@ func (*PolymarketUMADisputeItem) ProtoMessage() {}
 
 func (*PolymarketUMAProposalItem) ProtoMessage() {}
 
-func (*TokenAPIChainIngestCheckpoint) ProtoMessage() {}
+func (*TokenChain) ProtoMessage() {}
 
-func (*TokenAPIChainOption) ProtoMessage() {}
+func (*TokenChainCheckpoint) ProtoMessage() {}
 
-func (*TokenAPIContractCode) ProtoMessage() {}
+func (*TokenCollectionTask) ProtoMessage() {}
 
-func (*TokenAPIContractCodeBlocklistEntry) ProtoMessage() {}
+func (*TokenContractCode) ProtoMessage() {}
 
-func (*TokenAPINodeStatus) ProtoMessage() {}
+func (*TokenContractCodeBlocklistEntry) ProtoMessage() {}
 
-func (*TokenAPIOptions) ProtoMessage() {}
+func (*TokenNodeStatus) ProtoMessage() {}
 
-func (*TokenAPIProject) ProtoMessage() {}
+func (*TokenProject) ProtoMessage() {}
 
-func (*TokenAPIProjectDataCollectionTask) ProtoMessage() {}
+func (*TokenProjectReport) ProtoMessage() {}
 
-func (*TokenAPIProjectReport) ProtoMessage() {}
+func (*TokenReportRevision) ProtoMessage() {}
 
-func (*TokenAPIProjectReportRevision) ProtoMessage() {}
+func (*TokenResearchState) ProtoMessage() {}
 
-func (*TokenAPIProjectResearchState) ProtoMessage() {}
+func (*TokenRuntimeConfiguration) ProtoMessage() {}
 
-func (*TokenAPIProjectSelection) ProtoMessage() {}
+func (*TokenSelection) ProtoMessage() {}
 
-func (*TokenAPIWalletBlocklistEntry) ProtoMessage() {}
+func (*TokenWalletBlocklistEntry) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}
 

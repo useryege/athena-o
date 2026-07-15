@@ -1,3 +1,18 @@
+x-token-worker: &token-worker
+  image: ${PROD_IMAGE:-athena:local}
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+  env_file:
+    - .env
+  command: ["athena"]
+
+x-token-worker-environment: &token-worker-environment
+  ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+  ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+  ATHENA_TOKEN_CHAINS_JSON: ${ATHENA_TOKEN_CHAINS_JSON:?ATHENA_TOKEN_CHAINS_JSON is required}
+
 services:
   postgres:
     image: docker.io/library/postgres:16
@@ -150,6 +165,7 @@ services:
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_TOKEN_API_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+      ATHENA_TOKEN_CHAINS_JSON: ${ATHENA_TOKEN_CHAINS_JSON:?ATHENA_TOKEN_CHAINS_JSON is required}
     command: ["athena", "--port", "8096"]
     expose:
       - "8096"
@@ -169,44 +185,101 @@ services:
     expose:
       - "8100"
 
-  athena-token-discovery:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
+  athena-token-scanner:
+    <<: *token-worker
     environment:
-      ATHENA_BINARY_NAME: athena-token
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_TOKEN_MODE: discovery
-      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8095
-      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
-    command: ["athena"]
-    expose:
-      - "8095"
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-scanner
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8110
+    expose: ["8110"]
 
-  athena-token-research:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
+  athena-token-validator:
+    <<: *token-worker
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-validator
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8111
+    expose: ["8111"]
+
+  athena-token-scheduler:
+    <<: *token-worker
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-scheduler
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8112
+    expose: ["8112"]
+
+  athena-token-collector-ave:
+    <<: *token-worker
+    command: ["athena", "--data-type", "ave"]
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-collector
+      ATHENA_TOKEN_DATA_TYPE: ave
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8113
+    expose: ["8113"]
+
+  athena-token-collector-chain-state:
+    <<: *token-worker
+    command: ["athena", "--data-type", "chain_state"]
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-collector
+      ATHENA_TOKEN_DATA_TYPE: chain_state
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8114
+    expose: ["8114"]
+
+  athena-token-collector-wallet-asset-state:
+    <<: *token-worker
+    command: ["athena", "--data-type", "wallet_asset_state"]
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-collector
+      ATHENA_TOKEN_DATA_TYPE: wallet_asset_state
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8115
+    expose: ["8115"]
+
+  athena-token-collector-simulation-result:
+    <<: *token-worker
+    command: ["athena", "--data-type", "simulation_result"]
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-collector
+      ATHENA_TOKEN_DATA_TYPE: simulation_result
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8116
+    expose: ["8116"]
+
+  athena-token-collector-contract-code-source:
+    <<: *token-worker
+    command: ["athena", "--data-type", "contract_code_source"]
     depends_on:
       postgres:
         condition: service_healthy
       athena-ethereum-api:
         condition: service_started
-    env_file:
-      - .env
     environment:
-      ATHENA_BINARY_NAME: athena-token
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_TOKEN_MODE: research
-      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8097
-      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-collector
+      ATHENA_TOKEN_DATA_TYPE: contract_code_source
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8117
       ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS: athena-ethereum-api:8100
-    command: ["athena"]
-    expose:
-      - "8097"
+    expose: ["8117"]
+
+  athena-token-report-builder:
+    <<: *token-worker
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-report-builder
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8118
+    expose: ["8118"]
+
+  athena-token-selector:
+    <<: *token-worker
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-selector
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8119
+    expose: ["8119"]
 
   athena-migrate:
     image: ${PROD_IMAGE:-athena:local}

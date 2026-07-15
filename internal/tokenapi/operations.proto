@@ -1,0 +1,11 @@
+syntax = "proto3";
+package athena.internal.tokenapi;
+import "internal/tokenapi/types.proto";
+option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
+service TokenOperationsService {
+  rpc GetRuntimeConfiguration(GetRuntimeConfigurationRequest) returns (GetRuntimeConfigurationResponse);
+  rpc ListNodeStatuses(ListNodeStatusesRequest) returns (ListNodeStatusesResponse);
+  rpc GetChainCheckpoint(GetChainCheckpointRequest) returns (GetChainCheckpointResponse);
+  rpc ListChainCheckpoints(ListChainCheckpointsRequest) returns (ListChainCheckpointsResponse);
+  rpc UpdateChainCheckpoint(UpdateChainCheckpointRequest) returns (UpdateChainCheckpointResponse);
+}

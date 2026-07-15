@@ -15,7 +15,14 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/adapters/evm"
+	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
+	catalogapp "github.com/useryege/athena/internal/token/catalog/application"
+	"github.com/useryege/athena/internal/token/chainregistry"
+	"github.com/useryege/athena/internal/token/discovery"
+	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
+	policyapp "github.com/useryege/athena/internal/token/policy/application"
+	researchapp "github.com/useryege/athena/internal/token/research/application"
 	"github.com/useryege/athena/internal/tokenapi"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -27,11 +34,9 @@ const cliName = "athena-token-api"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost     string
-		listenPort     int
-		ethNodeWSURLs  []string
-		bscNodeWSURLs  []string
-		nodeWSUseProxy bool
+		listenHost string
+		listenPort int
+		chainsJSON string
 	)
 
 	command := &cobra.Command{
@@ -53,13 +58,42 @@ func NewCommand() *cobra.Command {
 
 			ctx := cmd.Context()
 
+			registry, err := chainregistry.Parse(chainsJSON)
+			if err != nil {
+				return err
+			}
+			database, err := tokenpostgres.NewDatabaseSource()(ctx)
+			if err != nil {
+				return err
+			}
+			chains := make([]discovery.Chain, 0, len(registry.Chains()))
+			for _, chain := range registry.Chains() {
+				chains = append(chains, discovery.Chain{ID: chain.ID, Name: chain.Name, Enabled: chain.Enabled})
+			}
+			if err := database.SyncChains(ctx, chains); err != nil {
+				_ = database.Close()
+				return err
+			}
+			evmRegistry := evm.NewChainClientRegistry(registry)
 			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
-				StoreSrc:       tokenstore.NewSQLStoreSource(),
-				EthNodeWSURLs:  ethNodeWSURLs,
-				BSCNodeWSURLs:  bscNodeWSURLs,
-				NodeWSUseProxy: nodeWSUseProxy,
+				Applications: tokenapi.Applications{
+					Catalog:    catalogapp.NewQueries(database.CatalogReadModel()),
+					Research:   researchapp.NewQueries(database.ResearchReadModel()),
+					Policy:     policyapp.NewService(database.Policy(), evmRegistry),
+					Operations: discoveryapp.NewOperations(database.Operations(), evmRegistry),
+				},
+				Close: func() error {
+					evmErr := evmRegistry.Close()
+					databaseErr := database.Close()
+					if evmErr != nil {
+						return evmErr
+					}
+					return databaseErr
+				},
 			})
 			if err != nil {
+				_ = evmRegistry.Close()
+				_ = database.Close()
 				return err
 			}
 			tokenAPIGRPC := server.CreateGRPC()
@@ -106,9 +140,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_API_LISTEN_ADDRESS", common.DefaultAddressTokenAPI), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortTokenAPI, "Listen on given port for incoming connections")
-	command.Flags().StringSliceVar(&ethNodeWSURLs, "eth-node-ws-urls", env.StringsFromEnv("ATHENA_TOKEN_ETH_NODE_WS_URLS", nil, ","), "Ethereum Mainnet node WebSocket addresses")
-	command.Flags().StringSliceVar(&bscNodeWSURLs, "bsc-node-ws-urls", env.StringsFromEnv("ATHENA_TOKEN_BSC_NODE_WS_URLS", nil, ","), "BSC Mainnet node WebSocket addresses")
-	command.Flags().BoolVar(&nodeWSUseProxy, "node-ws-use-proxy", env.ParseBoolFromEnv("ATHENA_TOKEN_NODE_WS_USE_PROXY", false), "Whether to use proxy environment variables for node WebSocket connections")
+	command.Flags().StringVar(&chainsJSON, "chains-json", env.StringFromEnv(chainregistry.EnvironmentVariable, ""), "Token chain registry JSON")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

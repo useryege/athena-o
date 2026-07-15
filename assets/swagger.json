@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-959-g596f6d0-dirty"
+    "version": "v1.0.0-962-g3c5f34e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -990,17 +990,17 @@
         }
       }
     },
-    "/api/v1/tokenapi/chain-ingest-checkpoints": {
+    "/api/v1/tokens/chain-checkpoints": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenOperationsService"
         ],
-        "operationId": "TokenAPIService_ListChainIngestCheckpoints",
+        "operationId": "TokenOperationsService_ListChainCheckpoints",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiListChainIngestCheckpointsResponse"
+              "$ref": "#/definitions/tokenapiListChainCheckpointsResponse"
             }
           },
           "default": {
@@ -1012,12 +1012,12 @@
         }
       }
     },
-    "/api/v1/tokenapi/chain-ingest-checkpoints/{chain_id}": {
+    "/api/v1/tokens/chain-checkpoints/{chain_id}": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenOperationsService"
         ],
-        "operationId": "TokenAPIService_GetChainIngestCheckpoint",
+        "operationId": "TokenOperationsService_GetChainCheckpoint",
         "parameters": [
           {
             "type": "string",
@@ -1031,7 +1031,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiGetChainIngestCheckpointResponse"
+              "$ref": "#/definitions/tokenapiGetChainCheckpointResponse"
             }
           },
           "default": {
@@ -1041,14 +1041,12 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/tokenapi/chain-ingest-checkpoints/{chain_id}/status": {
-      "post": {
+      },
+      "patch": {
         "tags": [
-          "TokenAPIService"
+          "TokenOperationsService"
         ],
-        "operationId": "TokenAPIService_UpdateChainIngestCheckpoint",
+        "operationId": "TokenOperationsService_UpdateChainCheckpoint",
         "parameters": [
           {
             "type": "string",
@@ -1062,7 +1060,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/tokenapiUpdateChainIngestCheckpointRequest"
+              "$ref": "#/definitions/tokenapiUpdateChainCheckpointRequest"
             }
           }
         ],
@@ -1070,7 +1068,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiUpdateChainIngestCheckpointResponse"
+              "$ref": "#/definitions/tokenapiUpdateChainCheckpointResponse"
             }
           },
           "default": {
@@ -1082,47 +1080,47 @@
         }
       }
     },
-    "/api/v1/tokenapi/contract-code-blocklist": {
+    "/api/v1/tokens/collection-tasks": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenResearchService"
         ],
-        "operationId": "TokenAPIService_ListContractCodeBlocklistEntries",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiListContractCodeBlocklistEntriesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_CreateContractCodeBlocklistEntry",
+        "operationId": "TokenResearchService_ListCollectionTasks",
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tokenapiCreateContractCodeBlocklistEntryRequest"
-            }
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "data_type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiCreateContractCodeBlocklistEntryResponse"
+              "$ref": "#/definitions/tokenapiListCollectionTasksResponse"
             }
           },
           "default": {
@@ -1134,16 +1132,17 @@
         }
       }
     },
-    "/api/v1/tokenapi/contract-code-blocklist/{code_hash}": {
+    "/api/v1/tokens/collection-tasks/{task_id}": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenResearchService"
         ],
-        "operationId": "TokenAPIService_GetContractCodeBlocklistEntry",
+        "operationId": "TokenResearchService_GetCollectionTask",
         "parameters": [
           {
             "type": "string",
-            "name": "code_hash",
+            "format": "int64",
+            "name": "task_id",
             "in": "path",
             "required": true
           }
@@ -1152,71 +1151,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiGetContractCodeBlocklistEntryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_UpdateContractCodeBlocklistEntry",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tokenapiUpdateContractCodeBlocklistEntryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiUpdateContractCodeBlocklistEntryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_DeleteContractCodeBlocklistEntry",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "code_hash",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiDeleteContractCodeBlocklistEntryResponse"
+              "$ref": "#/definitions/tokenapiGetCollectionTaskResponse"
             }
           },
           "default": {
@@ -1228,12 +1163,12 @@
         }
       }
     },
-    "/api/v1/tokenapi/contract-codes": {
+    "/api/v1/tokens/contract-codes": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenCatalogService"
         ],
-        "operationId": "TokenAPIService_ListContractCodes",
+        "operationId": "TokenCatalogService_ListContractCodes",
         "parameters": [
           {
             "type": "string",
@@ -1274,12 +1209,12 @@
         }
       }
     },
-    "/api/v1/tokenapi/contract-codes/{code_hash}": {
+    "/api/v1/tokens/contract-codes/{code_hash}": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenCatalogService"
         ],
-        "operationId": "TokenAPIService_GetContractCode",
+        "operationId": "TokenCatalogService_GetContractCode",
         "parameters": [
           {
             "type": "string",
@@ -1304,12 +1239,12 @@
         }
       }
     },
-    "/api/v1/tokenapi/node-statuses": {
+    "/api/v1/tokens/node-statuses": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenOperationsService"
         ],
-        "operationId": "TokenAPIService_ListNodeStatuses",
+        "operationId": "TokenOperationsService_ListNodeStatuses",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1326,17 +1261,47 @@
         }
       }
     },
-    "/api/v1/tokenapi/options": {
+    "/api/v1/tokens/policies/contract-code-blocklist-entries": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenPolicyService"
         ],
-        "operationId": "TokenAPIService_GetOptions",
+        "operationId": "TokenPolicyService_ListContractCodeBlocklistEntries",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiGetOptionsResponse"
+              "$ref": "#/definitions/tokenapiListContractCodeBlocklistEntriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TokenPolicyService"
+        ],
+        "operationId": "TokenPolicyService_CreateContractCodeBlocklistEntry",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateContractCodeBlocklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateContractCodeBlocklistEntryResponse"
             }
           },
           "default": {
@@ -1348,69 +1313,16 @@
         }
       }
     },
-    "/api/v1/tokenapi/project-data-collection-tasks": {
+    "/api/v1/tokens/policies/contract-code-blocklist-entries/{code_hash}": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenPolicyService"
         ],
-        "operationId": "TokenAPIService_ListProjectDataCollectionTasks",
+        "operationId": "TokenPolicyService_GetContractCodeBlocklistEntry",
         "parameters": [
           {
             "type": "string",
-            "format": "int64",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "data_type",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "status",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiListProjectDataCollectionTasksResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/tokenapi/project-data-collection-tasks/{task_id}": {
-      "get": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_GetProjectDataCollectionTask",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "task_id",
+            "name": "code_hash",
             "in": "path",
             "required": true
           }
@@ -1419,7 +1331,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiGetProjectDataCollectionTaskResponse"
+              "$ref": "#/definitions/tokenapiGetContractCodeBlocklistEntryResponse"
             }
           },
           "default": {
@@ -1429,45 +1341,61 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/tokenapi/project-report-revisions": {
-      "get": {
+      },
+      "delete": {
         "tags": [
-          "TokenAPIService"
+          "TokenPolicyService"
         ],
-        "operationId": "TokenAPIService_ListProjectReportRevisions",
+        "operationId": "TokenPolicyService_DeleteContractCodeBlocklistEntry",
         "parameters": [
           {
             "type": "string",
-            "format": "int64",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
+            "name": "code_hash",
+            "in": "path",
+            "required": true
           }
         ],
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiListProjectReportRevisionsResponse"
+              "$ref": "#/definitions/tokenapiDeleteContractCodeBlocklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "TokenPolicyService"
+        ],
+        "operationId": "TokenPolicyService_UpdateContractCodeBlocklistEntry",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code_hash",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateContractCodeBlocklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateContractCodeBlocklistEntryResponse"
             }
           },
           "default": {
@@ -1479,12 +1407,158 @@
         }
       }
     },
-    "/api/v1/tokenapi/project-reports": {
+    "/api/v1/tokens/policies/wallet-blocklist-entries": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenPolicyService"
         ],
-        "operationId": "TokenAPIService_ListProjectReports",
+        "operationId": "TokenPolicyService_ListWalletBlocklistEntries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListWalletBlocklistEntriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TokenPolicyService"
+        ],
+        "operationId": "TokenPolicyService_CreateWalletBlocklistEntry",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateWalletBlocklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiCreateWalletBlocklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/policies/wallet-blocklist-entries/{wallet}": {
+      "get": {
+        "tags": [
+          "TokenPolicyService"
+        ],
+        "operationId": "TokenPolicyService_GetWalletBlocklistEntry",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetWalletBlocklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TokenPolicyService"
+        ],
+        "operationId": "TokenPolicyService_DeleteWalletBlocklistEntry",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiDeleteWalletBlocklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "TokenPolicyService"
+        ],
+        "operationId": "TokenPolicyService_UpdateWalletBlocklistEntry",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateWalletBlocklistEntryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiUpdateWalletBlocklistEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/project-reports": {
+      "get": {
+        "tags": [
+          "TokenResearchService"
+        ],
+        "operationId": "TokenResearchService_ListProjectReports",
         "parameters": [
           {
             "type": "string",
@@ -1537,118 +1611,12 @@
         }
       }
     },
-    "/api/v1/tokenapi/project-research-states": {
+    "/api/v1/tokens/projects": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenCatalogService"
         ],
-        "operationId": "TokenAPIService_ListProjectResearchStates",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "status",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiListProjectResearchStatesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/tokenapi/project-selections": {
-      "get": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_ListProjectSelections",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "outcome",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiListProjectSelectionsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/tokenapi/projects": {
-      "get": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_ListProjects",
+        "operationId": "TokenCatalogService_ListProjects",
         "parameters": [
           {
             "type": "string",
@@ -1695,47 +1663,43 @@
         }
       }
     },
-    "/api/v1/tokenapi/wallet-blocklist": {
+    "/api/v1/tokens/report-revisions": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenResearchService"
         ],
-        "operationId": "TokenAPIService_ListWalletBlocklistEntries",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiListWalletBlocklistEntriesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "TokenAPIService"
-        ],
-        "operationId": "TokenAPIService_CreateWalletBlocklistEntry",
+        "operationId": "TokenResearchService_ListReportRevisions",
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tokenapiCreateWalletBlocklistEntryRequest"
-            }
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiCreateWalletBlocklistEntryResponse"
+              "$ref": "#/definitions/tokenapiListReportRevisionsResponse"
             }
           },
           "default": {
@@ -1747,25 +1711,48 @@
         }
       }
     },
-    "/api/v1/tokenapi/wallet-blocklist/{wallet}": {
+    "/api/v1/tokens/research-states": {
       "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenResearchService"
         ],
-        "operationId": "TokenAPIService_GetWalletBlocklistEntry",
+        "operationId": "TokenResearchService_ListResearchStates",
         "parameters": [
           {
             "type": "string",
-            "name": "wallet",
-            "in": "path",
-            "required": true
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiGetWalletBlocklistEntryResponse"
+              "$ref": "#/definitions/tokenapiListResearchStatesResponse"
             }
           },
           "default": {
@@ -1775,33 +1762,19 @@
             }
           }
         }
-      },
-      "post": {
+      }
+    },
+    "/api/v1/tokens/runtime-configuration": {
+      "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenOperationsService"
         ],
-        "operationId": "TokenAPIService_UpdateWalletBlocklistEntry",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "wallet",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tokenapiUpdateWalletBlocklistEntryRequest"
-            }
-          }
-        ],
+        "operationId": "TokenOperationsService_GetRuntimeConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiUpdateWalletBlocklistEntryResponse"
+              "$ref": "#/definitions/tokenapiGetRuntimeConfigurationResponse"
             }
           },
           "default": {
@@ -1811,25 +1784,50 @@
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/api/v1/tokens/selections": {
+      "get": {
         "tags": [
-          "TokenAPIService"
+          "TokenResearchService"
         ],
-        "operationId": "TokenAPIService_DeleteWalletBlocklistEntry",
+        "operationId": "TokenResearchService_ListSelections",
         "parameters": [
           {
             "type": "string",
-            "name": "wallet",
-            "in": "path",
-            "required": true
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "outcome",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tokenapiDeleteWalletBlocklistEntryResponse"
+              "$ref": "#/definitions/tokenapiListSelectionsResponse"
             }
           },
           "default": {
@@ -3249,14 +3247,25 @@
         }
       }
     },
-    "tokenapiGetChainIngestCheckpointResponse": {
+    "tokenapiGetChainCheckpointResponse": {
       "type": "object",
       "properties": {
         "checkpoint": {
-          "$ref": "#/definitions/v1alpha1TokenAPIChainIngestCheckpoint"
+          "$ref": "#/definitions/v1alpha1TokenChainCheckpoint"
         },
         "found": {
           "type": "boolean"
+        }
+      }
+    },
+    "tokenapiGetCollectionTaskResponse": {
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "boolean"
+        },
+        "task": {
+          "$ref": "#/definitions/v1alpha1TokenCollectionTask"
         }
       }
     },
@@ -3264,7 +3273,7 @@
       "type": "object",
       "properties": {
         "entry": {
-          "$ref": "#/definitions/v1alpha1TokenAPIContractCodeBlocklistEntry"
+          "$ref": "#/definitions/v1alpha1TokenContractCodeBlocklistEntry"
         },
         "found": {
           "type": "boolean"
@@ -3275,29 +3284,18 @@
       "type": "object",
       "properties": {
         "contract_code": {
-          "$ref": "#/definitions/v1alpha1TokenAPIContractCode"
+          "$ref": "#/definitions/v1alpha1TokenContractCode"
         },
         "found": {
           "type": "boolean"
         }
       }
     },
-    "tokenapiGetOptionsResponse": {
+    "tokenapiGetRuntimeConfigurationResponse": {
       "type": "object",
       "properties": {
-        "options": {
-          "$ref": "#/definitions/v1alpha1TokenAPIOptions"
-        }
-      }
-    },
-    "tokenapiGetProjectDataCollectionTaskResponse": {
-      "type": "object",
-      "properties": {
-        "found": {
-          "type": "boolean"
-        },
-        "task": {
-          "$ref": "#/definitions/v1alpha1TokenAPIProjectDataCollectionTask"
+        "configuration": {
+          "$ref": "#/definitions/v1alpha1TokenRuntimeConfiguration"
         }
       }
     },
@@ -3305,21 +3303,44 @@
       "type": "object",
       "properties": {
         "entry": {
-          "$ref": "#/definitions/v1alpha1TokenAPIWalletBlocklistEntry"
+          "$ref": "#/definitions/v1alpha1TokenWalletBlocklistEntry"
         },
         "found": {
           "type": "boolean"
         }
       }
     },
-    "tokenapiListChainIngestCheckpointsResponse": {
+    "tokenapiListChainCheckpointsResponse": {
       "type": "object",
       "properties": {
         "checkpoints": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIChainIngestCheckpoint"
+            "$ref": "#/definitions/v1alpha1TokenChainCheckpoint"
           }
+        }
+      }
+    },
+    "tokenapiListCollectionTasksResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenCollectionTask"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -3329,7 +3350,7 @@
         "entries": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIContractCodeBlocklistEntry"
+            "$ref": "#/definitions/v1alpha1TokenContractCodeBlocklistEntry"
           }
         }
       }
@@ -3340,7 +3361,7 @@
         "contract_codes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIContractCode"
+            "$ref": "#/definitions/v1alpha1TokenContractCode"
           }
         },
         "page": {
@@ -3363,54 +3384,8 @@
         "node_statuses": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPINodeStatus"
+            "$ref": "#/definitions/v1alpha1TokenNodeStatus"
           }
-        }
-      }
-    },
-    "tokenapiListProjectDataCollectionTasksResponse": {
-      "type": "object",
-      "properties": {
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "tasks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIProjectDataCollectionTask"
-          }
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "tokenapiListProjectReportRevisionsResponse": {
-      "type": "object",
-      "properties": {
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "report_revisions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIProjectReportRevision"
-          }
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
         }
       }
     },
@@ -3428,53 +3403,7 @@
         "project_reports": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIProjectReport"
-          }
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "tokenapiListProjectResearchStatesResponse": {
-      "type": "object",
-      "properties": {
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "research_states": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIProjectResearchState"
-          }
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "tokenapiListProjectSelectionsResponse": {
-      "type": "object",
-      "properties": {
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "selections": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIProjectSelection"
+            "$ref": "#/definitions/v1alpha1TokenProjectReport"
           }
         },
         "total": {
@@ -3497,7 +3426,76 @@
         "projects": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIProject"
+            "$ref": "#/definitions/v1alpha1TokenProject"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiListReportRevisionsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "report_revisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenReportRevision"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiListResearchStatesResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "research_states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenResearchState"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "tokenapiListSelectionsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "selections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenSelection"
           }
         },
         "total": {
@@ -3512,12 +3510,12 @@
         "entries": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIWalletBlocklistEntry"
+            "$ref": "#/definitions/v1alpha1TokenWalletBlocklistEntry"
           }
         }
       }
     },
-    "tokenapiUpdateChainIngestCheckpointRequest": {
+    "tokenapiUpdateChainCheckpointRequest": {
       "type": "object",
       "properties": {
         "chain_id": {
@@ -3529,11 +3527,11 @@
         }
       }
     },
-    "tokenapiUpdateChainIngestCheckpointResponse": {
+    "tokenapiUpdateChainCheckpointResponse": {
       "type": "object",
       "properties": {
         "checkpoint": {
-          "$ref": "#/definitions/v1alpha1TokenAPIChainIngestCheckpoint"
+          "$ref": "#/definitions/v1alpha1TokenChainCheckpoint"
         },
         "found": {
           "type": "boolean"
@@ -4636,7 +4634,19 @@
         }
       }
     },
-    "v1alpha1TokenAPIChainIngestCheckpoint": {
+    "v1alpha1TokenChain": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "chainName": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenChainCheckpoint": {
       "type": "object",
       "properties": {
         "chainId": {
@@ -4661,19 +4671,49 @@
         }
       }
     },
-    "v1alpha1TokenAPIChainOption": {
+    "v1alpha1TokenCollectionTask": {
       "type": "object",
       "properties": {
-        "chainId": {
+        "attempts": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "availableAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "dataType": {
+          "type": "string"
+        },
+        "lastError": {
+          "type": "string"
+        },
+        "leaseExpiresAt": {
+          "type": "string"
+        },
+        "projectId": {
           "type": "integer",
           "format": "int64"
         },
-        "chainName": {
+        "revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "updatedAt": {
           "type": "string"
         }
       }
     },
-    "v1alpha1TokenAPIContractCode": {
+    "v1alpha1TokenContractCode": {
       "type": "object",
       "properties": {
         "codeHash": {
@@ -4694,7 +4734,7 @@
         }
       }
     },
-    "v1alpha1TokenAPIContractCodeBlocklistEntry": {
+    "v1alpha1TokenContractCodeBlocklistEntry": {
       "type": "object",
       "properties": {
         "codeHash": {
@@ -4715,7 +4755,7 @@
         }
       }
     },
-    "v1alpha1TokenAPINodeStatus": {
+    "v1alpha1TokenNodeStatus": {
       "type": "object",
       "properties": {
         "available": {
@@ -4765,18 +4805,7 @@
         }
       }
     },
-    "v1alpha1TokenAPIOptions": {
-      "type": "object",
-      "properties": {
-        "chains": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1TokenAPIChainOption"
-          }
-        }
-      }
-    },
-    "v1alpha1TokenAPIProject": {
+    "v1alpha1TokenProject": {
       "type": "object",
       "properties": {
         "blockNumber": {
@@ -4822,49 +4851,7 @@
         }
       }
     },
-    "v1alpha1TokenAPIProjectDataCollectionTask": {
-      "type": "object",
-      "properties": {
-        "attempts": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "availableAt": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string"
-        },
-        "dataType": {
-          "type": "string"
-        },
-        "lastError": {
-          "type": "string"
-        },
-        "leaseExpiresAt": {
-          "type": "string"
-        },
-        "projectId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "revision": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "status": {
-          "type": "string"
-        },
-        "taskId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "updatedAt": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1TokenAPIProjectReport": {
+    "v1alpha1TokenProjectReport": {
       "type": "object",
       "properties": {
         "chainId": {
@@ -4941,7 +4928,7 @@
         }
       }
     },
-    "v1alpha1TokenAPIProjectReportRevision": {
+    "v1alpha1TokenReportRevision": {
       "type": "object",
       "properties": {
         "builtAt": {
@@ -5017,7 +5004,7 @@
         }
       }
     },
-    "v1alpha1TokenAPIProjectResearchState": {
+    "v1alpha1TokenResearchState": {
       "type": "object",
       "properties": {
         "chainId": {
@@ -5063,7 +5050,18 @@
         }
       }
     },
-    "v1alpha1TokenAPIProjectSelection": {
+    "v1alpha1TokenRuntimeConfiguration": {
+      "type": "object",
+      "properties": {
+        "chains": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenChain"
+          }
+        }
+      }
+    },
+    "v1alpha1TokenSelection": {
       "type": "object",
       "properties": {
         "chainId": {
@@ -5111,7 +5109,7 @@
         }
       }
     },
-    "v1alpha1TokenAPIWalletBlocklistEntry": {
+    "v1alpha1TokenWalletBlocklistEntry": {
       "type": "object",
       "properties": {
         "createdAt": {

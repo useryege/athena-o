@@ -2,7 +2,7 @@ import {Empty} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {AppPage, ResourceTable, Section, StatusTag, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
-import {TokenAPINodeStatus} from '../shared/services/tokenapi-service';
+import {TokenNodeStatus} from '../shared/services/token-service';
 import {fmtNumber} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
@@ -15,7 +15,7 @@ export const NodeStatusesPage = () => {
     const data = useAsyncData(() => services.tokenapi.listNodeStatuses(), []);
     const statuses = data.data || [];
     const chainIDs = Array.from(new Set(statuses.map(item => item.chainID).filter((value): value is number => value !== undefined)));
-    const columns: ColumnsType<TokenAPINodeStatus> = [
+    const columns: ColumnsType<TokenNodeStatus> = [
         {title: 'Endpoint', render: item => <TruncatedText value={item.endpoint} copyable={true} />},
         {title: 'Status', render: item => <StatusTag value={item.available ? 'Available' : 'Unavailable'} positive={item.available} negative={!item.available} />},
         {title: 'Latency', render: item => displayLatency(item.latencyMS)},

@@ -7,7 +7,10 @@ import (
 )
 
 type Server struct {
-	tokenapipkg.UnimplementedTokenAPIServiceServer
+	tokenapipkg.UnimplementedTokenCatalogServiceServer
+	tokenapipkg.UnimplementedTokenResearchServiceServer
+	tokenapipkg.UnimplementedTokenPolicyServiceServer
+	tokenapipkg.UnimplementedTokenOperationsServiceServer
 	tokenAPIClientSet tokenapiapiclient.Clientset
 }
 
@@ -15,24 +18,22 @@ func NewServer(clientset tokenapiapiclient.Clientset) *Server {
 	return &Server{tokenAPIClientSet: clientset}
 }
 
-func (s *Server) GetOptions(ctx context.Context, _ *tokenapipkg.GetOptionsRequest) (*tokenapipkg.GetOptionsResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) GetRuntimeConfiguration(ctx context.Context, _ *tokenapipkg.GetRuntimeConfigurationRequest) (*tokenapipkg.GetRuntimeConfigurationResponse, error) {
+	client, e := s.tokenAPIClientSet.Operations()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.GetOptions(ctx, &tokenapiapiclient.GetOptionsRequest{})
+	r, e := client.GetRuntimeConfiguration(ctx, &tokenapiapiclient.GetRuntimeConfigurationRequest{})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.GetOptionsResponse{Options: r.GetOptions()}, nil
+	return &tokenapipkg.GetRuntimeConfigurationResponse{Configuration: r.GetConfiguration()}, nil
 }
 func (s *Server) ListNodeStatuses(ctx context.Context, _ *tokenapipkg.ListNodeStatusesRequest) (*tokenapipkg.ListNodeStatusesResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Operations()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.ListNodeStatuses(ctx, &tokenapiapiclient.ListNodeStatusesRequest{})
 	if e != nil {
 		return nil, e
@@ -41,11 +42,10 @@ func (s *Server) ListNodeStatuses(ctx context.Context, _ *tokenapipkg.ListNodeSt
 }
 
 func (s *Server) GetContractCodeBlocklistEntry(ctx context.Context, req *tokenapipkg.GetContractCodeBlocklistEntryRequest) (*tokenapipkg.GetContractCodeBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.GetContractCodeBlocklistEntry(ctx, &tokenapiapiclient.GetContractCodeBlocklistEntryRequest{CodeHash: req.GetCodeHash()})
 	if e != nil {
 		return nil, e
@@ -53,11 +53,10 @@ func (s *Server) GetContractCodeBlocklistEntry(ctx context.Context, req *tokenap
 	return &tokenapipkg.GetContractCodeBlocklistEntryResponse{Found: r.GetFound(), Entry: r.GetEntry()}, nil
 }
 func (s *Server) ListContractCodeBlocklistEntries(ctx context.Context, _ *tokenapipkg.ListContractCodeBlocklistEntriesRequest) (*tokenapipkg.ListContractCodeBlocklistEntriesResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.ListContractCodeBlocklistEntries(ctx, &tokenapiapiclient.ListContractCodeBlocklistEntriesRequest{})
 	if e != nil {
 		return nil, e
@@ -65,11 +64,10 @@ func (s *Server) ListContractCodeBlocklistEntries(ctx context.Context, _ *tokena
 	return &tokenapipkg.ListContractCodeBlocklistEntriesResponse{Entries: r.GetEntries()}, nil
 }
 func (s *Server) CreateContractCodeBlocklistEntry(ctx context.Context, req *tokenapipkg.CreateContractCodeBlocklistEntryRequest) (*tokenapipkg.CreateContractCodeBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	_, e = client.CreateContractCodeBlocklistEntry(ctx, &tokenapiapiclient.CreateContractCodeBlocklistEntryRequest{Note: req.GetNote(), SourceChainId: req.GetSourceChainId(), SourceContract: req.GetSourceContract()})
 	if e != nil {
 		return nil, e
@@ -77,11 +75,10 @@ func (s *Server) CreateContractCodeBlocklistEntry(ctx context.Context, req *toke
 	return &tokenapipkg.CreateContractCodeBlocklistEntryResponse{}, nil
 }
 func (s *Server) UpdateContractCodeBlocklistEntry(ctx context.Context, req *tokenapipkg.UpdateContractCodeBlocklistEntryRequest) (*tokenapipkg.UpdateContractCodeBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.UpdateContractCodeBlocklistEntry(ctx, &tokenapiapiclient.UpdateContractCodeBlocklistEntryRequest{CodeHash: req.GetCodeHash(), Note: req.GetNote()})
 	if e != nil {
 		return nil, e
@@ -89,11 +86,10 @@ func (s *Server) UpdateContractCodeBlocklistEntry(ctx context.Context, req *toke
 	return &tokenapipkg.UpdateContractCodeBlocklistEntryResponse{UpdatedCount: r.GetUpdatedCount()}, nil
 }
 func (s *Server) DeleteContractCodeBlocklistEntry(ctx context.Context, req *tokenapipkg.DeleteContractCodeBlocklistEntryRequest) (*tokenapipkg.DeleteContractCodeBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.DeleteContractCodeBlocklistEntry(ctx, &tokenapiapiclient.DeleteContractCodeBlocklistEntryRequest{CodeHash: req.GetCodeHash()})
 	if e != nil {
 		return nil, e
@@ -102,11 +98,10 @@ func (s *Server) DeleteContractCodeBlocklistEntry(ctx context.Context, req *toke
 }
 
 func (s *Server) GetWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.GetWalletBlocklistEntryRequest) (*tokenapipkg.GetWalletBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.GetWalletBlocklistEntry(ctx, &tokenapiapiclient.GetWalletBlocklistEntryRequest{Wallet: req.GetWallet()})
 	if e != nil {
 		return nil, e
@@ -114,11 +109,10 @@ func (s *Server) GetWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.G
 	return &tokenapipkg.GetWalletBlocklistEntryResponse{Found: r.GetFound(), Entry: r.GetEntry()}, nil
 }
 func (s *Server) ListWalletBlocklistEntries(ctx context.Context, _ *tokenapipkg.ListWalletBlocklistEntriesRequest) (*tokenapipkg.ListWalletBlocklistEntriesResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.ListWalletBlocklistEntries(ctx, &tokenapiapiclient.ListWalletBlocklistEntriesRequest{})
 	if e != nil {
 		return nil, e
@@ -126,11 +120,10 @@ func (s *Server) ListWalletBlocklistEntries(ctx context.Context, _ *tokenapipkg.
 	return &tokenapipkg.ListWalletBlocklistEntriesResponse{Entries: r.GetEntries()}, nil
 }
 func (s *Server) CreateWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.CreateWalletBlocklistEntryRequest) (*tokenapipkg.CreateWalletBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	_, e = client.CreateWalletBlocklistEntry(ctx, &tokenapiapiclient.CreateWalletBlocklistEntryRequest{Wallet: req.GetWallet(), Note: req.GetNote()})
 	if e != nil {
 		return nil, e
@@ -138,11 +131,10 @@ func (s *Server) CreateWalletBlocklistEntry(ctx context.Context, req *tokenapipk
 	return &tokenapipkg.CreateWalletBlocklistEntryResponse{}, nil
 }
 func (s *Server) UpdateWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.UpdateWalletBlocklistEntryRequest) (*tokenapipkg.UpdateWalletBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.UpdateWalletBlocklistEntry(ctx, &tokenapiapiclient.UpdateWalletBlocklistEntryRequest{Wallet: req.GetWallet(), Note: req.GetNote()})
 	if e != nil {
 		return nil, e
@@ -150,11 +142,10 @@ func (s *Server) UpdateWalletBlocklistEntry(ctx context.Context, req *tokenapipk
 	return &tokenapipkg.UpdateWalletBlocklistEntryResponse{UpdatedCount: r.GetUpdatedCount()}, nil
 }
 func (s *Server) DeleteWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.DeleteWalletBlocklistEntryRequest) (*tokenapipkg.DeleteWalletBlocklistEntryResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Policy()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.DeleteWalletBlocklistEntry(ctx, &tokenapiapiclient.DeleteWalletBlocklistEntryRequest{Wallet: req.GetWallet()})
 	if e != nil {
 		return nil, e
@@ -162,48 +153,44 @@ func (s *Server) DeleteWalletBlocklistEntry(ctx context.Context, req *tokenapipk
 	return &tokenapipkg.DeleteWalletBlocklistEntryResponse{DeletedCount: r.GetDeletedCount()}, nil
 }
 
-func (s *Server) GetChainIngestCheckpoint(ctx context.Context, req *tokenapipkg.GetChainIngestCheckpointRequest) (*tokenapipkg.GetChainIngestCheckpointResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) GetChainCheckpoint(ctx context.Context, req *tokenapipkg.GetChainCheckpointRequest) (*tokenapipkg.GetChainCheckpointResponse, error) {
+	client, e := s.tokenAPIClientSet.Operations()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.GetChainIngestCheckpoint(ctx, &tokenapiapiclient.GetChainIngestCheckpointRequest{ChainId: req.GetChainId()})
+	r, e := client.GetChainCheckpoint(ctx, &tokenapiapiclient.GetChainCheckpointRequest{ChainId: req.GetChainId()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.GetChainIngestCheckpointResponse{Found: r.GetFound(), Checkpoint: r.GetCheckpoint()}, nil
+	return &tokenapipkg.GetChainCheckpointResponse{Found: r.GetFound(), Checkpoint: r.GetCheckpoint()}, nil
 }
-func (s *Server) ListChainIngestCheckpoints(ctx context.Context, _ *tokenapipkg.ListChainIngestCheckpointsRequest) (*tokenapipkg.ListChainIngestCheckpointsResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) ListChainCheckpoints(ctx context.Context, _ *tokenapipkg.ListChainCheckpointsRequest) (*tokenapipkg.ListChainCheckpointsResponse, error) {
+	client, e := s.tokenAPIClientSet.Operations()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.ListChainIngestCheckpoints(ctx, &tokenapiapiclient.ListChainIngestCheckpointsRequest{})
+	r, e := client.ListChainCheckpoints(ctx, &tokenapiapiclient.ListChainCheckpointsRequest{})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.ListChainIngestCheckpointsResponse{Checkpoints: r.GetCheckpoints()}, nil
+	return &tokenapipkg.ListChainCheckpointsResponse{Checkpoints: r.GetCheckpoints()}, nil
 }
-func (s *Server) UpdateChainIngestCheckpoint(ctx context.Context, req *tokenapipkg.UpdateChainIngestCheckpointRequest) (*tokenapipkg.UpdateChainIngestCheckpointResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) UpdateChainCheckpoint(ctx context.Context, req *tokenapipkg.UpdateChainCheckpointRequest) (*tokenapipkg.UpdateChainCheckpointResponse, error) {
+	client, e := s.tokenAPIClientSet.Operations()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.UpdateChainIngestCheckpoint(ctx, &tokenapiapiclient.UpdateChainIngestCheckpointRequest{ChainId: req.GetChainId(), Status: req.GetStatus()})
+	r, e := client.UpdateChainCheckpoint(ctx, &tokenapiapiclient.UpdateChainCheckpointRequest{ChainId: req.GetChainId(), Status: req.GetStatus()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.UpdateChainIngestCheckpointResponse{Found: r.GetFound(), Checkpoint: r.GetCheckpoint()}, nil
+	return &tokenapipkg.UpdateChainCheckpointResponse{Found: r.GetFound(), Checkpoint: r.GetCheckpoint()}, nil
 }
 func (s *Server) GetContractCode(ctx context.Context, req *tokenapipkg.GetContractCodeRequest) (*tokenapipkg.GetContractCodeResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Catalog()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.GetContractCode(ctx, &tokenapiapiclient.GetContractCodeRequest{CodeHash: req.GetCodeHash()})
 	if e != nil {
 		return nil, e
@@ -211,11 +198,10 @@ func (s *Server) GetContractCode(ctx context.Context, req *tokenapipkg.GetContra
 	return &tokenapipkg.GetContractCodeResponse{Found: r.GetFound(), ContractCode: r.GetContractCode()}, nil
 }
 func (s *Server) ListContractCodes(ctx context.Context, req *tokenapipkg.ListContractCodesRequest) (*tokenapipkg.ListContractCodesResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Catalog()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.ListContractCodes(ctx, &tokenapiapiclient.ListContractCodesRequest{CodeHash: req.GetCodeHash(), Page: req.GetPage(), PageSize: req.GetPageSize(), OrderBy: req.GetOrderBy()})
 	if e != nil {
 		return nil, e
@@ -223,11 +209,10 @@ func (s *Server) ListContractCodes(ctx context.Context, req *tokenapipkg.ListCon
 	return &tokenapipkg.ListContractCodesResponse{ContractCodes: r.GetContractCodes(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
 func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjectsRequest) (*tokenapipkg.ListProjectsResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Catalog()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{ChainId: req.GetChainId(), CodeHash: req.GetCodeHash(), Contract: req.GetContract(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
@@ -235,74 +220,68 @@ func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjects
 	return &tokenapipkg.ListProjectsResponse{Projects: r.GetProjects(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
 func (s *Server) ListProjectReports(ctx context.Context, req *tokenapipkg.ListProjectReportsRequest) (*tokenapipkg.ListProjectReportsResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
 	r, e := client.ListProjectReports(ctx, &tokenapiapiclient.ListProjectReportsRequest{ChainId: req.GetChainId(), ProjectId: req.GetProjectId(), Contract: req.GetContract(), EvaluationStatus: req.GetEvaluationStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
 	}
 	return &tokenapipkg.ListProjectReportsResponse{ProjectReports: r.GetProjectReports(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
-func (s *Server) GetProjectDataCollectionTask(ctx context.Context, req *tokenapipkg.GetProjectDataCollectionTaskRequest) (*tokenapipkg.GetProjectDataCollectionTaskResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) GetCollectionTask(ctx context.Context, req *tokenapipkg.GetCollectionTaskRequest) (*tokenapipkg.GetCollectionTaskResponse, error) {
+	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.GetProjectDataCollectionTask(ctx, &tokenapiapiclient.GetProjectDataCollectionTaskRequest{TaskId: req.GetTaskId()})
+	r, e := client.GetCollectionTask(ctx, &tokenapiapiclient.GetCollectionTaskRequest{TaskId: req.GetTaskId()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.GetProjectDataCollectionTaskResponse{Found: r.GetFound(), Task: r.GetTask()}, nil
+	return &tokenapipkg.GetCollectionTaskResponse{Found: r.GetFound(), Task: r.GetTask()}, nil
 }
-func (s *Server) ListProjectDataCollectionTasks(ctx context.Context, req *tokenapipkg.ListProjectDataCollectionTasksRequest) (*tokenapipkg.ListProjectDataCollectionTasksResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) ListCollectionTasks(ctx context.Context, req *tokenapipkg.ListCollectionTasksRequest) (*tokenapipkg.ListCollectionTasksResponse, error) {
+	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.ListProjectDataCollectionTasks(ctx, &tokenapiapiclient.ListProjectDataCollectionTasksRequest{ProjectId: req.GetProjectId(), DataType: req.GetDataType(), Status: req.GetStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	r, e := client.ListCollectionTasks(ctx, &tokenapiapiclient.ListCollectionTasksRequest{ProjectId: req.GetProjectId(), DataType: req.GetDataType(), Status: req.GetStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.ListProjectDataCollectionTasksResponse{Tasks: r.GetTasks(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+	return &tokenapipkg.ListCollectionTasksResponse{Tasks: r.GetTasks(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
-func (s *Server) ListProjectResearchStates(ctx context.Context, req *tokenapipkg.ListProjectResearchStatesRequest) (*tokenapipkg.ListProjectResearchStatesResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) ListResearchStates(ctx context.Context, req *tokenapipkg.ListResearchStatesRequest) (*tokenapipkg.ListResearchStatesResponse, error) {
+	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.ListProjectResearchStates(ctx, &tokenapiapiclient.ListProjectResearchStatesRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Status: req.GetStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	r, e := client.ListResearchStates(ctx, &tokenapiapiclient.ListResearchStatesRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Status: req.GetStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.ListProjectResearchStatesResponse{ResearchStates: r.GetResearchStates(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+	return &tokenapipkg.ListResearchStatesResponse{ResearchStates: r.GetResearchStates(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
-func (s *Server) ListProjectReportRevisions(ctx context.Context, req *tokenapipkg.ListProjectReportRevisionsRequest) (*tokenapipkg.ListProjectReportRevisionsResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) ListReportRevisions(ctx context.Context, req *tokenapipkg.ListReportRevisionsRequest) (*tokenapipkg.ListReportRevisionsResponse, error) {
+	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.ListProjectReportRevisions(ctx, &tokenapiapiclient.ListProjectReportRevisionsRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	r, e := client.ListReportRevisions(ctx, &tokenapiapiclient.ListReportRevisionsRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.ListProjectReportRevisionsResponse{ReportRevisions: r.GetReportRevisions(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+	return &tokenapipkg.ListReportRevisionsResponse{ReportRevisions: r.GetReportRevisions(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
-func (s *Server) ListProjectSelections(ctx context.Context, req *tokenapipkg.ListProjectSelectionsRequest) (*tokenapipkg.ListProjectSelectionsResponse, error) {
-	c, client, e := s.tokenAPIClientSet.NewTokenAPIServiceClient()
+func (s *Server) ListSelections(ctx context.Context, req *tokenapipkg.ListSelectionsRequest) (*tokenapipkg.ListSelectionsResponse, error) {
+	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {
 		return nil, e
 	}
-	defer c.Close()
-	r, e := client.ListProjectSelections(ctx, &tokenapiapiclient.ListProjectSelectionsRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Outcome: req.GetOutcome(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	r, e := client.ListSelections(ctx, &tokenapiapiclient.ListSelectionsRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Outcome: req.GetOutcome(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
 	}
-	return &tokenapipkg.ListProjectSelectionsResponse{Selections: r.GetSelections(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+	return &tokenapipkg.ListSelectionsResponse{Selections: r.GetSelections(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }

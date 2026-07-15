@@ -1,0 +1,37 @@
+package commands
+
+import (
+	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/useryege/athena/cmd/tokenworker"
+	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/token/research/scheduler"
+	"github.com/useryege/athena/util/cli"
+	"github.com/useryege/athena/util/env"
+)
+
+const cliName = "athena-token-scheduler"
+
+func NewCommand() *cobra.Command {
+	var flags tokenworker.CommonFlags
+	var chainStateInterval, walletAssetInterval, simulationInterval, aveInterval, contractSourceInterval, researchTTL time.Duration
+	command := &cobra.Command{Use: cliName, Short: "Schedule token research collection", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		database, _, host, err := flags.Open(cmd.Context(), "scheduler")
+		if err != nil {
+			return err
+		}
+		host.SetWorker(scheduler.NewWorker(scheduler.Options{Store: database.Research(), ChainStateInterval: chainStateInterval, WalletAssetInterval: walletAssetInterval, SimulationInterval: simulationInterval, AveInterval: aveInterval, ContractSourceInterval: contractSourceInterval, ResearchTTL: researchTTL, Telemetry: host.Reporter()}))
+		common.GetVersion().LogStartupInfo("Athena Token Scheduler", nil)
+		return host.Run(cmd.Context())
+	}}
+	flags.Bind(command, "127.0.0.1:8112")
+	command.Flags().DurationVar(&chainStateInterval, "chain-state-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_CHAIN_STATE_INTERVAL", 15*time.Second, time.Second, time.Hour), "Chain state refresh interval")
+	command.Flags().DurationVar(&walletAssetInterval, "wallet-asset-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_WALLET_ASSET_INTERVAL", time.Minute, time.Second, time.Hour), "Wallet asset refresh interval")
+	command.Flags().DurationVar(&simulationInterval, "simulation-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_SIMULATION_INTERVAL", time.Minute, time.Second, time.Hour), "Simulation refresh interval")
+	command.Flags().DurationVar(&aveInterval, "ave-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_AVE_INTERVAL", 5*time.Minute, time.Second, 24*time.Hour), "Ave refresh interval")
+	command.Flags().DurationVar(&contractSourceInterval, "contract-source-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_CONTRACT_SOURCE_INTERVAL", 10*time.Minute, time.Second, 24*time.Hour), "Contract source refresh interval")
+	command.Flags().DurationVar(&researchTTL, "research-ttl", env.ParseDurationFromEnv("ATHENA_TOKEN_RESEARCH_TTL", 168*time.Hour, time.Hour, 30*24*time.Hour), "Research expiration duration")
+	command.AddCommand(cli.NewVersionCmd(cliName))
+	return command
+}

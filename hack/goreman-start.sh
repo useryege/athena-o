@@ -154,10 +154,18 @@ cleanup_athena_ports() {
 		"notification:${ATHENA_NOTIFICATION_PORT:-8086}"
 		"wallet:${ATHENA_WALLET_PORT:-8088}"
 		"polymarket:${ATHENA_POLYMARKET_PORT:-8092}"
-		"token-discovery-health:8095"
 		"token-api:${ATHENA_TOKEN_API_PORT:-8096}"
-		"token-research-health:8097"
 		"ethereum-api:${ATHENA_ETHEREUM_API_PORT:-8100}"
+		"token-scanner-health:8110"
+		"token-validator-health:8111"
+		"token-scheduler-health:8112"
+		"token-collector-ave-health:8113"
+		"token-collector-chain-state-health:8114"
+		"token-collector-wallet-asset-state-health:8115"
+		"token-collector-simulation-result-health:8116"
+		"token-collector-contract-code-source-health:8117"
+		"token-report-builder-health:8118"
+		"token-selector-health:8119"
 	)
 	local entry name port pid pids cmd
 

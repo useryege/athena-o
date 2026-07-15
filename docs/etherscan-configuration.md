@@ -17,8 +17,8 @@ Each ethereum-api cache refresh picks the next API key and next gateway address
 in round-robin order. A failed gateway request is returned immediately; the
 manager does not retry with another key or gateway.
 
-`athena-token-research` does not read a standalone Etherscan API key. Its
-contract source collector calls `athena-ethereum-api` over gRPC:
+The `athena-token-collector --data-type contract_code_source` process does not
+read a standalone Etherscan API key. It calls `athena-ethereum-api` over gRPC:
 
 ```bash
 ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS='localhost:8100'

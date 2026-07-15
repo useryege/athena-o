@@ -7,8 +7,8 @@ import (
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 )
 
-func (s *Service) ListProjectResearchStates(ctx context.Context, req *apiclient.ListProjectResearchStatesRequest) (*apiclient.ListProjectResearchStatesResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+func (s *Service) ListResearchStates(ctx context.Context, req *apiclient.ListResearchStatesRequest) (*apiclient.ListResearchStatesResponse, error) {
+	store, e := s.researchApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -26,10 +26,10 @@ func (s *Service) ListProjectResearchStates(ctx context.Context, req *apiclient.
 	if e != nil {
 		return nil, wrapStoreError("list project research states", e)
 	}
-	return &apiclient.ListProjectResearchStatesResponse{ResearchStates: mapProjectResearchStates(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
+	return &apiclient.ListResearchStatesResponse{ResearchStates: mapProjectResearchStates(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
 }
-func (s *Service) ListProjectReportRevisions(ctx context.Context, req *apiclient.ListProjectReportRevisionsRequest) (*apiclient.ListProjectReportRevisionsResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+func (s *Service) ListReportRevisions(ctx context.Context, req *apiclient.ListReportRevisionsRequest) (*apiclient.ListReportRevisionsResponse, error) {
+	store, e := s.researchApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -43,10 +43,10 @@ func (s *Service) ListProjectReportRevisions(ctx context.Context, req *apiclient
 	if e != nil {
 		return nil, wrapStoreError("list project report revisions", e)
 	}
-	return &apiclient.ListProjectReportRevisionsResponse{ReportRevisions: mapProjectReportRevisions(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
+	return &apiclient.ListReportRevisionsResponse{ReportRevisions: mapProjectReportRevisions(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
 }
-func (s *Service) ListProjectSelections(ctx context.Context, req *apiclient.ListProjectSelectionsRequest) (*apiclient.ListProjectSelectionsResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+func (s *Service) ListSelections(ctx context.Context, req *apiclient.ListSelectionsRequest) (*apiclient.ListSelectionsResponse, error) {
+	store, e := s.researchApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -64,5 +64,5 @@ func (s *Service) ListProjectSelections(ctx context.Context, req *apiclient.List
 	if e != nil {
 		return nil, wrapStoreError("list project selections", e)
 	}
-	return &apiclient.ListProjectSelectionsResponse{Selections: mapProjectSelections(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
+	return &apiclient.ListSelectionsResponse{Selections: mapProjectSelections(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
 }

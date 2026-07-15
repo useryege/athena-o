@@ -606,7 +606,13 @@ message PolymarketUMAProposalItem {
   optional string polymarketUrl = 25;
 }
 
-message TokenAPIChainIngestCheckpoint {
+message TokenChain {
+  optional int64 chainId = 1;
+
+  optional string chainName = 2;
+}
+
+message TokenChainCheckpoint {
   optional int64 chainId = 1;
 
   optional string chainName = 2;
@@ -620,13 +626,31 @@ message TokenAPIChainIngestCheckpoint {
   optional string createdAt = 6;
 }
 
-message TokenAPIChainOption {
-  optional int64 chainId = 1;
+message TokenCollectionTask {
+  optional int64 taskId = 1;
 
-  optional string chainName = 2;
+  optional int64 projectId = 2;
+
+  optional string dataType = 3;
+
+  optional string status = 4;
+
+  optional int64 revision = 5;
+
+  optional int32 attempts = 6;
+
+  optional string availableAt = 7;
+
+  optional string leaseExpiresAt = 8;
+
+  optional string lastError = 9;
+
+  optional string createdAt = 10;
+
+  optional string updatedAt = 11;
 }
 
-message TokenAPIContractCode {
+message TokenContractCode {
   optional string codeHash = 1;
 
   optional string sourceCode = 2;
@@ -638,7 +662,7 @@ message TokenAPIContractCode {
   optional int64 deploymentCount = 5;
 }
 
-message TokenAPIContractCodeBlocklistEntry {
+message TokenContractCodeBlocklistEntry {
   optional string codeHash = 1;
 
   optional string note = 2;
@@ -650,7 +674,7 @@ message TokenAPIContractCodeBlocklistEntry {
   optional string createdAt = 5;
 }
 
-message TokenAPINodeStatus {
+message TokenNodeStatus {
   optional int64 chainId = 1;
 
   optional string chainName = 2;
@@ -678,11 +702,7 @@ message TokenAPINodeStatus {
   optional bool syncing = 13;
 }
 
-message TokenAPIOptions {
-  repeated TokenAPIChainOption chains = 1;
-}
-
-message TokenAPIProject {
+message TokenProject {
   optional int64 projectId = 1;
 
   optional int64 chainId = 2;
@@ -708,31 +728,7 @@ message TokenAPIProject {
   optional string createdAt = 12;
 }
 
-message TokenAPIProjectDataCollectionTask {
-  optional int64 taskId = 1;
-
-  optional int64 projectId = 2;
-
-  optional string dataType = 3;
-
-  optional string status = 4;
-
-  optional int64 revision = 5;
-
-  optional int32 attempts = 6;
-
-  optional string availableAt = 7;
-
-  optional string leaseExpiresAt = 8;
-
-  optional string lastError = 9;
-
-  optional string createdAt = 10;
-
-  optional string updatedAt = 11;
-}
-
-message TokenAPIProjectReport {
+message TokenProjectReport {
   optional int64 projectId = 1;
 
   optional int64 chainId = 2;
@@ -780,7 +776,7 @@ message TokenAPIProjectReport {
   optional string createdAt = 23;
 }
 
-message TokenAPIProjectReportRevision {
+message TokenReportRevision {
   optional int64 reportRevisionId = 1;
 
   optional int64 projectId = 2;
@@ -826,7 +822,7 @@ message TokenAPIProjectReportRevision {
   optional string createdAt = 22;
 }
 
-message TokenAPIProjectResearchState {
+message TokenResearchState {
   optional int64 projectId = 1;
 
   optional int64 chainId = 2;
@@ -852,7 +848,11 @@ message TokenAPIProjectResearchState {
   optional string updatedAt = 12;
 }
 
-message TokenAPIProjectSelection {
+message TokenRuntimeConfiguration {
+  repeated TokenChain chains = 1;
+}
+
+message TokenSelection {
   optional int64 selectionId = 1;
 
   optional int64 projectId = 2;
@@ -878,7 +878,7 @@ message TokenAPIProjectSelection {
   optional string createdAt = 12;
 }
 
-message TokenAPIWalletBlocklistEntry {
+message TokenWalletBlocklistEntry {
   optional string wallet = 1;
 
   optional string note = 2;

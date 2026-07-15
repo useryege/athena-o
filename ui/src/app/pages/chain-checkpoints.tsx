@@ -4,23 +4,23 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ResourceTable, StatusTag, useAsyncData} from '../components';
 import {services} from '../shared/services';
-import {TokenAPIChainIngestCheckpoint} from '../shared/services/tokenapi-service';
+import {TokenChainCheckpoint} from '../shared/services/token-service';
 import {boolTag, fmtNumber} from './shared';
 import {ChainBadge} from './token-shared';
 
 type ChainIngestStatus = 'running' | 'stopped';
 
 export const ChainCheckpointsPage = () => {
-    const data = useAsyncData(() => services.tokenapi.listChainIngestCheckpoints(), []);
+    const data = useAsyncData(() => services.tokenapi.listChainCheckpoints(), []);
     const [updatingStatusByChainID, setUpdatingStatusByChainID] = React.useState<Record<number, ChainIngestStatus>>({});
-    const updateStatus = async (item: TokenAPIChainIngestCheckpoint, status: ChainIngestStatus) => {
+    const updateStatus = async (item: TokenChainCheckpoint, status: ChainIngestStatus) => {
         if (item.chainID === undefined) {
             return;
         }
         const chainID = item.chainID;
         setUpdatingStatusByChainID(current => ({...current, [chainID]: status}));
         try {
-            await services.tokenapi.updateChainIngestCheckpoint(chainID, status);
+            await services.tokenapi.updateChainCheckpoint(chainID, status);
             data.reload();
         } finally {
             setUpdatingStatusByChainID(current => {
@@ -30,7 +30,7 @@ export const ChainCheckpointsPage = () => {
             });
         }
     };
-    const columns: ColumnsType<TokenAPIChainIngestCheckpoint> = [
+    const columns: ColumnsType<TokenChainCheckpoint> = [
         {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
         {title: 'Enabled', render: item => boolTag(item.enabled)},
         {title: 'Cursor', render: item => fmtNumber(item.cursorBlockNumber)},

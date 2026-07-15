@@ -2,7 +2,7 @@ import {InputNumber, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
-import {TokenAPIProjectReport} from '../shared/services/tokenapi-service';
+import {TokenProjectReport} from '../shared/services/token-service';
 import {usePagedParams} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
@@ -54,7 +54,7 @@ export const ProjectReportsPage = () => {
         next.set('page', '1');
         setParams(next);
     };
-    const options = useAsyncData(() => services.tokenapi.getOptions(), []);
+    const options = useAsyncData(() => services.tokenapi.getRuntimeConfiguration(), []);
     const data = useAsyncData(
         () =>
             services.tokenapi.listProjectReports({
@@ -67,7 +67,7 @@ export const ProjectReportsPage = () => {
             }),
         [page, pageSize, chainID, projectID, contract, evaluationStatus]
     );
-    const columns: ColumnsType<TokenAPIProjectReport> = [
+    const columns: ColumnsType<TokenProjectReport> = [
         {
             title: 'Project',
             children: [

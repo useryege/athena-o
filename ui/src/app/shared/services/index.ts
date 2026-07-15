@@ -3,7 +3,7 @@ import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
 import {PolymarketService} from './polymarket-service';
 import {ServiceStatusService} from './service-status-service';
-import {TokenAPIService} from './tokenapi-service';
+import {TokenService} from './token-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
@@ -12,7 +12,7 @@ import {WormPolyService} from './wormpoly-service';
 import {WormService} from './worm-service';
 
 export interface Services {
-    tokenapi: TokenAPIService;
+    tokenapi: TokenService;
     users: UserService;
     authService: AuthService;
     viewPreferences: ViewPreferencesService;
@@ -27,7 +27,7 @@ export interface Services {
 }
 
 export const services: Services = {
-    tokenapi: new TokenAPIService(),
+    tokenapi: new TokenService(),
     authService: new AuthService(),
     users: new UserService(),
     viewPreferences: new ViewPreferencesService(),

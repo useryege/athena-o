@@ -1,0 +1,55 @@
+syntax = "proto3";
+package tokenapi;
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
+
+message GetContractCodeBlocklistEntryRequest { string code_hash = 1; }
+message GetContractCodeBlocklistEntryResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenContractCodeBlocklistEntry entry = 2; }
+message ListContractCodeBlocklistEntriesRequest {}
+message ListContractCodeBlocklistEntriesResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenContractCodeBlocklistEntry entries = 1; }
+message CreateContractCodeBlocklistEntryRequest { string note = 1; int64 source_chain_id = 2; string source_contract = 3; }
+message CreateContractCodeBlocklistEntryResponse {}
+message UpdateContractCodeBlocklistEntryRequest { string code_hash = 1; string note = 2; }
+message UpdateContractCodeBlocklistEntryResponse { int64 updated_count = 1; }
+message DeleteContractCodeBlocklistEntryRequest { string code_hash = 1; }
+message DeleteContractCodeBlocklistEntryResponse { int64 deleted_count = 1; }
+message GetWalletBlocklistEntryRequest { string wallet = 1; }
+message GetWalletBlocklistEntryResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenWalletBlocklistEntry entry = 2; }
+message ListWalletBlocklistEntriesRequest {}
+message ListWalletBlocklistEntriesResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenWalletBlocklistEntry entries = 1; }
+message CreateWalletBlocklistEntryRequest { string wallet = 1; string note = 2; }
+message CreateWalletBlocklistEntryResponse {}
+message UpdateWalletBlocklistEntryRequest { string wallet = 1; string note = 2; }
+message UpdateWalletBlocklistEntryResponse { int64 updated_count = 1; }
+message DeleteWalletBlocklistEntryRequest { string wallet = 1; }
+message DeleteWalletBlocklistEntryResponse { int64 deleted_count = 1; }
+
+message GetRuntimeConfigurationRequest {}
+message GetRuntimeConfigurationResponse { github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenRuntimeConfiguration configuration = 1; }
+message ListNodeStatusesRequest {}
+message ListNodeStatusesResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenNodeStatus node_statuses = 1; }
+message GetChainCheckpointRequest { int64 chain_id = 1; }
+message GetChainCheckpointResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainCheckpoint checkpoint = 2; }
+message ListChainCheckpointsRequest {}
+message ListChainCheckpointsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainCheckpoint checkpoints = 1; }
+message UpdateChainCheckpointRequest { int64 chain_id = 1; string status = 2; }
+message UpdateChainCheckpointResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainCheckpoint checkpoint = 2; }
+
+message GetContractCodeRequest { string code_hash = 1; }
+message GetContractCodeResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenContractCode contract_code = 2; }
+message ListContractCodesRequest { string code_hash = 1; int32 page = 2; int32 page_size = 3; string order_by = 4; }
+message ListContractCodesResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenContractCode contract_codes = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
+message ListProjectsRequest { int64 chain_id = 1; string code_hash = 2; string contract = 3; int32 page = 4; int32 page_size = 5; }
+message ListProjectsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenProject projects = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
+message ListProjectReportsRequest { int64 chain_id = 1; int64 project_id = 2; string contract = 3; string evaluation_status = 4; int32 page = 5; int32 page_size = 6; }
+message ListProjectReportsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenProjectReport project_reports = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
+message GetCollectionTaskRequest { int64 task_id = 1; }
+message GetCollectionTaskResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenCollectionTask task = 2; }
+message ListCollectionTasksRequest { int64 project_id = 1; string data_type = 2; string status = 3; int32 page = 4; int32 page_size = 5; }
+message ListCollectionTasksResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenCollectionTask tasks = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
+message ListResearchStatesRequest { int64 project_id = 1; int64 chain_id = 2; string status = 3; int32 page = 4; int32 page_size = 5; }
+message ListResearchStatesResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenResearchState research_states = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
+message ListReportRevisionsRequest { int64 project_id = 1; int64 chain_id = 2; int32 page = 3; int32 page_size = 4; }
+message ListReportRevisionsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenReportRevision report_revisions = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
+message ListSelectionsRequest { int64 project_id = 1; int64 chain_id = 2; string outcome = 3; int32 page = 4; int32 page_size = 5; }
+message ListSelectionsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenSelection selections = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }

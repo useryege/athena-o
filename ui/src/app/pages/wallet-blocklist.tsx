@@ -5,12 +5,12 @@ import * as React from 'react';
 import {AppPage, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
-import {TokenAPIWalletBlocklistEntry} from '../shared/services/tokenapi-service';
+import {TokenWalletBlocklistEntry} from '../shared/services/token-service';
 
 export const WalletBlocklistPage = () => {
     const ctx = React.useContext(Context);
     const [form] = Form.useForm();
-    const [editing, setEditing] = React.useState<TokenAPIWalletBlocklistEntry>(null);
+    const [editing, setEditing] = React.useState<TokenWalletBlocklistEntry>(null);
     const data = useAsyncData(() => services.tokenapi.listWalletBlocklistEntries(), []);
     const add = async (values: {wallet: string; note?: string}) => {
         await services.tokenapi.createWalletBlocklistEntry(values.wallet, values.note || '');
@@ -26,7 +26,7 @@ export const WalletBlocklistPage = () => {
         setEditing(null);
         data.reload();
     };
-    const remove = (item: TokenAPIWalletBlocklistEntry) => {
+    const remove = (item: TokenWalletBlocklistEntry) => {
         ctx.modal.confirm({
             title: 'Delete wallet blocklist entry?',
             content: item.wallet,
@@ -36,7 +36,7 @@ export const WalletBlocklistPage = () => {
             }
         });
     };
-    const columns: ColumnsType<TokenAPIWalletBlocklistEntry> = [
+    const columns: ColumnsType<TokenWalletBlocklistEntry> = [
         {title: 'Wallet', render: item => <TruncatedText value={item.wallet} copyable={true} />},
         {title: 'Note', dataIndex: 'note'},
         {title: 'Created', dataIndex: 'createdAt'},

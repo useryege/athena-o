@@ -3,19 +3,12 @@ package tokenapi
 import (
 	"context"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	log "github.com/sirupsen/logrus"
-	athenacommon "github.com/useryege/athena/common"
-	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/policy"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
-	"github.com/useryege/athena/util/ethws"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (s *Service) GetContractCodeBlocklistEntry(ctx context.Context, req *apiclient.GetContractCodeBlocklistEntryRequest) (*apiclient.GetContractCodeBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -33,7 +26,7 @@ func (s *Service) GetContractCodeBlocklistEntry(ctx context.Context, req *apicli
 	return &apiclient.GetContractCodeBlocklistEntryResponse{Found: true, Entry: mapContractCodeBlocklistEntry(*item)}, nil
 }
 func (s *Service) ListContractCodeBlocklistEntries(ctx context.Context, _ *apiclient.ListContractCodeBlocklistEntriesRequest) (*apiclient.ListContractCodeBlocklistEntriesResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -44,7 +37,7 @@ func (s *Service) ListContractCodeBlocklistEntries(ctx context.Context, _ *apicl
 	return &apiclient.ListContractCodeBlocklistEntriesResponse{Entries: mapContractCodeBlocklistEntries(items)}, nil
 }
 func (s *Service) CreateContractCodeBlocklistEntry(ctx context.Context, req *apiclient.CreateContractCodeBlocklistEntryRequest) (*apiclient.CreateContractCodeBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -52,17 +45,13 @@ func (s *Service) CreateContractCodeBlocklistEntry(ctx context.Context, req *api
 	if e != nil {
 		return nil, e
 	}
-	hash, e := s.fetchContractCodeHash(ctx, req.GetSourceChainId(), contract)
-	if e != nil {
-		return nil, e
-	}
-	if e = store.CreateContractCodeBlocklistEntry(ctx, domain.ContractCodeBlocklistEntry{CodeHash: hash, Note: req.GetNote(), SourceChainID: req.GetSourceChainId(), SourceContract: contract}); e != nil {
+	if e = store.CreateContractCodeBlocklistEntry(ctx, req.GetSourceChainId(), contract, req.GetNote()); e != nil {
 		return nil, wrapStoreError("create contract code blocklist entry", e)
 	}
 	return &apiclient.CreateContractCodeBlocklistEntryResponse{}, nil
 }
 func (s *Service) UpdateContractCodeBlocklistEntry(ctx context.Context, req *apiclient.UpdateContractCodeBlocklistEntryRequest) (*apiclient.UpdateContractCodeBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -77,7 +66,7 @@ func (s *Service) UpdateContractCodeBlocklistEntry(ctx context.Context, req *api
 	return &apiclient.UpdateContractCodeBlocklistEntryResponse{UpdatedCount: n}, nil
 }
 func (s *Service) DeleteContractCodeBlocklistEntry(ctx context.Context, req *apiclient.DeleteContractCodeBlocklistEntryRequest) (*apiclient.DeleteContractCodeBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -93,7 +82,7 @@ func (s *Service) DeleteContractCodeBlocklistEntry(ctx context.Context, req *api
 }
 
 func (s *Service) GetWalletBlocklistEntry(ctx context.Context, req *apiclient.GetWalletBlocklistEntryRequest) (*apiclient.GetWalletBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -111,7 +100,7 @@ func (s *Service) GetWalletBlocklistEntry(ctx context.Context, req *apiclient.Ge
 	return &apiclient.GetWalletBlocklistEntryResponse{Found: true, Entry: mapWalletBlocklistEntry(*item)}, nil
 }
 func (s *Service) ListWalletBlocklistEntries(ctx context.Context, _ *apiclient.ListWalletBlocklistEntriesRequest) (*apiclient.ListWalletBlocklistEntriesResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -122,7 +111,7 @@ func (s *Service) ListWalletBlocklistEntries(ctx context.Context, _ *apiclient.L
 	return &apiclient.ListWalletBlocklistEntriesResponse{Entries: mapWalletBlocklistEntries(items)}, nil
 }
 func (s *Service) CreateWalletBlocklistEntry(ctx context.Context, req *apiclient.CreateWalletBlocklistEntryRequest) (*apiclient.CreateWalletBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -130,13 +119,13 @@ func (s *Service) CreateWalletBlocklistEntry(ctx context.Context, req *apiclient
 	if e != nil {
 		return nil, e
 	}
-	if e = store.CreateWalletBlocklistEntry(ctx, domain.WalletBlocklistEntry{Wallet: wallet, Note: req.GetNote()}); e != nil {
+	if e = store.CreateWalletBlocklistEntry(ctx, policy.WalletBlocklistEntry{Wallet: wallet, Note: req.GetNote()}); e != nil {
 		return nil, wrapStoreError("create wallet blocklist entry", e)
 	}
 	return &apiclient.CreateWalletBlocklistEntryResponse{}, nil
 }
 func (s *Service) UpdateWalletBlocklistEntry(ctx context.Context, req *apiclient.UpdateWalletBlocklistEntryRequest) (*apiclient.UpdateWalletBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -151,7 +140,7 @@ func (s *Service) UpdateWalletBlocklistEntry(ctx context.Context, req *apiclient
 	return &apiclient.UpdateWalletBlocklistEntryResponse{UpdatedCount: n}, nil
 }
 func (s *Service) DeleteWalletBlocklistEntry(ctx context.Context, req *apiclient.DeleteWalletBlocklistEntryRequest) (*apiclient.DeleteWalletBlocklistEntryResponse, error) {
-	store, e := requiredStore(s.tokenStore())
+	store, e := s.policyApplication()
 	if e != nil {
 		return nil, e
 	}
@@ -164,29 +153,4 @@ func (s *Service) DeleteWalletBlocklistEntry(ctx context.Context, req *apiclient
 		return nil, wrapStoreError("delete wallet blocklist entry", e)
 	}
 	return &apiclient.DeleteWalletBlocklistEntryResponse{DeletedCount: n}, nil
-}
-
-func (s *Service) fetchContractCodeHash(ctx context.Context, chainID int64, contract ethcommon.Address) (ethcommon.Hash, error) {
-	urls, ok := s.nodeConfig(chainID)
-	if !ok {
-		return ethcommon.Hash{}, status.Errorf(codes.InvalidArgument, "source_chain_id must be %d or %d", athenacommon.ChainIDEthereumMainnet, athenacommon.ChainIDBSCMainnet)
-	}
-	urls = ethws.NormalizeEndpoints(urls)
-	if len(urls) == 0 {
-		return ethcommon.Hash{}, status.Errorf(codes.FailedPrecondition, "node websocket URLs are not configured for %s", athenacommon.ChainName(chainID))
-	}
-	client, endpoint, e := ethws.DialFastestContext(ctx, urls, chainID, s.nodeWSUseProxy())
-	if e != nil {
-		return ethcommon.Hash{}, status.Errorf(codes.Unavailable, "connect to node: %v", e)
-	}
-	defer client.Close()
-	log.WithFields(log.Fields{"chain_id": chainID, "node_ws_url": ethws.RedactEndpoint(endpoint)}).Info("token API connected to node websocket")
-	code, e := client.CodeAt(ctx, contract, nil)
-	if e != nil {
-		return ethcommon.Hash{}, status.Errorf(codes.Unavailable, "fetch contract bytecode: %v", e)
-	}
-	if len(code) == 0 {
-		return ethcommon.Hash{}, status.Error(codes.FailedPrecondition, "source_contract has no deployed bytecode")
-	}
-	return crypto.Keccak256Hash(code), nil
 }

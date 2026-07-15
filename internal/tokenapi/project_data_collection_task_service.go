@@ -7,8 +7,8 @@ import (
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 )
 
-func (s *Service) GetProjectDataCollectionTask(ctx context.Context, req *apiclient.GetProjectDataCollectionTaskRequest) (*apiclient.GetProjectDataCollectionTaskResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+func (s *Service) GetCollectionTask(ctx context.Context, req *apiclient.GetCollectionTaskRequest) (*apiclient.GetCollectionTaskResponse, error) {
+	store, err := s.researchApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -20,16 +20,16 @@ func (s *Service) GetProjectDataCollectionTask(ctx context.Context, req *apiclie
 		return nil, wrapStoreError("get project data collection task", err)
 	}
 	if item == nil {
-		return &apiclient.GetProjectDataCollectionTaskResponse{}, nil
+		return &apiclient.GetCollectionTaskResponse{}, nil
 	}
-	return &apiclient.GetProjectDataCollectionTaskResponse{
+	return &apiclient.GetCollectionTaskResponse{
 		Found: true,
 		Task:  mapProjectDataCollectionTask(*item),
 	}, nil
 }
 
-func (s *Service) ListProjectDataCollectionTasks(ctx context.Context, req *apiclient.ListProjectDataCollectionTasksRequest) (*apiclient.ListProjectDataCollectionTasksResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+func (s *Service) ListCollectionTasks(ctx context.Context, req *apiclient.ListCollectionTasksRequest) (*apiclient.ListCollectionTasksResponse, error) {
+	store, err := s.researchApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *Service) ListProjectDataCollectionTasks(ctx context.Context, req *apicl
 	if err != nil {
 		return nil, wrapStoreError("list project data collection tasks", err)
 	}
-	return &apiclient.ListProjectDataCollectionTasksResponse{
+	return &apiclient.ListCollectionTasksResponse{
 		Tasks:    mapProjectDataCollectionTasks(page.Items),
 		Total:    page.Total,
 		Page:     page.Page,

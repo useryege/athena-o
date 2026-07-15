@@ -1,10 +1,10 @@
 package v1alpha1
 
-func (*TokenAPIContractCodeBlocklistEntry) ProtoMessage() {}
-func (*TokenAPIWalletBlocklistEntry) ProtoMessage()       {}
-func (*TokenAPIChainIngestCheckpoint) ProtoMessage()      {}
-func (*TokenAPIContractCode) ProtoMessage()               {}
-func (*TokenAPIProjectDataCollectionTask) ProtoMessage()  {}
-func (*TokenAPIProjectResearchState) ProtoMessage()       {}
-func (*TokenAPIProjectReportRevision) ProtoMessage()      {}
-func (*TokenAPIProjectSelection) ProtoMessage()           {}
+func (*TokenContractCodeBlocklistEntry) ProtoMessage() {}
+func (*TokenWalletBlocklistEntry) ProtoMessage()       {}
+func (*TokenChainCheckpoint) ProtoMessage()            {}
+func (*TokenContractCode) ProtoMessage()               {}
+func (*TokenCollectionTask) ProtoMessage()             {}
+func (*TokenResearchState) ProtoMessage()              {}
+func (*TokenReportRevision) ProtoMessage()             {}
+func (*TokenSelection) ProtoMessage()                  {}

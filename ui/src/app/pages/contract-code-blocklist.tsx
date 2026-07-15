@@ -5,15 +5,15 @@ import * as React from 'react';
 import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
 import {services} from '../shared/services';
-import {TokenAPIContractCodeBlocklistEntry} from '../shared/services/tokenapi-service';
+import {TokenContractCodeBlocklistEntry} from '../shared/services/token-service';
 import {ChainBadge, chainLabel} from './token-shared';
 
 export const ContractCodeBlocklistPage = () => {
     const ctx = React.useContext(Context);
     const [form] = Form.useForm();
-    const [editing, setEditing] = React.useState<TokenAPIContractCodeBlocklistEntry>(null);
+    const [editing, setEditing] = React.useState<TokenContractCodeBlocklistEntry>(null);
     const data = useAsyncData(() => services.tokenapi.listContractCodeBlocklistEntries(), []);
-    const options = useAsyncData(() => services.tokenapi.getOptions(), []);
+    const options = useAsyncData(() => services.tokenapi.getRuntimeConfiguration(), []);
     const chainOptions = React.useMemo(
         () =>
             (options.data?.chains || [])
@@ -42,7 +42,7 @@ export const ContractCodeBlocklistPage = () => {
         setEditing(null);
         data.reload();
     };
-    const remove = (item: TokenAPIContractCodeBlocklistEntry) => {
+    const remove = (item: TokenContractCodeBlocklistEntry) => {
         ctx.modal.confirm({
             title: 'Delete contract code blocklist entry?',
             content: item.codeHash,
@@ -52,7 +52,7 @@ export const ContractCodeBlocklistPage = () => {
             }
         });
     };
-    const columns: ColumnsType<TokenAPIContractCodeBlocklistEntry> = [
+    const columns: ColumnsType<TokenContractCodeBlocklistEntry> = [
         {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
         {title: 'Note', dataIndex: 'note'},
         {title: 'Source Chain', render: item => <ChainBadge chainID={item.sourceChainID} />},

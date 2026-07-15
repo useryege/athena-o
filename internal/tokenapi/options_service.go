@@ -7,8 +7,8 @@ import (
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
-func (s *Service) GetOptions(ctx context.Context, _ *apiclient.GetOptionsRequest) (*apiclient.GetOptionsResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+func (s *Service) GetRuntimeConfiguration(ctx context.Context, _ *apiclient.GetRuntimeConfigurationRequest) (*apiclient.GetRuntimeConfigurationResponse, error) {
+	store, err := s.operationsApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -16,8 +16,8 @@ func (s *Service) GetOptions(ctx context.Context, _ *apiclient.GetOptionsRequest
 	if err != nil {
 		return nil, wrapStoreError("get token api options", err)
 	}
-	return &apiclient.GetOptionsResponse{
-		Options: &v1alpha1.TokenAPIOptions{
+	return &apiclient.GetRuntimeConfigurationResponse{
+		Configuration: &v1alpha1.TokenRuntimeConfiguration{
 			Chains: mapChainOptions(chains),
 		},
 	}, nil

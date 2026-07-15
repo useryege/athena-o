@@ -3,7 +3,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
-import {TokenAPIProjectDataCollectionTask} from '../shared/services/tokenapi-service';
+import {TokenCollectionTask} from '../shared/services/token-service';
 import {usePagedParams} from './shared';
 
 export const CollectionTasksPage = () => {
@@ -13,7 +13,7 @@ export const CollectionTasksPage = () => {
     const [status, setStatus] = React.useState('');
     const data = useAsyncData(
         () =>
-            services.tokenapi.listProjectDataCollectionTasks({
+            services.tokenapi.listCollectionTasks({
                 page,
                 pageSize,
                 projectID,
@@ -22,7 +22,7 @@ export const CollectionTasksPage = () => {
             }),
         [page, pageSize, projectID, dataType, status]
     );
-    const columns: ColumnsType<TokenAPIProjectDataCollectionTask> = [
+    const columns: ColumnsType<TokenCollectionTask> = [
 		{title: 'Task', dataIndex: 'taskID'},
         {title: 'Project', dataIndex: 'projectID'},
         {title: 'Data Type', dataIndex: 'dataType'},

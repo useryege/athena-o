@@ -46,11 +46,11 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/token/store/migrations"
-    queries: "internal/token/store/queries"
+    schema: "internal/token/adapters/postgres/migrations"
+    queries: "internal/token/adapters/postgres/queries"
     gen:
       go:
         package: "sqlc"
-        out: "internal/token/store/sqlc"
+        out: "internal/token/adapters/postgres/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true

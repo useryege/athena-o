@@ -4,69 +4,26 @@ import (
 	"context"
 	"time"
 
-	athenacommon "github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 	applicationv1alpha1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	"github.com/useryege/athena/util/ethws"
 )
 
 func (s *Service) ListNodeStatuses(ctx context.Context, _ *apiclient.ListNodeStatusesRequest) (*apiclient.ListNodeStatusesResponse, error) {
-	type chainProbe struct {
-		chainID int64
-		results []ethws.ProbeResult
-		err     error
+	operations, err := s.operationsApplication()
+	if err != nil {
+		return nil, err
 	}
-
-	chainIDs := []int64{
-		athenacommon.ChainIDEthereumMainnet,
-		athenacommon.ChainIDBSCMainnet,
+	items, err := operations.ListNodeStatuses(ctx)
+	if err != nil {
+		return nil, err
 	}
-	probeCh := make(chan chainProbe, len(chainIDs))
-	for _, chainID := range chainIDs {
-		endpoints, _ := s.nodeConfig(chainID)
-		go func(chainID int64, endpoints []string) {
-			results, err := ethws.ProbeEndpoints(ctx, endpoints, chainID, s.nodeWSUseProxy())
-			probeCh <- chainProbe{chainID: chainID, results: results, err: err}
-		}(chainID, endpoints)
-	}
-
-	byChain := make(map[int64][]ethws.ProbeResult, len(chainIDs))
-	for range chainIDs {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case probe := <-probeCh:
-			if probe.err != nil {
-				return nil, probe.err
-			}
-			byChain[probe.chainID] = probe.results
+	statuses := make([]*applicationv1alpha1.TokenNodeStatus, 0, len(items))
+	for _, item := range items {
+		status := &applicationv1alpha1.TokenNodeStatus{ChainID: item.ChainID, ChainName: item.ChainName, Endpoint: item.Endpoint, Available: item.Available, LatencyMS: item.Latency.Milliseconds(), ReportedChainID: item.ReportedChainID, LatestBlockNumber: item.LatestBlockNumber, ReferenceBlockNumber: item.ReferenceBlockNumber, BlockLag: item.BlockLag, Syncing: item.Syncing, CheckedAt: item.CheckedAt.Format(time.RFC3339Nano), Error: item.Error}
+		if !item.LatestBlockTime.IsZero() {
+			status.LatestBlockTime = item.LatestBlockTime.Format(time.RFC3339)
 		}
-	}
-
-	statuses := make([]*applicationv1alpha1.TokenAPINodeStatus, 0)
-	for _, chainID := range chainIDs {
-		for _, result := range byChain[chainID] {
-			status := &applicationv1alpha1.TokenAPINodeStatus{
-				ChainID:              chainID,
-				ChainName:            athenacommon.ChainName(chainID),
-				Endpoint:             result.Endpoint,
-				Available:            result.Available,
-				LatencyMS:            result.Latency.Milliseconds(),
-				ReportedChainID:      result.ReportedChainID,
-				LatestBlockNumber:    result.LatestBlockNumber,
-				ReferenceBlockNumber: result.ReferenceBlockNumber,
-				BlockLag:             result.BlockLag,
-				Syncing:              result.Syncing,
-				CheckedAt:            result.CheckedAt.Format(time.RFC3339Nano),
-			}
-			if !result.LatestBlockTime.IsZero() {
-				status.LatestBlockTime = result.LatestBlockTime.Format(time.RFC3339)
-			}
-			if result.Err != nil {
-				status.Error = result.Err.Error()
-			}
-			statuses = append(statuses, status)
-		}
+		statuses = append(statuses, status)
 	}
 	return &apiclient.ListNodeStatusesResponse{NodeStatuses: statuses}, nil
 }

@@ -9,8 +9,12 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/internal/token/domain"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/discovery"
+	"github.com/useryege/athena/internal/token/policy"
+	"github.com/useryege/athena/internal/token/reporting"
+	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/selection"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -70,10 +74,10 @@ func validateNonNegativeInt64Field(name string, value int64) error {
 func validateChainIngestStatus(value string) error {
 	value = strings.TrimSpace(value)
 	switch value {
-	case string(domain.ChainIngestStatusRunning), string(domain.ChainIngestStatusStopped):
+	case string(discovery.ChainIngestStatusRunning), string(discovery.ChainIngestStatusStopped):
 		return nil
 	default:
-		return status.Errorf(codes.InvalidArgument, "status must be %q or %q", domain.ChainIngestStatusRunning, domain.ChainIngestStatusStopped)
+		return status.Errorf(codes.InvalidArgument, "status must be %q or %q", discovery.ChainIngestStatusRunning, discovery.ChainIngestStatusStopped)
 	}
 }
 
@@ -91,19 +95,19 @@ func validateProjectDataCollectionType(value string) error {
 		return nil
 	}
 	switch value {
-	case string(domain.DataCollectionTypeAve),
-		string(domain.DataCollectionTypeChainState),
-		string(domain.DataCollectionTypeWalletAssetState),
-		string(domain.DataCollectionTypeSimulationResult),
-		string(domain.DataCollectionTypeContractCodeSource):
+	case string(research.DataCollectionTypeAve),
+		string(research.DataCollectionTypeChainState),
+		string(research.DataCollectionTypeWalletAssetState),
+		string(research.DataCollectionTypeSimulationResult),
+		string(research.DataCollectionTypeContractCodeSource):
 		return nil
 	default:
 		return status.Errorf(codes.InvalidArgument, "data_type must be one of %q, %q, %q, %q, or %q",
-			domain.DataCollectionTypeAve,
-			domain.DataCollectionTypeChainState,
-			domain.DataCollectionTypeWalletAssetState,
-			domain.DataCollectionTypeSimulationResult,
-			domain.DataCollectionTypeContractCodeSource,
+			research.DataCollectionTypeAve,
+			research.DataCollectionTypeChainState,
+			research.DataCollectionTypeWalletAssetState,
+			research.DataCollectionTypeSimulationResult,
+			research.DataCollectionTypeContractCodeSource,
 		)
 	}
 }
@@ -114,21 +118,21 @@ func validateProjectDataCollectionStatus(value string) error {
 		return nil
 	}
 	switch value {
-	case string(domain.TaskStatusPending), string(domain.TaskStatusRunning), string(domain.TaskStatusSucceeded), string(domain.TaskStatusFailed):
+	case string(research.TaskStatusPending), string(research.TaskStatusRunning), string(research.TaskStatusSucceeded), string(research.TaskStatusFailed):
 		return nil
 	default:
 		return status.Errorf(codes.InvalidArgument, "status must be one of %q, %q, %q, or %q",
-			domain.TaskStatusPending, domain.TaskStatusRunning, domain.TaskStatusSucceeded, domain.TaskStatusFailed,
+			research.TaskStatusPending, research.TaskStatusRunning, research.TaskStatusSucceeded, research.TaskStatusFailed,
 		)
 	}
 }
 
 func validateProjectReportEvaluationStatus(value string) error {
 	value = strings.TrimSpace(value)
-	if value == "" || value == string(domain.TaskStatusSucceeded) {
+	if value == "" || value == string(research.TaskStatusSucceeded) {
 		return nil
 	}
-	return status.Errorf(codes.InvalidArgument, "evaluation_status must be empty or %q", domain.TaskStatusSucceeded)
+	return status.Errorf(codes.InvalidArgument, "evaluation_status must be empty or %q", research.TaskStatusSucceeded)
 }
 
 func validateProjectResearchStatus(value string) error {
@@ -137,7 +141,7 @@ func validateProjectResearchStatus(value string) error {
 		return nil
 	}
 	switch value {
-	case string(domain.ProjectResearchStatusResearching), string(domain.ProjectResearchStatusSelected), string(domain.ProjectResearchStatusRejected), string(domain.ProjectResearchStatusExpired):
+	case string(research.ProjectResearchStatusResearching), string(research.ProjectResearchStatusSelected), string(research.ProjectResearchStatusRejected), string(research.ProjectResearchStatusExpired):
 		return nil
 	}
 	return status.Error(codes.InvalidArgument, "invalid research status")
@@ -148,7 +152,7 @@ func validateProjectSelectionOutcome(value string) error {
 		return nil
 	}
 	switch value {
-	case string(domain.SelectionOutcomeSelected), string(domain.SelectionOutcomeRejected), string(domain.SelectionOutcomeDeferred):
+	case string(selection.SelectionOutcomeSelected), string(selection.SelectionOutcomeRejected), string(selection.SelectionOutcomeDeferred):
 		return nil
 	}
 	return status.Error(codes.InvalidArgument, "invalid selection outcome")
@@ -159,13 +163,6 @@ func grpcStoreError(err error) error {
 		return nil
 	}
 	return status.Error(codes.Internal, err.Error())
-}
-
-func requiredStore(store *tokenstore.SQLStore) (*tokenstore.SQLStore, error) {
-	if store == nil {
-		return nil, status.Error(codes.Internal, "token postgres database is not configured")
-	}
-	return store, nil
 }
 
 func formatTime(value time.Time) string {
@@ -182,8 +179,8 @@ func formatHash(value common.Hash) string {
 	return value.Hex()
 }
 
-func mapChainIngestCheckpoint(item domain.ChainIngestCheckpoint) *v1alpha1.TokenAPIChainIngestCheckpoint {
-	return &v1alpha1.TokenAPIChainIngestCheckpoint{
+func mapChainIngestCheckpoint(item discovery.ChainIngestCheckpoint) *v1alpha1.TokenChainCheckpoint {
+	return &v1alpha1.TokenChainCheckpoint{
 		ChainID:           item.ChainID,
 		ChainName:         item.ChainName,
 		Enabled:           item.Enabled,
@@ -193,18 +190,18 @@ func mapChainIngestCheckpoint(item domain.ChainIngestCheckpoint) *v1alpha1.Token
 	}
 }
 
-func mapChainIngestCheckpoints(items []domain.ChainIngestCheckpoint) []*v1alpha1.TokenAPIChainIngestCheckpoint {
-	results := make([]*v1alpha1.TokenAPIChainIngestCheckpoint, 0, len(items))
+func mapChainIngestCheckpoints(items []discovery.ChainIngestCheckpoint) []*v1alpha1.TokenChainCheckpoint {
+	results := make([]*v1alpha1.TokenChainCheckpoint, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapChainIngestCheckpoint(item))
 	}
 	return results
 }
 
-func mapChainOptions(items []domain.Chain) []v1alpha1.TokenAPIChainOption {
-	results := make([]v1alpha1.TokenAPIChainOption, 0, len(items))
+func mapChainOptions(items []discovery.Chain) []v1alpha1.TokenChain {
+	results := make([]v1alpha1.TokenChain, 0, len(items))
 	for _, item := range items {
-		results = append(results, v1alpha1.TokenAPIChainOption{
+		results = append(results, v1alpha1.TokenChain{
 			ChainID:   item.ID,
 			ChainName: item.Name,
 		})
@@ -212,8 +209,8 @@ func mapChainOptions(items []domain.Chain) []v1alpha1.TokenAPIChainOption {
 	return results
 }
 
-func mapContractCode(item domain.ContractCode) *v1alpha1.TokenAPIContractCode {
-	return &v1alpha1.TokenAPIContractCode{
+func mapContractCode(item catalog.ContractCode) *v1alpha1.TokenContractCode {
+	return &v1alpha1.TokenContractCode{
 		CodeHash:            item.CodeHash.Hex(),
 		SourceCode:          item.SourceCode,
 		SourceCodeFetchedAt: formatTime(item.SourceCodeFetchedAt),
@@ -222,16 +219,16 @@ func mapContractCode(item domain.ContractCode) *v1alpha1.TokenAPIContractCode {
 	}
 }
 
-func mapContractCodes(items []domain.ContractCode) []*v1alpha1.TokenAPIContractCode {
-	results := make([]*v1alpha1.TokenAPIContractCode, 0, len(items))
+func mapContractCodes(items []catalog.ContractCode) []*v1alpha1.TokenContractCode {
+	results := make([]*v1alpha1.TokenContractCode, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapContractCode(item))
 	}
 	return results
 }
 
-func mapProject(item domain.Project) *v1alpha1.TokenAPIProject {
-	return &v1alpha1.TokenAPIProject{
+func mapProject(item catalog.Project) *v1alpha1.TokenProject {
+	return &v1alpha1.TokenProject{
 		ProjectID:   item.ID,
 		ChainID:     item.ChainID,
 		Name:        item.Name,
@@ -247,8 +244,8 @@ func mapProject(item domain.Project) *v1alpha1.TokenAPIProject {
 	}
 }
 
-func mapProjects(items []domain.Project) []*v1alpha1.TokenAPIProject {
-	results := make([]*v1alpha1.TokenAPIProject, 0, len(items))
+func mapProjects(items []catalog.Project) []*v1alpha1.TokenProject {
+	results := make([]*v1alpha1.TokenProject, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapProject(item))
 	}
@@ -273,7 +270,7 @@ func boolValue(value *bool) bool {
 	return value != nil && *value
 }
 
-func mapProjectReport(item tokenstore.ProjectReportListItem) *v1alpha1.TokenAPIProjectReport {
+func mapProjectReport(item reporting.ProjectReportReadModel) *v1alpha1.TokenProjectReport {
 	report := item.Report
 	risk := report.Report.RiskSummary
 	dataAvailable := risk.WethPairIsCreated != nil &&
@@ -282,7 +279,7 @@ func mapProjectReport(item tokenstore.ProjectReportListItem) *v1alpha1.TokenAPIP
 		risk.UsdtPairIsCreated != nil &&
 		risk.UsdtPairIsRemoveLiquidity != nil &&
 		risk.UsdtPairIsMint != nil
-	result := &v1alpha1.TokenAPIProjectReport{
+	result := &v1alpha1.TokenProjectReport{
 		ProjectID:           report.ProjectID,
 		ChainID:             item.ChainID,
 		Name:                item.Name,
@@ -313,16 +310,16 @@ func mapProjectReport(item tokenstore.ProjectReportListItem) *v1alpha1.TokenAPIP
 	return result
 }
 
-func mapProjectReports(items []tokenstore.ProjectReportListItem) []*v1alpha1.TokenAPIProjectReport {
-	results := make([]*v1alpha1.TokenAPIProjectReport, 0, len(items))
+func mapProjectReports(items []reporting.ProjectReportReadModel) []*v1alpha1.TokenProjectReport {
+	results := make([]*v1alpha1.TokenProjectReport, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapProjectReport(item))
 	}
 	return results
 }
 
-func mapProjectDataCollectionTask(item domain.ProjectDataCollectionTask) *v1alpha1.TokenAPIProjectDataCollectionTask {
-	return &v1alpha1.TokenAPIProjectDataCollectionTask{
+func mapProjectDataCollectionTask(item research.ProjectDataCollectionTask) *v1alpha1.TokenCollectionTask {
+	return &v1alpha1.TokenCollectionTask{
 		TaskID:         item.ID,
 		ProjectID:      item.ProjectID,
 		DataType:       string(item.DataType),
@@ -337,20 +334,20 @@ func mapProjectDataCollectionTask(item domain.ProjectDataCollectionTask) *v1alph
 	}
 }
 
-func mapProjectDataCollectionTasks(items []domain.ProjectDataCollectionTask) []*v1alpha1.TokenAPIProjectDataCollectionTask {
-	results := make([]*v1alpha1.TokenAPIProjectDataCollectionTask, 0, len(items))
+func mapProjectDataCollectionTasks(items []research.ProjectDataCollectionTask) []*v1alpha1.TokenCollectionTask {
+	results := make([]*v1alpha1.TokenCollectionTask, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapProjectDataCollectionTask(item))
 	}
 	return results
 }
 
-func mapContractCodeBlocklistEntry(item domain.ContractCodeBlocklistEntry) *v1alpha1.TokenAPIContractCodeBlocklistEntry {
+func mapContractCodeBlocklistEntry(item policy.ContractCodeBlocklistEntry) *v1alpha1.TokenContractCodeBlocklistEntry {
 	sourceContract := ""
 	if item.SourceContract != (common.Address{}) {
 		sourceContract = item.SourceContract.Hex()
 	}
-	return &v1alpha1.TokenAPIContractCodeBlocklistEntry{
+	return &v1alpha1.TokenContractCodeBlocklistEntry{
 		CodeHash:       item.CodeHash.Hex(),
 		Note:           item.Note,
 		SourceChainID:  item.SourceChainID,
@@ -359,47 +356,47 @@ func mapContractCodeBlocklistEntry(item domain.ContractCodeBlocklistEntry) *v1al
 	}
 }
 
-func mapContractCodeBlocklistEntries(items []domain.ContractCodeBlocklistEntry) []*v1alpha1.TokenAPIContractCodeBlocklistEntry {
-	results := make([]*v1alpha1.TokenAPIContractCodeBlocklistEntry, 0, len(items))
+func mapContractCodeBlocklistEntries(items []policy.ContractCodeBlocklistEntry) []*v1alpha1.TokenContractCodeBlocklistEntry {
+	results := make([]*v1alpha1.TokenContractCodeBlocklistEntry, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapContractCodeBlocklistEntry(item))
 	}
 	return results
 }
 
-func mapWalletBlocklistEntry(item domain.WalletBlocklistEntry) *v1alpha1.TokenAPIWalletBlocklistEntry {
-	return &v1alpha1.TokenAPIWalletBlocklistEntry{
+func mapWalletBlocklistEntry(item policy.WalletBlocklistEntry) *v1alpha1.TokenWalletBlocklistEntry {
+	return &v1alpha1.TokenWalletBlocklistEntry{
 		Wallet:    item.Wallet.Hex(),
 		Note:      item.Note,
 		CreatedAt: formatTime(item.CreatedAt),
 	}
 }
 
-func mapWalletBlocklistEntries(items []domain.WalletBlocklistEntry) []*v1alpha1.TokenAPIWalletBlocklistEntry {
-	results := make([]*v1alpha1.TokenAPIWalletBlocklistEntry, 0, len(items))
+func mapWalletBlocklistEntries(items []policy.WalletBlocklistEntry) []*v1alpha1.TokenWalletBlocklistEntry {
+	results := make([]*v1alpha1.TokenWalletBlocklistEntry, 0, len(items))
 	for _, item := range items {
 		results = append(results, mapWalletBlocklistEntry(item))
 	}
 	return results
 }
 
-func mapProjectResearchState(item domain.ProjectResearchState) *v1alpha1.TokenAPIProjectResearchState {
-	return &v1alpha1.TokenAPIProjectResearchState{ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: item.Contract.Hex(), Status: string(item.Status), EvidenceRevision: item.EvidenceRevision, CurrentReportRevision: item.CurrentReportRevision, CurrentSelectionOutcome: string(item.CurrentSelectionOutcome), LastEvaluatedRevision: item.LastEvaluatedReportRevision, LastEvaluatedAt: formatTime(item.LastEvaluatedAt), ExpiresAt: formatTime(item.ExpiresAt), CreatedAt: formatTime(item.CreatedAt), UpdatedAt: formatTime(item.UpdatedAt)}
+func mapProjectResearchState(item research.ProjectResearchState) *v1alpha1.TokenResearchState {
+	return &v1alpha1.TokenResearchState{ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: item.Contract.Hex(), Status: string(item.Status), EvidenceRevision: item.EvidenceRevision, CurrentReportRevision: item.CurrentReportRevision, CurrentSelectionOutcome: string(item.CurrentSelectionOutcome), LastEvaluatedRevision: item.LastEvaluatedReportRevision, LastEvaluatedAt: formatTime(item.LastEvaluatedAt), ExpiresAt: formatTime(item.ExpiresAt), CreatedAt: formatTime(item.CreatedAt), UpdatedAt: formatTime(item.UpdatedAt)}
 }
-func mapProjectResearchStates(items []domain.ProjectResearchState) []*v1alpha1.TokenAPIProjectResearchState {
-	out := make([]*v1alpha1.TokenAPIProjectResearchState, 0, len(items))
+func mapProjectResearchStates(items []research.ProjectResearchState) []*v1alpha1.TokenResearchState {
+	out := make([]*v1alpha1.TokenResearchState, 0, len(items))
 	for _, item := range items {
 		out = append(out, mapProjectResearchState(item))
 	}
 	return out
 }
-func mapProjectReportRevision(item domain.ProjectReportRevision) *v1alpha1.TokenAPIProjectReportRevision {
+func mapProjectReportRevision(item reporting.ProjectReportRevision) *v1alpha1.TokenReportRevision {
 	var block uint64
 	if item.ObservedBlockNumber != nil {
 		block = *item.ObservedBlockNumber
 	}
 	risk := item.Report.RiskSummary
-	return &v1alpha1.TokenAPIProjectReportRevision{
+	return &v1alpha1.TokenReportRevision{
 		ReportRevisionID:          item.ID,
 		ProjectID:                 item.ProjectID,
 		ChainID:                   item.ChainID,
@@ -432,18 +429,18 @@ func jsonString(value any) string {
 	}
 	return string(encoded)
 }
-func mapProjectReportRevisions(items []domain.ProjectReportRevision) []*v1alpha1.TokenAPIProjectReportRevision {
-	out := make([]*v1alpha1.TokenAPIProjectReportRevision, 0, len(items))
+func mapProjectReportRevisions(items []reporting.ProjectReportRevision) []*v1alpha1.TokenReportRevision {
+	out := make([]*v1alpha1.TokenReportRevision, 0, len(items))
 	for _, item := range items {
 		out = append(out, mapProjectReportRevision(item))
 	}
 	return out
 }
-func mapProjectSelection(item domain.ProjectSelection) *v1alpha1.TokenAPIProjectSelection {
-	return &v1alpha1.TokenAPIProjectSelection{SelectionID: item.ID, ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: item.Contract.Hex(), Outcome: string(item.Outcome), StrategyKey: item.StrategyKey, StrategyVersion: item.StrategyVersion, ReportRevision: item.ReportRevision, ReasonCodes: item.ReasonCodes, ReasonDetail: item.ReasonDetail, DecidedAt: formatTime(item.DecidedAt), CreatedAt: formatTime(item.CreatedAt)}
+func mapProjectSelection(item selection.ProjectSelection) *v1alpha1.TokenSelection {
+	return &v1alpha1.TokenSelection{SelectionID: item.ID, ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: item.Contract.Hex(), Outcome: string(item.Outcome), StrategyKey: item.StrategyKey, StrategyVersion: item.StrategyVersion, ReportRevision: item.ReportRevision, ReasonCodes: item.ReasonCodes, ReasonDetail: item.ReasonDetail, DecidedAt: formatTime(item.DecidedAt), CreatedAt: formatTime(item.CreatedAt)}
 }
-func mapProjectSelections(items []domain.ProjectSelection) []*v1alpha1.TokenAPIProjectSelection {
-	out := make([]*v1alpha1.TokenAPIProjectSelection, 0, len(items))
+func mapProjectSelections(items []selection.ProjectSelection) []*v1alpha1.TokenSelection {
+	out := make([]*v1alpha1.TokenSelection, 0, len(items))
 	for _, item := range items {
 		out = append(out, mapProjectSelection(item))
 	}

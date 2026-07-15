@@ -1,0 +1,16 @@
+syntax = "proto3";
+package athena.internal.tokenapi;
+import "internal/tokenapi/types.proto";
+option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
+service TokenPolicyService {
+  rpc GetContractCodeBlocklistEntry(GetContractCodeBlocklistEntryRequest) returns (GetContractCodeBlocklistEntryResponse);
+  rpc ListContractCodeBlocklistEntries(ListContractCodeBlocklistEntriesRequest) returns (ListContractCodeBlocklistEntriesResponse);
+  rpc CreateContractCodeBlocklistEntry(CreateContractCodeBlocklistEntryRequest) returns (CreateContractCodeBlocklistEntryResponse);
+  rpc UpdateContractCodeBlocklistEntry(UpdateContractCodeBlocklistEntryRequest) returns (UpdateContractCodeBlocklistEntryResponse);
+  rpc DeleteContractCodeBlocklistEntry(DeleteContractCodeBlocklistEntryRequest) returns (DeleteContractCodeBlocklistEntryResponse);
+  rpc GetWalletBlocklistEntry(GetWalletBlocklistEntryRequest) returns (GetWalletBlocklistEntryResponse);
+  rpc ListWalletBlocklistEntries(ListWalletBlocklistEntriesRequest) returns (ListWalletBlocklistEntriesResponse);
+  rpc CreateWalletBlocklistEntry(CreateWalletBlocklistEntryRequest) returns (CreateWalletBlocklistEntryResponse);
+  rpc UpdateWalletBlocklistEntry(UpdateWalletBlocklistEntryRequest) returns (UpdateWalletBlocklistEntryResponse);
+  rpc DeleteWalletBlocklistEntry(DeleteWalletBlocklistEntryRequest) returns (DeleteWalletBlocklistEntryResponse);
+}

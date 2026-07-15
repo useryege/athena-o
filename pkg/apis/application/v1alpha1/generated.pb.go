@@ -66,31 +66,31 @@ func (m *PolymarketUMADisputeItem) Reset() { *m = PolymarketUMADisputeItem{} }
 
 func (m *PolymarketUMAProposalItem) Reset() { *m = PolymarketUMAProposalItem{} }
 
-func (m *TokenAPIChainIngestCheckpoint) Reset() { *m = TokenAPIChainIngestCheckpoint{} }
+func (m *TokenChain) Reset() { *m = TokenChain{} }
 
-func (m *TokenAPIChainOption) Reset() { *m = TokenAPIChainOption{} }
+func (m *TokenChainCheckpoint) Reset() { *m = TokenChainCheckpoint{} }
 
-func (m *TokenAPIContractCode) Reset() { *m = TokenAPIContractCode{} }
+func (m *TokenCollectionTask) Reset() { *m = TokenCollectionTask{} }
 
-func (m *TokenAPIContractCodeBlocklistEntry) Reset() { *m = TokenAPIContractCodeBlocklistEntry{} }
+func (m *TokenContractCode) Reset() { *m = TokenContractCode{} }
 
-func (m *TokenAPINodeStatus) Reset() { *m = TokenAPINodeStatus{} }
+func (m *TokenContractCodeBlocklistEntry) Reset() { *m = TokenContractCodeBlocklistEntry{} }
 
-func (m *TokenAPIOptions) Reset() { *m = TokenAPIOptions{} }
+func (m *TokenNodeStatus) Reset() { *m = TokenNodeStatus{} }
 
-func (m *TokenAPIProject) Reset() { *m = TokenAPIProject{} }
+func (m *TokenProject) Reset() { *m = TokenProject{} }
 
-func (m *TokenAPIProjectDataCollectionTask) Reset() { *m = TokenAPIProjectDataCollectionTask{} }
+func (m *TokenProjectReport) Reset() { *m = TokenProjectReport{} }
 
-func (m *TokenAPIProjectReport) Reset() { *m = TokenAPIProjectReport{} }
+func (m *TokenReportRevision) Reset() { *m = TokenReportRevision{} }
 
-func (m *TokenAPIProjectReportRevision) Reset() { *m = TokenAPIProjectReportRevision{} }
+func (m *TokenResearchState) Reset() { *m = TokenResearchState{} }
 
-func (m *TokenAPIProjectResearchState) Reset() { *m = TokenAPIProjectResearchState{} }
+func (m *TokenRuntimeConfiguration) Reset() { *m = TokenRuntimeConfiguration{} }
 
-func (m *TokenAPIProjectSelection) Reset() { *m = TokenAPIProjectSelection{} }
+func (m *TokenSelection) Reset() { *m = TokenSelection{} }
 
-func (m *TokenAPIWalletBlocklistEntry) Reset() { *m = TokenAPIWalletBlocklistEntry{} }
+func (m *TokenWalletBlocklistEntry) Reset() { *m = TokenWalletBlocklistEntry{} }
 
 func (m *WalletDetail) Reset() { *m = WalletDetail{} }
 
@@ -2182,7 +2182,7 @@ func (m *PolymarketUMAProposalItem) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIChainIngestCheckpoint) Marshal() (dAtA []byte, err error) {
+func (m *TokenChain) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2192,12 +2192,43 @@ func (m *TokenAPIChainIngestCheckpoint) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIChainIngestCheckpoint) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenChain) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIChainIngestCheckpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenChain) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.ChainName)
+	copy(dAtA[i:], m.ChainName)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ChainName)))
+	i--
+	dAtA[i] = 0x12
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ChainID))
+	i--
+	dAtA[i] = 0x8
+	return len(dAtA) - i, nil
+}
+
+func (m *TokenChainCheckpoint) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TokenChainCheckpoint) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TokenChainCheckpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2234,7 +2265,7 @@ func (m *TokenAPIChainIngestCheckpoint) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIChainOption) Marshal() (dAtA []byte, err error) {
+func (m *TokenCollectionTask) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2244,28 +2275,67 @@ func (m *TokenAPIChainOption) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIChainOption) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenCollectionTask) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIChainOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenCollectionTask) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.ChainName)
-	copy(dAtA[i:], m.ChainName)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ChainName)))
+	i -= len(m.UpdatedAt)
+	copy(dAtA[i:], m.UpdatedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
 	i--
-	dAtA[i] = 0x12
-	i = encodeVarintGenerated(dAtA, i, uint64(m.ChainID))
+	dAtA[i] = 0x5a
+	i -= len(m.CreatedAt)
+	copy(dAtA[i:], m.CreatedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedAt)))
+	i--
+	dAtA[i] = 0x52
+	i -= len(m.LastError)
+	copy(dAtA[i:], m.LastError)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LastError)))
+	i--
+	dAtA[i] = 0x4a
+	i -= len(m.LeaseExpiresAt)
+	copy(dAtA[i:], m.LeaseExpiresAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LeaseExpiresAt)))
+	i--
+	dAtA[i] = 0x42
+	i -= len(m.AvailableAt)
+	copy(dAtA[i:], m.AvailableAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AvailableAt)))
+	i--
+	dAtA[i] = 0x3a
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Attempts))
+	i--
+	dAtA[i] = 0x30
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Revision))
+	i--
+	dAtA[i] = 0x28
+	i -= len(m.Status)
+	copy(dAtA[i:], m.Status)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Status)))
+	i--
+	dAtA[i] = 0x22
+	i -= len(m.DataType)
+	copy(dAtA[i:], m.DataType)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.DataType)))
+	i--
+	dAtA[i] = 0x1a
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ProjectID))
+	i--
+	dAtA[i] = 0x10
+	i = encodeVarintGenerated(dAtA, i, uint64(m.TaskID))
 	i--
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIContractCode) Marshal() (dAtA []byte, err error) {
+func (m *TokenContractCode) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2275,12 +2345,12 @@ func (m *TokenAPIContractCode) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIContractCode) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenContractCode) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIContractCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenContractCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2311,7 +2381,7 @@ func (m *TokenAPIContractCode) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIContractCodeBlocklistEntry) Marshal() (dAtA []byte, err error) {
+func (m *TokenContractCodeBlocklistEntry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2321,12 +2391,12 @@ func (m *TokenAPIContractCodeBlocklistEntry) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIContractCodeBlocklistEntry) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenContractCodeBlocklistEntry) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIContractCodeBlocklistEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenContractCodeBlocklistEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2357,7 +2427,7 @@ func (m *TokenAPIContractCodeBlocklistEntry) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPINodeStatus) Marshal() (dAtA []byte, err error) {
+func (m *TokenNodeStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2367,12 +2437,12 @@ func (m *TokenAPINodeStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPINodeStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenNodeStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPINodeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenNodeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2439,7 +2509,7 @@ func (m *TokenAPINodeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIOptions) Marshal() (dAtA []byte, err error) {
+func (m *TokenProject) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2449,49 +2519,12 @@ func (m *TokenAPIOptions) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIOptions) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenProject) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Chains) > 0 {
-		for iNdEx := len(m.Chains) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Chains[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintGenerated(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *TokenAPIProject) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TokenAPIProject) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TokenAPIProject) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenProject) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2549,7 +2582,7 @@ func (m *TokenAPIProject) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIProjectDataCollectionTask) Marshal() (dAtA []byte, err error) {
+func (m *TokenProjectReport) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2559,82 +2592,12 @@ func (m *TokenAPIProjectDataCollectionTask) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIProjectDataCollectionTask) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenProjectReport) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIProjectDataCollectionTask) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	i -= len(m.UpdatedAt)
-	copy(dAtA[i:], m.UpdatedAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
-	i--
-	dAtA[i] = 0x5a
-	i -= len(m.CreatedAt)
-	copy(dAtA[i:], m.CreatedAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedAt)))
-	i--
-	dAtA[i] = 0x52
-	i -= len(m.LastError)
-	copy(dAtA[i:], m.LastError)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LastError)))
-	i--
-	dAtA[i] = 0x4a
-	i -= len(m.LeaseExpiresAt)
-	copy(dAtA[i:], m.LeaseExpiresAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LeaseExpiresAt)))
-	i--
-	dAtA[i] = 0x42
-	i -= len(m.AvailableAt)
-	copy(dAtA[i:], m.AvailableAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AvailableAt)))
-	i--
-	dAtA[i] = 0x3a
-	i = encodeVarintGenerated(dAtA, i, uint64(m.Attempts))
-	i--
-	dAtA[i] = 0x30
-	i = encodeVarintGenerated(dAtA, i, uint64(m.Revision))
-	i--
-	dAtA[i] = 0x28
-	i -= len(m.Status)
-	copy(dAtA[i:], m.Status)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Status)))
-	i--
-	dAtA[i] = 0x22
-	i -= len(m.DataType)
-	copy(dAtA[i:], m.DataType)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.DataType)))
-	i--
-	dAtA[i] = 0x1a
-	i = encodeVarintGenerated(dAtA, i, uint64(m.ProjectID))
-	i--
-	dAtA[i] = 0x10
-	i = encodeVarintGenerated(dAtA, i, uint64(m.TaskID))
-	i--
-	dAtA[i] = 0x8
-	return len(dAtA) - i, nil
-}
-
-func (m *TokenAPIProjectReport) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TokenAPIProjectReport) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TokenAPIProjectReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenProjectReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2788,7 +2751,7 @@ func (m *TokenAPIProjectReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIProjectReportRevision) Marshal() (dAtA []byte, err error) {
+func (m *TokenReportRevision) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2798,12 +2761,12 @@ func (m *TokenAPIProjectReportRevision) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIProjectReportRevision) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenReportRevision) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIProjectReportRevision) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenReportRevision) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2943,7 +2906,7 @@ func (m *TokenAPIProjectReportRevision) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIProjectResearchState) Marshal() (dAtA []byte, err error) {
+func (m *TokenResearchState) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2953,12 +2916,12 @@ func (m *TokenAPIProjectResearchState) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIProjectResearchState) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenResearchState) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIProjectResearchState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenResearchState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3016,7 +2979,7 @@ func (m *TokenAPIProjectResearchState) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIProjectSelection) Marshal() (dAtA []byte, err error) {
+func (m *TokenRuntimeConfiguration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3026,12 +2989,49 @@ func (m *TokenAPIProjectSelection) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIProjectSelection) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenRuntimeConfiguration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIProjectSelection) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenRuntimeConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Chains) > 0 {
+		for iNdEx := len(m.Chains) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Chains[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenerated(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TokenSelection) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TokenSelection) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TokenSelection) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3095,7 +3095,7 @@ func (m *TokenAPIProjectSelection) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *TokenAPIWalletBlocklistEntry) Marshal() (dAtA []byte, err error) {
+func (m *TokenWalletBlocklistEntry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3105,12 +3105,12 @@ func (m *TokenAPIWalletBlocklistEntry) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenAPIWalletBlocklistEntry) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenWalletBlocklistEntry) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TokenAPIWalletBlocklistEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TokenWalletBlocklistEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -4573,7 +4573,19 @@ func (m *PolymarketUMAProposalItem) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIChainIngestCheckpoint) Size() (n int) {
+func (m *TokenChain) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovGenerated(uint64(m.ChainID))
+	l = len(m.ChainName)
+	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
+func (m *TokenChainCheckpoint) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4591,19 +4603,34 @@ func (m *TokenAPIChainIngestCheckpoint) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIChainOption) Size() (n int) {
+func (m *TokenCollectionTask) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	n += 1 + sovGenerated(uint64(m.ChainID))
-	l = len(m.ChainName)
+	n += 1 + sovGenerated(uint64(m.TaskID))
+	n += 1 + sovGenerated(uint64(m.ProjectID))
+	l = len(m.DataType)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.Status)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.Revision))
+	n += 1 + sovGenerated(uint64(m.Attempts))
+	l = len(m.AvailableAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.LeaseExpiresAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.LastError)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.CreatedAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.UpdatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
-func (m *TokenAPIContractCode) Size() (n int) {
+func (m *TokenContractCode) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4621,7 +4648,7 @@ func (m *TokenAPIContractCode) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIContractCodeBlocklistEntry) Size() (n int) {
+func (m *TokenContractCodeBlocklistEntry) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4639,7 +4666,7 @@ func (m *TokenAPIContractCodeBlocklistEntry) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPINodeStatus) Size() (n int) {
+func (m *TokenNodeStatus) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4666,22 +4693,7 @@ func (m *TokenAPINodeStatus) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIOptions) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Chains) > 0 {
-		for _, e := range m.Chains {
-			l = e.Size()
-			n += 1 + l + sovGenerated(uint64(l))
-		}
-	}
-	return n
-}
-
-func (m *TokenAPIProject) Size() (n int) {
+func (m *TokenProject) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4709,34 +4721,7 @@ func (m *TokenAPIProject) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIProjectDataCollectionTask) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	n += 1 + sovGenerated(uint64(m.TaskID))
-	n += 1 + sovGenerated(uint64(m.ProjectID))
-	l = len(m.DataType)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.Status)
-	n += 1 + l + sovGenerated(uint64(l))
-	n += 1 + sovGenerated(uint64(m.Revision))
-	n += 1 + sovGenerated(uint64(m.Attempts))
-	l = len(m.AvailableAt)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.LeaseExpiresAt)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.LastError)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.CreatedAt)
-	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.UpdatedAt)
-	n += 1 + l + sovGenerated(uint64(l))
-	return n
-}
-
-func (m *TokenAPIProjectReport) Size() (n int) {
+func (m *TokenProjectReport) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4781,7 +4766,7 @@ func (m *TokenAPIProjectReport) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIProjectReportRevision) Size() (n int) {
+func (m *TokenReportRevision) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4823,7 +4808,7 @@ func (m *TokenAPIProjectReportRevision) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIProjectResearchState) Size() (n int) {
+func (m *TokenResearchState) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4851,7 +4836,22 @@ func (m *TokenAPIProjectResearchState) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIProjectSelection) Size() (n int) {
+func (m *TokenRuntimeConfiguration) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Chains) > 0 {
+		for _, e := range m.Chains {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *TokenSelection) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4884,7 +4884,7 @@ func (m *TokenAPIProjectSelection) Size() (n int) {
 	return n
 }
 
-func (m *TokenAPIWalletBlocklistEntry) Size() (n int) {
+func (m *TokenWalletBlocklistEntry) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5707,11 +5707,22 @@ func (this *PolymarketUMAProposalItem) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIChainIngestCheckpoint) String() string {
+func (this *TokenChain) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIChainIngestCheckpoint{`,
+	s := strings.Join([]string{`&TokenChain{`,
+		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
+		`ChainName:` + fmt.Sprintf("%v", this.ChainName) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TokenChainCheckpoint) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TokenChainCheckpoint{`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
 		`ChainName:` + fmt.Sprintf("%v", this.ChainName) + `,`,
 		`Enabled:` + fmt.Sprintf("%v", this.Enabled) + `,`,
@@ -5722,22 +5733,31 @@ func (this *TokenAPIChainIngestCheckpoint) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIChainOption) String() string {
+func (this *TokenCollectionTask) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIChainOption{`,
-		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
-		`ChainName:` + fmt.Sprintf("%v", this.ChainName) + `,`,
+	s := strings.Join([]string{`&TokenCollectionTask{`,
+		`TaskID:` + fmt.Sprintf("%v", this.TaskID) + `,`,
+		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
+		`DataType:` + fmt.Sprintf("%v", this.DataType) + `,`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
+		`Revision:` + fmt.Sprintf("%v", this.Revision) + `,`,
+		`Attempts:` + fmt.Sprintf("%v", this.Attempts) + `,`,
+		`AvailableAt:` + fmt.Sprintf("%v", this.AvailableAt) + `,`,
+		`LeaseExpiresAt:` + fmt.Sprintf("%v", this.LeaseExpiresAt) + `,`,
+		`LastError:` + fmt.Sprintf("%v", this.LastError) + `,`,
+		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
+		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`}`,
 	}, "")
 	return s
 }
-func (this *TokenAPIContractCode) String() string {
+func (this *TokenContractCode) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIContractCode{`,
+	s := strings.Join([]string{`&TokenContractCode{`,
 		`CodeHash:` + fmt.Sprintf("%v", this.CodeHash) + `,`,
 		`SourceCode:` + fmt.Sprintf("%v", this.SourceCode) + `,`,
 		`SourceCodeFetchedAt:` + fmt.Sprintf("%v", this.SourceCodeFetchedAt) + `,`,
@@ -5747,11 +5767,11 @@ func (this *TokenAPIContractCode) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIContractCodeBlocklistEntry) String() string {
+func (this *TokenContractCodeBlocklistEntry) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIContractCodeBlocklistEntry{`,
+	s := strings.Join([]string{`&TokenContractCodeBlocklistEntry{`,
 		`CodeHash:` + fmt.Sprintf("%v", this.CodeHash) + `,`,
 		`Note:` + fmt.Sprintf("%v", this.Note) + `,`,
 		`SourceChainID:` + fmt.Sprintf("%v", this.SourceChainID) + `,`,
@@ -5761,11 +5781,11 @@ func (this *TokenAPIContractCodeBlocklistEntry) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPINodeStatus) String() string {
+func (this *TokenNodeStatus) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPINodeStatus{`,
+	s := strings.Join([]string{`&TokenNodeStatus{`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
 		`ChainName:` + fmt.Sprintf("%v", this.ChainName) + `,`,
 		`Endpoint:` + fmt.Sprintf("%v", this.Endpoint) + `,`,
@@ -5783,26 +5803,11 @@ func (this *TokenAPINodeStatus) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIOptions) String() string {
+func (this *TokenProject) String() string {
 	if this == nil {
 		return "nil"
 	}
-	repeatedStringForChains := "[]TokenAPIChainOption{"
-	for _, f := range this.Chains {
-		repeatedStringForChains += strings.Replace(strings.Replace(f.String(), "TokenAPIChainOption", "TokenAPIChainOption", 1), `&`, ``, 1) + ","
-	}
-	repeatedStringForChains += "}"
-	s := strings.Join([]string{`&TokenAPIOptions{`,
-		`Chains:` + repeatedStringForChains + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *TokenAPIProject) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&TokenAPIProject{`,
+	s := strings.Join([]string{`&TokenProject{`,
 		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
@@ -5819,31 +5824,11 @@ func (this *TokenAPIProject) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIProjectDataCollectionTask) String() string {
+func (this *TokenProjectReport) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIProjectDataCollectionTask{`,
-		`TaskID:` + fmt.Sprintf("%v", this.TaskID) + `,`,
-		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
-		`DataType:` + fmt.Sprintf("%v", this.DataType) + `,`,
-		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
-		`Revision:` + fmt.Sprintf("%v", this.Revision) + `,`,
-		`Attempts:` + fmt.Sprintf("%v", this.Attempts) + `,`,
-		`AvailableAt:` + fmt.Sprintf("%v", this.AvailableAt) + `,`,
-		`LeaseExpiresAt:` + fmt.Sprintf("%v", this.LeaseExpiresAt) + `,`,
-		`LastError:` + fmt.Sprintf("%v", this.LastError) + `,`,
-		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
-		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *TokenAPIProjectReport) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&TokenAPIProjectReport{`,
+	s := strings.Join([]string{`&TokenProjectReport{`,
 		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
@@ -5871,11 +5856,11 @@ func (this *TokenAPIProjectReport) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIProjectReportRevision) String() string {
+func (this *TokenReportRevision) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIProjectReportRevision{`,
+	s := strings.Join([]string{`&TokenReportRevision{`,
 		`ReportRevisionID:` + fmt.Sprintf("%v", this.ReportRevisionID) + `,`,
 		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
@@ -5902,11 +5887,11 @@ func (this *TokenAPIProjectReportRevision) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIProjectResearchState) String() string {
+func (this *TokenResearchState) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIProjectResearchState{`,
+	s := strings.Join([]string{`&TokenResearchState{`,
 		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
 		`Contract:` + fmt.Sprintf("%v", this.Contract) + `,`,
@@ -5923,11 +5908,26 @@ func (this *TokenAPIProjectResearchState) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIProjectSelection) String() string {
+func (this *TokenRuntimeConfiguration) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIProjectSelection{`,
+	repeatedStringForChains := "[]TokenChain{"
+	for _, f := range this.Chains {
+		repeatedStringForChains += strings.Replace(strings.Replace(f.String(), "TokenChain", "TokenChain", 1), `&`, ``, 1) + ","
+	}
+	repeatedStringForChains += "}"
+	s := strings.Join([]string{`&TokenRuntimeConfiguration{`,
+		`Chains:` + repeatedStringForChains + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TokenSelection) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TokenSelection{`,
 		`SelectionID:` + fmt.Sprintf("%v", this.SelectionID) + `,`,
 		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
@@ -5944,11 +5944,11 @@ func (this *TokenAPIProjectSelection) String() string {
 	}, "")
 	return s
 }
-func (this *TokenAPIWalletBlocklistEntry) String() string {
+func (this *TokenWalletBlocklistEntry) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&TokenAPIWalletBlocklistEntry{`,
+	s := strings.Join([]string{`&TokenWalletBlocklistEntry{`,
 		`Wallet:` + fmt.Sprintf("%v", this.Wallet) + `,`,
 		`Note:` + fmt.Sprintf("%v", this.Note) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
@@ -14824,7 +14824,7 @@ func (m *PolymarketUMAProposalItem) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIChainIngestCheckpoint) Unmarshal(dAtA []byte) error {
+func (m *TokenChain) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -14847,10 +14847,111 @@ func (m *TokenAPIChainIngestCheckpoint) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIChainIngestCheckpoint: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenChain: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIChainIngestCheckpoint: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenChain: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainID", wireType)
+			}
+			m.ChainID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TokenChainCheckpoint) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TokenChainCheckpoint: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TokenChainCheckpoint: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -15028,7 +15129,7 @@ func (m *TokenAPIChainIngestCheckpoint) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIChainOption) Unmarshal(dAtA []byte) error {
+func (m *TokenCollectionTask) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -15051,17 +15152,17 @@ func (m *TokenAPIChainOption) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIChainOption: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenCollectionTask: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIChainOption: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenCollectionTask: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ChainID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TaskID", wireType)
 			}
-			m.ChainID = 0
+			m.TaskID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -15071,14 +15172,33 @@ func (m *TokenAPIChainOption) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ChainID |= int64(b&0x7F) << shift
+				m.TaskID |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProjectID", wireType)
+			}
+			m.ProjectID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ProjectID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ChainName", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DataType", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -15106,7 +15226,237 @@ func (m *TokenAPIChainOption) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ChainName = string(dAtA[iNdEx:postIndex])
+			m.DataType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Revision", wireType)
+			}
+			m.Revision = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Revision |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Attempts", wireType)
+			}
+			m.Attempts = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Attempts |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AvailableAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AvailableAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LeaseExpiresAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LeaseExpiresAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastError", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LastError = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -15129,7 +15479,7 @@ func (m *TokenAPIChainOption) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
+func (m *TokenContractCode) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -15152,10 +15502,10 @@ func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIContractCode: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenContractCode: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIContractCode: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenContractCode: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -15326,7 +15676,7 @@ func (m *TokenAPIContractCode) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIContractCodeBlocklistEntry) Unmarshal(dAtA []byte) error {
+func (m *TokenContractCodeBlocklistEntry) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -15349,10 +15699,10 @@ func (m *TokenAPIContractCodeBlocklistEntry) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIContractCodeBlocklistEntry: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenContractCodeBlocklistEntry: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIContractCodeBlocklistEntry: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenContractCodeBlocklistEntry: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -15523,7 +15873,7 @@ func (m *TokenAPIContractCodeBlocklistEntry) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPINodeStatus) Unmarshal(dAtA []byte) error {
+func (m *TokenNodeStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -15546,10 +15896,10 @@ func (m *TokenAPINodeStatus) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPINodeStatus: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenNodeStatus: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPINodeStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenNodeStatus: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -15887,7 +16237,7 @@ func (m *TokenAPINodeStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIOptions) Unmarshal(dAtA []byte) error {
+func (m *TokenProject) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -15910,94 +16260,10 @@ func (m *TokenAPIOptions) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIOptions: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenProject: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIOptions: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Chains", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Chains = append(m.Chains, TokenAPIChainOption{})
-			if err := m.Chains[len(m.Chains)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *TokenAPIProject) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIProject: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIProject: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenProject: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -16340,7 +16606,7 @@ func (m *TokenAPIProject) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIProjectDataCollectionTask) Unmarshal(dAtA []byte) error {
+func (m *TokenProjectReport) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -16363,360 +16629,10 @@ func (m *TokenAPIProjectDataCollectionTask) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIProjectDataCollectionTask: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenProjectReport: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIProjectDataCollectionTask: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TaskID", wireType)
-			}
-			m.TaskID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.TaskID |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProjectID", wireType)
-			}
-			m.ProjectID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ProjectID |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DataType", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DataType = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Status = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Revision", wireType)
-			}
-			m.Revision = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Revision |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Attempts", wireType)
-			}
-			m.Attempts = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Attempts |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AvailableAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AvailableAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LeaseExpiresAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LeaseExpiresAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LastError", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.LastError = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CreatedAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 11:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *TokenAPIProjectReport) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIProjectReport: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIProjectReport: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenProjectReport: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -17353,7 +17269,7 @@ func (m *TokenAPIProjectReport) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIProjectReportRevision) Unmarshal(dAtA []byte) error {
+func (m *TokenReportRevision) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -17376,10 +17292,10 @@ func (m *TokenAPIProjectReportRevision) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIProjectReportRevision: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenReportRevision: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIProjectReportRevision: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenReportRevision: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -17970,7 +17886,7 @@ func (m *TokenAPIProjectReportRevision) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIProjectResearchState) Unmarshal(dAtA []byte) error {
+func (m *TokenResearchState) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -17993,10 +17909,10 @@ func (m *TokenAPIProjectResearchState) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIProjectResearchState: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenResearchState: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIProjectResearchState: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenResearchState: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -18339,7 +18255,7 @@ func (m *TokenAPIProjectResearchState) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIProjectSelection) Unmarshal(dAtA []byte) error {
+func (m *TokenRuntimeConfiguration) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -18362,10 +18278,94 @@ func (m *TokenAPIProjectSelection) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIProjectSelection: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenRuntimeConfiguration: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIProjectSelection: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenRuntimeConfiguration: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chains", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chains = append(m.Chains, TokenChain{})
+			if err := m.Chains[len(m.Chains)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TokenSelection) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TokenSelection: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TokenSelection: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -18721,7 +18721,7 @@ func (m *TokenAPIProjectSelection) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TokenAPIWalletBlocklistEntry) Unmarshal(dAtA []byte) error {
+func (m *TokenWalletBlocklistEntry) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -18744,10 +18744,10 @@ func (m *TokenAPIWalletBlocklistEntry) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TokenAPIWalletBlocklistEntry: wiretype end group for non-group")
+			return fmt.Errorf("proto: TokenWalletBlocklistEntry: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TokenAPIWalletBlocklistEntry: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TokenWalletBlocklistEntry: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

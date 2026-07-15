@@ -1,6 +1,6 @@
 package v1alpha1
 
-type TokenAPIContractCodeBlocklistEntry struct {
+type TokenContractCodeBlocklistEntry struct {
 	CodeHash       string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
 	Note           string `protobuf:"bytes,2,opt,name=note" json:"note"`
 	SourceChainID  int64  `protobuf:"varint,3,opt,name=sourceChainId" json:"sourceChainId"`
@@ -8,13 +8,13 @@ type TokenAPIContractCodeBlocklistEntry struct {
 	CreatedAt      string `protobuf:"bytes,5,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenAPIWalletBlocklistEntry struct {
+type TokenWalletBlocklistEntry struct {
 	Wallet    string `protobuf:"bytes,1,opt,name=wallet" json:"wallet"`
 	Note      string `protobuf:"bytes,2,opt,name=note" json:"note"`
 	CreatedAt string `protobuf:"bytes,3,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenAPIChainIngestCheckpoint struct {
+type TokenChainCheckpoint struct {
 	ChainID           int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
 	ChainName         string `protobuf:"bytes,2,opt,name=chainName" json:"chainName"`
 	Enabled           bool   `protobuf:"varint,3,opt,name=enabled" json:"enabled"`
@@ -23,16 +23,16 @@ type TokenAPIChainIngestCheckpoint struct {
 	CreatedAt         string `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenAPIChainOption struct {
+type TokenChain struct {
 	ChainID   int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
 	ChainName string `protobuf:"bytes,2,opt,name=chainName" json:"chainName"`
 }
 
-type TokenAPIOptions struct {
-	Chains []TokenAPIChainOption `protobuf:"bytes,1,rep,name=chains" json:"chains"`
+type TokenRuntimeConfiguration struct {
+	Chains []TokenChain `protobuf:"bytes,1,rep,name=chains" json:"chains"`
 }
 
-type TokenAPINodeStatus struct {
+type TokenNodeStatus struct {
 	ChainID              int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
 	ChainName            string `protobuf:"bytes,2,opt,name=chainName" json:"chainName"`
 	Endpoint             string `protobuf:"bytes,3,opt,name=endpoint" json:"endpoint"`
@@ -48,7 +48,7 @@ type TokenAPINodeStatus struct {
 	Syncing              bool   `protobuf:"varint,13,opt,name=syncing" json:"syncing"`
 }
 
-type TokenAPIContractCode struct {
+type TokenContractCode struct {
 	CodeHash            string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
 	SourceCode          string `protobuf:"bytes,2,opt,name=sourceCode" json:"sourceCode"`
 	SourceCodeFetchedAt string `protobuf:"bytes,3,opt,name=sourceCodeFetchedAt" json:"sourceCodeFetchedAt"`
@@ -56,7 +56,7 @@ type TokenAPIContractCode struct {
 	DeploymentCount     int64  `protobuf:"varint,5,opt,name=deploymentCount" json:"deploymentCount"`
 }
 
-type TokenAPIProject struct {
+type TokenProject struct {
 	ProjectID   int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
 	ChainID     int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
 	Name        string `protobuf:"bytes,3,opt,name=name" json:"name"`
@@ -71,7 +71,7 @@ type TokenAPIProject struct {
 	CreatedAt   string `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenAPIProjectReport struct {
+type TokenProjectReport struct {
 	ProjectID                 int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
 	ChainID                   int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
 	Name                      string `protobuf:"bytes,3,opt,name=name" json:"name"`
@@ -97,7 +97,7 @@ type TokenAPIProjectReport struct {
 	CreatedAt                 string `protobuf:"bytes,23,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenAPIProjectDataCollectionTask struct {
+type TokenCollectionTask struct {
 	TaskID         int64  `protobuf:"varint,1,opt,name=taskId" json:"taskId"`
 	ProjectID      int64  `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
 	DataType       string `protobuf:"bytes,3,opt,name=dataType" json:"dataType"`
@@ -111,7 +111,7 @@ type TokenAPIProjectDataCollectionTask struct {
 	UpdatedAt      string `protobuf:"bytes,11,opt,name=updatedAt" json:"updatedAt"`
 }
 
-type TokenAPIProjectResearchState struct {
+type TokenResearchState struct {
 	ProjectID               int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
 	ChainID                 int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
 	Contract                string `protobuf:"bytes,3,opt,name=contract" json:"contract"`
@@ -126,7 +126,7 @@ type TokenAPIProjectResearchState struct {
 	UpdatedAt               string `protobuf:"bytes,12,opt,name=updatedAt" json:"updatedAt"`
 }
 
-type TokenAPIProjectReportRevision struct {
+type TokenReportRevision struct {
 	ReportRevisionID          int64  `protobuf:"varint,1,opt,name=reportRevisionId" json:"reportRevisionId"`
 	ProjectID                 int64  `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
 	ChainID                   int64  `protobuf:"varint,3,opt,name=chainId" json:"chainId"`
@@ -151,7 +151,7 @@ type TokenAPIProjectReportRevision struct {
 	CreatedAt                 string `protobuf:"bytes,22,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenAPIProjectSelection struct {
+type TokenSelection struct {
 	SelectionID     int64    `protobuf:"varint,1,opt,name=selectionId" json:"selectionId"`
 	ProjectID       int64    `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
 	ChainID         int64    `protobuf:"varint,3,opt,name=chainId" json:"chainId"`

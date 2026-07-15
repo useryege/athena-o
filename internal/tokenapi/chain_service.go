@@ -4,12 +4,12 @@ import (
 	"context"
 	"strings"
 
-	"github.com/useryege/athena/internal/token/domain"
+	"github.com/useryege/athena/internal/token/discovery"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 )
 
-func (s *Service) GetChainIngestCheckpoint(ctx context.Context, req *apiclient.GetChainIngestCheckpointRequest) (*apiclient.GetChainIngestCheckpointResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+func (s *Service) GetChainCheckpoint(ctx context.Context, req *apiclient.GetChainCheckpointRequest) (*apiclient.GetChainCheckpointResponse, error) {
+	store, err := s.operationsApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -21,16 +21,16 @@ func (s *Service) GetChainIngestCheckpoint(ctx context.Context, req *apiclient.G
 		return nil, wrapStoreError("get chain ingest checkpoint", err)
 	}
 	if item == nil {
-		return &apiclient.GetChainIngestCheckpointResponse{}, nil
+		return &apiclient.GetChainCheckpointResponse{}, nil
 	}
-	return &apiclient.GetChainIngestCheckpointResponse{
+	return &apiclient.GetChainCheckpointResponse{
 		Found:      true,
 		Checkpoint: mapChainIngestCheckpoint(*item),
 	}, nil
 }
 
-func (s *Service) ListChainIngestCheckpoints(ctx context.Context, _ *apiclient.ListChainIngestCheckpointsRequest) (*apiclient.ListChainIngestCheckpointsResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+func (s *Service) ListChainCheckpoints(ctx context.Context, _ *apiclient.ListChainCheckpointsRequest) (*apiclient.ListChainCheckpointsResponse, error) {
+	store, err := s.operationsApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -38,13 +38,13 @@ func (s *Service) ListChainIngestCheckpoints(ctx context.Context, _ *apiclient.L
 	if err != nil {
 		return nil, wrapStoreError("list chain ingest checkpoints", err)
 	}
-	return &apiclient.ListChainIngestCheckpointsResponse{
+	return &apiclient.ListChainCheckpointsResponse{
 		Checkpoints: mapChainIngestCheckpoints(items),
 	}, nil
 }
 
-func (s *Service) UpdateChainIngestCheckpoint(ctx context.Context, req *apiclient.UpdateChainIngestCheckpointRequest) (*apiclient.UpdateChainIngestCheckpointResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+func (s *Service) UpdateChainCheckpoint(ctx context.Context, req *apiclient.UpdateChainCheckpointRequest) (*apiclient.UpdateChainCheckpointResponse, error) {
+	store, err := s.operationsApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -55,14 +55,14 @@ func (s *Service) UpdateChainIngestCheckpoint(ctx context.Context, req *apiclien
 	if err := validateChainIngestStatus(status); err != nil {
 		return nil, err
 	}
-	item, err := store.UpdateChainIngestCheckpointStatus(ctx, req.GetChainId(), domain.ChainIngestStatus(status))
+	item, err := store.UpdateChainIngestCheckpointStatus(ctx, req.GetChainId(), discovery.ChainIngestStatus(status))
 	if err != nil {
 		return nil, wrapStoreError("update chain ingest checkpoint", err)
 	}
 	if item == nil {
-		return &apiclient.UpdateChainIngestCheckpointResponse{}, nil
+		return &apiclient.UpdateChainCheckpointResponse{}, nil
 	}
-	return &apiclient.UpdateChainIngestCheckpointResponse{
+	return &apiclient.UpdateChainCheckpointResponse{
 		Found:      true,
 		Checkpoint: mapChainIngestCheckpoint(*item),
 	}, nil

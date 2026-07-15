@@ -2,7 +2,7 @@ import {Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
-import {TokenAPIProject} from '../shared/services/tokenapi-service';
+import {TokenProject} from '../shared/services/token-service';
 import {fmtNumber, useKeywordParam, usePagedParams} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
@@ -24,7 +24,7 @@ export const ProjectsPage = () => {
         next.set('pageSize', String(pageSize));
         setParams(next);
     };
-    const options = useAsyncData(() => services.tokenapi.getOptions(), []);
+    const options = useAsyncData(() => services.tokenapi.getRuntimeConfiguration(), []);
     const data = useAsyncData(
         () =>
             services.tokenapi.listProjects({
@@ -36,7 +36,7 @@ export const ProjectsPage = () => {
             }),
         [page, pageSize, chainID, contract, codeHash]
     );
-    const columns: ColumnsType<TokenAPIProject> = [
+    const columns: ColumnsType<TokenProject> = [
         {title: 'ID', dataIndex: 'projectID'},
         {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
         {

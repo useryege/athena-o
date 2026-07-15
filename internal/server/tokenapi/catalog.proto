@@ -1,0 +1,10 @@
+syntax = "proto3";
+package tokenapi;
+import "internal/server/tokenapi/types.proto";
+import "google/api/annotations.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
+service TokenCatalogService {
+  rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse) { option (google.api.http) = {get: "/api/v1/tokens/contract-codes/{code_hash}"}; }
+  rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse) { option (google.api.http) = {get: "/api/v1/tokens/contract-codes"}; }
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects"}; }
+}

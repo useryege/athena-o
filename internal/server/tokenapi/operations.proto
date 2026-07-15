@@ -1,0 +1,12 @@
+syntax = "proto3";
+package tokenapi;
+import "internal/server/tokenapi/types.proto";
+import "google/api/annotations.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
+service TokenOperationsService {
+  rpc GetRuntimeConfiguration(GetRuntimeConfigurationRequest) returns (GetRuntimeConfigurationResponse) { option (google.api.http) = {get: "/api/v1/tokens/runtime-configuration"}; }
+  rpc ListNodeStatuses(ListNodeStatusesRequest) returns (ListNodeStatusesResponse) { option (google.api.http) = {get: "/api/v1/tokens/node-statuses"}; }
+  rpc GetChainCheckpoint(GetChainCheckpointRequest) returns (GetChainCheckpointResponse) { option (google.api.http) = {get: "/api/v1/tokens/chain-checkpoints/{chain_id}"}; }
+  rpc ListChainCheckpoints(ListChainCheckpointsRequest) returns (ListChainCheckpointsResponse) { option (google.api.http) = {get: "/api/v1/tokens/chain-checkpoints"}; }
+  rpc UpdateChainCheckpoint(UpdateChainCheckpointRequest) returns (UpdateChainCheckpointResponse) { option (google.api.http) = {patch: "/api/v1/tokens/chain-checkpoints/{chain_id}" body: "*"}; }
+}

@@ -3,21 +3,18 @@
 当前阶段只实现项目发现、研究和投资标的选择。运行时部署边界如下：
 
 ```text
-athena-token-discovery
-├── chain scanner
-└── project validator
-
-athena-token-research
-├── research scheduler
-├── data collectors
-├── report builder
-└── selection evaluator
+athena-token-scanner
+athena-token-validator
+athena-token-scheduler
+athena-token-collector × 5 data types
+athena-token-report-builder
+athena-token-selector
 
 athena-token-api
 └── 查询与管理 API
 ```
 
-发现进程扫描新区块并验证候选项目。有效项目进入研究状态，由调度器持续采集 Ave、链状态、相关钱包资产、模拟结果和合约源码。采集事实以不可变 observation 保存，报告和项目选择也采用不可变版本。
+各 Worker 是独立进程，只通过同一 PostgreSQL 中的持久化任务协作。有效项目进入研究状态，由调度器持续安排 Ave、链状态、相关钱包资产、模拟结果和合约源码采集。采集事实以不可变 observation 保存，报告和项目选择也采用不可变版本。
 
 后续交易领域按以下边界演进：
 

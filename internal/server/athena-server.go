@@ -393,7 +393,10 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
 	wormpolypkg.RegisterWormPolyServiceServer(grpcS, server.serviceSet.WormPolyService)
 	polymarketpkg.RegisterPolymarketServiceServer(grpcS, server.serviceSet.PolymarketService)
-	tokenapipkg.RegisterTokenAPIServiceServer(grpcS, server.serviceSet.TokenAPIService)
+	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
+	tokenapipkg.RegisterTokenResearchServiceServer(grpcS, server.serviceSet.TokenServices)
+	tokenapipkg.RegisterTokenPolicyServiceServer(grpcS, server.serviceSet.TokenServices)
+	tokenapipkg.RegisterTokenOperationsServiceServer(grpcS, server.serviceSet.TokenServices)
 	servicestatuspkg.RegisterServiceStatusServiceServer(grpcS, server.serviceSet.ServiceStatusService)
 
 	// Register reflection service on gRPC server.
@@ -414,7 +417,7 @@ type AthenaServiceSet struct {
 	WormService          *serverworm.Server
 	WormPolyService      *serverwormpoly.Server
 	PolymarketService    *serverpolymarket.Server
-	TokenAPIService      *servertokenapi.Server
+	TokenServices        *servertokenapi.Server
 	ServiceStatusService *serverservicestatus.Server
 }
 
@@ -476,7 +479,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		WormService:          wormService,
 		WormPolyService:      wormPolyService,
 		PolymarketService:    polymarketService,
-		TokenAPIService:      tokenAPIService,
+		TokenServices:        tokenAPIService,
 		ServiceStatusService: serviceStatusService,
 	}
 }
@@ -779,7 +782,10 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormpolypkg.RegisterWormPolyServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, polymarketpkg.RegisterPolymarketServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenAPIServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenResearchServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenPolicyServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenOperationsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
@@ -955,6 +961,11 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 			log.Info("All servers were gracefully shutdown. Exiting...")
 		case <-shutdownCtx.Done():
 			log.Warn("Graceful shutdown timeout. Exiting...")
+		}
+		if server.TokenAPIClientset != nil {
+			if err := server.TokenAPIClientset.Close(); err != nil {
+				log.WithError(err).Warn("failed to close token API clientset")
+			}
 		}
 	}
 	server.Shutdown = shutdownFunc

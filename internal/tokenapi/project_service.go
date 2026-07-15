@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsRequest) (*apiclient.ListProjectsResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+	store, err := s.catalogApplication()
 	if err != nil {
 		return nil, err
 	}

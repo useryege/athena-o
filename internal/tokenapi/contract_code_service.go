@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/catalog"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,7 +13,7 @@ import (
 const contractCodeOrderByDeploymentCount = "deployment_count"
 
 func (s *Service) GetContractCode(ctx context.Context, req *apiclient.GetContractCodeRequest) (*apiclient.GetContractCodeResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+	store, err := s.catalogApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (s *Service) GetContractCode(ctx context.Context, req *apiclient.GetContrac
 }
 
 func (s *Service) ListContractCodes(ctx context.Context, req *apiclient.ListContractCodesRequest) (*apiclient.ListContractCodesResponse, error) {
-	store, err := requiredStore(s.tokenStore())
+	store, err := s.catalogApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *Service) ListContractCodes(ctx context.Context, req *apiclient.ListCont
 		return nil, err
 	}
 	orderBy := strings.TrimSpace(req.GetOrderBy())
-	var page *tokenstore.ContractCodePage
+	var page *catalog.ContractCodePage
 	switch orderBy {
 	case "":
 		defaultPage, err := store.ListContractCodes(ctx, codeHash, req.GetPage(), req.GetPageSize())

@@ -1,0 +1,17 @@
+syntax = "proto3";
+package tokenapi;
+import "internal/server/tokenapi/types.proto";
+import "google/api/annotations.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
+service TokenPolicyService {
+  rpc GetContractCodeBlocklistEntry(GetContractCodeBlocklistEntryRequest) returns (GetContractCodeBlocklistEntryResponse) { option (google.api.http) = {get: "/api/v1/tokens/policies/contract-code-blocklist-entries/{code_hash}"}; }
+  rpc ListContractCodeBlocklistEntries(ListContractCodeBlocklistEntriesRequest) returns (ListContractCodeBlocklistEntriesResponse) { option (google.api.http) = {get: "/api/v1/tokens/policies/contract-code-blocklist-entries"}; }
+  rpc CreateContractCodeBlocklistEntry(CreateContractCodeBlocklistEntryRequest) returns (CreateContractCodeBlocklistEntryResponse) { option (google.api.http) = {post: "/api/v1/tokens/policies/contract-code-blocklist-entries" body: "*"}; }
+  rpc UpdateContractCodeBlocklistEntry(UpdateContractCodeBlocklistEntryRequest) returns (UpdateContractCodeBlocklistEntryResponse) { option (google.api.http) = {patch: "/api/v1/tokens/policies/contract-code-blocklist-entries/{code_hash}" body: "*"}; }
+  rpc DeleteContractCodeBlocklistEntry(DeleteContractCodeBlocklistEntryRequest) returns (DeleteContractCodeBlocklistEntryResponse) { option (google.api.http) = {delete: "/api/v1/tokens/policies/contract-code-blocklist-entries/{code_hash}"}; }
+  rpc GetWalletBlocklistEntry(GetWalletBlocklistEntryRequest) returns (GetWalletBlocklistEntryResponse) { option (google.api.http) = {get: "/api/v1/tokens/policies/wallet-blocklist-entries/{wallet}"}; }
+  rpc ListWalletBlocklistEntries(ListWalletBlocklistEntriesRequest) returns (ListWalletBlocklistEntriesResponse) { option (google.api.http) = {get: "/api/v1/tokens/policies/wallet-blocklist-entries"}; }
+  rpc CreateWalletBlocklistEntry(CreateWalletBlocklistEntryRequest) returns (CreateWalletBlocklistEntryResponse) { option (google.api.http) = {post: "/api/v1/tokens/policies/wallet-blocklist-entries" body: "*"}; }
+  rpc UpdateWalletBlocklistEntry(UpdateWalletBlocklistEntryRequest) returns (UpdateWalletBlocklistEntryResponse) { option (google.api.http) = {patch: "/api/v1/tokens/policies/wallet-blocklist-entries/{wallet}" body: "*"}; }
+  rpc DeleteWalletBlocklistEntry(DeleteWalletBlocklistEntryRequest) returns (DeleteWalletBlocklistEntryResponse) { option (google.api.http) = {delete: "/api/v1/tokens/policies/wallet-blocklist-entries/{wallet}"}; }
+}

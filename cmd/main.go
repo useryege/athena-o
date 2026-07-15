@@ -15,7 +15,12 @@ import (
 	athenaPredPolyCommands "github.com/useryege/athena/cmd/athena-pred-poly/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	athenaTokenAPICommands "github.com/useryege/athena/cmd/athena-token-api/commands"
-	athenaTokenCommands "github.com/useryege/athena/cmd/athena-token/commands"
+	athenaTokenCollectorCommands "github.com/useryege/athena/cmd/athena-token-collector/commands"
+	athenaTokenReportBuilderCommands "github.com/useryege/athena/cmd/athena-token-report-builder/commands"
+	athenaTokenScannerCommands "github.com/useryege/athena/cmd/athena-token-scanner/commands"
+	athenaTokenSchedulerCommands "github.com/useryege/athena/cmd/athena-token-scheduler/commands"
+	athenaTokenSelectorCommands "github.com/useryege/athena/cmd/athena-token-selector/commands"
+	athenaTokenValidatorCommands "github.com/useryege/athena/cmd/athena-token-validator/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
 	athenaWormPolyCommands "github.com/useryege/athena/cmd/athena-worm-poly/commands"
 	athenaWormCommands "github.com/useryege/athena/cmd/athena-worm/commands"
@@ -54,10 +59,20 @@ func main() {
 		command = athenaPolymarketCommands.NewCommand()
 	case "athena-pred-poly":
 		command = athenaPredPolyCommands.NewCommand()
-	case "athena-token":
-		command = athenaTokenCommands.NewCommand()
 	case "athena-token-api":
 		command = athenaTokenAPICommands.NewCommand()
+	case "athena-token-scanner":
+		command = athenaTokenScannerCommands.NewCommand()
+	case "athena-token-validator":
+		command = athenaTokenValidatorCommands.NewCommand()
+	case "athena-token-scheduler":
+		command = athenaTokenSchedulerCommands.NewCommand()
+	case "athena-token-collector":
+		command = athenaTokenCollectorCommands.NewCommand()
+	case "athena-token-report-builder":
+		command = athenaTokenReportBuilderCommands.NewCommand()
+	case "athena-token-selector":
+		command = athenaTokenSelectorCommands.NewCommand()
 	case "athena-wallet":
 		command = athenaWalletCommands.NewCommand()
 	case "athena-worm":
