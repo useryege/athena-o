@@ -1,140 +1,101 @@
--- name: UpsertProjectDataCollectionTask :one
+-- name: CreateProjectDataCollectionTask :one
 INSERT INTO project_data_collection_task (
   project_id,
   data_type,
-  status,
-  attempts,
-  next_attempt_at,
-  last_error
+  revision
 ) VALUES (
   @project_id,
   @data_type,
-  @status,
-  @attempts,
-  @next_attempt_at,
-  sqlc.narg('last_error')
+  @revision
 )
-ON CONFLICT (project_id, data_type) DO UPDATE
-SET status = EXCLUDED.status,
-  attempts = EXCLUDED.attempts,
-  next_attempt_at = EXCLUDED.next_attempt_at,
-  last_error = EXCLUDED.last_error,
-  updated_at = now()
+ON CONFLICT (project_id, data_type, revision) DO UPDATE
+SET updated_at = project_data_collection_task.updated_at
 RETURNING *;
 
--- name: EnqueueProjectDataCollectionTask :one
-INSERT INTO project_data_collection_task (
-  project_id,
-  data_type
-) VALUES (
-  @project_id,
-  @data_type
+-- name: ClaimProjectDataCollectionTasks :many
+WITH claimable AS (
+  SELECT task.id
+  FROM project_data_collection_task AS task
+  JOIN project AS project ON project.id = task.project_id
+  JOIN project_research_state AS research ON research.project_id = task.project_id
+  WHERE task.data_type = @data_type
+    AND project.chain_id = ANY(@chain_ids::bigint[])
+    AND research.status IN ('researching', 'selected')
+    AND (
+      (task.status = 'pending' AND task.available_at <= now())
+      OR (task.status = 'running' AND task.lease_expires_at <= now())
+    )
+  ORDER BY task.available_at, task.id
+  FOR UPDATE OF task SKIP LOCKED
+  LIMIT sqlc.arg('limit')
 )
-ON CONFLICT (project_id, data_type) DO UPDATE
-SET status = 'pending',
-  revision = project_data_collection_task.revision + 1,
-  attempts = 0,
-  next_attempt_at = now(),
-  last_error = NULL,
+UPDATE project_data_collection_task AS task
+SET status = 'running',
+  locked_at = now(),
+  lease_expires_at = now() + (sqlc.arg('lease_seconds')::bigint * INTERVAL '1 second'),
   updated_at = now()
-RETURNING *;
+FROM claimable
+WHERE task.id = claimable.id
+RETURNING task.*;
 
 -- name: GetProjectDataCollectionTask :one
 SELECT *
 FROM project_data_collection_task
-WHERE project_id = @project_id
-  AND data_type = @data_type;
+WHERE id = @id;
 
 -- name: CountProjectDataCollectionTasks :one
 SELECT COUNT(*)::bigint
 FROM project_data_collection_task
-WHERE (sqlc.narg('project_id')::bigint IS NULL OR project_id = sqlc.narg('project_id')::bigint)
-  AND (sqlc.narg('data_type')::text IS NULL OR data_type = sqlc.narg('data_type')::text)
-  AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status')::text);
+WHERE (sqlc.arg('project_id')::bigint = 0 OR project_id = sqlc.arg('project_id')::bigint)
+  AND (sqlc.arg('data_type')::text = '' OR data_type = sqlc.arg('data_type')::text)
+  AND (sqlc.arg('status')::text = '' OR status = sqlc.arg('status')::text);
 
 -- name: ListProjectDataCollectionTasks :many
 SELECT *
 FROM project_data_collection_task
-WHERE (sqlc.narg('project_id')::bigint IS NULL OR project_id = sqlc.narg('project_id')::bigint)
-  AND (sqlc.narg('data_type')::text IS NULL OR data_type = sqlc.narg('data_type')::text)
-  AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status')::text)
-ORDER BY created_at DESC, project_id DESC, data_type DESC
+WHERE (sqlc.arg('project_id')::bigint = 0 OR project_id = sqlc.arg('project_id')::bigint)
+  AND (sqlc.arg('data_type')::text = '' OR data_type = sqlc.arg('data_type')::text)
+  AND (sqlc.arg('status')::text = '' OR status = sqlc.arg('status')::text)
+ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
-
--- name: ListDueProjectDataCollectionTasks :many
-SELECT
-  t.project_id,
-  t.data_type,
-  t.status,
-  t.revision,
-  t.attempts,
-  t.next_attempt_at,
-  t.last_error,
-  t.created_at,
-  t.updated_at,
-  p.chain_id,
-  p.contract,
-  p.tx_sender,
-  p.tx_hash,
-  p.tx_index,
-  p.block_number,
-  p.block_time,
-  p.code_hash,
-  p.name,
-  p.symbol,
-  p.decimals,
-  p.total_supply,
-  p.weth_pair,
-  p.usdt_pair,
-  p.created_at AS project_created_at
-FROM project_data_collection_task AS t
-JOIN project AS p ON p.id = t.project_id
-WHERE t.data_type = @data_type
-  AND p.chain_id = ANY(@chain_ids::bigint[])
-  AND t.status = 'pending'
-  AND t.attempts < 5
-  AND t.next_attempt_at <= now()
-ORDER BY t.next_attempt_at ASC, t.created_at ASC, t.project_id ASC
-LIMIT sqlc.arg('limit');
-
--- name: LockProjectDataCollectionTask :one
-SELECT *
-FROM project_data_collection_task
-WHERE project_id = @project_id
-  AND data_type = @data_type
-FOR UPDATE;
 
 -- name: MarkProjectDataCollectionTaskSucceeded :execrows
 UPDATE project_data_collection_task
 SET status = 'succeeded',
-  next_attempt_at = now(),
+  locked_at = NULL,
+  lease_expires_at = NULL,
   last_error = NULL,
   updated_at = now()
-WHERE project_id = @project_id
-  AND data_type = @data_type
-  AND revision = @revision
-  AND status = 'pending';
+WHERE id = @id
+  AND status = 'running';
 
--- name: MarkProjectDataCollectionTaskFailed :one
+-- name: RetryProjectDataCollectionTask :one
 UPDATE project_data_collection_task
-SET attempts = attempts + 1,
-  status = CASE
-    WHEN attempts + 1 >= 5 THEN 'failed'
-    ELSE 'pending'
-  END,
-  next_attempt_at = CASE
-    WHEN attempts + 1 >= 5 THEN now()
-    ELSE now() + INTERVAL '1 minute'
-  END,
+SET status = 'pending',
+  attempts = attempts + 1,
+  available_at = @available_at,
+  locked_at = NULL,
+  lease_expires_at = NULL,
   last_error = @last_error,
   updated_at = now()
-WHERE project_id = @project_id
-  AND data_type = @data_type
-  AND revision = @revision
-  AND status = 'pending'
+WHERE id = @id
+  AND status = 'running'
+  AND attempts < 4
 RETURNING *;
 
--- name: DeleteProjectDataCollectionTask :execrows
-DELETE FROM project_data_collection_task
-WHERE project_id = @project_id
-  AND data_type = @data_type;
+-- name: FailProjectDataCollectionTask :execrows
+UPDATE project_data_collection_task
+SET status = 'failed',
+  attempts = LEAST(attempts + 1, 5),
+  locked_at = NULL,
+  lease_expires_at = NULL,
+  last_error = @last_error,
+  updated_at = now()
+WHERE id = @id
+  AND status = 'running';
+
+-- name: GetProjectForDataCollectionTask :one
+SELECT project.*
+FROM project_data_collection_task AS task
+JOIN project ON project.id = task.project_id
+WHERE task.id = @id;

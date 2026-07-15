@@ -17,620 +17,322 @@ const (
 	maxPageSize     = int32(200)
 )
 
-func bytesToHash(value []byte) common.Hash {
-	if len(value) == 0 {
+func bytesToHash(v []byte) common.Hash {
+	if len(v) == 0 {
 		return common.Hash{}
 	}
-	return common.BytesToHash(value)
+	return common.BytesToHash(v)
 }
-
-func bytesToAddress(value []byte) common.Address {
-	if len(value) == 0 {
+func bytesToAddress(v []byte) common.Address {
+	if len(v) == 0 {
 		return common.Address{}
 	}
-	return common.BytesToAddress(value)
+	return common.BytesToAddress(v)
 }
-
-func optionalHashBytes(value common.Hash) []byte {
-	if value == (common.Hash{}) {
+func optionalHashBytes(v common.Hash) []byte {
+	if v == (common.Hash{}) {
 		return nil
 	}
-	return value.Bytes()
+	return v.Bytes()
 }
-
-func optionalAddressBytes(value common.Address) []byte {
-	if value == (common.Address{}) {
+func optionalAddressBytes(v common.Address) []byte {
+	if v == (common.Address{}) {
 		return nil
 	}
-	return value.Bytes()
+	return v.Bytes()
 }
-
-func nullableText(value string) pgtype.Text {
-	if value == "" {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: value, Valid: true}
-}
-
-func textValue(value pgtype.Text) string {
-	if !value.Valid {
+func nullableText(v string) pgtype.Text { return pgtype.Text{String: v, Valid: v != ""} }
+func textValue(v pgtype.Text) string {
+	if !v.Valid {
 		return ""
 	}
-	return value.String
+	return v.String
 }
-
-func nullableTime(value time.Time) pgtype.Timestamptz {
-	if value.IsZero() {
-		return pgtype.Timestamptz{}
-	}
-	return pgtype.Timestamptz{Time: value, Valid: true}
+func nullableTime(v time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: v, Valid: !v.IsZero()}
 }
-
-func timeValue(value pgtype.Timestamptz) time.Time {
-	if !value.Valid {
+func timeValue(v pgtype.Timestamptz) time.Time {
+	if !v.Valid {
 		return time.Time{}
 	}
-	return value.Time
+	return v.Time
 }
-
-func nullableInt64(value int64) pgtype.Int8 {
-	if value == 0 {
-		return pgtype.Int8{}
-	}
-	return pgtype.Int8{Int64: value, Valid: true}
-}
-
-func int64Value(value pgtype.Int8) int64 {
-	if !value.Valid {
+func nullableInt64(v int64) pgtype.Int8 { return pgtype.Int8{Int64: v, Valid: v != 0} }
+func int64Value(v pgtype.Int8) int64 {
+	if !v.Valid {
 		return 0
 	}
-	return value.Int64
+	return v.Int64
 }
-
-func nullableBool(value *bool) pgtype.Bool {
-	if value == nil {
+func nullableBool(v *bool) pgtype.Bool {
+	if v == nil {
 		return pgtype.Bool{}
 	}
-	return pgtype.Bool{Bool: *value, Valid: true}
+	return pgtype.Bool{Bool: *v, Valid: true}
 }
-
-func boolPointer(value pgtype.Bool) *bool {
-	if !value.Valid {
+func boolPointer(v pgtype.Bool) *bool {
+	if !v.Valid {
 		return nil
 	}
-	result := value.Bool
-	return &result
+	r := v.Bool
+	return &r
 }
 
-func int16ToUint8(field string, value int16) (uint8, error) {
-	if value < 0 || value > math.MaxUint8 {
-		return 0, fmt.Errorf("%s exceeds uint8 range", field)
+func numericFromBigInt(v *big.Int) pgtype.Numeric {
+	if v == nil {
+		v = new(big.Int)
 	}
-	return uint8(value), nil
+	return pgtype.Numeric{Int: new(big.Int).Set(v), Exp: 0, Valid: true}
 }
-
-func numericFromBigInt(value *big.Int) pgtype.Numeric {
-	if value == nil {
-		return pgtype.Numeric{Int: new(big.Int), Exp: 0, Valid: true}
-	}
-	return pgtype.Numeric{Int: new(big.Int).Set(value), Exp: 0, Valid: true}
-}
-
-func nullableNumericFromBigInt(value *big.Int) pgtype.Numeric {
-	if value == nil {
+func nullableNumericFromBigInt(v *big.Int) pgtype.Numeric {
+	if v == nil {
 		return pgtype.Numeric{}
 	}
-	return numericFromBigInt(value)
+	return numericFromBigInt(v)
 }
-
-func bigIntPointerFromNumeric(value pgtype.Numeric) *big.Int {
-	if !value.Valid {
-		return nil
-	}
-	return bigIntFromNumeric(value)
-}
-
-func bigIntFromNumeric(value pgtype.Numeric) *big.Int {
-	if !value.Valid || value.Int == nil {
+func bigIntFromNumeric(v pgtype.Numeric) *big.Int {
+	if !v.Valid || v.Int == nil {
 		return new(big.Int)
 	}
-	if value.Exp >= 0 {
-		result := new(big.Int).Set(value.Int)
-		if value.Exp > 0 {
-			result.Mul(result, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(value.Exp)), nil))
-		}
-		return result
+	r := new(big.Int).Set(v.Int)
+	if v.Exp > 0 {
+		return r.Mul(r, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(v.Exp)), nil))
 	}
-	result := new(big.Int).Set(value.Int)
-	return result.Quo(result, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-value.Exp)), nil))
+	if v.Exp < 0 {
+		return r.Quo(r, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-v.Exp)), nil))
+	}
+	return r
+}
+func bigIntPointerFromNumeric(v pgtype.Numeric) *big.Int {
+	if !v.Valid {
+		return nil
+	}
+	return bigIntFromNumeric(v)
 }
 
-func nullableUint64(value *uint64) (pgtype.Int8, error) {
-	if value == nil {
-		return pgtype.Int8{}, nil
-	}
-	converted, err := uint64ToInt64("timestamp", *value)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-	return pgtype.Int8{Int64: converted, Valid: true}, nil
-}
-
-func uint64PointerFromInt64(field string, value pgtype.Int8) (*uint64, error) {
-	if !value.Valid {
-		return nil, nil
-	}
-	converted, err := int64ToUint64(field, value.Int64)
-	if err != nil {
-		return nil, err
-	}
-	return &converted, nil
-}
-
-func uint64ToInt64(field string, value uint64) (int64, error) {
-	if value > math.MaxInt64 {
+func uint64ToInt64(field string, v uint64) (int64, error) {
+	if v > math.MaxInt64 {
 		return 0, fmt.Errorf("%s exceeds int64 max", field)
 	}
-	return int64(value), nil
+	return int64(v), nil
 }
-
-func int64ToUint64(field string, value int64) (uint64, error) {
-	if value < 0 {
+func int64ToUint64(field string, v int64) (uint64, error) {
+	if v < 0 {
 		return 0, fmt.Errorf("%s is negative", field)
 	}
-	return uint64(value), nil
+	return uint64(v), nil
 }
-
-func normalizePage(page, pageSize int32) (int32, int32, int32) {
+func int16ToUint8(field string, v int16) (uint8, error) {
+	if v < 0 || v > math.MaxUint8 {
+		return 0, fmt.Errorf("%s exceeds uint8 range", field)
+	}
+	return uint8(v), nil
+}
+func nullableUint64(v *uint64) (pgtype.Int8, error) {
+	if v == nil {
+		return pgtype.Int8{}, nil
+	}
+	n, e := uint64ToInt64("uint64", *v)
+	return pgtype.Int8{Int64: n, Valid: e == nil}, e
+}
+func uint64PointerFromInt64(field string, v pgtype.Int8) (*uint64, error) {
+	if !v.Valid {
+		return nil, nil
+	}
+	n, e := int64ToUint64(field, v.Int64)
+	return &n, e
+}
+func normalizePage(page, size int32) (int32, int32, int32) {
 	if page < 1 {
 		page = 1
 	}
-	if pageSize <= 0 {
-		pageSize = defaultPageSize
+	if size <= 0 {
+		size = defaultPageSize
 	}
-	if pageSize > maxPageSize {
-		pageSize = maxPageSize
+	if size > maxPageSize {
+		size = maxPageSize
 	}
-	return page, pageSize, (page - 1) * pageSize
+	return page, size, (page - 1) * size
 }
 
 func mapChainCheckpointRow(row tokensqlc.GetChainIngestCheckpointRow) (*ChainIngestCheckpoint, error) {
-	cursorBlockNumber, err := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
-	if err != nil {
-		return nil, err
+	n, e := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
+	if e != nil {
+		return nil, e
 	}
-	return &ChainIngestCheckpoint{
-		ChainID:           row.ChainID,
-		ChainName:         row.ChainName,
-		Enabled:           row.Enabled,
-		CursorBlockNumber: cursorBlockNumber,
-		Status:            row.Status,
-		CreatedAt:         timeValue(row.CreatedAt),
-	}, nil
+	return &ChainIngestCheckpoint{ChainID: row.ChainID, ChainName: row.ChainName, Enabled: row.Enabled, CursorBlockNumber: n, Status: row.Status, CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
 }
-
 func mapChainCheckpointListRow(row tokensqlc.ListChainIngestCheckpointsRow) (*ChainIngestCheckpoint, error) {
 	return mapChainCheckpointRow(tokensqlc.GetChainIngestCheckpointRow(row))
 }
-
 func mapChainCheckpoint(row tokensqlc.ChainIngestCheckpoint) (*ChainIngestCheckpoint, error) {
-	cursorBlockNumber, err := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
-	if err != nil {
-		return nil, err
+	n, e := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
+	if e != nil {
+		return nil, e
 	}
-	return &ChainIngestCheckpoint{
-		ChainID:           row.ChainID,
-		CursorBlockNumber: cursorBlockNumber,
-		Status:            row.Status,
-		CreatedAt:         timeValue(row.CreatedAt),
-	}, nil
+	return &ChainIngestCheckpoint{ChainID: row.ChainID, CursorBlockNumber: n, Status: row.Status, CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
 }
 
 func mapProjectCandidate(row tokensqlc.ProjectCandidate) (*ProjectCandidate, error) {
-	txIndex, err := int64ToUint64("tx_index", row.TxIndex)
-	if err != nil {
-		return nil, err
+	tx, e := int64ToUint64("tx_index", row.TxIndex)
+	if e != nil {
+		return nil, e
 	}
-	blockNumber, err := int64ToUint64("block_number", row.BlockNumber)
-	if err != nil {
-		return nil, err
+	bn, e := int64ToUint64("block_number", row.BlockNumber)
+	if e != nil {
+		return nil, e
 	}
-	blockTime, err := int64ToUint64("block_time", row.BlockTime)
-	if err != nil {
-		return nil, err
+	bt, e := int64ToUint64("block_time", row.BlockTime)
+	if e != nil {
+		return nil, e
 	}
-	return &ProjectCandidate{
-		ID:          row.ID,
-		ChainID:     row.ChainID,
-		Contract:    bytesToAddress(row.Contract),
-		TxSender:    bytesToAddress(row.TxSender),
-		TxHash:      bytesToHash(row.TxHash),
-		TxIndex:     txIndex,
-		BlockNumber: blockNumber,
-		BlockTime:   blockTime,
-		Status:      row.Status,
-		CreatedAt:   timeValue(row.CreatedAt),
-	}, nil
+	return &ProjectCandidate{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, Status: row.Status, CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-
 func mapProjectCandidates(rows []tokensqlc.ProjectCandidate) ([]ProjectCandidate, error) {
-	items := make([]ProjectCandidate, 0, len(rows))
-	for _, row := range rows {
-		item, err := mapProjectCandidate(row)
-		if err != nil {
-			return nil, err
+	out := make([]ProjectCandidate, 0, len(rows))
+	for _, r := range rows {
+		v, e := mapProjectCandidate(r)
+		if e != nil {
+			return nil, e
 		}
-		items = append(items, *item)
+		out = append(out, *v)
 	}
-	return items, nil
+	return out, nil
 }
-
 func mapContractCode(row tokensqlc.ContractCode) *ContractCode {
-	return &ContractCode{
-		CodeHash:            bytesToHash(row.CodeHash),
-		SourceCode:          textValue(row.SourceCode),
-		SourceCodeFetchedAt: timeValue(row.SourceCodeFetchedAt),
-		DeploymentCount:     row.DeploymentCount,
-		CreatedAt:           timeValue(row.CreatedAt),
-	}
+	return &ContractCode{CodeHash: bytesToHash(row.CodeHash), SourceCode: textValue(row.SourceCode), SourceCodeFetchedAt: timeValue(row.SourceCodeFetchedAt), DeploymentCount: row.DeploymentCount, CreatedAt: timeValue(row.CreatedAt)}
 }
-
 func mapContractCodes(rows []tokensqlc.ContractCode) []ContractCode {
-	items := make([]ContractCode, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, *mapContractCode(row))
+	out := make([]ContractCode, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, *mapContractCode(r))
 	}
-	return items
+	return out
 }
-
 func mapProject(row tokensqlc.Project) (*Project, error) {
-	txIndex, err := int64ToUint64("tx_index", row.TxIndex)
-	if err != nil {
-		return nil, err
+	tx, e := int64ToUint64("tx_index", row.TxIndex)
+	if e != nil {
+		return nil, e
 	}
-	blockNumber, err := int64ToUint64("block_number", row.BlockNumber)
-	if err != nil {
-		return nil, err
+	bn, e := int64ToUint64("block_number", row.BlockNumber)
+	if e != nil {
+		return nil, e
 	}
-	blockTime, err := int64ToUint64("block_time", row.BlockTime)
-	if err != nil {
-		return nil, err
+	bt, e := int64ToUint64("block_time", row.BlockTime)
+	if e != nil {
+		return nil, e
 	}
-	decimals, err := int16ToUint8("decimals", row.Decimals)
-	if err != nil {
-		return nil, err
+	d, e := int16ToUint8("decimals", row.Decimals)
+	if e != nil {
+		return nil, e
 	}
-	return &Project{
-		ID:          row.ID,
-		ChainID:     row.ChainID,
-		Contract:    bytesToAddress(row.Contract),
-		TxSender:    bytesToAddress(row.TxSender),
-		TxHash:      bytesToHash(row.TxHash),
-		TxIndex:     txIndex,
-		BlockNumber: blockNumber,
-		BlockTime:   blockTime,
-		CodeHash:    bytesToHash(row.CodeHash),
-		Name:        row.Name,
-		Symbol:      row.Symbol,
-		Decimals:    decimals,
-		TotalSupply: bigIntFromNumeric(row.TotalSupply),
-		WethPair:    bytesToAddress(row.WethPair),
-		UsdtPair:    bytesToAddress(row.UsdtPair),
-		CreatedAt:   timeValue(row.CreatedAt),
-	}, nil
+	return &Project{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, CodeHash: bytesToHash(row.CodeHash), Name: row.Name, Symbol: row.Symbol, Decimals: d, TotalSupply: bigIntFromNumeric(row.TotalSupply), WethPair: bytesToAddress(row.WethPair), UsdtPair: bytesToAddress(row.UsdtPair), CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-
 func mapProjects(rows []tokensqlc.Project) ([]Project, error) {
-	items := make([]Project, 0, len(rows))
-	for _, row := range rows {
-		item, err := mapProject(row)
-		if err != nil {
-			return nil, err
+	out := make([]Project, 0, len(rows))
+	for _, r := range rows {
+		v, e := mapProject(r)
+		if e != nil {
+			return nil, e
 		}
-		items = append(items, *item)
+		out = append(out, *v)
 	}
-	return items, nil
+	return out, nil
 }
-
-func mapProjectAveData(row tokensqlc.ProjectAveDatum) *ProjectAveData {
-	return &ProjectAveData{
-		ProjectID:   row.ProjectID,
-		AveResponse: json.RawMessage(row.AveResponse),
-		FetchedAt:   timeValue(row.FetchedAt),
-		CreatedAt:   timeValue(row.CreatedAt),
-	}
-}
-
-func mapProjectChainStateData(row tokensqlc.ProjectChainState) *ProjectChainStateData {
-	return &ProjectChainStateData{
-		ProjectID:  row.ProjectID,
-		ChainState: json.RawMessage(row.ChainState),
-		FetchedAt:  timeValue(row.FetchedAt),
-		CreatedAt:  timeValue(row.CreatedAt),
-	}
-}
-
 func mapProjectRelatedWallet(row tokensqlc.ProjectRelatedWallet) *ProjectRelatedWallet {
-	return &ProjectRelatedWallet{
-		ProjectID: row.ProjectID,
-		Wallet:    bytesToAddress(row.Wallet),
-		Role:      row.Role,
-		CreatedAt: timeValue(row.CreatedAt),
-	}
+	return &ProjectRelatedWallet{ProjectID: row.ProjectID, Wallet: bytesToAddress(row.Wallet), Role: row.Role, CreatedAt: timeValue(row.CreatedAt)}
 }
-
 func mapProjectRelatedWallets(rows []tokensqlc.ProjectRelatedWallet) []ProjectRelatedWallet {
-	items := make([]ProjectRelatedWallet, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, *mapProjectRelatedWallet(row))
+	out := make([]ProjectRelatedWallet, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, *mapProjectRelatedWallet(r))
 	}
-	return items
+	return out
 }
-
 func mapProjectInitialRecipient(row tokensqlc.ProjectInitialRecipient) (*ProjectInitialRecipient, error) {
-	sourceBlockNumber, err := int64ToUint64("source_block_number", row.SourceBlockNumber)
-	if err != nil {
-		return nil, err
+	bn, e := int64ToUint64("source_block_number", row.SourceBlockNumber)
+	if e != nil {
+		return nil, e
 	}
-	return &ProjectInitialRecipient{
-		ID:                row.ID,
-		ProjectID:         row.ProjectID,
-		Wallet:            bytesToAddress(row.Wallet),
-		RatioBPS:          row.RatioBps,
-		RankIndex:         row.RankIndex,
-		SourceTxHash:      bytesToHash(row.SourceTxHash),
-		SourceBlockNumber: sourceBlockNumber,
-		CreatedAt:         timeValue(row.CreatedAt),
-	}, nil
+	return &ProjectInitialRecipient{ID: row.ID, ProjectID: row.ProjectID, Wallet: bytesToAddress(row.Wallet), RatioBPS: row.RatioBps, RankIndex: row.RankIndex, SourceTxHash: bytesToHash(row.SourceTxHash), SourceBlockNumber: bn, CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-
 func mapProjectInitialRecipients(rows []tokensqlc.ProjectInitialRecipient) ([]ProjectInitialRecipient, error) {
-	items := make([]ProjectInitialRecipient, 0, len(rows))
-	for _, row := range rows {
-		item, err := mapProjectInitialRecipient(row)
-		if err != nil {
-			return nil, err
+	out := make([]ProjectInitialRecipient, 0, len(rows))
+	for _, r := range rows {
+		v, e := mapProjectInitialRecipient(r)
+		if e != nil {
+			return nil, e
 		}
-		items = append(items, *item)
+		out = append(out, *v)
 	}
-	return items, nil
+	return out, nil
 }
 
-func mapWalletAssetState(row tokensqlc.WalletAssetState) *WalletAssetState {
-	return &WalletAssetState{
-		ChainID:       row.ChainID,
-		Wallet:        bytesToAddress(row.Wallet),
-		WethBalance:   bigIntFromNumeric(row.WethBalance),
-		UsdtBalance:   bigIntFromNumeric(row.UsdtBalance),
-		NativeBalance: bigIntFromNumeric(row.NativeBalance),
-		UsdtValue:     bigIntFromNumeric(row.UsdtValue),
-		FetchedAt:     timeValue(row.FetchedAt),
-		CreatedAt:     timeValue(row.CreatedAt),
+func mapContractCodeBlocklistEntry(row tokensqlc.ContractCodeBlocklist) *ContractCodeBlocklistEntry {
+	return &ContractCodeBlocklistEntry{CodeHash: bytesToHash(row.CodeHash), Note: textValue(row.Note), SourceChainID: int64Value(row.SourceChainID), SourceContract: bytesToAddress(row.SourceContract), CreatedAt: timeValue(row.CreatedAt)}
+}
+func mapContractCodeBlocklistEntries(rows []tokensqlc.ContractCodeBlocklist) []ContractCodeBlocklistEntry {
+	out := make([]ContractCodeBlocklistEntry, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, *mapContractCodeBlocklistEntry(r))
 	}
+	return out
+}
+func mapWalletBlocklistEntry(row tokensqlc.WalletBlocklist) *WalletBlocklistEntry {
+	return &WalletBlocklistEntry{Wallet: bytesToAddress(row.Wallet), Note: textValue(row.Note), CreatedAt: timeValue(row.CreatedAt)}
+}
+func mapWalletBlocklistEntries(rows []tokensqlc.WalletBlocklist) []WalletBlocklistEntry {
+	out := make([]WalletBlocklistEntry, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, *mapWalletBlocklistEntry(r))
+	}
+	return out
 }
 
-func mapWalletAssetStates(rows []tokensqlc.WalletAssetState) []WalletAssetState {
-	items := make([]WalletAssetState, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, *mapWalletAssetState(row))
-	}
-	return items
+func mapProjectDataCollectionSchedule(row tokensqlc.ProjectDataCollectionSchedule) ProjectDataCollectionSchedule {
+	return ProjectDataCollectionSchedule{ProjectID: row.ProjectID, DataType: row.DataType, Status: row.Status, RefreshInterval: time.Duration(row.RefreshIntervalSeconds) * time.Second, NextRunAt: timeValue(row.NextRunAt), LatestTaskRevision: row.LatestTaskRevision, ConsecutiveFailures: row.ConsecutiveFailures, LastError: textValue(row.LastError), LastCheckedAt: timeValue(row.LastCheckedAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
 }
-
-func mapProjectSimulationResult(row tokensqlc.ProjectSimulationResult) *ProjectSimulationResult {
-	return &ProjectSimulationResult{
-		ProjectID:                          row.ProjectID,
-		Wallet:                             bytesToAddress(row.Wallet),
-		CanMintFromDeadViaTransferFrom:     row.CanMintFromDeadViaTransferFrom,
-		CanMintFromZeroViaTransferFrom:     row.CanMintFromZeroViaTransferFrom,
-		CanMintFromWethPairViaTransferFrom: row.CanMintFromWethPairViaTransferFrom,
-		CanMintFromUsdtPairViaTransferFrom: row.CanMintFromUsdtPairViaTransferFrom,
-		CanMintViaTransferToWethPair:       row.CanMintViaTransferToWethPair,
-		CanMintViaTransferToUsdtPair:       row.CanMintViaTransferToUsdtPair,
-		FetchedAt:                          timeValue(row.FetchedAt),
-		CreatedAt:                          timeValue(row.CreatedAt),
-	}
+func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) ProjectDataCollectionTask {
+	return ProjectDataCollectionTask{ID: row.ID, ProjectID: row.ProjectID, DataType: row.DataType, Status: row.Status, Revision: row.Revision, Attempts: row.Attempts, AvailableAt: timeValue(row.AvailableAt), LockedAt: timeValue(row.LockedAt), LeaseExpiresAt: timeValue(row.LeaseExpiresAt), LastError: textValue(row.LastError), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
 }
-
-func mapProjectSimulationResults(rows []tokensqlc.ProjectSimulationResult) []ProjectSimulationResult {
-	items := make([]ProjectSimulationResult, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, *mapProjectSimulationResult(row))
-	}
-	return items
+func mapProjectObservation(row tokensqlc.ProjectObservation) (ProjectObservation, error) {
+	bn, e := uint64PointerFromInt64("block_number", row.BlockNumber)
+	return ProjectObservation{ID: row.ID, ProjectID: row.ProjectID, DataType: row.DataType, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: bn, ObservedAt: timeValue(row.ObservedAt), CreatedAt: timeValue(row.CreatedAt)}, e
 }
-
-func mapBytecodeBlacklistEntry(row tokensqlc.BytecodeBlacklist) *BytecodeBlacklistEntry {
-	return &BytecodeBlacklistEntry{
-		CodeHash:       bytesToHash(row.CodeHash),
-		Note:           textValue(row.Note),
-		SourceChainID:  int64Value(row.SourceChainID),
-		SourceContract: bytesToAddress(row.SourceContract),
-		CreatedAt:      timeValue(row.CreatedAt),
-	}
+func mapCurrentProjectObservation(row tokensqlc.GetCurrentProjectObservationRow) (ProjectObservation, error) {
+	bn, e := uint64PointerFromInt64("block_number", row.BlockNumber)
+	return ProjectObservation{ID: row.ID, ProjectID: row.ProjectID, DataType: row.DataType, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: bn, ObservedAt: timeValue(row.ObservedAt), LastCheckedAt: timeValue(row.LastCheckedAt), CreatedAt: timeValue(row.CreatedAt)}, e
 }
-
-func mapBytecodeBlacklistEntries(rows []tokensqlc.BytecodeBlacklist) []BytecodeBlacklistEntry {
-	items := make([]BytecodeBlacklistEntry, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, *mapBytecodeBlacklistEntry(row))
-	}
-	return items
-}
-
-func mapWalletBlacklistEntry(row tokensqlc.WalletBlacklist) *WalletBlacklistEntry {
-	return &WalletBlacklistEntry{
-		Wallet:    bytesToAddress(row.Wallet),
-		Note:      textValue(row.Note),
-		CreatedAt: timeValue(row.CreatedAt),
-	}
-}
-
-func mapWalletBlacklistEntries(rows []tokensqlc.WalletBlacklist) []WalletBlacklistEntry {
-	items := make([]WalletBlacklistEntry, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, *mapWalletBlacklistEntry(row))
-	}
-	return items
-}
-
-func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) *ProjectDataCollectionTask {
-	return &ProjectDataCollectionTask{
-		ProjectID:     row.ProjectID,
-		DataType:      row.DataType,
-		Status:        row.Status,
-		Revision:      row.Revision,
-		Attempts:      row.Attempts,
-		NextAttemptAt: timeValue(row.NextAttemptAt),
-		LastError:     textValue(row.LastError),
-		CreatedAt:     timeValue(row.CreatedAt),
-		UpdatedAt:     timeValue(row.UpdatedAt),
-	}
-}
-
-func mapDueProjectDataCollectionTask(row tokensqlc.ListDueProjectDataCollectionTasksRow) (*ProjectDataCollectionTaskWithProject, error) {
-	txIndex, err := int64ToUint64("tx_index", row.TxIndex)
-	if err != nil {
-		return nil, err
-	}
-	blockNumber, err := int64ToUint64("block_number", row.BlockNumber)
-	if err != nil {
-		return nil, err
-	}
-	blockTime, err := int64ToUint64("block_time", row.BlockTime)
-	if err != nil {
-		return nil, err
-	}
-	decimals, err := int16ToUint8("decimals", row.Decimals)
-	if err != nil {
-		return nil, err
-	}
-	return &ProjectDataCollectionTaskWithProject{
-		Task: ProjectDataCollectionTask{
-			ProjectID:     row.ProjectID,
-			DataType:      row.DataType,
-			Status:        row.Status,
-			Revision:      row.Revision,
-			Attempts:      row.Attempts,
-			NextAttemptAt: timeValue(row.NextAttemptAt),
-			LastError:     textValue(row.LastError),
-			CreatedAt:     timeValue(row.CreatedAt),
-			UpdatedAt:     timeValue(row.UpdatedAt),
-		},
-		Project: Project{
-			ID:          row.ProjectID,
-			ChainID:     row.ChainID,
-			Contract:    bytesToAddress(row.Contract),
-			TxSender:    bytesToAddress(row.TxSender),
-			TxHash:      bytesToHash(row.TxHash),
-			TxIndex:     txIndex,
-			BlockNumber: blockNumber,
-			BlockTime:   blockTime,
-			CodeHash:    bytesToHash(row.CodeHash),
-			Name:        row.Name,
-			Symbol:      row.Symbol,
-			Decimals:    decimals,
-			TotalSupply: bigIntFromNumeric(row.TotalSupply),
-			WethPair:    bytesToAddress(row.WethPair),
-			UsdtPair:    bytesToAddress(row.UsdtPair),
-			CreatedAt:   timeValue(row.ProjectCreatedAt),
-		},
-	}, nil
-}
-
-func mapProjectReport(row tokensqlc.ProjectReport) (*ProjectReport, error) {
-	wethLastSwapTimestamp, err := uint64PointerFromInt64("weth_pair_last_swap_timestamp", row.WethPairLastSwapTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	usdtLastSwapTimestamp, err := uint64PointerFromInt64("usdt_pair_last_swap_timestamp", row.UsdtPairLastSwapTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	return &ProjectReport{
-		ProjectID:                 row.ProjectID,
-		WethPairIsCreated:         boolPointer(row.WethPairIsCreated),
-		WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity),
-		WethPairIsMint:            boolPointer(row.WethPairIsMint),
-		WethPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt),
-		WethPairLastSwapTimestamp: wethLastSwapTimestamp,
-		UsdtPairIsCreated:         boolPointer(row.UsdtPairIsCreated),
-		UsdtPairIsRemoveLiquidity: boolPointer(row.UsdtPairIsRemoveLiquidity),
-		UsdtPairIsMint:            boolPointer(row.UsdtPairIsMint),
-		UsdtPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt),
-		UsdtPairLastSwapTimestamp: usdtLastSwapTimestamp,
-		SourceUpdatedAt:           timeValue(row.SourceUpdatedAt),
-		EvaluatedAt:               timeValue(row.EvaluatedAt),
-		CreatedAt:                 timeValue(row.CreatedAt),
-	}, nil
-}
-
-func mapProjectReportListItem(row tokensqlc.ListProjectReportsRow) (*ProjectReportListItem, error) {
-	report, err := mapProjectReport(tokensqlc.ProjectReport{
-		ProjectID:                 row.ProjectID,
-		WethPairIsCreated:         row.WethPairIsCreated,
-		WethPairIsRemoveLiquidity: row.WethPairIsRemoveLiquidity,
-		WethPairIsMint:            row.WethPairIsMint,
-		WethPairQuoteUsdtValueInt: row.WethPairQuoteUsdtValueInt,
-		WethPairLastSwapTimestamp: row.WethPairLastSwapTimestamp,
-		UsdtPairIsCreated:         row.UsdtPairIsCreated,
-		UsdtPairIsRemoveLiquidity: row.UsdtPairIsRemoveLiquidity,
-		UsdtPairIsMint:            row.UsdtPairIsMint,
-		UsdtPairQuoteUsdtValueInt: row.UsdtPairQuoteUsdtValueInt,
-		UsdtPairLastSwapTimestamp: row.UsdtPairLastSwapTimestamp,
-		SourceUpdatedAt:           row.SourceUpdatedAt,
-		EvaluatedAt:               row.EvaluatedAt,
-		CreatedAt:                 row.CreatedAt,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &ProjectReportListItem{
-		Report:              *report,
-		ChainID:             row.ChainID,
-		Name:                row.Name,
-		Symbol:              row.Symbol,
-		Contract:            bytesToAddress(row.Contract),
-		EvaluationStatus:    row.EvaluationStatus,
-		EvaluationAttempts:  row.EvaluationAttempts,
-		EvaluationLastError: row.EvaluationLastError,
-		EvaluationUpdatedAt: timeValue(row.EvaluationUpdatedAt),
-	}, nil
-}
-
-func mapProjectReportListItems(rows []tokensqlc.ListProjectReportsRow) ([]ProjectReportListItem, error) {
-	items := make([]ProjectReportListItem, 0, len(rows))
-	for _, row := range rows {
-		item, err := mapProjectReportListItem(row)
-		if err != nil {
-			return nil, err
+func mapCurrentProjectObservations(rows []tokensqlc.ListCurrentProjectObservationsRow) ([]ProjectObservation, error) {
+	out := make([]ProjectObservation, 0, len(rows))
+	for _, r := range rows {
+		v, e := mapCurrentProjectObservation(tokensqlc.GetCurrentProjectObservationRow(r))
+		if e != nil {
+			return nil, e
 		}
-		items = append(items, *item)
+		out = append(out, v)
 	}
-	return items, nil
+	return out, nil
 }
 
-func mapProjectReportEvaluationTask(row tokensqlc.ProjectReportEvaluationTask) *ProjectReportEvaluationTask {
-	return &ProjectReportEvaluationTask{
-		ProjectID:     row.ProjectID,
-		Status:        row.Status,
-		Revision:      row.Revision,
-		Attempts:      row.Attempts,
-		NextAttemptAt: timeValue(row.NextAttemptAt),
-		LastError:     textValue(row.LastError),
-		CreatedAt:     timeValue(row.CreatedAt),
-		UpdatedAt:     timeValue(row.UpdatedAt),
-	}
+func mapProjectResearchState(row tokensqlc.ListProjectResearchStatesRow) ProjectResearchState {
+	return ProjectResearchState{ProjectID: row.ProjectID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), Status: row.Status, EvidenceRevision: row.EvidenceRevision, CurrentReportRevision: int64Value(row.CurrentReportRevision), CurrentSelectionID: int64Value(row.CurrentSelectionID), CurrentSelectionOutcome: row.CurrentSelectionOutcome, LastEvaluatedReportRevision: int64Value(row.LastEvaluatedReportRevision), LastEvaluatedAt: timeValue(row.LastEvaluatedAt), ExpiresAt: timeValue(row.ExpiresAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
 }
-
-func mapDueProjectDataCollectionTasks(rows []tokensqlc.ListDueProjectDataCollectionTasksRow) ([]ProjectDataCollectionTaskWithProject, error) {
-	items := make([]ProjectDataCollectionTaskWithProject, 0, len(rows))
-	for _, row := range rows {
-		item, err := mapDueProjectDataCollectionTask(row)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, *item)
+func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (ProjectReportRevision, error) {
+	bn, e := uint64PointerFromInt64("observed_block_number", row.ObservedBlockNumber)
+	if e != nil {
+		return ProjectReportRevision{}, e
 	}
-	return items, nil
+	wts, e := uint64PointerFromInt64("weth_pair_last_swap_timestamp", row.WethPairLastSwapTimestamp)
+	if e != nil {
+		return ProjectReportRevision{}, e
+	}
+	uts, e := uint64PointerFromInt64("usdt_pair_last_swap_timestamp", row.UsdtPairLastSwapTimestamp)
+	if e != nil {
+		return ProjectReportRevision{}, e
+	}
+	return ProjectReportRevision{ID: row.ID, ProjectID: row.ProjectID, Revision: row.Revision, ContentHash: bytesToHash(row.ContentHash), CompletenessStatus: row.CompletenessStatus, Evidence: json.RawMessage(row.Evidence), Report: json.RawMessage(row.Report), ObservedBlockNumber: bn, WethPairIsCreated: boolPointer(row.WethPairIsCreated), WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity), WethPairIsMint: boolPointer(row.WethPairIsMint), WethPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt), WethPairLastSwapTimestamp: wts, UsdtPairIsCreated: boolPointer(row.UsdtPairIsCreated), UsdtPairIsRemoveLiquidity: boolPointer(row.UsdtPairIsRemoveLiquidity), UsdtPairIsMint: boolPointer(row.UsdtPairIsMint), UsdtPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt), UsdtPairLastSwapTimestamp: uts, BuiltAt: timeValue(row.BuiltAt), CreatedAt: timeValue(row.CreatedAt)}, nil
+}
+func mapProjectSelection(row tokensqlc.ProjectSelection) ProjectSelection {
+	return ProjectSelection{ID: row.ID, ProjectID: row.ProjectID, Outcome: row.Outcome, StrategyKey: row.StrategyKey, StrategyVersion: row.StrategyVersion, ReportRevision: row.ReportRevision, ReasonCodes: row.ReasonCodes, ReasonDetail: row.ReasonDetail, DecidedAt: timeValue(row.DecidedAt), CreatedAt: timeValue(row.CreatedAt)}
 }

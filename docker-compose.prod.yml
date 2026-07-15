@@ -137,19 +137,6 @@ services:
     expose:
       - "8088"
 
-  athena-token:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-token
-      ATHENA_TOKEN_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_TOKEN_MODE: grpc
-    command: ["athena", "--port", "8094"]
-    expose:
-      - "8094"
-
   athena-token-api:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -182,7 +169,7 @@ services:
     expose:
       - "8100"
 
-  athena-token-chain-ingestor:
+  athena-token-discovery:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
@@ -193,26 +180,11 @@ services:
     environment:
       ATHENA_BINARY_NAME: athena-token
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_TOKEN_MODE: chain-ingestor
+      ATHENA_TOKEN_MODE: discovery
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
     command: ["athena"]
 
-  athena-token-project-qualifier:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-token
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_TOKEN_MODE: project-qualifier
-      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
-    command: ["athena"]
-
-  athena-token-project-data-collector:
+  athena-token-research:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
@@ -225,24 +197,9 @@ services:
     environment:
       ATHENA_BINARY_NAME: athena-token
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_TOKEN_MODE: project-data-collector
+      ATHENA_TOKEN_MODE: research
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
       ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS: athena-ethereum-api:8100
-    command: ["athena"]
-
-  athena-token-project-report-evaluator:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      ATHENA_BINARY_NAME: athena-token
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_TOKEN_MODE: project-report-evaluator
-      ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
     command: ["athena"]
 
   athena-migrate:

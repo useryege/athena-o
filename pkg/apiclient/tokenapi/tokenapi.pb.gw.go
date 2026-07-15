@@ -69,8 +69,8 @@ func local_request_TokenAPIService_ListNodeStatuses_0(ctx context.Context, marsh
 
 }
 
-func request_TokenAPIService_GetBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetBytecodeBlacklistRequest
+func request_TokenAPIService_GetContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -91,13 +91,13 @@ func request_TokenAPIService_GetBytecodeBlacklist_0(ctx context.Context, marshal
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
 	}
 
-	msg, err := client.GetBytecodeBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetContractCodeBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_GetBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetBytecodeBlacklistRequest
+func local_request_TokenAPIService_GetContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -118,48 +118,31 @@ func local_request_TokenAPIService_GetBytecodeBlacklist_0(ctx context.Context, m
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
 	}
 
-	msg, err := server.GetBytecodeBlacklist(ctx, &protoReq)
+	msg, err := server.GetContractCodeBlocklistEntry(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_ListBytecodeBlacklists_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListBytecodeBlacklistsRequest
+func request_TokenAPIService_ListContractCodeBlocklistEntries_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListContractCodeBlocklistEntriesRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.ListBytecodeBlacklists(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListContractCodeBlocklistEntries(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_ListBytecodeBlacklists_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListBytecodeBlacklistsRequest
+func local_request_TokenAPIService_ListContractCodeBlocklistEntries_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListContractCodeBlocklistEntriesRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.ListBytecodeBlacklists(ctx, &protoReq)
+	msg, err := server.ListContractCodeBlocklistEntries(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_CreateBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateBytecodeBlacklistRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.CreateBytecodeBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_TokenAPIService_CreateBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateBytecodeBlacklistRequest
+func request_TokenAPIService_CreateContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -170,13 +153,13 @@ func local_request_TokenAPIService_CreateBytecodeBlacklist_0(ctx context.Context
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.CreateBytecodeBlacklist(ctx, &protoReq)
+	msg, err := client.CreateContractCodeBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_UpdateBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateBytecodeBlacklistRequest
+func local_request_TokenAPIService_CreateContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -187,31 +170,13 @@ func request_TokenAPIService_UpdateBytecodeBlacklist_0(ctx context.Context, mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["code_hash"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "code_hash")
-	}
-
-	protoReq.CodeHash, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
-	}
-
-	msg, err := client.UpdateBytecodeBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := server.CreateContractCodeBlocklistEntry(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_UpdateBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateBytecodeBlacklistRequest
+func request_TokenAPIService_UpdateContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -240,13 +205,48 @@ func local_request_TokenAPIService_UpdateBytecodeBlacklist_0(ctx context.Context
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
 	}
 
-	msg, err := server.UpdateBytecodeBlacklist(ctx, &protoReq)
+	msg, err := client.UpdateContractCodeBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_DeleteBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteBytecodeBlacklistRequest
+func local_request_TokenAPIService_UpdateContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateContractCodeBlocklistEntryRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["code_hash"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "code_hash")
+	}
+
+	protoReq.CodeHash, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
+	}
+
+	msg, err := server.UpdateContractCodeBlocklistEntry(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_TokenAPIService_DeleteContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -267,13 +267,13 @@ func request_TokenAPIService_DeleteBytecodeBlacklist_0(ctx context.Context, mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
 	}
 
-	msg, err := client.DeleteBytecodeBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeleteContractCodeBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_DeleteBytecodeBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteBytecodeBlacklistRequest
+func local_request_TokenAPIService_DeleteContractCodeBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteContractCodeBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -294,13 +294,13 @@ func local_request_TokenAPIService_DeleteBytecodeBlacklist_0(ctx context.Context
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "code_hash", err)
 	}
 
-	msg, err := server.DeleteBytecodeBlacklist(ctx, &protoReq)
+	msg, err := server.DeleteContractCodeBlocklistEntry(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_GetWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetWalletBlacklistRequest
+func request_TokenAPIService_GetWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -321,13 +321,13 @@ func request_TokenAPIService_GetWalletBlacklist_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
 	}
 
-	msg, err := client.GetWalletBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetWalletBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_GetWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetWalletBlacklistRequest
+func local_request_TokenAPIService_GetWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -348,48 +348,31 @@ func local_request_TokenAPIService_GetWalletBlacklist_0(ctx context.Context, mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
 	}
 
-	msg, err := server.GetWalletBlacklist(ctx, &protoReq)
+	msg, err := server.GetWalletBlocklistEntry(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_ListWalletBlacklists_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListWalletBlacklistsRequest
+func request_TokenAPIService_ListWalletBlocklistEntries_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListWalletBlocklistEntriesRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.ListWalletBlacklists(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListWalletBlocklistEntries(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_ListWalletBlacklists_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListWalletBlacklistsRequest
+func local_request_TokenAPIService_ListWalletBlocklistEntries_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListWalletBlocklistEntriesRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.ListWalletBlacklists(ctx, &protoReq)
+	msg, err := server.ListWalletBlocklistEntries(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_CreateWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateWalletBlacklistRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.CreateWalletBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_TokenAPIService_CreateWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CreateWalletBlacklistRequest
+func request_TokenAPIService_CreateWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -400,13 +383,13 @@ func local_request_TokenAPIService_CreateWalletBlacklist_0(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.CreateWalletBlacklist(ctx, &protoReq)
+	msg, err := client.CreateWalletBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_UpdateWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateWalletBlacklistRequest
+func local_request_TokenAPIService_CreateWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -417,31 +400,13 @@ func request_TokenAPIService_UpdateWalletBlacklist_0(ctx context.Context, marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["wallet"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "wallet")
-	}
-
-	protoReq.Wallet, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
-	}
-
-	msg, err := client.UpdateWalletBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := server.CreateWalletBlocklistEntry(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_UpdateWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateWalletBlacklistRequest
+func request_TokenAPIService_UpdateWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -470,13 +435,48 @@ func local_request_TokenAPIService_UpdateWalletBlacklist_0(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
 	}
 
-	msg, err := server.UpdateWalletBlacklist(ctx, &protoReq)
+	msg, err := client.UpdateWalletBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_TokenAPIService_DeleteWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteWalletBlacklistRequest
+func local_request_TokenAPIService_UpdateWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateWalletBlocklistEntryRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["wallet"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "wallet")
+	}
+
+	protoReq.Wallet, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
+	}
+
+	msg, err := server.UpdateWalletBlocklistEntry(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_TokenAPIService_DeleteWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -497,13 +497,13 @@ func request_TokenAPIService_DeleteWalletBlacklist_0(ctx context.Context, marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
 	}
 
-	msg, err := client.DeleteWalletBlacklist(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeleteWalletBlocklistEntry(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TokenAPIService_DeleteWalletBlacklist_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteWalletBlacklistRequest
+func local_request_TokenAPIService_DeleteWalletBlocklistEntry_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteWalletBlocklistEntryRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -524,7 +524,7 @@ func local_request_TokenAPIService_DeleteWalletBlacklist_0(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "wallet", err)
 	}
 
-	msg, err := server.DeleteWalletBlacklist(ctx, &protoReq)
+	msg, err := server.DeleteWalletBlocklistEntry(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -844,26 +844,15 @@ func request_TokenAPIService_GetProjectDataCollectionTask_0(ctx context.Context,
 		_   = err
 	)
 
-	val, ok = pathParams["project_id"]
+	val, ok = pathParams["task_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "project_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "task_id")
 	}
 
-	protoReq.ProjectId, err = runtime.Int64(val)
+	protoReq.TaskId, err = runtime.Int64(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "project_id", err)
-	}
-
-	val, ok = pathParams["data_type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "data_type")
-	}
-
-	protoReq.DataType, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "data_type", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "task_id", err)
 	}
 
 	msg, err := client.GetProjectDataCollectionTask(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -882,26 +871,15 @@ func local_request_TokenAPIService_GetProjectDataCollectionTask_0(ctx context.Co
 		_   = err
 	)
 
-	val, ok = pathParams["project_id"]
+	val, ok = pathParams["task_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "project_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "task_id")
 	}
 
-	protoReq.ProjectId, err = runtime.Int64(val)
+	protoReq.TaskId, err = runtime.Int64(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "project_id", err)
-	}
-
-	val, ok = pathParams["data_type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "data_type")
-	}
-
-	protoReq.DataType, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "data_type", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "task_id", err)
 	}
 
 	msg, err := server.GetProjectDataCollectionTask(ctx, &protoReq)
@@ -941,6 +919,114 @@ func local_request_TokenAPIService_ListProjectDataCollectionTasks_0(ctx context.
 	}
 
 	msg, err := server.ListProjectDataCollectionTasks(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+var (
+	filter_TokenAPIService_ListProjectResearchStates_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TokenAPIService_ListProjectResearchStates_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListProjectResearchStatesRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenAPIService_ListProjectResearchStates_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListProjectResearchStates(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TokenAPIService_ListProjectResearchStates_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListProjectResearchStatesRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenAPIService_ListProjectResearchStates_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListProjectResearchStates(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+var (
+	filter_TokenAPIService_ListProjectReportRevisions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TokenAPIService_ListProjectReportRevisions_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListProjectReportRevisionsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenAPIService_ListProjectReportRevisions_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListProjectReportRevisions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TokenAPIService_ListProjectReportRevisions_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListProjectReportRevisionsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenAPIService_ListProjectReportRevisions_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListProjectReportRevisions(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+var (
+	filter_TokenAPIService_ListProjectSelections_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TokenAPIService_ListProjectSelections_0(ctx context.Context, marshaler runtime.Marshaler, client TokenAPIServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListProjectSelectionsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenAPIService_ListProjectSelections_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListProjectSelections(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TokenAPIService_ListProjectSelections_0(ctx context.Context, marshaler runtime.Marshaler, server TokenAPIServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListProjectSelectionsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenAPIService_ListProjectSelections_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListProjectSelections(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -997,7 +1083,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_GetBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_GetContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1008,7 +1094,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_GetBytecodeBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_GetContractCodeBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1016,11 +1102,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_GetBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_GetContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_ListBytecodeBlacklists_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_ListContractCodeBlocklistEntries_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1031,7 +1117,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_ListBytecodeBlacklists_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_ListContractCodeBlocklistEntries_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1039,11 +1125,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_ListBytecodeBlacklists_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_ListContractCodeBlocklistEntries_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_CreateBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_CreateContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1054,7 +1140,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_CreateBytecodeBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_CreateContractCodeBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1062,11 +1148,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_CreateBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_CreateContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_UpdateBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_UpdateContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1077,7 +1163,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_UpdateBytecodeBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_UpdateContractCodeBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1085,11 +1171,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_UpdateBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_UpdateContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_TokenAPIService_DeleteBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_TokenAPIService_DeleteContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1100,7 +1186,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_DeleteBytecodeBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_DeleteContractCodeBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1108,11 +1194,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_DeleteBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_DeleteContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_GetWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_GetWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1123,7 +1209,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_GetWalletBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_GetWalletBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1131,11 +1217,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_GetWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_GetWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_ListWalletBlacklists_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_ListWalletBlocklistEntries_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1146,7 +1232,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_ListWalletBlacklists_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_ListWalletBlocklistEntries_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1154,11 +1240,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_ListWalletBlacklists_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_ListWalletBlocklistEntries_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_CreateWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_CreateWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1169,7 +1255,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_CreateWalletBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_CreateWalletBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1177,11 +1263,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_CreateWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_CreateWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_UpdateWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_UpdateWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1192,7 +1278,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_UpdateWalletBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_UpdateWalletBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1200,11 +1286,11 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_UpdateWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_UpdateWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_TokenAPIService_DeleteWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_TokenAPIService_DeleteWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1215,7 +1301,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TokenAPIService_DeleteWalletBlacklist_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TokenAPIService_DeleteWalletBlocklistEntry_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1223,7 +1309,7 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_TokenAPIService_DeleteWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_DeleteWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1434,6 +1520,75 @@ func RegisterTokenAPIServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 
 	})
 
+	mux.Handle("GET", pattern_TokenAPIService_ListProjectResearchStates_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TokenAPIService_ListProjectResearchStates_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenAPIService_ListProjectResearchStates_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenAPIService_ListProjectReportRevisions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TokenAPIService_ListProjectReportRevisions_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenAPIService_ListProjectReportRevisions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenAPIService_ListProjectSelections_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TokenAPIService_ListProjectSelections_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenAPIService_ListProjectSelections_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -1515,7 +1670,7 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_GetBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_GetContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1524,18 +1679,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_GetBytecodeBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_GetContractCodeBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_GetBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_GetContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_ListBytecodeBlacklists_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_ListContractCodeBlocklistEntries_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1544,18 +1699,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_ListBytecodeBlacklists_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_ListContractCodeBlocklistEntries_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_ListBytecodeBlacklists_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_ListContractCodeBlocklistEntries_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_CreateBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_CreateContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1564,18 +1719,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_CreateBytecodeBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_CreateContractCodeBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_CreateBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_CreateContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_UpdateBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_UpdateContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1584,18 +1739,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_UpdateBytecodeBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_UpdateContractCodeBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_UpdateBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_UpdateContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_TokenAPIService_DeleteBytecodeBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_TokenAPIService_DeleteContractCodeBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1604,18 +1759,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_DeleteBytecodeBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_DeleteContractCodeBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_DeleteBytecodeBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_DeleteContractCodeBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_GetWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_GetWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1624,18 +1779,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_GetWalletBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_GetWalletBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_GetWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_GetWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TokenAPIService_ListWalletBlacklists_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TokenAPIService_ListWalletBlocklistEntries_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1644,18 +1799,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_ListWalletBlacklists_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_ListWalletBlocklistEntries_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_ListWalletBlacklists_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_ListWalletBlocklistEntries_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_CreateWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_CreateWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1664,18 +1819,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_CreateWalletBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_CreateWalletBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_CreateWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_CreateWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TokenAPIService_UpdateWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TokenAPIService_UpdateWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1684,18 +1839,18 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_UpdateWalletBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_UpdateWalletBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_UpdateWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_UpdateWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_TokenAPIService_DeleteWalletBlacklist_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_TokenAPIService_DeleteWalletBlocklistEntry_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1704,14 +1859,14 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TokenAPIService_DeleteWalletBlacklist_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TokenAPIService_DeleteWalletBlocklistEntry_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TokenAPIService_DeleteWalletBlacklist_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TokenAPIService_DeleteWalletBlocklistEntry_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1895,6 +2050,66 @@ func RegisterTokenAPIServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 
 	})
 
+	mux.Handle("GET", pattern_TokenAPIService_ListProjectResearchStates_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TokenAPIService_ListProjectResearchStates_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenAPIService_ListProjectResearchStates_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenAPIService_ListProjectReportRevisions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TokenAPIService_ListProjectReportRevisions_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenAPIService_ListProjectReportRevisions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenAPIService_ListProjectSelections_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TokenAPIService_ListProjectSelections_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenAPIService_ListProjectSelections_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -1903,25 +2118,25 @@ var (
 
 	pattern_TokenAPIService_ListNodeStatuses_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "node-statuses"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_GetBytecodeBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "bytecode-blacklists", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_GetContractCodeBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "contract-code-blocklist", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_ListBytecodeBlacklists_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "bytecode-blacklists"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_ListContractCodeBlocklistEntries_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "contract-code-blocklist"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_CreateBytecodeBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "bytecode-blacklists"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_CreateContractCodeBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "contract-code-blocklist"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_UpdateBytecodeBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "bytecode-blacklists", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_UpdateContractCodeBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "contract-code-blocklist", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_DeleteBytecodeBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "bytecode-blacklists", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_DeleteContractCodeBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "contract-code-blocklist", "code_hash"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_GetWalletBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "wallet-blacklists", "wallet"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_GetWalletBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "wallet-blocklist", "wallet"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_ListWalletBlacklists_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "wallet-blacklists"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_ListWalletBlocklistEntries_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "wallet-blocklist"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_CreateWalletBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "wallet-blacklists"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_CreateWalletBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "wallet-blocklist"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_UpdateWalletBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "wallet-blacklists", "wallet"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_UpdateWalletBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "wallet-blocklist", "wallet"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_DeleteWalletBlacklist_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "wallet-blacklists", "wallet"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_DeleteWalletBlocklistEntry_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "wallet-blocklist", "wallet"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_TokenAPIService_GetChainIngestCheckpoint_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "chain-ingest-checkpoints", "chain_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -1937,9 +2152,15 @@ var (
 
 	pattern_TokenAPIService_ListProjectReports_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "project-reports"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_TokenAPIService_GetProjectDataCollectionTask_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"api", "v1", "tokenapi", "project-data-collection-tasks", "project_id", "data_type"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_TokenAPIService_GetProjectDataCollectionTask_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokenapi", "project-data-collection-tasks", "task_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_TokenAPIService_ListProjectDataCollectionTasks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "project-data-collection-tasks"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_TokenAPIService_ListProjectResearchStates_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "project-research-states"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_TokenAPIService_ListProjectReportRevisions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "project-report-revisions"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_TokenAPIService_ListProjectSelections_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokenapi", "project-selections"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -1947,25 +2168,25 @@ var (
 
 	forward_TokenAPIService_ListNodeStatuses_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_GetBytecodeBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_GetContractCodeBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_ListBytecodeBlacklists_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_ListContractCodeBlocklistEntries_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_CreateBytecodeBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_CreateContractCodeBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_UpdateBytecodeBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_UpdateContractCodeBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_DeleteBytecodeBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_DeleteContractCodeBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_GetWalletBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_GetWalletBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_ListWalletBlacklists_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_ListWalletBlocklistEntries_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_CreateWalletBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_CreateWalletBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_UpdateWalletBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_UpdateWalletBlocklistEntry_0 = runtime.ForwardResponseMessage
 
-	forward_TokenAPIService_DeleteWalletBlacklist_0 = runtime.ForwardResponseMessage
+	forward_TokenAPIService_DeleteWalletBlocklistEntry_0 = runtime.ForwardResponseMessage
 
 	forward_TokenAPIService_GetChainIngestCheckpoint_0 = runtime.ForwardResponseMessage
 
@@ -1984,4 +2205,10 @@ var (
 	forward_TokenAPIService_GetProjectDataCollectionTask_0 = runtime.ForwardResponseMessage
 
 	forward_TokenAPIService_ListProjectDataCollectionTasks_0 = runtime.ForwardResponseMessage
+
+	forward_TokenAPIService_ListProjectResearchStates_0 = runtime.ForwardResponseMessage
+
+	forward_TokenAPIService_ListProjectReportRevisions_0 = runtime.ForwardResponseMessage
+
+	forward_TokenAPIService_ListProjectSelections_0 = runtime.ForwardResponseMessage
 )

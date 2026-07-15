@@ -606,18 +606,6 @@ message PolymarketUMAProposalItem {
   optional string polymarketUrl = 25;
 }
 
-message TokenAPIBytecodeBlacklist {
-  optional string codeHash = 1;
-
-  optional string note = 2;
-
-  optional int64 sourceChainId = 3;
-
-  optional string sourceContract = 4;
-
-  optional string createdAt = 5;
-}
-
 message TokenAPIChainIngestCheckpoint {
   optional int64 chainId = 1;
 
@@ -648,6 +636,18 @@ message TokenAPIContractCode {
   optional string createdAt = 4;
 
   optional int64 deploymentCount = 5;
+}
+
+message TokenAPIContractCodeBlocklistEntry {
+  optional string codeHash = 1;
+
+  optional string note = 2;
+
+  optional int64 sourceChainId = 3;
+
+  optional string sourceContract = 4;
+
+  optional string createdAt = 5;
 }
 
 message TokenAPINodeStatus {
@@ -709,19 +709,27 @@ message TokenAPIProject {
 }
 
 message TokenAPIProjectDataCollectionTask {
-  optional int64 projectId = 1;
+  optional int64 taskId = 1;
 
-  optional string dataType = 2;
+  optional int64 projectId = 2;
 
-  optional string status = 3;
+  optional string dataType = 3;
 
-  optional int32 attempts = 4;
+  optional string status = 4;
 
-  optional string nextAttemptAt = 5;
+  optional int64 revision = 5;
 
-  optional string lastError = 6;
+  optional int32 attempts = 6;
 
-  optional string createdAt = 7;
+  optional string availableAt = 7;
+
+  optional string leaseExpiresAt = 8;
+
+  optional string lastError = 9;
+
+  optional string createdAt = 10;
+
+  optional string updatedAt = 11;
 }
 
 message TokenAPIProjectReport {
@@ -772,7 +780,105 @@ message TokenAPIProjectReport {
   optional string createdAt = 23;
 }
 
-message TokenAPIWalletBlacklist {
+message TokenAPIProjectReportRevision {
+  optional int64 reportRevisionId = 1;
+
+  optional int64 projectId = 2;
+
+  optional int64 chainId = 3;
+
+  optional string contract = 4;
+
+  optional int64 revision = 5;
+
+  optional string contentHash = 6;
+
+  optional string completenessStatus = 7;
+
+  optional string evidenceJson = 8;
+
+  optional string reportJson = 9;
+
+  optional uint64 observedBlockNumber = 10;
+
+  optional bool wethPairIsCreated = 11;
+
+  optional bool wethPairIsRemoveLiquidity = 12;
+
+  optional bool wethPairIsMint = 13;
+
+  optional string wethPairQuoteUsdtValueInt = 14;
+
+  optional string wethPairLastSwapAt = 15;
+
+  optional bool usdtPairIsCreated = 16;
+
+  optional bool usdtPairIsRemoveLiquidity = 17;
+
+  optional bool usdtPairIsMint = 18;
+
+  optional string usdtPairQuoteUsdtValueInt = 19;
+
+  optional string usdtPairLastSwapAt = 20;
+
+  optional string builtAt = 21;
+
+  optional string createdAt = 22;
+}
+
+message TokenAPIProjectResearchState {
+  optional int64 projectId = 1;
+
+  optional int64 chainId = 2;
+
+  optional string contract = 3;
+
+  optional string status = 4;
+
+  optional int64 evidenceRevision = 5;
+
+  optional int64 currentReportRevision = 6;
+
+  optional string currentSelectionOutcome = 7;
+
+  optional int64 lastEvaluatedRevision = 8;
+
+  optional string lastEvaluatedAt = 9;
+
+  optional string expiresAt = 10;
+
+  optional string createdAt = 11;
+
+  optional string updatedAt = 12;
+}
+
+message TokenAPIProjectSelection {
+  optional int64 selectionId = 1;
+
+  optional int64 projectId = 2;
+
+  optional int64 chainId = 3;
+
+  optional string contract = 4;
+
+  optional string outcome = 5;
+
+  optional string strategyKey = 6;
+
+  optional string strategyVersion = 7;
+
+  optional int64 reportRevision = 8;
+
+  repeated string reasonCodes = 9;
+
+  optional string reasonDetail = 10;
+
+  optional string decidedAt = 11;
+
+  optional string createdAt = 12;
+}
+
+message TokenAPIWalletBlocklistEntry {
   optional string wallet = 1;
 
   optional string note = 2;

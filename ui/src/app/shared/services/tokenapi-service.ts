@@ -1,6 +1,6 @@
 import requests from './requests';
 
-export interface TokenAPIBytecodeBlacklist {
+export interface TokenAPIContractCodeBlocklistEntry {
     codeHash?: string;
     note?: string;
     sourceChainID?: number;
@@ -8,7 +8,7 @@ export interface TokenAPIBytecodeBlacklist {
     createdAt?: string;
 }
 
-export interface TokenAPIWalletBlacklist {
+export interface TokenAPIWalletBlocklistEntry {
     wallet?: string;
     note?: string;
     createdAt?: string;
@@ -98,13 +98,17 @@ export interface TokenAPIProjectReport {
 }
 
 export interface TokenAPIProjectDataCollectionTask {
+    taskID?: number;
     projectID?: number;
     dataType?: string;
     status?: string;
     attempts?: number;
-    nextAttemptAt?: string;
+    revision?: number;
+    availableAt?: string;
+    leaseExpiresAt?: string;
     lastError?: string;
     createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface PagedResponse<T> {
@@ -125,7 +129,7 @@ const numberValue = (value: unknown): number | undefined => {
     return undefined;
 };
 
-function normalizeBytecodeBlacklist(item: any): TokenAPIBytecodeBlacklist {
+function normalizeContractCodeBlocklistEntry(item: any): TokenAPIContractCodeBlocklistEntry {
     return {
         codeHash: item.codeHash ?? item.code_hash,
         note: item.note,
@@ -135,7 +139,7 @@ function normalizeBytecodeBlacklist(item: any): TokenAPIBytecodeBlacklist {
     };
 }
 
-function normalizeWalletBlacklist(item: any): TokenAPIWalletBlacklist {
+function normalizeWalletBlocklistEntry(item: any): TokenAPIWalletBlocklistEntry {
     return {
         wallet: item.wallet,
         note: item.note,
@@ -243,13 +247,17 @@ function normalizeProjectReport(item: any): TokenAPIProjectReport {
 
 function normalizeTask(item: any): TokenAPIProjectDataCollectionTask {
     return {
+        taskID: numberValue(item.taskID ?? item.taskId ?? item.task_id),
         projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
         dataType: item.dataType ?? item.data_type,
         status: item.status,
+        revision: numberValue(item.revision),
         attempts: numberValue(item.attempts),
-        nextAttemptAt: item.nextAttemptAt ?? item.next_attempt_at,
+        availableAt: item.availableAt ?? item.available_at,
+        leaseExpiresAt: item.leaseExpiresAt ?? item.lease_expires_at,
         lastError: item.lastError ?? item.last_error,
-        createdAt: item.createdAt ?? item.created_at
+        createdAt: item.createdAt ?? item.created_at,
+        updatedAt: item.updatedAt ?? item.updated_at
     };
 }
 
@@ -273,15 +281,15 @@ export class TokenAPIService {
         return promise;
     }
 
-    public listBytecodeBlacklists(): Promise<TokenAPIBytecodeBlacklist[]> & {abort?: () => void} {
-        const req = requests.get('/tokenapi/bytecode-blacklists');
-        const promise = req.then(res => ((res.body?.bytecodeBlacklists || res.body?.bytecode_blacklists || []) as any[]).map(normalizeBytecodeBlacklist)) as any;
+    public listContractCodeBlocklistEntries(): Promise<TokenAPIContractCodeBlocklistEntry[]> & {abort?: () => void} {
+        const req = requests.get('/tokenapi/contract-code-blocklist');
+        const promise = req.then(res => ((res.body?.entries || []) as any[]).map(normalizeContractCodeBlocklistEntry)) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public createBytecodeBlacklist(values: {note?: string; sourceChainID?: number; sourceContract?: string}): Promise<void> & {abort?: () => void} {
-        const req = requests.post('/tokenapi/bytecode-blacklists').send({
+    public createContractCodeBlocklistEntry(values: {note?: string; sourceChainID?: number; sourceContract?: string}): Promise<void> & {abort?: () => void} {
+        const req = requests.post('/tokenapi/contract-code-blocklist').send({
             note: values.note || '',
             sourceChainId: values.sourceChainID,
             source_chain_id: values.sourceChainID,
@@ -293,43 +301,43 @@ export class TokenAPIService {
         return promise;
     }
 
-    public updateBytecodeBlacklist(codeHash: string, note: string): Promise<number> & {abort?: () => void} {
-        const req = requests.post(`/tokenapi/bytecode-blacklists/${encodeURIComponent(codeHash)}`).send({codeHash, code_hash: codeHash, note});
+    public updateContractCodeBlocklistEntry(codeHash: string, note: string): Promise<number> & {abort?: () => void} {
+        const req = requests.post(`/tokenapi/contract-code-blocklist/${encodeURIComponent(codeHash)}`).send({codeHash, code_hash: codeHash, note});
         const promise = req.then(res => numberValue(res.body?.updatedCount ?? res.body?.updated_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public deleteBytecodeBlacklist(codeHash: string): Promise<number> & {abort?: () => void} {
-        const req = requests.delete(`/tokenapi/bytecode-blacklists/${encodeURIComponent(codeHash)}`);
+    public deleteContractCodeBlocklistEntry(codeHash: string): Promise<number> & {abort?: () => void} {
+        const req = requests.delete(`/tokenapi/contract-code-blocklist/${encodeURIComponent(codeHash)}`);
         const promise = req.then(res => numberValue(res.body?.deletedCount ?? res.body?.deleted_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public listWalletBlacklists(): Promise<TokenAPIWalletBlacklist[]> & {abort?: () => void} {
-        const req = requests.get('/tokenapi/wallet-blacklists');
-        const promise = req.then(res => ((res.body?.walletBlacklists || res.body?.wallet_blacklists || []) as any[]).map(normalizeWalletBlacklist)) as any;
+    public listWalletBlocklistEntries(): Promise<TokenAPIWalletBlocklistEntry[]> & {abort?: () => void} {
+        const req = requests.get('/tokenapi/wallet-blocklist');
+        const promise = req.then(res => ((res.body?.entries || []) as any[]).map(normalizeWalletBlocklistEntry)) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public createWalletBlacklist(wallet: string, note: string): Promise<void> & {abort?: () => void} {
-        const req = requests.post('/tokenapi/wallet-blacklists').send({wallet, note});
+    public createWalletBlocklistEntry(wallet: string, note: string): Promise<void> & {abort?: () => void} {
+        const req = requests.post('/tokenapi/wallet-blocklist').send({wallet, note});
         const promise = req.then(() => undefined) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public updateWalletBlacklist(wallet: string, note: string): Promise<number> & {abort?: () => void} {
-        const req = requests.post(`/tokenapi/wallet-blacklists/${encodeURIComponent(wallet)}`).send({wallet, note});
+    public updateWalletBlocklistEntry(wallet: string, note: string): Promise<number> & {abort?: () => void} {
+        const req = requests.post(`/tokenapi/wallet-blocklist/${encodeURIComponent(wallet)}`).send({wallet, note});
         const promise = req.then(res => numberValue(res.body?.updatedCount ?? res.body?.updated_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
-    public deleteWalletBlacklist(wallet: string): Promise<number> & {abort?: () => void} {
-        const req = requests.delete(`/tokenapi/wallet-blacklists/${encodeURIComponent(wallet)}`);
+    public deleteWalletBlocklistEntry(wallet: string): Promise<number> & {abort?: () => void} {
+        const req = requests.delete(`/tokenapi/wallet-blocklist/${encodeURIComponent(wallet)}`);
         const promise = req.then(res => numberValue(res.body?.deletedCount ?? res.body?.deleted_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;

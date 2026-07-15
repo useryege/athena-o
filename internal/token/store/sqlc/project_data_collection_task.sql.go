@@ -11,219 +11,67 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countProjectDataCollectionTasks = `-- name: CountProjectDataCollectionTasks :one
-SELECT COUNT(*)::bigint
-FROM project_data_collection_task
-WHERE ($1::bigint IS NULL OR project_id = $1::bigint)
-  AND ($2::text IS NULL OR data_type = $2::text)
-  AND ($3::text IS NULL OR status = $3::text)
-`
-
-type CountProjectDataCollectionTasksParams struct {
-	ProjectID pgtype.Int8
-	DataType  pgtype.Text
-	Status    pgtype.Text
-}
-
-func (q *Queries) CountProjectDataCollectionTasks(ctx context.Context, arg CountProjectDataCollectionTasksParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countProjectDataCollectionTasks, arg.ProjectID, arg.DataType, arg.Status)
-	var column_1 int64
-	err := row.Scan(&column_1)
-	return column_1, err
-}
-
-const deleteProjectDataCollectionTask = `-- name: DeleteProjectDataCollectionTask :execrows
-DELETE FROM project_data_collection_task
-WHERE project_id = $1
-  AND data_type = $2
-`
-
-type DeleteProjectDataCollectionTaskParams struct {
-	ProjectID int64
-	DataType  string
-}
-
-func (q *Queries) DeleteProjectDataCollectionTask(ctx context.Context, arg DeleteProjectDataCollectionTaskParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteProjectDataCollectionTask, arg.ProjectID, arg.DataType)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const enqueueProjectDataCollectionTask = `-- name: EnqueueProjectDataCollectionTask :one
-INSERT INTO project_data_collection_task (
-  project_id,
-  data_type
-) VALUES (
-  $1,
-  $2
+const claimProjectDataCollectionTasks = `-- name: ClaimProjectDataCollectionTasks :many
+WITH claimable AS (
+  SELECT task.id
+  FROM project_data_collection_task AS task
+  JOIN project AS project ON project.id = task.project_id
+  JOIN project_research_state AS research ON research.project_id = task.project_id
+  WHERE task.data_type = $2
+    AND project.chain_id = ANY($3::bigint[])
+    AND research.status IN ('researching', 'selected')
+    AND (
+      (task.status = 'pending' AND task.available_at <= now())
+      OR (task.status = 'running' AND task.lease_expires_at <= now())
+    )
+  ORDER BY task.available_at, task.id
+  FOR UPDATE OF task SKIP LOCKED
+  LIMIT $4
 )
-ON CONFLICT (project_id, data_type) DO UPDATE
-SET status = 'pending',
-  revision = project_data_collection_task.revision + 1,
-  attempts = 0,
-  next_attempt_at = now(),
-  last_error = NULL,
+UPDATE project_data_collection_task AS task
+SET status = 'running',
+  locked_at = now(),
+  lease_expires_at = now() + ($1::bigint * INTERVAL '1 second'),
   updated_at = now()
-RETURNING project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+FROM claimable
+WHERE task.id = claimable.id
+RETURNING task.id, task.project_id, task.data_type, task.revision, task.status, task.attempts, task.available_at, task.locked_at, task.lease_expires_at, task.last_error, task.created_at, task.updated_at
 `
 
-type EnqueueProjectDataCollectionTaskParams struct {
-	ProjectID int64
-	DataType  string
+type ClaimProjectDataCollectionTasksParams struct {
+	LeaseSeconds int64
+	DataType     string
+	ChainIds     []int64
+	Limit        int32
 }
 
-func (q *Queries) EnqueueProjectDataCollectionTask(ctx context.Context, arg EnqueueProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, enqueueProjectDataCollectionTask, arg.ProjectID, arg.DataType)
-	var i ProjectDataCollectionTask
-	err := row.Scan(
-		&i.ProjectID,
-		&i.DataType,
-		&i.Status,
-		&i.Revision,
-		&i.Attempts,
-		&i.NextAttemptAt,
-		&i.LastError,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+func (q *Queries) ClaimProjectDataCollectionTasks(ctx context.Context, arg ClaimProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error) {
+	rows, err := q.db.Query(ctx, claimProjectDataCollectionTasks,
+		arg.LeaseSeconds,
+		arg.DataType,
+		arg.ChainIds,
+		arg.Limit,
 	)
-	return i, err
-}
-
-const getProjectDataCollectionTask = `-- name: GetProjectDataCollectionTask :one
-SELECT project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
-FROM project_data_collection_task
-WHERE project_id = $1
-  AND data_type = $2
-`
-
-type GetProjectDataCollectionTaskParams struct {
-	ProjectID int64
-	DataType  string
-}
-
-func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, arg GetProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, getProjectDataCollectionTask, arg.ProjectID, arg.DataType)
-	var i ProjectDataCollectionTask
-	err := row.Scan(
-		&i.ProjectID,
-		&i.DataType,
-		&i.Status,
-		&i.Revision,
-		&i.Attempts,
-		&i.NextAttemptAt,
-		&i.LastError,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const listDueProjectDataCollectionTasks = `-- name: ListDueProjectDataCollectionTasks :many
-SELECT
-  t.project_id,
-  t.data_type,
-  t.status,
-  t.revision,
-  t.attempts,
-  t.next_attempt_at,
-  t.last_error,
-  t.created_at,
-  t.updated_at,
-  p.chain_id,
-  p.contract,
-  p.tx_sender,
-  p.tx_hash,
-  p.tx_index,
-  p.block_number,
-  p.block_time,
-  p.code_hash,
-  p.name,
-  p.symbol,
-  p.decimals,
-  p.total_supply,
-  p.weth_pair,
-  p.usdt_pair,
-  p.created_at AS project_created_at
-FROM project_data_collection_task AS t
-JOIN project AS p ON p.id = t.project_id
-WHERE t.data_type = $1
-  AND p.chain_id = ANY($2::bigint[])
-  AND t.status = 'pending'
-  AND t.attempts < 5
-  AND t.next_attempt_at <= now()
-ORDER BY t.next_attempt_at ASC, t.created_at ASC, t.project_id ASC
-LIMIT $3
-`
-
-type ListDueProjectDataCollectionTasksParams struct {
-	DataType string
-	ChainIds []int64
-	Limit    int32
-}
-
-type ListDueProjectDataCollectionTasksRow struct {
-	ProjectID        int64
-	DataType         string
-	Status           string
-	Revision         int64
-	Attempts         int32
-	NextAttemptAt    pgtype.Timestamptz
-	LastError        pgtype.Text
-	CreatedAt        pgtype.Timestamptz
-	UpdatedAt        pgtype.Timestamptz
-	ChainID          int64
-	Contract         []byte
-	TxSender         []byte
-	TxHash           []byte
-	TxIndex          int64
-	BlockNumber      int64
-	BlockTime        int64
-	CodeHash         []byte
-	Name             string
-	Symbol           string
-	Decimals         int16
-	TotalSupply      pgtype.Numeric
-	WethPair         []byte
-	UsdtPair         []byte
-	ProjectCreatedAt pgtype.Timestamptz
-}
-
-func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg ListDueProjectDataCollectionTasksParams) ([]ListDueProjectDataCollectionTasksRow, error) {
-	rows, err := q.db.Query(ctx, listDueProjectDataCollectionTasks, arg.DataType, arg.ChainIds, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListDueProjectDataCollectionTasksRow
+	var items []ProjectDataCollectionTask
 	for rows.Next() {
-		var i ListDueProjectDataCollectionTasksRow
+		var i ProjectDataCollectionTask
 		if err := rows.Scan(
+			&i.ID,
 			&i.ProjectID,
 			&i.DataType,
-			&i.Status,
 			&i.Revision,
+			&i.Status,
 			&i.Attempts,
-			&i.NextAttemptAt,
+			&i.AvailableAt,
+			&i.LockedAt,
+			&i.LeaseExpiresAt,
 			&i.LastError,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.ChainID,
-			&i.Contract,
-			&i.TxSender,
-			&i.TxHash,
-			&i.TxIndex,
-			&i.BlockNumber,
-			&i.BlockTime,
-			&i.CodeHash,
-			&i.Name,
-			&i.Symbol,
-			&i.Decimals,
-			&i.TotalSupply,
-			&i.WethPair,
-			&i.UsdtPair,
-			&i.ProjectCreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -235,20 +83,164 @@ func (q *Queries) ListDueProjectDataCollectionTasks(ctx context.Context, arg Lis
 	return items, nil
 }
 
-const listProjectDataCollectionTasks = `-- name: ListProjectDataCollectionTasks :many
-SELECT project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+const countProjectDataCollectionTasks = `-- name: CountProjectDataCollectionTasks :one
+SELECT COUNT(*)::bigint
 FROM project_data_collection_task
-WHERE ($1::bigint IS NULL OR project_id = $1::bigint)
-  AND ($2::text IS NULL OR data_type = $2::text)
-  AND ($3::text IS NULL OR status = $3::text)
-ORDER BY created_at DESC, project_id DESC, data_type DESC
+WHERE ($1::bigint = 0 OR project_id = $1::bigint)
+  AND ($2::text = '' OR data_type = $2::text)
+  AND ($3::text = '' OR status = $3::text)
+`
+
+type CountProjectDataCollectionTasksParams struct {
+	ProjectID int64
+	DataType  string
+	Status    string
+}
+
+func (q *Queries) CountProjectDataCollectionTasks(ctx context.Context, arg CountProjectDataCollectionTasksParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countProjectDataCollectionTasks, arg.ProjectID, arg.DataType, arg.Status)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const createProjectDataCollectionTask = `-- name: CreateProjectDataCollectionTask :one
+INSERT INTO project_data_collection_task (
+  project_id,
+  data_type,
+  revision
+) VALUES (
+  $1,
+  $2,
+  $3
+)
+ON CONFLICT (project_id, data_type, revision) DO UPDATE
+SET updated_at = project_data_collection_task.updated_at
+RETURNING id, project_id, data_type, revision, status, attempts, available_at, locked_at, lease_expires_at, last_error, created_at, updated_at
+`
+
+type CreateProjectDataCollectionTaskParams struct {
+	ProjectID int64
+	DataType  string
+	Revision  int64
+}
+
+func (q *Queries) CreateProjectDataCollectionTask(ctx context.Context, arg CreateProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, createProjectDataCollectionTask, arg.ProjectID, arg.DataType, arg.Revision)
+	var i ProjectDataCollectionTask
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.DataType,
+		&i.Revision,
+		&i.Status,
+		&i.Attempts,
+		&i.AvailableAt,
+		&i.LockedAt,
+		&i.LeaseExpiresAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const failProjectDataCollectionTask = `-- name: FailProjectDataCollectionTask :execrows
+UPDATE project_data_collection_task
+SET status = 'failed',
+  attempts = LEAST(attempts + 1, 5),
+  locked_at = NULL,
+  lease_expires_at = NULL,
+  last_error = $1,
+  updated_at = now()
+WHERE id = $2
+  AND status = 'running'
+`
+
+type FailProjectDataCollectionTaskParams struct {
+	LastError pgtype.Text
+	ID        int64
+}
+
+func (q *Queries) FailProjectDataCollectionTask(ctx context.Context, arg FailProjectDataCollectionTaskParams) (int64, error) {
+	result, err := q.db.Exec(ctx, failProjectDataCollectionTask, arg.LastError, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getProjectDataCollectionTask = `-- name: GetProjectDataCollectionTask :one
+SELECT id, project_id, data_type, revision, status, attempts, available_at, locked_at, lease_expires_at, last_error, created_at, updated_at
+FROM project_data_collection_task
+WHERE id = $1
+`
+
+func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, id int64) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, getProjectDataCollectionTask, id)
+	var i ProjectDataCollectionTask
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.DataType,
+		&i.Revision,
+		&i.Status,
+		&i.Attempts,
+		&i.AvailableAt,
+		&i.LockedAt,
+		&i.LeaseExpiresAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProjectForDataCollectionTask = `-- name: GetProjectForDataCollectionTask :one
+SELECT project.id, project.chain_id, project.contract, project.tx_sender, project.tx_hash, project.tx_index, project.block_number, project.block_time, project.code_hash, project.name, project.symbol, project.decimals, project.total_supply, project.weth_pair, project.usdt_pair, project.created_at
+FROM project_data_collection_task AS task
+JOIN project ON project.id = task.project_id
+WHERE task.id = $1
+`
+
+func (q *Queries) GetProjectForDataCollectionTask(ctx context.Context, id int64) (Project, error) {
+	row := q.db.QueryRow(ctx, getProjectForDataCollectionTask, id)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.ChainID,
+		&i.Contract,
+		&i.TxSender,
+		&i.TxHash,
+		&i.TxIndex,
+		&i.BlockNumber,
+		&i.BlockTime,
+		&i.CodeHash,
+		&i.Name,
+		&i.Symbol,
+		&i.Decimals,
+		&i.TotalSupply,
+		&i.WethPair,
+		&i.UsdtPair,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listProjectDataCollectionTasks = `-- name: ListProjectDataCollectionTasks :many
+SELECT id, project_id, data_type, revision, status, attempts, available_at, locked_at, lease_expires_at, last_error, created_at, updated_at
+FROM project_data_collection_task
+WHERE ($1::bigint = 0 OR project_id = $1::bigint)
+  AND ($2::text = '' OR data_type = $2::text)
+  AND ($3::text = '' OR status = $3::text)
+ORDER BY created_at DESC, id DESC
 LIMIT $5 OFFSET $4
 `
 
 type ListProjectDataCollectionTasksParams struct {
-	ProjectID pgtype.Int8
-	DataType  pgtype.Text
-	Status    pgtype.Text
+	ProjectID int64
+	DataType  string
+	Status    string
 	Offset    int32
 	Limit     int32
 }
@@ -269,12 +261,15 @@ func (q *Queries) ListProjectDataCollectionTasks(ctx context.Context, arg ListPr
 	for rows.Next() {
 		var i ProjectDataCollectionTask
 		if err := rows.Scan(
+			&i.ID,
 			&i.ProjectID,
 			&i.DataType,
-			&i.Status,
 			&i.Revision,
+			&i.Status,
 			&i.Attempts,
-			&i.NextAttemptAt,
+			&i.AvailableAt,
+			&i.LockedAt,
+			&i.LeaseExpiresAt,
 			&i.LastError,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -289,162 +284,59 @@ func (q *Queries) ListProjectDataCollectionTasks(ctx context.Context, arg ListPr
 	return items, nil
 }
 
-const lockProjectDataCollectionTask = `-- name: LockProjectDataCollectionTask :one
-SELECT project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
-FROM project_data_collection_task
-WHERE project_id = $1
-  AND data_type = $2
-FOR UPDATE
-`
-
-type LockProjectDataCollectionTaskParams struct {
-	ProjectID int64
-	DataType  string
-}
-
-func (q *Queries) LockProjectDataCollectionTask(ctx context.Context, arg LockProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, lockProjectDataCollectionTask, arg.ProjectID, arg.DataType)
-	var i ProjectDataCollectionTask
-	err := row.Scan(
-		&i.ProjectID,
-		&i.DataType,
-		&i.Status,
-		&i.Revision,
-		&i.Attempts,
-		&i.NextAttemptAt,
-		&i.LastError,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const markProjectDataCollectionTaskFailed = `-- name: MarkProjectDataCollectionTaskFailed :one
-UPDATE project_data_collection_task
-SET attempts = attempts + 1,
-  status = CASE
-    WHEN attempts + 1 >= 5 THEN 'failed'
-    ELSE 'pending'
-  END,
-  next_attempt_at = CASE
-    WHEN attempts + 1 >= 5 THEN now()
-    ELSE now() + INTERVAL '1 minute'
-  END,
-  last_error = $1,
-  updated_at = now()
-WHERE project_id = $2
-  AND data_type = $3
-  AND revision = $4
-  AND status = 'pending'
-RETURNING project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
-`
-
-type MarkProjectDataCollectionTaskFailedParams struct {
-	LastError pgtype.Text
-	ProjectID int64
-	DataType  string
-	Revision  int64
-}
-
-func (q *Queries) MarkProjectDataCollectionTaskFailed(ctx context.Context, arg MarkProjectDataCollectionTaskFailedParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, markProjectDataCollectionTaskFailed,
-		arg.LastError,
-		arg.ProjectID,
-		arg.DataType,
-		arg.Revision,
-	)
-	var i ProjectDataCollectionTask
-	err := row.Scan(
-		&i.ProjectID,
-		&i.DataType,
-		&i.Status,
-		&i.Revision,
-		&i.Attempts,
-		&i.NextAttemptAt,
-		&i.LastError,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const markProjectDataCollectionTaskSucceeded = `-- name: MarkProjectDataCollectionTaskSucceeded :execrows
 UPDATE project_data_collection_task
 SET status = 'succeeded',
-  next_attempt_at = now(),
+  locked_at = NULL,
+  lease_expires_at = NULL,
   last_error = NULL,
   updated_at = now()
-WHERE project_id = $1
-  AND data_type = $2
-  AND revision = $3
-  AND status = 'pending'
+WHERE id = $1
+  AND status = 'running'
 `
 
-type MarkProjectDataCollectionTaskSucceededParams struct {
-	ProjectID int64
-	DataType  string
-	Revision  int64
-}
-
-func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, arg MarkProjectDataCollectionTaskSucceededParams) (int64, error) {
-	result, err := q.db.Exec(ctx, markProjectDataCollectionTaskSucceeded, arg.ProjectID, arg.DataType, arg.Revision)
+func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, markProjectDataCollectionTaskSucceeded, id)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected(), nil
 }
 
-const upsertProjectDataCollectionTask = `-- name: UpsertProjectDataCollectionTask :one
-INSERT INTO project_data_collection_task (
-  project_id,
-  data_type,
-  status,
-  attempts,
-  next_attempt_at,
-  last_error
-) VALUES (
-  $1,
-  $2,
-  $3,
-  $4,
-  $5,
-  $6
-)
-ON CONFLICT (project_id, data_type) DO UPDATE
-SET status = EXCLUDED.status,
-  attempts = EXCLUDED.attempts,
-  next_attempt_at = EXCLUDED.next_attempt_at,
-  last_error = EXCLUDED.last_error,
+const retryProjectDataCollectionTask = `-- name: RetryProjectDataCollectionTask :one
+UPDATE project_data_collection_task
+SET status = 'pending',
+  attempts = attempts + 1,
+  available_at = $1,
+  locked_at = NULL,
+  lease_expires_at = NULL,
+  last_error = $2,
   updated_at = now()
-RETURNING project_id, data_type, status, revision, attempts, next_attempt_at, last_error, created_at, updated_at
+WHERE id = $3
+  AND status = 'running'
+  AND attempts < 4
+RETURNING id, project_id, data_type, revision, status, attempts, available_at, locked_at, lease_expires_at, last_error, created_at, updated_at
 `
 
-type UpsertProjectDataCollectionTaskParams struct {
-	ProjectID     int64
-	DataType      string
-	Status        string
-	Attempts      int32
-	NextAttemptAt pgtype.Timestamptz
-	LastError     pgtype.Text
+type RetryProjectDataCollectionTaskParams struct {
+	AvailableAt pgtype.Timestamptz
+	LastError   pgtype.Text
+	ID          int64
 }
 
-func (q *Queries) UpsertProjectDataCollectionTask(ctx context.Context, arg UpsertProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
-	row := q.db.QueryRow(ctx, upsertProjectDataCollectionTask,
-		arg.ProjectID,
-		arg.DataType,
-		arg.Status,
-		arg.Attempts,
-		arg.NextAttemptAt,
-		arg.LastError,
-	)
+func (q *Queries) RetryProjectDataCollectionTask(ctx context.Context, arg RetryProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error) {
+	row := q.db.QueryRow(ctx, retryProjectDataCollectionTask, arg.AvailableAt, arg.LastError, arg.ID)
 	var i ProjectDataCollectionTask
 	err := row.Scan(
+		&i.ID,
 		&i.ProjectID,
 		&i.DataType,
-		&i.Status,
 		&i.Revision,
+		&i.Status,
 		&i.Attempts,
-		&i.NextAttemptAt,
+		&i.AvailableAt,
+		&i.LockedAt,
+		&i.LeaseExpiresAt,
 		&i.LastError,
 		&i.CreatedAt,
 		&i.UpdatedAt,

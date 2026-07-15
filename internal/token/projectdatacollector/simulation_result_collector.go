@@ -3,6 +3,7 @@ package projectdatacollector
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -32,17 +33,27 @@ func (r *dataCollectorRunner) processSimulationResultTasks(ctx context.Context) 
 }
 
 func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject) {
+	client, err := r.ensureClient(ctx, task.Project.ChainID)
+	if err != nil {
+		r.markTaskFailed(ctx, task.Task, err)
+		return
+	}
+	blockNumber, err := client.BlockNumber(ctx)
+	if err != nil {
+		r.markTaskFailed(ctx, task.Task, err)
+		return
+	}
 	wallets, err := r.projectRelatedWallets(ctx, task.Project.ID)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
 	if len(wallets) == 0 {
-		r.completeEmptySimulationResultTask(ctx, task, "without related wallets")
+		r.completeEmptySimulationResultTask(ctx, task, blockNumber, "without related wallets")
 		return
 	}
 	if task.Project.WethPair == (ethcommon.Address{}) || task.Project.UsdtPair == (ethcommon.Address{}) {
-		r.completeEmptySimulationResultTask(ctx, task, "without token pairs")
+		r.completeEmptySimulationResultTask(ctx, task, blockNumber, "without token pairs")
 		return
 	}
 	caller, err := r.ensureCaller(ctx, task.Project.ChainID)
@@ -51,7 +62,7 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 		return
 	}
 	queries := walletSimulationStateQueries(task.Project.Contract, wallets)
-	states, err := caller.ListWalletSimulationStates(&bind.CallOpts{Context: ctx}, queries)
+	states, err := caller.ListWalletSimulationStates(&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(blockNumber)}, queries)
 	if err != nil {
 		r.resetChain(task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet simulation state chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
@@ -62,18 +73,13 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet simulation state chain_id=%d project_id=%d returned %d items for %d wallets", task.Project.ChainID, task.Project.ID, len(states), len(wallets)))
 		return
 	}
-	client, err := r.ensureClient(ctx, task.Project.ChainID)
-	if err != nil {
-		r.markTaskFailed(ctx, task.Task, err)
-		return
-	}
 	results, err := simulateProjectWallets(ctx, client.Client(), task.Project, wallets, states)
 	if err != nil {
 		r.resetChain(task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("simulate token project wallets chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
 		return
 	}
-	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, results, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, results, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
@@ -85,8 +91,8 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 	}).Info("token project data collector fetched simulation result")
 }
 
-func (r *dataCollectorRunner) completeEmptySimulationResultTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject, reason string) {
-	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, nil, time.Now().UTC()); err != nil {
+func (r *dataCollectorRunner) completeEmptySimulationResultTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject, blockNumber uint64, reason string) {
+	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, nil, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

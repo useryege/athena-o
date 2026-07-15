@@ -3,6 +3,7 @@ package projectdatacollector
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -32,13 +33,23 @@ func (r *dataCollectorRunner) processWalletAssetStateTasks(ctx context.Context) 
 }
 
 func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject) {
+	client, err := r.ensureClient(ctx, task.Project.ChainID)
+	if err != nil {
+		r.markTaskFailed(ctx, task.Task, err)
+		return
+	}
+	blockNumber, err := client.BlockNumber(ctx)
+	if err != nil {
+		r.markTaskFailed(ctx, task.Task, err)
+		return
+	}
 	wallets, err := r.projectRelatedWallets(ctx, task.Project.ID)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
 	if len(wallets) == 0 {
-		if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, nil, time.Now().UTC()); err != nil {
+		if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, nil, blockNumber, time.Now().UTC()); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			return
 		}
@@ -54,7 +65,7 @@ func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, t
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
-	items, err := caller.ListWalletAssetStates(&bind.CallOpts{Context: ctx}, wallets)
+	items, err := caller.ListWalletAssetStates(&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(blockNumber)}, wallets)
 	if err != nil {
 		r.resetChain(task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet asset state chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
@@ -66,7 +77,7 @@ func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, t
 		return
 	}
 	states := walletAssetStatesFromAthena(task.Project.ChainID, items)
-	if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, states, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, states, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

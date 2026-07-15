@@ -23,11 +23,14 @@ export const CollectionTasksPage = () => {
         [page, pageSize, projectID, dataType, status]
     );
     const columns: ColumnsType<TokenAPIProjectDataCollectionTask> = [
+		{title: 'Task', dataIndex: 'taskID'},
         {title: 'Project', dataIndex: 'projectID'},
         {title: 'Data Type', dataIndex: 'dataType'},
+		{title: 'Revision', dataIndex: 'revision'},
         {title: 'Status', dataIndex: 'status'},
         {title: 'Attempts', dataIndex: 'attempts'},
-        {title: 'Next Attempt', dataIndex: 'nextAttemptAt'},
+		{title: 'Available At', dataIndex: 'availableAt'},
+		{title: 'Lease Expires', dataIndex: 'leaseExpiresAt'},
         {title: 'Last Error', render: item => <TruncatedText value={item.lastError} />},
         {title: 'Created', dataIndex: 'createdAt'}
     ];
@@ -49,7 +52,7 @@ export const CollectionTasksPage = () => {
                     <ChoiceGroup<string>
                         ariaLabel='Filter by status'
                         value={status || 'all'}
-                        options={[{label: 'All', value: 'all'}, ...['pending', 'succeeded', 'failed'].map(value => ({value, label: value}))]}
+						options={[{label: 'All', value: 'all'}, ...['pending', 'running', 'succeeded', 'failed'].map(value => ({value, label: value}))]}
                         onChange={value => {
                             setStatus(value === 'all' ? '' : value);
                         }}
@@ -57,7 +60,7 @@ export const CollectionTasksPage = () => {
                 </Space>
             }>
             <ResourceTable
-                rowKey={item => `${item.projectID}-${item.dataType}`}
+				rowKey={item => item.taskID || `${item.projectID}-${item.dataType}-${item.revision}`}
                 items={data.data?.items || []}
                 columns={columns}
                 loading={data.loading}

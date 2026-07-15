@@ -55,13 +55,13 @@ func (*PolymarketUMADisputeItem) ProtoMessage() {}
 
 func (*PolymarketUMAProposalItem) ProtoMessage() {}
 
-func (*TokenAPIBytecodeBlacklist) ProtoMessage() {}
-
 func (*TokenAPIChainIngestCheckpoint) ProtoMessage() {}
 
 func (*TokenAPIChainOption) ProtoMessage() {}
 
 func (*TokenAPIContractCode) ProtoMessage() {}
+
+func (*TokenAPIContractCodeBlocklistEntry) ProtoMessage() {}
 
 func (*TokenAPINodeStatus) ProtoMessage() {}
 
@@ -73,7 +73,13 @@ func (*TokenAPIProjectDataCollectionTask) ProtoMessage() {}
 
 func (*TokenAPIProjectReport) ProtoMessage() {}
 
-func (*TokenAPIWalletBlacklist) ProtoMessage() {}
+func (*TokenAPIProjectReportRevision) ProtoMessage() {}
+
+func (*TokenAPIProjectResearchState) ProtoMessage() {}
+
+func (*TokenAPIProjectSelection) ProtoMessage() {}
+
+func (*TokenAPIWalletBlocklistEntry) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}
 

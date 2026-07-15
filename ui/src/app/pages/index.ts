@@ -1,4 +1,4 @@
-export * from './bytecode-blacklists';
+export * from './contract-code-blocklist';
 export * from './chain-checkpoints';
 export * from './collection-tasks';
 export * from './contract-code-detail';
@@ -17,7 +17,7 @@ export * from './settings';
 export * from './settings-shared';
 export * from './service-status';
 export * from './user-info';
-export * from './wallet-blacklists';
+export * from './wallet-blocklist';
 export * from './wallets';
 export * from './world-cup-corners';
 export * from './worm-poly';

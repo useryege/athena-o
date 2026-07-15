@@ -1,37 +1,38 @@
 -- +goose Up
 
-CREATE TABLE IF NOT EXISTS chain (
-  id BIGINT PRIMARY KEY,
+CREATE TABLE chain (
+  id BIGINT,
   name TEXT NOT NULL,
   enabled BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT chain_name_not_empty CHECK (btrim(name) <> '')
+  CONSTRAINT chain_id_uidx PRIMARY KEY (id),
+  CONSTRAINT chain_name_not_empty_check CHECK (btrim(name) <> '')
 );
 
 INSERT INTO chain (id, name)
 VALUES
   (1, 'Ethereum Mainnet'),
-  (56, 'BSC Mainnet')
-ON CONFLICT (id) DO NOTHING;
+  (56, 'BSC Mainnet');
 
-CREATE TABLE IF NOT EXISTS chain_ingest_checkpoint (
-  chain_id BIGINT PRIMARY KEY,
+CREATE TABLE chain_ingest_checkpoint (
+  chain_id BIGINT,
   cursor_block_number BIGINT NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'stopped',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT chain_ingest_checkpoint_chain_id_uidx PRIMARY KEY (chain_id),
   CONSTRAINT chain_ingest_checkpoint_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
-  CONSTRAINT chain_ingest_checkpoint_cursor_block_nonnegative CHECK (cursor_block_number >= 0),
-  CONSTRAINT chain_ingest_checkpoint_status_allowed CHECK (status IN ('running', 'stopped'))
+  CONSTRAINT chain_ingest_checkpoint_cursor_block_number_check CHECK (cursor_block_number >= 0),
+  CONSTRAINT chain_ingest_checkpoint_status_check CHECK (status IN ('running', 'stopped'))
 );
 
 INSERT INTO chain_ingest_checkpoint (chain_id, cursor_block_number, status)
 VALUES
   (1, 25211026, 'stopped'),
-  (56, 101719440, 'stopped')
-ON CONFLICT (chain_id) DO NOTHING;
+  (56, 101719440, 'stopped');
 
-CREATE TABLE IF NOT EXISTS project_candidate (
-  id BIGSERIAL PRIMARY KEY,
+CREATE TABLE project_candidate (
+  id BIGSERIAL,
   chain_id BIGINT NOT NULL,
   contract BYTEA NOT NULL,
   tx_sender BYTEA NOT NULL,
@@ -41,40 +42,40 @@ CREATE TABLE IF NOT EXISTS project_candidate (
   block_time BIGINT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_candidate_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_candidate_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
-  CONSTRAINT project_candidate_contract_len CHECK (length(contract) = 20),
-  CONSTRAINT project_candidate_tx_sender_len CHECK (length(tx_sender) = 20),
-  CONSTRAINT project_candidate_tx_hash_len CHECK (length(tx_hash) = 32),
-  CONSTRAINT project_candidate_tx_index_nonnegative CHECK (tx_index >= 0),
-  CONSTRAINT project_candidate_block_number_nonnegative CHECK (block_number >= 0),
-  CONSTRAINT project_candidate_block_time_nonnegative CHECK (block_time >= 0),
-  CONSTRAINT project_candidate_status_allowed CHECK (status IN ('pending', 'qualified', 'rejected'))
+  CONSTRAINT project_candidate_contract_length_check CHECK (length(contract) = 20),
+  CONSTRAINT project_candidate_tx_sender_length_check CHECK (length(tx_sender) = 20),
+  CONSTRAINT project_candidate_tx_hash_length_check CHECK (length(tx_hash) = 32),
+  CONSTRAINT project_candidate_tx_index_check CHECK (tx_index >= 0),
+  CONSTRAINT project_candidate_block_number_check CHECK (block_number >= 0),
+  CONSTRAINT project_candidate_block_time_check CHECK (block_time >= 0),
+  CONSTRAINT project_candidate_status_check CHECK (status IN ('pending', 'validated', 'rejected'))
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS project_candidate_chain_contract_uidx
+CREATE UNIQUE INDEX project_candidate_chain_id_contract_uidx
   ON project_candidate (chain_id, contract);
-
-CREATE UNIQUE INDEX IF NOT EXISTS project_candidate_chain_tx_hash_uidx
+CREATE UNIQUE INDEX project_candidate_chain_id_tx_hash_uidx
   ON project_candidate (chain_id, tx_hash);
+CREATE INDEX project_candidate_status_created_at_idx
+  ON project_candidate (status, created_at, id);
 
-CREATE INDEX IF NOT EXISTS project_candidate_status_created_idx
-  ON project_candidate (status, created_at);
-
-CREATE TABLE IF NOT EXISTS contract_code (
-  code_hash BYTEA PRIMARY KEY,
+CREATE TABLE contract_code (
+  code_hash BYTEA,
   source_code TEXT,
   source_code_fetched_at TIMESTAMPTZ,
   deployment_count BIGINT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT contract_code_code_hash_len CHECK (length(code_hash) = 32),
-  CONSTRAINT contract_code_deployment_count_nonnegative CHECK (deployment_count >= 0)
+  CONSTRAINT contract_code_code_hash_uidx PRIMARY KEY (code_hash),
+  CONSTRAINT contract_code_code_hash_length_check CHECK (length(code_hash) = 32),
+  CONSTRAINT contract_code_deployment_count_check CHECK (deployment_count >= 0)
 );
 
-CREATE INDEX IF NOT EXISTS contract_code_deployment_count_idx
+CREATE INDEX contract_code_deployment_count_created_at_idx
   ON contract_code (deployment_count DESC, created_at DESC, code_hash);
 
-CREATE TABLE IF NOT EXISTS project (
-  id BIGSERIAL PRIMARY KEY,
+CREATE TABLE project (
+  id BIGSERIAL,
   chain_id BIGINT NOT NULL,
   contract BYTEA NOT NULL,
   tx_sender BYTEA NOT NULL,
@@ -90,31 +91,26 @@ CREATE TABLE IF NOT EXISTS project (
   weth_pair BYTEA,
   usdt_pair BYTEA,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
   CONSTRAINT project_contract_code_fk FOREIGN KEY (code_hash) REFERENCES contract_code(code_hash),
-  CONSTRAINT project_contract_len CHECK (length(contract) = 20),
-  CONSTRAINT project_tx_sender_len CHECK (length(tx_sender) = 20),
-  CONSTRAINT project_tx_hash_len CHECK (length(tx_hash) = 32),
-  CONSTRAINT project_code_hash_len CHECK (length(code_hash) = 32),
-  CONSTRAINT project_weth_pair_len CHECK (weth_pair IS NULL OR length(weth_pair) = 20),
-  CONSTRAINT project_usdt_pair_len CHECK (usdt_pair IS NULL OR length(usdt_pair) = 20),
-  CONSTRAINT project_tx_index_nonnegative CHECK (tx_index >= 0),
-  CONSTRAINT project_block_number_nonnegative CHECK (block_number >= 0),
-  CONSTRAINT project_block_time_nonnegative CHECK (block_time >= 0),
-  CONSTRAINT project_decimals_uint8 CHECK (decimals BETWEEN 0 AND 255),
-  CONSTRAINT project_total_supply_nonnegative CHECK (total_supply >= 0)
+  CONSTRAINT project_contract_length_check CHECK (length(contract) = 20),
+  CONSTRAINT project_tx_sender_length_check CHECK (length(tx_sender) = 20),
+  CONSTRAINT project_tx_hash_length_check CHECK (length(tx_hash) = 32),
+  CONSTRAINT project_code_hash_length_check CHECK (length(code_hash) = 32),
+  CONSTRAINT project_weth_pair_length_check CHECK (weth_pair IS NULL OR length(weth_pair) = 20),
+  CONSTRAINT project_usdt_pair_length_check CHECK (usdt_pair IS NULL OR length(usdt_pair) = 20),
+  CONSTRAINT project_tx_index_check CHECK (tx_index >= 0),
+  CONSTRAINT project_block_number_check CHECK (block_number >= 0),
+  CONSTRAINT project_block_time_check CHECK (block_time >= 0),
+  CONSTRAINT project_decimals_check CHECK (decimals BETWEEN 0 AND 255),
+  CONSTRAINT project_total_supply_check CHECK (total_supply >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS project_chain_contract_uidx
-  ON project (chain_id, contract);
-
-CREATE UNIQUE INDEX IF NOT EXISTS project_chain_tx_hash_uidx
-  ON project (chain_id, tx_hash);
-
-CREATE INDEX IF NOT EXISTS project_code_hash_idx
-  ON project (code_hash);
-
-CREATE INDEX IF NOT EXISTS project_block_order_idx
+CREATE UNIQUE INDEX project_chain_id_contract_uidx ON project (chain_id, contract);
+CREATE UNIQUE INDEX project_chain_id_tx_hash_uidx ON project (chain_id, tx_hash);
+CREATE INDEX project_code_hash_idx ON project (code_hash);
+CREATE INDEX project_chain_id_block_number_tx_index_idx
   ON project (chain_id, block_number, tx_index, id);
 
 -- +goose StatementBegin
@@ -122,28 +118,16 @@ CREATE OR REPLACE FUNCTION update_contract_code_deployment_count()
 RETURNS trigger AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    UPDATE contract_code
-    SET deployment_count = deployment_count + 1
-    WHERE code_hash = NEW.code_hash;
+    UPDATE contract_code SET deployment_count = deployment_count + 1 WHERE code_hash = NEW.code_hash;
     RETURN NEW;
   ELSIF TG_OP = 'DELETE' THEN
-    UPDATE contract_code
-    SET deployment_count = GREATEST(deployment_count - 1, 0)
-    WHERE code_hash = OLD.code_hash;
+    UPDATE contract_code SET deployment_count = GREATEST(deployment_count - 1, 0) WHERE code_hash = OLD.code_hash;
     RETURN OLD;
-  ELSIF TG_OP = 'UPDATE' THEN
-    IF OLD.code_hash IS DISTINCT FROM NEW.code_hash THEN
-      UPDATE contract_code
-      SET deployment_count = GREATEST(deployment_count - 1, 0)
-      WHERE code_hash = OLD.code_hash;
-
-      UPDATE contract_code
-      SET deployment_count = deployment_count + 1
-      WHERE code_hash = NEW.code_hash;
-    END IF;
-    RETURN NEW;
+  ELSIF OLD.code_hash IS DISTINCT FROM NEW.code_hash THEN
+    UPDATE contract_code SET deployment_count = GREATEST(deployment_count - 1, 0) WHERE code_hash = OLD.code_hash;
+    UPDATE contract_code SET deployment_count = deployment_count + 1 WHERE code_hash = NEW.code_hash;
   END IF;
-  RETURN NULL;
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 -- +goose StatementEnd
@@ -152,26 +136,22 @@ CREATE TRIGGER project_contract_code_deployment_count_trigger
 AFTER INSERT OR UPDATE OF code_hash OR DELETE ON project
 FOR EACH ROW EXECUTE FUNCTION update_contract_code_deployment_count();
 
-CREATE TABLE IF NOT EXISTS project_related_wallet (
+CREATE TABLE project_related_wallet (
   project_id BIGINT NOT NULL,
   wallet BYTEA NOT NULL,
   role TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (project_id, wallet, role),
-  CONSTRAINT project_related_wallet_project_fk
-    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_related_wallet_wallet_len CHECK (length(wallet) = 20),
-  CONSTRAINT project_related_wallet_role_not_empty CHECK (btrim(role) <> '')
+  CONSTRAINT project_related_wallet_project_id_wallet_role_uidx PRIMARY KEY (project_id, wallet, role),
+  CONSTRAINT project_related_wallet_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_related_wallet_wallet_length_check CHECK (length(wallet) = 20),
+  CONSTRAINT project_related_wallet_role_check CHECK (btrim(role) <> '')
 );
 
-CREATE INDEX IF NOT EXISTS project_related_wallet_project_role_idx
-  ON project_related_wallet (project_id, role);
+CREATE INDEX project_related_wallet_project_id_role_idx ON project_related_wallet (project_id, role);
+CREATE INDEX project_related_wallet_wallet_idx ON project_related_wallet (wallet);
 
-CREATE INDEX IF NOT EXISTS project_related_wallet_wallet_idx
-  ON project_related_wallet (wallet);
-
-CREATE TABLE IF NOT EXISTS project_initial_recipient (
-  id BIGSERIAL PRIMARY KEY,
+CREATE TABLE project_initial_recipient (
+  id BIGSERIAL,
   project_id BIGINT NOT NULL,
   wallet BYTEA NOT NULL,
   ratio_bps BIGINT NOT NULL,
@@ -179,71 +159,137 @@ CREATE TABLE IF NOT EXISTS project_initial_recipient (
   source_tx_hash BYTEA NOT NULL,
   source_block_number BIGINT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_initial_recipient_project_fk
-    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_initial_recipient_wallet_len CHECK (length(wallet) = 20),
-  CONSTRAINT project_initial_recipient_source_tx_hash_len CHECK (length(source_tx_hash) = 32),
-  CONSTRAINT project_initial_recipient_ratio_bps_nonnegative CHECK (ratio_bps >= 0),
-  CONSTRAINT project_initial_recipient_rank_index_nonnegative CHECK (rank_index >= 0),
-  CONSTRAINT project_initial_recipient_source_block_number_nonnegative CHECK (source_block_number >= 0),
-  CONSTRAINT project_initial_recipient_project_wallet_uidx UNIQUE (project_id, wallet)
+  CONSTRAINT project_initial_recipient_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_initial_recipient_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_initial_recipient_wallet_length_check CHECK (length(wallet) = 20),
+  CONSTRAINT project_initial_recipient_source_tx_hash_length_check CHECK (length(source_tx_hash) = 32),
+  CONSTRAINT project_initial_recipient_ratio_bps_check CHECK (ratio_bps >= 0),
+  CONSTRAINT project_initial_recipient_rank_index_check CHECK (rank_index >= 0),
+  CONSTRAINT project_initial_recipient_source_block_number_check CHECK (source_block_number >= 0),
+  CONSTRAINT project_initial_recipient_project_id_wallet_uidx UNIQUE (project_id, wallet)
 );
 
-CREATE INDEX IF NOT EXISTS project_initial_recipient_project_rank_idx
+CREATE INDEX project_initial_recipient_project_id_rank_index_idx
   ON project_initial_recipient (project_id, rank_index);
-
-CREATE INDEX IF NOT EXISTS project_initial_recipient_wallet_ratio_idx
+CREATE INDEX project_initial_recipient_wallet_ratio_bps_idx
   ON project_initial_recipient (wallet, ratio_bps DESC, project_id);
 
-CREATE TABLE IF NOT EXISTS wallet_asset_state (
-  chain_id BIGINT NOT NULL,
-  wallet BYTEA NOT NULL,
-  weth_balance NUMERIC(78, 0) NOT NULL DEFAULT 0,
-  usdt_balance NUMERIC(78, 0) NOT NULL DEFAULT 0,
-  native_balance NUMERIC(78, 0) NOT NULL DEFAULT 0,
-  usdt_value NUMERIC(78, 0) NOT NULL DEFAULT 0,
-  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+CREATE TABLE project_research_state (
+  project_id BIGINT,
+  status TEXT NOT NULL DEFAULT 'researching',
+  evidence_revision BIGINT NOT NULL DEFAULT 0,
+  current_report_revision BIGINT,
+  current_selection_id BIGINT,
+  last_evaluated_report_revision BIGINT,
+  last_evaluated_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '7 days'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (chain_id, wallet),
-  CONSTRAINT wallet_asset_state_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
-  CONSTRAINT wallet_asset_state_wallet_len CHECK (length(wallet) = 20),
-  CONSTRAINT wallet_asset_state_weth_balance_nonnegative CHECK (weth_balance >= 0),
-  CONSTRAINT wallet_asset_state_usdt_balance_nonnegative CHECK (usdt_balance >= 0),
-  CONSTRAINT wallet_asset_state_native_balance_nonnegative CHECK (native_balance >= 0),
-  CONSTRAINT wallet_asset_state_usdt_value_nonnegative CHECK (usdt_value >= 0)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_research_state_project_id_uidx PRIMARY KEY (project_id),
+  CONSTRAINT project_research_state_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_research_state_status_check CHECK (status IN ('researching', 'selected', 'rejected', 'expired')),
+  CONSTRAINT project_research_state_evidence_revision_check CHECK (evidence_revision >= 0),
+  CONSTRAINT project_research_state_current_report_revision_check CHECK (current_report_revision IS NULL OR current_report_revision > 0),
+  CONSTRAINT project_research_state_last_evaluated_report_revision_check CHECK (last_evaluated_report_revision IS NULL OR last_evaluated_report_revision > 0)
 );
 
-CREATE INDEX IF NOT EXISTS wallet_asset_state_usdt_value_idx
-  ON wallet_asset_state (chain_id, usdt_value DESC);
+CREATE INDEX project_research_state_status_expires_at_idx
+  ON project_research_state (status, expires_at, project_id);
 
-CREATE TABLE IF NOT EXISTS project_data_collection_task (
+CREATE TABLE project_data_collection_schedule (
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  refresh_interval_seconds BIGINT NOT NULL,
+  next_run_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  latest_task_revision BIGINT NOT NULL DEFAULT 0,
+  consecutive_failures INT NOT NULL DEFAULT 0,
+  last_error TEXT,
+  last_checked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_data_collection_schedule_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
+  CONSTRAINT project_data_collection_schedule_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
+  CONSTRAINT project_data_collection_schedule_status_check CHECK (status IN ('active', 'completed', 'paused')),
+  CONSTRAINT project_data_collection_schedule_refresh_interval_seconds_check CHECK (refresh_interval_seconds > 0),
+  CONSTRAINT project_data_collection_schedule_latest_task_revision_check CHECK (latest_task_revision >= 0),
+  CONSTRAINT project_data_collection_schedule_consecutive_failures_check CHECK (consecutive_failures >= 0)
+);
+
+CREATE INDEX project_data_collection_schedule_status_next_run_at_idx
+  ON project_data_collection_schedule (status, next_run_at, data_type, project_id);
+
+CREATE TABLE project_data_collection_task (
+  id BIGSERIAL,
+  project_id BIGINT NOT NULL,
+  data_type TEXT NOT NULL,
+  revision BIGINT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
-  revision BIGINT NOT NULL DEFAULT 1,
   attempts INT NOT NULL DEFAULT 0,
-  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  locked_at TIMESTAMPTZ,
+  lease_expires_at TIMESTAMPTZ,
   last_error TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (project_id, data_type),
-  CONSTRAINT project_data_collection_task_project_fk
-    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_data_collection_task_data_type_allowed
-    CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
-  CONSTRAINT project_data_collection_task_status_allowed
-    CHECK (status IN ('pending', 'succeeded', 'failed')),
-  CONSTRAINT project_data_collection_task_revision_positive
-    CHECK (revision > 0),
-  CONSTRAINT project_data_collection_task_attempts_range
-    CHECK (attempts >= 0 AND attempts <= 5)
+  CONSTRAINT project_data_collection_task_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_data_collection_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_data_collection_task_project_id_data_type_revision_uidx UNIQUE (project_id, data_type, revision),
+  CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
+  CONSTRAINT project_data_collection_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
+  CONSTRAINT project_data_collection_task_revision_check CHECK (revision > 0),
+  CONSTRAINT project_data_collection_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
 );
 
-CREATE INDEX IF NOT EXISTS project_data_collection_task_due_idx
-  ON project_data_collection_task (status, next_attempt_at, data_type, project_id);
+CREATE INDEX project_data_collection_task_status_available_at_idx
+  ON project_data_collection_task (status, available_at, data_type, project_id);
+CREATE INDEX project_data_collection_task_lease_expires_at_idx
+  ON project_data_collection_task (lease_expires_at) WHERE status = 'running';
 
-CREATE TABLE IF NOT EXISTS project_report (
-  project_id BIGINT PRIMARY KEY,
+CREATE TABLE project_observation (
+  id BIGSERIAL,
+  project_id BIGINT NOT NULL,
+  data_type TEXT NOT NULL,
+  content_hash BYTEA NOT NULL,
+  payload JSONB NOT NULL,
+  block_number BIGINT,
+  observed_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_observation_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_observation_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_observation_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
+  CONSTRAINT project_observation_content_hash_length_check CHECK (length(content_hash) = 32),
+  CONSTRAINT project_observation_block_number_check CHECK (block_number IS NULL OR block_number >= 0)
+);
+
+CREATE INDEX project_observation_project_id_data_type_created_at_idx
+  ON project_observation (project_id, data_type, created_at DESC, id DESC);
+
+CREATE TABLE project_observation_current (
+  project_id BIGINT NOT NULL,
+  data_type TEXT NOT NULL,
+  observation_id BIGINT NOT NULL,
+  last_checked_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_observation_current_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
+  CONSTRAINT project_observation_current_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_observation_current_observation_fk FOREIGN KEY (observation_id) REFERENCES project_observation(id) ON DELETE CASCADE,
+  CONSTRAINT project_observation_current_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source'))
+);
+
+CREATE INDEX project_observation_current_observation_id_idx
+  ON project_observation_current (observation_id);
+
+CREATE TABLE project_report_revision (
+  id BIGSERIAL,
+  project_id BIGINT NOT NULL,
+  revision BIGINT NOT NULL,
+  content_hash BYTEA NOT NULL,
+  completeness_status TEXT NOT NULL,
+  evidence JSONB NOT NULL DEFAULT '{}'::jsonb,
+  report JSONB NOT NULL DEFAULT '{}'::jsonb,
+  observed_block_number BIGINT,
   weth_pair_is_created BOOLEAN,
   weth_pair_is_remove_liquidity BOOLEAN,
   weth_pair_is_mint BOOLEAN,
@@ -254,121 +300,147 @@ CREATE TABLE IF NOT EXISTS project_report (
   usdt_pair_is_mint BOOLEAN,
   usdt_pair_quote_usdt_value_int NUMERIC(78, 0),
   usdt_pair_last_swap_timestamp BIGINT,
-  source_updated_at TIMESTAMPTZ,
-  evaluated_at TIMESTAMPTZ,
+  built_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_report_project_fk
-    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_report_weth_pair_quote_usdt_value_nonnegative
-    CHECK (weth_pair_quote_usdt_value_int IS NULL OR weth_pair_quote_usdt_value_int >= 0),
-  CONSTRAINT project_report_weth_pair_last_swap_timestamp_nonnegative
-    CHECK (weth_pair_last_swap_timestamp IS NULL OR weth_pair_last_swap_timestamp >= 0),
-  CONSTRAINT project_report_usdt_pair_quote_usdt_value_nonnegative
-    CHECK (usdt_pair_quote_usdt_value_int IS NULL OR usdt_pair_quote_usdt_value_int >= 0),
-  CONSTRAINT project_report_usdt_pair_last_swap_timestamp_nonnegative
-    CHECK (usdt_pair_last_swap_timestamp IS NULL OR usdt_pair_last_swap_timestamp >= 0)
+  CONSTRAINT project_report_revision_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_report_revision_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_report_revision_project_id_revision_uidx UNIQUE (project_id, revision),
+  CONSTRAINT project_report_revision_revision_check CHECK (revision > 0),
+  CONSTRAINT project_report_revision_content_hash_length_check CHECK (length(content_hash) = 32),
+  CONSTRAINT project_report_revision_completeness_status_check CHECK (completeness_status IN ('incomplete', 'complete')),
+  CONSTRAINT project_report_revision_observed_block_number_check CHECK (observed_block_number IS NULL OR observed_block_number >= 0),
+  CONSTRAINT project_report_revision_weth_pair_quote_usdt_value_int_check CHECK (weth_pair_quote_usdt_value_int IS NULL OR weth_pair_quote_usdt_value_int >= 0),
+  CONSTRAINT project_report_revision_weth_pair_last_swap_timestamp_check CHECK (weth_pair_last_swap_timestamp IS NULL OR weth_pair_last_swap_timestamp >= 0),
+  CONSTRAINT project_report_revision_usdt_pair_quote_usdt_value_int_check CHECK (usdt_pair_quote_usdt_value_int IS NULL OR usdt_pair_quote_usdt_value_int >= 0),
+  CONSTRAINT project_report_revision_usdt_pair_last_swap_timestamp_check CHECK (usdt_pair_last_swap_timestamp IS NULL OR usdt_pair_last_swap_timestamp >= 0)
 );
 
-CREATE TABLE IF NOT EXISTS project_report_evaluation_task (
-  project_id BIGINT PRIMARY KEY,
+CREATE INDEX project_report_revision_project_id_revision_idx
+  ON project_report_revision (project_id, revision DESC);
+
+CREATE TABLE project_report_build_task (
+  id BIGSERIAL,
+  project_id BIGINT NOT NULL,
+  evidence_revision BIGINT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
-  revision BIGINT NOT NULL DEFAULT 1,
   attempts INT NOT NULL DEFAULT 0,
-  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  locked_at TIMESTAMPTZ,
+  lease_expires_at TIMESTAMPTZ,
   last_error TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_report_evaluation_task_report_fk
-    FOREIGN KEY (project_id) REFERENCES project_report(project_id) ON DELETE CASCADE,
-  CONSTRAINT project_report_evaluation_task_status_allowed
-    CHECK (status IN ('pending', 'succeeded', 'failed')),
-  CONSTRAINT project_report_evaluation_task_revision_positive
-    CHECK (revision > 0),
-  CONSTRAINT project_report_evaluation_task_attempts_range
-    CHECK (attempts >= 0 AND attempts <= 5)
+  CONSTRAINT project_report_build_task_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_report_build_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_report_build_task_project_id_evidence_revision_uidx UNIQUE (project_id, evidence_revision),
+  CONSTRAINT project_report_build_task_evidence_revision_check CHECK (evidence_revision > 0),
+  CONSTRAINT project_report_build_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
+  CONSTRAINT project_report_build_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
 );
 
-CREATE INDEX IF NOT EXISTS project_report_evaluation_task_due_idx
-  ON project_report_evaluation_task (status, next_attempt_at, project_id);
+CREATE INDEX project_report_build_task_status_available_at_idx
+  ON project_report_build_task (status, available_at, project_id);
 
-CREATE TABLE IF NOT EXISTS project_ave_data (
-  project_id BIGINT PRIMARY KEY,
-  ave_response JSONB NOT NULL DEFAULT '{}'::jsonb,
-  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_ave_data_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS project_chain_state (
-  project_id BIGINT PRIMARY KEY,
-  chain_state JSONB NOT NULL DEFAULT '{}'::jsonb,
-  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_chain_state_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS project_simulation_result (
+CREATE TABLE project_selection (
+  id BIGSERIAL,
   project_id BIGINT NOT NULL,
-  wallet BYTEA NOT NULL,
-  can_mint_from_dead_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  can_mint_from_zero_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  can_mint_from_weth_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  can_mint_from_usdt_pair_via_transfer_from BOOLEAN NOT NULL DEFAULT false,
-  can_mint_via_transfer_to_weth_pair BOOLEAN NOT NULL DEFAULT false,
-  can_mint_via_transfer_to_usdt_pair BOOLEAN NOT NULL DEFAULT false,
-  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  outcome TEXT NOT NULL,
+  strategy_key TEXT NOT NULL,
+  strategy_version TEXT NOT NULL,
+  report_revision BIGINT NOT NULL,
+  reason_codes TEXT[] NOT NULL DEFAULT '{}',
+  reason_detail TEXT NOT NULL DEFAULT '',
+  decided_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (project_id, wallet),
-  CONSTRAINT project_simulation_result_project_fk
-    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_simulation_result_wallet_len CHECK (length(wallet) = 20)
+  CONSTRAINT project_selection_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_selection_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_selection_project_report_fk FOREIGN KEY (project_id, report_revision) REFERENCES project_report_revision(project_id, revision) ON DELETE CASCADE,
+  CONSTRAINT project_selection_outcome_check CHECK (outcome IN ('selected', 'rejected', 'deferred')),
+  CONSTRAINT project_selection_strategy_key_check CHECK (btrim(strategy_key) <> ''),
+  CONSTRAINT project_selection_strategy_version_check CHECK (btrim(strategy_version) <> ''),
+  CONSTRAINT project_selection_report_revision_check CHECK (report_revision > 0)
 );
 
-CREATE INDEX IF NOT EXISTS project_simulation_result_wallet_idx
-  ON project_simulation_result (wallet);
+CREATE INDEX project_selection_project_id_decided_at_idx
+  ON project_selection (project_id, decided_at DESC, id DESC);
+CREATE INDEX project_selection_outcome_decided_at_idx
+  ON project_selection (outcome, decided_at DESC, id DESC);
 
-CREATE INDEX IF NOT EXISTS project_simulation_result_risk_idx
-  ON project_simulation_result (project_id)
-  WHERE can_mint_from_dead_via_transfer_from
-    OR can_mint_from_zero_via_transfer_from
-    OR can_mint_from_weth_pair_via_transfer_from
-    OR can_mint_from_usdt_pair_via_transfer_from
-    OR can_mint_via_transfer_to_weth_pair
-    OR can_mint_via_transfer_to_usdt_pair;
+CREATE TABLE project_selection_evaluation_task (
+  id BIGSERIAL,
+  project_id BIGINT NOT NULL,
+  report_revision BIGINT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  attempts INT NOT NULL DEFAULT 0,
+  available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  locked_at TIMESTAMPTZ,
+  lease_expires_at TIMESTAMPTZ,
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_selection_evaluation_task_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_selection_evaluation_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_selection_evaluation_task_project_report_fk FOREIGN KEY (project_id, report_revision) REFERENCES project_report_revision(project_id, revision) ON DELETE CASCADE,
+  CONSTRAINT project_selection_evaluation_task_project_report_uidx UNIQUE (project_id, report_revision),
+  CONSTRAINT project_selection_evaluation_task_report_revision_check CHECK (report_revision > 0),
+  CONSTRAINT project_selection_evaluation_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
+  CONSTRAINT project_selection_evaluation_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
+);
 
-CREATE TABLE IF NOT EXISTS bytecode_blacklist (
-  code_hash BYTEA PRIMARY KEY,
+CREATE INDEX project_selection_evaluation_task_status_available_at_idx
+  ON project_selection_evaluation_task (status, available_at, project_id);
+
+ALTER TABLE project_research_state
+  ADD CONSTRAINT project_research_state_current_report_fk
+  FOREIGN KEY (project_id, current_report_revision)
+  REFERENCES project_report_revision(project_id, revision);
+
+ALTER TABLE project_research_state
+  ADD CONSTRAINT project_research_state_current_selection_fk
+  FOREIGN KEY (current_selection_id)
+  REFERENCES project_selection(id);
+
+CREATE TABLE contract_code_blocklist (
+  code_hash BYTEA,
   note TEXT,
   source_chain_id BIGINT,
   source_contract BYTEA,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT bytecode_blacklist_code_hash_len CHECK (length(code_hash) = 32),
-  CONSTRAINT bytecode_blacklist_source_contract_len CHECK (source_contract IS NULL OR length(source_contract) = 20)
+  CONSTRAINT contract_code_blocklist_code_hash_uidx PRIMARY KEY (code_hash),
+  CONSTRAINT contract_code_blocklist_source_chain_fk FOREIGN KEY (source_chain_id) REFERENCES chain(id),
+  CONSTRAINT contract_code_blocklist_code_hash_length_check CHECK (length(code_hash) = 32),
+  CONSTRAINT contract_code_blocklist_source_contract_length_check CHECK (source_contract IS NULL OR length(source_contract) = 20)
 );
 
-CREATE TABLE IF NOT EXISTS wallet_blacklist (
-  wallet BYTEA PRIMARY KEY,
+CREATE TABLE wallet_blocklist (
+  wallet BYTEA,
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT wallet_blacklist_wallet_len CHECK (length(wallet) = 20)
+  CONSTRAINT wallet_blocklist_wallet_uidx PRIMARY KEY (wallet),
+  CONSTRAINT wallet_blocklist_wallet_length_check CHECK (length(wallet) = 20)
 );
 
 -- +goose Down
 
-DROP TABLE IF EXISTS wallet_blacklist;
-DROP TABLE IF EXISTS bytecode_blacklist;
-DROP TABLE IF EXISTS project_report_evaluation_task;
-DROP TABLE IF EXISTS project_report;
+DROP TABLE IF EXISTS wallet_blocklist;
+DROP TABLE IF EXISTS contract_code_blocklist;
+ALTER TABLE IF EXISTS project_research_state DROP CONSTRAINT IF EXISTS project_research_state_current_selection_fk;
+ALTER TABLE IF EXISTS project_research_state DROP CONSTRAINT IF EXISTS project_research_state_current_report_fk;
+DROP TABLE IF EXISTS project_selection_evaluation_task;
+DROP TABLE IF EXISTS project_selection;
+DROP TABLE IF EXISTS project_report_build_task;
+DROP TABLE IF EXISTS project_report_revision;
+DROP TABLE IF EXISTS project_observation_current;
+DROP TABLE IF EXISTS project_observation;
 DROP TABLE IF EXISTS project_data_collection_task;
-DROP TABLE IF EXISTS project_simulation_result;
-DROP TABLE IF EXISTS project_chain_state;
-DROP TABLE IF EXISTS project_ave_data;
-DROP TABLE IF EXISTS wallet_asset_state;
+DROP TABLE IF EXISTS project_data_collection_schedule;
+DROP TABLE IF EXISTS project_research_state;
 DROP TABLE IF EXISTS project_initial_recipient;
 DROP TABLE IF EXISTS project_related_wallet;
+DROP TRIGGER IF EXISTS project_contract_code_deployment_count_trigger ON project;
 DROP TABLE IF EXISTS project;
+DROP FUNCTION IF EXISTS update_contract_code_deployment_count();
 DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;
 DROP TABLE IF EXISTS chain_ingest_checkpoint;
 DROP TABLE IF EXISTS chain;
-DROP FUNCTION IF EXISTS update_contract_code_deployment_count();

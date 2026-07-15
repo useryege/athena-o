@@ -5,7 +5,8 @@ SELECT
   c.enabled,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
-  COALESCE(cp.created_at, c.created_at) AS created_at
+  COALESCE(cp.created_at, c.created_at) AS created_at,
+  COALESCE(cp.updated_at, c.created_at) AS updated_at
 FROM chain c
 LEFT JOIN chain_ingest_checkpoint cp ON cp.chain_id = c.id
 WHERE c.id = @chain_id;
@@ -52,7 +53,8 @@ SELECT
   c.enabled,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
-  COALESCE(cp.created_at, c.created_at) AS created_at
+  COALESCE(cp.created_at, c.created_at) AS created_at,
+  COALESCE(cp.updated_at, c.created_at) AS updated_at
 FROM chain c
 LEFT JOIN chain_ingest_checkpoint cp ON cp.chain_id = c.id
 ORDER BY c.id;

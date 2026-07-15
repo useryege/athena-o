@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -41,11 +42,21 @@ func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, ch
 		r.failTasks(ctx, tasks, err)
 		return
 	}
+	client, err := r.ensureClient(ctx, chainID)
+	if err != nil {
+		r.failTasks(ctx, tasks, err)
+		return
+	}
+	blockNumber, err := client.BlockNumber(ctx)
+	if err != nil {
+		r.failTasks(ctx, tasks, err)
+		return
+	}
 	tokenContracts := make([]ethcommon.Address, 0, len(tasks))
 	for _, task := range tasks {
 		tokenContracts = append(tokenContracts, task.Project.Contract)
 	}
-	items, err := caller.ListProjectStates(&bind.CallOpts{Context: ctx}, tokenContracts)
+	items, err := caller.ListProjectStates(&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(blockNumber)}, tokenContracts)
 	if err != nil {
 		r.resetChain(chainID)
 		r.failTasks(ctx, tasks, fmt.Errorf("fetch ATHENA chain state chain_id=%d task_count=%d: %w", chainID, len(tasks), err))
@@ -63,7 +74,7 @@ func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, ch
 			r.markTaskFailed(ctx, task.Task, fmt.Errorf("marshal ATHENA chain state project_id=%d: %w", task.Project.ID, err))
 			continue
 		}
-		if _, err := r.opts.store.CompleteProjectChainStateCollection(ctx, task.Task, payload, time.Now().UTC()); err != nil {
+		if _, err := r.opts.store.CompleteProjectChainStateCollection(ctx, task.Task, payload, blockNumber, time.Now().UTC()); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			continue
 		}

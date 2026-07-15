@@ -18,7 +18,8 @@ SELECT
   c.enabled,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
-  COALESCE(cp.created_at, c.created_at) AS created_at
+  COALESCE(cp.created_at, c.created_at) AS created_at,
+  COALESCE(cp.updated_at, c.created_at) AS updated_at
 FROM chain c
 LEFT JOIN chain_ingest_checkpoint cp ON cp.chain_id = c.id
 WHERE c.id = $1
@@ -31,6 +32,7 @@ type GetChainIngestCheckpointRow struct {
 	CursorBlockNumber int64
 	Status            string
 	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
 }
 
 func (q *Queries) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error) {
@@ -43,6 +45,7 @@ func (q *Queries) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -54,7 +57,8 @@ SELECT
   c.enabled,
   COALESCE(cp.cursor_block_number, 0)::bigint AS cursor_block_number,
   COALESCE(cp.status, 'stopped')::text AS status,
-  COALESCE(cp.created_at, c.created_at) AS created_at
+  COALESCE(cp.created_at, c.created_at) AS created_at,
+  COALESCE(cp.updated_at, c.created_at) AS updated_at
 FROM chain c
 LEFT JOIN chain_ingest_checkpoint cp ON cp.chain_id = c.id
 ORDER BY c.id
@@ -67,6 +71,7 @@ type ListChainIngestCheckpointsRow struct {
 	CursorBlockNumber int64
 	Status            string
 	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
 }
 
 func (q *Queries) ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error) {
@@ -85,6 +90,7 @@ func (q *Queries) ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIn
 			&i.CursorBlockNumber,
 			&i.Status,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -100,7 +106,7 @@ const updateChainIngestCheckpointStatus = `-- name: UpdateChainIngestCheckpointS
 UPDATE chain_ingest_checkpoint
 SET status = $1
 WHERE chain_id = $2
-RETURNING chain_id, cursor_block_number, status, created_at
+RETURNING chain_id, cursor_block_number, status, created_at, updated_at
 `
 
 type UpdateChainIngestCheckpointStatusParams struct {
@@ -116,6 +122,7 @@ func (q *Queries) UpdateChainIngestCheckpointStatus(ctx context.Context, arg Upd
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -133,7 +140,7 @@ INSERT INTO chain_ingest_checkpoint (
 ON CONFLICT (chain_id) DO UPDATE
 SET cursor_block_number = EXCLUDED.cursor_block_number,
   status = EXCLUDED.status
-RETURNING chain_id, cursor_block_number, status, created_at
+RETURNING chain_id, cursor_block_number, status, created_at, updated_at
 `
 
 type UpsertChainIngestCheckpointParams struct {
@@ -150,6 +157,7 @@ func (q *Queries) UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertCha
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -166,7 +174,7 @@ INSERT INTO chain_ingest_checkpoint (
 )
 ON CONFLICT (chain_id) DO UPDATE
 SET cursor_block_number = EXCLUDED.cursor_block_number
-RETURNING chain_id, cursor_block_number, status, created_at
+RETURNING chain_id, cursor_block_number, status, created_at, updated_at
 `
 
 type UpsertChainIngestCheckpointCursorParams struct {
@@ -183,6 +191,7 @@ func (q *Queries) UpsertChainIngestCheckpointCursor(ctx context.Context, arg Ups
 		&i.CursorBlockNumber,
 		&i.Status,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

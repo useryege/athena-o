@@ -32,7 +32,7 @@ import {services, ViewPreferences} from './shared/services';
 import requests from './shared/services/requests';
 import {BrandMark} from './components';
 import {
-    BytecodeBlacklistsPage,
+    ContractCodeBlocklistPage,
     ChainCheckpointsPage,
     CollectionTasksPage,
     ContractCodeDetailPage,
@@ -55,7 +55,7 @@ import {
     SettingsPage,
     ServiceStatusPage,
     UserInfoPage,
-    WalletBlacklistsPage,
+    WalletBlocklistPage,
     WalletsPage,
     WorldCupCornersPage,
     WormPolyPage
@@ -110,8 +110,8 @@ const tokenapiSubresources = {
     projects: 'projects',
     projectReports: 'project-reports',
     contractCodes: 'contract-codes',
-    bytecodeBlacklists: 'bytecode-blacklists',
-    walletBlacklists: 'wallet-blacklists',
+    contractCodeBlocklist: 'contract-code-blocklist',
+    walletBlocklist: 'wallet-blocklist',
     nodeStatuses: 'node-statuses',
     chainCheckpoints: 'chain-checkpoints',
     collectionTasks: 'collection-tasks'
@@ -203,18 +203,18 @@ const tokenNavItem: NavItem = {
             permission: tokenapiPermission(tokenapiSubresources.contractCodes)
         },
         {
-            key: '/token/bytecode-blacklists',
-            label: 'Bytecode Blacklists',
-            path: '/token/bytecode-blacklists',
+            key: '/token/contract-code-blocklist',
+            label: 'Contract Code Blocklist',
+            path: '/token/contract-code-blocklist',
             icon: <ApiOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.bytecodeBlacklists)
+            permission: tokenapiPermission(tokenapiSubresources.contractCodeBlocklist)
         },
         {
-            key: '/token/wallet-blacklists',
-            label: 'Wallet Blacklists',
-            path: '/token/wallet-blacklists',
+            key: '/token/wallet-blocklist',
+            label: 'Wallet Blocklist',
+            path: '/token/wallet-blocklist',
             icon: <WalletOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.walletBlacklists)
+            permission: tokenapiPermission(tokenapiSubresources.walletBlocklist)
         },
         {
             key: '/token/node-statuses',
@@ -445,8 +445,8 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/token/project-reports' element={withPermission(tokenapiPermission(tokenapiSubresources.projectReports), <ProjectReportsPage />)} />
             <Route path='/token/contract-codes' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodesPage />)} />
             <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />
-            <Route path='/token/bytecode-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.bytecodeBlacklists), <BytecodeBlacklistsPage />)} />
-            <Route path='/token/wallet-blacklists' element={withPermission(tokenapiPermission(tokenapiSubresources.walletBlacklists), <WalletBlacklistsPage />)} />
+            <Route path='/token/contract-code-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodeBlocklist), <ContractCodeBlocklistPage />)} />
+            <Route path='/token/wallet-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.walletBlocklist), <WalletBlocklistPage />)} />
             <Route path='/token/node-statuses' element={withPermission(tokenapiPermission(tokenapiSubresources.nodeStatuses), <NodeStatusesPage />)} />
             <Route path='/token/chain-checkpoints' element={withPermission(tokenapiPermission(tokenapiSubresources.chainCheckpoints), <ChainCheckpointsPage />)} />
             <Route path='/token/collection-tasks' element={withPermission(tokenapiPermission(tokenapiSubresources.collectionTasks), <CollectionTasksPage />)} />

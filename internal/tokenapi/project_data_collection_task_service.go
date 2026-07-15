@@ -12,14 +12,10 @@ func (s *Service) GetProjectDataCollectionTask(ctx context.Context, req *apiclie
 	if err != nil {
 		return nil, err
 	}
-	if err := validatePositiveInt64Field("project_id", req.GetProjectId()); err != nil {
+	if err := validatePositiveInt64Field("task_id", req.GetTaskId()); err != nil {
 		return nil, err
 	}
-	dataType := strings.TrimSpace(req.GetDataType())
-	if err := validateRequiredProjectDataCollectionType(dataType); err != nil {
-		return nil, err
-	}
-	item, err := store.GetProjectDataCollectionTask(ctx, req.GetProjectId(), dataType)
+	item, err := store.GetProjectDataCollectionTask(ctx, req.GetTaskId())
 	if err != nil {
 		return nil, wrapStoreError("get project data collection task", err)
 	}

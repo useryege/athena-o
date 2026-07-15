@@ -77,17 +77,17 @@ func notificationObject(req any) string {
 
 func tokenAPIObject(req any) string {
 	switch r := req.(type) {
-	case *tokenapipkg.GetBytecodeBlacklistRequest:
+	case *tokenapipkg.GetContractCodeBlocklistEntryRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.UpdateBytecodeBlacklistRequest:
+	case *tokenapipkg.UpdateContractCodeBlocklistEntryRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.DeleteBytecodeBlacklistRequest:
+	case *tokenapipkg.DeleteContractCodeBlocklistEntryRequest:
 		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.GetWalletBlacklistRequest:
+	case *tokenapipkg.GetWalletBlocklistEntryRequest:
 		return nonEmptyObject(r.GetWallet())
-	case *tokenapipkg.UpdateWalletBlacklistRequest:
+	case *tokenapipkg.UpdateWalletBlocklistEntryRequest:
 		return nonEmptyObject(r.GetWallet())
-	case *tokenapipkg.DeleteWalletBlacklistRequest:
+	case *tokenapipkg.DeleteWalletBlocklistEntryRequest:
 		return nonEmptyObject(r.GetWallet())
 	case *tokenapipkg.GetChainIngestCheckpointRequest:
 		return fmt.Sprintf("%d", r.GetChainId())
@@ -96,10 +96,10 @@ func tokenAPIObject(req any) string {
 	case *tokenapipkg.GetContractCodeRequest:
 		return nonEmptyObject(r.GetCodeHash())
 	case *tokenapipkg.GetProjectDataCollectionTaskRequest:
-		return fmt.Sprintf("%d/%s", r.GetProjectId(), nonEmptyObject(r.GetDataType()))
-	case *tokenapipkg.CreateBytecodeBlacklistRequest:
+		return fmt.Sprintf("%d", r.GetTaskId())
+	case *tokenapipkg.CreateContractCodeBlocklistEntryRequest:
 		return nonEmptyObject(r.GetSourceContract())
-	case *tokenapipkg.CreateWalletBlacklistRequest:
+	case *tokenapipkg.CreateWalletBlocklistEntryRequest:
 		return nonEmptyObject(r.GetWallet())
 	default:
 		return "*"
@@ -195,27 +195,30 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/wormpoly.WormPolyService/GetWormPolyFIFADashboard":      fixedRule(rbac.ResourceWormPoly, rbac.ActionGet),
 	"/wormpoly.WormPolyService/UpdateWormPolyFIFAEventConfig": fixedRule(rbac.ResourceWormPoly, rbac.ActionUpdate),
 
-	"/tokenapi.TokenAPIService/GetOptions":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
-	"/tokenapi.TokenAPIService/ListNodeStatuses":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),
-	"/tokenapi.TokenAPIService/GetBytecodeBlacklist":           fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "bytecode-blacklists"),
-	"/tokenapi.TokenAPIService/ListBytecodeBlacklists":         fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "bytecode-blacklists"),
-	"/tokenapi.TokenAPIService/CreateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/UpdateBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/DeleteBytecodeBlacklist":        {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/GetWalletBlacklist":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blacklists"),
-	"/tokenapi.TokenAPIService/ListWalletBlacklists":           fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blacklists"),
-	"/tokenapi.TokenAPIService/CreateWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/UpdateWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/DeleteWalletBlacklist":          {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/GetChainIngestCheckpoint":       fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
-	"/tokenapi.TokenAPIService/ListChainIngestCheckpoints":     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
-	"/tokenapi.TokenAPIService/UpdateChainIngestCheckpoint":    {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenAPIService/GetContractCode":                fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
-	"/tokenapi.TokenAPIService/ListContractCodes":              fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
-	"/tokenapi.TokenAPIService/ListProjects":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenAPIService/ListProjectReports":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "project-reports"),
-	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
-	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks": fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
+	"/tokenapi.TokenAPIService/GetOptions":                       fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "options"),
+	"/tokenapi.TokenAPIService/ListNodeStatuses":                 fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),
+	"/tokenapi.TokenAPIService/GetContractCodeBlocklistEntry":    fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-code-blocklist"),
+	"/tokenapi.TokenAPIService/ListContractCodeBlocklistEntries": fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-code-blocklist"),
+	"/tokenapi.TokenAPIService/CreateContractCodeBlocklistEntry": {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/UpdateContractCodeBlocklistEntry": {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/DeleteContractCodeBlocklistEntry": {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetWalletBlocklistEntry":          fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blocklist"),
+	"/tokenapi.TokenAPIService/ListWalletBlocklistEntries":       fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blocklist"),
+	"/tokenapi.TokenAPIService/CreateWalletBlocklistEntry":       {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/UpdateWalletBlocklistEntry":       {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/DeleteWalletBlocklistEntry":       {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetChainIngestCheckpoint":         fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
+	"/tokenapi.TokenAPIService/ListChainIngestCheckpoints":       fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
+	"/tokenapi.TokenAPIService/UpdateChainIngestCheckpoint":      {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenAPIService/GetContractCode":                  fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
+	"/tokenapi.TokenAPIService/ListContractCodes":                fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
+	"/tokenapi.TokenAPIService/ListProjects":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
+	"/tokenapi.TokenAPIService/ListProjectReports":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "project-reports"),
+	"/tokenapi.TokenAPIService/GetProjectDataCollectionTask":     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
+	"/tokenapi.TokenAPIService/ListProjectDataCollectionTasks":   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
+	"/tokenapi.TokenAPIService/ListProjectResearchStates":        fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "project-research-states"),
+	"/tokenapi.TokenAPIService/ListProjectReportRevisions":       fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "project-report-revisions"),
+	"/tokenapi.TokenAPIService/ListProjectSelections":            fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "project-selections"),
 
 	"/servicestatus.ServiceStatusService/ListServiceStatuses":               fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
 	"/servicestatus.ServiceStatusService/ListEtherscanGatewayStatuses":      fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
