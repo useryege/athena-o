@@ -6,18 +6,19 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-var defaultCollectionIntervals = map[string]time.Duration{
-	ProjectDataCollectionTypeChainState:         15 * time.Second,
-	ProjectDataCollectionTypeWalletAssetState:   60 * time.Second,
-	ProjectDataCollectionTypeSimulationResult:   60 * time.Second,
-	ProjectDataCollectionTypeAve:                5 * time.Minute,
-	ProjectDataCollectionTypeContractCodeSource: 10 * time.Minute,
+var defaultCollectionIntervals = map[domain.DataCollectionType]time.Duration{
+	domain.DataCollectionTypeChainState:         15 * time.Second,
+	domain.DataCollectionTypeWalletAssetState:   60 * time.Second,
+	domain.DataCollectionTypeSimulationResult:   60 * time.Second,
+	domain.DataCollectionTypeAve:                5 * time.Minute,
+	domain.DataCollectionTypeContractCodeSource: 10 * time.Minute,
 }
 
-func (s *SQLStore) ValidateProjectCandidate(ctx context.Context, candidate ProjectCandidate, codeHash common.Hash, token ProjectTokenMetadata, wethPair, usdtPair common.Address, relatedWallets []ProjectRelatedWallet, initialRecipients []ProjectInitialRecipient) (*Project, error) {
+func (s *SQLStore) ValidateProjectCandidate(ctx context.Context, candidate domain.ProjectCandidate, codeHash common.Hash, token domain.ProjectTokenMetadata, wethPair, usdtPair common.Address, relatedWallets []domain.ProjectRelatedWallet, initialRecipients []domain.ProjectInitialRecipient) (*domain.Project, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -46,7 +47,7 @@ func (s *SQLStore) ValidateProjectCandidate(ctx context.Context, candidate Proje
 	if err != nil {
 		return nil, fmt.Errorf("upsert project: %w", err)
 	}
-	if _, err = q.MarkProjectCandidateStatus(ctx, tokensqlc.MarkProjectCandidateStatusParams{ID: candidate.ID, Status: ProjectCandidateStatusValidated}); err != nil {
+	if _, err = q.MarkProjectCandidateStatus(ctx, tokensqlc.MarkProjectCandidateStatusParams{ID: candidate.ID, Status: string(domain.ProjectCandidateStatusValidated)}); err != nil {
 		return nil, fmt.Errorf("mark project candidate validated: %w", err)
 	}
 	if _, err = q.CreateProjectResearchState(ctx, row.ID); err != nil {
@@ -54,7 +55,7 @@ func (s *SQLStore) ValidateProjectCandidate(ctx context.Context, candidate Proje
 	}
 	now := time.Now().UTC()
 	for dataType, interval := range defaultCollectionIntervals {
-		if _, err = q.UpsertProjectDataCollectionSchedule(ctx, tokensqlc.UpsertProjectDataCollectionScheduleParams{ProjectID: row.ID, DataType: dataType, RefreshIntervalSeconds: int64(interval / time.Second), NextRunAt: nullableTime(now)}); err != nil {
+		if _, err = q.UpsertProjectDataCollectionSchedule(ctx, tokensqlc.UpsertProjectDataCollectionScheduleParams{ProjectID: row.ID, DataType: string(dataType), RefreshIntervalSeconds: int64(interval / time.Second), NextRunAt: nullableTime(now)}); err != nil {
 			return nil, fmt.Errorf("create %s collection schedule: %w", dataType, err)
 		}
 	}
@@ -62,7 +63,7 @@ func (s *SQLStore) ValidateProjectCandidate(ctx context.Context, candidate Proje
 		if wallet.Wallet == (common.Address{}) || wallet.Role == "" {
 			continue
 		}
-		if _, err = q.UpsertProjectRelatedWallet(ctx, tokensqlc.UpsertProjectRelatedWalletParams{ProjectID: row.ID, Wallet: wallet.Wallet.Bytes(), Role: wallet.Role}); err != nil {
+		if _, err = q.UpsertProjectRelatedWallet(ctx, tokensqlc.UpsertProjectRelatedWalletParams{ProjectID: row.ID, Wallet: wallet.Wallet.Bytes(), Role: string(wallet.Role)}); err != nil {
 			return nil, fmt.Errorf("upsert related wallet: %w", err)
 		}
 	}

@@ -13,7 +13,7 @@ import (
 
 const getCurrentProjectObservation = `-- name: GetCurrentProjectObservation :one
 SELECT
-  observation.id, observation.project_id, observation.data_type, observation.content_hash, observation.payload, observation.block_number, observation.observed_at, observation.created_at,
+  observation.id, observation.project_id, observation.data_type, observation.schema_version, observation.content_hash, observation.payload, observation.block_number, observation.observed_at, observation.created_at,
   current.last_checked_at
 FROM project_observation_current AS current
 JOIN project_observation AS observation ON observation.id = current.observation_id
@@ -30,6 +30,7 @@ type GetCurrentProjectObservationRow struct {
 	ID            int64
 	ProjectID     int64
 	DataType      string
+	SchemaVersion int32
 	ContentHash   []byte
 	Payload       []byte
 	BlockNumber   pgtype.Int8
@@ -45,6 +46,7 @@ func (q *Queries) GetCurrentProjectObservation(ctx context.Context, arg GetCurre
 		&i.ID,
 		&i.ProjectID,
 		&i.DataType,
+		&i.SchemaVersion,
 		&i.ContentHash,
 		&i.Payload,
 		&i.BlockNumber,
@@ -59,6 +61,7 @@ const insertProjectObservation = `-- name: InsertProjectObservation :one
 INSERT INTO project_observation (
   project_id,
   data_type,
+  schema_version,
   content_hash,
   payload,
   block_number,
@@ -67,26 +70,29 @@ INSERT INTO project_observation (
   $1,
   $2,
   $3,
-  $4::jsonb,
-  $5,
-  $6
+  $4,
+  $5::jsonb,
+  $6,
+  $7
 )
-RETURNING id, project_id, data_type, content_hash, payload, block_number, observed_at, created_at
+RETURNING id, project_id, data_type, schema_version, content_hash, payload, block_number, observed_at, created_at
 `
 
 type InsertProjectObservationParams struct {
-	ProjectID   int64
-	DataType    string
-	ContentHash []byte
-	Payload     []byte
-	BlockNumber pgtype.Int8
-	ObservedAt  pgtype.Timestamptz
+	ProjectID     int64
+	DataType      string
+	SchemaVersion int32
+	ContentHash   []byte
+	Payload       []byte
+	BlockNumber   pgtype.Int8
+	ObservedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) InsertProjectObservation(ctx context.Context, arg InsertProjectObservationParams) (ProjectObservation, error) {
 	row := q.db.QueryRow(ctx, insertProjectObservation,
 		arg.ProjectID,
 		arg.DataType,
+		arg.SchemaVersion,
 		arg.ContentHash,
 		arg.Payload,
 		arg.BlockNumber,
@@ -97,6 +103,7 @@ func (q *Queries) InsertProjectObservation(ctx context.Context, arg InsertProjec
 		&i.ID,
 		&i.ProjectID,
 		&i.DataType,
+		&i.SchemaVersion,
 		&i.ContentHash,
 		&i.Payload,
 		&i.BlockNumber,
@@ -108,7 +115,7 @@ func (q *Queries) InsertProjectObservation(ctx context.Context, arg InsertProjec
 
 const listCurrentProjectObservations = `-- name: ListCurrentProjectObservations :many
 SELECT
-  observation.id, observation.project_id, observation.data_type, observation.content_hash, observation.payload, observation.block_number, observation.observed_at, observation.created_at,
+  observation.id, observation.project_id, observation.data_type, observation.schema_version, observation.content_hash, observation.payload, observation.block_number, observation.observed_at, observation.created_at,
   current.last_checked_at
 FROM project_observation_current AS current
 JOIN project_observation AS observation ON observation.id = current.observation_id
@@ -120,6 +127,7 @@ type ListCurrentProjectObservationsRow struct {
 	ID            int64
 	ProjectID     int64
 	DataType      string
+	SchemaVersion int32
 	ContentHash   []byte
 	Payload       []byte
 	BlockNumber   pgtype.Int8
@@ -141,6 +149,7 @@ func (q *Queries) ListCurrentProjectObservations(ctx context.Context, projectID 
 			&i.ID,
 			&i.ProjectID,
 			&i.DataType,
+			&i.SchemaVersion,
 			&i.ContentHash,
 			&i.Payload,
 			&i.BlockNumber,
@@ -159,7 +168,7 @@ func (q *Queries) ListCurrentProjectObservations(ctx context.Context, projectID 
 }
 
 const listProjectObservations = `-- name: ListProjectObservations :many
-SELECT id, project_id, data_type, content_hash, payload, block_number, observed_at, created_at
+SELECT id, project_id, data_type, schema_version, content_hash, payload, block_number, observed_at, created_at
 FROM project_observation
 WHERE project_id = $1
   AND ($2::text = '' OR data_type = $2::text)
@@ -192,6 +201,7 @@ func (q *Queries) ListProjectObservations(ctx context.Context, arg ListProjectOb
 			&i.ID,
 			&i.ProjectID,
 			&i.DataType,
+			&i.SchemaVersion,
 			&i.ContentHash,
 			&i.Payload,
 			&i.BlockNumber,

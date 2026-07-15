@@ -8,7 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	"github.com/useryege/athena/util/ethws"
 )
 
@@ -21,7 +21,7 @@ const (
 )
 
 type Options struct {
-	Store          *tokenstore.SQLStore
+	Store          Store
 	EthNodeWSURLs  []string
 	BSCNodeWSURLs  []string
 	EthEnabled     bool
@@ -83,9 +83,9 @@ func (w *Worker) Start(ctx context.Context) error {
 			}).Info("token chain scanner chain is disabled")
 			continue
 		}
-		checkpoint.Status = tokenstore.ChainIngestStatusStopped
+		checkpoint.Status = domain.ChainIngestStatusStopped
 		if cfg.autoStart {
-			checkpoint.Status = tokenstore.ChainIngestStatusRunning
+			checkpoint.Status = domain.ChainIngestStatusRunning
 		}
 		if _, err := w.opts.Store.UpsertChainIngestCheckpoint(ctx, *checkpoint); err != nil {
 			cancel()
@@ -150,7 +150,7 @@ func (w *Worker) Stop(ctx context.Context) error {
 	}
 	var result error
 	for chainID := range runners {
-		if _, err := w.opts.Store.UpdateChainIngestCheckpointStatus(ctx, chainID, tokenstore.ChainIngestStatusStopped); err != nil {
+		if _, err := w.opts.Store.UpdateChainIngestCheckpointStatus(ctx, chainID, domain.ChainIngestStatusStopped); err != nil {
 			if result == nil {
 				result = err
 			}

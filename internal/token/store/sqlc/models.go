@@ -112,14 +112,15 @@ type ProjectInitialRecipient struct {
 }
 
 type ProjectObservation struct {
-	ID          int64
-	ProjectID   int64
-	DataType    string
-	ContentHash []byte
-	Payload     []byte
-	BlockNumber pgtype.Int8
-	ObservedAt  pgtype.Timestamptz
-	CreatedAt   pgtype.Timestamptz
+	ID            int64
+	ProjectID     int64
+	DataType      string
+	SchemaVersion int32
+	ContentHash   []byte
+	Payload       []byte
+	BlockNumber   pgtype.Int8
+	ObservedAt    pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
 }
 
 type ProjectObservationCurrent struct {
@@ -155,6 +156,7 @@ type ProjectReportRevision struct {
 	ID                        int64
 	ProjectID                 int64
 	Revision                  int64
+	SchemaVersion             int32
 	ContentHash               []byte
 	CompletenessStatus        string
 	Evidence                  []byte

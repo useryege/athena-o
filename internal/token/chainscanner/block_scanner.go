@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
 func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
@@ -16,7 +16,7 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 	if checkpoint == nil {
 		return fmt.Errorf("token chain scanner checkpoint missing for chain %d", r.opts.chainID)
 	}
-	if !checkpoint.Enabled || checkpoint.Status != tokenstore.ChainIngestStatusRunning {
+	if !checkpoint.Enabled || checkpoint.Status != domain.ChainIngestStatusRunning {
 		return nil
 	}
 	client, err := r.ensureClient(ctx)
@@ -48,7 +48,7 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		if checkpoint == nil || !checkpoint.Enabled || checkpoint.Status != tokenstore.ChainIngestStatusRunning {
+		if checkpoint == nil || !checkpoint.Enabled || checkpoint.Status != domain.ChainIngestStatusRunning {
 			return nil
 		}
 		batchStart := next
@@ -61,7 +61,7 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 			r.resetClient()
 			return err
 		}
-		candidates := make([]tokenstore.ProjectCandidate, 0)
+		candidates := make([]domain.ProjectCandidate, 0)
 		for _, block := range blocks {
 			blockCandidates, err := r.projectCandidatesFromBlock(block)
 			if err != nil {
@@ -69,10 +69,10 @@ func (r *chainRunner) processAvailableBlocks(ctx context.Context) error {
 			}
 			candidates = append(candidates, blockCandidates...)
 		}
-		if _, err := r.opts.store.IngestProjectCandidateBatch(ctx, tokenstore.ChainIngestCheckpoint{
+		if _, err := r.opts.store.IngestProjectCandidateBatch(ctx, domain.ChainIngestCheckpoint{
 			ChainID:           r.opts.chainID,
 			CursorBlockNumber: batchEnd,
-			Status:            tokenstore.ChainIngestStatusRunning,
+			Status:            domain.ChainIngestStatusRunning,
 		}, candidates); err != nil {
 			return err
 		}

@@ -11,6 +11,7 @@ WHERE current.project_id = @project_id
 INSERT INTO project_observation (
   project_id,
   data_type,
+  schema_version,
   content_hash,
   payload,
   block_number,
@@ -18,6 +19,7 @@ INSERT INTO project_observation (
 ) VALUES (
   @project_id,
   @data_type,
+  @schema_version,
   @content_hash,
   @payload::jsonb,
   sqlc.narg('block_number'),

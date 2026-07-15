@@ -9,13 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
 )
 
 const maxBlocksPerBatch = uint64(100)
 
 type chainRunnerOptions struct {
-	store                 *tokenstore.SQLStore
+	store                 Store
 	chainID               int64
 	chainName             string
 	nodeWSURLs            []string

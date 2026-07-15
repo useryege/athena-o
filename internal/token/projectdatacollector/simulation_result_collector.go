@@ -9,12 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 func (r *dataCollectorRunner) processSimulationResultTasks(ctx context.Context) error {
-	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, tokenstore.ProjectDataCollectionTypeSimulationResult, r.opts.chainIDs, simulationTaskLimit)
+	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, domain.DataCollectionTypeSimulationResult, r.opts.chainIDs, simulationTaskLimit)
 	if err != nil {
 		return err
 	}
@@ -32,8 +32,8 @@ func (r *dataCollectorRunner) processSimulationResultTasks(ctx context.Context) 
 	return nil
 }
 
-func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject) {
-	client, err := r.ensureClient(ctx, task.Project.ChainID)
+func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, task domain.ProjectDataCollectionTaskWithProject) {
+	client, err := r.ensureClient(ctx, domain.DataCollectionTypeSimulationResult, task.Project.ChainID)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
@@ -56,7 +56,7 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 		r.completeEmptySimulationResultTask(ctx, task, blockNumber, "without token pairs")
 		return
 	}
-	caller, err := r.ensureCaller(ctx, task.Project.ChainID)
+	caller, err := r.ensureCaller(ctx, domain.DataCollectionTypeSimulationResult, task.Project.ChainID)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
@@ -64,22 +64,22 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 	queries := walletSimulationStateQueries(task.Project.Contract, wallets)
 	states, err := caller.ListWalletSimulationStates(&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(blockNumber)}, queries)
 	if err != nil {
-		r.resetChain(task.Project.ChainID)
+		r.resetChain(domain.DataCollectionTypeSimulationResult, task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet simulation state chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
 		return
 	}
 	if len(states) != len(wallets) {
-		r.resetChain(task.Project.ChainID)
+		r.resetChain(domain.DataCollectionTypeSimulationResult, task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet simulation state chain_id=%d project_id=%d returned %d items for %d wallets", task.Project.ChainID, task.Project.ID, len(states), len(wallets)))
 		return
 	}
 	results, err := simulateProjectWallets(ctx, client.Client(), task.Project, wallets, states)
 	if err != nil {
-		r.resetChain(task.Project.ChainID)
+		r.resetChain(domain.DataCollectionTypeSimulationResult, task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("simulate token project wallets chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
 		return
 	}
-	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, results, blockNumber, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, domain.SimulationObservationV1{Items: results}, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
@@ -91,8 +91,8 @@ func (r *dataCollectorRunner) processSimulationResultTask(ctx context.Context, t
 	}).Info("token project data collector fetched simulation result")
 }
 
-func (r *dataCollectorRunner) completeEmptySimulationResultTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject, blockNumber uint64, reason string) {
-	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, nil, blockNumber, time.Now().UTC()); err != nil {
+func (r *dataCollectorRunner) completeEmptySimulationResultTask(ctx context.Context, task domain.ProjectDataCollectionTaskWithProject, blockNumber uint64, reason string) {
+	if err := r.opts.store.CompleteProjectSimulationResultCollection(ctx, task.Task, domain.SimulationObservationV1{}, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}

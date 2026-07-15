@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
 func (r *validatorRunner) processPendingCandidates(ctx context.Context) error {
@@ -22,15 +22,15 @@ func (r *validatorRunner) processPendingCandidates(ctx context.Context) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		page, err := r.opts.store.ListProjectCandidates(ctx, chainID, tokenstore.ProjectCandidateStatusPending, 1, r.opts.candidateLimit)
+		candidates, err := r.opts.store.ListPendingProjectCandidates(ctx, chainID, r.opts.candidateLimit)
 		if err != nil {
 			return err
 		}
-		if len(page.Items) == 0 {
+		if len(candidates) == 0 {
 			continue
 		}
-		totalCandidates += len(page.Items)
-		if err := r.processChainCandidates(ctx, chainID, page.Items); err != nil {
+		totalCandidates += len(candidates)
+		if err := r.processChainCandidates(ctx, chainID, candidates); err != nil {
 			return err
 		}
 	}
@@ -42,7 +42,7 @@ func (r *validatorRunner) processPendingCandidates(ctx context.Context) error {
 	return nil
 }
 
-func (r *validatorRunner) processChainCandidates(ctx context.Context, chainID int64, candidates []tokenstore.ProjectCandidate) error {
+func (r *validatorRunner) processChainCandidates(ctx context.Context, chainID int64, candidates []domain.ProjectCandidate) error {
 	client, err := r.ensureClient(ctx, chainID)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func (r *validatorRunner) processChainCandidates(ctx context.Context, chainID in
 	return nil
 }
 
-func (r *validatorRunner) processValidatedCandidate(ctx context.Context, client *ethclient.Client, candidate tokenstore.ProjectCandidate, validation tokenValidation) error {
+func (r *validatorRunner) processValidatedCandidate(ctx context.Context, client *ethclient.Client, candidate domain.ProjectCandidate, validation tokenValidation) error {
 	if !validation.IsValidERC20 {
 		return r.rejectCandidate(ctx, candidate, "token project validator rejected non ERC20 candidate")
 	}
@@ -113,7 +113,7 @@ func (r *validatorRunner) processValidatedCandidate(ctx context.Context, client 
 	}
 	relatedWallets := buildProjectRelatedWallets(candidate, initialRecipients)
 	projectInitialRecipients := buildProjectInitialRecipients(candidate, initialRecipients, validation.TotalSupply)
-	token := tokenstore.ProjectTokenMetadata{
+	token := domain.ProjectTokenMetadata{
 		Name:        validation.Name,
 		Symbol:      validation.Symbol,
 		Decimals:    validation.Decimals,
@@ -136,8 +136,8 @@ func (r *validatorRunner) processValidatedCandidate(ctx context.Context, client 
 	return nil
 }
 
-func (r *validatorRunner) rejectCandidate(ctx context.Context, candidate tokenstore.ProjectCandidate, message string) error {
-	if _, err := r.opts.store.MarkProjectCandidateStatus(ctx, candidate.ID, tokenstore.ProjectCandidateStatusRejected); err != nil {
+func (r *validatorRunner) rejectCandidate(ctx context.Context, candidate domain.ProjectCandidate, message string) error {
+	if _, err := r.opts.store.MarkProjectCandidateStatus(ctx, candidate.ID, domain.ProjectCandidateStatusRejected); err != nil {
 		return err
 	}
 	log.WithFields(log.Fields{

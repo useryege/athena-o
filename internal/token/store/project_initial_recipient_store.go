@@ -7,10 +7,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) UpsertProjectInitialRecipient(ctx context.Context, item ProjectInitialRecipient) (*ProjectInitialRecipient, error) {
+func (s *SQLStore) UpsertProjectInitialRecipient(ctx context.Context, item domain.ProjectInitialRecipient) (*domain.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (s *SQLStore) UpsertProjectInitialRecipient(ctx context.Context, item Proje
 	return mapped, nil
 }
 
-func (s *SQLStore) GetProjectInitialRecipient(ctx context.Context, projectID int64, wallet common.Address) (*ProjectInitialRecipient, error) {
+func (s *SQLStore) GetProjectInitialRecipient(ctx context.Context, projectID int64, wallet common.Address) (*domain.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -59,7 +60,7 @@ func (s *SQLStore) GetProjectInitialRecipient(ctx context.Context, projectID int
 	return mapped, nil
 }
 
-func (s *SQLStore) ListProjectInitialRecipientsByProject(ctx context.Context, projectID int64) ([]ProjectInitialRecipient, error) {
+func (s *SQLStore) ListProjectInitialRecipientsByProject(ctx context.Context, projectID int64) ([]domain.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func (s *SQLStore) ListProjectInitialRecipientsByProject(ctx context.Context, pr
 	return items, nil
 }
 
-func (s *SQLStore) ListProjectInitialRecipientsByWallet(ctx context.Context, wallet common.Address) ([]ProjectInitialRecipient, error) {
+func (s *SQLStore) ListProjectInitialRecipientsByWallet(ctx context.Context, wallet common.Address) ([]domain.ProjectInitialRecipient, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err

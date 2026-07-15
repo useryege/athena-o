@@ -6,14 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
-func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]tokenstore.ProjectCandidate, error) {
+func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]domain.ProjectCandidate, error) {
 	if block == nil {
 		return nil, nil
 	}
-	candidates := make([]tokenstore.ProjectCandidate, 0)
+	candidates := make([]domain.ProjectCandidate, 0)
 	for txIndex, tx := range block.Transactions() {
 		if tx == nil || tx.To() != nil {
 			continue
@@ -26,7 +26,7 @@ func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]tokensto
 		if contract == (common.Address{}) {
 			continue
 		}
-		candidates = append(candidates, tokenstore.ProjectCandidate{
+		candidates = append(candidates, domain.ProjectCandidate{
 			ChainID:     r.opts.chainID,
 			Contract:    contract,
 			TxSender:    txSender,
@@ -34,7 +34,7 @@ func (r *chainRunner) projectCandidatesFromBlock(block *types.Block) ([]tokensto
 			TxIndex:     uint64(txIndex),
 			BlockNumber: block.NumberU64(),
 			BlockTime:   block.Time(),
-			Status:      tokenstore.ProjectCandidateStatusPending,
+			Status:      domain.ProjectCandidateStatusPending,
 		})
 	}
 	return candidates, nil

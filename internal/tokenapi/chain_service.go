@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/useryege/athena/internal/token/domain"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 )
 
@@ -54,7 +55,7 @@ func (s *Service) UpdateChainIngestCheckpoint(ctx context.Context, req *apiclien
 	if err := validateChainIngestStatus(status); err != nil {
 		return nil, err
 	}
-	item, err := store.UpdateChainIngestCheckpointStatus(ctx, req.GetChainId(), status)
+	item, err := store.UpdateChainIngestCheckpointStatus(ctx, req.GetChainId(), domain.ChainIngestStatus(status))
 	if err != nil {
 		return nil, wrapStoreError("update chain ingest checkpoint", err)
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	log "github.com/sirupsen/logrus"
 	athenacommon "github.com/useryege/athena/common"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 	"github.com/useryege/athena/util/ethws"
 	"google.golang.org/grpc/codes"
@@ -56,7 +56,7 @@ func (s *Service) CreateContractCodeBlocklistEntry(ctx context.Context, req *api
 	if e != nil {
 		return nil, e
 	}
-	if e = store.CreateContractCodeBlocklistEntry(ctx, tokenstore.ContractCodeBlocklistEntry{CodeHash: hash, Note: req.GetNote(), SourceChainID: req.GetSourceChainId(), SourceContract: contract}); e != nil {
+	if e = store.CreateContractCodeBlocklistEntry(ctx, domain.ContractCodeBlocklistEntry{CodeHash: hash, Note: req.GetNote(), SourceChainID: req.GetSourceChainId(), SourceContract: contract}); e != nil {
 		return nil, wrapStoreError("create contract code blocklist entry", e)
 	}
 	return &apiclient.CreateContractCodeBlocklistEntryResponse{}, nil
@@ -130,7 +130,7 @@ func (s *Service) CreateWalletBlocklistEntry(ctx context.Context, req *apiclient
 	if e != nil {
 		return nil, e
 	}
-	if e = store.CreateWalletBlocklistEntry(ctx, tokenstore.WalletBlocklistEntry{Wallet: wallet, Note: req.GetNote()}); e != nil {
+	if e = store.CreateWalletBlocklistEntry(ctx, domain.WalletBlocklistEntry{Wallet: wallet, Note: req.GetNote()}); e != nil {
 		return nil, wrapStoreError("create wallet blocklist entry", e)
 	}
 	return &apiclient.CreateWalletBlocklistEntryResponse{}, nil

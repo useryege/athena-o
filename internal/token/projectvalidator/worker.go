@@ -9,7 +9,6 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
-	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ethws"
 )
 
@@ -20,7 +19,7 @@ const (
 )
 
 type Options struct {
-	Store             *tokenstore.SQLStore
+	Store             Store
 	EthNodeWSURLs     []string
 	BSCNodeWSURLs     []string
 	EthAthenaContract string

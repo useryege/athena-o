@@ -15,6 +15,7 @@ WHERE project_id = @project_id
 INSERT INTO project_report_revision (
   project_id,
   revision,
+  schema_version,
   content_hash,
   completeness_status,
   evidence,
@@ -34,6 +35,7 @@ INSERT INTO project_report_revision (
 ) VALUES (
   @project_id,
   @revision,
+  @schema_version,
   @content_hash,
   @completeness_status,
   @evidence::jsonb,

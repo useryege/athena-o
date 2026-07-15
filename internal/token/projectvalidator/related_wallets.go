@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	erc20contract "github.com/useryege/athena/pkg/abi/ERC20"
 )
 
@@ -19,7 +19,7 @@ const basisPointsDenominator int64 = 10000
 
 var errProjectCreationReceiptNil = errors.New("project creation transaction receipt is nil")
 
-func fetchProjectCreationReceipt(ctx context.Context, client *ethclient.Client, candidate tokenstore.ProjectCandidate) (*types.Receipt, error) {
+func fetchProjectCreationReceipt(ctx context.Context, client *ethclient.Client, candidate domain.ProjectCandidate) (*types.Receipt, error) {
 	receipt, err := client.TransactionReceipt(ctx, candidate.TxHash)
 	if err != nil {
 		return nil, err
@@ -104,12 +104,12 @@ func filterInitialRecipientWallets(ctx context.Context, client *ethclient.Client
 	return filtered, nil
 }
 
-func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.ProjectRelatedWallet {
-	wallets := make([]tokenstore.ProjectRelatedWallet, 0, 1+len(initialRecipients))
+func buildProjectRelatedWallets(candidate domain.ProjectCandidate, initialRecipients []initialRecipientWallet) []domain.ProjectRelatedWallet {
+	wallets := make([]domain.ProjectRelatedWallet, 0, 1+len(initialRecipients))
 	if candidate.TxSender != (common.Address{}) {
-		wallets = append(wallets, tokenstore.ProjectRelatedWallet{
+		wallets = append(wallets, domain.ProjectRelatedWallet{
 			Wallet: candidate.TxSender,
-			Role:   tokenstore.ProjectRelatedWalletRoleCreator,
+			Role:   domain.RelatedWalletRoleCreator,
 		})
 	}
 	for _, recipient := range initialRecipients {
@@ -117,53 +117,26 @@ func buildProjectRelatedWallets(candidate tokenstore.ProjectCandidate, initialRe
 		if wallet == (common.Address{}) {
 			continue
 		}
-		wallets = append(wallets, tokenstore.ProjectRelatedWallet{
+		wallets = append(wallets, domain.ProjectRelatedWallet{
 			Wallet: wallet,
-			Role:   tokenstore.ProjectRelatedWalletRoleInitialRecipient,
+			Role:   domain.RelatedWalletRoleInitialRecipient,
 		})
 	}
 	return wallets
 }
 
-func buildWalletAssetStates(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet) []tokenstore.WalletAssetState {
-	wallets := make([]tokenstore.WalletAssetState, 0, 1+len(initialRecipients))
-	seen := make(map[common.Address]struct{}, 1+len(initialRecipients))
-	if candidate.TxSender != (common.Address{}) {
-		seen[candidate.TxSender] = struct{}{}
-		wallets = append(wallets, tokenstore.WalletAssetState{
-			ChainID: candidate.ChainID,
-			Wallet:  candidate.TxSender,
-		})
-	}
-	for _, recipient := range initialRecipients {
-		wallet := recipient.wallet
-		if wallet == (common.Address{}) {
-			continue
-		}
-		if _, exists := seen[wallet]; exists {
-			continue
-		}
-		seen[wallet] = struct{}{}
-		wallets = append(wallets, tokenstore.WalletAssetState{
-			ChainID: candidate.ChainID,
-			Wallet:  wallet,
-		})
-	}
-	return wallets
-}
-
-func buildProjectInitialRecipients(candidate tokenstore.ProjectCandidate, initialRecipients []initialRecipientWallet, totalSupply *big.Int) []tokenstore.ProjectInitialRecipient {
+func buildProjectInitialRecipients(candidate domain.ProjectCandidate, initialRecipients []initialRecipientWallet, totalSupply *big.Int) []domain.ProjectInitialRecipient {
 	if len(initialRecipients) == 0 || totalSupply == nil || totalSupply.Sign() <= 0 {
 		return nil
 	}
-	items := make([]tokenstore.ProjectInitialRecipient, 0, len(initialRecipients))
+	items := make([]domain.ProjectInitialRecipient, 0, len(initialRecipients))
 	for i, recipient := range initialRecipients {
 		if recipient.wallet == (common.Address{}) || recipient.amount == nil || recipient.amount.Sign() <= 0 {
 			continue
 		}
 		ratio := new(big.Int).Mul(recipient.amount, big.NewInt(basisPointsDenominator))
 		ratio.Div(ratio, totalSupply)
-		items = append(items, tokenstore.ProjectInitialRecipient{
+		items = append(items, domain.ProjectInitialRecipient{
 			Wallet:            recipient.wallet,
 			RatioBPS:          ratio.Int64(),
 			RankIndex:         int32(i),

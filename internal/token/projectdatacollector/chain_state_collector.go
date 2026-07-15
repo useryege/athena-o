@@ -2,7 +2,6 @@ package projectdatacollector
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -10,11 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
+	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 func (r *dataCollectorRunner) processChainStateTasks(ctx context.Context) error {
-	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, tokenstore.ProjectDataCollectionTypeChainState, r.opts.chainIDs, chainStateTaskLimit)
+	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, domain.DataCollectionTypeChainState, r.opts.chainIDs, chainStateTaskLimit)
 	if err != nil {
 		return err
 	}
@@ -22,7 +22,7 @@ func (r *dataCollectorRunner) processChainStateTasks(ctx context.Context) error 
 		log.Debug("token project data collector has no due chain state tasks")
 		return nil
 	}
-	byChain := make(map[int64][]tokenstore.ProjectDataCollectionTaskWithProject)
+	byChain := make(map[int64][]domain.ProjectDataCollectionTaskWithProject)
 	for _, task := range tasks {
 		byChain[task.Project.ChainID] = append(byChain[task.Project.ChainID], task)
 	}
@@ -36,13 +36,13 @@ func (r *dataCollectorRunner) processChainStateTasks(ctx context.Context) error 
 	return nil
 }
 
-func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, chainID int64, tasks []tokenstore.ProjectDataCollectionTaskWithProject) {
-	caller, err := r.ensureCaller(ctx, chainID)
+func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, chainID int64, tasks []domain.ProjectDataCollectionTaskWithProject) {
+	caller, err := r.ensureCaller(ctx, domain.DataCollectionTypeChainState, chainID)
 	if err != nil {
 		r.failTasks(ctx, tasks, err)
 		return
 	}
-	client, err := r.ensureClient(ctx, chainID)
+	client, err := r.ensureClient(ctx, domain.DataCollectionTypeChainState, chainID)
 	if err != nil {
 		r.failTasks(ctx, tasks, err)
 		return
@@ -58,23 +58,18 @@ func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, ch
 	}
 	items, err := caller.ListProjectStates(&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(blockNumber)}, tokenContracts)
 	if err != nil {
-		r.resetChain(chainID)
+		r.resetChain(domain.DataCollectionTypeChainState, chainID)
 		r.failTasks(ctx, tasks, fmt.Errorf("fetch ATHENA chain state chain_id=%d task_count=%d: %w", chainID, len(tasks), err))
 		return
 	}
 	if len(items) != len(tasks) {
-		r.resetChain(chainID)
+		r.resetChain(domain.DataCollectionTypeChainState, chainID)
 		r.failTasks(ctx, tasks, fmt.Errorf("fetch ATHENA chain state chain_id=%d returned %d items for %d tasks", chainID, len(items), len(tasks)))
 		return
 	}
 	for i, state := range items {
 		task := tasks[i]
-		payload, err := json.Marshal(state)
-		if err != nil {
-			r.markTaskFailed(ctx, task.Task, fmt.Errorf("marshal ATHENA chain state project_id=%d: %w", task.Project.ID, err))
-			continue
-		}
-		if _, err := r.opts.store.CompleteProjectChainStateCollection(ctx, task.Task, payload, blockNumber, time.Now().UTC()); err != nil {
+		if _, err := r.opts.store.CompleteProjectChainStateCollection(ctx, task.Task, chainStateObservationV1(state), blockNumber, time.Now().UTC()); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			continue
 		}
@@ -84,4 +79,36 @@ func (r *dataCollectorRunner) processChainStateTaskBatch(ctx context.Context, ch
 			"contract":   task.Project.Contract.Hex(),
 		}).Info("token project data collector fetched chain state")
 	}
+}
+
+func chainStateObservationV1(state athenacontract.AthenaProjectState) domain.ChainStateObservationV1 {
+	return domain.ChainStateObservationV1{
+		TokenContract: state.TokenContract,
+		UpdatedAt:     cloneBigIntData(state.UpdatedAt),
+		Token:         domain.ChainTokenV1{IsValidERC20: state.Token.IsValidERC20, Name: state.Token.Name, Symbol: state.Token.Symbol, Decimals: state.Token.Decimals, TotalSupply: cloneBigIntData(state.Token.TotalSupply), WethPair: state.Token.WethPair, UsdtPair: state.Token.UsdtPair},
+		TokenReport:   domain.ChainTokenReportV1{IsValidERC20: state.TokenReport.IsValidERC20},
+		WethPair:      chainPairV1(state.WethPair),
+		WethReport:    domain.ChainPairReportV1{IsRemoveLiquidity: state.WethReport.IsRemoveLiquidity, IsMint: state.WethReport.IsMint},
+		UsdtPair:      chainPairV1(state.UsdtPair),
+		UsdtReport:    domain.ChainPairReportV1{IsRemoveLiquidity: state.UsdtReport.IsRemoveLiquidity, IsMint: state.UsdtReport.IsMint},
+	}
+}
+
+func chainPairV1(pair athenacontract.AthenaPair) domain.ChainPairV1 {
+	return domain.ChainPairV1{
+		PairContract: pair.PairContract, IsCreated: pair.IsCreated,
+		LiquidityState: domain.ChainPairLiquidityStateV1{
+			TotalSupply: cloneBigIntData(pair.LiquidityState.TotalSupply), LockedLiquidity: cloneBigIntData(pair.LiquidityState.LockedLiquidity),
+			FeeAddressHoldLiquidityBalance: cloneBigIntData(pair.LiquidityState.FeeAddressHoldLiquidityBalance), FeeAddressHoldLiquidityRatio: cloneBigIntData(pair.LiquidityState.FeeAddressHoldLiquidityRatio),
+		},
+		BaseBalance: cloneBigIntData(pair.BaseBalance), QuoteBalance: cloneBigIntData(pair.QuoteBalance), QuoteUsdtValue: cloneBigIntData(pair.QuoteUsdtValue),
+		QuoteUsdtValueInt: cloneBigIntData(pair.QuoteUsdtValueInt), LastSwapTimestamp: pair.LastSwapTimestamp,
+	}
+}
+
+func cloneBigIntData(value *big.Int) *big.Int {
+	if value == nil {
+		return new(big.Int)
+	}
+	return new(big.Int).Set(value)
 }

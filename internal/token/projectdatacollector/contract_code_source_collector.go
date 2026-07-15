@@ -9,11 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
 func (r *dataCollectorRunner) processContractCodeSourceTasks(ctx context.Context) error {
-	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, tokenstore.ProjectDataCollectionTypeContractCodeSource, r.opts.chainIDs, contractCodeSourceLimit)
+	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, domain.DataCollectionTypeContractCodeSource, r.opts.chainIDs, contractCodeSourceLimit)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (r *dataCollectorRunner) processContractCodeSourceTasks(ctx context.Context
 	return nil
 }
 
-func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject) {
+func (r *dataCollectorRunner) processContractCodeSourceTask(ctx context.Context, task domain.ProjectDataCollectionTaskWithProject) {
 	record, err := r.opts.store.GetContractCode(ctx, task.Project.CodeHash)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)

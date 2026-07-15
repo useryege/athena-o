@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/common"
 	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
-	tokenstore "github.com/useryege/athena/internal/token/store"
 	"github.com/useryege/athena/util/ave"
 	"github.com/useryege/athena/util/ethws"
 	utilio "github.com/useryege/athena/util/io"
@@ -29,7 +28,7 @@ const (
 )
 
 type Options struct {
-	Store              *tokenstore.SQLStore
+	Store              Store
 	EthNodeWSURLs      []string
 	BSCNodeWSURLs      []string
 	EthAthenaContract  string
@@ -115,7 +114,6 @@ func (w *Worker) Stop(ctx context.Context) error {
 	w.startStopMu.Lock()
 	cancel := w.cancel
 	done := w.done
-	runner := w.runner
 	w.cancel = nil
 	w.done = nil
 	w.runner = nil
@@ -123,9 +121,6 @@ func (w *Worker) Stop(ctx context.Context) error {
 
 	if cancel != nil {
 		cancel()
-	}
-	if runner != nil {
-		runner.close()
 	}
 	if done != nil {
 		select {

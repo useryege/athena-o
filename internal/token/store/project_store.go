@@ -7,10 +7,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) UpsertProject(ctx context.Context, item Project) (*Project, error) {
+func (s *SQLStore) UpsertProject(ctx context.Context, item domain.Project) (*domain.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (s *SQLStore) UpsertProject(ctx context.Context, item Project) (*Project, e
 	return mapped, nil
 }
 
-func (s *SQLStore) GetProject(ctx context.Context, id int64) (*Project, error) {
+func (s *SQLStore) GetProject(ctx context.Context, id int64) (*domain.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (s *SQLStore) GetProject(ctx context.Context, id int64) (*Project, error) {
 	return item, nil
 }
 
-func (s *SQLStore) GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*Project, error) {
+func (s *SQLStore) GetProjectByContract(ctx context.Context, chainID int64, contract common.Address) (*domain.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -110,7 +111,7 @@ func (s *SQLStore) CountProjects(ctx context.Context, chainID int64, codeHash co
 	return total, nil
 }
 
-func (s *SQLStore) ListProjects(ctx context.Context, chainID int64) ([]Project, error) {
+func (s *SQLStore) ListProjects(ctx context.Context, chainID int64) ([]domain.Project, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err

@@ -7,10 +7,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) CreateContractCodeBlocklistEntry(ctx context.Context, item ContractCodeBlocklistEntry) error {
+func (s *SQLStore) CreateContractCodeBlocklistEntry(ctx context.Context, item domain.ContractCodeBlocklistEntry) error {
 	q, err := s.querier()
 	if err != nil {
 		return err
@@ -21,7 +22,7 @@ func (s *SQLStore) CreateContractCodeBlocklistEntry(ctx context.Context, item Co
 	}
 	return nil
 }
-func (s *SQLStore) GetContractCodeBlocklistEntry(ctx context.Context, codeHash common.Hash) (*ContractCodeBlocklistEntry, error) {
+func (s *SQLStore) GetContractCodeBlocklistEntry(ctx context.Context, codeHash common.Hash) (*domain.ContractCodeBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -35,7 +36,7 @@ func (s *SQLStore) GetContractCodeBlocklistEntry(ctx context.Context, codeHash c
 	}
 	return mapContractCodeBlocklistEntry(r), nil
 }
-func (s *SQLStore) ListContractCodeBlocklistEntries(ctx context.Context) ([]ContractCodeBlocklistEntry, error) {
+func (s *SQLStore) ListContractCodeBlocklistEntries(ctx context.Context) ([]domain.ContractCodeBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -80,7 +81,7 @@ func (s *SQLStore) IsContractCodeBlocked(ctx context.Context, codeHash common.Ha
 	return v, nil
 }
 
-func (s *SQLStore) CreateWalletBlocklistEntry(ctx context.Context, item WalletBlocklistEntry) error {
+func (s *SQLStore) CreateWalletBlocklistEntry(ctx context.Context, item domain.WalletBlocklistEntry) error {
 	q, e := s.querier()
 	if e != nil {
 		return e
@@ -91,7 +92,7 @@ func (s *SQLStore) CreateWalletBlocklistEntry(ctx context.Context, item WalletBl
 	}
 	return nil
 }
-func (s *SQLStore) GetWalletBlocklistEntry(ctx context.Context, wallet common.Address) (*WalletBlocklistEntry, error) {
+func (s *SQLStore) GetWalletBlocklistEntry(ctx context.Context, wallet common.Address) (*domain.WalletBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e
@@ -105,7 +106,7 @@ func (s *SQLStore) GetWalletBlocklistEntry(ctx context.Context, wallet common.Ad
 	}
 	return mapWalletBlocklistEntry(r), nil
 }
-func (s *SQLStore) ListWalletBlocklistEntries(ctx context.Context) ([]WalletBlocklistEntry, error) {
+func (s *SQLStore) ListWalletBlocklistEntries(ctx context.Context) ([]domain.WalletBlocklistEntry, error) {
 	q, e := s.querier()
 	if e != nil {
 		return nil, e

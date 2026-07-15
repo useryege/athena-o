@@ -64,7 +64,7 @@ func (q *Queries) CountProjectReportRevisions(ctx context.Context, arg CountProj
 }
 
 const getLatestProjectReportRevision = `-- name: GetLatestProjectReportRevision :one
-SELECT id, project_id, revision, content_hash, completeness_status, evidence, report, observed_block_number, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, built_at, created_at
+SELECT id, project_id, revision, schema_version, content_hash, completeness_status, evidence, report, observed_block_number, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, built_at, created_at
 FROM project_report_revision
 WHERE project_id = $1
 ORDER BY revision DESC
@@ -78,6 +78,7 @@ func (q *Queries) GetLatestProjectReportRevision(ctx context.Context, projectID 
 		&i.ID,
 		&i.ProjectID,
 		&i.Revision,
+		&i.SchemaVersion,
 		&i.ContentHash,
 		&i.CompletenessStatus,
 		&i.Evidence,
@@ -100,7 +101,7 @@ func (q *Queries) GetLatestProjectReportRevision(ctx context.Context, projectID 
 }
 
 const getProjectReportRevision = `-- name: GetProjectReportRevision :one
-SELECT id, project_id, revision, content_hash, completeness_status, evidence, report, observed_block_number, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, built_at, created_at
+SELECT id, project_id, revision, schema_version, content_hash, completeness_status, evidence, report, observed_block_number, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, built_at, created_at
 FROM project_report_revision
 WHERE project_id = $1
   AND revision = $2
@@ -118,6 +119,7 @@ func (q *Queries) GetProjectReportRevision(ctx context.Context, arg GetProjectRe
 		&i.ID,
 		&i.ProjectID,
 		&i.Revision,
+		&i.SchemaVersion,
 		&i.ContentHash,
 		&i.CompletenessStatus,
 		&i.Evidence,
@@ -143,6 +145,7 @@ const insertProjectReportRevision = `-- name: InsertProjectReportRevision :one
 INSERT INTO project_report_revision (
   project_id,
   revision,
+  schema_version,
   content_hash,
   completeness_status,
   evidence,
@@ -164,9 +167,9 @@ INSERT INTO project_report_revision (
   $2,
   $3,
   $4,
-  $5::jsonb,
+  $5,
   $6::jsonb,
-  $7,
+  $7::jsonb,
   $8,
   $9,
   $10,
@@ -177,14 +180,16 @@ INSERT INTO project_report_revision (
   $15,
   $16,
   $17,
-  $18
+  $18,
+  $19
 )
-RETURNING id, project_id, revision, content_hash, completeness_status, evidence, report, observed_block_number, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, built_at, created_at
+RETURNING id, project_id, revision, schema_version, content_hash, completeness_status, evidence, report, observed_block_number, weth_pair_is_created, weth_pair_is_remove_liquidity, weth_pair_is_mint, weth_pair_quote_usdt_value_int, weth_pair_last_swap_timestamp, usdt_pair_is_created, usdt_pair_is_remove_liquidity, usdt_pair_is_mint, usdt_pair_quote_usdt_value_int, usdt_pair_last_swap_timestamp, built_at, created_at
 `
 
 type InsertProjectReportRevisionParams struct {
 	ProjectID                 int64
 	Revision                  int64
+	SchemaVersion             int32
 	ContentHash               []byte
 	CompletenessStatus        string
 	Evidence                  []byte
@@ -207,6 +212,7 @@ func (q *Queries) InsertProjectReportRevision(ctx context.Context, arg InsertPro
 	row := q.db.QueryRow(ctx, insertProjectReportRevision,
 		arg.ProjectID,
 		arg.Revision,
+		arg.SchemaVersion,
 		arg.ContentHash,
 		arg.CompletenessStatus,
 		arg.Evidence,
@@ -229,6 +235,7 @@ func (q *Queries) InsertProjectReportRevision(ctx context.Context, arg InsertPro
 		&i.ID,
 		&i.ProjectID,
 		&i.Revision,
+		&i.SchemaVersion,
 		&i.ContentHash,
 		&i.CompletenessStatus,
 		&i.Evidence,
@@ -252,7 +259,7 @@ func (q *Queries) InsertProjectReportRevision(ctx context.Context, arg InsertPro
 
 const listCurrentProjectReports = `-- name: ListCurrentProjectReports :many
 SELECT
-  report.id, report.project_id, report.revision, report.content_hash, report.completeness_status, report.evidence, report.report, report.observed_block_number, report.weth_pair_is_created, report.weth_pair_is_remove_liquidity, report.weth_pair_is_mint, report.weth_pair_quote_usdt_value_int, report.weth_pair_last_swap_timestamp, report.usdt_pair_is_created, report.usdt_pair_is_remove_liquidity, report.usdt_pair_is_mint, report.usdt_pair_quote_usdt_value_int, report.usdt_pair_last_swap_timestamp, report.built_at, report.created_at,
+  report.id, report.project_id, report.revision, report.schema_version, report.content_hash, report.completeness_status, report.evidence, report.report, report.observed_block_number, report.weth_pair_is_created, report.weth_pair_is_remove_liquidity, report.weth_pair_is_mint, report.weth_pair_quote_usdt_value_int, report.weth_pair_last_swap_timestamp, report.usdt_pair_is_created, report.usdt_pair_is_remove_liquidity, report.usdt_pair_is_mint, report.usdt_pair_quote_usdt_value_int, report.usdt_pair_last_swap_timestamp, report.built_at, report.created_at,
   project.chain_id,
   project.name,
   project.symbol,
@@ -287,6 +294,7 @@ type ListCurrentProjectReportsRow struct {
 	ID                        int64
 	ProjectID                 int64
 	Revision                  int64
+	SchemaVersion             int32
 	ContentHash               []byte
 	CompletenessStatus        string
 	Evidence                  []byte
@@ -334,6 +342,7 @@ func (q *Queries) ListCurrentProjectReports(ctx context.Context, arg ListCurrent
 			&i.ID,
 			&i.ProjectID,
 			&i.Revision,
+			&i.SchemaVersion,
 			&i.ContentHash,
 			&i.CompletenessStatus,
 			&i.Evidence,
@@ -372,7 +381,7 @@ func (q *Queries) ListCurrentProjectReports(ctx context.Context, arg ListCurrent
 
 const listProjectReportRevisions = `-- name: ListProjectReportRevisions :many
 SELECT
-  report.id, report.project_id, report.revision, report.content_hash, report.completeness_status, report.evidence, report.report, report.observed_block_number, report.weth_pair_is_created, report.weth_pair_is_remove_liquidity, report.weth_pair_is_mint, report.weth_pair_quote_usdt_value_int, report.weth_pair_last_swap_timestamp, report.usdt_pair_is_created, report.usdt_pair_is_remove_liquidity, report.usdt_pair_is_mint, report.usdt_pair_quote_usdt_value_int, report.usdt_pair_last_swap_timestamp, report.built_at, report.created_at,
+  report.id, report.project_id, report.revision, report.schema_version, report.content_hash, report.completeness_status, report.evidence, report.report, report.observed_block_number, report.weth_pair_is_created, report.weth_pair_is_remove_liquidity, report.weth_pair_is_mint, report.weth_pair_quote_usdt_value_int, report.weth_pair_last_swap_timestamp, report.usdt_pair_is_created, report.usdt_pair_is_remove_liquidity, report.usdt_pair_is_mint, report.usdt_pair_quote_usdt_value_int, report.usdt_pair_last_swap_timestamp, report.built_at, report.created_at,
   project.chain_id,
   project.contract
 FROM project_report_revision AS report
@@ -394,6 +403,7 @@ type ListProjectReportRevisionsRow struct {
 	ID                        int64
 	ProjectID                 int64
 	Revision                  int64
+	SchemaVersion             int32
 	ContentHash               []byte
 	CompletenessStatus        string
 	Evidence                  []byte
@@ -433,6 +443,7 @@ func (q *Queries) ListProjectReportRevisions(ctx context.Context, arg ListProjec
 			&i.ID,
 			&i.ProjectID,
 			&i.Revision,
+			&i.SchemaVersion,
 			&i.ContentHash,
 			&i.CompletenessStatus,
 			&i.Evidence,

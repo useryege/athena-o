@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/pkg/abi/ERC20"
 )
@@ -35,7 +35,7 @@ type simulationEthCallResult struct {
 	Error error
 }
 
-func simulateProjectWallets(ctx context.Context, rpcClient *rpc.Client, project tokenstore.Project, wallets []common.Address, states []athenacontract.AthenaSimulationState) ([]tokenstore.ProjectSimulationResult, error) {
+func simulateProjectWallets(ctx context.Context, rpcClient *rpc.Client, project domain.Project, wallets []common.Address, states []athenacontract.AthenaSimulationState) ([]domain.SimulationResultV1, error) {
 	parsed, err := ERC20.ERC20MetaData.GetAbi()
 	if err != nil {
 		return nil, err
@@ -58,10 +58,10 @@ func simulateProjectWallets(ctx context.Context, rpcClient *rpc.Client, project 
 	if err != nil {
 		return nil, err
 	}
-	results := make([]tokenstore.ProjectSimulationResult, 0, len(wallets))
+	results := make([]domain.SimulationResultV1, 0, len(wallets))
 	for i, wallet := range wallets {
 		offset := i * 6
-		results = append(results, tokenstore.ProjectSimulationResult{
+		results = append(results, domain.SimulationResultV1{
 			ProjectID:                          project.ID,
 			Wallet:                             wallet,
 			CanMintFromDeadViaTransferFrom:     callResults[offset].Error == nil,

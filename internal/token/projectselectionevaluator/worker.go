@@ -7,18 +7,20 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
-type Decision struct {
-	Outcome      string
-	ReasonCodes  []string
-	ReasonDetail string
+type Store interface {
+	ClaimProjectSelectionEvaluationTasks(context.Context, int32) ([]domain.ProjectSelectionEvaluationTask, error)
+	GetProjectReportRevision(context.Context, int64, int64) (*domain.ProjectReportRevision, error)
+	CompleteProjectSelectionEvaluation(context.Context, domain.ProjectSelectionEvaluationTask, domain.ProjectSelection) (*domain.ProjectSelection, bool, error)
+	MarkProjectSelectionEvaluationTaskFailed(context.Context, domain.ProjectSelectionEvaluationTask, string) error
 }
+
 type Strategy interface {
 	Key() string
 	Version() string
-	Evaluate(context.Context, tokenstore.ProjectReportRevision) (Decision, error)
+	Evaluate(context.Context, domain.StrategyInput) (domain.SelectionDecision, error)
 }
 type Registry struct {
 	mu         sync.RWMutex
@@ -49,12 +51,12 @@ type NotConfiguredStrategy struct{}
 
 func (NotConfiguredStrategy) Key() string     { return "default" }
 func (NotConfiguredStrategy) Version() string { return "1" }
-func (NotConfiguredStrategy) Evaluate(context.Context, tokenstore.ProjectReportRevision) (Decision, error) {
-	return Decision{Outcome: tokenstore.ProjectSelectionOutcomeDeferred, ReasonCodes: []string{"strategy_not_configured"}}, nil
+func (NotConfiguredStrategy) Evaluate(context.Context, domain.StrategyInput) (domain.SelectionDecision, error) {
+	return domain.SelectionDecision{Outcome: domain.SelectionOutcomeDeferred, ReasonCodes: []string{"strategy_not_configured"}}, nil
 }
 
 type Options struct {
-	Store        *tokenstore.SQLStore
+	Store        Store
 	Registry     *Registry
 	PollInterval time.Duration
 	TaskLimit    int32
@@ -131,7 +133,7 @@ func (w *Worker) run(ctx context.Context) {
 		}
 	}
 }
-func (w *Worker) process(ctx context.Context, task tokenstore.ProjectSelectionEvaluationTask) {
+func (w *Worker) process(ctx context.Context, task domain.ProjectSelectionEvaluationTask) {
 	report, err := w.opts.Store.GetProjectReportRevision(ctx, task.ProjectID, task.ReportRevision)
 	if err != nil || report == nil {
 		if err == nil {
@@ -141,12 +143,12 @@ func (w *Worker) process(ctx context.Context, task tokenstore.ProjectSelectionEv
 		return
 	}
 	strategy := w.opts.Registry.Active()
-	decision, err := strategy.Evaluate(ctx, *report)
+	decision, err := strategy.Evaluate(ctx, domain.StrategyInput{ProjectID: report.ProjectID, ReportRevision: report.Revision, Report: report.Report})
 	if err != nil {
 		_ = w.opts.Store.MarkProjectSelectionEvaluationTaskFailed(ctx, task, err.Error())
 		return
 	}
-	selection := tokenstore.ProjectSelection{ProjectID: task.ProjectID, Outcome: decision.Outcome, StrategyKey: strategy.Key(), StrategyVersion: strategy.Version(), ReportRevision: task.ReportRevision, ReasonCodes: decision.ReasonCodes, ReasonDetail: decision.ReasonDetail, DecidedAt: time.Now().UTC()}
+	selection := domain.ProjectSelection{ProjectID: task.ProjectID, Outcome: decision.Outcome, StrategyKey: strategy.Key(), StrategyVersion: strategy.Version(), ReportRevision: task.ReportRevision, ReasonCodes: decision.ReasonCodes, ReasonDetail: decision.ReasonDetail, DecidedAt: time.Now().UTC()}
 	_, created, err := w.opts.Store.CompleteProjectSelectionEvaluation(ctx, task, selection)
 	if err != nil {
 		_ = w.opts.Store.MarkProjectSelectionEvaluationTaskFailed(ctx, task, err.Error())

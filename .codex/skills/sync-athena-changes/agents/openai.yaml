@@ -1,0 +1,4 @@
+interface:
+  display_name: "ATHENA Change Sync"
+  short_description: "Sync ATHENA sources with generated artifacts."
+  default_prompt: "Use $sync-athena-changes to keep this ATHENA change aligned with its generated artifacts and dependent layers."

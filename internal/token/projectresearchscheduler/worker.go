@@ -7,11 +7,17 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
+type Store interface {
+	ApplyResearchPolicy(context.Context, map[domain.DataCollectionType]time.Duration, time.Duration) error
+	MaintainResearchLifecycle(context.Context) error
+	ScheduleDueProjectDataCollectionTasks(context.Context, int32) (int, error)
+}
+
 type Options struct {
-	Store                  *tokenstore.SQLStore
+	Store                  Store
 	ChainStateInterval     time.Duration
 	WalletAssetInterval    time.Duration
 	SimulationInterval     time.Duration
@@ -60,7 +66,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	if w.opts.Store == nil {
 		return fmt.Errorf("token research scheduler store is required")
 	}
-	policies := map[string]time.Duration{tokenstore.ProjectDataCollectionTypeChainState: w.opts.ChainStateInterval, tokenstore.ProjectDataCollectionTypeWalletAssetState: w.opts.WalletAssetInterval, tokenstore.ProjectDataCollectionTypeSimulationResult: w.opts.SimulationInterval, tokenstore.ProjectDataCollectionTypeAve: w.opts.AveInterval, tokenstore.ProjectDataCollectionTypeContractCodeSource: w.opts.ContractSourceInterval}
+	policies := map[domain.DataCollectionType]time.Duration{domain.DataCollectionTypeChainState: w.opts.ChainStateInterval, domain.DataCollectionTypeWalletAssetState: w.opts.WalletAssetInterval, domain.DataCollectionTypeSimulationResult: w.opts.SimulationInterval, domain.DataCollectionTypeAve: w.opts.AveInterval, domain.DataCollectionTypeContractCodeSource: w.opts.ContractSourceInterval}
 	if err := w.opts.Store.ApplyResearchPolicy(ctx, policies, w.opts.ResearchTTL); err != nil {
 		return err
 	}

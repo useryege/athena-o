@@ -9,14 +9,14 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 	"github.com/useryege/athena/util/ave"
 	utilio "github.com/useryege/athena/util/io"
 )
 
 type dataCollectorRunnerOptions struct {
-	store           *tokenstore.SQLStore
+	store           Store
 	chainIDs        []int64
 	nodeWSURLs      map[int64][]string
 	athenaContracts map[int64]ethcommon.Address
@@ -31,60 +31,70 @@ type dataCollectorRunner struct {
 	opts dataCollectorRunnerOptions
 
 	clientMu sync.Mutex
-	clients  map[int64]*ethclient.Client
-	callers  map[int64]*athenacontract.ATHENACaller
+	clients  map[chainResourceKey]*ethclient.Client
+	callers  map[chainResourceKey]*athenacontract.ATHENACaller
+}
+
+type chainResourceKey struct {
+	dataType domain.DataCollectionType
+	chainID  int64
 }
 
 func newDataCollectorRunner(opts dataCollectorRunnerOptions) *dataCollectorRunner {
 	return &dataCollectorRunner{
 		opts:    opts,
-		clients: make(map[int64]*ethclient.Client),
-		callers: make(map[int64]*athenacontract.ATHENACaller),
+		clients: make(map[chainResourceKey]*ethclient.Client),
+		callers: make(map[chainResourceKey]*athenacontract.ATHENACaller),
 	}
 }
 
 func (r *dataCollectorRunner) run(ctx context.Context) {
 	defer r.close()
+	loops := []struct {
+		name    string
+		process func(context.Context) error
+	}{
+		{name: "ave", process: r.processAveTasks},
+		{name: "contract code source", process: r.processContractCodeSourceTasks},
+		{name: "chain state", process: r.processChainStateTasks},
+		{name: "wallet asset state", process: r.processWalletAssetStateTasks},
+		{name: "simulation result", process: r.processSimulationResultTasks},
+	}
+	var wg sync.WaitGroup
+	for _, loop := range loops {
+		loop := loop
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.runCollectorLoop(ctx, loop.name, loop.process)
+		}()
+	}
+	wg.Wait()
+}
+
+func (r *dataCollectorRunner) runCollectorLoop(ctx context.Context, name string, process func(context.Context) error) {
 	for {
-		if err := ctx.Err(); err != nil {
+		if ctx.Err() != nil {
 			return
 		}
-		r.processAvailableTasks(ctx)
+		if len(r.opts.chainIDs) == 0 {
+			log.Debug("token project data collector has no enabled chains")
+		} else if err := process(ctx); err != nil && ctx.Err() == nil {
+			log.WithError(err).WithField("collector", name).Error("token project data collector loop failed")
+		}
 		if !sleepContext(ctx, r.opts.pollInterval) {
 			return
 		}
 	}
 }
 
-func (r *dataCollectorRunner) processAvailableTasks(ctx context.Context) {
-	if len(r.opts.chainIDs) == 0 {
-		log.Debug("token project data collector has no enabled chains")
-		return
-	}
-	if err := r.processAveTasks(ctx); err != nil {
-		log.WithError(err).Error("token project data collector ave task loop failed")
-	}
-	if err := r.processContractCodeSourceTasks(ctx); err != nil {
-		log.WithError(err).Error("token project data collector contract code source task loop failed")
-	}
-	if err := r.processChainStateTasks(ctx); err != nil {
-		log.WithError(err).Error("token project data collector chain state task loop failed")
-	}
-	if err := r.processWalletAssetStateTasks(ctx); err != nil {
-		log.WithError(err).Error("token project data collector wallet asset state task loop failed")
-	}
-	if err := r.processSimulationResultTasks(ctx); err != nil {
-		log.WithError(err).Error("token project data collector simulation result task loop failed")
-	}
-}
-
-func (r *dataCollectorRunner) failTasks(ctx context.Context, tasks []tokenstore.ProjectDataCollectionTaskWithProject, err error) {
+func (r *dataCollectorRunner) failTasks(ctx context.Context, tasks []domain.ProjectDataCollectionTaskWithProject, err error) {
 	for _, task := range tasks {
 		r.markTaskFailed(ctx, task.Task, err)
 	}
 }
 
-func (r *dataCollectorRunner) markTaskFailed(ctx context.Context, task tokenstore.ProjectDataCollectionTask, err error) {
+func (r *dataCollectorRunner) markTaskFailed(ctx context.Context, task domain.ProjectDataCollectionTask, err error) {
 	if err == nil {
 		return
 	}

@@ -37,10 +37,6 @@ func NewSQLStore(db any) *SQLStore {
 	}
 }
 
-func NewSQLStoreWithQuerier(querier tokensqlc.Querier) *SQLStore {
-	return &SQLStore{queries: querier}
-}
-
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
 		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{

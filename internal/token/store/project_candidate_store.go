@@ -7,17 +7,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) UpsertProjectCandidate(ctx context.Context, item ProjectCandidate) (*ProjectCandidate, error) {
+func (s *SQLStore) UpsertProjectCandidate(ctx context.Context, item domain.ProjectCandidate) (*domain.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
 	status := item.Status
 	if status == "" {
-		status = ProjectCandidateStatusPending
+		status = domain.ProjectCandidateStatusPending
 	}
 	txIndex, err := uint64ToInt64("tx_index", item.TxIndex)
 	if err != nil {
@@ -39,7 +40,7 @@ func (s *SQLStore) UpsertProjectCandidate(ctx context.Context, item ProjectCandi
 		TxIndex:     txIndex,
 		BlockNumber: blockNumber,
 		BlockTime:   blockTime,
-		Status:      status,
+		Status:      string(status),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project candidate: %w", err)
@@ -51,7 +52,7 @@ func (s *SQLStore) UpsertProjectCandidate(ctx context.Context, item ProjectCandi
 	return mapped, nil
 }
 
-func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []ProjectCandidate) error {
+func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []domain.ProjectCandidate) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -69,7 +70,7 @@ func (s *SQLStore) BatchUpsertProjectCandidates(ctx context.Context, items []Pro
 	return nil
 }
 
-func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.BatchUpsertProjectCandidatesParams, error) {
+func batchUpsertProjectCandidatesParams(items []domain.ProjectCandidate) (tokensqlc.BatchUpsertProjectCandidatesParams, error) {
 	chainIDs := make([]int64, 0, len(items))
 	contracts := make([][]byte, 0, len(items))
 	txSenders := make([][]byte, 0, len(items))
@@ -81,7 +82,7 @@ func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.Bat
 	for _, item := range items {
 		status := item.Status
 		if status == "" {
-			status = ProjectCandidateStatusPending
+			status = domain.ProjectCandidateStatusPending
 		}
 		txIndex, err := uint64ToInt64("tx_index", item.TxIndex)
 		if err != nil {
@@ -102,7 +103,7 @@ func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.Bat
 		txIndexes = append(txIndexes, txIndex)
 		blockNumbers = append(blockNumbers, blockNumber)
 		blockTimes = append(blockTimes, blockTime)
-		statuses = append(statuses, status)
+		statuses = append(statuses, string(status))
 	}
 	return tokensqlc.BatchUpsertProjectCandidatesParams{
 		ChainIds:     chainIDs,
@@ -116,7 +117,7 @@ func batchUpsertProjectCandidatesParams(items []ProjectCandidate) (tokensqlc.Bat
 	}, nil
 }
 
-func (s *SQLStore) GetProjectCandidate(ctx context.Context, id int64) (*ProjectCandidate, error) {
+func (s *SQLStore) GetProjectCandidate(ctx context.Context, id int64) (*domain.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -135,7 +136,7 @@ func (s *SQLStore) GetProjectCandidate(ctx context.Context, id int64) (*ProjectC
 	return item, nil
 }
 
-func (s *SQLStore) GetProjectCandidateByContract(ctx context.Context, chainID int64, contract common.Address) (*ProjectCandidate, error) {
+func (s *SQLStore) GetProjectCandidateByContract(ctx context.Context, chainID int64, contract common.Address) (*domain.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -157,14 +158,14 @@ func (s *SQLStore) GetProjectCandidateByContract(ctx context.Context, chainID in
 	return item, nil
 }
 
-func (s *SQLStore) CountProjectCandidates(ctx context.Context, chainID int64, status string) (int64, error) {
+func (s *SQLStore) CountProjectCandidates(ctx context.Context, chainID int64, status domain.ProjectCandidateStatus) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
 	}
 	total, err := q.CountProjectCandidates(ctx, tokensqlc.CountProjectCandidatesParams{
 		ChainID: chainID,
-		Status:  nullableText(status),
+		Status:  nullableText(string(status)),
 	})
 	if err != nil {
 		return 0, fmt.Errorf("count project candidates: %w", err)
@@ -172,7 +173,7 @@ func (s *SQLStore) CountProjectCandidates(ctx context.Context, chainID int64, st
 	return total, nil
 }
 
-func (s *SQLStore) ListProjectCandidates(ctx context.Context, chainID int64, status string, page, pageSize int32) (*ProjectCandidatePage, error) {
+func (s *SQLStore) ListProjectCandidates(ctx context.Context, chainID int64, status domain.ProjectCandidateStatus, page, pageSize int32) (*ProjectCandidatePage, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -180,14 +181,14 @@ func (s *SQLStore) ListProjectCandidates(ctx context.Context, chainID int64, sta
 	page, pageSize, offset := normalizePage(page, pageSize)
 	total, err := q.CountProjectCandidates(ctx, tokensqlc.CountProjectCandidatesParams{
 		ChainID: chainID,
-		Status:  nullableText(status),
+		Status:  nullableText(string(status)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("count project candidates: %w", err)
 	}
 	rows, err := q.ListProjectCandidates(ctx, tokensqlc.ListProjectCandidatesParams{
 		ChainID: chainID,
-		Status:  nullableText(status),
+		Status:  nullableText(string(status)),
 		Offset:  offset,
 		Limit:   pageSize,
 	})
@@ -206,7 +207,15 @@ func (s *SQLStore) ListProjectCandidates(ctx context.Context, chainID int64, sta
 	}, nil
 }
 
-func (s *SQLStore) ListProjectCandidatesByStatus(ctx context.Context, status string, limit int32) ([]ProjectCandidate, error) {
+func (s *SQLStore) ListPendingProjectCandidates(ctx context.Context, chainID int64, limit int32) ([]domain.ProjectCandidate, error) {
+	page, err := s.ListProjectCandidates(ctx, chainID, domain.ProjectCandidateStatusPending, 1, limit)
+	if err != nil {
+		return nil, err
+	}
+	return page.Items, nil
+}
+
+func (s *SQLStore) ListProjectCandidatesByStatus(ctx context.Context, status domain.ProjectCandidateStatus, limit int32) ([]domain.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -218,7 +227,7 @@ func (s *SQLStore) ListProjectCandidatesByStatus(ctx context.Context, status str
 		limit = maxPageSize
 	}
 	rows, err := q.ListProjectCandidatesByStatus(ctx, tokensqlc.ListProjectCandidatesByStatusParams{
-		Status:     status,
+		Status:     string(status),
 		LimitCount: limit,
 	})
 	if err != nil {
@@ -231,14 +240,14 @@ func (s *SQLStore) ListProjectCandidatesByStatus(ctx context.Context, status str
 	return items, nil
 }
 
-func (s *SQLStore) MarkProjectCandidateStatus(ctx context.Context, id int64, status string) (*ProjectCandidate, error) {
+func (s *SQLStore) MarkProjectCandidateStatus(ctx context.Context, id int64, status domain.ProjectCandidateStatus) (*domain.ProjectCandidate, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
 	row, err := q.MarkProjectCandidateStatus(ctx, tokensqlc.MarkProjectCandidateStatusParams{
 		ID:     id,
-		Status: status,
+		Status: string(status),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

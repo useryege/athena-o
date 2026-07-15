@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) IngestProjectCandidateBatch(ctx context.Context, checkpoint ChainIngestCheckpoint, candidates []ProjectCandidate) (*ChainIngestCheckpoint, error) {
+func (s *SQLStore) IngestProjectCandidateBatch(ctx context.Context, checkpoint domain.ChainIngestCheckpoint, candidates []domain.ProjectCandidate) (*domain.ChainIngestCheckpoint, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token postgres database is not configured")
 	}
@@ -36,7 +37,7 @@ func (s *SQLStore) IngestProjectCandidateBatch(ctx context.Context, checkpoint C
 	row, err := q.UpsertChainIngestCheckpointCursor(ctx, tokensqlc.UpsertChainIngestCheckpointCursorParams{
 		ChainID:           checkpoint.ChainID,
 		CursorBlockNumber: cursorBlockNumber,
-		Status:            checkpoint.Status,
+		Status:            string(checkpoint.Status),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert chain ingest checkpoint cursor: %w", err)

@@ -251,6 +251,7 @@ CREATE TABLE project_observation (
   id BIGSERIAL,
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
+  schema_version INT NOT NULL,
   content_hash BYTEA NOT NULL,
   payload JSONB NOT NULL,
   block_number BIGINT,
@@ -259,6 +260,7 @@ CREATE TABLE project_observation (
   CONSTRAINT project_observation_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_observation_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
   CONSTRAINT project_observation_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
+  CONSTRAINT project_observation_schema_version_check CHECK (schema_version > 0),
   CONSTRAINT project_observation_content_hash_length_check CHECK (length(content_hash) = 32),
   CONSTRAINT project_observation_block_number_check CHECK (block_number IS NULL OR block_number >= 0)
 );
@@ -285,6 +287,7 @@ CREATE TABLE project_report_revision (
   id BIGSERIAL,
   project_id BIGINT NOT NULL,
   revision BIGINT NOT NULL,
+  schema_version INT NOT NULL,
   content_hash BYTEA NOT NULL,
   completeness_status TEXT NOT NULL,
   evidence JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -306,6 +309,7 @@ CREATE TABLE project_report_revision (
   CONSTRAINT project_report_revision_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
   CONSTRAINT project_report_revision_project_id_revision_uidx UNIQUE (project_id, revision),
   CONSTRAINT project_report_revision_revision_check CHECK (revision > 0),
+  CONSTRAINT project_report_revision_schema_version_check CHECK (schema_version > 0),
   CONSTRAINT project_report_revision_content_hash_length_check CHECK (length(content_hash) = 32),
   CONSTRAINT project_report_revision_completeness_status_check CHECK (completeness_status IN ('incomplete', 'complete')),
   CONSTRAINT project_report_revision_observed_block_number_check CHECK (observed_block_number IS NULL OR observed_block_number >= 0),

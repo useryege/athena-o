@@ -6,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*ChainIngestCheckpoint, error) {
+func (s *SQLStore) GetChainIngestCheckpoint(ctx context.Context, chainID int64) (*domain.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -28,7 +29,7 @@ func (s *SQLStore) GetChainIngestCheckpoint(ctx context.Context, chainID int64) 
 	return item, nil
 }
 
-func (s *SQLStore) ListChainIngestCheckpoints(ctx context.Context) ([]ChainIngestCheckpoint, error) {
+func (s *SQLStore) ListChainIngestCheckpoints(ctx context.Context) ([]domain.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (s *SQLStore) ListChainIngestCheckpoints(ctx context.Context) ([]ChainInges
 	if err != nil {
 		return nil, fmt.Errorf("list chain ingest checkpoints: %w", err)
 	}
-	items := make([]ChainIngestCheckpoint, 0, len(rows))
+	items := make([]domain.ChainIngestCheckpoint, 0, len(rows))
 	for _, row := range rows {
 		item, err := mapChainCheckpointListRow(row)
 		if err != nil {
@@ -48,14 +49,14 @@ func (s *SQLStore) ListChainIngestCheckpoints(ctx context.Context) ([]ChainInges
 	return items, nil
 }
 
-func (s *SQLStore) UpsertChainIngestCheckpoint(ctx context.Context, item ChainIngestCheckpoint) (*ChainIngestCheckpoint, error) {
+func (s *SQLStore) UpsertChainIngestCheckpoint(ctx context.Context, item domain.ChainIngestCheckpoint) (*domain.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
 	status := item.Status
 	if status == "" {
-		status = ChainIngestStatusStopped
+		status = domain.ChainIngestStatusStopped
 	}
 	cursorBlockNumber, err := uint64ToInt64("cursor_block_number", item.CursorBlockNumber)
 	if err != nil {
@@ -64,7 +65,7 @@ func (s *SQLStore) UpsertChainIngestCheckpoint(ctx context.Context, item ChainIn
 	row, err := q.UpsertChainIngestCheckpoint(ctx, tokensqlc.UpsertChainIngestCheckpointParams{
 		ChainID:           item.ChainID,
 		CursorBlockNumber: cursorBlockNumber,
-		Status:            status,
+		Status:            string(status),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert chain ingest checkpoint: %w", err)
@@ -78,14 +79,14 @@ func (s *SQLStore) UpsertChainIngestCheckpoint(ctx context.Context, item ChainIn
 	return mapped, nil
 }
 
-func (s *SQLStore) UpdateChainIngestCheckpointStatus(ctx context.Context, chainID int64, status string) (*ChainIngestCheckpoint, error) {
+func (s *SQLStore) UpdateChainIngestCheckpointStatus(ctx context.Context, chainID int64, status domain.ChainIngestStatus) (*domain.ChainIngestCheckpoint, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
 	}
 	row, err := q.UpdateChainIngestCheckpointStatus(ctx, tokensqlc.UpdateChainIngestCheckpointStatusParams{
 		ChainID: chainID,
-		Status:  status,
+		Status:  string(status),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -100,7 +101,7 @@ func (s *SQLStore) UpdateChainIngestCheckpointStatus(ctx context.Context, chainI
 	return item, nil
 }
 
-func (s *SQLStore) ListChains(ctx context.Context) ([]Chain, error) {
+func (s *SQLStore) ListChains(ctx context.Context) ([]domain.Chain, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -109,9 +110,9 @@ func (s *SQLStore) ListChains(ctx context.Context) ([]Chain, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list chains: %w", err)
 	}
-	items := make([]Chain, 0, len(rows))
+	items := make([]domain.Chain, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, Chain{
+		items = append(items, domain.Chain{
 			ID:        row.ID,
 			Name:      row.Name,
 			Enabled:   row.Enabled,

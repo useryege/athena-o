@@ -9,12 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
+	"github.com/useryege/athena/internal/token/domain"
 	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
 )
 
 func (r *dataCollectorRunner) processWalletAssetStateTasks(ctx context.Context) error {
-	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, tokenstore.ProjectDataCollectionTypeWalletAssetState, r.opts.chainIDs, walletAssetTaskLimit)
+	tasks, err := r.opts.store.ListDueProjectDataCollectionTasks(ctx, domain.DataCollectionTypeWalletAssetState, r.opts.chainIDs, walletAssetTaskLimit)
 	if err != nil {
 		return err
 	}
@@ -32,8 +32,8 @@ func (r *dataCollectorRunner) processWalletAssetStateTasks(ctx context.Context) 
 	return nil
 }
 
-func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, task tokenstore.ProjectDataCollectionTaskWithProject) {
-	client, err := r.ensureClient(ctx, task.Project.ChainID)
+func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, task domain.ProjectDataCollectionTaskWithProject) {
+	client, err := r.ensureClient(ctx, domain.DataCollectionTypeWalletAssetState, task.Project.ChainID)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
@@ -49,7 +49,7 @@ func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, t
 		return
 	}
 	if len(wallets) == 0 {
-		if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, nil, blockNumber, time.Now().UTC()); err != nil {
+		if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, domain.WalletAssetObservationV1{}, blockNumber, time.Now().UTC()); err != nil {
 			r.markTaskFailed(ctx, task.Task, err)
 			return
 		}
@@ -60,24 +60,24 @@ func (r *dataCollectorRunner) processWalletAssetStateTask(ctx context.Context, t
 		}).Info("token project data collector skipped wallet asset state without related wallets")
 		return
 	}
-	caller, err := r.ensureCaller(ctx, task.Project.ChainID)
+	caller, err := r.ensureCaller(ctx, domain.DataCollectionTypeWalletAssetState, task.Project.ChainID)
 	if err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
 	items, err := caller.ListWalletAssetStates(&bind.CallOpts{Context: ctx, BlockNumber: new(big.Int).SetUint64(blockNumber)}, wallets)
 	if err != nil {
-		r.resetChain(task.Project.ChainID)
+		r.resetChain(domain.DataCollectionTypeWalletAssetState, task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet asset state chain_id=%d project_id=%d wallet_count=%d: %w", task.Project.ChainID, task.Project.ID, len(wallets), err))
 		return
 	}
 	if len(items) != len(wallets) {
-		r.resetChain(task.Project.ChainID)
+		r.resetChain(domain.DataCollectionTypeWalletAssetState, task.Project.ChainID)
 		r.markTaskFailed(ctx, task.Task, fmt.Errorf("fetch ATHENA wallet asset state chain_id=%d project_id=%d returned %d items for %d wallets", task.Project.ChainID, task.Project.ID, len(items), len(wallets)))
 		return
 	}
 	states := walletAssetStatesFromAthena(task.Project.ChainID, items)
-	if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, states, blockNumber, time.Now().UTC()); err != nil {
+	if err := r.opts.store.CompleteProjectWalletAssetStateCollection(ctx, task.Task, domain.WalletAssetObservationV1{Items: states}, blockNumber, time.Now().UTC()); err != nil {
 		r.markTaskFailed(ctx, task.Task, err)
 		return
 	}
@@ -109,19 +109,19 @@ func (r *dataCollectorRunner) projectRelatedWallets(ctx context.Context, project
 	return wallets, nil
 }
 
-func walletAssetStatesFromAthena(chainID int64, items []athenacontract.AthenaWalletAssetState) []tokenstore.WalletAssetState {
-	states := make([]tokenstore.WalletAssetState, 0, len(items))
+func walletAssetStatesFromAthena(chainID int64, items []athenacontract.AthenaWalletAssetState) []domain.WalletAssetStateV1 {
+	states := make([]domain.WalletAssetStateV1, 0, len(items))
 	for _, item := range items {
 		if item.Wallet == (ethcommon.Address{}) {
 			continue
 		}
-		states = append(states, tokenstore.WalletAssetState{
+		states = append(states, domain.WalletAssetStateV1{
 			ChainID:       chainID,
 			Wallet:        item.Wallet,
-			WethBalance:   item.AssetState.WethBalance,
-			UsdtBalance:   item.AssetState.UsdtBalance,
-			NativeBalance: item.AssetState.NativeBalance,
-			UsdtValue:     item.AssetState.UsdtValue,
+			WethBalance:   cloneBigIntData(item.AssetState.WethBalance),
+			UsdtBalance:   cloneBigIntData(item.AssetState.UsdtBalance),
+			NativeBalance: cloneBigIntData(item.AssetState.NativeBalance),
+			UsdtValue:     cloneBigIntData(item.AssetState.UsdtValue),
 		})
 	}
 	return states

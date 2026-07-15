@@ -30,15 +30,28 @@ type Runtime struct {
 	workers []worker
 }
 type RuntimeOptions struct {
-	Mode                   string
-	StoreSrc               func(context.Context) (*tokenstore.SQLStore, error)
-	EthNodeWSURLs          []string
-	BSCNodeWSURLs          []string
-	EthAthenaContract      string
-	BSCAthenaContract      string
-	EthEnabled             bool
-	BSCEnabled             bool
-	NodeWSUseProxy         bool
+	Mode      string
+	StoreSrc  func(context.Context) (*tokenstore.SQLStore, error)
+	Discovery DiscoveryOptions
+	Research  ResearchOptions
+}
+
+type ChainRuntimeOptions struct {
+	EthNodeWSURLs     []string
+	BSCNodeWSURLs     []string
+	EthAthenaContract string
+	BSCAthenaContract string
+	EthEnabled        bool
+	BSCEnabled        bool
+	NodeWSUseProxy    bool
+}
+
+type DiscoveryOptions struct {
+	Chains ChainRuntimeOptions
+}
+
+type ResearchOptions struct {
+	Chains                 ChainRuntimeOptions
 	AveAPIKey              string
 	AveAPIBaseURL          string
 	EthereumAPIAddress     string
@@ -69,9 +82,9 @@ func (r *Runtime) Start(ctx context.Context) error {
 	}
 	r.store = store
 	if r.opts.Mode == ModeDiscovery {
-		r.workers = []worker{chainscanner.NewWorker(chainscanner.Options{Store: store, EthNodeWSURLs: r.opts.EthNodeWSURLs, BSCNodeWSURLs: r.opts.BSCNodeWSURLs, EthEnabled: r.opts.EthEnabled, BSCEnabled: r.opts.BSCEnabled, NodeWSUseProxy: r.opts.NodeWSUseProxy}), projectvalidator.NewWorker(projectvalidator.Options{Store: store, EthNodeWSURLs: r.opts.EthNodeWSURLs, BSCNodeWSURLs: r.opts.BSCNodeWSURLs, EthAthenaContract: r.opts.EthAthenaContract, BSCAthenaContract: r.opts.BSCAthenaContract, EthEnabled: r.opts.EthEnabled, BSCEnabled: r.opts.BSCEnabled, NodeWSUseProxy: r.opts.NodeWSUseProxy})}
+		r.workers = r.buildDiscoveryWorkers(store)
 	} else {
-		r.workers = []worker{projectresearchscheduler.NewWorker(projectresearchscheduler.Options{Store: store, ChainStateInterval: r.opts.ChainStateInterval, WalletAssetInterval: r.opts.WalletAssetInterval, SimulationInterval: r.opts.SimulationInterval, AveInterval: r.opts.AveInterval, ContractSourceInterval: r.opts.ContractSourceInterval, ResearchTTL: r.opts.ResearchTTL}), projectdatacollector.NewWorker(projectdatacollector.Options{Store: store, EthNodeWSURLs: r.opts.EthNodeWSURLs, BSCNodeWSURLs: r.opts.BSCNodeWSURLs, EthAthenaContract: r.opts.EthAthenaContract, BSCAthenaContract: r.opts.BSCAthenaContract, EthEnabled: r.opts.EthEnabled, BSCEnabled: r.opts.BSCEnabled, NodeWSUseProxy: r.opts.NodeWSUseProxy, AveAPIKey: r.opts.AveAPIKey, AveAPIBaseURL: r.opts.AveAPIBaseURL, EthereumAPIAddress: r.opts.EthereumAPIAddress}), projectreportbuilder.NewWorker(projectreportbuilder.Options{Store: store}), projectselectionevaluator.NewWorker(projectselectionevaluator.Options{Store: store})}
+		r.workers = r.buildResearchWorkers(store)
 	}
 	for i, w := range r.workers {
 		if err = w.Start(ctx); err != nil {
@@ -82,6 +95,25 @@ func (r *Runtime) Start(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (r *Runtime) buildDiscoveryWorkers(store *tokenstore.SQLStore) []worker {
+	chains := r.opts.Discovery.Chains
+	return []worker{
+		chainscanner.NewWorker(chainscanner.Options{Store: store, EthNodeWSURLs: chains.EthNodeWSURLs, BSCNodeWSURLs: chains.BSCNodeWSURLs, EthEnabled: chains.EthEnabled, BSCEnabled: chains.BSCEnabled, NodeWSUseProxy: chains.NodeWSUseProxy}),
+		projectvalidator.NewWorker(projectvalidator.Options{Store: store, EthNodeWSURLs: chains.EthNodeWSURLs, BSCNodeWSURLs: chains.BSCNodeWSURLs, EthAthenaContract: chains.EthAthenaContract, BSCAthenaContract: chains.BSCAthenaContract, EthEnabled: chains.EthEnabled, BSCEnabled: chains.BSCEnabled, NodeWSUseProxy: chains.NodeWSUseProxy}),
+	}
+}
+
+func (r *Runtime) buildResearchWorkers(store *tokenstore.SQLStore) []worker {
+	opts := r.opts.Research
+	chains := opts.Chains
+	return []worker{
+		projectresearchscheduler.NewWorker(projectresearchscheduler.Options{Store: store, ChainStateInterval: opts.ChainStateInterval, WalletAssetInterval: opts.WalletAssetInterval, SimulationInterval: opts.SimulationInterval, AveInterval: opts.AveInterval, ContractSourceInterval: opts.ContractSourceInterval, ResearchTTL: opts.ResearchTTL}),
+		projectdatacollector.NewWorker(projectdatacollector.Options{Store: store, EthNodeWSURLs: chains.EthNodeWSURLs, BSCNodeWSURLs: chains.BSCNodeWSURLs, EthAthenaContract: chains.EthAthenaContract, BSCAthenaContract: chains.BSCAthenaContract, EthEnabled: chains.EthEnabled, BSCEnabled: chains.BSCEnabled, NodeWSUseProxy: chains.NodeWSUseProxy, AveAPIKey: opts.AveAPIKey, AveAPIBaseURL: opts.AveAPIBaseURL, EthereumAPIAddress: opts.EthereumAPIAddress}),
+		projectreportbuilder.NewWorker(projectreportbuilder.Options{Store: store}),
+		projectselectionevaluator.NewWorker(projectselectionevaluator.Options{Store: store}),
+	}
 }
 func (r *Runtime) stopWorkers(start int) {
 	for i := start - 1; i >= 0; i-- {

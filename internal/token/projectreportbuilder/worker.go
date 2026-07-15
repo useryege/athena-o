@@ -11,15 +11,22 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
-	athenacontract "github.com/useryege/athena/pkg/abi/ATHENA"
+	"github.com/useryege/athena/internal/token/domain"
 )
 
+type Store interface {
+	ClaimProjectReportBuildTasks(context.Context, int32) ([]domain.ProjectReportBuildTask, error)
+	ListCurrentProjectObservations(context.Context, int64) ([]domain.ProjectObservation, error)
+	CompleteProjectReportBuild(context.Context, domain.ProjectReportBuildTask, domain.ProjectReportRevision) (*domain.ProjectReportRevision, bool, error)
+	MarkProjectReportBuildTaskFailed(context.Context, domain.ProjectReportBuildTask, string) error
+}
+
 type Options struct {
-	Store        *tokenstore.SQLStore
+	Store        Store
 	PollInterval time.Duration
 	TaskLimit    int32
 }
+
 type Worker struct {
 	opts   Options
 	mu     sync.Mutex
@@ -36,6 +43,7 @@ func NewWorker(opts Options) *Worker {
 	}
 	return &Worker{opts: opts}
 }
+
 func (w *Worker) Start(ctx context.Context) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -51,6 +59,7 @@ func (w *Worker) Start(ctx context.Context) error {
 	go w.run(runCtx)
 	return nil
 }
+
 func (w *Worker) Stop(ctx context.Context) error {
 	w.mu.Lock()
 	cancel, done := w.cancel, w.done
@@ -69,6 +78,7 @@ func (w *Worker) Stop(ctx context.Context) error {
 	}
 	return nil
 }
+
 func (w *Worker) run(ctx context.Context) {
 	defer close(w.done)
 	ticker := time.NewTicker(w.opts.PollInterval)
@@ -89,7 +99,8 @@ func (w *Worker) run(ctx context.Context) {
 		}
 	}
 }
-func (w *Worker) process(ctx context.Context, task tokenstore.ProjectReportBuildTask) {
+
+func (w *Worker) process(ctx context.Context, task domain.ProjectReportBuildTask) {
 	observations, err := w.opts.Store.ListCurrentProjectObservations(ctx, task.ProjectID)
 	if err != nil {
 		_ = w.opts.Store.MarkProjectReportBuildTaskFailed(ctx, task, err.Error())
@@ -108,86 +119,111 @@ func (w *Worker) process(ctx context.Context, task tokenstore.ProjectReportBuild
 	log.WithFields(log.Fields{"project_id": task.ProjectID, "evidence_revision": task.EvidenceRevision, "created": created}).Info("token project report build completed")
 }
 
-type evidenceItem struct {
-	ObservationID int64   `json:"observationId"`
-	DataType      string  `json:"dataType"`
-	ContentHash   string  `json:"contentHash"`
-	BlockNumber   *uint64 `json:"blockNumber,omitempty"`
-}
-type freshnessItem struct {
-	DataType      string    `json:"dataType"`
-	LastCheckedAt time.Time `json:"lastCheckedAt"`
-}
-type normalizedReport struct {
-	ProjectID    int64                      `json:"projectId"`
-	Observations map[string]json.RawMessage `json:"observations"`
-	Freshness    []freshnessItem            `json:"freshness"`
-}
-
-func buildReport(projectID int64, items []tokenstore.ProjectObservation) (tokenstore.ProjectReportRevision, error) {
-	evidence := make([]evidenceItem, 0, len(items))
-	freshness := make([]freshnessItem, 0, len(items))
-	payloads := make(map[string]json.RawMessage, len(items))
-	present := make(map[string]bool, len(items))
+func buildReport(projectID int64, items []domain.ProjectObservation) (domain.ProjectReportRevision, error) {
+	evidence := make([]domain.EvidenceReference, 0, len(items))
+	freshness := make([]domain.ObservationFreshness, 0, len(items))
+	observations := domain.ResearchObservationsV1{}
 	var maxBlock *uint64
 	for _, item := range items {
-		evidence = append(evidence, evidenceItem{ObservationID: item.ID, DataType: item.DataType, ContentHash: item.ContentHash.Hex(), BlockNumber: item.BlockNumber})
-		freshness = append(freshness, freshnessItem{DataType: item.DataType, LastCheckedAt: item.LastCheckedAt})
-		payloads[item.DataType] = item.Payload
-		present[item.DataType] = true
+		if item.SchemaVersion != domain.ObservationSchemaVersionV1 {
+			return domain.ProjectReportRevision{}, fmt.Errorf("unsupported %s observation schema version %d", item.DataType, item.SchemaVersion)
+		}
+		evidence = append(evidence, domain.EvidenceReference{ObservationID: item.ID, DataType: item.DataType, SchemaVersion: item.SchemaVersion, ContentHash: item.ContentHash.Hex(), BlockNumber: item.BlockNumber})
+		freshness = append(freshness, domain.ObservationFreshness{DataType: item.DataType, LastCheckedAt: item.LastCheckedAt})
 		if item.BlockNumber != nil && (maxBlock == nil || *item.BlockNumber > *maxBlock) {
 			v := *item.BlockNumber
 			maxBlock = &v
 		}
+		if err := decodeObservationV1(&observations, item); err != nil {
+			return domain.ProjectReportRevision{}, err
+		}
 	}
-	evidenceJSON, err := json.Marshal(evidence)
-	if err != nil {
-		return tokenstore.ProjectReportRevision{}, err
-	}
-	reportJSON, err := json.Marshal(normalizedReport{ProjectID: projectID, Observations: payloads, Freshness: freshness})
-	if err != nil {
-		return tokenstore.ProjectReportRevision{}, err
-	}
-	combined, _ := json.Marshal(struct {
-		Evidence json.RawMessage `json:"evidence"`
-		Report   json.RawMessage `json:"report"`
-	}{evidenceJSON, reportJSON})
-	digest := sha256.Sum256(combined)
+
 	completeness := "complete"
-	for _, required := range []string{tokenstore.ProjectDataCollectionTypeAve, tokenstore.ProjectDataCollectionTypeChainState, tokenstore.ProjectDataCollectionTypeWalletAssetState, tokenstore.ProjectDataCollectionTypeSimulationResult, tokenstore.ProjectDataCollectionTypeContractCodeSource} {
-		if !present[required] {
-			completeness = "incomplete"
-			break
-		}
+	if observations.Ave == nil || observations.ChainState == nil || observations.WalletAssets == nil || observations.Simulation == nil || observations.ContractSource == nil {
+		completeness = "incomplete"
 	}
-	result := tokenstore.ProjectReportRevision{ProjectID: projectID, ContentHash: common.BytesToHash(digest[:]), CompletenessStatus: completeness, Evidence: evidenceJSON, Report: reportJSON, ObservedBlockNumber: maxBlock, BuiltAt: time.Now().UTC()}
-	if chainPayload := payloads[tokenstore.ProjectDataCollectionTypeChainState]; len(chainPayload) > 0 {
-		if err = applyRiskSummary(&result, chainPayload); err != nil {
-			return tokenstore.ProjectReportRevision{}, err
-		}
+	risk := riskSummary(observations.ChainState)
+	report := domain.ResearchReportV1{SchemaVersion: domain.ReportSchemaVersionV1, ProjectID: projectID, CompletenessStatus: completeness, Observations: observations, Freshness: freshness, RiskSummary: risk}
+	canonical, err := json.Marshal(struct {
+		SchemaVersion int32                      `json:"schemaVersion"`
+		Evidence      []domain.EvidenceReference `json:"evidence"`
+		Report        domain.ResearchReportV1    `json:"report"`
+	}{SchemaVersion: domain.ReportSchemaVersionV1, Evidence: evidence, Report: report})
+	if err != nil {
+		return domain.ProjectReportRevision{}, err
 	}
-	return result, nil
+	digest := sha256.Sum256(canonical)
+	return domain.ProjectReportRevision{
+		ProjectID:                 projectID,
+		SchemaVersion:             domain.ReportSchemaVersionV1,
+		ContentHash:               common.BytesToHash(digest[:]),
+		CompletenessStatus:        completeness,
+		Evidence:                  evidence,
+		Report:                    report,
+		ObservedBlockNumber:       maxBlock,
+		WethPairIsCreated:         risk.WethPairIsCreated,
+		WethPairIsRemoveLiquidity: risk.WethPairIsRemoveLiquidity,
+		WethPairIsMint:            risk.WethPairIsMint,
+		WethPairQuoteUsdtValueInt: cloneBigInt(risk.WethPairQuoteUsdtValueInt),
+		WethPairLastSwapTimestamp: risk.WethPairLastSwapTimestamp,
+		UsdtPairIsCreated:         risk.UsdtPairIsCreated,
+		UsdtPairIsRemoveLiquidity: risk.UsdtPairIsRemoveLiquidity,
+		UsdtPairIsMint:            risk.UsdtPairIsMint,
+		UsdtPairQuoteUsdtValueInt: cloneBigInt(risk.UsdtPairQuoteUsdtValueInt),
+		UsdtPairLastSwapTimestamp: risk.UsdtPairLastSwapTimestamp,
+		BuiltAt:                   time.Now().UTC(),
+	}, nil
 }
-func applyRiskSummary(report *tokenstore.ProjectReportRevision, payload []byte) error {
-	var state athenacontract.AthenaProjectState
-	if err := json.Unmarshal(payload, &state); err != nil {
-		return fmt.Errorf("unmarshal chain state: %w", err)
+
+func decodeObservationV1(target *domain.ResearchObservationsV1, item domain.ProjectObservation) error {
+	var destination any
+	switch item.DataType {
+	case domain.DataCollectionTypeAve:
+		target.Ave = &domain.AveObservationV1{}
+		destination = target.Ave
+	case domain.DataCollectionTypeChainState:
+		target.ChainState = &domain.ChainStateObservationV1{}
+		destination = target.ChainState
+	case domain.DataCollectionTypeWalletAssetState:
+		target.WalletAssets = &domain.WalletAssetObservationV1{}
+		destination = target.WalletAssets
+	case domain.DataCollectionTypeSimulationResult:
+		target.Simulation = &domain.SimulationObservationV1{}
+		destination = target.Simulation
+	case domain.DataCollectionTypeContractCodeSource:
+		target.ContractSource = &domain.ContractSourceObservationV1{}
+		destination = target.ContractSource
+	default:
+		return fmt.Errorf("unsupported observation data type %q", item.DataType)
 	}
-	report.WethPairIsCreated = boolPtr(state.WethPair.IsCreated)
-	report.WethPairIsRemoveLiquidity = boolPtr(state.WethReport.IsRemoveLiquidity)
-	report.WethPairIsMint = boolPtr(state.WethReport.IsMint)
-	report.WethPairQuoteUsdtValueInt = bigInt(state.WethPair.QuoteUsdtValueInt)
-	report.WethPairLastSwapTimestamp = uint64Ptr(uint64(state.WethPair.LastSwapTimestamp))
-	report.UsdtPairIsCreated = boolPtr(state.UsdtPair.IsCreated)
-	report.UsdtPairIsRemoveLiquidity = boolPtr(state.UsdtReport.IsRemoveLiquidity)
-	report.UsdtPairIsMint = boolPtr(state.UsdtReport.IsMint)
-	report.UsdtPairQuoteUsdtValueInt = bigInt(state.UsdtPair.QuoteUsdtValueInt)
-	report.UsdtPairLastSwapTimestamp = uint64Ptr(uint64(state.UsdtPair.LastSwapTimestamp))
+	if err := json.Unmarshal(item.Payload, destination); err != nil {
+		return fmt.Errorf("decode %s observation schema version %d: %w", item.DataType, item.SchemaVersion, err)
+	}
 	return nil
 }
+
+func riskSummary(state *domain.ChainStateObservationV1) domain.ReportRiskSummary {
+	if state == nil {
+		return domain.ReportRiskSummary{}
+	}
+	return domain.ReportRiskSummary{
+		WethPairIsCreated:         boolPtr(state.WethPair.IsCreated),
+		WethPairIsRemoveLiquidity: boolPtr(state.WethReport.IsRemoveLiquidity),
+		WethPairIsMint:            boolPtr(state.WethReport.IsMint),
+		WethPairQuoteUsdtValueInt: cloneBigInt(state.WethPair.QuoteUsdtValueInt),
+		WethPairLastSwapTimestamp: uint64Ptr(uint64(state.WethPair.LastSwapTimestamp)),
+		UsdtPairIsCreated:         boolPtr(state.UsdtPair.IsCreated),
+		UsdtPairIsRemoveLiquidity: boolPtr(state.UsdtReport.IsRemoveLiquidity),
+		UsdtPairIsMint:            boolPtr(state.UsdtReport.IsMint),
+		UsdtPairQuoteUsdtValueInt: cloneBigInt(state.UsdtPair.QuoteUsdtValueInt),
+		UsdtPairLastSwapTimestamp: uint64Ptr(uint64(state.UsdtPair.LastSwapTimestamp)),
+	}
+}
+
 func boolPtr(v bool) *bool       { return &v }
 func uint64Ptr(v uint64) *uint64 { return &v }
-func bigInt(v *big.Int) *big.Int {
+func cloneBigInt(v *big.Int) *big.Int {
 	if v == nil {
 		return new(big.Int)
 	}

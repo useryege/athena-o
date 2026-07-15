@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
@@ -155,25 +156,25 @@ func normalizePage(page, size int32) (int32, int32, int32) {
 	return page, size, (page - 1) * size
 }
 
-func mapChainCheckpointRow(row tokensqlc.GetChainIngestCheckpointRow) (*ChainIngestCheckpoint, error) {
+func mapChainCheckpointRow(row tokensqlc.GetChainIngestCheckpointRow) (*domain.ChainIngestCheckpoint, error) {
 	n, e := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
 	if e != nil {
 		return nil, e
 	}
-	return &ChainIngestCheckpoint{ChainID: row.ChainID, ChainName: row.ChainName, Enabled: row.Enabled, CursorBlockNumber: n, Status: row.Status, CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
+	return &domain.ChainIngestCheckpoint{ChainID: row.ChainID, ChainName: row.ChainName, Enabled: row.Enabled, CursorBlockNumber: n, Status: domain.ChainIngestStatus(row.Status), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
 }
-func mapChainCheckpointListRow(row tokensqlc.ListChainIngestCheckpointsRow) (*ChainIngestCheckpoint, error) {
+func mapChainCheckpointListRow(row tokensqlc.ListChainIngestCheckpointsRow) (*domain.ChainIngestCheckpoint, error) {
 	return mapChainCheckpointRow(tokensqlc.GetChainIngestCheckpointRow(row))
 }
-func mapChainCheckpoint(row tokensqlc.ChainIngestCheckpoint) (*ChainIngestCheckpoint, error) {
+func mapChainCheckpoint(row tokensqlc.ChainIngestCheckpoint) (*domain.ChainIngestCheckpoint, error) {
 	n, e := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
 	if e != nil {
 		return nil, e
 	}
-	return &ChainIngestCheckpoint{ChainID: row.ChainID, CursorBlockNumber: n, Status: row.Status, CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
+	return &domain.ChainIngestCheckpoint{ChainID: row.ChainID, CursorBlockNumber: n, Status: domain.ChainIngestStatus(row.Status), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
 }
 
-func mapProjectCandidate(row tokensqlc.ProjectCandidate) (*ProjectCandidate, error) {
+func mapProjectCandidate(row tokensqlc.ProjectCandidate) (*domain.ProjectCandidate, error) {
 	tx, e := int64ToUint64("tx_index", row.TxIndex)
 	if e != nil {
 		return nil, e
@@ -186,10 +187,10 @@ func mapProjectCandidate(row tokensqlc.ProjectCandidate) (*ProjectCandidate, err
 	if e != nil {
 		return nil, e
 	}
-	return &ProjectCandidate{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, Status: row.Status, CreatedAt: timeValue(row.CreatedAt)}, nil
+	return &domain.ProjectCandidate{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, Status: domain.ProjectCandidateStatus(row.Status), CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-func mapProjectCandidates(rows []tokensqlc.ProjectCandidate) ([]ProjectCandidate, error) {
-	out := make([]ProjectCandidate, 0, len(rows))
+func mapProjectCandidates(rows []tokensqlc.ProjectCandidate) ([]domain.ProjectCandidate, error) {
+	out := make([]domain.ProjectCandidate, 0, len(rows))
 	for _, r := range rows {
 		v, e := mapProjectCandidate(r)
 		if e != nil {
@@ -199,17 +200,17 @@ func mapProjectCandidates(rows []tokensqlc.ProjectCandidate) ([]ProjectCandidate
 	}
 	return out, nil
 }
-func mapContractCode(row tokensqlc.ContractCode) *ContractCode {
-	return &ContractCode{CodeHash: bytesToHash(row.CodeHash), SourceCode: textValue(row.SourceCode), SourceCodeFetchedAt: timeValue(row.SourceCodeFetchedAt), DeploymentCount: row.DeploymentCount, CreatedAt: timeValue(row.CreatedAt)}
+func mapContractCode(row tokensqlc.ContractCode) *domain.ContractCode {
+	return &domain.ContractCode{CodeHash: bytesToHash(row.CodeHash), SourceCode: textValue(row.SourceCode), SourceCodeFetchedAt: timeValue(row.SourceCodeFetchedAt), DeploymentCount: row.DeploymentCount, CreatedAt: timeValue(row.CreatedAt)}
 }
-func mapContractCodes(rows []tokensqlc.ContractCode) []ContractCode {
-	out := make([]ContractCode, 0, len(rows))
+func mapContractCodes(rows []tokensqlc.ContractCode) []domain.ContractCode {
+	out := make([]domain.ContractCode, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, *mapContractCode(r))
 	}
 	return out
 }
-func mapProject(row tokensqlc.Project) (*Project, error) {
+func mapProject(row tokensqlc.Project) (*domain.Project, error) {
 	tx, e := int64ToUint64("tx_index", row.TxIndex)
 	if e != nil {
 		return nil, e
@@ -226,10 +227,10 @@ func mapProject(row tokensqlc.Project) (*Project, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &Project{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, CodeHash: bytesToHash(row.CodeHash), Name: row.Name, Symbol: row.Symbol, Decimals: d, TotalSupply: bigIntFromNumeric(row.TotalSupply), WethPair: bytesToAddress(row.WethPair), UsdtPair: bytesToAddress(row.UsdtPair), CreatedAt: timeValue(row.CreatedAt)}, nil
+	return &domain.Project{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, CodeHash: bytesToHash(row.CodeHash), Name: row.Name, Symbol: row.Symbol, Decimals: d, TotalSupply: bigIntFromNumeric(row.TotalSupply), WethPair: bytesToAddress(row.WethPair), UsdtPair: bytesToAddress(row.UsdtPair), CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-func mapProjects(rows []tokensqlc.Project) ([]Project, error) {
-	out := make([]Project, 0, len(rows))
+func mapProjects(rows []tokensqlc.Project) ([]domain.Project, error) {
+	out := make([]domain.Project, 0, len(rows))
 	for _, r := range rows {
 		v, e := mapProject(r)
 		if e != nil {
@@ -239,25 +240,25 @@ func mapProjects(rows []tokensqlc.Project) ([]Project, error) {
 	}
 	return out, nil
 }
-func mapProjectRelatedWallet(row tokensqlc.ProjectRelatedWallet) *ProjectRelatedWallet {
-	return &ProjectRelatedWallet{ProjectID: row.ProjectID, Wallet: bytesToAddress(row.Wallet), Role: row.Role, CreatedAt: timeValue(row.CreatedAt)}
+func mapProjectRelatedWallet(row tokensqlc.ProjectRelatedWallet) *domain.ProjectRelatedWallet {
+	return &domain.ProjectRelatedWallet{ProjectID: row.ProjectID, Wallet: bytesToAddress(row.Wallet), Role: domain.RelatedWalletRole(row.Role), CreatedAt: timeValue(row.CreatedAt)}
 }
-func mapProjectRelatedWallets(rows []tokensqlc.ProjectRelatedWallet) []ProjectRelatedWallet {
-	out := make([]ProjectRelatedWallet, 0, len(rows))
+func mapProjectRelatedWallets(rows []tokensqlc.ProjectRelatedWallet) []domain.ProjectRelatedWallet {
+	out := make([]domain.ProjectRelatedWallet, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, *mapProjectRelatedWallet(r))
 	}
 	return out
 }
-func mapProjectInitialRecipient(row tokensqlc.ProjectInitialRecipient) (*ProjectInitialRecipient, error) {
+func mapProjectInitialRecipient(row tokensqlc.ProjectInitialRecipient) (*domain.ProjectInitialRecipient, error) {
 	bn, e := int64ToUint64("source_block_number", row.SourceBlockNumber)
 	if e != nil {
 		return nil, e
 	}
-	return &ProjectInitialRecipient{ID: row.ID, ProjectID: row.ProjectID, Wallet: bytesToAddress(row.Wallet), RatioBPS: row.RatioBps, RankIndex: row.RankIndex, SourceTxHash: bytesToHash(row.SourceTxHash), SourceBlockNumber: bn, CreatedAt: timeValue(row.CreatedAt)}, nil
+	return &domain.ProjectInitialRecipient{ID: row.ID, ProjectID: row.ProjectID, Wallet: bytesToAddress(row.Wallet), RatioBPS: row.RatioBps, RankIndex: row.RankIndex, SourceTxHash: bytesToHash(row.SourceTxHash), SourceBlockNumber: bn, CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-func mapProjectInitialRecipients(rows []tokensqlc.ProjectInitialRecipient) ([]ProjectInitialRecipient, error) {
-	out := make([]ProjectInitialRecipient, 0, len(rows))
+func mapProjectInitialRecipients(rows []tokensqlc.ProjectInitialRecipient) ([]domain.ProjectInitialRecipient, error) {
+	out := make([]domain.ProjectInitialRecipient, 0, len(rows))
 	for _, r := range rows {
 		v, e := mapProjectInitialRecipient(r)
 		if e != nil {
@@ -268,43 +269,43 @@ func mapProjectInitialRecipients(rows []tokensqlc.ProjectInitialRecipient) ([]Pr
 	return out, nil
 }
 
-func mapContractCodeBlocklistEntry(row tokensqlc.ContractCodeBlocklist) *ContractCodeBlocklistEntry {
-	return &ContractCodeBlocklistEntry{CodeHash: bytesToHash(row.CodeHash), Note: textValue(row.Note), SourceChainID: int64Value(row.SourceChainID), SourceContract: bytesToAddress(row.SourceContract), CreatedAt: timeValue(row.CreatedAt)}
+func mapContractCodeBlocklistEntry(row tokensqlc.ContractCodeBlocklist) *domain.ContractCodeBlocklistEntry {
+	return &domain.ContractCodeBlocklistEntry{CodeHash: bytesToHash(row.CodeHash), Note: textValue(row.Note), SourceChainID: int64Value(row.SourceChainID), SourceContract: bytesToAddress(row.SourceContract), CreatedAt: timeValue(row.CreatedAt)}
 }
-func mapContractCodeBlocklistEntries(rows []tokensqlc.ContractCodeBlocklist) []ContractCodeBlocklistEntry {
-	out := make([]ContractCodeBlocklistEntry, 0, len(rows))
+func mapContractCodeBlocklistEntries(rows []tokensqlc.ContractCodeBlocklist) []domain.ContractCodeBlocklistEntry {
+	out := make([]domain.ContractCodeBlocklistEntry, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, *mapContractCodeBlocklistEntry(r))
 	}
 	return out
 }
-func mapWalletBlocklistEntry(row tokensqlc.WalletBlocklist) *WalletBlocklistEntry {
-	return &WalletBlocklistEntry{Wallet: bytesToAddress(row.Wallet), Note: textValue(row.Note), CreatedAt: timeValue(row.CreatedAt)}
+func mapWalletBlocklistEntry(row tokensqlc.WalletBlocklist) *domain.WalletBlocklistEntry {
+	return &domain.WalletBlocklistEntry{Wallet: bytesToAddress(row.Wallet), Note: textValue(row.Note), CreatedAt: timeValue(row.CreatedAt)}
 }
-func mapWalletBlocklistEntries(rows []tokensqlc.WalletBlocklist) []WalletBlocklistEntry {
-	out := make([]WalletBlocklistEntry, 0, len(rows))
+func mapWalletBlocklistEntries(rows []tokensqlc.WalletBlocklist) []domain.WalletBlocklistEntry {
+	out := make([]domain.WalletBlocklistEntry, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, *mapWalletBlocklistEntry(r))
 	}
 	return out
 }
 
-func mapProjectDataCollectionSchedule(row tokensqlc.ProjectDataCollectionSchedule) ProjectDataCollectionSchedule {
-	return ProjectDataCollectionSchedule{ProjectID: row.ProjectID, DataType: row.DataType, Status: row.Status, RefreshInterval: time.Duration(row.RefreshIntervalSeconds) * time.Second, NextRunAt: timeValue(row.NextRunAt), LatestTaskRevision: row.LatestTaskRevision, ConsecutiveFailures: row.ConsecutiveFailures, LastError: textValue(row.LastError), LastCheckedAt: timeValue(row.LastCheckedAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
+func mapProjectDataCollectionSchedule(row tokensqlc.ProjectDataCollectionSchedule) domain.ProjectDataCollectionSchedule {
+	return domain.ProjectDataCollectionSchedule{ProjectID: row.ProjectID, DataType: domain.DataCollectionType(row.DataType), Status: domain.DataCollectionScheduleStatus(row.Status), RefreshInterval: time.Duration(row.RefreshIntervalSeconds) * time.Second, NextRunAt: timeValue(row.NextRunAt), LatestTaskRevision: row.LatestTaskRevision, ConsecutiveFailures: row.ConsecutiveFailures, LastError: textValue(row.LastError), LastCheckedAt: timeValue(row.LastCheckedAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
 }
-func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) ProjectDataCollectionTask {
-	return ProjectDataCollectionTask{ID: row.ID, ProjectID: row.ProjectID, DataType: row.DataType, Status: row.Status, Revision: row.Revision, Attempts: row.Attempts, AvailableAt: timeValue(row.AvailableAt), LockedAt: timeValue(row.LockedAt), LeaseExpiresAt: timeValue(row.LeaseExpiresAt), LastError: textValue(row.LastError), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
+func mapProjectDataCollectionTask(row tokensqlc.ProjectDataCollectionTask) domain.ProjectDataCollectionTask {
+	return domain.ProjectDataCollectionTask{ID: row.ID, ProjectID: row.ProjectID, DataType: domain.DataCollectionType(row.DataType), Status: domain.TaskStatus(row.Status), Revision: row.Revision, Attempts: row.Attempts, AvailableAt: timeValue(row.AvailableAt), LockedAt: timeValue(row.LockedAt), LeaseExpiresAt: timeValue(row.LeaseExpiresAt), LastError: textValue(row.LastError), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
 }
-func mapProjectObservation(row tokensqlc.ProjectObservation) (ProjectObservation, error) {
+func mapProjectObservation(row tokensqlc.ProjectObservation) (domain.ProjectObservation, error) {
 	bn, e := uint64PointerFromInt64("block_number", row.BlockNumber)
-	return ProjectObservation{ID: row.ID, ProjectID: row.ProjectID, DataType: row.DataType, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: bn, ObservedAt: timeValue(row.ObservedAt), CreatedAt: timeValue(row.CreatedAt)}, e
+	return domain.ProjectObservation{ID: row.ID, ProjectID: row.ProjectID, DataType: domain.DataCollectionType(row.DataType), SchemaVersion: row.SchemaVersion, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: bn, ObservedAt: timeValue(row.ObservedAt), CreatedAt: timeValue(row.CreatedAt)}, e
 }
-func mapCurrentProjectObservation(row tokensqlc.GetCurrentProjectObservationRow) (ProjectObservation, error) {
+func mapCurrentProjectObservation(row tokensqlc.GetCurrentProjectObservationRow) (domain.ProjectObservation, error) {
 	bn, e := uint64PointerFromInt64("block_number", row.BlockNumber)
-	return ProjectObservation{ID: row.ID, ProjectID: row.ProjectID, DataType: row.DataType, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: bn, ObservedAt: timeValue(row.ObservedAt), LastCheckedAt: timeValue(row.LastCheckedAt), CreatedAt: timeValue(row.CreatedAt)}, e
+	return domain.ProjectObservation{ID: row.ID, ProjectID: row.ProjectID, DataType: domain.DataCollectionType(row.DataType), SchemaVersion: row.SchemaVersion, ContentHash: bytesToHash(row.ContentHash), Payload: json.RawMessage(row.Payload), BlockNumber: bn, ObservedAt: timeValue(row.ObservedAt), LastCheckedAt: timeValue(row.LastCheckedAt), CreatedAt: timeValue(row.CreatedAt)}, e
 }
-func mapCurrentProjectObservations(rows []tokensqlc.ListCurrentProjectObservationsRow) ([]ProjectObservation, error) {
-	out := make([]ProjectObservation, 0, len(rows))
+func mapCurrentProjectObservations(rows []tokensqlc.ListCurrentProjectObservationsRow) ([]domain.ProjectObservation, error) {
+	out := make([]domain.ProjectObservation, 0, len(rows))
 	for _, r := range rows {
 		v, e := mapCurrentProjectObservation(tokensqlc.GetCurrentProjectObservationRow(r))
 		if e != nil {
@@ -315,24 +316,32 @@ func mapCurrentProjectObservations(rows []tokensqlc.ListCurrentProjectObservatio
 	return out, nil
 }
 
-func mapProjectResearchState(row tokensqlc.ListProjectResearchStatesRow) ProjectResearchState {
-	return ProjectResearchState{ProjectID: row.ProjectID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), Status: row.Status, EvidenceRevision: row.EvidenceRevision, CurrentReportRevision: int64Value(row.CurrentReportRevision), CurrentSelectionID: int64Value(row.CurrentSelectionID), CurrentSelectionOutcome: row.CurrentSelectionOutcome, LastEvaluatedReportRevision: int64Value(row.LastEvaluatedReportRevision), LastEvaluatedAt: timeValue(row.LastEvaluatedAt), ExpiresAt: timeValue(row.ExpiresAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
+func mapProjectResearchState(row tokensqlc.ListProjectResearchStatesRow) domain.ProjectResearchState {
+	return domain.ProjectResearchState{ProjectID: row.ProjectID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), Status: domain.ProjectResearchStatus(row.Status), EvidenceRevision: row.EvidenceRevision, CurrentReportRevision: int64Value(row.CurrentReportRevision), CurrentSelectionID: int64Value(row.CurrentSelectionID), CurrentSelectionOutcome: domain.SelectionOutcome(row.CurrentSelectionOutcome), LastEvaluatedReportRevision: int64Value(row.LastEvaluatedReportRevision), LastEvaluatedAt: timeValue(row.LastEvaluatedAt), ExpiresAt: timeValue(row.ExpiresAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
 }
-func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (ProjectReportRevision, error) {
+func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (domain.ProjectReportRevision, error) {
 	bn, e := uint64PointerFromInt64("observed_block_number", row.ObservedBlockNumber)
 	if e != nil {
-		return ProjectReportRevision{}, e
+		return domain.ProjectReportRevision{}, e
 	}
 	wts, e := uint64PointerFromInt64("weth_pair_last_swap_timestamp", row.WethPairLastSwapTimestamp)
 	if e != nil {
-		return ProjectReportRevision{}, e
+		return domain.ProjectReportRevision{}, e
 	}
 	uts, e := uint64PointerFromInt64("usdt_pair_last_swap_timestamp", row.UsdtPairLastSwapTimestamp)
 	if e != nil {
-		return ProjectReportRevision{}, e
+		return domain.ProjectReportRevision{}, e
 	}
-	return ProjectReportRevision{ID: row.ID, ProjectID: row.ProjectID, Revision: row.Revision, ContentHash: bytesToHash(row.ContentHash), CompletenessStatus: row.CompletenessStatus, Evidence: json.RawMessage(row.Evidence), Report: json.RawMessage(row.Report), ObservedBlockNumber: bn, WethPairIsCreated: boolPointer(row.WethPairIsCreated), WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity), WethPairIsMint: boolPointer(row.WethPairIsMint), WethPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt), WethPairLastSwapTimestamp: wts, UsdtPairIsCreated: boolPointer(row.UsdtPairIsCreated), UsdtPairIsRemoveLiquidity: boolPointer(row.UsdtPairIsRemoveLiquidity), UsdtPairIsMint: boolPointer(row.UsdtPairIsMint), UsdtPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt), UsdtPairLastSwapTimestamp: uts, BuiltAt: timeValue(row.BuiltAt), CreatedAt: timeValue(row.CreatedAt)}, nil
+	var evidence []domain.EvidenceReference
+	if e = json.Unmarshal(row.Evidence, &evidence); e != nil {
+		return domain.ProjectReportRevision{}, fmt.Errorf("decode report evidence: %w", e)
+	}
+	var report domain.ResearchReportV1
+	if e = json.Unmarshal(row.Report, &report); e != nil {
+		return domain.ProjectReportRevision{}, fmt.Errorf("decode report: %w", e)
+	}
+	return domain.ProjectReportRevision{ID: row.ID, ProjectID: row.ProjectID, Revision: row.Revision, SchemaVersion: row.SchemaVersion, ContentHash: bytesToHash(row.ContentHash), CompletenessStatus: row.CompletenessStatus, Evidence: evidence, Report: report, ObservedBlockNumber: bn, WethPairIsCreated: boolPointer(row.WethPairIsCreated), WethPairIsRemoveLiquidity: boolPointer(row.WethPairIsRemoveLiquidity), WethPairIsMint: boolPointer(row.WethPairIsMint), WethPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt), WethPairLastSwapTimestamp: wts, UsdtPairIsCreated: boolPointer(row.UsdtPairIsCreated), UsdtPairIsRemoveLiquidity: boolPointer(row.UsdtPairIsRemoveLiquidity), UsdtPairIsMint: boolPointer(row.UsdtPairIsMint), UsdtPairQuoteUsdtValueInt: bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt), UsdtPairLastSwapTimestamp: uts, BuiltAt: timeValue(row.BuiltAt), CreatedAt: timeValue(row.CreatedAt)}, nil
 }
-func mapProjectSelection(row tokensqlc.ProjectSelection) ProjectSelection {
-	return ProjectSelection{ID: row.ID, ProjectID: row.ProjectID, Outcome: row.Outcome, StrategyKey: row.StrategyKey, StrategyVersion: row.StrategyVersion, ReportRevision: row.ReportRevision, ReasonCodes: row.ReasonCodes, ReasonDetail: row.ReasonDetail, DecidedAt: timeValue(row.DecidedAt), CreatedAt: timeValue(row.CreatedAt)}
+func mapProjectSelection(row tokensqlc.ProjectSelection) domain.ProjectSelection {
+	return domain.ProjectSelection{ID: row.ID, ProjectID: row.ProjectID, Outcome: domain.SelectionOutcome(row.Outcome), StrategyKey: row.StrategyKey, StrategyVersion: row.StrategyVersion, ReportRevision: row.ReportRevision, ReasonCodes: row.ReasonCodes, ReasonDetail: row.ReasonDetail, DecidedAt: timeValue(row.DecidedAt), CreatedAt: timeValue(row.CreatedAt)}
 }

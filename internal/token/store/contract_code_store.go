@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
@@ -22,7 +23,7 @@ func (s *SQLStore) UpsertContractCode(ctx context.Context, codeHash common.Hash)
 	return nil
 }
 
-func (s *SQLStore) GetContractCode(ctx context.Context, codeHash common.Hash) (*ContractCode, error) {
+func (s *SQLStore) GetContractCode(ctx context.Context, codeHash common.Hash) (*domain.ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -101,7 +102,7 @@ func (s *SQLStore) ListContractCodesByDeploymentCount(ctx context.Context, page,
 	}, nil
 }
 
-func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, fetchedAt time.Time) (*ContractCode, error) {
+func (s *SQLStore) UpdateContractCodeSource(ctx context.Context, codeHash common.Hash, sourceCode string, fetchedAt time.Time) (*domain.ContractCode, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err

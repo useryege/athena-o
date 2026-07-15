@@ -8,11 +8,10 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
-	tokenstore "github.com/useryege/athena/internal/token/store"
 )
 
 type validatorRunnerOptions struct {
-	store                *tokenstore.SQLStore
+	store                Store
 	chainIDs             []int64
 	nodeWSURLs           map[int64][]string
 	athenaContracts      map[int64]ethcommon.Address

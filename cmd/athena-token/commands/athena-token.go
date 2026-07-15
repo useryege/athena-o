@@ -34,7 +34,12 @@ func NewCommand() *cobra.Command {
 	command := &cobra.Command{Use: cliName, Short: "Run Athena Token discovery or research", Long: "Runs one consolidated Token Intelligence worker process.", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
 		cli.SetLogFormat(cmdutil.LogFormat)
 		cli.SetLogLevel(cmdutil.LogLevel)
-		runtime, err := token.NewRuntime(token.RuntimeOptions{Mode: mode, StoreSrc: tokenstore.NewSQLStoreSource(), EthNodeWSURLs: ethNodeWSURLs, BSCNodeWSURLs: bscNodeWSURLs, EthAthenaContract: ethAthenaContract, BSCAthenaContract: bscAthenaContract, EthEnabled: ethEnabled, BSCEnabled: bscEnabled, NodeWSUseProxy: nodeWSUseProxy, AveAPIKey: aveAPIKey, AveAPIBaseURL: aveAPIBaseURL, EthereumAPIAddress: ethereumAPIAddress, ChainStateInterval: chainStateInterval, WalletAssetInterval: walletAssetInterval, SimulationInterval: simulationInterval, AveInterval: aveInterval, ContractSourceInterval: contractSourceInterval, ResearchTTL: researchTTL})
+		chains := token.ChainRuntimeOptions{EthNodeWSURLs: ethNodeWSURLs, BSCNodeWSURLs: bscNodeWSURLs, EthAthenaContract: ethAthenaContract, BSCAthenaContract: bscAthenaContract, EthEnabled: ethEnabled, BSCEnabled: bscEnabled, NodeWSUseProxy: nodeWSUseProxy}
+		runtime, err := token.NewRuntime(token.RuntimeOptions{
+			Mode: mode, StoreSrc: tokenstore.NewSQLStoreSource(),
+			Discovery: token.DiscoveryOptions{Chains: chains},
+			Research:  token.ResearchOptions{Chains: chains, AveAPIKey: aveAPIKey, AveAPIBaseURL: aveAPIBaseURL, EthereumAPIAddress: ethereumAPIAddress, ChainStateInterval: chainStateInterval, WalletAssetInterval: walletAssetInterval, SimulationInterval: simulationInterval, AveInterval: aveInterval, ContractSourceInterval: contractSourceInterval, ResearchTTL: researchTTL},
+		})
 		if err != nil {
 			return err
 		}

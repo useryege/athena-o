@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/useryege/athena/internal/token/domain"
 	tokensqlc "github.com/useryege/athena/internal/token/store/sqlc"
 )
 
-func (s *SQLStore) UpsertProjectRelatedWallet(ctx context.Context, item ProjectRelatedWallet) (*ProjectRelatedWallet, error) {
+func (s *SQLStore) UpsertProjectRelatedWallet(ctx context.Context, item domain.ProjectRelatedWallet) (*domain.ProjectRelatedWallet, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -16,7 +17,7 @@ func (s *SQLStore) UpsertProjectRelatedWallet(ctx context.Context, item ProjectR
 	row, err := q.UpsertProjectRelatedWallet(ctx, tokensqlc.UpsertProjectRelatedWalletParams{
 		ProjectID: item.ProjectID,
 		Wallet:    item.Wallet.Bytes(),
-		Role:      item.Role,
+		Role:      string(item.Role),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project related wallet: %w", err)
@@ -24,7 +25,7 @@ func (s *SQLStore) UpsertProjectRelatedWallet(ctx context.Context, item ProjectR
 	return mapProjectRelatedWallet(row), nil
 }
 
-func (s *SQLStore) ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]ProjectRelatedWallet, error) {
+func (s *SQLStore) ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]domain.ProjectRelatedWallet, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func (s *SQLStore) ListProjectRelatedWalletsByProject(ctx context.Context, proje
 	return mapProjectRelatedWallets(rows), nil
 }
 
-func (s *SQLStore) ListProjectRelatedWalletsByWallet(ctx context.Context, wallet common.Address) ([]ProjectRelatedWallet, error) {
+func (s *SQLStore) ListProjectRelatedWalletsByWallet(ctx context.Context, wallet common.Address) ([]domain.ProjectRelatedWallet, error) {
 	q, err := s.querier()
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func (s *SQLStore) ListProjectRelatedWalletsByWallet(ctx context.Context, wallet
 	return mapProjectRelatedWallets(rows), nil
 }
 
-func (s *SQLStore) DeleteProjectRelatedWallet(ctx context.Context, projectID int64, wallet common.Address, role string) (int64, error) {
+func (s *SQLStore) DeleteProjectRelatedWallet(ctx context.Context, projectID int64, wallet common.Address, role domain.RelatedWalletRole) (int64, error) {
 	q, err := s.querier()
 	if err != nil {
 		return 0, err
@@ -56,7 +57,7 @@ func (s *SQLStore) DeleteProjectRelatedWallet(ctx context.Context, projectID int
 	rowsAffected, err := q.DeleteProjectRelatedWallet(ctx, tokensqlc.DeleteProjectRelatedWalletParams{
 		ProjectID: projectID,
 		Wallet:    wallet.Bytes(),
-		Role:      role,
+		Role:      string(role),
 	})
 	if err != nil {
 		return 0, fmt.Errorf("delete project related wallet: %w", err)
