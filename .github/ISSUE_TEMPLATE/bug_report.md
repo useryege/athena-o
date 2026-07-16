@@ -6,11 +6,11 @@ labels: ['bug', 'triage/pending']
 assignees: ''
 ---
 
-<!-- If you are trying to resolve an environment-specific issue or have a one-off question about the edge case that does not require a feature then please consider asking a question in athena slack [channel](https://athena.readthedocs.io/en/stable/community/join-slack). -->
+<!-- If you are trying to resolve an environment-specific issue or have a one-off question about an edge case that does not require a feature, please consider asking in [Athena Discussions](https://github.com/useryege/athena/discussions/new) or [Athena Slack](https://useryege.github.io/community/join-slack). -->
 
 Checklist:
 
-- [ ] I've searched in the docs and FAQ for my answer: https://bit.ly/athena-faq.
+- [ ] I've searched the [repository documentation](https://github.com/useryege/athena/tree/main/docs) and [FAQ](https://github.com/useryege/athena/blob/main/docs/faq.md) for my answer.
 - [ ] I've included steps to reproduce the bug.
 - [ ] I've pasted the output of `athena version`.
 

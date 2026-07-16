@@ -14,7 +14,6 @@ Target GA date: ___. __, ____
  - [ ] 1wk before feature freeze post in #argo-contributors that PRs must be merged by DD-MM-YYYY to be included in the release - ask approvers to drop items from milestone they can't merge
  - [ ] At least two days before RC1 date, draft RC blog post and submit it for review (or delegate this task)
  - [ ] Create new release branch (or delegate this task to an Approver)
-    - [ ] Add the release branch to ReadTheDocs
  - [ ] Cut RC1 (or delegate this task to an Approver and coordinate timing)
     - [ ] Run the [Init Athena Release workflow](https://github.com/useryege/athena/actions/workflows/init-release.yaml) from the release branch
     - [ ] Review and merge the generated version bump PR
@@ -22,8 +21,6 @@ Target GA date: ___. __, ____
     - [ ] Monitor the [Publish Athena Release workflow](https://github.com/useryege/athena/actions/workflows/release.yaml)
     - [ ] Verify the release on [GitHub releases](https://github.com/useryege/athena/releases)
     - [ ] Verify the container image on [Quay.io](https://quay.io/repository/useryege/athena?tab=tags)
-    - [ ] Confirm the new version appears in [Read the Docs](https://athena.readthedocs.io/)
-    - [ ] Verify the docs release build in https://app.readthedocs.org/projects/athena/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
  - [ ] Announce RC1 release
    - [ ] Confirm that tweet and blog post are ready
    - [ ] Publish tweet and blog post
@@ -54,7 +51,7 @@ Target GA date: ___. __, ____
      > 
      > This is the final release of the {EOL_SERIES} release series. As of {GA_DATE}, this version has reached end of life and will no longer receive bug fixes or security updates.
      > 
-     > **Action Required**: Please upgrade to a [supported version](https://athena.readthedocs.io/en/stable/operator-manual/upgrading/overview/) (v{SUPPORTED_VERSION_1}, v{SUPPORTED_VERSION_2}, or v{NEW_VERSION}).
+     > **Action Required**: Please upgrade to a supported version (v{SUPPORTED_VERSION_1}, v{SUPPORTED_VERSION_2}, or v{NEW_VERSION}).
      ```
  - [ ] Cut GA release (or delegate this task to an Approver and coordinate timing)
     - [ ] Run the [Init Athena Release workflow](https://github.com/useryege/athena/actions/workflows/init-release.yaml) from the release branch
@@ -64,8 +61,6 @@ Target GA date: ___. __, ____
     - [ ] Verify the release on [GitHub releases](https://github.com/useryege/athena/releases)
     - [ ] Verify the container image on [Quay.io](https://quay.io/repository/useryege/athena?tab=tags)
     - [ ] Verify the `stable` tag has been updated
-    - [ ] Confirm the new version appears in [Read the Docs](https://athena.readthedocs.io/)
-    - [ ] Verify the docs release build in https://app.readthedocs.org/projects/athena/ succeeded and retry if failed (requires an Approver with admin creds to readthedocs)
  - [ ] Announce GA release with EOL notice
    - [ ] Confirm that tweet and blog post are ready
    - [ ] Publish tweet and blog post
@@ -75,7 +70,7 @@ Target GA date: ___. __, ____
      
      Please go through the following resources to know more about the release:
      
-     Upgrade instructions: https://athena.readthedocs.io/en/latest/operator-manual/upgrading/{PREV_MINOR}-{MAJOR}.{MINOR}/
+     Upgrade instructions: {UPGRADE_GUIDE_URL}
      Blog: {BLOG_POST_URL}
      
      :warning: IMPORTANT: With the release of Athena v{MAJOR}.{MINOR}, support for Athena v{EOL_VERSION} has officially reached End of Life (EOL).

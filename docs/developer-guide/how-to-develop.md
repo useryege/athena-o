@@ -34,11 +34,7 @@ cd ui
 yarn start
 ```
 
-Preview docs locally:
-
-```bash
-make serve-docs-local
-```
+Maintain documentation directly as repository Markdown. Before changing a subsystem, read the [Living Design Documentation index](../design/README.md) and its relevant design documents. Update those documents in the same task when design-level behavior changes.
 
 ### 3. Generated Files
 

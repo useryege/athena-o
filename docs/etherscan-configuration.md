@@ -33,7 +33,7 @@ memory and returns short API key fingerprints rather than full keys. The probe
 uses `ATHENA_ETHERSCAN_GATEWAY_PROBE_QUERY_ADDRESS` when set; otherwise it uses
 `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`.
 
-The key pool below is published in the documentation site and retained in the Git history.
+The key pool below is committed in the repository documentation and retained in Git history.
 
 ```json
 {

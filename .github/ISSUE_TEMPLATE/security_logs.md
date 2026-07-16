@@ -12,7 +12,7 @@ Specify the event that needs to be logged or existing logs that need to be tagge
 
 # Proposed level
 
-What security level should these events be logged under? Refer to https://athena.readthedocs.io/en/latest/operator-manual/security/#security-field for more info.
+What security level should these events be logged under? Describe the expected severity and rationale, and reference repository security documentation when relevant.
 
 # Common Weakness Enumeration
 

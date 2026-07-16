@@ -1,6 +1,6 @@
 # Athena Makefile 常用命令指南
 
-本文档说明项目根目录 `Makefile` 中保留的常用命令，偏向日常本地运行、代码生成、文档和生产部署速查。
+本文档说明项目根目录 `Makefile` 中保留的常用命令，偏向日常本地运行、代码生成和生产部署速查。
 
 ## 前置依赖
 
@@ -9,11 +9,10 @@
 - Go：用于代码生成，以及生产镜像内部构建二进制。
 - Docker：用于构建生产镜像和运行生产 compose。
 - yarn：用于手动在 `ui` 目录运行前端开发命令。
-- mkdocs：用于本地文档预览和文档构建；也可以通过 Docker 目标运行。
 
 ## 命令约定
 
-- Makefile 只保留当前日常使用的入口：本地运行、代码生成、文档、生产部署和数据清理。
+- Makefile 只保留当前日常使用的入口：本地运行、代码生成、生产部署和数据清理。
 - 生产镜像构建通过 Dockerfile 完成，Dockerfile 内部仍会调用 `make athena-all` 构建二进制。
 - 所有命令默认在项目根目录执行。
 
@@ -150,10 +149,7 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 
 ## 文档
 
-| 命令 | 用途 | 示例 |
-| --- | --- | --- |
-| `make serve-docs-local` | 使用本机 `mkdocs serve` 预览文档。 | `make serve-docs-local` |
-| `make build-docs` | 使用 Docker 构建 MkDocs 文档。 | `make build-docs` |
+文档直接以仓库内 Markdown 维护。开发前先阅读 `docs/design/README.md` 和相关子系统设计文档；设计级代码变更需要在同一任务中同步更新 Living Design Docs。
 
 ## 生产部署
 

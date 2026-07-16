@@ -8,6 +8,7 @@
   - [No Historical Compatibility](#no-historical-compatibility)
   - [No Tests](#no-tests)
   - [Chinese Plans](#chinese-plans)
+  - [Living Design Documentation](#living-design-documentation)
   - [UI Layout Review](#ui-layout-review)
 
 ## Rules
@@ -36,6 +37,19 @@ Do not plan, propose, add, or run tests (unit tests, integration tests, end-to-e
 ### Chinese Plans
 
 When outlining or listing a plan (implementation steps, task breakdown, approach summary, etc.), write the plan in Chinese (简体中文).
+
+### Living Design Documentation
+
+`docs/design/` contains the repository-internal, English-language explanation of the currently implemented design for developers and AI agents.
+
+- Before planning or implementing a change, read `docs/design/README.md` and every design document relevant to the affected subsystem or capability.
+- Update the relevant design document in the same change when implementation changes component responsibilities, boundaries, runtime flow, state machines, data models, interface contracts, configuration defaults, dependency relationships, failure recovery, health checks, or observability.
+- When adding a subsystem or independently understandable capability, create a document from `docs/design/template.md` and register it in `docs/design/README.md`.
+- Purely internal refactors, formatting changes, copy edits, and generated-file updates that do not change design semantics do not require a design-document update.
+- Describe only the current implementation. Replace obsolete content instead of retaining compatibility notes, change histories, future plans, or deprecated designs as an archive.
+- Link to actual source paths and name the important symbols instead of copying large code sections into documentation.
+- Executable code is the source of truth. If code and documentation disagree, inspect the code and correct the documentation in the same task.
+- The implementer is responsible for keeping the affected design documents synchronized; documentation maintenance is not a separate follow-up task.
 
 ### UI Layout Review
 

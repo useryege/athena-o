@@ -68,7 +68,7 @@ As is the case with the development process, this document is under constant cha
 - [Generate API glue code and other assets](development-cycle.md#generate-API-glue-code-and-other-assets)
 - [Build your code and run unit tests](development-cycle.md#build-your-code-and-run-unit-tests)
 - [Lint your code base](development-cycle.md#lint-your-code-base)
-- How to contribute to documentation: [build and run documentation site](docs-site/) on your machine for manual testing
+- How to contribute to documentation: maintain repository Markdown directly and follow the [Living Design Documentation](../design/README.md) rules for design-level changes
 
 ### Run and debug Athena locally
 - [Run Athena on your machine for manual testing](running-locally.md)

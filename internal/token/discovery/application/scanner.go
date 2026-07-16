@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/discovery"
 )
 
-const maxBlocksPerScanBatch = uint64(100)
+const (
+	maxBlocksPerScanBatch     = uint64(100)
+	initialScanLookbackBlocks = uint64(1_000_000)
+)
 
 type ScannerRepository interface {
 	GetChainIngestCheckpoint(context.Context, int64) (*discovery.ChainIngestCheckpoint, error)
@@ -77,6 +81,20 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	if err != nil {
 		return ScanResult{}, err
 	}
+	if checkpoint.CursorBlockNumber == 0 {
+		start := initialScanStartBlock(latest)
+		checkpoint.CursorBlockNumber = start - 1
+		checkpoint, err = scanner.repository.UpsertChainIngestCheckpoint(ctx, *checkpoint)
+		if err != nil {
+			return ScanResult{}, err
+		}
+		log.WithFields(log.Fields{
+			"chain_id":        command.ChainID,
+			"latest_block":    latest,
+			"lookback_blocks": initialScanLookbackBlocks,
+			"start_block":     start,
+		}).Info("initialized token chain scanner checkpoint")
+	}
 	next := uint64(1)
 	if checkpoint.CursorBlockNumber > 0 {
 		next = checkpoint.CursorBlockNumber + 1
@@ -110,4 +128,11 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		next = batchEnd + 1
 	}
 	return result, nil
+}
+
+func initialScanStartBlock(latest uint64) uint64 {
+	if latest > initialScanLookbackBlocks {
+		return latest - initialScanLookbackBlocks
+	}
+	return 1
 }

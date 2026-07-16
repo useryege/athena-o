@@ -9,7 +9,6 @@ Install:
 - Docker
 - GNU Make
 - Node.js and Yarn for UI work
-- MkDocs dependencies when editing documentation
 
 Verify the core tools:
 

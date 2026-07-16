@@ -34,10 +34,6 @@ ifneq ($(DOCKER),docker)
 $(error Only Docker is supported. Please run make with DOCKER=docker)
 endif
 
-# pointing to python 3.12 
-MKDOCS_DOCKER_IMAGE?=python:3.12-alpine
-MKDOCS_RUN_ARGS?=
-
 PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
@@ -309,14 +305,6 @@ e2e-live-etherscan-gateway-multi-key-staggered-success:
 		exit 1; \
 	fi; \
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanGatewayMultiKeyStaggeredSuccessProbe -v
-
-.PHONY: serve-docs-local
-serve-docs-local:
-	mkdocs serve
-
-.PHONY: build-docs
-build-docs:
-	$(DOCKER) run ${MKDOCS_RUN_ARGS} --rm -it -v ${CURRENT_DIR}:/docs -w /docs --entrypoint "" ${MKDOCS_DOCKER_IMAGE} sh -c 'pip install -r docs/requirements.txt; mkdocs build'
 
 .PHONY: prod-build-local
 prod-build-local:
