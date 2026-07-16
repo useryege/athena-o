@@ -304,6 +304,27 @@ func (q *Queries) MarkProjectDataCollectionTaskSucceeded(ctx context.Context, id
 	return result.RowsAffected(), nil
 }
 
+const renewProjectDataCollectionTaskLease = `-- name: RenewProjectDataCollectionTaskLease :execrows
+UPDATE project_data_collection_task
+SET lease_expires_at = now() + ($1::bigint * INTERVAL '1 second'),
+  updated_at = now()
+WHERE id = $2
+  AND status = 'running'
+`
+
+type RenewProjectDataCollectionTaskLeaseParams struct {
+	LeaseSeconds int64
+	ID           int64
+}
+
+func (q *Queries) RenewProjectDataCollectionTaskLease(ctx context.Context, arg RenewProjectDataCollectionTaskLeaseParams) (int64, error) {
+	result, err := q.db.Exec(ctx, renewProjectDataCollectionTaskLease, arg.LeaseSeconds, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const retryProjectDataCollectionTask = `-- name: RetryProjectDataCollectionTask :one
 UPDATE project_data_collection_task
 SET status = 'pending',

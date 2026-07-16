@@ -21,17 +21,18 @@ const (
 type DataCollectionType string
 
 const (
-	DataCollectionTypeAve                DataCollectionType = "ave"
-	DataCollectionTypeChainState         DataCollectionType = "chain_state"
-	DataCollectionTypeWalletAssetState   DataCollectionType = "wallet_asset_state"
-	DataCollectionTypeSimulationResult   DataCollectionType = "simulation_result"
-	DataCollectionTypeContractCodeSource DataCollectionType = "contract_code_source"
+	DataCollectionTypeAve                            DataCollectionType = "ave"
+	DataCollectionTypeChainState                     DataCollectionType = "chain_state"
+	DataCollectionTypeWalletAssetState               DataCollectionType = "wallet_asset_state"
+	DataCollectionTypeSimulationResult               DataCollectionType = "simulation_result"
+	DataCollectionTypeContractCodeSource             DataCollectionType = "contract_code_source"
+	DataCollectionTypeWalletNormalTransactionHistory DataCollectionType = "wallet_normal_transaction_history"
 )
 
 func ParseDataCollectionType(value string) (DataCollectionType, bool) {
 	dataType := DataCollectionType(value)
 	switch dataType {
-	case DataCollectionTypeAve, DataCollectionTypeChainState, DataCollectionTypeWalletAssetState, DataCollectionTypeSimulationResult, DataCollectionTypeContractCodeSource:
+	case DataCollectionTypeAve, DataCollectionTypeChainState, DataCollectionTypeWalletAssetState, DataCollectionTypeSimulationResult, DataCollectionTypeContractCodeSource, DataCollectionTypeWalletNormalTransactionHistory:
 		return dataType, true
 	default:
 		return "", false
@@ -85,14 +86,16 @@ type ProjectDataCollectionTask struct {
 }
 
 type ProjectCollectionContext struct {
-	ID              int64
-	ChainID         int64
-	Contract        shared.Address
-	CodeHash        shared.Hash
-	WethPair        shared.Address
-	UsdtPair        shared.Address
-	RelatedWallets  []shared.Address
-	RefreshInterval time.Duration
+	ID                       int64
+	ChainID                  int64
+	Contract                 shared.Address
+	CreationBlockNumber      uint64
+	CreationTransactionIndex uint64
+	CodeHash                 shared.Hash
+	WethPair                 shared.Address
+	UsdtPair                 shared.Address
+	RelatedWallets           []shared.Address
+	RefreshInterval          time.Duration
 }
 
 type ProjectDataCollectionTaskWithProject struct {

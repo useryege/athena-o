@@ -39,6 +39,13 @@ FROM claimable
 WHERE task.id = claimable.id
 RETURNING task.*;
 
+-- name: RenewProjectDataCollectionTaskLease :execrows
+UPDATE project_data_collection_task
+SET lease_expires_at = now() + (sqlc.arg('lease_seconds')::bigint * INTERVAL '1 second'),
+  updated_at = now()
+WHERE id = @id
+  AND status = 'running';
+
 -- name: GetProjectDataCollectionTask :one
 SELECT *
 FROM project_data_collection_task

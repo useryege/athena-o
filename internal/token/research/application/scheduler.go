@@ -48,11 +48,12 @@ type Scheduler struct {
 func NewScheduler(repository SchedulerRepository, options SchedulerOptions) *Scheduler {
 	if options.Intervals == nil {
 		options.Intervals = map[research.DataCollectionType]time.Duration{
-			research.DataCollectionTypeChainState:         15 * time.Second,
-			research.DataCollectionTypeWalletAssetState:   time.Minute,
-			research.DataCollectionTypeSimulationResult:   time.Minute,
-			research.DataCollectionTypeAve:                5 * time.Minute,
-			research.DataCollectionTypeContractCodeSource: 10 * time.Minute,
+			research.DataCollectionTypeChainState:                     15 * time.Second,
+			research.DataCollectionTypeWalletAssetState:               time.Minute,
+			research.DataCollectionTypeSimulationResult:               time.Minute,
+			research.DataCollectionTypeWalletNormalTransactionHistory: time.Minute,
+			research.DataCollectionTypeAve:                            5 * time.Minute,
+			research.DataCollectionTypeContractCodeSource:             10 * time.Minute,
 		}
 	}
 	if options.TTL <= 0 {

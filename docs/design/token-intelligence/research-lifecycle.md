@@ -46,15 +46,15 @@ Selection updates the shared research state. The lifecycle does not depend on an
 ## Runtime Flow
 
 1. The Validator claims and inspects pending project candidates. A rejected inspection marks only the candidate rejected and does not create research state or schedules.
-2. For an accepted inspection, `PromoteCandidateAndInitializeResearch` atomically upserts the project, marks the candidate validated, inserts a `researching` state, creates five active schedules, and stores the related wallets and initial recipients.
+2. For an accepted inspection, `PromoteCandidateAndInitializeResearch` atomically upserts the project, marks the candidate validated, inserts a `researching` state, creates six active schedules, and stores the related wallets and initial recipients.
 3. The research state's `created_at` is the start of its research window. Its schema default sets `expires_at` to one day after insertion. The project's deployment or discovery time does not define the TTL.
-4. The five initial schedules are `chain_state` every 15 seconds, `wallet_asset_state` every minute, `simulation_result` every minute, `ave` every 5 minutes, and `contract_code_source` every 10 minutes. Their first `next_run_at` is the Validator's current UTC time.
+4. The six initial schedules are `chain_state` every 15 seconds, `wallet_asset_state` every minute, `simulation_result` every minute, `ave` every 5 minutes, `contract_code_source` every 10 minutes, and the one-time `wallet_normal_transaction_history` collector with a 1-minute full-task retry interval. Their first `next_run_at` is the Validator's current UTC time.
 5. At Scheduler startup, `Initialize` applies the configured intervals to active schedules and recomputes `expires_at = created_at + TTL` for every state that is still `researching`. This makes the Scheduler's configured policy authoritative for active research.
 6. The Scheduler job runs once per second. Each run first changes overdue `researching` states to `expired`, then changes active schedules belonging to `expired` or `rejected` projects to `paused`.
 7. The Scheduler lists due active schedules only for `researching` or `selected` projects. For each due schedule, a PostgreSQL transaction locks the schedule, rechecks its revision and due time, creates the next task revision, advances `next_run_at`, and commits both changes together.
 8. Collector workers claim pending tasks only while the project's research state is `researching` or `selected`. Tasks left pending after a project becomes `expired` or `rejected` are therefore no longer claimable.
 9. A `selected` outcome moves a `researching` project to `selected`. Expiration applies only to `researching`, so selected projects continue collection without a TTL cutoff. A `rejected` outcome can stop either a researching or selected project; the next maintenance run pauses its active schedules.
-10. A collector can mark a schedule `completed` when its data no longer needs periodic collection. Lifecycle maintenance only pauses schedules that are still active.
+10. A collector can mark a schedule `completed` when its data no longer needs periodic collection. Contract source completes after source is recorded. Wallet normal transaction history completes after every distinct related wallet has a durable history marker, including wallets with zero matching transactions. Lifecycle maintenance only pauses schedules that are still active.
 11. On `SIGINT` or `SIGTERM`, the shared worker host cancels the periodic job, stops the health server, and closes PostgreSQL after the job exits.
 
 ## State / Data
@@ -80,6 +80,7 @@ Task creation and schedule advancement share a transaction. The due query exclud
 | `ATHENA_TOKEN_CHAIN_STATE_INTERVAL` / `--chain-state-interval` | Chain-state collection interval. Default 15 seconds. |
 | `ATHENA_TOKEN_WALLET_ASSET_INTERVAL` / `--wallet-asset-interval` | Wallet-asset collection interval. Default 1 minute. |
 | `ATHENA_TOKEN_SIMULATION_INTERVAL` / `--simulation-interval` | Simulation-result collection interval. Default 1 minute. |
+| `ATHENA_TOKEN_WALLET_NORMAL_TRANSACTION_HISTORY_RETRY_INTERVAL` / `--wallet-normal-transaction-history-retry-interval` | Delay before scheduling a new task revision after wallet-history fast retries are exhausted. Default 1 minute; environment parsing accepts 1 second through 24 hours. |
 | `ATHENA_TOKEN_AVE_INTERVAL` / `--ave-interval` | Ave collection interval. Default 5 minutes. |
 | `ATHENA_TOKEN_CONTRACT_SOURCE_INTERVAL` / `--contract-source-interval` | Contract-source collection interval. Default 10 minutes. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Shared telemetry listener. The Scheduler default is `127.0.0.1:8112`. |
@@ -95,12 +96,15 @@ The application-layer fallback TTL is also 24 hours when a Scheduler is built wi
 - Project promotion, research-state creation, schedule creation, related-wallet persistence, and initial-recipient persistence commit atomically.
 - Schedule locking and expected-revision checks prevent duplicate task revisions during concurrent scheduling.
 - Every collector, including Ave, follows the same research eligibility rules; collector-specific frequencies remain independently configured.
+- Wallet normal transaction history is one-time: completed wallets are not fetched again, and its schedule completes after all distinct related wallets are complete.
 
 ## Failure Recovery
 
 Failure anywhere in accepted-candidate promotion rolls back the entire transaction, so a candidate cannot become validated without its project research state and schedules. A later Validator loop can retry from durable candidate state.
 
 Scheduler initialization failure prevents the worker from becoming operational. During steady state, lifecycle maintenance, due-listing, or task-creation failure fails the current one-second loop and is retried by the periodic worker. Task creation and schedule advancement roll back together, so the next loop sees the previous due state rather than a partially advanced schedule.
+
+Wallet normal transaction history persists each wallet independently. A task retry skips durable wallet histories and resumes with only incomplete wallets. The collector renews its task lease while processing multiple wallets; after the four fast retries are exhausted, the schedule becomes eligible for a new task revision after its 1-minute retry interval.
 
 If a project crosses its deadline while the Scheduler is unavailable, the first successful maintenance run after recovery expires it before listing due schedules. Collector claim queries independently enforce research eligibility, which prevents terminal projects from claiming queued tasks even before their schedules are paused.
 

@@ -78,6 +78,8 @@ type Querier interface {
 	InsertProjectObservation(ctx context.Context, arg InsertProjectObservationParams) (ProjectObservation, error)
 	InsertProjectReportRevision(ctx context.Context, arg InsertProjectReportRevisionParams) (ProjectReportRevision, error)
 	InsertProjectSelection(ctx context.Context, arg InsertProjectSelectionParams) (ProjectSelection, error)
+	InsertProjectWalletNormalTransaction(ctx context.Context, arg InsertProjectWalletNormalTransactionParams) error
+	InsertProjectWalletNormalTransactionHistory(ctx context.Context, arg InsertProjectWalletNormalTransactionHistoryParams) (ProjectWalletNormalTransactionHistory, error)
 	IsContractCodeBlocked(ctx context.Context, codeHash []byte) (bool, error)
 	IsWalletBlocked(ctx context.Context, wallet []byte) (bool, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
@@ -88,6 +90,8 @@ type Querier interface {
 	ListCurrentProjectObservations(ctx context.Context, projectID int64) ([]ListCurrentProjectObservationsRow, error)
 	ListCurrentProjectReports(ctx context.Context, arg ListCurrentProjectReportsParams) ([]ListCurrentProjectReportsRow, error)
 	ListDueProjectDataCollectionSchedules(ctx context.Context, limit int32) ([]ProjectDataCollectionSchedule, error)
+	// One-time related-wallet normal transaction history persistence.
+	ListPendingProjectWalletNormalTransactionHistoryWallets(ctx context.Context, projectID int64) ([][]byte, error)
 	// Worker host diagnostics read model.
 	ListPipelineQueueMetrics(ctx context.Context) ([]ListPipelineQueueMetricsRow, error)
 	ListProjectCandidates(ctx context.Context, arg ListProjectCandidatesParams) ([]ProjectCandidate, error)
@@ -113,6 +117,7 @@ type Querier interface {
 	PauseTerminalProjectDataCollectionSchedules(ctx context.Context) (int64, error)
 	ReleaseProjectCandidateValidationClaims(ctx context.Context, validationLockToken pgtype.UUID) (int64, error)
 	RenewProjectCandidateValidationClaims(ctx context.Context, arg RenewProjectCandidateValidationClaimsParams) (int64, error)
+	RenewProjectDataCollectionTaskLease(ctx context.Context, arg RenewProjectDataCollectionTaskLeaseParams) (int64, error)
 	RetryProjectDataCollectionTask(ctx context.Context, arg RetryProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	RetryProjectReportBuildTask(ctx context.Context, arg RetryProjectReportBuildTaskParams) (ProjectReportBuildTask, error)
 	RetryProjectSelectionEvaluationTask(ctx context.Context, arg RetryProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error)

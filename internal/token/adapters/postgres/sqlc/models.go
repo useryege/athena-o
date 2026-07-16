@@ -219,6 +219,44 @@ type ProjectSelectionEvaluationTask struct {
 	UpdatedAt      pgtype.Timestamptz
 }
 
+type ProjectWalletNormalTransaction struct {
+	ProjectID         int64
+	Wallet            []byte
+	RankIndex         int32
+	BlockNumber       int64
+	BlockHash         []byte
+	BlockTimestamp    int64
+	TransactionHash   []byte
+	Nonce             int64
+	TransactionIndex  int64
+	FromAddress       []byte
+	ToAddress         []byte
+	Value             pgtype.Numeric
+	Gas               int64
+	GasPrice          pgtype.Numeric
+	Input             string
+	MethodID          []byte
+	FunctionName      string
+	ContractAddress   []byte
+	CumulativeGasUsed int64
+	ReceiptStatus     string
+	GasUsed           int64
+	Confirmations     int64
+	IsError           bool
+	CreatedAt         pgtype.Timestamptz
+}
+
+type ProjectWalletNormalTransactionHistory struct {
+	ProjectID                 int64
+	Wallet                    []byte
+	AnchorBlockNumber         int64
+	AnchorTransactionIndex    int64
+	RequestedTransactionCount int32
+	CollectedTransactionCount int32
+	FetchedAt                 pgtype.Timestamptz
+	CreatedAt                 pgtype.Timestamptz
+}
+
 type WalletBlocklist struct {
 	Wallet    []byte
 	Note      pgtype.Text
