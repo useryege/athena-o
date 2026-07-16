@@ -195,7 +195,7 @@ CREATE TABLE project_research_state (
   current_selection_id BIGINT,
   last_evaluated_report_revision BIGINT,
   last_evaluated_at TIMESTAMPTZ,
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '7 days'),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '1 day'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_research_state_project_id_uidx PRIMARY KEY (project_id),

@@ -16,6 +16,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Subsystem | Capability | Document |
 | --- | --- | --- |
 | Token Intelligence | EVM chain scanning and project candidate ingestion | [Token Scanner](token-intelligence/scanner.md) |
+| Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
 
 Use [the design document template](template.md) when adding a subsystem or an independently understandable capability.
 
@@ -35,4 +36,3 @@ Use [the design document template](template.md) when adding a subsystem or an in
 3. Inspect the implementation and link every primary entry point, boundary, state store, and operational endpoint.
 4. Add the document to the map above.
 5. Check every relative link and remove placeholders before completing the task.
-

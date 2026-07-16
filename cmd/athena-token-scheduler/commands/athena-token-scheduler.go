@@ -41,7 +41,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().DurationVar(&simulationInterval, "simulation-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_SIMULATION_INTERVAL", time.Minute, time.Second, time.Hour), "Simulation refresh interval")
 	command.Flags().DurationVar(&aveInterval, "ave-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_AVE_INTERVAL", 5*time.Minute, time.Second, 24*time.Hour), "Ave refresh interval")
 	command.Flags().DurationVar(&contractSourceInterval, "contract-source-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_CONTRACT_SOURCE_INTERVAL", 10*time.Minute, time.Second, 24*time.Hour), "Contract source refresh interval")
-	command.Flags().DurationVar(&researchTTL, "research-ttl", env.ParseDurationFromEnv("ATHENA_TOKEN_RESEARCH_TTL", 168*time.Hour, time.Hour, 30*24*time.Hour), "Research expiration duration")
+	command.Flags().DurationVar(&researchTTL, "research-ttl", env.ParseDurationFromEnv("ATHENA_TOKEN_RESEARCH_TTL", 24*time.Hour, time.Hour, 30*24*time.Hour), "Research expiration duration")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
 }

@@ -10,7 +10,7 @@ import (
 
 const (
 	maxBlocksPerScanBatch     = uint64(100)
-	initialScanLookbackBlocks = uint64(1_000_000)
+	initialScanLookbackBlocks = uint64(2_000_000)
 )
 
 type ScannerRepository interface {

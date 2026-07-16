@@ -51,7 +51,7 @@ The application layer depends only on the `ScannerRepository` and `BlockSource` 
 4. `PeriodicWorker.Start` calls `StartChain` for every job before starting the job goroutines. `StartChain` persists status `running` while retaining the cursor.
 5. Each job creates its poll ticker and calls `RunOnce` immediately. Later runs start on the next available tick. Because the ticker advances independently, a run that takes longer than its interval can be followed immediately by the next run.
 6. `RunOnce` reloads the checkpoint and returns without work when the chain is disabled or not `running`. It then obtains one latest-block snapshot for the entire run.
-7. For a fresh cursor of `0`, the scanner computes `start = max(1, latest - 1,000,000)`, persists cursor `start - 1`, and logs the initialized range. This persistence occurs before block scanning, so a restart resumes from the initialized range rather than falling back to block `1`. If `latest` is at most `1,000,000`, scanning starts at block `1`.
+7. For a fresh cursor of `0`, the scanner computes `start = max(1, latest - 2,000,000)`, persists cursor `start - 1`, and logs the initialized range. This persistence occurs before block scanning, so a restart resumes from the initialized range rather than falling back to block `1`. If `latest` is at most `2,000,000`, scanning starts at block `1`.
 8. The scanner processes the inclusive range from `cursor + 1` through the latest-block snapshot in batches of at most 100 blocks. The configured per-chain block-fetch concurrency limits simultaneous `BlockByNumber` calls inside a batch.
 9. Blocks are restored to block-number order after concurrent retrieval. Every transaction with a nil `To` address is treated as a contract creation. The sender and nonce derive the contract address, and the candidate is assigned `pending` status.
 10. Candidate upserts and the batch-end checkpoint update commit in one PostgreSQL transaction. The next batch starts only after that transaction succeeds.
@@ -87,14 +87,14 @@ Scanner configuration comes from command flags backed by environment variables:
 | `ATHENA_TOKEN_HEALTH_STALE_AFTER` / `--health-stale-after` | Maximum age of the last successful loop before readiness fails. The default is 2 minutes, constrained to 1 minute through 1 hour by environment parsing. |
 | `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared worker logging format and level. |
 
-The initial lookback of 1,000,000 blocks and maximum batch size of 100 blocks are application constants. They are not runtime configuration.
+The initial lookback of 2,000,000 blocks and maximum batch size of 100 blocks are application constants. They are not runtime configuration.
 
 ## Invariants
 
 - Cursor `0` means fresh data and triggers initial range initialization only after a latest block is available.
 - A positive cursor always resumes at exactly `cursor + 1`; it never recalculates the initial lookback.
 - The latest block is sampled once per `RunOnce`, so each run has a finite, stable upper bound.
-- The scan range and each batch are inclusive. At sufficient chain height, the initial range contains up to 1,000,001 blocks because it begins at `latest - 1,000,000`.
+- The scan range and each batch are inclusive. At sufficient chain height, the initial range contains up to 2,000,001 blocks because it begins at `latest - 2,000,000`.
 - A committed cursor means candidate persistence for every earlier scanned batch also committed.
 - Each chain has at most one job in a scanner process, and batches for that chain do not overlap.
 - Block-fetch concurrency is bounded per batch and per chain.

@@ -56,7 +56,7 @@ func NewScheduler(repository SchedulerRepository, options SchedulerOptions) *Sch
 		}
 	}
 	if options.TTL <= 0 {
-		options.TTL = 168 * time.Hour
+		options.TTL = 24 * time.Hour
 	}
 	if options.Limit <= 0 {
 		options.Limit = 100
