@@ -19,5 +19,5 @@ ethereum-api: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-ethe
 wallet: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-wallet ATHENA_WALLET_ENCRYPTION_KEY=${ATHENA_WALLET_ENCRYPTION_KEY:-athena-local-wallet-encryption-key} go run ./cmd/main.go --port ${ATHENA_WALLET_PORT:-8088}"
 redis: hack/start-redis-with-password.sh
 postgres: hack/start-postgres-with-password.sh
-# ui:    sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'
+ui:    sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'
 api-server: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server go run ./cmd/main.go --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
