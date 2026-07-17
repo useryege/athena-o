@@ -41,6 +41,7 @@ PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=.env.prod
 REMOTE_APP_DIR?=/root/athena
 REMOTE_USER?=root
+IP_GENERATOR_REMOTE_PATH?=/root/ip-generator
 PROD_LOG_SERVICE?=
 PROD_MIGRATE_MODULE?=all
 PROD_POSTGRES_VOLUME?=athena-prod-postgres-data
@@ -135,6 +136,10 @@ prod-reset-secrets:
 .PHONY: deploy-etherscan-gateway-vps
 deploy-etherscan-gateway-vps:
 	bash ./hack/deploy-etherscan-gateway.sh
+
+.PHONY: deploy-ip-generator
+deploy-ip-generator:
+	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) IP_GENERATOR_REMOTE_PATH=$(IP_GENERATOR_REMOTE_PATH) bash ./hack/deploy-ip-generator.sh
 
 .PHONY: auto-clicker
 auto-clicker:
