@@ -32,7 +32,7 @@ func NewCommand() *cobra.Command {
 		for _, chain := range registry.EnabledChains() {
 			chain := chain
 			jobs = append(jobs, workerhost.PeriodicJob{Name: fmt.Sprintf("chain-scanner-%d", chain.ID), Interval: chain.ScannerPollInterval, Scope: telemetry.Scope{Component: "chain_scanner", ChainID: chain.ID}, Initialize: func(ctx context.Context) error { return application.StartChain(ctx, chain.ID) }, Shutdown: func(ctx context.Context) error { return application.StopChain(ctx, chain.ID) }, RunOnce: func(ctx context.Context) (workerhost.JobResult, error) {
-				result, err := application.RunOnce(ctx, discoveryapp.ScanChainCommand{ChainID: chain.ID, BlockFetchConcurrency: chain.BlockFetchConcurrency})
+				result, err := application.RunOnce(ctx, discoveryapp.ScanChainCommand{ChainID: chain.ID, InitialLookbackBlocks: chain.ScannerInitialLookbackBlocks, BlockFetchConcurrency: chain.BlockFetchConcurrency})
 				return workerhost.JobResult{Processed: int(result.Blocks)}, err
 			}})
 		}

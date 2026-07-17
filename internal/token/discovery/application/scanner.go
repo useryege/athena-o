@@ -3,15 +3,13 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/discovery"
 )
 
-const (
-	maxBlocksPerScanBatch     = uint64(100)
-	initialScanLookbackBlocks = uint64(2_000_000)
-)
+const maxBlocksPerScanBatch = uint64(100)
 
 type ScannerRepository interface {
 	GetChainIngestCheckpoint(context.Context, int64) (*discovery.ChainIngestCheckpoint, error)
@@ -45,6 +43,7 @@ type BlockSource interface {
 
 type ScanChainCommand struct {
 	ChainID               int64
+	InitialLookbackBlocks uint64
 	BlockFetchConcurrency int
 }
 
@@ -82,7 +81,7 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		return ScanResult{}, err
 	}
 	if checkpoint.CursorBlockNumber == 0 {
-		start := initialScanStartBlock(latest)
+		start := initialScanStartBlock(latest, command.InitialLookbackBlocks)
 		checkpoint.CursorBlockNumber = start - 1
 		checkpoint, err = scanner.repository.UpsertChainIngestCheckpoint(ctx, *checkpoint)
 		if err != nil {
@@ -91,7 +90,7 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		log.WithFields(log.Fields{
 			"chain_id":        command.ChainID,
 			"latest_block":    latest,
-			"lookback_blocks": initialScanLookbackBlocks,
+			"lookback_blocks": command.InitialLookbackBlocks,
 			"start_block":     start,
 		}).Info("initialized token chain scanner checkpoint")
 	}
@@ -115,6 +114,7 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		if batchEnd > latest {
 			batchEnd = latest
 		}
+		batchStartedAt := time.Now()
 		candidates, err := scanner.blocks.DiscoverProjectCandidates(ctx, command.ChainID, next, batchEnd, command.BlockFetchConcurrency)
 		if err != nil {
 			return result, err
@@ -122,17 +122,26 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		if _, err = scanner.repository.IngestProjectCandidateBatch(ctx, discovery.ChainIngestCheckpoint{ChainID: command.ChainID, CursorBlockNumber: batchEnd, Status: discovery.ChainIngestStatusRunning}, candidates); err != nil {
 			return result, err
 		}
+		blockCount := batchEnd - next + 1
+		log.WithFields(log.Fields{
+			"block_count":     blockCount,
+			"candidate_count": len(candidates),
+			"chain_id":        command.ChainID,
+			"duration_ms":     time.Since(batchStartedAt).Milliseconds(),
+			"end_block":       batchEnd,
+			"start_block":     next,
+		}).Info("token scanner batch completed")
 		result.Batches++
-		result.Blocks += batchEnd - next + 1
+		result.Blocks += blockCount
 		result.Candidates += len(candidates)
 		next = batchEnd + 1
 	}
 	return result, nil
 }
 
-func initialScanStartBlock(latest uint64) uint64 {
-	if latest > initialScanLookbackBlocks {
-		return latest - initialScanLookbackBlocks
+func initialScanStartBlock(latest uint64, lookbackBlocks uint64) uint64 {
+	if latest > lookbackBlocks {
+		return latest - lookbackBlocks
 	}
 	return 1
 }

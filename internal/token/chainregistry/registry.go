@@ -33,25 +33,27 @@ func (d *duration) UnmarshalJSON(data []byte) error {
 }
 
 type chainJSON struct {
-	ID                    int64    `json:"id"`
-	Name                  string   `json:"name"`
-	Enabled               bool     `json:"enabled"`
-	NodeWSURLs            []string `json:"nodeWsUrls"`
-	UseProxy              bool     `json:"useProxy"`
-	AthenaContract        string   `json:"athenaContract"`
-	ScannerPollInterval   duration `json:"scannerPollInterval"`
-	BlockFetchConcurrency int      `json:"blockFetchConcurrency"`
+	ID                           int64    `json:"id"`
+	Name                         string   `json:"name"`
+	Enabled                      bool     `json:"enabled"`
+	NodeWSURLs                   []string `json:"nodeWsUrls"`
+	UseProxy                     bool     `json:"useProxy"`
+	AthenaContract               string   `json:"athenaContract"`
+	ScannerInitialLookbackBlocks uint64   `json:"scannerInitialLookbackBlocks"`
+	ScannerPollInterval          duration `json:"scannerPollInterval"`
+	BlockFetchConcurrency        int      `json:"blockFetchConcurrency"`
 }
 
 type Chain struct {
-	ID                    int64
-	Name                  string
-	Enabled               bool
-	NodeWSURLs            []string
-	UseProxy              bool
-	AthenaContract        string
-	ScannerPollInterval   time.Duration
-	BlockFetchConcurrency int
+	ID                           int64
+	Name                         string
+	Enabled                      bool
+	NodeWSURLs                   []string
+	UseProxy                     bool
+	AthenaContract               string
+	ScannerInitialLookbackBlocks uint64
+	ScannerPollInterval          time.Duration
+	BlockFetchConcurrency        int
 }
 
 type Registry struct {
@@ -89,10 +91,13 @@ func Parse(raw string) (*Registry, error) {
 		if value.ScannerPollInterval.Duration <= 0 {
 			return nil, fmt.Errorf("%s[%d].scannerPollInterval must be positive", EnvironmentVariable, index)
 		}
+		if value.ScannerInitialLookbackBlocks == 0 {
+			return nil, fmt.Errorf("%s[%d].scannerInitialLookbackBlocks must be positive", EnvironmentVariable, index)
+		}
 		if value.BlockFetchConcurrency <= 0 {
 			return nil, fmt.Errorf("%s[%d].blockFetchConcurrency must be positive", EnvironmentVariable, index)
 		}
-		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, UseProxy: value.UseProxy, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerPollInterval: value.ScannerPollInterval.Duration, BlockFetchConcurrency: value.BlockFetchConcurrency}
+		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, UseProxy: value.UseProxy, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerInitialLookbackBlocks: value.ScannerInitialLookbackBlocks, ScannerPollInterval: value.ScannerPollInterval.Duration, BlockFetchConcurrency: value.BlockFetchConcurrency}
 		registry.chains = append(registry.chains, chain)
 		registry.byID[chain.ID] = chain
 	}

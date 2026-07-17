@@ -51,7 +51,7 @@ The application layer depends only on the `ScannerRepository` and `BlockSource` 
 4. `PeriodicWorker.Start` calls `StartChain` for every job before starting the job goroutines. `StartChain` persists status `running` while retaining the cursor.
 5. Each job creates its poll ticker and calls `RunOnce` immediately. Later runs start on the next available tick. Because the ticker advances independently, a run that takes longer than its interval can be followed immediately by the next run.
 6. `RunOnce` reloads the checkpoint and returns without work when the chain is disabled or not `running`. It then obtains one latest-block snapshot for the entire run.
-7. For a fresh cursor of `0`, the scanner computes `start = max(1, latest - 2,000,000)`, persists cursor `start - 1`, and logs the initialized range. This persistence occurs before block scanning, so a restart resumes from the initialized range rather than falling back to block `1`. If `latest` is at most `2,000,000`, scanning starts at block `1`.
+7. For a fresh cursor of `0`, the scanner computes `start = max(1, latest - scannerInitialLookbackBlocks)` from the current chain configuration, persists cursor `start - 1`, and logs the initialized range. This persistence occurs before block scanning, so a restart resumes from the initialized range rather than recalculating from block `1`. If `latest` is at most the configured lookback, scanning starts at block `1`.
 8. The scanner processes the inclusive range from `cursor + 1` through the latest-block snapshot in batches of at most 100 blocks. The configured per-chain block-fetch concurrency limits simultaneous `BlockByNumber` calls inside a batch.
 9. Blocks are restored to block-number order after concurrent retrieval. Every transaction with a nil `To` address is treated as a contract creation. The sender and nonce derive the contract address, and the candidate is assigned `pending` status.
 10. Candidate upserts and the batch-end checkpoint update commit in one PostgreSQL transaction. The next batch starts only after that transaction succeeds.
@@ -80,21 +80,21 @@ Scanner configuration comes from command flags backed by environment variables:
 
 | Setting | Behavior |
 | --- | --- |
-| `ATHENA_TOKEN_CHAINS_JSON` / `--chains-json` | Required chain list. Each entry supplies `id`, `name`, `enabled`, `nodeWsUrls`, `useProxy`, `athenaContract`, `scannerPollInterval`, and `blockFetchConcurrency`. Chain IDs must be positive and unique; poll interval and concurrency must be positive. |
+| `ATHENA_TOKEN_CHAINS_JSON` / `--chains-json` | Required chain list. Each entry supplies `id`, `name`, `enabled`, `nodeWsUrls`, `useProxy`, `athenaContract`, `scannerInitialLookbackBlocks`, `scannerPollInterval`, and `blockFetchConcurrency`. Chain IDs must be positive and unique; the initial lookback, poll interval, and concurrency must be positive. |
 | `ATHENA_TOKEN_POSTGRES_DSN` | Token database connection used for migrations, chain synchronization, candidates, checkpoints, readiness, and diagnostics. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls whether embedded Token migrations run during connection setup. The default is `true`. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Health, readiness, and metrics listener. The scanner default is `127.0.0.1:8110`. |
 | `ATHENA_TOKEN_HEALTH_STALE_AFTER` / `--health-stale-after` | Maximum age of the last successful loop before readiness fails. The default is 2 minutes, constrained to 1 minute through 1 hour by environment parsing. |
 | `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared worker logging format and level. |
 
-The initial lookback of 2,000,000 blocks and maximum batch size of 100 blocks are application constants. They are not runtime configuration.
+The initial lookback is configured independently for each chain. The maintained Ethereum and BSC configurations use 70,000 and 2,000,000 blocks respectively. The maximum batch size of 100 blocks remains an application constant.
 
 ## Invariants
 
 - Cursor `0` means fresh data and triggers initial range initialization only after a latest block is available.
 - A positive cursor always resumes at exactly `cursor + 1`; it never recalculates the initial lookback.
 - The latest block is sampled once per `RunOnce`, so each run has a finite, stable upper bound.
-- The scan range and each batch are inclusive. At sufficient chain height, the initial range contains up to 2,000,001 blocks because it begins at `latest - 2,000,000`.
+- The scan range and each batch are inclusive. At sufficient chain height, the initial range contains up to `scannerInitialLookbackBlocks + 1` blocks because it begins at `latest - scannerInitialLookbackBlocks`.
 - A committed cursor means candidate persistence for every earlier scanned batch also committed.
 - Each chain has at most one job in a scanner process, and batches for that chain do not overlap.
 - Block-fetch concurrency is bounded per batch and per chain.
@@ -118,7 +118,7 @@ The worker listens on the configured health address:
 - `GET /readyz` checks PostgreSQL and every registered chain-scanner scope. Readiness is false until every enabled chain has completed at least one successful `RunOnce`, when a last success is stale, or when PostgreSQL cannot be pinged. A scanner can therefore be live but not ready during its initial catch-up.
 - `GET /metrics` exposes per-chain loop success and failure counters, last-success and last-error timestamps, consecutive failure counts, and shared Token pipeline queue diagnostics.
 
-Fresh initialization emits `initialized token chain scanner checkpoint` at info level with `chain_id`, `latest_block`, `start_block`, and `lookback_blocks`. Failed loops emit `token periodic job failed` with the job name and error. Successful loops with processed blocks emit a debug log with `job` and `processed`.
+Fresh initialization emits `initialized token chain scanner checkpoint` at info level with `chain_id`, `latest_block`, `start_block`, and `lookback_blocks`. Every successfully committed scan batch emits `token scanner batch completed` at info level with `chain_id`, the inclusive `start_block` and `end_block`, `block_count`, `candidate_count`, and `duration_ms`. The duration covers block retrieval, candidate extraction, and the candidate/checkpoint transaction; failed or cancelled batches do not emit this completion log. Failed loops emit `token periodic job failed` with the job name and error. Successful loops with processed blocks emit a debug log with `job` and `processed`.
 
 ## Change Checklist
 
