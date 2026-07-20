@@ -25,7 +25,7 @@ E2E_LIVE_PACKAGES ?= ./e2e/tests/live/...
 VERSION=$(shell cat ${CURRENT_DIR}/VERSION)
 BUILD_DATE:=$(if $(BUILD_DATE),$(BUILD_DATE),$(shell date -u +'%Y-%m-%dT%H:%M:%SZ'))
 GIT_COMMIT:=$(if $(GIT_COMMIT),$(GIT_COMMIT),$(shell git rev-parse HEAD))
-GIT_TAG:=$(if $(GIT_TAG),$(GIT_TAG),$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi))
+GIT_TAG:=$(if $(GIT_TAG),$(GIT_TAG),$(shell if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi))
 GIT_TREE_STATE:=$(if $(GIT_TREE_STATE),$(GIT_TREE_STATE),$(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi))
 
 # Docker command to use
@@ -46,6 +46,11 @@ PROD_LOG_SERVICE?=
 PROD_MIGRATE_MODULE?=all
 PROD_POSTGRES_VOLUME?=athena-prod-postgres-data
 PROD_COMPOSE_LOCAL=PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE)
+BSC_INDEXER_IMAGE?=athena-bsc-transaction-indexer:local
+BSC_INDEXER_DOCKERFILE?=deploy/bsc-transaction-indexer/Dockerfile
+BSC_INDEXER_COMPOSE_FILE?=deploy/bsc-transaction-indexer/docker-compose.yml
+BSC_INDEXER_ENV_FILE?=.env.bsc-transaction-indexer
+BSC_INDEXER_REMOTE_APP_DIR?=/opt/athena-bsc-transaction-indexer
 # perform static compilation
 DEFAULT_STATIC_BUILD:=true
 ifeq ($(IS_DARWIN),true)
@@ -137,6 +142,10 @@ prod-reset-secrets:
 deploy-etherscan-gateway-vps:
 	bash ./hack/deploy-etherscan-gateway.sh
 
+.PHONY: deploy-bsc-transaction-indexer-vps
+deploy-bsc-transaction-indexer-vps:
+	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) TARGET_ARCH=$(TARGET_ARCH) BSC_INDEXER_IMAGE=$(BSC_INDEXER_IMAGE) BSC_INDEXER_DOCKERFILE=$(BSC_INDEXER_DOCKERFILE) BSC_INDEXER_COMPOSE_FILE=$(BSC_INDEXER_COMPOSE_FILE) BSC_INDEXER_ENV_FILE=$(BSC_INDEXER_ENV_FILE) BSC_INDEXER_REMOTE_APP_DIR=$(BSC_INDEXER_REMOTE_APP_DIR) bash ./hack/deploy-bsc-transaction-indexer.sh
+
 .PHONY: deploy-ip-generator
 deploy-ip-generator:
 	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) IP_GENERATOR_REMOTE_PATH=$(IP_GENERATOR_REMOTE_PATH) bash ./hack/deploy-ip-generator.sh
@@ -171,6 +180,15 @@ athena-all: clean-debug
 .PHONY: athena-etherscan-gateway
 athena-etherscan-gateway: clean-debug
 	CGO_ENABLED=${CGO_FLAG} GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -trimpath -v -ldflags '${LDFLAGS} -s -w' -o ${DIST_DIR}/athena-etherscan-gateway ./cmd/athena-etherscan-gateway
+
+.PHONY: athena-bsc-transaction-indexer
+athena-bsc-transaction-indexer: clean-debug
+	@mkdir -p ${DIST_DIR}
+	CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -trimpath -v -ldflags '${LDFLAGS} -s -w' -o ${DIST_DIR}/athena-bsc-transaction-indexer ./cmd/athena-bsc-transaction-indexer
+
+.PHONY: bsc-transaction-indexer-build-image
+bsc-transaction-indexer-build-image:
+	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -f $(BSC_INDEXER_DOCKERFILE) -t $(BSC_INDEXER_IMAGE) --build-arg GIT_COMMIT=$(GIT_COMMIT) --build-arg GIT_TREE_STATE=$(GIT_TREE_STATE) --build-arg GIT_TAG=$(GIT_TAG) --build-arg BUILD_DATE=$(BUILD_DATE) .
 
 # Run goreman start with exclude option , provide exclude env variable with list of services
 .PHONY: run

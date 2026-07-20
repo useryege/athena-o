@@ -84,7 +84,7 @@ RUN GIT_COMMIT=$GIT_COMMIT \
 ####################################################################################################
 FROM athena-base
 ENTRYPOINT ["/usr/bin/tini", "--"]
-COPY --from=athena-build /go/src/github.com/useryege/athena/dist/athena* /usr/local/bin/
+COPY --from=athena-build /go/src/github.com/useryege/athena/dist/athena /usr/local/bin/athena
 
 USER root
 RUN ln -s /usr/local/bin/athena /usr/local/bin/athena-server
