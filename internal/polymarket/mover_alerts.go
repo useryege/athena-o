@@ -361,6 +361,13 @@ func polymarketEventMarketLink(eventSlug, marketSlug string) string {
 	return polymarketEventBaseURL + url.PathEscape(eventSlug) + "/" + url.PathEscape(marketSlug)
 }
 
+func polymarketEventMarketOrMarketLink(eventSlug, marketSlug string) string {
+	if link := polymarketEventMarketLink(eventSlug, marketSlug); link != "" {
+		return link
+	}
+	return polymarketMarketLink(marketSlug)
+}
+
 func polymarketMarketLink(marketSlug string) string {
 	marketSlug = strings.TrimSpace(marketSlug)
 	if marketSlug == "" {

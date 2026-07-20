@@ -370,7 +370,7 @@ SELECT
   COALESCE(market.question, '')::text AS question,
   COALESCE(matched_labels.labels, '')::text AS matched_labels
 FROM polymarket_managed_oo_dispute_price_log AS log
-LEFT JOIN polymarket_managed_oo_market AS market
+JOIN polymarket_managed_oo_market AS market
   ON market.market_id = log.market_id
 LEFT JOIN matched_labels
   ON matched_labels.market_id = log.market_id
@@ -378,6 +378,7 @@ LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
   ON state.tx_hash = log.tx_hash
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
+  AND btrim(market.slug) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT $1
 `
@@ -546,35 +547,54 @@ func (q *Queries) ListManagedOODisputePriceLogs(ctx context.Context, arg ListMan
 }
 
 const listManagedOOMarketIDsNeedingRefresh = `-- name: ListManagedOOMarketIDsNeedingRefresh :many
-WITH event_market_ids AS (
-  SELECT market_id
-  FROM polymarket_managed_oo_propose_price_log
-  UNION
-  SELECT market_id
-  FROM polymarket_managed_oo_dispute_price_log
+WITH market_activity AS (
+  SELECT
+    activity.market_id,
+    max(activity.block_number) AS latest_block_number
+  FROM (
+    SELECT market_id, block_number
+    FROM polymarket_managed_oo_propose_price_log
+    UNION ALL
+    SELECT market_id, block_number
+    FROM polymarket_managed_oo_dispute_price_log
+  ) AS activity
+  WHERE activity.market_id <> ''
+    AND activity.market_id ~ '^[0-9]+$'
+  GROUP BY activity.market_id
+), pending_disputed_markets AS (
+  SELECT DISTINCT log.market_id
+  FROM polymarket_managed_oo_dispute_price_log AS log
+  LEFT JOIN polymarket_managed_oo_dispute_price_alert_state AS state
+    ON state.tx_hash = log.tx_hash
+    AND state.log_index = log.log_index
+  WHERE state.tx_hash IS NULL
+    AND log.market_id <> ''
+    AND log.market_id ~ '^[0-9]+$'
 )
-SELECT DISTINCT event_market_ids.market_id
-FROM event_market_ids
+SELECT market_activity.market_id
+FROM market_activity
 LEFT JOIN polymarket_managed_oo_market AS market
-  ON market.market_id = event_market_ids.market_id
-WHERE event_market_ids.market_id <> ''
-  AND event_market_ids.market_id ~ '^[0-9]+$'
-  AND (
-    market.market_id IS NULL
-    OR (
-      market.fetched_at <= $1
-      AND (
-        market.fetch_status <> 'ok'
-        OR btrim(market.slug) = ''
-        OR COALESCE(
-          NULLIF(btrim(market.event_slug), ''),
-          NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
-          ''
-        ) = ''
-      )
+  ON market.market_id = market_activity.market_id
+LEFT JOIN pending_disputed_markets
+  ON pending_disputed_markets.market_id = market_activity.market_id
+WHERE market.market_id IS NULL
+  OR (
+    market.fetched_at <= $1
+    AND (
+      market.fetch_status <> 'ok'
+      OR btrim(market.slug) = ''
     )
   )
-ORDER BY event_market_ids.market_id
+ORDER BY
+  CASE
+    WHEN pending_disputed_markets.market_id IS NOT NULL AND market.market_id IS NULL THEN 0
+    WHEN pending_disputed_markets.market_id IS NOT NULL THEN 1
+    WHEN market.market_id IS NULL THEN 2
+    ELSE 3
+  END,
+  market_activity.latest_block_number DESC,
+  market.fetched_at ASC NULLS FIRST,
+  market_activity.market_id
 LIMIT $2
 `
 
@@ -637,11 +657,6 @@ LEFT JOIN polymarket_managed_oo_propose_price_alert_state AS state
   AND state.log_index = log.log_index
 WHERE state.tx_hash IS NULL
   AND btrim(market.slug) <> ''
-  AND COALESCE(
-    NULLIF(btrim(market.event_slug), ''),
-    NULLIF(btrim(market.raw #>> '{events,0,slug}'), ''),
-    ''
-  ) <> ''
 ORDER BY log.block_number ASC, log.log_index ASC
 LIMIT $1
 `

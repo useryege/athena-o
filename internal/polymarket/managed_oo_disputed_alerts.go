@@ -120,17 +120,10 @@ func (s *Service) renderManagedOODisputePriceAlertNotification(candidate polymar
 		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:        fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),
 		Body:         strings.Join(bodyLines, "\n"),
-		Link:         s.managedOODisputePriceAlertLink(candidate),
+		Link:         s.polymarketNotificationLink(polymarketEventMarketOrMarketLink(candidate.EventSlug, candidate.MarketSlug)),
 		TelegramChat: notificationapiclient.TelegramChat_TELEGRAM_CHAT_PROD,
 		TopicLabel:   managedOODisputedAlertTopic,
 	}
-}
-
-func (s *Service) managedOODisputePriceAlertLink(candidate polymarketstore.ManagedOODisputePriceAlertCandidate) string {
-	if link := polymarketEventMarketLink(candidate.EventSlug, candidate.MarketSlug); link != "" {
-		return s.polymarketNotificationLink(link)
-	}
-	return s.polymarketNotificationLink(polymarketMarketLink(candidate.MarketSlug))
 }
 
 func managedOOAncillaryTitle(value string) string {

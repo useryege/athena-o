@@ -94,7 +94,7 @@ func (s *Service) ListPolymarketUMAProposals(ctx context.Context, req *apiclient
 		return nil, status.Errorf(codes.Internal, "list polymarket uma proposals: %v", err)
 	}
 	for _, item := range items {
-		item.PolymarketURL = polymarketEventMarketLink(item.EventSlug, item.MarketSlug)
+		item.PolymarketURL = polymarketEventMarketOrMarketLink(item.EventSlug, item.MarketSlug)
 	}
 	return &apiclient.ListPolymarketUMAProposalsResponse{
 		Items: items, Total: total, Page: int32(page), PageSize: int32(pageSize),
@@ -116,7 +116,7 @@ func (s *Service) ListPolymarketUMADisputes(ctx context.Context, req *apiclient.
 		return nil, status.Errorf(codes.Internal, "list polymarket uma disputes: %v", err)
 	}
 	for _, item := range items {
-		item.PolymarketURL = polymarketEventMarketLink(item.EventSlug, item.MarketSlug)
+		item.PolymarketURL = polymarketEventMarketOrMarketLink(item.EventSlug, item.MarketSlug)
 	}
 	return &apiclient.ListPolymarketUMADisputesResponse{
 		Items: items, Total: total, Page: int32(page), PageSize: int32(pageSize),

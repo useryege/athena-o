@@ -15,6 +15,7 @@ The executable code remains the source of truth. These documents provide the mai
 
 | Subsystem | Capability | Document |
 | --- | --- | --- |
+| Polymarket | Managed Optimistic Oracle log ingestion, market enrichment, and alerts | [Managed OO Alerts](polymarket/managed-oo-alerts.md) |
 | Token Intelligence | EVM chain scanning and project candidate ingestion | [Token Scanner](token-intelligence/scanner.md) |
 | Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
 | Token Intelligence | One-time related-wallet normal transaction history | [Wallet Normal Transaction History](token-intelligence/wallet-normal-transaction-history.md) |
