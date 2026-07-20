@@ -146,6 +146,10 @@ deploy-etherscan-gateway-vps:
 deploy-bsc-transaction-indexer-vps:
 	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) TARGET_ARCH=$(TARGET_ARCH) BSC_INDEXER_IMAGE=$(BSC_INDEXER_IMAGE) BSC_INDEXER_DOCKERFILE=$(BSC_INDEXER_DOCKERFILE) BSC_INDEXER_COMPOSE_FILE=$(BSC_INDEXER_COMPOSE_FILE) BSC_INDEXER_ENV_FILE=$(BSC_INDEXER_ENV_FILE) BSC_INDEXER_REMOTE_APP_DIR=$(BSC_INDEXER_REMOTE_APP_DIR) bash ./hack/deploy-bsc-transaction-indexer.sh
 
+.PHONY: install-docker-vps
+install-docker-vps:
+	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) bash ./hack/install-docker-vps.sh
+
 .PHONY: deploy-ip-generator
 deploy-ip-generator:
 	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) IP_GENERATOR_REMOTE_PATH=$(IP_GENERATOR_REMOTE_PATH) bash ./hack/deploy-ip-generator.sh

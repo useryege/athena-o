@@ -18,7 +18,17 @@
 
 远端不需要安装 Go、Git、PostgreSQL 客户端、ATHENA 源代码或私有镜像仓库。索引器镜像由本地构建，然后通过 `docker save | ssh docker load` 传输。
 
-Docker Engine 和 Compose 插件建议按照官方说明安装：
+ATHENA 提供面向 Ubuntu root 服务器的一键安装命令：
+
+```bash
+make install-docker-vps REMOTE_HOST=<目标服务器IP>
+```
+
+该命令通过 SSH 使用 Docker 官方 APT 仓库安装 Engine、CLI、Buildx 和 Compose v2。Docker daemon、Compose 和 `up --wait` 已完整可用时，命令直接成功退出，不重复安装或升级。发现残缺 Docker 安装或冲突包时，命令会停止并报告问题，不会自动卸载或覆盖远端组件。
+
+安装脚本要求目标系统为 Ubuntu，并要求 `REMOTE_USER`（默认 `root`）在远端的 UID 为 `0`；不支持交互式 `sudo`。它不会创建 Swap、修改防火墙或运行 `hello-world`。
+
+也可以按照 Docker 官方说明手动安装：
 
 - [Install Docker Engine](https://docs.docker.com/engine/install/)
 - [Install the Docker Compose plugin](https://docs.docker.com/compose/install/linux/)

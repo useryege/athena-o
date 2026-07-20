@@ -12,6 +12,7 @@ BEP-20 transfers, internal transactions, execution traces, swaps, outbound histo
 | --- | --- | --- |
 | Standalone process | [cmd/athena-bsc-transaction-indexer](../../../cmd/athena-bsc-transaction-indexer) | `main`, `commands.NewCommand` |
 | Deployment bundle | [deploy/bsc-transaction-indexer](../../../deploy/bsc-transaction-indexer) | dedicated `Dockerfile`, Compose services `postgres` and `indexer` |
+| Remote Docker bootstrap | [hack/install-docker-vps.sh](../../../hack/install-docker-vps.sh) | idempotent Ubuntu Docker Engine and Compose installation |
 | Remote deployment | [hack/deploy-bsc-transaction-indexer.sh](../../../hack/deploy-bsc-transaction-indexer.sh) | image build, SSH transfer, idempotent Compose update |
 | Finalized block ingestion | [internal/bscinbound/scanner.go](../../../internal/bscinbound/scanner.go) | `Scanner.Run`, `Scanner.runOnce` |
 | BSC node access | [internal/bscinbound/node.go](../../../internal/bscinbound/node.go) | `DialNode`, `Node.FinalizedHeader` |
@@ -36,6 +37,8 @@ flowchart LR
 The scanner and gRPC service run in one process and share one PostgreSQL connection pool. The scanner is the only writer. PostgreSQL owns both the qualifying transaction facts and the durable scan cursor. The gRPC service performs direct indexed reads and does not call the BSC node.
 
 The process has its own executable, minimal runtime image, Compose project, PostgreSQL 18 container, and persistent Docker volume. It is absent from the main ATHENA executable dispatch, Procfile, production Compose, and PostgreSQL bootstrap. The deployment bundle therefore runs on an independent server without installing or restarting the main ATHENA stack.
+
+The Docker bootstrap script prepares a fresh Ubuntu server through a direct root SSH session using Docker's official APT repository. It is idempotent only for a fully healthy Engine and Compose installation; incomplete installations and conflicting distribution packages fail without automatic removal or replacement. It does not manage Swap, host firewalls, or cloud security groups.
 
 The deployment script builds the dedicated image locally, streams it over SSH, installs the Compose and environment files, and recreates only this Compose project. Repeated deployments preserve the named PostgreSQL volume. A remote ATHENA component can connect to the exposed gRPC endpoint, but selecting and integrating that caller is outside this capability.
 

@@ -172,10 +172,10 @@ request, upstream, or gateway transport errors.
 
 Adding the fifth gateway raised the 6-round success rate from 93.65% to 95.24%.
 The 5-gateway run produced `45` keys at `6/6` success and `18` keys at `5/6`
-success. Per-gateway success rates were balanced: `47.245.183.140:6776` reached
-`74/76`, `47.245.166.57:6776` reached `71/76`, `47.245.161.139:6776` reached
-`71/76`, `47.245.181.189:6776` reached `70/75`, and `47.254.154.128:6776`
-reached `74/75`. All remaining failures were Etherscan `rate_limit` responses.
+success. Per-gateway success rates for the four retained nodes were balanced:
+`47.245.166.57:6776` reached `71/76`, `47.245.161.139:6776` reached `71/76`,
+`47.245.181.189:6776` reached `70/75`, and `47.254.154.128:6776` reached
+`74/75`. All remaining failures were Etherscan `rate_limit` responses.
 
 ## Structure
 
