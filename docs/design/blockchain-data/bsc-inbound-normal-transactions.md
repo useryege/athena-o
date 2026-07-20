@@ -2,7 +2,7 @@
 
 ## Scope
 
-This service indexes successful finalized BNB Smart Chain Mainnet transactions that directly transfer more than `10000000000000000` wei to a non-null recipient. It owns the initial 30-day backfill, finalized-head following, receipt validation, atomic PostgreSQL persistence, address-first keyset pagination, gRPC serving, and scanner health reporting.
+This service indexes successful finalized BNB Smart Chain Mainnet transactions that directly transfer more than `10000000000000000` wei with empty calldata to a non-null recipient. It owns the initial 30-day backfill, finalized-head following, receipt validation, atomic PostgreSQL persistence, address-first keyset pagination, gRPC serving, and scanner health reporting.
 
 BEP-20 transfers, internal transactions, execution traces, swaps, outbound history, multi-chain indexing, and integration with the Token Intelligence wallet-history collector are outside this capability.
 
@@ -49,7 +49,7 @@ The deployment script builds the dedicated image locally, streams it over SSH, i
 3. When no checkpoint exists, the scanner reads the finalized header, subtracts 30 days from its timestamp, and binary-searches block headers for the first block at or after that timestamp. The preceding header becomes the initial committed cursor.
 4. Every scanner iteration samples one finalized head and selects up to the configured batch size after the committed cursor.
 5. Blocks are fetched concurrently and restored to block-number order. The first parent hash must match the committed cursor, and every later parent must match the preceding block.
-6. Transactions with a null recipient or a value at or below `10000000000000000` wei are discarded before receipt retrieval. Sender recovery and receipt retrieval occur only for remaining candidates.
+6. Transactions with a null recipient, a value at or below `10000000000000000` wei, or non-empty calldata are discarded before sender recovery and receipt retrieval. Sender recovery and receipt retrieval occur only for remaining candidates.
 7. Only receipts with successful status and the expected block position produce persisted transactions.
 8. Transaction inserts and the conditional cursor advance commit in one PostgreSQL transaction. A successful iteration immediately starts the next batch while behind; a caught-up or failed iteration waits for the poll interval.
 9. gRPC reads are ordered by block number and transaction index descending. The opaque page token binds the address and the last returned block position.
@@ -82,8 +82,9 @@ The standalone Compose publishes gRPC on `BSC_INDEXER_GRPC_BIND_ADDRESS:BSC_INDE
 
 ## Invariants
 
-- Every stored transaction is finalized, successful, has a recipient, and transfers strictly more than `0.01 BNB` at the top transaction level.
-- Token logs, traces, internal transfers, failed transactions, and contract creations are never persisted.
+- Every stored transaction is finalized, successful, has a recipient, has empty calldata, and transfers strictly more than `0.01 BNB` at the top transaction level.
+- Token logs, traces, internal transfers, failed transactions, contract creations, and contract calls with non-empty calldata are never persisted.
+- Empty calldata is the operational wallet-transfer heuristic. The scanner does not call `eth_getCode`, so a direct BNB transfer to a contract receive or fallback handler can still be persisted.
 - The cursor advances only in the transaction that makes the entire preceding batch durable.
 - The block chain from the committed cursor through every new batch is hash-contiguous.
 - API results are newest first and scoped to one exact recipient address.
@@ -110,7 +111,7 @@ The Compose healthcheck uses `/healthz`, so deployment can complete while the in
 ## Change Checklist
 
 - [ ] Recheck finalized-head lookup, timestamp binary search, and chain-ID validation.
-- [ ] Recheck value prefiltering, sender recovery, receipt success, and position validation.
+- [ ] Recheck recipient, value, empty-calldata prefiltering, sender recovery, receipt success, and position validation.
 - [ ] Recheck hash continuity and the transaction/checkpoint commit boundary.
 - [ ] Recheck address-first ordering, opaque token validation, and page-size limits.
 - [ ] Recheck gRPC, health, readiness, metrics, and graceful shutdown behavior.

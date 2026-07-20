@@ -247,7 +247,7 @@ func (s *Scanner) collectTransactions(ctx context.Context, blocks []*types.Block
 	candidates := make([]receiptCandidate, 0)
 	for _, block := range blocks {
 		for transactionIndex, transaction := range block.Transactions() {
-			if transaction == nil || transaction.To() == nil || transaction.Value().Cmp(minimumInboundValueWei) <= 0 {
+			if transaction == nil || transaction.To() == nil || transaction.Value().Cmp(minimumInboundValueWei) <= 0 || len(transaction.Data()) != 0 {
 				continue
 			}
 			from, err := types.Sender(signer, transaction)
