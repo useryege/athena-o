@@ -23,8 +23,6 @@ const (
 	envEtherscanGatewayMultiKeyStaggeredProbe = "ATHENA_E2E_ETHERSCAN_GATEWAY_MULTI_KEY_STAGGERED_PROBE"
 	envEtherscanMultiKeyProbe                 = "ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE"
 	envEtherscanMultiKeyStaggeredProbe        = "ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE"
-	envEtherscanProxyMultiKeyStaggeredProbe   = "ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE"
-	envEtherscanProxyURLs                     = "ATHENA_E2E_ETHERSCAN_PROXY_URLS"
 	envEtherscanRateLimitProbe                = "ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE"
 	envE2ETimeout                             = "ATHENA_E2E_TIMEOUT"
 	envE2ELive                                = "E2E_LIVE"

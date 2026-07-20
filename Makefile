@@ -263,37 +263,6 @@ e2e-live-etherscan-multi-key-staggered-rate-limit:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe -v
 
-.PHONY: e2e-live-etherscan-proxy-multi-key-staggered-rate-limit
-e2e-live-etherscan-proxy-multi-key-staggered-rate-limit:
-	@env_file="$(E2E_ENV_FILE)"; \
-	if [ ! -f "$$env_file" ]; then \
-		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without an env file.' >&2; \
-		printf '%s\n' 'Run: E2E_ENV_FILE=.env E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
-		exit 1; \
-	fi
-	@env_file="$(E2E_ENV_FILE)"; \
-	case "$$env_file" in /*|*/*) env_source="$$env_file" ;; *) env_source="./$$env_file" ;; esac; \
-	set -a; . "$$env_source"; set +a; \
-	if [ "$${E2E_LIVE:-}" != "1" ]; then \
-		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without live test confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
-		exit 1; \
-	fi; \
-	if [ "$${ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE:-}" != "1" ]; then \
-		printf '%s\n' 'Refusing to intentionally run the staggered Etherscan proxy multi-key probe without confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_PROXY_MULTI_KEY_STAGGERED_PROBE=1 make e2e-live-etherscan-proxy-multi-key-staggered-rate-limit' >&2; \
-		exit 1; \
-	fi; \
-	if [ -z "$${ATHENA_E2E_ETHERSCAN_API_KEYS:-}" ]; then \
-		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without ATHENA_E2E_ETHERSCAN_API_KEYS in the env file.' >&2; \
-		exit 1; \
-	fi; \
-	if [ -z "$${ATHENA_E2E_ETHERSCAN_PROXY_URLS:-}" ]; then \
-		printf '%s\n' 'Refusing to run staggered Etherscan proxy multi-key probe without ATHENA_E2E_ETHERSCAN_PROXY_URLS in the env file.' >&2; \
-		exit 1; \
-	fi; \
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanProxyMultiKeyAggregateStaggeredRateLimitProbe -v
-
 .PHONY: e2e-live-etherscan-gateway-multi-key-staggered-success
 e2e-live-etherscan-gateway-multi-key-staggered-success:
 	@env_file="$(E2E_ENV_FILE)"; \
