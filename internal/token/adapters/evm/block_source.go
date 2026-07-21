@@ -17,16 +17,40 @@ type BlockSource struct{ clients *ChainClientRegistry }
 
 func NewBlockSource(clients *ChainClientRegistry) *BlockSource { return &BlockSource{clients: clients} }
 
-func (source *BlockSource) LatestBlockNumber(ctx context.Context, chainID int64) (uint64, error) {
+func (source *BlockSource) LatestBlockHeader(ctx context.Context, chainID int64) (discovery.BlockHeader, error) {
 	client, err := source.clients.Client(ctx, chainID)
 	if err != nil {
-		return 0, err
+		return discovery.BlockHeader{}, err
 	}
-	value, err := client.BlockNumber(ctx)
+	header, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		source.clients.Reset(chainID)
+		return discovery.BlockHeader{}, fmt.Errorf("fetch latest block header: %w", err)
 	}
-	return value, err
+	mapped, err := mapBlockHeader(header, nil)
+	if err != nil {
+		source.clients.Reset(chainID)
+		return discovery.BlockHeader{}, err
+	}
+	return mapped, nil
+}
+
+func (source *BlockSource) BlockHeaderByNumber(ctx context.Context, chainID int64, number uint64) (discovery.BlockHeader, error) {
+	client, err := source.clients.Client(ctx, chainID)
+	if err != nil {
+		return discovery.BlockHeader{}, err
+	}
+	header, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(number))
+	if err != nil {
+		source.clients.Reset(chainID)
+		return discovery.BlockHeader{}, fmt.Errorf("fetch block header %d: %w", number, err)
+	}
+	mapped, err := mapBlockHeader(header, &number)
+	if err != nil {
+		source.clients.Reset(chainID)
+		return discovery.BlockHeader{}, err
+	}
+	return mapped, nil
 }
 
 func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainID int64, start, end uint64, concurrency int) ([]discovery.ProjectCandidate, error) {
@@ -91,4 +115,15 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		}
 	}
 	return candidates, nil
+}
+
+func mapBlockHeader(header *types.Header, expectedNumber *uint64) (discovery.BlockHeader, error) {
+	if header == nil || header.Number == nil || !header.Number.IsUint64() {
+		return discovery.BlockHeader{}, fmt.Errorf("block header is invalid")
+	}
+	number := header.Number.Uint64()
+	if expectedNumber != nil && number != *expectedNumber {
+		return discovery.BlockHeader{}, fmt.Errorf("block header %d returned number %d", *expectedNumber, number)
+	}
+	return discovery.BlockHeader{Number: number, Timestamp: header.Time}, nil
 }

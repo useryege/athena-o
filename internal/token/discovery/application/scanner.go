@@ -37,14 +37,15 @@ func (scanner *Scanner) StopChain(ctx context.Context, chainID int64) error {
 }
 
 type BlockSource interface {
-	LatestBlockNumber(context.Context, int64) (uint64, error)
+	LatestBlockHeader(context.Context, int64) (discovery.BlockHeader, error)
+	BlockHeaderByNumber(context.Context, int64, uint64) (discovery.BlockHeader, error)
 	DiscoverProjectCandidates(context.Context, int64, uint64, uint64, int) ([]discovery.ProjectCandidate, error)
 }
 
 type ScanChainCommand struct {
-	ChainID               int64
-	InitialLookbackBlocks uint64
-	BlockFetchConcurrency int
+	ChainID                 int64
+	InitialLookbackDuration time.Duration
+	BlockFetchConcurrency   int
 }
 
 type ScanResult struct {
@@ -66,6 +67,9 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	if scanner == nil || scanner.repository == nil || scanner.blocks == nil {
 		return ScanResult{}, fmt.Errorf("token scanner application is not configured")
 	}
+	if command.InitialLookbackDuration < time.Second {
+		return ScanResult{}, fmt.Errorf("token scanner initial lookback duration must be at least 1s")
+	}
 	checkpoint, err := scanner.repository.GetChainIngestCheckpoint(ctx, command.ChainID)
 	if err != nil {
 		return ScanResult{}, err
@@ -76,22 +80,35 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	if !checkpoint.Enabled || checkpoint.Status != discovery.ChainIngestStatusRunning {
 		return ScanResult{}, nil
 	}
-	latest, err := scanner.blocks.LatestBlockNumber(ctx, command.ChainID)
+	latest, err := scanner.blocks.LatestBlockHeader(ctx, command.ChainID)
 	if err != nil {
 		return ScanResult{}, err
 	}
 	if checkpoint.CursorBlockNumber == 0 {
-		start := initialScanStartBlock(latest, command.InitialLookbackBlocks)
+		lookbackSeconds := uint64(command.InitialLookbackDuration / time.Second)
+		targetTimestamp := uint64(0)
+		if latest.Timestamp > lookbackSeconds {
+			targetTimestamp = latest.Timestamp - lookbackSeconds
+		}
+		start, err := scanner.findFirstBlockAtOrAfter(ctx, command.ChainID, latest.Number, targetTimestamp)
+		if err != nil {
+			return ScanResult{}, err
+		}
+		if start == 0 {
+			start = 1
+		}
 		checkpoint.CursorBlockNumber = start - 1
 		checkpoint, err = scanner.repository.UpsertChainIngestCheckpoint(ctx, *checkpoint)
 		if err != nil {
 			return ScanResult{}, err
 		}
 		log.WithFields(log.Fields{
-			"chain_id":        command.ChainID,
-			"latest_block":    latest,
-			"lookback_blocks": command.InitialLookbackBlocks,
-			"start_block":     start,
+			"chain_id":          command.ChainID,
+			"latest_block":      latest.Number,
+			"latest_timestamp":  latest.Timestamp,
+			"lookback_duration": command.InitialLookbackDuration.String(),
+			"start_block":       start,
+			"target_timestamp":  targetTimestamp,
 		}).Info("initialized token chain scanner checkpoint")
 	}
 	next := uint64(1)
@@ -99,7 +116,7 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		next = checkpoint.CursorBlockNumber + 1
 	}
 	result := ScanResult{}
-	for next <= latest {
+	for next <= latest.Number {
 		if err := ctx.Err(); err != nil {
 			return result, err
 		}
@@ -111,8 +128,8 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 			return result, nil
 		}
 		batchEnd := next + maxBlocksPerScanBatch - 1
-		if batchEnd > latest {
-			batchEnd = latest
+		if batchEnd > latest.Number {
+			batchEnd = latest.Number
 		}
 		batchStartedAt := time.Now()
 		candidates, err := scanner.blocks.DiscoverProjectCandidates(ctx, command.ChainID, next, batchEnd, command.BlockFetchConcurrency)
@@ -139,9 +156,19 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	return result, nil
 }
 
-func initialScanStartBlock(latest uint64, lookbackBlocks uint64) uint64 {
-	if latest > lookbackBlocks {
-		return latest - lookbackBlocks
+func (scanner *Scanner) findFirstBlockAtOrAfter(ctx context.Context, chainID int64, high, targetTimestamp uint64) (uint64, error) {
+	low := uint64(0)
+	for low < high {
+		mid := low + (high-low)/2
+		header, err := scanner.blocks.BlockHeaderByNumber(ctx, chainID, mid)
+		if err != nil {
+			return 0, err
+		}
+		if header.Timestamp < targetTimestamp {
+			low = mid + 1
+		} else {
+			high = mid
+		}
 	}
-	return 1
+	return low, nil
 }

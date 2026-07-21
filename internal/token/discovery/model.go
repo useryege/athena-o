@@ -38,6 +38,11 @@ type Chain struct {
 	CreatedAt time.Time
 }
 
+type BlockHeader struct {
+	Number    uint64
+	Timestamp uint64
+}
+
 type ProjectCandidate struct {
 	ID                       int64
 	ChainID                  int64
