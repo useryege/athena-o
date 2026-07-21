@@ -1,0 +1,14 @@
+.git
+.codex
+.env
+.env.*
+.scratch
+.tmp
+dist
+docs
+e2e
+node_modules
+site
+test-results
+ui
+vendor

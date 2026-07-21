@@ -51,6 +51,11 @@ BSC_INDEXER_DOCKERFILE?=deploy/bsc-transaction-indexer/Dockerfile
 BSC_INDEXER_COMPOSE_FILE?=deploy/bsc-transaction-indexer/docker-compose.yml
 BSC_INDEXER_ENV_FILE?=.env.bsc-transaction-indexer
 BSC_INDEXER_REMOTE_APP_DIR?=/opt/athena-bsc-transaction-indexer
+BSC_SWAP_INDEXER_IMAGE?=athena-bsc-swap-indexer:local
+BSC_SWAP_INDEXER_DOCKERFILE?=deploy/bsc-swap-indexer/Dockerfile
+BSC_SWAP_INDEXER_COMPOSE_FILE?=deploy/bsc-swap-indexer/docker-compose.yml
+BSC_SWAP_INDEXER_ENV_FILE?=.env.bsc-swap-indexer
+BSC_SWAP_INDEXER_REMOTE_APP_DIR?=/opt/athena-bsc-swap-indexer
 # perform static compilation
 DEFAULT_STATIC_BUILD:=true
 ifeq ($(IS_DARWIN),true)
@@ -146,6 +151,10 @@ deploy-etherscan-gateway-vps:
 deploy-bsc-transaction-indexer-vps:
 	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) TARGET_ARCH=$(TARGET_ARCH) BSC_INDEXER_IMAGE=$(BSC_INDEXER_IMAGE) BSC_INDEXER_DOCKERFILE=$(BSC_INDEXER_DOCKERFILE) BSC_INDEXER_COMPOSE_FILE=$(BSC_INDEXER_COMPOSE_FILE) BSC_INDEXER_ENV_FILE=$(BSC_INDEXER_ENV_FILE) BSC_INDEXER_REMOTE_APP_DIR=$(BSC_INDEXER_REMOTE_APP_DIR) bash ./hack/deploy-bsc-transaction-indexer.sh
 
+.PHONY: deploy-bsc-swap-indexer-vps
+deploy-bsc-swap-indexer-vps:
+	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) TARGET_ARCH=$(TARGET_ARCH) BSC_SWAP_INDEXER_IMAGE=$(BSC_SWAP_INDEXER_IMAGE) BSC_SWAP_INDEXER_DOCKERFILE=$(BSC_SWAP_INDEXER_DOCKERFILE) BSC_SWAP_INDEXER_COMPOSE_FILE=$(BSC_SWAP_INDEXER_COMPOSE_FILE) BSC_SWAP_INDEXER_ENV_FILE=$(BSC_SWAP_INDEXER_ENV_FILE) BSC_SWAP_INDEXER_REMOTE_APP_DIR=$(BSC_SWAP_INDEXER_REMOTE_APP_DIR) bash ./hack/deploy-bsc-swap-indexer.sh
+
 .PHONY: install-docker-vps
 install-docker-vps:
 	REMOTE_HOST=$(REMOTE_HOST) REMOTE_USER=$(REMOTE_USER) bash ./hack/install-docker-vps.sh
@@ -193,6 +202,15 @@ athena-bsc-transaction-indexer: clean-debug
 .PHONY: bsc-transaction-indexer-build-image
 bsc-transaction-indexer-build-image:
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -f $(BSC_INDEXER_DOCKERFILE) -t $(BSC_INDEXER_IMAGE) --build-arg GIT_COMMIT=$(GIT_COMMIT) --build-arg GIT_TREE_STATE=$(GIT_TREE_STATE) --build-arg GIT_TAG=$(GIT_TAG) --build-arg BUILD_DATE=$(BUILD_DATE) .
+
+.PHONY: athena-bsc-swap-indexer
+athena-bsc-swap-indexer: clean-debug
+	@mkdir -p ${DIST_DIR}
+	CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} GODEBUG="tarinsecurepath=0,zipinsecurepath=0" go build -trimpath -v -ldflags '${LDFLAGS} -s -w' -o ${DIST_DIR}/athena-bsc-swap-indexer ./cmd/athena-bsc-swap-indexer
+
+.PHONY: bsc-swap-indexer-build-image
+bsc-swap-indexer-build-image:
+	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -f $(BSC_SWAP_INDEXER_DOCKERFILE) -t $(BSC_SWAP_INDEXER_IMAGE) --build-arg GIT_COMMIT=$(GIT_COMMIT) --build-arg GIT_TREE_STATE=$(GIT_TREE_STATE) --build-arg GIT_TAG=$(GIT_TAG) --build-arg BUILD_DATE=$(BUILD_DATE) .
 
 # Run goreman start with exclude option , provide exclude env variable with list of services
 .PHONY: run

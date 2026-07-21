@@ -63,3 +63,12 @@ sql:
         out: "internal/bscinbound/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
+  - engine: "postgresql"
+    schema: "internal/bscswap/store/migrations"
+    queries: "internal/bscswap/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/bscswap/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
