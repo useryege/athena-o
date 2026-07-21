@@ -18,12 +18,20 @@ message InboundNormalTransaction {
   string value_wei = 8;
 }
 
+// InboundNormalTransactionPosition identifies one transaction position within
+// a block. Queries using this position return only earlier transactions.
+message InboundNormalTransactionPosition {
+  uint64 block_number = 1;
+  uint64 transaction_index = 2;
+}
+
 // ListInboundNormalTransactionsRequest lists direct BNB transfers received by
 // one address, newest first.
 message ListInboundNormalTransactionsRequest {
   string address = 1;
   int32 page_size = 2;
   string page_token = 3;
+  InboundNormalTransactionPosition before_position = 4;
 }
 
 // ListInboundNormalTransactionsResponse returns one stable keyset page and the

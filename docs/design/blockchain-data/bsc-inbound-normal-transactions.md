@@ -2,9 +2,9 @@
 
 ## Scope
 
-This service indexes successful finalized BNB Smart Chain Mainnet transactions that directly transfer more than `10000000000000000` wei with empty calldata to a non-null recipient. It owns the initial 30-day backfill, finalized-head following, receipt validation, atomic PostgreSQL persistence, address-first keyset pagination, gRPC serving, and scanner health reporting.
+This service indexes successful finalized BNB Smart Chain Mainnet transactions that directly transfer more than `10000000000000000` wei with empty calldata to a non-null recipient. It owns the initial 30-day backfill, finalized-head following, receipt validation, atomic PostgreSQL persistence, address-first keyset pagination with an optional exclusive starting position, gRPC serving, and scanner health reporting.
 
-BEP-20 transfers, internal transactions, execution traces, swaps, outbound history, multi-chain indexing, and integration with the Token Intelligence wallet-history collector are outside this capability.
+BEP-20 transfers, internal transactions, execution traces, swaps, outbound history, and multi-chain indexing are outside this capability. The Token Intelligence funding-source collector consumes the gRPC query but owns project anchors, immutable snapshots, and its own PostgreSQL persistence.
 
 ## Source Locations
 
@@ -30,7 +30,7 @@ flowchart LR
     S --> R["Receipt validation"]
     R --> P["PostgreSQL 18"]
     P --> G["BSC inbound gRPC service"]
-    C["Remote ATHENA caller"] -->|"private TCP 8130"| G
+    C["Token funding-source collector"] -->|"private TCP 8130"| G
     S --> H["Health and Prometheus telemetry"]
 ```
 
@@ -40,7 +40,7 @@ The process has its own executable, minimal runtime image, Compose project, Post
 
 The Docker bootstrap script prepares a fresh Ubuntu server through a direct root SSH session using Docker's official APT repository. It is idempotent only for a fully healthy Engine and Compose installation; incomplete installations and conflicting distribution packages fail without automatic removal or replacement. It does not manage Swap, host firewalls, or cloud security groups.
 
-The deployment script builds the dedicated image locally, streams it over SSH, installs the Compose and environment files, and recreates only this Compose project. Repeated deployments preserve the named PostgreSQL volume. A remote ATHENA component can connect to the exposed gRPC endpoint, but selecting and integrating that caller is outside this capability.
+The deployment script builds the dedicated image locally, streams it over SSH, installs the Compose and environment files, and recreates only this Compose project. Repeated deployments preserve the named PostgreSQL volume. The remote ATHENA funding-source collector connects to the exposed gRPC endpoint through its configured server address.
 
 ## Runtime Flow
 
@@ -52,7 +52,7 @@ The deployment script builds the dedicated image locally, streams it over SSH, i
 6. Transactions with a null recipient, a value at or below `10000000000000000` wei, or non-empty calldata are discarded before sender recovery and receipt retrieval. Sender recovery and receipt retrieval occur only for remaining candidates.
 7. Only receipts with successful status and the expected block position produce persisted transactions.
 8. Transaction inserts and the conditional cursor advance commit in one PostgreSQL transaction. A successful iteration immediately starts the next batch while behind; a caught-up or failed iteration waits for the poll interval.
-9. gRPC reads are ordered by block number and transaction index descending. The opaque page token binds the address and the last returned block position.
+9. gRPC reads are ordered by block number and transaction index descending. A first request may supply `before_position` for a strict block-and-transaction-index cutoff. Otherwise it starts at the newest indexed transaction. `before_position` and `page_token` are mutually exclusive, and the opaque page token binds subsequent pages to the address and last returned position.
 10. Cancellation stops new RPC work, gracefully stops gRPC and telemetry, and closes the node and PostgreSQL connections.
 
 ## State / Data
@@ -61,7 +61,7 @@ The deployment script builds the dedicated image locally, streams it over SSH, i
 
 `bsc_inbound_scan_checkpoint` is a singleton row containing the initial block, highest committed block, its hash and timestamp, and lifecycle timestamps. `Store.CommitBatch` updates it only when its current cursor equals the expected cursor, so concurrent scanner instances cannot advance the same range independently.
 
-Page tokens use a versioned binary encoding of recipient address, block number, and transaction index. New inserts do not change the meaning of an existing token.
+Page tokens use a versioned binary encoding of recipient address, block number, and transaction index. New inserts do not change the meaning of an existing token. `InboundNormalTransactionPosition` uses the same block and transaction coordinates as an explicit exclusive cursor for the first page.
 
 ## Configuration
 
@@ -88,6 +88,7 @@ The standalone Compose publishes gRPC on `BSC_INDEXER_GRPC_BIND_ADDRESS:BSC_INDE
 - The cursor advances only in the transaction that makes the entire preceding batch durable.
 - The block chain from the committed cursor through every new batch is hash-contiguous.
 - API results are newest first and scoped to one exact recipient address.
+- A request with `before_position` returns only transactions strictly earlier than that position.
 - The service contains no `chain_id` field because it accepts only BSC Mainnet.
 
 ## Failure Recovery
@@ -113,6 +114,6 @@ The Compose healthcheck uses `/healthz`, so deployment can complete while the in
 - [ ] Recheck finalized-head lookup, timestamp binary search, and chain-ID validation.
 - [ ] Recheck recipient, value, empty-calldata prefiltering, sender recovery, receipt success, and position validation.
 - [ ] Recheck hash continuity and the transaction/checkpoint commit boundary.
-- [ ] Recheck address-first ordering, opaque token validation, and page-size limits.
+- [ ] Recheck address-first ordering, exclusive starting-position handling, opaque token validation, and page-size limits.
 - [ ] Recheck gRPC, health, readiness, metrics, and graceful shutdown behavior.
 - [ ] Keep the design index and generated proto/SQLC artifacts synchronized.

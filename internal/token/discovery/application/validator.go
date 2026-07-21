@@ -137,7 +137,7 @@ func (validator *Validator) RunOnce(ctx context.Context, chainID int64) (int, er
 			processed++
 			continue
 		}
-		if _, err := validator.transaction.PromoteCandidateAndInitializeResearch(ctx, PromoteCandidateCommand{Inspection: inspection, Schedules: defaultResearchSchedules(validator.options.Now().UTC())}); err != nil {
+		if _, err := validator.transaction.PromoteCandidateAndInitializeResearch(ctx, PromoteCandidateCommand{Inspection: inspection, Schedules: defaultResearchSchedules(inspection.Candidate.ChainID, validator.options.Now().UTC())}); err != nil {
 			return processed, err
 		}
 		processed++
@@ -164,13 +164,16 @@ func (validator *Validator) renewLease(ctx context.Context, leaseID string) func
 	return func() { cancel(); <-done }
 }
 
-func defaultResearchSchedules(now time.Time) []CollectionScheduleSeed {
-	return []CollectionScheduleSeed{
+func defaultResearchSchedules(chainID int64, now time.Time) []CollectionScheduleSeed {
+	schedules := []CollectionScheduleSeed{
 		{DataType: "chain_state", RefreshInterval: 15 * time.Second, NextRunAt: now},
 		{DataType: "wallet_asset_state", RefreshInterval: time.Minute, NextRunAt: now},
 		{DataType: "simulation_result", RefreshInterval: time.Minute, NextRunAt: now},
-		{DataType: "wallet_normal_transaction_history", RefreshInterval: time.Minute, NextRunAt: now},
 		{DataType: "ave", RefreshInterval: 5 * time.Minute, NextRunAt: now},
 		{DataType: "contract_code_source", RefreshInterval: 10 * time.Minute, NextRunAt: now},
 	}
+	if chainID == 56 {
+		schedules = append(schedules, CollectionScheduleSeed{DataType: "wallet_funding_source_history", RefreshInterval: time.Minute, NextRunAt: now})
+	}
+	return schedules
 }

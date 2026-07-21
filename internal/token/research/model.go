@@ -21,18 +21,18 @@ const (
 type DataCollectionType string
 
 const (
-	DataCollectionTypeAve                            DataCollectionType = "ave"
-	DataCollectionTypeChainState                     DataCollectionType = "chain_state"
-	DataCollectionTypeWalletAssetState               DataCollectionType = "wallet_asset_state"
-	DataCollectionTypeSimulationResult               DataCollectionType = "simulation_result"
-	DataCollectionTypeContractCodeSource             DataCollectionType = "contract_code_source"
-	DataCollectionTypeWalletNormalTransactionHistory DataCollectionType = "wallet_normal_transaction_history"
+	DataCollectionTypeAve                        DataCollectionType = "ave"
+	DataCollectionTypeChainState                 DataCollectionType = "chain_state"
+	DataCollectionTypeWalletAssetState           DataCollectionType = "wallet_asset_state"
+	DataCollectionTypeSimulationResult           DataCollectionType = "simulation_result"
+	DataCollectionTypeContractCodeSource         DataCollectionType = "contract_code_source"
+	DataCollectionTypeWalletFundingSourceHistory DataCollectionType = "wallet_funding_source_history"
 )
 
 func ParseDataCollectionType(value string) (DataCollectionType, bool) {
 	dataType := DataCollectionType(value)
 	switch dataType {
-	case DataCollectionTypeAve, DataCollectionTypeChainState, DataCollectionTypeWalletAssetState, DataCollectionTypeSimulationResult, DataCollectionTypeContractCodeSource, DataCollectionTypeWalletNormalTransactionHistory:
+	case DataCollectionTypeAve, DataCollectionTypeChainState, DataCollectionTypeWalletAssetState, DataCollectionTypeSimulationResult, DataCollectionTypeContractCodeSource, DataCollectionTypeWalletFundingSourceHistory:
 		return dataType, true
 	default:
 		return "", false

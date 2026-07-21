@@ -45,15 +45,23 @@ athena-bsc-transaction-indexer-postgres-data
 
 ## 服务接口和配置
 
-主服务使用以下地址连接索引器：
+主服务的 `wallet_funding_source_history` Collector 使用以下地址连接索引器：
 
 ```text
 47.245.183.140:8130
 ```
 
+对应的主服务配置为：
+
+```env
+ATHENA_TOKEN_BSC_INBOUND_SERVER_ADDRESS=47.245.183.140:8130
+```
+
 该端口提供 `BscInboundTransactionService`，当前只查询成功、finalized、空
-calldata 且严格大于 `0.01 BNB` 的顶层入账普通交易。生产索引器不保存内部
-转账、Trace、BEP-20 转账或 Swap。
+calldata 且严格大于 `0.01 BNB` 的顶层入账普通交易。查询可以通过
+`before_position` 指定排他的区块号和交易索引截止点；`before_position` 与
+`page_token` 不能同时提供。生产索引器不保存内部转账、Trace、BEP-20 转账或
+Swap。
 
 当前扫描配置：
 
@@ -84,6 +92,10 @@ make deploy-bsc-transaction-indexer-vps \
 部署脚本在本地构建 Linux amd64 镜像，通过 SSH 传输镜像和配置，再重建专用
 Compose 容器。它不会删除 PostgreSQL 命名卷，扫描会从数据库中的已提交游标
 继续。
+
+当 gRPC 契约和主 ATHENA Collector 同时更新时，必须先部署索引器并确认新契约
+可用，再部署调用 `before_position` 的主服务。旧索引器会忽略新请求字段，不能
+满足创建交易之前的严格查询语义。
 
 完整的安装、部署、备份和恢复说明见
 [BSC Transaction Indexer 独立部署](../deploy/bsc-transaction-indexer/README.md)。
@@ -125,4 +137,3 @@ ssh root@47.245.183.140 \
 ssh root@47.245.183.140 \
   'cd /opt/athena-bsc-transaction-indexer && docker compose --env-file .env logs -f indexer'
 ```
-

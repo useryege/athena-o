@@ -13,7 +13,7 @@ import (
 	"github.com/useryege/athena/internal/token/adapters/evm"
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	"github.com/useryege/athena/internal/token/adapters/sourcecode"
-	"github.com/useryege/athena/internal/token/adapters/wallettransactions"
+	"github.com/useryege/athena/internal/token/adapters/walletfunding"
 	"github.com/useryege/athena/internal/token/research"
 	researchapp "github.com/useryege/athena/internal/token/research/application"
 	"github.com/useryege/athena/internal/token/telemetry"
@@ -28,13 +28,13 @@ const cliName = "athena-token-collector"
 var collectorHealthAddresses = map[research.DataCollectionType]string{
 	research.DataCollectionTypeAve: "127.0.0.1:8113", research.DataCollectionTypeChainState: "127.0.0.1:8114",
 	research.DataCollectionTypeWalletAssetState: "127.0.0.1:8115", research.DataCollectionTypeSimulationResult: "127.0.0.1:8116",
-	research.DataCollectionTypeContractCodeSource:             "127.0.0.1:8117",
-	research.DataCollectionTypeWalletNormalTransactionHistory: "127.0.0.1:8120",
+	research.DataCollectionTypeContractCodeSource:         "127.0.0.1:8117",
+	research.DataCollectionTypeWalletFundingSourceHistory: "127.0.0.1:8120",
 }
 
 func NewCommand() *cobra.Command {
 	var flags tokenworker.CommonFlags
-	var dataTypeValue, aveAPIKey, aveAPIBaseURL, ethereumAPIAddress string
+	var dataTypeValue, aveAPIKey, aveAPIBaseURL, ethereumAPIAddress, bscInboundAddress string
 	command := &cobra.Command{Use: cliName, Short: "Collect one token research data type", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
 		dataType, ok := research.ParseDataCollectionType(strings.TrimSpace(dataTypeValue))
 		if !ok {
@@ -49,7 +49,7 @@ func NewCommand() *cobra.Command {
 		}
 		repository := tokenpostgres.NewCollectionRepository(connection)
 		var processor researchapp.TaskProcessor
-		var walletHistoryProvider *wallettransactions.Provider
+		var walletFundingProvider *walletfunding.Provider
 		switch dataType {
 		case research.DataCollectionTypeAve:
 			provider, err := aveadapter.New(aveadapter.Config{APIKey: aveAPIKey, BaseURL: aveAPIBaseURL})
@@ -64,13 +64,13 @@ func NewCommand() *cobra.Command {
 			}
 			host.AddClose(provider.Close)
 			processor = researchapp.ContractSourceProcessor{Codes: repository, Provider: provider}
-		case research.DataCollectionTypeWalletNormalTransactionHistory:
-			provider, err := wallettransactions.New(ethereumAPIAddress)
+		case research.DataCollectionTypeWalletFundingSourceHistory:
+			provider, err := walletfunding.New(bscInboundAddress)
 			if err != nil {
 				return err
 			}
 			host.AddClose(provider.Close)
-			walletHistoryProvider = provider
+			walletFundingProvider = provider
 		case research.DataCollectionTypeChainState, research.DataCollectionTypeWalletAssetState, research.DataCollectionTypeSimulationResult:
 			clients := evm.NewChainClientRegistry(registry)
 			host.AddClose(clients.Close)
@@ -86,13 +86,16 @@ func NewCommand() *cobra.Command {
 		}
 		chainIDs := make([]int64, 0, len(registry.EnabledChains()))
 		for _, chain := range registry.EnabledChains() {
+			if dataType == research.DataCollectionTypeWalletFundingSourceHistory && chain.ID != 56 {
+				continue
+			}
 			chainIDs = append(chainIDs, chain.ID)
 		}
 		var application interface {
 			RunOnce(context.Context) (int, error)
 		}
-		if dataType == research.DataCollectionTypeWalletNormalTransactionHistory {
-			application = researchapp.NewWalletNormalTransactionHistoryCollector(repository, walletHistoryProvider, researchapp.CollectorOptions{ChainIDs: chainIDs})
+		if dataType == research.DataCollectionTypeWalletFundingSourceHistory {
+			application = researchapp.NewWalletFundingSourceHistoryCollector(repository, walletFundingProvider, researchapp.CollectorOptions{ChainIDs: chainIDs})
 		} else {
 			application = researchapp.NewCollector(repository, processor, researchapp.CollectorOptions{ChainIDs: chainIDs})
 		}
@@ -105,10 +108,11 @@ func NewCommand() *cobra.Command {
 		return host.Run(cmd.Context())
 	}}
 	flags.Bind(command, "")
-	command.Flags().StringVar(&dataTypeValue, "data-type", env.StringFromEnv("ATHENA_TOKEN_DATA_TYPE", ""), "Collection type: ave|chain_state|wallet_asset_state|simulation_result|contract_code_source|wallet_normal_transaction_history")
+	command.Flags().StringVar(&dataTypeValue, "data-type", env.StringFromEnv("ATHENA_TOKEN_DATA_TYPE", ""), "Collection type: ave|chain_state|wallet_asset_state|simulation_result|contract_code_source|wallet_funding_source_history")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_TOKEN_AVE_API_KEY", ""), "Ave API key")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_TOKEN_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringVar(&ethereumAPIAddress, "ethereum-api-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortEthereumAPI)), "Ethereum API gRPC address")
+	command.Flags().StringVar(&bscInboundAddress, "bsc-inbound-server-address", env.StringFromEnv("ATHENA_TOKEN_BSC_INBOUND_SERVER_ADDRESS", "localhost:8130"), "BSC inbound transaction gRPC address")
 	_ = command.MarkFlagRequired("data-type")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

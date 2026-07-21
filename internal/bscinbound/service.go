@@ -90,10 +90,23 @@ func normalizeListRequest(request *apiclient.ListInboundNormalTransactionsReques
 	if pageSize < 1 || pageSize > maxPageSize {
 		return common.Address{}, 0, nil, status.Errorf(codes.InvalidArgument, "page_size must be between 1 and %d", maxPageSize)
 	}
-	if request.GetPageToken() == "" {
+	pageToken := request.GetPageToken()
+	beforePosition := request.GetBeforePosition()
+	if pageToken != "" && beforePosition != nil {
+		return common.Address{}, 0, nil, status.Error(codes.InvalidArgument, "page_token and before_position cannot be used together")
+	}
+	if beforePosition != nil {
+		if beforePosition.GetBlockNumber() > math.MaxInt64 || beforePosition.GetTransactionIndex() > math.MaxInt64 {
+			return common.Address{}, 0, nil, status.Error(codes.InvalidArgument, "before_position is invalid")
+		}
+		return address, pageSize, &store.PageCursor{
+			BlockNumber: beforePosition.GetBlockNumber(), TransactionIndex: beforePosition.GetTransactionIndex(),
+		}, nil
+	}
+	if pageToken == "" {
 		return address, pageSize, nil, nil
 	}
-	cursor, tokenAddress, err := decodePageToken(request.GetPageToken())
+	cursor, tokenAddress, err := decodePageToken(pageToken)
 	if err != nil {
 		return common.Address{}, 0, nil, status.Error(codes.InvalidArgument, "page_token is invalid")
 	}

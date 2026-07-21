@@ -78,8 +78,8 @@ type Querier interface {
 	InsertProjectObservation(ctx context.Context, arg InsertProjectObservationParams) (ProjectObservation, error)
 	InsertProjectReportRevision(ctx context.Context, arg InsertProjectReportRevisionParams) (ProjectReportRevision, error)
 	InsertProjectSelection(ctx context.Context, arg InsertProjectSelectionParams) (ProjectSelection, error)
-	InsertProjectWalletNormalTransaction(ctx context.Context, arg InsertProjectWalletNormalTransactionParams) error
-	InsertProjectWalletNormalTransactionHistory(ctx context.Context, arg InsertProjectWalletNormalTransactionHistoryParams) (ProjectWalletNormalTransactionHistory, error)
+	InsertProjectWalletFundingSourceHistory(ctx context.Context, arg InsertProjectWalletFundingSourceHistoryParams) (ProjectWalletFundingSourceHistory, error)
+	InsertProjectWalletFundingSourceTransaction(ctx context.Context, arg InsertProjectWalletFundingSourceTransactionParams) error
 	IsContractCodeBlocked(ctx context.Context, codeHash []byte) (bool, error)
 	IsWalletBlocked(ctx context.Context, wallet []byte) (bool, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
@@ -90,8 +90,8 @@ type Querier interface {
 	ListCurrentProjectObservations(ctx context.Context, projectID int64) ([]ListCurrentProjectObservationsRow, error)
 	ListCurrentProjectReports(ctx context.Context, arg ListCurrentProjectReportsParams) ([]ListCurrentProjectReportsRow, error)
 	ListDueProjectDataCollectionSchedules(ctx context.Context, limit int32) ([]ProjectDataCollectionSchedule, error)
-	// One-time related-wallet normal transaction history persistence.
-	ListPendingProjectWalletNormalTransactionHistoryWallets(ctx context.Context, projectID int64) ([][]byte, error)
+	// One-time related-wallet BSC funding-source history persistence.
+	ListPendingProjectWalletFundingSourceHistoryWallets(ctx context.Context, projectID int64) ([][]byte, error)
 	// Worker host diagnostics read model.
 	ListPipelineQueueMetrics(ctx context.Context) ([]ListPipelineQueueMetricsRow, error)
 	ListProjectCandidates(ctx context.Context, arg ListProjectCandidatesParams) ([]ProjectCandidate, error)

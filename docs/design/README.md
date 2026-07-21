@@ -18,7 +18,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Polymarket | Managed Optimistic Oracle log ingestion, market enrichment, and alerts | [Managed OO Alerts](polymarket/managed-oo-alerts.md) |
 | Token Intelligence | EVM chain scanning and project candidate ingestion | [Token Scanner](token-intelligence/scanner.md) |
 | Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
-| Token Intelligence | One-time related-wallet normal transaction history | [Wallet Normal Transaction History](token-intelligence/wallet-normal-transaction-history.md) |
+| Token Intelligence | One-time related-wallet BSC funding-source history | [Wallet Funding Source History](token-intelligence/wallet-funding-source-history.md) |
 | Blockchain Data | Finalized inbound BSC transaction indexing and lookup | [BSC Inbound Normal Transactions](blockchain-data/bsc-inbound-normal-transactions.md) |
 
 Use [the design document template](template.md) when adding a subsystem or an independently understandable capability.

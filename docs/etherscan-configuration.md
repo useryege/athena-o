@@ -17,21 +17,17 @@ Each ethereum-api cache refresh picks the next API key and next gateway address
 in round-robin order. A failed gateway request is returned immediately; the
 manager does not retry with another key or gateway.
 
-The `athena-token-collector --data-type contract_code_source` and
-`athena-token-collector --data-type wallet_normal_transaction_history`
-processes do not read standalone Etherscan API keys. Both call
-`athena-ethereum-api` over gRPC:
+The `athena-token-collector --data-type contract_code_source` process does not
+read standalone Etherscan API keys. It calls `athena-ethereum-api` over gRPC:
 
 ```bash
 ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS='localhost:8100'
 ```
 
-The wallet-history collector uses the existing `ListNormalTransactions` RPC.
-For each distinct project-related wallet it requests descending Etherscan normal
-transactions ending at the project creation block, filters out the project
-creation transaction and later transactions in the same block, and persists at
-most the nearest 300 earlier transactions. It records each wallet once and does
-not add the result to Token observations or reports.
+The generic `ListNormalTransactions` RPC remains available through
+`athena-ethereum-api`, but the Token funding-source collector does not use it.
+That collector reads indexed BSC inbound transfers through the separately
+deployed `BscInboundTransactionService`.
 
 `athena-server` also reads the gateway IP list, gateway bearer token, and
 `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS` for the `/etherscan-gateways` UI live

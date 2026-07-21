@@ -166,7 +166,7 @@ cleanup_athena_ports() {
 		"token-collector-contract-code-source-health:8117"
 		"token-report-builder-health:8118"
 		"token-selector-health:8119"
-		"token-collector-wallet-normal-transaction-history-health:8120"
+		"token-collector-wallet-funding-source-history-health:8120"
 	)
 	local entry name port pid pids cmd
 
