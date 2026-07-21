@@ -25,7 +25,7 @@ node_modules/
 rerunreport.txt
 .env
 .env.bsc-transaction-indexer
-
+.env.bsc-swap-indexer
 
 # ignore built binaries
 cmd/athena/athena
