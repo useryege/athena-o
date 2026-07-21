@@ -1,4 +1,4 @@
-# BSC Transaction Indexer Server
+# BSC Transaction Indexer Server (LXM)
 
 本文记录当前独立运行 BSC 入账普通交易索引器的服务器。该实例与主 ATHENA
 服务分开部署，主服务通过 gRPC 读取已经完成索引的数据。
@@ -9,6 +9,7 @@
 
 | 项目 | 当前值 |
 | --- | --- |
+| 服务器 | LXM |
 | 公网 IP | `47.245.183.140` |
 | 主机名 | `iZgw8g4vw9m7flvr3ltbkbZ` |
 | 系统 | Ubuntu 24.04.2 LTS |
