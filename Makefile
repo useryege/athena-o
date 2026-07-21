@@ -207,6 +207,10 @@ e2e:
 e2e-ethereumapi:
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/ethereumapi
 
+.PHONY: e2e-bsc-block-trace
+e2e-bsc-block-trace:
+	go run ./e2e/cmd/bsc-block-trace $(if $(BLOCK_NUMBER),-block "$(BLOCK_NUMBER)",)
+
 .PHONY: e2e-live
 e2e-live:
 	@if [ "$${E2E_LIVE:-}" != "1" ]; then \

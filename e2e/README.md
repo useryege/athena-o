@@ -30,6 +30,44 @@ Run only ethereum-api default E2E tests:
 make e2e-ethereumapi
 ```
 
+Run the manual BSC fixed-block trace viewer with a decimal or `0x`-prefixed
+block number:
+
+```bash
+make e2e-bsc-block-trace BLOCK_NUMBER=111071631
+```
+
+Omit `BLOCK_NUMBER` to enter it interactively. The command defaults to
+`ws://65.108.192.118:8546`; set `ATHENA_E2E_BSC_TRACE_RPC_URL` to use another
+BSC Mainnet WebSocket endpoint. It validates chain ID `56`, calls
+`debug_traceBlockByNumber` with `callTracer`, downloads the complete call tree,
+and filters it in the Go client. The formatted JSON written to stdout contains
+only the block and trace summary plus qualifying normal and internal BNB
+transfers; the complete call tree is not included. Prompts and errors use
+stderr, so the filtered result can be saved directly:
+
+```bash
+make e2e-bsc-block-trace BLOCK_NUMBER=111071631 > transfers.json
+```
+
+Both transfer categories require a successful execution and a value strictly
+greater than `10000000000000000` wei. A normal transfer is the top-level `CALL`
+with a non-null recipient and empty calldata. An internal transfer is a nested
+successful `CALL`; calls below a failed or reverted ancestor are excluded.
+`DELEGATECALL`, `STATICCALL`, `CALLCODE`, contract creation, and
+`SELFDESTRUCT` frames are not transfers themselves, although qualifying child
+`CALL` frames below a successful non-`CALL` frame are still discovered.
+
+Each internal transfer includes its `trace_address`, which is the sequence of
+child indexes locating the call within that transaction's call tree. Amounts
+are decimal wei strings. `trace_response_bytes` reports the size of the full
+call-tracer response downloaded by the client, while `total_call_frames`
+reports how many frames were inspected before filtering.
+
+The default endpoint currently retains traceable historical state for only
+about one minute. Older blocks fail with `historical state is not available`;
+the command reports that RPC error and never substitutes a different block.
+
 Run live E2E tests explicitly:
 
 ```bash
@@ -181,6 +219,7 @@ success. Per-gateway success rates for the four retained nodes were balanced:
 
 | Path | Purpose |
 | --- | --- |
+| `cmd/` | Manually invoked E2E diagnostic commands. |
 | `tests/<service>/` | Default local regression tests. |
 | `tests/live/<service>/` | Explicit live tests with real external dependencies. |
 | `internal/e2etest/` | Cross-service E2E helpers. |
