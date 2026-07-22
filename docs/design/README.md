@@ -19,6 +19,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Token Intelligence | EVM chain scanning and project candidate ingestion | [Token Scanner](token-intelligence/scanner.md) |
 | Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
 | Token Intelligence | One-time related-wallet BSC funding-source history | [Wallet Funding Source History](token-intelligence/wallet-funding-source-history.md) |
+| Token Intelligence | One-time related-wallet BSC V2 Swap transaction-hash history | [Wallet Swap Transaction History](token-intelligence/wallet-swap-transaction-history.md) |
 | Blockchain Data | Finalized inbound BSC transaction indexing and lookup | [BSC Inbound Normal Transactions](blockchain-data/bsc-inbound-normal-transactions.md) |
 | Blockchain Data | Finalized BSC V2 Swap-topic transaction indexing and lookup | [BSC V2 Swap Transactions](blockchain-data/bsc-v2-swap-transactions.md) |
 

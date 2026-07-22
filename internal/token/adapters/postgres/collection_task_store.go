@@ -103,6 +103,24 @@ func (repository *CollectionRepository) RetryCollectionTask(ctx context.Context,
 	return err
 }
 
+func (repository *CollectionRepository) RenewCollectionTaskLease(ctx context.Context, taskID int64, lease time.Duration) error {
+	if lease <= 0 {
+		return fmt.Errorf("collection task lease must be positive")
+	}
+	queries, err := repository.querier()
+	if err != nil {
+		return err
+	}
+	rows, err := queries.RenewProjectDataCollectionTaskLease(ctx, tokensqlc.RenewProjectDataCollectionTaskLeaseParams{LeaseSeconds: int64(lease / time.Second), ID: taskID})
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("collection task %d is no longer running", taskID)
+	}
+	return nil
+}
+
 func (repository *CollectionRepository) FailCollectionTask(ctx context.Context, command researchapp.FailCollectionTaskCommand) error {
 	if repository == nil || repository.pool == nil {
 		return fmt.Errorf("token collection repository is not configured")

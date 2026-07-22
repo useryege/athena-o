@@ -73,6 +73,12 @@ athena-bsc-swap-indexer-postgres-data
 钱包地址和排他的 `before_block_number`；后续请求使用绑定钱包和区块位置的
 `page_token`。响应返回交易哈希、下一页令牌和当前已索引边界。
 
+Token Intelligence 的 `wallet_swap_transaction_history` Collector 通过
+`ATHENA_TOKEN_BSC_SWAP_SERVER_ADDRESS=47.254.154.128:8130` 调用该接口。它对每个
+去重关联钱包只请求项目创建区块之前的第一页 100 笔交易哈希，并保存响应中的实际
+索引进度。即使本索引器尚未追平项目创建区块，该次部分结果仍会永久完成，不会在
+索引追平后自动补采。
+
 gRPC 当前没有 TLS 或应用层认证。阿里云安全组中的 TCP `8130` 必须只允许实际
 调用服务的来源访问，不应向任意公网客户端开放。
 

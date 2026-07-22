@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
@@ -94,24 +93,6 @@ func (repository *CollectionRepository) SaveWalletFundingSourceHistory(ctx conte
 		return false, err
 	}
 	return true, nil
-}
-
-func (repository *CollectionRepository) RenewCollectionTaskLease(ctx context.Context, taskID int64, lease time.Duration) error {
-	if lease <= 0 {
-		return fmt.Errorf("collection task lease must be positive")
-	}
-	queries, err := repository.querier()
-	if err != nil {
-		return err
-	}
-	rows, err := queries.RenewProjectDataCollectionTaskLease(ctx, tokensqlc.RenewProjectDataCollectionTaskLeaseParams{LeaseSeconds: int64(lease / time.Second), ID: taskID})
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return fmt.Errorf("collection task %d is no longer running", taskID)
-	}
-	return nil
 }
 
 func (repository *CollectionRepository) CompleteWalletFundingSourceHistory(ctx context.Context, command researchapp.CompleteWalletFundingSourceHistoryCommand) (bool, error) {

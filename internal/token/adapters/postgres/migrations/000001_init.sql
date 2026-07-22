@@ -223,7 +223,7 @@ CREATE TABLE project_data_collection_schedule (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_data_collection_schedule_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
   CONSTRAINT project_data_collection_schedule_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_funding_source_history')),
+  CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_funding_source_history', 'wallet_swap_transaction_history')),
   CONSTRAINT project_data_collection_schedule_status_check CHECK (status IN ('active', 'completed', 'paused')),
   CONSTRAINT project_data_collection_schedule_refresh_interval_seconds_check CHECK (refresh_interval_seconds > 0),
   CONSTRAINT project_data_collection_schedule_latest_task_revision_check CHECK (latest_task_revision >= 0),
@@ -249,7 +249,7 @@ CREATE TABLE project_data_collection_task (
   CONSTRAINT project_data_collection_task_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_data_collection_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
   CONSTRAINT project_data_collection_task_project_id_data_type_revision_uidx UNIQUE (project_id, data_type, revision),
-  CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_funding_source_history')),
+  CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_funding_source_history', 'wallet_swap_transaction_history')),
   CONSTRAINT project_data_collection_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
   CONSTRAINT project_data_collection_task_revision_check CHECK (revision > 0),
   CONSTRAINT project_data_collection_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
@@ -315,6 +315,43 @@ CREATE TABLE project_wallet_funding_source_transaction (
 
 CREATE INDEX project_wallet_funding_source_transaction_project_id_block_number_idx
   ON project_wallet_funding_source_transaction (project_id, block_number DESC, transaction_index DESC, wallet, rank_index);
+
+CREATE TABLE project_wallet_swap_transaction_history (
+  project_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  anchor_block_number BIGINT NOT NULL,
+  requested_transaction_count INT NOT NULL,
+  collected_transaction_count INT NOT NULL,
+  indexed_through_block BIGINT NOT NULL,
+  indexed_through_timestamp BIGINT NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_wallet_swap_transaction_history_project_id_wallet_uidx PRIMARY KEY (project_id, wallet),
+  CONSTRAINT project_wallet_swap_transaction_history_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_wallet_swap_transaction_history_wallet_length_check CHECK (length(wallet) = 20),
+  CONSTRAINT project_wallet_swap_transaction_history_anchor_block_number_check CHECK (anchor_block_number > 0),
+  CONSTRAINT project_wallet_swap_transaction_history_requested_count_check CHECK (requested_transaction_count > 0),
+  CONSTRAINT project_wallet_swap_transaction_history_collected_count_check CHECK (
+    collected_transaction_count >= 0
+    AND collected_transaction_count <= requested_transaction_count
+  ),
+  CONSTRAINT project_wallet_swap_transaction_history_indexed_block_check CHECK (indexed_through_block >= 0),
+  CONSTRAINT project_wallet_swap_transaction_history_indexed_timestamp_check CHECK (indexed_through_timestamp >= 0)
+);
+
+CREATE TABLE project_wallet_swap_transaction (
+  project_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  rank_index INT NOT NULL,
+  transaction_hash BYTEA NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_wallet_swap_transaction_project_id_wallet_rank_index_uidx PRIMARY KEY (project_id, wallet, rank_index),
+  CONSTRAINT project_wallet_swap_transaction_history_fk FOREIGN KEY (project_id, wallet) REFERENCES project_wallet_swap_transaction_history(project_id, wallet) ON DELETE CASCADE,
+  CONSTRAINT project_wallet_swap_transaction_project_id_wallet_hash_uidx UNIQUE (project_id, wallet, transaction_hash),
+  CONSTRAINT project_wallet_swap_transaction_wallet_length_check CHECK (length(wallet) = 20),
+  CONSTRAINT project_wallet_swap_transaction_rank_index_check CHECK (rank_index >= 0),
+  CONSTRAINT project_wallet_swap_transaction_hash_length_check CHECK (length(transaction_hash) = 32)
+);
 
 CREATE TABLE project_observation (
   id BIGSERIAL,
@@ -508,6 +545,8 @@ DROP TABLE IF EXISTS project_report_build_task;
 DROP TABLE IF EXISTS project_report_revision;
 DROP TABLE IF EXISTS project_observation_current;
 DROP TABLE IF EXISTS project_observation;
+DROP TABLE IF EXISTS project_wallet_swap_transaction;
+DROP TABLE IF EXISTS project_wallet_swap_transaction_history;
 DROP TABLE IF EXISTS project_wallet_funding_source_transaction;
 DROP TABLE IF EXISTS project_wallet_funding_source_history;
 DROP TABLE IF EXISTS project_data_collection_task;

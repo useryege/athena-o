@@ -173,7 +173,10 @@ func defaultResearchSchedules(chainID int64, now time.Time) []CollectionSchedule
 		{DataType: "contract_code_source", RefreshInterval: 10 * time.Minute, NextRunAt: now},
 	}
 	if chainID == 56 {
-		schedules = append(schedules, CollectionScheduleSeed{DataType: "wallet_funding_source_history", RefreshInterval: time.Minute, NextRunAt: now})
+		schedules = append(schedules,
+			CollectionScheduleSeed{DataType: "wallet_funding_source_history", RefreshInterval: time.Minute, NextRunAt: now},
+			CollectionScheduleSeed{DataType: "wallet_swap_transaction_history", RefreshInterval: time.Minute, NextRunAt: now},
+		)
 	}
 	return schedules
 }
