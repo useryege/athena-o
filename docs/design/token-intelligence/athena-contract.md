@@ -52,7 +52,7 @@ Token and pair observations are transient return values. `updatedAt` is the curr
 | `1` | `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | `0xdAC17F958D2ee523a2206206994597C13D831ec7` | `0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f` | `6` |
 | `56` | `0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73` | `0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c` | `0x55d398326f99059fF775485246999027B3197955` | `0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5` | `18` |
 
-The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f85`; the BSC fee-recipient address is `0x0ED943Ce24BaEBf257488771759F9BF482C39706`. Runtime services obtain the deployed contract address from each chain's `athenaContract` field in `ATHENA_TOKEN_CHAINS_JSON`.
+The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f85`; the BSC fee-recipient address is `0x0ED943Ce24BaEBf257488771759F9BF482C39706`. Runtime services obtain the deployed contract address from each chain's `athenaContract` field in `ATHENA_TOKEN_CHAINS_JSON`. The maintained [local](../../../.env) and [production](../../../.env.prod) configurations enable Ethereum Mainnet at `0x917559765849Fd7d49ed5794e7583E7AacCd0ef2` and BSC Mainnet at `0x372333a07c7b358Ef29187315e4FDF42Bc44FAC1`.
 
 ## Invariants
 
