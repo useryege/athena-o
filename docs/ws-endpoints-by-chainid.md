@@ -88,59 +88,59 @@
 
 ## Chain ID 1 — Ethereum 主网
 
-> 实时检查：2026-07-20 09:50–10:00（UTC+8）；参考 RPC：`https://ethereum-rpc.publicnode.com`
-> 方法：检查 WebSocket、Chain ID、同步状态和链头，并抽样区块 `1`、链高的 `1%/10%/25%/50%/75%`、`latest-1000`；历史回执优先使用 `eth_getBlockReceipts`，历史状态使用余额查询并以 WETH 历史存储复核 Archive 候选。裁剪节点的连续边界采用二分法估算。
+> 历史能力检查：2026-07-20 09:50–10:00（UTC+8）；检查 WebSocket、Chain ID、同步状态和链头，并抽样区块 `1`、链高的 `1%/10%/25%/50%/75%`、`latest-1000`；历史回执优先使用 `eth_getBlockReceipts`，历史状态使用余额查询并以 WETH 历史存储复核 Archive 候选。裁剪节点的连续边界采用二分法估算。
+> 实时可用性复核：2026-07-23 16:32（UTC+8）；参考 RPC：`https://ethereum-rpc.publicnode.com`，参考链高 `25,594,257`；检查 WebSocket、`eth_chainId`、`eth_blockNumber`、`eth_syncing`、最新区块时间和客户端版本，失败节点连续检查 3 次。结果为 `healthy` 36 个、`stale` 3 个、`syncing` 1 个、`unreachable` 6 个。
 > 状态阈值：`healthy` 表示最新区块不超过 60 秒且相对参考链头最多落后 2 块；`stale`、`syncing`、`unreachable` 分别表示链头过旧、正在同步、WebSocket 不可用。
-> 类型：`archive` = 历史区块、回执和状态完整；`full-history` = 历史区块和块级回执完整、历史状态已裁剪；`pruned-history` = 历史区块或回执已裁剪；`unknown` = 数据不足或索引状态不一致。结果是多高度抽样快照，不代表逐块扫描。
+> 类型：`archive` = 历史区块、回执和状态完整；`full-history` = 历史区块和块级回执完整、历史状态已裁剪；`pruned-history` = 历史区块或回执已裁剪；`unknown` = 数据不足或索引状态不一致。区块、回执、历史状态和类型沿用 7 月 20 日的多高度抽样结果，本次未重新检查；负落后值表示并发检查期间节点比参考 RPC 先返回了新区块。
 
 | 节点 | 状态 | 最新高度 / 落后 | 区块 | 回执 | 历史状态 | 类型 | 客户端与备注 |
 |---|---|---:|---|---|---|---|---|
-| `ws://49.12.19.226:8546` | healthy | 25,570,753 / 0 | complete | complete | complete | archive | Geth 1.16.7；WETH 历史存储复核通过 |
-| `ws://49.12.58.246:8546` | healthy | 25,570,753 / 0 | complete | complete | pruned | full-history | Geth 111pg 1.16.7；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://49.12.58.248:8546` | healthy | 25,570,753 / 0 | complete | complete | pruned | full-history | Geth 111pg 1.16.7；长超时复核通过，旧交易 hash 查询为 `null` |
-| `ws://49.12.58.251:8546` | healthy | 25,570,753 / 0 | complete | complete | pruned | full-history | Geth 111pg 1.17.0；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://49.12.83.145:8546` | healthy | 25,570,753 / 0 | complete | complete | pruned | full-history | Geth 1.17.4；长超时复核通过，旧交易 hash 查询为 `null` |
-| `ws://49.12.123.150:8546` | healthy | 25,570,754 / 0 | pruned | pruned | pruned | pruned-history | 客户端版本 RPC 超时；最早连续区块约 `#10,000,000` |
-| `ws://65.21.12.175:8546` | healthy | 25,570,755 / 0 | complete | complete | pruned | full-history | Geth 1.17.1；长超时复核通过，旧交易 hash 查询为 `null` |
-| `ws://65.21.45.43:8546` | healthy | 25,570,759 / 0 | complete | complete | pruned | full-history | Geth 1.16.8；长超时复核通过，旧交易 hash 查询为 `null` |
-| `ws://65.21.80.13:8546` | healthy | 25,570,760 / 0 | complete | complete | complete | archive | Reth 2.3.0；WETH 历史存储复核通过 |
-| `ws://65.21.93.190:8546` | unreachable | — | unknown | unknown | unknown | unknown | TCP 可达，但 WebSocket 握手连续 3 次失败 |
-| `ws://65.21.133.53:8546` | healthy | 25,570,760 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；定向复核通过 |
-| `ws://65.108.72.217:8546` | healthy | 25,570,760 / 0 | complete | complete | complete | archive | Erigon 3.4.3；WETH 历史存储复核通过 |
-| `ws://65.108.75.55:8546` | stale | 25,522,674 / 48,086 | complete | complete | pruned | full-history | Geth 1.16.7；链头约 6.7 天未更新；旧交易 hash 查询为 `null` |
-| `ws://65.108.79.174:8546` | healthy | 25,570,762 / 0 | pruned | pruned | pruned | pruned-history | Erigon 3.4.0；最早连续区块约 `#25,470,764`，约保留 13.94 天 |
-| `ws://65.108.105.28:8546` | healthy | 25,570,762 / 0 | complete | complete | pruned | full-history | Geth 1.17.4；定向复核通过 |
-| `ws://65.108.108.60:8546` | healthy | 25,570,762 / 0 | complete | complete | complete | archive | Reth 1.9.3；WETH 历史存储复核通过 |
-| `ws://65.108.129.183:8546` | healthy | 25,570,764 / 0 | complete | pruned | pruned | pruned-history | 客户端版本 RPC 超时；回执索引不连续，未计算边界 |
-| `ws://65.108.132.84:8546` | healthy | 25,570,765 / 0 | complete | complete | complete | archive | Reth 1.10.2；WETH 历史存储复核通过 |
-| `ws://65.108.133.93:8546` | healthy | 25,570,766 / 0 | complete | pruned | pruned | pruned-history | Reth 1.10.2；回执索引不连续，未计算边界 |
-| `ws://65.108.142.146:8546` | unreachable | — | unknown | unknown | unknown | unknown | TCP 可达，但 WebSocket 握手连续 3 次失败 |
-| `ws://65.108.199.204:8546` | healthy | 25,570,766 / 0 | unknown | pruned | pruned | pruned-history | Geth 1.17.4；历史回执裁剪，部分区块查询超时 |
-| `ws://65.108.202.46:8546` | unreachable | — | unknown | unknown | unknown | unknown | TCP 可达，但 WebSocket 握手连续 3 次失败 |
-| `ws://65.108.230.161:8546` | stale | 2 / 25,570,765 | complete | complete | unknown | unknown | Geth 1.12.0；仅同步至区块 2，无法形成多高度历史证据 |
-| `ws://65.108.233.209:8546` | unreachable | — | unknown | unknown | unknown | unknown | TCP 可达，但 WebSocket 握手连续 3 次失败 |
-| `ws://65.109.30.13:8546` | healthy | 25,570,767 / 0 | pruned | pruned | pruned | pruned-history | Erigon 3.4.0；最早连续区块约 `#25,470,769`，约保留 13.94 天 |
-| `ws://65.109.33.234:8546` | healthy | 25,570,767 / 0 | complete | complete | complete | archive | Erigon 3.3.0；WETH 历史存储复核通过 |
-| `ws://65.109.38.15:8546` | healthy | 25,570,769 / 0 | complete | complete | complete | archive | Erigon 3.4.2；WETH 历史存储复核通过 |
-| `ws://65.109.53.250:8546` | healthy | 25,570,768 / 1 | pruned | pruned | pruned | pruned-history | Erigon 3.3.10；早期与中期区块可用性不连续，未计算边界 |
-| `ws://65.109.82.250:8546` | healthy | 25,570,769 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；定向复核通过 |
-| `ws://65.109.112.157:8546` | healthy | 25,570,769 / 0 | complete | complete | complete | archive | Reth 2.4.0；WETH 历史存储复核通过 |
-| `ws://65.109.121.144:8546` | healthy | 25,570,769 / 0 | pruned | pruned | complete | pruned-history | Ethrex 21.0.0；最早连续区块约 `#24,932,752`，约保留 88.94 天 |
-| `ws://65.109.145.251:8546` | healthy | 25,570,769 / 0 | unknown | pruned | pruned | pruned-history | Nethermind 1.36.2；历史回执裁剪，部分区块查询超时 |
-| `ws://78.46.37.162:8546` | syncing | 0 / 25,570,772 | unknown | unknown | unknown | unknown | Geth 1.16.4；同步尚未产生可检查区块 |
-| `ws://78.46.80.172:8546` | healthy | 25,570,772 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；长超时复核通过，旧交易 hash 查询为 `null` |
-| `ws://88.99.30.186:8546` | healthy | 25,570,772 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；定向复核通过 |
-| `ws://95.216.0.93:8546` | healthy | 25,570,773 / 0 | complete | complete | pruned | full-history | Geth 1.17.1；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://116.202.213.113:8546` | healthy | 25,570,773 / 0 | complete | complete | pruned | full-history | Geth 1.17.1；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://116.202.218.100:8546` | healthy | 25,570,774 / 0 | complete | complete | complete | archive | Reth 2.3.0；WETH 历史存储复核通过 |
-| `ws://116.202.233.23:8546` | healthy | 25,570,775 / 0 | complete | complete | pruned | full-history | Geth 1.16.8；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://135.181.6.56:8546` | healthy | 25,570,776 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://135.181.22.123:8546` | healthy | 25,570,776 / 0 | complete | complete | pruned | full-history | Geth 1.17.2；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://135.181.57.120:8546` | healthy | 25,570,777 / 0 | complete | complete | complete | archive | Erigon 3.4.1；WETH 历史存储复核通过 |
-| `ws://135.181.103.235:8546` | healthy | 25,570,778 / 0 | pruned | pruned | complete | pruned-history | Besu 26.6.1；最早连续区块约 `#15,537,395`，约保留 1,403.80 天 |
-| `ws://135.181.177.35:8546` | healthy | 25,570,778 / 0 | pruned | pruned | pruned | pruned-history | Geth 1.16.7；最早连续区块约 `#15,537,393`，约保留 1,403.80 天 |
-| `ws://135.181.232.241:8546` | healthy | 25,570,778 / 0 | complete | complete | pruned | full-history | Geth 1.17.2；块级回执完整，旧交易 hash 查询为 `null` |
-| `ws://135.181.238.121:8546` | healthy | 25,570,778 / 0 | complete | complete | complete | archive | Reth 1.9.3；WETH 历史存储复核通过 |
+| `ws://49.12.19.226:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Geth 1.16.7；WETH 历史存储复核通过 |
+| `ws://49.12.58.246:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 111pg 1.16.7；块级回执完整，旧交易 hash 查询为 `null` |
+| `ws://49.12.58.248:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 111pg 1.16.7；长超时复核通过，旧交易 hash 查询为 `null` |
+| `ws://49.12.58.251:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 111pg 1.17.0；块级回执完整，旧交易 hash 查询为 `null` |
+| `ws://49.12.83.145:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.17.4；长超时复核通过，旧交易 hash 查询为 `null` |
+| `ws://49.12.123.150:8546` | healthy | 25,594,257 / 0 | pruned | pruned | pruned | pruned-history | 客户端版本 RPC 超时；最早连续区块约 `#10,000,000` |
+| `ws://65.21.12.175:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.17.1；长超时复核通过，旧交易 hash 查询为 `null` |
+| `ws://65.21.45.43:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.16.8；长超时复核通过，旧交易 hash 查询为 `null` |
+| `ws://65.21.80.13:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Reth 2.3.0；WETH 历史存储复核通过 |
+| `ws://65.21.93.190:8546` | unreachable | — | unknown | unknown | unknown | unknown | WebSocket 连续 3 次连接失败（1006） |
+| `ws://65.21.133.53:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；定向复核通过 |
+| `ws://65.108.72.217:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Erigon 3.4.3；WETH 历史存储复核通过 |
+| `ws://65.108.75.55:8546` | unreachable | — | complete | complete | pruned | full-history | Geth 1.16.7（7 月 20 日）；本次 WebSocket 连续 3 次连接失败（1006） |
+| `ws://65.108.79.174:8546` | healthy | 25,594,257 / 0 | pruned | pruned | pruned | pruned-history | Erigon 3.4.0；最早连续区块约 `#25,470,764`，约保留 13.94 天 |
+| `ws://65.108.105.28:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.17.4；定向复核通过 |
+| `ws://65.108.108.60:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Reth 1.9.3；WETH 历史存储复核通过 |
+| `ws://65.108.129.183:8546` | healthy | 25,594,257 / 0 | complete | pruned | pruned | pruned-history | 客户端版本 RPC 超时；回执索引不连续，未计算边界 |
+| `ws://65.108.132.84:8546` | healthy | 25,594,258 / -1 | complete | complete | complete | archive | Reth 1.10.2；WETH 历史存储复核通过；本次完整 RPC 检查第 2 次成功 |
+| `ws://65.108.133.93:8546` | healthy | 25,594,257 / 0 | complete | pruned | pruned | pruned-history | Reth 1.10.2；回执索引不连续，未计算边界 |
+| `ws://65.108.142.146:8546` | unreachable | — | unknown | unknown | unknown | unknown | WebSocket 连续 3 次连接失败（1006） |
+| `ws://65.108.199.204:8546` | healthy | 25,594,257 / 0 | unknown | pruned | pruned | pruned-history | Geth 1.17.4；历史回执裁剪，部分区块查询超时 |
+| `ws://65.108.202.46:8546` | unreachable | — | unknown | unknown | unknown | unknown | WebSocket 连续 3 次连接失败（1006） |
+| `ws://65.108.230.161:8546` | stale | 2 / 25,594,255 | complete | complete | unknown | unknown | Geth 1.12.0；仅同步至区块 2，无法形成多高度历史证据 |
+| `ws://65.108.233.209:8546` | unreachable | — | unknown | unknown | unknown | unknown | WebSocket 连续 3 次连接失败（1006） |
+| `ws://65.109.30.13:8546` | healthy | 25,594,257 / 0 | pruned | pruned | pruned | pruned-history | Erigon 3.4.0；最早连续区块约 `#25,470,769`，约保留 13.94 天 |
+| `ws://65.109.33.234:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Erigon 3.3.0；WETH 历史存储复核通过 |
+| `ws://65.109.38.15:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Erigon 3.4.2；WETH 历史存储复核通过 |
+| `ws://65.109.53.250:8546` | healthy | 25,594,257 / 0 | pruned | pruned | pruned | pruned-history | Erigon 3.3.10；早期与中期区块可用性不连续，未计算边界 |
+| `ws://65.109.82.250:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；定向复核通过 |
+| `ws://65.109.112.157:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Reth 2.4.0；WETH 历史存储复核通过 |
+| `ws://65.109.121.144:8546` | healthy | 25,594,257 / 0 | pruned | pruned | complete | pruned-history | Ethrex 22.0.0；最早连续区块约 `#24,932,752`，约保留 88.94 天 |
+| `ws://65.109.145.251:8546` | healthy | 25,594,257 / 0 | unknown | pruned | pruned | pruned-history | Nethermind 1.36.2；历史回执裁剪，部分区块查询超时 |
+| `ws://78.46.37.162:8546` | syncing | 0 / 25,594,257 | unknown | unknown | unknown | unknown | Geth 1.16.4；同步尚未产生可检查区块 |
+| `ws://78.46.80.172:8546` | stale | 25,594,247 / 10 | complete | complete | pruned | full-history | Geth 1.16.7；链头约 126 秒未更新；旧交易 hash 查询为 `null` |
+| `ws://88.99.30.186:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；定向复核通过 |
+| `ws://95.216.0.93:8546` | stale | 25,593,829 / 428 | complete | complete | pruned | full-history | Geth 1.17.1；链头约 86 分钟未更新；旧交易 hash 查询为 `null` |
+| `ws://116.202.213.113:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.17.1；块级回执完整，旧交易 hash 查询为 `null` |
+| `ws://116.202.218.100:8546` | healthy | 25,594,258 / -1 | complete | complete | complete | archive | Reth 2.3.0；WETH 历史存储复核通过；本次完整 RPC 检查第 2 次成功 |
+| `ws://116.202.233.23:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.16.8；块级回执完整，旧交易 hash 查询为 `null` |
+| `ws://135.181.6.56:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.16.7；块级回执完整，旧交易 hash 查询为 `null` |
+| `ws://135.181.22.123:8546` | healthy | 25,594,257 / 0 | complete | complete | pruned | full-history | Geth 1.17.2；块级回执完整，旧交易 hash 查询为 `null` |
+| `ws://135.181.57.120:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Erigon 3.4.1；WETH 历史存储复核通过 |
+| `ws://135.181.103.235:8546` | healthy | 25,594,257 / 0 | pruned | pruned | complete | pruned-history | Besu 26.6.1；最早连续区块约 `#15,537,395`，约保留 1,403.80 天 |
+| `ws://135.181.177.35:8546` | healthy | 25,594,257 / 0 | pruned | pruned | pruned | pruned-history | Geth 1.16.7；最早连续区块约 `#15,537,393`，约保留 1,403.80 天 |
+| `ws://135.181.232.241:8546` | unreachable | — | complete | complete | pruned | full-history | Geth 1.17.2（7 月 20 日）；本次 WebSocket 连续 3 次连接失败（1006） |
+| `ws://135.181.238.121:8546` | healthy | 25,594,257 / 0 | complete | complete | complete | archive | Reth 1.9.3；WETH 历史存储复核通过 |
 
 ## Chain ID 7 — ThaiChain
 
