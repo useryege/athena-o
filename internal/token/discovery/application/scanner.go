@@ -9,7 +9,10 @@ import (
 	"github.com/useryege/athena/internal/token/discovery"
 )
 
-const maxBlocksPerScanBatch = uint64(100)
+const (
+	maxBlocksPerScanBatch      = uint64(100)
+	initialBlockTimeSampleSize = uint64(100)
+)
 
 type ScannerRepository interface {
 	GetChainIngestCheckpoint(context.Context, int64) (*discovery.ChainIngestCheckpoint, error)
@@ -54,6 +57,16 @@ type ScanResult struct {
 	Candidates int
 }
 
+type initialBlockEstimate struct {
+	StartBlock              uint64
+	EstimatedLookbackBlocks uint64
+	SampleBlock             uint64
+	SampleTimestamp         uint64
+	SampleBlockCount        uint64
+	SampleElapsedSeconds    uint64
+	AverageBlockTimeMillis  uint64
+}
+
 type Scanner struct {
 	repository ScannerRepository
 	blocks     BlockSource
@@ -90,25 +103,29 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		if latest.Timestamp > lookbackSeconds {
 			targetTimestamp = latest.Timestamp - lookbackSeconds
 		}
-		start, err := scanner.findFirstBlockAtOrAfter(ctx, command.ChainID, latest.Number, targetTimestamp)
+		estimate, err := scanner.estimateInitialStartBlock(ctx, command.ChainID, latest, lookbackSeconds, targetTimestamp)
 		if err != nil {
 			return ScanResult{}, err
 		}
-		if start == 0 {
-			start = 1
-		}
+		start := estimate.StartBlock
 		checkpoint.CursorBlockNumber = start - 1
 		checkpoint, err = scanner.repository.UpsertChainIngestCheckpoint(ctx, *checkpoint)
 		if err != nil {
 			return ScanResult{}, err
 		}
 		log.WithFields(log.Fields{
-			"chain_id":          command.ChainID,
-			"latest_block":      latest.Number,
-			"latest_timestamp":  latest.Timestamp,
-			"lookback_duration": command.InitialLookbackDuration.String(),
-			"start_block":       start,
-			"target_timestamp":  targetTimestamp,
+			"chain_id":                  command.ChainID,
+			"latest_block":              latest.Number,
+			"latest_timestamp":          latest.Timestamp,
+			"lookback_duration":         command.InitialLookbackDuration.String(),
+			"start_block":               start,
+			"target_timestamp":          targetTimestamp,
+			"estimated_lookback_blocks": estimate.EstimatedLookbackBlocks,
+			"sample_block":              estimate.SampleBlock,
+			"sample_timestamp":          estimate.SampleTimestamp,
+			"sample_block_count":        estimate.SampleBlockCount,
+			"sample_elapsed_seconds":    estimate.SampleElapsedSeconds,
+			"average_block_time_ms":     estimate.AverageBlockTimeMillis,
 		}).Info("initialized token chain scanner checkpoint")
 	}
 	next := uint64(1)
@@ -156,19 +173,60 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	return result, nil
 }
 
-func (scanner *Scanner) findFirstBlockAtOrAfter(ctx context.Context, chainID int64, high, targetTimestamp uint64) (uint64, error) {
-	low := uint64(0)
-	for low < high {
-		mid := low + (high-low)/2
-		header, err := scanner.blocks.BlockHeaderByNumber(ctx, chainID, mid)
-		if err != nil {
-			return 0, err
-		}
-		if header.Timestamp < targetTimestamp {
-			low = mid + 1
-		} else {
-			high = mid
-		}
+func (scanner *Scanner) estimateInitialStartBlock(
+	ctx context.Context,
+	chainID int64,
+	latest discovery.BlockHeader,
+	lookbackSeconds uint64,
+	targetTimestamp uint64,
+) (initialBlockEstimate, error) {
+	estimate := initialBlockEstimate{
+		StartBlock:              1,
+		EstimatedLookbackBlocks: latest.Number,
 	}
-	return low, nil
+	if latest.Number <= initialBlockTimeSampleSize || targetTimestamp == 0 {
+		return estimate, nil
+	}
+
+	sampleBlock := latest.Number - initialBlockTimeSampleSize
+	sample, err := scanner.blocks.BlockHeaderByNumber(ctx, chainID, sampleBlock)
+	if err != nil {
+		return initialBlockEstimate{}, err
+	}
+	if sample.Number != sampleBlock {
+		return initialBlockEstimate{}, fmt.Errorf(
+			"token scanner block-time sample returned block %d for requested block %d",
+			sample.Number,
+			sampleBlock,
+		)
+	}
+	if sample.Timestamp >= latest.Timestamp {
+		return initialBlockEstimate{}, fmt.Errorf(
+			"token scanner block-time sample must have an earlier timestamp: sample=%d latest=%d",
+			sample.Timestamp,
+			latest.Timestamp,
+		)
+	}
+
+	sampleElapsedSeconds := latest.Timestamp - sample.Timestamp
+	numerator := lookbackSeconds * initialBlockTimeSampleSize
+	estimatedLookbackBlocks := numerator / sampleElapsedSeconds
+	remainder := numerator % sampleElapsedSeconds
+	if remainder >= sampleElapsedSeconds-remainder {
+		estimatedLookbackBlocks++
+	}
+
+	startBlock := uint64(1)
+	if estimatedLookbackBlocks < latest.Number {
+		startBlock = latest.Number - estimatedLookbackBlocks
+	}
+	return initialBlockEstimate{
+		StartBlock:              startBlock,
+		EstimatedLookbackBlocks: estimatedLookbackBlocks,
+		SampleBlock:             sample.Number,
+		SampleTimestamp:         sample.Timestamp,
+		SampleBlockCount:        initialBlockTimeSampleSize,
+		SampleElapsedSeconds:    sampleElapsedSeconds,
+		AverageBlockTimeMillis:  sampleElapsedSeconds * 1000 / initialBlockTimeSampleSize,
+	}, nil
 }
