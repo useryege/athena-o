@@ -1,10 +1,10 @@
 # Etherscan Gateway Servers
 
-本文记录 Etherscan Gateway 当前使用的三台服务器。服务器顺序与 `.env`
+本文记录 Etherscan Gateway 当前使用的五台服务器。服务器顺序与 `.env`
 中的 `ETHERSCAN_GATEWAY_IPS` 配置一一对应：
 
 ```bash
-ETHERSCAN_GATEWAY_IPS='47.245.166.57 47.245.161.139 47.245.181.189'
+ETHERSCAN_GATEWAY_IPS='47.245.166.57 47.245.161.139 47.245.181.189 47.254.154.128 47.245.183.140'
 ```
 
 ## 服务器清单
@@ -14,6 +14,8 @@ ETHERSCAN_GATEWAY_IPS='47.245.166.57 47.245.161.139 47.245.181.189'
 | 1 | HYD | `47.245.166.57` |
 | 2 | SYY | `47.245.161.139` |
 | 3 | LDM | `47.245.181.189` |
+| 4 | iZgw883p7pkcbe7f09pofeZ | `47.254.154.128` |
+| 5 | iZgw8g4vw9m7flvr3ltbkbZ | `47.245.183.140` |
 
 ## 部署信息
 
@@ -31,7 +33,7 @@ ETHERSCAN_GATEWAY_IPS='47.245.166.57 47.245.161.139 47.245.181.189'
 显式 `host:port` 列表：
 
 ```bash
-ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776'
+ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776 47.254.154.128:6776 47.245.183.140:6776'
 ```
 
 Athena 前端的 `/etherscan-gateways` 状态页由 `athena-server` 聚合展示。该页面读取
