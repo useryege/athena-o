@@ -18,10 +18,6 @@ interface IUniswapV2PairView {
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
 }
 
-interface IPancakeFactoryView {
-    function INIT_CODE_PAIR_HASH() external view returns (bytes32);
-}
-
 /**
  * @title Athena
  * @author yege
@@ -115,6 +111,10 @@ contract Athena {
 
     address private constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     address private constant ZERO_ADDRESS = address(0);
+    bytes32 private constant ETHEREUM_V2_INIT_CODE_PAIR_HASH =
+        0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f;
+    bytes32 private constant BSC_V2_INIT_CODE_PAIR_HASH =
+        0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5;
 
     address private immutable factoryContract;
     address private immutable wethContract;
@@ -133,15 +133,16 @@ contract Athena {
             wethContract = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
             usdtContract = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
             v2pairFeeToAddress = 0xf38521f130fcCF29dB1961597bc5d2B60F995f85;
+            initCodePairHash = ETHEREUM_V2_INIT_CODE_PAIR_HASH;
         } else if (chainId == 56) {
             factoryContract = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
             wethContract = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
             usdtContract = 0x55d398326f99059fF775485246999027B3197955;
             v2pairFeeToAddress = 0x0ED943Ce24BaEBf257488771759F9BF482C39706;
+            initCodePairHash = BSC_V2_INIT_CODE_PAIR_HASH;
         } else {
             revert("Invalid chain id");
         }
-        initCodePairHash = IPancakeFactoryView(factoryContract).INIT_CODE_PAIR_HASH();
         (bool usdtDecimalsOk, uint8 decimals) = _safeUint8(usdtContract, IERC20View.decimals.selector);
         usdtDecimals = usdtDecimalsOk && decimals > 0 ? decimals : (chainId == 1 ? uint8(6) : uint8(18));
     }

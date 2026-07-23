@@ -17,6 +17,7 @@ The executable code remains the source of truth. These documents provide the mai
 | --- | --- | --- |
 | Polymarket | Managed Optimistic Oracle log ingestion, market enrichment, and alerts | [Managed OO Alerts](polymarket/managed-oo-alerts.md) |
 | Token Intelligence | EVM chain scanning and project candidate ingestion | [Token Scanner](token-intelligence/scanner.md) |
+| Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |
 | Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
 | Token Intelligence | One-time related-wallet BSC funding-source history | [Wallet Funding Source History](token-intelligence/wallet-funding-source-history.md) |
 | Token Intelligence | One-time related-wallet BSC V2 Swap transaction-hash history | [Wallet Swap Transaction History](token-intelligence/wallet-swap-transaction-history.md) |
