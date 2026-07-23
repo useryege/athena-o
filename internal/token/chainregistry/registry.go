@@ -41,7 +41,6 @@ type chainJSON struct {
 	AthenaContract                 string   `json:"athenaContract"`
 	ScannerInitialLookbackDuration duration `json:"scannerInitialLookbackDuration"`
 	ScannerPollInterval            duration `json:"scannerPollInterval"`
-	BlockFetchConcurrency          int      `json:"blockFetchConcurrency"`
 }
 
 type Chain struct {
@@ -53,7 +52,6 @@ type Chain struct {
 	AthenaContract                 string
 	ScannerInitialLookbackDuration time.Duration
 	ScannerPollInterval            time.Duration
-	BlockFetchConcurrency          int
 }
 
 type Registry struct {
@@ -94,10 +92,7 @@ func Parse(raw string) (*Registry, error) {
 		if value.ScannerInitialLookbackDuration.Duration < time.Second {
 			return nil, fmt.Errorf("%s[%d].scannerInitialLookbackDuration must be at least 1s", EnvironmentVariable, index)
 		}
-		if value.BlockFetchConcurrency <= 0 {
-			return nil, fmt.Errorf("%s[%d].blockFetchConcurrency must be positive", EnvironmentVariable, index)
-		}
-		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, UseProxy: value.UseProxy, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerInitialLookbackDuration: value.ScannerInitialLookbackDuration.Duration, ScannerPollInterval: value.ScannerPollInterval.Duration, BlockFetchConcurrency: value.BlockFetchConcurrency}
+		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, UseProxy: value.UseProxy, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerInitialLookbackDuration: value.ScannerInitialLookbackDuration.Duration, ScannerPollInterval: value.ScannerPollInterval.Duration}
 		registry.chains = append(registry.chains, chain)
 		registry.byID[chain.ID] = chain
 	}

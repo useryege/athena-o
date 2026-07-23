@@ -8,7 +8,7 @@ import (
 	"github.com/useryege/athena/internal/token/discovery"
 )
 
-func (s *ChainRepository) IngestProjectCandidateBatch(ctx context.Context, checkpoint discovery.ChainIngestCheckpoint, candidates []discovery.ProjectCandidate) (*discovery.ChainIngestCheckpoint, error) {
+func (s *ChainRepository) IngestProjectCandidateBlock(ctx context.Context, checkpoint discovery.ChainIngestCheckpoint, candidates []discovery.ProjectCandidate) (*discovery.ChainIngestCheckpoint, error) {
 	if s == nil || s.pool == nil {
 		return nil, fmt.Errorf("token chain repository is not configured")
 	}
@@ -18,7 +18,7 @@ func (s *ChainRepository) IngestProjectCandidateBatch(ctx context.Context, check
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("begin ingest project candidate batch transaction: %w", err)
+		return nil, fmt.Errorf("begin ingest project candidate block transaction: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
@@ -43,7 +43,7 @@ func (s *ChainRepository) IngestProjectCandidateBatch(ctx context.Context, check
 		return nil, fmt.Errorf("upsert chain ingest checkpoint cursor: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("commit ingest project candidate batch transaction: %w", err)
+		return nil, fmt.Errorf("commit ingest project candidate block transaction: %w", err)
 	}
 	mapped, err := mapChainCheckpoint(row)
 	if err != nil {

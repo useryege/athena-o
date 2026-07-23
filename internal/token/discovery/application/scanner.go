@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	maxBlocksPerScanBatch      = uint64(100)
 	initialBlockTimeSampleSize = uint64(100)
 )
 
@@ -18,7 +17,7 @@ type ScannerRepository interface {
 	GetChainIngestCheckpoint(context.Context, int64) (*discovery.ChainIngestCheckpoint, error)
 	UpsertChainIngestCheckpoint(context.Context, discovery.ChainIngestCheckpoint) (*discovery.ChainIngestCheckpoint, error)
 	UpdateChainIngestCheckpointStatus(context.Context, int64, discovery.ChainIngestStatus) (*discovery.ChainIngestCheckpoint, error)
-	IngestProjectCandidateBatch(context.Context, discovery.ChainIngestCheckpoint, []discovery.ProjectCandidate) (*discovery.ChainIngestCheckpoint, error)
+	IngestProjectCandidateBlock(context.Context, discovery.ChainIngestCheckpoint, []discovery.ProjectCandidate) (*discovery.ChainIngestCheckpoint, error)
 }
 
 func (scanner *Scanner) StartChain(ctx context.Context, chainID int64) error {
@@ -42,17 +41,15 @@ func (scanner *Scanner) StopChain(ctx context.Context, chainID int64) error {
 type BlockSource interface {
 	LatestBlockHeader(context.Context, int64) (discovery.BlockHeader, error)
 	BlockHeaderByNumber(context.Context, int64, uint64) (discovery.BlockHeader, error)
-	DiscoverProjectCandidates(context.Context, int64, uint64, uint64, int) ([]discovery.ProjectCandidate, error)
+	DiscoverProjectCandidates(context.Context, int64, uint64) ([]discovery.ProjectCandidate, error)
 }
 
 type ScanChainCommand struct {
 	ChainID                 int64
 	InitialLookbackDuration time.Duration
-	BlockFetchConcurrency   int
 }
 
 type ScanResult struct {
-	Batches    int
 	Blocks     uint64
 	Candidates int
 }
@@ -144,31 +141,23 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		if checkpoint == nil || !checkpoint.Enabled || checkpoint.Status != discovery.ChainIngestStatusRunning {
 			return result, nil
 		}
-		batchEnd := next + maxBlocksPerScanBatch - 1
-		if batchEnd > latest.Number {
-			batchEnd = latest.Number
-		}
-		batchStartedAt := time.Now()
-		candidates, err := scanner.blocks.DiscoverProjectCandidates(ctx, command.ChainID, next, batchEnd, command.BlockFetchConcurrency)
+		blockStartedAt := time.Now()
+		candidates, err := scanner.blocks.DiscoverProjectCandidates(ctx, command.ChainID, next)
 		if err != nil {
 			return result, err
 		}
-		if _, err = scanner.repository.IngestProjectCandidateBatch(ctx, discovery.ChainIngestCheckpoint{ChainID: command.ChainID, CursorBlockNumber: batchEnd, Status: discovery.ChainIngestStatusRunning}, candidates); err != nil {
+		if _, err = scanner.repository.IngestProjectCandidateBlock(ctx, discovery.ChainIngestCheckpoint{ChainID: command.ChainID, CursorBlockNumber: next, Status: discovery.ChainIngestStatusRunning}, candidates); err != nil {
 			return result, err
 		}
-		blockCount := batchEnd - next + 1
 		log.WithFields(log.Fields{
-			"block_count":     blockCount,
+			"block_number":    next,
 			"candidate_count": len(candidates),
 			"chain_id":        command.ChainID,
-			"duration_ms":     time.Since(batchStartedAt).Milliseconds(),
-			"end_block":       batchEnd,
-			"start_block":     next,
-		}).Info("token scanner batch completed")
-		result.Batches++
-		result.Blocks += blockCount
+			"duration_ms":     time.Since(blockStartedAt).Milliseconds(),
+		}).Info("token scanner block completed")
+		result.Blocks++
 		result.Candidates += len(candidates)
-		next = batchEnd + 1
+		next++
 	}
 	return result, nil
 }
