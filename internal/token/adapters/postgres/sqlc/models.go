@@ -219,54 +219,6 @@ type ProjectSelectionEvaluationTask struct {
 	UpdatedAt      pgtype.Timestamptz
 }
 
-type ProjectWalletFundingSourceHistory struct {
-	ProjectID                 int64
-	Wallet                    []byte
-	AnchorBlockNumber         int64
-	AnchorTransactionIndex    int64
-	RequestedTransactionCount int32
-	CollectedTransactionCount int32
-	IndexedThroughBlock       int64
-	IndexedThroughTimestamp   int64
-	FetchedAt                 pgtype.Timestamptz
-	CreatedAt                 pgtype.Timestamptz
-}
-
-type ProjectWalletFundingSourceTransaction struct {
-	ProjectID        int64
-	Wallet           []byte
-	RankIndex        int32
-	BlockNumber      int64
-	BlockHash        []byte
-	BlockTimestamp   int64
-	TransactionHash  []byte
-	TransactionIndex int64
-	FromAddress      []byte
-	ToAddress        []byte
-	ValueWei         pgtype.Numeric
-	CreatedAt        pgtype.Timestamptz
-}
-
-type ProjectWalletSwapTransaction struct {
-	ProjectID       int64
-	Wallet          []byte
-	RankIndex       int32
-	TransactionHash []byte
-	CreatedAt       pgtype.Timestamptz
-}
-
-type ProjectWalletSwapTransactionHistory struct {
-	ProjectID                 int64
-	Wallet                    []byte
-	AnchorBlockNumber         int64
-	RequestedTransactionCount int32
-	CollectedTransactionCount int32
-	IndexedThroughBlock       int64
-	IndexedThroughTimestamp   int64
-	FetchedAt                 pgtype.Timestamptz
-	CreatedAt                 pgtype.Timestamptz
-}
-
 type WalletBlocklist struct {
 	Wallet    []byte
 	Note      pgtype.Text

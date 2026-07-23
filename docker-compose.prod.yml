@@ -239,34 +239,6 @@ services:
       ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8115
     expose: ["8115"]
 
-  athena-token-collector-wallet-funding-source-history:
-    <<: *token-worker
-    command: ["athena", "--data-type", "wallet_funding_source_history"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      <<: *token-worker-environment
-      ATHENA_BINARY_NAME: athena-token-collector
-      ATHENA_TOKEN_DATA_TYPE: wallet_funding_source_history
-      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8120
-      ATHENA_TOKEN_BSC_INBOUND_SERVER_ADDRESS: ${ATHENA_TOKEN_BSC_INBOUND_SERVER_ADDRESS:?ATHENA_TOKEN_BSC_INBOUND_SERVER_ADDRESS is required}
-    expose: ["8120"]
-
-  athena-token-collector-wallet-swap-transaction-history:
-    <<: *token-worker
-    command: ["athena", "--data-type", "wallet_swap_transaction_history"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      <<: *token-worker-environment
-      ATHENA_BINARY_NAME: athena-token-collector
-      ATHENA_TOKEN_DATA_TYPE: wallet_swap_transaction_history
-      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8121
-      ATHENA_TOKEN_BSC_SWAP_SERVER_ADDRESS: ${ATHENA_TOKEN_BSC_SWAP_SERVER_ADDRESS:?ATHENA_TOKEN_BSC_SWAP_SERVER_ADDRESS is required}
-    expose: ["8121"]
-
   athena-token-collector-simulation-result:
     <<: *token-worker
     command: ["athena", "--data-type", "simulation_result"]

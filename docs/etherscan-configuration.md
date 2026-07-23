@@ -25,9 +25,7 @@ ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS='localhost:8100'
 ```
 
 The generic `ListNormalTransactions` RPC remains available through
-`athena-ethereum-api`, but the Token funding-source collector does not use it.
-That collector reads indexed BSC inbound transfers through the separately
-deployed `BscInboundTransactionService`.
+`athena-ethereum-api`.
 
 `athena-server` also reads the gateway IP list, gateway bearer token, and
 `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS` for the `/etherscan-gateways` UI live

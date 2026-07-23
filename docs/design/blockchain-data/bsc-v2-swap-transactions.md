@@ -34,7 +34,7 @@ flowchart LR
 
 The scanner and gRPC service run in one process and share one PostgreSQL connection pool. The scanner is the only writer. It uses one `eth_getLogs` request for each contiguous range of at most 100 finalized blocks and fetches full blocks only when the filtered logs contain a transaction in that block. It does not request individual receipts.
 
-The process has its own executable, image, Compose project, PostgreSQL database, and persistent volume. It is independent of the main ATHENA process and the inbound BSC transaction indexer. The Token Intelligence wallet Swap-history collector is a downstream client that stores only the newest 100 hashes before each project's creation block; it owns its own immutable snapshot and completion state.
+The process has its own executable, image, Compose project, PostgreSQL database, and persistent volume. It is independent of the main ATHENA process and the inbound BSC transaction indexer. Its gRPC query remains available to authorized independent clients.
 
 ## Runtime Flow
 

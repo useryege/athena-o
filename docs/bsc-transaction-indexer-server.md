@@ -46,16 +46,10 @@ athena-bsc-transaction-indexer-postgres-data
 
 ## 服务接口和配置
 
-主服务的 `wallet_funding_source_history` Collector 使用以下地址连接索引器：
+授权调用方使用以下地址连接索引器：
 
 ```text
 47.245.183.140:8130
-```
-
-对应的主服务配置为：
-
-```env
-ATHENA_TOKEN_BSC_INBOUND_SERVER_ADDRESS=47.245.183.140:8130
 ```
 
 该端口提供 `BscInboundTransactionService`，当前只查询成功、finalized、空
@@ -78,7 +72,7 @@ ATHENA_BSC_INBOUND_TELEMETRY_LISTEN_ADDRESS=0.0.0.0:8131
 `127.0.0.1:8131`，公网无法直接访问。PostgreSQL 没有宿主机端口映射。
 
 gRPC 当前没有 TLS 或 token 验证。TCP `8130` 必须由云安全组或服务器防火墙
-限制为仅允许 ATHENA 主服务器访问，不应面向任意公网客户端开放。
+限制为仅允许授权调用方访问，不应面向任意公网客户端开放。
 
 ## 部署和更新
 

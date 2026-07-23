@@ -44,7 +44,7 @@ func (repository *CollectionRepository) ClaimCollectionTasks(ctx context.Context
 		if err != nil {
 			return nil, err
 		}
-		contextValue := research.ProjectCollectionContext{ID: project.ID, ChainID: project.ChainID, Contract: project.Contract, CreationBlockNumber: project.BlockNumber, CreationTransactionIndex: project.TxIndex, CodeHash: project.CodeHash, WethPair: project.WethPair, UsdtPair: project.UsdtPair, RefreshInterval: time.Duration(schedule.RefreshIntervalSeconds) * time.Second}
+		contextValue := research.ProjectCollectionContext{ID: project.ID, ChainID: project.ChainID, Contract: project.Contract, CodeHash: project.CodeHash, WethPair: project.WethPair, UsdtPair: project.UsdtPair, RefreshInterval: time.Duration(schedule.RefreshIntervalSeconds) * time.Second}
 		for _, wallet := range walletRows {
 			contextValue.RelatedWallets = append(contextValue.RelatedWallets, bytesToAddress(wallet.Wallet))
 		}

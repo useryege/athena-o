@@ -4,7 +4,7 @@
 
 This service indexes successful finalized BNB Smart Chain Mainnet transactions that directly transfer more than `10000000000000000` wei with empty calldata to a non-null recipient. It owns the initial 30-day backfill, finalized-head following, receipt validation, atomic PostgreSQL persistence, address-first keyset pagination with an optional exclusive starting position, gRPC serving, and scanner health reporting.
 
-BEP-20 transfers, internal transactions, execution traces, swaps, outbound history, and multi-chain indexing are outside this capability. The Token Intelligence funding-source collector consumes the gRPC query but owns project anchors, immutable snapshots, and its own PostgreSQL persistence.
+BEP-20 transfers, internal transactions, execution traces, swaps, outbound history, and multi-chain indexing are outside this capability. The gRPC query remains available to authorized independent clients.
 
 ## Source Locations
 
@@ -30,7 +30,6 @@ flowchart LR
     S --> R["Receipt validation"]
     R --> P["PostgreSQL 18"]
     P --> G["BSC inbound gRPC service"]
-    C["Token funding-source collector"] -->|"private TCP 8130"| G
     S --> H["Health and Prometheus telemetry"]
 ```
 
@@ -40,7 +39,7 @@ The process has its own executable, minimal runtime image, Compose project, Post
 
 The Docker bootstrap script prepares a fresh Ubuntu server through a direct root SSH session using Docker's official APT repository. It is idempotent only for a fully healthy Engine and Compose installation; incomplete installations and conflicting distribution packages fail without automatic removal or replacement. It does not manage Swap, host firewalls, or cloud security groups.
 
-The deployment script builds the dedicated image locally, streams it over SSH, installs the Compose and environment files, and recreates only this Compose project. Repeated deployments preserve the named PostgreSQL volume. The remote ATHENA funding-source collector connects to the exposed gRPC endpoint through its configured server address.
+The deployment script builds the dedicated image locally, streams it over SSH, installs the Compose and environment files, and recreates only this Compose project. Repeated deployments preserve the named PostgreSQL volume.
 
 ## Runtime Flow
 
