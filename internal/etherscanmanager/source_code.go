@@ -1,12 +1,12 @@
-package ethereumapi
+package etherscanmanager
 
 import (
 	"context"
 	"strings"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/useryege/athena/internal/ethereumapi/apiclient"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/internal/etherscanmanager/apiclient"
+	"github.com/useryege/athena/util/etherscanapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -26,9 +26,9 @@ func (s *Service) GetSourceCode(
 		return nil, status.Error(codes.InvalidArgument, "contract_address must be a valid EVM address")
 	}
 
-	response, err := s.ethereumAPI.GetSourceCode(ctx, req.GetChainId(), ethcommon.HexToAddress(contractAddress).Hex())
+	response, err := s.manager.GetSourceCode(ctx, req.GetChainId(), ethcommon.HexToAddress(contractAddress).Hex())
 	if err != nil {
-		return nil, grpcErrorFromEthereumAPI(err)
+		return nil, grpcErrorFromEtherscanAPI(err)
 	}
 	if response == nil {
 		return nil, status.Error(codes.DataLoss, "source code response is empty")
@@ -41,7 +41,7 @@ func (s *Service) GetSourceCode(
 	return &apiclient.GetSourceCodeResponse{Items: items}, nil
 }
 
-func sourceCodeToProto(item utilethereumapi.SourceCodeResult) *apiclient.SourceCode {
+func sourceCodeToProto(item etherscanapi.SourceCodeResult) *apiclient.SourceCode {
 	return &apiclient.SourceCode{
 		SourceCode:           item.SourceCode,
 		Abi:                  item.ABI,

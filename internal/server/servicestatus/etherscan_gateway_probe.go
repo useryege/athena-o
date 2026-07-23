@@ -137,7 +137,7 @@ func (s *Server) newEtherscanGatewayProbeConfig(req *servicestatuspkg.RunEthersc
 
 	keys := etherscangatewayprobe.ParseAPIKeys(s.etherscanAPIKeysRaw)
 	if len(keys) == 0 {
-		return etherscangatewayprobe.Config{}, grpcstatus.Error(codes.FailedPrecondition, "ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS is required")
+		return etherscangatewayprobe.Config{}, grpcstatus.Error(codes.FailedPrecondition, "ATHENA_ETHERSCAN_MANAGER_API_KEYS is required")
 	}
 
 	gatewayAddrs, err := etherscangatewayprobe.ParseGatewayAddrs("", strings.Join(s.etherscanGatewayIPs, " "))

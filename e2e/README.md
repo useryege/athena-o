@@ -24,10 +24,10 @@ Run the default local regression suite:
 make e2e
 ```
 
-Run only ethereum-api default E2E tests:
+Run only etherscan-manager default E2E tests:
 
 ```bash
-make e2e-ethereumapi
+make e2e-etherscan-manager
 ```
 
 Run the manual BSC fixed-block trace viewer with a decimal or `0x`-prefixed
@@ -72,7 +72,7 @@ Run live E2E tests explicitly:
 
 ```bash
 E2E_LIVE=1 make e2e-live
-E2E_LIVE=1 make e2e-live-ethereumapi
+E2E_LIVE=1 make e2e-live-etherscan-manager
 ```
 
 Run the manual Etherscan rate-limit probe explicitly:
@@ -116,17 +116,17 @@ and that file should contain `ATHENA_E2E_ETHERSCAN_API_KEYS`,
 `ETHERSCAN_GATEWAY_IPS`, and `ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN`. Use
 `E2E_ENV_FILE=.env.local` to point at a different local secret file.
 
-## ethereum-api
+## etherscan-manager
 
-The ethereum-api tests connect to the gRPC service started by `make run`.
+The etherscan-manager tests connect to the gRPC service started by `make run`.
 
 Environment variables:
 
 | Name | Default | Description |
 | --- | --- | --- |
-| `ATHENA_E2E_ETHEREUM_API_ADDR` | `127.0.0.1:8100` | ethereum-api gRPC address. |
+| `ATHENA_E2E_ETHERSCAN_MANAGER_ADDR` | `127.0.0.1:8100` | etherscan-manager gRPC address. |
 | `ATHENA_E2E_TIMEOUT` | `90s` | Readiness wait and RPC timeout. |
-| `ATHENA_E2E_ETHEREUM_API_ADDRESS` | `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` | Ethereum mainnet address used by live transaction queries. |
+| `ATHENA_E2E_ETHERSCAN_QUERY_ADDRESS` | `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` | Ethereum mainnet address used by live transaction queries. |
 | `ATHENA_E2E_ETHERSCAN_API_KEY` | unset | Optional Etherscan API key override for direct live probes. |
 | `ATHENA_E2E_ETHERSCAN_API_KEYS` | unset | Comma or newline-separated Etherscan API keys for the manual multi-key probes; the Gateway target reads it from `E2E_ENV_FILE`. |
 | `ATHENA_E2E_ETHERSCAN_GATEWAY_ADDRS` | unset | Optional comma, space, or newline-separated `host:port` Etherscan Gateway gRPC addresses; overrides `ETHERSCAN_GATEWAY_IPS`. |
@@ -138,18 +138,19 @@ Environment variables:
 | `ETHERSCAN_GATEWAY_IPS` | unset | Space-separated Etherscan Gateway server IPs; each is called on port `6776`. |
 | `E2E_LIVE` | unset | Must be `1` to run live tests. |
 
-The default ethereum-api tests do not call Etherscan. The live ethereum-api
-tests perform a real normal transaction query and fail directly on
-authentication failures, rate limits, network failures, Postgres failures, and
+The default etherscan-manager tests do not call Etherscan. The live
+etherscan-manager tests perform a real normal transaction query and fail
+directly on authentication failures, rate limits, network failures, and
 service errors.
 
-The Etherscan rate-limit probe bypasses the local ethereum-api service and calls
+The Etherscan rate-limit probe bypasses the local etherscan-manager service and calls
 `https://api.etherscan.io/v2/api` directly without Athena's built-in Etherscan
 rate limiter. It intentionally sends a short burst of requests to trigger the
 upstream free-plan limit, consumes real Etherscan quota, and expects at least one
-rate-limit response. It is not included in the default live ethereum-api target.
+rate-limit response. It is not included in the default live
+etherscan-manager target.
 
-The Etherscan multi-key aggregate probe also bypasses the local ethereum-api
+The Etherscan multi-key aggregate probe also bypasses the local etherscan-manager
 service and calls Etherscan directly. It sends three concurrent requests per key
 in one short burst, redacts keys in logs to short fingerprints, and passes when
 at least 90% of the aggregate requests succeed. High rate-limit counts indicate

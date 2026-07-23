@@ -1,34 +1,31 @@
 # Etherscan Configuration
 
-Athena runtime services centralize Etherscan access through `athena-ethereum-api`.
-
-- `ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS`
-
-`athena-ethereum-api` uses an Etherscan Gateway manager and requires a comma,
-space, or newline separated key list plus explicit gateway gRPC addresses:
+Athena runtime services centralize Etherscan access through
+`athena-etherscan-manager`. The manager requires a comma-, space-, or
+newline-separated API key list plus explicit Gateway gRPC addresses:
 
 ```bash
-ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS='key1,key2,key3'
-ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776 47.254.154.128:6776 47.245.183.140:6776'
+ATHENA_ETHERSCAN_MANAGER_API_KEYS='key1,key2,key3'
+ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS='47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776 47.254.154.128:6776 47.245.183.140:6776'
 ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN='gateway-bearer-token'
 ```
 
-Each ethereum-api cache refresh picks the next API key and next gateway address
-in round-robin order. A failed gateway request is returned immediately; the
-manager does not retry with another key or gateway.
+Each outbound request picks the next API key and Gateway address using one
+shared round-robin sequence. A failed Gateway request is returned immediately;
+the manager does not retry with another key or Gateway.
 
 The `athena-token-collector --data-type contract_code_source` process does not
-read standalone Etherscan API keys. It calls `athena-ethereum-api` over gRPC:
+read standalone Etherscan API keys. It calls `athena-etherscan-manager` over gRPC:
 
 ```bash
-ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS='localhost:8100'
+ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS='localhost:8100'
 ```
 
 The generic `ListNormalTransactions` RPC remains available through
-`athena-ethereum-api`.
+`athena-etherscan-manager`.
 
 `athena-server` also reads the gateway IP list, gateway bearer token, and
-`ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS` for the `/etherscan-gateways` UI live
+`ATHENA_ETHERSCAN_MANAGER_API_KEYS` for the `/etherscan-gateways` UI live
 probe. The UI accepts an interval in milliseconds and a request count per API
 key, then runs the same `ListNormalTransactions` success-rate probe through the
 configured gateway fleet. It stores only the latest run in `athena-server`

@@ -1,4 +1,4 @@
-package ethereumapi
+package etherscanmanager
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/useryege/athena/internal/ethereumapi/apiclient"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/internal/etherscanmanager/apiclient"
+	"github.com/useryege/athena/util/etherscanapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -32,9 +32,9 @@ func (s *Service) ListNormalTransactions(
 	if err != nil {
 		return nil, err
 	}
-	response, err := s.ethereumAPI.ListNormalTransactions(ctx, query)
+	response, err := s.manager.ListNormalTransactions(ctx, query)
 	if err != nil {
-		return nil, grpcErrorFromEthereumAPI(err)
+		return nil, grpcErrorFromEtherscanAPI(err)
 	}
 	if response == nil {
 		return nil, status.Error(codes.DataLoss, "normal transactions response is empty")
@@ -42,7 +42,7 @@ func (s *Service) ListNormalTransactions(
 
 	transactions := make([]*apiclient.NormalTransaction, 0, len(response.Result))
 	for index, item := range response.Result {
-		transaction, err := normalTransactionFromEthereumAPI(item)
+		transaction, err := normalTransactionFromEtherscanAPI(item)
 		if err != nil {
 			return nil, status.Errorf(codes.DataLoss, "decode normal transaction %d: %v", index, err)
 		}
@@ -55,16 +55,16 @@ func (s *Service) ListNormalTransactions(
 	}, nil
 }
 
-func normalizeNormalTransactionQuery(req *apiclient.ListNormalTransactionsRequest) (utilethereumapi.ListNormalTransactionsOptions, error) {
+func normalizeNormalTransactionQuery(req *apiclient.ListNormalTransactionsRequest) (etherscanapi.ListNormalTransactionsOptions, error) {
 	if req == nil {
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "request is required")
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "request is required")
 	}
 	if req.GetChainId() <= 0 {
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "chain_id must be positive")
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "chain_id must be positive")
 	}
 	addressText := strings.TrimSpace(req.GetAddress())
 	if !ethcommon.IsHexAddress(addressText) {
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "address must be a valid EVM address")
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "address must be a valid EVM address")
 	}
 
 	startBlock := uint64(0)
@@ -73,11 +73,11 @@ func normalizeNormalTransactionQuery(req *apiclient.ListNormalTransactionsReques
 		startBlock = blockRange.GetStartBlock()
 		endBlock = blockRange.GetEndBlock()
 		if startBlock > endBlock {
-			return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "start_block must not exceed end_block")
+			return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "start_block must not exceed end_block")
 		}
 	}
 	if startBlock > math.MaxInt64 || endBlock > math.MaxInt64 {
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "block range exceeds the supported range")
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "block range exceeds the supported range")
 	}
 
 	page := req.GetPage()
@@ -85,31 +85,31 @@ func normalizeNormalTransactionQuery(req *apiclient.ListNormalTransactionsReques
 		page = defaultNormalTransactionPage
 	}
 	if page < 1 {
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "page must be positive")
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "page must be positive")
 	}
 	pageSize := req.GetPageSize()
 	if pageSize == 0 {
 		pageSize = defaultNormalTransactionPageSize
 	}
 	if pageSize < 1 || pageSize > maxNormalTransactionPageSize {
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Errorf(
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Errorf(
 			codes.InvalidArgument,
 			"page_size must be between 1 and %d",
 			maxNormalTransactionPageSize,
 		)
 	}
 
-	sortOrder := utilethereumapi.NormalTransactionSortASC
+	sortOrder := etherscanapi.NormalTransactionSortASC
 	switch req.GetSort() {
 	case apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_UNSPECIFIED,
 		apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC:
 	case apiclient.NormalTransactionSort_NORMAL_TRANSACTION_SORT_DESC:
-		sortOrder = utilethereumapi.NormalTransactionSortDESC
+		sortOrder = etherscanapi.NormalTransactionSortDESC
 	default:
-		return utilethereumapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "sort is invalid")
+		return etherscanapi.ListNormalTransactionsOptions{}, status.Error(codes.InvalidArgument, "sort is invalid")
 	}
 
-	return utilethereumapi.ListNormalTransactionsOptions{
+	return etherscanapi.ListNormalTransactionsOptions{
 		ChainID:    req.GetChainId(),
 		Address:    ethcommon.HexToAddress(addressText).Hex(),
 		StartBlock: startBlock,
@@ -120,7 +120,7 @@ func normalizeNormalTransactionQuery(req *apiclient.ListNormalTransactionsReques
 	}, nil
 }
 
-func normalTransactionFromEthereumAPI(item utilethereumapi.NormalTransactionResult) (*apiclient.NormalTransaction, error) {
+func normalTransactionFromEtherscanAPI(item etherscanapi.NormalTransactionResult) (*apiclient.NormalTransaction, error) {
 	blockNumber, err := parseUint64Field("blockNumber", item.BlockNumber)
 	if err != nil {
 		return nil, err
@@ -310,23 +310,23 @@ func parseZeroOneBool(name string, value string) (bool, error) {
 	}
 }
 
-func grpcErrorFromEthereumAPI(err error) error {
+func grpcErrorFromEtherscanAPI(err error) error {
 	if err == nil {
 		return nil
 	}
 	if contextError := contextErrorStatus(err); contextError != nil {
 		return contextError
 	}
-	var apiErr *utilethereumapi.APIError
+	var apiErr *etherscanapi.APIError
 	if stderrors.As(err, &apiErr) {
 		switch apiErr.Type {
-		case utilethereumapi.APIErrorTypeRateLimit:
+		case etherscanapi.APIErrorTypeRateLimit:
 			return status.Error(codes.ResourceExhausted, apiErr.Error())
-		case utilethereumapi.APIErrorTypeAuthentication, utilethereumapi.APIErrorTypePlan:
+		case etherscanapi.APIErrorTypeAuthentication, etherscanapi.APIErrorTypePlan:
 			return status.Error(codes.FailedPrecondition, apiErr.Error())
-		case utilethereumapi.APIErrorTypeInvalidRequest:
+		case etherscanapi.APIErrorTypeInvalidRequest:
 			return status.Error(codes.InvalidArgument, apiErr.Error())
-		case utilethereumapi.APIErrorTypeMalformed:
+		case etherscanapi.APIErrorTypeMalformed:
 			return status.Error(codes.DataLoss, apiErr.Error())
 		}
 		return status.Error(codes.Unavailable, apiErr.Error())

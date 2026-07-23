@@ -15,7 +15,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/useryege/athena/pkg/apiclient/etherscangateway"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/etherscanapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -47,11 +47,11 @@ type Service struct {
 func NewService(opts ServiceOpts) *Service {
 	baseURL := strings.TrimSpace(opts.EtherscanBaseURL)
 	if baseURL == "" {
-		baseURL = utilethereumapi.DefaultBaseURL
+		baseURL = etherscanapi.DefaultBaseURL
 	}
 	timeout := opts.Timeout
 	if timeout <= 0 {
-		timeout = utilethereumapi.DefaultTimeout
+		timeout = etherscanapi.DefaultTimeout
 	}
 	return &Service{
 		etherscanBaseURL: baseURL,
@@ -101,12 +101,12 @@ func (s *Service) ListNormalTransactions(
 	client := s.newEtherscanClient(apiKey)
 	response, err := client.ListNormalTransactions(ctx, query.options)
 	if err != nil {
-		return nil, grpcErrorFromEthereumAPI(err, apiKey)
+		return nil, grpcErrorFromEtherscanAPI(err, apiKey)
 	}
 
 	transactions := make([]*etherscangateway.NormalTransaction, 0, len(response.Result))
 	for index, item := range response.Result {
-		transaction, err := normalTransactionFromEthereumAPI(item)
+		transaction, err := normalTransactionFromEtherscanAPI(item)
 		if err != nil {
 			return nil, status.Errorf(codes.DataLoss, "decode normal transaction %d: %v", index, err)
 		}
@@ -141,18 +141,18 @@ func (s *Service) GetSourceCode(
 	client := s.newEtherscanClient(apiKey)
 	response, err := client.GetSourceCode(ctx, req.GetChainId(), ethcommon.HexToAddress(contractAddress).Hex())
 	if err != nil {
-		return nil, grpcErrorFromEthereumAPI(err, apiKey)
+		return nil, grpcErrorFromEtherscanAPI(err, apiKey)
 	}
 
 	items := make([]*etherscangateway.SourceCode, 0, len(response.Result))
 	for _, item := range response.Result {
-		items = append(items, sourceCodeFromEthereumAPI(item))
+		items = append(items, sourceCodeFromEtherscanAPI(item))
 	}
 	return &etherscangateway.GetSourceCodeResponse{Items: items}, nil
 }
 
-func (s *Service) newEtherscanClient(apiKey string) utilethereumapi.EthereumAPI {
-	return utilethereumapi.NewEthereumAPIWithConfig(utilethereumapi.Config{
+func (s *Service) newEtherscanClient(apiKey string) etherscanapi.Client {
+	return etherscanapi.NewClientWithConfig(etherscanapi.Config{
 		BaseURL: s.etherscanBaseURL,
 		APIKey:  apiKey,
 		Timeout: s.timeout,
@@ -160,7 +160,7 @@ func (s *Service) newEtherscanClient(apiKey string) utilethereumapi.EthereumAPI 
 }
 
 type normalizedNormalTransactionRequest struct {
-	options  utilethereumapi.ListNormalTransactionsOptions
+	options  etherscanapi.ListNormalTransactionsOptions
 	page     int32
 	pageSize int32
 }
@@ -213,18 +213,18 @@ func normalizeNormalTransactionRequest(req *etherscangateway.ListNormalTransacti
 		)
 	}
 
-	sortOrder := utilethereumapi.NormalTransactionSortASC
+	sortOrder := etherscanapi.NormalTransactionSortASC
 	switch req.GetSort() {
 	case etherscangateway.NormalTransactionSort_NORMAL_TRANSACTION_SORT_UNSPECIFIED,
 		etherscangateway.NormalTransactionSort_NORMAL_TRANSACTION_SORT_ASC:
 	case etherscangateway.NormalTransactionSort_NORMAL_TRANSACTION_SORT_DESC:
-		sortOrder = utilethereumapi.NormalTransactionSortDESC
+		sortOrder = etherscanapi.NormalTransactionSortDESC
 	default:
 		return normalizedNormalTransactionRequest{}, "", status.Error(codes.InvalidArgument, "sort is invalid")
 	}
 
 	return normalizedNormalTransactionRequest{
-		options: utilethereumapi.ListNormalTransactionsOptions{
+		options: etherscanapi.ListNormalTransactionsOptions{
 			ChainID:    req.GetChainId(),
 			Address:    ethcommon.HexToAddress(addressText).Hex(),
 			StartBlock: startBlock,
@@ -238,7 +238,7 @@ func normalizeNormalTransactionRequest(req *etherscangateway.ListNormalTransacti
 	}, apiKey, nil
 }
 
-func normalTransactionFromEthereumAPI(item utilethereumapi.NormalTransactionResult) (*etherscangateway.NormalTransaction, error) {
+func normalTransactionFromEtherscanAPI(item etherscanapi.NormalTransactionResult) (*etherscangateway.NormalTransaction, error) {
 	blockNumber, err := parseUint64Field("blockNumber", item.BlockNumber)
 	if err != nil {
 		return nil, err
@@ -349,7 +349,7 @@ func normalTransactionFromEthereumAPI(item utilethereumapi.NormalTransactionResu
 	}, nil
 }
 
-func sourceCodeFromEthereumAPI(item utilethereumapi.SourceCodeResult) *etherscangateway.SourceCode {
+func sourceCodeFromEtherscanAPI(item etherscanapi.SourceCodeResult) *etherscangateway.SourceCode {
 	return &etherscangateway.SourceCode{
 		SourceCode:           item.SourceCode,
 		Abi:                  item.ABI,
@@ -446,7 +446,7 @@ func parseZeroOneBool(name string, value string) (bool, error) {
 	}
 }
 
-func grpcErrorFromEthereumAPI(err error, apiKey string) error {
+func grpcErrorFromEtherscanAPI(err error, apiKey string) error {
 	if err == nil {
 		return nil
 	}
@@ -455,18 +455,18 @@ func grpcErrorFromEthereumAPI(err error, apiKey string) error {
 	}
 
 	message := sanitizeEtherscanError(err, apiKey)
-	var apiErr *utilethereumapi.APIError
+	var apiErr *etherscanapi.APIError
 	if stderrors.As(err, &apiErr) {
 		switch apiErr.Type {
-		case utilethereumapi.APIErrorTypeRateLimit:
+		case etherscanapi.APIErrorTypeRateLimit:
 			return status.Error(codes.ResourceExhausted, message)
-		case utilethereumapi.APIErrorTypeAuthentication:
+		case etherscanapi.APIErrorTypeAuthentication:
 			return status.Error(codes.Unauthenticated, message)
-		case utilethereumapi.APIErrorTypePlan:
+		case etherscanapi.APIErrorTypePlan:
 			return status.Error(codes.PermissionDenied, message)
-		case utilethereumapi.APIErrorTypeInvalidRequest:
+		case etherscanapi.APIErrorTypeInvalidRequest:
 			return status.Error(codes.InvalidArgument, message)
-		case utilethereumapi.APIErrorTypeMalformed:
+		case etherscanapi.APIErrorTypeMalformed:
 			return status.Error(codes.DataLoss, message)
 		}
 		return status.Error(codes.Unavailable, message)

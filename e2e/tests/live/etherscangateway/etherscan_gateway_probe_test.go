@@ -1,4 +1,4 @@
-package ethereumapilivee2e
+package etherscangatewaylivee2e
 
 import (
 	"context"

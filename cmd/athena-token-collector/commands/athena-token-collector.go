@@ -32,7 +32,7 @@ var collectorHealthAddresses = map[research.DataCollectionType]string{
 
 func NewCommand() *cobra.Command {
 	var flags tokenworker.CommonFlags
-	var dataTypeValue, aveAPIKey, aveAPIBaseURL, ethereumAPIAddress string
+	var dataTypeValue, aveAPIKey, aveAPIBaseURL, etherscanManagerAddress string
 	command := &cobra.Command{Use: cliName, Short: "Collect one token research data type", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
 		dataType, ok := research.ParseDataCollectionType(strings.TrimSpace(dataTypeValue))
 		if !ok {
@@ -55,7 +55,7 @@ func NewCommand() *cobra.Command {
 			}
 			processor = researchapp.AveProcessor{Provider: provider}
 		case research.DataCollectionTypeContractCodeSource:
-			provider, err := sourcecode.New(ethereumAPIAddress)
+			provider, err := sourcecode.New(etherscanManagerAddress)
 			if err != nil {
 				return err
 			}
@@ -91,7 +91,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&dataTypeValue, "data-type", env.StringFromEnv("ATHENA_TOKEN_DATA_TYPE", ""), "Collection type: ave|chain_state|wallet_asset_state|simulation_result|contract_code_source")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_TOKEN_AVE_API_KEY", ""), "Ave API key")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_TOKEN_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
-	command.Flags().StringVar(&ethereumAPIAddress, "ethereum-api-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHEREUM_API_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortEthereumAPI)), "Ethereum API gRPC address")
+	command.Flags().StringVar(&etherscanManagerAddress, "etherscan-manager-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortEtherscanManager)), "Etherscan Manager gRPC address")
 	_ = command.MarkFlagRequired("data-type")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

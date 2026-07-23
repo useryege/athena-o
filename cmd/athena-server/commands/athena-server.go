@@ -208,7 +208,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", "localhost:8096"), "Athena token API server address")
 	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")
 	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC status calls")
-	command.Flags().StringVar(&etherscanAPIKeys, "etherscan-api-keys", env.StringFromEnv("ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS", ""), "Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs")
+	command.Flags().StringVar(&etherscanAPIKeys, "etherscan-api-keys", env.StringFromEnv("ATHENA_ETHERSCAN_MANAGER_API_KEYS", ""), "Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs")
 	command.Flags().StringVar(&etherscanProbeQueryAddress, "etherscan-gateway-probe-query-address", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_PROBE_QUERY_ADDRESS", ""), "Ethereum address used by Etherscan Gateway probe runs")
 	// command.Flags().BoolVar(&hydratorEnabled, "hydrator-enabled", env.ParseBoolFromEnv("ATHENA_SERVER_HYDRATOR_ENABLED", false), "Feature flag to enable Hydrator. Default (\"false\")")
 	// command.Flags().BoolVar(&syncWithReplaceAllowed, "sync-with-replace-allowed", env.ParseBoolFromEnv("ATHENA_SERVER_SYNC_WITH_REPLACE_ALLOWED", true), "Whether to allow users to select replace for syncs from UI/CLI")

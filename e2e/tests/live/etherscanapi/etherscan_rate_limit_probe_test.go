@@ -1,4 +1,4 @@
-package ethereumapilivee2e
+package etherscanapilivee2e
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/useryege/athena/e2e/internal/e2etest"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/etherscanapi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -39,8 +39,8 @@ func TestEtherscanFreePlanRateLimitProbe(t *testing.T) {
 		t.Fatalf("%s is required to run this live probe", envEtherscanAPIKey)
 	}
 
-	client := utilethereumapi.NewEthereumAPIWithConfig(utilethereumapi.Config{
-		BaseURL: utilethereumapi.DefaultBaseURL,
+	client := etherscanapi.NewClientWithConfig(etherscanapi.Config{
+		BaseURL: etherscanapi.DefaultBaseURL,
 		APIKey:  apiKey,
 		Timeout: cfg.timeout,
 	})
@@ -127,7 +127,7 @@ func TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe(t *testing.T) {
 	)
 }
 
-func runEtherscanRateLimitProbe(t testing.TB, client utilethereumapi.EthereumAPI, cfg e2eConfig) etherscanRateLimitProbeSummary {
+func runEtherscanRateLimitProbe(t testing.TB, client etherscanapi.Client, cfg e2eConfig) etherscanRateLimitProbeSummary {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
@@ -143,12 +143,12 @@ func runEtherscanRateLimitProbe(t testing.TB, client utilethereumapi.EthereumAPI
 		go func() {
 			defer wg.Done()
 			<-start
-			_, err := client.ListNormalTransactions(ctx, utilethereumapi.ListNormalTransactionsOptions{
+			_, err := client.ListNormalTransactions(ctx, etherscanapi.ListNormalTransactionsOptions{
 				ChainID:  1,
 				Address:  cfg.queryAddress,
 				Page:     1,
 				PageSize: 1,
-				Sort:     utilethereumapi.NormalTransactionSortASC,
+				Sort:     etherscanapi.NormalTransactionSortASC,
 			})
 			results <- err
 		}()
@@ -199,15 +199,15 @@ func runEtherscanMultiKeyAggregateRateLimitProbeWithInterval(t testing.TB, keys 
 		summary.perKey[keyLabel] = &etherscanMultiKeyProbeKeySummary{keyLabel: keyLabel}
 		summary.perKeyOrder = append(summary.perKeyOrder, keyLabel)
 
-		client := utilethereumapi.NewEthereumAPIWithConfig(utilethereumapi.Config{
-			BaseURL: utilethereumapi.DefaultBaseURL,
+		client := etherscanapi.NewClientWithConfig(etherscanapi.Config{
+			BaseURL: etherscanapi.DefaultBaseURL,
 			APIKey:  key,
 			Timeout: cfg.timeout,
 		})
 		for i := 0; i < etherscanMultiKeyProbeRequestsPerKey; i++ {
 			index := requestIndex
 			requestIndex++
-			go func(keyLabel string, client utilethereumapi.EthereumAPI, requestIndex int) {
+			go func(keyLabel string, client etherscanapi.Client, requestIndex int) {
 				defer wg.Done()
 				<-start
 				if !waitEtherscanProbeRequestInterval(ctx, time.Duration(requestIndex)*interval) {
@@ -219,12 +219,12 @@ func runEtherscanMultiKeyAggregateRateLimitProbeWithInterval(t testing.TB, keys 
 					return
 				}
 				startedAt := time.Now()
-				_, err := client.ListNormalTransactions(ctx, utilethereumapi.ListNormalTransactionsOptions{
+				_, err := client.ListNormalTransactions(ctx, etherscanapi.ListNormalTransactionsOptions{
 					ChainID:  1,
 					Address:  cfg.queryAddress,
 					Page:     1,
 					PageSize: 1,
-					Sort:     utilethereumapi.NormalTransactionSortASC,
+					Sort:     etherscanapi.NormalTransactionSortASC,
 				})
 				results <- etherscanMultiKeyProbeResult{
 					keyLabel:  keyLabel,
@@ -618,23 +618,23 @@ func classifyEtherscanProbeError(err error) etherscanProbeResultCategory {
 		}
 	}
 
-	var apiErr *utilethereumapi.APIError
+	var apiErr *etherscanapi.APIError
 	if errors.As(err, &apiErr) {
 		if apiErr.StatusCode == 429 || isEtherscanRateLimitError(err) {
 			return etherscanProbeResultRateLimit
 		}
 		switch apiErr.Type {
-		case utilethereumapi.APIErrorTypeRateLimit:
+		case etherscanapi.APIErrorTypeRateLimit:
 			return etherscanProbeResultRateLimit
-		case utilethereumapi.APIErrorTypeAuthentication:
+		case etherscanapi.APIErrorTypeAuthentication:
 			return etherscanProbeResultAuthentication
-		case utilethereumapi.APIErrorTypePlan:
+		case etherscanapi.APIErrorTypePlan:
 			return etherscanProbeResultPlan
-		case utilethereumapi.APIErrorTypeInvalidRequest:
+		case etherscanapi.APIErrorTypeInvalidRequest:
 			return etherscanProbeResultInvalidRequest
-		case utilethereumapi.APIErrorTypeMalformed:
+		case etherscanapi.APIErrorTypeMalformed:
 			return etherscanProbeResultMalformed
-		case utilethereumapi.APIErrorTypeUpstream:
+		case etherscanapi.APIErrorTypeUpstream:
 			return etherscanProbeResultUpstream
 		default:
 			return etherscanProbeResultOther

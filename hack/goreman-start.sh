@@ -155,7 +155,7 @@ cleanup_athena_ports() {
 		"wallet:${ATHENA_WALLET_PORT:-8088}"
 		"polymarket:${ATHENA_POLYMARKET_PORT:-8092}"
 		"token-api:${ATHENA_TOKEN_API_PORT:-8096}"
-		"ethereum-api:${ATHENA_ETHEREUM_API_PORT:-8100}"
+		"etherscan-manager:${ATHENA_ETHERSCAN_MANAGER_PORT:-8100}"
 		"token-scanner-health:8110"
 		"token-validator-health:8111"
 		"token-scheduler-health:8112"

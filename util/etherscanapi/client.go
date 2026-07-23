@@ -1,4 +1,4 @@
-package ethereumapi
+package etherscanapi
 
 import (
 	"context"
@@ -31,13 +31,13 @@ const (
 	APIErrorTypeUpstream       = "upstream"
 )
 
-type EthereumAPI interface {
+type Client interface {
 	GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*SourceCodeResponse, error)
 	GetABI(ctx context.Context, chainID int64, contractAddress string) (*ABIResponse, error)
 	ListNormalTransactions(ctx context.Context, opts ListNormalTransactionsOptions) (*NormalTransactionsResponse, error)
 }
 
-type ethereumAPIImpl struct {
+type client struct {
 	baseURL     string
 	apiKey      string
 	client      *http.Client
@@ -52,14 +52,14 @@ type Config struct {
 	HTTPClient  *http.Client
 }
 
-func NewEthereumAPI(baseURL string, apiKey string) EthereumAPI {
-	return NewEthereumAPIWithConfig(Config{
+func NewClient(baseURL string, apiKey string) Client {
+	return NewClientWithConfig(Config{
 		BaseURL: baseURL,
 		APIKey:  apiKey,
 	})
 }
 
-func NewEthereumAPIWithConfig(config Config) EthereumAPI {
+func NewClientWithConfig(config Config) Client {
 	baseURL := strings.TrimSpace(config.BaseURL)
 	if baseURL == "" {
 		baseURL = DefaultBaseURL
@@ -68,18 +68,18 @@ func NewEthereumAPIWithConfig(config Config) EthereumAPI {
 	if rateLimiter == nil {
 		rateLimiter = ratelimit.Noop()
 	}
-	client := config.HTTPClient
-	if client == nil {
+	httpClient := config.HTTPClient
+	if httpClient == nil {
 		timeout := config.Timeout
 		if timeout <= 0 {
 			timeout = DefaultTimeout
 		}
-		client = &http.Client{Timeout: timeout}
+		httpClient = &http.Client{Timeout: timeout}
 	}
-	return &ethereumAPIImpl{
+	return &client{
 		baseURL:     baseURL,
 		apiKey:      config.APIKey,
-		client:      client,
+		client:      httpClient,
 		rateLimiter: rateLimiter,
 	}
 }
@@ -179,7 +179,7 @@ type ABIResponse struct {
 	Result  string `json:"result"`
 }
 
-func (e *ethereumAPIImpl) GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*SourceCodeResponse, error) {
+func (e *client) GetSourceCode(ctx context.Context, chainID int64, contractAddress string) (*SourceCodeResponse, error) {
 	resp, err := e.do(ctx, e.apiKey, chainID, "contract", "getsourcecode", map[string]interface{}{
 		"address": contractAddress,
 	})
@@ -221,7 +221,7 @@ func (e *ethereumAPIImpl) GetSourceCode(ctx context.Context, chainID int64, cont
 	return &sourceCodeResp, nil
 }
 
-func (e *ethereumAPIImpl) GetABI(ctx context.Context, chainID int64, contractAddress string) (*ABIResponse, error) {
+func (e *client) GetABI(ctx context.Context, chainID int64, contractAddress string) (*ABIResponse, error) {
 	resp, err := e.do(ctx, e.apiKey, chainID, "contract", "getabi", map[string]interface{}{
 		"address": contractAddress,
 	})
@@ -244,7 +244,7 @@ func (e *ethereumAPIImpl) GetABI(ctx context.Context, chainID int64, contractAdd
 	return &abiResp, nil
 }
 
-func (e *ethereumAPIImpl) ListNormalTransactions(ctx context.Context, opts ListNormalTransactionsOptions) (*NormalTransactionsResponse, error) {
+func (e *client) ListNormalTransactions(ctx context.Context, opts ListNormalTransactionsOptions) (*NormalTransactionsResponse, error) {
 	resp, err := e.do(ctx, e.apiKey, opts.ChainID, "account", "txlist", map[string]interface{}{
 		"address":    opts.Address,
 		"startblock": opts.StartBlock,
@@ -302,7 +302,7 @@ func (e *ethereumAPIImpl) ListNormalTransactions(ctx context.Context, opts ListN
 	return nil, newEnvelopeAPIError(rawResp.Message, resultMessage)
 }
 
-func (e *ethereumAPIImpl) do(ctx context.Context, apiKey string, chainID int64, module string, action string, params map[string]interface{}) (*http.Response, error) {
+func (e *client) do(ctx context.Context, apiKey string, chainID int64, module string, action string, params map[string]interface{}) (*http.Response, error) {
 	endpoint, err := url.Parse(e.baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse etherscan base url: %w", err)

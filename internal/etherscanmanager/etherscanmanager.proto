@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-// Ethereum API Service API exposes ethereum-api service runtime status.
-package athena.internal.ethereumapi;
+// Etherscan Manager Service API exposes centrally scheduled Etherscan data.
+package athena.internal.etherscanmanager;
 
-option go_package = "github.com/useryege/athena/internal/ethereumapi/apiclient";
+option go_package = "github.com/useryege/athena/internal/etherscanmanager/apiclient";
 
-// GetEthereumAPIStatusRequest queries the ethereum-api service runtime status.
-message GetEthereumAPIStatusRequest {}
+// GetEtherscanManagerStatusRequest queries the manager service runtime status.
+message GetEtherscanManagerStatusRequest {}
 
-// GetEthereumAPIStatusResponse returns the ethereum-api service runtime status.
-message GetEthereumAPIStatusResponse {
+// GetEtherscanManagerStatusResponse returns the manager service runtime status.
+message GetEtherscanManagerStatusResponse {
   bool started = 1;
   string status = 2;
 }
@@ -103,9 +103,9 @@ message GetSourceCodeResponse {
   repeated SourceCode items = 1;
 }
 
-service EthereumAPIService {
-  // GetEthereumAPIStatus returns the ethereum-api service runtime status.
-  rpc GetEthereumAPIStatus(GetEthereumAPIStatusRequest) returns (GetEthereumAPIStatusResponse);
+service EtherscanManagerService {
+  // GetEtherscanManagerStatus returns the manager service runtime status.
+  rpc GetEtherscanManagerStatus(GetEtherscanManagerStatusRequest) returns (GetEtherscanManagerStatusResponse);
 
   // ListNormalTransactions returns normal transactions for one EVM address.
   rpc ListNormalTransactions(ListNormalTransactionsRequest) returns (ListNormalTransactionsResponse);

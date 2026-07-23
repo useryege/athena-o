@@ -13,7 +13,7 @@ token-collector-contract-code-source: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/
 token-report-builder: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-report-builder} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-report-builder go run ./cmd/main.go"
 token-selector: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-selector} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-selector go run ./cmd/main.go"
 token-api: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-api} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-api go run ./cmd/main.go --port ${ATHENA_TOKEN_API_PORT:-8096}"
-ethereum-api: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-ethereum-api} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-ethereum-api go run ./cmd/main.go --port ${ATHENA_ETHEREUM_API_PORT:-8100}"
+etherscan-manager: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-etherscan-manager} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-etherscan-manager go run ./cmd/main.go --port ${ATHENA_ETHERSCAN_MANAGER_PORT:-8100}"
 # notification: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-notification} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-notification go run ./cmd/main.go --port ${ATHENA_NOTIFICATION_PORT:-8086}"
 wallet: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-wallet ATHENA_WALLET_ENCRYPTION_KEY=${ATHENA_WALLET_ENCRYPTION_KEY:-athena-local-wallet-encryption-key} go run ./cmd/main.go --port ${ATHENA_WALLET_PORT:-8088}"
 redis: hack/start-redis-with-password.sh

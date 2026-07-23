@@ -221,9 +221,9 @@ run:
 e2e:
 	go test $(E2E_GO_TEST_FLAGS) $(E2E_PACKAGES)
 
-.PHONY: e2e-ethereumapi
-e2e-ethereumapi:
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/ethereumapi
+.PHONY: e2e-etherscan-manager
+e2e-etherscan-manager:
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/etherscanmanager
 
 .PHONY: e2e-bsc-block-trace
 e2e-bsc-block-trace:
@@ -238,14 +238,14 @@ e2e-live:
 	fi
 	go test $(E2E_GO_TEST_FLAGS) $(E2E_LIVE_PACKAGES)
 
-.PHONY: e2e-live-ethereumapi
-e2e-live-ethereumapi:
+.PHONY: e2e-live-etherscan-manager
+e2e-live-etherscan-manager:
 	@if [ "$${E2E_LIVE:-}" != "1" ]; then \
-		printf '%s\n' 'Refusing to run ethereum-api live E2E tests without explicit confirmation.' >&2; \
-		printf '%s\n' 'Run: E2E_LIVE=1 make e2e-live-ethereumapi' >&2; \
+		printf '%s\n' 'Refusing to run etherscan-manager live E2E tests without explicit confirmation.' >&2; \
+		printf '%s\n' 'Run: E2E_LIVE=1 make e2e-live-etherscan-manager' >&2; \
 		exit 1; \
 	fi
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/etherscanmanager
 
 .PHONY: e2e-live-etherscan-rate-limit
 e2e-live-etherscan-rate-limit:
@@ -259,7 +259,7 @@ e2e-live-etherscan-rate-limit:
 		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_RATE_LIMIT_PROBE=1 make e2e-live-etherscan-rate-limit' >&2; \
 		exit 1; \
 	fi
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanFreePlanRateLimitProbe -v
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/etherscanapi -run TestEtherscanFreePlanRateLimitProbe -v
 
 .PHONY: e2e-live-etherscan-multi-key-rate-limit
 e2e-live-etherscan-multi-key-rate-limit:
@@ -273,7 +273,7 @@ e2e-live-etherscan-multi-key-rate-limit:
 		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_MULTI_KEY_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 make e2e-live-etherscan-multi-key-rate-limit' >&2; \
 		exit 1; \
 	fi
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateRateLimitProbe -v
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/etherscanapi -run TestEtherscanMultiKeyAggregateRateLimitProbe -v
 
 .PHONY: e2e-live-etherscan-multi-key-staggered-rate-limit
 e2e-live-etherscan-multi-key-staggered-rate-limit:
@@ -287,7 +287,7 @@ e2e-live-etherscan-multi-key-staggered-rate-limit:
 		printf '%s\n' 'Run: E2E_LIVE=1 ATHENA_E2E_ETHERSCAN_MULTI_KEY_STAGGERED_PROBE=1 ATHENA_E2E_ETHERSCAN_API_KEYS=key1,key2,key3 make e2e-live-etherscan-multi-key-staggered-rate-limit' >&2; \
 		exit 1; \
 	fi
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe -v
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/etherscanapi -run TestEtherscanMultiKeyAggregateStaggeredRateLimitProbe -v
 
 .PHONY: e2e-live-etherscan-gateway-multi-key-staggered-success
 e2e-live-etherscan-gateway-multi-key-staggered-success:
@@ -322,7 +322,7 @@ e2e-live-etherscan-gateway-multi-key-staggered-success:
 		printf '%s\n' 'Refusing to run staggered Etherscan Gateway multi-key probe without ATHENA_E2E_ETHERSCAN_GATEWAY_ADDRS or ETHERSCAN_GATEWAY_IPS in the env file.' >&2; \
 		exit 1; \
 	fi; \
-	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/ethereumapi -run TestEtherscanGatewayMultiKeyStaggeredSuccessProbe -v
+	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/live/etherscangateway -run TestEtherscanGatewayMultiKeyStaggeredSuccessProbe -v
 
 .PHONY: prod-build-local
 prod-build-local:

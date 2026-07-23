@@ -29,11 +29,11 @@ ETHERSCAN_GATEWAY_IPS='47.245.166.57 47.245.161.139 47.245.181.189 47.254.154.12
 部署脚本会按 `ETHERSCAN_GATEWAY_IPS` 中的 IP 顺序依次发布
 `athena-etherscan-gateway`，并在每台服务器上启用 systemd 服务。
 
-`athena-ethereum-api` 运行时不直接读取 `ETHERSCAN_GATEWAY_IPS`。它使用
+`athena-etherscan-manager` 运行时不直接读取 `ETHERSCAN_GATEWAY_IPS`。它使用
 显式 `host:port` 列表：
 
 ```bash
-ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS='47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776 47.254.154.128:6776 47.245.183.140:6776'
+ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS='47.245.166.57:6776 47.245.161.139:6776 47.245.181.189:6776 47.254.154.128:6776 47.245.183.140:6776'
 ```
 
 Athena 前端的 `/etherscan-gateways` 状态页由 `athena-server` 聚合展示。该页面读取
@@ -43,6 +43,6 @@ Athena 前端的 `/etherscan-gateways` 状态页由 `athena-server` 聚合展示
 
 同一页面也提供 Etherscan Gateway live probe。运维人员可设置请求启动间隔和
 每个 API key 的调用次数；`athena-server` 会读取
-`ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS`、`ETHERSCAN_GATEWAY_IPS` 和
+`ATHENA_ETHERSCAN_MANAGER_API_KEYS`、`ETHERSCAN_GATEWAY_IPS` 和
 `ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN` 后异步执行测试，只在 UI 中返回聚合统计、
 gateway 汇总和短 API key fingerprint。该测试会消耗真实 Etherscan 请求额度。

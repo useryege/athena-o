@@ -1,9 +1,9 @@
-package ethereumapi
+package etherscanmanager
 
 import (
 	"context"
 
-	"github.com/useryege/athena/internal/ethereumapi/apiclient"
+	"github.com/useryege/athena/internal/etherscanmanager/apiclient"
 	"github.com/useryege/athena/internal/server/version"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
@@ -18,7 +18,7 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	EthereumAPI etherscanClient
+	Manager requestManager
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -27,7 +27,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	return &Server{
 		ServerOpts: opts,
 		service: NewService(ServiceOpts{
-			EthereumAPI: opts.EthereumAPI,
+			Manager: opts.Manager,
 		}),
 		healthService: healthService,
 	}, nil
@@ -39,7 +39,7 @@ func (s *Server) CreateGRPC() *grpc.Server {
 		return true, nil
 	})
 	versionpkg.RegisterVersionServiceServer(server, versionService)
-	apiclient.RegisterEthereumAPIServiceServer(server, s.service)
+	apiclient.RegisterEtherscanManagerServiceServer(server, s.service)
 	grpc_health_v1.RegisterHealthServer(server, s.healthService)
 	return server
 }

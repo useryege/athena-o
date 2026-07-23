@@ -1,4 +1,4 @@
-package ethereumapilivee2e
+package etherscanmanagerlivee2e
 
 import (
 	"context"
@@ -7,16 +7,16 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/useryege/athena/e2e/internal/e2etest"
-	"github.com/useryege/athena/internal/ethereumapi/apiclient"
+	"github.com/useryege/athena/internal/etherscanmanager/apiclient"
 	"google.golang.org/grpc"
 )
 
-const ethereumAPIReadinessHint = "confirm `make run` is running ethereum-api, and ATHENA_ETHEREUM_API_ETHERSCAN_API_KEYS, ATHENA_ETHEREUM_API_ETHERSCAN_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
+const etherscanManagerReadinessHint = "confirm `make run` is running etherscan-manager, and ATHENA_ETHERSCAN_MANAGER_API_KEYS, ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS, and ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN were set before startup"
 
-func TestEthereumAPIListNormalTransactions(t *testing.T) {
+func TestEtherscanManagerListNormalTransactions(t *testing.T) {
 	e2etest.RequireEnvValue(t, envE2ELive, "1")
 
-	cfg, client := ethereumAPIClient(t)
+	cfg, client := etherscanManagerClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
 
@@ -42,21 +42,21 @@ func TestEthereumAPIListNormalTransactions(t *testing.T) {
 	requireNormalTransactionShape(t, resp.GetTransactions()[0])
 }
 
-func ethereumAPIClient(t testing.TB) (e2eConfig, apiclient.EthereumAPIServiceClient) {
+func etherscanManagerClient(t testing.TB) (e2eConfig, apiclient.EtherscanManagerServiceClient) {
 	t.Helper()
 
 	cfg := loadConfig(t)
-	waitForEthereumAPI(t, cfg)
+	waitForEtherscanManager(t, cfg)
 	conn := e2etest.NewInsecureGRPCConn(t, cfg.addr, grpc.MaxCallRecvMsgSize(apiclient.MaxGRPCMessageSize))
-	return cfg, apiclient.NewEthereumAPIServiceClient(conn)
+	return cfg, apiclient.NewEtherscanManagerServiceClient(conn)
 }
 
-func waitForEthereumAPI(t testing.TB, cfg e2eConfig) {
+func waitForEtherscanManager(t testing.TB, cfg e2eConfig) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
-	if err := e2etest.WaitForGRPCServing(ctx, cfg.addr, ethereumAPIReadinessHint); err != nil {
+	if err := e2etest.WaitForGRPCServing(ctx, cfg.addr, etherscanManagerReadinessHint); err != nil {
 		t.Fatal(err)
 	}
 }

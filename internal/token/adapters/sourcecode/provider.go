@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"strings"
 
-	ethereumapiapiclient "github.com/useryege/athena/internal/ethereumapi/apiclient"
+	etherscanmanagerapiclient "github.com/useryege/athena/internal/etherscanmanager/apiclient"
 	"github.com/useryege/athena/internal/token/shared"
 	utilio "github.com/useryege/athena/util/io"
 )
 
 type Provider struct {
-	client ethereumapiapiclient.EthereumAPIServiceClient
+	client etherscanmanagerapiclient.EtherscanManagerServiceClient
 	closer utilio.Closer
 }
 
 func New(address string) (*Provider, error) {
 	address = strings.TrimSpace(address)
 	if address == "" {
-		return nil, fmt.Errorf("Ethereum API address is required")
+		return nil, fmt.Errorf("Etherscan Manager address is required")
 	}
-	closer, client, err := ethereumapiapiclient.NewEthereumAPIClientset(address).NewEthereumAPIServiceClient()
+	closer, client, err := etherscanmanagerapiclient.NewEtherscanManagerClientset(address).NewEtherscanManagerServiceClient()
 	if err != nil {
 		return nil, err
 	}
@@ -28,15 +28,15 @@ func New(address string) (*Provider, error) {
 }
 
 func (p *Provider) GetSourceCode(ctx context.Context, chainID int64, contract shared.Address) (string, error) {
-	response, err := p.client.GetSourceCode(ctx, &ethereumapiapiclient.GetSourceCodeRequest{
+	response, err := p.client.GetSourceCode(ctx, &etherscanmanagerapiclient.GetSourceCodeRequest{
 		ChainId:         chainID,
 		ContractAddress: contract.Hex(),
 	})
 	if err != nil {
-		return "", fmt.Errorf("fetch ethereum-api source code chain_id=%d contract=%s: %w", chainID, contract.Hex(), err)
+		return "", fmt.Errorf("fetch etherscan-manager source code chain_id=%d contract=%s: %w", chainID, contract.Hex(), err)
 	}
 	if response == nil || len(response.GetItems()) == 0 {
-		return "", fmt.Errorf("fetch ethereum-api source code chain_id=%d contract=%s returned empty result", chainID, contract.Hex())
+		return "", fmt.Errorf("fetch etherscan-manager source code chain_id=%d contract=%s returned empty result", chainID, contract.Hex())
 	}
 	return strings.TrimSpace(response.GetItems()[0].GetSourceCode()), nil
 }

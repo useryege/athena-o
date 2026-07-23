@@ -7,7 +7,7 @@ import (
 	internalversion "github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/pkg/apiclient/etherscangateway"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/etherscanapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -28,11 +28,11 @@ type ServerOpts struct {
 func NewServer(opts ServerOpts) (*Server, error) {
 	baseURL := opts.EtherscanBaseURL
 	if baseURL == "" {
-		baseURL = utilethereumapi.DefaultBaseURL
+		baseURL = etherscanapi.DefaultBaseURL
 	}
 	timeout := opts.Timeout
 	if timeout <= 0 {
-		timeout = utilethereumapi.DefaultTimeout
+		timeout = etherscanapi.DefaultTimeout
 	}
 	healthService := health.NewServer()
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)

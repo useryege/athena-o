@@ -21,7 +21,7 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
-	utilethereumapi "github.com/useryege/athena/util/ethereumapi"
+	"github.com/useryege/athena/util/etherscanapi"
 	"github.com/useryege/athena/util/templates"
 )
 
@@ -108,7 +108,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenAddress, "listen-address", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_LISTEN_ADDRESS", defaultListenAddress), "Listen address for incoming gRPC connections")
 	command.Flags().StringVar(&authToken, "auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token required in gRPC metadata authorization")
-	command.Flags().DurationVar(&timeout, "timeout", env.ParseDurationFromEnv("ATHENA_ETHERSCAN_GATEWAY_TIMEOUT", utilethereumapi.DefaultTimeout, time.Second, time.Hour), "Timeout for outbound Etherscan requests")
+	command.Flags().DurationVar(&timeout, "timeout", env.ParseDurationFromEnv("ATHENA_ETHERSCAN_GATEWAY_TIMEOUT", etherscanapi.DefaultTimeout, time.Second, time.Hour), "Timeout for outbound Etherscan requests")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

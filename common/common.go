@@ -34,8 +34,8 @@ const (
 	DefaultPortTokenAPI = 8096
 	// Athena Pred Poly
 	DefaultPortPredPoly = 8098
-	// Athena Ethereum API
-	DefaultPortEthereumAPI = 8100
+	// Athena Etherscan Manager
+	DefaultPortEtherscanManager = 8100
 	// Athena Etherscan Gateway
 	DefaultPortEtherscanGateway = 8102
 )
@@ -50,7 +50,7 @@ const (
 	DefaultAddressPolymarket       = "0.0.0.0"
 	DefaultAddressTokenAPI         = "0.0.0.0"
 	DefaultAddressPredPoly         = "0.0.0.0"
-	DefaultAddressEthereumAPI      = "0.0.0.0"
+	DefaultAddressEtherscanManager = "0.0.0.0"
 	DefaultAddressEtherscanGateway = "0.0.0.0"
 )
 

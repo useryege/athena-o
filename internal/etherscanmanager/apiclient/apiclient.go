@@ -16,9 +16,9 @@ import (
 
 var MaxGRPCMessageSize = env.ParseNumFromEnv(common.EnvGRPCMaxSizeMB, 100, 0, math.MaxInt32) * 1024 * 1024
 
-// Clientset represents ethereum-api clients.
+// Clientset represents Etherscan Manager clients.
 type Clientset interface {
-	NewEthereumAPIServiceClient() (utilio.Closer, EthereumAPIServiceClient, error)
+	NewEtherscanManagerServiceClient() (utilio.Closer, EtherscanManagerServiceClient, error)
 	CheckHealth(ctx context.Context) (grpc_health_v1.HealthCheckResponse_ServingStatus, error)
 }
 
@@ -26,24 +26,24 @@ type clientSet struct {
 	address string
 }
 
-// NewEthereumAPIServiceClient creates a new ethereum-api client.
-func (c *clientSet) NewEthereumAPIServiceClient() (utilio.Closer, EthereumAPIServiceClient, error) {
+// NewEtherscanManagerServiceClient creates a new Etherscan Manager client.
+func (c *clientSet) NewEtherscanManagerServiceClient() (utilio.Closer, EtherscanManagerServiceClient, error) {
 	conn, err := NewConnection(c.address)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open a new connection to ethereum-api service: %w", err)
+		return nil, nil, fmt.Errorf("failed to open a new connection to Etherscan Manager service: %w", err)
 	}
-	return conn, NewEthereumAPIServiceClient(conn), nil
+	return conn, NewEtherscanManagerServiceClient(conn), nil
 }
 
-// NewEthereumAPIClientset creates a new ethereum-api Clientset.
-func NewEthereumAPIClientset(address string) Clientset {
+// NewEtherscanManagerClientset creates a new Etherscan Manager Clientset.
+func NewEtherscanManagerClientset(address string) Clientset {
 	return &clientSet{address: address}
 }
 
 func NewConnection(address string) (*grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Errorf("Unable to connect to ethereum-api service with address %s", address)
+		log.Errorf("Unable to connect to Etherscan Manager service with address %s", address)
 		return nil, err
 	}
 	return conn, nil
