@@ -1,5 +1,6 @@
 import {Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
+import {useNavigate} from 'react-router-dom';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {services} from '../shared/services';
 import {TokenProject} from '../shared/services/token-service';
@@ -7,6 +8,7 @@ import {fmtNumber, useKeywordParam, usePagedParams} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
 export const ProjectsPage = () => {
+    const navigate = useNavigate();
     const {params, setParams, page, pageSize, setPage} = usePagedParams();
     const chainID = Number(params.get('chainID') || params.get('chain_id')) || undefined;
     const [contract, setContract] = useKeywordParam('contract');
@@ -94,6 +96,7 @@ export const ProjectsPage = () => {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 scrollX={1500}
+                onItemClick={item => item.projectID && navigate(`/token/projects/${item.projectID}`)}
             />
         </AppPage>
     );

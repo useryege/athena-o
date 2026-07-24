@@ -180,6 +180,45 @@ func (q *Queries) ListDueProjectDataCollectionSchedules(ctx context.Context, lim
 	return items, nil
 }
 
+const listProjectDataCollectionSchedulesByProject = `-- name: ListProjectDataCollectionSchedulesByProject :many
+SELECT project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
+FROM project_data_collection_schedule
+WHERE project_id = $1
+ORDER BY data_type
+`
+
+func (q *Queries) ListProjectDataCollectionSchedulesByProject(ctx context.Context, projectID int64) ([]ProjectDataCollectionSchedule, error) {
+	rows, err := q.db.Query(ctx, listProjectDataCollectionSchedulesByProject, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProjectDataCollectionSchedule
+	for rows.Next() {
+		var i ProjectDataCollectionSchedule
+		if err := rows.Scan(
+			&i.ProjectID,
+			&i.DataType,
+			&i.Status,
+			&i.RefreshIntervalSeconds,
+			&i.NextRunAt,
+			&i.LatestTaskRevision,
+			&i.ConsecutiveFailures,
+			&i.LastError,
+			&i.LastCheckedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockProjectDataCollectionSchedule = `-- name: LockProjectDataCollectionSchedule :one
 SELECT project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
 FROM project_data_collection_schedule

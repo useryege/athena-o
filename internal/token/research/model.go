@@ -129,6 +129,7 @@ type WalletNormalTransaction struct {
 	FunctionName     string
 	ReceiptStatus    NormalTransactionReceiptStatus
 	IsError          bool
+	CollectedAt      time.Time
 }
 
 type ProjectObservation struct {

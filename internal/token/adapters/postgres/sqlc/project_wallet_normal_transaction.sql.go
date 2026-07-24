@@ -11,6 +11,67 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countProjectWalletNormalTransactions = `-- name: CountProjectWalletNormalTransactions :one
+SELECT COUNT(*)::bigint
+FROM project_wallet_normal_transaction
+WHERE project_id = $1
+  AND ($2::bytea IS NULL OR wallet = $2::bytea)
+  AND ($3::text = '' OR receipt_status = $3::text)
+  AND ($4::text = '' OR method_id = $4::text)
+`
+
+type CountProjectWalletNormalTransactionsParams struct {
+	ProjectID     int64
+	Wallet        []byte
+	ReceiptStatus string
+	MethodID      string
+}
+
+func (q *Queries) CountProjectWalletNormalTransactions(ctx context.Context, arg CountProjectWalletNormalTransactionsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countProjectWalletNormalTransactions,
+		arg.ProjectID,
+		arg.Wallet,
+		arg.ReceiptStatus,
+		arg.MethodID,
+	)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const countProjectWalletNormalTransactionsByWallet = `-- name: CountProjectWalletNormalTransactionsByWallet :many
+SELECT wallet, COUNT(*)::bigint AS transaction_count
+FROM project_wallet_normal_transaction
+WHERE project_id = $1
+GROUP BY wallet
+ORDER BY wallet
+`
+
+type CountProjectWalletNormalTransactionsByWalletRow struct {
+	Wallet           []byte
+	TransactionCount int64
+}
+
+func (q *Queries) CountProjectWalletNormalTransactionsByWallet(ctx context.Context, projectID int64) ([]CountProjectWalletNormalTransactionsByWalletRow, error) {
+	rows, err := q.db.Query(ctx, countProjectWalletNormalTransactionsByWallet, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountProjectWalletNormalTransactionsByWalletRow
+	for rows.Next() {
+		var i CountProjectWalletNormalTransactionsByWalletRow
+		if err := rows.Scan(&i.Wallet, &i.TransactionCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertProjectWalletNormalTransaction = `-- name: InsertProjectWalletNormalTransaction :exec
 INSERT INTO project_wallet_normal_transaction (
   project_id,
@@ -102,4 +163,71 @@ func (q *Queries) InsertProjectWalletNormalTransaction(ctx context.Context, arg 
 		arg.CollectedAt,
 	)
 	return err
+}
+
+const listProjectWalletNormalTransactions = `-- name: ListProjectWalletNormalTransactions :many
+SELECT project_id, wallet, transaction_hash, block_number, block_timestamp, transaction_index, nonce, from_address, to_address, value, gas, gas_price, gas_used, input, method_id, function_name, receipt_status, is_error, collected_at
+FROM project_wallet_normal_transaction
+WHERE project_id = $1
+  AND ($2::bytea IS NULL OR wallet = $2::bytea)
+  AND ($3::text = '' OR receipt_status = $3::text)
+  AND ($4::text = '' OR method_id = $4::text)
+ORDER BY block_number DESC, transaction_index DESC, transaction_hash
+LIMIT $6 OFFSET $5
+`
+
+type ListProjectWalletNormalTransactionsParams struct {
+	ProjectID     int64
+	Wallet        []byte
+	ReceiptStatus string
+	MethodID      string
+	Offset        int32
+	Limit         int32
+}
+
+func (q *Queries) ListProjectWalletNormalTransactions(ctx context.Context, arg ListProjectWalletNormalTransactionsParams) ([]ProjectWalletNormalTransaction, error) {
+	rows, err := q.db.Query(ctx, listProjectWalletNormalTransactions,
+		arg.ProjectID,
+		arg.Wallet,
+		arg.ReceiptStatus,
+		arg.MethodID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProjectWalletNormalTransaction
+	for rows.Next() {
+		var i ProjectWalletNormalTransaction
+		if err := rows.Scan(
+			&i.ProjectID,
+			&i.Wallet,
+			&i.TransactionHash,
+			&i.BlockNumber,
+			&i.BlockTimestamp,
+			&i.TransactionIndex,
+			&i.Nonce,
+			&i.FromAddress,
+			&i.ToAddress,
+			&i.Value,
+			&i.Gas,
+			&i.GasPrice,
+			&i.GasUsed,
+			&i.Input,
+			&i.MethodID,
+			&i.FunctionName,
+			&i.ReceiptStatus,
+			&i.IsError,
+			&i.CollectedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

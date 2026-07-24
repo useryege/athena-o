@@ -5,6 +5,7 @@ import (
 	"github.com/useryege/athena/internal/token/catalog"
 	"github.com/useryege/athena/internal/token/discovery"
 	"github.com/useryege/athena/internal/token/policy"
+	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/reporting"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/selection"
@@ -33,6 +34,13 @@ type SelectionApplication interface {
 	ListProjectSelectionsPage(context.Context, int64, int64, string, int32, int32) (*selection.Page, error)
 }
 
+type ProjectViewApplication interface {
+	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
+	ListProjectObservationsPage(context.Context, int64, string, int32, int32) (*projectview.ObservationPage, error)
+	ListProjectTrends(context.Context, int64, string) (*projectview.TrendResult, error)
+	ListProjectWalletNormalTransactionsPage(context.Context, int64, shared.Address, string, string, int32, int32) (*projectview.WalletNormalTransactionPage, error)
+}
+
 type PolicyApplication interface {
 	GetContractCodeBlocklistEntry(context.Context, shared.Hash) (*policy.ContractCodeBlocklistEntry, error)
 	ListContractCodeBlocklistEntries(context.Context) ([]policy.ContractCodeBlocklistEntry, error)
@@ -55,10 +63,11 @@ type OperationsApplication interface {
 }
 
 type Applications struct {
-	Catalog    CatalogApplication
-	Research   ResearchApplication
-	Reporting  ReportingApplication
-	Selection  SelectionApplication
-	Policy     PolicyApplication
-	Operations OperationsApplication
+	Catalog     CatalogApplication
+	Research    ResearchApplication
+	Reporting   ReportingApplication
+	Selection   SelectionApplication
+	ProjectView ProjectViewApplication
+	Policy      PolicyApplication
+	Operations  OperationsApplication
 }

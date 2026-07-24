@@ -12,6 +12,7 @@ import (
 	"github.com/useryege/athena/internal/token/catalog"
 	"github.com/useryege/athena/internal/token/discovery"
 	"github.com/useryege/athena/internal/token/policy"
+	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/reporting"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/selection"
@@ -251,6 +252,10 @@ func mapProject(item catalog.Project) *v1alpha1.TokenProject {
 		BlockTime:   item.BlockTime,
 		CodeHash:    item.CodeHash.Hex(),
 		CreatedAt:   formatTime(item.CreatedAt),
+		Decimals:    int32(item.Decimals),
+		TotalSupply: formatBigInt(item.TotalSupply),
+		WethPair:    formatAddress(item.WethPair),
+		UsdtPair:    formatAddress(item.UsdtPair),
 	}
 }
 
@@ -455,6 +460,342 @@ func mapProjectSelections(items []selection.ProjectSelection) []*v1alpha1.TokenS
 		out = append(out, mapProjectSelection(item))
 	}
 	return out
+}
+
+func mapProjectObservation(item research.ProjectObservation) *v1alpha1.TokenProjectObservation {
+	var blockNumber uint64
+	if item.BlockNumber != nil {
+		blockNumber = *item.BlockNumber
+	}
+	return &v1alpha1.TokenProjectObservation{
+		ObservationID: item.ID,
+		ProjectID:     item.ProjectID,
+		DataType:      string(item.DataType),
+		SchemaVersion: item.SchemaVersion,
+		ContentHash:   item.ContentHash.Hex(),
+		PayloadJSON:   string(item.Payload),
+		BlockNumber:   blockNumber,
+		ObservedAt:    formatTime(item.ObservedAt),
+		LastCheckedAt: formatTime(item.LastCheckedAt),
+		CreatedAt:     formatTime(item.CreatedAt),
+	}
+}
+
+func mapProjectObservations(items []research.ProjectObservation) []*v1alpha1.TokenProjectObservation {
+	result := make([]*v1alpha1.TokenProjectObservation, 0, len(items))
+	for _, item := range items {
+		result = append(result, mapProjectObservation(item))
+	}
+	return result
+}
+
+func decimalString(value *research.Decimal) string {
+	if value == nil {
+		return ""
+	}
+	return value.String()
+}
+
+func optionalTimeString(value *time.Time) string {
+	if value == nil {
+		return ""
+	}
+	return formatTime(*value)
+}
+
+func mapAveToken(item research.AveTokenV1) *v1alpha1.TokenAveToken {
+	result := &v1alpha1.TokenAveToken{
+		Address:          formatAddress(item.Address),
+		Name:             item.Name,
+		Symbol:           item.Symbol,
+		Decimals:         int32(item.Decimals),
+		TotalSupply:      decimalString(item.TotalSupply),
+		CurrentPriceUSD:  decimalString(item.CurrentPriceUSD),
+		CurrentPriceETH:  decimalString(item.CurrentPriceETH),
+		MarketCap:        decimalString(item.MarketCap),
+		FDV:              decimalString(item.FDV),
+		TVL:              decimalString(item.TVL),
+		MainPairTVL:      decimalString(item.MainPairTVL),
+		Holders:          int32(item.Holders),
+		RiskLevel:        int32(item.RiskLevel),
+		RiskScore:        decimalString(item.RiskScore),
+		RiskInfo:         item.RiskInfo,
+		HasMintMethod:    item.HasMintMethod,
+		IsLPNotLocked:    item.IsLPNotLocked,
+		HasNotRenounced:  item.HasNotRenounced,
+		HasNotAudited:    item.HasNotAudited,
+		HasNotOpenSource: item.HasNotOpenSource,
+		IsInBlacklist:    item.IsInBlacklist,
+		IsHoneypot:       item.IsHoneypot,
+		LaunchAt:         optionalTimeString(item.LaunchAt),
+		UpdatedAt:        optionalTimeString(item.UpdatedAt),
+	}
+	if item.IsMintable != nil {
+		result.IsMintableKnown = true
+		result.IsMintable = *item.IsMintable
+	}
+	return result
+}
+
+func mapAvePair(item research.AvePairV1) *v1alpha1.TokenAvePair {
+	return &v1alpha1.TokenAvePair{
+		Pair:          formatAddress(item.Pair),
+		ChainID:       item.ChainID,
+		AMM:           item.AMM,
+		Token0Address: formatAddress(item.Token0Address),
+		Token0Symbol:  item.Token0Symbol,
+		Token1Address: formatAddress(item.Token1Address),
+		Token1Symbol:  item.Token1Symbol,
+		Reserve0:      decimalString(item.Reserve0),
+		Reserve1:      decimalString(item.Reserve1),
+		VolumeUSD:     decimalString(item.VolumeUSD),
+		MarketCap:     decimalString(item.MarketCap),
+		FDV:           decimalString(item.FDV),
+		IsFake:        item.IsFake,
+		CreatedAt:     optionalTimeString(item.CreatedAt),
+		UpdatedAt:     optionalTimeString(item.UpdatedAt),
+	}
+}
+
+func mapAveObservation(item research.AveObservationV1) *v1alpha1.TokenAveObservation {
+	pairs := make([]*v1alpha1.TokenAvePair, 0, len(item.Pairs))
+	for _, pair := range item.Pairs {
+		pairs = append(pairs, mapAvePair(pair))
+	}
+	return &v1alpha1.TokenAveObservation{
+		ChainID:   item.ChainID,
+		Token:     mapAveToken(item.Token),
+		Pairs:     pairs,
+		IsAudited: item.IsAudited,
+	}
+}
+
+func mapChainToken(item research.ChainTokenV1) *v1alpha1.TokenChainToken {
+	return &v1alpha1.TokenChainToken{
+		IsValidERC20: item.IsValidERC20,
+		Name:         item.Name,
+		Symbol:       item.Symbol,
+		Decimals:     int32(item.Decimals),
+		TotalSupply:  formatBigInt(item.TotalSupply),
+		WethPair:     formatAddress(item.WethPair),
+		UsdtPair:     formatAddress(item.UsdtPair),
+	}
+}
+
+func mapChainPair(item research.ChainPairV1, report research.ChainPairReportV1) *v1alpha1.TokenChainPair {
+	lastSwap := uint64(item.LastSwapTimestamp)
+	return &v1alpha1.TokenChainPair{
+		PairContract: formatAddress(item.PairContract),
+		IsCreated:    item.IsCreated,
+		Liquidity: &v1alpha1.TokenChainPairLiquidity{
+			TotalSupply:                    formatBigInt(item.LiquidityState.TotalSupply),
+			LockedLiquidity:                formatBigInt(item.LiquidityState.LockedLiquidity),
+			FeeAddressHoldLiquidityBalance: formatBigInt(item.LiquidityState.FeeAddressHoldLiquidityBalance),
+			FeeAddressHoldLiquidityRatio:   formatBigInt(item.LiquidityState.FeeAddressHoldLiquidityRatio),
+		},
+		BaseBalance:       formatBigInt(item.BaseBalance),
+		QuoteBalance:      formatBigInt(item.QuoteBalance),
+		QuoteUsdtValue:    formatBigInt(item.QuoteUsdtValue),
+		QuoteUsdtValueInt: formatBigInt(item.QuoteUsdtValueInt),
+		LastSwapAt:        formatUnixTime(&lastSwap),
+		IsRemoveLiquidity: report.IsRemoveLiquidity,
+		IsMint:            report.IsMint,
+	}
+}
+
+func mapChainStateObservation(item research.ChainStateObservationV1) *v1alpha1.TokenChainStateObservation {
+	return &v1alpha1.TokenChainStateObservation{
+		TokenContract: formatAddress(item.TokenContract),
+		UpdatedAt:     formatBigInt(item.UpdatedAt),
+		Token:         mapChainToken(item.Token),
+		IsValidERC20:  item.TokenReport.IsValidERC20,
+		WethPair:      mapChainPair(item.WethPair, item.WethReport),
+		UsdtPair:      mapChainPair(item.UsdtPair, item.UsdtReport),
+	}
+}
+
+func mapWalletAssetState(item research.WalletAssetStateV1) *v1alpha1.TokenWalletAssetState {
+	return &v1alpha1.TokenWalletAssetState{
+		ChainID:       item.ChainID,
+		Wallet:        formatAddress(item.Wallet),
+		WethBalance:   formatBigInt(item.WethBalance),
+		UsdtBalance:   formatBigInt(item.UsdtBalance),
+		NativeBalance: formatBigInt(item.NativeBalance),
+		UsdtValue:     formatBigInt(item.UsdtValue),
+	}
+}
+
+func mapSimulationResult(item research.SimulationResultV1) *v1alpha1.TokenSimulationResult {
+	return &v1alpha1.TokenSimulationResult{
+		ProjectID:                          item.ProjectID,
+		Wallet:                             formatAddress(item.Wallet),
+		CanMintFromDeadViaTransferFrom:     item.CanMintFromDeadViaTransferFrom,
+		CanMintFromZeroViaTransferFrom:     item.CanMintFromZeroViaTransferFrom,
+		CanMintFromWethPairViaTransferFrom: item.CanMintFromWethPairViaTransferFrom,
+		CanMintFromUsdtPairViaTransferFrom: item.CanMintFromUsdtPairViaTransferFrom,
+		CanMintViaTransferToWethPair:       item.CanMintViaTransferToWethPair,
+		CanMintViaTransferToUsdtPair:       item.CanMintViaTransferToUsdtPair,
+	}
+}
+
+func mapProjectDetail(item projectview.Detail) (*v1alpha1.TokenProjectDetail, error) {
+	result := &v1alpha1.TokenProjectDetail{
+		Project:             mapProject(item.Project),
+		TransactionCount:    item.TransactionCount,
+		CurrentObservations: mapProjectObservations(item.CurrentObservations),
+		GeneratedAt:         formatTime(time.Now()),
+	}
+	if item.ResearchState != nil {
+		result.ResearchState = mapProjectResearchState(*item.ResearchState)
+	}
+	if item.CurrentReport != nil {
+		result.CurrentReport = mapProjectReportRevision(*item.CurrentReport)
+	}
+	if item.CurrentSelection != nil {
+		result.CurrentSelection = mapProjectSelection(*item.CurrentSelection)
+	}
+	for _, relatedWallet := range item.RelatedWallets {
+		result.RelatedWallets = append(result.RelatedWallets, &v1alpha1.TokenProjectRelatedWallet{
+			ProjectID: relatedWallet.ProjectID,
+			Wallet:    formatAddress(relatedWallet.Wallet),
+			Role:      string(relatedWallet.Role),
+			CreatedAt: formatTime(relatedWallet.CreatedAt),
+		})
+	}
+	for _, recipient := range item.InitialRecipients {
+		result.InitialRecipients = append(result.InitialRecipients, &v1alpha1.TokenProjectInitialRecipient{
+			RecipientID:       recipient.ID,
+			ProjectID:         recipient.ProjectID,
+			Wallet:            formatAddress(recipient.Wallet),
+			RatioBPS:          recipient.RatioBPS,
+			RankIndex:         recipient.RankIndex,
+			SourceTxHash:      recipient.SourceTxHash.Hex(),
+			SourceBlockNumber: recipient.SourceBlockNumber,
+			CreatedAt:         formatTime(recipient.CreatedAt),
+		})
+	}
+	for _, schedule := range item.CollectionSchedules {
+		result.CollectionSchedules = append(result.CollectionSchedules, &v1alpha1.TokenCollectionSchedule{
+			ProjectID:           schedule.ProjectID,
+			DataType:            string(schedule.DataType),
+			Status:              string(schedule.Status),
+			RefreshIntervalSecs: int64(schedule.RefreshInterval / time.Second),
+			NextRunAt:           formatTime(schedule.NextRunAt),
+			LatestTaskRevision:  schedule.LatestTaskRevision,
+			ConsecutiveFailures: schedule.ConsecutiveFailures,
+			LastError:           schedule.LastError,
+			LastCheckedAt:       formatTime(schedule.LastCheckedAt),
+			CreatedAt:           formatTime(schedule.CreatedAt),
+			UpdatedAt:           formatTime(schedule.UpdatedAt),
+		})
+	}
+	for _, count := range item.WalletTransactionCounts {
+		result.WalletTransactionCounts = append(result.WalletTransactionCounts, &v1alpha1.TokenWalletTransactionCount{
+			Wallet:           formatAddress(count.Wallet),
+			TransactionCount: count.TransactionCount,
+		})
+	}
+	for _, observation := range item.CurrentObservations {
+		if observation.SchemaVersion != research.ObservationSchemaVersionV1 {
+			continue
+		}
+		switch observation.DataType {
+		case research.DataCollectionTypeAve:
+			var value research.AveObservationV1
+			if err := json.Unmarshal(observation.Payload, &value); err != nil {
+				return nil, fmt.Errorf("decode current ave observation: %w", err)
+			}
+			result.Ave = mapAveObservation(value)
+		case research.DataCollectionTypeChainState:
+			var value research.ChainStateObservationV1
+			if err := json.Unmarshal(observation.Payload, &value); err != nil {
+				return nil, fmt.Errorf("decode current chain state observation: %w", err)
+			}
+			result.ChainState = mapChainStateObservation(value)
+		case research.DataCollectionTypeWalletAssetState:
+			var value research.WalletAssetObservationV1
+			if err := json.Unmarshal(observation.Payload, &value); err != nil {
+				return nil, fmt.Errorf("decode current wallet asset observation: %w", err)
+			}
+			for _, wallet := range value.Items {
+				result.WalletAssets = append(result.WalletAssets, mapWalletAssetState(wallet))
+			}
+		case research.DataCollectionTypeSimulationResult:
+			var value research.SimulationObservationV1
+			if err := json.Unmarshal(observation.Payload, &value); err != nil {
+				return nil, fmt.Errorf("decode current simulation observation: %w", err)
+			}
+			for _, simulation := range value.Items {
+				result.Simulations = append(result.Simulations, mapSimulationResult(simulation))
+			}
+		case research.DataCollectionTypeContractCodeSource:
+			var value research.ContractSourceObservationV1
+			if err := json.Unmarshal(observation.Payload, &value); err != nil {
+				return nil, fmt.Errorf("decode current contract source observation: %w", err)
+			}
+			result.ContractSource = &v1alpha1.TokenContractSourceObservation{
+				CodeHash:        value.CodeHash.Hex(),
+				SourceAvailable: value.SourceAvailable,
+			}
+		}
+	}
+	return result, nil
+}
+
+func mapProjectTrends(item projectview.TrendResult) *v1alpha1.TokenProjectTrends {
+	result := &v1alpha1.TokenProjectTrends{
+		Range:        item.Range,
+		ObservedFrom: formatTime(item.ObservedFrom),
+		GeneratedAt:  formatTime(item.GeneratedAt),
+	}
+	for _, series := range item.Series {
+		mapped := &v1alpha1.TokenProjectTrendSeries{
+			Key:      series.Key,
+			Label:    series.Label,
+			Unit:     series.Unit,
+			DataType: string(series.DataType),
+		}
+		for _, point := range series.Points {
+			mapped.Points = append(mapped.Points, &v1alpha1.TokenProjectTrendPoint{
+				ObservedAt: formatTime(point.ObservedAt),
+				Value:      point.Value,
+			})
+		}
+		result.Series = append(result.Series, mapped)
+	}
+	return result
+}
+
+func mapWalletNormalTransaction(item research.WalletNormalTransaction) *v1alpha1.TokenWalletNormalTransaction {
+	blockTimestamp := item.BlockTimestamp
+	return &v1alpha1.TokenWalletNormalTransaction{
+		Wallet:           formatAddress(item.Wallet),
+		TransactionHash:  item.TransactionHash.Hex(),
+		BlockNumber:      item.BlockNumber,
+		BlockTimestamp:   formatUnixTime(&blockTimestamp),
+		TransactionIndex: item.TransactionIndex,
+		Nonce:            item.Nonce,
+		FromAddress:      formatAddress(item.FromAddress),
+		ToAddress:        formatAddress(item.ToAddress),
+		Value:            formatBigInt(item.Value),
+		Gas:              item.Gas,
+		GasPrice:         formatBigInt(item.GasPrice),
+		GasUsed:          item.GasUsed,
+		Input:            item.Input,
+		MethodID:         item.MethodID,
+		FunctionName:     item.FunctionName,
+		ReceiptStatus:    string(item.ReceiptStatus),
+		IsError:          item.IsError,
+		CollectedAt:      formatTime(item.CollectedAt),
+	}
+}
+
+func mapWalletNormalTransactions(items []research.WalletNormalTransaction) []*v1alpha1.TokenWalletNormalTransaction {
+	result := make([]*v1alpha1.TokenWalletNormalTransaction, 0, len(items))
+	for _, item := range items {
+		result = append(result, mapWalletNormalTransaction(item))
+	}
+	return result
 }
 
 func wrapStoreError(action string, err error) error {

@@ -441,7 +441,7 @@ export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
             )}
             {hasProbeResult && activeRun && (
                 <Section title='By Gateway'>
-                    <ResourceTable
+                    <ResourceTable<EtherscanGatewayProbeGatewaySummary>
                         rowKey='gateway'
                         label='Etherscan Gateway probe gateway summaries'
                         items={activeRun.gatewaySummaries}
@@ -453,7 +453,7 @@ export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
             )}
             {hasProbeResult && activeRun && (
                 <Section title='By API Key'>
-                    <ResourceTable
+                    <ResourceTable<EtherscanGatewayProbeKeySummary>
                         rowKey='keyLabel'
                         label='Etherscan Gateway probe API key summaries'
                         items={activeRun.keySummaries}

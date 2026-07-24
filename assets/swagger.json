@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-962-g3c5f34e-dirty"
+    "version": "v1.0.0-1001-gd533e64-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1663,6 +1663,179 @@
         }
       }
     },
+    "/api/v1/tokens/projects/{project_id}": {
+      "get": {
+        "tags": [
+          "TokenCatalogService"
+        ],
+        "operationId": "TokenCatalogService_GetProjectDetail",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetProjectDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/projects/{project_id}/observations": {
+      "get": {
+        "tags": [
+          "TokenCatalogService"
+        ],
+        "operationId": "TokenCatalogService_ListProjectObservations",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "data_type",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListProjectObservationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/projects/{project_id}/trends": {
+      "get": {
+        "tags": [
+          "TokenCatalogService"
+        ],
+        "operationId": "TokenCatalogService_ListProjectTrends",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "range",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListProjectTrendsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/projects/{project_id}/wallet-normal-transactions": {
+      "get": {
+        "tags": [
+          "TokenCatalogService"
+        ],
+        "operationId": "TokenCatalogService_ListProjectWalletNormalTransactions",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "receipt_status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "method_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListProjectWalletNormalTransactionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tokens/report-revisions": {
       "get": {
         "tags": [
@@ -3291,6 +3464,17 @@
         }
       }
     },
+    "tokenapiGetProjectDetailResponse": {
+      "type": "object",
+      "properties": {
+        "detail": {
+          "$ref": "#/definitions/v1alpha1TokenProjectDetail"
+        },
+        "found": {
+          "type": "boolean"
+        }
+      }
+    },
     "tokenapiGetRuntimeConfigurationResponse": {
       "type": "object",
       "properties": {
@@ -3389,6 +3573,29 @@
         }
       }
     },
+    "tokenapiListProjectObservationsResponse": {
+      "type": "object",
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenProjectObservation"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "tokenapiListProjectReportsResponse": {
       "type": "object",
       "properties": {
@@ -3409,6 +3616,37 @@
         "total": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "tokenapiListProjectTrendsResponse": {
+      "type": "object",
+      "properties": {
+        "trends": {
+          "$ref": "#/definitions/v1alpha1TokenProjectTrends"
+        }
+      }
+    },
+    "tokenapiListProjectWalletNormalTransactionsResponse": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "transactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenWalletNormalTransaction"
+          }
         }
       }
     },
@@ -4634,6 +4872,164 @@
         }
       }
     },
+    "v1alpha1TokenAveObservation": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "isAudited": {
+          "type": "boolean"
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenAvePair"
+          }
+        },
+        "token": {
+          "$ref": "#/definitions/v1alpha1TokenAveToken"
+        }
+      }
+    },
+    "v1alpha1TokenAvePair": {
+      "type": "object",
+      "properties": {
+        "amm": {
+          "type": "string"
+        },
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "fdv": {
+          "type": "string"
+        },
+        "isFake": {
+          "type": "boolean"
+        },
+        "marketCap": {
+          "type": "string"
+        },
+        "pair": {
+          "type": "string"
+        },
+        "reserve0": {
+          "type": "string"
+        },
+        "reserve1": {
+          "type": "string"
+        },
+        "token0Address": {
+          "type": "string"
+        },
+        "token0Symbol": {
+          "type": "string"
+        },
+        "token1Address": {
+          "type": "string"
+        },
+        "token1Symbol": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volumeUsd": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenAveToken": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "currentPriceEth": {
+          "type": "string"
+        },
+        "currentPriceUsd": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fdv": {
+          "type": "string"
+        },
+        "hasMintMethod": {
+          "type": "boolean"
+        },
+        "hasNotAudited": {
+          "type": "boolean"
+        },
+        "hasNotOpenSource": {
+          "type": "boolean"
+        },
+        "hasNotRenounced": {
+          "type": "boolean"
+        },
+        "holders": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "isHoneypot": {
+          "type": "boolean"
+        },
+        "isInBlacklist": {
+          "type": "boolean"
+        },
+        "isLpNotLocked": {
+          "type": "boolean"
+        },
+        "isMintable": {
+          "type": "boolean"
+        },
+        "isMintableKnown": {
+          "type": "boolean"
+        },
+        "launchAt": {
+          "type": "string"
+        },
+        "mainPairTvl": {
+          "type": "string"
+        },
+        "marketCap": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "riskInfo": {
+          "type": "string"
+        },
+        "riskLevel": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "riskScore": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        },
+        "tvl": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1TokenChain": {
       "type": "object",
       "properties": {
@@ -4667,6 +5063,150 @@
           "type": "boolean"
         },
         "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenChainPair": {
+      "type": "object",
+      "properties": {
+        "baseBalance": {
+          "type": "string"
+        },
+        "isCreated": {
+          "type": "boolean"
+        },
+        "isMint": {
+          "type": "boolean"
+        },
+        "isRemoveLiquidity": {
+          "type": "boolean"
+        },
+        "lastSwapAt": {
+          "type": "string"
+        },
+        "liquidity": {
+          "$ref": "#/definitions/v1alpha1TokenChainPairLiquidity"
+        },
+        "pairContract": {
+          "type": "string"
+        },
+        "quoteBalance": {
+          "type": "string"
+        },
+        "quoteUsdtValue": {
+          "type": "string"
+        },
+        "quoteUsdtValueInt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenChainPairLiquidity": {
+      "type": "object",
+      "properties": {
+        "feeAddressHoldLiquidityBalance": {
+          "type": "string"
+        },
+        "feeAddressHoldLiquidityRatio": {
+          "type": "string"
+        },
+        "lockedLiquidity": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenChainStateObservation": {
+      "type": "object",
+      "properties": {
+        "isValidErc20": {
+          "type": "boolean"
+        },
+        "token": {
+          "$ref": "#/definitions/v1alpha1TokenChainToken"
+        },
+        "tokenContract": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "usdtPair": {
+          "$ref": "#/definitions/v1alpha1TokenChainPair"
+        },
+        "wethPair": {
+          "$ref": "#/definitions/v1alpha1TokenChainPair"
+        }
+      }
+    },
+    "v1alpha1TokenChainToken": {
+      "type": "object",
+      "properties": {
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "isValidErc20": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "totalSupply": {
+          "type": "string"
+        },
+        "usdtPair": {
+          "type": "string"
+        },
+        "wethPair": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenCollectionSchedule": {
+      "type": "object",
+      "properties": {
+        "consecutiveFailures": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "dataType": {
+          "type": "string"
+        },
+        "lastCheckedAt": {
+          "type": "string"
+        },
+        "lastError": {
+          "type": "string"
+        },
+        "latestTaskRevision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nextRunAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "refreshIntervalSecs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string"
+        },
+        "updatedAt": {
           "type": "string"
         }
       }
@@ -4755,6 +5295,17 @@
         }
       }
     },
+    "v1alpha1TokenContractSourceObservation": {
+      "type": "object",
+      "properties": {
+        "codeHash": {
+          "type": "string"
+        },
+        "sourceAvailable": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1alpha1TokenNodeStatus": {
       "type": "object",
       "properties": {
@@ -4829,6 +5380,10 @@
         "createdAt": {
           "type": "string"
         },
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
         "name": {
           "type": "string"
         },
@@ -4839,6 +5394,9 @@
         "symbol": {
           "type": "string"
         },
+        "totalSupply": {
+          "type": "string"
+        },
         "txHash": {
           "type": "string"
         },
@@ -4847,6 +5405,178 @@
           "format": "uint64"
         },
         "txSender": {
+          "type": "string"
+        },
+        "usdtPair": {
+          "type": "string"
+        },
+        "wethPair": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenProjectDetail": {
+      "type": "object",
+      "properties": {
+        "ave": {
+          "$ref": "#/definitions/v1alpha1TokenAveObservation"
+        },
+        "chainState": {
+          "$ref": "#/definitions/v1alpha1TokenChainStateObservation"
+        },
+        "collectionSchedules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenCollectionSchedule"
+          }
+        },
+        "contractSource": {
+          "$ref": "#/definitions/v1alpha1TokenContractSourceObservation"
+        },
+        "currentObservations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenProjectObservation"
+          }
+        },
+        "currentReport": {
+          "$ref": "#/definitions/v1alpha1TokenReportRevision"
+        },
+        "currentSelection": {
+          "$ref": "#/definitions/v1alpha1TokenSelection"
+        },
+        "generatedAt": {
+          "type": "string"
+        },
+        "initialRecipients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenProjectInitialRecipient"
+          }
+        },
+        "project": {
+          "$ref": "#/definitions/v1alpha1TokenProject"
+        },
+        "relatedWallets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenProjectRelatedWallet"
+          }
+        },
+        "researchState": {
+          "$ref": "#/definitions/v1alpha1TokenResearchState"
+        },
+        "simulations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenSimulationResult"
+          }
+        },
+        "transactionCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "walletAssets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenWalletAssetState"
+          }
+        },
+        "walletTransactionCounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenWalletTransactionCount"
+          }
+        }
+      }
+    },
+    "v1alpha1TokenProjectInitialRecipient": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rankIndex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ratioBps": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "recipientId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sourceBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "sourceTxHash": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenProjectObservation": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "contentHash": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "dataType": {
+          "type": "string"
+        },
+        "lastCheckedAt": {
+          "type": "string"
+        },
+        "observationId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "observedAt": {
+          "type": "string"
+        },
+        "payloadJson": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1alpha1TokenProjectRelatedWallet": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "role": {
+          "type": "string"
+        },
+        "wallet": {
           "type": "string"
         }
       }
@@ -4925,6 +5655,60 @@
         },
         "wethPairQuoteUsdtValueInt": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenProjectTrendPoint": {
+      "type": "object",
+      "properties": {
+        "observedAt": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenProjectTrendSeries": {
+      "type": "object",
+      "properties": {
+        "dataType": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenProjectTrendPoint"
+          }
+        },
+        "unit": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenProjectTrends": {
+      "type": "object",
+      "properties": {
+        "generatedAt": {
+          "type": "string"
+        },
+        "observedFrom": {
+          "type": "string"
+        },
+        "range": {
+          "type": "string"
+        },
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenProjectTrendSeries"
+          }
         }
       }
     },
@@ -5109,6 +5893,60 @@
         }
       }
     },
+    "v1alpha1TokenSimulationResult": {
+      "type": "object",
+      "properties": {
+        "canMintFromDeadViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintFromUsdtPairViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintFromWethPairViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintFromZeroViaTransferFrom": {
+          "type": "boolean"
+        },
+        "canMintViaTransferToUsdtPair": {
+          "type": "boolean"
+        },
+        "canMintViaTransferToWethPair": {
+          "type": "boolean"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenWalletAssetState": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nativeBalance": {
+          "type": "string"
+        },
+        "usdtBalance": {
+          "type": "string"
+        },
+        "usdtValue": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        },
+        "wethBalance": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1TokenWalletBlocklistEntry": {
       "type": "object",
       "properties": {
@@ -5117,6 +5955,82 @@
         },
         "note": {
           "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenWalletNormalTransaction": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "blockTimestamp": {
+          "type": "string"
+        },
+        "collectedAt": {
+          "type": "string"
+        },
+        "fromAddress": {
+          "type": "string"
+        },
+        "functionName": {
+          "type": "string"
+        },
+        "gas": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "gasPrice": {
+          "type": "string"
+        },
+        "gasUsed": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "input": {
+          "type": "string"
+        },
+        "isError": {
+          "type": "boolean"
+        },
+        "methodId": {
+          "type": "string"
+        },
+        "nonce": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "receiptStatus": {
+          "type": "string"
+        },
+        "toAddress": {
+          "type": "string"
+        },
+        "transactionHash": {
+          "type": "string"
+        },
+        "transactionIndex": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "value": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenWalletTransactionCount": {
+      "type": "object",
+      "properties": {
+        "transactionCount": {
+          "type": "integer",
+          "format": "int64"
         },
         "wallet": {
           "type": "string"

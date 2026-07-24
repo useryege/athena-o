@@ -50,6 +50,9 @@ func (s *Service) reportingApplication() (ReportingApplication, error) {
 func (s *Service) selectionApplication() (SelectionApplication, error) {
 	return requiredApplication(s.applications.Selection, s.applications.Selection != nil)
 }
+func (s *Service) projectViewApplication() (ProjectViewApplication, error) {
+	return requiredApplication(s.applications.ProjectView, s.applications.ProjectView != nil)
+}
 func (s *Service) policyApplication() (PolicyApplication, error) {
 	return requiredApplication(s.applications.Policy, s.applications.Policy != nil)
 }

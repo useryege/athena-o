@@ -6,4 +6,8 @@ service TokenCatalogService {
   rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
   rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse);
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc GetProjectDetail(GetProjectDetailRequest) returns (GetProjectDetailResponse);
+  rpc ListProjectTrends(ListProjectTrendsRequest) returns (ListProjectTrendsResponse);
+  rpc ListProjectObservations(ListProjectObservationsRequest) returns (ListProjectObservationsResponse);
+  rpc ListProjectWalletNormalTransactions(ListProjectWalletNormalTransactionsRequest) returns (ListProjectWalletNormalTransactionsResponse);
 }

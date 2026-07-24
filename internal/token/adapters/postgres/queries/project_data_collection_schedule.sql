@@ -100,3 +100,9 @@ SELECT *
 FROM project_data_collection_schedule
 WHERE project_id = @project_id
   AND data_type = @data_type;
+
+-- name: ListProjectDataCollectionSchedulesByProject :many
+SELECT *
+FROM project_data_collection_schedule
+WHERE project_id = @project_id
+ORDER BY data_type;

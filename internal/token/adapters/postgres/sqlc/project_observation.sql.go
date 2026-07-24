@@ -11,6 +11,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countProjectObservations = `-- name: CountProjectObservations :one
+SELECT COUNT(*)::bigint
+FROM project_observation
+WHERE project_id = $1
+  AND ($2::text = '' OR data_type = $2::text)
+`
+
+type CountProjectObservationsParams struct {
+	ProjectID int64
+	DataType  string
+}
+
+func (q *Queries) CountProjectObservations(ctx context.Context, arg CountProjectObservationsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countProjectObservations, arg.ProjectID, arg.DataType)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const getCurrentProjectObservation = `-- name: GetCurrentProjectObservation :one
 SELECT
   observation.id, observation.project_id, observation.data_type, observation.schema_version, observation.content_hash, observation.payload, observation.block_number, observation.observed_at, observation.created_at,
@@ -191,6 +210,50 @@ func (q *Queries) ListProjectObservations(ctx context.Context, arg ListProjectOb
 		arg.Offset,
 		arg.Limit,
 	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProjectObservation
+	for rows.Next() {
+		var i ProjectObservation
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.DataType,
+			&i.SchemaVersion,
+			&i.ContentHash,
+			&i.Payload,
+			&i.BlockNumber,
+			&i.ObservedAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProjectTrendObservations = `-- name: ListProjectTrendObservations :many
+SELECT id, project_id, data_type, schema_version, content_hash, payload, block_number, observed_at, created_at
+FROM project_observation
+WHERE project_id = $1
+  AND data_type IN ('ave', 'chain_state')
+  AND observed_at >= $2
+ORDER BY observed_at, id
+`
+
+type ListProjectTrendObservationsParams struct {
+	ProjectID    int64
+	ObservedFrom pgtype.Timestamptz
+}
+
+func (q *Queries) ListProjectTrendObservations(ctx context.Context, arg ListProjectTrendObservationsParams) ([]ProjectObservation, error) {
+	rows, err := q.db.Query(ctx, listProjectTrendObservations, arg.ProjectID, arg.ObservedFrom)
 	if err != nil {
 		return nil, err
 	}

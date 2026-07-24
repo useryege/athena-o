@@ -51,6 +51,7 @@ import {
     PolymarketUMADisputedPage,
     PolymarketUMAProposedPage,
     ProjectReportsPage,
+    ProjectDetailPage,
     ProjectsPage,
     SettingsPage,
     ServiceStatusPage,
@@ -437,11 +438,15 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
             <Route path='/service-status' element={withPermission(serviceStatusPermission, <ServiceStatusPage />)} />
-            <Route path='/etherscan-gateways' element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage canRunProbe={hasPermission(props.access, serviceStatusInvokePermission)} />)} />
+            <Route
+                path='/etherscan-gateways'
+                element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage canRunProbe={hasPermission(props.access, serviceStatusInvokePermission)} />)}
+            />
             <Route path='/user-info' element={<UserInfoPage />} />
             <Route path='/help' element={<HelpPage />} />
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />
             <Route path='/token/projects' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectsPage />)} />
+            <Route path='/token/projects/:projectID' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectDetailPage />)} />
             <Route path='/token/project-reports' element={withPermission(tokenapiPermission(tokenapiSubresources.projectReports), <ProjectReportsPage />)} />
             <Route path='/token/contract-codes' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodesPage />)} />
             <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />

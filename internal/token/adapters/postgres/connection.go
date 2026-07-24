@@ -72,6 +72,7 @@ type CatalogRepository struct{ *baseRepository }
 type ReportingRepository struct{ *baseRepository }
 type ResearchReadRepository struct{ *baseRepository }
 type SelectionRepository struct{ *baseRepository }
+type ProjectViewRepository struct{ *baseRepository }
 type PolicyRepository struct{ *baseRepository }
 type DiagnosticsRepository struct{ *baseRepository }
 
@@ -98,6 +99,9 @@ func NewResearchReadRepository(connection *Connection) *ResearchReadRepository {
 }
 func NewSelectionRepository(connection *Connection) *SelectionRepository {
 	return &SelectionRepository{newBaseRepository(connection)}
+}
+func NewProjectViewRepository(connection *Connection) *ProjectViewRepository {
+	return &ProjectViewRepository{newBaseRepository(connection)}
 }
 func NewPolicyRepository(connection *Connection) *PolicyRepository {
 	return &PolicyRepository{newBaseRepository(connection)}

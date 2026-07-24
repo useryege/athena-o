@@ -8,9 +8,11 @@ pre-deployment block boundary, per-wallet result limit, transaction persistence,
 and one-time schedule completion.
 
 Related-wallet discovery, Etherscan key and Gateway scheduling, research
-eligibility, report generation, and public transaction query APIs are outside
-this boundary. The collected rows are durable project data but are not research
-observations and do not enqueue report builds.
+eligibility, report generation, and the project detail read API are outside this
+boundary. The collected rows are durable project data but are not research
+observations and do not enqueue report builds. Their public filtering and
+pagination boundary is documented in the
+[Token Project Detail Read Model](project-detail-read-model.md).
 
 ## Source Locations
 
@@ -21,6 +23,7 @@ observations and do not enqueue report builds.
 | Etherscan Manager adapter | [`internal/token/adapters/normaltransactions/provider.go`](../../../internal/token/adapters/normaltransactions/provider.go) | `Provider.ListNormalTransactions` |
 | Atomic persistence | [`internal/token/adapters/postgres/observation_store.go`](../../../internal/token/adapters/postgres/observation_store.go), [`internal/token/adapters/postgres/wallet_normal_transaction_store.go`](../../../internal/token/adapters/postgres/wallet_normal_transaction_store.go) | `CommitCollection`, `insertWalletNormalTransactions` |
 | Schema and insert query | [`internal/token/adapters/postgres/migrations/000001_init.sql`](../../../internal/token/adapters/postgres/migrations/000001_init.sql), [`internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql`](../../../internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql) | `project_wallet_normal_transaction`, `InsertProjectWalletNormalTransaction` |
+| Public read boundary | [`internal/token/adapters/postgres/project_view_store.go`](../../../internal/token/adapters/postgres/project_view_store.go), [`internal/tokenapi/project_detail_service.go`](../../../internal/tokenapi/project_detail_service.go) | `ListProjectWalletNormalTransactionsPage`, `ListProjectWalletNormalTransactions` |
 | Process declarations | [`Procfile`](../../../Procfile), [`docker-compose.prod.yml`](../../../docker-compose.prod.yml) | `token-collector-wallet-normal-transactions`, `athena-token-collector-wallet-normal-transactions` |
 
 ## Architecture

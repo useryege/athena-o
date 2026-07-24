@@ -69,3 +69,17 @@ WHERE project_id = @project_id
   AND (sqlc.arg('data_type')::text = '' OR data_type = sqlc.arg('data_type')::text)
 ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountProjectObservations :one
+SELECT COUNT(*)::bigint
+FROM project_observation
+WHERE project_id = @project_id
+  AND (sqlc.arg('data_type')::text = '' OR data_type = sqlc.arg('data_type')::text);
+
+-- name: ListProjectTrendObservations :many
+SELECT *
+FROM project_observation
+WHERE project_id = @project_id
+  AND data_type IN ('ave', 'chain_state')
+  AND observed_at >= @observed_from
+ORDER BY observed_at, id;

@@ -219,6 +219,50 @@ func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjects
 	}
 	return &tokenapipkg.ListProjectsResponse{Projects: r.GetProjects(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
+func (s *Server) GetProjectDetail(ctx context.Context, req *tokenapipkg.GetProjectDetailRequest) (*tokenapipkg.GetProjectDetailResponse, error) {
+	client, e := s.tokenAPIClientSet.Catalog()
+	if e != nil {
+		return nil, e
+	}
+	r, e := client.GetProjectDetail(ctx, &tokenapiapiclient.GetProjectDetailRequest{ProjectId: req.GetProjectId()})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.GetProjectDetailResponse{Found: r.GetFound(), Detail: r.GetDetail()}, nil
+}
+func (s *Server) ListProjectTrends(ctx context.Context, req *tokenapipkg.ListProjectTrendsRequest) (*tokenapipkg.ListProjectTrendsResponse, error) {
+	client, e := s.tokenAPIClientSet.Catalog()
+	if e != nil {
+		return nil, e
+	}
+	r, e := client.ListProjectTrends(ctx, &tokenapiapiclient.ListProjectTrendsRequest{ProjectId: req.GetProjectId(), Range: req.GetRange()})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.ListProjectTrendsResponse{Trends: r.GetTrends()}, nil
+}
+func (s *Server) ListProjectObservations(ctx context.Context, req *tokenapipkg.ListProjectObservationsRequest) (*tokenapipkg.ListProjectObservationsResponse, error) {
+	client, e := s.tokenAPIClientSet.Catalog()
+	if e != nil {
+		return nil, e
+	}
+	r, e := client.ListProjectObservations(ctx, &tokenapiapiclient.ListProjectObservationsRequest{ProjectId: req.GetProjectId(), DataType: req.GetDataType(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.ListProjectObservationsResponse{Observations: r.GetObservations(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+}
+func (s *Server) ListProjectWalletNormalTransactions(ctx context.Context, req *tokenapipkg.ListProjectWalletNormalTransactionsRequest) (*tokenapipkg.ListProjectWalletNormalTransactionsResponse, error) {
+	client, e := s.tokenAPIClientSet.Catalog()
+	if e != nil {
+		return nil, e
+	}
+	r, e := client.ListProjectWalletNormalTransactions(ctx, &tokenapiapiclient.ListProjectWalletNormalTransactionsRequest{ProjectId: req.GetProjectId(), Wallet: req.GetWallet(), ReceiptStatus: req.GetReceiptStatus(), MethodId: req.GetMethodId(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.ListProjectWalletNormalTransactionsResponse{Transactions: r.GetTransactions(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+}
 func (s *Server) ListProjectReports(ctx context.Context, req *tokenapipkg.ListProjectReportsRequest) (*tokenapipkg.ListProjectReportsResponse, error) {
 	client, e := s.tokenAPIClientSet.Research()
 	if e != nil {

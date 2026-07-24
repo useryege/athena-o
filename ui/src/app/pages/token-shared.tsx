@@ -9,9 +9,19 @@ const chainIconAssets = {
     solana: solanaIcon
 };
 
-const tokenChainDisplayByID: Record<number, {label: string; icon?: string}> = {
-    1: {label: 'ETH', icon: chainIconAssets.eth},
-    56: {label: 'BSC', icon: chainIconAssets.bsc}
+interface TokenChainDisplay {
+    label: string;
+    icon?: string;
+    explorer: string;
+    native: string;
+    wrapped: string;
+    stable: string;
+    stableDecimals: number;
+}
+
+const tokenChainDisplayByID: Record<number, TokenChainDisplay> = {
+    1: {label: 'ETH', icon: chainIconAssets.eth, explorer: 'https://etherscan.io', native: 'ETH', wrapped: 'WETH', stable: 'USDT', stableDecimals: 6},
+    56: {label: 'BSC', icon: chainIconAssets.bsc, explorer: 'https://bscscan.com', native: 'BNB', wrapped: 'WBNB', stable: 'USDT', stableDecimals: 18}
 };
 
 export const chainLabel = (chainID?: number) => {
@@ -29,4 +39,22 @@ export const ChainBadge = (props: {chainID?: number}) => {
             <span>{chainLabel(props.chainID)}</span>
         </Tag>
     );
+};
+
+export const chainAssetLabels = (chainID?: number) => {
+    const display = chainID === undefined ? undefined : tokenChainDisplayByID[chainID];
+    return {
+        native: display?.native || 'Native',
+        wrapped: display?.wrapped || 'Wrapped native',
+        stable: display?.stable || 'USDT',
+        stableDecimals: display?.stableDecimals ?? 18
+    };
+};
+
+export const tokenExplorerURL = (chainID: number | undefined, kind: 'address' | 'tx', value?: string) => {
+    if (!value || chainID === undefined) {
+        return undefined;
+    }
+    const explorer = tokenChainDisplayByID[chainID]?.explorer;
+    return explorer ? `${explorer}/${kind}/${encodeURIComponent(value)}` : undefined;
 };

@@ -7,4 +7,8 @@ service TokenCatalogService {
   rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse) { option (google.api.http) = {get: "/api/v1/tokens/contract-codes/{code_hash}"}; }
   rpc ListContractCodes(ListContractCodesRequest) returns (ListContractCodesResponse) { option (google.api.http) = {get: "/api/v1/tokens/contract-codes"}; }
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects"}; }
+  rpc GetProjectDetail(GetProjectDetailRequest) returns (GetProjectDetailResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}"}; }
+  rpc ListProjectTrends(ListProjectTrendsRequest) returns (ListProjectTrendsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/trends"}; }
+  rpc ListProjectObservations(ListProjectObservationsRequest) returns (ListProjectObservationsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/observations"}; }
+  rpc ListProjectWalletNormalTransactions(ListProjectWalletNormalTransactionsRequest) returns (ListProjectWalletNormalTransactionsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/wallet-normal-transactions"}; }
 }

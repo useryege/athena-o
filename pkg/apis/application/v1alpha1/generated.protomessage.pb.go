@@ -55,9 +55,25 @@ func (*PolymarketUMADisputeItem) ProtoMessage() {}
 
 func (*PolymarketUMAProposalItem) ProtoMessage() {}
 
+func (*TokenAveObservation) ProtoMessage() {}
+
+func (*TokenAvePair) ProtoMessage() {}
+
+func (*TokenAveToken) ProtoMessage() {}
+
 func (*TokenChain) ProtoMessage() {}
 
 func (*TokenChainCheckpoint) ProtoMessage() {}
+
+func (*TokenChainPair) ProtoMessage() {}
+
+func (*TokenChainPairLiquidity) ProtoMessage() {}
+
+func (*TokenChainStateObservation) ProtoMessage() {}
+
+func (*TokenChainToken) ProtoMessage() {}
+
+func (*TokenCollectionSchedule) ProtoMessage() {}
 
 func (*TokenCollectionTask) ProtoMessage() {}
 
@@ -65,11 +81,27 @@ func (*TokenContractCode) ProtoMessage() {}
 
 func (*TokenContractCodeBlocklistEntry) ProtoMessage() {}
 
+func (*TokenContractSourceObservation) ProtoMessage() {}
+
 func (*TokenNodeStatus) ProtoMessage() {}
 
 func (*TokenProject) ProtoMessage() {}
 
+func (*TokenProjectDetail) ProtoMessage() {}
+
+func (*TokenProjectInitialRecipient) ProtoMessage() {}
+
+func (*TokenProjectObservation) ProtoMessage() {}
+
+func (*TokenProjectRelatedWallet) ProtoMessage() {}
+
 func (*TokenProjectReport) ProtoMessage() {}
+
+func (*TokenProjectTrendPoint) ProtoMessage() {}
+
+func (*TokenProjectTrendSeries) ProtoMessage() {}
+
+func (*TokenProjectTrends) ProtoMessage() {}
 
 func (*TokenReportRevision) ProtoMessage() {}
 
@@ -79,7 +111,15 @@ func (*TokenRuntimeConfiguration) ProtoMessage() {}
 
 func (*TokenSelection) ProtoMessage() {}
 
+func (*TokenSimulationResult) ProtoMessage() {}
+
+func (*TokenWalletAssetState) ProtoMessage() {}
+
 func (*TokenWalletBlocklistEntry) ProtoMessage() {}
+
+func (*TokenWalletNormalTransaction) ProtoMessage() {}
+
+func (*TokenWalletTransactionCount) ProtoMessage() {}
 
 func (*WalletDetail) ProtoMessage() {}
 

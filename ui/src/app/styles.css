@@ -2616,6 +2616,275 @@ body::-webkit-scrollbar-thumb,
     font-family: var(--athena-data-font);
 }
 
+.project-detail {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+}
+
+.project-detail-summary {
+    display: grid;
+    grid-template-columns: minmax(430px, 0.9fr) minmax(0, 1.6fr);
+    gap: 14px;
+    min-width: 0;
+}
+
+.project-detail-identity,
+.project-detail-kpi {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.project-detail-identity .ant-card-body {
+    display: grid;
+    gap: 14px;
+}
+
+.project-detail-identity__heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.project-detail-identity__heading h3 {
+    margin: 0 0 4px;
+}
+
+.project-detail-identity__symbol {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--athena-brand) 38%, var(--athena-border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--athena-brand) 12%, var(--athena-panel));
+    color: var(--athena-primary);
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.project-detail-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+}
+
+.project-detail-kpi .ant-card-body {
+    height: 100%;
+    min-height: 112px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.project-detail-kpi strong {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: clamp(16px, 1.25vw, 22px);
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-detail__numeric {
+    font-family: var(--athena-data-font);
+}
+
+.project-detail-tabs > .ant-tabs-nav {
+    position: sticky;
+    z-index: 20;
+    top: 56px;
+    margin-bottom: 14px;
+    padding-inline: 4px;
+    border: 1px solid var(--athena-border);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
+    box-shadow: var(--athena-shadow-tight);
+    backdrop-filter: blur(12px);
+}
+
+.project-detail-tabs > .ant-tabs-nav::before {
+    border-bottom: 0;
+}
+
+.project-detail-tabs .ant-tabs-tab:first-child {
+    margin-left: 12px;
+}
+
+.project-detail-tab {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+}
+
+.project-risk-grid,
+.project-collection-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.project-risk-flag {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 11px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+}
+
+.project-detail-inline-alert {
+    margin-top: 12px;
+}
+
+.project-detail-pair-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.project-detail-pair-grid > .ant-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+}
+
+.project-collection-grid > .ant-empty {
+    grid-column: 1 / -1;
+}
+
+.project-collection-card .ant-card-body {
+    display: grid;
+    gap: 6px;
+}
+
+.project-trend {
+    display: grid;
+    gap: 12px;
+}
+
+.project-trend__summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.project-trend__summary > span {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+}
+
+.project-trend__summary strong {
+    overflow: hidden;
+    font-family: var(--athena-data-font);
+    text-overflow: ellipsis;
+}
+
+.project-trend__canvas {
+    position: relative;
+    min-height: 260px;
+    overflow: hidden;
+    border: 1px solid var(--athena-border);
+    border-radius: 9px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--athena-blue) 4%, transparent), transparent 65%),
+        var(--athena-panel);
+}
+
+.project-trend__canvas svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    touch-action: none;
+}
+
+.project-trend__grid {
+    stroke: var(--athena-border);
+    stroke-width: 1;
+    stroke-dasharray: 4 5;
+}
+
+.project-trend__line {
+    fill: none;
+    stroke: var(--athena-blue);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.project-trend__cursor {
+    stroke: var(--athena-muted);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+}
+
+.project-trend__point {
+    fill: var(--athena-panel-solid);
+    stroke: var(--athena-blue);
+    stroke-width: 3;
+}
+
+.project-trend__axis-label {
+    fill: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-size: 11px;
+}
+
+.project-trend__tooltip-anchor {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+
+.project-contract-source,
+.project-json-viewer {
+    max-height: 70vh;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-bg-soft);
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre;
+}
+
+.project-selection-event {
+    display: grid;
+    gap: 5px;
+    padding-bottom: 8px;
+}
+
+.project-selection-event .ant-typography {
+    margin-bottom: 0;
+}
+
+.project-detail-not-found {
+    padding: 64px 20px;
+    border: 1px solid var(--athena-border);
+    border-radius: 10px;
+    background: var(--athena-panel);
+}
+
 @media (max-width: 900px) {
     .fifa-wallet-holding__row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2673,6 +2942,23 @@ body::-webkit-scrollbar-thumb,
 
     .world-cup-corners-filters .choice-group {
         justify-content: flex-start;
+    }
+
+    .project-detail-summary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project-detail-kpis {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .project-detail-kpi .ant-card-body {
+        min-height: 92px;
+    }
+
+    .project-risk-grid,
+    .project-collection-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 

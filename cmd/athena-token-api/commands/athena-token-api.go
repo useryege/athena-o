@@ -22,6 +22,7 @@ import (
 	"github.com/useryege/athena/internal/token/discovery"
 	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
 	policyapp "github.com/useryege/athena/internal/token/policy/application"
+	projectviewapp "github.com/useryege/athena/internal/token/projectview/application"
 	reportingapp "github.com/useryege/athena/internal/token/reporting/application"
 	researchapp "github.com/useryege/athena/internal/token/research/application"
 	selectionapp "github.com/useryege/athena/internal/token/selection/application"
@@ -80,12 +81,13 @@ func NewCommand() *cobra.Command {
 			evmRegistry := evm.NewChainClientRegistry(registry)
 			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
 				Applications: tokenapi.Applications{
-					Catalog:    catalogapp.NewQueries(tokenpostgres.NewCatalogRepository(connection)),
-					Research:   researchapp.NewQueries(tokenpostgres.NewResearchReadRepository(connection)),
-					Reporting:  reportingapp.NewQueries(tokenpostgres.NewReportingRepository(connection)),
-					Selection:  selectionapp.NewQueries(tokenpostgres.NewSelectionRepository(connection)),
-					Policy:     policyapp.NewService(tokenpostgres.NewPolicyRepository(connection), evmRegistry),
-					Operations: discoveryapp.NewOperations(chainRepository, evmRegistry),
+					Catalog:     catalogapp.NewQueries(tokenpostgres.NewCatalogRepository(connection)),
+					Research:    researchapp.NewQueries(tokenpostgres.NewResearchReadRepository(connection)),
+					Reporting:   reportingapp.NewQueries(tokenpostgres.NewReportingRepository(connection)),
+					Selection:   selectionapp.NewQueries(tokenpostgres.NewSelectionRepository(connection)),
+					ProjectView: projectviewapp.NewQueries(tokenpostgres.NewProjectViewRepository(connection)),
+					Policy:      policyapp.NewService(tokenpostgres.NewPolicyRepository(connection), evmRegistry),
+					Operations:  discoveryapp.NewOperations(chainRepository, evmRegistry),
 				},
 				Close: func() error {
 					evmErr := evmRegistry.Close()

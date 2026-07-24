@@ -42,3 +42,28 @@ INSERT INTO project_wallet_normal_transaction (
   @collected_at
 )
 ON CONFLICT (project_id, wallet, transaction_hash) DO NOTHING;
+
+-- name: CountProjectWalletNormalTransactions :one
+SELECT COUNT(*)::bigint
+FROM project_wallet_normal_transaction
+WHERE project_id = @project_id
+  AND (sqlc.narg('wallet')::bytea IS NULL OR wallet = sqlc.narg('wallet')::bytea)
+  AND (sqlc.arg('receipt_status')::text = '' OR receipt_status = sqlc.arg('receipt_status')::text)
+  AND (sqlc.arg('method_id')::text = '' OR method_id = sqlc.arg('method_id')::text);
+
+-- name: ListProjectWalletNormalTransactions :many
+SELECT *
+FROM project_wallet_normal_transaction
+WHERE project_id = @project_id
+  AND (sqlc.narg('wallet')::bytea IS NULL OR wallet = sqlc.narg('wallet')::bytea)
+  AND (sqlc.arg('receipt_status')::text = '' OR receipt_status = sqlc.arg('receipt_status')::text)
+  AND (sqlc.arg('method_id')::text = '' OR method_id = sqlc.arg('method_id')::text)
+ORDER BY block_number DESC, transaction_index DESC, transaction_hash
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountProjectWalletNormalTransactionsByWallet :many
+SELECT wallet, COUNT(*)::bigint AS transaction_count
+FROM project_wallet_normal_transaction
+WHERE project_id = @project_id
+GROUP BY wallet
+ORDER BY wallet;
