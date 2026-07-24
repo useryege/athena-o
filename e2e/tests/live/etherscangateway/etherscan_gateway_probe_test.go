@@ -10,7 +10,11 @@ import (
 	"github.com/useryege/athena/internal/etherscangatewayprobe"
 )
 
-const etherscanGatewayProbeRounds = 6
+const (
+	etherscanGatewayProbeRounds          = 6
+	etherscanGatewayProbeCooldown        = 2 * time.Second
+	etherscanGatewayProbeRequestInterval = 10 * time.Millisecond
+)
 
 func TestEtherscanGatewayMultiKeyStaggeredSuccessProbe(t *testing.T) {
 	if e2etest.StringFromEnv(envE2ELive, "") != "1" {
@@ -42,8 +46,8 @@ func TestEtherscanGatewayMultiKeyStaggeredSuccessProbe(t *testing.T) {
 		t.Fatalf("%s is required to run this live probe", envEtherscanGatewayAuthToken)
 	}
 
-	t.Logf("waiting %s before staggered Etherscan Gateway multi-key probe", etherscanRateLimitProbeCooldown)
-	time.Sleep(etherscanRateLimitProbeCooldown)
+	t.Logf("waiting %s before staggered Etherscan Gateway multi-key probe", etherscanGatewayProbeCooldown)
+	time.Sleep(etherscanGatewayProbeCooldown)
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
@@ -53,7 +57,7 @@ func TestEtherscanGatewayMultiKeyStaggeredSuccessProbe(t *testing.T) {
 		AuthToken:      authToken,
 		QueryAddress:   cfg.queryAddress,
 		RequestsPerKey: etherscanGatewayProbeRounds,
-		Interval:       etherscanMultiKeyProbeRequestInterval,
+		Interval:       etherscanGatewayProbeRequestInterval,
 	})
 	if err != nil {
 		t.Fatalf("run staggered Etherscan Gateway multi-key probe: %v", err)
