@@ -21,7 +21,7 @@ collector own their collection lifecycle.
 | Public internal contract | [`internal/etherscanmanager/etherscanmanager.proto`](../../../internal/etherscanmanager/etherscanmanager.proto) | `EtherscanManagerService` |
 | Gateway execution | [`internal/etherscangateway/service.go`](../../../internal/etherscangateway/service.go) | `Service.ListNormalTransactions`, `Service.GetSourceCode` |
 | Etherscan HTTP client | [`util/etherscanapi/client.go`](../../../util/etherscanapi/client.go) | `Client`, `NewClientWithConfig` |
-| Contract-source consumer | [`internal/token/adapters/sourcecode/provider.go`](../../../internal/token/adapters/sourcecode/provider.go) | `Provider` |
+| Token consumers | [`internal/token/adapters/sourcecode/provider.go`](../../../internal/token/adapters/sourcecode/provider.go), [`internal/token/adapters/normaltransactions/provider.go`](../../../internal/token/adapters/normaltransactions/provider.go) | `sourcecode.Provider`, `normaltransactions.Provider` |
 
 ## Architecture
 
@@ -83,7 +83,7 @@ round-robin sequence to the first API key and first Gateway.
 | `ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS` | Required comma-, whitespace-, or newline-separated Gateway `host:port` pool. |
 | `ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN` | Required shared bearer token added to Gateway gRPC calls. |
 | `ATHENA_GRPC_MAX_SIZE_MB` | Maximum Manager gRPC receive size; defaults to `100` MiB. |
-| `ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS` | Token contract-source collector address; defaults to `localhost:8100`. |
+| `ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS` | Token contract-source and wallet-normal-transaction collector address; defaults to `localhost:8100`. |
 
 ## Invariants
 

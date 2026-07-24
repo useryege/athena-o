@@ -48,13 +48,13 @@ Selection updates the shared research state. The lifecycle does not depend on an
 1. The Validator claims and inspects pending project candidates. A rejected inspection marks only the candidate rejected and does not create research state or schedules.
 2. For an accepted inspection, `PromoteCandidateAndInitializeResearch` atomically upserts the project, marks the candidate validated, inserts a `researching` state, creates the configured active schedules, and stores the related wallets and initial recipients.
 3. The research state's `created_at` is the start of its research window. Its schema default sets `expires_at` to one day after insertion. The project's deployment or discovery time does not define the TTL.
-4. Every project receives `chain_state` every 15 seconds, `wallet_asset_state` every minute, `simulation_result` every minute, `ave` every 5 minutes, and `contract_code_source` every 10 minutes. Every initial `next_run_at` is the Validator's current UTC time.
+4. Every project receives `chain_state` every 15 seconds, `wallet_asset_state` every minute, `simulation_result` every minute, `ave` every 5 minutes, `contract_code_source` every 10 minutes, and the one-time `wallet_normal_transactions` schedule with a 10-minute retry interval. Every initial `next_run_at` is the Validator's current UTC time.
 5. At Scheduler startup, `Initialize` applies the configured intervals to active schedules and recomputes `expires_at = created_at + TTL` for every state that is still `researching`. This makes the Scheduler's configured policy authoritative for active research.
 6. The Scheduler job runs once per second. Each run first changes overdue `researching` states to `expired`, then changes active schedules belonging to `expired` or `rejected` projects to `paused`.
 7. The Scheduler lists due active schedules only for `researching` or `selected` projects. For each due schedule, a PostgreSQL transaction locks the schedule, rechecks its revision and due time, creates the next task revision, advances `next_run_at`, and commits both changes together.
 8. Collector workers claim pending tasks only while the project's research state is `researching` or `selected`. Tasks left pending after a project becomes `expired` or `rejected` are therefore no longer claimable.
 9. A `selected` outcome moves a `researching` project to `selected`. Expiration applies only to `researching`, so selected projects continue collection without a TTL cutoff. A `rejected` outcome can stop either a researching or selected project; the next maintenance run pauses its active schedules.
-10. A collector can mark a schedule `completed` when its data no longer needs periodic collection. Contract source completes after source is recorded. Lifecycle maintenance only pauses schedules that are still active.
+10. A collector can mark a schedule `completed` when its data no longer needs periodic collection. Contract source completes after source is recorded. Wallet normal transactions complete after every distinct related-wallet request succeeds and the complete result set is committed, including when every result is empty. Lifecycle maintenance only pauses schedules that are still active.
 11. On `SIGINT` or `SIGTERM`, the shared worker host cancels the periodic job, stops the health server, and closes PostgreSQL after the job exits.
 
 ## State / Data
@@ -82,6 +82,7 @@ Task creation and schedule advancement share a transaction. The due query exclud
 | `ATHENA_TOKEN_SIMULATION_INTERVAL` / `--simulation-interval` | Simulation-result collection interval. Default 1 minute. |
 | `ATHENA_TOKEN_AVE_INTERVAL` / `--ave-interval` | Ave collection interval. Default 5 minutes. |
 | `ATHENA_TOKEN_CONTRACT_SOURCE_INTERVAL` / `--contract-source-interval` | Contract-source collection interval. Default 10 minutes. |
+| `ATHENA_TOKEN_WALLET_NORMAL_TRANSACTIONS_INTERVAL` / `--wallet-normal-transactions-interval` | Retry interval for the one-time related-wallet normal-transaction collection. Default 10 minutes. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Shared telemetry listener. The Scheduler default is `127.0.0.1:8112`. |
 
 The application-layer fallback TTL is also 24 hours when a Scheduler is built without a positive TTL. The initial schema assigns the same one-day default to direct research-state inserts. A newly created development database receives this schema default; recreating an existing development database is the supported way to apply the current initial schema.
@@ -94,6 +95,7 @@ The application-layer fallback TTL is also 24 hours when a Scheduler is built wi
 - `rejected` and `expired` projects cannot produce or claim new collection work; their active schedules are paused by lifecycle maintenance.
 - Project promotion, research-state creation, schedule creation, related-wallet persistence, and initial-recipient persistence commit atomically.
 - Schedule locking and expected-revision checks prevent duplicate task revisions during concurrent scheduling.
+- Contract source and wallet normal transactions complete their schedules after their one-time success and do not produce later task revisions.
 - Every collector, including Ave, follows the same research eligibility rules; collector-specific frequencies remain independently configured.
 
 ## Failure Recovery

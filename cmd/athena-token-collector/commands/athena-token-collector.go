@@ -11,6 +11,7 @@ import (
 	"github.com/useryege/athena/common"
 	aveadapter "github.com/useryege/athena/internal/token/adapters/ave"
 	"github.com/useryege/athena/internal/token/adapters/evm"
+	"github.com/useryege/athena/internal/token/adapters/normaltransactions"
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	"github.com/useryege/athena/internal/token/adapters/sourcecode"
 	"github.com/useryege/athena/internal/token/research"
@@ -27,7 +28,8 @@ const cliName = "athena-token-collector"
 var collectorHealthAddresses = map[research.DataCollectionType]string{
 	research.DataCollectionTypeAve: "127.0.0.1:8113", research.DataCollectionTypeChainState: "127.0.0.1:8114",
 	research.DataCollectionTypeWalletAssetState: "127.0.0.1:8115", research.DataCollectionTypeSimulationResult: "127.0.0.1:8116",
-	research.DataCollectionTypeContractCodeSource: "127.0.0.1:8117",
+	research.DataCollectionTypeContractCodeSource:       "127.0.0.1:8117",
+	research.DataCollectionTypeWalletNormalTransactions: "127.0.0.1:8120",
 }
 
 func NewCommand() *cobra.Command {
@@ -61,6 +63,13 @@ func NewCommand() *cobra.Command {
 			}
 			host.AddClose(provider.Close)
 			processor = researchapp.ContractSourceProcessor{Codes: repository, Provider: provider}
+		case research.DataCollectionTypeWalletNormalTransactions:
+			provider, err := normaltransactions.New(etherscanManagerAddress)
+			if err != nil {
+				return err
+			}
+			host.AddClose(provider.Close)
+			processor = researchapp.WalletNormalTransactionsProcessor{Provider: provider}
 		case research.DataCollectionTypeChainState, research.DataCollectionTypeWalletAssetState, research.DataCollectionTypeSimulationResult:
 			clients := evm.NewChainClientRegistry(registry)
 			host.AddClose(clients.Close)
@@ -88,7 +97,7 @@ func NewCommand() *cobra.Command {
 		return host.Run(cmd.Context())
 	}}
 	flags.Bind(command, "")
-	command.Flags().StringVar(&dataTypeValue, "data-type", env.StringFromEnv("ATHENA_TOKEN_DATA_TYPE", ""), "Collection type: ave|chain_state|wallet_asset_state|simulation_result|contract_code_source")
+	command.Flags().StringVar(&dataTypeValue, "data-type", env.StringFromEnv("ATHENA_TOKEN_DATA_TYPE", ""), "Collection type: ave|chain_state|wallet_asset_state|simulation_result|contract_code_source|wallet_normal_transactions")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_TOKEN_AVE_API_KEY", ""), "Ave API key")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_TOKEN_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
 	command.Flags().StringVar(&etherscanManagerAddress, "etherscan-manager-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortEtherscanManager)), "Etherscan Manager gRPC address")

@@ -12,16 +12,18 @@ import (
 
 type CollectionTaskRepository interface {
 	ClaimCollectionTasks(context.Context, research.DataCollectionType, []int64, int32) ([]research.ProjectDataCollectionTaskWithProject, error)
-	CommitObservationAndEnqueueReport(context.Context, CommitCollectionCommand) (CommitCollectionResult, error)
+	CommitCollection(context.Context, CommitCollectionCommand) (CommitCollectionResult, error)
 	RetryCollectionTask(context.Context, RetryCollectionTaskCommand) error
 	FailCollectionTask(context.Context, FailCollectionTaskCommand) error
 }
 
 type CollectionOutput struct {
-	Observation       any
-	BlockNumber       *uint64
-	RecordObservation bool
-	CodeSource        *CodeSourceUpdate
+	Observation        any
+	BlockNumber        *uint64
+	RecordObservation  bool
+	CodeSource         *CodeSourceUpdate
+	NormalTransactions []research.WalletNormalTransaction
+	CompleteSchedule   bool
 }
 
 type CodeSourceUpdate struct {
@@ -35,16 +37,17 @@ type TaskProcessor interface {
 }
 
 type CommitCollectionCommand struct {
-	Task              research.ProjectDataCollectionTask
-	CheckedAt         time.Time
-	SchemaVersion     int32
-	Payload           json.RawMessage
-	ContentHash       shared.Hash
-	BlockNumber       *uint64
-	RecordObservation bool
-	CodeSource        *CodeSourceUpdate
-	NextRunAt         time.Time
-	CompleteSchedule  bool
+	Task               research.ProjectDataCollectionTask
+	CheckedAt          time.Time
+	SchemaVersion      int32
+	Payload            json.RawMessage
+	ContentHash        shared.Hash
+	BlockNumber        *uint64
+	RecordObservation  bool
+	CodeSource         *CodeSourceUpdate
+	NormalTransactions []research.WalletNormalTransaction
+	NextRunAt          time.Time
+	CompleteSchedule   bool
 }
 
 type CommitCollectionResult struct {
@@ -112,7 +115,12 @@ func (collector *Collector) process(ctx context.Context, item research.ProjectDa
 		return collector.fail(ctx, item, err)
 	}
 	checkedAt := collector.options.Now().UTC()
-	command := CommitCollectionCommand{Task: item.Task, CheckedAt: checkedAt, SchemaVersion: research.ObservationSchemaVersionV1, BlockNumber: output.BlockNumber, RecordObservation: output.RecordObservation, CodeSource: output.CodeSource, NextRunAt: checkedAt.Add(item.Project.RefreshInterval), CompleteSchedule: collector.processor.DataType() == research.DataCollectionTypeContractCodeSource && output.RecordObservation}
+	command := CommitCollectionCommand{
+		Task: item.Task, CheckedAt: checkedAt, SchemaVersion: research.ObservationSchemaVersionV1,
+		BlockNumber: output.BlockNumber, RecordObservation: output.RecordObservation, CodeSource: output.CodeSource,
+		NormalTransactions: output.NormalTransactions, NextRunAt: checkedAt.Add(item.Project.RefreshInterval),
+		CompleteSchedule: output.CompleteSchedule,
+	}
 	if output.RecordObservation {
 		payload, err := json.Marshal(output.Observation)
 		if err != nil {
@@ -123,7 +131,7 @@ func (collector *Collector) process(ctx context.Context, item research.ProjectDa
 			return collector.fail(ctx, item, err)
 		}
 	}
-	if _, err := collector.repository.CommitObservationAndEnqueueReport(ctx, command); err != nil {
+	if _, err := collector.repository.CommitCollection(ctx, command); err != nil {
 		return collector.fail(ctx, item, err)
 	}
 	return nil
@@ -217,7 +225,7 @@ func (processor ContractSourceProcessor) Process(ctx context.Context, project re
 			return CollectionOutput{RecordObservation: false}, nil
 		}
 		observation := research.ContractSourceObservationV1{CodeHash: project.CodeHash, SourceAvailable: true}
-		return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: code.SourceCode}}, nil
+		return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: code.SourceCode}, CompleteSchedule: true}, nil
 	}
 	source, err := processor.Provider.GetSourceCode(ctx, project.ChainID, project.Contract)
 	if err != nil {
@@ -227,5 +235,33 @@ func (processor ContractSourceProcessor) Process(ctx context.Context, project re
 		return CollectionOutput{RecordObservation: false}, nil
 	}
 	observation := research.ContractSourceObservationV1{CodeHash: project.CodeHash, SourceAvailable: true}
-	return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: source}}, nil
+	return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: source}, CompleteSchedule: true}, nil
+}
+
+type WalletNormalTransactionProvider interface {
+	ListNormalTransactions(context.Context, int64, shared.Address, uint64) ([]research.WalletNormalTransaction, error)
+}
+
+type WalletNormalTransactionsProcessor struct {
+	Provider WalletNormalTransactionProvider
+}
+
+func (processor WalletNormalTransactionsProcessor) DataType() research.DataCollectionType {
+	return research.DataCollectionTypeWalletNormalTransactions
+}
+
+func (processor WalletNormalTransactionsProcessor) Process(ctx context.Context, project research.ProjectCollectionContext) (CollectionOutput, error) {
+	if project.DeploymentBlockNumber == 0 {
+		return CollectionOutput{CompleteSchedule: true}, nil
+	}
+	transactions := make([]research.WalletNormalTransaction, 0)
+	endBlock := project.DeploymentBlockNumber - 1
+	for _, wallet := range project.RelatedWallets {
+		items, err := processor.Provider.ListNormalTransactions(ctx, project.ChainID, wallet, endBlock)
+		if err != nil {
+			return CollectionOutput{}, err
+		}
+		transactions = append(transactions, items...)
+	}
+	return CollectionOutput{NormalTransactions: transactions, CompleteSchedule: true}, nil
 }

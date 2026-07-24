@@ -11,7 +11,7 @@ import (
 	researchapp "github.com/useryege/athena/internal/token/research/application"
 )
 
-func (repository *CollectionRepository) CommitObservationAndEnqueueReport(ctx context.Context, command researchapp.CommitCollectionCommand) (researchapp.CommitCollectionResult, error) {
+func (repository *CollectionRepository) CommitCollection(ctx context.Context, command researchapp.CommitCollectionCommand) (researchapp.CommitCollectionResult, error) {
 	if repository == nil || repository.pool == nil {
 		return researchapp.CommitCollectionResult{}, fmt.Errorf("token collection repository is not configured")
 	}
@@ -32,6 +32,9 @@ func (repository *CollectionRepository) CommitObservationAndEnqueueReport(ctx co
 		if err != nil {
 			return researchapp.CommitCollectionResult{}, err
 		}
+	}
+	if err = insertWalletNormalTransactions(ctx, queries, command.Task.ProjectID, command.CheckedAt, command.NormalTransactions); err != nil {
+		return researchapp.CommitCollectionResult{}, err
 	}
 	rows, err := queries.MarkProjectDataCollectionTaskSucceeded(ctx, command.Task.ID)
 	if err != nil {

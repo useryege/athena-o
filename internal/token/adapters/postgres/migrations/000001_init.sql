@@ -162,6 +162,49 @@ CREATE TABLE project_related_wallet (
 CREATE INDEX project_related_wallet_project_id_role_idx ON project_related_wallet (project_id, role);
 CREATE INDEX project_related_wallet_wallet_idx ON project_related_wallet (wallet);
 
+CREATE TABLE project_wallet_normal_transaction (
+  project_id BIGINT NOT NULL,
+  wallet BYTEA NOT NULL,
+  transaction_hash BYTEA NOT NULL,
+  block_number BIGINT NOT NULL,
+  block_timestamp BIGINT NOT NULL,
+  transaction_index BIGINT NOT NULL,
+  nonce BIGINT NOT NULL,
+  from_address BYTEA NOT NULL,
+  to_address BYTEA,
+  value NUMERIC(78, 0) NOT NULL,
+  gas BIGINT NOT NULL,
+  gas_price NUMERIC(78, 0) NOT NULL,
+  gas_used BIGINT NOT NULL,
+  input TEXT NOT NULL,
+  method_id TEXT NOT NULL,
+  function_name TEXT NOT NULL,
+  receipt_status TEXT NOT NULL,
+  is_error BOOLEAN NOT NULL,
+  collected_at TIMESTAMPTZ NOT NULL,
+  CONSTRAINT project_wallet_normal_transaction_project_id_wallet_transaction_hash_uidx
+    PRIMARY KEY (project_id, wallet, transaction_hash),
+  CONSTRAINT project_wallet_normal_transaction_project_fk
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_wallet_normal_transaction_wallet_length_check CHECK (length(wallet) = 20),
+  CONSTRAINT project_wallet_normal_transaction_transaction_hash_length_check CHECK (length(transaction_hash) = 32),
+  CONSTRAINT project_wallet_normal_transaction_block_number_check CHECK (block_number >= 0),
+  CONSTRAINT project_wallet_normal_transaction_block_timestamp_check CHECK (block_timestamp >= 0),
+  CONSTRAINT project_wallet_normal_transaction_transaction_index_check CHECK (transaction_index >= 0),
+  CONSTRAINT project_wallet_normal_transaction_nonce_check CHECK (nonce >= 0),
+  CONSTRAINT project_wallet_normal_transaction_from_address_length_check CHECK (length(from_address) = 20),
+  CONSTRAINT project_wallet_normal_transaction_to_address_length_check CHECK (to_address IS NULL OR length(to_address) = 20),
+  CONSTRAINT project_wallet_normal_transaction_value_check CHECK (value >= 0),
+  CONSTRAINT project_wallet_normal_transaction_gas_check CHECK (gas >= 0),
+  CONSTRAINT project_wallet_normal_transaction_gas_price_check CHECK (gas_price >= 0),
+  CONSTRAINT project_wallet_normal_transaction_gas_used_check CHECK (gas_used >= 0),
+  CONSTRAINT project_wallet_normal_transaction_receipt_status_check
+    CHECK (receipt_status IN ('unspecified', 'failed', 'success'))
+);
+
+CREATE INDEX project_wallet_normal_transaction_project_wallet_position_idx
+  ON project_wallet_normal_transaction (project_id, wallet, block_number DESC, transaction_index DESC);
+
 CREATE TABLE project_initial_recipient (
   id BIGSERIAL,
   project_id BIGINT NOT NULL,
@@ -223,7 +266,7 @@ CREATE TABLE project_data_collection_schedule (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_data_collection_schedule_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
   CONSTRAINT project_data_collection_schedule_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
+  CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
   CONSTRAINT project_data_collection_schedule_status_check CHECK (status IN ('active', 'completed', 'paused')),
   CONSTRAINT project_data_collection_schedule_refresh_interval_seconds_check CHECK (refresh_interval_seconds > 0),
   CONSTRAINT project_data_collection_schedule_latest_task_revision_check CHECK (latest_task_revision >= 0),
@@ -249,7 +292,7 @@ CREATE TABLE project_data_collection_task (
   CONSTRAINT project_data_collection_task_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_data_collection_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
   CONSTRAINT project_data_collection_task_project_id_data_type_revision_uidx UNIQUE (project_id, data_type, revision),
-  CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
+  CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
   CONSTRAINT project_data_collection_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
   CONSTRAINT project_data_collection_task_revision_check CHECK (revision > 0),
   CONSTRAINT project_data_collection_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
@@ -456,6 +499,7 @@ DROP TABLE IF EXISTS project_data_collection_task;
 DROP TABLE IF EXISTS project_data_collection_schedule;
 DROP TABLE IF EXISTS project_research_state;
 DROP TABLE IF EXISTS project_initial_recipient;
+DROP TABLE IF EXISTS project_wallet_normal_transaction;
 DROP TABLE IF EXISTS project_related_wallet;
 DROP TRIGGER IF EXISTS project_contract_code_deployment_count_trigger ON project;
 DROP TABLE IF EXISTS project;

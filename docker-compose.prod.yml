@@ -265,6 +265,22 @@ services:
       ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS: athena-etherscan-manager:8100
     expose: ["8117"]
 
+  athena-token-collector-wallet-normal-transactions:
+    <<: *token-worker
+    command: ["athena", "--data-type", "wallet_normal_transactions"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      athena-etherscan-manager:
+        condition: service_started
+    environment:
+      <<: *token-worker-environment
+      ATHENA_BINARY_NAME: athena-token-collector
+      ATHENA_TOKEN_DATA_TYPE: wallet_normal_transactions
+      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8120
+      ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS: athena-etherscan-manager:8100
+    expose: ["8120"]
+
   athena-token-report-builder:
     <<: *token-worker
     environment:

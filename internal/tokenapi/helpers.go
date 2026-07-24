@@ -100,15 +100,17 @@ func validateProjectDataCollectionType(value string) error {
 		string(research.DataCollectionTypeChainState),
 		string(research.DataCollectionTypeWalletAssetState),
 		string(research.DataCollectionTypeSimulationResult),
-		string(research.DataCollectionTypeContractCodeSource):
+		string(research.DataCollectionTypeContractCodeSource),
+		string(research.DataCollectionTypeWalletNormalTransactions):
 		return nil
 	default:
-		return status.Errorf(codes.InvalidArgument, "data_type must be one of %q, %q, %q, %q, or %q",
+		return status.Errorf(codes.InvalidArgument, "data_type must be one of %q, %q, %q, %q, %q, or %q",
 			research.DataCollectionTypeAve,
 			research.DataCollectionTypeChainState,
 			research.DataCollectionTypeWalletAssetState,
 			research.DataCollectionTypeSimulationResult,
 			research.DataCollectionTypeContractCodeSource,
+			research.DataCollectionTypeWalletNormalTransactions,
 		)
 	}
 }

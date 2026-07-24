@@ -171,5 +171,6 @@ func defaultResearchSchedules(now time.Time) []CollectionScheduleSeed {
 		{DataType: "simulation_result", RefreshInterval: time.Minute, NextRunAt: now},
 		{DataType: "ave", RefreshInterval: 5 * time.Minute, NextRunAt: now},
 		{DataType: "contract_code_source", RefreshInterval: 10 * time.Minute, NextRunAt: now},
+		{DataType: "wallet_normal_transactions", RefreshInterval: 10 * time.Minute, NextRunAt: now},
 	}
 }

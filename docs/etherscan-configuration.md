@@ -14,15 +14,18 @@ Each outbound request picks the next API key and Gateway address using one
 shared round-robin sequence. A failed Gateway request is returned immediately;
 the manager does not retry with another key or Gateway.
 
-The `athena-token-collector --data-type contract_code_source` process does not
-read standalone Etherscan API keys. It calls `athena-etherscan-manager` over gRPC:
+The `athena-token-collector --data-type contract_code_source` and
+`athena-token-collector --data-type wallet_normal_transactions` processes do
+not read standalone Etherscan API keys. They call `athena-etherscan-manager`
+over gRPC:
 
 ```bash
 ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS='localhost:8100'
 ```
 
-The generic `ListNormalTransactions` RPC remains available through
-`athena-etherscan-manager`.
+The wallet normal-transaction collector uses `ListNormalTransactions` to fetch
+each related wallet's latest 300 transactions strictly before its project's
+deployment block.
 
 `athena-server` also reads the gateway IP list, gateway bearer token, and
 `ATHENA_ETHERSCAN_MANAGER_API_KEYS` for the `/etherscan-gateways` UI live

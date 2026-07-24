@@ -10,6 +10,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/research"
 	researchapp "github.com/useryege/athena/internal/token/research/application"
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 const collectionTaskLease = 90 * time.Second
@@ -44,9 +45,19 @@ func (repository *CollectionRepository) ClaimCollectionTasks(ctx context.Context
 		if err != nil {
 			return nil, err
 		}
-		contextValue := research.ProjectCollectionContext{ID: project.ID, ChainID: project.ChainID, Contract: project.Contract, CodeHash: project.CodeHash, WethPair: project.WethPair, UsdtPair: project.UsdtPair, RefreshInterval: time.Duration(schedule.RefreshIntervalSeconds) * time.Second}
+		contextValue := research.ProjectCollectionContext{
+			ID: project.ID, ChainID: project.ChainID, Contract: project.Contract, CodeHash: project.CodeHash,
+			WethPair: project.WethPair, UsdtPair: project.UsdtPair, DeploymentBlockNumber: project.BlockNumber,
+			RefreshInterval: time.Duration(schedule.RefreshIntervalSeconds) * time.Second,
+		}
+		seenWallets := make(map[shared.Address]struct{}, len(walletRows))
 		for _, wallet := range walletRows {
-			contextValue.RelatedWallets = append(contextValue.RelatedWallets, bytesToAddress(wallet.Wallet))
+			address := bytesToAddress(wallet.Wallet)
+			if _, ok := seenWallets[address]; ok {
+				continue
+			}
+			seenWallets[address] = struct{}{}
+			contextValue.RelatedWallets = append(contextValue.RelatedWallets, address)
 		}
 		result = append(result, research.ProjectDataCollectionTaskWithProject{Task: mapProjectDataCollectionTask(row), Project: contextValue})
 	}

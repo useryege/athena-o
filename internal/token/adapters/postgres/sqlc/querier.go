@@ -78,6 +78,8 @@ type Querier interface {
 	InsertProjectObservation(ctx context.Context, arg InsertProjectObservationParams) (ProjectObservation, error)
 	InsertProjectReportRevision(ctx context.Context, arg InsertProjectReportRevisionParams) (ProjectReportRevision, error)
 	InsertProjectSelection(ctx context.Context, arg InsertProjectSelectionParams) (ProjectSelection, error)
+	// One-time pre-deployment normal transactions for project-related wallets.
+	InsertProjectWalletNormalTransaction(ctx context.Context, arg InsertProjectWalletNormalTransactionParams) error
 	IsContractCodeBlocked(ctx context.Context, codeHash []byte) (bool, error)
 	IsWalletBlocked(ctx context.Context, wallet []byte) (bool, error)
 	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)

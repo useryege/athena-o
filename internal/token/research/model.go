@@ -2,6 +2,7 @@ package research
 
 import (
 	"encoding/json"
+	"math/big"
 	"time"
 
 	"github.com/useryege/athena/internal/token/shared"
@@ -21,17 +22,18 @@ const (
 type DataCollectionType string
 
 const (
-	DataCollectionTypeAve                DataCollectionType = "ave"
-	DataCollectionTypeChainState         DataCollectionType = "chain_state"
-	DataCollectionTypeWalletAssetState   DataCollectionType = "wallet_asset_state"
-	DataCollectionTypeSimulationResult   DataCollectionType = "simulation_result"
-	DataCollectionTypeContractCodeSource DataCollectionType = "contract_code_source"
+	DataCollectionTypeAve                      DataCollectionType = "ave"
+	DataCollectionTypeChainState               DataCollectionType = "chain_state"
+	DataCollectionTypeWalletAssetState         DataCollectionType = "wallet_asset_state"
+	DataCollectionTypeSimulationResult         DataCollectionType = "simulation_result"
+	DataCollectionTypeContractCodeSource       DataCollectionType = "contract_code_source"
+	DataCollectionTypeWalletNormalTransactions DataCollectionType = "wallet_normal_transactions"
 )
 
 func ParseDataCollectionType(value string) (DataCollectionType, bool) {
 	dataType := DataCollectionType(value)
 	switch dataType {
-	case DataCollectionTypeAve, DataCollectionTypeChainState, DataCollectionTypeWalletAssetState, DataCollectionTypeSimulationResult, DataCollectionTypeContractCodeSource:
+	case DataCollectionTypeAve, DataCollectionTypeChainState, DataCollectionTypeWalletAssetState, DataCollectionTypeSimulationResult, DataCollectionTypeContractCodeSource, DataCollectionTypeWalletNormalTransactions:
 		return dataType, true
 	default:
 		return "", false
@@ -85,19 +87,48 @@ type ProjectDataCollectionTask struct {
 }
 
 type ProjectCollectionContext struct {
-	ID              int64
-	ChainID         int64
-	Contract        shared.Address
-	CodeHash        shared.Hash
-	WethPair        shared.Address
-	UsdtPair        shared.Address
-	RelatedWallets  []shared.Address
-	RefreshInterval time.Duration
+	ID                    int64
+	ChainID               int64
+	Contract              shared.Address
+	CodeHash              shared.Hash
+	WethPair              shared.Address
+	UsdtPair              shared.Address
+	DeploymentBlockNumber uint64
+	RelatedWallets        []shared.Address
+	RefreshInterval       time.Duration
 }
 
 type ProjectDataCollectionTaskWithProject struct {
 	Task    ProjectDataCollectionTask
 	Project ProjectCollectionContext
+}
+
+type NormalTransactionReceiptStatus string
+
+const (
+	NormalTransactionReceiptStatusUnspecified NormalTransactionReceiptStatus = "unspecified"
+	NormalTransactionReceiptStatusFailed      NormalTransactionReceiptStatus = "failed"
+	NormalTransactionReceiptStatusSuccess     NormalTransactionReceiptStatus = "success"
+)
+
+type WalletNormalTransaction struct {
+	Wallet           shared.Address
+	TransactionHash  shared.Hash
+	BlockNumber      uint64
+	BlockTimestamp   uint64
+	TransactionIndex uint64
+	Nonce            uint64
+	FromAddress      shared.Address
+	ToAddress        shared.Address
+	Value            *big.Int
+	Gas              uint64
+	GasPrice         *big.Int
+	GasUsed          uint64
+	Input            string
+	MethodID         string
+	FunctionName     string
+	ReceiptStatus    NormalTransactionReceiptStatus
+	IsError          bool
 }
 
 type ProjectObservation struct {
