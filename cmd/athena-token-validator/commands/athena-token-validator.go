@@ -25,7 +25,7 @@ func NewCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		clients := evm.NewChainClientRegistry(registry)
+		clients := evm.NewChainClientRegistry(registry, flags.NodeWSProxyURL)
 		host.AddClose(clients.Close)
 		repository := tokenpostgres.NewCandidateRepository(connection)
 		application := discoveryapp.NewValidator(repository, evm.NewCandidateInspector(registry, clients), repository, discoveryapp.ValidatorOptions{})

@@ -44,13 +44,13 @@ func RedactEndpoint(endpoint string) string {
 }
 
 // DialFastestContext probes all endpoints and returns the lowest-latency healthy client.
-func DialFastestContext(ctx context.Context, endpoints []string, expectedChainID int64, useProxy bool) (*ethclient.Client, string, error) {
+func DialFastestContext(ctx context.Context, endpoints []string, expectedChainID int64, proxyURL string) (*ethclient.Client, string, error) {
 	endpoints = NormalizeEndpoints(endpoints)
 	if len(endpoints) == 0 {
 		return nil, "", fmt.Errorf("node websocket endpoint list is empty")
 	}
 
-	probes, err := probeEndpoints(ctx, endpoints, expectedChainID, useProxy)
+	probes, err := probeEndpoints(ctx, endpoints, expectedChainID, proxyURL)
 	if err != nil {
 		return nil, "", err
 	}

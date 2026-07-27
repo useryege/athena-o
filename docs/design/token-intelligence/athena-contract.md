@@ -12,6 +12,7 @@ The ATHENA contract is a stateless on-chain read aggregator for Token Intelligen
 | Generated deployment and call binding | [pkg/abi/ATHENA/ATHENA.go](../../../pkg/abi/ATHENA/ATHENA.go) | `DeployATHENA`, `ATHENACaller`, `ATHENAMetaData` |
 | ABI generation | [hack/generate-abi.sh](../../../hack/generate-abi.sh) | `compile_solidity`, `abigen` |
 | Chain and deployed-address configuration | [internal/token/chainregistry/registry.go](../../../internal/token/chainregistry/registry.go) | `Chain.AthenaContract`, `Registry.Chain` |
+| Shared EVM connection lifecycle | [internal/token/adapters/evm/chain_client_registry.go](../../../internal/token/adapters/evm/chain_client_registry.go) | `ChainClientRegistry.Client`, `Reset`, `Close` |
 | Candidate validation consumer | [internal/token/adapters/evm/candidate_inspector.go](../../../internal/token/adapters/evm/candidate_inspector.go) | `CandidateInspector.InspectCandidates` |
 | Research-state consumer | [internal/token/adapters/evm/project_state_reader.go](../../../internal/token/adapters/evm/project_state_reader.go) | `ProjectStateReader`, `ReadChainState`, `ReadWalletAssetState`, `ReadSimulationResult` |
 
@@ -28,7 +29,7 @@ flowchart LR
     A --> P["Uniswap/PancakeSwap V2 pairs"]
 ```
 
-The Go consumers select the deployed contract address from the chain registry and call it through the generated binding. The contract contains all supported-chain protocol addresses and CREATE2 pair hashes as bytecode constants. It reads token and pair contracts directly and does not write storage or call an off-chain service.
+The Go consumers select the deployed contract address from the chain registry and call it through the generated binding over the shared EVM client registry. The contract contains all supported-chain protocol addresses and CREATE2 pair hashes as bytecode constants. It reads token and pair contracts directly and does not write storage or call an off-chain service.
 
 ## Runtime Flow
 
@@ -54,6 +55,8 @@ Token and pair observations are transient return values. `updatedAt` is the curr
 
 The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f85`; the BSC fee-recipient address is `0x0ED943Ce24BaEBf257488771759F9BF482C39706`. Runtime services obtain the deployed contract address from each chain's `athenaContract` field in `ATHENA_TOKEN_CHAINS_JSON`. The maintained [local](../../../.env) and [production](../../../.env.prod) configurations enable Ethereum Mainnet at `0x917559765849Fd7d49ed5794e7583E7AacCd0ef2` and BSC Mainnet at `0x372333a07c7b358Ef29187315e4FDF42Bc44FAC1`.
 
+`ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` supplies an optional HTTP, HTTPS, or SOCKS5 proxy exclusively to the shared Token EVM WebSocket registry. `make run` removes standard proxy variables from Goreman children and supplies the WSL host's HTTP proxy on port `10809` by default. An empty value forces direct dialing, which is the production and manual-launch behavior. Process-wide HTTP proxy variables are not consulted by this EVM connection path.
+
 ## Invariants
 
 - Only constructor arguments `1` and `56` are accepted.
@@ -74,7 +77,7 @@ Go consumers treat contract-call failures and result-length mismatches as failed
 
 ## Observability
 
-The contract emits no events and has no health endpoint or mutable status. Deployment failures surface through the transaction or gas-estimation result. Runtime call failures are reported by the Token Intelligence workers that invoke the generated binding; their shared telemetry and logs identify the chain, project, and failed periodic job.
+The contract emits no events and has no health endpoint or mutable status. Deployment failures surface through the transaction or gas-estimation result. Runtime call failures are reported by the Token Intelligence workers that invoke the generated binding; their shared telemetry and logs identify the chain, project, and failed periodic job. Each newly selected shared EVM client logs whether the dedicated proxy is enabled and includes the complete unredacted proxy endpoint.
 
 ## Change Checklist
 

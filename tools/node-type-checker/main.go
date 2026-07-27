@@ -183,7 +183,7 @@ func inspectNode(ctx context.Context, endpoint string) resultRow {
 		nodeType: typeUnknown,
 	}
 
-	client, err := ethws.DialContext(ctx, endpoint, false)
+	client, err := ethws.DialContext(ctx, endpoint, "")
 	if err != nil {
 		row.status = statusUnreachable
 		row.detail = compactError(fmt.Errorf("connect target: %w", err))

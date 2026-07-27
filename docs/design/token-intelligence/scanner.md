@@ -11,6 +11,7 @@ Candidate validation, ERC-20 inspection, project creation, and downstream resear
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | Local process declaration | [Procfile](../../../Procfile) | `token-scanner` process |
+| Local process orchestration | [hack/goreman-start.sh](../../../hack/goreman-start.sh) | `configure_token_node_ws_proxy`, `start_goreman` |
 | Binary dispatch | [cmd/main.go](../../../cmd/main.go) | `main`, `ATHENA_BINARY_NAME` dispatch |
 | Scanner composition | [cmd/athena-token-scanner/commands/athena-token-scanner.go](../../../cmd/athena-token-scanner/commands/athena-token-scanner.go) | `NewCommand` |
 | Shared worker startup | [cmd/tokenworker/common.go](../../../cmd/tokenworker/common.go) | `CommonFlags.Bind`, `CommonFlags.Open` |
@@ -32,7 +33,10 @@ flowchart LR
     H --> W["Periodic Worker\none job per enabled chain"]
     W --> S["Scanner application"]
     S --> E["EVM Block Source"]
-    E --> N["Fastest configured WebSocket node"]
+    E --> P{"Dedicated proxy URL configured?"}
+    P -->|"yes"| X["HTTP(S) or SOCKS5 proxy"]
+    P -->|"no"| N["Fastest configured WebSocket node"]
+    X --> N
     S --> R["PostgreSQL Chain Repository"]
     R --> C["chain_ingest_checkpoint"]
     R --> Q["project_candidate"]
@@ -74,6 +78,8 @@ Fresh checkpoint initialization is a separate durable write. Every later block u
 
 The EVM client registry caches one selected WebSocket client per chain in memory. When no client is cached, the registry probes all configured endpoints concurrently under one shared 15-second deadline. That deadline covers the WebSocket connection, chain ID, sync status, latest block number, and latest block header calls. The lowest-latency healthy result is cached. Node-status inspection uses the same probe behavior and deadline. The deadline is an internal constant rather than chain configuration.
 
+Every registry receives one explicit Token EVM WebSocket proxy URL. A non-empty URL routes endpoint probes, scanner block reads, candidate validation, Token API EVM operations, and on-chain state collectors through that HTTP, HTTPS, or SOCKS5 proxy. An empty URL installs no proxy and forces direct dialing. The EVM dialer never reads the process-wide `http_proxy`, `https_proxy`, or `all_proxy` variables.
+
 A latest-header, historical-header, or block-fetch error or invalid header closes and removes the cached client so a later loop can probe configured endpoints again.
 
 ## Configuration
@@ -82,7 +88,8 @@ Scanner configuration comes from command flags backed by environment variables:
 
 | Setting | Behavior |
 | --- | --- |
-| `ATHENA_TOKEN_CHAINS_JSON` / `--chains-json` | Required chain list. Each entry supplies `id`, `name`, `enabled`, `nodeWsUrls`, `useProxy`, `athenaContract`, `scannerInitialLookbackDuration`, and `scannerPollInterval`. Chain IDs must be positive and unique; the initial lookback must be at least one second, and the poll interval must be positive. Durations use Go duration syntax. |
+| `ATHENA_TOKEN_CHAINS_JSON` / `--chains-json` | Required chain list. Each entry supplies `id`, `name`, `enabled`, `nodeWsUrls`, `athenaContract`, `scannerInitialLookbackDuration`, and `scannerPollInterval`. Chain IDs must be positive and unique; the initial lookback must be at least one second, and the poll interval must be positive. Durations use Go duration syntax. |
+| `ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` | Optional proxy used only by Token EVM WebSocket connections. Supported schemes are `http`, `https`, and `socks5`; an empty value means direct dialing. |
 | `ATHENA_TOKEN_POSTGRES_DSN` | Token database connection used for migrations, chain synchronization, candidates, checkpoints, readiness, and diagnostics. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls whether embedded Token migrations run during connection setup. The default is `true`. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Health, readiness, and metrics listener. The scanner default is `127.0.0.1:8110`. |
@@ -90,6 +97,8 @@ Scanner configuration comes from command flags backed by environment variables:
 | `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared worker logging format and level. |
 
 The initial lookback is configured independently for each chain. The maintained Ethereum and BSC configurations both use `168h`. Initial block-time estimation always samples the latest 100-block interval; the sample size is an application constant and is not chain configuration. Scanning itself is strictly sequential and has no block-fetch concurrency setting.
+
+Before starting Goreman, `make run` removes the standard lowercase and uppercase HTTP, HTTPS, and ALL proxy variables from its child-process environment. On WSL it then derives the Windows host from the default route and supplies `http://<gateway>:10809` unless `ATHENA_TOKEN_NODE_WS_PROXY_URL` was already set. An explicitly empty value disables that local default. Non-WSL local runs, manual process launches, and production deployments do not synthesize a proxy URL and therefore dial directly. Production Compose does not provide the dedicated proxy setting.
 
 ## Invariants
 
@@ -105,7 +114,7 @@ The initial lookback is configured independently for each chain. The maintained 
 
 ## Failure Recovery
 
-Invalid chain configuration, database connection or migration failure, chain synchronization failure, failure to mark a checkpoint as running, or health-port binding failure prevents process startup.
+Invalid chain or Token EVM WebSocket proxy configuration, database connection or migration failure, chain synchronization failure, failure to mark a checkpoint as running, or health-port binding failure prevents process startup.
 
 If obtaining the latest header or the historical header required for initial block-time sampling fails for a fresh chain, the checkpoint cursor remains `0`. A sampled header whose number differs from the requested height or whose timestamp is not earlier than the latest timestamp also fails initialization without persisting an estimate. Failure to persist the initial scan range fails only the current loop. Any EVM read, sender derivation, or database error fails the current loop. The periodic worker records the failure, logs it, waits for the next poll tick, and retries from the last durable cursor. The EVM adapter resets its cached client on header and block-fetch RPC failures or invalid header responses.
 
@@ -125,7 +134,7 @@ Fresh initialization emits `initialized token chain scanner checkpoint` at info 
 
 When a run has blocks to process, `token scanner scan range resolved` reports the cursor, inclusive start and latest block, remaining block count, initial checkpoint-read duration, latest-header duration, and total preparation duration. Each block then emits `token scanner block started` after its checkpoint has been refreshed, including the latest snapshot, remaining block count, and checkpoint-read duration.
 
-The EVM adapter emits `token scanner block discovery completed` after a successful block read and candidate extraction. Its fields separate client acquisition, `BlockByNumber`, and candidate-extraction durations and include the returned block number, transaction count, and candidate count. A newly selected client emits `token EVM client selected` with the chain, credential-free endpoint, normalized endpoint count, and endpoint-probe duration. Cached client access does not emit this selection event; the event is emitted again after an RPC failure resets the cached client and a later operation reconnects.
+The EVM adapter emits `token scanner block discovery completed` after a successful block read and candidate extraction. Its fields separate client acquisition, `BlockByNumber`, and candidate-extraction durations and include the returned block number, transaction count, and candidate count. A newly selected client emits `token EVM client selected` with the chain, credential-free node endpoint, normalized endpoint count, endpoint-probe duration, `proxy_enabled`, and the original unredacted `proxy_endpoint`. Cached client access does not emit this selection event; the event is emitted again after an RPC failure resets the cached client and a later operation reconnects.
 
 Every successfully committed block emits `token scanner block completed` with `chain_id`, `block_number`, `candidate_count`, `checkpoint_read_duration_ms`, `discovery_duration_ms`, `persistence_duration_ms`, and total `duration_ms`. This final duration starts before the per-block checkpoint refresh and ends after the candidate/checkpoint transaction commits. Failed stages emit `token scanner run failed`, `token scanner block failed`, or `token scanner block discovery failed` at error level with `stage`, `phase_duration_ms`, total `duration_ms`, and the relevant chain and block identifiers. Cancellation does not emit these failure events or a completion event. The periodic worker still emits `token periodic job failed` with the job name and error, and successful loops with processed blocks emit a debug log with `job` and `processed`.
 

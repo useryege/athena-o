@@ -39,8 +39,8 @@ type healthPolicy struct {
 }
 
 // ProbeEndpoints checks all endpoints concurrently and preserves their configured order.
-func ProbeEndpoints(ctx context.Context, endpoints []string, expectedChainID int64, useProxy bool) ([]ProbeResult, error) {
-	probes, err := probeEndpoints(ctx, endpoints, expectedChainID, useProxy)
+func ProbeEndpoints(ctx context.Context, endpoints []string, expectedChainID int64, proxyURL string) ([]ProbeResult, error) {
+	probes, err := probeEndpoints(ctx, endpoints, expectedChainID, proxyURL)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func ProbeEndpoints(ctx context.Context, endpoints []string, expectedChainID int
 	return results, nil
 }
 
-func probeEndpoints(ctx context.Context, endpoints []string, expectedChainID int64, useProxy bool) ([]endpointProbe, error) {
+func probeEndpoints(ctx context.Context, endpoints []string, expectedChainID int64, proxyURL string) ([]endpointProbe, error) {
 	endpoints = NormalizeEndpoints(endpoints)
 	if len(endpoints) == 0 {
 		return []endpointProbe{}, nil
@@ -74,7 +74,7 @@ func probeEndpoints(ctx context.Context, endpoints []string, expectedChainID int
 		go func(index int, endpoint string) {
 			probeCh <- indexedProbe{
 				index: index,
-				probe: collectEndpointProbe(probeCtx, endpoint, expectedChainID, useProxy),
+				probe: collectEndpointProbe(probeCtx, endpoint, expectedChainID, proxyURL),
 			}
 		}(index, endpoint)
 	}
@@ -93,7 +93,7 @@ func probeEndpoints(ctx context.Context, endpoints []string, expectedChainID int
 	return probes, nil
 }
 
-func collectEndpointProbe(ctx context.Context, endpoint string, expectedChainID int64, useProxy bool) endpointProbe {
+func collectEndpointProbe(ctx context.Context, endpoint string, expectedChainID int64, proxyURL string) endpointProbe {
 	startedAt := time.Now()
 	probe := endpointProbe{
 		result: ProbeResult{Endpoint: RedactEndpoint(endpoint)},
@@ -105,7 +105,7 @@ func collectEndpointProbe(ctx context.Context, endpoint string, expectedChainID 
 		return probe
 	}
 
-	client, err := DialContext(ctx, endpoint, useProxy)
+	client, err := DialContext(ctx, endpoint, proxyURL)
 	if err != nil {
 		return finish(fmt.Errorf("dial websocket: %w", err))
 	}

@@ -13,10 +13,12 @@ import (
 	"github.com/useryege/athena/internal/token/workerhost"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
+	"github.com/useryege/athena/util/ethws"
 )
 
 type CommonFlags struct {
 	ChainsJSON          string
+	NodeWSProxyURL      string
 	HealthListenAddress string
 	HealthStaleAfter    time.Duration
 }
@@ -25,6 +27,7 @@ func (f *CommonFlags) Bind(command *cobra.Command, defaultHealthAddress string) 
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv(common.EnvLogFormat, "json"), "Set log format: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set log level")
 	command.Flags().StringVar(&f.ChainsJSON, "chains-json", env.StringFromEnv(chainregistry.EnvironmentVariable, ""), "Token chain registry JSON")
+	command.Flags().StringVar(&f.NodeWSProxyURL, "node-ws-proxy-url", env.StringFromEnv(ethws.ProxyURLEnvironmentVariable, ""), "Proxy URL used only for Token EVM WebSocket connections")
 	command.Flags().StringVar(&f.HealthListenAddress, "health-listen-address", env.StringFromEnv("ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS", defaultHealthAddress), "Health, readiness, and metrics listen address")
 	command.Flags().DurationVar(&f.HealthStaleAfter, "health-stale-after", env.ParseDurationFromEnv("ATHENA_TOKEN_HEALTH_STALE_AFTER", 2*time.Minute, time.Minute, time.Hour), "Maximum successful loop age before readiness fails")
 }
@@ -32,6 +35,9 @@ func (f *CommonFlags) Bind(command *cobra.Command, defaultHealthAddress string) 
 func (f *CommonFlags) Open(ctx context.Context, name string) (*tokenpostgres.Connection, *chainregistry.Registry, *workerhost.Host, error) {
 	cli.SetLogFormat(cmdutil.LogFormat)
 	cli.SetLogLevel(cmdutil.LogLevel)
+	if err := ethws.ValidateProxyURL(f.NodeWSProxyURL); err != nil {
+		return nil, nil, nil, err
+	}
 	registry, err := chainregistry.Parse(f.ChainsJSON)
 	if err != nil {
 		return nil, nil, nil, err

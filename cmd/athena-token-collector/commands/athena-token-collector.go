@@ -71,7 +71,7 @@ func NewCommand() *cobra.Command {
 			host.AddClose(provider.Close)
 			processor = researchapp.WalletNormalTransactionsProcessor{Provider: provider}
 		case research.DataCollectionTypeChainState, research.DataCollectionTypeWalletAssetState, research.DataCollectionTypeSimulationResult:
-			clients := evm.NewChainClientRegistry(registry)
+			clients := evm.NewChainClientRegistry(registry, flags.NodeWSProxyURL)
 			host.AddClose(clients.Close)
 			reader := evm.NewProjectStateReader(registry, clients)
 			switch dataType {

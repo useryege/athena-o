@@ -186,7 +186,7 @@ func probeEndpoint(ctx context.Context, endpoint string, timeout time.Duration) 
 	probeCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	client, err := ethws.DialContext(probeCtx, endpoint, false)
+	client, err := ethws.DialContext(probeCtx, endpoint, "")
 	if err != nil {
 		result.err = fmt.Errorf("dial websocket: %w", err)
 		return result

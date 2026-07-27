@@ -37,7 +37,6 @@ type chainJSON struct {
 	Name                           string   `json:"name"`
 	Enabled                        bool     `json:"enabled"`
 	NodeWSURLs                     []string `json:"nodeWsUrls"`
-	UseProxy                       bool     `json:"useProxy"`
 	AthenaContract                 string   `json:"athenaContract"`
 	ScannerInitialLookbackDuration duration `json:"scannerInitialLookbackDuration"`
 	ScannerPollInterval            duration `json:"scannerPollInterval"`
@@ -48,7 +47,6 @@ type Chain struct {
 	Name                           string
 	Enabled                        bool
 	NodeWSURLs                     []string
-	UseProxy                       bool
 	AthenaContract                 string
 	ScannerInitialLookbackDuration time.Duration
 	ScannerPollInterval            time.Duration
@@ -92,7 +90,7 @@ func Parse(raw string) (*Registry, error) {
 		if value.ScannerInitialLookbackDuration.Duration < time.Second {
 			return nil, fmt.Errorf("%s[%d].scannerInitialLookbackDuration must be at least 1s", EnvironmentVariable, index)
 		}
-		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, UseProxy: value.UseProxy, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerInitialLookbackDuration: value.ScannerInitialLookbackDuration.Duration, ScannerPollInterval: value.ScannerPollInterval.Duration}
+		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerInitialLookbackDuration: value.ScannerInitialLookbackDuration.Duration, ScannerPollInterval: value.ScannerPollInterval.Duration}
 		registry.chains = append(registry.chains, chain)
 		registry.byID[chain.ID] = chain
 	}

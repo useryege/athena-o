@@ -30,6 +30,7 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
+	"github.com/useryege/athena/util/ethws"
 	"github.com/useryege/athena/util/templates"
 )
 
@@ -37,9 +38,10 @@ const cliName = "athena-token-api"
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost string
-		listenPort int
-		chainsJSON string
+		listenHost     string
+		listenPort     int
+		chainsJSON     string
+		nodeWSProxyURL string
 	)
 
 	command := &cobra.Command{
@@ -61,6 +63,9 @@ func NewCommand() *cobra.Command {
 
 			ctx := cmd.Context()
 
+			if err := ethws.ValidateProxyURL(nodeWSProxyURL); err != nil {
+				return err
+			}
 			registry, err := chainregistry.Parse(chainsJSON)
 			if err != nil {
 				return err
@@ -78,7 +83,7 @@ func NewCommand() *cobra.Command {
 				_ = connection.Close()
 				return err
 			}
-			evmRegistry := evm.NewChainClientRegistry(registry)
+			evmRegistry := evm.NewChainClientRegistry(registry, nodeWSProxyURL)
 			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
 				Applications: tokenapi.Applications{
 					Catalog:     catalogapp.NewQueries(tokenpostgres.NewCatalogRepository(connection)),
@@ -148,6 +153,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_API_LISTEN_ADDRESS", common.DefaultAddressTokenAPI), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortTokenAPI, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&chainsJSON, "chains-json", env.StringFromEnv(chainregistry.EnvironmentVariable, ""), "Token chain registry JSON")
+	command.Flags().StringVar(&nodeWSProxyURL, "node-ws-proxy-url", env.StringFromEnv(ethws.ProxyURLEnvironmentVariable, ""), "Proxy URL used only for Token EVM WebSocket connections")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

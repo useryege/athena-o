@@ -3,6 +3,7 @@ package evm
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,12 +19,13 @@ import (
 
 type ChainClientRegistry struct {
 	registry *chainregistry.Registry
+	proxyURL string
 	mu       sync.Mutex
 	clients  map[int64]*ethclient.Client
 }
 
-func NewChainClientRegistry(registry *chainregistry.Registry) *ChainClientRegistry {
-	return &ChainClientRegistry{registry: registry, clients: make(map[int64]*ethclient.Client)}
+func NewChainClientRegistry(registry *chainregistry.Registry, proxyURL string) *ChainClientRegistry {
+	return &ChainClientRegistry{registry: registry, proxyURL: strings.TrimSpace(proxyURL), clients: make(map[int64]*ethclient.Client)}
 }
 
 func (r *ChainClientRegistry) Client(ctx context.Context, chainID int64) (*ethclient.Client, error) {
@@ -37,7 +39,7 @@ func (r *ChainClientRegistry) Client(ctx context.Context, chainID int64) (*ethcl
 		return nil, fmt.Errorf("token chain %d is not enabled", chainID)
 	}
 	startedAt := time.Now()
-	client, endpoint, err := ethws.DialFastestContext(ctx, chain.NodeWSURLs, chain.ID, chain.UseProxy)
+	client, endpoint, err := ethws.DialFastestContext(ctx, chain.NodeWSURLs, chain.ID, r.proxyURL)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +48,8 @@ func (r *ChainClientRegistry) Client(ctx context.Context, chainID int64) (*ethcl
 		"chain_id":       chainID,
 		"endpoint":       ethws.RedactEndpoint(endpoint),
 		"endpoint_count": len(ethws.NormalizeEndpoints(chain.NodeWSURLs)),
+		"proxy_enabled":  r.proxyURL != "",
+		"proxy_endpoint": r.proxyURL,
 		"duration_ms":    time.Since(startedAt).Milliseconds(),
 	}).Info("token EVM client selected")
 	return client, nil
@@ -83,7 +87,7 @@ func (r *ChainClientRegistry) ListNodeStatuses(ctx context.Context) ([]discovery
 		if !chain.Enabled {
 			continue
 		}
-		probes, err := ethws.ProbeEndpoints(ctx, chain.NodeWSURLs, chain.ID, chain.UseProxy)
+		probes, err := ethws.ProbeEndpoints(ctx, chain.NodeWSURLs, chain.ID, r.proxyURL)
 		if err != nil {
 			return nil, err
 		}

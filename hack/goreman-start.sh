@@ -7,6 +7,40 @@ DEFAULT_RUN_EXCLUDE=""
 goreman_pid=""
 cleanup_started=false
 
+configure_token_node_ws_proxy() {
+	unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
+
+	if [[ "${ATHENA_TOKEN_NODE_WS_PROXY_URL+x}" == "x" ]]; then
+		export ATHENA_TOKEN_NODE_WS_PROXY_URL
+		if [[ -n "${ATHENA_TOKEN_NODE_WS_PROXY_URL}" ]]; then
+			printf 'using configured Token EVM WebSocket proxy: %s\n' "${ATHENA_TOKEN_NODE_WS_PROXY_URL}" >&2
+		else
+			printf 'Token EVM WebSocket proxy explicitly disabled\n' >&2
+		fi
+		return
+	fi
+
+	if [[ -z "${WSL_DISTRO_NAME:-}" && -z "${WSL_INTEROP:-}" ]] &&
+		! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
+		return
+	fi
+	if ! command -v ip >/dev/null 2>&1; then
+		printf 'cannot configure Token EVM WebSocket proxy: ip command is unavailable\n' >&2
+		exit 1
+	fi
+
+	local wsl_host
+	wsl_host="$(ip route show default | awk 'NR == 1 { print $3 }')"
+	if [[ -z "${wsl_host}" ]]; then
+		printf 'cannot configure Token EVM WebSocket proxy: WSL default gateway was not found\n' >&2
+		exit 1
+	fi
+
+	ATHENA_TOKEN_NODE_WS_PROXY_URL="http://${wsl_host}:10809"
+	export ATHENA_TOKEN_NODE_WS_PROXY_URL
+	printf 'using default WSL Token EVM WebSocket proxy: %s\n' "${ATHENA_TOKEN_NODE_WS_PROXY_URL}" >&2
+}
+
 run_exclude_value() {
 	if [[ "${ATHENA_RUN_EXCLUDE+x}" == "x" ]]; then
 		printf '%s' "${ATHENA_RUN_EXCLUDE}"
@@ -312,6 +346,7 @@ if [[ "${ATHENA_RUN_DRY_RUN:-false}" == "true" ]]; then
 	exit 0
 fi
 
+configure_token_node_ws_proxy
 start_goreman "${filtered_procfile}"
 
 set +e
