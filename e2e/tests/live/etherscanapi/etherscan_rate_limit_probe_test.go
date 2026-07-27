@@ -342,36 +342,30 @@ const (
 )
 
 type etherscanMultiKeyProbeResult struct {
-	keyLabel     string
-	gatewayLabel string
-	startedAt    time.Time
-	err          error
+	keyLabel  string
+	startedAt time.Time
+	err       error
 }
 
 type etherscanMultiKeyProbeSummary struct {
-	keyCount        int
-	gatewayCount    int
-	requestsPerKey  int
-	rounds          int
-	interval        time.Duration
-	total           int
-	success         int
-	rateLimit       int
-	authentication  int
-	plan            int
-	invalidRequest  int
-	malformed       int
-	upstream        int
-	other           int
-	elapsed         time.Duration
-	firstStart      time.Time
-	lastStart       time.Time
-	startSpread     time.Duration
-	samples         []string
-	perKey          map[string]*etherscanMultiKeyProbeKeySummary
-	perKeyOrder     []string
-	perGateway      map[string]*etherscanMultiKeyProbeGatewaySummary
-	perGatewayOrder []string
+	keyCount       int
+	requestsPerKey int
+	total          int
+	success        int
+	rateLimit      int
+	authentication int
+	plan           int
+	invalidRequest int
+	malformed      int
+	upstream       int
+	other          int
+	elapsed        time.Duration
+	firstStart     time.Time
+	lastStart      time.Time
+	startSpread    time.Duration
+	samples        []string
+	perKey         map[string]*etherscanMultiKeyProbeKeySummary
+	perKeyOrder    []string
 }
 
 func (s *etherscanMultiKeyProbeSummary) record(result etherscanMultiKeyProbeResult) {
@@ -386,11 +380,6 @@ func (s *etherscanMultiKeyProbeSummary) record(result etherscanMultiKeyProbeResu
 	s.recordCategory(category)
 	if keySummary := s.perKey[result.keyLabel]; keySummary != nil {
 		keySummary.recordCategory(category)
-	}
-	if result.gatewayLabel != "" {
-		if gatewaySummary := s.perGateway[result.gatewayLabel]; gatewaySummary != nil {
-			gatewaySummary.recordCategory(category)
-		}
 	}
 	s.addSample(result)
 }
@@ -420,11 +409,7 @@ func (s *etherscanMultiKeyProbeSummary) addSample(result etherscanMultiKeyProbeR
 	if result.err == nil || len(s.samples) >= 5 {
 		return
 	}
-	label := result.keyLabel
-	if result.gatewayLabel != "" {
-		label = fmt.Sprintf("%s@%s", label, result.gatewayLabel)
-	}
-	s.samples = append(s.samples, fmt.Sprintf("%s:%s", label, etherscanProbeErrorSample(result.err)))
+	s.samples = append(s.samples, fmt.Sprintf("%s:%s", result.keyLabel, etherscanProbeErrorSample(result.err)))
 }
 
 func (s *etherscanMultiKeyProbeSummary) finishStartSpread() {
@@ -441,15 +426,6 @@ func (s etherscanMultiKeyProbeSummary) requiredSuccess() int {
 func (s etherscanMultiKeyProbeSummary) String() string {
 	parts := []string{
 		fmt.Sprintf("keys=%d", s.keyCount),
-	}
-	if s.gatewayCount > 0 {
-		parts = append(parts, fmt.Sprintf("gateways=%d", s.gatewayCount))
-	}
-	if s.rounds > 0 {
-		parts = append(parts, fmt.Sprintf("rounds=%d", s.rounds))
-	}
-	if s.interval > 0 {
-		parts = append(parts, fmt.Sprintf("interval=%s", s.interval))
 	}
 	parts = append(parts,
 		fmt.Sprintf("requests_per_key=%d", s.requestsPerKey),
@@ -480,18 +456,6 @@ func (s etherscanMultiKeyProbeSummary) perKeySummaries() []string {
 			continue
 		}
 		lines = append(lines, keySummary.String())
-	}
-	return lines
-}
-
-func (s etherscanMultiKeyProbeSummary) perGatewaySummaries() []string {
-	lines := make([]string, 0, len(s.perGatewayOrder))
-	for _, gatewayLabel := range s.perGatewayOrder {
-		gatewaySummary := s.perGateway[gatewayLabel]
-		if gatewaySummary == nil {
-			continue
-		}
-		lines = append(lines, gatewaySummary.String())
 	}
 	return lines
 }
@@ -543,54 +507,6 @@ func (s etherscanMultiKeyProbeKeySummary) String() string {
 		fmt.Sprintf("upstream=%d", s.upstream),
 		fmt.Sprintf("other=%d", s.other),
 	)
-	return strings.Join(parts, " ")
-}
-
-type etherscanMultiKeyProbeGatewaySummary struct {
-	gatewayLabel   string
-	success        int
-	rateLimit      int
-	authentication int
-	plan           int
-	invalidRequest int
-	malformed      int
-	upstream       int
-	other          int
-}
-
-func (s *etherscanMultiKeyProbeGatewaySummary) recordCategory(category etherscanProbeResultCategory) {
-	switch category {
-	case etherscanProbeResultSuccess:
-		s.success++
-	case etherscanProbeResultRateLimit:
-		s.rateLimit++
-	case etherscanProbeResultAuthentication:
-		s.authentication++
-	case etherscanProbeResultPlan:
-		s.plan++
-	case etherscanProbeResultInvalidRequest:
-		s.invalidRequest++
-	case etherscanProbeResultMalformed:
-		s.malformed++
-	case etherscanProbeResultUpstream:
-		s.upstream++
-	default:
-		s.other++
-	}
-}
-
-func (s etherscanMultiKeyProbeGatewaySummary) String() string {
-	parts := []string{
-		fmt.Sprintf("gateway=%s", s.gatewayLabel),
-		fmt.Sprintf("success=%d", s.success),
-		fmt.Sprintf("rate_limit=%d", s.rateLimit),
-		fmt.Sprintf("authentication=%d", s.authentication),
-		fmt.Sprintf("plan=%d", s.plan),
-		fmt.Sprintf("invalid_request=%d", s.invalidRequest),
-		fmt.Sprintf("malformed=%d", s.malformed),
-		fmt.Sprintf("upstream=%d", s.upstream),
-		fmt.Sprintf("other=%d", s.other),
-	}
 	return strings.Join(parts, " ")
 }
 
