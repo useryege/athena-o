@@ -75,6 +75,10 @@ the observation metadata and raw JSON for history consumers.
 5. While the document is visible, the UI reloads only this current snapshot
    every 30 seconds. Returning to a visible document triggers an immediate
    snapshot reload.
+6. The Market tab matches Ave pairs to the project's canonical wrapped-native
+   and USDT pair addresses. It displays one pair detail card at a time, defaults
+   to wrapped native, and falls back to USDT when the wrapped-native pair is
+   absent. Unavailable pair choices are disabled.
 
 The aggregate consists of independent read queries and is not a
 transaction-level database snapshot. Each returned entity is committed state,
@@ -119,6 +123,10 @@ strings. JavaScript converts values to floating point only for compact visual
 formatting and SVG coordinates; raw values remain available in tooltips, copied
 text, and JSON.
 
+The current Ave observation exposes at most the canonical wrapped-native and
+USDT pairs. The UI still matches by contract address instead of relying on array
+position, so pair identity remains explicit at the presentation boundary.
+
 ## Configuration
 
 There is no runtime configuration specific to this read model.
@@ -129,6 +137,7 @@ There is no runtime configuration specific to this read model.
 | Default trend range | 24 hours | Used when the request omits `range`. |
 | Accepted trend ranges | `1h`, `6h`, `24h`, `7d` | Other values are rejected before querying. |
 | Maximum points per trend series | 500 | Applies LTTB when a series exceeds the limit. |
+| Default Ave pair selection | Wrapped native, then USDT | Keeps the current selection while it remains available and otherwise falls back in priority order. |
 | Desktop minimum width | 1280 pixels | Matches the existing ATHENA UI shell. |
 
 ## Invariants
@@ -138,6 +147,9 @@ There is no runtime configuration specific to this read model.
   transaction state.
 - Missing observation sections remain absent; the UI renders them as
   `Not collected` or `Unknown` and does not convert absence to `false` or zero.
+- Ave key-pair choices are enabled only when the current observation contains
+  the exact project pair contract, and the detail card never displays an
+  unrelated Ave pair.
 - High-precision values cross the API boundary as strings.
 - Observation history excludes wallet normal transactions because those rows
   have their own normalized, filterable endpoint.

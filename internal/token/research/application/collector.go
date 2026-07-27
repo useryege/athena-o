@@ -146,8 +146,15 @@ func (collector *Collector) fail(ctx context.Context, item research.ProjectDataC
 	return collector.repository.FailCollectionTask(ctx, FailCollectionTaskCommand{Task: item.Task, LastError: failure.Error(), FailedAt: failedAt, NextRunAt: failedAt.Add(item.Project.RefreshInterval)})
 }
 
+type AveMarketDataRequest struct {
+	ChainID  int64
+	Contract shared.Address
+	WethPair shared.Address
+	UsdtPair shared.Address
+}
+
 type MarketDataProvider interface {
-	GetMarketData(context.Context, int64, shared.Address) (research.AveObservationV1, error)
+	GetMarketData(context.Context, AveMarketDataRequest) (research.AveObservationV1, error)
 }
 
 type AveProcessor struct{ Provider MarketDataProvider }
@@ -156,7 +163,12 @@ func (processor AveProcessor) DataType() research.DataCollectionType {
 	return research.DataCollectionTypeAve
 }
 func (processor AveProcessor) Process(ctx context.Context, project research.ProjectCollectionContext) (CollectionOutput, error) {
-	value, err := processor.Provider.GetMarketData(ctx, project.ChainID, project.Contract)
+	value, err := processor.Provider.GetMarketData(ctx, AveMarketDataRequest{
+		ChainID:  project.ChainID,
+		Contract: project.Contract,
+		WethPair: project.WethPair,
+		UsdtPair: project.UsdtPair,
+	})
 	return CollectionOutput{Observation: value, RecordObservation: err == nil}, err
 }
 

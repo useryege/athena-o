@@ -3,13 +3,13 @@ package aveadapter
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/useryege/athena/internal/token/research"
+	researchapp "github.com/useryege/athena/internal/token/research/application"
 	"github.com/useryege/athena/internal/token/shared"
 	"github.com/useryege/athena/util/ave"
 )
@@ -36,16 +36,22 @@ func New(config Config) (*Provider, error) {
 	return &Provider{client: client}, nil
 }
 
-func (p *Provider) GetMarketData(ctx context.Context, chainID int64, contract shared.Address) (research.AveObservationV1, error) {
-	commonContract := ethcommon.Address(contract)
-	response, err := p.client.GetTokenDetail(ctx, commonContract, chainID)
+func (p *Provider) GetMarketData(ctx context.Context, request researchapp.AveMarketDataRequest) (research.AveObservationV1, error) {
+	commonContract := ethcommon.Address(request.Contract)
+	response, err := p.client.GetTokenDetail(ctx, commonContract, request.ChainID)
 	if err != nil {
-		return research.AveObservationV1{}, fmt.Errorf("fetch Ave token detail chain_id=%d contract=%s: %w", chainID, contract.Hex(), err)
+		return research.AveObservationV1{}, fmt.Errorf("fetch Ave token detail chain_id=%d contract=%s: %w", request.ChainID, request.Contract.Hex(), err)
 	}
-	return normalizeObservation(response, commonContract, chainID)
+	return normalizeObservation(response, commonContract, request.ChainID, ethcommon.Address(request.WethPair), ethcommon.Address(request.UsdtPair))
 }
 
-func normalizeObservation(resp *ave.TokenDetailResponse, expectedContract ethcommon.Address, chainID int64) (research.AveObservationV1, error) {
+func normalizeObservation(
+	resp *ave.TokenDetailResponse,
+	expectedContract ethcommon.Address,
+	chainID int64,
+	expectedWethPair ethcommon.Address,
+	expectedUsdtPair ethcommon.Address,
+) (research.AveObservationV1, error) {
 	if resp == nil {
 		return research.AveObservationV1{}, fmt.Errorf("response is nil")
 	}
@@ -111,52 +117,79 @@ func normalizeObservation(resp *ave.TokenDetailResponse, expectedContract ethcom
 			HasNotRenounced: token.HasNotRenounced, HasNotAudited: token.HasNotAudited, HasNotOpenSource: token.HasNotOpenSource,
 			IsInBlacklist: token.IsInBlacklist, IsHoneypot: token.IsHoneypot, LaunchAt: unixTime(token.LaunchAt), UpdatedAt: unixTime(token.UpdatedAt),
 		},
-		Pairs: make([]research.AvePairV1, 0, len(resp.Data.Pairs)),
+		Pairs: make([]research.AvePairV1, 0, 2),
 	}
+	var wethPair, usdtPair *research.AvePairV1
 	for index, pair := range resp.Data.Pairs {
-		if !strings.EqualFold(strings.TrimSpace(pair.Chain), expectedChain) {
-			return research.AveObservationV1{}, fmt.Errorf("pair %d chain %q does not match chain id %d", index, pair.Chain, chainID)
+		pairValue := strings.TrimSpace(pair.Pair)
+		if !ethcommon.IsHexAddress(pairValue) {
+			continue
 		}
-		pairAddress, err := requiredAddress(fmt.Sprintf("pair %d address", index), pair.Pair)
-		if err != nil {
-			return research.AveObservationV1{}, err
+		pairAddress := ethcommon.HexToAddress(pairValue)
+		if pairAddress == (ethcommon.Address{}) {
+			continue
 		}
-		token0Address, err := requiredAddress(fmt.Sprintf("pair %d token0 address", index), pair.Token0Address)
-		if err != nil {
-			return research.AveObservationV1{}, err
+		switch {
+		case expectedWethPair != (ethcommon.Address{}) && pairAddress == expectedWethPair && wethPair == nil:
+			value, err := normalizePair(pair, index, pairAddress, expectedChain, chainID)
+			if err != nil {
+				return research.AveObservationV1{}, err
+			}
+			wethPair = &value
+		case expectedUsdtPair != (ethcommon.Address{}) && pairAddress == expectedUsdtPair && usdtPair == nil:
+			value, err := normalizePair(pair, index, pairAddress, expectedChain, chainID)
+			if err != nil {
+				return research.AveObservationV1{}, err
+			}
+			usdtPair = &value
 		}
-		token1Address, err := requiredAddress(fmt.Sprintf("pair %d token1 address", index), pair.Token1Address)
-		if err != nil {
-			return research.AveObservationV1{}, err
-		}
-		reserve0, err := aveDecimal(fmt.Sprintf("pair %d reserve0", index), pair.Reserve0)
-		if err != nil {
-			return research.AveObservationV1{}, err
-		}
-		reserve1, err := aveDecimal(fmt.Sprintf("pair %d reserve1", index), pair.Reserve1)
-		if err != nil {
-			return research.AveObservationV1{}, err
-		}
-		volumeUSD, err := aveDecimal(fmt.Sprintf("pair %d volume usd", index), pair.VolumeU)
-		if err != nil {
-			return research.AveObservationV1{}, err
-		}
-		pairMarketCap, err := aveDecimal(fmt.Sprintf("pair %d market cap", index), pair.MarketCap)
-		if err != nil {
-			return research.AveObservationV1{}, err
-		}
-		pairFDV, err := aveDecimal(fmt.Sprintf("pair %d fdv", index), pair.FDV)
-		if err != nil {
-			return research.AveObservationV1{}, err
-		}
-		result.Pairs = append(result.Pairs, research.AvePairV1{
-			Pair: shared.Address(pairAddress), ChainID: chainID, AMM: pair.AMM, Token0Address: shared.Address(token0Address), Token0Symbol: pair.Token0Symbol,
-			Token1Address: shared.Address(token1Address), Token1Symbol: pair.Token1Symbol, Reserve0: reserve0, Reserve1: reserve1,
-			VolumeUSD: volumeUSD, MarketCap: pairMarketCap, FDV: pairFDV, IsFake: pair.IsFake, CreatedAt: unixTime(pair.CreatedAt), UpdatedAt: unixTime(pair.UpdatedAt),
-		})
 	}
-	sort.Slice(result.Pairs, func(i, j int) bool { return result.Pairs[i].Pair.Hex() < result.Pairs[j].Pair.Hex() })
+	if wethPair != nil {
+		result.Pairs = append(result.Pairs, *wethPair)
+	}
+	if usdtPair != nil {
+		result.Pairs = append(result.Pairs, *usdtPair)
+	}
 	return result, nil
+}
+
+func normalizePair(pair ave.Pair, index int, pairAddress ethcommon.Address, expectedChain string, chainID int64) (research.AvePairV1, error) {
+	if !strings.EqualFold(strings.TrimSpace(pair.Chain), expectedChain) {
+		return research.AvePairV1{}, fmt.Errorf("pair %d chain %q does not match chain id %d", index, pair.Chain, chainID)
+	}
+	token0Address, err := requiredAddress(fmt.Sprintf("pair %d token0 address", index), pair.Token0Address)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	token1Address, err := requiredAddress(fmt.Sprintf("pair %d token1 address", index), pair.Token1Address)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	reserve0, err := aveDecimal(fmt.Sprintf("pair %d reserve0", index), pair.Reserve0)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	reserve1, err := aveDecimal(fmt.Sprintf("pair %d reserve1", index), pair.Reserve1)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	volumeUSD, err := aveDecimal(fmt.Sprintf("pair %d volume usd", index), pair.VolumeU)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	pairMarketCap, err := aveDecimal(fmt.Sprintf("pair %d market cap", index), pair.MarketCap)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	pairFDV, err := aveDecimal(fmt.Sprintf("pair %d fdv", index), pair.FDV)
+	if err != nil {
+		return research.AvePairV1{}, err
+	}
+	return research.AvePairV1{
+		Pair: shared.Address(pairAddress), ChainID: chainID, AMM: pair.AMM, Token0Address: shared.Address(token0Address), Token0Symbol: pair.Token0Symbol,
+		Token1Address: shared.Address(token1Address), Token1Symbol: pair.Token1Symbol, Reserve0: reserve0, Reserve1: reserve1,
+		VolumeUSD: volumeUSD, MarketCap: pairMarketCap, FDV: pairFDV, IsFake: pair.IsFake, CreatedAt: unixTime(pair.CreatedAt), UpdatedAt: unixTime(pair.UpdatedAt),
+	}, nil
 }
 
 func aveDecimal(field, value string) (*research.Decimal, error) {

@@ -33,6 +33,8 @@ const missing = (label = 'Not collected') => <Typography.Text type='secondary'>{
 
 const hasValue = (value: unknown) => value !== undefined && value !== null && value !== '';
 
+const addressesEqual = (left?: string, right?: string) => Boolean(left && right && left.toLowerCase() === right.toLowerCase());
+
 const formatCompact = (value?: string | number, currency = false) => {
     if (!hasValue(value)) {
         return missing();
@@ -343,6 +345,7 @@ const OverviewTab = (props: {detail: TokenProjectDetail}) => {
 const MarketTab = (props: {projectID: number; detail: TokenProjectDetail; refreshVersion: number}) => {
     const [range, setRange] = React.useState('24h');
     const [metric, setMetric] = React.useState('price_usd');
+    const [avePairSelection, setAvePairSelection] = React.useState<{projectID: number; kind: 'weth' | 'usdt'}>({projectID: props.projectID, kind: 'weth'});
     const trends = useAsyncData(() => services.tokenapi.listProjectTrends(props.projectID, range), [props.projectID, range, props.refreshVersion]);
     const series = trends.data?.series || [];
     React.useEffect(() => {
@@ -357,35 +360,28 @@ const MarketTab = (props: {projectID: number; detail: TokenProjectDetail; refres
     const labels = chainAssetLabels(chainID);
     const wrappedPair = props.detail.chainState?.wethPair || (props.detail.project?.wethPair ? {pairContract: props.detail.project.wethPair, isCreated: true} : undefined);
     const stablePair = props.detail.chainState?.usdtPair || (props.detail.project?.usdtPair ? {pairContract: props.detail.project.usdtPair, isCreated: true} : undefined);
-    const columns: ColumnsType<TokenAvePair> = [
-        {title: 'Pair', render: item => <ExplorerValue chainID={chainID} kind='address' value={item.pair} />},
-        {title: 'AMM', dataIndex: 'amm'},
-        {
-            title: 'Token 0',
-            render: item => (
-                <Space orientation='vertical' size={0}>
-                    <span>{item.token0Symbol || '-'}</span>
-                    <TruncatedText value={item.token0Address} copyable={true} />
-                </Space>
-            )
-        },
-        {title: 'Reserve 0', render: item => formatExact(item.reserve0)},
-        {
-            title: 'Token 1',
-            render: item => (
-                <Space orientation='vertical' size={0}>
-                    <span>{item.token1Symbol || '-'}</span>
-                    <TruncatedText value={item.token1Address} copyable={true} />
-                </Space>
-            )
-        },
-        {title: 'Reserve 1', render: item => formatExact(item.reserve1)},
-        {title: 'Volume USD', render: item => formatExact(item.volumeUSD)},
-        {title: 'Market Cap', render: item => formatExact(item.marketCap)},
-        {title: 'FDV', render: item => formatExact(item.fdv)},
-        {title: 'Integrity', render: item => <BooleanState value={item.isFake} trueLabel='Fake' falseLabel='Verified' dangerWhenTrue={true} />},
-        {title: 'Updated', render: item => <TimeValue value={item.updatedAt} />}
-    ];
+    const avePairs = ave?.pairs || [];
+    const wethAvePair = avePairs.find(item => addressesEqual(item.pair, props.detail.project?.wethPair));
+    const usdtAvePair = avePairs.find(item => addressesEqual(item.pair, props.detail.project?.usdtPair));
+    const requestedAvePairKind = avePairSelection.projectID === props.projectID ? avePairSelection.kind : 'weth';
+    const requestedAvePair = requestedAvePairKind === 'weth' ? wethAvePair : usdtAvePair;
+    const selectedAvePairKind = requestedAvePair ? requestedAvePairKind : wethAvePair ? 'weth' : usdtAvePair ? 'usdt' : 'weth';
+    const selectedAvePair = selectedAvePairKind === 'weth' ? wethAvePair : usdtAvePair;
+    React.useEffect(() => {
+        if (avePairSelection.projectID !== props.projectID || avePairSelection.kind !== selectedAvePairKind) {
+            setAvePairSelection({projectID: props.projectID, kind: selectedAvePairKind});
+        }
+    }, [avePairSelection, props.projectID, selectedAvePairKind]);
+    const pairTokenValue = (pair: TokenAvePair, tokenIndex: 0 | 1) => {
+        const symbol = tokenIndex === 0 ? pair.token0Symbol : pair.token1Symbol;
+        const address = tokenIndex === 0 ? pair.token0Address : pair.token1Address;
+        return (
+            <Space orientation='vertical' size={0}>
+                <span>{symbol || '-'}</span>
+                <ExplorerValue chainID={chainID} kind='address' value={address} />
+            </Space>
+        );
+    };
     return (
         <div className='project-detail-tab'>
             <Section title='Market snapshot'>
@@ -442,8 +438,40 @@ const MarketTab = (props: {projectID: number; detail: TokenProjectDetail; refres
                     <ProjectTrendChart series={selectedSeries} />
                 </div>
             </Section>
-            <Section title='Ave pairs'>
-                <ResourceTable rowKey={item => item.pair || `${item.token0Address}-${item.token1Address}`} items={ave?.pairs || []} columns={columns} scrollX={1900} />
+            <Section
+                title='AVE key pair data'
+                extra={
+                    <ChoiceGroup<'weth' | 'usdt'>
+                        ariaLabel='AVE key pair'
+                        value={selectedAvePairKind}
+                        options={[
+                            {label: `${labels.wrapped} pair`, value: 'weth', disabled: !wethAvePair},
+                            {label: `${labels.stable} pair`, value: 'usdt', disabled: !usdtAvePair}
+                        ]}
+                        onChange={kind => setAvePairSelection({projectID: props.projectID, kind})}
+                    />
+                }>
+                {selectedAvePair ? (
+                    <KeyValueGrid
+                        columns={3}
+                        items={[
+                            {label: 'Pair contract', value: <ExplorerValue chainID={chainID} kind='address' value={selectedAvePair.pair} />},
+                            {label: 'AMM', value: selectedAvePair.amm},
+                            {label: 'Token 0', value: pairTokenValue(selectedAvePair, 0)},
+                            {label: 'Reserve 0', value: formatExact(selectedAvePair.reserve0)},
+                            {label: 'Token 1', value: pairTokenValue(selectedAvePair, 1)},
+                            {label: 'Reserve 1', value: formatExact(selectedAvePair.reserve1)},
+                            {label: 'Volume USD', value: formatExact(selectedAvePair.volumeUSD)},
+                            {label: 'Market Cap', value: formatExact(selectedAvePair.marketCap)},
+                            {label: 'FDV', value: formatExact(selectedAvePair.fdv)},
+                            {label: 'Integrity', value: <BooleanState value={selectedAvePair.isFake} trueLabel='Fake' falseLabel='Verified' dangerWhenTrue={true} />},
+                            {label: 'Created', value: <TimeValue value={selectedAvePair.createdAt} />},
+                            {label: 'Updated', value: <TimeValue value={selectedAvePair.updatedAt} />}
+                        ]}
+                    />
+                ) : (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={`Ave did not return ${labels.wrapped} or ${labels.stable} pair data`} />
+                )}
             </Section>
         </div>
     );
