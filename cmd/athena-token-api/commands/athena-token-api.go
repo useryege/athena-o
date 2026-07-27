@@ -13,12 +13,12 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"github.com/useryege/athena/cmd/tokenchain"
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/token/adapters/evm"
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	catalogapp "github.com/useryege/athena/internal/token/catalog/application"
-	"github.com/useryege/athena/internal/token/chainregistry"
 	"github.com/useryege/athena/internal/token/discovery"
 	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
 	policyapp "github.com/useryege/athena/internal/token/policy/application"
@@ -40,7 +40,7 @@ func NewCommand() *cobra.Command {
 	var (
 		listenHost     string
 		listenPort     int
-		chainsJSON     string
+		chains         tokenchain.Flags
 		nodeWSProxyURL string
 	)
 
@@ -66,7 +66,7 @@ func NewCommand() *cobra.Command {
 			if err := ethws.ValidateProxyURL(nodeWSProxyURL); err != nil {
 				return err
 			}
-			registry, err := chainregistry.Parse(chainsJSON)
+			registry, err := chains.Registry()
 			if err != nil {
 				return err
 			}
@@ -152,7 +152,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_TOKEN_API_LISTEN_ADDRESS", common.DefaultAddressTokenAPI), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortTokenAPI, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&chainsJSON, "chains-json", env.StringFromEnv(chainregistry.EnvironmentVariable, ""), "Token chain registry JSON")
+	chains.Bind(command)
 	command.Flags().StringVar(&nodeWSProxyURL, "node-ws-proxy-url", env.StringFromEnv(ethws.ProxyURLEnvironmentVariable, ""), "Proxy URL used only for Token EVM WebSocket connections")
 
 	command.AddCommand(cli.NewVersionCmd(cliName))

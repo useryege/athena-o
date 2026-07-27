@@ -15,7 +15,8 @@ Candidate validation, ERC-20 inspection, project creation, and downstream resear
 | Binary dispatch | [cmd/main.go](../../../cmd/main.go) | `main`, `ATHENA_BINARY_NAME` dispatch |
 | Scanner composition | [cmd/athena-token-scanner/commands/athena-token-scanner.go](../../../cmd/athena-token-scanner/commands/athena-token-scanner.go) | `NewCommand` |
 | Shared worker startup | [cmd/tokenworker/common.go](../../../cmd/tokenworker/common.go) | `CommonFlags.Bind`, `CommonFlags.Open` |
-| Chain configuration | [internal/token/chainregistry/registry.go](../../../internal/token/chainregistry/registry.go) | `Parse`, `Registry.EnabledChains` |
+| Chain command configuration | [cmd/tokenchain/flags.go](../../../cmd/tokenchain/flags.go) | `Flags.Bind`, `Flags.Registry` |
+| Fixed chain registry | [internal/token/chainregistry/registry.go](../../../internal/token/chainregistry/registry.go) | `New`, `Registry.EnabledChains` |
 | Scanner application flow | [internal/token/discovery/application/scanner.go](../../../internal/token/discovery/application/scanner.go) | `Scanner.RunOnce`, `Scanner.estimateInitialStartBlock`, `StartChain`, `StopChain` |
 | EVM block source | [internal/token/adapters/evm/block_source.go](../../../internal/token/adapters/evm/block_source.go) | `LatestBlockHeader`, `BlockHeaderByNumber`, `DiscoverProjectCandidates` |
 | EVM client lifecycle | [internal/token/adapters/evm/chain_client_registry.go](../../../internal/token/adapters/evm/chain_client_registry.go) | `Client`, `Reset`, `Close` |
@@ -50,7 +51,7 @@ The application layer depends only on the `ScannerRepository` and `BlockSource` 
 ## Runtime Flow
 
 1. The `token-scanner` Procfile process runs `cmd/main.go` with `ATHENA_BINARY_NAME=athena-token-scanner`. The dispatcher selects the scanner Cobra command.
-2. `CommonFlags.Open` parses `ATHENA_TOKEN_CHAINS_JSON`, applies Token migrations when automatic migration is enabled, connects to the Token PostgreSQL database, synchronizes configured chains, creates any missing checkpoint at cursor `0` with status `stopped`, and creates the worker host.
+2. `CommonFlags.Open` builds the fixed Ethereum Mainnet and BSC Mainnet registry from their individual command settings, applies Token migrations when automatic migration is enabled, connects to the Token PostgreSQL database, synchronizes both chains, creates any missing checkpoint at cursor `0` with status `stopped`, and creates the worker host.
 3. `NewCommand` builds one job for each enabled chain. Startup fails when no chain is enabled.
 4. `PeriodicWorker.Start` calls `StartChain` for every job before starting the job goroutines. `StartChain` persists status `running` while retaining the cursor.
 5. Each job creates its poll ticker and calls `RunOnce` immediately. Later runs start on the next available tick. Because the ticker advances independently, a run that takes longer than its interval can be followed immediately by the next run.
@@ -88,7 +89,11 @@ Scanner configuration comes from command flags backed by environment variables:
 
 | Setting | Behavior |
 | --- | --- |
-| `ATHENA_TOKEN_CHAINS_JSON` / `--chains-json` | Required chain list. Each entry supplies `id`, `name`, `enabled`, `nodeWsUrls`, `athenaContract`, `scannerInitialLookbackDuration`, and `scannerPollInterval`. Chain IDs must be positive and unique; the initial lookback must be at least one second, and the poll interval must be positive. Durations use Go duration syntax. |
+| `ATHENA_TOKEN_{ETH,BSC}_ENABLED` / `--{eth,bsc}-enabled` | Required strict boolean for each supported chain. Ethereum Mainnet is fixed to chain ID `1`; BSC Mainnet is fixed to chain ID `56`. |
+| `ATHENA_TOKEN_{ETH,BSC}_NODE_WS_URLS` / `--{eth,bsc}-node-ws-urls` | Required non-empty WebSocket node pool for each chain. URLs may be separated by commas, spaces, tabs, or newlines. |
+| `ATHENA_TOKEN_{ETH,BSC}_ATHENA_CONTRACT` / `--{eth,bsc}-athena-contract` | Required deployed ATHENA contract address for each chain. |
+| `ATHENA_TOKEN_{ETH,BSC}_SCANNER_INITIAL_LOOKBACK_DURATION` / `--{eth,bsc}-scanner-initial-lookback-duration` | Required initial lookback for each chain. Values use Go duration syntax and must be at least one second. |
+| `ATHENA_TOKEN_{ETH,BSC}_SCANNER_POLL_INTERVAL` / `--{eth,bsc}-scanner-poll-interval` | Required positive scanner interval for each chain. Values use Go duration syntax. |
 | `ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` | Optional proxy used only by Token EVM WebSocket connections. Supported schemes are `http`, `https`, and `socks5`; an empty value means direct dialing. |
 | `ATHENA_TOKEN_POSTGRES_DSN` | Token database connection used for migrations, chain synchronization, candidates, checkpoints, readiness, and diagnostics. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls whether embedded Token migrations run during connection setup. The default is `true`. |
@@ -96,7 +101,7 @@ Scanner configuration comes from command flags backed by environment variables:
 | `ATHENA_TOKEN_HEALTH_STALE_AFTER` / `--health-stale-after` | Maximum age of the last successful loop before readiness fails. The default is 2 minutes, constrained to 1 minute through 1 hour by environment parsing. |
 | `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared worker logging format and level. |
 
-The initial lookback is configured independently for each chain. The maintained Ethereum and BSC configurations both use `168h`. Initial block-time estimation always samples the latest 100-block interval; the sample size is an application constant and is not chain configuration. Scanning itself is strictly sequential and has no block-fetch concurrency setting.
+Every chain setting is required even when that chain is disabled, so enabling a maintained chain does not expose a partially configured node pool or contract address. The maintained configuration enables Ethereum and disables BSC. Both chains use an initial lookback of `168h`. Initial block-time estimation always samples the latest 100-block interval; the sample size is an application constant and is not chain configuration. Scanning itself is strictly sequential and has no block-fetch concurrency setting.
 
 Before starting Goreman, `make run` removes the standard lowercase and uppercase HTTP, HTTPS, and ALL proxy variables from its child-process environment. On WSL it then derives the Windows host from the default route and supplies `http://<gateway>:10809` unless `ATHENA_TOKEN_NODE_WS_PROXY_URL` was already set. An explicitly empty value disables that local default. Non-WSL local runs, manual process launches, and production deployments do not synthesize a proxy URL and therefore dial directly. Production Compose does not provide the dedicated proxy setting.
 

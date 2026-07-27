@@ -1,45 +1,29 @@
 package chainregistry
 
 import (
-	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 )
 
-const EnvironmentVariable = "ATHENA_TOKEN_CHAINS_JSON"
+const (
+	ethereumChainID   int64 = 1
+	ethereumChainName       = "Ethereum Mainnet"
+	bscChainID        int64 = 56
+	bscChainName            = "BSC Mainnet"
+)
 
-type duration struct {
-	time.Duration
+type ChainConfig struct {
+	Enabled                        bool
+	NodeWSURLs                     []string
+	AthenaContract                 string
+	ScannerInitialLookbackDuration time.Duration
+	ScannerPollInterval            time.Duration
 }
 
-func (d *duration) UnmarshalJSON(data []byte) error {
-	var text string
-	if err := json.Unmarshal(data, &text); err == nil {
-		parsed, err := time.ParseDuration(strings.TrimSpace(text))
-		if err != nil {
-			return err
-		}
-		d.Duration = parsed
-		return nil
-	}
-	var nanos int64
-	if err := json.Unmarshal(data, &nanos); err != nil {
-		return fmt.Errorf("duration must be a duration string or nanoseconds: %w", err)
-	}
-	d.Duration = time.Duration(nanos)
-	return nil
-}
-
-type chainJSON struct {
-	ID                             int64    `json:"id"`
-	Name                           string   `json:"name"`
-	Enabled                        bool     `json:"enabled"`
-	NodeWSURLs                     []string `json:"nodeWsUrls"`
-	AthenaContract                 string   `json:"athenaContract"`
-	ScannerInitialLookbackDuration duration `json:"scannerInitialLookbackDuration"`
-	ScannerPollInterval            duration `json:"scannerPollInterval"`
+type Config struct {
+	Ethereum ChainConfig
+	BSC      ChainConfig
 }
 
 type Chain struct {
@@ -57,45 +41,47 @@ type Registry struct {
 	byID   map[int64]Chain
 }
 
-func Parse(raw string) (*Registry, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return nil, fmt.Errorf("%s is required", EnvironmentVariable)
+func New(config Config) (*Registry, error) {
+	chains := []Chain{
+		newChain(ethereumChainID, ethereumChainName, config.Ethereum),
+		newChain(bscChainID, bscChainName, config.BSC),
 	}
-	var values []chainJSON
-	if err := json.Unmarshal([]byte(raw), &values); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", EnvironmentVariable, err)
-	}
-	registry := &Registry{chains: make([]Chain, 0, len(values)), byID: make(map[int64]Chain, len(values))}
-	for index, value := range values {
-		value.Name = strings.TrimSpace(value.Name)
-		if value.ID <= 0 {
-			return nil, fmt.Errorf("%s[%d].id must be positive", EnvironmentVariable, index)
+	registry := &Registry{chains: make([]Chain, 0, len(chains)), byID: make(map[int64]Chain, len(chains))}
+	for _, chain := range chains {
+		if len(chain.NodeWSURLs) == 0 {
+			return nil, fmt.Errorf("%s node WebSocket URLs are required", chain.Name)
 		}
-		if value.Name == "" {
-			return nil, fmt.Errorf("%s[%d].name is required", EnvironmentVariable, index)
+		if chain.AthenaContract == "" {
+			return nil, fmt.Errorf("%s ATHENA contract is required", chain.Name)
 		}
-		if _, exists := registry.byID[value.ID]; exists {
-			return nil, fmt.Errorf("%s contains duplicate chain id %d", EnvironmentVariable, value.ID)
+		if chain.ScannerInitialLookbackDuration < time.Second {
+			return nil, fmt.Errorf("%s scanner initial lookback duration must be at least 1s", chain.Name)
 		}
-		urls := make([]string, 0, len(value.NodeWSURLs))
-		for _, endpoint := range value.NodeWSURLs {
-			if endpoint = strings.TrimSpace(endpoint); endpoint != "" {
-				urls = append(urls, endpoint)
-			}
+		if chain.ScannerPollInterval <= 0 {
+			return nil, fmt.Errorf("%s scanner poll interval must be positive", chain.Name)
 		}
-		if value.ScannerPollInterval.Duration <= 0 {
-			return nil, fmt.Errorf("%s[%d].scannerPollInterval must be positive", EnvironmentVariable, index)
-		}
-		if value.ScannerInitialLookbackDuration.Duration < time.Second {
-			return nil, fmt.Errorf("%s[%d].scannerInitialLookbackDuration must be at least 1s", EnvironmentVariable, index)
-		}
-		chain := Chain{ID: value.ID, Name: value.Name, Enabled: value.Enabled, NodeWSURLs: urls, AthenaContract: strings.TrimSpace(value.AthenaContract), ScannerInitialLookbackDuration: value.ScannerInitialLookbackDuration.Duration, ScannerPollInterval: value.ScannerPollInterval.Duration}
 		registry.chains = append(registry.chains, chain)
 		registry.byID[chain.ID] = chain
 	}
-	sort.Slice(registry.chains, func(i, j int) bool { return registry.chains[i].ID < registry.chains[j].ID })
 	return registry, nil
+}
+
+func newChain(id int64, name string, config ChainConfig) Chain {
+	urls := make([]string, 0, len(config.NodeWSURLs))
+	for _, endpoint := range config.NodeWSURLs {
+		if endpoint = strings.TrimSpace(endpoint); endpoint != "" {
+			urls = append(urls, endpoint)
+		}
+	}
+	return Chain{
+		ID:                             id,
+		Name:                           name,
+		Enabled:                        config.Enabled,
+		NodeWSURLs:                     urls,
+		AthenaContract:                 strings.TrimSpace(config.AthenaContract),
+		ScannerInitialLookbackDuration: config.ScannerInitialLookbackDuration,
+		ScannerPollInterval:            config.ScannerPollInterval,
+	}
 }
 
 func (r *Registry) Chains() []Chain {
