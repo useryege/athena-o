@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/discovery"
 	"github.com/useryege/athena/internal/token/shared"
 )
@@ -53,27 +55,41 @@ func (source *BlockSource) BlockHeaderByNumber(ctx context.Context, chainID int6
 }
 
 func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainID int64, blockNumber uint64) ([]discovery.ProjectCandidate, error) {
+	startedAt := time.Now()
+	clientStartedAt := time.Now()
 	client, err := source.clients.Client(ctx, chainID)
+	clientDuration := time.Since(clientStartedAt)
 	if err != nil {
+		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "client", startedAt, clientDuration, err)
 		return nil, err
 	}
+	blockFetchStartedAt := time.Now()
 	block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+	blockFetchDuration := time.Since(blockFetchStartedAt)
 	if err != nil {
 		source.clients.Reset(chainID)
-		return nil, fmt.Errorf("fetch block %d: %w", blockNumber, err)
+		err = fmt.Errorf("fetch block %d: %w", blockNumber, err)
+		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "block_fetch", startedAt, blockFetchDuration, err)
+		return nil, err
 	}
 	if block == nil {
-		return nil, fmt.Errorf("fetch block %d returned nil block", blockNumber)
+		err = fmt.Errorf("fetch block %d returned nil block", blockNumber)
+		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "block_fetch", startedAt, blockFetchDuration, err)
+		return nil, err
 	}
+	candidateExtractionStartedAt := time.Now()
 	signer := types.LatestSignerForChainID(big.NewInt(chainID))
 	candidates := make([]discovery.ProjectCandidate, 0)
-	for transactionIndex, transaction := range block.Transactions() {
+	transactions := block.Transactions()
+	for transactionIndex, transaction := range transactions {
 		if transaction == nil || transaction.To() != nil {
 			continue
 		}
 		sender, err := types.Sender(signer, transaction)
 		if err != nil {
-			return nil, fmt.Errorf("derive transaction sender for tx %s: %w", transaction.Hash().Hex(), err)
+			err = fmt.Errorf("derive transaction sender for tx %s: %w", transaction.Hash().Hex(), err)
+			logBlockDiscoveryFailure(ctx, chainID, blockNumber, "candidate_extraction", startedAt, time.Since(candidateExtractionStartedAt), err)
+			return nil, err
 		}
 		contract := crypto.CreateAddress(sender, transaction.Nonce())
 		if contract == (common.Address{}) {
@@ -81,7 +97,40 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		}
 		candidates = append(candidates, discovery.ProjectCandidate{ChainID: chainID, Contract: shared.Address(contract), TxSender: shared.Address(sender), TxHash: shared.Hash(transaction.Hash()), TxIndex: uint64(transactionIndex), BlockNumber: block.NumberU64(), BlockTime: block.Time(), Status: discovery.ProjectCandidateStatusPending})
 	}
+	candidateExtractionDuration := time.Since(candidateExtractionStartedAt)
+	log.WithFields(log.Fields{
+		"block_number":                     blockNumber,
+		"returned_block_number":            block.NumberU64(),
+		"chain_id":                         chainID,
+		"transaction_count":                len(transactions),
+		"candidate_count":                  len(candidates),
+		"client_duration_ms":               clientDuration.Milliseconds(),
+		"block_fetch_duration_ms":          blockFetchDuration.Milliseconds(),
+		"candidate_extraction_duration_ms": candidateExtractionDuration.Milliseconds(),
+		"duration_ms":                      time.Since(startedAt).Milliseconds(),
+	}).Info("token scanner block discovery completed")
 	return candidates, nil
+}
+
+func logBlockDiscoveryFailure(
+	ctx context.Context,
+	chainID int64,
+	blockNumber uint64,
+	stage string,
+	startedAt time.Time,
+	phaseDuration time.Duration,
+	err error,
+) {
+	if ctx.Err() != nil {
+		return
+	}
+	log.WithError(err).WithFields(log.Fields{
+		"block_number":      blockNumber,
+		"chain_id":          chainID,
+		"stage":             stage,
+		"phase_duration_ms": phaseDuration.Milliseconds(),
+		"duration_ms":       time.Since(startedAt).Milliseconds(),
+	}).Error("token scanner block discovery failed")
 }
 
 func mapBlockHeader(header *types.Header, expectedNumber *uint64) (discovery.BlockHeader, error) {

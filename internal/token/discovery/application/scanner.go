@@ -80,18 +80,27 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	if command.InitialLookbackDuration < time.Second {
 		return ScanResult{}, fmt.Errorf("token scanner initial lookback duration must be at least 1s")
 	}
+	runStartedAt := time.Now()
+	checkpointReadStartedAt := time.Now()
 	checkpoint, err := scanner.repository.GetChainIngestCheckpoint(ctx, command.ChainID)
+	checkpointReadDuration := time.Since(checkpointReadStartedAt)
 	if err != nil {
+		logScannerRunFailure(ctx, command.ChainID, "checkpoint_read", runStartedAt, checkpointReadDuration, err)
 		return ScanResult{}, err
 	}
 	if checkpoint == nil {
-		return ScanResult{}, fmt.Errorf("token chain scanner checkpoint missing for chain %d", command.ChainID)
+		err = fmt.Errorf("token chain scanner checkpoint missing for chain %d", command.ChainID)
+		logScannerRunFailure(ctx, command.ChainID, "checkpoint_read", runStartedAt, checkpointReadDuration, err)
+		return ScanResult{}, err
 	}
 	if !checkpoint.Enabled || checkpoint.Status != discovery.ChainIngestStatusRunning {
 		return ScanResult{}, nil
 	}
+	latestHeaderStartedAt := time.Now()
 	latest, err := scanner.blocks.LatestBlockHeader(ctx, command.ChainID)
+	latestHeaderDuration := time.Since(latestHeaderStartedAt)
 	if err != nil {
+		logScannerRunFailure(ctx, command.ChainID, "latest_header", runStartedAt, latestHeaderDuration, err)
 		return ScanResult{}, err
 	}
 	if checkpoint.CursorBlockNumber == 0 {
@@ -100,14 +109,18 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 		if latest.Timestamp > lookbackSeconds {
 			targetTimestamp = latest.Timestamp - lookbackSeconds
 		}
+		initialBlockEstimateStartedAt := time.Now()
 		estimate, err := scanner.estimateInitialStartBlock(ctx, command.ChainID, latest, lookbackSeconds, targetTimestamp)
 		if err != nil {
+			logScannerRunFailure(ctx, command.ChainID, "initial_block_estimate", runStartedAt, time.Since(initialBlockEstimateStartedAt), err)
 			return ScanResult{}, err
 		}
 		start := estimate.StartBlock
 		checkpoint.CursorBlockNumber = start - 1
+		checkpointInitializeStartedAt := time.Now()
 		checkpoint, err = scanner.repository.UpsertChainIngestCheckpoint(ctx, *checkpoint)
 		if err != nil {
+			logScannerRunFailure(ctx, command.ChainID, "checkpoint_initialize", runStartedAt, time.Since(checkpointInitializeStartedAt), err)
 			return ScanResult{}, err
 		}
 		log.WithFields(log.Fields{
@@ -129,37 +142,109 @@ func (scanner *Scanner) RunOnce(ctx context.Context, command ScanChainCommand) (
 	if checkpoint.CursorBlockNumber > 0 {
 		next = checkpoint.CursorBlockNumber + 1
 	}
+	if next <= latest.Number {
+		log.WithFields(log.Fields{
+			"chain_id":                    command.ChainID,
+			"cursor_block_number":         checkpoint.CursorBlockNumber,
+			"start_block":                 next,
+			"latest_block":                latest.Number,
+			"remaining_block_count":       latest.Number - next + 1,
+			"checkpoint_read_duration_ms": checkpointReadDuration.Milliseconds(),
+			"latest_header_duration_ms":   latestHeaderDuration.Milliseconds(),
+			"duration_ms":                 time.Since(runStartedAt).Milliseconds(),
+		}).Info("token scanner scan range resolved")
+	}
 	result := ScanResult{}
 	for next <= latest.Number {
 		if err := ctx.Err(); err != nil {
 			return result, err
 		}
+		blockStartedAt := time.Now()
+		blockCheckpointReadStartedAt := time.Now()
 		checkpoint, err = scanner.repository.GetChainIngestCheckpoint(ctx, command.ChainID)
+		blockCheckpointReadDuration := time.Since(blockCheckpointReadStartedAt)
 		if err != nil {
+			logScannerBlockFailure(ctx, command.ChainID, next, "checkpoint_read", blockStartedAt, blockCheckpointReadDuration, err)
 			return result, err
 		}
 		if checkpoint == nil || !checkpoint.Enabled || checkpoint.Status != discovery.ChainIngestStatusRunning {
 			return result, nil
 		}
-		blockStartedAt := time.Now()
-		candidates, err := scanner.blocks.DiscoverProjectCandidates(ctx, command.ChainID, next)
-		if err != nil {
-			return result, err
-		}
-		if _, err = scanner.repository.IngestProjectCandidateBlock(ctx, discovery.ChainIngestCheckpoint{ChainID: command.ChainID, CursorBlockNumber: next, Status: discovery.ChainIngestStatusRunning}, candidates); err != nil {
-			return result, err
-		}
 		log.WithFields(log.Fields{
-			"block_number":    next,
-			"candidate_count": len(candidates),
-			"chain_id":        command.ChainID,
-			"duration_ms":     time.Since(blockStartedAt).Milliseconds(),
+			"block_number":                next,
+			"chain_id":                    command.ChainID,
+			"latest_block":                latest.Number,
+			"remaining_block_count":       latest.Number - next + 1,
+			"checkpoint_read_duration_ms": blockCheckpointReadDuration.Milliseconds(),
+		}).Info("token scanner block started")
+
+		discoveryStartedAt := time.Now()
+		candidates, err := scanner.blocks.DiscoverProjectCandidates(ctx, command.ChainID, next)
+		discoveryDuration := time.Since(discoveryStartedAt)
+		if err != nil {
+			logScannerBlockFailure(ctx, command.ChainID, next, "candidate_discovery", blockStartedAt, discoveryDuration, err)
+			return result, err
+		}
+		persistenceStartedAt := time.Now()
+		if _, err = scanner.repository.IngestProjectCandidateBlock(ctx, discovery.ChainIngestCheckpoint{ChainID: command.ChainID, CursorBlockNumber: next, Status: discovery.ChainIngestStatusRunning}, candidates); err != nil {
+			logScannerBlockFailure(ctx, command.ChainID, next, "persistence", blockStartedAt, time.Since(persistenceStartedAt), err)
+			return result, err
+		}
+		persistenceDuration := time.Since(persistenceStartedAt)
+		log.WithFields(log.Fields{
+			"block_number":                next,
+			"candidate_count":             len(candidates),
+			"chain_id":                    command.ChainID,
+			"checkpoint_read_duration_ms": blockCheckpointReadDuration.Milliseconds(),
+			"discovery_duration_ms":       discoveryDuration.Milliseconds(),
+			"persistence_duration_ms":     persistenceDuration.Milliseconds(),
+			"duration_ms":                 time.Since(blockStartedAt).Milliseconds(),
 		}).Info("token scanner block completed")
 		result.Blocks++
 		result.Candidates += len(candidates)
 		next++
 	}
 	return result, nil
+}
+
+func logScannerRunFailure(
+	ctx context.Context,
+	chainID int64,
+	stage string,
+	startedAt time.Time,
+	phaseDuration time.Duration,
+	err error,
+) {
+	if ctx.Err() != nil {
+		return
+	}
+	log.WithError(err).WithFields(log.Fields{
+		"chain_id":          chainID,
+		"stage":             stage,
+		"phase_duration_ms": phaseDuration.Milliseconds(),
+		"duration_ms":       time.Since(startedAt).Milliseconds(),
+	}).Error("token scanner run failed")
+}
+
+func logScannerBlockFailure(
+	ctx context.Context,
+	chainID int64,
+	blockNumber uint64,
+	stage string,
+	startedAt time.Time,
+	phaseDuration time.Duration,
+	err error,
+) {
+	if ctx.Err() != nil {
+		return
+	}
+	log.WithError(err).WithFields(log.Fields{
+		"block_number":      blockNumber,
+		"chain_id":          chainID,
+		"stage":             stage,
+		"phase_duration_ms": phaseDuration.Milliseconds(),
+		"duration_ms":       time.Since(startedAt).Milliseconds(),
+	}).Error("token scanner block failed")
 }
 
 func (scanner *Scanner) estimateInitialStartBlock(

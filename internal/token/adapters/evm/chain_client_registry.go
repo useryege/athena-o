@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/token/chainregistry"
 	"github.com/useryege/athena/internal/token/discovery"
 	"github.com/useryege/athena/internal/token/shared"
@@ -34,11 +36,18 @@ func (r *ChainClientRegistry) Client(ctx context.Context, chainID int64) (*ethcl
 	if !ok || !chain.Enabled {
 		return nil, fmt.Errorf("token chain %d is not enabled", chainID)
 	}
-	client, _, err := ethws.DialFastestContext(ctx, chain.NodeWSURLs, chain.ID, chain.UseProxy)
+	startedAt := time.Now()
+	client, endpoint, err := ethws.DialFastestContext(ctx, chain.NodeWSURLs, chain.ID, chain.UseProxy)
 	if err != nil {
 		return nil, err
 	}
 	r.clients[chainID] = client
+	log.WithFields(log.Fields{
+		"chain_id":       chainID,
+		"endpoint":       ethws.RedactEndpoint(endpoint),
+		"endpoint_count": len(ethws.NormalizeEndpoints(chain.NodeWSURLs)),
+		"duration_ms":    time.Since(startedAt).Milliseconds(),
+	}).Info("token EVM client selected")
 	return client, nil
 }
 
