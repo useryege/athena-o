@@ -61,7 +61,7 @@ func probeEndpoints(ctx context.Context, endpoints []string, expectedChainID int
 		return []endpointProbe{}, nil
 	}
 
-	probeCtx, cancel := context.WithTimeout(ctx, poolDialTimeout)
+	probeCtx, cancel := context.WithTimeout(ctx, endpointProbeTimeout)
 	defer cancel()
 
 	type indexedProbe struct {

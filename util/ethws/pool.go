@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-const poolDialTimeout = 5 * time.Second
+const endpointProbeTimeout = 15 * time.Second
 
 // NormalizeEndpoints trims endpoint values, removes empty entries, and deduplicates them.
 func NormalizeEndpoints(endpoints []string) []string {

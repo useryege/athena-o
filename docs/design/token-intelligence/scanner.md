@@ -72,7 +72,9 @@ Fresh checkpoint initialization is a separate durable write. Every later block u
 
 `project_candidate` stores contract address, sender, transaction hash and index, block number and time, and validation status. Candidate identity is unique by chain and contract. Re-observing a pending candidate refreshes its source data without reverting an already validated or rejected status.
 
-The EVM client registry caches one selected WebSocket client per chain in memory. A latest-header, historical-header, or block-fetch error or invalid header closes and removes that cached client so a later loop can probe configured endpoints again.
+The EVM client registry caches one selected WebSocket client per chain in memory. When no client is cached, the registry probes all configured endpoints concurrently under one shared 15-second deadline. That deadline covers the WebSocket connection, chain ID, sync status, latest block number, and latest block header calls. The lowest-latency healthy result is cached. Node-status inspection uses the same probe behavior and deadline. The deadline is an internal constant rather than chain configuration.
+
+A latest-header, historical-header, or block-fetch error or invalid header closes and removes the cached client so a later loop can probe configured endpoints again.
 
 ## Configuration
 
