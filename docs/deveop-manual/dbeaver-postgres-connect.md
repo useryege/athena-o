@@ -10,17 +10,16 @@
 make run
 ```
 
-或：
-
-```bash
-goreman start
-```
-
 也可以只启动 PostgreSQL：
 
 ```bash
 hack/start-postgres-with-password.sh
 ```
+
+`make run` 使用 `athena-local-postgres-data` 命名 volume 保存数据库。
+`make stop` 或前台按 `Ctrl+C` 会删除本次运行的 PostgreSQL 容器，但不会
+删除该 volume；下一次 `make run` 会继续使用原数据库。只有执行
+`make run-reset` 才会删除 volume，使后续启动创建全新数据库。
 
 ## 新建连接
 
@@ -69,6 +68,9 @@ ATHENA_REDIS_PASSWORD
 ```
 
 如果本地启动 PostgreSQL 时没有加载 `.env`，脚本默认 `POSTGRES_PASSWORD` 为空，并可能使用 trust auth。此时 DBeaver 密码可以留空。
+
+PostgreSQL 初始化密码是持久化配置的一部分。修改 `.env` 中的
+`POSTGRES_PASSWORD` 后，需要先执行 `make run-reset`，再用新密码启动。
 
 ### 连接不上 localhost:5432
 

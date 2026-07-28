@@ -15,6 +15,7 @@ The executable code remains the source of truth. These documents provide the mai
 
 | Subsystem | Capability | Document |
 | --- | --- | --- |
+| Development Runtime | Local process supervision and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
 | Polymarket | Managed Optimistic Oracle log ingestion, market enrichment, and alerts | [Managed OO Alerts](polymarket/managed-oo-alerts.md) |
 | Token Intelligence | EVM chain scanning and project candidate ingestion | [Token Scanner](token-intelligence/scanner.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |

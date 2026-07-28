@@ -141,7 +141,20 @@ PROD_IMAGE=athena:local make prod-build-local
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make run` | 通过 `hack/goreman-start.sh` 启动，可使用脚本支持的排除参数。 | `make run` |
+| `make run` | 前台启动本地服务，创建可重建的 PostgreSQL/Redis 容器并复用持久化数据。支持 `ATHENA_RUN_EXCLUDE`。 | `make run` |
+| `make stop` | 优雅停止本地服务并删除容器和运行控制状态，保留 PostgreSQL/Redis 数据 volume。 | `make stop` |
+| `make run-reset` | 先停止服务，再删除本地容器、数据 volume、运行控制状态和默认临时运行数据。不会重新启动。 | `make run-reset` |
+
+本地 PostgreSQL 和 Redis 数据分别保存在固定命名 volume
+`athena-local-postgres-data` 和 `athena-local-redis-data`。前台按
+`Ctrl+C` 与从另一终端执行 `make stop` 具有相同的浅层清理语义，后续
+`make run` 会创建新容器并挂载原数据。PostgreSQL volume 会记录镜像、
+用户、初始数据库、密码和初始化 SQL 的配置指纹；这些初始化设置发生变化
+后必须执行 `make run-reset`，避免以新配置静默打开不兼容的旧数据。
+
+`make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
+`/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
+指定到其他位置的自定义临时目录不会被自动删除。
 
 ## UI
 

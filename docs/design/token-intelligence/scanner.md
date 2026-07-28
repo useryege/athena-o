@@ -11,7 +11,7 @@ Candidate validation, ERC-20 inspection, project creation, and downstream resear
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | Local process declaration | [Procfile](../../../Procfile) | `token-scanner` process |
-| Local process orchestration | [hack/goreman-start.sh](../../../hack/goreman-start.sh) | `configure_token_node_ws_proxy`, `start_goreman` |
+| Local process orchestration | [hack/local-runtime.sh](../../../hack/local-runtime.sh) | `configure_token_node_ws_proxy`, `start_runtime`, `stop_runtime` |
 | Binary dispatch | [cmd/main.go](../../../cmd/main.go) | `main`, `ATHENA_BINARY_NAME` dispatch |
 | Scanner composition | [cmd/athena-token-scanner/commands/athena-token-scanner.go](../../../cmd/athena-token-scanner/commands/athena-token-scanner.go) | `NewCommand` |
 | Shared worker startup | [cmd/tokenworker/common.go](../../../cmd/tokenworker/common.go) | `CommonFlags.Bind`, `CommonFlags.Open` |
@@ -104,6 +104,13 @@ Scanner configuration comes from command flags backed by environment variables:
 Every chain setting is required even when that chain is disabled, so enabling a maintained chain does not expose a partially configured node pool or contract address. The maintained configuration enables Ethereum and disables BSC. Both chains use an initial lookback of `168h`. Initial block-time estimation always samples the latest 100-block interval; the sample size is an application constant and is not chain configuration. Scanning itself is strictly sequential and has no block-fetch concurrency setting.
 
 Before starting Goreman, `make run` removes the standard lowercase and uppercase HTTP, HTTPS, and ALL proxy variables from its child-process environment. On WSL it then derives the Windows host from the default route and supplies `http://<gateway>:10809` unless `ATHENA_TOKEN_NODE_WS_PROXY_URL` was already set. An explicitly empty value disables that local default. Non-WSL local runs, manual process launches, and production deployments do not synthesize a proxy URL and therefore dial directly. Production Compose does not provide the dedicated proxy setting.
+
+Local PostgreSQL data lives in the `athena-local-postgres-data` Docker volume.
+`make stop` and foreground `Ctrl+C` remove the disposable PostgreSQL container
+but retain the volume, so the scanner resumes from its durable checkpoint on the
+next `make run`. `make run-reset` deletes that volume and therefore restores the
+fresh-checkpoint behavior described above. The complete local resource lifecycle
+is documented in [Local Runtime Orchestration](../development-runtime/local-runtime-orchestration.md).
 
 ## Invariants
 

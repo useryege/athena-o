@@ -212,10 +212,18 @@ athena-bsc-swap-indexer: clean-debug
 bsc-swap-indexer-build-image:
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -f $(BSC_SWAP_INDEXER_DOCKERFILE) -t $(BSC_SWAP_INDEXER_IMAGE) --build-arg GIT_COMMIT=$(GIT_COMMIT) --build-arg GIT_TREE_STATE=$(GIT_TREE_STATE) --build-arg GIT_TAG=$(GIT_TAG) --build-arg BUILD_DATE=$(BUILD_DATE) .
 
-# Run goreman start with exclude option , provide exclude env variable with list of services
+# Manage the foreground local development runtime and its resources.
 .PHONY: run
 run:
-	bash ./hack/goreman-start.sh
+	bash ./hack/local-runtime.sh start
+
+.PHONY: stop
+stop:
+	bash ./hack/local-runtime.sh stop
+
+.PHONY: run-reset
+run-reset:
+	bash ./hack/local-runtime.sh reset
 
 .PHONY: e2e
 e2e:
