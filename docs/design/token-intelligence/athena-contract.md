@@ -72,7 +72,7 @@ The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f8
 
 An unsupported constructor argument reverts deployment. The constructor does not call the configured Factory; deployment therefore does not depend on a Factory hash getter. A failed or zero USDT-decimal probe uses the chain-specific fallback.
 
-Defensive token probes return an unsuccessful flag and zero or empty value instead of bubbling most target-contract failures. Missing pair code produces an uncreated pair state. Failed or malformed reserve reads produce zero reserves, preventing quote conversion. Invalid pair-derivation inputs revert the affected aggregate call.
+Defensive token probes return an unsuccessful flag and zero or empty value instead of bubbling most target-contract failures. A malformed `uint8` metadata response whose first ABI word exceeds the valid range is treated as an unsuccessful probe rather than bubbling a decode revert, while trailing return data remains permitted. Missing pair code produces an uncreated pair state. Failed or malformed reserve reads produce zero reserves, preventing quote conversion. Invalid pair-derivation inputs revert the affected aggregate call.
 
 Go consumers treat contract-call failures and result-length mismatches as failed work. EVM adapters reset their cached chain client after call failures so the surrounding periodic worker can retry through normal job recovery.
 

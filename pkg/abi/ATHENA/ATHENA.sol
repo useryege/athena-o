@@ -444,7 +444,14 @@ contract Athena {
         if (!callOk || data.length < 32) {
             return (false, 0);
         }
-        return (true, abi.decode(data, (uint8)));
+        uint256 rawValue;
+        assembly {
+            rawValue := mload(add(data, 32))
+        }
+        if (rawValue > type(uint8).max) {
+            return (false, 0);
+        }
+        return (true, uint8(rawValue));
     }
 
     function _safeUint256(address target, bytes4 selector) private view returns (bool ok, uint256 value) {
