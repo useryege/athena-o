@@ -17,9 +17,6 @@ p, role:readonly, polymarket, get, *, allow
 p, role:readonly, wallets, get, *, allow
 p, role:readonly, wallets, update, *, allow
 p, role:readonly, wallets, invoke, *, allow
-p, role:readonly, tokenapi, get, options, allow
-p, role:readonly, tokenapi, get, projects, allow
-p, role:readonly, tokenapi, get, chain-checkpoints, allow
 
 p, role:admin, application, update, *, allow
 p, role:admin, accounts, update, *, allow
