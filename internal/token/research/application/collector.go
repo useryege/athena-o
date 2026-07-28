@@ -10,6 +10,8 @@ import (
 	"github.com/useryege/athena/internal/token/shared"
 )
 
+const maxCollectionAttempts = int32(10)
+
 type CollectionTaskRepository interface {
 	ClaimCollectionTasks(context.Context, research.DataCollectionType, []int64, int32) ([]research.ProjectDataCollectionTaskWithProject, error)
 	CommitCollection(context.Context, CommitCollectionCommand) (CommitCollectionResult, error)
@@ -23,7 +25,6 @@ type CollectionOutput struct {
 	RecordObservation  bool
 	CodeSource         *CodeSourceUpdate
 	NormalTransactions []research.WalletNormalTransaction
-	CompleteSchedule   bool
 }
 
 type CodeSourceUpdate struct {
@@ -46,8 +47,6 @@ type CommitCollectionCommand struct {
 	RecordObservation  bool
 	CodeSource         *CodeSourceUpdate
 	NormalTransactions []research.WalletNormalTransaction
-	NextRunAt          time.Time
-	CompleteSchedule   bool
 }
 
 type CommitCollectionResult struct {
@@ -57,16 +56,16 @@ type CommitCollectionResult struct {
 }
 
 type RetryCollectionTaskCommand struct {
-	Task        research.ProjectDataCollectionTask
-	LastError   string
-	AvailableAt time.Time
+	Task           research.ProjectDataCollectionTask
+	LastError      string
+	FailedAttempts int32
+	AvailableAt    time.Time
 }
 
 type FailCollectionTaskCommand struct {
-	Task      research.ProjectDataCollectionTask
-	LastError string
-	FailedAt  time.Time
-	NextRunAt time.Time
+	Task           research.ProjectDataCollectionTask
+	LastError      string
+	FailedAttempts int32
 }
 
 type CollectorOptions struct {
@@ -118,8 +117,7 @@ func (collector *Collector) process(ctx context.Context, item research.ProjectDa
 	command := CommitCollectionCommand{
 		Task: item.Task, CheckedAt: checkedAt, SchemaVersion: research.ObservationSchemaVersionV1,
 		BlockNumber: output.BlockNumber, RecordObservation: output.RecordObservation, CodeSource: output.CodeSource,
-		NormalTransactions: output.NormalTransactions, NextRunAt: checkedAt.Add(item.Project.RefreshInterval),
-		CompleteSchedule: output.CompleteSchedule,
+		NormalTransactions: output.NormalTransactions,
 	}
 	if output.RecordObservation {
 		payload, err := json.Marshal(output.Observation)
@@ -139,11 +137,16 @@ func (collector *Collector) process(ctx context.Context, item research.ProjectDa
 
 func (collector *Collector) fail(ctx context.Context, item research.ProjectDataCollectionTaskWithProject, failure error) error {
 	failedAt := collector.options.Now().UTC()
-	backoff := time.Duration(1<<min(int(item.Task.Attempts), 4)) * time.Second
-	if item.Task.Attempts < 4 {
-		return collector.repository.RetryCollectionTask(ctx, RetryCollectionTaskCommand{Task: item.Task, LastError: failure.Error(), AvailableAt: failedAt.Add(backoff)})
+	failedAttempts := item.Task.Attempts + 1
+	if failedAttempts < maxCollectionAttempts {
+		return collector.repository.RetryCollectionTask(ctx, RetryCollectionTaskCommand{
+			Task: item.Task, LastError: failure.Error(), FailedAttempts: failedAttempts,
+			AvailableAt: failedAt.Add(item.Project.RetryInterval),
+		})
 	}
-	return collector.repository.FailCollectionTask(ctx, FailCollectionTaskCommand{Task: item.Task, LastError: failure.Error(), FailedAt: failedAt, NextRunAt: failedAt.Add(item.Project.RefreshInterval)})
+	return collector.repository.FailCollectionTask(ctx, FailCollectionTaskCommand{
+		Task: item.Task, LastError: failure.Error(), FailedAttempts: failedAttempts,
+	})
 }
 
 type AveMarketDataRequest struct {
@@ -237,7 +240,7 @@ func (processor ContractSourceProcessor) Process(ctx context.Context, project re
 			return CollectionOutput{RecordObservation: false}, nil
 		}
 		observation := research.ContractSourceObservationV1{CodeHash: project.CodeHash, SourceAvailable: true}
-		return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: code.SourceCode}, CompleteSchedule: true}, nil
+		return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: code.SourceCode}}, nil
 	}
 	source, err := processor.Provider.GetSourceCode(ctx, project.ChainID, project.Contract)
 	if err != nil {
@@ -247,7 +250,7 @@ func (processor ContractSourceProcessor) Process(ctx context.Context, project re
 		return CollectionOutput{RecordObservation: false}, nil
 	}
 	observation := research.ContractSourceObservationV1{CodeHash: project.CodeHash, SourceAvailable: true}
-	return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: source}, CompleteSchedule: true}, nil
+	return CollectionOutput{Observation: observation, RecordObservation: true, CodeSource: &CodeSourceUpdate{CodeHash: project.CodeHash, SourceCode: source}}, nil
 }
 
 type WalletNormalTransactionProvider interface {
@@ -264,7 +267,7 @@ func (processor WalletNormalTransactionsProcessor) DataType() research.DataColle
 
 func (processor WalletNormalTransactionsProcessor) Process(ctx context.Context, project research.ProjectCollectionContext) (CollectionOutput, error) {
 	if project.DeploymentBlockNumber == 0 {
-		return CollectionOutput{CompleteSchedule: true}, nil
+		return CollectionOutput{}, nil
 	}
 	transactions := make([]research.WalletNormalTransaction, 0)
 	endBlock := project.DeploymentBlockNumber - 1
@@ -275,5 +278,5 @@ func (processor WalletNormalTransactionsProcessor) Process(ctx context.Context, 
 		}
 		transactions = append(transactions, items...)
 	}
-	return CollectionOutput{NormalTransactions: transactions, CompleteSchedule: true}, nil
+	return CollectionOutput{NormalTransactions: transactions}, nil
 }

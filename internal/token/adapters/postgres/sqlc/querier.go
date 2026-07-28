@@ -53,6 +53,7 @@ type Querier interface {
 	// Selection task persistence.
 	EnqueueProjectSelectionEvaluationTask(ctx context.Context, arg EnqueueProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error)
 	ExpireProjectResearchStates(ctx context.Context) (int64, error)
+	FailProjectDataCollectionSchedule(ctx context.Context, arg FailProjectDataCollectionScheduleParams) (int64, error)
 	FailProjectDataCollectionTask(ctx context.Context, arg FailProjectDataCollectionTaskParams) (int64, error)
 	FailProjectReportBuildTask(ctx context.Context, arg FailProjectReportBuildTaskParams) (int64, error)
 	FailProjectSelectionEvaluationTask(ctx context.Context, arg FailProjectSelectionEvaluationTaskParams) (int64, error)
@@ -113,8 +114,7 @@ type Querier interface {
 	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	ListWalletBlocklistEntries(ctx context.Context) ([]WalletBlocklist, error)
 	LockProjectDataCollectionSchedule(ctx context.Context, arg LockProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
-	MarkProjectDataCollectionScheduleFailed(ctx context.Context, arg MarkProjectDataCollectionScheduleFailedParams) (int64, error)
-	MarkProjectDataCollectionScheduleSucceeded(ctx context.Context, arg MarkProjectDataCollectionScheduleSucceededParams) (int64, error)
+	MarkProjectDataCollectionScheduleRetrying(ctx context.Context, arg MarkProjectDataCollectionScheduleRetryingParams) (int64, error)
 	MarkProjectDataCollectionTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	MarkProjectReportBuildTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	MarkProjectSelectionEvaluationTaskSucceeded(ctx context.Context, id int64) (int64, error)

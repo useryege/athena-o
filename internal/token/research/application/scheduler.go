@@ -12,7 +12,7 @@ type DueSchedule struct {
 	ProjectID          int64
 	DataType           research.DataCollectionType
 	Status             research.DataCollectionScheduleStatus
-	RefreshInterval    time.Duration
+	RetryInterval      time.Duration
 	NextRunAt          time.Time
 	LatestTaskRevision int64
 }
@@ -34,10 +34,10 @@ type SchedulerRepository interface {
 }
 
 type SchedulerOptions struct {
-	Intervals map[research.DataCollectionType]time.Duration
-	TTL       time.Duration
-	Limit     int32
-	Now       func() time.Time
+	RetryIntervals map[research.DataCollectionType]time.Duration
+	TTL            time.Duration
+	Limit          int32
+	Now            func() time.Time
 }
 
 type Scheduler struct {
@@ -46,8 +46,8 @@ type Scheduler struct {
 }
 
 func NewScheduler(repository SchedulerRepository, options SchedulerOptions) *Scheduler {
-	if options.Intervals == nil {
-		options.Intervals = map[research.DataCollectionType]time.Duration{
+	if options.RetryIntervals == nil {
+		options.RetryIntervals = map[research.DataCollectionType]time.Duration{
 			research.DataCollectionTypeChainState:               15 * time.Second,
 			research.DataCollectionTypeWalletAssetState:         time.Minute,
 			research.DataCollectionTypeSimulationResult:         time.Minute,
@@ -72,7 +72,7 @@ func (scheduler *Scheduler) Initialize(ctx context.Context) error {
 	if scheduler == nil || scheduler.repository == nil {
 		return fmt.Errorf("token scheduler application is not configured")
 	}
-	return scheduler.repository.ApplyResearchPolicy(ctx, scheduler.options.Intervals, scheduler.options.TTL)
+	return scheduler.repository.ApplyResearchPolicy(ctx, scheduler.options.RetryIntervals, scheduler.options.TTL)
 }
 
 func (scheduler *Scheduler) RunOnce(ctx context.Context) (int, error) {
@@ -94,7 +94,7 @@ func (scheduler *Scheduler) RunOnce(ctx context.Context) (int, error) {
 		}
 		applied, err := scheduler.repository.CreateCollectionTaskIfDue(ctx, CreateCollectionTaskCommand{
 			ProjectID: schedule.ProjectID, DataType: schedule.DataType, ExpectedRevision: schedule.LatestTaskRevision,
-			TaskRevision: schedule.LatestTaskRevision + 1, Now: now, NextRunAt: now.Add(schedule.RefreshInterval),
+			TaskRevision: schedule.LatestTaskRevision + 1, Now: now, NextRunAt: now.Add(schedule.RetryInterval),
 		})
 		if err != nil {
 			return created, err

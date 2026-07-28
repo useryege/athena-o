@@ -256,8 +256,8 @@ CREATE TABLE project_data_collection_schedule (
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'active',
-  refresh_interval_seconds BIGINT NOT NULL,
-  next_run_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  retry_interval_seconds BIGINT NOT NULL,
+  next_run_at TIMESTAMPTZ DEFAULT now(),
   latest_task_revision BIGINT NOT NULL DEFAULT 0,
   consecutive_failures INT NOT NULL DEFAULT 0,
   last_error TEXT,
@@ -267,8 +267,12 @@ CREATE TABLE project_data_collection_schedule (
   CONSTRAINT project_data_collection_schedule_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
   CONSTRAINT project_data_collection_schedule_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
   CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
-  CONSTRAINT project_data_collection_schedule_status_check CHECK (status IN ('active', 'completed', 'paused')),
-  CONSTRAINT project_data_collection_schedule_refresh_interval_seconds_check CHECK (refresh_interval_seconds > 0),
+  CONSTRAINT project_data_collection_schedule_status_check CHECK (status IN ('active', 'completed', 'failed', 'paused')),
+  CONSTRAINT project_data_collection_schedule_retry_interval_seconds_check CHECK (retry_interval_seconds > 0),
+  CONSTRAINT project_data_collection_schedule_next_run_at_check CHECK (
+    (status = 'active' AND next_run_at IS NOT NULL)
+    OR (status IN ('completed', 'failed', 'paused') AND next_run_at IS NULL)
+  ),
   CONSTRAINT project_data_collection_schedule_latest_task_revision_check CHECK (latest_task_revision >= 0),
   CONSTRAINT project_data_collection_schedule_consecutive_failures_check CHECK (consecutive_failures >= 0)
 );
@@ -295,7 +299,7 @@ CREATE TABLE project_data_collection_task (
   CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
   CONSTRAINT project_data_collection_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
   CONSTRAINT project_data_collection_task_revision_check CHECK (revision > 0),
-  CONSTRAINT project_data_collection_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
+  CONSTRAINT project_data_collection_task_attempts_check CHECK (attempts BETWEEN 0 AND 10)
 );
 
 CREATE INDEX project_data_collection_task_status_available_at_idx

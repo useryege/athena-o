@@ -59,9 +59,9 @@ type InitialRecipient struct {
 }
 
 type CollectionScheduleSeed struct {
-	DataType        string
-	RefreshInterval time.Duration
-	NextRunAt       time.Time
+	DataType      string
+	RetryInterval time.Duration
+	NextRunAt     time.Time
 }
 
 type PromoteCandidateCommand struct {
@@ -166,11 +166,11 @@ func (validator *Validator) renewLease(ctx context.Context, leaseID string) func
 
 func defaultResearchSchedules(now time.Time) []CollectionScheduleSeed {
 	return []CollectionScheduleSeed{
-		{DataType: "chain_state", RefreshInterval: 15 * time.Second, NextRunAt: now},
-		{DataType: "wallet_asset_state", RefreshInterval: time.Minute, NextRunAt: now},
-		{DataType: "simulation_result", RefreshInterval: time.Minute, NextRunAt: now},
-		{DataType: "ave", RefreshInterval: 5 * time.Minute, NextRunAt: now},
-		{DataType: "contract_code_source", RefreshInterval: 10 * time.Minute, NextRunAt: now},
-		{DataType: "wallet_normal_transactions", RefreshInterval: 10 * time.Minute, NextRunAt: now},
+		{DataType: "chain_state", RetryInterval: 15 * time.Second, NextRunAt: now},
+		{DataType: "wallet_asset_state", RetryInterval: time.Minute, NextRunAt: now},
+		{DataType: "simulation_result", RetryInterval: time.Minute, NextRunAt: now},
+		{DataType: "ave", RetryInterval: 5 * time.Minute, NextRunAt: now},
+		{DataType: "contract_code_source", RetryInterval: 10 * time.Minute, NextRunAt: now},
+		{DataType: "wallet_normal_transactions", RetryInterval: 10 * time.Minute, NextRunAt: now},
 	}
 }

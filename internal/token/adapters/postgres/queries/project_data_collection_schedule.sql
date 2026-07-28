@@ -3,22 +3,22 @@
 INSERT INTO project_data_collection_schedule (
   project_id,
   data_type,
-  refresh_interval_seconds,
+  retry_interval_seconds,
   next_run_at
 ) VALUES (
   @project_id,
   @data_type,
-  @refresh_interval_seconds,
+  @retry_interval_seconds,
   @next_run_at
 )
 ON CONFLICT (project_id, data_type) DO UPDATE
-SET refresh_interval_seconds = EXCLUDED.refresh_interval_seconds,
+SET retry_interval_seconds = EXCLUDED.retry_interval_seconds,
   updated_at = now()
 RETURNING *;
 
 -- name: ApplyProjectDataCollectionSchedulePolicy :execrows
 UPDATE project_data_collection_schedule
-SET refresh_interval_seconds = @refresh_interval_seconds,
+SET retry_interval_seconds = @retry_interval_seconds,
   updated_at = now()
 WHERE data_type = @data_type
   AND status = 'active';
@@ -63,32 +63,36 @@ SET status = 'completed',
   consecutive_failures = 0,
   last_error = NULL,
   last_checked_at = @last_checked_at,
+  next_run_at = NULL,
   updated_at = now()
 WHERE project_id = @project_id
   AND data_type = @data_type;
 
--- name: MarkProjectDataCollectionScheduleSucceeded :execrows
+-- name: MarkProjectDataCollectionScheduleRetrying :execrows
 UPDATE project_data_collection_schedule
-SET consecutive_failures = 0,
-  last_error = NULL,
-  last_checked_at = @last_checked_at,
-  next_run_at = @next_run_at,
-  updated_at = now()
-WHERE project_id = @project_id
-  AND data_type = @data_type;
-
--- name: MarkProjectDataCollectionScheduleFailed :execrows
-UPDATE project_data_collection_schedule
-SET consecutive_failures = consecutive_failures + 1,
+SET consecutive_failures = @consecutive_failures,
   last_error = @last_error,
   next_run_at = @next_run_at,
   updated_at = now()
 WHERE project_id = @project_id
-  AND data_type = @data_type;
+  AND data_type = @data_type
+  AND status = 'active';
+
+-- name: FailProjectDataCollectionSchedule :execrows
+UPDATE project_data_collection_schedule
+SET status = 'failed',
+  consecutive_failures = @consecutive_failures,
+  last_error = @last_error,
+  next_run_at = NULL,
+  updated_at = now()
+WHERE project_id = @project_id
+  AND data_type = @data_type
+  AND status = 'active';
 
 -- name: PauseTerminalProjectDataCollectionSchedules :execrows
 UPDATE project_data_collection_schedule AS schedule
 SET status = 'paused',
+  next_run_at = NULL,
   updated_at = now()
 FROM project_research_state AS research
 WHERE research.project_id = schedule.project_id

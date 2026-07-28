@@ -75,17 +75,17 @@ type ProjectCandidate struct {
 }
 
 type ProjectDataCollectionSchedule struct {
-	ProjectID              int64
-	DataType               string
-	Status                 string
-	RefreshIntervalSeconds int64
-	NextRunAt              pgtype.Timestamptz
-	LatestTaskRevision     int64
-	ConsecutiveFailures    int32
-	LastError              pgtype.Text
-	LastCheckedAt          pgtype.Timestamptz
-	CreatedAt              pgtype.Timestamptz
-	UpdatedAt              pgtype.Timestamptz
+	ProjectID            int64
+	DataType             string
+	Status               string
+	RetryIntervalSeconds int64
+	NextRunAt            pgtype.Timestamptz
+	LatestTaskRevision   int64
+	ConsecutiveFailures  int32
+	LastError            pgtype.Text
+	LastCheckedAt        pgtype.Timestamptz
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
 }
 
 type ProjectDataCollectionTask struct {

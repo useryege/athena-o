@@ -791,7 +791,7 @@ message TokenCollectionSchedule {
 
   optional string status = 3;
 
-  optional int64 refreshIntervalSecs = 4;
+  optional int64 retryIntervalSecs = 4;
 
   optional string nextRunAt = 5;
 

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1001-gd533e64-dirty"
+    "version": "v1.0.0-1015-g6a0a2af-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -5199,7 +5199,7 @@
           "type": "integer",
           "format": "int64"
         },
-        "refreshIntervalSecs": {
+        "retryIntervalSecs": {
           "type": "integer",
           "format": "int64"
         },

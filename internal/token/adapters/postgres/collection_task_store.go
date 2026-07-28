@@ -48,7 +48,7 @@ func (repository *CollectionRepository) ClaimCollectionTasks(ctx context.Context
 		contextValue := research.ProjectCollectionContext{
 			ID: project.ID, ChainID: project.ChainID, Contract: project.Contract, CodeHash: project.CodeHash,
 			WethPair: project.WethPair, UsdtPair: project.UsdtPair, DeploymentBlockNumber: project.BlockNumber,
-			RefreshInterval: time.Duration(schedule.RefreshIntervalSeconds) * time.Second,
+			RetryInterval: time.Duration(schedule.RetryIntervalSeconds) * time.Second,
 		}
 		seenWallets := make(map[shared.Address]struct{}, len(walletRows))
 		for _, wallet := range walletRows {
@@ -103,15 +103,32 @@ func (repository *ResearchReadRepository) ListProjectDataCollectionTasks(ctx con
 }
 
 func (repository *CollectionRepository) RetryCollectionTask(ctx context.Context, command researchapp.RetryCollectionTaskCommand) error {
-	queries, err := repository.querier()
+	if repository == nil || repository.pool == nil {
+		return fmt.Errorf("token collection repository is not configured")
+	}
+	tx, err := repository.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = queries.RetryProjectDataCollectionTask(ctx, tokensqlc.RetryProjectDataCollectionTaskParams{AvailableAt: nullableTime(command.AvailableAt), LastError: nullableText(command.LastError), ID: command.Task.ID})
+	defer func() { _ = tx.Rollback(ctx) }()
+	queries := tokensqlc.New(tx)
+	task, err := queries.RetryProjectDataCollectionTask(ctx, tokensqlc.RetryProjectDataCollectionTaskParams{AvailableAt: nullableTime(command.AvailableAt), LastError: nullableText(command.LastError), ID: command.Task.ID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	if task.Attempts != command.FailedAttempts {
+		return fmt.Errorf("collection task %d attempts advanced to %d instead of %d", command.Task.ID, task.Attempts, command.FailedAttempts)
+	}
+	if _, err = queries.MarkProjectDataCollectionScheduleRetrying(ctx, tokensqlc.MarkProjectDataCollectionScheduleRetryingParams{
+		ConsecutiveFailures: command.FailedAttempts, LastError: nullableText(command.LastError), NextRunAt: nullableTime(command.AvailableAt),
+		ProjectID: command.Task.ProjectID, DataType: string(command.Task.DataType),
+	}); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (repository *CollectionRepository) RenewCollectionTaskLease(ctx context.Context, taskID int64, lease time.Duration) error {
@@ -146,7 +163,10 @@ func (repository *CollectionRepository) FailCollectionTask(ctx context.Context, 
 	if err != nil || rows == 0 {
 		return err
 	}
-	if err = markScheduleFailed(ctx, queries, command.Task.ProjectID, command.Task.DataType, command.LastError, command.NextRunAt); err != nil {
+	if _, err = queries.FailProjectDataCollectionSchedule(ctx, tokensqlc.FailProjectDataCollectionScheduleParams{
+		ConsecutiveFailures: command.FailedAttempts, LastError: nullableText(command.LastError),
+		ProjectID: command.Task.ProjectID, DataType: string(command.Task.DataType),
+	}); err != nil {
 		return err
 	}
 	if err = tx.Commit(ctx); err != nil {

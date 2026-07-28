@@ -18,7 +18,7 @@ SET latest_task_revision = $1,
   updated_at = now()
 WHERE project_id = $3
   AND data_type = $4
-RETURNING project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
+RETURNING project_id, data_type, status, retry_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
 `
 
 type AdvanceProjectDataCollectionScheduleParams struct {
@@ -40,7 +40,7 @@ func (q *Queries) AdvanceProjectDataCollectionSchedule(ctx context.Context, arg 
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
-		&i.RefreshIntervalSeconds,
+		&i.RetryIntervalSeconds,
 		&i.NextRunAt,
 		&i.LatestTaskRevision,
 		&i.ConsecutiveFailures,
@@ -54,19 +54,19 @@ func (q *Queries) AdvanceProjectDataCollectionSchedule(ctx context.Context, arg 
 
 const applyProjectDataCollectionSchedulePolicy = `-- name: ApplyProjectDataCollectionSchedulePolicy :execrows
 UPDATE project_data_collection_schedule
-SET refresh_interval_seconds = $1,
+SET retry_interval_seconds = $1,
   updated_at = now()
 WHERE data_type = $2
   AND status = 'active'
 `
 
 type ApplyProjectDataCollectionSchedulePolicyParams struct {
-	RefreshIntervalSeconds int64
-	DataType               string
+	RetryIntervalSeconds int64
+	DataType             string
 }
 
 func (q *Queries) ApplyProjectDataCollectionSchedulePolicy(ctx context.Context, arg ApplyProjectDataCollectionSchedulePolicyParams) (int64, error) {
-	result, err := q.db.Exec(ctx, applyProjectDataCollectionSchedulePolicy, arg.RefreshIntervalSeconds, arg.DataType)
+	result, err := q.db.Exec(ctx, applyProjectDataCollectionSchedulePolicy, arg.RetryIntervalSeconds, arg.DataType)
 	if err != nil {
 		return 0, err
 	}
@@ -79,6 +79,7 @@ SET status = 'completed',
   consecutive_failures = 0,
   last_error = NULL,
   last_checked_at = $1,
+  next_run_at = NULL,
   updated_at = now()
 WHERE project_id = $2
   AND data_type = $3
@@ -98,8 +99,40 @@ func (q *Queries) CompleteProjectDataCollectionSchedule(ctx context.Context, arg
 	return result.RowsAffected(), nil
 }
 
+const failProjectDataCollectionSchedule = `-- name: FailProjectDataCollectionSchedule :execrows
+UPDATE project_data_collection_schedule
+SET status = 'failed',
+  consecutive_failures = $1,
+  last_error = $2,
+  next_run_at = NULL,
+  updated_at = now()
+WHERE project_id = $3
+  AND data_type = $4
+  AND status = 'active'
+`
+
+type FailProjectDataCollectionScheduleParams struct {
+	ConsecutiveFailures int32
+	LastError           pgtype.Text
+	ProjectID           int64
+	DataType            string
+}
+
+func (q *Queries) FailProjectDataCollectionSchedule(ctx context.Context, arg FailProjectDataCollectionScheduleParams) (int64, error) {
+	result, err := q.db.Exec(ctx, failProjectDataCollectionSchedule,
+		arg.ConsecutiveFailures,
+		arg.LastError,
+		arg.ProjectID,
+		arg.DataType,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getProjectDataCollectionSchedule = `-- name: GetProjectDataCollectionSchedule :one
-SELECT project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
+SELECT project_id, data_type, status, retry_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
 FROM project_data_collection_schedule
 WHERE project_id = $1
   AND data_type = $2
@@ -117,7 +150,7 @@ func (q *Queries) GetProjectDataCollectionSchedule(ctx context.Context, arg GetP
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
-		&i.RefreshIntervalSeconds,
+		&i.RetryIntervalSeconds,
 		&i.NextRunAt,
 		&i.LatestTaskRevision,
 		&i.ConsecutiveFailures,
@@ -130,7 +163,7 @@ func (q *Queries) GetProjectDataCollectionSchedule(ctx context.Context, arg GetP
 }
 
 const listDueProjectDataCollectionSchedules = `-- name: ListDueProjectDataCollectionSchedules :many
-SELECT schedule.project_id, schedule.data_type, schedule.status, schedule.refresh_interval_seconds, schedule.next_run_at, schedule.latest_task_revision, schedule.consecutive_failures, schedule.last_error, schedule.last_checked_at, schedule.created_at, schedule.updated_at
+SELECT schedule.project_id, schedule.data_type, schedule.status, schedule.retry_interval_seconds, schedule.next_run_at, schedule.latest_task_revision, schedule.consecutive_failures, schedule.last_error, schedule.last_checked_at, schedule.created_at, schedule.updated_at
 FROM project_data_collection_schedule AS schedule
 JOIN project_research_state AS research ON research.project_id = schedule.project_id
 WHERE schedule.status = 'active'
@@ -161,7 +194,7 @@ func (q *Queries) ListDueProjectDataCollectionSchedules(ctx context.Context, lim
 			&i.ProjectID,
 			&i.DataType,
 			&i.Status,
-			&i.RefreshIntervalSeconds,
+			&i.RetryIntervalSeconds,
 			&i.NextRunAt,
 			&i.LatestTaskRevision,
 			&i.ConsecutiveFailures,
@@ -181,7 +214,7 @@ func (q *Queries) ListDueProjectDataCollectionSchedules(ctx context.Context, lim
 }
 
 const listProjectDataCollectionSchedulesByProject = `-- name: ListProjectDataCollectionSchedulesByProject :many
-SELECT project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
+SELECT project_id, data_type, status, retry_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
 FROM project_data_collection_schedule
 WHERE project_id = $1
 ORDER BY data_type
@@ -200,7 +233,7 @@ func (q *Queries) ListProjectDataCollectionSchedulesByProject(ctx context.Contex
 			&i.ProjectID,
 			&i.DataType,
 			&i.Status,
-			&i.RefreshIntervalSeconds,
+			&i.RetryIntervalSeconds,
 			&i.NextRunAt,
 			&i.LatestTaskRevision,
 			&i.ConsecutiveFailures,
@@ -220,7 +253,7 @@ func (q *Queries) ListProjectDataCollectionSchedulesByProject(ctx context.Contex
 }
 
 const lockProjectDataCollectionSchedule = `-- name: LockProjectDataCollectionSchedule :one
-SELECT project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
+SELECT project_id, data_type, status, retry_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
 FROM project_data_collection_schedule
 WHERE project_id = $1
   AND data_type = $2
@@ -239,7 +272,7 @@ func (q *Queries) LockProjectDataCollectionSchedule(ctx context.Context, arg Loc
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
-		&i.RefreshIntervalSeconds,
+		&i.RetryIntervalSeconds,
 		&i.NextRunAt,
 		&i.LatestTaskRevision,
 		&i.ConsecutiveFailures,
@@ -251,57 +284,29 @@ func (q *Queries) LockProjectDataCollectionSchedule(ctx context.Context, arg Loc
 	return i, err
 }
 
-const markProjectDataCollectionScheduleFailed = `-- name: MarkProjectDataCollectionScheduleFailed :execrows
+const markProjectDataCollectionScheduleRetrying = `-- name: MarkProjectDataCollectionScheduleRetrying :execrows
 UPDATE project_data_collection_schedule
-SET consecutive_failures = consecutive_failures + 1,
-  last_error = $1,
-  next_run_at = $2,
+SET consecutive_failures = $1,
+  last_error = $2,
+  next_run_at = $3,
   updated_at = now()
-WHERE project_id = $3
-  AND data_type = $4
+WHERE project_id = $4
+  AND data_type = $5
+  AND status = 'active'
 `
 
-type MarkProjectDataCollectionScheduleFailedParams struct {
-	LastError pgtype.Text
-	NextRunAt pgtype.Timestamptz
-	ProjectID int64
-	DataType  string
+type MarkProjectDataCollectionScheduleRetryingParams struct {
+	ConsecutiveFailures int32
+	LastError           pgtype.Text
+	NextRunAt           pgtype.Timestamptz
+	ProjectID           int64
+	DataType            string
 }
 
-func (q *Queries) MarkProjectDataCollectionScheduleFailed(ctx context.Context, arg MarkProjectDataCollectionScheduleFailedParams) (int64, error) {
-	result, err := q.db.Exec(ctx, markProjectDataCollectionScheduleFailed,
+func (q *Queries) MarkProjectDataCollectionScheduleRetrying(ctx context.Context, arg MarkProjectDataCollectionScheduleRetryingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markProjectDataCollectionScheduleRetrying,
+		arg.ConsecutiveFailures,
 		arg.LastError,
-		arg.NextRunAt,
-		arg.ProjectID,
-		arg.DataType,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const markProjectDataCollectionScheduleSucceeded = `-- name: MarkProjectDataCollectionScheduleSucceeded :execrows
-UPDATE project_data_collection_schedule
-SET consecutive_failures = 0,
-  last_error = NULL,
-  last_checked_at = $1,
-  next_run_at = $2,
-  updated_at = now()
-WHERE project_id = $3
-  AND data_type = $4
-`
-
-type MarkProjectDataCollectionScheduleSucceededParams struct {
-	LastCheckedAt pgtype.Timestamptz
-	NextRunAt     pgtype.Timestamptz
-	ProjectID     int64
-	DataType      string
-}
-
-func (q *Queries) MarkProjectDataCollectionScheduleSucceeded(ctx context.Context, arg MarkProjectDataCollectionScheduleSucceededParams) (int64, error) {
-	result, err := q.db.Exec(ctx, markProjectDataCollectionScheduleSucceeded,
-		arg.LastCheckedAt,
 		arg.NextRunAt,
 		arg.ProjectID,
 		arg.DataType,
@@ -315,6 +320,7 @@ func (q *Queries) MarkProjectDataCollectionScheduleSucceeded(ctx context.Context
 const pauseTerminalProjectDataCollectionSchedules = `-- name: PauseTerminalProjectDataCollectionSchedules :execrows
 UPDATE project_data_collection_schedule AS schedule
 SET status = 'paused',
+  next_run_at = NULL,
   updated_at = now()
 FROM project_research_state AS research
 WHERE research.project_id = schedule.project_id
@@ -334,7 +340,7 @@ const upsertProjectDataCollectionSchedule = `-- name: UpsertProjectDataCollectio
 INSERT INTO project_data_collection_schedule (
   project_id,
   data_type,
-  refresh_interval_seconds,
+  retry_interval_seconds,
   next_run_at
 ) VALUES (
   $1,
@@ -343,16 +349,16 @@ INSERT INTO project_data_collection_schedule (
   $4
 )
 ON CONFLICT (project_id, data_type) DO UPDATE
-SET refresh_interval_seconds = EXCLUDED.refresh_interval_seconds,
+SET retry_interval_seconds = EXCLUDED.retry_interval_seconds,
   updated_at = now()
-RETURNING project_id, data_type, status, refresh_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
+RETURNING project_id, data_type, status, retry_interval_seconds, next_run_at, latest_task_revision, consecutive_failures, last_error, last_checked_at, created_at, updated_at
 `
 
 type UpsertProjectDataCollectionScheduleParams struct {
-	ProjectID              int64
-	DataType               string
-	RefreshIntervalSeconds int64
-	NextRunAt              pgtype.Timestamptz
+	ProjectID            int64
+	DataType             string
+	RetryIntervalSeconds int64
+	NextRunAt            pgtype.Timestamptz
 }
 
 // Research scheduling persistence.
@@ -360,7 +366,7 @@ func (q *Queries) UpsertProjectDataCollectionSchedule(ctx context.Context, arg U
 	row := q.db.QueryRow(ctx, upsertProjectDataCollectionSchedule,
 		arg.ProjectID,
 		arg.DataType,
-		arg.RefreshIntervalSeconds,
+		arg.RetryIntervalSeconds,
 		arg.NextRunAt,
 	)
 	var i ProjectDataCollectionSchedule
@@ -368,7 +374,7 @@ func (q *Queries) UpsertProjectDataCollectionSchedule(ctx context.Context, arg U
 		&i.ProjectID,
 		&i.DataType,
 		&i.Status,
-		&i.RefreshIntervalSeconds,
+		&i.RetryIntervalSeconds,
 		&i.NextRunAt,
 		&i.LatestTaskRevision,
 		&i.ConsecutiveFailures,

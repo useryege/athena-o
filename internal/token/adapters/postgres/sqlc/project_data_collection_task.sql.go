@@ -17,9 +17,13 @@ WITH claimable AS (
   FROM project_data_collection_task AS task
   JOIN project AS project ON project.id = task.project_id
   JOIN project_research_state AS research ON research.project_id = task.project_id
+  JOIN project_data_collection_schedule AS schedule
+    ON schedule.project_id = task.project_id
+    AND schedule.data_type = task.data_type
   WHERE task.data_type = $2
     AND project.chain_id = ANY($3::bigint[])
     AND research.status IN ('researching', 'selected')
+    AND schedule.status = 'active'
     AND (
       (task.status = 'pending' AND task.available_at <= now())
       OR (task.status = 'running' AND task.lease_expires_at <= now())
@@ -149,7 +153,7 @@ func (q *Queries) CreateProjectDataCollectionTask(ctx context.Context, arg Creat
 const failProjectDataCollectionTask = `-- name: FailProjectDataCollectionTask :execrows
 UPDATE project_data_collection_task
 SET status = 'failed',
-  attempts = LEAST(attempts + 1, 5),
+  attempts = LEAST(attempts + 1, 10),
   locked_at = NULL,
   lease_expires_at = NULL,
   last_error = $1,
@@ -336,7 +340,7 @@ SET status = 'pending',
   updated_at = now()
 WHERE id = $3
   AND status = 'running'
-  AND attempts < 4
+  AND attempts < 9
 RETURNING id, project_id, data_type, revision, status, attempts, available_at, locked_at, lease_expires_at, last_error, created_at, updated_at
 `
 

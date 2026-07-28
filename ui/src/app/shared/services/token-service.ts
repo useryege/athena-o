@@ -314,7 +314,7 @@ export interface TokenCollectionSchedule {
     projectID?: number;
     dataType?: string;
     status?: string;
-    refreshIntervalSecs?: number;
+    retryIntervalSecs?: number;
     nextRunAt?: string;
     latestTaskRevision?: number;
     consecutiveFailures?: number;
@@ -770,7 +770,7 @@ function normalizeProjectDetail(item: any): TokenProjectDetail {
             projectID: numberValue(schedule.projectID ?? schedule.projectId ?? schedule.project_id),
             dataType: schedule.dataType ?? schedule.data_type,
             status: schedule.status,
-            refreshIntervalSecs: numberValue(schedule.refreshIntervalSecs ?? schedule.refresh_interval_secs),
+            retryIntervalSecs: numberValue(schedule.retryIntervalSecs ?? schedule.retry_interval_secs),
             nextRunAt: schedule.nextRunAt ?? schedule.next_run_at,
             latestTaskRevision: numberValue(schedule.latestTaskRevision ?? schedule.latest_task_revision),
             consecutiveFailures: numberValue(schedule.consecutiveFailures ?? schedule.consecutive_failures),

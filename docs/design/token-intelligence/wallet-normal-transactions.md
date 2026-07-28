@@ -88,7 +88,7 @@ for this data type.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS` / `--etherscan-manager-server-address` | Manager gRPC address; defaults to `localhost:8100`. |
-| `ATHENA_TOKEN_WALLET_NORMAL_TRANSACTIONS_INTERVAL` / `--wallet-normal-transactions-interval` | Delay before a new task revision after the current task exhausts its retries; defaults to 10 minutes. |
+| `ATHENA_TOKEN_WALLET_NORMAL_TRANSACTIONS_RETRY_INTERVAL` / `--wallet-normal-transactions-retry-interval` | Delay after a failed collection attempt; defaults to 10 minutes. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Collector telemetry address; this collector defaults to `127.0.0.1:8120`. |
 
 The page size `300`, descending ordering, sequential wallet requests, and
@@ -114,10 +114,10 @@ failure fails the task attempt. No transaction rows or success state commit when
 the final database transaction fails. Earlier successful RPC calls in the same
 attempt are not durable and may be repeated by a later attempt.
 
-The shared collector retries a running task with exponential backoff and marks
-it failed after the normal attempt limit. The active schedule becomes due again
-after its configured interval and can create another revision while the project
-remains eligible. Idempotent inserts protect recovery from a repeated commit.
+The shared collector returns the same task to pending after the configured
+10-minute retry interval. Attempts one through nine remain retryable. The tenth
+failed call atomically marks the task and schedule failed, and no later task
+revision is created. Idempotent inserts protect recovery from a repeated commit.
 
 ## Observability
 

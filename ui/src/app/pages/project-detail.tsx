@@ -338,12 +338,12 @@ const OverviewTab = (props: {detail: TokenProjectDetail}) => {
                             <Card size='small' key={schedule.dataType} className='project-collection-card'>
                                 <Flex justify='space-between' align='center' gap={8}>
                                     <Typography.Text strong={true}>{schedule.dataType}</Typography.Text>
-                                    <StatusTag value={schedule.status} negative={Boolean(schedule.consecutiveFailures)} />
+                                    <StatusTag value={schedule.status} negative={schedule.status === 'failed' || Boolean(schedule.consecutiveFailures)} />
                                 </Flex>
                                 <Typography.Text type='secondary'>Last checked</Typography.Text>
                                 <TimeValue value={observation?.lastCheckedAt || schedule.lastCheckedAt} />
-                                <Typography.Text type='secondary'>Next run</Typography.Text>
-                                <TimeValue value={schedule.nextRunAt} />
+                                <Typography.Text type='secondary'>Next attempt</Typography.Text>
+                                <TimeValue value={schedule.status === 'active' ? schedule.nextRunAt : undefined} />
                                 {schedule.lastError && <Typography.Text type='danger'>{schedule.lastError}</Typography.Text>}
                             </Card>
                         );
@@ -834,12 +834,12 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
     );
     const scheduleColumns: ColumnsType<TokenCollectionSchedule> = [
         {title: 'Data type', dataIndex: 'dataType'},
-        {title: 'Status', render: item => <StatusTag value={item.status} negative={Boolean(item.consecutiveFailures)} />},
-        {title: 'Interval', render: item => (hasValue(item.refreshIntervalSecs) ? `${item.refreshIntervalSecs}s` : missing())},
+        {title: 'Status', render: item => <StatusTag value={item.status} negative={item.status === 'failed' || Boolean(item.consecutiveFailures)} />},
+        {title: 'Retry interval', render: item => (hasValue(item.retryIntervalSecs) ? `${item.retryIntervalSecs}s` : missing())},
         {title: 'Revision', render: item => formatExact(item.latestTaskRevision)},
         {title: 'Failures', render: item => formatExact(item.consecutiveFailures)},
         {title: 'Last checked', render: item => <TimeValue value={item.lastCheckedAt} />},
-        {title: 'Next run', render: item => <TimeValue value={item.nextRunAt} />},
+        {title: 'Next attempt', render: item => <TimeValue value={item.status === 'active' ? item.nextRunAt : undefined} />},
         {title: 'Last error', render: item => (item.lastError ? <Typography.Text type='danger'>{item.lastError}</Typography.Text> : '-')}
     ];
     const observationColumns: ColumnsType<TokenProjectObservation> = [

@@ -679,7 +679,7 @@ func mapProjectDetail(item projectview.Detail) (*v1alpha1.TokenProjectDetail, er
 			ProjectID:           schedule.ProjectID,
 			DataType:            string(schedule.DataType),
 			Status:              string(schedule.Status),
-			RefreshIntervalSecs: int64(schedule.RefreshInterval / time.Second),
+			RetryIntervalSecs:   int64(schedule.RetryInterval / time.Second),
 			NextRunAt:           formatTime(schedule.NextRunAt),
 			LatestTaskRevision:  schedule.LatestTaskRevision,
 			ConsecutiveFailures: schedule.ConsecutiveFailures,

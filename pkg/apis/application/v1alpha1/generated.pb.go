@@ -2979,7 +2979,7 @@ func (m *TokenCollectionSchedule) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.NextRunAt)))
 	i--
 	dAtA[i] = 0x2a
-	i = encodeVarintGenerated(dAtA, i, uint64(m.RefreshIntervalSecs))
+	i = encodeVarintGenerated(dAtA, i, uint64(m.RetryIntervalSecs))
 	i--
 	dAtA[i] = 0x20
 	i -= len(m.Status)
@@ -6391,7 +6391,7 @@ func (m *TokenCollectionSchedule) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Status)
 	n += 1 + l + sovGenerated(uint64(l))
-	n += 1 + sovGenerated(uint64(m.RefreshIntervalSecs))
+	n += 1 + sovGenerated(uint64(m.RetryIntervalSecs))
 	l = len(m.NextRunAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	n += 1 + sovGenerated(uint64(m.LatestTaskRevision))
@@ -7993,7 +7993,7 @@ func (this *TokenCollectionSchedule) String() string {
 		`ProjectID:` + fmt.Sprintf("%v", this.ProjectID) + `,`,
 		`DataType:` + fmt.Sprintf("%v", this.DataType) + `,`,
 		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
-		`RefreshIntervalSecs:` + fmt.Sprintf("%v", this.RefreshIntervalSecs) + `,`,
+		`RetryIntervalSecs:` + fmt.Sprintf("%v", this.RetryIntervalSecs) + `,`,
 		`NextRunAt:` + fmt.Sprintf("%v", this.NextRunAt) + `,`,
 		`LatestTaskRevision:` + fmt.Sprintf("%v", this.LatestTaskRevision) + `,`,
 		`ConsecutiveFailures:` + fmt.Sprintf("%v", this.ConsecutiveFailures) + `,`,
@@ -20163,9 +20163,9 @@ func (m *TokenCollectionSchedule) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RefreshIntervalSecs", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RetryIntervalSecs", wireType)
 			}
-			m.RefreshIntervalSecs = 0
+			m.RetryIntervalSecs = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -20175,7 +20175,7 @@ func (m *TokenCollectionSchedule) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.RefreshIntervalSecs |= int64(b&0x7F) << shift
+				m.RetryIntervalSecs |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

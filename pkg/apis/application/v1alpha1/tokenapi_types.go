@@ -323,7 +323,7 @@ type TokenCollectionSchedule struct {
 	ProjectID           int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
 	DataType            string `protobuf:"bytes,2,opt,name=dataType" json:"dataType"`
 	Status              string `protobuf:"bytes,3,opt,name=status" json:"status"`
-	RefreshIntervalSecs int64  `protobuf:"varint,4,opt,name=refreshIntervalSecs" json:"refreshIntervalSecs"`
+	RetryIntervalSecs   int64  `protobuf:"varint,4,opt,name=retryIntervalSecs" json:"retryIntervalSecs"`
 	NextRunAt           string `protobuf:"bytes,5,opt,name=nextRunAt" json:"nextRunAt"`
 	LatestTaskRevision  int64  `protobuf:"varint,6,opt,name=latestTaskRevision" json:"latestTaskRevision"`
 	ConsecutiveFailures int32  `protobuf:"varint,7,opt,name=consecutiveFailures" json:"consecutiveFailures"`

@@ -19,9 +19,13 @@ WITH claimable AS (
   FROM project_data_collection_task AS task
   JOIN project AS project ON project.id = task.project_id
   JOIN project_research_state AS research ON research.project_id = task.project_id
+  JOIN project_data_collection_schedule AS schedule
+    ON schedule.project_id = task.project_id
+    AND schedule.data_type = task.data_type
   WHERE task.data_type = @data_type
     AND project.chain_id = ANY(@chain_ids::bigint[])
     AND research.status IN ('researching', 'selected')
+    AND schedule.status = 'active'
     AND (
       (task.status = 'pending' AND task.available_at <= now())
       OR (task.status = 'running' AND task.lease_expires_at <= now())
@@ -88,13 +92,13 @@ SET status = 'pending',
   updated_at = now()
 WHERE id = @id
   AND status = 'running'
-  AND attempts < 4
+  AND attempts < 9
 RETURNING *;
 
 -- name: FailProjectDataCollectionTask :execrows
 UPDATE project_data_collection_task
 SET status = 'failed',
-  attempts = LEAST(attempts + 1, 5),
+  attempts = LEAST(attempts + 1, 10),
   locked_at = NULL,
   lease_expires_at = NULL,
   last_error = @last_error,

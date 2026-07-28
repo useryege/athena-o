@@ -45,6 +45,7 @@ type DataCollectionScheduleStatus string
 const (
 	DataCollectionScheduleStatusActive    DataCollectionScheduleStatus = "active"
 	DataCollectionScheduleStatusCompleted DataCollectionScheduleStatus = "completed"
+	DataCollectionScheduleStatusFailed    DataCollectionScheduleStatus = "failed"
 	DataCollectionScheduleStatusPaused    DataCollectionScheduleStatus = "paused"
 )
 
@@ -61,7 +62,7 @@ type ProjectDataCollectionSchedule struct {
 	ProjectID           int64
 	DataType            DataCollectionType
 	Status              DataCollectionScheduleStatus
-	RefreshInterval     time.Duration
+	RetryInterval       time.Duration
 	NextRunAt           time.Time
 	LatestTaskRevision  int64
 	ConsecutiveFailures int32
@@ -95,7 +96,7 @@ type ProjectCollectionContext struct {
 	UsdtPair              shared.Address
 	DeploymentBlockNumber uint64
 	RelatedWallets        []shared.Address
-	RefreshInterval       time.Duration
+	RetryInterval         time.Duration
 }
 
 type ProjectDataCollectionTaskWithProject struct {

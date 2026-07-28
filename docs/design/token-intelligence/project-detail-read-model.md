@@ -70,8 +70,9 @@ the observation metadata and raw JSON for history consumers.
    recipients, collection schedules, per-wallet transaction counts, and the
    project-wide transaction count.
 4. The API mapper exposes the project identity and typed observation content.
-   Integer and decimal values that may exceed JavaScript precision remain
-   strings.
+   Collection schedules expose `retryIntervalSecs`, their terminal status, and
+   `nextRunAt` only while another attempt remains possible. Integer and decimal
+   values that may exceed JavaScript precision remain strings.
 5. While the document is visible, the UI reloads only this current snapshot
    every 30 seconds. Returning to a visible document triggers an immediate
    snapshot reload.
@@ -84,6 +85,9 @@ The aggregate consists of independent read queries and is not a
 transaction-level database snapshot. Each returned entity is committed state,
 but a collection or report transition can become visible between component
 queries.
+
+The collection summary renders `failed` as an error state, labels the configured
+delay as `Retry interval`, and displays `Next attempt` only for active schedules.
 
 ### Trends and history
 
@@ -147,6 +151,8 @@ There is no runtime configuration specific to this read model.
   transaction state.
 - Missing observation sections remain absent; the UI renders them as
   `Not collected` or `Unknown` and does not convert absence to `false` or zero.
+- Collection schedules expose retry timing rather than a periodic refresh
+  cadence. Completed, failed, and paused schedules have no next attempt.
 - Ave key-pair choices are enabled only when the current observation contains
   the exact project pair contract, and the detail card never displays an
   unrelated Ave pair.

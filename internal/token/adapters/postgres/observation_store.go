@@ -43,12 +43,7 @@ func (repository *CollectionRepository) CommitCollection(ctx context.Context, co
 	if rows == 0 {
 		return researchapp.CommitCollectionResult{}, nil
 	}
-	if command.CompleteSchedule {
-		_, err = queries.CompleteProjectDataCollectionSchedule(ctx, tokensqlc.CompleteProjectDataCollectionScheduleParams{LastCheckedAt: nullableTime(command.CheckedAt), ProjectID: command.Task.ProjectID, DataType: string(command.Task.DataType)})
-	} else {
-		err = markScheduleSucceeded(ctx, queries, command.Task.ProjectID, command.Task.DataType, command.CheckedAt, command.NextRunAt)
-	}
-	if err != nil {
+	if _, err = queries.CompleteProjectDataCollectionSchedule(ctx, tokensqlc.CompleteProjectDataCollectionScheduleParams{LastCheckedAt: nullableTime(command.CheckedAt), ProjectID: command.Task.ProjectID, DataType: string(command.Task.DataType)}); err != nil {
 		return researchapp.CommitCollectionResult{}, err
 	}
 	if err = tx.Commit(ctx); err != nil {

@@ -53,7 +53,7 @@ func (repository *CandidateRepository) PromoteCandidateAndInitializeResearch(ctx
 		return 0, fmt.Errorf("create project research state: %w", err)
 	}
 	for _, schedule := range command.Schedules {
-		if _, err = queries.UpsertProjectDataCollectionSchedule(ctx, tokensqlc.UpsertProjectDataCollectionScheduleParams{ProjectID: row.ID, DataType: schedule.DataType, RefreshIntervalSeconds: int64(schedule.RefreshInterval.Seconds()), NextRunAt: nullableTime(schedule.NextRunAt)}); err != nil {
+		if _, err = queries.UpsertProjectDataCollectionSchedule(ctx, tokensqlc.UpsertProjectDataCollectionScheduleParams{ProjectID: row.ID, DataType: schedule.DataType, RetryIntervalSeconds: int64(schedule.RetryInterval.Seconds()), NextRunAt: nullableTime(schedule.NextRunAt)}); err != nil {
 			return 0, fmt.Errorf("create %s collection schedule: %w", schedule.DataType, err)
 		}
 	}

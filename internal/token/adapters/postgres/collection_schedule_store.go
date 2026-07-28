@@ -10,13 +10,13 @@ import (
 	researchapp "github.com/useryege/athena/internal/token/research/application"
 )
 
-func (repository *SchedulerRepository) ApplyResearchPolicy(ctx context.Context, intervals map[research.DataCollectionType]time.Duration, ttl time.Duration) error {
+func (repository *SchedulerRepository) ApplyResearchPolicy(ctx context.Context, retryIntervals map[research.DataCollectionType]time.Duration, ttl time.Duration) error {
 	queries, err := repository.querier()
 	if err != nil {
 		return err
 	}
-	for dataType, interval := range intervals {
-		if _, err = queries.ApplyProjectDataCollectionSchedulePolicy(ctx, tokensqlc.ApplyProjectDataCollectionSchedulePolicyParams{RefreshIntervalSeconds: int64(interval / time.Second), DataType: string(dataType)}); err != nil {
+	for dataType, retryInterval := range retryIntervals {
+		if _, err = queries.ApplyProjectDataCollectionSchedulePolicy(ctx, tokensqlc.ApplyProjectDataCollectionSchedulePolicyParams{RetryIntervalSeconds: int64(retryInterval / time.Second), DataType: string(dataType)}); err != nil {
 			return fmt.Errorf("apply %s schedule policy: %w", dataType, err)
 		}
 	}
@@ -49,7 +49,7 @@ func (repository *SchedulerRepository) ListDueCollectionSchedules(ctx context.Co
 	}
 	result := make([]researchapp.DueSchedule, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, researchapp.DueSchedule{ProjectID: row.ProjectID, DataType: research.DataCollectionType(row.DataType), Status: research.DataCollectionScheduleStatus(row.Status), RefreshInterval: time.Duration(row.RefreshIntervalSeconds) * time.Second, NextRunAt: timeValue(row.NextRunAt), LatestTaskRevision: row.LatestTaskRevision})
+		result = append(result, researchapp.DueSchedule{ProjectID: row.ProjectID, DataType: research.DataCollectionType(row.DataType), Status: research.DataCollectionScheduleStatus(row.Status), RetryInterval: time.Duration(row.RetryIntervalSeconds) * time.Second, NextRunAt: timeValue(row.NextRunAt), LatestTaskRevision: row.LatestTaskRevision})
 	}
 	return result, nil
 }
@@ -81,14 +81,4 @@ func (repository *SchedulerRepository) CreateCollectionTaskIfDue(ctx context.Con
 		return false, err
 	}
 	return true, nil
-}
-
-func markScheduleSucceeded(ctx context.Context, queries *tokensqlc.Queries, projectID int64, dataType research.DataCollectionType, checkedAt, nextRunAt time.Time) error {
-	_, err := queries.MarkProjectDataCollectionScheduleSucceeded(ctx, tokensqlc.MarkProjectDataCollectionScheduleSucceededParams{LastCheckedAt: nullableTime(checkedAt), NextRunAt: nullableTime(nextRunAt), ProjectID: projectID, DataType: string(dataType)})
-	return err
-}
-
-func markScheduleFailed(ctx context.Context, queries *tokensqlc.Queries, projectID int64, dataType research.DataCollectionType, lastError string, nextRunAt time.Time) error {
-	_, err := queries.MarkProjectDataCollectionScheduleFailed(ctx, tokensqlc.MarkProjectDataCollectionScheduleFailedParams{LastError: nullableText(lastError), NextRunAt: nullableTime(nextRunAt), ProjectID: projectID, DataType: string(dataType)})
-	return err
 }
