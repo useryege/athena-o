@@ -1806,6 +1806,17 @@ body::-webkit-scrollbar-thumb,
     font-size: 12px;
 }
 
+.truncate-text--single-line {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
+}
+
 .code-block {
     max-height: 52vh;
     overflow: auto;
@@ -2624,7 +2635,8 @@ body::-webkit-scrollbar-thumb,
 
 .project-detail-summary {
     display: grid;
-    grid-template-columns: minmax(430px, 0.9fr) minmax(0, 1.6fr);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     gap: 14px;
     min-width: 0;
 }
@@ -2652,6 +2664,20 @@ body::-webkit-scrollbar-thumb,
     margin: 0 0 4px;
 }
 
+.project-detail-identity .ant-descriptions-item-content,
+.project-detail-identity .break-value {
+    min-width: 0;
+}
+
+.project-detail-identity .key-value-grid.ant-descriptions-bordered > .ant-descriptions-view > table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.project-detail-identity .break-value {
+    display: block;
+}
+
 .project-detail-identity__symbol {
     width: 52px;
     height: 52px;
@@ -2664,6 +2690,33 @@ body::-webkit-scrollbar-thumb,
     color: var(--athena-primary);
     font-size: 17px;
     font-weight: 900;
+}
+
+.project-detail-identifier {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+}
+
+.project-detail-identifier .truncate-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.project-detail-identifier__link {
+    flex: 0 0 auto;
+}
+
+.project-detail-code-hash {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
 }
 
 .project-detail-kpis {
@@ -2942,10 +2995,6 @@ body::-webkit-scrollbar-thumb,
 
     .world-cup-corners-filters .choice-group {
         justify-content: flex-start;
-    }
-
-    .project-detail-summary {
-        grid-template-columns: minmax(0, 1fr);
     }
 
     .project-detail-kpis {

@@ -112,16 +112,21 @@ const ExplorerValue = (props: {chainID?: number; kind: 'address' | 'tx'; value?:
     }
     const url = tokenExplorerURL(props.chainID, props.kind, props.value);
     return (
-        <Space size={4}>
-            <TruncatedText value={props.value} copyable={true} />
+        <span className='project-detail-identifier'>
+            <TruncatedText value={props.value} copyable={true} singleLine={true} />
             {url && (
                 <Tooltip title='Open in block explorer'>
-                    <Typography.Link href={url} target='_blank' rel='noreferrer' aria-label={`Open ${props.value} in block explorer`}>
+                    <Typography.Link
+                        className='project-detail-identifier__link'
+                        href={url}
+                        target='_blank'
+                        rel='noreferrer'
+                        aria-label={`Open ${props.value} in block explorer`}>
                         <ExportOutlined />
                     </Typography.Link>
                 </Tooltip>
             )}
-        </Space>
+        </span>
     );
 };
 
@@ -185,7 +190,15 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
                         {label: 'Block time', value: <TimeValue unixSeconds={project?.blockTime} />},
                         {
                             label: 'Code hash',
-                            value: project?.codeHash ? <Link to={`/token/contract-codes/${encodeURIComponent(project.codeHash)}`}>{project.codeHash}</Link> : missing()
+                            value: project?.codeHash ? (
+                                <Tooltip title={project.codeHash}>
+                                    <Link className='project-detail-code-hash' to={`/token/contract-codes/${encodeURIComponent(project.codeHash)}`}>
+                                        {project.codeHash}
+                                    </Link>
+                                </Tooltip>
+                            ) : (
+                                missing()
+                            )
                         },
                         {
                             label: 'Report freshness',

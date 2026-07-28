@@ -57,8 +57,11 @@ export const InlineActions = (props: {children: React.ReactNode}) => (
     </Flex>
 );
 
-export const TruncatedText = (props: {value?: React.ReactNode; copyable?: boolean}) => (
-    <Typography.Text className='truncate-text' copyable={props.copyable}>
+export const TruncatedText = (props: {value?: React.ReactNode; copyable?: boolean; singleLine?: boolean}) => (
+    <Typography.Text
+        className={`truncate-text${props.singleLine ? ' truncate-text--single-line' : ''}`}
+        copyable={props.copyable}
+        ellipsis={props.singleLine ? {tooltip: props.value} : undefined}>
         {props.value || '-'}
     </Typography.Text>
 );
