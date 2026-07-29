@@ -93,7 +93,7 @@ Scanner configuration comes from command flags backed by environment variables:
 | `ATHENA_TOKEN_{ETH,BSC}_NODE_WS_URLS` / `--{eth,bsc}-node-ws-urls` | Required non-empty WebSocket node pool for each chain. URLs may be separated by commas, spaces, tabs, or newlines. |
 | `ATHENA_TOKEN_{ETH,BSC}_ATHENA_CONTRACT` / `--{eth,bsc}-athena-contract` | Required deployed ATHENA contract address for each chain. |
 | `ATHENA_TOKEN_{ETH,BSC}_SCANNER_INITIAL_LOOKBACK_DURATION` / `--{eth,bsc}-scanner-initial-lookback-duration` | Required initial lookback for each chain. Values use Go duration syntax and must be at least one second. |
-| `ATHENA_TOKEN_{ETH,BSC}_SCANNER_POLL_INTERVAL` / `--{eth,bsc}-scanner-poll-interval` | Required positive scanner interval for each chain. Values use Go duration syntax. |
+| `ATHENA_TOKEN_{ETH,BSC}_SCANNER_POLL_INTERVAL` / `--{eth,bsc}-scanner-poll-interval` | Required positive scanner interval for each chain. Values use Go duration syntax. The maintained configuration uses `15s` for Ethereum and `1s` for BSC. |
 | `ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` | Optional proxy used only by Token EVM WebSocket connections. Supported schemes are `http`, `https`, and `socks5`; an empty value means direct dialing. |
 | `ATHENA_TOKEN_POSTGRES_DSN` | Token database connection used for migrations, chain synchronization, candidates, checkpoints, readiness, and diagnostics. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls whether embedded Token migrations run during connection setup. The default is `true`. |
