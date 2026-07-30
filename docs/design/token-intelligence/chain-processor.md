@@ -10,8 +10,10 @@ numeric processing checkpoints, candidate inspection, the atomic block commit,
 and processor health reporting.
 
 Scheduled research collection, report generation, project selection, and Swap
-collection are outside this boundary. The public Token chain-checkpoint API
-exposes the processor's progress and running or stopped status.
+log collection are outside this boundary. The processor does initialize the two
+Swap pair targets that the independent [Token Swap Processor](swap-processor.md)
+later observes. The public Token chain-checkpoint API exposes the processor's
+progress and running or stopped status.
 
 ## Source Locations
 
@@ -48,7 +50,7 @@ flowchart LR
     I --> E
     I --> A["ATHENA contract\nlatest chain state"]
     C --> R["PostgreSQL block commit"]
-    R --> D["final candidates, projects,\nresearch state and schedules"]
+    R --> D["final candidates, projects,\nresearch state, schedules,\nand Swap pair targets"]
     R --> K["chain_processing_checkpoint"]
     H --> T["Health, readiness, and metrics"]
 ```
@@ -64,7 +66,8 @@ transaction. The block source owns block retrieval and contract-creation
 extraction. The inspector owns ATHENA validation, latest-state code and receipt
 reads, pair derivation, and related-wallet inspection. PostgreSQL owns the
 all-or-nothing persistence of the resulting candidates, accepted projects,
-research initialization, and processing checkpoint.
+research initialization, WETH and USDT Swap pair targets, and processing
+checkpoint.
 
 ## Runtime Flow
 
@@ -103,9 +106,13 @@ research initialization, and processing checkpoint.
 10. After every candidate has a final result, one PostgreSQL transaction writes
     all `validated` and `rejected` candidate rows. For each validated candidate
     it also creates the project, `researching` state, six active one-shot
-    collection schedules, related wallets, and initial recipients. The
-    transaction advances `chain_processing_checkpoint` to the current block only
-    after all block data has been written.
+    collection schedules, related wallets, initial recipients, and independent
+    `collecting` Swap targets for the nonzero WETH and USDT pair addresses. Both
+    targets start at the complete project deployment block and derive their
+    chain-time observation deadlines from that block's timestamp. A missing or
+    zero pair fails the block. The transaction advances
+    `chain_processing_checkpoint` to the current block only after all block data
+    has been written.
 11. An empty block skips candidate inspection and commits only its checkpoint.
     The next block is not fetched until the current block transaction commits.
 12. Reaching the latest snapshot completes the run. The next poll obtains a new
@@ -121,7 +128,8 @@ execution status:
 
 - `chain_id` identifies the independently processed chain.
 - `cursor_block_number` is the highest block for which discovery, validation,
-  project and research initialization, and checkpoint persistence all committed.
+  project/research/Swap-target initialization, and checkpoint persistence have
+  all committed.
 - `status` is `running` while the process owns the chain job and `stopped` after
   graceful shutdown or an API status update.
 
@@ -134,10 +142,17 @@ Its only persisted statuses are `validated` and `rejected`. It has no pending
 queue, claim token, lock timestamp, or lease expiry. Candidate identity remains
 unique by chain and contract.
 
-Accepted results also create the project and its initial research graph. The
-project, research state, six schedules, related wallets, initial recipients, all
-candidate outcomes from the block, and the checkpoint share one transaction.
-Until that transaction commits, none of the block is visible as processed.
+Accepted results also create the project, its initial research graph, and one
+`project_swap_pair` target for each `weth` and `usdt` pair kind. Pair targets
+store the accepted project's chain, nonzero pair address, inclusive deployment
+block and time, and initial 24-hour and seven-day chain-time deadlines. The
+project, research state, six schedules, related wallets, initial recipients,
+Swap targets, all candidate outcomes from the block, and the checkpoint share
+one transaction. Until that transaction commits, none of the block is visible
+as processed.
+
+The independent [Token Swap Processor](swap-processor.md) follows the committed
+checkpoint and owns all later event, count, completion, and expiration updates.
 
 The EVM client registry caches one selected WebSocket client per chain. Endpoint
 selection probes configured nodes concurrently under a shared 15-second
@@ -154,6 +169,7 @@ attempt probes again.
 | `ATHENA_TOKEN_{ETH,BSC}_ATHENA_CONTRACT` / `--{eth,bsc}-athena-contract` | Required deployed ATHENA contract address for each chain. |
 | `ATHENA_TOKEN_{ETH,BSC}_PROCESSOR_INITIAL_LOOKBACK_DURATION` / `--{eth,bsc}-processor-initial-lookback-duration` | Required initial lookback. Go duration syntax; minimum one second. |
 | `ATHENA_TOKEN_{ETH,BSC}_PROCESSOR_POLL_INTERVAL` / `--{eth,bsc}-processor-poll-interval` | Required positive periodic interval. Maintained values are `15s` for Ethereum and `1s` for BSC. |
+| `ATHENA_TOKEN_{ETH,BSC}_SWAP_POLL_INTERVAL` / `--{eth,bsc}-swap-poll-interval` | Required positive shared-registry setting. The Chain Processor validates but does not consume it. |
 | `ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` | Optional HTTP, HTTPS, or SOCKS5 proxy used only by shared Token EVM WebSocket connections. Empty means direct dialing. |
 | `ATHENA_TOKEN_POSTGRES_DSN` | Token database used for migrations, chain synchronization, complete block commits, readiness, and public checkpoint reads. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded Token migration during connection setup; default `true`. |
@@ -181,12 +197,14 @@ deletes that volume and restores fresh-checkpoint behavior.
 - Blocks for one chain are discovered, validated, and committed sequentially.
 - Candidate chunks and inspection results preserve block transaction order.
 - A committed cursor means every candidate from that block has a final status
-  and every accepted candidate's project and research graph also committed.
-- Rejected candidates never create projects or research schedules.
+  and every accepted candidate's project, research graph, and two Swap targets
+  also committed.
+- Rejected candidates never create projects, research schedules, or Swap targets.
 - No candidate can persist as pending or be claimed by another process.
 - The processor reads `latest` state and assumes the observed chain does not
   reorganize; it performs no block-hash verification, finality delay, or rollback.
-- Swap logs and Swap observation state are not part of the block transaction.
+- Swap logs and later observation-state changes are not part of this block
+  transaction; only initial WETH and USDT target creation is included.
 
 ## Failure Recovery
 
@@ -199,11 +217,11 @@ unchanged. A block fetch, ATHENA call, code read, receipt read, sender derivatio
 or inspection-shape error fails the current block before persistence. An invalid
 ERC-20 is a normal rejected outcome and does not fail the block.
 
-Any candidate, project, research, wallet, or checkpoint write failure rolls back
-the complete block transaction. The periodic job retries from the unchanged
-cursor, so the same block may be read and inspected again but cannot become
-partially committed. Cancellation likewise prevents a not-yet-committed block
-from advancing the checkpoint.
+Any candidate, project, research, wallet, Swap-target, or checkpoint write
+failure rolls back the complete block transaction. The periodic job retries
+from the unchanged cursor, so the same block may be read and inspected again
+but cannot become partially committed. Cancellation likewise prevents a
+not-yet-committed block from advancing the checkpoint.
 
 The processor intentionally does not detect or repair a chain reorganization.
 Its numeric checkpoint records the latest-state chain observed when each block
@@ -233,6 +251,7 @@ chain, credential-free endpoint, probe duration, and dedicated proxy state.
 - [ ] Recheck process wiring, one-job-per-chain creation, and shutdown ordering.
 - [ ] Recheck lookback estimation, latest snapshot, numeric cursor, and sequential block boundaries.
 - [ ] Recheck candidate ordering, 100-candidate chunks, and inspection concurrency.
-- [ ] Recheck the complete block transaction and final-only candidate states.
+- [ ] Recheck the complete block transaction, final-only candidate states, and
+      WETH and USDT Swap-target initialization.
 - [ ] Recheck API checkpoint mapping, retries, health/readiness, logs, and metrics.
 - [ ] Keep the [design index](../README.md) entry current.

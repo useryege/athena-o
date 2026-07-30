@@ -16,7 +16,7 @@ and application-level migration behavior are outside this capability.
 | Process and cleanup lifecycle | [hack/local-runtime.sh](../../../hack/local-runtime.sh) | `start_runtime`, `stop_runtime`, `reset_runtime`, `stop_goreman` |
 | PostgreSQL persistence | [hack/start-postgres-with-password.sh](../../../hack/start-postgres-with-password.sh) | `postgres_config_fingerprint`, `ensure_postgres_volume` |
 | Redis persistence | [hack/start-redis-with-password.sh](../../../hack/start-redis-with-password.sh) | `ensure_redis_volume` |
-| Process declarations | [Procfile](../../../Procfile) | `token-chain-processor`, `postgres`, `redis`, application processes |
+| Process declarations | [Procfile](../../../Procfile) | `token-chain-processor`, `token-swap-processor`, `postgres`, `redis`, application processes |
 
 ## Architecture
 
@@ -48,8 +48,9 @@ ownership independently from names.
 2. It writes a filtered Procfile for `ATHENA_RUN_EXCLUDE`, cleans verified stale
    local containers and Athena processes, configures the WSL Token WebSocket
    proxy, starts Goreman in a new session, and records its identity. Token chain
-   discovery and validation run as the single `token-chain-processor` Procfile
-   process with its health listener on port `8110`.
+   discovery and validation run in `token-chain-processor` with its health
+   listener on port `8110`; per-project Pair Swap collection runs independently
+   in `token-swap-processor` with its health listener on port `8111`.
 3. PostgreSQL and Redis validate or create their named volumes. Each `docker run`
    creates an attached, labeled, `--rm` container. PostgreSQL mounts its data
    directory; Redis enables AOF under `/data`.
@@ -77,7 +78,8 @@ The supervisor state and filtered Procfile are transient control data under
 `.run/athena-local-runtime`. Default SSH runtime data is under
 `/tmp/athena-local`; default Go coverage outputs use the exact directories
 declared in the Procfile, including
-`/tmp/coverage/athena-token-chain-processor`.
+`/tmp/coverage/athena-token-chain-processor` and
+`/tmp/coverage/athena-token-swap-processor`.
 
 ## Configuration
 

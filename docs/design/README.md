@@ -18,6 +18,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Development Runtime | Local process supervision and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
 | Polymarket | Managed Optimistic Oracle log ingestion, market enrichment, and alerts | [Managed OO Alerts](polymarket/managed-oo-alerts.md) |
 | Token Intelligence | Synchronous EVM block discovery, token validation, and project initialization | [Token Chain Processor](token-intelligence/chain-processor.md) |
+| Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |
 | Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
 | Token Intelligence | Ave token market data and canonical pair collection | [Ave Market Data Collection](token-intelligence/ave-market-data.md) |

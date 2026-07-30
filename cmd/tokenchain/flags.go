@@ -22,6 +22,7 @@ type chainFlags struct {
 	athenaContract                   string
 	processorInitialLookbackDuration string
 	processorPollInterval            string
+	swapPollInterval                 string
 }
 
 type Flags struct {
@@ -52,6 +53,7 @@ func bindChain(command *cobra.Command, flagPrefix, environmentPrefix, name strin
 	command.Flags().StringVar(&values.athenaContract, flagPrefix+"-athena-contract", env.StringFromEnv(environmentPrefix+"_ATHENA_CONTRACT", ""), name+" ATHENA contract address")
 	command.Flags().StringVar(&values.processorInitialLookbackDuration, flagPrefix+"-processor-initial-lookback-duration", env.StringFromEnv(environmentPrefix+"_PROCESSOR_INITIAL_LOOKBACK_DURATION", ""), name+" processor initial lookback duration")
 	command.Flags().StringVar(&values.processorPollInterval, flagPrefix+"-processor-poll-interval", env.StringFromEnv(environmentPrefix+"_PROCESSOR_POLL_INTERVAL", ""), name+" processor poll interval")
+	command.Flags().StringVar(&values.swapPollInterval, flagPrefix+"-swap-poll-interval", env.StringFromEnv(environmentPrefix+"_SWAP_POLL_INTERVAL", ""), name+" Swap processor poll interval")
 }
 
 func parseChain(flagPrefix, environmentPrefix string, values chainFlags) (chainregistry.ChainConfig, error) {
@@ -75,12 +77,17 @@ func parseChain(flagPrefix, environmentPrefix string, values chainFlags) (chainr
 	if err != nil {
 		return chainregistry.ChainConfig{}, err
 	}
+	swapPollInterval, err := parseDuration(values.swapPollInterval, environmentPrefix+"_SWAP_POLL_INTERVAL", "--"+flagPrefix+"-swap-poll-interval")
+	if err != nil {
+		return chainregistry.ChainConfig{}, err
+	}
 	return chainregistry.ChainConfig{
 		Enabled:                          enabled,
 		NodeWSURLs:                       nodeWSURLs,
 		AthenaContract:                   athenaContract,
 		ProcessorInitialLookbackDuration: initialLookback,
 		ProcessorPollInterval:            pollInterval,
+		SwapPollInterval:                 swapPollInterval,
 	}, nil
 }
 

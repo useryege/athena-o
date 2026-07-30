@@ -22,6 +22,21 @@ CREATE TABLE chain_processing_checkpoint (
   CONSTRAINT chain_processing_checkpoint_status_check CHECK (status IN ('running', 'stopped'))
 );
 
+CREATE TABLE chain_swap_processing_checkpoint (
+  chain_id BIGINT,
+  cursor_block_number BIGINT NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'stopped',
+  initialized BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT chain_swap_processing_checkpoint_chain_id_uidx PRIMARY KEY (chain_id),
+  CONSTRAINT chain_swap_processing_checkpoint_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
+  CONSTRAINT chain_swap_processing_checkpoint_cursor_block_number_check CHECK (cursor_block_number >= 0),
+  CONSTRAINT chain_swap_processing_checkpoint_status_check CHECK (status IN ('running', 'stopped')),
+  CONSTRAINT chain_swap_processing_checkpoint_initialization_check
+    CHECK (initialized OR cursor_block_number = 0)
+);
+
 CREATE TABLE project_candidate (
   id BIGSERIAL,
   chain_id BIGINT NOT NULL,
@@ -84,6 +99,7 @@ CREATE TABLE project (
   usdt_pair BYTEA,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_id_chain_id_uidx UNIQUE (id, chain_id),
   CONSTRAINT project_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
   CONSTRAINT project_contract_code_fk FOREIGN KEY (code_hash) REFERENCES contract_code(code_hash),
   CONSTRAINT project_contract_length_check CHECK (length(contract) = 20),
@@ -104,6 +120,196 @@ CREATE UNIQUE INDEX project_chain_id_tx_hash_uidx ON project (chain_id, tx_hash)
 CREATE INDEX project_code_hash_idx ON project (code_hash);
 CREATE INDEX project_chain_id_block_number_tx_index_idx
   ON project (chain_id, block_number, tx_index, id);
+
+CREATE TABLE project_swap_pair (
+  id BIGSERIAL,
+  project_id BIGINT NOT NULL,
+  chain_id BIGINT NOT NULL,
+  pair_kind TEXT NOT NULL,
+  pair_address BYTEA NOT NULL,
+  start_block_number BIGINT NOT NULL,
+  start_block_time BIGINT NOT NULL,
+  swap_block_count INT NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'collecting',
+  first_swap_block_number BIGINT,
+  first_swap_block_time BIGINT,
+  last_swap_block_number BIGINT,
+  last_swap_block_time BIGINT,
+  absolute_expiry_block_time BIGINT NOT NULL,
+  next_expiry_block_time BIGINT,
+  completed_block_number BIGINT,
+  completed_block_time BIGINT,
+  expired_block_number BIGINT,
+  expired_block_time BIGINT,
+  expired_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_swap_pair_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_swap_pair_project_chain_fk
+    FOREIGN KEY (project_id, chain_id) REFERENCES project(id, chain_id) ON DELETE CASCADE,
+  CONSTRAINT project_swap_pair_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
+  CONSTRAINT project_swap_pair_project_id_pair_kind_uidx UNIQUE (project_id, pair_kind),
+  CONSTRAINT project_swap_pair_pair_kind_check CHECK (pair_kind IN ('weth', 'usdt')),
+  CONSTRAINT project_swap_pair_pair_address_length_check CHECK (length(pair_address) = 20),
+  CONSTRAINT project_swap_pair_pair_address_not_zero_check
+    CHECK (pair_address <> decode(repeat('00', 20), 'hex')),
+  CONSTRAINT project_swap_pair_start_block_number_check CHECK (start_block_number > 0),
+  CONSTRAINT project_swap_pair_start_block_time_check CHECK (start_block_time >= 0),
+  CONSTRAINT project_swap_pair_swap_block_count_check CHECK (swap_block_count BETWEEN 0 AND 100),
+  CONSTRAINT project_swap_pair_status_check CHECK (status IN ('collecting', 'completed', 'expired')),
+  CONSTRAINT project_swap_pair_first_swap_block_number_check
+    CHECK (first_swap_block_number IS NULL OR first_swap_block_number >= start_block_number),
+  CONSTRAINT project_swap_pair_first_swap_block_time_check
+    CHECK (first_swap_block_time IS NULL OR first_swap_block_time >= start_block_time),
+  CONSTRAINT project_swap_pair_last_swap_block_number_check
+    CHECK (last_swap_block_number IS NULL OR last_swap_block_number >= first_swap_block_number),
+  CONSTRAINT project_swap_pair_last_swap_block_time_check
+    CHECK (last_swap_block_time IS NULL OR last_swap_block_time >= first_swap_block_time),
+  CONSTRAINT project_swap_pair_absolute_expiry_block_time_check
+    CHECK (absolute_expiry_block_time > start_block_time),
+  CONSTRAINT project_swap_pair_next_expiry_block_time_check
+    CHECK (
+      next_expiry_block_time IS NULL
+      OR (
+        next_expiry_block_time > start_block_time
+        AND next_expiry_block_time <= absolute_expiry_block_time
+      )
+    ),
+  CONSTRAINT project_swap_pair_swap_observation_check CHECK (
+    (
+      swap_block_count = 0
+      AND first_swap_block_number IS NULL
+      AND first_swap_block_time IS NULL
+      AND last_swap_block_number IS NULL
+      AND last_swap_block_time IS NULL
+    )
+    OR
+    (
+      swap_block_count > 0
+      AND first_swap_block_number IS NOT NULL
+      AND first_swap_block_time IS NOT NULL
+      AND last_swap_block_number IS NOT NULL
+      AND last_swap_block_time IS NOT NULL
+    )
+  ),
+  CONSTRAINT project_swap_pair_terminal_state_check CHECK (
+    (
+      status = 'collecting'
+      AND swap_block_count < 100
+      AND next_expiry_block_time IS NOT NULL
+      AND completed_block_number IS NULL
+      AND completed_block_time IS NULL
+      AND expired_block_number IS NULL
+      AND expired_block_time IS NULL
+      AND expired_reason IS NULL
+    )
+    OR
+    (
+      status = 'completed'
+      AND swap_block_count = 100
+      AND next_expiry_block_time IS NULL
+      AND completed_block_number IS NOT NULL
+      AND completed_block_time IS NOT NULL
+      AND expired_block_number IS NULL
+      AND expired_block_time IS NULL
+      AND expired_reason IS NULL
+    )
+    OR
+    (
+      status = 'expired'
+      AND swap_block_count < 100
+      AND next_expiry_block_time IS NULL
+      AND completed_block_number IS NULL
+      AND completed_block_time IS NULL
+      AND expired_block_number IS NOT NULL
+      AND expired_block_time IS NOT NULL
+      AND expired_reason IS NOT NULL
+      AND expired_reason IN ('no_swap', 'inactive', 'max_duration')
+    )
+  ),
+  CONSTRAINT project_swap_pair_completed_position_check CHECK (
+    completed_block_number IS NULL
+    OR (
+      completed_block_number = last_swap_block_number
+      AND completed_block_time = last_swap_block_time
+    )
+  ),
+  CONSTRAINT project_swap_pair_expired_position_check CHECK (
+    expired_block_number IS NULL
+    OR (
+      expired_block_number >= COALESCE(last_swap_block_number, start_block_number)
+      AND expired_block_time >= COALESCE(last_swap_block_time, start_block_time)
+    )
+  )
+);
+
+CREATE INDEX project_swap_pair_chain_id_collecting_start_idx
+  ON project_swap_pair (chain_id, start_block_number, id)
+  WHERE status = 'collecting';
+CREATE INDEX project_swap_pair_chain_id_collecting_address_idx
+  ON project_swap_pair (chain_id, pair_address, id)
+  WHERE status = 'collecting';
+CREATE INDEX project_swap_pair_chain_id_collecting_expiry_idx
+  ON project_swap_pair (chain_id, next_expiry_block_time, id)
+  WHERE status = 'collecting';
+
+CREATE TABLE project_swap_block (
+  id BIGSERIAL,
+  project_swap_pair_id BIGINT NOT NULL,
+  block_number BIGINT NOT NULL,
+  block_time BIGINT NOT NULL,
+  sample_index INT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_swap_block_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_swap_block_pair_fk
+    FOREIGN KEY (project_swap_pair_id) REFERENCES project_swap_pair(id) ON DELETE CASCADE,
+  CONSTRAINT project_swap_block_id_project_swap_pair_id_uidx UNIQUE (id, project_swap_pair_id),
+  CONSTRAINT project_swap_block_project_swap_pair_id_block_number_uidx
+    UNIQUE (project_swap_pair_id, block_number),
+  CONSTRAINT project_swap_block_project_swap_pair_id_sample_index_uidx
+    UNIQUE (project_swap_pair_id, sample_index),
+  CONSTRAINT project_swap_block_block_number_check CHECK (block_number >= 0),
+  CONSTRAINT project_swap_block_block_time_check CHECK (block_time >= 0),
+  CONSTRAINT project_swap_block_sample_index_check CHECK (sample_index BETWEEN 1 AND 100)
+);
+
+CREATE TABLE project_swap_event (
+  id BIGSERIAL,
+  project_swap_pair_id BIGINT NOT NULL,
+  project_swap_block_id BIGINT NOT NULL,
+  transaction_hash BYTEA NOT NULL,
+  transaction_index BIGINT NOT NULL,
+  log_index BIGINT NOT NULL,
+  tx_from BYTEA NOT NULL,
+  sender BYTEA NOT NULL,
+  to_address BYTEA NOT NULL,
+  amount0_in NUMERIC(78, 0) NOT NULL,
+  amount1_in NUMERIC(78, 0) NOT NULL,
+  amount0_out NUMERIC(78, 0) NOT NULL,
+  amount1_out NUMERIC(78, 0) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_swap_event_id_uidx PRIMARY KEY (id),
+  CONSTRAINT project_swap_event_pair_fk
+    FOREIGN KEY (project_swap_pair_id) REFERENCES project_swap_pair(id) ON DELETE CASCADE,
+  CONSTRAINT project_swap_event_block_pair_fk
+    FOREIGN KEY (project_swap_block_id, project_swap_pair_id)
+    REFERENCES project_swap_block(id, project_swap_pair_id) ON DELETE CASCADE,
+  CONSTRAINT project_swap_event_project_swap_pair_id_transaction_hash_log_index_uidx
+    UNIQUE (project_swap_pair_id, transaction_hash, log_index),
+  CONSTRAINT project_swap_event_transaction_hash_length_check CHECK (length(transaction_hash) = 32),
+  CONSTRAINT project_swap_event_transaction_index_check CHECK (transaction_index >= 0),
+  CONSTRAINT project_swap_event_log_index_check CHECK (log_index >= 0),
+  CONSTRAINT project_swap_event_tx_from_length_check CHECK (length(tx_from) = 20),
+  CONSTRAINT project_swap_event_sender_length_check CHECK (length(sender) = 20),
+  CONSTRAINT project_swap_event_to_address_length_check CHECK (length(to_address) = 20),
+  CONSTRAINT project_swap_event_amount0_in_check CHECK (amount0_in >= 0),
+  CONSTRAINT project_swap_event_amount1_in_check CHECK (amount1_in >= 0),
+  CONSTRAINT project_swap_event_amount0_out_check CHECK (amount0_out >= 0),
+  CONSTRAINT project_swap_event_amount1_out_check CHECK (amount1_out >= 0)
+);
+
+CREATE INDEX project_swap_event_project_swap_block_id_position_idx
+  ON project_swap_event (project_swap_block_id, transaction_index, log_index, id);
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_contract_code_deployment_count()
@@ -485,10 +691,14 @@ DROP TABLE IF EXISTS project_research_state;
 DROP TABLE IF EXISTS project_initial_recipient;
 DROP TABLE IF EXISTS project_wallet_normal_transaction;
 DROP TABLE IF EXISTS project_related_wallet;
+DROP TABLE IF EXISTS project_swap_event;
+DROP TABLE IF EXISTS project_swap_block;
+DROP TABLE IF EXISTS project_swap_pair;
 DROP TRIGGER IF EXISTS project_contract_code_deployment_count_trigger ON project;
 DROP TABLE IF EXISTS project;
 DROP FUNCTION IF EXISTS update_contract_code_deployment_count();
 DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;
+DROP TABLE IF EXISTS chain_swap_processing_checkpoint;
 DROP TABLE IF EXISTS chain_processing_checkpoint;
 DROP TABLE IF EXISTS chain;

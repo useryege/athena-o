@@ -19,6 +19,7 @@ type ChainConfig struct {
 	AthenaContract                   string
 	ProcessorInitialLookbackDuration time.Duration
 	ProcessorPollInterval            time.Duration
+	SwapPollInterval                 time.Duration
 }
 
 type Config struct {
@@ -34,6 +35,7 @@ type Chain struct {
 	AthenaContract                   string
 	ProcessorInitialLookbackDuration time.Duration
 	ProcessorPollInterval            time.Duration
+	SwapPollInterval                 time.Duration
 }
 
 type Registry struct {
@@ -60,6 +62,9 @@ func New(config Config) (*Registry, error) {
 		if chain.ProcessorPollInterval <= 0 {
 			return nil, fmt.Errorf("%s processor poll interval must be positive", chain.Name)
 		}
+		if chain.SwapPollInterval <= 0 {
+			return nil, fmt.Errorf("%s Swap processor poll interval must be positive", chain.Name)
+		}
 		registry.chains = append(registry.chains, chain)
 		registry.byID[chain.ID] = chain
 	}
@@ -81,6 +86,7 @@ func newChain(id int64, name string, config ChainConfig) Chain {
 		AthenaContract:                   strings.TrimSpace(config.AthenaContract),
 		ProcessorInitialLookbackDuration: config.ProcessorInitialLookbackDuration,
 		ProcessorPollInterval:            config.ProcessorPollInterval,
+		SwapPollInterval:                 config.SwapPollInterval,
 	}
 }
 

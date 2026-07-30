@@ -23,6 +23,15 @@ type ChainProcessingCheckpoint struct {
 	UpdatedAt         pgtype.Timestamptz
 }
 
+type ChainSwapProcessingCheckpoint struct {
+	ChainID           int64
+	CursorBlockNumber int64
+	Status            string
+	Initialized       bool
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
 type ContractCode struct {
 	CodeHash            []byte
 	SourceCode          pgtype.Text
@@ -214,6 +223,57 @@ type ProjectSelectionEvaluationTask struct {
 	LastError      pgtype.Text
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
+}
+
+type ProjectSwapBlock struct {
+	ID                int64
+	ProjectSwapPairID int64
+	BlockNumber       int64
+	BlockTime         int64
+	SampleIndex       int32
+	CreatedAt         pgtype.Timestamptz
+}
+
+type ProjectSwapEvent struct {
+	ID                 int64
+	ProjectSwapPairID  int64
+	ProjectSwapBlockID int64
+	TransactionHash    []byte
+	TransactionIndex   int64
+	LogIndex           int64
+	TxFrom             []byte
+	Sender             []byte
+	ToAddress          []byte
+	Amount0In          pgtype.Numeric
+	Amount1In          pgtype.Numeric
+	Amount0Out         pgtype.Numeric
+	Amount1Out         pgtype.Numeric
+	CreatedAt          pgtype.Timestamptz
+}
+
+type ProjectSwapPair struct {
+	ID                      int64
+	ProjectID               int64
+	ChainID                 int64
+	PairKind                string
+	PairAddress             []byte
+	StartBlockNumber        int64
+	StartBlockTime          int64
+	SwapBlockCount          int32
+	Status                  string
+	FirstSwapBlockNumber    pgtype.Int8
+	FirstSwapBlockTime      pgtype.Int8
+	LastSwapBlockNumber     pgtype.Int8
+	LastSwapBlockTime       pgtype.Int8
+	AbsoluteExpiryBlockTime int64
+	NextExpiryBlockTime     pgtype.Int8
+	CompletedBlockNumber    pgtype.Int8
+	CompletedBlockTime      pgtype.Int8
+	ExpiredBlockNumber      pgtype.Int8
+	ExpiredBlockTime        pgtype.Int8
+	ExpiredReason           pgtype.Text
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
 }
 
 type ProjectWalletNormalTransaction struct {

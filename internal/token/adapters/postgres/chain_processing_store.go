@@ -7,6 +7,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/discovery"
 	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
+	"github.com/useryege/athena/internal/token/swap"
 )
 
 const (
@@ -123,6 +124,12 @@ func prepareCandidateInspections(checkpoint discovery.ChainProcessingCheckpoint,
 
 func initializeInspectedProject(ctx context.Context, queries *tokensqlc.Queries, inspection discoveryapp.CandidateInspection, schedules []discoveryapp.CollectionScheduleSeed) error {
 	candidate := inspection.Candidate
+	if inspection.WethPair.IsZero() {
+		return fmt.Errorf("validated project candidate %s has no WETH pair", candidate.Contract)
+	}
+	if inspection.UsdtPair.IsZero() {
+		return fmt.Errorf("validated project candidate %s has no USDT pair", candidate.Contract)
+	}
 	txIndex, err := uint64ToInt64("tx_index", candidate.TxIndex)
 	if err != nil {
 		return err
@@ -156,6 +163,35 @@ func initializeInspectedProject(ctx context.Context, queries *tokensqlc.Queries,
 	})
 	if err != nil {
 		return fmt.Errorf("upsert project for candidate %s: %w", candidate.Contract, err)
+	}
+	absoluteExpiryBlockTime, err := addSwapObservationDuration(candidate.BlockTime, swap.AbsoluteObservationTimeout)
+	if err != nil {
+		return fmt.Errorf("calculate absolute Swap expiry for project %d: %w", project.ID, err)
+	}
+	nextExpiryBlockTime, err := addSwapObservationDuration(candidate.BlockTime, swap.FirstSwapTimeout)
+	if err != nil {
+		return fmt.Errorf("calculate initial Swap expiry for project %d: %w", project.ID, err)
+	}
+	swapPairs := []struct {
+		kind    swap.PairKind
+		address []byte
+	}{
+		{kind: swap.PairKindWETH, address: inspection.WethPair.Bytes()},
+		{kind: swap.PairKindUSDT, address: inspection.UsdtPair.Bytes()},
+	}
+	for _, pair := range swapPairs {
+		if _, err := queries.CreateProjectSwapPair(ctx, tokensqlc.CreateProjectSwapPairParams{
+			ProjectID:               project.ID,
+			ChainID:                 candidate.ChainID,
+			PairKind:                string(pair.kind),
+			PairAddress:             pair.address,
+			StartBlockNumber:        blockNumber,
+			StartBlockTime:          blockTime,
+			AbsoluteExpiryBlockTime: absoluteExpiryBlockTime,
+			NextExpiryBlockTime:     nextExpiryBlockTime,
+		}); err != nil {
+			return fmt.Errorf("create %s Swap pair for project %d: %w", pair.kind, project.ID, err)
+		}
 	}
 	if _, err := queries.CreateProjectResearchState(ctx, project.ID); err != nil {
 		return fmt.Errorf("create research state for project %d: %w", project.ID, err)
