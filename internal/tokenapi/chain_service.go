@@ -16,16 +16,16 @@ func (s *Service) GetChainCheckpoint(ctx context.Context, req *apiclient.GetChai
 	if err := validatePositiveInt64Field("chain_id", req.GetChainId()); err != nil {
 		return nil, err
 	}
-	item, err := store.GetChainIngestCheckpoint(ctx, req.GetChainId())
+	item, err := store.GetChainProcessingCheckpoint(ctx, req.GetChainId())
 	if err != nil {
-		return nil, wrapStoreError("get chain ingest checkpoint", err)
+		return nil, wrapStoreError("get chain processing checkpoint", err)
 	}
 	if item == nil {
 		return &apiclient.GetChainCheckpointResponse{}, nil
 	}
 	return &apiclient.GetChainCheckpointResponse{
 		Found:      true,
-		Checkpoint: mapChainIngestCheckpoint(*item),
+		Checkpoint: mapChainProcessingCheckpoint(*item),
 	}, nil
 }
 
@@ -34,12 +34,12 @@ func (s *Service) ListChainCheckpoints(ctx context.Context, _ *apiclient.ListCha
 	if err != nil {
 		return nil, err
 	}
-	items, err := store.ListChainIngestCheckpoints(ctx)
+	items, err := store.ListChainProcessingCheckpoints(ctx)
 	if err != nil {
-		return nil, wrapStoreError("list chain ingest checkpoints", err)
+		return nil, wrapStoreError("list chain processing checkpoints", err)
 	}
 	return &apiclient.ListChainCheckpointsResponse{
-		Checkpoints: mapChainIngestCheckpoints(items),
+		Checkpoints: mapChainProcessingCheckpoints(items),
 	}, nil
 }
 
@@ -52,18 +52,18 @@ func (s *Service) UpdateChainCheckpoint(ctx context.Context, req *apiclient.Upda
 		return nil, err
 	}
 	status := strings.TrimSpace(req.GetStatus())
-	if err := validateChainIngestStatus(status); err != nil {
+	if err := validateChainProcessingStatus(status); err != nil {
 		return nil, err
 	}
-	item, err := store.UpdateChainIngestCheckpointStatus(ctx, req.GetChainId(), discovery.ChainIngestStatus(status))
+	item, err := store.UpdateChainProcessingCheckpointStatus(ctx, req.GetChainId(), discovery.ChainProcessingStatus(status))
 	if err != nil {
-		return nil, wrapStoreError("update chain ingest checkpoint", err)
+		return nil, wrapStoreError("update chain processing checkpoint", err)
 	}
 	if item == nil {
 		return &apiclient.UpdateChainCheckpointResponse{}, nil
 	}
 	return &apiclient.UpdateChainCheckpointResponse{
 		Found:      true,
-		Checkpoint: mapChainIngestCheckpoint(*item),
+		Checkpoint: mapChainProcessingCheckpoint(*item),
 	}, nil
 }

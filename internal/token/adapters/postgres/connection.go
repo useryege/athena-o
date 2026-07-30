@@ -65,7 +65,6 @@ func (repository *baseRepository) querier() (tokensqlc.Querier, error) {
 }
 
 type ChainRepository struct{ *baseRepository }
-type CandidateRepository struct{ *baseRepository }
 type SchedulerRepository struct{ *baseRepository }
 type CollectionRepository struct{ *baseRepository }
 type CatalogRepository struct{ *baseRepository }
@@ -78,9 +77,6 @@ type DiagnosticsRepository struct{ *baseRepository }
 
 func NewChainRepository(connection *Connection) *ChainRepository {
 	return &ChainRepository{newBaseRepository(connection)}
-}
-func NewCandidateRepository(connection *Connection) *CandidateRepository {
-	return &CandidateRepository{newBaseRepository(connection)}
 }
 func NewSchedulerRepository(connection *Connection) *SchedulerRepository {
 	return &SchedulerRepository{newBaseRepository(connection)}

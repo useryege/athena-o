@@ -56,9 +56,9 @@ type PolicyApplication interface {
 
 type OperationsApplication interface {
 	ListChains(context.Context) ([]discovery.Chain, error)
-	GetChainIngestCheckpoint(context.Context, int64) (*discovery.ChainIngestCheckpoint, error)
-	ListChainIngestCheckpoints(context.Context) ([]discovery.ChainIngestCheckpoint, error)
-	UpdateChainIngestCheckpointStatus(context.Context, int64, discovery.ChainIngestStatus) (*discovery.ChainIngestCheckpoint, error)
+	GetChainProcessingCheckpoint(context.Context, int64) (*discovery.ChainProcessingCheckpoint, error)
+	ListChainProcessingCheckpoints(context.Context) ([]discovery.ChainProcessingCheckpoint, error)
+	UpdateChainProcessingCheckpointStatus(context.Context, int64, discovery.ChainProcessingStatus) (*discovery.ChainProcessingCheckpoint, error)
 	ListNodeStatuses(context.Context) ([]discovery.NodeStatus, error)
 }
 

@@ -10,16 +10,16 @@ CREATE TABLE chain (
   CONSTRAINT chain_name_not_empty_check CHECK (btrim(name) <> '')
 );
 
-CREATE TABLE chain_ingest_checkpoint (
+CREATE TABLE chain_processing_checkpoint (
   chain_id BIGINT,
   cursor_block_number BIGINT NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'stopped',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT chain_ingest_checkpoint_chain_id_uidx PRIMARY KEY (chain_id),
-  CONSTRAINT chain_ingest_checkpoint_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
-  CONSTRAINT chain_ingest_checkpoint_cursor_block_number_check CHECK (cursor_block_number >= 0),
-  CONSTRAINT chain_ingest_checkpoint_status_check CHECK (status IN ('running', 'stopped'))
+  CONSTRAINT chain_processing_checkpoint_chain_id_uidx PRIMARY KEY (chain_id),
+  CONSTRAINT chain_processing_checkpoint_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
+  CONSTRAINT chain_processing_checkpoint_cursor_block_number_check CHECK (cursor_block_number >= 0),
+  CONSTRAINT chain_processing_checkpoint_status_check CHECK (status IN ('running', 'stopped'))
 );
 
 CREATE TABLE project_candidate (
@@ -31,10 +31,7 @@ CREATE TABLE project_candidate (
   tx_index BIGINT NOT NULL,
   block_number BIGINT NOT NULL,
   block_time BIGINT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  validation_lock_token UUID,
-  validation_locked_at TIMESTAMPTZ,
-  validation_lease_expires_at TIMESTAMPTZ,
+  status TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_candidate_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_candidate_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
@@ -44,21 +41,7 @@ CREATE TABLE project_candidate (
   CONSTRAINT project_candidate_tx_index_check CHECK (tx_index >= 0),
   CONSTRAINT project_candidate_block_number_check CHECK (block_number >= 0),
   CONSTRAINT project_candidate_block_time_check CHECK (block_time >= 0),
-  CONSTRAINT project_candidate_status_check CHECK (status IN ('pending', 'validated', 'rejected')),
-  CONSTRAINT project_candidate_validation_lease_check CHECK (
-    (
-      validation_lock_token IS NULL
-      AND validation_locked_at IS NULL
-      AND validation_lease_expires_at IS NULL
-    )
-    OR
-    (
-      status = 'pending'
-      AND validation_lock_token IS NOT NULL
-      AND validation_locked_at IS NOT NULL
-      AND validation_lease_expires_at IS NOT NULL
-    )
-  )
+  CONSTRAINT project_candidate_status_check CHECK (status IN ('validated', 'rejected'))
 );
 
 CREATE UNIQUE INDEX project_candidate_chain_id_contract_uidx
@@ -67,9 +50,6 @@ CREATE UNIQUE INDEX project_candidate_chain_id_tx_hash_uidx
   ON project_candidate (chain_id, tx_hash);
 CREATE INDEX project_candidate_status_created_at_idx
   ON project_candidate (status, created_at, id);
-CREATE INDEX project_candidate_pending_validation_lease_idx
-  ON project_candidate (validation_lease_expires_at, created_at, id)
-  WHERE status = 'pending';
 
 -- Catalog
 CREATE TABLE contract_code (
@@ -510,5 +490,5 @@ DROP TABLE IF EXISTS project;
 DROP FUNCTION IF EXISTS update_contract_code_deployment_count();
 DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;
-DROP TABLE IF EXISTS chain_ingest_checkpoint;
+DROP TABLE IF EXISTS chain_processing_checkpoint;
 DROP TABLE IF EXISTS chain;

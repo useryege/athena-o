@@ -14,21 +14,9 @@ import (
 const listPipelineQueueMetrics = `-- name: ListPipelineQueueMetrics :many
 WITH queue_items AS (
   SELECT
-    'candidate_validation'::text AS queue,
-    CASE
-      WHEN validation_lease_expires_at IS NOT NULL AND validation_lease_expires_at > now() THEN 'running'::text
-      ELSE 'pending'::text
-    END AS status,
-    CASE
-      WHEN validation_lease_expires_at IS NOT NULL AND validation_lease_expires_at > now() THEN validation_lease_expires_at
-      ELSE created_at
-    END AS available_at
-  FROM project_candidate
-  WHERE status = 'pending'
-
-  UNION ALL
-
-  SELECT 'data_collection:' || data_type, status, available_at
+    ('data_collection:' || data_type)::text AS queue,
+    status,
+    available_at
   FROM project_data_collection_task
   WHERE status IN ('pending', 'running', 'failed')
 

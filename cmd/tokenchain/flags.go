@@ -17,11 +17,11 @@ const (
 )
 
 type chainFlags struct {
-	enabled                        string
-	nodeWSURLs                     string
-	athenaContract                 string
-	scannerInitialLookbackDuration string
-	scannerPollInterval            string
+	enabled                          string
+	nodeWSURLs                       string
+	athenaContract                   string
+	processorInitialLookbackDuration string
+	processorPollInterval            string
 }
 
 type Flags struct {
@@ -50,8 +50,8 @@ func bindChain(command *cobra.Command, flagPrefix, environmentPrefix, name strin
 	command.Flags().StringVar(&values.enabled, flagPrefix+"-enabled", env.StringFromEnv(environmentPrefix+"_ENABLED", ""), "Enable "+name)
 	command.Flags().StringVar(&values.nodeWSURLs, flagPrefix+"-node-ws-urls", env.StringFromEnv(environmentPrefix+"_NODE_WS_URLS", ""), "Comma, space, or newline-separated "+name+" WebSocket node URLs")
 	command.Flags().StringVar(&values.athenaContract, flagPrefix+"-athena-contract", env.StringFromEnv(environmentPrefix+"_ATHENA_CONTRACT", ""), name+" ATHENA contract address")
-	command.Flags().StringVar(&values.scannerInitialLookbackDuration, flagPrefix+"-scanner-initial-lookback-duration", env.StringFromEnv(environmentPrefix+"_SCANNER_INITIAL_LOOKBACK_DURATION", ""), name+" scanner initial lookback duration")
-	command.Flags().StringVar(&values.scannerPollInterval, flagPrefix+"-scanner-poll-interval", env.StringFromEnv(environmentPrefix+"_SCANNER_POLL_INTERVAL", ""), name+" scanner poll interval")
+	command.Flags().StringVar(&values.processorInitialLookbackDuration, flagPrefix+"-processor-initial-lookback-duration", env.StringFromEnv(environmentPrefix+"_PROCESSOR_INITIAL_LOOKBACK_DURATION", ""), name+" processor initial lookback duration")
+	command.Flags().StringVar(&values.processorPollInterval, flagPrefix+"-processor-poll-interval", env.StringFromEnv(environmentPrefix+"_PROCESSOR_POLL_INTERVAL", ""), name+" processor poll interval")
 }
 
 func parseChain(flagPrefix, environmentPrefix string, values chainFlags) (chainregistry.ChainConfig, error) {
@@ -67,20 +67,20 @@ func parseChain(flagPrefix, environmentPrefix string, values chainFlags) (chainr
 	if athenaContract == "" {
 		return chainregistry.ChainConfig{}, requiredError(environmentPrefix+"_ATHENA_CONTRACT", "--"+flagPrefix+"-athena-contract")
 	}
-	initialLookback, err := parseDuration(values.scannerInitialLookbackDuration, environmentPrefix+"_SCANNER_INITIAL_LOOKBACK_DURATION", "--"+flagPrefix+"-scanner-initial-lookback-duration")
+	initialLookback, err := parseDuration(values.processorInitialLookbackDuration, environmentPrefix+"_PROCESSOR_INITIAL_LOOKBACK_DURATION", "--"+flagPrefix+"-processor-initial-lookback-duration")
 	if err != nil {
 		return chainregistry.ChainConfig{}, err
 	}
-	pollInterval, err := parseDuration(values.scannerPollInterval, environmentPrefix+"_SCANNER_POLL_INTERVAL", "--"+flagPrefix+"-scanner-poll-interval")
+	pollInterval, err := parseDuration(values.processorPollInterval, environmentPrefix+"_PROCESSOR_POLL_INTERVAL", "--"+flagPrefix+"-processor-poll-interval")
 	if err != nil {
 		return chainregistry.ChainConfig{}, err
 	}
 	return chainregistry.ChainConfig{
-		Enabled:                        enabled,
-		NodeWSURLs:                     nodeWSURLs,
-		AthenaContract:                 athenaContract,
-		ScannerInitialLookbackDuration: initialLookback,
-		ScannerPollInterval:            pollInterval,
+		Enabled:                          enabled,
+		NodeWSURLs:                       nodeWSURLs,
+		AthenaContract:                   athenaContract,
+		ProcessorInitialLookbackDuration: initialLookback,
+		ProcessorPollInterval:            pollInterval,
 	}, nil
 }
 

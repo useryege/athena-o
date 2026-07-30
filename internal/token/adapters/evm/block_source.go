@@ -95,7 +95,7 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		if contract == (common.Address{}) {
 			continue
 		}
-		candidates = append(candidates, discovery.ProjectCandidate{ChainID: chainID, Contract: shared.Address(contract), TxSender: shared.Address(sender), TxHash: shared.Hash(transaction.Hash()), TxIndex: uint64(transactionIndex), BlockNumber: block.NumberU64(), BlockTime: block.Time(), Status: discovery.ProjectCandidateStatusPending})
+		candidates = append(candidates, discovery.ProjectCandidate{ChainID: chainID, Contract: shared.Address(contract), TxSender: shared.Address(sender), TxHash: shared.Hash(transaction.Hash()), TxIndex: uint64(transactionIndex), BlockNumber: block.NumberU64(), BlockTime: block.Time()})
 	}
 	candidateExtractionDuration := time.Since(candidateExtractionStartedAt)
 	log.WithFields(log.Fields{
@@ -108,7 +108,7 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		"block_fetch_duration_ms":          blockFetchDuration.Milliseconds(),
 		"candidate_extraction_duration_ms": candidateExtractionDuration.Milliseconds(),
 		"duration_ms":                      time.Since(startedAt).Milliseconds(),
-	}).Info("token scanner block discovery completed")
+	}).Info("token chain block discovery completed")
 	return candidates, nil
 }
 
@@ -130,7 +130,7 @@ func logBlockDiscoveryFailure(
 		"stage":             stage,
 		"phase_duration_ms": phaseDuration.Milliseconds(),
 		"duration_ms":       time.Since(startedAt).Milliseconds(),
-	}).Error("token scanner block discovery failed")
+	}).Error("token chain block discovery failed")
 }
 
 func mapBlockHeader(header *types.Header, expectedNumber *uint64) (discovery.BlockHeader, error) {

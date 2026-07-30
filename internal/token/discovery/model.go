@@ -6,27 +6,19 @@ import (
 	"github.com/useryege/athena/internal/token/shared"
 )
 
-type ChainIngestStatus string
+type ChainProcessingStatus string
 
 const (
-	ChainIngestStatusRunning ChainIngestStatus = "running"
-	ChainIngestStatusStopped ChainIngestStatus = "stopped"
+	ChainProcessingStatusRunning ChainProcessingStatus = "running"
+	ChainProcessingStatusStopped ChainProcessingStatus = "stopped"
 )
 
-type ProjectCandidateStatus string
-
-const (
-	ProjectCandidateStatusPending   ProjectCandidateStatus = "pending"
-	ProjectCandidateStatusValidated ProjectCandidateStatus = "validated"
-	ProjectCandidateStatusRejected  ProjectCandidateStatus = "rejected"
-)
-
-type ChainIngestCheckpoint struct {
+type ChainProcessingCheckpoint struct {
 	ChainID           int64
 	ChainName         string
 	Enabled           bool
 	CursorBlockNumber uint64
-	Status            ChainIngestStatus
+	Status            ChainProcessingStatus
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
@@ -44,26 +36,13 @@ type BlockHeader struct {
 }
 
 type ProjectCandidate struct {
-	ID                       int64
-	ChainID                  int64
-	Contract                 shared.Address
-	TxSender                 shared.Address
-	TxHash                   shared.Hash
-	TxIndex                  uint64
-	BlockNumber              uint64
-	BlockTime                uint64
-	Status                   ProjectCandidateStatus
-	ValidationLockToken      string
-	ValidationLockedAt       time.Time
-	ValidationLeaseExpiresAt time.Time
-	CreatedAt                time.Time
-}
-
-type CandidatePage struct {
-	Items    []ProjectCandidate
-	Total    int64
-	Page     int32
-	PageSize int32
+	ChainID     int64
+	Contract    shared.Address
+	TxSender    shared.Address
+	TxHash      shared.Hash
+	TxIndex     uint64
+	BlockNumber uint64
+	BlockTime   uint64
 }
 
 type NodeStatus struct {

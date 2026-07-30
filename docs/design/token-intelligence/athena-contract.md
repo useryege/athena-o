@@ -14,7 +14,7 @@ The ATHENA contract is a stateless on-chain read aggregator for Token Intelligen
 | Chain command configuration | [cmd/tokenchain/flags.go](../../../cmd/tokenchain/flags.go) | `Flags.Bind`, `Flags.Registry` |
 | Fixed chain and deployed-address registry | [internal/token/chainregistry/registry.go](../../../internal/token/chainregistry/registry.go) | `Chain.AthenaContract`, `Registry.Chain` |
 | Shared EVM connection lifecycle | [internal/token/adapters/evm/chain_client_registry.go](../../../internal/token/adapters/evm/chain_client_registry.go) | `ChainClientRegistry.Client`, `Reset`, `Close` |
-| Candidate validation consumer | [internal/token/adapters/evm/candidate_inspector.go](../../../internal/token/adapters/evm/candidate_inspector.go) | `CandidateInspector.InspectCandidates` |
+| Chain Processor validation consumer | [internal/token/adapters/evm/candidate_inspector.go](../../../internal/token/adapters/evm/candidate_inspector.go) | `CandidateInspector.InspectCandidates` |
 | Research-state consumer | [internal/token/adapters/evm/project_state_reader.go](../../../internal/token/adapters/evm/project_state_reader.go) | `ProjectStateReader`, `ReadChainState`, `ReadWalletAssetState`, `ReadSimulationResult` |
 
 ## Architecture
@@ -30,12 +30,12 @@ flowchart LR
     A --> P["Uniswap/PancakeSwap V2 pairs"]
 ```
 
-The Go consumers select the deployed contract address from the chain registry and call it through the generated binding over the shared EVM client registry. The contract contains all supported-chain protocol addresses and CREATE2 pair hashes as bytecode constants. It reads token and pair contracts directly and does not write storage or call an off-chain service.
+The Token Chain Processor's candidate-inspection stage and the research-state readers select the deployed contract address from the chain registry and call it through the generated binding over the shared EVM client registry. The contract contains all supported-chain protocol addresses and CREATE2 pair hashes as bytecode constants. It reads token and pair contracts directly and does not write storage or call an off-chain service.
 
 ## Runtime Flow
 
 1. Deployment passes a numeric chain ID to `DeployATHENA`. The constructor accepts Ethereum Mainnet (`1`) or BSC Mainnet (`56`), selects the chain's Factory, wrapped-native token, USDT, V2 fee recipient, and V2 pair init code hash, then probes USDT decimals. The parameter selects configuration and is not compared with `block.chainid`.
-2. `ValidateERC20` probes each address for non-empty name and symbol, positive decimals and total supply, and decodable `balanceOf` and `allowance` responses. Valid tokens receive deterministic WETH and USDT pair addresses.
+2. During synchronous block processing, `ValidateERC20` probes each candidate chunk for non-empty name and symbol, positive decimals and total supply, and decodable `balanceOf` and `allowance` responses. Valid tokens receive deterministic WETH and USDT pair addresses.
 3. `ListProjectStates` repeats token validation, checks whether each derived pair has deployed code, reads pair balances and liquidity state, converts quote balances to USDT using the WETH/USDT reserves, and produces token and pair reports.
 4. `ListWalletAssetStates` reads wrapped-native, USDT, and native balances for each non-zero wallet and reports their aggregate USDT value.
 5. `ListWalletSimulationStates` reads token allowances for the dead address, zero address, derived pairs, and the requested caller balance. Off-chain code uses this state to build simulation calls.
@@ -74,11 +74,11 @@ An unsupported constructor argument reverts deployment. The constructor does not
 
 Defensive token probes return an unsuccessful flag and zero or empty value instead of bubbling most target-contract failures. A malformed `uint8` metadata response whose first ABI word exceeds the valid range is treated as an unsuccessful probe rather than bubbling a decode revert, while trailing return data remains permitted. Missing pair code produces an uncreated pair state. Failed or malformed reserve reads produce zero reserves, preventing quote conversion. Invalid pair-derivation inputs revert the affected aggregate call.
 
-Go consumers treat contract-call failures and result-length mismatches as failed work. EVM adapters reset their cached chain client after call failures so the surrounding periodic worker can retry through normal job recovery.
+Go consumers treat contract-call failures and result-length mismatches as failed work. During candidate validation this fails the complete current block before persistence. EVM adapters reset their cached chain client after call failures so the surrounding periodic worker can retry through normal job recovery.
 
 ## Observability
 
-The contract emits no events and has no health endpoint or mutable status. Deployment failures surface through the transaction or gas-estimation result. Runtime call failures are reported by the Token Intelligence workers that invoke the generated binding; their shared telemetry and logs identify the chain, project, and failed periodic job. Each newly selected shared EVM client logs whether the dedicated proxy is enabled and includes the complete unredacted proxy endpoint.
+The contract emits no events and has no health endpoint or mutable status. Deployment failures surface through the transaction or gas-estimation result. Runtime call failures are reported by the Token Chain Processor or collector worker that invokes the generated binding; shared telemetry and logs identify the chain, block or project, and failed periodic job. Each newly selected shared EVM client logs whether the dedicated proxy is enabled and includes the complete unredacted proxy endpoint.
 
 ## Change Checklist
 

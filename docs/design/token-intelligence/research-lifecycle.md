@@ -2,9 +2,9 @@
 
 ## Scope
 
-The Token Research Lifecycle begins when the Validator accepts a project candidate. It owns creation and expiration of the project's research state, initialization and maintenance of one-shot data-collection schedules, and creation of collection tasks while a project remains eligible for research.
+The Token Research Lifecycle begins when the Token Chain Processor accepts a project candidate while synchronously processing its deployment block. It owns creation and expiration of the project's research state, initialization and maintenance of one-shot data-collection schedules, and creation of collection tasks while a project remains eligible for research.
 
-Scanner discovery, candidate inspection, collector-specific payload construction, report generation, and selection policy are adjacent stages. This document records how selection outcomes affect collection eligibility, but it does not define how those outcomes are decided. Ave uses the same lifecycle and schedule machinery as the other collectors; its request and pair-retention behavior is documented in [Ave Market Data Collection](ave-market-data.md).
+Block discovery and candidate inspection inside the Chain Processor, collector-specific payload construction, report generation, and selection policy are adjacent stages. This document records how selection outcomes affect collection eligibility, but it does not define how those outcomes are decided. Ave uses the same lifecycle and schedule machinery as the other collectors; its request and pair-retention behavior is documented in [Ave Market Data Collection](ave-market-data.md).
 
 ## Source Locations
 
@@ -12,8 +12,8 @@ Scanner discovery, candidate inspection, collector-specific payload construction
 | --- | --- | --- |
 | Local process declaration | [Procfile](../../../Procfile) | `token-scheduler` process |
 | Scheduler composition and configuration | [cmd/athena-token-scheduler/commands/athena-token-scheduler.go](../../../cmd/athena-token-scheduler/commands/athena-token-scheduler.go) | `NewCommand` |
-| Validator promotion flow | [internal/token/discovery/application/validator.go](../../../internal/token/discovery/application/validator.go) | `Validator.RunOnce`, `defaultResearchSchedules` |
-| Atomic project initialization | [internal/token/adapters/postgres/project_validator_store.go](../../../internal/token/adapters/postgres/project_validator_store.go) | `PromoteCandidateAndInitializeResearch` |
+| Chain Processor initialization flow | [internal/token/discovery/application/chain_processor.go](../../../internal/token/discovery/application/chain_processor.go) | `ChainProcessor.RunOnce`, `defaultResearchSchedules` |
+| Atomic block and project initialization | [internal/token/adapters/postgres/chain_processing_store.go](../../../internal/token/adapters/postgres/chain_processing_store.go) | `ChainRepository.CommitProcessedBlock` |
 | Scheduler application flow | [internal/token/research/application/scheduler.go](../../../internal/token/research/application/scheduler.go) | `NewScheduler`, `Initialize`, `RunOnce` |
 | Lifecycle and schedule persistence | [internal/token/adapters/postgres/collection_schedule_store.go](../../../internal/token/adapters/postgres/collection_schedule_store.go) | `ApplyResearchPolicy`, `MaintainResearchLifecycle`, `CreateCollectionTaskIfDue` |
 | Research-state queries | [internal/token/adapters/postgres/queries/project_research_state.sql](../../../internal/token/adapters/postgres/queries/project_research_state.sql) | `CreateProjectResearchState`, `ApplyProjectResearchTTL`, `ExpireProjectResearchStates`, `UpdateProjectResearchSelection` |
@@ -28,7 +28,7 @@ Scanner discovery, candidate inspection, collector-specific payload construction
 
 ```mermaid
 flowchart LR
-    V["Validator"] -->|"accepted candidate"| P["Atomic project promotion"]
+    V["Token Chain Processor"] -->|"accepted candidate in current block"| P["Atomic block commit"]
     P --> R["project_research_state"]
     P --> S["collection schedules"]
     C["Scheduler policy"] --> R
@@ -41,16 +41,16 @@ flowchart LR
     R -->|"rejected or expired"| X["paused schedules"]
 ```
 
-The Validator decides whether an inspected candidate is a valid project. PostgreSQL promotes an accepted candidate and initializes its research state, schedules, related wallets, and initial recipients in one transaction. The Scheduler owns time-based lifecycle maintenance and task production. Collector workers claim tasks only for projects whose research state remains eligible.
+The Token Chain Processor decides whether each candidate from the current block is a valid project. PostgreSQL commits all final candidate outcomes, accepted projects, their research state, schedules, related wallets, initial recipients, and the processing checkpoint in one block transaction. The Scheduler owns time-based lifecycle maintenance and task production. Collector workers claim tasks only for projects whose research state remains eligible.
 
 Selection updates the shared research state. The lifecycle does not depend on any collector's payload format or vendor-specific request policy.
 
 ## Runtime Flow
 
-1. The Validator claims and inspects pending project candidates. A rejected inspection marks only the candidate rejected and does not create research state or schedules.
-2. For an accepted inspection, `PromoteCandidateAndInitializeResearch` atomically upserts the project, marks the candidate validated, inserts a `researching` state, creates the configured active schedules, and stores the related wallets and initial recipients.
+1. The Token Chain Processor discovers and inspects every candidate in one block before opening the final database transaction. A rejected inspection produces only a final `rejected` candidate and no research state or schedules.
+2. The block commit atomically inserts the project, stores the candidate as `validated`, inserts a `researching` state, creates the configured active schedules, stores related wallets and initial recipients, and advances the chain processing checkpoint.
 3. The research state's `created_at` is the start of its research window. Its schema default sets `expires_at` to one day after insertion. The project's deployment or discovery time does not define the TTL.
-4. Every project receives one active schedule for `chain_state`, `wallet_asset_state`, `simulation_result`, `ave`, `contract_code_source`, and `wallet_normal_transactions`. Every initial `next_run_at` is the Validator's current UTC time, so the first task is due immediately.
+4. Every project receives one active schedule for `chain_state`, `wallet_asset_state`, `simulation_result`, `ave`, `contract_code_source`, and `wallet_normal_transactions`. Every initial `next_run_at` is the Chain Processor's current UTC time, so the first task is due immediately.
 5. At Scheduler startup, `Initialize` applies the configured per-data-type retry intervals to active schedules and recomputes `expires_at = created_at + TTL` for every state that is still `researching`. This makes the Scheduler's configured policy authoritative for active research.
 6. The Scheduler job runs once per second. Each run first changes overdue `researching` states to `expired`, then changes active schedules belonging to `expired` or `rejected` projects to `paused`.
 7. The Scheduler lists due active schedules only for `researching` or `selected` projects. For each due schedule, a PostgreSQL transaction locks the schedule, rechecks its revision and due time, creates one task, advances `next_run_at` to the nominal retry time, and commits both changes together.
@@ -97,7 +97,7 @@ The application-layer fallback TTL is also 24 hours when a Scheduler is built wi
 - The default research window is 24 hours, and Scheduler initialization always derives the deadline from `created_at` for states still researching.
 - Only `researching` can expire. `selected` remains eligible until each schedule succeeds, exhausts its attempts, or a later rejection stops the remaining active work.
 - `rejected` and `expired` projects cannot produce or claim new collection work; their active schedules are paused by lifecycle maintenance.
-- Project promotion, research-state creation, schedule creation, related-wallet persistence, and initial-recipient persistence commit atomically.
+- Final candidate persistence, project creation, research-state creation, schedule creation, related-wallet persistence, initial-recipient persistence, and the deployment-block checkpoint are committed atomically.
 - Schedule locking and expected-revision checks prevent duplicate task revisions during concurrent scheduling.
 - Every collector completes its schedule after the first successful end-to-end attempt, including successful empty results.
 - Attempts one through nine reuse the same pending task after the configured retry delay. Attempt ten is terminal and leaves both the task and schedule failed.
@@ -105,7 +105,7 @@ The application-layer fallback TTL is also 24 hours when a Scheduler is built wi
 
 ## Failure Recovery
 
-Failure anywhere in accepted-candidate promotion rolls back the entire transaction, so a candidate cannot become validated without its project research state and schedules. A later Validator loop can retry from durable candidate state.
+Failure anywhere in the Chain Processor's block commit rolls back every candidate and project result from that block, so a candidate cannot become validated without its project research state and schedules. The unchanged processing checkpoint causes the complete block to be discovered and inspected again.
 
 Scheduler initialization failure prevents the worker from becoming operational. During steady state, lifecycle maintenance, due-listing, or task-creation failure fails the current one-second loop and is retried by the periodic worker. Task creation and schedule advancement roll back together, so the next loop sees the previous due state rather than a partially advanced schedule.
 
@@ -125,7 +125,7 @@ Failed lifecycle or scheduling loops emit `token periodic job failed` with the j
 
 ## Change Checklist
 
-- [ ] Recheck Validator promotion and its transaction boundary.
+- [ ] Recheck Chain Processor project initialization and the complete block transaction boundary.
 - [ ] Recheck TTL anchoring, status transitions, and selection effects.
 - [ ] Recheck schedule defaults, due eligibility, task revisions, and claim eligibility.
 - [ ] Recheck terminal-state pause behavior and recovery after Scheduler downtime.

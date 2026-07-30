@@ -8,12 +8,12 @@ import {TokenChainCheckpoint} from '../shared/services/token-service';
 import {boolTag, fmtNumber} from './shared';
 import {ChainBadge} from './token-shared';
 
-type ChainIngestStatus = 'running' | 'stopped';
+type ChainProcessingStatus = 'running' | 'stopped';
 
 export const ChainCheckpointsPage = () => {
     const data = useAsyncData(() => services.tokenapi.listChainCheckpoints(), []);
-    const [updatingStatusByChainID, setUpdatingStatusByChainID] = React.useState<Record<number, ChainIngestStatus>>({});
-    const updateStatus = async (item: TokenChainCheckpoint, status: ChainIngestStatus) => {
+    const [updatingStatusByChainID, setUpdatingStatusByChainID] = React.useState<Record<number, ChainProcessingStatus>>({});
+    const updateStatus = async (item: TokenChainCheckpoint, status: ChainProcessingStatus) => {
         if (item.chainID === undefined) {
             return;
         }

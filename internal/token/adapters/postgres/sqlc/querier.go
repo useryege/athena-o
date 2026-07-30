@@ -6,24 +6,18 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	AdvanceProjectDataCollectionSchedule(ctx context.Context, arg AdvanceProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
 	ApplyProjectDataCollectionSchedulePolicy(ctx context.Context, arg ApplyProjectDataCollectionSchedulePolicyParams) (int64, error)
 	ApplyProjectResearchTTL(ctx context.Context, ttlSeconds int64) (int64, error)
-	BatchUpsertProjectCandidates(ctx context.Context, arg BatchUpsertProjectCandidatesParams) error
-	ClaimProjectCandidateValidations(ctx context.Context, arg ClaimProjectCandidateValidationsParams) ([]ProjectCandidate, error)
 	ClaimProjectDataCollectionTasks(ctx context.Context, arg ClaimProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
 	ClaimProjectReportBuildTasks(ctx context.Context, arg ClaimProjectReportBuildTasksParams) ([]ProjectReportBuildTask, error)
 	ClaimProjectSelectionEvaluationTasks(ctx context.Context, arg ClaimProjectSelectionEvaluationTasksParams) ([]ProjectSelectionEvaluationTask, error)
-	CompleteProjectCandidateValidation(ctx context.Context, arg CompleteProjectCandidateValidationParams) (ProjectCandidate, error)
 	CompleteProjectDataCollectionSchedule(ctx context.Context, arg CompleteProjectDataCollectionScheduleParams) (int64, error)
 	CountContractCodes(ctx context.Context, codeHash []byte) (int64, error)
 	CountCurrentProjectReports(ctx context.Context, arg CountCurrentProjectReportsParams) (int64, error)
-	CountProjectCandidates(ctx context.Context, arg CountProjectCandidatesParams) (int64, error)
 	CountProjectDataCollectionTasks(ctx context.Context, arg CountProjectDataCollectionTasksParams) (int64, error)
 	CountProjectObservations(ctx context.Context, arg CountProjectObservationsParams) (int64, error)
 	CountProjectReportRevisions(ctx context.Context, arg CountProjectReportRevisionsParams) (int64, error)
@@ -42,7 +36,6 @@ type Querier interface {
 	CreateWalletBlocklistEntry(ctx context.Context, arg CreateWalletBlocklistEntryParams) error
 	DeleteContractCodeBlocklistEntry(ctx context.Context, codeHash []byte) (int64, error)
 	DeleteProject(ctx context.Context, id int64) (int64, error)
-	DeleteProjectCandidate(ctx context.Context, id int64) (int64, error)
 	DeleteProjectInitialRecipient(ctx context.Context, arg DeleteProjectInitialRecipientParams) (int64, error)
 	DeleteProjectInitialRecipientsByProject(ctx context.Context, projectID int64) (int64, error)
 	DeleteProjectRelatedWallet(ctx context.Context, arg DeleteProjectRelatedWalletParams) (int64, error)
@@ -57,8 +50,8 @@ type Querier interface {
 	FailProjectDataCollectionTask(ctx context.Context, arg FailProjectDataCollectionTaskParams) (int64, error)
 	FailProjectReportBuildTask(ctx context.Context, arg FailProjectReportBuildTaskParams) (int64, error)
 	FailProjectSelectionEvaluationTask(ctx context.Context, arg FailProjectSelectionEvaluationTaskParams) (int64, error)
-	// Discovery persistence.
-	GetChainIngestCheckpoint(ctx context.Context, chainID int64) (GetChainIngestCheckpointRow, error)
+	// Discovery processing persistence.
+	GetChainProcessingCheckpoint(ctx context.Context, chainID int64) (GetChainProcessingCheckpointRow, error)
 	GetContractCode(ctx context.Context, codeHash []byte) (ContractCode, error)
 	GetContractCodeBlocklistEntry(ctx context.Context, codeHash []byte) (ContractCodeBlocklist, error)
 	// Research observation persistence.
@@ -69,8 +62,6 @@ type Querier interface {
 	GetLatestProjectSelection(ctx context.Context, projectID int64) (ProjectSelection, error)
 	GetProject(ctx context.Context, id int64) (Project, error)
 	GetProjectByContract(ctx context.Context, arg GetProjectByContractParams) (Project, error)
-	GetProjectCandidate(ctx context.Context, id int64) (ProjectCandidate, error)
-	GetProjectCandidateByContract(ctx context.Context, arg GetProjectCandidateByContractParams) (ProjectCandidate, error)
 	GetProjectDataCollectionSchedule(ctx context.Context, arg GetProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
 	GetProjectDataCollectionTask(ctx context.Context, id int64) (ProjectDataCollectionTask, error)
 	GetProjectForDataCollectionTask(ctx context.Context, id int64) (Project, error)
@@ -86,7 +77,7 @@ type Querier interface {
 	InsertProjectWalletNormalTransaction(ctx context.Context, arg InsertProjectWalletNormalTransactionParams) error
 	IsContractCodeBlocked(ctx context.Context, codeHash []byte) (bool, error)
 	IsWalletBlocked(ctx context.Context, wallet []byte) (bool, error)
-	ListChainIngestCheckpoints(ctx context.Context) ([]ListChainIngestCheckpointsRow, error)
+	ListChainProcessingCheckpoints(ctx context.Context) ([]ListChainProcessingCheckpointsRow, error)
 	ListChains(ctx context.Context) ([]Chain, error)
 	ListContractCodeBlocklistEntries(ctx context.Context) ([]ContractCodeBlocklist, error)
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
@@ -96,8 +87,6 @@ type Querier interface {
 	ListDueProjectDataCollectionSchedules(ctx context.Context, limit int32) ([]ProjectDataCollectionSchedule, error)
 	// Worker host diagnostics read model.
 	ListPipelineQueueMetrics(ctx context.Context) ([]ListPipelineQueueMetricsRow, error)
-	ListProjectCandidates(ctx context.Context, arg ListProjectCandidatesParams) ([]ProjectCandidate, error)
-	ListProjectCandidatesByStatus(ctx context.Context, arg ListProjectCandidatesByStatusParams) ([]ProjectCandidate, error)
 	ListProjectDataCollectionSchedulesByProject(ctx context.Context, projectID int64) ([]ProjectDataCollectionSchedule, error)
 	ListProjectDataCollectionTasks(ctx context.Context, arg ListProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
 	ListProjectInitialRecipientsByProject(ctx context.Context, projectID int64) ([]ProjectInitialRecipient, error)
@@ -119,14 +108,12 @@ type Querier interface {
 	MarkProjectReportBuildTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	MarkProjectSelectionEvaluationTaskSucceeded(ctx context.Context, id int64) (int64, error)
 	PauseTerminalProjectDataCollectionSchedules(ctx context.Context) (int64, error)
-	ReleaseProjectCandidateValidationClaims(ctx context.Context, validationLockToken pgtype.UUID) (int64, error)
-	RenewProjectCandidateValidationClaims(ctx context.Context, arg RenewProjectCandidateValidationClaimsParams) (int64, error)
 	RenewProjectDataCollectionTaskLease(ctx context.Context, arg RenewProjectDataCollectionTaskLeaseParams) (int64, error)
 	RetryProjectDataCollectionTask(ctx context.Context, arg RetryProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	RetryProjectReportBuildTask(ctx context.Context, arg RetryProjectReportBuildTaskParams) (ProjectReportBuildTask, error)
 	RetryProjectSelectionEvaluationTask(ctx context.Context, arg RetryProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error)
 	TouchCurrentProjectObservation(ctx context.Context, arg TouchCurrentProjectObservationParams) (int64, error)
-	UpdateChainIngestCheckpointStatus(ctx context.Context, arg UpdateChainIngestCheckpointStatusParams) (ChainIngestCheckpoint, error)
+	UpdateChainProcessingCheckpointStatus(ctx context.Context, arg UpdateChainProcessingCheckpointStatusParams) (ChainProcessingCheckpoint, error)
 	UpdateContractCodeBlocklistEntryNote(ctx context.Context, arg UpdateContractCodeBlocklistEntryNoteParams) (int64, error)
 	UpdateContractCodeSource(ctx context.Context, arg UpdateContractCodeSourceParams) (ContractCode, error)
 	UpdateProjectResearchCurrentReport(ctx context.Context, arg UpdateProjectResearchCurrentReportParams) (int64, error)
@@ -135,15 +122,15 @@ type Querier interface {
 	UpdateWalletBlocklistEntryNote(ctx context.Context, arg UpdateWalletBlocklistEntryNoteParams) (int64, error)
 	// Operations read model.
 	UpsertChain(ctx context.Context, arg UpsertChainParams) (Chain, error)
-	UpsertChainIngestCheckpoint(ctx context.Context, arg UpsertChainIngestCheckpointParams) (ChainIngestCheckpoint, error)
-	UpsertChainIngestCheckpointCursor(ctx context.Context, arg UpsertChainIngestCheckpointCursorParams) (ChainIngestCheckpoint, error)
+	UpsertChainProcessingCheckpoint(ctx context.Context, arg UpsertChainProcessingCheckpointParams) (ChainProcessingCheckpoint, error)
+	UpsertChainProcessingCheckpointCursor(ctx context.Context, arg UpsertChainProcessingCheckpointCursorParams) (ChainProcessingCheckpoint, error)
 	// Catalog persistence and read model.
 	UpsertContractCode(ctx context.Context, codeHash []byte) error
 	UpsertCurrentProjectObservation(ctx context.Context, arg UpsertCurrentProjectObservationParams) (ProjectObservationCurrent, error)
 	// Catalog persistence and read model.
 	UpsertProject(ctx context.Context, arg UpsertProjectParams) (Project, error)
-	// Discovery persistence.
-	UpsertProjectCandidate(ctx context.Context, arg UpsertProjectCandidateParams) (ProjectCandidate, error)
+	// Discovery processing persistence.
+	UpsertProjectCandidate(ctx context.Context, arg UpsertProjectCandidateParams) error
 	// Research scheduling persistence.
 	UpsertProjectDataCollectionSchedule(ctx context.Context, arg UpsertProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
 	// Discovery validation persistence.

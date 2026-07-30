@@ -45,8 +45,9 @@ schedule state changes together.
 
 ## Runtime Flow
 
-1. Validator promotion creates an active `wallet_normal_transactions` schedule
-   alongside the other project research schedules.
+1. The Token Chain Processor's atomic deployment-block commit creates an active
+   `wallet_normal_transactions` schedule alongside the other project research
+   schedules.
 2. The shared Scheduler creates a versioned task while the project remains
    `researching` or `selected`.
 3. Task claim loads `project.block_number` and deduplicates

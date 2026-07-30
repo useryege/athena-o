@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/catalog"
@@ -31,13 +30,6 @@ func bytesToHash(v []byte) shared.Hash {
 	return shared.BytesToHash(v)
 }
 
-func uuidParam(v string) pgtype.UUID {
-	parsed, err := uuid.Parse(v)
-	if err != nil || parsed == uuid.Nil {
-		return pgtype.UUID{}
-	}
-	return pgtype.UUID{Bytes: [16]byte(parsed), Valid: true}
-}
 func bytesToAddress(v []byte) shared.Address {
 	if len(v) == 0 {
 		return shared.Address{}
@@ -170,53 +162,22 @@ func normalizePage(page, size int32) (int32, int32, int32) {
 	return page, size, (page - 1) * size
 }
 
-func mapChainCheckpointRow(row tokensqlc.GetChainIngestCheckpointRow) (*discovery.ChainIngestCheckpoint, error) {
+func mapChainCheckpointRow(row tokensqlc.GetChainProcessingCheckpointRow) (*discovery.ChainProcessingCheckpoint, error) {
 	n, e := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
 	if e != nil {
 		return nil, e
 	}
-	return &discovery.ChainIngestCheckpoint{ChainID: row.ChainID, ChainName: row.ChainName, Enabled: row.Enabled, CursorBlockNumber: n, Status: discovery.ChainIngestStatus(row.Status), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
+	return &discovery.ChainProcessingCheckpoint{ChainID: row.ChainID, ChainName: row.ChainName, Enabled: row.Enabled, CursorBlockNumber: n, Status: discovery.ChainProcessingStatus(row.Status), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
 }
-func mapChainCheckpointListRow(row tokensqlc.ListChainIngestCheckpointsRow) (*discovery.ChainIngestCheckpoint, error) {
-	return mapChainCheckpointRow(tokensqlc.GetChainIngestCheckpointRow(row))
+func mapChainCheckpointListRow(row tokensqlc.ListChainProcessingCheckpointsRow) (*discovery.ChainProcessingCheckpoint, error) {
+	return mapChainCheckpointRow(tokensqlc.GetChainProcessingCheckpointRow(row))
 }
-func mapChainCheckpoint(row tokensqlc.ChainIngestCheckpoint) (*discovery.ChainIngestCheckpoint, error) {
+func mapChainCheckpoint(row tokensqlc.ChainProcessingCheckpoint) (*discovery.ChainProcessingCheckpoint, error) {
 	n, e := int64ToUint64("cursor_block_number", row.CursorBlockNumber)
 	if e != nil {
 		return nil, e
 	}
-	return &discovery.ChainIngestCheckpoint{ChainID: row.ChainID, CursorBlockNumber: n, Status: discovery.ChainIngestStatus(row.Status), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
-}
-
-func mapProjectCandidate(row tokensqlc.ProjectCandidate) (*discovery.ProjectCandidate, error) {
-	tx, e := int64ToUint64("tx_index", row.TxIndex)
-	if e != nil {
-		return nil, e
-	}
-	bn, e := int64ToUint64("block_number", row.BlockNumber)
-	if e != nil {
-		return nil, e
-	}
-	bt, e := int64ToUint64("block_time", row.BlockTime)
-	if e != nil {
-		return nil, e
-	}
-	lockToken := ""
-	if row.ValidationLockToken.Valid {
-		lockToken = uuid.UUID(row.ValidationLockToken.Bytes).String()
-	}
-	return &discovery.ProjectCandidate{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, Status: discovery.ProjectCandidateStatus(row.Status), ValidationLockToken: lockToken, ValidationLockedAt: timeValue(row.ValidationLockedAt), ValidationLeaseExpiresAt: timeValue(row.ValidationLeaseExpiresAt), CreatedAt: timeValue(row.CreatedAt)}, nil
-}
-func mapProjectCandidates(rows []tokensqlc.ProjectCandidate) ([]discovery.ProjectCandidate, error) {
-	out := make([]discovery.ProjectCandidate, 0, len(rows))
-	for _, r := range rows {
-		v, e := mapProjectCandidate(r)
-		if e != nil {
-			return nil, e
-		}
-		out = append(out, *v)
-	}
-	return out, nil
+	return &discovery.ChainProcessingCheckpoint{ChainID: row.ChainID, CursorBlockNumber: n, Status: discovery.ChainProcessingStatus(row.Status), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}, nil
 }
 func mapContractCode(row tokensqlc.ContractCode) *catalog.ContractCode {
 	return &catalog.ContractCode{CodeHash: bytesToHash(row.CodeHash), SourceCode: textValue(row.SourceCode), SourceCodeFetchedAt: timeValue(row.SourceCodeFetchedAt), DeploymentCount: row.DeploymentCount, CreatedAt: timeValue(row.CreatedAt)}

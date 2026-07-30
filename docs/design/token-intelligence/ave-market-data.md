@@ -2,7 +2,7 @@
 
 ## Scope
 
-Ave Market Data Collection retrieves vendor token-detail data for Token Intelligence projects, normalizes the token snapshot, retains only the project's canonical wrapped-native and USDT V2 pairs, and commits versioned Ave observations. The research scheduler owns when collection runs, the ATHENA contract and Validator own pair-address derivation and persistence, and the project-detail read model owns presentation.
+Ave Market Data Collection retrieves vendor token-detail data for Token Intelligence projects, normalizes the token snapshot, retains only the project's canonical wrapped-native and USDT V2 pairs, and commits versioned Ave observations. The research scheduler owns when collection runs, the ATHENA contract and Token Chain Processor own pair-address derivation and persistence, and the project-detail read model owns presentation.
 
 ## Source Locations
 

@@ -73,13 +73,13 @@ func validateNonNegativeInt64Field(name string, value int64) error {
 	return nil
 }
 
-func validateChainIngestStatus(value string) error {
+func validateChainProcessingStatus(value string) error {
 	value = strings.TrimSpace(value)
 	switch value {
-	case string(discovery.ChainIngestStatusRunning), string(discovery.ChainIngestStatusStopped):
+	case string(discovery.ChainProcessingStatusRunning), string(discovery.ChainProcessingStatusStopped):
 		return nil
 	default:
-		return status.Errorf(codes.InvalidArgument, "status must be %q or %q", discovery.ChainIngestStatusRunning, discovery.ChainIngestStatusStopped)
+		return status.Errorf(codes.InvalidArgument, "status must be %q or %q", discovery.ChainProcessingStatusRunning, discovery.ChainProcessingStatusStopped)
 	}
 }
 
@@ -190,7 +190,7 @@ func formatAddress(value shared.Address) string {
 	return common.Address(value).Hex()
 }
 
-func mapChainIngestCheckpoint(item discovery.ChainIngestCheckpoint) *v1alpha1.TokenChainCheckpoint {
+func mapChainProcessingCheckpoint(item discovery.ChainProcessingCheckpoint) *v1alpha1.TokenChainCheckpoint {
 	return &v1alpha1.TokenChainCheckpoint{
 		ChainID:           item.ChainID,
 		ChainName:         item.ChainName,
@@ -201,10 +201,10 @@ func mapChainIngestCheckpoint(item discovery.ChainIngestCheckpoint) *v1alpha1.To
 	}
 }
 
-func mapChainIngestCheckpoints(items []discovery.ChainIngestCheckpoint) []*v1alpha1.TokenChainCheckpoint {
+func mapChainProcessingCheckpoints(items []discovery.ChainProcessingCheckpoint) []*v1alpha1.TokenChainCheckpoint {
 	results := make([]*v1alpha1.TokenChainCheckpoint, 0, len(items))
 	for _, item := range items {
-		results = append(results, mapChainIngestCheckpoint(item))
+		results = append(results, mapChainProcessingCheckpoint(item))
 	}
 	return results
 }
