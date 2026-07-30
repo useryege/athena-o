@@ -4,6 +4,7 @@
 
 - [Rules](#rules)
   - [Project Status](#project-status)
+  - [Requirement-Driven Architecture](#requirement-driven-architecture)
   - [Test Data and API Keys](#test-data-and-api-keys)
   - [No Historical Compatibility](#no-historical-compatibility)
   - [No Tests](#no-tests)
@@ -16,6 +17,15 @@
 ### Project Status
 
 The project is currently in development and has not been launched yet. Necessary breaking changes are allowed, and backward compatibility with historical behavior is not required.
+
+### Requirement-Driven Architecture
+
+The current service architecture is designed to satisfy the current requirements and must not be treated as a permanent constraint. Future requirements may expose limitations in the existing architecture or make those requirements inconvenient to implement. When that happens:
+
+- Prioritize satisfying the requirements over preserving the existing architecture.
+- Freely perform breaking refactors or replace existing component boundaries, data flows, and technology choices when needed to provide a clear and effective implementation.
+- Introduce additional infrastructure or technology stacks, including Kafka, Redis, RabbitMQ, or other appropriate systems, whenever the requirements justify them.
+- Do not treat the current architecture or technology stack as immutable.
 
 ### Test Data and API Keys
 
