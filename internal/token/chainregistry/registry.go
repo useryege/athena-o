@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/useryege/athena/internal/token/shared"
 )
 
 const (
@@ -12,6 +14,44 @@ const (
 	bscChainID        int64 = 56
 	bscChainName            = "BSC Mainnet"
 )
+
+type AssetMetadata struct {
+	Address  shared.Address
+	Symbol   string
+	Decimals uint8
+}
+
+type ChainAssets struct {
+	WrappedNative AssetMetadata
+	Stable        AssetMetadata
+}
+
+var fixedAssets = map[int64]ChainAssets{
+	ethereumChainID: {
+		WrappedNative: AssetMetadata{
+			Address:  mustAddress("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+			Symbol:   "WETH",
+			Decimals: 18,
+		},
+		Stable: AssetMetadata{
+			Address:  mustAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+			Symbol:   "USDT",
+			Decimals: 6,
+		},
+	},
+	bscChainID: {
+		WrappedNative: AssetMetadata{
+			Address:  mustAddress("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"),
+			Symbol:   "WBNB",
+			Decimals: 18,
+		},
+		Stable: AssetMetadata{
+			Address:  mustAddress("0x55d398326f99059fF775485246999027B3197955"),
+			Symbol:   "USDT",
+			Decimals: 18,
+		},
+	},
+}
 
 type ChainConfig struct {
 	Enabled                          bool
@@ -31,6 +71,7 @@ type Chain struct {
 	ID                               int64
 	Name                             string
 	Enabled                          bool
+	Assets                           ChainAssets
 	NodeWSURLs                       []string
 	AthenaContract                   string
 	ProcessorInitialLookbackDuration time.Duration
@@ -78,16 +119,31 @@ func newChain(id int64, name string, config ChainConfig) Chain {
 			urls = append(urls, endpoint)
 		}
 	}
+	assets, _ := FixedAssets(id)
 	return Chain{
 		ID:                               id,
 		Name:                             name,
 		Enabled:                          config.Enabled,
+		Assets:                           assets,
 		NodeWSURLs:                       urls,
 		AthenaContract:                   strings.TrimSpace(config.AthenaContract),
 		ProcessorInitialLookbackDuration: config.ProcessorInitialLookbackDuration,
 		ProcessorPollInterval:            config.ProcessorPollInterval,
 		SwapPollInterval:                 config.SwapPollInterval,
 	}
+}
+
+func FixedAssets(chainID int64) (ChainAssets, bool) {
+	assets, ok := fixedAssets[chainID]
+	return assets, ok
+}
+
+func mustAddress(value string) shared.Address {
+	address, err := shared.HexToAddress(value)
+	if err != nil {
+		panic(fmt.Sprintf("invalid fixed chain asset address %q: %v", value, err))
+	}
+	return address
 }
 
 func (r *Registry) Chains() []Chain {

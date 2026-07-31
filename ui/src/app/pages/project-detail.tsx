@@ -1,4 +1,4 @@
-import {CodeOutlined, CopyOutlined, ExportOutlined} from '@ant-design/icons';
+import {CodeOutlined, CopyOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Drawer, Empty, Flex, Pagination, Select, Space, Table, Tabs, Tag, Timeline, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
@@ -18,7 +18,9 @@ import {
     TokenWalletNormalTransaction
 } from '../shared/services/token-service';
 import {ProjectTrendChart} from './project-detail-chart';
-import {ChainBadge, chainAssetLabels, tokenExplorerURL} from './token-shared';
+import {ProjectSwapActivityTab} from './project-swap-activity';
+import {ProjectExplorerValue as ExplorerValue, ProjectRawTokenAmount, ProjectTimeValue as TimeValue} from './project-detail-values';
+import {ChainBadge, chainAssetLabels} from './token-shared';
 
 const observationTypes = [
     {label: 'All', value: ''},
@@ -59,25 +61,7 @@ const formatExact = (value?: string | number) =>
         missing()
     );
 
-const formatTokenAmount = (value: string | undefined, decimals: number) => {
-    if (!hasValue(value)) {
-        return missing();
-    }
-    const raw = String(value);
-    const match = raw.match(/^(-?)(\d+)$/);
-    if (!match || decimals < 0) {
-        return formatExact(value);
-    }
-    const digits = match[2].padStart(decimals + 1, '0');
-    const whole = decimals === 0 ? digits : digits.slice(0, -decimals);
-    const fraction = decimals === 0 ? '' : digits.slice(-decimals).replace(/0+$/, '');
-    const display = `${match[1]}${whole}${fraction ? `.${fraction}` : ''}`;
-    return (
-        <Tooltip title={`${raw} base units`}>
-            <span className='project-detail__numeric'>{formatCompact(display)}</span>
-        </Tooltip>
-    );
-};
+const formatTokenAmount = (value: string | undefined, decimals: number) => <ProjectRawTokenAmount raw={value} decimals={decimals} />;
 
 const prettyJSON = (value?: string) => {
     if (!value) {
@@ -88,46 +72,6 @@ const prettyJSON = (value?: string) => {
     } catch {
         return value;
     }
-};
-
-const TimeValue = (props: {value?: string; unixSeconds?: number}) => {
-    const raw = props.value || (props.unixSeconds ? new Date(props.unixSeconds * 1000).toISOString() : undefined);
-    if (!raw) {
-        return missing();
-    }
-    const parsed = new Date(raw);
-    if (Number.isNaN(parsed.getTime())) {
-        return <span>{raw}</span>;
-    }
-    return (
-        <Tooltip title={parsed.toISOString()}>
-            <time dateTime={parsed.toISOString()}>{parsed.toLocaleString()}</time>
-        </Tooltip>
-    );
-};
-
-const ExplorerValue = (props: {chainID?: number; kind: 'address' | 'tx'; value?: string}) => {
-    if (!props.value) {
-        return missing();
-    }
-    const url = tokenExplorerURL(props.chainID, props.kind, props.value);
-    return (
-        <span className='project-detail-identifier'>
-            <TruncatedText value={props.value} copyable={true} singleLine={true} />
-            {url && (
-                <Tooltip title='Open in block explorer'>
-                    <Typography.Link
-                        className='project-detail-identifier__link'
-                        href={url}
-                        target='_blank'
-                        rel='noreferrer'
-                        aria-label={`Open ${props.value} in block explorer`}>
-                        <ExportOutlined />
-                    </Typography.Link>
-                </Tooltip>
-            )}
-        </span>
-    );
 };
 
 const BooleanState = (props: {value?: boolean; trueLabel?: string; falseLabel?: string; dangerWhenTrue?: boolean}) => {
@@ -1069,6 +1013,13 @@ export const ProjectDetailPage = () => {
                                 key: 'market',
                                 label: 'Market & Liquidity',
                                 children: <MarketTab projectID={projectID} detail={detail.data} refreshVersion={activeRefreshVersion('market')} />
+                            },
+                            {
+                                key: 'swap-activity',
+                                label: 'Swap Activity',
+                                children: (
+                                    <ProjectSwapActivityTab projectID={projectID} active={activeTab === 'swap-activity'} refreshVersion={activeRefreshVersion('swap-activity')} />
+                                )
                             },
                             {key: 'wallets', label: 'Wallets', children: <WalletsTab detail={detail.data} />},
                             {

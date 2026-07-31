@@ -58,6 +58,11 @@ existing role hierarchy.
    `rbacGRPCMethods`. `authorizeGRPC` rejects read-only callers before proxying
    the request to the Token API service.
 
+The project-detail snapshot, Swap activity summary, and paginated Swap event
+methods all map explicitly to the existing `tokenapi/get/projects` permission.
+Adding Swap visibility therefore does not introduce a broader permission or
+make the activity endpoints independently discoverable to read-only users.
+
 ## State / Data
 
 This capability adds no durable state. Role grants are embedded in the server
@@ -85,6 +90,8 @@ operation always uses the built-in role policy described here.
   not from a client-side username check.
 - Hiding navigation is not the security boundary; every Token API method is
   also protected by a server-side `tokenapi` authorization rule.
+- `GetProjectSwapActivity` and `ListProjectSwapEvents` require the same
+  `tokenapi/get/projects` permission as `GetProjectDetail`.
 - An inaccessible Token route renders the shared 403 result without mounting
   its page component.
 - Token API paths, request and response messages, and public data types are
@@ -114,6 +121,8 @@ log format.
 - [ ] Session permission projection still covers every Token navigation and route permission.
 - [ ] Token navigation filtering and direct-route denial remain aligned.
 - [ ] Every public Token API method has a server-side `tokenapi` authorization rule.
+- [ ] Project detail, Swap activity, and Swap event reads remain mapped to
+      `tokenapi/get/projects`.
 - [ ] API and session response schemas remain unchanged.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

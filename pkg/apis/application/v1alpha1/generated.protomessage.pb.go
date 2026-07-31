@@ -97,6 +97,16 @@ func (*TokenProjectRelatedWallet) ProtoMessage() {}
 
 func (*TokenProjectReport) ProtoMessage() {}
 
+func (*TokenProjectSwapActivity) ProtoMessage() {}
+
+func (*TokenProjectSwapAsset) ProtoMessage() {}
+
+func (*TokenProjectSwapBlock) ProtoMessage() {}
+
+func (*TokenProjectSwapEvent) ProtoMessage() {}
+
+func (*TokenProjectSwapPairActivity) ProtoMessage() {}
+
 func (*TokenProjectTrendPoint) ProtoMessage() {}
 
 func (*TokenProjectTrendSeries) ProtoMessage() {}

@@ -199,6 +199,8 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/tokenapi.TokenCatalogService/ListContractCodes":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
 	"/tokenapi.TokenCatalogService/ListProjects":                        fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
 	"/tokenapi.TokenCatalogService/GetProjectDetail":                    fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
+	"/tokenapi.TokenCatalogService/GetProjectSwapActivity":              fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
+	"/tokenapi.TokenCatalogService/ListProjectSwapEvents":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
 	"/tokenapi.TokenCatalogService/ListProjectTrends":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
 	"/tokenapi.TokenCatalogService/ListProjectObservations":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
 	"/tokenapi.TokenCatalogService/ListProjectWalletNormalTransactions": fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),

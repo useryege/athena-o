@@ -10,9 +10,12 @@ independent per-pair observation state, the 100-Swap-block limit, inactivity
 expiration, numeric Swap checkpoints, and process health reporting.
 
 The Token Chain Processor creates the two pair targets atomically with each
-accepted project. Public Token APIs, the project-detail read model, research
-collection schedules, report generation, and project selection do not expose or
-consume Swap observations.
+accepted project. The project-detail read model exposes committed Swap
+observations through read-only activity and event-detail endpoints. It derives
+trade classification, pair-accounting flows, and execution-price summaries at
+read time; those concerns do not feed back into this processor. Research
+collection schedules, report generation, and project selection do not consume
+Swap observations.
 
 ## Source Locations
 
@@ -51,6 +54,8 @@ flowchart LR
     R --> T
     R --> B["sampled Swap blocks"]
     R --> V["decoded Swap events"]
+    B --> Q["Project-detail Swap read model"]
+    V --> Q
 ```
 
 `NewCommand` creates one shared PostgreSQL connection, fixed chain registry, EVM
@@ -159,7 +164,9 @@ transaction hash and position, log index, `tx_from`, event `sender`, event
 `to_address`, and the four raw nonnegative `NUMERIC(78,0)` amounts.
 `(project_swap_pair_id, transaction_hash, log_index)` is unique. Project, chain,
 pair kind, pair address, topic, raw log bytes, price, and trade direction remain
-derivable or outside the stored event.
+derivable or outside the stored event. The project-detail read model performs
+those derivations without changing the processor's storage or collection
+rules.
 
 The WETH and USDT targets, even when their addresses are equal, never share
 counts or terminal state. Completed and expired targets retain all previously
@@ -273,4 +280,6 @@ without credentials.
 - [ ] Recheck the atomic block transaction, retries, shutdown, health,
       readiness, logs, and metrics.
 - [ ] Recheck target initialization inside the Chain Processor block transaction.
+- [ ] Keep the raw observation contract aligned with the read-only project-detail
+      Swap view.
 - [ ] Keep the [design index](../README.md) entry current.

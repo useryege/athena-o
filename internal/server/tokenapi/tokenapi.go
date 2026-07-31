@@ -230,6 +230,39 @@ func (s *Server) GetProjectDetail(ctx context.Context, req *tokenapipkg.GetProje
 	}
 	return &tokenapipkg.GetProjectDetailResponse{Found: r.GetFound(), Detail: r.GetDetail()}, nil
 }
+func (s *Server) GetProjectSwapActivity(ctx context.Context, req *tokenapipkg.GetProjectSwapActivityRequest) (*tokenapipkg.GetProjectSwapActivityResponse, error) {
+	client, e := s.tokenAPIClientSet.Catalog()
+	if e != nil {
+		return nil, e
+	}
+	r, e := client.GetProjectSwapActivity(ctx, &tokenapiapiclient.GetProjectSwapActivityRequest{ProjectId: req.GetProjectId()})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.GetProjectSwapActivityResponse{Found: r.GetFound(), Activity: r.GetActivity()}, nil
+}
+func (s *Server) ListProjectSwapEvents(ctx context.Context, req *tokenapipkg.ListProjectSwapEventsRequest) (*tokenapipkg.ListProjectSwapEventsResponse, error) {
+	client, e := s.tokenAPIClientSet.Catalog()
+	if e != nil {
+		return nil, e
+	}
+	r, e := client.ListProjectSwapEvents(ctx, &tokenapiapiclient.ListProjectSwapEventsRequest{
+		ProjectId:   req.GetProjectId(),
+		PairKind:    req.GetPairKind(),
+		BlockNumber: req.GetBlockNumber(),
+		Page:        req.GetPage(),
+		PageSize:    req.GetPageSize(),
+	})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.ListProjectSwapEventsResponse{
+		Events:   r.GetEvents(),
+		Total:    r.GetTotal(),
+		Page:     r.GetPage(),
+		PageSize: r.GetPageSize(),
+	}, nil
+}
 func (s *Server) ListProjectTrends(ctx context.Context, req *tokenapipkg.ListProjectTrendsRequest) (*tokenapipkg.ListProjectTrendsResponse, error) {
 	client, e := s.tokenAPIClientSet.Catalog()
 	if e != nil {

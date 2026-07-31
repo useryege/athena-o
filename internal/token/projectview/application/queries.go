@@ -13,12 +13,15 @@ import (
 	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/shared"
+	"github.com/useryege/athena/internal/token/swap"
 )
 
 const maxTrendPoints = 500
 
 type ReadRepository interface {
 	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
+	GetProjectSwapActivity(context.Context, int64) (*projectview.SwapActivity, error)
+	ListProjectSwapEventsPage(context.Context, int64, swap.PairKind, uint64, int32, int32) (*projectview.SwapEventPage, error)
 	ListProjectObservationsPage(context.Context, int64, string, int32, int32) (*projectview.ObservationPage, error)
 	ListProjectTrendObservations(context.Context, int64, time.Time) ([]research.ProjectObservation, error)
 	ListProjectWalletNormalTransactionsPage(context.Context, int64, shared.Address, string, string, int32, int32) (*projectview.WalletNormalTransactionPage, error)
@@ -35,6 +38,33 @@ func NewQueries(repository ReadRepository) *Queries {
 
 func (queries *Queries) GetProjectDetail(ctx context.Context, projectID int64) (*projectview.Detail, error) {
 	return queries.repository.GetProjectDetail(ctx, projectID)
+}
+
+func (queries *Queries) GetProjectSwapActivity(ctx context.Context, projectID int64) (*projectview.SwapActivity, error) {
+	activity, err := queries.repository.GetProjectSwapActivity(ctx, projectID)
+	if err != nil || activity == nil {
+		return activity, err
+	}
+	activity.GeneratedAt = queries.now().UTC()
+	return activity, nil
+}
+
+func (queries *Queries) ListProjectSwapEventsPage(
+	ctx context.Context,
+	projectID int64,
+	pairKind swap.PairKind,
+	blockNumber uint64,
+	page, pageSize int32,
+) (*projectview.SwapEventPage, error) {
+	switch pairKind {
+	case swap.PairKindWETH, swap.PairKindUSDT:
+	default:
+		return nil, fmt.Errorf("pair kind must be weth or usdt")
+	}
+	if blockNumber == 0 {
+		return nil, fmt.Errorf("block number must be positive")
+	}
+	return queries.repository.ListProjectSwapEventsPage(ctx, projectID, pairKind, blockNumber, page, pageSize)
 }
 
 func (queries *Queries) ListProjectObservationsPage(ctx context.Context, projectID int64, dataType string, page, pageSize int32) (*projectview.ObservationPage, error) {
