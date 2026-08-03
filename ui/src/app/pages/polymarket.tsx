@@ -4,6 +4,7 @@ import {Button, Empty, Space, Switch, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, CardTitle, ResourceTable, useAsyncData} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import {
     PolymarketHotMarketItem,
@@ -35,12 +36,12 @@ const PolymarketListPage = <T extends PolymarketHotMarketItem | PolymarketRealti
         {title: 'Volume', render: item => fmtNumber((item as any).volume24hr || (item as any).volumeNum)},
         {title: 'Liquidity', render: item => fmtNumber((item as any).liquidityNum)},
         {title: 'Spread', render: item => fmt((item as any).spread)},
-        {title: 'Updated', dataIndex: 'updatedAt'}
+        {title: 'Updated', render: item => formatBeijingDateTime((item as any).updatedAt) || '-'}
     ];
     return (
         <AppPage
             title={props.title}
-            subtitle={`Fetched ${fmt(data.data?.fetchedAt)} ${data.data?.stale ? '(stale)' : ''}`}
+            subtitle={`Fetched ${formatBeijingUnixSeconds(data.data?.fetchedAt) || '-'} ${data.data?.stale ? '(stale)' : ''}`}
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}>
@@ -124,7 +125,7 @@ export const PolymarketSportsLivePage = () => {
     return (
         <AppPage
             title='Sports Live'
-            subtitle={`Fetched ${fmt(events.data?.fetchedAt)} ${events.data?.stale ? '(stale)' : ''}`}
+            subtitle={`Fetched ${formatBeijingUnixSeconds(events.data?.fetchedAt) || '-'} ${events.data?.stale ? '(stale)' : ''}`}
             loading={events.loading}
             error={events.error}
             onRefresh={reloadAll}>
@@ -155,7 +156,7 @@ const sportsHistoryLeagues = ['ATP', 'WTA'];
 const sportsHistorySyncPollingIdleMs = 10000;
 const sportsHistorySyncPollingActiveMs = 2000;
 
-const sportsHistorySyncTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : 'Not available');
+const sportsHistorySyncTime = (value?: number) => formatBeijingUnixSeconds(value) || 'Not available';
 
 const SportsHistorySyncStatusBar = (props: {status?: PolymarketSportsHistorySyncStatus; refreshing: boolean}) => {
     const state = props.refreshing ? 'syncing' : props.status?.state || 'idle';
@@ -266,7 +267,7 @@ export const PolymarketSportsHistoryPage = (props: {canRefresh: boolean}) => {
     return (
         <AppPage
             title='Sports History'
-            subtitle={`Last 72 hours · Fetched ${fmt(events.data?.fetchedAt)} ${events.data?.stale ? '(stale)' : ''}`}
+            subtitle={`Last 72 hours · Fetched ${formatBeijingUnixSeconds(events.data?.fetchedAt) || '-'} ${events.data?.stale ? '(stale)' : ''}`}
             loading={events.loading}
             error={events.error || syncStatus.error}
             extra={

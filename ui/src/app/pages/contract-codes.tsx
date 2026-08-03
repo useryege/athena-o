@@ -1,6 +1,7 @@
 import type {ColumnsType} from 'antd/es/table';
 import {Link} from 'react-router-dom';
 import {AppPage, ResourceTable, SearchBar, useAsyncData} from '../components';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenContractCode} from '../shared/services/token-service';
 import {short, useKeywordParam, usePagedParams} from './shared';
@@ -12,8 +13,8 @@ export const ContractCodesPage = () => {
     const columns: ColumnsType<TokenContractCode> = [
         {title: 'Code Hash', render: item => <Link to={`/token/contract-codes/${encodeURIComponent(item.codeHash || '')}`}>{short(item.codeHash)}</Link>},
         {title: 'Deployments', dataIndex: 'deploymentCount'},
-        {title: 'Fetched', dataIndex: 'sourceCodeFetchedAt'},
-        {title: 'Created', dataIndex: 'createdAt'}
+        {title: 'Fetched', render: item => formatBeijingDateTime(item.sourceCodeFetchedAt) || '-'},
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
     return (
         <AppPage

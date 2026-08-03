@@ -1,6 +1,7 @@
 import {Tabs} from 'antd';
 import {useParams} from 'react-router-dom';
 import {AppPage, KeyValueGrid, Section, TruncatedText, useAsyncData} from '../components';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {boolTag, fmtNumber} from './shared';
 
@@ -16,8 +17,8 @@ export const ContractCodeDetailPage = () => {
                         {label: 'Code Hash', value: <TruncatedText value={decoded} copyable={true} />},
                         {label: 'Found', value: boolTag(!!detail.data)},
                         {label: 'Deployments', value: fmtNumber(detail.data?.deploymentCount)},
-                        {label: 'Fetched', value: detail.data?.sourceCodeFetchedAt},
-                        {label: 'Created', value: detail.data?.createdAt}
+                        {label: 'Fetched', value: formatBeijingDateTime(detail.data?.sourceCodeFetchedAt) || '-'},
+                        {label: 'Created', value: formatBeijingDateTime(detail.data?.createdAt) || '-'}
                     ]}
                 />
             </Section>

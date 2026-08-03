@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenWalletBlocklistEntry} from '../shared/services/token-service';
 
@@ -39,7 +40,7 @@ export const WalletBlocklistPage = () => {
     const columns: ColumnsType<TokenWalletBlocklistEntry> = [
         {title: 'Wallet', render: item => <TruncatedText value={item.wallet} copyable={true} />},
         {title: 'Note', dataIndex: 'note'},
-        {title: 'Created', dataIndex: 'createdAt'},
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'},
         {
             title: 'Actions',
             render: item => (

@@ -1,28 +1,22 @@
 import {ExportOutlined} from '@ant-design/icons';
 import {Tooltip, Typography} from 'antd';
 import {TruncatedText} from '../components';
+import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {tokenExplorerURL} from './token-shared';
 
 const hasText = (value?: string) => value !== undefined && value !== '';
 
-export const formatProjectTimeText = (value?: string) => {
-    if (!hasText(value)) {
-        return undefined;
-    }
-    const parsed = new Date(value as string);
-    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
-};
+export const formatProjectTimeText = (value?: string) => formatBeijingDateTime(value);
 
 export const ProjectTimeValue = (props: {value?: string; unixSeconds?: number}) => {
-    const raw = props.value || (props.unixSeconds ? new Date(props.unixSeconds * 1000).toISOString() : undefined);
-    const display = formatProjectTimeText(raw);
+    const parsed = props.value ? new Date(props.value) : props.unixSeconds ? new Date(props.unixSeconds * 1000) : undefined;
+    const display = props.value ? formatBeijingDateTime(props.value) : formatBeijingUnixSeconds(props.unixSeconds);
     if (!display) {
         return <Typography.Text type='secondary'>-</Typography.Text>;
     }
-    const parsed = new Date(raw as string);
-    const dateTime = Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString();
+    const dateTime = parsed && !Number.isNaN(parsed.getTime()) ? parsed.toISOString() : props.value;
     return (
-        <Tooltip title={raw}>
+        <Tooltip title={display}>
             <time dateTime={dateTime}>{display}</time>
         </Tooltip>
     );

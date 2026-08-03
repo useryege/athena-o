@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, KeyValueGrid, ResourceTable, Section, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingDateTime, formatBeijingUnixSeconds, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {ListPolymarketUMAResult, PolymarketUMADisputeItem, PolymarketUMAProposalItem} from '../shared/services/polymarket-service';
 import {fmt, short, usePagedParams} from './shared';
@@ -13,12 +14,7 @@ type UMAKind = 'proposal' | 'dispute';
 
 const explorerURL = (txHash: string) => `https://polygonscan.com/tx/${encodeURIComponent(txHash)}`;
 
-const formatTimestamp = (value: number) => {
-    if (!value) {
-        return '-';
-    }
-    return new Date(value * 1000).toLocaleString();
-};
+const formatTimestamp = (value: number) => formatBeijingUnixSeconds(value) || '-';
 
 const externalLink = (href: string, label: React.ReactNode) =>
     href ? (
@@ -50,7 +46,7 @@ const UMADetailDrawer = (props: {item?: UMAItem; kind: UMAKind; onClose: () => v
                     <KeyValueGrid
                         columns={2}
                         items={[
-                            {label: 'Block', value: fmt(item.blockNumber)},
+                            {label: 'Block', value: formatBlockNumber(item.blockNumber)},
                             {label: 'Log index', value: fmt(item.logIndex)},
                             {label: 'Transaction', value: <TruncatedText value={item.txHash} copyable={true} />},
                             {label: 'Transaction index', value: fmt(item.txIndex)},
@@ -73,7 +69,7 @@ const UMADetailDrawer = (props: {item?: UMAItem; kind: UMAKind; onClose: () => v
                                       {label: 'Currency', value: <TruncatedText value={item.currency} copyable={true} />}
                                   ]
                                 : []),
-                            {label: 'Fetched at', value: item.fetchedAt},
+                            {label: 'Fetched at', value: formatBeijingDateTime(item.fetchedAt) || '-'},
                             {label: 'Ancillary data', value: <TruncatedText value={item.ancillaryDataText} copyable={true} />},
                             {label: 'Ancillary data hex', value: <TruncatedText value={item.ancillaryDataHex} copyable={true} />},
                             {label: 'Raw topics', value: <TruncatedText value={item.rawTopics} copyable={true} />},
@@ -137,7 +133,7 @@ const PolymarketUMAPage = (props: {kind: UMAKind; canScan: boolean}) => {
     };
 
     const columns: ColumnsType<UMAItem> = [
-        {title: 'Block', dataIndex: 'blockNumber'},
+        {title: 'Block', render: item => formatBlockNumber(item.blockNumber)},
         {title: 'Question', dataIndex: 'question', width: 360, render: value => value || '-'},
         {title: props.kind === 'proposal' ? 'Proposer' : 'Disputer', render: item => short(props.kind === 'proposal' ? item.proposer : 'disputer' in item ? item.disputer : '')},
         {title: 'Price', dataIndex: 'proposedPrice'},

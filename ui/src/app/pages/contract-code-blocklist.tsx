@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenContractCodeBlocklistEntry} from '../shared/services/token-service';
 import {ChainBadge, chainLabel} from './token-shared';
@@ -57,7 +58,7 @@ export const ContractCodeBlocklistPage = () => {
         {title: 'Note', dataIndex: 'note'},
         {title: 'Source Chain', render: item => <ChainBadge chainID={item.sourceChainID} />},
         {title: 'Source Contract', render: item => <TruncatedText value={item.sourceContract} copyable={true} />},
-        {title: 'Created', dataIndex: 'createdAt'},
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'},
         {
             title: 'Actions',
             render: item => (

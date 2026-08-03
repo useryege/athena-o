@@ -3,8 +3,15 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, MetricRow, ResourceTable, Section, StatusTag, TruncatedText, useAsyncData} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
-import type {EtherscanGatewayProbeCounts, EtherscanGatewayProbeGatewaySummary, EtherscanGatewayProbeKeySummary, EtherscanGatewayProbeRun, EtherscanGatewayStatus} from '../shared/services';
+import type {
+    EtherscanGatewayProbeCounts,
+    EtherscanGatewayProbeGatewaySummary,
+    EtherscanGatewayProbeKeySummary,
+    EtherscanGatewayProbeRun,
+    EtherscanGatewayStatus
+} from '../shared/services';
 
 type ProbeTone = 'good' | 'bad' | 'warn' | 'neutral' | 'running';
 type FailureCategoryKey = Exclude<keyof EtherscanGatewayProbeCounts, 'success'>;
@@ -19,7 +26,7 @@ const failureCategories: Array<{key: FailureCategoryKey; label: string; tone: Ex
     {key: 'other', label: 'Other', tone: 'bad'}
 ];
 
-const formatUnixSeconds = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
+const formatUnixSeconds = (value?: number) => formatBeijingUnixSeconds(value) || '-';
 const formatLatency = (value?: number) => (value === undefined ? '-' : `${value} ms`);
 const formatDuration = (value?: number) => {
     if (!value) {
@@ -61,7 +68,8 @@ const failureCount = (counts?: EtherscanGatewayProbeCounts) => {
     return Math.max(countsTotal(counts) - counts.success, 0);
 };
 
-const severeFailureCount = (counts?: EtherscanGatewayProbeCounts) => (counts ? counts.authentication + counts.plan + counts.invalidRequest + counts.malformed + counts.upstream + counts.other : 0);
+const severeFailureCount = (counts?: EtherscanGatewayProbeCounts) =>
+    counts ? counts.authentication + counts.plan + counts.invalidRequest + counts.malformed + counts.upstream + counts.other : 0;
 
 const mainFailureCause = (counts?: EtherscanGatewayProbeCounts): {label: string; value: number; tone: ProbeTone} => {
     if (!counts) {
@@ -197,7 +205,14 @@ const sampleTone = (sample: string): ProbeTone => {
     if (lower.includes('rate_limit') || lower.includes('rate limit')) {
         return 'warn';
     }
-    if (lower.includes('authentication') || lower.includes('permission') || lower.includes('invalid') || lower.includes('malformed') || lower.includes('upstream') || lower.includes('other')) {
+    if (
+        lower.includes('authentication') ||
+        lower.includes('permission') ||
+        lower.includes('invalid') ||
+        lower.includes('malformed') ||
+        lower.includes('upstream') ||
+        lower.includes('other')
+    ) {
         return 'bad';
     }
     return 'neutral';
@@ -221,7 +236,7 @@ export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
     }, []);
 
     const items = data.data?.items || [];
-    const checkedAt = data.data?.checkedAt ? new Date(data.data.checkedAt * 1000).toLocaleString() : 'Not checked';
+    const checkedAt = formatBeijingUnixSeconds(data.data?.checkedAt) || 'Not checked';
     const running = items.filter(isRunning).length;
     const unreachable = items.filter(item => item.status === 'unreachable').length;
     const errors = items.filter(isRuntimeError).length;
@@ -400,10 +415,25 @@ export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
                             )}
                         </div>
                         <div className='etherscan-probe-kpi-grid'>
-                            <ProbeKPI label='Success %' value={successRate(activeRun.counts, activeRun.total)} detail={`${activeRun.counts.success}/${activeRun.total} success`} tone={activeRunTone} />
-                            <ProbeKPI label='Success' value={`${activeRun.counts.success}/${activeRun.total}`} detail={`${activeRun.requiredSuccess} required`} tone={activeRunTone} />
+                            <ProbeKPI
+                                label='Success %'
+                                value={successRate(activeRun.counts, activeRun.total)}
+                                detail={`${activeRun.counts.success}/${activeRun.total} success`}
+                                tone={activeRunTone}
+                            />
+                            <ProbeKPI
+                                label='Success'
+                                value={`${activeRun.counts.success}/${activeRun.total}`}
+                                detail={`${activeRun.requiredSuccess} required`}
+                                tone={activeRunTone}
+                            />
                             <ProbeKPI label='Required' value={activeRun.requiredSuccess} detail={requiredDeltaLabel(activeRun)} tone={activeRunTone} />
-                            <ProbeKPI label='Failures' value={activeRunFailures} detail={`${countsTotal(activeRun.counts)} completed`} tone={activeRunFailures > 0 ? 'warn' : 'good'} />
+                            <ProbeKPI
+                                label='Failures'
+                                value={activeRunFailures}
+                                detail={`${countsTotal(activeRun.counts)} completed`}
+                                tone={activeRunFailures > 0 ? 'warn' : 'good'}
+                            />
                             <ProbeKPI
                                 label='Main Cause'
                                 value={activeRunMainCause.label}

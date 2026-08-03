@@ -1,6 +1,7 @@
 import {InputNumber, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenProjectReport} from '../shared/services/token-service';
 import {usePagedParams} from './shared';
@@ -100,7 +101,7 @@ export const ProjectReportsPage = () => {
                 {title: 'Remove Liquidity', render: item => riskTag(item.reportDataAvailable ? item.wethPairIsRemoveLiquidity : undefined)},
                 {title: 'Mint', render: item => riskTag(item.reportDataAvailable ? item.wethPairIsMint : undefined)},
                 {title: 'Quote USDT', render: item => (item.reportDataAvailable ? formatInteger(item.wethPairQuoteUsdtValueInt) : '-')},
-                {title: 'Last Swap', render: item => (item.reportDataAvailable ? item.wethPairLastSwapAt || '-' : '-')}
+                {title: 'Last Swap', render: item => (item.reportDataAvailable ? formatBeijingDateTime(item.wethPairLastSwapAt) || '-' : '-')}
             ]
         },
         {
@@ -110,16 +111,16 @@ export const ProjectReportsPage = () => {
                 {title: 'Remove Liquidity', render: item => riskTag(item.reportDataAvailable ? item.usdtPairIsRemoveLiquidity : undefined)},
                 {title: 'Mint', render: item => riskTag(item.reportDataAvailable ? item.usdtPairIsMint : undefined)},
                 {title: 'Quote USDT', render: item => (item.reportDataAvailable ? formatInteger(item.usdtPairQuoteUsdtValueInt) : '-')},
-                {title: 'Last Swap', render: item => (item.reportDataAvailable ? item.usdtPairLastSwapAt || '-' : '-')}
+                {title: 'Last Swap', render: item => (item.reportDataAvailable ? formatBeijingDateTime(item.usdtPairLastSwapAt) || '-' : '-')}
             ]
         },
         {
             title: 'Updated',
             children: [
-                {title: 'Source', dataIndex: 'sourceUpdatedAt'},
-                {title: 'Evaluated', dataIndex: 'evaluatedAt'},
-                {title: 'Task', dataIndex: 'evaluationUpdatedAt'},
-                {title: 'Report Created', dataIndex: 'createdAt'}
+                {title: 'Source', render: item => formatBeijingDateTime(item.sourceUpdatedAt) || '-'},
+                {title: 'Evaluated', render: item => formatBeijingDateTime(item.evaluatedAt) || '-'},
+                {title: 'Task', render: item => formatBeijingDateTime(item.evaluationUpdatedAt) || '-'},
+                {title: 'Report Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
             ]
         }
     ];

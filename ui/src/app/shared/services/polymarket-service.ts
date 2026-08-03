@@ -673,5 +673,4 @@ export class PolymarketService {
         promise.abort = () => req.abort();
         return promise;
     }
-
 }

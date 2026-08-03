@@ -3,6 +3,7 @@ import {Alert, Button, Card, Drawer, Empty, Pagination, Skeleton, Space, Table, 
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {ChoiceGroup, ResourceTable, Section, StatusTag} from '../components';
+import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {
     PagedResponse,
@@ -403,12 +404,7 @@ const TimelinePanel = (props: {
     const yAt = (value: number) => TIMELINE_PADDING.top + ((maximum + ySpread * 0.08 - value) / (ySpread * 1.16)) * chartHeight;
     const baselineY = TIMELINE_PADDING.top + chartHeight;
 
-    const axisLabel = (value: number) =>
-        props.axis === 'time'
-            ? new Date(value).toLocaleString()
-            : Number.isSafeInteger(value)
-              ? new Intl.NumberFormat(undefined, {maximumFractionDigits: 0}).format(value)
-              : String(value);
+    const axisLabel = (value: number) => (props.axis === 'time' ? formatBeijingDateTime(new Date(value)) || '-' : formatBlockNumber(value));
 
     const pointTitle = (block: TokenProjectSwapBlock) => {
         const prefix = `Sample ${block.sampleIndex}, block ${block.blockNumber}, ${formatTimeText(block.blockTime) || block.blockTime || 'unknown time'}`;

@@ -5,6 +5,7 @@ import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, useAsyncData} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {NotificationDelivery} from '../shared/services/notification-service';
 import {useKeywordParam, usePagedParams} from './shared';
@@ -57,7 +58,7 @@ export const NotificationsPage = () => {
         {title: 'Telegram Chat', dataIndex: 'telegramChat'},
         {title: 'Status', dataIndex: 'status'},
         {title: 'Channel', dataIndex: 'channel'},
-        {title: 'Created', dataIndex: 'createdAt'}
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
     return (
         <AppPage

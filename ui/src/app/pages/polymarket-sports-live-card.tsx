@@ -2,6 +2,7 @@ import {LinkOutlined} from '@ant-design/icons';
 import {Button, Tooltip, Typography} from 'antd';
 import * as React from 'react';
 import {CardTitle} from '../components';
+import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {
     PolymarketSportsLiveEventCardItem,
     PolymarketSportsHistoryEventCardItem,
@@ -213,13 +214,7 @@ const chartPercent = (value?: number) => {
 const chartOutcomeLabel = (value: string) => (value.length > 16 ? `${value.slice(0, 15)}...` : value);
 const chartSelectionLabel = (value: string) => (value.length > 20 ? `${value.slice(0, 19)}...` : value);
 const chartSelectionPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
-const chartSelectionTime = (timestamp: number) =>
-    new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-    }).format(new Date(timestamp * 1000));
+const chartSelectionTime = (timestamp: number) => formatBeijingUnixSeconds(timestamp) || '-';
 const chartTones = ['blue', 'gold', 'red', 'green'];
 const displayOptionKey = (option: SportsLiveDisplayOption) => `${option.marketKey}:${option.historyOutcome}:${option.label}`;
 
@@ -633,13 +628,7 @@ export const SportsLiveEventCard = (props: {item: PolymarketSportsLiveEventCardI
     return <LegacySportsLiveEventCard item={props.item} history={props.history} />;
 };
 
-const sportsHistoryTime = (value?: string) => {
-    if (!value) {
-        return '-';
-    }
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-};
+const sportsHistoryTime = (value?: string) => formatBeijingDateTime(value) || '-';
 
 const SportsHistoryEventInfoSection = (props: {item: PolymarketSportsHistoryEventCardItem}) => {
     const title = (

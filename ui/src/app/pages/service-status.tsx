@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {AppPage, ResourceTable, Section, StatusTag, useAsyncData} from '../components';
+import {formatBeijingUnixSeconds} from '../shared/format';
 import {services, ServiceHealthStatus, ServiceStatus} from '../shared/services';
 
 const serviceLabels: Record<string, string> = {
@@ -25,7 +26,7 @@ export const ServiceStatusPage = () => {
         return () => window.clearInterval(timer);
     }, []);
 
-    const checkedAt = data.data?.checkedAt ? new Date(data.data.checkedAt * 1000).toLocaleString() : 'Not checked';
+    const checkedAt = formatBeijingUnixSeconds(data.data?.checkedAt) || 'Not checked';
     return (
         <AppPage title='Service Status' subtitle={`gRPC health of Athena services · Last checked ${checkedAt}`} error={data.error} onRefresh={data.reload}>
             <Section title='Services'>

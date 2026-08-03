@@ -1,5 +1,6 @@
 import {Empty, Tooltip, Typography} from 'antd';
 import * as React from 'react';
+import {formatBeijingDateTime} from '../shared/format';
 import {TokenProjectTrendSeries} from '../shared/services/token-service';
 
 const WIDTH = 920;
@@ -87,10 +88,10 @@ export const ProjectTrendChart = (props: {series?: TokenProjectTrendSeries}) => 
                     <line className='project-trend__cursor' x1={xAt(selectedIndex)} x2={xAt(selectedIndex)} y1={PADDING.top} y2={HEIGHT - PADDING.bottom} />
                     <circle className='project-trend__point' cx={xAt(selectedIndex)} cy={yAt(selected.numericValue)} r={5} />
                     <text className='project-trend__axis-label' x={PADDING.left} y={HEIGHT - 8}>
-                        {new Date(first.observedAt || '').toLocaleString()}
+                        {formatBeijingDateTime(first.observedAt) || '-'}
                     </text>
                     <text className='project-trend__axis-label' x={WIDTH - PADDING.right} y={HEIGHT - 8} textAnchor='end'>
-                        {new Date(last.observedAt || '').toLocaleString()}
+                        {formatBeijingDateTime(last.observedAt) || '-'}
                     </text>
                 </svg>
                 <Tooltip
@@ -99,7 +100,7 @@ export const ProjectTrendChart = (props: {series?: TokenProjectTrendSeries}) => 
                         <span>
                             {formatMetric(selected.numericValue, props.series?.unit)}
                             <br />
-                            {new Date(selected.observedAt || '').toLocaleString()}
+                            {formatBeijingDateTime(selected.observedAt) || '-'}
                         </span>
                     }>
                     <span

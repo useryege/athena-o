@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, Section, StatusTag, TruncatedText, useAsyncData} from '../components';
+import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {
     TokenAvePair,
@@ -129,7 +130,7 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
                         {label: 'Contract', value: <ExplorerValue chainID={chainID} kind='address' value={project?.contract} />},
                         {label: 'Deployment tx', value: <ExplorerValue chainID={chainID} kind='tx' value={project?.txHash} />},
                         {label: 'Deployer', value: <ExplorerValue chainID={chainID} kind='address' value={project?.txSender} />},
-                        {label: 'Block', value: formatExact(project?.blockNumber)},
+                        {label: 'Block', value: formatBlockNumber(project?.blockNumber)},
                         {label: 'Transaction index', value: formatExact(project?.txIndex)},
                         {label: 'Block time', value: <TimeValue unixSeconds={project?.blockTime} />},
                         {
@@ -147,7 +148,7 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
                         {
                             label: 'Report freshness',
                             value: reportTime ? (
-                                <Tooltip title={reportTime}>
+                                <Tooltip title={formatBeijingDateTime(reportTime)}>
                                     <span>{ageLabel(reportTime)}</span>
                                 </Tooltip>
                             ) : (
@@ -555,7 +556,7 @@ const TransactionsTab = (props: {projectID: number; detail: TokenProjectDetail; 
     const chainID = props.detail.project?.chainID;
     const walletOptions = walletRows(props.detail).map(item => ({label: item.wallet, value: item.wallet}));
     const columns: ColumnsType<TokenWalletNormalTransaction> = [
-        {title: 'Block', width: 120, render: item => formatExact(item.blockNumber)},
+        {title: 'Block', width: 120, render: item => formatBlockNumber(item.blockNumber)},
         {title: 'Index', width: 80, dataIndex: 'transactionIndex'},
         {title: 'Time', width: 190, render: item => <TimeValue value={item.blockTimestamp} />},
         {title: 'Transaction', width: 260, render: item => <ExplorerValue chainID={chainID} kind='tx' value={item.transactionHash} />},
@@ -790,7 +791,7 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
         {title: 'ID', dataIndex: 'observationID'},
         {title: 'Data type', dataIndex: 'dataType'},
         {title: 'Schema', dataIndex: 'schemaVersion'},
-        {title: 'Block', render: item => formatExact(item.blockNumber)},
+        {title: 'Block', render: item => formatBlockNumber(item.blockNumber)},
         {title: 'Observed', render: item => <TimeValue value={item.observedAt} />},
         {title: 'Last checked', render: item => <TimeValue value={item.lastCheckedAt} />},
         {title: 'Content hash', render: item => <TruncatedText value={item.contentHash} copyable={true} />},
@@ -806,7 +807,7 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
     const reportColumns: ColumnsType<TokenReportRevision> = [
         {title: 'Revision', dataIndex: 'revision'},
         {title: 'Completeness', render: item => <StatusTag value={item.completenessStatus} />},
-        {title: 'Block', render: item => formatExact(item.observedBlockNumber)},
+        {title: 'Block', render: item => formatBlockNumber(item.observedBlockNumber)},
         {title: 'Content hash', render: item => <TruncatedText value={item.contentHash} copyable={true} />},
         {title: 'Built', render: item => <TimeValue value={item.builtAt} />},
         {

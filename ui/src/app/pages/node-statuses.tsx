@@ -1,12 +1,13 @@
 import {Empty} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {AppPage, ResourceTable, Section, StatusTag, TruncatedText, useAsyncData} from '../components';
+import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenNodeStatus} from '../shared/services/token-service';
 import {fmtNumber} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
-const displayNumber = (value?: number) => (value === undefined || value === 0 ? '-' : fmtNumber(value));
+const displayBlockNumber = (value?: number) => (value === undefined || value === 0 ? '-' : formatBlockNumber(value));
 const displayLag = (value?: number) => (value === undefined ? '-' : fmtNumber(value));
 const displayLatency = (value?: number) => (value === undefined ? '-' : `${fmtNumber(value)} ms`);
 const displaySyncing = (value?: boolean) => (value === undefined ? '-' : value ? 'Yes' : 'No');
@@ -19,16 +20,16 @@ export const NodeStatusesPage = () => {
         {title: 'Endpoint', render: item => <TruncatedText value={item.endpoint} copyable={true} />},
         {title: 'Status', render: item => <StatusTag value={item.available ? 'Available' : 'Unavailable'} positive={item.available} negative={!item.available} />},
         {title: 'Latency', render: item => displayLatency(item.latencyMS)},
-        {title: 'Reported Chain ID', render: item => displayNumber(item.reportedChainID)},
-        {title: 'Latest Block', render: item => displayNumber(item.latestBlockNumber)},
-        {title: 'Reference Block', render: item => displayNumber(item.referenceBlockNumber)},
+        {title: 'Reported Chain ID', render: item => displayBlockNumber(item.reportedChainID)},
+        {title: 'Latest Block', render: item => displayBlockNumber(item.latestBlockNumber)},
+        {title: 'Reference Block', render: item => displayBlockNumber(item.referenceBlockNumber)},
         {title: 'Block Lag', render: item => displayLag(item.blockLag)},
-        {title: 'Latest Block Time', dataIndex: 'latestBlockTime'},
+        {title: 'Latest Block Time', render: item => formatBeijingDateTime(item.latestBlockTime) || '-'},
         {
             title: 'Syncing',
             render: item => <StatusTag value={displaySyncing(item.syncing)} positive={item.syncing === false} negative={item.syncing === true} />
         },
-        {title: 'Checked', dataIndex: 'checkedAt'},
+        {title: 'Checked', render: item => formatBeijingDateTime(item.checkedAt) || '-'},
         {title: 'Error', render: item => <TruncatedText value={item.error} copyable={Boolean(item.error)} />}
     ];
 

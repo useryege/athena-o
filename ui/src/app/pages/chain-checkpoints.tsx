@@ -3,9 +3,10 @@ import {Button, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ResourceTable, StatusTag, useAsyncData} from '../components';
+import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenChainCheckpoint} from '../shared/services/token-service';
-import {boolTag, fmtNumber} from './shared';
+import {boolTag} from './shared';
 import {ChainBadge} from './token-shared';
 
 type ChainProcessingStatus = 'running' | 'stopped';
@@ -33,9 +34,9 @@ export const ChainCheckpointsPage = () => {
     const columns: ColumnsType<TokenChainCheckpoint> = [
         {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
         {title: 'Enabled', render: item => boolTag(item.enabled)},
-        {title: 'Cursor', render: item => fmtNumber(item.cursorBlockNumber)},
+        {title: 'Cursor', render: item => formatBlockNumber(item.cursorBlockNumber)},
         {title: 'Current Status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
-        {title: 'Created', dataIndex: 'createdAt'},
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'},
         {
             title: 'Actions',
             render: item => {

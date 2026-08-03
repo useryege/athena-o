@@ -1,7 +1,10 @@
 import {useParams} from 'react-router-dom';
 import {AppPage, KeyValueGrid, Section, useAsyncData} from '../components';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {fmt} from './shared';
+
+const timeFields = new Set(['createdAt', 'sentAt']);
 
 export const NotificationsDetailPage = () => {
     const {id = ''} = useParams();
@@ -17,6 +20,8 @@ export const NotificationsDetailPage = () => {
                                 <a href={String(value)} target='_blank' rel='noreferrer'>
                                     {String(value)}
                                 </a>
+                            ) : timeFields.has(label) ? (
+                                formatBeijingDateTime(String(value)) || '-'
                             ) : (
                                 fmt(value)
                             )

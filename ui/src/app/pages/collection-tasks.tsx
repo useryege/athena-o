@@ -2,6 +2,7 @@ import {Input, InputNumber, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
+import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenCollectionTask} from '../shared/services/token-service';
 import {usePagedParams} from './shared';
@@ -23,16 +24,16 @@ export const CollectionTasksPage = () => {
         [page, pageSize, projectID, dataType, status]
     );
     const columns: ColumnsType<TokenCollectionTask> = [
-		{title: 'Task', dataIndex: 'taskID'},
+        {title: 'Task', dataIndex: 'taskID'},
         {title: 'Project', dataIndex: 'projectID'},
         {title: 'Data Type', dataIndex: 'dataType'},
-		{title: 'Revision', dataIndex: 'revision'},
+        {title: 'Revision', dataIndex: 'revision'},
         {title: 'Status', dataIndex: 'status'},
         {title: 'Attempts', dataIndex: 'attempts'},
-		{title: 'Available At', dataIndex: 'availableAt'},
-		{title: 'Lease Expires', dataIndex: 'leaseExpiresAt'},
+        {title: 'Available At', render: item => formatBeijingDateTime(item.availableAt) || '-'},
+        {title: 'Lease Expires', render: item => formatBeijingDateTime(item.leaseExpiresAt) || '-'},
         {title: 'Last Error', render: item => <TruncatedText value={item.lastError} />},
-        {title: 'Created', dataIndex: 'createdAt'}
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
     return (
         <AppPage
@@ -52,7 +53,7 @@ export const CollectionTasksPage = () => {
                     <ChoiceGroup<string>
                         ariaLabel='Filter by status'
                         value={status || 'all'}
-						options={[{label: 'All', value: 'all'}, ...['pending', 'running', 'succeeded', 'failed'].map(value => ({value, label: value}))]}
+                        options={[{label: 'All', value: 'all'}, ...['pending', 'running', 'succeeded', 'failed'].map(value => ({value, label: value}))]}
                         onChange={value => {
                             setStatus(value === 'all' ? '' : value);
                         }}
@@ -60,7 +61,7 @@ export const CollectionTasksPage = () => {
                 </Space>
             }>
             <ResourceTable
-				rowKey={item => item.taskID || `${item.projectID}-${item.dataType}-${item.revision}`}
+                rowKey={item => item.taskID || `${item.projectID}-${item.dataType}-${item.revision}`}
                 items={data.data?.items || []}
                 columns={columns}
                 loading={data.loading}

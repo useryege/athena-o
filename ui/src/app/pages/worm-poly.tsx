@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {AppPage, CardTitle, MetricRow, TruncatedText} from '../components';
 import {Context} from '../shared/context';
+import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import {
     PolymarketFIFAMoneylineDirectionItem,
@@ -47,7 +48,7 @@ const money = (value?: number) => (value === undefined || !Number.isFinite(value
 const percent = (value?: number) => (value === undefined || !Number.isFinite(value) ? '-' : `${(value * 100).toFixed(2)}%`);
 const balanceValue = (item: PolymarketFIFAWalletBalanceItem) =>
     item.ok && !item.errorMessage && item.amount && item.amount !== '-' ? `${item.amount} ${item.tokenSymbol || ''}`.trim() : '-';
-const unixTime = (value?: number) => (value ? new Date(value * 1000).toLocaleString() : '-');
+const unixTime = (value?: number) => formatBeijingUnixSeconds(value) || '-';
 const wormMarketURL = (conditionId: string) => `https://www.worm.wtf/market/${encodeURIComponent(conditionId)}`;
 type FIFAInfoGridItem = {label: React.ReactNode; value: React.ReactNode; copyText?: string};
 type FIFAOutcomeKey = 'home' | 'draw' | 'away';
@@ -237,7 +238,7 @@ const FIFAWalletBalancesPanel = (props: {items?: PolymarketFIFAWalletBalanceItem
                     </Col>
                 ))}
             </Row>
-            {detailsVisible && <Typography.Text type='secondary'>Fetched {fmt(props.fetchedAt)}</Typography.Text>}
+            {detailsVisible && <Typography.Text type='secondary'>Fetched {unixTime(props.fetchedAt)}</Typography.Text>}
             {props.error && <Typography.Text type='danger'>{props.error.message}</Typography.Text>}
         </section>
     );
@@ -584,10 +585,10 @@ const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
                 items={[
                     {label: 'Event ID', value: item.eventId},
                     {label: 'Sport', value: fmt(item.sport)},
-                    {label: 'Start', value: fmt(item.startTime)},
+                    {label: 'Start', value: formatBeijingDateTime(item.startTime) || '-'},
                     {label: 'Status', value: fmt(item.gameStatus || (item.live ? 'Live' : item.ended ? 'Ended' : 'Scheduled'))},
                     {label: 'Score', value: fmt(item.score)},
-                    {label: 'Updated', value: fmt(item.updatedAt)},
+                    {label: 'Updated', value: formatBeijingDateTime(item.updatedAt) || '-'},
                     {label: 'Active', value: boolTag(item.active)},
                     {label: 'Closed', value: boolTag(item.closed)}
                 ]}

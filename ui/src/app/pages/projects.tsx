@@ -2,9 +2,10 @@ import {Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
+import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenProject} from '../shared/services/token-service';
-import {fmtNumber, useKeywordParam, usePagedParams} from './shared';
+import {useKeywordParam, usePagedParams} from './shared';
 import {ChainBadge, chainLabel} from './token-shared';
 
 export const ProjectsPage = () => {
@@ -52,10 +53,10 @@ export const ProjectsPage = () => {
         },
         {title: 'Contract', render: item => <TruncatedText value={item.contract} copyable={true} />},
         {title: 'Tx Sender', render: item => <TruncatedText value={item.txSender} copyable={true} />},
-        {title: 'Block', render: item => fmtNumber(item.blockNumber)},
+        {title: 'Block', render: item => formatBlockNumber(item.blockNumber)},
         {title: 'Tx Index', dataIndex: 'txIndex'},
         {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
-        {title: 'Created', dataIndex: 'createdAt'}
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
     const chainOptions = (options.data?.chains || [])
         .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
