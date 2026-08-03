@@ -11,6 +11,7 @@
   - [Chinese Plans](#chinese-plans)
   - [Living Design Documentation](#living-design-documentation)
   - [UI Layout Review](#ui-layout-review)
+  - [本地图片路径规则](#本地图片路径规则)
 
 ## Rules
 
@@ -68,3 +69,16 @@ When a task involves UI design, page layout, interaction structure, visual hiera
 - The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
 - Begin code implementation only after the user confirms the layout diagram.
 - Minor style tweaks, copy changes, or non-visual logic changes do not require a layout diagram unless the user explicitly asks for one.
+
+### 本地图片路径规则
+
+- 读取用户提供的本地图片前，必须先将路径转换为 WSL2 可用的格式。
+- 禁止将原始 Windows 路径（如 `C:\Users\name\AppData\Local\Temp\image.png`）直接传给 Linux 图片工具。
+- 应转换为对应的 WSL 路径，例如 `/mnt/c/Users/name/AppData/Local/Temp/image.png`；必要时使用 `wslpath -u`。
+- 读取前必须确认转换后的路径真实存在。
+- Windows 8.3 短路径（如 `FUNDCO~1`）必要时应解析为完整用户目录名称。
+- 对 Windows 临时目录中的图片，需要区分：
+  - 路径格式不正确；
+  - 临时文件已经被删除。
+- 转换后的文件存在时，使用其绝对 WSL 路径读取。
+- 文件不存在时，应告知用户临时文件可能已经过期，并请用户重新上传或附加图片。
