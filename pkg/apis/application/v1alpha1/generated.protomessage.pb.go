@@ -91,11 +91,19 @@ func (*TokenProjectDetail) ProtoMessage() {}
 
 func (*TokenProjectInitialRecipient) ProtoMessage() {}
 
+func (*TokenProjectListItem) ProtoMessage() {}
+
 func (*TokenProjectObservation) ProtoMessage() {}
+
+func (*TokenProjectPairRiskSummary) ProtoMessage() {}
 
 func (*TokenProjectRelatedWallet) ProtoMessage() {}
 
-func (*TokenProjectReport) ProtoMessage() {}
+func (*TokenProjectReportEvaluationSummary) ProtoMessage() {}
+
+func (*TokenProjectReportRiskSummary) ProtoMessage() {}
+
+func (*TokenProjectReportSummary) ProtoMessage() {}
 
 func (*TokenProjectSwapActivity) ProtoMessage() {}
 

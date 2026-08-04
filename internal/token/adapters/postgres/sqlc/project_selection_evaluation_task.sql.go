@@ -135,6 +135,37 @@ func (q *Queries) FailProjectSelectionEvaluationTask(ctx context.Context, arg Fa
 	return result.RowsAffected(), nil
 }
 
+const getProjectSelectionEvaluationTask = `-- name: GetProjectSelectionEvaluationTask :one
+SELECT id, project_id, report_revision, status, attempts, available_at, locked_at, lease_expires_at, last_error, created_at, updated_at
+FROM project_selection_evaluation_task
+WHERE project_id = $1
+  AND report_revision = $2
+`
+
+type GetProjectSelectionEvaluationTaskParams struct {
+	ProjectID      int64
+	ReportRevision int64
+}
+
+func (q *Queries) GetProjectSelectionEvaluationTask(ctx context.Context, arg GetProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error) {
+	row := q.db.QueryRow(ctx, getProjectSelectionEvaluationTask, arg.ProjectID, arg.ReportRevision)
+	var i ProjectSelectionEvaluationTask
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.ReportRevision,
+		&i.Status,
+		&i.Attempts,
+		&i.AvailableAt,
+		&i.LockedAt,
+		&i.LeaseExpiresAt,
+		&i.LastError,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const markProjectSelectionEvaluationTaskSucceeded = `-- name: MarkProjectSelectionEvaluationTaskSucceeded :execrows
 UPDATE project_selection_evaluation_task
 SET status = 'succeeded',

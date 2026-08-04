@@ -43,7 +43,11 @@ func (s *Service) ListReportRevisions(ctx context.Context, req *apiclient.ListRe
 	if e != nil {
 		return nil, wrapStoreError("list project report revisions", e)
 	}
-	return &apiclient.ListReportRevisionsResponse{ReportRevisions: mapProjectReportRevisions(page.Items), Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
+	reportRevisions, e := mapProjectReportRevisions(page.Items)
+	if e != nil {
+		return nil, wrapStoreError("map project report revisions", e)
+	}
+	return &apiclient.ListReportRevisionsResponse{ReportRevisions: reportRevisions, Total: page.Total, Page: page.Page, PageSize: page.PageSize}, nil
 }
 func (s *Service) ListSelections(ctx context.Context, req *apiclient.ListSelectionsRequest) (*apiclient.ListSelectionsResponse, error) {
 	store, e := s.selectionApplication()

@@ -11,27 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countProjects = `-- name: CountProjects :one
-SELECT COUNT(*)::bigint
-FROM project
-WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
-  AND ($2::bytea IS NULL OR code_hash = $2::bytea)
-  AND ($3::bytea IS NULL OR contract = $3::bytea)
-`
-
-type CountProjectsParams struct {
-	ChainID  int64
-	CodeHash []byte
-	Contract []byte
-}
-
-func (q *Queries) CountProjects(ctx context.Context, arg CountProjectsParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countProjects, arg.ChainID, arg.CodeHash, arg.Contract)
-	var column_1 int64
-	err := row.Scan(&column_1)
-	return column_1, err
-}
-
 const deleteProject = `-- name: DeleteProject :execrows
 DELETE FROM project
 WHERE id = $1
@@ -120,67 +99,6 @@ ORDER BY block_number, tx_index, id
 
 func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, error) {
 	rows, err := q.db.Query(ctx, listProjects, chainID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Project
-	for rows.Next() {
-		var i Project
-		if err := rows.Scan(
-			&i.ID,
-			&i.ChainID,
-			&i.Contract,
-			&i.TxSender,
-			&i.TxHash,
-			&i.TxIndex,
-			&i.BlockNumber,
-			&i.BlockTime,
-			&i.CodeHash,
-			&i.Name,
-			&i.Symbol,
-			&i.Decimals,
-			&i.TotalSupply,
-			&i.WethPair,
-			&i.UsdtPair,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listProjectsPage = `-- name: ListProjectsPage :many
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
-FROM project
-WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
-  AND ($2::bytea IS NULL OR code_hash = $2::bytea)
-  AND ($3::bytea IS NULL OR contract = $3::bytea)
-ORDER BY created_at DESC, id DESC
-LIMIT $5 OFFSET $4
-`
-
-type ListProjectsPageParams struct {
-	ChainID  int64
-	CodeHash []byte
-	Contract []byte
-	Offset   int32
-	Limit    int32
-}
-
-func (q *Queries) ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error) {
-	rows, err := q.db.Query(ctx, listProjectsPage,
-		arg.ChainID,
-		arg.CodeHash,
-		arg.Contract,
-		arg.Offset,
-		arg.Limit,
-	)
 	if err != nil {
 		return nil, err
 	}

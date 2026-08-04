@@ -50,7 +50,6 @@ import {
     PolymarketSportsHistoryPage,
     PolymarketUMADisputedPage,
     PolymarketUMAProposedPage,
-    ProjectReportsPage,
     ProjectDetailPage,
     ProjectsPage,
     SettingsPage,
@@ -109,7 +108,6 @@ const rbacActions = {
 
 const tokenapiSubresources = {
     projects: 'projects',
-    projectReports: 'project-reports',
     contractCodes: 'contract-codes',
     contractCodeBlocklist: 'contract-code-blocklist',
     walletBlocklist: 'wallet-blocklist',
@@ -189,13 +187,6 @@ const tokenNavItem: NavItem = {
     icon: <DashboardOutlined />,
     children: [
         {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />, permission: tokenapiPermission(tokenapiSubresources.projects)},
-        {
-            key: '/token/project-reports',
-            label: 'Project Reports',
-            path: '/token/project-reports',
-            icon: <FileTextOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.projectReports)
-        },
         {
             key: '/token/contract-codes',
             label: 'Contract Codes',
@@ -378,6 +369,24 @@ const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do no
 const RequirePermission = (props: {access: AccessState; permission: Permission; children: React.ReactElement}) =>
     hasPermission(props.access, props.permission) ? props.children : <ForbiddenPage />;
 
+const narrowShellQuery = '(max-width: 900px)';
+
+const useNarrowShell = () => {
+    const matches = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(narrowShellQuery).matches;
+    const [narrow, setNarrow] = React.useState(matches);
+    React.useEffect(() => {
+        if (typeof window.matchMedia !== 'function') {
+            return;
+        }
+        const query = window.matchMedia(narrowShellQuery);
+        const update = () => setNarrow(query.matches);
+        update();
+        query.addEventListener('change', update);
+        return () => query.removeEventListener('change', update);
+    }, []);
+    return narrow;
+};
+
 const AppRoutes = (props: {access: AccessState}) => {
     const visibleTokenDefault = filterNavItems(navItems, props.access)
         .find(item => item.key === 'token')
@@ -447,7 +456,6 @@ const AppRoutes = (props: {access: AccessState}) => {
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />
             <Route path='/token/projects' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectsPage />)} />
             <Route path='/token/projects/:projectID' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectDetailPage />)} />
-            <Route path='/token/project-reports' element={withPermission(tokenapiPermission(tokenapiSubresources.projectReports), <ProjectReportsPage />)} />
             <Route path='/token/contract-codes' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodesPage />)} />
             <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />
             <Route path='/token/contract-code-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodeBlocklist), <ContractCodeBlocklistPage />)} />
@@ -464,15 +472,76 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const navigate = useNavigate();
     const location = useLocation();
     const ant = AntApp.useApp();
-    const [sidebarCollapsed, setSidebarCollapsed] = React.useState(props.pref.hideSidebar);
+    const narrowShell = useNarrowShell();
+    const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.pref.hideSidebar);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+    const sidebarRef = React.useRef<HTMLDivElement>(null);
+    const shellBackgroundRef = React.useRef<HTMLElement>(null);
+    const mobileSidebarToggleRef = React.useRef<HTMLButtonElement>(null);
+    const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
     const isLoginPath = location.pathname.startsWith('/login');
     const locationKey = location.pathname;
     const [authorizedLocationKey, setAuthorizedLocationKey] = React.useState(isLoginPath ? locationKey : '');
     const [access, setAccess] = React.useState<AccessState>(null);
 
     React.useEffect(() => {
-        setSidebarCollapsed(props.pref.hideSidebar);
+        setDesktopSidebarCollapsed(props.pref.hideSidebar);
     }, [props.pref.hideSidebar]);
+
+    React.useEffect(() => {
+        if (narrowShell) {
+            setMobileSidebarOpen(false);
+        }
+    }, [location.pathname, narrowShell]);
+
+    React.useLayoutEffect(() => {
+        if (!narrowShell || !mobileSidebarOpen) {
+            return;
+        }
+        const sidebar = sidebarRef.current;
+        const background = shellBackgroundRef.current;
+        sidebar?.querySelector<HTMLElement>('.athena-shell__mobile-close, .athena-brand, [role="menuitem"]')?.focus();
+        background?.setAttribute('inert', '');
+        background?.setAttribute('aria-hidden', 'true');
+        const previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        const handleDialogKeyboard = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setMobileSidebarOpen(false);
+                return;
+            }
+            if (event.key !== 'Tab' || !sidebar) {
+                return;
+            }
+            const focusable = Array.from(
+                sidebar.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [role="menuitem"], [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter(item => item.getClientRects().length > 0 && item.getAttribute('aria-hidden') !== 'true');
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const activeIndex = focusable.findIndex(item => item === document.activeElement);
+            let nextIndex = activeIndex + 1;
+            if (event.shiftKey) {
+                nextIndex = activeIndex <= 0 ? focusable.length - 1 : activeIndex - 1;
+            } else if (activeIndex < 0 || activeIndex === focusable.length - 1) {
+                nextIndex = 0;
+            }
+            event.preventDefault();
+            focusable[nextIndex].focus();
+        };
+        document.addEventListener('keydown', handleDialogKeyboard, true);
+        return () => {
+            document.body.style.overflow = previousBodyOverflow;
+            background?.removeAttribute('inert');
+            background?.removeAttribute('aria-hidden');
+            document.removeEventListener('keydown', handleDialogKeyboard, true);
+            window.requestAnimationFrame(() => mobileSidebarToggleRef.current?.focus());
+        };
+    }, [mobileSidebarOpen, narrowShell]);
 
     React.useEffect(() => {
         if (isLoginPath) {
@@ -541,6 +610,9 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const onMenuClick: MenuProps['onClick'] = item => {
         const target = flattenNav(visibleNavItems).find(navItem => navItem.key === item.key);
         if (target?.path) {
+            if (narrowShell) {
+                setMobileSidebarOpen(false);
+            }
             navigate(target.path);
         }
     };
@@ -592,33 +664,85 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         routes
     ) : (
         <AntLayout className='athena-shell'>
-            <a className='athena-skip-link' href='#athena-main'>
+            <a className='athena-skip-link' href='#athena-main' aria-hidden={narrowShell && mobileSidebarOpen} tabIndex={narrowShell && mobileSidebarOpen ? -1 : undefined}>
                 Skip to main content
             </a>
-            <AntLayout.Sider className='athena-shell__sider' collapsible={true} collapsed={sidebarCollapsed} collapsedWidth={72} trigger={null} width={248}>
-                <button className='athena-brand' type='button' aria-label='Open Athena user information' onClick={() => navigate('/user-info')}>
-                    <BrandMark size='small' />
-                    {!sidebarCollapsed && (
-                        <span className='athena-brand__copy'>
-                            <strong>Athena</strong>
-                            <small>Operations Console</small>
-                        </span>
-                    )}
-                </button>
-                <nav aria-label='Primary navigation'>{menu}</nav>
+            <AntLayout.Sider
+                className='athena-shell__sider'
+                collapsible={true}
+                collapsed={sidebarCollapsed}
+                collapsedWidth={narrowShell ? 0 : 72}
+                trigger={null}
+                width={248}
+                ref={sidebarRef}
+                role={narrowShell && mobileSidebarOpen ? 'dialog' : undefined}
+                aria-modal={narrowShell && mobileSidebarOpen ? true : undefined}
+                aria-label={narrowShell && mobileSidebarOpen ? 'Primary navigation' : undefined}
+                aria-hidden={narrowShell && !mobileSidebarOpen}>
+                {narrowShell && mobileSidebarOpen && (
+                    <Button
+                        className='athena-shell__mobile-close'
+                        type='text'
+                        aria-label='Close navigation'
+                        icon={<MenuFoldOutlined />}
+                        onClick={() => setMobileSidebarOpen(false)}
+                    />
+                )}
+                {(!narrowShell || mobileSidebarOpen) && (
+                    <button
+                        className='athena-brand'
+                        type='button'
+                        aria-label='Open Athena user information'
+                        onClick={() => {
+                            if (narrowShell) {
+                                setMobileSidebarOpen(false);
+                            }
+                            navigate('/user-info');
+                        }}>
+                        <BrandMark size='small' />
+                        {!sidebarCollapsed && (
+                            <span className='athena-brand__copy'>
+                                <strong>Athena</strong>
+                                <small>Operations Console</small>
+                            </span>
+                        )}
+                    </button>
+                )}
+                <nav id='athena-primary-navigation' aria-label='Primary navigation'>
+                    {(!narrowShell || mobileSidebarOpen) && menu}
+                </nav>
             </AntLayout.Sider>
-            <AntLayout>
+            {narrowShell && mobileSidebarOpen && (
+                <button
+                    className='athena-shell__backdrop'
+                    type='button'
+                    aria-label='Close navigation'
+                    aria-hidden='true'
+                    tabIndex={-1}
+                    onClick={() => {
+                        setMobileSidebarOpen(false);
+                    }}
+                />
+            )}
+            <AntLayout ref={shellBackgroundRef}>
                 <AntLayout.Header className='athena-shell__header'>
                     <div className='athena-shell__header-left'>
-                        <Tooltip title={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}>
+                        <Tooltip title={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
                             <Button
+                                ref={mobileSidebarToggleRef}
                                 className='athena-shell__sidebar-toggle'
                                 type='text'
-                                aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+                                aria-label={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}
+                                aria-controls='athena-primary-navigation'
+                                aria-expanded={!sidebarCollapsed}
                                 icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                                 onClick={() => {
-                                    const next = !sidebarCollapsed;
-                                    setSidebarCollapsed(next);
+                                    if (narrowShell) {
+                                        setMobileSidebarOpen(current => !current);
+                                        return;
+                                    }
+                                    const next = !desktopSidebarCollapsed;
+                                    setDesktopSidebarCollapsed(next);
                                     services.viewPreferences.updatePreferences({hideSidebar: next});
                                 }}
                             />

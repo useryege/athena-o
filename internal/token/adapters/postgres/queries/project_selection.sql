@@ -1,4 +1,10 @@
 -- Selection persistence and read model.
+-- name: GetProjectSelectionByID :one
+SELECT *
+FROM project_selection
+WHERE id = @id
+  AND project_id = @project_id;
+
 -- name: GetLatestProjectSelection :one
 SELECT *
 FROM project_selection

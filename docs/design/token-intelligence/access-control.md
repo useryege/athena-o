@@ -58,10 +58,12 @@ existing role hierarchy.
    `rbacGRPCMethods`. `authorizeGRPC` rejects read-only callers before proxying
    the request to the Token API service.
 
-The project-detail snapshot, Swap activity summary, and paginated Swap event
-methods all map explicitly to the existing `tokenapi/get/projects` permission.
-Adding Swap visibility therefore does not introduce a broader permission or
-make the activity endpoints independently discoverable to read-only users.
+The unified Projects list, both of its UI projections, the project-detail
+snapshot, Swap activity summary, and paginated Swap event methods all map
+explicitly to the existing `tokenapi/get/projects` permission. The Report tab's
+revision history continues to call `ListReportRevisions`, which maps to
+`tokenapi/get/report-revisions` and remains in the session bootstrap permission
+set. There is no separate current-Report list route or permission.
 
 ## State / Data
 
@@ -92,6 +94,11 @@ operation always uses the built-in role policy described here.
   also protected by a server-side `tokenapi` authorization rule.
 - `GetProjectSwapActivity` and `ListProjectSwapEvents` require the same
   `tokenapi/get/projects` permission as `GetProjectDetail`.
+- `ListProjects` and both Projects UI views require `tokenapi/get/projects`;
+  `ListReportRevisions` continues to require
+  `tokenapi/get/report-revisions`.
+- Current Report risk and Evaluation summaries do not introduce a standalone
+  Report-list permission.
 - An inaccessible Token route renders the shared 403 result without mounting
   its page component.
 - Token API paths, request and response messages, and public data types are
@@ -123,6 +130,9 @@ log format.
 - [ ] Every public Token API method has a server-side `tokenapi` authorization rule.
 - [ ] Project detail, Swap activity, and Swap event reads remain mapped to
       `tokenapi/get/projects`.
+- [ ] Projects Overview and Report Risk remain mapped to
+      `tokenapi/get/projects`, while Report revision history remains mapped to
+      `tokenapi/get/report-revisions`.
 - [ ] API and session response schemas remain unchanged.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

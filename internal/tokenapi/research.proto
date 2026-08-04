@@ -3,7 +3,6 @@ package athena.internal.tokenapi;
 import "internal/tokenapi/types.proto";
 option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
 service TokenResearchService {
-  rpc ListProjectReports(ListProjectReportsRequest) returns (ListProjectReportsResponse);
   rpc GetCollectionTask(GetCollectionTaskRequest) returns (GetCollectionTaskResponse);
   rpc ListCollectionTasks(ListCollectionTasksRequest) returns (ListCollectionTasksResponse);
   rpc ListResearchStates(ListResearchStatesRequest) returns (ListResearchStatesResponse);

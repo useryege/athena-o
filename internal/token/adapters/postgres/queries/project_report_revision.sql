@@ -56,41 +56,6 @@ INSERT INTO project_report_revision (
 )
 RETURNING *;
 
--- name: CountCurrentProjectReports :one
-SELECT COUNT(*)::bigint
-FROM project_research_state AS research
-JOIN project ON project.id = research.project_id
-JOIN project_report_revision AS report
-  ON report.project_id = research.project_id
-  AND report.revision = research.current_report_revision
-WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id')::bigint)
-  AND (sqlc.arg('project_id')::bigint = 0 OR project.id = sqlc.arg('project_id')::bigint)
-  AND (sqlc.narg('contract')::bytea IS NULL OR project.contract = sqlc.narg('contract')::bytea)
-  AND (sqlc.arg('build_status')::text = '' OR sqlc.arg('build_status')::text = 'succeeded');
-
--- name: ListCurrentProjectReports :many
-SELECT
-  report.*,
-  project.chain_id,
-  project.name,
-  project.symbol,
-  project.contract,
-  'succeeded'::text AS build_status,
-  0::int AS build_attempts,
-  ''::text AS build_last_error,
-  report.built_at AS build_updated_at
-FROM project_research_state AS research
-JOIN project ON project.id = research.project_id
-JOIN project_report_revision AS report
-  ON report.project_id = research.project_id
-  AND report.revision = research.current_report_revision
-WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id')::bigint)
-  AND (sqlc.arg('project_id')::bigint = 0 OR project.id = sqlc.arg('project_id')::bigint)
-  AND (sqlc.narg('contract')::bytea IS NULL OR project.contract = sqlc.narg('contract')::bytea)
-  AND (sqlc.arg('build_status')::text = '' OR sqlc.arg('build_status')::text = 'succeeded')
-ORDER BY report.built_at DESC, report.project_id DESC
-LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
-
 -- name: CountProjectReportRevisions :one
 SELECT COUNT(*)::bigint
 FROM project_report_revision AS report

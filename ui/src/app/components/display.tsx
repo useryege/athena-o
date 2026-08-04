@@ -1,4 +1,5 @@
 import {Col, Descriptions, Flex, Input, Row, Tag, Typography} from 'antd';
+import type {DescriptionsProps} from 'antd';
 import * as React from 'react';
 
 export const CardTitle = (props: {title: React.ReactNode; subtitle?: React.ReactNode; image?: string; tags?: React.ReactNode}) => (
@@ -12,15 +13,29 @@ export const CardTitle = (props: {title: React.ReactNode; subtitle?: React.React
     </div>
 );
 
-export const KeyValueGrid = (props: {items: Array<{label: React.ReactNode; value: React.ReactNode}>; columns?: number}) => (
-    <Descriptions className='key-value-grid' bordered={true} size='small' column={props.columns || 3}>
-        {props.items.map(item => (
-            <Descriptions.Item key={String(item.label)} label={item.label}>
-                <span className='break-value'>{item.value ?? '-'}</span>
-            </Descriptions.Item>
-        ))}
-    </Descriptions>
-);
+export const KeyValueGrid = (props: {items: Array<{label: React.ReactNode; value: React.ReactNode}>; columns?: DescriptionsProps['column']}) => {
+    const requestedColumns = props.columns || 3;
+    const responsiveColumns: DescriptionsProps['column'] =
+        typeof requestedColumns === 'number'
+            ? {
+                  xxl: requestedColumns,
+                  xl: requestedColumns,
+                  lg: requestedColumns,
+                  md: Math.min(requestedColumns, 2),
+                  sm: 1,
+                  xs: 1
+              }
+            : requestedColumns;
+    return (
+        <Descriptions className='key-value-grid' bordered={true} size='small' column={responsiveColumns}>
+            {props.items.map(item => (
+                <Descriptions.Item key={String(item.label)} label={item.label}>
+                    <span className='break-value'>{item.value ?? '-'}</span>
+                </Descriptions.Item>
+            ))}
+        </Descriptions>
+    );
+};
 
 export const MetricRow = (props: {items: Array<{label: string; value: React.ReactNode; tone?: 'good' | 'bad' | 'warn'}>}) => (
     <Row gutter={[8, 8]} className='metric-row'>

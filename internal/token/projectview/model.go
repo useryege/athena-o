@@ -1,6 +1,7 @@
 package projectview
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/useryege/athena/internal/token/catalog"
@@ -16,10 +17,65 @@ type WalletTransactionCount struct {
 	TransactionCount int64
 }
 
+type ProjectListFilter struct {
+	ChainID          int64
+	ProjectID        int64
+	CodeHash         shared.Hash
+	Contract         shared.Address
+	ResearchStatus   research.ProjectResearchStatus
+	ReportState      string
+	EvaluationStatus selection.TaskStatus
+	SelectionOutcome selection.SelectionOutcome
+}
+
+type ProjectPairRiskSummary struct {
+	IsCreated         bool
+	IsRemoveLiquidity bool
+	IsMint            bool
+	QuoteUSDTValueInt *big.Int
+	LastSwapTimestamp uint64
+}
+
+type ProjectReportRiskSummary struct {
+	WethPair *ProjectPairRiskSummary
+	UsdtPair *ProjectPairRiskSummary
+}
+
+type ProjectReportEvaluationSummary struct {
+	Status         selection.TaskStatus
+	FailedAttempts int32
+	LastError      string
+	UpdatedAt      time.Time
+	Outcome        selection.SelectionOutcome
+	EvaluatedAt    time.Time
+}
+
+type ProjectReportSummary struct {
+	Revision           int64
+	CompletenessStatus string
+	BuiltAt            time.Time
+	RiskSummary        *ProjectReportRiskSummary
+	Evaluation         *ProjectReportEvaluationSummary
+}
+
+type ProjectListItem struct {
+	Project        catalog.Project
+	ResearchStatus research.ProjectResearchStatus
+	CurrentReport  *ProjectReportSummary
+}
+
+type ProjectListPage struct {
+	Items    []ProjectListItem
+	Total    int64
+	Page     int32
+	PageSize int32
+}
+
 type Detail struct {
 	Project                 catalog.Project
 	ResearchState           *research.ProjectResearchState
 	CurrentReport           *reporting.ProjectReportRevision
+	CurrentReportEvaluation *ProjectReportEvaluationSummary
 	CurrentSelection        *selection.ProjectSelection
 	CurrentObservations     []research.ProjectObservation
 	RelatedWallets          []catalog.ProjectRelatedWallet

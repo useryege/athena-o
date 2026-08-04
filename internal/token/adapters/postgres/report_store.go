@@ -12,36 +12,9 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/reporting"
 	reportingapp "github.com/useryege/athena/internal/token/reporting/application"
-	"github.com/useryege/athena/internal/token/shared"
 )
 
 const researchTaskLease = 90 * time.Second
-
-func (s *ReportingRepository) ListProjectReportsPage(ctx context.Context, chainID, projectID int64, contract shared.Address, buildStatus string, page, pageSize int32) (*reporting.ProjectReportPage, error) {
-	q, e := s.querier()
-	if e != nil {
-		return nil, e
-	}
-	page, pageSize, offset := normalizePage(page, pageSize)
-	count := tokensqlc.CountCurrentProjectReportsParams{ChainID: chainID, ProjectID: projectID, Contract: optionalAddressBytes(contract), BuildStatus: buildStatus}
-	total, e := q.CountCurrentProjectReports(ctx, count)
-	if e != nil {
-		return nil, e
-	}
-	rows, e := q.ListCurrentProjectReports(ctx, tokensqlc.ListCurrentProjectReportsParams{ChainID: chainID, ProjectID: projectID, Contract: count.Contract, BuildStatus: buildStatus, Offset: offset, Limit: pageSize})
-	if e != nil {
-		return nil, e
-	}
-	items := make([]reporting.ProjectReportReadModel, 0, len(rows))
-	for _, r := range rows {
-		report, e := mapProjectReportRevision(tokensqlc.ProjectReportRevision{ID: r.ID, ProjectID: r.ProjectID, Revision: r.Revision, SchemaVersion: r.SchemaVersion, ContentHash: r.ContentHash, CompletenessStatus: r.CompletenessStatus, Evidence: r.Evidence, Report: r.Report, ObservedBlockNumber: r.ObservedBlockNumber, WethPairIsCreated: r.WethPairIsCreated, WethPairIsRemoveLiquidity: r.WethPairIsRemoveLiquidity, WethPairIsMint: r.WethPairIsMint, WethPairQuoteUsdtValueInt: r.WethPairQuoteUsdtValueInt, WethPairLastSwapTimestamp: r.WethPairLastSwapTimestamp, UsdtPairIsCreated: r.UsdtPairIsCreated, UsdtPairIsRemoveLiquidity: r.UsdtPairIsRemoveLiquidity, UsdtPairIsMint: r.UsdtPairIsMint, UsdtPairQuoteUsdtValueInt: r.UsdtPairQuoteUsdtValueInt, UsdtPairLastSwapTimestamp: r.UsdtPairLastSwapTimestamp, BuiltAt: r.BuiltAt, CreatedAt: r.CreatedAt})
-		if e != nil {
-			return nil, e
-		}
-		items = append(items, reporting.ProjectReportReadModel{Report: report, ChainID: r.ChainID, Name: r.Name, Symbol: r.Symbol, Contract: bytesToAddress(r.Contract), BuildStatus: r.BuildStatus, BuildAttempts: r.BuildAttempts, BuildLastError: r.BuildLastError, BuildUpdatedAt: timeValue(r.BuildUpdatedAt)})
-	}
-	return &reporting.ProjectReportPage{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
-}
 
 func (s *ReportingRepository) ListProjectReportRevisionsPage(ctx context.Context, chainID, projectID int64, page, pageSize int32) (*reporting.ReportRevisionPage, error) {
 	q, e := s.querier()

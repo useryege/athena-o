@@ -19,6 +19,7 @@ import (
 const maxTrendPoints = 500
 
 type ReadRepository interface {
+	ListProjectsPage(context.Context, projectview.ProjectListFilter, int32, int32) (*projectview.ProjectListPage, error)
 	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
 	GetProjectSwapActivity(context.Context, int64) (*projectview.SwapActivity, error)
 	ListProjectSwapEventsPage(context.Context, int64, swap.PairKind, uint64, int32, int32) (*projectview.SwapEventPage, error)
@@ -34,6 +35,10 @@ type Queries struct {
 
 func NewQueries(repository ReadRepository) *Queries {
 	return &Queries{repository: repository, now: time.Now}
+}
+
+func (queries *Queries) ListProjectsPage(ctx context.Context, filter projectview.ProjectListFilter, page, pageSize int32) (*projectview.ProjectListPage, error) {
+	return queries.repository.ListProjectsPage(ctx, filter, page, pageSize)
 }
 
 func (queries *Queries) GetProjectDetail(ctx context.Context, projectID int64) (*projectview.Detail, error) {

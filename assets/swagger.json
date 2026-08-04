@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1020-gfad8123-dirty"
+    "version": "v1.0.0-1024-g667da13-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1553,64 +1553,6 @@
         }
       }
     },
-    "/api/v1/tokens/project-reports": {
-      "get": {
-        "tags": [
-          "TokenResearchService"
-        ],
-        "operationId": "TokenResearchService_ListProjectReports",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "contract",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "evaluation_status",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tokenapiListProjectReportsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/tokens/projects": {
       "get": {
         "tags": [
@@ -1644,6 +1586,32 @@
             "type": "integer",
             "format": "int32",
             "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "research_status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "report_state",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "evaluation_status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "selection_outcome",
             "in": "query"
           }
         ],
@@ -3693,29 +3661,6 @@
         }
       }
     },
-    "tokenapiListProjectReportsResponse": {
-      "type": "object",
-      "properties": {
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "project_reports": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1TokenProjectReport"
-          }
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
     "tokenapiListProjectSwapEventsResponse": {
       "type": "object",
       "properties": {
@@ -3784,7 +3729,7 @@
         "projects": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1TokenProject"
+            "$ref": "#/definitions/v1alpha1TokenProjectListItem"
           }
         },
         "total": {
@@ -5562,6 +5507,9 @@
         "currentReport": {
           "$ref": "#/definitions/v1alpha1TokenReportRevision"
         },
+        "currentReportEvaluation": {
+          "$ref": "#/definitions/v1alpha1TokenProjectReportEvaluationSummary"
+        },
         "currentSelection": {
           "$ref": "#/definitions/v1alpha1TokenSelection"
         },
@@ -5644,6 +5592,20 @@
         }
       }
     },
+    "v1alpha1TokenProjectListItem": {
+      "type": "object",
+      "properties": {
+        "currentReport": {
+          "$ref": "#/definitions/v1alpha1TokenProjectReportSummary"
+        },
+        "project": {
+          "$ref": "#/definitions/v1alpha1TokenProject"
+        },
+        "researchStatus": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1TokenProjectObservation": {
       "type": "object",
       "properties": {
@@ -5683,6 +5645,26 @@
         }
       }
     },
+    "v1alpha1TokenProjectPairRiskSummary": {
+      "type": "object",
+      "properties": {
+        "isCreated": {
+          "type": "boolean"
+        },
+        "isMint": {
+          "type": "boolean"
+        },
+        "isRemoveLiquidity": {
+          "type": "boolean"
+        },
+        "lastSwapAt": {
+          "type": "string"
+        },
+        "quoteUsdtValueInt": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1TokenProjectRelatedWallet": {
       "type": "object",
       "properties": {
@@ -5701,80 +5683,59 @@
         }
       }
     },
-    "v1alpha1TokenProjectReport": {
+    "v1alpha1TokenProjectReportEvaluationSummary": {
       "type": "object",
       "properties": {
-        "chainId": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "contract": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string"
-        },
         "evaluatedAt": {
           "type": "string"
         },
-        "evaluationAttempts": {
+        "failedAttempts": {
           "type": "integer",
           "format": "int32"
         },
-        "evaluationLastError": {
+        "lastError": {
           "type": "string"
         },
-        "evaluationStatus": {
+        "outcome": {
           "type": "string"
         },
-        "evaluationUpdatedAt": {
+        "status": {
           "type": "string"
         },
-        "name": {
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenProjectReportRiskSummary": {
+      "type": "object",
+      "properties": {
+        "usdtPair": {
+          "$ref": "#/definitions/v1alpha1TokenProjectPairRiskSummary"
+        },
+        "wethPair": {
+          "$ref": "#/definitions/v1alpha1TokenProjectPairRiskSummary"
+        }
+      }
+    },
+    "v1alpha1TokenProjectReportSummary": {
+      "type": "object",
+      "properties": {
+        "builtAt": {
           "type": "string"
         },
-        "projectId": {
+        "completenessStatus": {
+          "type": "string"
+        },
+        "evaluation": {
+          "$ref": "#/definitions/v1alpha1TokenProjectReportEvaluationSummary"
+        },
+        "revision": {
           "type": "integer",
           "format": "int64"
         },
-        "reportDataAvailable": {
-          "type": "boolean"
-        },
-        "sourceUpdatedAt": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "usdtPairIsCreated": {
-          "type": "boolean"
-        },
-        "usdtPairIsMint": {
-          "type": "boolean"
-        },
-        "usdtPairIsRemoveLiquidity": {
-          "type": "boolean"
-        },
-        "usdtPairLastSwapAt": {
-          "type": "string"
-        },
-        "usdtPairQuoteUsdtValueInt": {
-          "type": "string"
-        },
-        "wethPairIsCreated": {
-          "type": "boolean"
-        },
-        "wethPairIsMint": {
-          "type": "boolean"
-        },
-        "wethPairIsRemoveLiquidity": {
-          "type": "boolean"
-        },
-        "wethPairLastSwapAt": {
-          "type": "string"
-        },
-        "wethPairQuoteUsdtValueInt": {
-          "type": "string"
+        "riskSummary": {
+          "$ref": "#/definitions/v1alpha1TokenProjectReportRiskSummary"
         }
       }
     },
@@ -6163,35 +6124,8 @@
           "type": "integer",
           "format": "int64"
         },
-        "usdtPairIsCreated": {
-          "type": "boolean"
-        },
-        "usdtPairIsMint": {
-          "type": "boolean"
-        },
-        "usdtPairIsRemoveLiquidity": {
-          "type": "boolean"
-        },
-        "usdtPairLastSwapAt": {
-          "type": "string"
-        },
-        "usdtPairQuoteUsdtValueInt": {
-          "type": "string"
-        },
-        "wethPairIsCreated": {
-          "type": "boolean"
-        },
-        "wethPairIsMint": {
-          "type": "boolean"
-        },
-        "wethPairIsRemoveLiquidity": {
-          "type": "boolean"
-        },
-        "wethPairLastSwapAt": {
-          "type": "string"
-        },
-        "wethPairQuoteUsdtValueInt": {
-          "type": "string"
+        "riskSummary": {
+          "$ref": "#/definitions/v1alpha1TokenProjectReportRiskSummary"
         }
       }
     },

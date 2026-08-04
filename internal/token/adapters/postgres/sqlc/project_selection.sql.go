@@ -41,9 +41,39 @@ ORDER BY decided_at DESC, id DESC
 LIMIT 1
 `
 
-// Selection persistence and read model.
 func (q *Queries) GetLatestProjectSelection(ctx context.Context, projectID int64) (ProjectSelection, error) {
 	row := q.db.QueryRow(ctx, getLatestProjectSelection, projectID)
+	var i ProjectSelection
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Outcome,
+		&i.StrategyKey,
+		&i.StrategyVersion,
+		&i.ReportRevision,
+		&i.ReasonCodes,
+		&i.ReasonDetail,
+		&i.DecidedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getProjectSelectionByID = `-- name: GetProjectSelectionByID :one
+SELECT id, project_id, outcome, strategy_key, strategy_version, report_revision, reason_codes, reason_detail, decided_at, created_at
+FROM project_selection
+WHERE id = $1
+  AND project_id = $2
+`
+
+type GetProjectSelectionByIDParams struct {
+	ID        int64
+	ProjectID int64
+}
+
+// Selection persistence and read model.
+func (q *Queries) GetProjectSelectionByID(ctx context.Context, arg GetProjectSelectionByIDParams) (ProjectSelection, error) {
+	row := q.db.QueryRow(ctx, getProjectSelectionByID, arg.ID, arg.ProjectID)
 	var i ProjectSelection
 	err := row.Scan(
 		&i.ID,

@@ -132,14 +132,6 @@ func validateProjectDataCollectionStatus(value string) error {
 	}
 }
 
-func validateProjectReportEvaluationStatus(value string) error {
-	value = strings.TrimSpace(value)
-	if value == "" || value == string(research.TaskStatusSucceeded) {
-		return nil
-	}
-	return status.Errorf(codes.InvalidArgument, "evaluation_status must be empty or %q", research.TaskStatusSucceeded)
-}
-
 func validateProjectResearchStatus(value string) error {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -260,10 +252,69 @@ func mapProject(item catalog.Project) *v1alpha1.TokenProject {
 	}
 }
 
-func mapProjects(items []catalog.Project) []*v1alpha1.TokenProject {
-	results := make([]*v1alpha1.TokenProject, 0, len(items))
+func mapProjectPairRiskSummary(item projectview.ProjectPairRiskSummary) *v1alpha1.TokenProjectPairRiskSummary {
+	lastSwapTimestamp := item.LastSwapTimestamp
+	return &v1alpha1.TokenProjectPairRiskSummary{
+		IsCreated:         item.IsCreated,
+		IsRemoveLiquidity: item.IsRemoveLiquidity,
+		IsMint:            item.IsMint,
+		QuoteUsdtValueInt: formatBigInt(item.QuoteUSDTValueInt),
+		LastSwapAt:        formatUnixTime(&lastSwapTimestamp),
+	}
+}
+
+func mapProjectReportRiskSummary(item projectview.ProjectReportRiskSummary) *v1alpha1.TokenProjectReportRiskSummary {
+	result := &v1alpha1.TokenProjectReportRiskSummary{}
+	if item.WethPair != nil {
+		result.WethPair = mapProjectPairRiskSummary(*item.WethPair)
+	}
+	if item.UsdtPair != nil {
+		result.UsdtPair = mapProjectPairRiskSummary(*item.UsdtPair)
+	}
+	return result
+}
+
+func mapProjectReportEvaluationSummary(item projectview.ProjectReportEvaluationSummary) *v1alpha1.TokenProjectReportEvaluationSummary {
+	return &v1alpha1.TokenProjectReportEvaluationSummary{
+		Status:         string(item.Status),
+		FailedAttempts: item.FailedAttempts,
+		LastError:      item.LastError,
+		UpdatedAt:      formatTime(item.UpdatedAt),
+		Outcome:        string(item.Outcome),
+		EvaluatedAt:    formatTime(item.EvaluatedAt),
+	}
+}
+
+func mapProjectReportSummary(item projectview.ProjectReportSummary) *v1alpha1.TokenProjectReportSummary {
+	result := &v1alpha1.TokenProjectReportSummary{
+		Revision:           item.Revision,
+		CompletenessStatus: item.CompletenessStatus,
+		BuiltAt:            formatTime(item.BuiltAt),
+	}
+	if item.RiskSummary != nil {
+		result.RiskSummary = mapProjectReportRiskSummary(*item.RiskSummary)
+	}
+	if item.Evaluation != nil {
+		result.Evaluation = mapProjectReportEvaluationSummary(*item.Evaluation)
+	}
+	return result
+}
+
+func mapProjectListItem(item projectview.ProjectListItem) *v1alpha1.TokenProjectListItem {
+	result := &v1alpha1.TokenProjectListItem{
+		Project:        mapProject(item.Project),
+		ResearchStatus: string(item.ResearchStatus),
+	}
+	if item.CurrentReport != nil {
+		result.CurrentReport = mapProjectReportSummary(*item.CurrentReport)
+	}
+	return result
+}
+
+func mapProjectListItems(items []projectview.ProjectListItem) []*v1alpha1.TokenProjectListItem {
+	results := make([]*v1alpha1.TokenProjectListItem, 0, len(items))
 	for _, item := range items {
-		results = append(results, mapProject(item))
+		results = append(results, mapProjectListItem(item))
 	}
 	return results
 }
@@ -282,56 +333,59 @@ func formatBigInt(value *big.Int) string {
 	return value.String()
 }
 
-func boolValue(value *bool) bool {
-	return value != nil && *value
+func mapReportingProjectPairRiskSummary(
+	pairKind string,
+	isCreated *bool,
+	isRemoveLiquidity *bool,
+	isMint *bool,
+	quoteUSDTValueInt *big.Int,
+	lastSwapTimestamp *uint64,
+) (*v1alpha1.TokenProjectPairRiskSummary, error) {
+	if isCreated == nil && isRemoveLiquidity == nil && isMint == nil && quoteUSDTValueInt == nil && lastSwapTimestamp == nil {
+		return nil, nil
+	}
+	if isCreated == nil || isRemoveLiquidity == nil || isMint == nil || quoteUSDTValueInt == nil || lastSwapTimestamp == nil {
+		return nil, fmt.Errorf("%s pair risk summary must be fully populated or absent", pairKind)
+	}
+	return &v1alpha1.TokenProjectPairRiskSummary{
+		IsCreated:         *isCreated,
+		IsRemoveLiquidity: *isRemoveLiquidity,
+		IsMint:            *isMint,
+		QuoteUsdtValueInt: quoteUSDTValueInt.String(),
+		LastSwapAt:        formatUnixTime(lastSwapTimestamp),
+	}, nil
 }
 
-func mapProjectReport(item reporting.ProjectReportReadModel) *v1alpha1.TokenProjectReport {
-	report := item.Report
-	risk := report.Report.RiskSummary
-	dataAvailable := risk.WethPairIsCreated != nil &&
-		risk.WethPairIsRemoveLiquidity != nil &&
-		risk.WethPairIsMint != nil &&
-		risk.UsdtPairIsCreated != nil &&
-		risk.UsdtPairIsRemoveLiquidity != nil &&
-		risk.UsdtPairIsMint != nil
-	result := &v1alpha1.TokenProjectReport{
-		ProjectID:           report.ProjectID,
-		ChainID:             item.ChainID,
-		Name:                item.Name,
-		Symbol:              item.Symbol,
-		Contract:            formatAddress(item.Contract),
-		EvaluationStatus:    item.BuildStatus,
-		EvaluationAttempts:  item.BuildAttempts,
-		EvaluationLastError: item.BuildLastError,
-		EvaluationUpdatedAt: formatTime(item.BuildUpdatedAt),
-		ReportDataAvailable: dataAvailable,
-		SourceUpdatedAt:     formatTime(report.BuiltAt),
-		EvaluatedAt:         formatTime(report.BuiltAt),
-		CreatedAt:           formatTime(report.CreatedAt),
+func mapReportingProjectReportRiskSummary(item reporting.ReportRiskSummary) (*v1alpha1.TokenProjectReportRiskSummary, error) {
+	wethPair, err := mapReportingProjectPairRiskSummary(
+		"weth",
+		item.WethPairIsCreated,
+		item.WethPairIsRemoveLiquidity,
+		item.WethPairIsMint,
+		item.WethPairQuoteUsdtValueInt,
+		item.WethPairLastSwapTimestamp,
+	)
+	if err != nil {
+		return nil, err
 	}
-	if !dataAvailable {
-		return result
+	usdtPair, err := mapReportingProjectPairRiskSummary(
+		"usdt",
+		item.UsdtPairIsCreated,
+		item.UsdtPairIsRemoveLiquidity,
+		item.UsdtPairIsMint,
+		item.UsdtPairQuoteUsdtValueInt,
+		item.UsdtPairLastSwapTimestamp,
+	)
+	if err != nil {
+		return nil, err
 	}
-	result.WethPairIsCreated = *risk.WethPairIsCreated
-	result.WethPairIsRemoveLiquidity = *risk.WethPairIsRemoveLiquidity
-	result.WethPairIsMint = *risk.WethPairIsMint
-	result.WethPairQuoteUsdtValueInt = formatBigInt(risk.WethPairQuoteUsdtValueInt)
-	result.WethPairLastSwapAt = formatUnixTime(risk.WethPairLastSwapTimestamp)
-	result.UsdtPairIsCreated = *risk.UsdtPairIsCreated
-	result.UsdtPairIsRemoveLiquidity = *risk.UsdtPairIsRemoveLiquidity
-	result.UsdtPairIsMint = *risk.UsdtPairIsMint
-	result.UsdtPairQuoteUsdtValueInt = formatBigInt(risk.UsdtPairQuoteUsdtValueInt)
-	result.UsdtPairLastSwapAt = formatUnixTime(risk.UsdtPairLastSwapTimestamp)
-	return result
-}
-
-func mapProjectReports(items []reporting.ProjectReportReadModel) []*v1alpha1.TokenProjectReport {
-	results := make([]*v1alpha1.TokenProjectReport, 0, len(items))
-	for _, item := range items {
-		results = append(results, mapProjectReport(item))
+	if wethPair == nil && usdtPair == nil {
+		return nil, nil
 	}
-	return results
+	return &v1alpha1.TokenProjectReportRiskSummary{
+		WethPair: wethPair,
+		UsdtPair: usdtPair,
+	}, nil
 }
 
 func mapProjectDataCollectionTask(item research.ProjectDataCollectionTask) *v1alpha1.TokenCollectionTask {
@@ -406,36 +460,30 @@ func mapProjectResearchStates(items []research.ProjectResearchState) []*v1alpha1
 	}
 	return out
 }
-func mapProjectReportRevision(item reporting.ProjectReportRevision) *v1alpha1.TokenReportRevision {
+func mapProjectReportRevision(item reporting.ProjectReportRevision) (*v1alpha1.TokenReportRevision, error) {
 	var block uint64
 	if item.ObservedBlockNumber != nil {
 		block = *item.ObservedBlockNumber
 	}
-	risk := item.Report.RiskSummary
-	return &v1alpha1.TokenReportRevision{
-		ReportRevisionID:          item.ID,
-		ProjectID:                 item.ProjectID,
-		ChainID:                   item.ChainID,
-		Contract:                  formatAddress(item.Contract),
-		Revision:                  item.Revision,
-		ContentHash:               item.ContentHash.Hex(),
-		CompletenessStatus:        item.CompletenessStatus,
-		EvidenceJSON:              jsonString(item.Evidence),
-		ReportJSON:                jsonString(item.Report),
-		ObservedBlockNumber:       block,
-		WethPairIsCreated:         boolValue(risk.WethPairIsCreated),
-		WethPairIsRemoveLiquidity: boolValue(risk.WethPairIsRemoveLiquidity),
-		WethPairIsMint:            boolValue(risk.WethPairIsMint),
-		WethPairQuoteUsdtValueInt: formatBigInt(risk.WethPairQuoteUsdtValueInt),
-		WethPairLastSwapAt:        formatUnixTime(risk.WethPairLastSwapTimestamp),
-		UsdtPairIsCreated:         boolValue(risk.UsdtPairIsCreated),
-		UsdtPairIsRemoveLiquidity: boolValue(risk.UsdtPairIsRemoveLiquidity),
-		UsdtPairIsMint:            boolValue(risk.UsdtPairIsMint),
-		UsdtPairQuoteUsdtValueInt: formatBigInt(risk.UsdtPairQuoteUsdtValueInt),
-		UsdtPairLastSwapAt:        formatUnixTime(risk.UsdtPairLastSwapTimestamp),
-		BuiltAt:                   formatTime(item.BuiltAt),
-		CreatedAt:                 formatTime(item.CreatedAt),
+	riskSummary, err := mapReportingProjectReportRiskSummary(item.Report.RiskSummary)
+	if err != nil {
+		return nil, fmt.Errorf("map report revision %d risk summary: %w", item.ID, err)
 	}
+	return &v1alpha1.TokenReportRevision{
+		ReportRevisionID:    item.ID,
+		ProjectID:           item.ProjectID,
+		ChainID:             item.ChainID,
+		Contract:            formatAddress(item.Contract),
+		Revision:            item.Revision,
+		ContentHash:         item.ContentHash.Hex(),
+		CompletenessStatus:  item.CompletenessStatus,
+		EvidenceJSON:        jsonString(item.Evidence),
+		ReportJSON:          jsonString(item.Report),
+		ObservedBlockNumber: block,
+		RiskSummary:         riskSummary,
+		BuiltAt:             formatTime(item.BuiltAt),
+		CreatedAt:           formatTime(item.CreatedAt),
+	}, nil
 }
 
 func jsonString(value any) string {
@@ -445,12 +493,16 @@ func jsonString(value any) string {
 	}
 	return string(encoded)
 }
-func mapProjectReportRevisions(items []reporting.ProjectReportRevision) []*v1alpha1.TokenReportRevision {
+func mapProjectReportRevisions(items []reporting.ProjectReportRevision) ([]*v1alpha1.TokenReportRevision, error) {
 	out := make([]*v1alpha1.TokenReportRevision, 0, len(items))
 	for _, item := range items {
-		out = append(out, mapProjectReportRevision(item))
+		mapped, err := mapProjectReportRevision(item)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, mapped)
 	}
-	return out
+	return out, nil
 }
 func mapProjectSelection(item selection.ProjectSelection) *v1alpha1.TokenSelection {
 	return &v1alpha1.TokenSelection{SelectionID: item.ID, ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: formatAddress(item.Contract), Outcome: string(item.Outcome), StrategyKey: item.StrategyKey, StrategyVersion: item.StrategyVersion, ReportRevision: item.ReportRevision, ReasonCodes: item.ReasonCodes, ReasonDetail: item.ReasonDetail, DecidedAt: formatTime(item.DecidedAt), CreatedAt: formatTime(item.CreatedAt)}
@@ -650,7 +702,14 @@ func mapProjectDetail(item projectview.Detail) (*v1alpha1.TokenProjectDetail, er
 		result.ResearchState = mapProjectResearchState(*item.ResearchState)
 	}
 	if item.CurrentReport != nil {
-		result.CurrentReport = mapProjectReportRevision(*item.CurrentReport)
+		currentReport, err := mapProjectReportRevision(*item.CurrentReport)
+		if err != nil {
+			return nil, err
+		}
+		result.CurrentReport = currentReport
+	}
+	if item.CurrentReportEvaluation != nil {
+		result.CurrentReportEvaluation = mapProjectReportEvaluationSummary(*item.CurrentReportEvaluation)
 	}
 	if item.CurrentSelection != nil {
 		result.CurrentSelection = mapProjectSelection(*item.CurrentSelection)

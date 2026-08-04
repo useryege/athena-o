@@ -17,7 +17,6 @@ type CatalogApplication interface {
 	GetContractCode(context.Context, shared.Hash) (*catalog.ContractCode, error)
 	ListContractCodes(context.Context, shared.Hash, int32, int32) (*catalog.ContractCodePage, error)
 	ListContractCodesByDeploymentCount(context.Context, int32, int32) (*catalog.ContractCodePage, error)
-	ListProjectsPage(context.Context, int64, shared.Hash, shared.Address, int32, int32) (*catalog.ProjectPage, error)
 }
 
 type ResearchApplication interface {
@@ -27,7 +26,6 @@ type ResearchApplication interface {
 }
 
 type ReportingApplication interface {
-	ListProjectReportsPage(context.Context, int64, int64, shared.Address, string, int32, int32) (*reporting.ProjectReportPage, error)
 	ListProjectReportRevisionsPage(context.Context, int64, int64, int32, int32) (*reporting.ReportRevisionPage, error)
 }
 
@@ -36,6 +34,7 @@ type SelectionApplication interface {
 }
 
 type ProjectViewApplication interface {
+	ListProjectsPage(context.Context, projectview.ProjectListFilter, int32, int32) (*projectview.ProjectListPage, error)
 	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
 	GetProjectSwapActivity(context.Context, int64) (*projectview.SwapActivity, error)
 	ListProjectSwapEventsPage(context.Context, int64, swap.PairKind, uint64, int32, int32) (*projectview.SwapEventPage, error)

@@ -956,6 +956,8 @@ message TokenProjectDetail {
   repeated TokenProjectObservation currentObservations = 15;
 
   optional string generatedAt = 16;
+
+  optional TokenProjectReportEvaluationSummary currentReportEvaluation = 17;
 }
 
 message TokenProjectInitialRecipient {
@@ -974,6 +976,14 @@ message TokenProjectInitialRecipient {
   optional uint64 sourceBlockNumber = 7;
 
   optional string createdAt = 8;
+}
+
+message TokenProjectListItem {
+  optional TokenProject project = 1;
+
+  optional string researchStatus = 2;
+
+  optional TokenProjectReportSummary currentReport = 3;
 }
 
 message TokenProjectObservation {
@@ -998,6 +1008,18 @@ message TokenProjectObservation {
   optional string createdAt = 10;
 }
 
+message TokenProjectPairRiskSummary {
+  optional bool isCreated = 1;
+
+  optional bool isRemoveLiquidity = 2;
+
+  optional bool isMint = 3;
+
+  optional string quoteUsdtValueInt = 4;
+
+  optional string lastSwapAt = 5;
+}
+
 message TokenProjectRelatedWallet {
   optional int64 projectId = 1;
 
@@ -1008,52 +1030,36 @@ message TokenProjectRelatedWallet {
   optional string createdAt = 4;
 }
 
-message TokenProjectReport {
-  optional int64 projectId = 1;
+message TokenProjectReportEvaluationSummary {
+  optional string status = 1;
 
-  optional int64 chainId = 2;
+  optional int32 failedAttempts = 2;
 
-  optional string name = 3;
+  optional string lastError = 3;
 
-  optional string symbol = 4;
+  optional string updatedAt = 4;
 
-  optional string contract = 5;
+  optional string outcome = 5;
 
-  optional string evaluationStatus = 6;
+  optional string evaluatedAt = 6;
+}
 
-  optional int32 evaluationAttempts = 7;
+message TokenProjectReportRiskSummary {
+  optional TokenProjectPairRiskSummary wethPair = 1;
 
-  optional string evaluationLastError = 8;
+  optional TokenProjectPairRiskSummary usdtPair = 2;
+}
 
-  optional string evaluationUpdatedAt = 9;
+message TokenProjectReportSummary {
+  optional int64 revision = 1;
 
-  optional bool reportDataAvailable = 10;
+  optional string completenessStatus = 2;
 
-  optional bool wethPairIsCreated = 11;
+  optional string builtAt = 3;
 
-  optional bool wethPairIsRemoveLiquidity = 12;
+  optional TokenProjectReportRiskSummary riskSummary = 4;
 
-  optional bool wethPairIsMint = 13;
-
-  optional string wethPairQuoteUsdtValueInt = 14;
-
-  optional string wethPairLastSwapAt = 15;
-
-  optional bool usdtPairIsCreated = 16;
-
-  optional bool usdtPairIsRemoveLiquidity = 17;
-
-  optional bool usdtPairIsMint = 18;
-
-  optional string usdtPairQuoteUsdtValueInt = 19;
-
-  optional string usdtPairLastSwapAt = 20;
-
-  optional string sourceUpdatedAt = 21;
-
-  optional string evaluatedAt = 22;
-
-  optional string createdAt = 23;
+  optional TokenProjectReportEvaluationSummary evaluation = 5;
 }
 
 message TokenProjectSwapActivity {
@@ -1273,25 +1279,7 @@ message TokenReportRevision {
 
   optional uint64 observedBlockNumber = 10;
 
-  optional bool wethPairIsCreated = 11;
-
-  optional bool wethPairIsRemoveLiquidity = 12;
-
-  optional bool wethPairIsMint = 13;
-
-  optional string wethPairQuoteUsdtValueInt = 14;
-
-  optional string wethPairLastSwapAt = 15;
-
-  optional bool usdtPairIsCreated = 16;
-
-  optional bool usdtPairIsRemoveLiquidity = 17;
-
-  optional bool usdtPairIsMint = 18;
-
-  optional string usdtPairQuoteUsdtValueInt = 19;
-
-  optional string usdtPairLastSwapAt = 20;
+  optional TokenProjectReportRiskSummary riskSummary = 11;
 
   optional string builtAt = 21;
 

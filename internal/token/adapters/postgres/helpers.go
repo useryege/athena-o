@@ -110,11 +110,26 @@ func bigIntFromNumeric(v pgtype.Numeric) *big.Int {
 	}
 	return r
 }
-func bigIntPointerFromNumeric(v pgtype.Numeric) *big.Int {
+func exactBigIntPointerFromNumeric(field string, v pgtype.Numeric) (*big.Int, error) {
 	if !v.Valid {
-		return nil
+		return nil, nil
 	}
-	return bigIntFromNumeric(v)
+	if v.NaN || v.InfinityModifier != pgtype.Finite || v.Int == nil {
+		return nil, fmt.Errorf("%s is not a finite numeric value", field)
+	}
+	r := new(big.Int).Set(v.Int)
+	if v.Exp > 0 {
+		r.Mul(r, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(v.Exp)), nil))
+	} else if v.Exp < 0 {
+		divisor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-v.Exp)), nil)
+		quotient, remainder := new(big.Int), new(big.Int)
+		quotient.QuoRem(r, divisor, remainder)
+		if remainder.Sign() != 0 {
+			return nil, fmt.Errorf("%s is not an integer", field)
+		}
+		r = quotient
+	}
+	return r, nil
 }
 
 func uint64ToInt64(field string, v uint64) (int64, error) {
@@ -311,6 +326,14 @@ func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (reporting.Pr
 	if e != nil {
 		return reporting.ProjectReportRevision{}, e
 	}
+	wethQuoteUSDTValueInt, e := exactBigIntPointerFromNumeric("weth_pair_quote_usdt_value_int", row.WethPairQuoteUsdtValueInt)
+	if e != nil {
+		return reporting.ProjectReportRevision{}, e
+	}
+	usdtQuoteUSDTValueInt, e := exactBigIntPointerFromNumeric("usdt_pair_quote_usdt_value_int", row.UsdtPairQuoteUsdtValueInt)
+	if e != nil {
+		return reporting.ProjectReportRevision{}, e
+	}
 	var evidence []reporting.EvidenceReference
 	if e = json.Unmarshal(row.Evidence, &evidence); e != nil {
 		return reporting.ProjectReportRevision{}, fmt.Errorf("decode report evidence: %w", e)
@@ -323,12 +346,12 @@ func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (reporting.Pr
 	if !equalBoolPointers(risk.WethPairIsCreated, boolPointer(row.WethPairIsCreated)) ||
 		!equalBoolPointers(risk.WethPairIsRemoveLiquidity, boolPointer(row.WethPairIsRemoveLiquidity)) ||
 		!equalBoolPointers(risk.WethPairIsMint, boolPointer(row.WethPairIsMint)) ||
-		!equalBigIntPointers(risk.WethPairQuoteUsdtValueInt, bigIntPointerFromNumeric(row.WethPairQuoteUsdtValueInt)) ||
+		!equalBigIntPointers(risk.WethPairQuoteUsdtValueInt, wethQuoteUSDTValueInt) ||
 		!equalUint64Pointers(risk.WethPairLastSwapTimestamp, wts) ||
 		!equalBoolPointers(risk.UsdtPairIsCreated, boolPointer(row.UsdtPairIsCreated)) ||
 		!equalBoolPointers(risk.UsdtPairIsRemoveLiquidity, boolPointer(row.UsdtPairIsRemoveLiquidity)) ||
 		!equalBoolPointers(risk.UsdtPairIsMint, boolPointer(row.UsdtPairIsMint)) ||
-		!equalBigIntPointers(risk.UsdtPairQuoteUsdtValueInt, bigIntPointerFromNumeric(row.UsdtPairQuoteUsdtValueInt)) ||
+		!equalBigIntPointers(risk.UsdtPairQuoteUsdtValueInt, usdtQuoteUSDTValueInt) ||
 		!equalUint64Pointers(risk.UsdtPairLastSwapTimestamp, uts) {
 		return reporting.ProjectReportRevision{}, fmt.Errorf("project report revision %d risk projection does not match report JSON", row.ID)
 	}

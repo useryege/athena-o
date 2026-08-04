@@ -1,4 +1,4 @@
-import {Pagination, Table, Typography} from 'antd';
+import {Empty, Pagination, Skeleton, Table, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import type {TableRowSelection} from 'antd/es/table/interface';
 import * as React from 'react';
@@ -24,6 +24,8 @@ export const ResourceTable = <T,>(props: {
     scrollX?: number | string;
     stickyHeader?: boolean | {offsetHeader?: number};
     rowClassName?: (record: T, index: number) => string;
+    compactRender?: (record: T) => React.ReactNode;
+    compactEmptyDescription?: React.ReactNode;
 }) => {
     const selectedKeys = props.selectedRowKeys || [];
     const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
@@ -72,7 +74,14 @@ export const ResourceTable = <T,>(props: {
     const scroll = props.scrollX === undefined ? undefined : {x: props.scrollX};
     const sticky = props.stickyHeader === true ? {offsetHeader: 56} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 56} : undefined;
     const hasPagination = props.total !== undefined && props.onPageChange;
-    const regionClassName = ['resource-table-region', hasPagination ? 'resource-table-region--paginated' : undefined, tableClassName].filter(Boolean).join(' ');
+    const regionClassName = [
+        'resource-table-region',
+        hasPagination ? 'resource-table-region--paginated' : undefined,
+        props.compactRender ? 'resource-table-region--compact' : undefined,
+        tableClassName
+    ]
+        .filter(Boolean)
+        .join(' ');
     const pageSizeOptions = props.pageSizeOptions || PAGE_SIZE_OPTIONS;
     const currentPage = props.page || 1;
     const currentPageSize = props.pageSize || pageSizeOptions[0];
@@ -123,6 +132,29 @@ export const ResourceTable = <T,>(props: {
                 onRow={tableOnRow}
                 rowClassName={props.rowClassName}
             />
+            {props.compactRender && (
+                <div className='resource-table-compact' aria-label={`${props.label || 'Data table'} compact view`}>
+                    {props.loading ? (
+                        <ul className='resource-table-compact__items resource-table-compact__loading' aria-label='Loading items'>
+                            {[0, 1, 2].map(index => (
+                                <li className='resource-table-compact__item resource-table-compact__skeleton-card' key={index}>
+                                    <Skeleton active={true} paragraph={{rows: 5}} />
+                                </li>
+                            ))}
+                        </ul>
+                    ) : props.items.length > 0 ? (
+                        <ul className='resource-table-compact__items'>
+                            {props.items.map(item => (
+                                <li className='resource-table-compact__item' key={itemKey(item)}>
+                                    {props.compactRender?.(item)}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <Empty className='resource-table-compact__empty' image={Empty.PRESENTED_IMAGE_SIMPLE} description={props.compactEmptyDescription || 'No items'} />
+                    )}
+                </div>
+            )}
         </div>
     );
 };

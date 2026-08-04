@@ -485,6 +485,16 @@ body::-webkit-scrollbar-thumb,
     min-width: 0;
 }
 
+.resource-table-compact {
+    display: none;
+}
+
+.resource-table-compact__items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
 .resource-table.ant-table-wrapper {
     border: 1px solid var(--athena-border);
     border-radius: 8px;
@@ -621,6 +631,92 @@ body::-webkit-scrollbar-thumb,
 
 .resource-table--paint-select .resource-table__row--clickable {
     cursor: crosshair;
+}
+
+.projects-controls {
+    display: grid;
+    gap: 14px;
+}
+
+.projects-view-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.projects-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.projects-filter-grid > * {
+    width: 100%;
+    min-width: 0;
+}
+
+.projects-token {
+    display: grid;
+    min-width: 0;
+}
+
+.projects-compact-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.projects-compact-card__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.projects-report-risk-card .ant-descriptions-item-content,
+.project-report-tab .ant-descriptions-item-content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.projects-report-risk-card__sections,
+.project-report-current,
+.project-report-risk-snapshot,
+.project-report-revision-card__body {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+}
+
+.projects-report-risk-card__sections h5,
+.project-report-revision-card__body h5 {
+    margin: 0 0 8px;
+    color: var(--athena-text);
+}
+
+.projects-report-risk-card__pair-grid,
+.project-report-pair-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    min-width: 0;
+}
+
+.projects-report-risk-card__pair-grid > section,
+.project-report-pair-grid > .ant-card {
+    min-width: 0;
+}
+
+.project-report-pair-grid > .ant-card,
+.project-report-revision-card {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.project-report-tab .ant-alert {
+    margin-bottom: 12px;
 }
 
 .world-cup-corners-notice {
@@ -3432,6 +3528,173 @@ body::-webkit-scrollbar-thumb,
 }
 
 @media (max-width: 900px) {
+    html,
+    body,
+    #app {
+        min-width: 0;
+    }
+
+    .athena-shell,
+    .athena-shell > .ant-layout,
+    .athena-shell__content {
+        min-width: 0;
+    }
+
+    .athena-shell__sider {
+        position: fixed !important;
+        z-index: 60;
+        top: 56px !important;
+        left: 0;
+        height: calc(100vh - 56px);
+        box-shadow: var(--athena-shadow);
+    }
+
+    .athena-shell__sider.ant-layout-sider-collapsed {
+        border-right: 0;
+        box-shadow: none;
+    }
+
+    .athena-shell__mobile-close {
+        position: absolute;
+        z-index: 1;
+        top: 18px;
+        right: 10px;
+    }
+
+    .athena-shell__sider .athena-brand {
+        padding-right: 52px;
+    }
+
+    .athena-shell__backdrop {
+        position: fixed;
+        z-index: 50;
+        inset: 56px 0 0;
+        padding: 0;
+        border: 0;
+        background: rgb(0 0 0 / 48%);
+        cursor: pointer;
+    }
+
+    .app-page {
+        padding: 16px 14px 28px;
+    }
+
+    .app-page__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .app-page__actions {
+        justify-content: flex-start;
+    }
+
+    .projects-view-control {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .projects-filter-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resource-table-region--compact .resource-table.ant-table-wrapper {
+        display: none;
+    }
+
+    .resource-table-region--compact .resource-table-compact {
+        display: block;
+        min-width: 0;
+        border: 1px solid var(--athena-border);
+        border-radius: 8px;
+        background: var(--athena-panel-solid);
+        box-shadow: var(--athena-shadow-surface);
+    }
+
+    .resource-table-region--compact.resource-table-region--paginated .resource-table-compact {
+        border-radius: 0 0 8px 8px;
+    }
+
+    .resource-table-compact__items {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .resource-table-compact__item {
+        min-width: 0;
+    }
+
+    .resource-table-compact__skeleton-card {
+        padding: 16px;
+        border: 1px solid var(--athena-border);
+        border-radius: 8px;
+        background: var(--athena-panel);
+    }
+
+    .resource-table-compact__empty {
+        padding: 42px 16px;
+    }
+
+    .resource-table-pagination__controls {
+        position: static;
+        justify-content: flex-start;
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    .resource-table-pagination__sizes {
+        width: 100%;
+    }
+
+    .projects-report-risk-card__pair-grid,
+    .project-report-pair-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .projects-compact-card .ant-card-head {
+        align-items: flex-start;
+    }
+
+    .projects-compact-card .ant-card-head-wrapper {
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .projects-compact-card .ant-card-extra {
+        padding-top: 1px;
+    }
+
+    .key-value-grid .ant-descriptions-item-label {
+        width: 126px;
+    }
+
+    .project-detail-kpis,
+    .project-risk-grid,
+    .project-collection-grid,
+    .project-detail-pair-grid,
+    .project-trend__summary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project-detail-tabs > .ant-tabs-nav {
+        top: 56px;
+    }
+
+    .section-panel__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .section-panel__extra {
+        width: 100%;
+    }
+
+    .project-json-drawer .ant-drawer-header,
+    .project-json-drawer .ant-drawer-body {
+        padding-inline: 14px;
+    }
+
     .fifa-wallet-holding__row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-areas:
@@ -3490,6 +3753,10 @@ body::-webkit-scrollbar-thumb,
         justify-content: flex-start;
     }
 
+    .projects-filter-grid {
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+    }
+
     .project-detail-kpis {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -3501,6 +3768,19 @@ body::-webkit-scrollbar-thumb,
     .project-risk-grid,
     .project-collection-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .app-page {
+        padding-inline: 14px;
+    }
+
+    .projects-controls .projects-filter-grid,
+    .project-detail .project-detail-kpis,
+    .project-detail-tab .project-risk-grid,
+    .project-detail-tab .project-collection-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

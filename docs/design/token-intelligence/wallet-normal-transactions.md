@@ -12,7 +12,7 @@ eligibility, report generation, and the project detail read API are outside this
 boundary. The collected rows are durable project data but are not research
 observations and do not enqueue report builds. Their public filtering and
 pagination boundary is documented in the
-[Token Project Detail Read Model](project-detail-read-model.md).
+[Token Project Read Model](project-read-model.md).
 
 ## Source Locations
 

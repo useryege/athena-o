@@ -75,30 +75,40 @@ export interface TokenProject {
     usdtPair?: string;
 }
 
-export interface TokenProjectReport {
-    projectID?: number;
-    chainID?: number;
-    name?: string;
-    symbol?: string;
-    contract?: string;
-    evaluationStatus?: string;
-    evaluationAttempts?: number;
-    evaluationLastError?: string;
-    evaluationUpdatedAt?: string;
-    reportDataAvailable?: boolean;
-    wethPairIsCreated?: boolean;
-    wethPairIsRemoveLiquidity?: boolean;
-    wethPairIsMint?: boolean;
-    wethPairQuoteUsdtValueInt?: string;
-    wethPairLastSwapAt?: string;
-    usdtPairIsCreated?: boolean;
-    usdtPairIsRemoveLiquidity?: boolean;
-    usdtPairIsMint?: boolean;
-    usdtPairQuoteUsdtValueInt?: string;
-    usdtPairLastSwapAt?: string;
-    sourceUpdatedAt?: string;
+export interface TokenProjectReportPairRisk {
+    isCreated?: boolean;
+    isRemoveLiquidity?: boolean;
+    isMint?: boolean;
+    quoteUsdtValueInt?: string;
+    lastSwapAt?: string;
+}
+
+export interface TokenProjectReportRiskSummary {
+    wethPair?: TokenProjectReportPairRisk;
+    usdtPair?: TokenProjectReportPairRisk;
+}
+
+export interface TokenProjectReportEvaluation {
+    status?: string;
+    failedAttempts?: number;
+    lastError?: string;
+    updatedAt?: string;
+    outcome?: string;
     evaluatedAt?: string;
-    createdAt?: string;
+}
+
+export interface TokenProjectCurrentReport {
+    revision?: number;
+    completenessStatus?: string;
+    builtAt?: string;
+    riskSummary?: TokenProjectReportRiskSummary;
+    evaluation?: TokenProjectReportEvaluation;
+}
+
+export interface TokenProjectListItem {
+    project?: TokenProject;
+    researchStatus?: string;
+    currentReport?: TokenProjectCurrentReport;
 }
 
 export interface TokenCollectionTask {
@@ -141,16 +151,7 @@ export interface TokenReportRevision {
     evidenceJSON?: string;
     reportJSON?: string;
     observedBlockNumber?: number;
-    wethPairIsCreated?: boolean;
-    wethPairIsRemoveLiquidity?: boolean;
-    wethPairIsMint?: boolean;
-    wethPairQuoteUsdtValueInt?: string;
-    wethPairLastSwapAt?: string;
-    usdtPairIsCreated?: boolean;
-    usdtPairIsRemoveLiquidity?: boolean;
-    usdtPairIsMint?: boolean;
-    usdtPairQuoteUsdtValueInt?: string;
-    usdtPairLastSwapAt?: string;
+    riskSummary?: TokenProjectReportRiskSummary;
     builtAt?: string;
     createdAt?: string;
 }
@@ -328,6 +329,7 @@ export interface TokenProjectDetail {
     project?: TokenProject;
     researchState?: TokenResearchState;
     currentReport?: TokenReportRevision;
+    currentReportEvaluation?: TokenProjectReportEvaluation;
     currentSelection?: TokenSelection;
     ave?: TokenAveObservation;
     chainState?: TokenChainStateObservation;
@@ -592,38 +594,61 @@ function normalizeProject(item: any): TokenProject {
     };
 }
 
-function normalizeProjectReport(item: any): TokenProjectReport {
-    const reportDataAvailable = item.reportDataAvailable ?? item.report_data_available ?? false;
-    const reportBoolean = (camel: string, snake: string) => {
-        if (!reportDataAvailable) {
-            return undefined;
-        }
-        return item[camel] ?? item[snake] ?? false;
-    };
+function normalizeProjectReportPairRisk(item: any): TokenProjectReportPairRisk | undefined {
+    if (!item) {
+        return undefined;
+    }
     return {
-        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
-        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
-        name: item.name,
-        symbol: item.symbol,
-        contract: item.contract,
-        evaluationStatus: item.evaluationStatus ?? item.evaluation_status,
-        evaluationAttempts: numberValue(item.evaluationAttempts ?? item.evaluation_attempts),
-        evaluationLastError: item.evaluationLastError ?? item.evaluation_last_error,
-        evaluationUpdatedAt: item.evaluationUpdatedAt ?? item.evaluation_updated_at,
-        reportDataAvailable,
-        wethPairIsCreated: reportBoolean('wethPairIsCreated', 'weth_pair_is_created'),
-        wethPairIsRemoveLiquidity: reportBoolean('wethPairIsRemoveLiquidity', 'weth_pair_is_remove_liquidity'),
-        wethPairIsMint: reportBoolean('wethPairIsMint', 'weth_pair_is_mint'),
-        wethPairQuoteUsdtValueInt: item.wethPairQuoteUsdtValueInt ?? item.weth_pair_quote_usdt_value_int,
-        wethPairLastSwapAt: item.wethPairLastSwapAt ?? item.weth_pair_last_swap_at,
-        usdtPairIsCreated: reportBoolean('usdtPairIsCreated', 'usdt_pair_is_created'),
-        usdtPairIsRemoveLiquidity: reportBoolean('usdtPairIsRemoveLiquidity', 'usdt_pair_is_remove_liquidity'),
-        usdtPairIsMint: reportBoolean('usdtPairIsMint', 'usdt_pair_is_mint'),
-        usdtPairQuoteUsdtValueInt: item.usdtPairQuoteUsdtValueInt ?? item.usdt_pair_quote_usdt_value_int,
-        usdtPairLastSwapAt: item.usdtPairLastSwapAt ?? item.usdt_pair_last_swap_at,
-        sourceUpdatedAt: item.sourceUpdatedAt ?? item.source_updated_at,
-        evaluatedAt: item.evaluatedAt ?? item.evaluated_at,
-        createdAt: item.createdAt ?? item.created_at
+        isCreated: item.isCreated ?? item.is_created,
+        isRemoveLiquidity: item.isRemoveLiquidity ?? item.is_remove_liquidity,
+        isMint: item.isMint ?? item.is_mint,
+        quoteUsdtValueInt: item.quoteUsdtValueInt ?? item.quote_usdt_value_int,
+        lastSwapAt: item.lastSwapAt ?? item.last_swap_at
+    };
+}
+
+function normalizeProjectReportRiskSummary(item: any): TokenProjectReportRiskSummary | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        wethPair: normalizeProjectReportPairRisk(item.wethPair ?? item.weth_pair),
+        usdtPair: normalizeProjectReportPairRisk(item.usdtPair ?? item.usdt_pair)
+    };
+}
+
+function normalizeProjectReportEvaluation(item: any): TokenProjectReportEvaluation | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        status: item.status,
+        failedAttempts: numberValue(item.failedAttempts ?? item.failed_attempts),
+        lastError: item.lastError ?? item.last_error,
+        updatedAt: item.updatedAt ?? item.updated_at,
+        outcome: item.outcome,
+        evaluatedAt: item.evaluatedAt ?? item.evaluated_at
+    };
+}
+
+function normalizeProjectCurrentReport(item: any): TokenProjectCurrentReport | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        revision: numberValue(item.revision),
+        completenessStatus: item.completenessStatus ?? item.completeness_status,
+        builtAt: item.builtAt ?? item.built_at,
+        riskSummary: normalizeProjectReportRiskSummary(item.riskSummary ?? item.risk_summary),
+        evaluation: normalizeProjectReportEvaluation(item.evaluation)
+    };
+}
+
+function normalizeProjectListItem(item: any): TokenProjectListItem {
+    return {
+        project: item.project ? normalizeProject(item.project) : undefined,
+        researchStatus: item.researchStatus ?? item.research_status,
+        currentReport: normalizeProjectCurrentReport(item.currentReport ?? item.current_report)
     };
 }
 
@@ -672,16 +697,7 @@ function normalizeReportRevision(item: any): TokenReportRevision {
         evidenceJSON: item.evidenceJSON ?? item.evidenceJson ?? item.evidence_json,
         reportJSON: item.reportJSON ?? item.reportJson ?? item.report_json,
         observedBlockNumber: numberValue(item.observedBlockNumber ?? item.observed_block_number),
-        wethPairIsCreated: item.wethPairIsCreated ?? item.weth_pair_is_created,
-        wethPairIsRemoveLiquidity: item.wethPairIsRemoveLiquidity ?? item.weth_pair_is_remove_liquidity,
-        wethPairIsMint: item.wethPairIsMint ?? item.weth_pair_is_mint,
-        wethPairQuoteUsdtValueInt: item.wethPairQuoteUsdtValueInt ?? item.weth_pair_quote_usdt_value_int,
-        wethPairLastSwapAt: item.wethPairLastSwapAt ?? item.weth_pair_last_swap_at,
-        usdtPairIsCreated: item.usdtPairIsCreated ?? item.usdt_pair_is_created,
-        usdtPairIsRemoveLiquidity: item.usdtPairIsRemoveLiquidity ?? item.usdt_pair_is_remove_liquidity,
-        usdtPairIsMint: item.usdtPairIsMint ?? item.usdt_pair_is_mint,
-        usdtPairQuoteUsdtValueInt: item.usdtPairQuoteUsdtValueInt ?? item.usdt_pair_quote_usdt_value_int,
-        usdtPairLastSwapAt: item.usdtPairLastSwapAt ?? item.usdt_pair_last_swap_at,
+        riskSummary: normalizeProjectReportRiskSummary(item.riskSummary ?? item.risk_summary),
         builtAt: item.builtAt ?? item.built_at,
         createdAt: item.createdAt ?? item.created_at
     };
@@ -801,6 +817,7 @@ function normalizeProjectDetail(item: any): TokenProjectDetail {
         project: item.project ? normalizeProject(item.project) : undefined,
         researchState: item.researchState || item.research_state ? normalizeResearchState(item.researchState ?? item.research_state) : undefined,
         currentReport: item.currentReport || item.current_report ? normalizeReportRevision(item.currentReport ?? item.current_report) : undefined,
+        currentReportEvaluation: normalizeProjectReportEvaluation(item.currentReportEvaluation ?? item.current_report_evaluation),
         currentSelection: item.currentSelection || item.current_selection ? normalizeSelection(item.currentSelection ?? item.current_selection) : undefined,
         ave: ave
             ? {
@@ -1158,19 +1175,35 @@ export class TokenService {
     }
 
     public listProjects(
-        options: {page?: number; pageSize?: number; chainID?: number; codeHash?: string; contract?: string} = {}
-    ): Promise<PagedResponse<TokenProject>> & {abort?: () => void} {
+        options: {
+            page?: number;
+            pageSize?: number;
+            chainID?: number;
+            projectID?: number;
+            codeHash?: string;
+            contract?: string;
+            researchStatus?: string;
+            reportState?: string;
+            evaluationStatus?: string;
+            selectionOutcome?: string;
+        } = {}
+    ): Promise<PagedResponse<TokenProjectListItem>> & {abort?: () => void} {
         const req = requests.get('/tokens/projects').query({
             chain_id: options.chainID,
+            project_id: options.projectID,
             code_hash: options.codeHash || undefined,
             contract: options.contract || undefined,
+            research_status: options.researchStatus || undefined,
+            report_state: options.reportState || undefined,
+            evaluation_status: options.evaluationStatus || undefined,
+            selection_outcome: options.selectionOutcome || undefined,
             page: options.page,
             page_size: options.pageSize
         });
         const promise = req.then(res => {
             const body = res.body || {};
             return {
-                items: ((body.projects || []) as any[]).map(normalizeProject),
+                items: ((body.projects || []) as any[]).map(normalizeProjectListItem),
                 total: numberValue(body.total) || 0,
                 page: numberValue(body.page) || options.page || 1,
                 pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
@@ -1283,30 +1316,6 @@ export class TokenService {
             const body = res.body || {};
             return {
                 items: ((body.transactions || []) as any[]).map(normalizeWalletNormalTransaction),
-                total: numberValue(body.total) || 0,
-                page: numberValue(body.page) || options.page || 1,
-                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listProjectReports(
-        options: {page?: number; pageSize?: number; chainID?: number; projectID?: number; contract?: string; evaluationStatus?: string} = {}
-    ): Promise<PagedResponse<TokenProjectReport>> & {abort?: () => void} {
-        const req = requests.get('/tokens/project-reports').query({
-            chain_id: options.chainID,
-            project_id: options.projectID,
-            contract: options.contract || undefined,
-            evaluation_status: options.evaluationStatus || undefined,
-            page: options.page,
-            page_size: options.pageSize
-        });
-        const promise = req.then(res => {
-            const body = res.body || {};
-            return {
-                items: ((body.projectReports || body.project_reports || []) as any[]).map(normalizeProjectReport),
                 total: numberValue(body.total) || 0,
                 page: numberValue(body.page) || options.page || 1,
                 pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20

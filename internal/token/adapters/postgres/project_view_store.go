@@ -11,6 +11,7 @@ import (
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/selection"
 	"github.com/useryege/athena/internal/token/shared"
 )
 
@@ -58,10 +59,24 @@ func (repository *ProjectViewRepository) GetProjectDetail(ctx context.Context, p
 				report.ChainID = project.ChainID
 				report.Contract = project.Contract
 				detail.CurrentReport = &report
+
+				evaluationRow, evaluationErr := queries.GetProjectSelectionEvaluationTask(ctx, tokensqlc.GetProjectSelectionEvaluationTaskParams{
+					ProjectID:      projectID,
+					ReportRevision: state.CurrentReportRevision,
+				})
+				if evaluationErr != nil && !errors.Is(evaluationErr, pgx.ErrNoRows) {
+					return nil, fmt.Errorf("get project detail current report evaluation: %w", evaluationErr)
+				}
+				if evaluationErr == nil {
+					detail.CurrentReportEvaluation = mapProjectSelectionEvaluationTask(evaluationRow)
+				}
 			}
 		}
 		if state.CurrentSelectionID > 0 {
-			selectionRow, selectionErr := queries.GetLatestProjectSelection(ctx, projectID)
+			selectionRow, selectionErr := queries.GetProjectSelectionByID(ctx, tokensqlc.GetProjectSelectionByIDParams{
+				ID:        state.CurrentSelectionID,
+				ProjectID: projectID,
+			})
 			if selectionErr != nil && !errors.Is(selectionErr, pgx.ErrNoRows) {
 				return nil, fmt.Errorf("get project detail current selection: %w", selectionErr)
 			}
@@ -71,6 +86,13 @@ func (repository *ProjectViewRepository) GetProjectDetail(ctx context.Context, p
 				currentSelection.Contract = project.Contract
 				detail.CurrentSelection = &currentSelection
 			}
+		}
+		if detail.CurrentReportEvaluation != nil &&
+			detail.CurrentReportEvaluation.Status == selection.TaskStatusSucceeded &&
+			state.LastEvaluatedReportRevision == state.CurrentReportRevision &&
+			detail.CurrentSelection != nil {
+			detail.CurrentReportEvaluation.Outcome = detail.CurrentSelection.Outcome
+			detail.CurrentReportEvaluation.EvaluatedAt = state.LastEvaluatedAt
 		}
 	}
 

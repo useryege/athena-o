@@ -1,32 +1,311 @@
-import {Space, Typography} from 'antd';
+import {Button, Card, InputNumber, Select, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useNavigate} from 'react-router-dom';
-import {AppPage, ChoiceGroup, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
+import * as React from 'react';
+import {Link, useSearchParams} from 'react-router-dom';
+import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, StatusTag, TruncatedText, useAsyncData} from '../components';
 import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
+import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
-import {TokenProject} from '../shared/services/token-service';
-import {useKeywordParam, usePagedParams} from './shared';
+import {TokenProjectListItem, TokenProjectReportPairRisk} from '../shared/services/token-service';
 import {ChainBadge, chainLabel} from './token-shared';
 
+type ProjectsView = 'overview' | 'report-risk';
+type ProjectsFilterKey = 'chainID' | 'projectID' | 'contract' | 'codeHash' | 'researchStatus' | 'reportState' | 'evaluationStatus' | 'selectionOutcome';
+
+const researchStatuses = ['researching', 'selected', 'rejected', 'expired'] as const;
+const reportStates = ['none', 'incomplete', 'complete'] as const;
+const evaluationStatuses = ['none', 'pending', 'running', 'succeeded', 'failed'] as const;
+const selectionOutcomes = ['none', 'selected', 'rejected', 'deferred'] as const;
+
+const positiveIntegerParam = (value: string | null) => {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
+};
+
+const enumParam = (value: string | null, allowed: readonly string[]) => (value && allowed.includes(value) ? value : '');
+
+interface ProjectsQueryState {
+    view: ProjectsView;
+    chainID?: number;
+    projectID?: number;
+    contract: string;
+    codeHash: string;
+    researchStatus: string;
+    reportState: string;
+    evaluationStatus: string;
+    selectionOutcome: string;
+    page: number;
+    pageSize: number;
+}
+
+const serializeQueryState = (state: ProjectsQueryState) => {
+    const next = new URLSearchParams();
+    if (state.view === 'report-risk') {
+        next.set('view', state.view);
+    }
+    if (state.chainID !== undefined) {
+        next.set('chainID', String(state.chainID));
+    }
+    if (state.projectID !== undefined) {
+        next.set('projectID', String(state.projectID));
+    }
+    if (state.contract) {
+        next.set('contract', state.contract);
+    }
+    if (state.codeHash) {
+        next.set('codeHash', state.codeHash);
+    }
+    if (state.researchStatus) {
+        next.set('researchStatus', state.researchStatus);
+    }
+    if (state.reportState) {
+        next.set('reportState', state.reportState);
+    }
+    if (state.evaluationStatus) {
+        next.set('evaluationStatus', state.evaluationStatus);
+    }
+    if (state.selectionOutcome) {
+        next.set('selectionOutcome', state.selectionOutcome);
+    }
+    if (state.page !== 1) {
+        next.set('page', String(state.page));
+    }
+    if (state.pageSize !== DEFAULT_PAGE_SIZE) {
+        next.set('pageSize', String(state.pageSize));
+    }
+    return next;
+};
+
+const formatInteger = (value?: string) => (value ? value.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '-');
+
+const researchTag = (status?: string) => <StatusTag value={status || 'Not started'} positive={status === 'selected'} negative={status === 'rejected' || status === 'expired'} />;
+
+const reportStateTag = (state?: string) => {
+    if (!state) {
+        return <Tag>No report</Tag>;
+    }
+    return <Tag color={state === 'complete' ? 'green' : 'gold'}>{state}</Tag>;
+};
+
+const evaluationTag = (status?: string) => {
+    const colors: Record<string, string> = {pending: 'gold', running: 'blue', succeeded: 'green', failed: 'red'};
+    return <Tag color={status ? colors[status] : undefined}>{status || 'No task'}</Tag>;
+};
+
+const outcomeTag = (outcome?: string) => (
+    <Tag color={outcome === 'selected' ? 'green' : outcome === 'rejected' ? 'red' : outcome === 'deferred' ? 'gold' : undefined}>{outcome || 'No outcome'}</Tag>
+);
+
+const pairCreatedTag = (value?: boolean) => {
+    if (value === undefined) {
+        return <Tag>Unknown</Tag>;
+    }
+    return <Tag color={value ? 'green' : undefined}>{value ? 'Created' : 'Not created'}</Tag>;
+};
+
+const pairRiskTag = (value?: boolean) => {
+    if (value === undefined) {
+        return <Tag>Unknown</Tag>;
+    }
+    return <Tag color={value ? 'red' : 'green'}>{value ? 'Detected' : 'Clear'}</Tag>;
+};
+
+const projectDetailLink = (item: TokenProjectListItem) =>
+    item.project?.projectID ? <Link to={`/token/projects/${item.project.projectID}`}>View details</Link> : <Typography.Text type='secondary'>Unavailable</Typography.Text>;
+
+const tokenValue = (item: TokenProjectListItem) => (
+    <span className='projects-token'>
+        <Typography.Text strong={true}>{item.project?.symbol || '-'}</Typography.Text>
+        <Typography.Text type='secondary'>{item.project?.name || '-'}</Typography.Text>
+    </span>
+);
+
+const projectIdentity = (item: TokenProjectListItem) => (
+    <span className='projects-token'>
+        <Typography.Text strong={true}>{item.project?.symbol || item.project?.name || 'Unnamed token'}</Typography.Text>
+        <Typography.Text type='secondary'>Project #{item.project?.projectID || '-'}</Typography.Text>
+        {item.project?.name && item.project.name !== item.project.symbol && <Typography.Text type='secondary'>{item.project.name}</Typography.Text>}
+        {projectDetailLink(item)}
+    </span>
+);
+
+const reportProjectIdentity = (item: TokenProjectListItem) => (
+    <span className='projects-token'>
+        {projectIdentity(item)}
+        <ChainBadge chainID={item.project?.chainID} />
+    </span>
+);
+
+const unavailablePairValue = (noReport: boolean) => (noReport ? <Tag>No report</Tag> : <Typography.Text type='secondary'>Risk unavailable</Typography.Text>);
+
+const pairSnapshotItems = (pair: TokenProjectReportPairRisk | undefined, noReport: boolean) => [
+    {label: 'Created', value: noReport ? <Tag>No report</Tag> : pairCreatedTag(pair?.isCreated)},
+    {label: 'Remove liquidity', value: noReport ? <Tag>No report</Tag> : pairRiskTag(pair?.isRemoveLiquidity)},
+    {label: 'Mint', value: noReport ? <Tag>No report</Tag> : pairRiskTag(pair?.isMint)},
+    {label: 'Quote USDT', value: pair?.quoteUsdtValueInt ? formatInteger(pair.quoteUsdtValueInt) : unavailablePairValue(noReport)},
+    {label: 'Last swap', value: pair?.lastSwapAt ? formatBeijingDateTime(pair.lastSwapAt) || '-' : unavailablePairValue(noReport)}
+];
+
+const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
+    const project = props.item.project;
+    return (
+        <Card
+            className='projects-compact-card'
+            size='small'
+            title={
+                <span className='projects-compact-card__title'>
+                    <span>{project?.symbol || project?.name || 'Unnamed token'}</span>
+                    <ChainBadge chainID={project?.chainID} />
+                </span>
+            }
+            extra={projectDetailLink(props.item)}>
+            <KeyValueGrid
+                columns={2}
+                items={[
+                    {label: 'Project', value: projectIdentity(props.item)},
+                    {label: 'Chain', value: <ChainBadge chainID={project?.chainID} />},
+                    {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
+                    {label: 'Tx sender', value: <TruncatedText value={project?.txSender} copyable={true} />},
+                    {label: 'Block', value: formatBlockNumber(project?.blockNumber)},
+                    {label: 'Tx index', value: project?.txIndex ?? '-'},
+                    {label: 'Code hash', value: <TruncatedText value={project?.codeHash} copyable={true} />},
+                    {label: 'Created', value: formatBeijingDateTime(project?.createdAt) || '-'}
+                ]}
+            />
+        </Card>
+    );
+};
+
+const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
+    const project = props.item.project;
+    const report = props.item.currentReport;
+    const evaluation = report?.evaluation;
+    return (
+        <Card
+            className='projects-compact-card projects-report-risk-card'
+            size='small'
+            title={
+                <span className='projects-compact-card__title'>
+                    <span>{project?.symbol || project?.name || 'Unnamed token'}</span>
+                    <ChainBadge chainID={project?.chainID} />
+                </span>
+            }
+            extra={projectDetailLink(props.item)}>
+            <div className='projects-report-risk-card__sections'>
+                <section aria-label='Project and report state'>
+                    <Typography.Title level={5}>Project & report</Typography.Title>
+                    <KeyValueGrid
+                        columns={2}
+                        items={[
+                            {label: 'Project ID', value: project?.projectID || '-'},
+                            {label: 'Token', value: tokenValue(props.item)},
+                            {label: 'Chain', value: <ChainBadge chainID={project?.chainID} />},
+                            {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
+                            {label: 'Research', value: researchTag(props.item.researchStatus)},
+                            {label: 'Report revision', value: report?.revision ?? '-'},
+                            {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
+                            {label: 'Built', value: formatBeijingDateTime(report?.builtAt) || '-'}
+                        ]}
+                    />
+                </section>
+                <section aria-label='Current report evaluation'>
+                    <Typography.Title level={5}>Evaluation</Typography.Title>
+                    <KeyValueGrid
+                        columns={2}
+                        items={[
+                            {label: 'Status', value: evaluationTag(evaluation?.status)},
+                            {label: 'Failed attempts', value: evaluation?.failedAttempts ?? '-'},
+                            {label: 'Last error', value: evaluation?.lastError || '-'},
+                            {label: 'Updated', value: formatBeijingDateTime(evaluation?.updatedAt) || '-'},
+                            {label: 'Outcome', value: outcomeTag(evaluation?.outcome)},
+                            {label: 'Evaluated', value: formatBeijingDateTime(evaluation?.evaluatedAt) || '-'}
+                        ]}
+                    />
+                </section>
+                <div className='projects-report-risk-card__pair-grid'>
+                    <section aria-label='WETH or WBNB pair report snapshot'>
+                        <Typography.Title level={5}>WETH / WBNB pair</Typography.Title>
+                        <Typography.Text type='secondary'>{!report ? 'No report' : !report.riskSummary?.wethPair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
+                        <KeyValueGrid columns={1} items={pairSnapshotItems(report?.riskSummary?.wethPair, !report)} />
+                    </section>
+                    <section aria-label='USDT pair report snapshot'>
+                        <Typography.Title level={5}>USDT pair</Typography.Title>
+                        <Typography.Text type='secondary'>{!report ? 'No report' : !report.riskSummary?.usdtPair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
+                        <KeyValueGrid columns={1} items={pairSnapshotItems(report?.riskSummary?.usdtPair, !report)} />
+                    </section>
+                </div>
+            </div>
+        </Card>
+    );
+};
+
 export const ProjectsPage = () => {
-    const navigate = useNavigate();
-    const {params, setParams, page, pageSize, setPage} = usePagedParams();
-    const chainID = Number(params.get('chainID') || params.get('chain_id')) || undefined;
-    const [contract, setContract] = useKeywordParam('contract');
-    const [codeHash, setCodeHash] = useKeywordParam('codeHash');
-    const setChainFilter = (value?: number | null) => {
-        const next = new URLSearchParams(params);
-        if (value === undefined || value === null) {
-            next.delete('chainID');
-        } else {
-            next.set('chainID', String(value));
+    const [params, setParams] = useSearchParams();
+    const view: ProjectsView = params.get('view') === 'report-risk' ? 'report-risk' : 'overview';
+    const chainID = positiveIntegerParam(params.get('chainID'));
+    const projectID = positiveIntegerParam(params.get('projectID'));
+    const contract = params.get('contract') || '';
+    const codeHash = params.get('codeHash') || '';
+    const researchStatus = enumParam(params.get('researchStatus'), researchStatuses);
+    const reportState = enumParam(params.get('reportState'), reportStates);
+    const evaluationStatus = enumParam(params.get('evaluationStatus'), evaluationStatuses);
+    const selectionOutcome = enumParam(params.get('selectionOutcome'), selectionOutcomes);
+    const page = positiveIntegerParam(params.get('page')) || 1;
+    const requestedPageSize = positiveIntegerParam(params.get('pageSize')) || DEFAULT_PAGE_SIZE;
+    const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
+
+    const queryState = React.useMemo<ProjectsQueryState>(
+        () => ({
+            view,
+            chainID,
+            projectID,
+            contract,
+            codeHash,
+            researchStatus,
+            reportState,
+            evaluationStatus,
+            selectionOutcome,
+            page,
+            pageSize
+        }),
+        [view, chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, page, pageSize]
+    );
+    const rawSearch = params.toString();
+
+    React.useEffect(() => {
+        const canonical = serializeQueryState(queryState);
+        if (canonical.toString() !== rawSearch) {
+            setParams(canonical, {replace: true});
         }
-        next.delete('chain_id');
-        next.delete('page_size');
-        next.set('page', '1');
-        next.set('pageSize', String(pageSize));
-        setParams(next);
+    }, [queryState, rawSearch, setParams]);
+
+    const setView = (nextView: ProjectsView) => {
+        setParams(serializeQueryState({...queryState, view: nextView}));
     };
+    const setFilter = (key: ProjectsFilterKey, value?: string | number) => {
+        const nextValue = value === undefined || value === '' ? undefined : value;
+        const next = {...queryState, page: 1, [key]: nextValue} as ProjectsQueryState;
+        setParams(serializeQueryState(next));
+    };
+    const setPage = (nextPage: number, nextPageSize: number) => {
+        setParams(serializeQueryState({...queryState, page: nextPage, pageSize: nextPageSize}));
+    };
+    const clearFilters = () => {
+        setParams(
+            serializeQueryState({
+                view,
+                contract: '',
+                codeHash: '',
+                researchStatus: '',
+                reportState: '',
+                evaluationStatus: '',
+                selectionOutcome: '',
+                page: 1,
+                pageSize
+            })
+        );
+    };
+
     const options = useAsyncData(() => services.tokenapi.getRuntimeConfiguration(), []);
     const data = useAsyncData(
         () =>
@@ -34,39 +313,93 @@ export const ProjectsPage = () => {
                 page,
                 pageSize,
                 chainID,
+                projectID,
                 contract: contract || undefined,
-                codeHash: codeHash || undefined
+                codeHash: codeHash || undefined,
+                researchStatus: researchStatus || undefined,
+                reportState: reportState || undefined,
+                evaluationStatus: evaluationStatus || undefined,
+                selectionOutcome: selectionOutcome || undefined
             }),
-        [page, pageSize, chainID, contract, codeHash]
+        [page, pageSize, chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome]
     );
-    const columns: ColumnsType<TokenProject> = [
-        {title: 'ID', dataIndex: 'projectID'},
-        {title: 'Chain', render: item => <ChainBadge chainID={item.chainID} />},
-        {
-            title: 'Token',
-            render: item => (
-                <Space orientation='vertical' size={0}>
-                    <Typography.Text strong={true}>{item.symbol || '-'}</Typography.Text>
-                    <Typography.Text type='secondary'>{item.name || '-'}</Typography.Text>
-                </Space>
-            )
-        },
-        {title: 'Contract', render: item => <TruncatedText value={item.contract} copyable={true} />},
-        {title: 'Tx Sender', render: item => <TruncatedText value={item.txSender} copyable={true} />},
-        {title: 'Block', render: item => formatBlockNumber(item.blockNumber)},
-        {title: 'Tx Index', dataIndex: 'txIndex'},
-        {title: 'Code Hash', render: item => <TruncatedText value={item.codeHash} copyable={true} />},
-        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
+
+    const overviewColumns: ColumnsType<TokenProjectListItem> = [
+        {title: 'Project', fixed: 'left', width: 220, render: projectIdentity},
+        {title: 'Chain', width: 120, render: item => <ChainBadge chainID={item.project?.chainID} />},
+        {title: 'Contract', width: 250, render: item => <TruncatedText value={item.project?.contract} copyable={true} />},
+        {title: 'Tx Sender', width: 240, render: item => <TruncatedText value={item.project?.txSender} copyable={true} />},
+        {title: 'Block', width: 130, render: item => formatBlockNumber(item.project?.blockNumber)},
+        {title: 'Tx Index', width: 90, render: item => item.project?.txIndex ?? '-'},
+        {title: 'Code Hash', width: 250, render: item => <TruncatedText value={item.project?.codeHash} copyable={true} />},
+        {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.project?.createdAt) || '-'}
     ];
+
+    const pairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
+        {title: 'Created', width: 90, render: item => (item.currentReport ? pairCreatedTag(pair(item)?.isCreated) : <Tag>No report</Tag>)},
+        {title: 'Remove Liquidity', width: 125, render: item => (item.currentReport ? pairRiskTag(pair(item)?.isRemoveLiquidity) : <Tag>No report</Tag>)},
+        {title: 'Mint', width: 80, render: item => (item.currentReport ? pairRiskTag(pair(item)?.isMint) : <Tag>No report</Tag>)},
+        {
+            title: 'Quote USDT',
+            width: 110,
+            render: item => (pair(item)?.quoteUsdtValueInt ? formatInteger(pair(item)?.quoteUsdtValueInt) : unavailablePairValue(!item.currentReport))
+        },
+        {
+            title: 'Last Swap',
+            width: 145,
+            render: item => (pair(item)?.lastSwapAt ? formatBeijingDateTime(pair(item)?.lastSwapAt) || '-' : unavailablePairValue(!item.currentReport))
+        }
+    ];
+
+    const reportRiskColumns: ColumnsType<TokenProjectListItem> = [
+        {title: 'Project', fixed: 'left', width: 230, render: reportProjectIdentity},
+        {
+            title: 'Contract',
+            fixed: 'left',
+            width: 220,
+            render: item => <TruncatedText value={item.project?.contract} copyable={true} />
+        },
+        {title: 'Research Status', width: 125, render: item => researchTag(item.researchStatus)},
+        {
+            title: 'Report',
+            children: [
+                {title: 'Revision', width: 75, render: item => item.currentReport?.revision ?? <Tag>No report</Tag>},
+                {title: 'Completeness', width: 115, render: item => reportStateTag(item.currentReport?.completenessStatus)},
+                {title: 'Built', width: 160, render: item => formatBeijingDateTime(item.currentReport?.builtAt) || (item.currentReport ? '-' : 'No report')}
+            ]
+        },
+        {
+            title: 'Evaluation',
+            children: [
+                {title: 'Status', width: 100, render: item => evaluationTag(item.currentReport?.evaluation?.status)},
+                {title: 'Failed Attempts', width: 90, render: item => item.currentReport?.evaluation?.failedAttempts ?? '-'},
+                {title: 'Updated', width: 150, render: item => formatBeijingDateTime(item.currentReport?.evaluation?.updatedAt) || '-'},
+                {title: 'Last Error', width: 260, render: item => <TruncatedText value={item.currentReport?.evaluation?.lastError} />}
+            ]
+        },
+        {
+            title: 'Selection Outcome',
+            children: [
+                {title: 'Outcome', width: 115, render: item => outcomeTag(item.currentReport?.evaluation?.outcome)},
+                {title: 'Evaluated', width: 150, render: item => formatBeijingDateTime(item.currentReport?.evaluation?.evaluatedAt) || '-'}
+            ]
+        },
+        {title: 'WETH / WBNB Pair', children: pairColumns(item => item.currentReport?.riskSummary?.wethPair)},
+        {title: 'USDT Pair', children: pairColumns(item => item.currentReport?.riskSummary?.usdtPair)}
+    ];
+
     const chainOptions = (options.data?.chains || [])
         .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
-        .map(item => ({
-            value: item.chainID,
-            label: chainLabel(item.chainID)
-        }));
+        .map(item => ({value: item.chainID, label: chainLabel(item.chainID)}));
+    const statusOptions = (values: readonly string[], noneLabel = 'None') => values.map(value => ({value, label: value === 'none' ? noneLabel : value.replace(/_/g, ' ')}));
+    const hasFilters = Boolean(chainID || projectID || contract || codeHash || researchStatus || reportState || evaluationStatus || selectionOutcome);
+    const items = data.data?.items || [];
+    const reportRiskView = view === 'report-risk';
+
     return (
         <AppPage
             title='Projects'
+            subtitle='Browse project identity and current report risk from one project read model.'
             loading={data.loading || options.loading}
             error={data.error || options.error}
             onRefresh={() => {
@@ -74,30 +407,89 @@ export const ProjectsPage = () => {
                 options.reload();
             }}
             filters={
-                <Space wrap={true}>
-                    <ChoiceGroup<number | 'all'>
-                        ariaLabel='Filter by chain'
-                        value={chainID ?? 'all'}
-                        options={[{label: 'All', value: 'all'}, ...chainOptions]}
-                        onChange={value => {
-                            setChainFilter(value === 'all' ? undefined : value);
-                        }}
-                    />
-                    <SearchBar value={contract} onChange={setContract} placeholder='Contract' />
-                    <SearchBar value={codeHash} onChange={setCodeHash} placeholder='Code hash' />
-                </Space>
+                <div className='projects-controls'>
+                    <div className='projects-view-control'>
+                        <Typography.Text strong={true}>View</Typography.Text>
+                        <ChoiceGroup<ProjectsView>
+                            ariaLabel='Projects view'
+                            value={view}
+                            options={[
+                                {label: 'Overview', value: 'overview'},
+                                {label: 'Report Risk', value: 'report-risk'}
+                            ]}
+                            onChange={setView}
+                        />
+                    </div>
+                    <div className='projects-filter-grid'>
+                        <Select
+                            aria-label='Filter by chain'
+                            value={chainID}
+                            allowClear={true}
+                            placeholder='All chains'
+                            options={chainOptions}
+                            onChange={value => setFilter('chainID', value)}
+                        />
+                        <InputNumber
+                            aria-label='Filter by project ID'
+                            value={projectID}
+                            min={1}
+                            precision={0}
+                            placeholder='Project ID'
+                            onChange={value => setFilter('projectID', typeof value === 'number' ? value : undefined)}
+                        />
+                        <SearchBar value={contract} onChange={value => setFilter('contract', value)} placeholder='Contract' />
+                        <SearchBar value={codeHash} onChange={value => setFilter('codeHash', value)} placeholder='Code hash' />
+                        <Select
+                            aria-label='Filter by research status'
+                            value={researchStatus || undefined}
+                            allowClear={true}
+                            placeholder='Research status'
+                            options={statusOptions(researchStatuses)}
+                            onChange={value => setFilter('researchStatus', value)}
+                        />
+                        <Select
+                            aria-label='Filter by report state'
+                            value={reportState || undefined}
+                            allowClear={true}
+                            placeholder='Report state'
+                            options={statusOptions(reportStates, 'No report')}
+                            onChange={value => setFilter('reportState', value)}
+                        />
+                        <Select
+                            aria-label='Filter by evaluation status'
+                            value={evaluationStatus || undefined}
+                            allowClear={true}
+                            placeholder='Evaluation status'
+                            options={statusOptions(evaluationStatuses, 'No evaluation task')}
+                            onChange={value => setFilter('evaluationStatus', value)}
+                        />
+                        <Select
+                            aria-label='Filter by selection outcome'
+                            value={selectionOutcome || undefined}
+                            allowClear={true}
+                            placeholder='Selection outcome'
+                            options={statusOptions(selectionOutcomes, 'No outcome')}
+                            onChange={value => setFilter('selectionOutcome', value)}
+                        />
+                        <Button disabled={!hasFilters} onClick={clearFilters}>
+                            Clear filters
+                        </Button>
+                    </div>
+                </div>
             }>
             <ResourceTable
-                rowKey={item => item.projectID || `${item.chainID}-${item.contract}`}
-                items={data.data?.items || []}
-                columns={columns}
+                label={reportRiskView ? 'Project report risk' : 'Project overview'}
+                rowKey={item => item.project?.projectID || `${item.project?.chainID}-${item.project?.contract}`}
+                items={items}
+                columns={reportRiskView ? reportRiskColumns : overviewColumns}
                 loading={data.loading}
                 total={data.data?.total}
                 page={page}
                 pageSize={pageSize}
                 onPageChange={setPage}
-                scrollX={1500}
-                onItemClick={item => item.projectID && navigate(`/token/projects/${item.projectID}`)}
+                scrollX={reportRiskView ? 2905 : 1500}
+                compactRender={item => (reportRiskView ? <ProjectReportRiskCard item={item} /> : <ProjectOverviewCard item={item} />)}
+                compactEmptyDescription={reportRiskView ? 'No projects match the report risk filters' : 'No projects match the filters'}
             />
         </AppPage>
     );

@@ -1,5 +1,5 @@
-import {CodeOutlined, CopyOutlined} from '@ant-design/icons';
-import {Alert, Button, Card, Drawer, Empty, Flex, Pagination, Select, Space, Table, Tabs, Tag, Timeline, Tooltip, Typography} from 'antd';
+import {CodeOutlined} from '@ant-design/icons';
+import {Alert, Button, Card, Empty, Flex, Pagination, Select, Space, Table, Tabs, Tag, Timeline, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
@@ -13,12 +13,13 @@ import {
     TokenCollectionTask,
     TokenProjectDetail,
     TokenProjectObservation,
-    TokenReportRevision,
     TokenSelection,
     TokenSimulationResult,
     TokenWalletNormalTransaction
 } from '../shared/services/token-service';
 import {ProjectTrendChart} from './project-detail-chart';
+import {ProjectJSONDrawer, ProjectJSONDrawerValue} from './project-json-drawer';
+import {ProjectReportTab} from './project-report-tab';
 import {ProjectSwapActivityTab} from './project-swap-activity';
 import {ProjectExplorerValue as ExplorerValue, ProjectRawTokenAmount, ProjectTimeValue as TimeValue} from './project-detail-values';
 import {ChainBadge, chainAssetLabels} from './token-shared';
@@ -63,17 +64,6 @@ const formatExact = (value?: string | number) =>
     );
 
 const formatTokenAmount = (value: string | undefined, decimals: number) => <ProjectRawTokenAmount raw={value} decimals={decimals} />;
-
-const prettyJSON = (value?: string) => {
-    if (!value) {
-        return '';
-    }
-    try {
-        return JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-        return value;
-    }
-};
 
 const BooleanState = (props: {value?: boolean; trueLabel?: string; falseLabel?: string; dangerWhenTrue?: boolean}) => {
     if (props.value === undefined) {
@@ -120,7 +110,7 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
                             <ChainBadge chainID={chainID} />
                             <Tag>Project #{project?.projectID}</Tag>
                             <StatusTag value={props.detail.researchState?.status || 'Research not started'} />
-                            <StatusTag value={props.detail.currentSelection?.outcome || 'Not selected'} />
+                            <StatusTag value={props.detail.currentReportEvaluation?.outcome || 'No current report outcome'} />
                         </Space>
                     </div>
                 </div>
@@ -259,7 +249,7 @@ const OverviewTab = (props: {detail: TokenProjectDetail}) => {
                         {label: 'Status', value: props.detail.researchState?.status || missing('Not started')},
                         {label: 'Evidence revision', value: formatExact(props.detail.researchState?.evidenceRevision)},
                         {label: 'Current report', value: formatExact(props.detail.researchState?.currentReportRevision)},
-                        {label: 'Selection outcome', value: props.detail.currentSelection?.outcome || missing('Not selected')},
+                        {label: 'Selection outcome', value: props.detail.currentReportEvaluation?.outcome || missing('No current report outcome')},
                         {label: 'Last evaluated', value: <TimeValue value={props.detail.researchState?.lastEvaluatedAt} />},
                         {label: 'Expires', value: <TimeValue value={props.detail.researchState?.expiresAt} />}
                     ]}
@@ -730,44 +720,18 @@ const ContractTab = (props: {detail: TokenProjectDetail; refreshVersion: number}
     );
 };
 
-const JSONDrawer = (props: {title?: string; value?: string; onClose: () => void}) => {
-    const formatted = prettyJSON(props.value);
-    return (
-        <Drawer
-            title={props.title || 'Raw JSON'}
-            width='min(760px, 80vw)'
-            open={Boolean(props.title)}
-            onClose={props.onClose}
-            extra={
-                formatted ? (
-                    <Button icon={<CopyOutlined />} onClick={() => navigator.clipboard.writeText(formatted)}>
-                        Copy
-                    </Button>
-                ) : undefined
-            }>
-            <pre className='code-block project-json-viewer'>{formatted}</pre>
-        </Drawer>
-    );
-};
-
 const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refreshVersion: number}) => {
     const [observationPage, setObservationPage] = React.useState(1);
     const [observationPageSize, setObservationPageSize] = React.useState(20);
     const [dataType, setDataType] = React.useState('');
-    const [reportPage, setReportPage] = React.useState(1);
-    const [reportPageSize, setReportPageSize] = React.useState(20);
     const [selectionPage, setSelectionPage] = React.useState(1);
     const [selectionPageSize, setSelectionPageSize] = React.useState(20);
     const [taskPage, setTaskPage] = React.useState(1);
     const [taskPageSize, setTaskPageSize] = React.useState(20);
-    const [drawer, setDrawer] = React.useState<{title: string; value: string}>();
+    const [drawer, setDrawer] = React.useState<ProjectJSONDrawerValue>();
     const observations = useAsyncData(
         () => services.tokenapi.listProjectObservations(props.projectID, {dataType, page: observationPage, pageSize: observationPageSize}),
         [props.projectID, dataType, observationPage, observationPageSize, props.refreshVersion]
-    );
-    const reports = useAsyncData(
-        () => services.tokenapi.listReportRevisions({projectID: props.projectID, page: reportPage, pageSize: reportPageSize}),
-        [props.projectID, reportPage, reportPageSize, props.refreshVersion]
     );
     const selections = useAsyncData(
         () => services.tokenapi.listSelections({projectID: props.projectID, page: selectionPage, pageSize: selectionPageSize}),
@@ -798,30 +762,7 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
         {
             title: 'Payload',
             render: item => (
-                <Button size='small' onClick={() => setDrawer({title: `Observation #${item.observationID} payload`, value: item.payloadJSON || ''})}>
-                    View JSON
-                </Button>
-            )
-        }
-    ];
-    const reportColumns: ColumnsType<TokenReportRevision> = [
-        {title: 'Revision', dataIndex: 'revision'},
-        {title: 'Completeness', render: item => <StatusTag value={item.completenessStatus} />},
-        {title: 'Block', render: item => formatBlockNumber(item.observedBlockNumber)},
-        {title: 'Content hash', render: item => <TruncatedText value={item.contentHash} copyable={true} />},
-        {title: 'Built', render: item => <TimeValue value={item.builtAt} />},
-        {
-            title: 'Evidence',
-            render: item => (
-                <Button size='small' onClick={() => setDrawer({title: `Report r${item.revision} evidence`, value: item.evidenceJSON || ''})}>
-                    View JSON
-                </Button>
-            )
-        },
-        {
-            title: 'Report',
-            render: item => (
-                <Button size='small' onClick={() => setDrawer({title: `Report r${item.revision}`, value: item.reportJSON || ''})}>
+                <Button size='small' disabled={!item.payloadJSON} onClick={() => setDrawer({title: `Observation #${item.observationID} payload`, value: item.payloadJSON || ''})}>
                     View JSON
                 </Button>
             )
@@ -911,23 +852,6 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
                     scrollX={1500}
                 />
             </Section>
-            <Section title='Report revisions'>
-                {sectionError('Report history unavailable', reports.error)}
-                <ResourceTable
-                    rowKey={item => item.reportRevisionID || `${item.revision}-${item.createdAt}`}
-                    items={reports.data?.items || []}
-                    columns={reportColumns}
-                    loading={reports.loading}
-                    total={reports.data?.total}
-                    page={reportPage}
-                    pageSize={reportPageSize}
-                    onPageChange={(nextPage, nextPageSize) => {
-                        setReportPage(nextPage);
-                        setReportPageSize(nextPageSize);
-                    }}
-                    scrollX={1300}
-                />
-            </Section>
             <Section title='Collection task history'>
                 {sectionError('Task history unavailable', tasks.error)}
                 <ResourceTable
@@ -945,7 +869,7 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
                     scrollX={1400}
                 />
             </Section>
-            <JSONDrawer title={drawer?.title} value={drawer?.value} onClose={() => setDrawer(undefined)} />
+            <ProjectJSONDrawer content={drawer} onClose={() => setDrawer(undefined)} />
         </div>
     );
 };
@@ -955,7 +879,7 @@ export const ProjectDetailPage = () => {
     const navigate = useNavigate();
     const projectID = Number(params.projectID);
     const [activeTab, setActiveTab] = React.useState('overview');
-    const [refreshVersion, setRefreshVersion] = React.useState(0);
+    const [tabRefreshVersions, setTabRefreshVersions] = React.useState<Record<string, number>>({});
     const detail = useAsyncData(() => services.tokenapi.getProjectDetail(projectID), [projectID]);
     const detailReloadRef = React.useRef(detail.reload);
     detailReloadRef.current = detail.reload;
@@ -980,10 +904,10 @@ export const ProjectDetailPage = () => {
 
     const refresh = () => {
         detail.reload();
-        setRefreshVersion(current => current + 1);
+        setTabRefreshVersions(current => ({...current, [activeTab]: (current[activeTab] || 0) + 1}));
     };
     const project = detail.data?.project;
-    const activeRefreshVersion = (key: string) => (activeTab === key ? refreshVersion : 0);
+    const tabRefreshVersion = (key: string) => tabRefreshVersions[key] || 0;
 
     return (
         <AppPage
@@ -1011,32 +935,38 @@ export const ProjectDetailPage = () => {
                         items={[
                             {key: 'overview', label: 'Overview', children: <OverviewTab detail={detail.data} />},
                             {
+                                key: 'report',
+                                label: 'Report',
+                                forceRender: false,
+                                children: <ProjectReportTab projectID={projectID} detail={detail.data} refreshVersion={tabRefreshVersion('report')} />
+                            },
+                            {
                                 key: 'market',
                                 label: 'Market & Liquidity',
-                                children: <MarketTab projectID={projectID} detail={detail.data} refreshVersion={activeRefreshVersion('market')} />
+                                children: <MarketTab projectID={projectID} detail={detail.data} refreshVersion={tabRefreshVersion('market')} />
                             },
                             {
                                 key: 'swap-activity',
                                 label: 'Swap Activity',
                                 children: (
-                                    <ProjectSwapActivityTab projectID={projectID} active={activeTab === 'swap-activity'} refreshVersion={activeRefreshVersion('swap-activity')} />
+                                    <ProjectSwapActivityTab projectID={projectID} active={activeTab === 'swap-activity'} refreshVersion={tabRefreshVersion('swap-activity')} />
                                 )
                             },
                             {key: 'wallets', label: 'Wallets', children: <WalletsTab detail={detail.data} />},
                             {
                                 key: 'transactions',
                                 label: `Transactions (${detail.data.transactionCount || 0})`,
-                                children: <TransactionsTab projectID={projectID} detail={detail.data} refreshVersion={activeRefreshVersion('transactions')} />
+                                children: <TransactionsTab projectID={projectID} detail={detail.data} refreshVersion={tabRefreshVersion('transactions')} />
                             },
                             {
                                 key: 'contract',
                                 label: 'Contract',
-                                children: <ContractTab detail={detail.data} refreshVersion={activeRefreshVersion('contract')} />
+                                children: <ContractTab detail={detail.data} refreshVersion={tabRefreshVersion('contract')} />
                             },
                             {
                                 key: 'research',
                                 label: 'Research',
-                                children: <ResearchTab projectID={projectID} detail={detail.data} refreshVersion={activeRefreshVersion('research')} />
+                                children: <ResearchTab projectID={projectID} detail={detail.data} refreshVersion={tabRefreshVersion('research')} />
                             }
                         ]}
                     />

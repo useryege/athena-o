@@ -213,7 +213,18 @@ func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjects
 	if e != nil {
 		return nil, e
 	}
-	r, e := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{ChainId: req.GetChainId(), CodeHash: req.GetCodeHash(), Contract: req.GetContract(), Page: req.GetPage(), PageSize: req.GetPageSize()})
+	r, e := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{
+		ChainId:          req.GetChainId(),
+		CodeHash:         req.GetCodeHash(),
+		Contract:         req.GetContract(),
+		Page:             req.GetPage(),
+		PageSize:         req.GetPageSize(),
+		ProjectId:        req.GetProjectId(),
+		ResearchStatus:   req.GetResearchStatus(),
+		ReportState:      req.GetReportState(),
+		EvaluationStatus: req.GetEvaluationStatus(),
+		SelectionOutcome: req.GetSelectionOutcome(),
+	})
 	if e != nil {
 		return nil, e
 	}
@@ -295,17 +306,6 @@ func (s *Server) ListProjectWalletNormalTransactions(ctx context.Context, req *t
 		return nil, e
 	}
 	return &tokenapipkg.ListProjectWalletNormalTransactionsResponse{Transactions: r.GetTransactions(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
-}
-func (s *Server) ListProjectReports(ctx context.Context, req *tokenapipkg.ListProjectReportsRequest) (*tokenapipkg.ListProjectReportsResponse, error) {
-	client, e := s.tokenAPIClientSet.Research()
-	if e != nil {
-		return nil, e
-	}
-	r, e := client.ListProjectReports(ctx, &tokenapiapiclient.ListProjectReportsRequest{ChainId: req.GetChainId(), ProjectId: req.GetProjectId(), Contract: req.GetContract(), EvaluationStatus: req.GetEvaluationStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListProjectReportsResponse{ProjectReports: r.GetProjectReports(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
 func (s *Server) GetCollectionTask(ctx context.Context, req *tokenapipkg.GetCollectionTaskRequest) (*tokenapipkg.GetCollectionTaskResponse, error) {
 	client, e := s.tokenAPIClientSet.Research()

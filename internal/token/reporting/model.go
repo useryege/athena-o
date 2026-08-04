@@ -111,25 +111,6 @@ type ProjectReportRevision struct {
 	CreatedAt           time.Time
 }
 
-type ProjectReportReadModel struct {
-	Report         ProjectReportRevision
-	ChainID        int64
-	Name           string
-	Symbol         string
-	Contract       shared.Address
-	BuildStatus    string
-	BuildAttempts  int32
-	BuildLastError string
-	BuildUpdatedAt time.Time
-}
-
-type ProjectReportPage struct {
-	Items    []ProjectReportReadModel
-	Total    int64
-	Page     int32
-	PageSize int32
-}
-
 type ReportRevisionPage struct {
 	Items    []ProjectReportRevision
 	Total    int64

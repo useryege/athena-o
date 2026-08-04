@@ -19,8 +19,9 @@ type Querier interface {
 	CompleteProjectDataCollectionSchedule(ctx context.Context, arg CompleteProjectDataCollectionScheduleParams) (int64, error)
 	CompleteProjectSwapPair(ctx context.Context, arg CompleteProjectSwapPairParams) (ProjectSwapPair, error)
 	CountContractCodes(ctx context.Context, codeHash []byte) (int64, error)
-	CountCurrentProjectReports(ctx context.Context, arg CountCurrentProjectReportsParams) (int64, error)
 	CountProjectDataCollectionTasks(ctx context.Context, arg CountProjectDataCollectionTasksParams) (int64, error)
+	// Project-centered current read model.
+	CountProjectListItems(ctx context.Context, arg CountProjectListItemsParams) (int64, error)
 	CountProjectObservations(ctx context.Context, arg CountProjectObservationsParams) (int64, error)
 	CountProjectReportRevisions(ctx context.Context, arg CountProjectReportRevisionsParams) (int64, error)
 	CountProjectResearchStates(ctx context.Context, arg CountProjectResearchStatesParams) (int64, error)
@@ -28,7 +29,6 @@ type Querier interface {
 	CountProjectSwapEvents(ctx context.Context, arg CountProjectSwapEventsParams) (int64, error)
 	CountProjectWalletNormalTransactions(ctx context.Context, arg CountProjectWalletNormalTransactionsParams) (int64, error)
 	CountProjectWalletNormalTransactionsByWallet(ctx context.Context, projectID int64) ([]CountProjectWalletNormalTransactionsByWalletRow, error)
-	CountProjects(ctx context.Context, arg CountProjectsParams) (int64, error)
 	// Policy persistence.
 	CreateContractCodeBlocklistEntry(ctx context.Context, arg CreateContractCodeBlocklistEntryParams) error
 	// Research collection persistence.
@@ -69,7 +69,6 @@ type Querier interface {
 	GetCurrentProjectObservation(ctx context.Context, arg GetCurrentProjectObservationParams) (GetCurrentProjectObservationRow, error)
 	// Reporting persistence and read model.
 	GetLatestProjectReportRevision(ctx context.Context, projectID int64) (ProjectReportRevision, error)
-	// Selection persistence and read model.
 	GetLatestProjectSelection(ctx context.Context, projectID int64) (ProjectSelection, error)
 	GetProject(ctx context.Context, id int64) (Project, error)
 	GetProjectByContract(ctx context.Context, arg GetProjectByContractParams) (Project, error)
@@ -79,6 +78,9 @@ type Querier interface {
 	GetProjectInitialRecipient(ctx context.Context, arg GetProjectInitialRecipientParams) (ProjectInitialRecipient, error)
 	GetProjectReportRevision(ctx context.Context, arg GetProjectReportRevisionParams) (ProjectReportRevision, error)
 	GetProjectResearchState(ctx context.Context, projectID int64) (ProjectResearchState, error)
+	// Selection persistence and read model.
+	GetProjectSelectionByID(ctx context.Context, arg GetProjectSelectionByIDParams) (ProjectSelection, error)
+	GetProjectSelectionEvaluationTask(ctx context.Context, arg GetProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error)
 	GetProjectSwapActivityPairTotals(ctx context.Context, arg GetProjectSwapActivityPairTotalsParams) (GetProjectSwapActivityPairTotalsRow, error)
 	GetProjectSwapPairForUpdate(ctx context.Context, projectSwapPairID int64) (ProjectSwapPair, error)
 	GetWalletBlocklistEntry(ctx context.Context, wallet []byte) (WalletBlocklist, error)
@@ -97,7 +99,6 @@ type Querier interface {
 	ListContractCodes(ctx context.Context, arg ListContractCodesParams) ([]ContractCode, error)
 	ListContractCodesByDeploymentCount(ctx context.Context, arg ListContractCodesByDeploymentCountParams) ([]ContractCode, error)
 	ListCurrentProjectObservations(ctx context.Context, projectID int64) ([]ListCurrentProjectObservationsRow, error)
-	ListCurrentProjectReports(ctx context.Context, arg ListCurrentProjectReportsParams) ([]ListCurrentProjectReportsRow, error)
 	ListDueCollectingProjectSwapPairsForUpdate(ctx context.Context, arg ListDueCollectingProjectSwapPairsForUpdateParams) ([]ProjectSwapPair, error)
 	ListDueProjectDataCollectionSchedules(ctx context.Context, limit int32) ([]ProjectDataCollectionSchedule, error)
 	ListMatchingCollectingProjectSwapPairs(ctx context.Context, arg ListMatchingCollectingProjectSwapPairsParams) ([]ProjectSwapPair, error)
@@ -107,6 +108,7 @@ type Querier interface {
 	ListProjectDataCollectionTasks(ctx context.Context, arg ListProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
 	ListProjectInitialRecipientsByProject(ctx context.Context, projectID int64) ([]ProjectInitialRecipient, error)
 	ListProjectInitialRecipientsByWallet(ctx context.Context, wallet []byte) ([]ProjectInitialRecipient, error)
+	ListProjectListItems(ctx context.Context, arg ListProjectListItemsParams) ([]ListProjectListItemsRow, error)
 	ListProjectObservations(ctx context.Context, arg ListProjectObservationsParams) ([]ProjectObservation, error)
 	ListProjectRelatedWalletsByProject(ctx context.Context, projectID int64) ([]ProjectRelatedWallet, error)
 	ListProjectRelatedWalletsByWallet(ctx context.Context, wallet []byte) ([]ProjectRelatedWallet, error)
@@ -120,7 +122,6 @@ type Querier interface {
 	ListProjectTrendObservations(ctx context.Context, arg ListProjectTrendObservationsParams) ([]ProjectObservation, error)
 	ListProjectWalletNormalTransactions(ctx context.Context, arg ListProjectWalletNormalTransactionsParams) ([]ProjectWalletNormalTransaction, error)
 	ListProjects(ctx context.Context, chainID int64) ([]Project, error)
-	ListProjectsPage(ctx context.Context, arg ListProjectsPageParams) ([]Project, error)
 	ListWalletBlocklistEntries(ctx context.Context) ([]WalletBlocklist, error)
 	LockProjectDataCollectionSchedule(ctx context.Context, arg LockProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
 	MarkProjectDataCollectionScheduleRetrying(ctx context.Context, arg MarkProjectDataCollectionScheduleRetryingParams) (int64, error)

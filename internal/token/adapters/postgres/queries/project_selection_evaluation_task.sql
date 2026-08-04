@@ -11,6 +11,12 @@ ON CONFLICT (project_id, report_revision) DO UPDATE
 SET updated_at = project_selection_evaluation_task.updated_at
 RETURNING *;
 
+-- name: GetProjectSelectionEvaluationTask :one
+SELECT *
+FROM project_selection_evaluation_task
+WHERE project_id = @project_id
+  AND report_revision = @report_revision;
+
 -- name: ClaimProjectSelectionEvaluationTasks :many
 WITH claimable AS (
   SELECT task.id

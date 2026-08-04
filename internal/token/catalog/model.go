@@ -72,10 +72,3 @@ type ContractCodePage struct {
 	Page     int32
 	PageSize int32
 }
-
-type ProjectPage struct {
-	Items    []Project
-	Total    int64
-	Page     int32
-	PageSize int32
-}
