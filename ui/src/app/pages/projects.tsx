@@ -10,12 +10,14 @@ import {TokenProjectListItem, TokenProjectReportPairRisk} from '../shared/servic
 import {ChainBadge, chainLabel} from './token-shared';
 
 type ProjectsView = 'overview' | 'report-risk';
+type ReportRiskSection = 'status' | 'wrapped-native' | 'usdt';
 type ProjectsFilterKey = 'chainID' | 'projectID' | 'contract' | 'codeHash' | 'researchStatus' | 'reportState' | 'evaluationStatus' | 'selectionOutcome';
 
 const researchStatuses = ['researching', 'selected', 'rejected', 'expired'] as const;
 const reportStates = ['none', 'incomplete', 'complete'] as const;
 const evaluationStatuses = ['none', 'pending', 'running', 'succeeded', 'failed'] as const;
 const selectionOutcomes = ['none', 'selected', 'rejected', 'deferred'] as const;
+const reportRiskSections = ['status', 'wrapped-native', 'usdt'] as const;
 
 const positiveIntegerParam = (value: string | null) => {
     const parsed = Number(value);
@@ -26,6 +28,7 @@ const enumParam = (value: string | null, allowed: readonly string[]) => (value &
 
 interface ProjectsQueryState {
     view: ProjectsView;
+    riskSection: ReportRiskSection;
     chainID?: number;
     projectID?: number;
     contract: string;
@@ -42,6 +45,9 @@ const serializeQueryState = (state: ProjectsQueryState) => {
     const next = new URLSearchParams();
     if (state.view === 'report-risk') {
         next.set('view', state.view);
+        if (state.riskSection !== 'status') {
+            next.set('riskSection', state.riskSection);
+        }
     }
     if (state.chainID !== undefined) {
         next.set('chainID', String(state.chainID));
@@ -136,6 +142,61 @@ const reportProjectIdentity = (item: TokenProjectListItem) => (
     </span>
 );
 
+const reportRiskSummary = (items: Array<{label: string; value: React.ReactNode}>) => (
+    <div className='projects-report-risk-summary'>
+        {items.map(item => (
+            <div className='projects-report-risk-summary__line' key={item.label}>
+                <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
+                    {item.label}
+                </Typography.Text>
+                <div className='projects-report-risk-summary__value'>{item.value}</div>
+            </div>
+        ))}
+    </div>
+);
+
+const reportRiskProjectContext = (item: TokenProjectListItem, includeReportContext: boolean) => {
+    const report = item.currentReport;
+    return (
+        <div className='projects-report-risk-summary'>
+            {reportProjectIdentity(item)}
+            <div className='projects-report-risk-summary__line'>
+                <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
+                    Contract
+                </Typography.Text>
+                <div className='projects-report-risk-summary__value'>
+                    <TruncatedText value={item.project?.contract} copyable={true} singleLine={true} />
+                </div>
+            </div>
+            {includeReportContext && (
+                <>
+                    <div className='projects-report-risk-summary__line'>
+                        <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
+                            Report
+                        </Typography.Text>
+                        <div className='projects-report-risk-summary__value'>{report ? `Revision ${report.revision ?? '-'}` : <Tag>No report</Tag>}</div>
+                    </div>
+                    <div className='projects-report-risk-summary__line'>
+                        <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
+                            State
+                        </Typography.Text>
+                        <div className='projects-report-risk-summary__value'>{reportStateTag(report?.completenessStatus)}</div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+const evaluationLastError = (value?: string) =>
+    value ? (
+        <Typography.Paragraph className='projects-report-risk-error' ellipsis={{rows: 2, expandable: 'collapsible', symbol: expanded => (expanded ? 'Show less' : 'Show more')}}>
+            {value}
+        </Typography.Paragraph>
+    ) : (
+        '-'
+    );
+
 const unavailablePairValue = (noReport: boolean) => (noReport ? <Tag>No report</Tag> : <Typography.Text type='secondary'>Risk unavailable</Typography.Text>);
 
 const pairSnapshotItems = (pair: TokenProjectReportPairRisk | undefined, noReport: boolean) => [
@@ -167,8 +228,6 @@ const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
                     {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
                     {label: 'Tx sender', value: <TruncatedText value={project?.txSender} copyable={true} />},
                     {label: 'Block', value: formatBlockNumber(project?.blockNumber)},
-                    {label: 'Tx index', value: project?.txIndex ?? '-'},
-                    {label: 'Code hash', value: <TruncatedText value={project?.codeHash} copyable={true} />},
                     {label: 'Created', value: formatBeijingDateTime(project?.createdAt) || '-'}
                 ]}
             />
@@ -242,6 +301,7 @@ const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
 export const ProjectsPage = () => {
     const [params, setParams] = useSearchParams();
     const view: ProjectsView = params.get('view') === 'report-risk' ? 'report-risk' : 'overview';
+    const riskSection = (enumParam(params.get('riskSection'), reportRiskSections) || 'status') as ReportRiskSection;
     const chainID = positiveIntegerParam(params.get('chainID'));
     const projectID = positiveIntegerParam(params.get('projectID'));
     const contract = params.get('contract') || '';
@@ -257,6 +317,7 @@ export const ProjectsPage = () => {
     const queryState = React.useMemo<ProjectsQueryState>(
         () => ({
             view,
+            riskSection,
             chainID,
             projectID,
             contract,
@@ -268,7 +329,7 @@ export const ProjectsPage = () => {
             page,
             pageSize
         }),
-        [view, chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, page, pageSize]
+        [view, riskSection, chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, page, pageSize]
     );
     const rawSearch = params.toString();
 
@@ -282,6 +343,9 @@ export const ProjectsPage = () => {
     const setView = (nextView: ProjectsView) => {
         setParams(serializeQueryState({...queryState, view: nextView}));
     };
+    const setRiskSection = (nextRiskSection: ReportRiskSection) => {
+        setParams(serializeQueryState({...queryState, riskSection: nextRiskSection}));
+    };
     const setFilter = (key: ProjectsFilterKey, value?: string | number) => {
         const nextValue = value === undefined || value === '' ? undefined : value;
         const next = {...queryState, page: 1, [key]: nextValue} as ProjectsQueryState;
@@ -294,6 +358,7 @@ export const ProjectsPage = () => {
         setParams(
             serializeQueryState({
                 view,
+                riskSection,
                 contract: '',
                 codeHash: '',
                 researchStatus: '',
@@ -330,8 +395,6 @@ export const ProjectsPage = () => {
         {title: 'Contract', width: 250, render: item => <TruncatedText value={item.project?.contract} copyable={true} />},
         {title: 'Tx Sender', width: 240, render: item => <TruncatedText value={item.project?.txSender} copyable={true} />},
         {title: 'Block', width: 130, render: item => formatBlockNumber(item.project?.blockNumber)},
-        {title: 'Tx Index', width: 90, render: item => item.project?.txIndex ?? '-'},
-        {title: 'Code Hash', width: 250, render: item => <TruncatedText value={item.project?.codeHash} copyable={true} />},
         {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.project?.createdAt) || '-'}
     ];
 
@@ -351,42 +414,52 @@ export const ProjectsPage = () => {
         }
     ];
 
-    const reportRiskColumns: ColumnsType<TokenProjectListItem> = [
-        {title: 'Project', fixed: 'left', width: 230, render: reportProjectIdentity},
-        {
-            title: 'Contract',
-            fixed: 'left',
-            width: 220,
-            render: item => <TruncatedText value={item.project?.contract} copyable={true} />
-        },
-        {title: 'Research Status', width: 125, render: item => researchTag(item.researchStatus)},
+    const reportRiskStatusColumns: ColumnsType<TokenProjectListItem> = [
+        {title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, false)},
+        {title: 'Research', width: 90, render: item => researchTag(item.researchStatus)},
         {
             title: 'Report',
-            children: [
-                {title: 'Revision', width: 75, render: item => item.currentReport?.revision ?? <Tag>No report</Tag>},
-                {title: 'Completeness', width: 115, render: item => reportStateTag(item.currentReport?.completenessStatus)},
-                {title: 'Built', width: 160, render: item => formatBeijingDateTime(item.currentReport?.builtAt) || (item.currentReport ? '-' : 'No report')}
-            ]
+            width: 150,
+            render: item =>
+                reportRiskSummary([
+                    {label: 'Revision', value: item.currentReport?.revision ?? <Tag>No report</Tag>},
+                    {label: 'Completeness', value: reportStateTag(item.currentReport?.completenessStatus)},
+                    {label: 'Built', value: formatBeijingDateTime(item.currentReport?.builtAt) || (item.currentReport ? '-' : 'No report')}
+                ])
         },
         {
             title: 'Evaluation',
-            children: [
-                {title: 'Status', width: 100, render: item => evaluationTag(item.currentReport?.evaluation?.status)},
-                {title: 'Failed Attempts', width: 90, render: item => item.currentReport?.evaluation?.failedAttempts ?? '-'},
-                {title: 'Updated', width: 150, render: item => formatBeijingDateTime(item.currentReport?.evaluation?.updatedAt) || '-'},
-                {title: 'Last Error', width: 260, render: item => <TruncatedText value={item.currentReport?.evaluation?.lastError} />}
-            ]
+            width: 210,
+            render: item =>
+                reportRiskSummary([
+                    {label: 'Status', value: evaluationTag(item.currentReport?.evaluation?.status)},
+                    {label: 'Failed attempts', value: item.currentReport?.evaluation?.failedAttempts ?? '-'},
+                    {label: 'Updated', value: formatBeijingDateTime(item.currentReport?.evaluation?.updatedAt) || '-'},
+                    {label: 'Last error', value: evaluationLastError(item.currentReport?.evaluation?.lastError)}
+                ])
         },
         {
-            title: 'Selection Outcome',
-            children: [
-                {title: 'Outcome', width: 115, render: item => outcomeTag(item.currentReport?.evaluation?.outcome)},
-                {title: 'Evaluated', width: 150, render: item => formatBeijingDateTime(item.currentReport?.evaluation?.evaluatedAt) || '-'}
-            ]
-        },
-        {title: 'WETH / WBNB Pair', children: pairColumns(item => item.currentReport?.riskSummary?.wethPair)},
-        {title: 'USDT Pair', children: pairColumns(item => item.currentReport?.riskSummary?.usdtPair)}
+            title: 'Selection',
+            width: 150,
+            render: item =>
+                reportRiskSummary([
+                    {label: 'Outcome', value: outcomeTag(item.currentReport?.evaluation?.outcome)},
+                    {label: 'Evaluated', value: formatBeijingDateTime(item.currentReport?.evaluation?.evaluatedAt) || '-'}
+                ])
+        }
     ];
+
+    const reportRiskPairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
+        {title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, true)},
+        ...pairColumns(pair)
+    ];
+
+    const reportRiskColumns =
+        riskSection === 'status'
+            ? reportRiskStatusColumns
+            : riskSection === 'wrapped-native'
+              ? reportRiskPairColumns(item => item.currentReport?.riskSummary?.wethPair)
+              : reportRiskPairColumns(item => item.currentReport?.riskSummary?.usdtPair);
 
     const chainOptions = (options.data?.chains || [])
         .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
@@ -420,6 +493,21 @@ export const ProjectsPage = () => {
                             onChange={setView}
                         />
                     </div>
+                    {reportRiskView && (
+                        <div className='projects-report-risk-section-control'>
+                            <Typography.Text strong={true}>Risk section</Typography.Text>
+                            <ChoiceGroup<ReportRiskSection>
+                                ariaLabel='Report risk section'
+                                value={riskSection}
+                                options={[
+                                    {label: 'Status', value: 'status'},
+                                    {label: 'WETH / WBNB', value: 'wrapped-native'},
+                                    {label: 'USDT', value: 'usdt'}
+                                ]}
+                                onChange={setRiskSection}
+                            />
+                        </div>
+                    )}
                     <div className='projects-filter-grid'>
                         <Select
                             aria-label='Filter by chain'
@@ -477,20 +565,23 @@ export const ProjectsPage = () => {
                     </div>
                 </div>
             }>
-            <ResourceTable
-                label={reportRiskView ? 'Project report risk' : 'Project overview'}
-                rowKey={item => item.project?.projectID || `${item.project?.chainID}-${item.project?.contract}`}
-                items={items}
-                columns={reportRiskView ? reportRiskColumns : overviewColumns}
-                loading={data.loading}
-                total={data.data?.total}
-                page={page}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                scrollX={reportRiskView ? 2905 : 1500}
-                compactRender={item => (reportRiskView ? <ProjectReportRiskCard item={item} /> : <ProjectOverviewCard item={item} />)}
-                compactEmptyDescription={reportRiskView ? 'No projects match the report risk filters' : 'No projects match the filters'}
-            />
+            <div className={reportRiskView ? 'projects-report-risk-table-region' : undefined}>
+                <ResourceTable
+                    label={reportRiskView ? 'Project report risk' : 'Project overview'}
+                    rowKey={item => item.project?.projectID || `${item.project?.chainID}-${item.project?.contract}`}
+                    items={items}
+                    columns={reportRiskView ? reportRiskColumns : overviewColumns}
+                    loading={data.loading}
+                    total={data.data?.total}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    scrollX={reportRiskView ? undefined : 1160}
+                    stickyHeader={reportRiskView}
+                    compactRender={item => (reportRiskView ? <ProjectReportRiskCard item={item} /> : <ProjectOverviewCard item={item} />)}
+                    compactEmptyDescription={reportRiskView ? 'No projects match the report risk filters' : 'No projects match the filters'}
+                />
+            </div>
         </AppPage>
     );
 };

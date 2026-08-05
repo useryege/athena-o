@@ -109,12 +109,33 @@ raw JSON for history consumers.
    API boundary as decimal integer strings.
 
 The Projects page renders the same response as two projections. `Overview` is
-the default URL state; `view=report-risk` selects the complete Report,
-Evaluation, Selection, and Pair matrix. `view` never reaches the API and is not
-part of the request dependency, so switching projections preserves filters,
-page, page size, total, and the loaded rows without issuing the same request
-again. At viewport widths up to 900 pixels, both projections use semantic
-project cards with the same business fields and paginator as the desktop table.
+the default URL state; `view=report-risk` selects the Report Risk projection.
+The Overview table and card omit transaction index and code hash from their
+display, while code hash remains an accepted list filter. `view` never reaches
+the API and is not part of the request dependency, so switching projections
+preserves filters, page, page size, total, and the loaded rows without issuing
+the same request again.
+
+Report Risk uses a second presentation-only URL parameter, `riskSection`, to
+split the desktop projection into `Status`, `WETH / WBNB`, and `USDT` tables.
+Status is canonical when the parameter is absent; the other canonical values
+are `wrapped-native` and `usdt`. Invalid values normalize to Status, and
+`riskSection` is removed outside
+`view=report-risk`. Changing sections preserves filters, page, page size,
+total, and rows because `riskSection` is not part of the list request or its
+dependency. Clearing filters likewise retains the active Report Risk section
+and page size.
+
+The desktop Status section groups research, Report, Evaluation, and trusted
+Selection fields into summary columns; its Evaluation error can be expanded
+with a keyboard-operable control. Each Pair section presents Report revision
+and completeness context followed by Created, Remove Liquidity, Mint, Quote
+USDT, and Last Swap. The tables fit the available desktop surface and do not
+render the former combined horizontal risk matrix. At viewport widths up to
+900 pixels, Overview uses semantic project cards. Report Risk switches to its
+semantic cards at 1100 pixels; each card contains the complete Status data and
+all five fields for both wrapped-native and USDT Pair snapshots. Both compact
+layouts retain the same rows and paginator as their desktop projections.
 
 ### Current snapshot
 
@@ -272,7 +293,8 @@ There is no runtime configuration specific to this read model.
 | Accepted trend ranges | `1h`, `6h`, `24h`, `7d` | Other values are rejected before querying. |
 | Maximum points per trend series | 500 | Applies LTTB when a series exceeds the limit. |
 | Default Ave pair selection | Wrapped native, then USDT | Keeps the current selection while it remains available and otherwise falls back in priority order. |
-| Compact project layout breakpoint | 900 pixels | Projects tables and Report revision history become complete semantic cards; the shell uses an overlay navigation. |
+| Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash; project-detail revision history also becomes cards and the shell uses overlay navigation. |
+| Report Risk compact layout breakpoint | 1100 pixels | The root layout may shrink below its desktop minimum and section controls and tables are replaced by cards containing complete Status, wrapped-native, and USDT data; overlay navigation still begins at 900 pixels. |
 
 ## Invariants
 
@@ -362,7 +384,9 @@ or updated timestamps for diagnosis.
 - [ ] The unified project page and six project-scoped endpoints remain aligned with the `projects` permission.
 - [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
-- [ ] Projects Overview and Report Risk remain two projections of one request and preserve canonical URL state.
+- [ ] Projects Overview and Report Risk remain two projections of one request; `view` and `riskSection` preserve canonical URL state without becoming request dependencies.
+- [ ] Overview omits transaction index and code hash from tables and cards while code hash remains filterable.
+- [ ] Desktop Report Risk sections avoid a combined horizontal matrix, and compact Report Risk cards retain complete Status and both Pair projections.
 - [ ] Report risk absence remains distinguishable from safe boolean values in lists, detail, and revision history.
 - [ ] Aggregate composition matches the typed public contract and observation V1 schemas.
 - [ ] Precision-sensitive values remain strings across the API and UI boundary.
