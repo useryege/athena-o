@@ -19,7 +19,7 @@ boundary.
 | RBAC initialization | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer`, `SetBuiltinPolicy` |
 | Web-session permission projection | [internal/server/session/session.go](../../../internal/server/session/session.go) | `uiBootstrapPermissions`, `GetUserInfo`, `userPermissions` |
 | Token API authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `rbacGRPCMethods`, `authorizeGRPC` |
-| UI navigation and route guards | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `tokenNavItem`, `filterNavItems`, `RequirePermission`, `AppRoutes` |
+| UI navigation, session bootstrap, and route guards | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | `Shell`, `invalidatePendingRequestErrors`, `tokenNavItem`, `filterNavItems`, `RequirePermission`, `AppRoutes` |
 
 ## Architecture
 
@@ -44,11 +44,15 @@ existing role hierarchy.
 ## Runtime Flow
 
 1. Server startup loads `assets/builtin-policy.csv` into the RBAC enforcer.
-2. An authenticated web client calls `GetUserInfo`.
+2. On the first protected route of a browser login session, the web client
+   calls `GetUserInfo`. The shell blocks protected routes only for this initial
+   bootstrap. Protected-to-protected pathname and query changes reuse the
+   resulting access snapshot without unmounting the active route or issuing
+   another session request.
 3. `userPermissions` checks every entry in `uiBootstrapPermissions` against the
    caller's claims. Administrators receive the concrete Token permissions that
    drive the UI; read-only users receive no Token permissions.
-4. The UI converts the returned permissions into `AccessState`.
+4. The UI converts the returned permissions into session-scoped `AccessState`.
    `filterNavItems` removes every inaccessible Token child and consequently
    removes the empty Token navigation group for a read-only user.
 5. Each `/token/*` route is wrapped by `RequirePermission`. A direct read-only
@@ -57,6 +61,17 @@ existing role hierarchy.
 6. Every Token API method is independently mapped to the `tokenapi` resource in
    `rbacGRPCMethods`. `authorizeGRPC` rejects read-only callers before proxying
    the request to the Token API service.
+
+Entering the login route clears `AccessState`, tab-local project query caches,
+and saved Projects return positions. A successful login therefore performs a
+new protected-route bootstrap without exposing data from the previous
+identity. A successful logout, `loggedIn=false`, or any API 401 performs the
+same invalidation before replacing the route with `/login`. A server-side role
+change within an otherwise valid session becomes visible to navigation after a
+hard reload or a new login; server authorization remains authoritative for
+every intervening request. Each invalidation also advances the shared request
+error generation, so an error emitted later by a request from the ended session
+cannot terminate the newly authenticated session.
 
 The unified Projects list, both of its UI projections, the project-detail
 snapshot, Swap activity summary, and paginated Swap event methods all map
@@ -70,7 +85,7 @@ set. There is no separate current-Report list route or permission.
 This capability adds no durable state. Role grants are embedded in the server
 binary through the built-in policy. The RBAC enforcer caches its evaluated
 policy in memory, and the browser keeps the current user's concrete permission
-set in `AccessState` for the active location.
+set in `AccessState` for the active login session.
 
 `GetUserInfoResponse.permissions` remains a list of resource, action, and
 subresource triples. Administrator-only access changes which triples are
@@ -106,10 +121,12 @@ operation always uses the built-in role policy described here.
 
 ## Failure Recovery
 
-An invalid built-in policy prevents server startup. A failed or unauthenticated
-session request follows the existing login flow. If user information cannot be
-loaded for another reason, the shell falls back to an empty permission set,
-which hides Token navigation and denies Token routes.
+An invalid built-in policy prevents server startup. An unauthenticated session
+request clears browser session state and follows the login flow. If the initial
+user-information request fails for another reason, the shell retains the
+protected-route boundary and presents a retry action; it does not synthesize an
+empty permission set or render a misleading 403. Retrying this recovery state
+is the only session request made without entering a new login session.
 
 Authorization failures are safe to retry after the caller's role or session
 changes. They do not reach the Token API service and cannot mutate Token state.

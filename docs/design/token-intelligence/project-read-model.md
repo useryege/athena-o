@@ -9,7 +9,9 @@ aggregate project-detail snapshot, metric trends, paginated histories, and
 pre-deployment wallet transaction reads. It also exposes independent WETH and
 USDT Swap activity summaries plus paginated events for one sampled block. The
 capability owns the Projects page's two presentation views and the project
-detail page's polling, manual-refresh, and lazy-loading behavior.
+detail page's polling, manual-refresh, lazy-loading, and return-navigation
+behavior. It also owns the Projects page's tab-local stale-while-revalidate
+cache so a detail round trip can reuse the last successful list snapshot.
 
 Project discovery, collection scheduling and execution, observation writes,
 report construction, selection decisions, contract-source acquisition, and
@@ -29,6 +31,7 @@ read model only composes their committed state.
 | Public data contract | [`pkg/apis/application/v1alpha1/tokenapi_types.go`](../../../pkg/apis/application/v1alpha1/tokenapi_types.go) | `TokenProjectListItem`, `TokenProjectReportSummary`, `TokenProjectPairRiskSummary`, `TokenProjectDetail`, `TokenReportRevision`, `TokenProjectSwapActivity` |
 | UI data client | [`ui/src/app/shared/services/token-service.ts`](../../../ui/src/app/shared/services/token-service.ts) | `listProjects`, `getProjectDetail`, `listReportRevisions`, `getProjectSwapActivity` |
 | UI pages and visualizations | [`ui/src/app/pages/projects.tsx`](../../../ui/src/app/pages/projects.tsx), [`ui/src/app/pages/project-detail.tsx`](../../../ui/src/app/pages/project-detail.tsx), [`ui/src/app/pages/project-report-tab.tsx`](../../../ui/src/app/pages/project-report-tab.tsx), [`ui/src/app/pages/project-detail-chart.tsx`](../../../ui/src/app/pages/project-detail-chart.tsx), [`ui/src/app/pages/project-swap-activity.tsx`](../../../ui/src/app/pages/project-swap-activity.tsx) | `ProjectsPage`, `ProjectDetailPage`, `ProjectReportTab`, `ProjectTrendChart`, `ProjectSwapActivityTab` |
+| UI request cache and return context | [`ui/src/app/components/data.ts`](../../../ui/src/app/components/data.ts), [`ui/src/app/pages/project-navigation.tsx`](../../../ui/src/app/pages/project-navigation.tsx) | `useCachedAsyncData`, `clearAsyncDataCache`, Projects return snapshots |
 | Shared detail values | [`ui/src/app/pages/project-detail-values.tsx`](../../../ui/src/app/pages/project-detail-values.tsx) | `ProjectTimeValue`, `ProjectExplorerValue`, `ProjectExactValue`, `ProjectRawTokenAmount` |
 
 ## Architecture
@@ -137,10 +140,29 @@ semantic cards at 1100 pixels; each card contains the complete Status data and
 all five fields for both wrapped-native and USDT Pair snapshots. Both compact
 layouts retain the same rows and paginator as their desktop projections.
 
+The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
+key contains only the server request fields: page, page size, chain, project,
+contract, code hash, research status, Report state, Evaluation status, and
+trusted Selection outcome. Presentation-only `view` and `riskSection` values
+are excluded. A successful list response is fresh for 30 seconds. A fresh hit
+renders synchronously without a request; a stale hit keeps its rows, total, and
+paginator visible while one deduplicated request refreshes the key in the
+background. Runtime configuration uses the same mechanism with a fixed key and
+a five-minute fresh window. An explicit Refresh forces both reads.
+
+The cache retains at most 20 inactive least-recently-used entries and has no
+durable backing. A background failure preserves the last successful snapshot
+and exposes the error without applying the table or compact-card loading mask.
+Login-session boundaries clear every entry. Requests are shared per key,
+cancelled after the final subscriber leaves, and guarded so cancelled or
+cleared requests cannot write late results into a new cache generation.
+
 ### Current snapshot
 
 1. The UI enters `/token/projects/:projectID` after navigation from the Projects
-   table.
+   table or card. A normal same-tab detail link records the exact list URL,
+   router history-entry key, a per-navigation return marker, and document
+   scroll position before navigation.
 2. The server validates a positive project ID and queries the project. A missing
    row becomes a successful `found: false` response.
 3. The read adapter composes the current research state, current Report, the
@@ -160,6 +182,19 @@ layouts retain the same rows and paginator as their desktop projections.
    and USDT pair addresses. It displays one pair detail card at a time, defaults
    to wrapped native, and falls back to USDT when the wrapped-native pair is
    absent. Unavailable pair choices are disabled.
+
+The detail page's Back action uses browser history when the location contains a
+validated Projects source; a direct detail entry falls back to
+`/token/projects`. Browser Back follows the same history path. On the resulting
+POP navigation, the Projects page restores the recorded document scroll only
+after the matching list response has rendered. The return snapshot is isolated
+by history-entry key and a marker stored on that exact browser history entry,
+must match the exact pathname and query, and is consumed after restoration.
+This prevents React Router's reusable initial `default` key from matching a
+later full-page entry. Filter, pagination, view, section, and canonicalization
+PUSH/REPLACE navigation never applies an old scroll snapshot. The snapshot is
+stored in tab-scoped `sessionStorage`; project business data remains in memory
+only.
 
 The detail tabs are ordered `Overview`, `Report`, `Market & Liquidity`, `Swap
 Activity`, `Wallets`, `Transactions`, `Contract`, and `Research`. The Report tab
@@ -285,6 +320,9 @@ There is no runtime configuration specific to this read model.
 | Constant | Value | Behavior |
 | --- | --- | --- |
 | Current snapshot interval | 30 seconds | Reloads while the browser document is visible. |
+| Projects list fresh window | 30 seconds | Fresh cache hits issue no request; stale hits render immediately and refresh in the background. |
+| Runtime-configuration fresh window | 5 minutes | Reuses chain options across Projects route round trips; explicit Refresh bypasses freshness. |
+| Projects cache capacity | 20 inactive entries | Least-recently-used inactive entries are evicted; active entries are never evicted. |
 | Swap activity interval | 30 seconds | Reloads only while its tab and document are visible and either Pair is collecting. |
 | Swap activity block target | 100 per Pair | WETH and USDT targets remain independent, including when their addresses match. |
 | Swap event page size | 50 in the UI, maximum 200 in the API | Event detail is loaded only for the opened block. |
@@ -311,6 +349,12 @@ There is no runtime configuration specific to this read model.
 - Every project-detail read is scoped by one positive project ID.
 - The aggregate endpoint does not mutate collection, report, selection, or
   transaction state.
+- Projects cache identity is derived only from list request fields. UI view and
+  risk section changes cannot create a second copy or a duplicate request for
+  the same server page.
+- Cached project data never crosses a login-session boundary. Return scroll
+  snapshots contain only URL, history-entry identity, a random return marker,
+  and scroll position.
 - Missing observation sections remain absent; the UI renders them as
   `Not collected` or `Unknown` and does not convert absence to `false` or zero.
 - Collection schedules expose retry timing rather than a periodic refresh

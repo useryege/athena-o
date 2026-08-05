@@ -23,6 +23,7 @@ enum ReadyState {
 let baseHRef = '/';
 
 const onError = new Subject<agent.ResponseError>();
+let requestErrorGeneration = 0;
 
 function toAbsURL(val: string): string {
     const base = (baseHRef || '/').replace(/\/+$/, '');
@@ -36,7 +37,12 @@ function apiRoot(): string {
 }
 
 function initHandlers(req: agent.Request) {
-    req.on('error', err => onError.next(err));
+    const generation = requestErrorGeneration;
+    req.on('error', err => {
+        if (generation === requestErrorGeneration) {
+            onError.next(err);
+        }
+    });
     return req;
 }
 
@@ -47,6 +53,9 @@ export default {
     agent,
     toAbsURL,
     onError: onError.asObservable(),
+    invalidatePendingRequestErrors() {
+        requestErrorGeneration++;
+    },
     get(url: string) {
         return initHandlers(agent.get(`${apiRoot()}${url}`));
     },

@@ -7,18 +7,27 @@ import {UserInfo, VersionMessage} from '../shared/models';
 import {services} from '../shared/services';
 import {boolTag} from './shared';
 
-export const UserInfoPage = () => {
+export const UserInfoPage = (props: {onSessionEnded: () => void}) => {
     const ctx = React.useContext(Context);
     const navigate = useNavigate();
     const [loggingOut, setLoggingOut] = React.useState(false);
     const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const version = useAsyncData<VersionMessage & {version?: string}>(() => services.version.version() as any, []);
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
+
+    React.useEffect(() => {
+        if (user.data?.loggedIn === false) {
+            props.onSessionEnded();
+            navigate('/login', {replace: true});
+        }
+    }, [navigate, props.onSessionEnded, user.data?.loggedIn]);
+
     const logout = async () => {
         setLoggingOut(true);
         ctx.notifications.info('Logging out');
         try {
             await services.users.logout();
+            props.onSessionEnded();
             navigate('/login', {replace: true});
         } catch (err: any) {
             setLoggingOut(false);

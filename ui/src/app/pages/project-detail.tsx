@@ -2,7 +2,7 @@ import {CodeOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Empty, Flex, Pagination, Select, Space, Table, Tabs, Tag, Timeline, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {Link, useNavigate, useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, Section, StatusTag, TruncatedText, useAsyncData} from '../components';
 import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
@@ -19,6 +19,7 @@ import {
 } from '../shared/services/token-service';
 import {ProjectTrendChart} from './project-detail-chart';
 import {ProjectJSONDrawer, ProjectJSONDrawerValue} from './project-json-drawer';
+import {useProjectDetailReturn, useScrollProjectDetailOnPush} from './project-navigation';
 import {ProjectReportTab} from './project-report-tab';
 import {ProjectSwapActivityTab} from './project-swap-activity';
 import {ProjectExplorerValue as ExplorerValue, ProjectRawTokenAmount, ProjectTimeValue as TimeValue} from './project-detail-values';
@@ -876,7 +877,8 @@ const ResearchTab = (props: {projectID: number; detail: TokenProjectDetail; refr
 
 export const ProjectDetailPage = () => {
     const params = useParams();
-    const navigate = useNavigate();
+    const returnToProjects = useProjectDetailReturn();
+    useScrollProjectDetailOnPush();
     const projectID = Number(params.projectID);
     const [activeTab, setActiveTab] = React.useState('overview');
     const [tabRefreshVersions, setTabRefreshVersions] = React.useState<Record<string, number>>({});
@@ -916,12 +918,12 @@ export const ProjectDetailPage = () => {
             loading={detail.loading}
             error={detail.error}
             onRefresh={refresh}
-            extra={<Button onClick={() => navigate('/token/projects')}>Back to projects</Button>}>
+            extra={<Button onClick={returnToProjects}>Back to projects</Button>}>
             {!Number.isInteger(projectID) || projectID <= 0 ? (
                 <Alert type='error' title='Invalid project ID' description='The project ID must be a positive integer.' showIcon={true} />
             ) : !detail.loading && !detail.error && !detail.data ? (
                 <Empty className='project-detail-not-found' image={Empty.PRESENTED_IMAGE_SIMPLE} description='Project not found'>
-                    <Button type='primary' onClick={() => navigate('/token/projects')}>
+                    <Button type='primary' onClick={returnToProjects}>
                         Return to projects
                     </Button>
                 </Empty>

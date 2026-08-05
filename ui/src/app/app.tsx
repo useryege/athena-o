@@ -30,7 +30,8 @@ import {AuthSettingsCtx, Provider} from './shared/context';
 import {AuthSettings, Permission, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests from './shared/services/requests';
-import {BrandMark} from './components';
+import {BrandMark, clearAsyncDataCache} from './components';
+import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {
     ContractCodeBlocklistPage,
     ChainCheckpointsPage,
@@ -387,7 +388,7 @@ const useNarrowShell = () => {
     return narrow;
 };
 
-const AppRoutes = (props: {access: AccessState}) => {
+const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => {
     const visibleTokenDefault = filterNavItems(navItems, props.access)
         .find(item => item.key === 'token')
         ?.children?.find(item => item.path)?.path;
@@ -399,7 +400,6 @@ const AppRoutes = (props: {access: AccessState}) => {
     return (
         <Routes>
             <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
-            <Route path='/login' element={<LoginPage />} />
             <Route
                 path='/wallet'
                 element={withPermission(
@@ -451,7 +451,7 @@ const AppRoutes = (props: {access: AccessState}) => {
                 path='/etherscan-gateways'
                 element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage canRunProbe={hasPermission(props.access, serviceStatusInvokePermission)} />)}
             />
-            <Route path='/user-info' element={<UserInfoPage />} />
+            <Route path='/user-info' element={<UserInfoPage onSessionEnded={props.onSessionEnded} />} />
             <Route path='/help' element={<HelpPage />} />
             <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />
             <Route path='/token/projects' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectsPage />)} />
@@ -478,11 +478,21 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const sidebarRef = React.useRef<HTMLDivElement>(null);
     const shellBackgroundRef = React.useRef<HTMLElement>(null);
     const mobileSidebarToggleRef = React.useRef<HTMLButtonElement>(null);
+    const accessGenerationRef = React.useRef(0);
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
     const isLoginPath = location.pathname.startsWith('/login');
-    const locationKey = location.pathname;
-    const [authorizedLocationKey, setAuthorizedLocationKey] = React.useState(isLoginPath ? locationKey : '');
     const [access, setAccess] = React.useState<AccessState>(null);
+    const [accessError, setAccessError] = React.useState<Error>(null);
+    const [accessRetry, setAccessRetry] = React.useState(0);
+
+    const endSession = React.useCallback(() => {
+        accessGenerationRef.current += 1;
+        requests.invalidatePendingRequestErrors();
+        setAccess(null);
+        setAccessError(null);
+        clearAsyncDataCache();
+        clearProjectsReturnSnapshots();
+    }, []);
 
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
@@ -545,46 +555,45 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     React.useEffect(() => {
         if (isLoginPath) {
-            setAccess(null);
-            setAuthorizedLocationKey(locationKey);
+            endSession();
+            return;
+        }
+
+        if (access) {
             return;
         }
 
         let active = true;
-        setAuthorizedLocationKey('');
-        setAccess(null);
+        const generation = accessGenerationRef.current;
+        setAccessError(null);
         services.users
             .get()
             .then(user => {
-                if (!active) {
+                if (!active || generation !== accessGenerationRef.current) {
                     return;
                 }
                 if (!user.loggedIn) {
+                    endSession();
                     navigate('/login', {replace: true});
                     return;
                 }
-                const nextAccess = loadAccessState(user);
-                if (!active) {
-                    return;
-                }
-                setAccess(nextAccess);
-                setAuthorizedLocationKey(locationKey);
+                setAccess(loadAccessState(user));
             })
             .catch(err => {
-                if (!active) {
+                if (!active || generation !== accessGenerationRef.current) {
                     return;
                 }
                 if (err?.status === 401) {
+                    endSession();
                     navigate('/login', {replace: true});
                     return;
                 }
-                setAccess({user: {loggedIn: true, username: '', iss: '', groups: [], permissions: []}, permissions: {}});
-                setAuthorizedLocationKey(locationKey);
+                setAccessError(err instanceof Error ? err : new Error(err?.message || String(err)));
             });
         return () => {
             active = false;
         };
-    }, [isLoginPath, locationKey, navigate]);
+    }, [access, accessRetry, endSession, isLoginPath, navigate]);
 
     React.useEffect(() => {
         const subscription: Subscription = requests.onError.subscribe(err => {
@@ -594,10 +603,11 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             if (window.location.pathname.startsWith(`${base.replace(/\/$/, '')}/login`)) {
                 return;
             }
+            endSession();
             navigate('/login', {replace: true});
         });
         return () => subscription?.unsubscribe();
-    }, [isLoginPath, navigate]);
+    }, [endSession, isLoginPath, navigate]);
 
     React.useEffect(() => {
         const current = flattenNav(navItems).find(item => item.key === selectedKey(location.pathname));
@@ -659,7 +669,40 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         />
     );
 
-    const routes = !isLoginPath && (authorizedLocationKey !== locationKey || !access) ? <div className='athena-boot'>Loading Athena...</div> : <AppRoutes access={access} />;
+    let routes: React.ReactNode;
+    if (isLoginPath) {
+        routes = (
+            <Routes>
+                <Route path='/login' element={<LoginPage />} />
+                <Route path='*' element={<Navigate replace={true} to='/login' />} />
+            </Routes>
+        );
+    } else if (accessError) {
+        routes = (
+            <div className='athena-recoverable'>
+                <Result
+                    status='warning'
+                    title='Unable to load session'
+                    subTitle='Athena could not load your account and permissions. Retry when the service is available.'
+                    extra={
+                        <Space orientation='vertical' size={12}>
+                            <Button
+                                type='primary'
+                                onClick={() => {
+                                    setAccessError(null);
+                                    setAccessRetry(value => value + 1);
+                                }}>
+                                Retry
+                            </Button>
+                            <Typography.Text type='secondary'>{accessError.message}</Typography.Text>
+                        </Space>
+                    }
+                />
+            </div>
+        );
+    } else {
+        routes = access ? <AppRoutes access={access} onSessionEnded={endSession} /> : <div className='athena-boot'>Loading Athena...</div>;
+    }
     const content = isLoginPath ? (
         routes
     ) : (

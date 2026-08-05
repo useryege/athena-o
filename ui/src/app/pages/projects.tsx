@@ -1,12 +1,13 @@
 import {Button, Card, InputNumber, Select, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {Link, useSearchParams} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, StatusTag, TruncatedText, useAsyncData} from '../components';
+import {useSearchParams} from 'react-router-dom';
+import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, StatusTag, TruncatedText, useCachedAsyncData} from '../components';
 import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
 import {TokenProjectListItem, TokenProjectReportPairRisk} from '../shared/services/token-service';
+import {ProjectDetailLink, useRestoreProjectsScroll} from './project-navigation';
 import {ChainBadge, chainLabel} from './token-shared';
 
 type ProjectsView = 'overview' | 'report-risk';
@@ -18,6 +19,9 @@ const reportStates = ['none', 'incomplete', 'complete'] as const;
 const evaluationStatuses = ['none', 'pending', 'running', 'succeeded', 'failed'] as const;
 const selectionOutcomes = ['none', 'selected', 'rejected', 'deferred'] as const;
 const reportRiskSections = ['status', 'wrapped-native', 'usdt'] as const;
+const PROJECTS_LIST_STALE_TIME_MS = 30_000;
+const RUNTIME_CONFIGURATION_STALE_TIME_MS = 5 * 60_000;
+const RUNTIME_CONFIGURATION_CACHE_KEY = 'token.runtime-configuration';
 
 const positiveIntegerParam = (value: string | null) => {
     const parsed = Number(value);
@@ -117,7 +121,7 @@ const pairRiskTag = (value?: boolean) => {
 };
 
 const projectDetailLink = (item: TokenProjectListItem) =>
-    item.project?.projectID ? <Link to={`/token/projects/${item.project.projectID}`}>View details</Link> : <Typography.Text type='secondary'>Unavailable</Typography.Text>;
+    item.project?.projectID ? <ProjectDetailLink projectID={item.project.projectID} /> : <Typography.Text type='secondary'>Unavailable</Typography.Text>;
 
 const tokenValue = (item: TokenProjectListItem) => (
     <span className='projects-token'>
@@ -371,8 +375,24 @@ export const ProjectsPage = () => {
         );
     };
 
-    const options = useAsyncData(() => services.tokenapi.getRuntimeConfiguration(), []);
-    const data = useAsyncData(
+    const listCacheKey = JSON.stringify([
+        'token.projects',
+        page,
+        pageSize,
+        chainID ?? null,
+        projectID ?? null,
+        contract || null,
+        codeHash || null,
+        researchStatus || null,
+        reportState || null,
+        evaluationStatus || null,
+        selectionOutcome || null
+    ]);
+    const options = useCachedAsyncData(RUNTIME_CONFIGURATION_CACHE_KEY, () => services.tokenapi.getRuntimeConfiguration(), {
+        staleTimeMs: RUNTIME_CONFIGURATION_STALE_TIME_MS
+    });
+    const data = useCachedAsyncData(
+        listCacheKey,
         () =>
             services.tokenapi.listProjects({
                 page,
@@ -386,8 +406,9 @@ export const ProjectsPage = () => {
                 evaluationStatus: evaluationStatus || undefined,
                 selectionOutcome: selectionOutcome || undefined
             }),
-        [page, pageSize, chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome]
+        {staleTimeMs: PROJECTS_LIST_STALE_TIME_MS}
     );
+    useRestoreProjectsScroll(Boolean(data.data));
 
     const overviewColumns: ColumnsType<TokenProjectListItem> = [
         {title: 'Project', fixed: 'left', width: 220, render: projectIdentity},
@@ -473,7 +494,7 @@ export const ProjectsPage = () => {
         <AppPage
             title='Projects'
             subtitle='Browse project identity and current report risk from one project read model.'
-            loading={data.loading || options.loading}
+            loading={data.loading || data.refreshing || options.loading || options.refreshing}
             error={data.error || options.error}
             onRefresh={() => {
                 data.reload();
