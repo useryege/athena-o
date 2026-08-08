@@ -224,6 +224,18 @@ value (USDT)`. The corresponding `totalAssetUsdtValue` API field is their
 aggregate USDT-denominated value, not the wallet's USDT balance or the value of
 untracked token holdings.
 
+The Transactions tab renders a compact explorer-style table at viewport widths
+of 1440 pixels and above. Transaction hashes and wallet addresses retain their
+first ten and last six characters in the visible row while their exact values
+remain available through tooltips, copy actions, and block-explorer links. The
+primary row shows transaction hash, method, block, relative age, associated
+wallet, sender, recipient, native value, and receipt status. Transaction index,
+nonce, the complete function signature, method ID, gas values, input, and
+collection time remain in the expandable technical details. Below 1440 pixels,
+the same paginated rows render as one transaction profile card per row with the
+same technical details in a collapsible section; neither projection uses
+horizontal scrolling.
+
 The aggregate consists of independent read queries and is not a
 transaction-level database snapshot. Each returned entity is committed state,
 but a collection or report transition can become visible between component
@@ -361,6 +373,7 @@ There is no runtime configuration specific to this read model.
 | Maximum points per trend series | 500 | Applies LTTB when a series exceeds the limit. |
 | Default Ave pair selection | Wrapped native, then USDT | Keeps the current selection while it remains available and otherwise falls back in priority order. |
 | Wallet profile card breakpoint | 1440 pixels | The Wallets tab displays two complete profile cards per row at and above the breakpoint and one card per row below it. |
+| Transactions compact layout breakpoint | 1440 pixels | The Transactions tab uses the compact table at and above the breakpoint and complete transaction cards below it. |
 | Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash; project-detail revision history also becomes cards and the shell uses overlay navigation. |
 | Report Risk compact layout breakpoint | 1100 pixels | The root layout may shrink below its desktop minimum and section controls and tables are replaced by cards containing complete Status, wrapped-native, and USDT data; overlay navigation still begins at 900 pixels. |
 

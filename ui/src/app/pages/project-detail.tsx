@@ -1,5 +1,5 @@
 import {CodeOutlined} from '@ant-design/icons';
-import {Alert, Button, Card, Empty, Flex, Pagination, Select, Space, Table, Tabs, Tag, Timeline, Tooltip, Typography} from 'antd';
+import {Alert, Button, Card, Collapse, Empty, Flex, Pagination, Select, Skeleton, Space, Table, Tabs, Tag, Timeline, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Link, useParams} from 'react-router-dom';
@@ -575,6 +575,94 @@ const WalletsTab = (props: {detail: TokenProjectDetail}) => {
     );
 };
 
+const transactionMethodLabel = (item: TokenWalletNormalTransaction) => {
+    const functionName = item.functionName?.trim();
+    if (functionName) {
+        return functionName.split('(', 1)[0] || functionName;
+    }
+    return item.methodID || undefined;
+};
+
+const TransactionMethodValue = (props: {item: TokenWalletNormalTransaction}) => {
+    const label = transactionMethodLabel(props.item);
+    if (!label) {
+        return missing('Unknown');
+    }
+    return (
+        <Tooltip title={props.item.functionName || props.item.methodID || label}>
+            <span className='project-transaction-method'>{label}</span>
+        </Tooltip>
+    );
+};
+
+const TransactionAgeValue = (props: {value?: string}) => {
+    const label = ageLabel(props.value);
+    if (!label) {
+        return missing();
+    }
+    return (
+        <Tooltip title={formatBeijingDateTime(props.value)}>
+            <time className='project-transaction-age' dateTime={props.value}>
+                {label}
+            </time>
+        </Tooltip>
+    );
+};
+
+const TransactionReceipt = (props: {item: TokenWalletNormalTransaction}) => (
+    <StatusTag
+        value={props.item.receiptStatus || 'Unknown'}
+        positive={props.item.receiptStatus === 'success'}
+        negative={props.item.receiptStatus === 'failed' || props.item.isError}
+    />
+);
+
+const TransactionTechnicalDetails = (props: {item: TokenWalletNormalTransaction}) => (
+    <KeyValueGrid
+        columns={3}
+        items={[
+            {label: 'Transaction index', value: formatExact(props.item.transactionIndex)},
+            {label: 'Nonce', value: formatExact(props.item.nonce)},
+            {label: 'Function', value: props.item.functionName || missing('Unknown')},
+            {label: 'Method ID', value: props.item.methodID || missing('Unknown')},
+            {label: 'Gas limit', value: formatExact(props.item.gas)},
+            {label: 'Gas used', value: formatExact(props.item.gasUsed)},
+            {label: 'Gas price', value: formatExact(props.item.gasPrice)},
+            {label: 'Input', value: <Typography.Text copyable={Boolean(props.item.input)}>{props.item.input || '-'}</Typography.Text>},
+            {label: 'Collected', value: <TimeValue value={props.item.collectedAt} />}
+        ]}
+    />
+);
+
+const TransactionCard = (props: {item: TokenWalletNormalTransaction; chainID?: number}) => (
+    <Card
+        className='project-transaction-card'
+        size='small'
+        title={<ExplorerValue compact={true} chainID={props.chainID} kind='tx' value={props.item.transactionHash} />}
+        extra={<TransactionReceipt item={props.item} />}>
+        <div className='project-transaction-card__body'>
+            <KeyValueGrid
+                columns={2}
+                items={[
+                    {label: 'Method', value: <TransactionMethodValue item={props.item} />},
+                    {label: `Value (${chainAssetLabels(props.chainID).native})`, value: formatTokenAmount(props.item.value, 18)},
+                    {label: 'Wallet', value: <ExplorerValue compact={true} chainID={props.chainID} kind='address' value={props.item.wallet} />},
+                    {label: 'From', value: <ExplorerValue compact={true} chainID={props.chainID} kind='address' value={props.item.fromAddress} />},
+                    {label: 'To', value: <ExplorerValue compact={true} chainID={props.chainID} kind='address' value={props.item.toAddress} />},
+                    {label: 'Block', value: formatBlockNumber(props.item.blockNumber)},
+                    {label: 'Age', value: <TransactionAgeValue value={props.item.blockTimestamp} />}
+                ]}
+            />
+            <Collapse
+                className='project-transaction-card__details'
+                ghost={true}
+                size='small'
+                items={[{key: 'technical-details', label: 'Technical details', children: <TransactionTechnicalDetails item={props.item} />}]}
+            />
+        </div>
+    </Card>
+);
+
 const TransactionsTab = (props: {projectID: number; detail: TokenProjectDetail; refreshVersion: number}) => {
     const [page, setPage] = React.useState(1);
     const [pageSize, setPageSize] = React.useState(20);
@@ -587,30 +675,35 @@ const TransactionsTab = (props: {projectID: number; detail: TokenProjectDetail; 
     );
     const chainID = props.detail.project?.chainID;
     const walletOptions = walletRows(props.detail).map(item => ({label: item.wallet, value: item.wallet}));
+    const items = data.data?.items || [];
     const columns: ColumnsType<TokenWalletNormalTransaction> = [
-        {title: 'Block', width: 120, render: item => formatBlockNumber(item.blockNumber)},
-        {title: 'Index', width: 80, dataIndex: 'transactionIndex'},
-        {title: 'Time', width: 190, render: item => <TimeValue value={item.blockTimestamp} />},
-        {title: 'Transaction', width: 260, render: item => <ExplorerValue chainID={chainID} kind='tx' value={item.transactionHash} />},
-        {title: 'Wallet', width: 230, render: item => <ExplorerValue chainID={chainID} kind='address' value={item.wallet} />},
-        {title: 'From', width: 230, render: item => <ExplorerValue chainID={chainID} kind='address' value={item.fromAddress} />},
-        {title: 'To', width: 230, render: item => <ExplorerValue chainID={chainID} kind='address' value={item.toAddress} />},
-        {title: 'Method', width: 150, render: item => item.functionName || item.methodID || missing('Unknown')},
-        {title: `Value (${chainAssetLabels(chainID).native})`, width: 160, render: item => formatTokenAmount(item.value, 18)},
-        {
-            title: 'Receipt',
-            width: 110,
-            render: item => (
-                <StatusTag value={item.receiptStatus || 'Unknown'} positive={item.receiptStatus === 'success'} negative={item.receiptStatus === 'failed' || item.isError} />
-            )
-        }
+        {title: 'Transaction Hash', width: 155, render: item => <ExplorerValue compact={true} chainID={chainID} kind='tx' value={item.transactionHash} />},
+        {title: 'Method', width: 96, render: item => <TransactionMethodValue item={item} />},
+        {title: 'Block', width: 88, render: item => formatBlockNumber(item.blockNumber)},
+        {title: 'Age', width: 72, render: item => <TransactionAgeValue value={item.blockTimestamp} />},
+        {title: 'Wallet', width: 150, render: item => <ExplorerValue compact={true} chainID={chainID} kind='address' value={item.wallet} />},
+        {title: 'From', width: 150, render: item => <ExplorerValue compact={true} chainID={chainID} kind='address' value={item.fromAddress} />},
+        {title: 'To', width: 150, render: item => <ExplorerValue compact={true} chainID={chainID} kind='address' value={item.toAddress} />},
+        {title: `Value (${chainAssetLabels(chainID).native})`, width: 110, render: item => <span className='project-transaction-value'>{formatTokenAmount(item.value, 18)}</span>},
+        {title: 'Receipt', width: 90, render: item => <TransactionReceipt item={item} />}
     ];
+    const handlePageChange = (nextPage: number, nextPageSize: number) => {
+        setPage(nextPage);
+        setPageSize(nextPageSize);
+    };
+    const pagination = {
+        current: page,
+        pageSize,
+        total: data.data?.total,
+        showSizeChanger: true,
+        onChange: handlePageChange
+    };
     return (
-        <div className='project-detail-tab'>
+        <div className='project-detail-tab project-transactions'>
             <Section
                 title='Pre-deployment wallet transactions'
                 extra={
-                    <Space wrap={true}>
+                    <Space className='project-transactions__filters' wrap={true}>
                         <Select
                             allowClear={true}
                             showSearch={true}
@@ -623,7 +716,7 @@ const TransactionsTab = (props: {projectID: number; detail: TokenProjectDetail; 
                                 setWallet(value || '');
                                 setPage(1);
                             }}
-                            style={{width: 220}}
+                            style={{width: 220, maxWidth: '100%'}}
                         />
                         <ChoiceGroup
                             ariaLabel='Receipt status'
@@ -650,43 +743,44 @@ const TransactionsTab = (props: {projectID: number; detail: TokenProjectDetail; 
                     </Space>
                 }>
                 {data.error && <Alert type='error' title='Transactions unavailable' description={data.error.message} showIcon={true} />}
-                <Table<TokenWalletNormalTransaction>
-                    className='resource-table'
-                    size='small'
-                    rowKey={item => `${item.wallet}-${item.transactionHash}`}
-                    dataSource={data.data?.items || []}
-                    columns={columns}
-                    loading={data.loading}
-                    locale={{emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No pre-deployment transactions collected' />}}
-                    pagination={{
-                        current: page,
-                        pageSize,
-                        total: data.data?.total,
-                        showSizeChanger: true,
-                        onChange: (nextPage, nextPageSize) => {
-                            setPage(nextPage);
-                            setPageSize(nextPageSize);
-                        }
-                    }}
-                    scroll={{x: 1900}}
-                    expandable={{
-                        expandedRowRender: item => (
-                            <KeyValueGrid
-                                columns={3}
-                                items={[
-                                    {label: 'Input', value: <Typography.Text copyable={true}>{item.input || '-'}</Typography.Text>},
-                                    {label: 'Function', value: item.functionName || missing('Unknown')},
-                                    {label: 'Method ID', value: item.methodID || missing('Unknown')},
-                                    {label: 'Gas limit', value: formatExact(item.gas)},
-                                    {label: 'Gas used', value: formatExact(item.gasUsed)},
-                                    {label: 'Gas price', value: formatExact(item.gasPrice)},
-                                    {label: 'Nonce', value: formatExact(item.nonce)},
-                                    {label: 'Collected', value: <TimeValue value={item.collectedAt} />}
-                                ]}
-                            />
-                        )
-                    }}
-                />
+                <div className='project-transaction-table'>
+                    <Table<TokenWalletNormalTransaction>
+                        className='resource-table'
+                        size='small'
+                        tableLayout='fixed'
+                        rowKey={item => `${item.wallet}-${item.transactionHash}`}
+                        dataSource={items}
+                        columns={columns}
+                        loading={data.loading}
+                        locale={{emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No pre-deployment transactions collected' />}}
+                        pagination={pagination}
+                        expandable={{columnWidth: 38, expandedRowRender: item => <TransactionTechnicalDetails item={item} />}}
+                    />
+                </div>
+                <div className='project-transaction-cards' aria-label='Pre-deployment wallet transaction cards' aria-busy={data.loading || undefined}>
+                    {data.loading ? (
+                        <ul className='project-transaction-card-list project-transaction-card-list--loading' aria-label='Loading transactions'>
+                            {[0, 1, 2].map(index => (
+                                <li key={index}>
+                                    <Card className='project-transaction-card' size='small'>
+                                        <Skeleton active={true} paragraph={{rows: 5}} />
+                                    </Card>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : items.length > 0 ? (
+                        <ul className='project-transaction-card-list'>
+                            {items.map(item => (
+                                <li key={`${item.wallet}-${item.transactionHash}`}>
+                                    <TransactionCard item={item} chainID={chainID} />
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No pre-deployment transactions collected' />
+                    )}
+                    {!data.loading && items.length > 0 && <Pagination className='project-transaction-card-pagination' {...pagination} responsive={true} showLessItems={true} />}
+                </div>
             </Section>
         </div>
     );

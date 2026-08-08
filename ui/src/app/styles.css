@@ -2879,6 +2879,31 @@ body::-webkit-scrollbar-thumb,
     flex: 0 0 auto;
 }
 
+.project-detail-identifier--compact {
+    width: auto;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.project-detail-identifier__compact {
+    min-width: 0;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+    font-family: var(--athena-data-font);
+    font-size: 11px;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+
+.project-detail-identifier__compact > span {
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+
 .project-detail-code-hash {
     display: block;
     min-width: 0;
@@ -3057,6 +3082,106 @@ body::-webkit-scrollbar-thumb,
     text-overflow: clip;
     white-space: normal;
     word-break: break-word;
+}
+
+.project-transaction-table,
+.project-transaction-cards,
+.project-transaction-card-list,
+.project-transaction-card-list > li,
+.project-transaction-card,
+.project-transaction-card__body {
+    min-width: 0;
+}
+
+.project-transaction-cards {
+    display: none;
+}
+
+.project-transactions > .section-panel .ant-alert {
+    margin-bottom: 12px;
+}
+
+.project-transaction-table .ant-table-cell {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.project-transaction-table .ant-table-thead > tr > th,
+.project-transaction-table .ant-table-tbody > tr:not(.ant-table-expanded-row) > td {
+    padding-inline: 5px;
+}
+
+.project-transaction-table .ant-table-expanded-row > td {
+    overflow: visible;
+}
+
+.project-transaction-table .project-detail-identifier {
+    gap: 2px;
+    max-width: 100%;
+}
+
+.project-transaction-table .project-detail-identifier__compact {
+    gap: 2px;
+    font-size: 10.5px;
+}
+
+.project-transaction-method,
+.project-transaction-age,
+.project-transaction-value {
+    min-width: 0;
+    max-width: 100%;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-transaction-card-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.project-transaction-card {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.project-transaction-card .ant-card-head-wrapper {
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.project-transaction-card .ant-card-head-title,
+.project-transaction-card .ant-card-extra {
+    min-width: 0;
+}
+
+.project-transaction-card__body {
+    display: grid;
+    gap: 8px;
+}
+
+.project-transaction-card__details {
+    border-top: 1px solid var(--athena-border);
+    border-radius: 0;
+}
+
+.project-transaction-card__details > .ant-collapse-item > .ant-collapse-header {
+    padding-inline: 0;
+}
+
+.project-transaction-card__details .ant-collapse-content-box {
+    padding: 0 0 4px;
+}
+
+.project-transaction-card-pagination {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: 12px;
 }
 
 .project-wallet-card .key-value-grid.ant-descriptions-bordered > .ant-descriptions-view > table {
@@ -3913,6 +4038,25 @@ body::-webkit-scrollbar-thumb,
     .project-wallet-list {
         grid-template-columns: minmax(0, 1fr);
     }
+
+    .project-transactions .section-panel__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .project-transactions .section-panel__extra,
+    .project-transactions__filters {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .project-transaction-table {
+        display: none;
+    }
+
+    .project-transaction-cards {
+        display: grid;
+    }
 }
 
 @media (max-width: 900px) {
@@ -3925,6 +4069,29 @@ body::-webkit-scrollbar-thumb,
     .project-detail-tab .project-risk-grid,
     .project-detail-tab .project-collection-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .project-transactions__filters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .project-transactions__filters > .ant-space-item,
+    .project-transactions__filters .ant-select,
+    .project-transactions__filters .search-bar {
+        width: 100% !important;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .project-transaction-card .key-value-grid .ant-descriptions-item-label {
+        width: 94px;
+    }
+
+    .project-transaction-card-pagination {
+        justify-content: flex-start;
     }
 }
 
