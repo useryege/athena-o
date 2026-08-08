@@ -789,6 +789,81 @@ body::-webkit-scrollbar-thumb,
     box-shadow: var(--athena-shadow-surface);
 }
 
+.project-report-tab .resource-table-region--compact .resource-table table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.project-report-tab .resource-table-region--compact .resource-table .ant-table-thead > tr > th,
+.project-report-tab .resource-table-region--compact .resource-table .ant-table-tbody > tr > td {
+    min-width: 0;
+    padding-inline: 5px;
+    overflow: hidden;
+    vertical-align: top;
+}
+
+.project-report-revision-times,
+.project-report-revision-pair {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+
+.project-report-revision-times > div,
+.project-report-revision-pair > div {
+    min-width: 0;
+}
+
+.project-report-revision-times > div {
+    display: grid;
+    gap: 1px;
+}
+
+.project-report-revision-pair > div {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+}
+
+.project-report-revision-times dt,
+.project-report-revision-pair dt {
+    color: var(--athena-muted);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.project-report-revision-times dd,
+.project-report-revision-pair dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.project-report-revision-pair .ant-tag {
+    max-width: 100%;
+    margin-inline-end: 0;
+    white-space: normal;
+}
+
+.project-report-revision-actions {
+    min-width: 0;
+    display: grid;
+    align-items: start;
+    gap: 5px;
+}
+
+.project-report-revision-actions .ant-btn {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 6px;
+}
+
 .project-report-tab .ant-alert {
     margin-bottom: 12px;
 }
@@ -4056,6 +4131,14 @@ body::-webkit-scrollbar-thumb,
 
     .project-transaction-cards {
         display: grid;
+    }
+
+    .project-report-tab .resource-table-region--compact .resource-table.ant-table-wrapper {
+        display: none;
+    }
+
+    .project-report-tab .resource-table-region--compact .resource-table-compact {
+        display: block;
     }
 }
 

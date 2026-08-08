@@ -236,6 +236,16 @@ the same paginated rows render as one transaction profile card per row with the
 same technical details in a collapsible section; neither projection uses
 horizontal scrolling.
 
+The Report tab's Revision History renders a fixed-layout comparison table at
+viewport widths of 1440 pixels and above. Each row keeps revision metadata and
+JSON actions as dedicated columns, combines Built and Created into one vertical
+Times cell, and renders each Pair's Created, Remove LP, Mint, Quote USDT, and
+Last swap values as one complete vertical summary. Content hashes remain
+copyable and use a single-line visual truncation. Below 1440 pixels, the same
+paginated revisions render as complete profile cards; the two Pair snapshots
+remain side by side until the existing 900-pixel compact layout stacks them.
+Neither projection uses horizontal scrolling.
+
 The aggregate consists of independent read queries and is not a
 transaction-level database snapshot. Each returned entity is committed state,
 but a collection or report transition can become visible between component
@@ -374,7 +384,8 @@ There is no runtime configuration specific to this read model.
 | Default Ave pair selection | Wrapped native, then USDT | Keeps the current selection while it remains available and otherwise falls back in priority order. |
 | Wallet profile card breakpoint | 1440 pixels | The Wallets tab displays two complete profile cards per row at and above the breakpoint and one card per row below it. |
 | Transactions compact layout breakpoint | 1440 pixels | The Transactions tab uses the compact table at and above the breakpoint and complete transaction cards below it. |
-| Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash; project-detail revision history also becomes cards and the shell uses overlay navigation. |
+| Revision History compact layout breakpoint | 1440 pixels | Revision History uses the fixed comparison table at and above the breakpoint and complete revision cards below it. |
+| Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash, and the shell uses overlay navigation. |
 | Report Risk compact layout breakpoint | 1100 pixels | The root layout may shrink below its desktop minimum and section controls and tables are replaced by cards containing complete Status, wrapped-native, and USDT data; overlay navigation still begins at 900 pixels. |
 
 ## Invariants

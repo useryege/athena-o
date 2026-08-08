@@ -52,6 +52,59 @@ const pairItems = (pair?: TokenProjectReportPairRisk) => [
     {label: 'Last swap', value: <TimeValue value={pair?.lastSwapAt} />}
 ];
 
+const revisionPairItems = (pair?: TokenProjectReportPairRisk) => [
+    {label: 'Created', value: createdTag(pair?.isCreated)},
+    {label: 'Remove LP', value: riskTag(pair?.isRemoveLiquidity)},
+    {label: 'Mint', value: riskTag(pair?.isMint)},
+    {label: 'Quote USDT', value: formatInteger(pair?.quoteUsdtValueInt)},
+    {label: 'Last swap', value: <TimeValue value={pair?.lastSwapAt} />}
+];
+
+const RevisionPairSummary = (props: {pair?: TokenProjectReportPairRisk}) => (
+    <dl className='project-report-revision-pair'>
+        {revisionPairItems(props.pair).map(item => (
+            <div key={item.label}>
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
+            </div>
+        ))}
+    </dl>
+);
+
+const RevisionTimes = (props: {builtAt?: string; createdAt?: string}) => (
+    <dl className='project-report-revision-times'>
+        <div>
+            <dt>Built</dt>
+            <dd>
+                <TimeValue value={props.builtAt} />
+            </dd>
+        </div>
+        <div>
+            <dt>Created</dt>
+            <dd>
+                <TimeValue value={props.createdAt} />
+            </dd>
+        </div>
+    </dl>
+);
+
+const RevisionJSONActions = (props: {revision: TokenReportRevision; openJSON: (content: ProjectJSONDrawerValue) => void}) => (
+    <div className='project-report-revision-actions'>
+        <Button
+            size='small'
+            disabled={!props.revision.evidenceJSON}
+            onClick={() => props.openJSON({title: `Report r${props.revision.revision} evidence`, value: props.revision.evidenceJSON || ''})}>
+            Evidence
+        </Button>
+        <Button
+            size='small'
+            disabled={!props.revision.reportJSON}
+            onClick={() => props.openJSON({title: `Report r${props.revision.revision}`, value: props.revision.reportJSON || ''})}>
+            Report
+        </Button>
+    </div>
+);
+
 const ReportPairSnapshots = (props: {chainID?: number; wethPair?: TokenProjectReportPairRisk; usdtPair?: TokenProjectReportPairRisk; compact?: boolean}) => {
     const labels = chainAssetLabels(props.chainID);
     return (
@@ -142,8 +195,7 @@ export const ProjectReportTab = (props: {projectID: number; detail: TokenProject
     const columns: ColumnsType<TokenReportRevision> = [
         {
             title: 'Revision',
-            fixed: 'left',
-            width: 120,
+            width: 90,
             render: item => (
                 <Space wrap={true} size={4}>
                     <span>{item.revision ?? '-'}</span>
@@ -151,44 +203,16 @@ export const ProjectReportTab = (props: {projectID: number; detail: TokenProject
                 </Space>
             )
         },
-        {title: 'Completeness', width: 120, render: item => completenessTag(item.completenessStatus)},
-        {title: 'Block', width: 120, render: item => formatBlockNumber(item.observedBlockNumber)},
-        {title: 'Content Hash', width: 230, render: item => <TruncatedText value={item.contentHash} copyable={true} />},
-        {title: 'Built', width: 175, render: item => <TimeValue value={item.builtAt} />},
-        {title: 'Created', width: 175, render: item => <TimeValue value={item.createdAt} />},
-        {
-            title: `${labels.wrapped} Pair`,
-            children: [
-                {title: 'Created', width: 95, render: item => createdTag(item.riskSummary?.wethPair?.isCreated)},
-                {title: 'Remove Liquidity', width: 120, render: item => riskTag(item.riskSummary?.wethPair?.isRemoveLiquidity)},
-                {title: 'Mint', width: 90, render: item => riskTag(item.riskSummary?.wethPair?.isMint)},
-                {title: 'Quote USDT', width: 135, render: item => formatInteger(item.riskSummary?.wethPair?.quoteUsdtValueInt)},
-                {title: 'Last Swap', width: 175, render: item => <TimeValue value={item.riskSummary?.wethPair?.lastSwapAt} />}
-            ]
-        },
-        {
-            title: `${labels.stable} Pair`,
-            children: [
-                {title: 'Created', width: 95, render: item => createdTag(item.riskSummary?.usdtPair?.isCreated)},
-                {title: 'Remove Liquidity', width: 120, render: item => riskTag(item.riskSummary?.usdtPair?.isRemoveLiquidity)},
-                {title: 'Mint', width: 90, render: item => riskTag(item.riskSummary?.usdtPair?.isMint)},
-                {title: 'Quote USDT', width: 135, render: item => formatInteger(item.riskSummary?.usdtPair?.quoteUsdtValueInt)},
-                {title: 'Last Swap', width: 175, render: item => <TimeValue value={item.riskSummary?.usdtPair?.lastSwapAt} />}
-            ]
-        },
+        {title: 'Completeness', width: 95, render: item => completenessTag(item.completenessStatus)},
+        {title: 'Block', width: 85, render: item => formatBlockNumber(item.observedBlockNumber)},
+        {title: 'Content Hash', width: 145, render: item => <TruncatedText value={item.contentHash} copyable={true} singleLine={true} />},
+        {title: 'Times', width: 145, render: item => <RevisionTimes builtAt={item.builtAt} createdAt={item.createdAt} />},
+        {title: `${labels.wrapped} Pair`, width: 205, render: item => <RevisionPairSummary pair={item.riskSummary?.wethPair} />},
+        {title: `${labels.stable} Pair`, width: 205, render: item => <RevisionPairSummary pair={item.riskSummary?.usdtPair} />},
         {
             title: 'JSON',
-            width: 210,
-            render: item => (
-                <Space wrap={true} size={4}>
-                    <Button size='small' disabled={!item.evidenceJSON} onClick={() => setDrawer({title: `Report r${item.revision} evidence`, value: item.evidenceJSON || ''})}>
-                        Evidence
-                    </Button>
-                    <Button size='small' disabled={!item.reportJSON} onClick={() => setDrawer({title: `Report r${item.revision}`, value: item.reportJSON || ''})}>
-                        Report
-                    </Button>
-                </Space>
-            )
+            width: 120,
+            render: item => <RevisionJSONActions revision={item} openJSON={setDrawer} />
         }
     ];
 
@@ -256,7 +280,6 @@ export const ProjectReportTab = (props: {projectID: number; detail: TokenProject
                                 setPage(nextPage);
                                 setPageSize(nextPageSize);
                             }}
-                            scrollX={2510}
                             compactRender={item => <RevisionCompactCard revision={item} currentRevision={report?.revision} chainID={chainID} openJSON={setDrawer} />}
                             compactEmptyDescription='No report revisions have been built for this project'
                         />
