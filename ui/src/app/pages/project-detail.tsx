@@ -23,7 +23,7 @@ import {useProjectDetailReturn, useScrollProjectDetailOnPush} from './project-na
 import {ProjectReportTab} from './project-report-tab';
 import {ProjectSwapActivityTab} from './project-swap-activity';
 import {ProjectExplorerValue as ExplorerValue, ProjectRawTokenAmount, ProjectTimeValue as TimeValue} from './project-detail-values';
-import {ChainBadge, chainAssetLabels} from './token-shared';
+import {ChainBadge, TokenLogo, chainAssetLabels} from './token-shared';
 
 const observationTypes = [
     {label: 'All', value: ''},
@@ -106,7 +106,7 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
         <div className='project-detail-summary'>
             <Card className='project-detail-identity' size='small'>
                 <div className='project-detail-identity__heading'>
-                    <span className='project-detail-identity__symbol'>{project?.symbol || '?'}</span>
+                    <TokenLogo logoURL={ave?.logoURL} symbol={project?.symbol} size='detail' />
                     <div>
                         <Typography.Title level={3}>{project?.name || 'Unnamed token'}</Typography.Title>
                         <Space wrap={true}>

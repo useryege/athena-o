@@ -8,7 +8,7 @@ import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
 import {TokenProjectListItem, TokenProjectReportPairRisk} from '../shared/services/token-service';
 import {ProjectDetailLink, useRestoreProjectsScroll} from './project-navigation';
-import {ChainBadge, chainLabel} from './token-shared';
+import {ChainBadge, TokenLogo, chainLabel} from './token-shared';
 
 type ProjectsView = 'overview' | 'report-risk';
 type ReportRiskSection = 'status' | 'wrapped-native' | 'usdt';
@@ -219,6 +219,7 @@ const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
             size='small'
             title={
                 <span className='projects-compact-card__title'>
+                    <TokenLogo logoURL={props.item.logoURL} symbol={project?.symbol} />
                     <span>{project?.symbol || project?.name || 'Unnamed token'}</span>
                     <ChainBadge chainID={project?.chainID} />
                 </span>
@@ -249,6 +250,7 @@ const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
             size='small'
             title={
                 <span className='projects-compact-card__title'>
+                    <TokenLogo logoURL={props.item.logoURL} symbol={project?.symbol} />
                     <span>{project?.symbol || project?.name || 'Unnamed token'}</span>
                     <ChainBadge chainID={project?.chainID} />
                 </span>
@@ -410,7 +412,16 @@ export const ProjectsPage = () => {
     );
     useRestoreProjectsScroll(Boolean(data.data));
 
+    const logoColumn: ColumnsType<TokenProjectListItem>[number] = {
+        title: 'Logo',
+        fixed: 'left',
+        width: 64,
+        align: 'center',
+        render: item => <TokenLogo logoURL={item.logoURL} symbol={item.project?.symbol} />
+    };
+
     const overviewColumns: ColumnsType<TokenProjectListItem> = [
+        logoColumn,
         {title: 'Project', fixed: 'left', width: 220, render: projectIdentity},
         {title: 'Chain', width: 120, render: item => <ChainBadge chainID={item.project?.chainID} />},
         {title: 'Contract', width: 250, render: item => <TruncatedText value={item.project?.contract} copyable={true} />},
@@ -436,6 +447,7 @@ export const ProjectsPage = () => {
     ];
 
     const reportRiskStatusColumns: ColumnsType<TokenProjectListItem> = [
+        logoColumn,
         {title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, false)},
         {title: 'Research', width: 90, render: item => researchTag(item.researchStatus)},
         {
@@ -471,6 +483,7 @@ export const ProjectsPage = () => {
     ];
 
     const reportRiskPairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
+        logoColumn,
         {title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, true)},
         ...pairColumns(pair)
     ];
@@ -597,7 +610,7 @@ export const ProjectsPage = () => {
                     page={page}
                     pageSize={pageSize}
                     onPageChange={setPage}
-                    scrollX={reportRiskView ? undefined : 1160}
+                    scrollX={reportRiskView ? 820 : 1224}
                     stickyHeader={reportRiskView}
                     compactRender={item => (reportRiskView ? <ProjectReportRiskCard item={item} /> : <ProjectOverviewCard item={item} />)}
                     compactEmptyDescription={reportRiskView ? 'No projects match the report risk filters' : 'No projects match the filters'}

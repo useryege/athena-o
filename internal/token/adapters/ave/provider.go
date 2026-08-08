@@ -109,7 +109,7 @@ func normalizeObservation(
 	result := research.AveObservationV1{
 		ChainID: chainID, IsAudited: resp.Data.IsAudited,
 		Token: research.AveTokenV1{
-			Address: shared.Address(address), Name: token.Name, Symbol: token.Symbol, Decimals: token.Decimal,
+			Address: shared.Address(address), Name: token.Name, Symbol: token.Symbol, LogoURL: strings.TrimSpace(token.LogoURL), Decimals: token.Decimal,
 			TotalSupply: totalSupply, CurrentPriceUSD: currentPriceUSD, CurrentPriceETH: currentPriceETH,
 			MarketCap: marketCap, FDV: fdv, TVL: tvl, MainPairTVL: mainPairTVL,
 			Holders: token.Holders, RiskLevel: token.RiskLevel, RiskScore: riskScore, RiskInfo: token.RiskInfo,

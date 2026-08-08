@@ -2,7 +2,7 @@
 
 ## Scope
 
-Ave Market Data Collection retrieves vendor token-detail data for Token Intelligence projects, normalizes the token snapshot, retains only the project's canonical wrapped-native and USDT V2 pairs, and commits versioned Ave observations. The research scheduler owns when collection runs, the ATHENA contract and Token Chain Processor own pair-address derivation and persistence, and the project-detail read model owns presentation.
+Ave Market Data Collection retrieves vendor token-detail data for Token Intelligence projects, normalizes the token snapshot including its display-logo URL, retains only the project's canonical wrapped-native and USDT V2 pairs, and commits versioned Ave observations. The research scheduler owns when collection runs, the ATHENA contract and Token Chain Processor own pair-address derivation and persistence, and the project-detail read model owns presentation.
 
 ## Source Locations
 
@@ -34,7 +34,7 @@ The claimed project context supplies the token contract, chain ID, and canonical
 1. The Ave collector claims a due task together with its `ProjectCollectionContext`.
 2. `AveProcessor` constructs an `AveMarketDataRequest` from the project's chain, token contract, WETH/WBNB pair, and USDT pair.
 3. The provider requests `/v2/tokens/{contract}-{chain}` and validates that the returned token contract and chain match the request.
-4. Token-level supply, price, valuation, TVL, holder, and risk fields are normalized independently of pair selection.
+4. Token-level identity, trimmed logo URL, supply, price, valuation, TVL, holder, and risk fields are normalized independently of pair selection.
 5. The provider scans Ave's pair list and considers only entries whose parsed pair contract exactly equals one of the two project pair addresses. Other entries are skipped without parsing their chain, reserves, volume, valuation, or token addresses.
 6. The first matching wrapped-native pair and first matching USDT pair are normalized. The observation stores them in wrapped-native-then-USDT order; absent pairs are omitted.
 7. The collector canonicalizes the observation JSON and computes its content hash. A changed result creates a new observation, updates the current pointer and evidence revision, and enqueues a report build. An unchanged result only refreshes the current observation check time.
@@ -48,9 +48,11 @@ The claimed project context supplies the token contract, chain ID, and canonical
 - the USDT pair follows the wrapped-native pair, or occupies index zero when it is the only match;
 - no other Ave pair is persisted.
 
+The token object's optional `logoUrl` is Ave's trimmed `logo_url` value. An empty value is omitted. The collector stores the URL as vendor data and does not download, proxy, cache, or validate the remote image; presentation clients own image loading and fallback behavior.
+
 Token-level `TVL` and `MainPairTVL` remain Ave-provided token metrics and are not recalculated from the retained pair entries.
 
-Observations are immutable versioned rows. `project_current_observation` identifies the latest committed Ave snapshot for each project.
+Observations are immutable versioned rows. `project_observation_current` identifies the latest committed Ave snapshot for each project.
 
 ## Configuration
 
@@ -69,7 +71,8 @@ Observations are immutable versioned rows. `project_current_observation` identif
 - A committed observation contains at most one wrapped-native pair and at most one USDT pair.
 - Retained pair order is deterministic: wrapped native before USDT.
 - Missing key pairs are valid and produce no placeholder entries.
-- The observation JSON shape and schema version remain unchanged.
+- Missing or unusable token logo URLs do not fail collection.
+- The optional logo field remains part of the V1 observation schema.
 - The first successful Ave response completes the schedule, whether or not its normalized content differs from an existing observation.
 
 ## Failure Recovery

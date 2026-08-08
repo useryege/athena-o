@@ -18,6 +18,7 @@ type AveTokenV1 struct {
 	Address          shared.Address `json:"address"`
 	Name             string         `json:"name"`
 	Symbol           string         `json:"symbol"`
+	LogoURL          string         `json:"logoUrl,omitempty"`
 	Decimals         int            `json:"decimals"`
 	TotalSupply      *Decimal       `json:"totalSupply,omitempty"`
 	CurrentPriceUSD  *Decimal       `json:"currentPriceUsd,omitempty"`

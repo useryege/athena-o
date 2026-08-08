@@ -88,8 +88,10 @@ raw JSON for history consumers.
    same committed snapshot.
 3. The query starts from `project` and uses one-to-zero-or-one `LEFT JOIN`s to
    `project_research_state`, its `current_report_revision`, the Evaluation task
-   for that exact Report revision, and `current_selection_id`. Every project
-   remains eligible for the page even when it has no research state or Report.
+   for that exact Report revision, `current_selection_id`, and the current Ave
+   observation. A schema-V1 Ave observation contributes only its
+   `token.logoUrl` projection. Every project remains eligible for the page even
+   when it has no research state, Report, or Ave observation.
    The Evaluation join is one-to-one because
    `(project_id, report_revision)` is unique.
 4. A Selection outcome is current and trustworthy only when the joined task is
@@ -118,6 +120,12 @@ display, while code hash remains an accepted list filter. `view` never reaches
 the API and is not part of the request dependency, so switching projections
 preserves filters, page, page size, total, and the loaded rows without issuing
 the same request again.
+
+Every desktop Projects projection renders the Ave logo as its fixed first
+column. Overview and Report Risk compact cards place the same logo at the start
+of the card title. List logos are 32 pixels square and fall back to the project
+symbol, or `?` when the symbol is absent, if the current Ave projection has no
+URL or the browser cannot load it.
 
 Report Risk uses a second presentation-only URL parameter, `riskSection`, to
 split the desktop projection into `Status`, `WETH / WBNB`, and `USDT` tables.
@@ -172,7 +180,8 @@ cleared requests cannot write late results into a new cache generation.
    transaction count. The same trusted-outcome rules used by the list apply to
    the detail Evaluation summary.
 4. The API mapper exposes the project identity, its deployment transaction
-   nonce, and typed observation content. Collection schedules expose
+   nonce, and typed observation content, including the Ave token `logoUrl`.
+   Collection schedules expose
    `retryIntervalSecs`, their terminal status, and `nextRunAt` only while
    another attempt remains possible. Integer and decimal values that may exceed
    JavaScript precision remain strings.
@@ -212,6 +221,11 @@ the current `wallet_asset_state` observation and uses the same USDT-decimal
 formatting as the Wallets tab; an absent observation renders `Not collected`.
 The stored transaction index remains part of project identity and ordering but
 is not displayed in this summary.
+
+The detail identity heading renders the current Ave logo at 52 pixels square.
+It retains the existing symbol tile as the fallback when the URL is missing or
+the browser image request fails. The UI loads vendor URLs directly without an
+image proxy or local cache and suppresses the page URL as the request referrer.
 
 The Wallets tab merges roles, initial-recipient allocation, current asset
 balances, pre-deployment transaction counts, and simulation results by wallet.

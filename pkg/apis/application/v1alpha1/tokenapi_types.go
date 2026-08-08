@@ -80,6 +80,7 @@ type TokenProjectListItem struct {
 	Project        *TokenProject              `protobuf:"bytes,1,opt,name=project" json:"project"`
 	ResearchStatus string                     `protobuf:"bytes,2,opt,name=researchStatus" json:"researchStatus"`
 	CurrentReport  *TokenProjectReportSummary `protobuf:"bytes,3,opt,name=currentReport" json:"currentReport"`
+	LogoURL        string                     `protobuf:"bytes,4,opt,name=logoUrl" json:"logoUrl"`
 }
 
 type TokenProjectReportSummary struct {
@@ -189,6 +190,7 @@ type TokenAveToken struct {
 	Address          string `protobuf:"bytes,1,opt,name=address" json:"address"`
 	Name             string `protobuf:"bytes,2,opt,name=name" json:"name"`
 	Symbol           string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
+	LogoURL          string `protobuf:"bytes,27,opt,name=logoUrl" json:"logoUrl"`
 	Decimals         int32  `protobuf:"varint,4,opt,name=decimals" json:"decimals"`
 	TotalSupply      string `protobuf:"bytes,5,opt,name=totalSupply" json:"totalSupply"`
 	CurrentPriceUSD  string `protobuf:"bytes,6,opt,name=currentPriceUsd" json:"currentPriceUsd"`

@@ -60,6 +60,7 @@ type ProjectReportSummary struct {
 
 type ProjectListItem struct {
 	Project        catalog.Project
+	LogoURL        string
 	ResearchStatus research.ProjectResearchStatus
 	CurrentReport  *ProjectReportSummary
 }

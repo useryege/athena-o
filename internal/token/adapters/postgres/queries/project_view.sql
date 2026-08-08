@@ -55,6 +55,13 @@ SELECT
   project.weth_pair,
   project.usdt_pair,
   project.created_at,
+  COALESCE(
+    CASE
+      WHEN ave_observation.schema_version = 1
+      THEN ave_observation.payload #>> '{token,logoUrl}'
+    END,
+    ''
+  )::text AS logo_url,
   COALESCE(research.status, '')::text AS research_status,
   report.revision AS report_revision,
   COALESCE(report.completeness_status, '')::text AS report_completeness_status,
@@ -93,6 +100,13 @@ LEFT JOIN project_selection AS selection
   AND selection.project_id = project.id
   AND evaluation.status = 'succeeded'
   AND research.last_evaluated_report_revision = report.revision
+LEFT JOIN project_observation_current AS ave_current
+  ON ave_current.project_id = project.id
+  AND ave_current.data_type = 'ave'
+LEFT JOIN project_observation AS ave_observation
+  ON ave_observation.id = ave_current.observation_id
+  AND ave_observation.project_id = project.id
+  AND ave_observation.data_type = 'ave'
 WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id')::bigint)
   AND (sqlc.arg('project_id')::bigint = 0 OR project.id = sqlc.arg('project_id')::bigint)
   AND (sqlc.narg('code_hash')::bytea IS NULL OR project.code_hash = sqlc.narg('code_hash')::bytea)

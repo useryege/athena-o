@@ -110,6 +110,7 @@ export interface TokenProjectListItem {
     project?: TokenProject;
     researchStatus?: string;
     currentReport?: TokenProjectCurrentReport;
+    logoURL?: string;
 }
 
 export interface TokenCollectionTask {
@@ -189,6 +190,7 @@ export interface TokenAveToken {
     address?: string;
     name?: string;
     symbol?: string;
+    logoURL?: string;
     decimals?: number;
     totalSupply?: string;
     currentPriceUSD?: string;
@@ -650,7 +652,8 @@ function normalizeProjectListItem(item: any): TokenProjectListItem {
     return {
         project: item.project ? normalizeProject(item.project) : undefined,
         researchStatus: item.researchStatus ?? item.research_status,
-        currentReport: normalizeProjectCurrentReport(item.currentReport ?? item.current_report)
+        currentReport: normalizeProjectCurrentReport(item.currentReport ?? item.current_report),
+        logoURL: item.logoURL ?? item.logoUrl ?? item.logo_url
     };
 }
 
@@ -742,6 +745,7 @@ function normalizeAveToken(item: any): TokenAveToken {
         address: item.address,
         name: item.name,
         symbol: item.symbol,
+        logoURL: item.logoURL ?? item.logoUrl ?? item.logo_url,
         decimals: numberValue(item.decimals),
         totalSupply: item.totalSupply ?? item.total_supply,
         currentPriceUSD: item.currentPriceUSD ?? item.currentPriceUsd ?? item.current_price_usd,

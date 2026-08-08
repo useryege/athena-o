@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1029-g4915a788-dirty"
+    "version": "v1.0.0-1032-ga34d5a3f-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -5062,6 +5062,9 @@
         "launchAt": {
           "type": "string"
         },
+        "logoUrl": {
+          "type": "string"
+        },
         "mainPairTvl": {
           "type": "string"
         },
@@ -5601,6 +5604,9 @@
       "properties": {
         "currentReport": {
           "$ref": "#/definitions/v1alpha1TokenProjectReportSummary"
+        },
+        "logoUrl": {
+          "type": "string"
         },
         "project": {
           "$ref": "#/definitions/v1alpha1TokenProject"

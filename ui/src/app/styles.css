@@ -748,6 +748,13 @@ body::-webkit-scrollbar-thumb,
     min-width: 0;
 }
 
+.projects-compact-card__title > .token-logo + span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .projects-report-risk-card .ant-descriptions-item-content,
 .project-report-tab .ant-descriptions-item-content {
     overflow-wrap: anywhere;
@@ -2923,18 +2930,46 @@ body::-webkit-scrollbar-thumb,
     display: block;
 }
 
-.project-detail-identity__symbol {
-    width: 52px;
-    height: 52px;
-    flex: 0 0 52px;
+.token-logo {
     display: grid;
     place-items: center;
+    flex: 0 0 auto;
+    overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--athena-brand) 38%, var(--athena-border));
-    border-radius: 14px;
     background: color-mix(in srgb, var(--athena-brand) 12%, var(--athena-panel));
     color: var(--athena-primary);
-    font-size: 17px;
     font-weight: 900;
+    line-height: 1;
+}
+
+.token-logo > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.token-logo > span {
+    max-width: 100%;
+    padding: 0 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.token-logo--list {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    font-size: 11px;
+}
+
+.token-logo--detail {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+    border-radius: 14px;
+    font-size: 17px;
 }
 
 .project-detail-identifier {

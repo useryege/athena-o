@@ -1,4 +1,5 @@
 import {Tag} from 'antd';
+import * as React from 'react';
 import bscIcon from '../../assets/images/bsc.png';
 import ethIcon from '../../assets/images/eth.png';
 import solanaIcon from '../../assets/images/solana.png';
@@ -38,6 +39,22 @@ export const ChainBadge = (props: {chainID?: number}) => {
             {display?.icon && <img src={display.icon} alt='' />}
             <span>{chainLabel(props.chainID)}</span>
         </Tag>
+    );
+};
+
+export const TokenLogo = (props: {logoURL?: string; symbol?: string; size?: 'list' | 'detail'}) => {
+    const logoURL = props.logoURL?.trim();
+    const [failedURL, setFailedURL] = React.useState<string>();
+    const size = props.size || 'list';
+    const showImage = Boolean(logoURL && failedURL !== logoURL);
+    return (
+        <span className={`token-logo token-logo--${size}`} aria-hidden='true'>
+            {showImage ? (
+                <img src={logoURL} alt='' loading={size === 'list' ? 'lazy' : 'eager'} referrerPolicy='no-referrer' draggable={false} onError={() => setFailedURL(logoURL)} />
+            ) : (
+                <span>{props.symbol?.trim() || '?'}</span>
+            )}
+        </span>
     );
 };
 

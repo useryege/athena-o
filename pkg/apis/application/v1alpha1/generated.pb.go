@@ -2419,6 +2419,13 @@ func (m *TokenAveToken) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.LogoURL)
+	copy(dAtA[i:], m.LogoURL)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LogoURL)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xda
 	i -= len(m.UpdatedAt)
 	copy(dAtA[i:], m.UpdatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
@@ -3696,6 +3703,11 @@ func (m *TokenProjectListItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.LogoURL)
+	copy(dAtA[i:], m.LogoURL)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LogoURL)))
+	i--
+	dAtA[i] = 0x22
 	if m.CurrentReport != nil {
 		{
 			size, err := m.CurrentReport.MarshalToSizedBuffer(dAtA[:i])
@@ -6880,6 +6892,8 @@ func (m *TokenAveToken) Size() (n int) {
 	n += 2 + l + sovGenerated(uint64(l))
 	l = len(m.UpdatedAt)
 	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.LogoURL)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -7292,6 +7306,8 @@ func (m *TokenProjectListItem) Size() (n int) {
 		l = m.CurrentReport.Size()
 		n += 1 + l + sovGenerated(uint64(l))
 	}
+	l = len(m.LogoURL)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -8757,6 +8773,7 @@ func (this *TokenAveToken) String() string {
 		`IsHoneypot:` + fmt.Sprintf("%v", this.IsHoneypot) + `,`,
 		`LaunchAt:` + fmt.Sprintf("%v", this.LaunchAt) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
+		`LogoURL:` + fmt.Sprintf("%v", this.LogoURL) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -9063,6 +9080,7 @@ func (this *TokenProjectListItem) String() string {
 		`Project:` + strings.Replace(this.Project.String(), "TokenProject", "TokenProject", 1) + `,`,
 		`ResearchStatus:` + fmt.Sprintf("%v", this.ResearchStatus) + `,`,
 		`CurrentReport:` + strings.Replace(this.CurrentReport.String(), "TokenProjectReportSummary", "TokenProjectReportSummary", 1) + `,`,
+		`LogoURL:` + fmt.Sprintf("%v", this.LogoURL) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -19742,6 +19760,38 @@ func (m *TokenAveToken) Unmarshal(dAtA []byte) error {
 			}
 			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 27:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LogoURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LogoURL = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -24138,6 +24188,38 @@ func (m *TokenProjectListItem) Unmarshal(dAtA []byte) error {
 			if err := m.CurrentReport.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LogoURL", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LogoURL = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

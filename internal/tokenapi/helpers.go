@@ -305,6 +305,7 @@ func mapProjectListItem(item projectview.ProjectListItem) *v1alpha1.TokenProject
 	result := &v1alpha1.TokenProjectListItem{
 		Project:        mapProject(item.Project),
 		ResearchStatus: string(item.ResearchStatus),
+		LogoURL:        item.LogoURL,
 	}
 	if item.CurrentReport != nil {
 		result.CurrentReport = mapProjectReportSummary(*item.CurrentReport)
@@ -562,6 +563,7 @@ func mapAveToken(item research.AveTokenV1) *v1alpha1.TokenAveToken {
 		Address:          formatAddress(item.Address),
 		Name:             item.Name,
 		Symbol:           item.Symbol,
+		LogoURL:          item.LogoURL,
 		Decimals:         int32(item.Decimals),
 		TotalSupply:      decimalString(item.TotalSupply),
 		CurrentPriceUSD:  decimalString(item.CurrentPriceUSD),

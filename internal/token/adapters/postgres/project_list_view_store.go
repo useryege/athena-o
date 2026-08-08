@@ -106,6 +106,7 @@ func mapProjectListItem(row tokensqlc.ListProjectListItemsRow) (projectview.Proj
 	}
 	item := projectview.ProjectListItem{
 		Project:        *project,
+		LogoURL:        row.LogoUrl,
 		ResearchStatus: research.ProjectResearchStatus(row.ResearchStatus),
 	}
 	if !row.ReportRevision.Valid {
