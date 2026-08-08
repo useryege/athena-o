@@ -25,7 +25,7 @@ func (q *Queries) DeleteProject(ctx context.Context, id int64) (int64, error) {
 }
 
 const getProject = `-- name: GetProject :one
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, deployment_nonce, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE id = $1
 `
@@ -40,6 +40,7 @@ func (q *Queries) GetProject(ctx context.Context, id int64) (Project, error) {
 		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
+		&i.DeploymentNonce,
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,
@@ -55,7 +56,7 @@ func (q *Queries) GetProject(ctx context.Context, id int64) (Project, error) {
 }
 
 const getProjectByContract = `-- name: GetProjectByContract :one
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, deployment_nonce, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
   AND contract = $2
@@ -76,6 +77,7 @@ func (q *Queries) GetProjectByContract(ctx context.Context, arg GetProjectByCont
 		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
+		&i.DeploymentNonce,
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,
@@ -91,7 +93,7 @@ func (q *Queries) GetProjectByContract(ctx context.Context, arg GetProjectByCont
 }
 
 const listProjects = `-- name: ListProjects :many
-SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+SELECT id, chain_id, contract, tx_sender, tx_hash, tx_index, deployment_nonce, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 FROM project
 WHERE chain_id = $1
 ORDER BY block_number, tx_index, id
@@ -113,6 +115,7 @@ func (q *Queries) ListProjects(ctx context.Context, chainID int64) ([]Project, e
 			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
+			&i.DeploymentNonce,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.CodeHash,
@@ -141,6 +144,7 @@ INSERT INTO project (
   tx_sender,
   tx_hash,
   tx_index,
+  deployment_nonce,
   block_number,
   block_time,
   code_hash,
@@ -164,7 +168,8 @@ INSERT INTO project (
   $11,
   $12,
   $13,
-  $14
+  $14,
+  $15
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET code_hash = EXCLUDED.code_hash,
@@ -174,24 +179,25 @@ SET code_hash = EXCLUDED.code_hash,
   total_supply = EXCLUDED.total_supply,
   weth_pair = EXCLUDED.weth_pair,
   usdt_pair = EXCLUDED.usdt_pair
-RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
+RETURNING id, chain_id, contract, tx_sender, tx_hash, tx_index, deployment_nonce, block_number, block_time, code_hash, name, symbol, decimals, total_supply, weth_pair, usdt_pair, created_at
 `
 
 type UpsertProjectParams struct {
-	ChainID     int64
-	Contract    []byte
-	TxSender    []byte
-	TxHash      []byte
-	TxIndex     int64
-	BlockNumber int64
-	BlockTime   int64
-	CodeHash    []byte
-	Name        string
-	Symbol      string
-	Decimals    int16
-	TotalSupply pgtype.Numeric
-	WethPair    []byte
-	UsdtPair    []byte
+	ChainID         int64
+	Contract        []byte
+	TxSender        []byte
+	TxHash          []byte
+	TxIndex         int64
+	DeploymentNonce int64
+	BlockNumber     int64
+	BlockTime       int64
+	CodeHash        []byte
+	Name            string
+	Symbol          string
+	Decimals        int16
+	TotalSupply     pgtype.Numeric
+	WethPair        []byte
+	UsdtPair        []byte
 }
 
 // Catalog persistence and read model.
@@ -202,6 +208,7 @@ func (q *Queries) UpsertProject(ctx context.Context, arg UpsertProjectParams) (P
 		arg.TxSender,
 		arg.TxHash,
 		arg.TxIndex,
+		arg.DeploymentNonce,
 		arg.BlockNumber,
 		arg.BlockTime,
 		arg.CodeHash,
@@ -220,6 +227,7 @@ func (q *Queries) UpsertProject(ctx context.Context, arg UpsertProjectParams) (P
 		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
+		&i.DeploymentNonce,
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,

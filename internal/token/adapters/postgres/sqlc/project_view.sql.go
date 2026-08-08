@@ -85,6 +85,7 @@ SELECT
   project.tx_sender,
   project.tx_hash,
   project.tx_index,
+  project.deployment_nonce,
   project.block_number,
   project.block_time,
   project.code_hash,
@@ -177,6 +178,7 @@ type ListProjectListItemsRow struct {
 	TxSender                  []byte
 	TxHash                    []byte
 	TxIndex                   int64
+	DeploymentNonce           int64
 	BlockNumber               int64
 	BlockTime                 int64
 	CodeHash                  []byte
@@ -236,6 +238,7 @@ func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListI
 			&i.TxSender,
 			&i.TxHash,
 			&i.TxIndex,
+			&i.DeploymentNonce,
 			&i.BlockNumber,
 			&i.BlockTime,
 			&i.CodeHash,

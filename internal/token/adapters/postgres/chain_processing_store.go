@@ -93,6 +93,10 @@ func prepareCandidateInspections(checkpoint discovery.ChainProcessingCheckpoint,
 		if err != nil {
 			return nil, err
 		}
+		deploymentNonce, err := uint64ToInt64("deployment_nonce", candidate.DeploymentNonce)
+		if err != nil {
+			return nil, err
+		}
 		blockNumber, err := uint64ToInt64("block_number", candidate.BlockNumber)
 		if err != nil {
 			return nil, err
@@ -108,14 +112,15 @@ func prepareCandidateInspections(checkpoint discovery.ChainProcessingCheckpoint,
 		prepared = append(prepared, preparedCandidateInspection{
 			inspection: inspection,
 			params: tokensqlc.UpsertProjectCandidateParams{
-				ChainID:     candidate.ChainID,
-				Contract:    candidate.Contract.Bytes(),
-				TxSender:    candidate.TxSender.Bytes(),
-				TxHash:      candidate.TxHash.Bytes(),
-				TxIndex:     txIndex,
-				BlockNumber: blockNumber,
-				BlockTime:   blockTime,
-				Status:      status,
+				ChainID:         candidate.ChainID,
+				Contract:        candidate.Contract.Bytes(),
+				TxSender:        candidate.TxSender.Bytes(),
+				TxHash:          candidate.TxHash.Bytes(),
+				TxIndex:         txIndex,
+				DeploymentNonce: deploymentNonce,
+				BlockNumber:     blockNumber,
+				BlockTime:       blockTime,
+				Status:          status,
 			},
 		})
 	}
@@ -134,6 +139,10 @@ func initializeInspectedProject(ctx context.Context, queries *tokensqlc.Queries,
 	if err != nil {
 		return err
 	}
+	deploymentNonce, err := uint64ToInt64("deployment_nonce", candidate.DeploymentNonce)
+	if err != nil {
+		return err
+	}
 	blockNumber, err := uint64ToInt64("block_number", candidate.BlockNumber)
 	if err != nil {
 		return err
@@ -146,20 +155,21 @@ func initializeInspectedProject(ctx context.Context, queries *tokensqlc.Queries,
 		return fmt.Errorf("upsert contract code for project candidate %s: %w", candidate.Contract, err)
 	}
 	project, err := queries.UpsertProject(ctx, tokensqlc.UpsertProjectParams{
-		ChainID:     candidate.ChainID,
-		Contract:    candidate.Contract.Bytes(),
-		TxSender:    candidate.TxSender.Bytes(),
-		TxHash:      candidate.TxHash.Bytes(),
-		TxIndex:     txIndex,
-		BlockNumber: blockNumber,
-		BlockTime:   blockTime,
-		CodeHash:    inspection.CodeHash.Bytes(),
-		Name:        inspection.Name,
-		Symbol:      inspection.Symbol,
-		Decimals:    int16(inspection.Decimals),
-		TotalSupply: numericFromBigInt(inspection.TotalSupply),
-		WethPair:    optionalAddressBytes(inspection.WethPair),
-		UsdtPair:    optionalAddressBytes(inspection.UsdtPair),
+		ChainID:         candidate.ChainID,
+		Contract:        candidate.Contract.Bytes(),
+		TxSender:        candidate.TxSender.Bytes(),
+		TxHash:          candidate.TxHash.Bytes(),
+		TxIndex:         txIndex,
+		DeploymentNonce: deploymentNonce,
+		BlockNumber:     blockNumber,
+		BlockTime:       blockTime,
+		CodeHash:        inspection.CodeHash.Bytes(),
+		Name:            inspection.Name,
+		Symbol:          inspection.Symbol,
+		Decimals:        int16(inspection.Decimals),
+		TotalSupply:     numericFromBigInt(inspection.TotalSupply),
+		WethPair:        optionalAddressBytes(inspection.WethPair),
+		UsdtPair:        optionalAddressBytes(inspection.UsdtPair),
 	})
 	if err != nil {
 		return fmt.Errorf("upsert project for candidate %s: %w", candidate.Contract, err)

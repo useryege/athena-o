@@ -100,6 +100,8 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
     const ave = props.detail.ave?.token;
     const reportTime = props.detail.currentReport?.builtAt || props.detail.currentReport?.createdAt;
     const chainID = project?.chainID;
+    const labels = chainAssetLabels(chainID);
+    const deployerAssets = props.detail.walletAssets.find(item => addressesEqual(item.wallet, project?.txSender));
     return (
         <div className='project-detail-summary'>
             <Card className='project-detail-identity' size='small'>
@@ -122,8 +124,19 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
                         {label: 'Deployment tx', value: <ExplorerValue chainID={chainID} kind='tx' value={project?.txHash} />},
                         {label: 'Deployer', value: <ExplorerValue chainID={chainID} kind='address' value={project?.txSender} />},
                         {label: 'Block', value: formatBlockNumber(project?.blockNumber)},
-                        {label: 'Transaction index', value: formatExact(project?.txIndex)},
+                        {label: 'Deployer nonce', value: formatExact(project?.deploymentNonce)},
                         {label: 'Block time', value: <TimeValue unixSeconds={project?.blockTime} />},
+                        {label: 'Total asset value (USDT)', value: formatTokenAmount(deployerAssets?.totalAssetUsdtValue, labels.stableDecimals)},
+                        {
+                            label: 'Report freshness',
+                            value: reportTime ? (
+                                <Tooltip title={formatBeijingDateTime(reportTime)}>
+                                    <span>{ageLabel(reportTime)}</span>
+                                </Tooltip>
+                            ) : (
+                                missing()
+                            )
+                        },
                         {
                             label: 'Code hash',
                             value: project?.codeHash ? (
@@ -131,16 +144,6 @@ const Summary = (props: {detail: TokenProjectDetail}) => {
                                     <Link className='project-detail-code-hash' to={`/token/contract-codes/${encodeURIComponent(project.codeHash)}`}>
                                         {project.codeHash}
                                     </Link>
-                                </Tooltip>
-                            ) : (
-                                missing()
-                            )
-                        },
-                        {
-                            label: 'Report freshness',
-                            value: reportTime ? (
-                                <Tooltip title={formatBeijingDateTime(reportTime)}>
-                                    <span>{ageLabel(reportTime)}</span>
                                 </Tooltip>
                             ) : (
                                 missing()

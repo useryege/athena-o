@@ -20,6 +20,10 @@ func (s *CatalogRepository) UpsertProject(ctx context.Context, item catalog.Proj
 	if err != nil {
 		return nil, err
 	}
+	deploymentNonce, err := uint64ToInt64("deployment_nonce", item.DeploymentNonce)
+	if err != nil {
+		return nil, err
+	}
 	blockNumber, err := uint64ToInt64("block_number", item.BlockNumber)
 	if err != nil {
 		return nil, err
@@ -29,20 +33,21 @@ func (s *CatalogRepository) UpsertProject(ctx context.Context, item catalog.Proj
 		return nil, err
 	}
 	row, err := q.UpsertProject(ctx, tokensqlc.UpsertProjectParams{
-		ChainID:     item.ChainID,
-		Contract:    item.Contract.Bytes(),
-		TxSender:    item.TxSender.Bytes(),
-		TxHash:      item.TxHash.Bytes(),
-		TxIndex:     txIndex,
-		BlockNumber: blockNumber,
-		BlockTime:   blockTime,
-		CodeHash:    item.CodeHash.Bytes(),
-		Name:        item.Name,
-		Symbol:      item.Symbol,
-		Decimals:    int16(item.Decimals),
-		TotalSupply: numericFromBigInt(item.TotalSupply),
-		WethPair:    optionalAddressBytes(item.WethPair),
-		UsdtPair:    optionalAddressBytes(item.UsdtPair),
+		ChainID:         item.ChainID,
+		Contract:        item.Contract.Bytes(),
+		TxSender:        item.TxSender.Bytes(),
+		TxHash:          item.TxHash.Bytes(),
+		TxIndex:         txIndex,
+		DeploymentNonce: deploymentNonce,
+		BlockNumber:     blockNumber,
+		BlockTime:       blockTime,
+		CodeHash:        item.CodeHash.Bytes(),
+		Name:            item.Name,
+		Symbol:          item.Symbol,
+		Decimals:        int16(item.Decimals),
+		TotalSupply:     numericFromBigInt(item.TotalSupply),
+		WethPair:        optionalAddressBytes(item.WethPair),
+		UsdtPair:        optionalAddressBytes(item.UsdtPair),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("upsert project: %w", err)

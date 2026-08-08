@@ -65,6 +65,7 @@ export interface TokenProject {
     txSender?: string;
     txHash?: string;
     txIndex?: number;
+    deploymentNonce?: number;
     blockNumber?: number;
     blockTime?: number;
     codeHash?: string;
@@ -583,6 +584,7 @@ function normalizeProject(item: any): TokenProject {
         txSender: item.txSender ?? item.tx_sender,
         txHash: item.txHash ?? item.tx_hash,
         txIndex: numberValue(item.txIndex ?? item.tx_index),
+        deploymentNonce: numberValue(item.deploymentNonce ?? item.deployment_nonce),
         blockNumber: numberValue(item.blockNumber ?? item.block_number),
         blockTime: numberValue(item.blockTime ?? item.block_time),
         codeHash: item.codeHash ?? item.code_hash,

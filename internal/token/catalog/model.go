@@ -16,22 +16,23 @@ type ContractCode struct {
 }
 
 type Project struct {
-	ID          int64
-	ChainID     int64
-	Contract    shared.Address
-	TxSender    shared.Address
-	TxHash      shared.Hash
-	TxIndex     uint64
-	BlockNumber uint64
-	BlockTime   uint64
-	CodeHash    shared.Hash
-	Name        string
-	Symbol      string
-	Decimals    uint8
-	TotalSupply *big.Int
-	WethPair    shared.Address
-	UsdtPair    shared.Address
-	CreatedAt   time.Time
+	ID              int64
+	ChainID         int64
+	Contract        shared.Address
+	TxSender        shared.Address
+	TxHash          shared.Hash
+	TxIndex         uint64
+	DeploymentNonce uint64
+	BlockNumber     uint64
+	BlockTime       uint64
+	CodeHash        shared.Hash
+	Name            string
+	Symbol          string
+	Decimals        uint8
+	TotalSupply     *big.Int
+	WethPair        shared.Address
+	UsdtPair        shared.Address
+	CreatedAt       time.Time
 }
 
 type ProjectTokenMetadata struct {

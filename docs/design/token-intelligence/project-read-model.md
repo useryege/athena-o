@@ -171,10 +171,11 @@ cleared requests cannot write late results into a new cache generation.
    collection schedules, per-wallet transaction counts, and the project-wide
    transaction count. The same trusted-outcome rules used by the list apply to
    the detail Evaluation summary.
-4. The API mapper exposes the project identity and typed observation content.
-   Collection schedules expose `retryIntervalSecs`, their terminal status, and
-   `nextRunAt` only while another attempt remains possible. Integer and decimal
-   values that may exceed JavaScript precision remain strings.
+4. The API mapper exposes the project identity, its deployment transaction
+   nonce, and typed observation content. Collection schedules expose
+   `retryIntervalSecs`, their terminal status, and `nextRunAt` only while
+   another attempt remains possible. Integer and decimal values that may exceed
+   JavaScript precision remain strings.
 5. While the document is visible, the UI reloads only this current snapshot
    every 30 seconds. Returning to a visible document triggers an immediate
    snapshot reload.
@@ -201,6 +202,16 @@ Activity`, `Wallets`, `Transactions`, `Contract`, and `Research`. The Report tab
 uses only the current Report's stored risk snapshot; it never substitutes the
 newer live `chainState` observation. Wrapped-native labels come from chain
 metadata, so BSC presents WBNB while the internal Pair kind remains `weth`.
+
+The Overview deployment summary shows Contract and Deployment tx, Deployer and
+Block, Deployer nonce and Block time, Total asset value (USDT) and Report
+freshness, then Code hash and Project created. The nonce is the immutable nonce
+of the contract-creation transaction, not the Deployer account's latest nonce.
+The total asset value matches the Deployer address case-insensitively against
+the current `wallet_asset_state` observation and uses the same USDT-decimal
+formatting as the Wallets tab; an absent observation renders `Not collected`.
+The stored transaction index remains part of project identity and ordering but
+is not displayed in this summary.
 
 The Wallets tab merges roles, initial-recipient allocation, current asset
 balances, pre-deployment transaction counts, and simulation results by wallet.
@@ -326,6 +337,10 @@ ordering; the read model does not request token metadata from an EVM node.
 Wallet asset observations and `TokenWalletAssetState` expose
 `totalAssetUsdtValue` as a decimal integer string scaled by the applicable USDT
 decimals.
+
+`TokenProject.deploymentNonce` exposes the sender nonce captured from the
+contract-creation transaction. It is persisted with the project and does not
+require an EVM read when loading the detail page.
 
 ## Configuration
 

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1028-g26490945-dirty"
+    "version": "v1.0.0-1029-g4915a788-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -5448,6 +5448,10 @@
         "decimals": {
           "type": "integer",
           "format": "int32"
+        },
+        "deploymentNonce": {
+          "type": "string",
+          "format": "uint64"
         },
         "name": {
           "type": "string"

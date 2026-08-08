@@ -57,22 +57,23 @@ type TokenContractCode struct {
 }
 
 type TokenProject struct {
-	ProjectID   int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
-	ChainID     int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
-	Name        string `protobuf:"bytes,3,opt,name=name" json:"name"`
-	Symbol      string `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
-	Contract    string `protobuf:"bytes,5,opt,name=contract" json:"contract"`
-	TxSender    string `protobuf:"bytes,6,opt,name=txSender" json:"txSender"`
-	TxHash      string `protobuf:"bytes,7,opt,name=txHash" json:"txHash"`
-	TxIndex     uint64 `protobuf:"varint,8,opt,name=txIndex" json:"txIndex"`
-	BlockNumber uint64 `protobuf:"varint,9,opt,name=blockNumber" json:"blockNumber"`
-	BlockTime   uint64 `protobuf:"varint,10,opt,name=blockTime" json:"blockTime"`
-	CodeHash    string `protobuf:"bytes,11,opt,name=codeHash" json:"codeHash"`
-	CreatedAt   string `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
-	Decimals    int32  `protobuf:"varint,13,opt,name=decimals" json:"decimals"`
-	TotalSupply string `protobuf:"bytes,14,opt,name=totalSupply" json:"totalSupply"`
-	WethPair    string `protobuf:"bytes,15,opt,name=wethPair" json:"wethPair"`
-	UsdtPair    string `protobuf:"bytes,16,opt,name=usdtPair" json:"usdtPair"`
+	ProjectID       int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
+	ChainID         int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	Name            string `protobuf:"bytes,3,opt,name=name" json:"name"`
+	Symbol          string `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
+	Contract        string `protobuf:"bytes,5,opt,name=contract" json:"contract"`
+	TxSender        string `protobuf:"bytes,6,opt,name=txSender" json:"txSender"`
+	TxHash          string `protobuf:"bytes,7,opt,name=txHash" json:"txHash"`
+	TxIndex         uint64 `protobuf:"varint,8,opt,name=txIndex" json:"txIndex"`
+	BlockNumber     uint64 `protobuf:"varint,9,opt,name=blockNumber" json:"blockNumber"`
+	BlockTime       uint64 `protobuf:"varint,10,opt,name=blockTime" json:"blockTime"`
+	CodeHash        string `protobuf:"bytes,11,opt,name=codeHash" json:"codeHash"`
+	CreatedAt       string `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
+	Decimals        int32  `protobuf:"varint,13,opt,name=decimals" json:"decimals"`
+	TotalSupply     string `protobuf:"bytes,14,opt,name=totalSupply" json:"totalSupply"`
+	WethPair        string `protobuf:"bytes,15,opt,name=wethPair" json:"wethPair"`
+	UsdtPair        string `protobuf:"bytes,16,opt,name=usdtPair" json:"usdtPair"`
+	DeploymentNonce uint64 `protobuf:"varint,17,opt,name=deploymentNonce" json:"deploymentNonce"`
 }
 
 type TokenProjectListItem struct {

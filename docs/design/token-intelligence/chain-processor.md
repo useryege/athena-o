@@ -93,7 +93,8 @@ checkpoint.
    checkpoint so an operator stop takes effect between blocks.
 7. `DiscoverProjectCandidates` fetches the block once. Every transaction with a
    nil `To` address becomes a candidate whose contract address is derived from
-   its sender and nonce.
+   its sender and deployment nonce. The candidate retains that nonce together
+   with its block transaction index.
 8. Candidates retain block transaction order and are inspected in deterministic
    consecutive chunks of at most 100. Chunks execute sequentially. Each chunk
    makes one ATHENA `ValidateERC20` call against latest chain state, then performs
@@ -138,9 +139,11 @@ reorganizations. Public `TokenChainCheckpoint` API fields and routes map the
 internal processing cursor and its running or stopped status.
 
 `project_candidate` is the audit record for every discovered contract creation.
-Its only persisted statuses are `validated` and `rejected`. It has no pending
-queue, claim token, lock timestamp, or lease expiry. Candidate identity remains
-unique by chain and contract.
+It stores both the deployment transaction's block index and its sender nonce;
+accepted projects retain the same immutable deployment metadata. Its only
+persisted statuses are `validated` and `rejected`. It has no pending queue,
+claim token, lock timestamp, or lease expiry. Candidate identity remains unique
+by chain and contract.
 
 Accepted results also create the project, its initial research graph, and one
 `project_swap_pair` target for each `weth` and `usdt` pair kind. Pair targets

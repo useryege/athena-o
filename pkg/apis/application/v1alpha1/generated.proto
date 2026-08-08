@@ -922,6 +922,8 @@ message TokenProject {
   optional string wethPair = 15;
 
   optional string usdtPair = 16;
+
+  optional uint64 deploymentNonce = 17;
 }
 
 message TokenProjectDetail {

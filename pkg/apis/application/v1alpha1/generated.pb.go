@@ -3316,6 +3316,11 @@ func (m *TokenProject) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i = encodeVarintGenerated(dAtA, i, uint64(m.DeploymentNonce))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x88
 	i -= len(m.UsdtPair)
 	copy(dAtA[i:], m.UsdtPair)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UsdtPair)))
@@ -7161,6 +7166,7 @@ func (m *TokenProject) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.UsdtPair)
 	n += 2 + l + sovGenerated(uint64(l))
+	n += 2 + sovGenerated(uint64(m.DeploymentNonce))
 	return n
 }
 
@@ -8966,6 +8972,7 @@ func (this *TokenProject) String() string {
 		`TotalSupply:` + fmt.Sprintf("%v", this.TotalSupply) + `,`,
 		`WethPair:` + fmt.Sprintf("%v", this.WethPair) + `,`,
 		`UsdtPair:` + fmt.Sprintf("%v", this.UsdtPair) + `,`,
+		`DeploymentNonce:` + fmt.Sprintf("%v", this.DeploymentNonce) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -23091,6 +23098,25 @@ func (m *TokenProject) Unmarshal(dAtA []byte) error {
 			}
 			m.UsdtPair = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentNonce", wireType)
+			}
+			m.DeploymentNonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeploymentNonce |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

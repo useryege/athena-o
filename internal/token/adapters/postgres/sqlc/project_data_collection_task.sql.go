@@ -202,7 +202,7 @@ func (q *Queries) GetProjectDataCollectionTask(ctx context.Context, id int64) (P
 }
 
 const getProjectForDataCollectionTask = `-- name: GetProjectForDataCollectionTask :one
-SELECT project.id, project.chain_id, project.contract, project.tx_sender, project.tx_hash, project.tx_index, project.block_number, project.block_time, project.code_hash, project.name, project.symbol, project.decimals, project.total_supply, project.weth_pair, project.usdt_pair, project.created_at
+SELECT project.id, project.chain_id, project.contract, project.tx_sender, project.tx_hash, project.tx_index, project.deployment_nonce, project.block_number, project.block_time, project.code_hash, project.name, project.symbol, project.decimals, project.total_supply, project.weth_pair, project.usdt_pair, project.created_at
 FROM project_data_collection_task AS task
 JOIN project ON project.id = task.project_id
 WHERE task.id = $1
@@ -218,6 +218,7 @@ func (q *Queries) GetProjectForDataCollectionTask(ctx context.Context, id int64)
 		&i.TxSender,
 		&i.TxHash,
 		&i.TxIndex,
+		&i.DeploymentNonce,
 		&i.BlockNumber,
 		&i.BlockTime,
 		&i.CodeHash,

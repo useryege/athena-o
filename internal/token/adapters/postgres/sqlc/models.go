@@ -49,35 +49,37 @@ type ContractCodeBlocklist struct {
 }
 
 type Project struct {
-	ID          int64
-	ChainID     int64
-	Contract    []byte
-	TxSender    []byte
-	TxHash      []byte
-	TxIndex     int64
-	BlockNumber int64
-	BlockTime   int64
-	CodeHash    []byte
-	Name        string
-	Symbol      string
-	Decimals    int16
-	TotalSupply pgtype.Numeric
-	WethPair    []byte
-	UsdtPair    []byte
-	CreatedAt   pgtype.Timestamptz
+	ID              int64
+	ChainID         int64
+	Contract        []byte
+	TxSender        []byte
+	TxHash          []byte
+	TxIndex         int64
+	DeploymentNonce int64
+	BlockNumber     int64
+	BlockTime       int64
+	CodeHash        []byte
+	Name            string
+	Symbol          string
+	Decimals        int16
+	TotalSupply     pgtype.Numeric
+	WethPair        []byte
+	UsdtPair        []byte
+	CreatedAt       pgtype.Timestamptz
 }
 
 type ProjectCandidate struct {
-	ID          int64
-	ChainID     int64
-	Contract    []byte
-	TxSender    []byte
-	TxHash      []byte
-	TxIndex     int64
-	BlockNumber int64
-	BlockTime   int64
-	Status      string
-	CreatedAt   pgtype.Timestamptz
+	ID              int64
+	ChainID         int64
+	Contract        []byte
+	TxSender        []byte
+	TxHash          []byte
+	TxIndex         int64
+	DeploymentNonce int64
+	BlockNumber     int64
+	BlockTime       int64
+	Status          string
+	CreatedAt       pgtype.Timestamptz
 }
 
 type ProjectDataCollectionSchedule struct {

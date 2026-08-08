@@ -36,13 +36,14 @@ type BlockHeader struct {
 }
 
 type ProjectCandidate struct {
-	ChainID     int64
-	Contract    shared.Address
-	TxSender    shared.Address
-	TxHash      shared.Hash
-	TxIndex     uint64
-	BlockNumber uint64
-	BlockTime   uint64
+	ChainID         int64
+	Contract        shared.Address
+	TxSender        shared.Address
+	TxHash          shared.Hash
+	TxIndex         uint64
+	DeploymentNonce uint64
+	BlockNumber     uint64
+	BlockTime       uint64
 }
 
 type NodeStatus struct {

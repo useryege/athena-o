@@ -209,6 +209,10 @@ func mapProject(row tokensqlc.Project) (*catalog.Project, error) {
 	if e != nil {
 		return nil, e
 	}
+	deploymentNonce, e := int64ToUint64("deployment_nonce", row.DeploymentNonce)
+	if e != nil {
+		return nil, e
+	}
 	bn, e := int64ToUint64("block_number", row.BlockNumber)
 	if e != nil {
 		return nil, e
@@ -221,7 +225,7 @@ func mapProject(row tokensqlc.Project) (*catalog.Project, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &catalog.Project{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, BlockNumber: bn, BlockTime: bt, CodeHash: bytesToHash(row.CodeHash), Name: row.Name, Symbol: row.Symbol, Decimals: d, TotalSupply: bigIntFromNumeric(row.TotalSupply), WethPair: bytesToAddress(row.WethPair), UsdtPair: bytesToAddress(row.UsdtPair), CreatedAt: timeValue(row.CreatedAt)}, nil
+	return &catalog.Project{ID: row.ID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), TxSender: bytesToAddress(row.TxSender), TxHash: bytesToHash(row.TxHash), TxIndex: tx, DeploymentNonce: deploymentNonce, BlockNumber: bn, BlockTime: bt, CodeHash: bytesToHash(row.CodeHash), Name: row.Name, Symbol: row.Symbol, Decimals: d, TotalSupply: bigIntFromNumeric(row.TotalSupply), WethPair: bytesToAddress(row.WethPair), UsdtPair: bytesToAddress(row.UsdtPair), CreatedAt: timeValue(row.CreatedAt)}, nil
 }
 func mapProjects(rows []tokensqlc.Project) ([]catalog.Project, error) {
 	out := make([]catalog.Project, 0, len(rows))

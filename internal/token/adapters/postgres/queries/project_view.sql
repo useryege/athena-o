@@ -44,6 +44,7 @@ SELECT
   project.tx_sender,
   project.tx_hash,
   project.tx_index,
+  project.deployment_nonce,
   project.block_number,
   project.block_time,
   project.code_hash,

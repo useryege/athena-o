@@ -91,11 +91,12 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 			logBlockDiscoveryFailure(ctx, chainID, blockNumber, "candidate_extraction", startedAt, time.Since(candidateExtractionStartedAt), err)
 			return nil, err
 		}
-		contract := crypto.CreateAddress(sender, transaction.Nonce())
+		deploymentNonce := transaction.Nonce()
+		contract := crypto.CreateAddress(sender, deploymentNonce)
 		if contract == (common.Address{}) {
 			continue
 		}
-		candidates = append(candidates, discovery.ProjectCandidate{ChainID: chainID, Contract: shared.Address(contract), TxSender: shared.Address(sender), TxHash: shared.Hash(transaction.Hash()), TxIndex: uint64(transactionIndex), BlockNumber: block.NumberU64(), BlockTime: block.Time()})
+		candidates = append(candidates, discovery.ProjectCandidate{ChainID: chainID, Contract: shared.Address(contract), TxSender: shared.Address(sender), TxHash: shared.Hash(transaction.Hash()), TxIndex: uint64(transactionIndex), DeploymentNonce: deploymentNonce, BlockNumber: block.NumberU64(), BlockTime: block.Time()})
 	}
 	candidateExtractionDuration := time.Since(candidateExtractionStartedAt)
 	log.WithFields(log.Fields{

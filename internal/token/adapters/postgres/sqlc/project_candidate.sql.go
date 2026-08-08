@@ -16,6 +16,7 @@ INSERT INTO project_candidate (
   tx_sender,
   tx_hash,
   tx_index,
+  deployment_nonce,
   block_number,
   block_time,
   status
@@ -27,26 +28,29 @@ INSERT INTO project_candidate (
   $5,
   $6,
   $7,
-  $8
+  $8,
+  $9
 )
 ON CONFLICT (chain_id, contract) DO UPDATE
 SET tx_sender = EXCLUDED.tx_sender,
   tx_hash = EXCLUDED.tx_hash,
   tx_index = EXCLUDED.tx_index,
+  deployment_nonce = EXCLUDED.deployment_nonce,
   block_number = EXCLUDED.block_number,
   block_time = EXCLUDED.block_time,
   status = EXCLUDED.status
 `
 
 type UpsertProjectCandidateParams struct {
-	ChainID     int64
-	Contract    []byte
-	TxSender    []byte
-	TxHash      []byte
-	TxIndex     int64
-	BlockNumber int64
-	BlockTime   int64
-	Status      string
+	ChainID         int64
+	Contract        []byte
+	TxSender        []byte
+	TxHash          []byte
+	TxIndex         int64
+	DeploymentNonce int64
+	BlockNumber     int64
+	BlockTime       int64
+	Status          string
 }
 
 // Discovery processing persistence.
@@ -57,6 +61,7 @@ func (q *Queries) UpsertProjectCandidate(ctx context.Context, arg UpsertProjectC
 		arg.TxSender,
 		arg.TxHash,
 		arg.TxIndex,
+		arg.DeploymentNonce,
 		arg.BlockNumber,
 		arg.BlockTime,
 		arg.Status,
