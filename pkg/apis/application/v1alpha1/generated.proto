@@ -1371,7 +1371,7 @@ message TokenWalletAssetState {
 
   optional string nativeBalance = 5;
 
-  optional string usdtValue = 6;
+  optional string totalAssetUsdtValue = 6;
 }
 
 message TokenWalletBlocklistEntry {

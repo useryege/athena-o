@@ -434,7 +434,7 @@ interface WalletView {
     wethBalance?: string;
     usdtBalance?: string;
     nativeBalance?: string;
-    usdtValue?: string;
+    totalAssetUsdtValue?: string;
     transactionCount?: number;
     simulation?: TokenSimulationResult;
 }
@@ -483,51 +483,89 @@ const walletRows = (detail: TokenProjectDetail): WalletView[] => {
     return [...rows.values()].sort((left, right) => (left.recipientRank ?? Number.MAX_SAFE_INTEGER) - (right.recipientRank ?? Number.MAX_SAFE_INTEGER));
 };
 
+const WalletProfileCard = (props: {item: WalletView; chainID?: number}) => {
+    const labels = chainAssetLabels(props.chainID);
+    const simulationValue = (field: keyof TokenSimulationResult) => (
+        <BooleanState value={props.item.simulation ? (props.item.simulation[field] as boolean) : undefined} trueLabel='Possible' falseLabel='Blocked' dangerWhenTrue={true} />
+    );
+    const transactionLabel = hasValue(props.item.transactionCount)
+        ? `${props.item.transactionCount} ${props.item.transactionCount === 1 ? 'transaction' : 'transactions'}`
+        : 'Transactions not collected';
+    return (
+        <Card
+            className='project-wallet-card'
+            size='small'
+            title={
+                <Space className='project-wallet-card__roles' size={4} wrap={true}>
+                    {props.item.roles.length > 0 ? props.item.roles.map(role => <Tag key={role}>{role}</Tag>) : missing()}
+                </Space>
+            }
+            extra={<Tag>{transactionLabel}</Tag>}>
+            <div className='project-wallet-card__body'>
+                <div className='project-wallet-card__identity'>
+                    <Typography.Text type='secondary'>Wallet</Typography.Text>
+                    <ExplorerValue chainID={props.chainID} kind='address' value={props.item.wallet} />
+                </div>
+                <section className='project-wallet-card__section' aria-label='Wallet allocation'>
+                    <Typography.Title level={5}>Allocation</Typography.Title>
+                    <KeyValueGrid
+                        columns={2}
+                        items={[
+                            {label: 'Recipient rank', value: formatExact(props.item.recipientRank)},
+                            {
+                                label: 'Share',
+                                value: hasValue(props.item.recipientRatioBPS) ? `${((props.item.recipientRatioBPS || 0) / 100).toFixed(2)}%` : missing()
+                            }
+                        ]}
+                    />
+                </section>
+                <section className='project-wallet-card__section' aria-label='Wallet assets'>
+                    <Typography.Title level={5}>Assets</Typography.Title>
+                    <KeyValueGrid
+                        columns={2}
+                        items={[
+                            {label: labels.native, value: formatTokenAmount(props.item.nativeBalance, 18)},
+                            {label: labels.wrapped, value: formatTokenAmount(props.item.wethBalance, 18)},
+                            {label: labels.stable, value: formatTokenAmount(props.item.usdtBalance, labels.stableDecimals)},
+                            {label: 'Total asset value (USDT)', value: formatTokenAmount(props.item.totalAssetUsdtValue, labels.stableDecimals)}
+                        ]}
+                    />
+                </section>
+                <section className='project-wallet-card__section' aria-label='Wallet mint simulations'>
+                    <Typography.Title level={5}>Mint simulations</Typography.Title>
+                    <KeyValueGrid
+                        columns={2}
+                        items={[
+                            {label: 'From dead', value: simulationValue('canMintFromDeadViaTransferFrom')},
+                            {label: 'From zero', value: simulationValue('canMintFromZeroViaTransferFrom')},
+                            {label: `From ${labels.wrapped} pair`, value: simulationValue('canMintFromWethPairViaTransferFrom')},
+                            {label: `From ${labels.stable} pair`, value: simulationValue('canMintFromUsdtPairViaTransferFrom')},
+                            {label: `Transfer to ${labels.wrapped}`, value: simulationValue('canMintViaTransferToWethPair')},
+                            {label: `Transfer to ${labels.stable}`, value: simulationValue('canMintViaTransferToUsdtPair')}
+                        ]}
+                    />
+                </section>
+            </div>
+        </Card>
+    );
+};
+
 const WalletsTab = (props: {detail: TokenProjectDetail}) => {
     const rows = walletRows(props.detail);
     const chainID = props.detail.project?.chainID;
-    const labels = chainAssetLabels(chainID);
-    const simulationColumn = (title: string, field: keyof TokenSimulationResult) => ({
-        title,
-        width: 142,
-        render: (item: WalletView) => (
-            <BooleanState value={item.simulation ? (item.simulation[field] as boolean) : undefined} trueLabel='Possible' falseLabel='Blocked' dangerWhenTrue={true} />
-        )
-    });
-    const columns: ColumnsType<WalletView> = [
-        {title: 'Wallet', fixed: 'left', width: 260, render: item => <ExplorerValue chainID={chainID} kind='address' value={item.wallet} />},
-        {
-            title: 'Roles',
-            width: 220,
-            render: (item: WalletView) => (
-                <Space wrap={true}>
-                    {item.roles.map((role: string) => (
-                        <Tag key={role}>{role}</Tag>
-                    ))}
-                </Space>
-            )
-        },
-        {title: 'Recipient rank', render: item => formatExact(item.recipientRank)},
-        {title: 'Share', render: item => (hasValue(item.recipientRatioBPS) ? `${((item.recipientRatioBPS || 0) / 100).toFixed(2)}%` : missing())},
-        {title: labels.native, render: item => formatTokenAmount(item.nativeBalance, 18)},
-        {title: labels.wrapped, render: item => formatTokenAmount(item.wethBalance, 18)},
-        {title: labels.stable, render: item => formatTokenAmount(item.usdtBalance, labels.stableDecimals)},
-        {title: 'USDT value', render: item => formatTokenAmount(item.usdtValue, labels.stableDecimals)},
-        {title: 'Transactions', render: item => formatExact(item.transactionCount)},
-        simulationColumn('From dead', 'canMintFromDeadViaTransferFrom'),
-        simulationColumn('From zero', 'canMintFromZeroViaTransferFrom'),
-        simulationColumn(`From ${labels.wrapped} pair`, 'canMintFromWethPairViaTransferFrom'),
-        simulationColumn(`From ${labels.stable} pair`, 'canMintFromUsdtPairViaTransferFrom'),
-        simulationColumn(`Transfer to ${labels.wrapped}`, 'canMintViaTransferToWethPair'),
-        simulationColumn(`Transfer to ${labels.stable}`, 'canMintViaTransferToUsdtPair')
-    ];
     return (
         <div className='project-detail-tab'>
             <Section title='Associated wallets'>
                 {rows.length === 0 ? (
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No associated wallet history' />
                 ) : (
-                    <ResourceTable rowKey='wallet' items={rows} columns={columns} scrollX={2500} />
+                    <ul className='project-wallet-list' aria-label='Associated wallets'>
+                        {rows.map(item => (
+                            <li key={item.wallet}>
+                                <WalletProfileCard item={item} chainID={chainID} />
+                            </li>
+                        ))}
+                    </ul>
                 )}
             </Section>
         </div>

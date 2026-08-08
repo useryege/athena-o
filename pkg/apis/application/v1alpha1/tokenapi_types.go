@@ -278,12 +278,12 @@ type TokenChainStateObservation struct {
 }
 
 type TokenWalletAssetState struct {
-	ChainID       int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
-	Wallet        string `protobuf:"bytes,2,opt,name=wallet" json:"wallet"`
-	WethBalance   string `protobuf:"bytes,3,opt,name=wethBalance" json:"wethBalance"`
-	UsdtBalance   string `protobuf:"bytes,4,opt,name=usdtBalance" json:"usdtBalance"`
-	NativeBalance string `protobuf:"bytes,5,opt,name=nativeBalance" json:"nativeBalance"`
-	UsdtValue     string `protobuf:"bytes,6,opt,name=usdtValue" json:"usdtValue"`
+	ChainID             int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
+	Wallet              string `protobuf:"bytes,2,opt,name=wallet" json:"wallet"`
+	WethBalance         string `protobuf:"bytes,3,opt,name=wethBalance" json:"wethBalance"`
+	UsdtBalance         string `protobuf:"bytes,4,opt,name=usdtBalance" json:"usdtBalance"`
+	NativeBalance       string `protobuf:"bytes,5,opt,name=nativeBalance" json:"nativeBalance"`
+	TotalAssetUsdtValue string `protobuf:"bytes,6,opt,name=totalAssetUsdtValue" json:"totalAssetUsdtValue"`
 }
 
 type TokenSimulationResult struct {

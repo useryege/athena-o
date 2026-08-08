@@ -669,12 +669,12 @@ func mapChainStateObservation(item research.ChainStateObservationV1) *v1alpha1.T
 
 func mapWalletAssetState(item research.WalletAssetStateV1) *v1alpha1.TokenWalletAssetState {
 	return &v1alpha1.TokenWalletAssetState{
-		ChainID:       item.ChainID,
-		Wallet:        formatAddress(item.Wallet),
-		WethBalance:   formatBigInt(item.WethBalance),
-		UsdtBalance:   formatBigInt(item.UsdtBalance),
-		NativeBalance: formatBigInt(item.NativeBalance),
-		UsdtValue:     formatBigInt(item.UsdtValue),
+		ChainID:             item.ChainID,
+		Wallet:              formatAddress(item.Wallet),
+		WethBalance:         formatBigInt(item.WethBalance),
+		UsdtBalance:         formatBigInt(item.UsdtBalance),
+		NativeBalance:       formatBigInt(item.NativeBalance),
+		TotalAssetUsdtValue: formatBigInt(item.TotalAssetUsdtValue),
 	}
 }
 

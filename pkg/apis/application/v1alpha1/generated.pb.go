@@ -5119,9 +5119,9 @@ func (m *TokenWalletAssetState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	i -= len(m.UsdtValue)
-	copy(dAtA[i:], m.UsdtValue)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UsdtValue)))
+	i -= len(m.TotalAssetUsdtValue)
+	copy(dAtA[i:], m.TotalAssetUsdtValue)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TotalAssetUsdtValue)))
 	i--
 	dAtA[i] = 0x32
 	i -= len(m.NativeBalance)
@@ -7799,7 +7799,7 @@ func (m *TokenWalletAssetState) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.NativeBalance)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.UsdtValue)
+	l = len(m.TotalAssetUsdtValue)
 	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
@@ -9434,7 +9434,7 @@ func (this *TokenWalletAssetState) String() string {
 		`WethBalance:` + fmt.Sprintf("%v", this.WethBalance) + `,`,
 		`UsdtBalance:` + fmt.Sprintf("%v", this.UsdtBalance) + `,`,
 		`NativeBalance:` + fmt.Sprintf("%v", this.NativeBalance) + `,`,
-		`UsdtValue:` + fmt.Sprintf("%v", this.UsdtValue) + `,`,
+		`TotalAssetUsdtValue:` + fmt.Sprintf("%v", this.TotalAssetUsdtValue) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -30035,7 +30035,7 @@ func (m *TokenWalletAssetState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UsdtValue", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalAssetUsdtValue", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -30063,7 +30063,7 @@ func (m *TokenWalletAssetState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UsdtValue = string(dAtA[iNdEx:postIndex])
+			m.TotalAssetUsdtValue = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

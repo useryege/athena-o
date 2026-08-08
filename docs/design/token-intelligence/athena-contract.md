@@ -37,7 +37,7 @@ The Token Chain Processor's candidate-inspection stage and the research-state re
 1. Deployment passes a numeric chain ID to `DeployATHENA`. The constructor accepts Ethereum Mainnet (`1`) or BSC Mainnet (`56`), selects the chain's Factory, wrapped-native token, USDT, V2 fee recipient, and V2 pair init code hash, then probes USDT decimals. The parameter selects configuration and is not compared with `block.chainid`.
 2. During synchronous block processing, `ValidateERC20` probes each candidate chunk for non-empty name and symbol, positive decimals and total supply, and decodable `balanceOf` and `allowance` responses. Valid tokens receive deterministic WETH and USDT pair addresses.
 3. `ListProjectStates` repeats token validation, checks whether each derived pair has deployed code, reads pair balances and liquidity state, converts quote balances to USDT using the WETH/USDT reserves, and produces token and pair reports.
-4. `ListWalletAssetStates` reads wrapped-native, USDT, and native balances for each non-zero wallet and reports their aggregate USDT value.
+4. `ListWalletAssetStates` reads wrapped-native, USDT, and native balances for each non-zero wallet. Its `totalAssetUsdtValue` is the sum of the USDT balance and the wrapped-native and native balances converted through the WETH/USDT reserve ratio. The value uses USDT decimals and does not include other wallet token holdings.
 5. `ListWalletSimulationStates` reads token allowances for the dead address, zero address, derived pairs, and the requested caller balance. Off-chain code uses this state to build simulation calls.
 6. Every list result preserves input order. The Go adapters require the returned array length to match the request before mapping results into Token Intelligence domain values.
 
@@ -45,7 +45,7 @@ The Token Chain Processor's candidate-inspection stage and the research-state re
 
 The contract has no mutable storage. Its deployed runtime contains immutable Factory, WETH, USDT, USDT-decimal, pair-hash, and fee-recipient values selected by the constructor. Pair addresses are derived with CREATE2 from the Factory address, sorted token addresses, and the configured init code hash.
 
-Token and pair observations are transient return values. `updatedAt` is the current block timestamp. Wallet native balance is read from the EVM account, while token, allowance, supply, and reserve values come from bounded or defensive static calls.
+Token and pair observations are transient return values. `updatedAt` is the current block timestamp. Wallet native balance is read from the EVM account, while token, allowance, supply, and reserve values come from bounded or defensive static calls. `WalletBalanceState.totalAssetUsdtValue` contains the aggregate value of only the three tracked asset balances and is scaled by the configured USDT decimals.
 
 ## Configuration
 
@@ -54,7 +54,7 @@ Token and pair observations are transient return values. `updatedAt` is the curr
 | `1` | `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f` | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | `0xdAC17F958D2ee523a2206206994597C13D831ec7` | `0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f` | `6` |
 | `56` | `0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73` | `0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c` | `0x55d398326f99059fF775485246999027B3197955` | `0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5` | `18` |
 
-The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f85`; the BSC fee-recipient address is `0x0ED943Ce24BaEBf257488771759F9BF482C39706`. Runtime services obtain the deployed contract addresses from `ATHENA_TOKEN_ETH_ATHENA_CONTRACT` and `ATHENA_TOKEN_BSC_ATHENA_CONTRACT`, exposed as the corresponding `--eth-athena-contract` and `--bsc-athena-contract` command settings. The maintained [local](../../../.env) and [production](../../../.env.prod) configurations enable Ethereum Mainnet at `0x32173a786d03A45FcC7119608F54ff59cB11716f` and disable BSC Mainnet while retaining its deployment at `0x372333a07c7b358Ef29187315e4FDF42Bc44FAC1`.
+The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f85`; the BSC fee-recipient address is `0x0ED943Ce24BaEBf257488771759F9BF482C39706`. Runtime services obtain the deployed contract addresses from `ATHENA_TOKEN_ETH_ATHENA_CONTRACT` and `ATHENA_TOKEN_BSC_ATHENA_CONTRACT`, exposed as the corresponding `--eth-athena-contract` and `--bsc-athena-contract` command settings. The maintained [local](../../../.env) and [production](../../../.env.prod) configurations enable Ethereum Mainnet at `0x68244311ba4c8ef8127e1e8b2ff30818d01e56b6` and disable BSC Mainnet while retaining its deployment at `0x372333a07c7b358Ef29187315e4FDF42Bc44FAC1`.
 
 `ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` supplies an optional HTTP, HTTPS, or SOCKS5 proxy exclusively to the shared Token EVM WebSocket registry. `make run` removes standard proxy variables from Goreman children and supplies the WSL host's HTTP proxy on port `10809` by default. An empty value forces direct dialing, which is the production and manual-launch behavior. Process-wide HTTP proxy variables are not consulted by this EVM connection path.
 

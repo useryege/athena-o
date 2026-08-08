@@ -113,12 +113,12 @@ type WalletAssetObservationV1 struct {
 }
 
 type WalletAssetStateV1 struct {
-	ChainID       int64          `json:"chainId"`
-	Wallet        shared.Address `json:"wallet"`
-	WethBalance   *big.Int       `json:"wethBalance"`
-	UsdtBalance   *big.Int       `json:"usdtBalance"`
-	NativeBalance *big.Int       `json:"nativeBalance"`
-	UsdtValue     *big.Int       `json:"usdtValue"`
+	ChainID             int64          `json:"chainId"`
+	Wallet              shared.Address `json:"wallet"`
+	WethBalance         *big.Int       `json:"wethBalance"`
+	UsdtBalance         *big.Int       `json:"usdtBalance"`
+	NativeBalance       *big.Int       `json:"nativeBalance"`
+	TotalAssetUsdtValue *big.Int       `json:"totalAssetUsdtValue"`
 }
 
 type SimulationObservationV1 struct {

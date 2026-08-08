@@ -93,7 +93,8 @@ contract Athena {
         uint256 wethBalance;
         uint256 usdtBalance;
         uint256 nativeBalance;
-        uint256 usdtValue;
+        // Sum of native, wrapped-native, and USDT balances, scaled by USDT decimals.
+        uint256 totalAssetUsdtValue;
     }
 
     struct WalletSimulationStateQuery {
@@ -324,7 +325,7 @@ contract Athena {
 
         uint256 wethUsdtValue = _quoteToUsdtValue(state.wethBalance, wethContract);
         uint256 nativeUsdtValue = _quoteToUsdtValue(state.nativeBalance, wethContract);
-        state.usdtValue = wethUsdtValue + state.usdtBalance + nativeUsdtValue;
+        state.totalAssetUsdtValue = wethUsdtValue + state.usdtBalance + nativeUsdtValue;
     }
 
     function _getPairWithDefaultLockers(address baseTokenContract, address quoteTokenContract)

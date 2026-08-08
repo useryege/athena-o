@@ -2982,6 +2982,88 @@ body::-webkit-scrollbar-thumb,
     background: var(--athena-panel);
 }
 
+.project-wallet-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.project-wallet-list > li,
+.project-wallet-card,
+.project-wallet-card__body,
+.project-wallet-card__identity,
+.project-wallet-card__section {
+    min-width: 0;
+}
+
+.project-wallet-card {
+    height: 100%;
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.project-wallet-card .ant-card-head-wrapper {
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.project-wallet-card .ant-card-head-title,
+.project-wallet-card .ant-card-extra {
+    min-width: 0;
+    white-space: normal;
+}
+
+.project-wallet-card__roles {
+    min-width: 0;
+}
+
+.project-wallet-card__body {
+    display: grid;
+    gap: 14px;
+}
+
+.project-wallet-card__identity,
+.project-wallet-card__section {
+    display: grid;
+    gap: 8px;
+}
+
+.project-wallet-card__identity {
+    gap: 5px;
+}
+
+.project-wallet-card__section h5 {
+    margin: 0;
+    color: var(--athena-text);
+}
+
+.project-wallet-card .ant-descriptions-item-content,
+.project-wallet-card .break-value {
+    min-width: 0;
+}
+
+.project-wallet-card .break-value {
+    display: block;
+}
+
+.project-wallet-card .project-detail-value__exact {
+    display: block;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.project-wallet-card .key-value-grid.ant-descriptions-bordered > .ant-descriptions-view > table {
+    width: 100%;
+    table-layout: fixed;
+}
+
 .project-collection-grid > .ant-empty {
     grid-column: 1 / -1;
 }
@@ -3826,6 +3908,10 @@ body::-webkit-scrollbar-thumb,
     .project-risk-grid,
     .project-collection-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .project-wallet-list {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

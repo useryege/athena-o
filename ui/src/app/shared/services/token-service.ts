@@ -279,7 +279,7 @@ export interface TokenWalletAssetState {
     wethBalance?: string;
     usdtBalance?: string;
     nativeBalance?: string;
-    usdtValue?: string;
+    totalAssetUsdtValue?: string;
 }
 
 export interface TokenSimulationResult {
@@ -853,7 +853,7 @@ function normalizeProjectDetail(item: any): TokenProjectDetail {
             wethBalance: asset.wethBalance ?? asset.weth_balance,
             usdtBalance: asset.usdtBalance ?? asset.usdt_balance,
             nativeBalance: asset.nativeBalance ?? asset.native_balance,
-            usdtValue: asset.usdtValue ?? asset.usdt_value
+            totalAssetUsdtValue: asset.totalAssetUsdtValue ?? asset.total_asset_usdt_value
         })),
         simulations: ((item.simulations || []) as any[]).map(simulation => ({
             projectID: numberValue(simulation.projectID ?? simulation.projectId ?? simulation.project_id),

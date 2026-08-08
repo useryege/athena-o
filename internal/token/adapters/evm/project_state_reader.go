@@ -68,7 +68,7 @@ func (reader *ProjectStateReader) ReadWalletAssetState(ctx context.Context, proj
 		if item.Wallet == (common.Address{}) {
 			continue
 		}
-		states = append(states, research.WalletAssetStateV1{ChainID: project.ChainID, Wallet: shared.Address(item.Wallet), WethBalance: cloneBigInt(item.AssetState.WethBalance), UsdtBalance: cloneBigInt(item.AssetState.UsdtBalance), NativeBalance: cloneBigInt(item.AssetState.NativeBalance), UsdtValue: cloneBigInt(item.AssetState.UsdtValue)})
+		states = append(states, research.WalletAssetStateV1{ChainID: project.ChainID, Wallet: shared.Address(item.Wallet), WethBalance: cloneBigInt(item.AssetState.WethBalance), UsdtBalance: cloneBigInt(item.AssetState.UsdtBalance), NativeBalance: cloneBigInt(item.AssetState.NativeBalance), TotalAssetUsdtValue: cloneBigInt(item.AssetState.TotalAssetUsdtValue)})
 	}
 	sort.Slice(states, func(i, j int) bool { return states[i].Wallet.Hex() < states[j].Wallet.Hex() })
 	return research.WalletAssetObservationV1{Items: states}, blockNumber, nil

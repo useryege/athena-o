@@ -202,6 +202,17 @@ uses only the current Report's stored risk snapshot; it never substitutes the
 newer live `chainState` observation. Wrapped-native labels come from chain
 metadata, so BSC presents WBNB while the internal Pair kind remains `weth`.
 
+The Wallets tab merges roles, initial-recipient allocation, current asset
+balances, pre-deployment transaction counts, and simulation results by wallet.
+It renders every wallet as a fully expanded semantic profile card instead of a
+horizontally scrolling table. Cards are displayed in two columns at viewport
+widths of 1440 pixels and above and in one column below that breakpoint; their
+field grids collapse to one column below 768 pixels. The Assets section displays
+native, wrapped-native, and USDT balances separately, followed by `Total asset
+value (USDT)`. The corresponding `totalAssetUsdtValue` API field is their
+aggregate USDT-denominated value, not the wallet's USDT balance or the value of
+untracked token holdings.
+
 The aggregate consists of independent read queries and is not a
 transaction-level database snapshot. Each returned entity is committed state,
 but a collection or report transition can become visible between component
@@ -312,6 +323,9 @@ The fixed assets are Ethereum WETH with 18 decimals and USDT with 6 decimals,
 and BSC WBNB and USDT with 18 decimals each. Their addresses match the ATHENA
 contract's Pair derivation inputs. These values provide units and token
 ordering; the read model does not request token metadata from an EVM node.
+Wallet asset observations and `TokenWalletAssetState` expose
+`totalAssetUsdtValue` as a decimal integer string scaled by the applicable USDT
+decimals.
 
 ## Configuration
 
@@ -331,6 +345,7 @@ There is no runtime configuration specific to this read model.
 | Accepted trend ranges | `1h`, `6h`, `24h`, `7d` | Other values are rejected before querying. |
 | Maximum points per trend series | 500 | Applies LTTB when a series exceeds the limit. |
 | Default Ave pair selection | Wrapped native, then USDT | Keeps the current selection while it remains available and otherwise falls back in priority order. |
+| Wallet profile card breakpoint | 1440 pixels | The Wallets tab displays two complete profile cards per row at and above the breakpoint and one card per row below it. |
 | Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash; project-detail revision history also becomes cards and the shell uses overlay navigation. |
 | Report Risk compact layout breakpoint | 1100 pixels | The root layout may shrink below its desktop minimum and section controls and tables are replaced by cards containing complete Status, wrapped-native, and USDT data; overlay navigation still begins at 900 pixels. |
 

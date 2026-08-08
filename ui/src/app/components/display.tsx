@@ -18,6 +18,7 @@ export const KeyValueGrid = (props: {items: Array<{label: React.ReactNode; value
     const responsiveColumns: DescriptionsProps['column'] =
         typeof requestedColumns === 'number'
             ? {
+                  xxxl: requestedColumns,
                   xxl: requestedColumns,
                   xl: requestedColumns,
                   lg: requestedColumns,
