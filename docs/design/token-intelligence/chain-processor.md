@@ -7,7 +7,7 @@ EVM chains, validates every candidate from each block, initializes accepted
 Token Intelligence projects, and persists the complete block result before
 advancing to the next block. It owns per-chain scheduling, initial lookback,
 numeric processing checkpoints, candidate inspection, the atomic block commit,
-and processor health reporting.
+chain-time research attention expiration, and processor health reporting.
 
 Scheduled research collection, report generation, project selection, and Swap
 log collection are outside this boundary. The processor does initialize the two
@@ -28,7 +28,7 @@ progress and running or stopped status.
 | Fixed chain registry | [internal/token/chainregistry/registry.go](../../../internal/token/chainregistry/registry.go) | `New`, `Registry.EnabledChains` |
 | Synchronous application flow | [internal/token/discovery/application/chain_processor.go](../../../internal/token/discovery/application/chain_processor.go) | `ChainProcessor.RunOnce`, `ChainProcessor.StartChain`, `ChainProcessor.StopChain` |
 | Candidate inspection | [internal/token/adapters/evm/candidate_inspector.go](../../../internal/token/adapters/evm/candidate_inspector.go) | `CandidateInspector.InspectCandidates` |
-| EVM block source | [internal/token/adapters/evm/block_source.go](../../../internal/token/adapters/evm/block_source.go) | `LatestBlockHeader`, `BlockHeaderByNumber`, `DiscoverProjectCandidates` |
+| EVM block source | [internal/token/adapters/evm/block_source.go](../../../internal/token/adapters/evm/block_source.go) | `LatestBlockHeader`, `BlockHeaderByNumber`, `DiscoverProjectBlock` |
 | EVM client lifecycle | [internal/token/adapters/evm/chain_client_registry.go](../../../internal/token/adapters/evm/chain_client_registry.go) | `Client`, `Reset`, `Close` |
 | Chain and checkpoint persistence | [internal/token/adapters/postgres/chain_store.go](../../../internal/token/adapters/postgres/chain_store.go) | `SyncChains`, `GetChainProcessingCheckpoint`, `UpsertChainProcessingCheckpoint` |
 | Atomic block persistence | [internal/token/adapters/postgres/chain_processing_store.go](../../../internal/token/adapters/postgres/chain_processing_store.go) | `ChainRepository.CommitProcessedBlock` |
@@ -50,7 +50,7 @@ flowchart LR
     I --> E
     I --> A["ATHENA contract\nlatest chain state"]
     C --> R["PostgreSQL block commit"]
-    R --> D["final candidates, projects,\nresearch state, schedules,\nand Swap pair targets"]
+    R --> D["final candidates, projects,\nresearch initialization and expiration,\nschedules, and Swap pair targets"]
     R --> K["chain_processing_checkpoint"]
     H --> T["Health, readiness, and metrics"]
 ```
@@ -67,7 +67,8 @@ extraction. The inspector owns ATHENA validation, latest-state code and receipt
 reads, pair derivation, and related-wallet inspection. PostgreSQL owns the
 all-or-nothing persistence of the resulting candidates, accepted projects,
 research initialization, WETH and USDT Swap pair targets, and processing
-checkpoint.
+checkpoint. Each block's timestamp is also the authoritative clock for expiring
+same-chain projects that remain `researching`.
 
 ## Runtime Flow
 
@@ -91,10 +92,11 @@ checkpoint.
 6. The processor handles the inclusive range from `cursor + 1` through the
    latest snapshot one block at a time. Before each block it reloads the
    checkpoint so an operator stop takes effect between blocks.
-7. `DiscoverProjectCandidates` fetches the block once. Every transaction with a
-   nil `To` address becomes a candidate whose contract address is derived from
-   its sender and deployment nonce. The candidate retains that nonce together
-   with its block transaction index.
+7. `DiscoverProjectBlock` fetches the block once and always returns its number
+   and timestamp, including when no contract creation exists. Every transaction
+   with a nil `To` address becomes a candidate whose contract address is derived
+   from its sender and deployment nonce. The candidate retains that nonce,
+   transaction index, and the same deployment block position.
 8. Candidates retain block transaction order and are inspected in deterministic
    consecutive chunks of at most 100. Chunks execute sequentially. Each chunk
    makes one ATHENA `ValidateERC20` call against latest chain state, then performs
@@ -110,12 +112,17 @@ checkpoint.
     collection schedules, related wallets, initial recipients, and independent
     `collecting` Swap targets for the nonzero WETH and USDT pair addresses. Both
     targets start at the complete project deployment block and derive their
-    chain-time observation deadlines from that block's timestamp. A missing or
-    zero pair fails the block. The transaction advances
+    chain-time observation deadlines from that block's timestamp. Each research
+    state independently fixes its attention deadline to the deployment block
+    timestamp plus the configured research TTL. The transaction then expires
+    same-chain `researching` states whose deadline is at or before the current
+    block timestamp, recording the actual expiry block. A missing or zero pair
+    fails the block. The transaction advances
     `chain_processing_checkpoint` to the current block only after all block data
     has been written.
-11. An empty block skips candidate inspection and commits only its checkpoint.
-    The next block is not fetched until the current block transaction commits.
+11. A block with no candidates skips inspection but still applies chain-time
+    research expiration and commits its checkpoint. The next block is not
+    fetched until the current block transaction commits.
 12. Reaching the latest snapshot completes the run. The next poll obtains a new
     latest snapshot and continues at the durable cursor plus one.
 13. On `SIGINT` or `SIGTERM`, the host cancels the workers, waits for their
@@ -149,10 +156,12 @@ Accepted results also create the project, its initial research graph, and one
 `project_swap_pair` target for each `weth` and `usdt` pair kind. Pair targets
 store the accepted project's chain, nonzero pair address, inclusive deployment
 block and time, and initial 24-hour and seven-day chain-time deadlines. The
-project, research state, six schedules, related wallets, initial recipients,
-Swap targets, all candidate outcomes from the block, and the checkpoint share
-one transaction. Until that transaction commits, none of the block is visible
-as processed.
+research state stores a fixed chain-time attention deadline; an `expired` state
+also stores the block number and timestamp that performed the transition. The
+project, research initialization and expiration, six schedules, related
+wallets, initial recipients, Swap targets, all candidate outcomes from the
+block, and the checkpoint share one transaction. Until that transaction
+commits, none of the block is visible as processed.
 
 The independent [Token Swap Processor](swap-processor.md) follows the committed
 checkpoint and owns all later event, count, completion, and expiration updates.
@@ -173,6 +182,7 @@ attempt probes again.
 | `ATHENA_TOKEN_{ETH,BSC}_PROCESSOR_INITIAL_LOOKBACK_DURATION` / `--{eth,bsc}-processor-initial-lookback-duration` | Required initial lookback. Go duration syntax; minimum one second. |
 | `ATHENA_TOKEN_{ETH,BSC}_PROCESSOR_POLL_INTERVAL` / `--{eth,bsc}-processor-poll-interval` | Required positive periodic interval. Maintained values are `15s` for Ethereum and `1s` for BSC. |
 | `ATHENA_TOKEN_{ETH,BSC}_SWAP_POLL_INTERVAL` / `--{eth,bsc}-swap-poll-interval` | Required positive shared-registry setting. The Chain Processor validates but does not consume it. |
+| `ATHENA_TOKEN_RESEARCH_TTL` / `--research-ttl` | Whole-second research attention duration added to each new project's deployment block timestamp. Default 24 hours; accepted range 1 hour through 30 days. Existing deadlines are not recomputed. |
 | `ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` | Optional HTTP, HTTPS, or SOCKS5 proxy used only by shared Token EVM WebSocket connections. Empty means direct dialing. |
 | `ATHENA_TOKEN_POSTGRES_DSN` | Token database used for migrations, chain synchronization, complete block commits, readiness, and public checkpoint reads. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded Token migration during connection setup; default `true`. |
@@ -201,7 +211,10 @@ deletes that volume and restores fresh-checkpoint behavior.
 - Candidate chunks and inspection results preserve block transaction order.
 - A committed cursor means every candidate from that block has a final status
   and every accepted candidate's project, research graph, and two Swap targets
-  also committed.
+  also committed, and every due same-chain research expiration was applied.
+- Project research expiration uses the processed block timestamp, never process
+  wall-clock time. Stopping the processor freezes lifecycle advancement until
+  the missing blocks are processed in order.
 - Rejected candidates never create projects, research schedules, or Swap targets.
 - No candidate can persist as pending or be claimed by another process.
 - The processor reads `latest` state and assumes the observed chain does not
@@ -220,8 +233,9 @@ unchanged. A block fetch, ATHENA call, code read, receipt read, sender derivatio
 or inspection-shape error fails the current block before persistence. An invalid
 ERC-20 is a normal rejected outcome and does not fail the block.
 
-Any candidate, project, research, wallet, Swap-target, or checkpoint write
-failure rolls back the complete block transaction. The periodic job retries
+Any candidate, project, research initialization or expiration, wallet,
+Swap-target, or checkpoint write failure rolls back the complete block
+transaction. The periodic job retries
 from the unchanged cursor, so the same block may be read and inspected again
 but cannot become partially committed. Cancellation likewise prevents a
 not-yet-committed block from advancing the checkpoint.
@@ -243,9 +257,9 @@ The processor exposes:
   Token pipeline diagnostics.
 
 Range and block logs identify the chain, cursor, target height, current block,
-remaining block count, and candidate totals. Every completed block reports
-separate discovery, validation, and persistence durations plus validated and
-rejected counts. Failures identify the stage and phase duration without logging
+remaining block count, and candidate totals. Every completed block reports its
+block timestamp, expired research-state count, separate discovery, validation,
+and persistence durations, plus validated and rejected counts. Failures identify the stage and phase duration without logging
 a completion event for cancellation. EVM client-selection logs identify the
 chain, credential-free endpoint, probe duration, and dedicated proxy state.
 
@@ -255,6 +269,6 @@ chain, credential-free endpoint, probe duration, and dedicated proxy state.
 - [ ] Recheck lookback estimation, latest snapshot, numeric cursor, and sequential block boundaries.
 - [ ] Recheck candidate ordering, 100-candidate chunks, and inspection concurrency.
 - [ ] Recheck the complete block transaction, final-only candidate states, and
-      WETH and USDT Swap-target initialization.
+      research expiration plus WETH and USDT Swap-target initialization.
 - [ ] Recheck API checkpoint mapping, retries, health/readiness, logs, and metrics.
 - [ ] Keep the [design index](../README.md) entry current.

@@ -54,14 +54,14 @@ func (source *BlockSource) BlockHeaderByNumber(ctx context.Context, chainID int6
 	return mapped, nil
 }
 
-func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainID int64, blockNumber uint64) ([]discovery.ProjectCandidate, error) {
+func (source *BlockSource) DiscoverProjectBlock(ctx context.Context, chainID int64, blockNumber uint64) (discovery.ProjectCandidateBlock, error) {
 	startedAt := time.Now()
 	clientStartedAt := time.Now()
 	client, err := source.clients.Client(ctx, chainID)
 	clientDuration := time.Since(clientStartedAt)
 	if err != nil {
 		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "client", startedAt, clientDuration, err)
-		return nil, err
+		return discovery.ProjectCandidateBlock{}, err
 	}
 	blockFetchStartedAt := time.Now()
 	block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
@@ -70,12 +70,17 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		source.clients.Reset(chainID)
 		err = fmt.Errorf("fetch block %d: %w", blockNumber, err)
 		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "block_fetch", startedAt, blockFetchDuration, err)
-		return nil, err
+		return discovery.ProjectCandidateBlock{}, err
 	}
 	if block == nil {
 		err = fmt.Errorf("fetch block %d returned nil block", blockNumber)
 		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "block_fetch", startedAt, blockFetchDuration, err)
-		return nil, err
+		return discovery.ProjectCandidateBlock{}, err
+	}
+	if block.NumberU64() != blockNumber {
+		err = fmt.Errorf("fetch block %d returned block %d", blockNumber, block.NumberU64())
+		logBlockDiscoveryFailure(ctx, chainID, blockNumber, "block_fetch", startedAt, blockFetchDuration, err)
+		return discovery.ProjectCandidateBlock{}, err
 	}
 	candidateExtractionStartedAt := time.Now()
 	signer := types.LatestSignerForChainID(big.NewInt(chainID))
@@ -89,7 +94,7 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		if err != nil {
 			err = fmt.Errorf("derive transaction sender for tx %s: %w", transaction.Hash().Hex(), err)
 			logBlockDiscoveryFailure(ctx, chainID, blockNumber, "candidate_extraction", startedAt, time.Since(candidateExtractionStartedAt), err)
-			return nil, err
+			return discovery.ProjectCandidateBlock{}, err
 		}
 		deploymentNonce := transaction.Nonce()
 		contract := crypto.CreateAddress(sender, deploymentNonce)
@@ -110,7 +115,10 @@ func (source *BlockSource) DiscoverProjectCandidates(ctx context.Context, chainI
 		"candidate_extraction_duration_ms": candidateExtractionDuration.Milliseconds(),
 		"duration_ms":                      time.Since(startedAt).Milliseconds(),
 	}).Info("token chain block discovery completed")
-	return candidates, nil
+	return discovery.ProjectCandidateBlock{
+		Header:     discovery.BlockHeader{Number: block.NumberU64(), Timestamp: block.Time()},
+		Candidates: candidates,
+	}, nil
 }
 
 func logBlockDiscoveryFailure(

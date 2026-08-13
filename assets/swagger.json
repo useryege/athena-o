@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1032-ga34d5a3f-dirty"
+    "version": "v1.0.0-1033-gb0ffed7d-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -6142,6 +6142,18 @@
     "v1alpha1TokenResearchState": {
       "type": "object",
       "properties": {
+        "attentionExpiryBlockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "attentionStartBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "attentionStartBlockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
         "chainId": {
           "type": "integer",
           "format": "int64"
@@ -6163,8 +6175,13 @@
           "type": "integer",
           "format": "int64"
         },
-        "expiresAt": {
-          "type": "string"
+        "expiredBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "expiredBlockTime": {
+          "type": "string",
+          "format": "uint64"
         },
         "lastEvaluatedAt": {
           "type": "string"

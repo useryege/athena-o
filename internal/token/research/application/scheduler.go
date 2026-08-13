@@ -27,15 +27,14 @@ type CreateCollectionTaskCommand struct {
 }
 
 type SchedulerRepository interface {
-	ApplyResearchPolicy(context.Context, map[research.DataCollectionType]time.Duration, time.Duration) error
-	MaintainResearchLifecycle(context.Context) error
+	ApplyResearchPolicy(context.Context, map[research.DataCollectionType]time.Duration) error
+	MaintainResearchSchedules(context.Context) error
 	ListDueCollectionSchedules(context.Context, int32) ([]DueSchedule, error)
 	CreateCollectionTaskIfDue(context.Context, CreateCollectionTaskCommand) (bool, error)
 }
 
 type SchedulerOptions struct {
 	RetryIntervals map[research.DataCollectionType]time.Duration
-	TTL            time.Duration
 	Limit          int32
 	Now            func() time.Time
 }
@@ -56,9 +55,6 @@ func NewScheduler(repository SchedulerRepository, options SchedulerOptions) *Sch
 			research.DataCollectionTypeWalletNormalTransactions: 10 * time.Minute,
 		}
 	}
-	if options.TTL <= 0 {
-		options.TTL = 24 * time.Hour
-	}
 	if options.Limit <= 0 {
 		options.Limit = 100
 	}
@@ -72,14 +68,14 @@ func (scheduler *Scheduler) Initialize(ctx context.Context) error {
 	if scheduler == nil || scheduler.repository == nil {
 		return fmt.Errorf("token scheduler application is not configured")
 	}
-	return scheduler.repository.ApplyResearchPolicy(ctx, scheduler.options.RetryIntervals, scheduler.options.TTL)
+	return scheduler.repository.ApplyResearchPolicy(ctx, scheduler.options.RetryIntervals)
 }
 
 func (scheduler *Scheduler) RunOnce(ctx context.Context) (int, error) {
 	if scheduler == nil || scheduler.repository == nil {
 		return 0, fmt.Errorf("token scheduler application is not configured")
 	}
-	if err := scheduler.repository.MaintainResearchLifecycle(ctx); err != nil {
+	if err := scheduler.repository.MaintainResearchSchedules(ctx); err != nil {
 		return 0, err
 	}
 	schedules, err := scheduler.repository.ListDueCollectionSchedules(ctx, scheduler.options.Limit)

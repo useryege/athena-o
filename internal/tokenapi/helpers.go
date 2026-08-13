@@ -453,7 +453,21 @@ func mapWalletBlocklistEntries(items []policy.WalletBlocklistEntry) []*v1alpha1.
 }
 
 func mapProjectResearchState(item research.ProjectResearchState) *v1alpha1.TokenResearchState {
-	return &v1alpha1.TokenResearchState{ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: formatAddress(item.Contract), Status: string(item.Status), EvidenceRevision: item.EvidenceRevision, CurrentReportRevision: item.CurrentReportRevision, CurrentSelectionOutcome: string(item.CurrentSelectionOutcome), LastEvaluatedRevision: item.LastEvaluatedReportRevision, LastEvaluatedAt: formatTime(item.LastEvaluatedAt), ExpiresAt: formatTime(item.ExpiresAt), CreatedAt: formatTime(item.CreatedAt), UpdatedAt: formatTime(item.UpdatedAt)}
+	var expiredBlockNumber, expiredBlockTime uint64
+	if item.ExpiredBlockNumber != nil {
+		expiredBlockNumber = *item.ExpiredBlockNumber
+	}
+	if item.ExpiredBlockTime != nil {
+		expiredBlockTime = *item.ExpiredBlockTime
+	}
+	return &v1alpha1.TokenResearchState{
+		ProjectID: item.ProjectID, ChainID: item.ChainID, Contract: formatAddress(item.Contract), Status: string(item.Status),
+		EvidenceRevision: item.EvidenceRevision, CurrentReportRevision: item.CurrentReportRevision, CurrentSelectionOutcome: string(item.CurrentSelectionOutcome),
+		LastEvaluatedRevision: item.LastEvaluatedReportRevision, LastEvaluatedAt: formatTime(item.LastEvaluatedAt),
+		AttentionStartBlockNumber: item.AttentionStartBlockNumber, AttentionStartBlockTime: item.AttentionStartBlockTime,
+		AttentionExpiryBlockTime: item.AttentionExpiryBlockTime, ExpiredBlockNumber: expiredBlockNumber, ExpiredBlockTime: expiredBlockTime,
+		CreatedAt: formatTime(item.CreatedAt), UpdatedAt: formatTime(item.UpdatedAt),
+	}
 }
 func mapProjectResearchStates(items []research.ProjectResearchState) []*v1alpha1.TokenResearchState {
 	out := make([]*v1alpha1.TokenResearchState, 0, len(items))

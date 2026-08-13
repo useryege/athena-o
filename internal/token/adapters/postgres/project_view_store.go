@@ -41,7 +41,10 @@ func (repository *ProjectViewRepository) GetProjectDetail(ctx context.Context, p
 		return nil, fmt.Errorf("list project detail research state: %w", err)
 	}
 	if len(researchRows) > 0 {
-		state := mapProjectResearchState(researchRows[0])
+		state, mapErr := mapProjectResearchState(researchRows[0])
+		if mapErr != nil {
+			return nil, fmt.Errorf("map project detail research state: %w", mapErr)
+		}
 		detail.ResearchState = &state
 		if state.CurrentReportRevision > 0 {
 			reportRow, reportErr := queries.GetProjectReportRevision(ctx, tokensqlc.GetProjectReportRevisionParams{

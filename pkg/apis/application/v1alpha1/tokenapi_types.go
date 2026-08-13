@@ -128,18 +128,22 @@ type TokenCollectionTask struct {
 }
 
 type TokenResearchState struct {
-	ProjectID               int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
-	ChainID                 int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
-	Contract                string `protobuf:"bytes,3,opt,name=contract" json:"contract"`
-	Status                  string `protobuf:"bytes,4,opt,name=status" json:"status"`
-	EvidenceRevision        int64  `protobuf:"varint,5,opt,name=evidenceRevision" json:"evidenceRevision"`
-	CurrentReportRevision   int64  `protobuf:"varint,6,opt,name=currentReportRevision" json:"currentReportRevision"`
-	CurrentSelectionOutcome string `protobuf:"bytes,7,opt,name=currentSelectionOutcome" json:"currentSelectionOutcome"`
-	LastEvaluatedRevision   int64  `protobuf:"varint,8,opt,name=lastEvaluatedRevision" json:"lastEvaluatedRevision"`
-	LastEvaluatedAt         string `protobuf:"bytes,9,opt,name=lastEvaluatedAt" json:"lastEvaluatedAt"`
-	ExpiresAt               string `protobuf:"bytes,10,opt,name=expiresAt" json:"expiresAt"`
-	CreatedAt               string `protobuf:"bytes,11,opt,name=createdAt" json:"createdAt"`
-	UpdatedAt               string `protobuf:"bytes,12,opt,name=updatedAt" json:"updatedAt"`
+	ProjectID                 int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
+	ChainID                   int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	Contract                  string `protobuf:"bytes,3,opt,name=contract" json:"contract"`
+	Status                    string `protobuf:"bytes,4,opt,name=status" json:"status"`
+	EvidenceRevision          int64  `protobuf:"varint,5,opt,name=evidenceRevision" json:"evidenceRevision"`
+	CurrentReportRevision     int64  `protobuf:"varint,6,opt,name=currentReportRevision" json:"currentReportRevision"`
+	CurrentSelectionOutcome   string `protobuf:"bytes,7,opt,name=currentSelectionOutcome" json:"currentSelectionOutcome"`
+	LastEvaluatedRevision     int64  `protobuf:"varint,8,opt,name=lastEvaluatedRevision" json:"lastEvaluatedRevision"`
+	LastEvaluatedAt           string `protobuf:"bytes,9,opt,name=lastEvaluatedAt" json:"lastEvaluatedAt"`
+	AttentionStartBlockNumber uint64 `protobuf:"varint,10,opt,name=attentionStartBlockNumber" json:"attentionStartBlockNumber"`
+	AttentionStartBlockTime   uint64 `protobuf:"varint,11,opt,name=attentionStartBlockTime" json:"attentionStartBlockTime"`
+	AttentionExpiryBlockTime  uint64 `protobuf:"varint,12,opt,name=attentionExpiryBlockTime" json:"attentionExpiryBlockTime"`
+	ExpiredBlockNumber        uint64 `protobuf:"varint,13,opt,name=expiredBlockNumber" json:"expiredBlockNumber"`
+	ExpiredBlockTime          uint64 `protobuf:"varint,14,opt,name=expiredBlockTime" json:"expiredBlockTime"`
+	CreatedAt                 string `protobuf:"bytes,15,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt                 string `protobuf:"bytes,16,opt,name=updatedAt" json:"updatedAt"`
 }
 
 type TokenReportRevision struct {

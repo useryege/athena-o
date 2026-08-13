@@ -137,7 +137,11 @@ export interface TokenResearchState {
     currentSelectionOutcome?: string;
     lastEvaluatedRevision?: number;
     lastEvaluatedAt?: string;
-    expiresAt?: string;
+    attentionStartBlockNumber?: number;
+    attentionStartBlockTime?: number;
+    attentionExpiryBlockTime?: number;
+    expiredBlockNumber?: number;
+    expiredBlockTime?: number;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -684,7 +688,11 @@ function normalizeResearchState(item: any): TokenResearchState {
         currentSelectionOutcome: item.currentSelectionOutcome ?? item.current_selection_outcome,
         lastEvaluatedRevision: numberValue(item.lastEvaluatedRevision ?? item.last_evaluated_revision),
         lastEvaluatedAt: item.lastEvaluatedAt ?? item.last_evaluated_at,
-        expiresAt: item.expiresAt ?? item.expires_at,
+        attentionStartBlockNumber: numberValue(item.attentionStartBlockNumber ?? item.attention_start_block_number),
+        attentionStartBlockTime: numberValue(item.attentionStartBlockTime ?? item.attention_start_block_time),
+        attentionExpiryBlockTime: numberValue(item.attentionExpiryBlockTime ?? item.attention_expiry_block_time),
+        expiredBlockNumber: numberValue(item.expiredBlockNumber ?? item.expired_block_number),
+        expiredBlockTime: numberValue(item.expiredBlockTime ?? item.expired_block_time),
         createdAt: item.createdAt ?? item.created_at,
         updatedAt: item.updatedAt ?? item.updated_at
     };

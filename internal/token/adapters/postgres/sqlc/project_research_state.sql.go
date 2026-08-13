@@ -11,21 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const applyProjectResearchTTL = `-- name: ApplyProjectResearchTTL :execrows
-UPDATE project_research_state
-SET expires_at = created_at + ($1::bigint * INTERVAL '1 second'),
-  updated_at = now()
-WHERE status = 'researching'
-`
-
-func (q *Queries) ApplyProjectResearchTTL(ctx context.Context, ttlSeconds int64) (int64, error) {
-	result, err := q.db.Exec(ctx, applyProjectResearchTTL, ttlSeconds)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const countProjectResearchStates = `-- name: CountProjectResearchStates :one
 SELECT COUNT(*)::bigint
 FROM project_research_state AS research
@@ -50,18 +35,25 @@ func (q *Queries) CountProjectResearchStates(ctx context.Context, arg CountProje
 
 const createProjectResearchState = `-- name: CreateProjectResearchState :one
 INSERT INTO project_research_state (
-  project_id
+  project_id,
+  attention_expiry_block_time
 ) VALUES (
-  $1
+  $1,
+  $2
 )
 ON CONFLICT (project_id) DO UPDATE
 SET updated_at = project_research_state.updated_at
-RETURNING project_id, status, evidence_revision, current_report_revision, current_selection_id, last_evaluated_report_revision, last_evaluated_at, expires_at, created_at, updated_at
+RETURNING project_id, status, evidence_revision, current_report_revision, current_selection_id, last_evaluated_report_revision, last_evaluated_at, attention_expiry_block_time, expired_block_number, expired_block_time, created_at, updated_at
 `
 
+type CreateProjectResearchStateParams struct {
+	ProjectID                int64
+	AttentionExpiryBlockTime int64
+}
+
 // Research lifecycle persistence.
-func (q *Queries) CreateProjectResearchState(ctx context.Context, projectID int64) (ProjectResearchState, error) {
-	row := q.db.QueryRow(ctx, createProjectResearchState, projectID)
+func (q *Queries) CreateProjectResearchState(ctx context.Context, arg CreateProjectResearchStateParams) (ProjectResearchState, error) {
+	row := q.db.QueryRow(ctx, createProjectResearchState, arg.ProjectID, arg.AttentionExpiryBlockTime)
 	var i ProjectResearchState
 	err := row.Scan(
 		&i.ProjectID,
@@ -71,23 +63,36 @@ func (q *Queries) CreateProjectResearchState(ctx context.Context, projectID int6
 		&i.CurrentSelectionID,
 		&i.LastEvaluatedReportRevision,
 		&i.LastEvaluatedAt,
-		&i.ExpiresAt,
+		&i.AttentionExpiryBlockTime,
+		&i.ExpiredBlockNumber,
+		&i.ExpiredBlockTime,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const expireProjectResearchStates = `-- name: ExpireProjectResearchStates :execrows
-UPDATE project_research_state
+const expireProjectResearchStatesForBlock = `-- name: ExpireProjectResearchStatesForBlock :execrows
+UPDATE project_research_state AS research
 SET status = 'expired',
+  expired_block_number = $1::bigint,
+  expired_block_time = $2::bigint,
   updated_at = now()
-WHERE status = 'researching'
-  AND expires_at <= now()
+FROM project
+WHERE project.id = research.project_id
+  AND project.chain_id = $3
+  AND research.status = 'researching'
+  AND research.attention_expiry_block_time <= $2::bigint
 `
 
-func (q *Queries) ExpireProjectResearchStates(ctx context.Context) (int64, error) {
-	result, err := q.db.Exec(ctx, expireProjectResearchStates)
+type ExpireProjectResearchStatesForBlockParams struct {
+	BlockNumber int64
+	BlockTime   int64
+	ChainID     int64
+}
+
+func (q *Queries) ExpireProjectResearchStatesForBlock(ctx context.Context, arg ExpireProjectResearchStatesForBlockParams) (int64, error) {
+	result, err := q.db.Exec(ctx, expireProjectResearchStatesForBlock, arg.BlockNumber, arg.BlockTime, arg.ChainID)
 	if err != nil {
 		return 0, err
 	}
@@ -95,7 +100,7 @@ func (q *Queries) ExpireProjectResearchStates(ctx context.Context) (int64, error
 }
 
 const getProjectResearchState = `-- name: GetProjectResearchState :one
-SELECT project_id, status, evidence_revision, current_report_revision, current_selection_id, last_evaluated_report_revision, last_evaluated_at, expires_at, created_at, updated_at
+SELECT project_id, status, evidence_revision, current_report_revision, current_selection_id, last_evaluated_report_revision, last_evaluated_at, attention_expiry_block_time, expired_block_number, expired_block_time, created_at, updated_at
 FROM project_research_state
 WHERE project_id = $1
 `
@@ -111,7 +116,9 @@ func (q *Queries) GetProjectResearchState(ctx context.Context, projectID int64) 
 		&i.CurrentSelectionID,
 		&i.LastEvaluatedReportRevision,
 		&i.LastEvaluatedAt,
-		&i.ExpiresAt,
+		&i.AttentionExpiryBlockTime,
+		&i.ExpiredBlockNumber,
+		&i.ExpiredBlockTime,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -123,7 +130,7 @@ UPDATE project_research_state
 SET evidence_revision = evidence_revision + 1,
   updated_at = now()
 WHERE project_id = $1
-RETURNING project_id, status, evidence_revision, current_report_revision, current_selection_id, last_evaluated_report_revision, last_evaluated_at, expires_at, created_at, updated_at
+RETURNING project_id, status, evidence_revision, current_report_revision, current_selection_id, last_evaluated_report_revision, last_evaluated_at, attention_expiry_block_time, expired_block_number, expired_block_time, created_at, updated_at
 `
 
 func (q *Queries) IncrementProjectEvidenceRevision(ctx context.Context, projectID int64) (ProjectResearchState, error) {
@@ -137,7 +144,9 @@ func (q *Queries) IncrementProjectEvidenceRevision(ctx context.Context, projectI
 		&i.CurrentSelectionID,
 		&i.LastEvaluatedReportRevision,
 		&i.LastEvaluatedAt,
-		&i.ExpiresAt,
+		&i.AttentionExpiryBlockTime,
+		&i.ExpiredBlockNumber,
+		&i.ExpiredBlockTime,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -146,9 +155,11 @@ func (q *Queries) IncrementProjectEvidenceRevision(ctx context.Context, projectI
 
 const listProjectResearchStates = `-- name: ListProjectResearchStates :many
 SELECT
-  research.project_id, research.status, research.evidence_revision, research.current_report_revision, research.current_selection_id, research.last_evaluated_report_revision, research.last_evaluated_at, research.expires_at, research.created_at, research.updated_at,
+  research.project_id, research.status, research.evidence_revision, research.current_report_revision, research.current_selection_id, research.last_evaluated_report_revision, research.last_evaluated_at, research.attention_expiry_block_time, research.expired_block_number, research.expired_block_time, research.created_at, research.updated_at,
   project.chain_id,
   project.contract,
+  project.block_number AS attention_start_block_number,
+  project.block_time AS attention_start_block_time,
   COALESCE(selection.outcome, '')::text AS current_selection_outcome
 FROM project_research_state AS research
 JOIN project ON project.id = research.project_id
@@ -176,11 +187,15 @@ type ListProjectResearchStatesRow struct {
 	CurrentSelectionID          pgtype.Int8
 	LastEvaluatedReportRevision pgtype.Int8
 	LastEvaluatedAt             pgtype.Timestamptz
-	ExpiresAt                   pgtype.Timestamptz
+	AttentionExpiryBlockTime    int64
+	ExpiredBlockNumber          pgtype.Int8
+	ExpiredBlockTime            pgtype.Int8
 	CreatedAt                   pgtype.Timestamptz
 	UpdatedAt                   pgtype.Timestamptz
 	ChainID                     int64
 	Contract                    []byte
+	AttentionStartBlockNumber   int64
+	AttentionStartBlockTime     int64
 	CurrentSelectionOutcome     string
 }
 
@@ -207,11 +222,15 @@ func (q *Queries) ListProjectResearchStates(ctx context.Context, arg ListProject
 			&i.CurrentSelectionID,
 			&i.LastEvaluatedReportRevision,
 			&i.LastEvaluatedAt,
-			&i.ExpiresAt,
+			&i.AttentionExpiryBlockTime,
+			&i.ExpiredBlockNumber,
+			&i.ExpiredBlockTime,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ChainID,
 			&i.Contract,
+			&i.AttentionStartBlockNumber,
+			&i.AttentionStartBlockTime,
 			&i.CurrentSelectionOutcome,
 		); err != nil {
 			return nil, err

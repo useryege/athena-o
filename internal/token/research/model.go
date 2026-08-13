@@ -157,7 +157,11 @@ type ProjectResearchState struct {
 	CurrentSelectionOutcome     string
 	LastEvaluatedReportRevision int64
 	LastEvaluatedAt             time.Time
-	ExpiresAt                   time.Time
+	AttentionStartBlockNumber   uint64
+	AttentionStartBlockTime     uint64
+	AttentionExpiryBlockTime    uint64
+	ExpiredBlockNumber          *uint64
+	ExpiredBlockTime            *uint64
 	CreatedAt                   time.Time
 	UpdatedAt                   time.Time
 }

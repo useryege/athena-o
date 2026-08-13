@@ -195,7 +195,9 @@ type ProjectResearchState struct {
 	CurrentSelectionID          pgtype.Int8
 	LastEvaluatedReportRevision pgtype.Int8
 	LastEvaluatedAt             pgtype.Timestamptz
-	ExpiresAt                   pgtype.Timestamptz
+	AttentionExpiryBlockTime    int64
+	ExpiredBlockNumber          pgtype.Int8
+	ExpiredBlockTime            pgtype.Int8
 	CreatedAt                   pgtype.Timestamptz
 	UpdatedAt                   pgtype.Timestamptz
 }

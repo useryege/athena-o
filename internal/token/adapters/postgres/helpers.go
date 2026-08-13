@@ -314,8 +314,34 @@ func mapCurrentProjectObservations(rows []tokensqlc.ListCurrentProjectObservatio
 	return out, nil
 }
 
-func mapProjectResearchState(row tokensqlc.ListProjectResearchStatesRow) research.ProjectResearchState {
-	return research.ProjectResearchState{ProjectID: row.ProjectID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), Status: research.ProjectResearchStatus(row.Status), EvidenceRevision: row.EvidenceRevision, CurrentReportRevision: int64Value(row.CurrentReportRevision), CurrentSelectionID: int64Value(row.CurrentSelectionID), CurrentSelectionOutcome: row.CurrentSelectionOutcome, LastEvaluatedReportRevision: int64Value(row.LastEvaluatedReportRevision), LastEvaluatedAt: timeValue(row.LastEvaluatedAt), ExpiresAt: timeValue(row.ExpiresAt), CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt)}
+func mapProjectResearchState(row tokensqlc.ListProjectResearchStatesRow) (research.ProjectResearchState, error) {
+	attentionStartBlockNumber, err := int64ToUint64("attention_start_block_number", row.AttentionStartBlockNumber)
+	if err != nil {
+		return research.ProjectResearchState{}, err
+	}
+	attentionStartBlockTime, err := int64ToUint64("attention_start_block_time", row.AttentionStartBlockTime)
+	if err != nil {
+		return research.ProjectResearchState{}, err
+	}
+	attentionExpiryBlockTime, err := int64ToUint64("attention_expiry_block_time", row.AttentionExpiryBlockTime)
+	if err != nil {
+		return research.ProjectResearchState{}, err
+	}
+	expiredBlockNumber, err := uint64PointerFromInt64("expired_block_number", row.ExpiredBlockNumber)
+	if err != nil {
+		return research.ProjectResearchState{}, err
+	}
+	expiredBlockTime, err := uint64PointerFromInt64("expired_block_time", row.ExpiredBlockTime)
+	if err != nil {
+		return research.ProjectResearchState{}, err
+	}
+	return research.ProjectResearchState{
+		ProjectID: row.ProjectID, ChainID: row.ChainID, Contract: bytesToAddress(row.Contract), Status: research.ProjectResearchStatus(row.Status),
+		EvidenceRevision: row.EvidenceRevision, CurrentReportRevision: int64Value(row.CurrentReportRevision), CurrentSelectionID: int64Value(row.CurrentSelectionID),
+		CurrentSelectionOutcome: row.CurrentSelectionOutcome, LastEvaluatedReportRevision: int64Value(row.LastEvaluatedReportRevision), LastEvaluatedAt: timeValue(row.LastEvaluatedAt),
+		AttentionStartBlockNumber: attentionStartBlockNumber, AttentionStartBlockTime: attentionStartBlockTime, AttentionExpiryBlockTime: attentionExpiryBlockTime,
+		ExpiredBlockNumber: expiredBlockNumber, ExpiredBlockTime: expiredBlockTime, CreatedAt: timeValue(row.CreatedAt), UpdatedAt: timeValue(row.UpdatedAt),
+	}, nil
 }
 func mapProjectReportRevision(row tokensqlc.ProjectReportRevision) (reporting.ProjectReportRevision, error) {
 	bn, e := uint64PointerFromInt64("observed_block_number", row.ObservedBlockNumber)

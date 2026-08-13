@@ -181,6 +181,9 @@ cleared requests cannot write late results into a new cache generation.
    the detail Evaluation summary.
 4. The API mapper exposes the project identity, its deployment transaction
    nonce, and typed observation content, including the Ave token `logoUrl`.
+   `TokenResearchState` exposes the deployment block as the attention start,
+   the fixed chain-time deadline, and the actual expiry block position when the
+   state is `expired`; all block times cross the boundary as Unix seconds.
    Collection schedules expose
    `retryIntervalSecs`, their terminal status, and `nextRunAt` only while
    another attempt remains possible. Integer and decimal values that may exceed
@@ -226,6 +229,12 @@ The detail identity heading renders the current Ave logo at 52 pixels square.
 It retains the existing symbol tile as the fallback when the URL is missing or
 the browser image request fails. The UI loads vendor URLs directly without an
 image proxy or local cache and suppresses the page URL as the request referrer.
+
+The Research lifecycle summary displays status, report and Selection context,
+then the attention start block and time, chain-time deadline, and actual expiry
+block and time. The UI converts Unix seconds for presentation only. A
+non-expired state renders the two actual-expiry values as `Not expired`; browser
+or server wall-clock time never changes lifecycle status.
 
 The Wallets tab merges roles, initial-recipient allocation, current asset
 balances, pre-deployment transaction counts, and simulation results by wallet.
@@ -427,6 +436,8 @@ There is no runtime configuration specific to this read model.
   `Not collected` or `Unknown` and does not convert absence to `false` or zero.
 - Collection schedules expose retry timing rather than a periodic refresh
   cadence. Completed, failed, and paused schedules have no next attempt.
+- Research attention fields preserve exact block numbers and Unix seconds. The
+  UI does not derive expiry from the current browser time.
 - Ave key-pair choices are enabled only when the current observation contains
   the exact project pair contract, and the detail card never displays an
   unrelated Ave pair.

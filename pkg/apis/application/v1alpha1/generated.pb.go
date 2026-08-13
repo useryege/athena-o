@@ -4872,17 +4872,29 @@ func (m *TokenResearchState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	copy(dAtA[i:], m.UpdatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
 	i--
-	dAtA[i] = 0x62
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
 	i -= len(m.CreatedAt)
 	copy(dAtA[i:], m.CreatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedAt)))
 	i--
-	dAtA[i] = 0x5a
-	i -= len(m.ExpiresAt)
-	copy(dAtA[i:], m.ExpiresAt)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ExpiresAt)))
+	dAtA[i] = 0x7a
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ExpiredBlockTime))
 	i--
-	dAtA[i] = 0x52
+	dAtA[i] = 0x70
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ExpiredBlockNumber))
+	i--
+	dAtA[i] = 0x68
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AttentionExpiryBlockTime))
+	i--
+	dAtA[i] = 0x60
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AttentionStartBlockTime))
+	i--
+	dAtA[i] = 0x58
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AttentionStartBlockNumber))
+	i--
+	dAtA[i] = 0x50
 	i -= len(m.LastEvaluatedAt)
 	copy(dAtA[i:], m.LastEvaluatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.LastEvaluatedAt)))
@@ -7731,12 +7743,15 @@ func (m *TokenResearchState) Size() (n int) {
 	n += 1 + sovGenerated(uint64(m.LastEvaluatedRevision))
 	l = len(m.LastEvaluatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.ExpiresAt)
-	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.AttentionStartBlockNumber))
+	n += 1 + sovGenerated(uint64(m.AttentionStartBlockTime))
+	n += 1 + sovGenerated(uint64(m.AttentionExpiryBlockTime))
+	n += 1 + sovGenerated(uint64(m.ExpiredBlockNumber))
+	n += 1 + sovGenerated(uint64(m.ExpiredBlockTime))
 	l = len(m.CreatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.UpdatedAt)
-	n += 1 + l + sovGenerated(uint64(l))
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -9389,7 +9404,11 @@ func (this *TokenResearchState) String() string {
 		`CurrentSelectionOutcome:` + fmt.Sprintf("%v", this.CurrentSelectionOutcome) + `,`,
 		`LastEvaluatedRevision:` + fmt.Sprintf("%v", this.LastEvaluatedRevision) + `,`,
 		`LastEvaluatedAt:` + fmt.Sprintf("%v", this.LastEvaluatedAt) + `,`,
-		`ExpiresAt:` + fmt.Sprintf("%v", this.ExpiresAt) + `,`,
+		`AttentionStartBlockNumber:` + fmt.Sprintf("%v", this.AttentionStartBlockNumber) + `,`,
+		`AttentionStartBlockTime:` + fmt.Sprintf("%v", this.AttentionStartBlockTime) + `,`,
+		`AttentionExpiryBlockTime:` + fmt.Sprintf("%v", this.AttentionExpiryBlockTime) + `,`,
+		`ExpiredBlockNumber:` + fmt.Sprintf("%v", this.ExpiredBlockNumber) + `,`,
+		`ExpiredBlockTime:` + fmt.Sprintf("%v", this.ExpiredBlockTime) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`}`,
@@ -29162,10 +29181,10 @@ func (m *TokenResearchState) Unmarshal(dAtA []byte) error {
 			m.LastEvaluatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresAt", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttentionStartBlockNumber", wireType)
 			}
-			var stringLen uint64
+			m.AttentionStartBlockNumber = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenerated
@@ -29175,25 +29194,88 @@ func (m *TokenResearchState) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				m.AttentionStartBlockNumber |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ExpiresAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttentionStartBlockTime", wireType)
+			}
+			m.AttentionStartBlockTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AttentionStartBlockTime |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttentionExpiryBlockTime", wireType)
+			}
+			m.AttentionExpiryBlockTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AttentionExpiryBlockTime |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiredBlockNumber", wireType)
+			}
+			m.ExpiredBlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiredBlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiredBlockTime", wireType)
+			}
+			m.ExpiredBlockTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiredBlockTime |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
 			}
@@ -29225,7 +29307,7 @@ func (m *TokenResearchState) Unmarshal(dAtA []byte) error {
 			}
 			m.CreatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 12:
+		case 16:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
 			}

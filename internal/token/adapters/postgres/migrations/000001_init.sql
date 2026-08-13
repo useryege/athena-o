@@ -428,7 +428,9 @@ CREATE TABLE project_research_state (
   current_selection_id BIGINT,
   last_evaluated_report_revision BIGINT,
   last_evaluated_at TIMESTAMPTZ,
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '1 day'),
+  attention_expiry_block_time BIGINT NOT NULL,
+  expired_block_number BIGINT,
+  expired_block_time BIGINT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_research_state_project_id_uidx PRIMARY KEY (project_id),
@@ -436,11 +438,28 @@ CREATE TABLE project_research_state (
   CONSTRAINT project_research_state_status_check CHECK (status IN ('researching', 'selected', 'rejected', 'expired')),
   CONSTRAINT project_research_state_evidence_revision_check CHECK (evidence_revision >= 0),
   CONSTRAINT project_research_state_current_report_revision_check CHECK (current_report_revision IS NULL OR current_report_revision > 0),
-  CONSTRAINT project_research_state_last_evaluated_report_revision_check CHECK (last_evaluated_report_revision IS NULL OR last_evaluated_report_revision > 0)
+  CONSTRAINT project_research_state_last_evaluated_report_revision_check CHECK (last_evaluated_report_revision IS NULL OR last_evaluated_report_revision > 0),
+  CONSTRAINT project_research_state_attention_expiry_block_time_check CHECK (attention_expiry_block_time >= 0),
+  CONSTRAINT project_research_state_expired_block_number_check CHECK (expired_block_number IS NULL OR expired_block_number >= 0),
+  CONSTRAINT project_research_state_expired_block_time_check CHECK (expired_block_time IS NULL OR expired_block_time >= 0),
+  CONSTRAINT project_research_state_expired_position_check CHECK (
+    (
+      status = 'expired'
+      AND expired_block_number IS NOT NULL
+      AND expired_block_time IS NOT NULL
+      AND expired_block_time >= attention_expiry_block_time
+    )
+    OR
+    (
+      status <> 'expired'
+      AND expired_block_number IS NULL
+      AND expired_block_time IS NULL
+    )
+  )
 );
 
-CREATE INDEX project_research_state_status_expires_at_idx
-  ON project_research_state (status, expires_at, project_id);
+CREATE INDEX project_research_state_status_attention_expiry_block_time_idx
+  ON project_research_state (status, attention_expiry_block_time, project_id);
 
 CREATE TABLE project_data_collection_schedule (
   project_id BIGINT NOT NULL,

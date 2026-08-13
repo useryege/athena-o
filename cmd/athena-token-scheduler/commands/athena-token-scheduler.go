@@ -20,7 +20,7 @@ const cliName = "athena-token-scheduler"
 
 func NewCommand() *cobra.Command {
 	var flags tokenworker.CommonFlags
-	var chainStateRetryInterval, walletAssetRetryInterval, simulationRetryInterval, aveRetryInterval, contractSourceRetryInterval, walletNormalTransactionsRetryInterval, researchTTL time.Duration
+	var chainStateRetryInterval, walletAssetRetryInterval, simulationRetryInterval, aveRetryInterval, contractSourceRetryInterval, walletNormalTransactionsRetryInterval time.Duration
 	command := &cobra.Command{Use: cliName, Short: "Schedule token research collection", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
 		connection, _, host, err := flags.Open(cmd.Context(), "scheduler")
 		if err != nil {
@@ -31,7 +31,7 @@ func NewCommand() *cobra.Command {
 			research.DataCollectionTypeSimulationResult: simulationRetryInterval, research.DataCollectionTypeAve: aveRetryInterval,
 			research.DataCollectionTypeContractCodeSource:       contractSourceRetryInterval,
 			research.DataCollectionTypeWalletNormalTransactions: walletNormalTransactionsRetryInterval,
-		}, TTL: researchTTL})
+		}})
 		job := workerhost.PeriodicJob{Name: "research-scheduler", Interval: time.Second, Scope: telemetry.Scope{Component: "research_scheduler"}, Initialize: application.Initialize, RunOnce: func(ctx context.Context) (workerhost.JobResult, error) {
 			count, err := application.RunOnce(ctx)
 			return workerhost.JobResult{Processed: count}, err
@@ -47,7 +47,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().DurationVar(&aveRetryInterval, "ave-retry-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_AVE_RETRY_INTERVAL", 5*time.Minute, time.Second, 24*time.Hour), "Ave retry interval")
 	command.Flags().DurationVar(&contractSourceRetryInterval, "contract-source-retry-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_CONTRACT_SOURCE_RETRY_INTERVAL", 10*time.Minute, time.Second, 24*time.Hour), "Contract source retry interval")
 	command.Flags().DurationVar(&walletNormalTransactionsRetryInterval, "wallet-normal-transactions-retry-interval", env.ParseDurationFromEnv("ATHENA_TOKEN_WALLET_NORMAL_TRANSACTIONS_RETRY_INTERVAL", 10*time.Minute, time.Second, 24*time.Hour), "Wallet normal transactions retry interval")
-	command.Flags().DurationVar(&researchTTL, "research-ttl", env.ParseDurationFromEnv("ATHENA_TOKEN_RESEARCH_TTL", 24*time.Hour, time.Hour, 30*24*time.Hour), "Research expiration duration")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
 }

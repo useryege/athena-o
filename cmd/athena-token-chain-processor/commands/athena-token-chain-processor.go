@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/useryege/athena/cmd/tokenworker"
@@ -13,12 +14,14 @@ import (
 	"github.com/useryege/athena/internal/token/telemetry"
 	"github.com/useryege/athena/internal/token/workerhost"
 	"github.com/useryege/athena/util/cli"
+	"github.com/useryege/athena/util/env"
 )
 
 const cliName = "athena-token-chain-processor"
 
 func NewCommand() *cobra.Command {
 	var flags tokenworker.CommonFlags
+	var researchTTL time.Duration
 	command := &cobra.Command{Use: cliName, Short: "Process configured token chains", DisableAutoGenTag: true, RunE: func(cmd *cobra.Command, _ []string) error {
 		connection, registry, host, err := flags.Open(cmd.Context(), "chain-processor")
 		if err != nil {
@@ -27,7 +30,7 @@ func NewCommand() *cobra.Command {
 		clients := evm.NewChainClientRegistry(registry, flags.NodeWSProxyURL)
 		host.AddClose(clients.Close)
 		repository := tokenpostgres.NewChainRepository(connection)
-		application := discoveryapp.NewChainProcessor(repository, evm.NewBlockSource(clients), evm.NewCandidateInspector(registry, clients), discoveryapp.ChainProcessorOptions{})
+		application := discoveryapp.NewChainProcessor(repository, evm.NewBlockSource(clients), evm.NewCandidateInspector(registry, clients), discoveryapp.ChainProcessorOptions{ResearchTTL: researchTTL})
 		jobs := make([]workerhost.PeriodicJob, 0, len(registry.EnabledChains()))
 		for _, chain := range registry.EnabledChains() {
 			chain := chain
@@ -44,6 +47,7 @@ func NewCommand() *cobra.Command {
 		return host.Run(cmd.Context())
 	}}
 	flags.Bind(command, "127.0.0.1:8110")
+	command.Flags().DurationVar(&researchTTL, "research-ttl", env.ParseDurationFromEnv("ATHENA_TOKEN_RESEARCH_TTL", 24*time.Hour, time.Hour, 30*24*time.Hour), "Project research attention duration measured in chain block time")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command
 }

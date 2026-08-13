@@ -1,26 +1,27 @@
 -- Research lifecycle persistence.
 -- name: CreateProjectResearchState :one
 INSERT INTO project_research_state (
-  project_id
+  project_id,
+  attention_expiry_block_time
 ) VALUES (
-  @project_id
+  @project_id,
+  @attention_expiry_block_time
 )
 ON CONFLICT (project_id) DO UPDATE
 SET updated_at = project_research_state.updated_at
 RETURNING *;
 
--- name: ApplyProjectResearchTTL :execrows
-UPDATE project_research_state
-SET expires_at = created_at + (sqlc.arg('ttl_seconds')::bigint * INTERVAL '1 second'),
-  updated_at = now()
-WHERE status = 'researching';
-
--- name: ExpireProjectResearchStates :execrows
-UPDATE project_research_state
+-- name: ExpireProjectResearchStatesForBlock :execrows
+UPDATE project_research_state AS research
 SET status = 'expired',
+  expired_block_number = sqlc.arg('block_number')::bigint,
+  expired_block_time = sqlc.arg('block_time')::bigint,
   updated_at = now()
-WHERE status = 'researching'
-  AND expires_at <= now();
+FROM project
+WHERE project.id = research.project_id
+  AND project.chain_id = @chain_id
+  AND research.status = 'researching'
+  AND research.attention_expiry_block_time <= sqlc.arg('block_time')::bigint;
 
 -- name: IncrementProjectEvidenceRevision :one
 UPDATE project_research_state
@@ -73,6 +74,8 @@ SELECT
   research.*,
   project.chain_id,
   project.contract,
+  project.block_number AS attention_start_block_number,
+  project.block_time AS attention_start_block_time,
   COALESCE(selection.outcome, '')::text AS current_selection_outcome
 FROM project_research_state AS research
 JOIN project ON project.id = research.project_id

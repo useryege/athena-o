@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/research"
@@ -24,7 +25,11 @@ func (s *ResearchReadRepository) ListProjectResearchStatesPage(ctx context.Conte
 	}
 	items := make([]research.ProjectResearchState, 0, len(rows))
 	for _, r := range rows {
-		items = append(items, mapProjectResearchState(r))
+		item, mapErr := mapProjectResearchState(r)
+		if mapErr != nil {
+			return nil, fmt.Errorf("map project research state: %w", mapErr)
+		}
+		items = append(items, item)
 	}
 	return &research.ResearchStatePage{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }

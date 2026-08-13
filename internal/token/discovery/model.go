@@ -35,6 +35,11 @@ type BlockHeader struct {
 	Timestamp uint64
 }
 
+type ProjectCandidateBlock struct {
+	Header     BlockHeader
+	Candidates []ProjectCandidate
+}
+
 type ProjectCandidate struct {
 	ChainID         int64
 	Contract        shared.Address

@@ -12,7 +12,6 @@ type Querier interface {
 	AdvanceChainSwapProcessingCheckpoint(ctx context.Context, arg AdvanceChainSwapProcessingCheckpointParams) (ChainSwapProcessingCheckpoint, error)
 	AdvanceProjectDataCollectionSchedule(ctx context.Context, arg AdvanceProjectDataCollectionScheduleParams) (ProjectDataCollectionSchedule, error)
 	ApplyProjectDataCollectionSchedulePolicy(ctx context.Context, arg ApplyProjectDataCollectionSchedulePolicyParams) (int64, error)
-	ApplyProjectResearchTTL(ctx context.Context, ttlSeconds int64) (int64, error)
 	ClaimProjectDataCollectionTasks(ctx context.Context, arg ClaimProjectDataCollectionTasksParams) ([]ProjectDataCollectionTask, error)
 	ClaimProjectReportBuildTasks(ctx context.Context, arg ClaimProjectReportBuildTasksParams) ([]ProjectReportBuildTask, error)
 	ClaimProjectSelectionEvaluationTasks(ctx context.Context, arg ClaimProjectSelectionEvaluationTasksParams) ([]ProjectSelectionEvaluationTask, error)
@@ -34,7 +33,7 @@ type Querier interface {
 	// Research collection persistence.
 	CreateProjectDataCollectionTask(ctx context.Context, arg CreateProjectDataCollectionTaskParams) (ProjectDataCollectionTask, error)
 	// Research lifecycle persistence.
-	CreateProjectResearchState(ctx context.Context, projectID int64) (ProjectResearchState, error)
+	CreateProjectResearchState(ctx context.Context, arg CreateProjectResearchStateParams) (ProjectResearchState, error)
 	CreateProjectSwapBlock(ctx context.Context, arg CreateProjectSwapBlockParams) (ProjectSwapBlock, error)
 	CreateProjectSwapEvent(ctx context.Context, arg CreateProjectSwapEventParams) (ProjectSwapEvent, error)
 	CreateProjectSwapPair(ctx context.Context, arg CreateProjectSwapPairParams) (ProjectSwapPair, error)
@@ -51,7 +50,7 @@ type Querier interface {
 	EnqueueProjectReportBuildTask(ctx context.Context, arg EnqueueProjectReportBuildTaskParams) (ProjectReportBuildTask, error)
 	// Selection task persistence.
 	EnqueueProjectSelectionEvaluationTask(ctx context.Context, arg EnqueueProjectSelectionEvaluationTaskParams) (ProjectSelectionEvaluationTask, error)
-	ExpireProjectResearchStates(ctx context.Context) (int64, error)
+	ExpireProjectResearchStatesForBlock(ctx context.Context, arg ExpireProjectResearchStatesForBlockParams) (int64, error)
 	ExpireProjectSwapPair(ctx context.Context, arg ExpireProjectSwapPairParams) (int64, error)
 	FailProjectDataCollectionSchedule(ctx context.Context, arg FailProjectDataCollectionScheduleParams) (int64, error)
 	FailProjectDataCollectionTask(ctx context.Context, arg FailProjectDataCollectionTaskParams) (int64, error)

@@ -10,7 +10,7 @@ import (
 	researchapp "github.com/useryege/athena/internal/token/research/application"
 )
 
-func (repository *SchedulerRepository) ApplyResearchPolicy(ctx context.Context, retryIntervals map[research.DataCollectionType]time.Duration, ttl time.Duration) error {
+func (repository *SchedulerRepository) ApplyResearchPolicy(ctx context.Context, retryIntervals map[research.DataCollectionType]time.Duration) error {
 	queries, err := repository.querier()
 	if err != nil {
 		return err
@@ -20,18 +20,12 @@ func (repository *SchedulerRepository) ApplyResearchPolicy(ctx context.Context, 
 			return fmt.Errorf("apply %s schedule policy: %w", dataType, err)
 		}
 	}
-	if _, err = queries.ApplyProjectResearchTTL(ctx, int64(ttl/time.Second)); err != nil {
-		return fmt.Errorf("apply research ttl: %w", err)
-	}
 	return nil
 }
 
-func (repository *SchedulerRepository) MaintainResearchLifecycle(ctx context.Context) error {
+func (repository *SchedulerRepository) MaintainResearchSchedules(ctx context.Context) error {
 	queries, err := repository.querier()
 	if err != nil {
-		return err
-	}
-	if _, err = queries.ExpireProjectResearchStates(ctx); err != nil {
 		return err
 	}
 	_, err = queries.PauseTerminalProjectDataCollectionSchedules(ctx)

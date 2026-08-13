@@ -255,7 +255,18 @@ const OverviewTab = (props: {detail: TokenProjectDetail}) => {
                         {label: 'Current report', value: formatExact(props.detail.researchState?.currentReportRevision)},
                         {label: 'Selection outcome', value: props.detail.currentReportEvaluation?.outcome || missing('No current report outcome')},
                         {label: 'Last evaluated', value: <TimeValue value={props.detail.researchState?.lastEvaluatedAt} />},
-                        {label: 'Expires', value: <TimeValue value={props.detail.researchState?.expiresAt} />}
+                        {label: 'Attention start block', value: formatBlockNumber(props.detail.researchState?.attentionStartBlockNumber)},
+                        {label: 'Attention start time', value: <TimeValue unixSeconds={props.detail.researchState?.attentionStartBlockTime} />},
+                        {label: 'Attention deadline', value: <TimeValue unixSeconds={props.detail.researchState?.attentionExpiryBlockTime} />},
+                        {
+                            label: 'Expired at block',
+                            value: props.detail.researchState?.status === 'expired' ? formatBlockNumber(props.detail.researchState.expiredBlockNumber) : missing('Not expired')
+                        },
+                        {
+                            label: 'Expired at time',
+                            value:
+                                props.detail.researchState?.status === 'expired' ? <TimeValue unixSeconds={props.detail.researchState.expiredBlockTime} /> : missing('Not expired')
+                        }
                     ]}
                 />
             </Section>
