@@ -214,16 +214,22 @@ func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjects
 		return nil, e
 	}
 	r, e := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{
-		ChainId:          req.GetChainId(),
-		CodeHash:         req.GetCodeHash(),
-		Contract:         req.GetContract(),
-		Page:             req.GetPage(),
-		PageSize:         req.GetPageSize(),
-		ProjectId:        req.GetProjectId(),
-		ResearchStatus:   req.GetResearchStatus(),
-		ReportState:      req.GetReportState(),
-		EvaluationStatus: req.GetEvaluationStatus(),
-		SelectionOutcome: req.GetSelectionOutcome(),
+		ChainId:                         req.GetChainId(),
+		CodeHash:                        req.GetCodeHash(),
+		Contract:                        req.GetContract(),
+		Page:                            req.GetPage(),
+		PageSize:                        req.GetPageSize(),
+		ProjectId:                       req.GetProjectId(),
+		ResearchStatus:                  req.GetResearchStatus(),
+		ReportState:                     req.GetReportState(),
+		EvaluationStatus:                req.GetEvaluationStatus(),
+		SelectionOutcome:                req.GetSelectionOutcome(),
+		ReportPairKind:                  req.GetReportPairKind(),
+		ReportPairRemoveLiquidityStates: req.GetReportPairRemoveLiquidityStates(),
+		ReportPairMintStates:            req.GetReportPairMintStates(),
+		ReportPairQuoteUsdtMin:          req.GetReportPairQuoteUsdtMin(),
+		ReportPairQuoteUsdtMax:          req.GetReportPairQuoteUsdtMax(),
+		ReportPairQuoteMissingStates:    req.GetReportPairQuoteMissingStates(),
 	})
 	if e != nil {
 		return nil, e

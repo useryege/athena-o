@@ -47,17 +47,123 @@ WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
     OR ($8::text = 'none' AND selection.id IS NULL)
     OR selection.outcome = $8::text
   )
+  AND (
+    COALESCE(cardinality($9::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY($9::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_remove_liquidity IS TRUE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY($9::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_remove_liquidity IS FALSE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY($9::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY($9::text[])
+        AND report.id IS NOT NULL
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_remove_liquidity IS NULL)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    COALESCE(cardinality($11::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY($11::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_mint IS TRUE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_mint IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY($11::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_mint IS FALSE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_mint IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY($11::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY($11::text[])
+        AND report.id IS NOT NULL
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_mint IS NULL)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_mint IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    (
+      $12::numeric IS NULL
+      AND $13::numeric IS NULL
+      AND COALESCE(cardinality($14::text[]), 0) = 0
+    )
+    OR (
+      (
+        ($12::numeric IS NOT NULL OR $13::numeric IS NOT NULL)
+        AND $10::text = 'weth'
+        AND report.weth_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          $12::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int >= $12::numeric
+        )
+        AND (
+          $13::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int <= $13::numeric
+        )
+      )
+      OR (
+        ($12::numeric IS NOT NULL OR $13::numeric IS NOT NULL)
+        AND $10::text = 'usdt'
+        AND report.usdt_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          $12::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int >= $12::numeric
+        )
+        AND (
+          $13::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int <= $13::numeric
+        )
+      )
+      OR ('no_report' = ANY($14::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY($14::text[])
+        AND report.id IS NOT NULL
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_quote_usdt_value_int IS NULL)
+          OR ($10::text = 'usdt' AND report.usdt_pair_quote_usdt_value_int IS NULL)
+        )
+      )
+    )
+  )
 `
 
 type CountProjectListItemsParams struct {
-	ChainID          int64
-	ProjectID        int64
-	CodeHash         []byte
-	Contract         []byte
-	ResearchStatus   string
-	ReportState      string
-	EvaluationStatus string
-	SelectionOutcome string
+	ChainID                         int64
+	ProjectID                       int64
+	CodeHash                        []byte
+	Contract                        []byte
+	ResearchStatus                  string
+	ReportState                     string
+	EvaluationStatus                string
+	SelectionOutcome                string
+	ReportPairRemoveLiquidityStates []string
+	ReportPairKind                  string
+	ReportPairMintStates            []string
+	ReportPairQuoteUsdtMin          pgtype.Numeric
+	ReportPairQuoteUsdtMax          pgtype.Numeric
+	ReportPairQuoteMissingStates    []string
 }
 
 // Project-centered current read model.
@@ -71,6 +177,12 @@ func (q *Queries) CountProjectListItems(ctx context.Context, arg CountProjectLis
 		arg.ReportState,
 		arg.EvaluationStatus,
 		arg.SelectionOutcome,
+		arg.ReportPairRemoveLiquidityStates,
+		arg.ReportPairKind,
+		arg.ReportPairMintStates,
+		arg.ReportPairQuoteUsdtMin,
+		arg.ReportPairQuoteUsdtMax,
+		arg.ReportPairQuoteMissingStates,
 	)
 	var column_1 int64
 	err := row.Scan(&column_1)
@@ -168,21 +280,127 @@ WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
     OR ($8::text = 'none' AND selection.id IS NULL)
     OR selection.outcome = $8::text
   )
+  AND (
+    COALESCE(cardinality($9::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY($9::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_remove_liquidity IS TRUE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY($9::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_remove_liquidity IS FALSE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY($9::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY($9::text[])
+        AND report.id IS NOT NULL
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_remove_liquidity IS NULL)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    COALESCE(cardinality($11::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY($11::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_mint IS TRUE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_mint IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY($11::text[])
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_mint IS FALSE)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_mint IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY($11::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY($11::text[])
+        AND report.id IS NOT NULL
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_is_mint IS NULL)
+          OR ($10::text = 'usdt' AND report.usdt_pair_is_mint IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    (
+      $12::numeric IS NULL
+      AND $13::numeric IS NULL
+      AND COALESCE(cardinality($14::text[]), 0) = 0
+    )
+    OR (
+      (
+        ($12::numeric IS NOT NULL OR $13::numeric IS NOT NULL)
+        AND $10::text = 'weth'
+        AND report.weth_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          $12::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int >= $12::numeric
+        )
+        AND (
+          $13::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int <= $13::numeric
+        )
+      )
+      OR (
+        ($12::numeric IS NOT NULL OR $13::numeric IS NOT NULL)
+        AND $10::text = 'usdt'
+        AND report.usdt_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          $12::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int >= $12::numeric
+        )
+        AND (
+          $13::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int <= $13::numeric
+        )
+      )
+      OR ('no_report' = ANY($14::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY($14::text[])
+        AND report.id IS NOT NULL
+        AND (
+          ($10::text = 'weth' AND report.weth_pair_quote_usdt_value_int IS NULL)
+          OR ($10::text = 'usdt' AND report.usdt_pair_quote_usdt_value_int IS NULL)
+        )
+      )
+    )
+  )
 ORDER BY project.created_at DESC, project.id DESC
-LIMIT $10 OFFSET $9
+LIMIT $16 OFFSET $15
 `
 
 type ListProjectListItemsParams struct {
-	ChainID          int64
-	ProjectID        int64
-	CodeHash         []byte
-	Contract         []byte
-	ResearchStatus   string
-	ReportState      string
-	EvaluationStatus string
-	SelectionOutcome string
-	Offset           int32
-	Limit            int32
+	ChainID                         int64
+	ProjectID                       int64
+	CodeHash                        []byte
+	Contract                        []byte
+	ResearchStatus                  string
+	ReportState                     string
+	EvaluationStatus                string
+	SelectionOutcome                string
+	ReportPairRemoveLiquidityStates []string
+	ReportPairKind                  string
+	ReportPairMintStates            []string
+	ReportPairQuoteUsdtMin          pgtype.Numeric
+	ReportPairQuoteUsdtMax          pgtype.Numeric
+	ReportPairQuoteMissingStates    []string
+	Offset                          int32
+	Limit                           int32
 }
 
 type ListProjectListItemsRow struct {
@@ -236,6 +454,12 @@ func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListI
 		arg.ReportState,
 		arg.EvaluationStatus,
 		arg.SelectionOutcome,
+		arg.ReportPairRemoveLiquidityStates,
+		arg.ReportPairKind,
+		arg.ReportPairMintStates,
+		arg.ReportPairQuoteUsdtMin,
+		arg.ReportPairQuoteUsdtMax,
+		arg.ReportPairQuoteMissingStates,
 		arg.Offset,
 		arg.Limit,
 	)

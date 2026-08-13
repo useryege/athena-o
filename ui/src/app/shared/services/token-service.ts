@@ -1200,6 +1200,12 @@ export class TokenService {
             reportState?: string;
             evaluationStatus?: string;
             selectionOutcome?: string;
+            reportPairKind?: string;
+            reportPairRemoveLiquidityStates?: string[];
+            reportPairMintStates?: string[];
+            reportPairQuoteUSDTMin?: string;
+            reportPairQuoteUSDTMax?: string;
+            reportPairQuoteMissingStates?: string[];
         } = {}
     ): Promise<PagedResponse<TokenProjectListItem>> & {abort?: () => void} {
         const req = requests.get('/tokens/projects').query({
@@ -1211,6 +1217,12 @@ export class TokenService {
             report_state: options.reportState || undefined,
             evaluation_status: options.evaluationStatus || undefined,
             selection_outcome: options.selectionOutcome || undefined,
+            report_pair_kind: options.reportPairKind || undefined,
+            report_pair_remove_liquidity_states: options.reportPairRemoveLiquidityStates?.length ? options.reportPairRemoveLiquidityStates : undefined,
+            report_pair_mint_states: options.reportPairMintStates?.length ? options.reportPairMintStates : undefined,
+            report_pair_quote_usdt_min: options.reportPairQuoteUSDTMin || undefined,
+            report_pair_quote_usdt_max: options.reportPairQuoteUSDTMax || undefined,
+            report_pair_quote_missing_states: options.reportPairQuoteMissingStates?.length ? options.reportPairQuoteMissingStates : undefined,
             page: options.page,
             page_size: options.pageSize
         });

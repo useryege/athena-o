@@ -34,6 +34,106 @@ WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id
     sqlc.arg('selection_outcome')::text = ''
     OR (sqlc.arg('selection_outcome')::text = 'none' AND selection.id IS NULL)
     OR selection.outcome = sqlc.arg('selection_outcome')::text
+  )
+  AND (
+    COALESCE(cardinality(sqlc.arg('report_pair_remove_liquidity_states')::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_remove_liquidity IS TRUE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_remove_liquidity IS FALSE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[])
+        AND report.id IS NOT NULL
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_remove_liquidity IS NULL)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    COALESCE(cardinality(sqlc.arg('report_pair_mint_states')::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY(sqlc.arg('report_pair_mint_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_mint IS TRUE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_mint IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY(sqlc.arg('report_pair_mint_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_mint IS FALSE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_mint IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY(sqlc.arg('report_pair_mint_states')::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY(sqlc.arg('report_pair_mint_states')::text[])
+        AND report.id IS NOT NULL
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_mint IS NULL)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_mint IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    (
+      sqlc.narg('report_pair_quote_usdt_min')::numeric IS NULL
+      AND sqlc.narg('report_pair_quote_usdt_max')::numeric IS NULL
+      AND COALESCE(cardinality(sqlc.arg('report_pair_quote_missing_states')::text[]), 0) = 0
+    )
+    OR (
+      (
+        (sqlc.narg('report_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('report_pair_quote_usdt_max')::numeric IS NOT NULL)
+        AND sqlc.arg('report_pair_kind')::text = 'weth'
+        AND report.weth_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          sqlc.narg('report_pair_quote_usdt_min')::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int >= sqlc.narg('report_pair_quote_usdt_min')::numeric
+        )
+        AND (
+          sqlc.narg('report_pair_quote_usdt_max')::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int <= sqlc.narg('report_pair_quote_usdt_max')::numeric
+        )
+      )
+      OR (
+        (sqlc.narg('report_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('report_pair_quote_usdt_max')::numeric IS NOT NULL)
+        AND sqlc.arg('report_pair_kind')::text = 'usdt'
+        AND report.usdt_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          sqlc.narg('report_pair_quote_usdt_min')::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int >= sqlc.narg('report_pair_quote_usdt_min')::numeric
+        )
+        AND (
+          sqlc.narg('report_pair_quote_usdt_max')::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int <= sqlc.narg('report_pair_quote_usdt_max')::numeric
+        )
+      )
+      OR ('no_report' = ANY(sqlc.arg('report_pair_quote_missing_states')::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY(sqlc.arg('report_pair_quote_missing_states')::text[])
+        AND report.id IS NOT NULL
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_quote_usdt_value_int IS NULL)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_quote_usdt_value_int IS NULL)
+        )
+      )
+    )
   );
 
 -- name: ListProjectListItems :many
@@ -126,6 +226,106 @@ WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id
     sqlc.arg('selection_outcome')::text = ''
     OR (sqlc.arg('selection_outcome')::text = 'none' AND selection.id IS NULL)
     OR selection.outcome = sqlc.arg('selection_outcome')::text
+  )
+  AND (
+    COALESCE(cardinality(sqlc.arg('report_pair_remove_liquidity_states')::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_remove_liquidity IS TRUE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_remove_liquidity IS FALSE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY(sqlc.arg('report_pair_remove_liquidity_states')::text[])
+        AND report.id IS NOT NULL
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_remove_liquidity IS NULL)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_remove_liquidity IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    COALESCE(cardinality(sqlc.arg('report_pair_mint_states')::text[]), 0) = 0
+    OR (
+      (
+        'detected' = ANY(sqlc.arg('report_pair_mint_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_mint IS TRUE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_mint IS TRUE)
+        )
+      )
+      OR (
+        'clear' = ANY(sqlc.arg('report_pair_mint_states')::text[])
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_mint IS FALSE)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_mint IS FALSE)
+        )
+      )
+      OR ('no_report' = ANY(sqlc.arg('report_pair_mint_states')::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY(sqlc.arg('report_pair_mint_states')::text[])
+        AND report.id IS NOT NULL
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_is_mint IS NULL)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_is_mint IS NULL)
+        )
+      )
+    )
+  )
+  AND (
+    (
+      sqlc.narg('report_pair_quote_usdt_min')::numeric IS NULL
+      AND sqlc.narg('report_pair_quote_usdt_max')::numeric IS NULL
+      AND COALESCE(cardinality(sqlc.arg('report_pair_quote_missing_states')::text[]), 0) = 0
+    )
+    OR (
+      (
+        (sqlc.narg('report_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('report_pair_quote_usdt_max')::numeric IS NOT NULL)
+        AND sqlc.arg('report_pair_kind')::text = 'weth'
+        AND report.weth_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          sqlc.narg('report_pair_quote_usdt_min')::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int >= sqlc.narg('report_pair_quote_usdt_min')::numeric
+        )
+        AND (
+          sqlc.narg('report_pair_quote_usdt_max')::numeric IS NULL
+          OR report.weth_pair_quote_usdt_value_int <= sqlc.narg('report_pair_quote_usdt_max')::numeric
+        )
+      )
+      OR (
+        (sqlc.narg('report_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('report_pair_quote_usdt_max')::numeric IS NOT NULL)
+        AND sqlc.arg('report_pair_kind')::text = 'usdt'
+        AND report.usdt_pair_quote_usdt_value_int IS NOT NULL
+        AND (
+          sqlc.narg('report_pair_quote_usdt_min')::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int >= sqlc.narg('report_pair_quote_usdt_min')::numeric
+        )
+        AND (
+          sqlc.narg('report_pair_quote_usdt_max')::numeric IS NULL
+          OR report.usdt_pair_quote_usdt_value_int <= sqlc.narg('report_pair_quote_usdt_max')::numeric
+        )
+      )
+      OR ('no_report' = ANY(sqlc.arg('report_pair_quote_missing_states')::text[]) AND report.id IS NULL)
+      OR (
+        'risk_unavailable' = ANY(sqlc.arg('report_pair_quote_missing_states')::text[])
+        AND report.id IS NOT NULL
+        AND (
+          (sqlc.arg('report_pair_kind')::text = 'weth' AND report.weth_pair_quote_usdt_value_int IS NULL)
+          OR (sqlc.arg('report_pair_kind')::text = 'usdt' AND report.usdt_pair_quote_usdt_value_int IS NULL)
+        )
+      )
+    )
   )
 ORDER BY project.created_at DESC, project.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');

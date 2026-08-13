@@ -80,8 +80,10 @@ raw JSON for history consumers.
 
 1. The UI requests one page through `ListProjects`. Accepted filters are chain,
    project ID, contract, code hash, research status, Report state, Evaluation
-   status, and trusted Selection outcome. Empty strings mean no filter; the API
-   rejects values outside the public status sets before querying PostgreSQL.
+   status, trusted Selection outcome, and one Report Pair's Remove Liquidity,
+   Mint, and Quote USDT projection. Pair filtering requires `weth` or `usdt`.
+   Empty strings and empty state lists mean no filter; the API rejects values
+   outside the public status sets before querying PostgreSQL.
 2. `ProjectViewRepository.ListProjectsPage` opens a read-only, repeatable-read
    transaction. `CountProjectListItems` and `ListProjectListItems` execute with
    identical filters inside that transaction, so `total` and rows describe the
@@ -103,7 +105,13 @@ raw JSON for history consumers.
    Pending, running, and failed tasks therefore expose no old outcome.
 5. `report_state=none`, `evaluation_status=none`, and
    `selection_outcome=none` match missing current state rather than a stored
-   literal. All other status filters are exact. Rows are ordered by
+   literal. Report Pair boolean filters accept `detected`, `clear`,
+   `no_report`, and `risk_unavailable`; Quote accepts inclusive non-negative
+   integer bounds plus the two missing states. States within one field are ORed,
+   the numeric range is ORed with selected Quote missing states, and the three
+   Pair fields are ANDed. `no_report` requires no current Report, while
+   `risk_unavailable` requires a Report whose selected Pair projection is
+   absent. All other status filters are exact. Rows are ordered by
    `project.created_at DESC, project.id DESC`.
 6. Each WETH/WBNB or USDT Pair risk projection is independently either absent
    or contains all five fields. The outer risk summary is absent only when both
@@ -117,9 +125,9 @@ The Projects page renders the same response as two projections. `Overview` is
 the default URL state; `view=report-risk` selects the Report Risk projection.
 The Overview table and card omit transaction index and code hash from their
 display, while code hash remains an accepted list filter. `view` never reaches
-the API and is not part of the request dependency, so switching projections
-preserves filters, page, page size, total, and the loaded rows without issuing
-the same request again.
+the API. Report Pair filters remain encoded in the URL when Overview is active
+but are not sent to the API, so switching projections preserves both Pair
+filter drafts while Overview returns the global-filter result set.
 
 Every desktop Projects projection renders the Ave logo as its fixed first
 column. Overview and Report Risk compact cards place the same logo at the start
@@ -132,27 +140,35 @@ split the desktop projection into `Status`, `WETH / WBNB`, and `USDT` tables.
 Status is canonical when the parameter is absent; the other canonical values
 are `wrapped-native` and `usdt`. Invalid values normalize to Status, and
 `riskSection` is removed outside
-`view=report-risk`. Changing sections preserves filters, page, page size,
-total, and rows because `riskSection` is not part of the list request or its
-dependency. Clearing filters likewise retains the active Report Risk section
-and page size.
+`view=report-risk`. The URL stores independent `weth*` and `usdt*` Pair filter
+parameters. Only the active Pair section's non-empty filter is translated to
+the generic `report_pair_*` request fields; Status applies neither Pair filter.
+Changing sections preserves both drafts and page size, but can select a
+different server request when the destination Pair has an active filter.
+Clearing filters retains the active Report Risk section and page size while
+removing global filters and both Pair drafts.
 
 The desktop Status section groups research, Report, Evaluation, and trusted
 Selection fields into summary columns; its Evaluation error can be expanded
 with a keyboard-operable control. Each Pair section presents Report revision
 and completeness context followed by Created, Remove Liquidity, Mint, Quote
-USDT, and Last Swap. The tables fit the available desktop surface and do not
+USDT, and Last Swap. Remove Liquidity, Mint, and Quote USDT expose controlled
+server-filter dropdowns in the desktop header; they never filter only the
+currently loaded page. The tables fit the available desktop surface and do not
 render the former combined horizontal risk matrix. At viewport widths up to
 900 pixels, Overview uses semantic project cards. Report Risk switches to its
-semantic cards at 1100 pixels; each card contains the complete Status data and
-all five fields for both wrapped-native and USDT Pair snapshots. Both compact
-layouts retain the same rows and paginator as their desktop projections.
+semantic cards at 1100 pixels; the Risk section control remains available and
+the active Pair's equivalent filters move above the card list. Each card still
+contains the complete Status data and all five fields for both wrapped-native
+and USDT Pair snapshots. Both compact layouts retain the same rows and
+paginator as their desktop projections.
 
 The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
 key contains only the server request fields: page, page size, chain, project,
 contract, code hash, research status, Report state, Evaluation status, and
-trusted Selection outcome. Presentation-only `view` and `riskSection` values
-are excluded. A successful list response is fresh for 30 seconds. A fresh hit
+trusted Selection outcome, plus the effective Report Pair kind and filters.
+Presentation-only `view`, `riskSection`, and inactive Pair drafts are excluded.
+A successful list response is fresh for 30 seconds. A fresh hit
 renders synchronously without a request; a stale hit keeps its rows, total, and
 paginator visible while one deduplicated request refreshes the key in the
 background. Runtime configuration uses the same mechanism with a fixed key and
@@ -427,8 +443,9 @@ There is no runtime configuration specific to this read model.
 - The aggregate endpoint does not mutate collection, report, selection, or
   transaction state.
 - Projects cache identity is derived only from list request fields. UI view and
-  risk section changes cannot create a second copy or a duplicate request for
-  the same server page.
+  risk section values and inactive Pair drafts cannot create a second copy of
+  the same server page; selecting a different effective Pair filter creates the
+  corresponding request identity.
 - Cached project data never crosses a login-session boundary. Return scroll
   snapshots contain only URL, history-entry identity, a random return marker,
   and scroll position.
@@ -470,10 +487,12 @@ The capability is read-only, so retrying cannot create duplicate state. Invalid
 IDs, ranges, data types, addresses, and receipt statuses return gRPC validation
 errors that the HTTP gateway maps to request failures.
 
-Invalid project-list status filters return `InvalidArgument` before a database
-read. A malformed stored Pair risk projection fails the page or revision request
-instead of presenting a partial matrix. The repeatable-read page transaction is
-rolled back on count, list, mapping, or context failure and is safe to retry.
+Invalid project-list status or Pair filters, missing Pair kind, malformed Quote
+bounds, and a minimum above the maximum return `InvalidArgument` before a
+database read. A malformed stored Pair risk projection fails the page or
+revision request instead of presenting a partial matrix. The repeatable-read
+page transaction is rolled back on count, list, mapping, or context failure and
+is safe to retry.
 
 A missing project renders a dedicated Not Found state. Failure of the aggregate
 request leaves any previously loaded aggregate visible through the shared
@@ -507,9 +526,9 @@ or updated timestamps for diagnosis.
 - [ ] The unified project page and six project-scoped endpoints remain aligned with the `projects` permission.
 - [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
-- [ ] Projects Overview and Report Risk remain two projections of one request; `view` and `riskSection` preserve canonical URL state without becoming request dependencies.
+- [ ] Projects Overview and Report Risk preserve canonical URL state; only the active Report Risk Pair's non-empty filter becomes a request dependency.
 - [ ] Overview omits transaction index and code hash from tables and cards while code hash remains filterable.
-- [ ] Desktop Report Risk sections avoid a combined horizontal matrix, and compact Report Risk cards retain complete Status and both Pair projections.
+- [ ] Desktop Pair columns use server-backed filters, and compact Report Risk cards retain complete Status and both Pair projections with equivalent controls above the list.
 - [ ] Report risk absence remains distinguishable from safe boolean values in lists, detail, and revision history.
 - [ ] Aggregate composition matches the typed public contract and observation V1 schemas.
 - [ ] Precision-sensitive values remain strings across the API and UI boundary.

@@ -34,30 +34,42 @@ func (repository *ProjectViewRepository) ListProjectsPage(
 
 	queries := tokensqlc.New(tx)
 	countParams := tokensqlc.CountProjectListItemsParams{
-		ChainID:          filter.ChainID,
-		ProjectID:        filter.ProjectID,
-		CodeHash:         optionalHashBytes(filter.CodeHash),
-		Contract:         optionalAddressBytes(filter.Contract),
-		ResearchStatus:   string(filter.ResearchStatus),
-		ReportState:      filter.ReportState,
-		EvaluationStatus: string(filter.EvaluationStatus),
-		SelectionOutcome: string(filter.SelectionOutcome),
+		ChainID:                         filter.ChainID,
+		ProjectID:                       filter.ProjectID,
+		CodeHash:                        optionalHashBytes(filter.CodeHash),
+		Contract:                        optionalAddressBytes(filter.Contract),
+		ResearchStatus:                  string(filter.ResearchStatus),
+		ReportState:                     filter.ReportState,
+		EvaluationStatus:                string(filter.EvaluationStatus),
+		SelectionOutcome:                string(filter.SelectionOutcome),
+		ReportPairKind:                  string(filter.ReportPairKind),
+		ReportPairRemoveLiquidityStates: filter.ReportPairRemoveLiquidityStates,
+		ReportPairMintStates:            filter.ReportPairMintStates,
+		ReportPairQuoteUsdtMin:          nullableNumericFromBigInt(filter.ReportPairQuoteUSDTMin),
+		ReportPairQuoteUsdtMax:          nullableNumericFromBigInt(filter.ReportPairQuoteUSDTMax),
+		ReportPairQuoteMissingStates:    filter.ReportPairQuoteMissingStates,
 	}
 	total, err := queries.CountProjectListItems(ctx, countParams)
 	if err != nil {
 		return nil, fmt.Errorf("count project list items: %w", err)
 	}
 	rows, err := queries.ListProjectListItems(ctx, tokensqlc.ListProjectListItemsParams{
-		ChainID:          countParams.ChainID,
-		ProjectID:        countParams.ProjectID,
-		CodeHash:         countParams.CodeHash,
-		Contract:         countParams.Contract,
-		ResearchStatus:   countParams.ResearchStatus,
-		ReportState:      countParams.ReportState,
-		EvaluationStatus: countParams.EvaluationStatus,
-		SelectionOutcome: countParams.SelectionOutcome,
-		Offset:           offset,
-		Limit:            pageSize,
+		ChainID:                         countParams.ChainID,
+		ProjectID:                       countParams.ProjectID,
+		CodeHash:                        countParams.CodeHash,
+		Contract:                        countParams.Contract,
+		ResearchStatus:                  countParams.ResearchStatus,
+		ReportState:                     countParams.ReportState,
+		EvaluationStatus:                countParams.EvaluationStatus,
+		SelectionOutcome:                countParams.SelectionOutcome,
+		ReportPairKind:                  countParams.ReportPairKind,
+		ReportPairRemoveLiquidityStates: countParams.ReportPairRemoveLiquidityStates,
+		ReportPairMintStates:            countParams.ReportPairMintStates,
+		ReportPairQuoteUsdtMin:          countParams.ReportPairQuoteUsdtMin,
+		ReportPairQuoteUsdtMax:          countParams.ReportPairQuoteUsdtMax,
+		ReportPairQuoteMissingStates:    countParams.ReportPairQuoteMissingStates,
+		Offset:                          offset,
+		Limit:                           pageSize,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("list project list items: %w", err)

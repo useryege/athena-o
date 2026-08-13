@@ -18,14 +18,20 @@ type WalletTransactionCount struct {
 }
 
 type ProjectListFilter struct {
-	ChainID          int64
-	ProjectID        int64
-	CodeHash         shared.Hash
-	Contract         shared.Address
-	ResearchStatus   research.ProjectResearchStatus
-	ReportState      string
-	EvaluationStatus selection.TaskStatus
-	SelectionOutcome selection.SelectionOutcome
+	ChainID                         int64
+	ProjectID                       int64
+	CodeHash                        shared.Hash
+	Contract                        shared.Address
+	ResearchStatus                  research.ProjectResearchStatus
+	ReportState                     string
+	EvaluationStatus                selection.TaskStatus
+	SelectionOutcome                selection.SelectionOutcome
+	ReportPairKind                  swap.PairKind
+	ReportPairRemoveLiquidityStates []string
+	ReportPairMintStates            []string
+	ReportPairQuoteUSDTMin          *big.Int
+	ReportPairQuoteUSDTMax          *big.Int
+	ReportPairQuoteMissingStates    []string
 }
 
 type ProjectPairRiskSummary struct {

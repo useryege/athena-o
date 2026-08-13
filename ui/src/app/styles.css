@@ -692,6 +692,80 @@ body::-webkit-scrollbar-thumb,
     min-width: 0;
 }
 
+.projects-pair-filter-dropdown {
+    display: grid;
+    gap: 12px;
+    min-width: 248px;
+    max-width: min(360px, calc(100vw - 32px));
+    margin: 0;
+    padding: 14px;
+    border: 0;
+    background: var(--athena-panel-solid);
+}
+
+.projects-pair-filter-dropdown legend,
+.projects-compact-pair-filters legend {
+    padding: 0;
+    color: var(--athena-text);
+    font-weight: 700;
+}
+
+.projects-pair-filter-dropdown__choices {
+    display: grid;
+    gap: 8px;
+}
+
+.projects-pair-filter-dropdown__choices .ant-checkbox-wrapper {
+    margin-inline-start: 0;
+}
+
+.projects-pair-filter-dropdown--quote > label,
+.projects-compact-pair-filters__grid > label {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.projects-pair-filter-dropdown__actions,
+.projects-compact-pair-filters__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.projects-compact-pair-filter-region {
+    display: none;
+}
+
+.projects-compact-pair-filters {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.projects-compact-pair-filters__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+}
+
+.projects-compact-pair-filters__grid .ant-select,
+.projects-compact-pair-filters__grid .ant-input {
+    width: 100%;
+    min-width: 0;
+}
+
 .projects-token {
     display: grid;
     min-width: 0;
@@ -3931,8 +4005,8 @@ body::-webkit-scrollbar-thumb,
         min-width: 0;
     }
 
-    .projects-report-risk-section-control {
-        display: none;
+    .projects-compact-pair-filter-region {
+        display: block;
     }
 
     .projects-report-risk-table-region .resource-table.ant-table-wrapper {
@@ -3998,7 +4072,16 @@ body::-webkit-scrollbar-thumb,
         flex-direction: column;
     }
 
+    .projects-report-risk-section-control {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
     .projects-filter-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .projects-compact-pair-filters__grid {
         grid-template-columns: minmax(0, 1fr);
     }
 
