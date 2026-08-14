@@ -661,7 +661,38 @@ body::-webkit-scrollbar-thumb,
 
 .projects-controls {
     display: grid;
-    gap: 14px;
+    gap: 12px;
+}
+
+.projects-controls__toolbar,
+.projects-controls__selectors,
+.projects-controls__actions,
+.projects-filter-summary,
+.projects-filter-summary__items,
+.projects-compact-sort-control {
+    display: flex;
+    align-items: center;
+}
+
+.projects-controls__toolbar {
+    justify-content: space-between;
+    gap: 14px 24px;
+    flex-wrap: wrap;
+}
+
+.projects-controls__selectors {
+    gap: 12px 24px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.projects-controls__actions {
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+.projects-controls__actions .ant-badge {
+    display: inline-flex;
 }
 
 .projects-view-control {
@@ -681,46 +712,155 @@ body::-webkit-scrollbar-thumb,
     flex: 0 0 auto;
 }
 
-.projects-filter-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(180px, 1fr));
-    gap: 10px;
+.projects-risk-section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.projects-filter-grid > * {
-    width: 100%;
+.projects-risk-section-label__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentcolor;
+    box-shadow: 0 0 0 2px color-mix(in srgb, currentcolor 16%, transparent);
+}
+
+.projects-filter-summary {
+    align-items: flex-start;
+    gap: 10px;
     min-width: 0;
 }
 
-.projects-pair-filter-dropdown {
-    display: grid;
-    gap: 12px;
-    min-width: 248px;
-    max-width: min(360px, calc(100vw - 32px));
-    margin: 0;
-    padding: 14px;
-    border: 0;
-    background: var(--athena-panel-solid);
-}
-
-.projects-pair-filter-dropdown legend,
-.projects-compact-pair-filters legend {
-    padding: 0;
-    color: var(--athena-text);
+.projects-filter-summary > .ant-typography {
+    flex: 0 0 auto;
+    padding-top: 2px;
+    font-size: 12px;
     font-weight: 700;
 }
 
-.projects-pair-filter-dropdown__choices {
-    display: grid;
+.projects-filter-summary__items {
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.projects-filter-summary__items .ant-tag {
+    display: inline-flex;
+    align-items: center;
+    max-width: min(360px, 100%);
+    margin-inline-end: 0;
+}
+
+.projects-filter-summary__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.projects-filter-summary__items .ant-tag-close-icon {
+    flex: 0 0 auto;
+}
+
+.projects-compact-sort-control {
+    display: none;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
-.projects-pair-filter-dropdown__choices .ant-checkbox-wrapper {
-    margin-inline-start: 0;
+.projects-compact-sort-control > .ant-typography {
+    flex: 0 0 auto;
 }
 
-.projects-pair-filter-dropdown--quote > label,
-.projects-compact-pair-filters__grid > label {
+.projects-compact-sort-control .ant-select {
+    width: min(220px, 100%);
+}
+
+.projects-filters-modal .ant-modal-body {
+    max-height: min(620px, calc(100vh - 220px));
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
+.projects-filters-modal .ant-tabs-nav {
+    margin-bottom: 18px;
+}
+
+.projects-filters-modal__tab-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.projects-filters-modal__tab-label--error {
+    color: var(--athena-red);
+}
+
+.projects-filters-modal__tab-count,
+.projects-filters-modal__tab-state,
+.projects-filters-modal__tab-error {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--athena-border);
+    border-radius: 999px;
+    background: var(--athena-bg-soft);
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.projects-filters-modal__tab-state {
+    color: var(--athena-blue);
+}
+
+.projects-filters-modal__tab-error {
+    border-color: color-mix(in srgb, var(--athena-red) 40%, var(--athena-border));
+    color: var(--athena-red);
+}
+
+.projects-filters-modal__content {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.projects-filters-modal__section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.projects-filters-modal__section-heading--subsection {
+    padding-top: 16px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.projects-filters-modal__section-heading h4 {
+    margin: 0 0 2px;
+    font-size: 15px;
+}
+
+.projects-filters-modal__section-heading .ant-typography-secondary {
+    font-size: 12px;
+}
+
+.projects-filters-modal__field-grid,
+.projects-filters-modal__pair-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+    min-width: 0;
+}
+
+.projects-filters-modal__field {
     display: grid;
     gap: 6px;
     min-width: 0;
@@ -729,41 +869,83 @@ body::-webkit-scrollbar-thumb,
     font-weight: 700;
 }
 
-.projects-pair-filter-dropdown__actions,
-.projects-compact-pair-filters__actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+.projects-filters-modal__field .ant-select,
+.projects-filters-modal__field .ant-input,
+.projects-filters-modal__field .ant-input-number {
+    width: 100%;
+    min-width: 0;
 }
 
-.projects-compact-pair-filter-region {
-    display: none;
-}
-
-.projects-compact-pair-filters {
-    display: grid;
-    gap: 12px;
+.projects-filters-modal__choice-field,
+.projects-filters-modal__quote-field {
     min-width: 0;
     margin: 0;
     padding: 14px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
-    background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    background: var(--athena-bg-soft);
 }
 
-.projects-compact-pair-filters__grid {
+.projects-filters-modal__choice-field legend,
+.projects-filters-modal__quote-field legend {
+    padding: 0 5px;
+    color: var(--athena-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.projects-filters-modal__choice-field .ant-checkbox-group,
+.projects-filters-modal__missing-field .ant-checkbox-group {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
 }
 
-.projects-compact-pair-filters__grid .ant-select,
-.projects-compact-pair-filters__grid .ant-input {
-    width: 100%;
-    min-width: 0;
+.projects-filters-modal__choice-field .ant-checkbox-wrapper,
+.projects-filters-modal__missing-field .ant-checkbox-wrapper {
+    margin-inline-start: 0;
+}
+
+.projects-filters-modal__quote-field {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: 14px;
+}
+
+.projects-filters-modal__quote-range {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    gap: 12px;
+}
+
+.projects-filters-modal__range-divider {
+    padding-bottom: 7px;
+    color: var(--athena-muted);
+}
+
+.projects-filters-modal__missing-field {
+    display: grid;
+    gap: 8px;
+}
+
+.projects-filters-modal__scope-note {
+    display: block;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--athena-border);
+    font-size: 12px;
+}
+
+.projects-filters-modal__footer,
+.projects-filters-modal__footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.projects-filters-modal__footer {
+    justify-content: space-between;
 }
 
 .projects-token {
@@ -4005,8 +4187,8 @@ body::-webkit-scrollbar-thumb,
         min-width: 0;
     }
 
-    .projects-compact-pair-filter-region {
-        display: block;
+    .projects-compact-sort-control {
+        display: flex;
     }
 
     .projects-report-risk-table-region .resource-table.ant-table-wrapper {
@@ -4077,12 +4259,18 @@ body::-webkit-scrollbar-thumb,
         flex-direction: column;
     }
 
-    .projects-filter-grid {
-        grid-template-columns: minmax(0, 1fr);
+    .projects-controls__toolbar,
+    .projects-controls__selectors {
+        align-items: flex-start;
     }
 
-    .projects-compact-pair-filters__grid {
-        grid-template-columns: minmax(0, 1fr);
+    .projects-controls__selectors {
+        width: 100%;
+    }
+
+    .projects-filter-summary {
+        flex-direction: column;
+        gap: 6px;
     }
 
     .resource-table-region--compact .resource-table.ant-table-wrapper {
@@ -4211,10 +4399,6 @@ body::-webkit-scrollbar-thumb,
         justify-content: flex-start;
     }
 
-    .projects-filter-grid {
-        grid-template-columns: repeat(3, minmax(180px, 1fr));
-    }
-
     .project-detail-kpis {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -4265,11 +4449,78 @@ body::-webkit-scrollbar-thumb,
         padding-inline: 14px;
     }
 
-    .projects-controls .projects-filter-grid,
     .project-detail .project-detail-kpis,
     .project-detail-tab .project-risk-grid,
     .project-detail-tab .project-collection-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .projects-controls__toolbar,
+    .projects-controls__selectors {
+        flex-direction: column;
+    }
+
+    .projects-controls__actions {
+        width: 100%;
+    }
+
+    .projects-controls__actions .ant-badge,
+    .projects-controls__actions .ant-btn {
+        flex: 1 1 0;
+    }
+
+    .projects-compact-sort-control {
+        align-items: stretch;
+    }
+
+    .projects-compact-sort-control > .ant-typography {
+        width: 100%;
+    }
+
+    .projects-compact-sort-control .ant-select {
+        width: auto;
+        min-width: 0;
+        flex: 1 1 180px;
+    }
+
+    .projects-filters-modal.ant-modal {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px);
+        margin: 12px auto;
+    }
+
+    .projects-filters-modal .ant-modal-content {
+        display: flex;
+        max-height: calc(100vh - 24px);
+        flex-direction: column;
+    }
+
+    .projects-filters-modal .ant-modal-body {
+        max-height: none;
+        min-height: 0;
+        flex: 1 1 auto;
+    }
+
+    .projects-filters-modal__field-grid,
+    .projects-filters-modal__pair-grid,
+    .projects-filters-modal__choice-field .ant-checkbox-group,
+    .projects-filters-modal__missing-field .ant-checkbox-group,
+    .projects-filters-modal__quote-range {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .projects-filters-modal__quote-field {
+        grid-column: auto;
+    }
+
+    .projects-filters-modal__range-divider {
+        display: none;
+    }
+
+    .projects-filters-modal__section-heading {
+        align-items: flex-start;
     }
 }
 

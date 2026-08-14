@@ -1,40 +1,48 @@
-import {FilterFilled} from '@ant-design/icons';
-import {Button, Card, Checkbox, Input, InputNumber, Select, Tag, Typography} from 'antd';
-import type {ColumnsType} from 'antd/es/table';
-import type {FilterDropdownProps} from 'antd/es/table/interface';
+import {FilterOutlined, SortAscendingOutlined, SortDescendingOutlined} from '@ant-design/icons';
+import {Badge, Button, Card, Select, Tag, Tooltip, Typography} from 'antd';
+import type {ColumnsType, TableProps} from 'antd/es/table';
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, StatusTag, TruncatedText, useCachedAsyncData} from '../components';
+import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, StatusTag, TruncatedText, useCachedAsyncData} from '../components';
 import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
 import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
 import {TokenProjectListItem, TokenProjectReportPairRisk} from '../shared/services/token-service';
 import {ProjectDetailLink, useRestoreProjectsScroll} from './project-navigation';
+import {
+    emptyProjectsFilterState,
+    evaluationStatuses,
+    generalFilterCount,
+    hasReportPairFilter,
+    ProjectsFiltersModal,
+    ProjectsFilterState,
+    ReportPairFilterState,
+    ReportPairKind,
+    reportPairFilterCount,
+    reportPairMissingStates,
+    reportPairRiskStates,
+    reportStates,
+    researchStatuses,
+    selectionOutcomes
+} from './projects-filters-modal';
 import {ChainBadge, TokenLogo, chainLabel} from './token-shared';
 
 type ProjectsView = 'overview' | 'report-risk';
 type ReportRiskSection = 'status' | 'wrapped-native' | 'usdt';
-type ReportPairKind = 'weth' | 'usdt';
-type ReportPairRiskState = 'detected' | 'clear' | 'no_report' | 'risk_unavailable';
-type ReportPairMissingState = 'no_report' | 'risk_unavailable';
-type ProjectsFilterKey = 'chainID' | 'projectID' | 'contract' | 'codeHash' | 'researchStatus' | 'reportState' | 'evaluationStatus' | 'selectionOutcome';
+type ReportRiskSortKey = 'project' | 'created' | 'removeLiquidity' | 'mint' | 'quoteUsdt' | 'lastSwap';
+type ReportRiskSortOrder = 'asc' | 'desc';
 
-const researchStatuses = ['researching', 'selected', 'rejected', 'expired'] as const;
-const reportStates = ['none', 'incomplete', 'complete'] as const;
-const evaluationStatuses = ['none', 'pending', 'running', 'succeeded', 'failed'] as const;
-const selectionOutcomes = ['none', 'selected', 'rejected', 'deferred'] as const;
 const reportRiskSections = ['status', 'wrapped-native', 'usdt'] as const;
-const reportPairRiskStates = ['detected', 'clear', 'no_report', 'risk_unavailable'] as const;
-const reportPairMissingStates = ['no_report', 'risk_unavailable'] as const;
-const reportPairRiskStateOptions = [
-    {label: 'Detected', value: 'detected'},
-    {label: 'Clear', value: 'clear'},
-    {label: 'No report', value: 'no_report'},
-    {label: 'Risk unavailable', value: 'risk_unavailable'}
-];
-const reportPairMissingStateOptions = [
-    {label: 'No report', value: 'no_report'},
-    {label: 'Risk unavailable', value: 'risk_unavailable'}
+const reportRiskSortKeys = ['project', 'created', 'removeLiquidity', 'mint', 'quoteUsdt', 'lastSwap'] as const;
+const reportRiskSortOrders = ['asc', 'desc'] as const;
+const reportRiskSortOptions = [
+    {label: 'Default order', value: 'default'},
+    {label: 'Project', value: 'project'},
+    {label: 'Created', value: 'created'},
+    {label: 'Remove Liquidity', value: 'removeLiquidity'},
+    {label: 'Mint', value: 'mint'},
+    {label: 'Quote USDT', value: 'quoteUsdt'},
+    {label: 'Last Swap', value: 'lastSwap'}
 ];
 const PROJECTS_LIST_STALE_TIME_MS = 30_000;
 const RUNTIME_CONFIGURATION_STALE_TIME_MS = 5 * 60_000;
@@ -47,32 +55,14 @@ const positiveIntegerParam = (value: string | null) => {
 
 const enumParam = (value: string | null, allowed: readonly string[]) => (value && allowed.includes(value) ? value : '');
 
-interface ProjectsQueryState {
+interface ProjectsQueryState extends ProjectsFilterState {
     view: ProjectsView;
     riskSection: ReportRiskSection;
-    chainID?: number;
-    projectID?: number;
-    contract: string;
-    codeHash: string;
-    researchStatus: string;
-    reportState: string;
-    evaluationStatus: string;
-    selectionOutcome: string;
-    wethPairFilter: ReportPairFilterState;
-    usdtPairFilter: ReportPairFilterState;
+    riskSort?: ReportRiskSortKey;
+    riskSortOrder?: ReportRiskSortOrder;
     page: number;
     pageSize: number;
 }
-
-interface ReportPairFilterState {
-    removeLiquidity: ReportPairRiskState[];
-    mint: ReportPairRiskState[];
-    quoteMin: string;
-    quoteMax: string;
-    quoteMissing: ReportPairMissingState[];
-}
-
-const emptyReportPairFilter = (): ReportPairFilterState => ({removeLiquidity: [], mint: [], quoteMin: '', quoteMax: '', quoteMissing: []});
 
 const enumListParam = <T extends string>(value: string | null, allowed: readonly T[]): T[] => {
     const selected = new Set((value || '').split(',').map(item => item.trim()));
@@ -110,9 +100,6 @@ const serializeReportPairFilter = (params: URLSearchParams, prefix: ReportPairKi
     }
 };
 
-const hasReportPairFilter = (filter: ReportPairFilterState) =>
-    filter.removeLiquidity.length > 0 || filter.mint.length > 0 || Boolean(filter.quoteMin || filter.quoteMax) || filter.quoteMissing.length > 0;
-
 const serializeQueryState = (state: ProjectsQueryState) => {
     const next = new URLSearchParams();
     if (state.view === 'report-risk') {
@@ -147,6 +134,10 @@ const serializeQueryState = (state: ProjectsQueryState) => {
     }
     serializeReportPairFilter(next, 'weth', state.wethPairFilter);
     serializeReportPairFilter(next, 'usdt', state.usdtPairFilter);
+    if (state.riskSort && state.riskSortOrder) {
+        next.set('riskSort', state.riskSort);
+        next.set('riskSortOrder', state.riskSortOrder);
+    }
     if (state.page !== 1) {
         next.set('page', String(state.page));
     }
@@ -281,259 +272,97 @@ const pairSnapshotItems = (pair: TokenProjectReportPairRisk | undefined, noRepor
     {label: 'Last swap', value: pair?.lastSwapAt ? formatBeijingDateTime(pair.lastSwapAt) || '-' : unavailablePairValue(noReport)}
 ];
 
-const normalizeUnsignedInteger = (value: string) => (value ? BigInt(value).toString() : '');
+const projectCollator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
 
-const quoteFilterError = (minimum: string, maximum: string) => {
-    if (minimum && !/^\d+$/.test(minimum)) {
-        return 'Minimum must be a non-negative integer.';
+const projectPair = (item: TokenProjectListItem, kind: ReportPairKind) => (kind === 'weth' ? item.currentReport?.riskSummary?.wethPair : item.currentReport?.riskSummary?.usdtPair);
+
+const comparePresentValues = <T,>(left: T | undefined, right: T | undefined, order: ReportRiskSortOrder, compare: (a: T, b: T) => number) => {
+    if (left === undefined && right === undefined) {
+        return 0;
     }
-    if (maximum && !/^\d+$/.test(maximum)) {
-        return 'Maximum must be a non-negative integer.';
+    if (left === undefined) {
+        return 1;
     }
-    if (minimum && maximum && BigInt(minimum) > BigInt(maximum)) {
-        return 'Minimum must not exceed maximum.';
+    if (right === undefined) {
+        return -1;
     }
-    return '';
+    const result = compare(left, right);
+    return order === 'asc' ? result : -result;
 };
 
-const pairFilterIcon = (label: string) => (filtered: boolean) => (
-    <FilterFilled aria-label={`${label} filter${filtered ? ' active' : ''}`} style={{color: filtered ? 'var(--athena-blue)' : undefined}} />
-);
-
-const ReportPairStateFilterDropdown = (props: {
-    label: string;
-    selected: ReportPairRiskState[];
-    onApply: (states: ReportPairRiskState[]) => void;
-    close: FilterDropdownProps['close'];
-}) => {
-    const [draft, setDraft] = React.useState<ReportPairRiskState[]>(props.selected);
-    const selectedKey = props.selected.join(',');
-    React.useEffect(() => setDraft(props.selected), [selectedKey]);
-    return (
-        <fieldset className='projects-pair-filter-dropdown' onKeyDown={event => event.stopPropagation()}>
-            <legend>{props.label}</legend>
-            <Checkbox.Group
-                aria-label={`${props.label} states`}
-                className='projects-pair-filter-dropdown__choices'
-                options={reportPairRiskStateOptions}
-                value={draft}
-                onChange={values => setDraft(values as ReportPairRiskState[])}
-            />
-            <div className='projects-pair-filter-dropdown__actions'>
-                <Button
-                    type='primary'
-                    size='small'
-                    onClick={() => {
-                        props.onApply(draft);
-                        props.close();
-                    }}>
-                    Apply
-                </Button>
-                <Button
-                    size='small'
-                    onClick={() => {
-                        setDraft([]);
-                        props.onApply([]);
-                        props.close();
-                    }}>
-                    Clear
-                </Button>
-            </div>
-        </fieldset>
-    );
+const sortReportRiskItems = (items: TokenProjectListItem[], kind: ReportPairKind, key?: ReportRiskSortKey, order?: ReportRiskSortOrder) => {
+    if (!key || !order) {
+        return items;
+    }
+    return items
+        .map((item, index) => ({item, index}))
+        .sort((left, right) => {
+            const leftPair = projectPair(left.item, kind);
+            const rightPair = projectPair(right.item, kind);
+            let result = 0;
+            switch (key) {
+                case 'project': {
+                    const leftLabel = left.item.project?.symbol || left.item.project?.name || 'Unnamed token';
+                    const rightLabel = right.item.project?.symbol || right.item.project?.name || 'Unnamed token';
+                    result = projectCollator.compare(leftLabel, rightLabel);
+                    if (result === 0) {
+                        result = (left.item.project?.projectID || 0) - (right.item.project?.projectID || 0);
+                    }
+                    result = order === 'asc' ? result : -result;
+                    break;
+                }
+                case 'created':
+                    result = comparePresentValues(leftPair?.isCreated, rightPair?.isCreated, order, (a, b) => Number(a) - Number(b));
+                    break;
+                case 'removeLiquidity':
+                    result = comparePresentValues(leftPair?.isRemoveLiquidity, rightPair?.isRemoveLiquidity, order, (a, b) => Number(a) - Number(b));
+                    break;
+                case 'mint':
+                    result = comparePresentValues(leftPair?.isMint, rightPair?.isMint, order, (a, b) => Number(a) - Number(b));
+                    break;
+                case 'quoteUsdt':
+                    result = comparePresentValues(
+                        leftPair?.quoteUsdtValueInt ? BigInt(leftPair.quoteUsdtValueInt) : undefined,
+                        rightPair?.quoteUsdtValueInt ? BigInt(rightPair.quoteUsdtValueInt) : undefined,
+                        order,
+                        (a, b) => (a < b ? -1 : a > b ? 1 : 0)
+                    );
+                    break;
+                case 'lastSwap': {
+                    const leftTime = leftPair?.lastSwapAt ? Date.parse(leftPair.lastSwapAt) : Number.NaN;
+                    const rightTime = rightPair?.lastSwapAt ? Date.parse(rightPair.lastSwapAt) : Number.NaN;
+                    result = comparePresentValues(Number.isFinite(leftTime) ? leftTime : undefined, Number.isFinite(rightTime) ? rightTime : undefined, order, (a, b) => a - b);
+                    break;
+                }
+            }
+            return result || left.index - right.index;
+        })
+        .map(entry => entry.item);
 };
 
-const ReportPairQuoteFilterDropdown = (props: {
-    selected: Pick<ReportPairFilterState, 'quoteMin' | 'quoteMax' | 'quoteMissing'>;
-    onApply: (filter: Pick<ReportPairFilterState, 'quoteMin' | 'quoteMax' | 'quoteMissing'>) => void;
-    close: FilterDropdownProps['close'];
-}) => {
-    const [minimum, setMinimum] = React.useState(props.selected.quoteMin);
-    const [maximum, setMaximum] = React.useState(props.selected.quoteMax);
-    const [missing, setMissing] = React.useState<ReportPairMissingState[]>(props.selected.quoteMissing);
-    const selectedKey = `${props.selected.quoteMin}|${props.selected.quoteMax}|${props.selected.quoteMissing.join(',')}`;
-    React.useEffect(() => {
-        setMinimum(props.selected.quoteMin);
-        setMaximum(props.selected.quoteMax);
-        setMissing(props.selected.quoteMissing);
-    }, [selectedKey]);
-    const error = quoteFilterError(minimum, maximum);
-    const errorID = React.useId();
-    return (
-        <fieldset className='projects-pair-filter-dropdown projects-pair-filter-dropdown--quote' onKeyDown={event => event.stopPropagation()}>
-            <legend>Quote USDT</legend>
-            <label>
-                <span>Minimum</span>
-                <Input
-                    aria-describedby={error ? errorID : undefined}
-                    aria-invalid={Boolean(error)}
-                    inputMode='numeric'
-                    pattern='[0-9]*'
-                    placeholder='No minimum'
-                    value={minimum}
-                    onChange={event => setMinimum(event.target.value.trim())}
-                />
-            </label>
-            <label>
-                <span>Maximum</span>
-                <Input
-                    aria-describedby={error ? errorID : undefined}
-                    aria-invalid={Boolean(error)}
-                    inputMode='numeric'
-                    pattern='[0-9]*'
-                    placeholder='No maximum'
-                    value={maximum}
-                    onChange={event => setMaximum(event.target.value.trim())}
-                />
-            </label>
-            <Typography.Text strong={true}>Include missing</Typography.Text>
-            <Checkbox.Group
-                aria-label='Quote USDT missing states'
-                className='projects-pair-filter-dropdown__choices'
-                options={reportPairMissingStateOptions}
-                value={missing}
-                onChange={values => setMissing(values as ReportPairMissingState[])}
-            />
-            {error && (
-                <Typography.Text id={errorID} type='danger' role='alert'>
-                    {error}
-                </Typography.Text>
-            )}
-            <div className='projects-pair-filter-dropdown__actions'>
-                <Button
-                    type='primary'
-                    size='small'
-                    disabled={Boolean(error)}
-                    onClick={() => {
-                        props.onApply({quoteMin: normalizeUnsignedInteger(minimum), quoteMax: normalizeUnsignedInteger(maximum), quoteMissing: missing});
-                        props.close();
-                    }}>
-                    Apply
-                </Button>
-                <Button
-                    size='small'
-                    onClick={() => {
-                        setMinimum('');
-                        setMaximum('');
-                        setMissing([]);
-                        props.onApply({quoteMin: '', quoteMax: '', quoteMissing: []});
-                        props.close();
-                    }}>
-                    Clear
-                </Button>
-            </div>
-        </fieldset>
-    );
+const pairStateLabels: Record<string, string> = {
+    detected: 'Detected',
+    clear: 'Clear',
+    no_report: 'No report',
+    risk_unavailable: 'Risk unavailable'
 };
 
-const CompactReportPairFilters = (props: {pairLabel: string; filter: ReportPairFilterState; onApply: (filter: ReportPairFilterState) => void}) => {
-    const [draft, setDraft] = React.useState(props.filter);
-    const selectedKey = [
-        props.filter.removeLiquidity.join(','),
-        props.filter.mint.join(','),
-        props.filter.quoteMin,
-        props.filter.quoteMax,
-        props.filter.quoteMissing.join(',')
-    ].join('|');
-    React.useEffect(() => setDraft(props.filter), [selectedKey]);
-    const error = quoteFilterError(draft.quoteMin, draft.quoteMax);
-    const errorID = React.useId();
-    return (
-        <fieldset className='projects-compact-pair-filters'>
-            <legend>{props.pairLabel} Pair filters</legend>
-            <Typography.Text type='secondary'>Compact cards still show Status and both Pair snapshots. These controls choose which projects are included.</Typography.Text>
-            <div className='projects-compact-pair-filters__grid'>
-                <label>
-                    <span>Remove Liquidity</span>
-                    <Select
-                        aria-label={`Filter ${props.pairLabel} Remove Liquidity`}
-                        mode='multiple'
-                        allowClear={true}
-                        placeholder='All states'
-                        options={reportPairRiskStateOptions}
-                        value={draft.removeLiquidity}
-                        onChange={values => setDraft({...draft, removeLiquidity: values as ReportPairRiskState[]})}
-                    />
-                </label>
-                <label>
-                    <span>Mint</span>
-                    <Select
-                        aria-label={`Filter ${props.pairLabel} Mint`}
-                        mode='multiple'
-                        allowClear={true}
-                        placeholder='All states'
-                        options={reportPairRiskStateOptions}
-                        value={draft.mint}
-                        onChange={values => setDraft({...draft, mint: values as ReportPairRiskState[]})}
-                    />
-                </label>
-                <label>
-                    <span>Quote minimum</span>
-                    <Input
-                        aria-describedby={error ? errorID : undefined}
-                        aria-invalid={Boolean(error)}
-                        inputMode='numeric'
-                        pattern='[0-9]*'
-                        placeholder='No minimum'
-                        value={draft.quoteMin}
-                        onChange={event => setDraft({...draft, quoteMin: event.target.value.trim()})}
-                    />
-                </label>
-                <label>
-                    <span>Quote maximum</span>
-                    <Input
-                        aria-describedby={error ? errorID : undefined}
-                        aria-invalid={Boolean(error)}
-                        inputMode='numeric'
-                        pattern='[0-9]*'
-                        placeholder='No maximum'
-                        value={draft.quoteMax}
-                        onChange={event => setDraft({...draft, quoteMax: event.target.value.trim()})}
-                    />
-                </label>
-                <label>
-                    <span>Quote missing</span>
-                    <Select
-                        aria-label={`Filter ${props.pairLabel} Quote USDT missing states`}
-                        mode='multiple'
-                        allowClear={true}
-                        placeholder='Do not include'
-                        options={reportPairMissingStateOptions}
-                        value={draft.quoteMissing}
-                        onChange={values => setDraft({...draft, quoteMissing: values as ReportPairMissingState[]})}
-                    />
-                </label>
-            </div>
-            {error && (
-                <Typography.Text id={errorID} type='danger' role='alert'>
-                    {error}
-                </Typography.Text>
-            )}
-            <div className='projects-compact-pair-filters__actions'>
-                <Button
-                    type='primary'
-                    disabled={Boolean(error)}
-                    onClick={() =>
-                        props.onApply({
-                            ...draft,
-                            quoteMin: normalizeUnsignedInteger(draft.quoteMin),
-                            quoteMax: normalizeUnsignedInteger(draft.quoteMax)
-                        })
-                    }>
-                    Apply Pair filters
-                </Button>
-                <Button
-                    disabled={!hasReportPairFilter(props.filter)}
-                    onClick={() => {
-                        const empty = emptyReportPairFilter();
-                        setDraft(empty);
-                        props.onApply(empty);
-                    }}>
-                    Clear Pair filters
-                </Button>
-            </div>
-        </fieldset>
-    );
+const summarizeStates = (states: string[]) => {
+    const labels = states.map(state => pairStateLabels[state] || state);
+    return labels.length > 1 ? `${labels[0]} +${labels.length - 1}` : labels[0] || '';
+};
+
+const quoteFilterSummary = (filter: ReportPairFilterState) => {
+    const range =
+        filter.quoteMin && filter.quoteMax
+            ? `${formatInteger(filter.quoteMin)}–${formatInteger(filter.quoteMax)}`
+            : filter.quoteMin
+              ? `≥ ${formatInteger(filter.quoteMin)}`
+              : filter.quoteMax
+                ? `≤ ${formatInteger(filter.quoteMax)}`
+                : '';
+    const missing = summarizeStates(filter.quoteMissing);
+    return [range, missing].filter(Boolean).join(' or ');
 };
 
 const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
@@ -631,6 +460,7 @@ const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
 
 export const ProjectsPage = () => {
     const [params, setParams] = useSearchParams();
+    const [filtersOpen, setFiltersOpen] = React.useState(false);
     const view: ProjectsView = params.get('view') === 'report-risk' ? 'report-risk' : 'overview';
     const reportRiskView = view === 'report-risk';
     const riskSection = (enumParam(params.get('riskSection'), reportRiskSections) || 'status') as ReportRiskSection;
@@ -646,6 +476,10 @@ export const ProjectsPage = () => {
     const usdtPairFilterParams = ['usdtRemoveLiquidity', 'usdtMint', 'usdtQuoteMin', 'usdtQuoteMax', 'usdtQuoteMissing'].map(key => params.get(key) || '').join('|');
     const wethPairFilter = React.useMemo(() => reportPairFilterFromParams(params, 'weth'), [wethPairFilterParams]);
     const usdtPairFilter = React.useMemo(() => reportPairFilterFromParams(params, 'usdt'), [usdtPairFilterParams]);
+    const parsedRiskSort = enumParam(params.get('riskSort'), reportRiskSortKeys) as ReportRiskSortKey | '';
+    const parsedRiskSortOrder = enumParam(params.get('riskSortOrder'), reportRiskSortOrders) as ReportRiskSortOrder | '';
+    const riskSort = parsedRiskSort && parsedRiskSortOrder ? parsedRiskSort : undefined;
+    const riskSortOrder = parsedRiskSort && parsedRiskSortOrder ? parsedRiskSortOrder : undefined;
     const page = positiveIntegerParam(params.get('page')) || 1;
     const requestedPageSize = positiveIntegerParam(params.get('pageSize')) || DEFAULT_PAGE_SIZE;
     const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
@@ -664,10 +498,33 @@ export const ProjectsPage = () => {
             selectionOutcome,
             wethPairFilter,
             usdtPairFilter,
+            riskSort,
+            riskSortOrder,
             page,
             pageSize
         }),
-        [view, riskSection, chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, wethPairFilter, usdtPairFilter, page, pageSize]
+        [
+            view,
+            riskSection,
+            chainID,
+            projectID,
+            contract,
+            codeHash,
+            researchStatus,
+            reportState,
+            evaluationStatus,
+            selectionOutcome,
+            wethPairFilter,
+            usdtPairFilter,
+            riskSort,
+            riskSortOrder,
+            page,
+            pageSize
+        ]
+    );
+    const filterState = React.useMemo<ProjectsFilterState>(
+        () => ({chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, wethPairFilter, usdtPairFilter}),
+        [chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, wethPairFilter, usdtPairFilter]
     );
     const rawSearch = params.toString();
 
@@ -684,41 +541,18 @@ export const ProjectsPage = () => {
     const setRiskSection = (nextRiskSection: ReportRiskSection) => {
         setParams(serializeQueryState({...queryState, riskSection: nextRiskSection}));
     };
-    const setFilter = (key: ProjectsFilterKey, value?: string | number) => {
-        const nextValue = value === undefined || value === '' ? undefined : value;
-        const next = {...queryState, page: 1, [key]: nextValue} as ProjectsQueryState;
-        setParams(serializeQueryState(next));
-    };
     const setPage = (nextPage: number, nextPageSize: number) => {
         setParams(serializeQueryState({...queryState, page: nextPage, pageSize: nextPageSize}));
     };
-    const setReportPairFilter = (kind: ReportPairKind, filter: ReportPairFilterState) => {
-        setParams(
-            serializeQueryState({
-                ...queryState,
-                page: 1,
-                wethPairFilter: kind === 'weth' ? filter : queryState.wethPairFilter,
-                usdtPairFilter: kind === 'usdt' ? filter : queryState.usdtPairFilter
-            })
-        );
+    const applyFilters = (nextFilters: ProjectsFilterState) => {
+        setFiltersOpen(false);
+        setParams(serializeQueryState({...queryState, ...nextFilters, page: 1}));
+    };
+    const setRiskSort = (nextSort?: ReportRiskSortKey, nextOrder?: ReportRiskSortOrder) => {
+        setParams(serializeQueryState({...queryState, riskSort: nextSort, riskSortOrder: nextSort ? nextOrder || 'asc' : undefined}));
     };
     const clearFilters = () => {
-        setParams(
-            serializeQueryState({
-                view,
-                riskSection,
-                contract: '',
-                codeHash: '',
-                researchStatus: '',
-                reportState: '',
-                evaluationStatus: '',
-                selectionOutcome: '',
-                wethPairFilter: emptyReportPairFilter(),
-                usdtPairFilter: emptyReportPairFilter(),
-                page: 1,
-                pageSize
-            })
-        );
+        setParams(serializeQueryState({...queryState, ...emptyProjectsFilterState(), page: 1}));
     };
 
     const activeReportPairKind: ReportPairKind | undefined =
@@ -773,6 +607,22 @@ export const ProjectsPage = () => {
     );
     useRestoreProjectsScroll(Boolean(data.data));
 
+    const sortColumn = (key: ReportRiskSortKey) => ({
+        key,
+        sorter: true,
+        sortOrder: riskSort === key ? (riskSortOrder === 'asc' ? ('ascend' as const) : ('descend' as const)) : null,
+        showSorterTooltip: {title: 'Sorts current page only'}
+    });
+    const handleReportRiskTableChange: TableProps<TokenProjectListItem>['onChange'] = (_pagination, _filters, sorter) => {
+        const activeSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+        const nextKey = activeSorter?.columnKey;
+        if (!nextKey || !reportRiskSortKeys.includes(nextKey as ReportRiskSortKey) || !activeSorter.order) {
+            setRiskSort();
+            return;
+        }
+        setRiskSort(nextKey as ReportRiskSortKey, activeSorter.order === 'ascend' ? 'asc' : 'desc');
+    };
+
     const logoColumn: ColumnsType<TokenProjectListItem>[number] = {
         title: 'Logo',
         fixed: 'left',
@@ -791,58 +641,34 @@ export const ProjectsPage = () => {
         {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.project?.createdAt) || '-'}
     ];
 
-    const pairColumns = (
-        pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined,
-        kind: ReportPairKind,
-        filter: ReportPairFilterState
-    ): ColumnsType<TokenProjectListItem> => [
-        {title: 'Created', width: 90, render: item => (item.currentReport ? pairCreatedTag(pair(item)?.isCreated) : <Tag>No report</Tag>)},
+    const pairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
+        {...sortColumn('created'), title: 'Created', width: 90, render: item => (item.currentReport ? pairCreatedTag(pair(item)?.isCreated) : <Tag>No report</Tag>)},
         {
+            ...sortColumn('removeLiquidity'),
             title: 'Remove Liquidity',
-            key: 'removeLiquidity',
             width: 125,
-            filteredValue: filter.removeLiquidity.length > 0 ? filter.removeLiquidity : null,
-            filterOnClose: false,
-            filterIcon: pairFilterIcon('Remove Liquidity'),
-            filterDropdown: ({close}) => (
-                <ReportPairStateFilterDropdown
-                    label='Remove Liquidity'
-                    selected={filter.removeLiquidity}
-                    close={close}
-                    onApply={states => setReportPairFilter(kind, {...filter, removeLiquidity: states})}
-                />
-            ),
             render: item => {
                 const pairRisk = pair(item);
                 return !item.currentReport ? <Tag>No report</Tag> : pairRisk ? pairRiskTag(pairRisk.isRemoveLiquidity) : unavailablePairValue(false);
             }
         },
         {
+            ...sortColumn('mint'),
             title: 'Mint',
-            key: 'mint',
             width: 80,
-            filteredValue: filter.mint.length > 0 ? filter.mint : null,
-            filterOnClose: false,
-            filterIcon: pairFilterIcon('Mint'),
-            filterDropdown: ({close}) => (
-                <ReportPairStateFilterDropdown label='Mint' selected={filter.mint} close={close} onApply={states => setReportPairFilter(kind, {...filter, mint: states})} />
-            ),
             render: item => {
                 const pairRisk = pair(item);
                 return !item.currentReport ? <Tag>No report</Tag> : pairRisk ? pairRiskTag(pairRisk.isMint) : unavailablePairValue(false);
             }
         },
         {
+            ...sortColumn('quoteUsdt'),
             title: 'Quote USDT',
-            key: 'quoteUsdt',
             width: 110,
-            filteredValue: filter.quoteMin || filter.quoteMax || filter.quoteMissing.length > 0 ? ['active'] : null,
-            filterOnClose: false,
-            filterIcon: pairFilterIcon('Quote USDT'),
-            filterDropdown: ({close}) => <ReportPairQuoteFilterDropdown selected={filter} close={close} onApply={next => setReportPairFilter(kind, {...filter, ...next})} />,
             render: item => (pair(item)?.quoteUsdtValueInt ? formatInteger(pair(item)?.quoteUsdtValueInt) : unavailablePairValue(!item.currentReport))
         },
         {
+            ...sortColumn('lastSwap'),
             title: 'Last Swap',
             width: 145,
             render: item => (pair(item)?.lastSwapAt ? formatBeijingDateTime(pair(item)?.lastSwapAt) || '-' : unavailablePairValue(!item.currentReport))
@@ -885,40 +711,92 @@ export const ProjectsPage = () => {
         }
     ];
 
-    const reportRiskPairColumns = (
-        pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined,
-        kind: ReportPairKind,
-        filter: ReportPairFilterState
-    ): ColumnsType<TokenProjectListItem> => [
+    const reportRiskPairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
         logoColumn,
-        {title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, true)},
-        ...pairColumns(pair, kind, filter)
+        {...sortColumn('project'), title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, true)},
+        ...pairColumns(pair)
     ];
 
     const reportRiskColumns =
         riskSection === 'status'
             ? reportRiskStatusColumns
             : riskSection === 'wrapped-native'
-              ? reportRiskPairColumns(item => item.currentReport?.riskSummary?.wethPair, 'weth', wethPairFilter)
-              : reportRiskPairColumns(item => item.currentReport?.riskSummary?.usdtPair, 'usdt', usdtPairFilter);
+              ? reportRiskPairColumns(item => item.currentReport?.riskSummary?.wethPair)
+              : reportRiskPairColumns(item => item.currentReport?.riskSummary?.usdtPair);
 
     const chainOptions = (options.data?.chains || [])
         .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
         .map(item => ({value: item.chainID, label: chainLabel(item.chainID)}));
-    const statusOptions = (values: readonly string[], noneLabel = 'None') => values.map(value => ({value, label: value === 'none' ? noneLabel : value.replace(/_/g, ' ')}));
-    const hasFilters = Boolean(
-        chainID ||
-            projectID ||
-            contract ||
-            codeHash ||
-            researchStatus ||
-            reportState ||
-            evaluationStatus ||
-            selectionOutcome ||
-            hasReportPairFilter(wethPairFilter) ||
-            hasReportPairFilter(usdtPairFilter)
+    const generalCount = generalFilterCount(filterState);
+    const wethFilterCount = reportPairFilterCount(wethPairFilter);
+    const usdtFilterCount = reportPairFilterCount(usdtPairFilter);
+    const effectiveFilterCount = generalCount + (activeReportPairKind === 'weth' ? wethFilterCount : activeReportPairKind === 'usdt' ? usdtFilterCount : 0);
+    const hasSavedFilters = generalCount + wethFilterCount + usdtFilterCount > 0;
+    const pairLabel = activeReportPairKind === 'weth' ? 'WETH / WBNB' : activeReportPairKind === 'usdt' ? 'USDT' : '';
+    const displayStatus = (value: string, noneLabel: string) => (value === 'none' ? noneLabel : value.replace(/_/g, ' '));
+    const filterSummaryItems: Array<{key: string; label: string; clear: () => void}> = [];
+    const clearFilterField = (key: keyof ProjectsFilterState, value: ProjectsFilterState[keyof ProjectsFilterState]) =>
+        applyFilters({...filterState, [key]: value} as ProjectsFilterState);
+    if (chainID) {
+        filterSummaryItems.push({key: 'chain', label: `Chain: ${chainLabel(chainID)}`, clear: () => clearFilterField('chainID', undefined)});
+    }
+    if (projectID) {
+        filterSummaryItems.push({key: 'project', label: `Project ID: ${projectID}`, clear: () => clearFilterField('projectID', undefined)});
+    }
+    if (contract) {
+        filterSummaryItems.push({key: 'contract', label: `Contract: ${contract}`, clear: () => clearFilterField('contract', '')});
+    }
+    if (codeHash) {
+        filterSummaryItems.push({key: 'codeHash', label: `Code hash: ${codeHash}`, clear: () => clearFilterField('codeHash', '')});
+    }
+    if (researchStatus) {
+        filterSummaryItems.push({key: 'research', label: `Research: ${displayStatus(researchStatus, 'None')}`, clear: () => clearFilterField('researchStatus', '')});
+    }
+    if (reportState) {
+        filterSummaryItems.push({key: 'report', label: `Report: ${displayStatus(reportState, 'No report')}`, clear: () => clearFilterField('reportState', '')});
+    }
+    if (evaluationStatus) {
+        filterSummaryItems.push({
+            key: 'evaluation',
+            label: `Evaluation: ${displayStatus(evaluationStatus, 'No evaluation task')}`,
+            clear: () => clearFilterField('evaluationStatus', '')
+        });
+    }
+    if (selectionOutcome) {
+        filterSummaryItems.push({key: 'selection', label: `Selection: ${displayStatus(selectionOutcome, 'No outcome')}`, clear: () => clearFilterField('selectionOutcome', '')});
+    }
+    if (activeReportPairKind && activeReportPairFilter) {
+        const filterKey = activeReportPairKind === 'weth' ? 'wethPairFilter' : 'usdtPairFilter';
+        if (activeReportPairFilter.removeLiquidity.length > 0) {
+            filterSummaryItems.push({
+                key: `${filterKey}-removeLiquidity`,
+                label: `${pairLabel} Remove Liquidity: ${summarizeStates(activeReportPairFilter.removeLiquidity)}`,
+                clear: () => clearFilterField(filterKey, {...activeReportPairFilter, removeLiquidity: []})
+            });
+        }
+        if (activeReportPairFilter.mint.length > 0) {
+            filterSummaryItems.push({
+                key: `${filterKey}-mint`,
+                label: `${pairLabel} Mint: ${summarizeStates(activeReportPairFilter.mint)}`,
+                clear: () => clearFilterField(filterKey, {...activeReportPairFilter, mint: []})
+            });
+        }
+        if (activeReportPairFilter.quoteMin || activeReportPairFilter.quoteMax || activeReportPairFilter.quoteMissing.length > 0) {
+            filterSummaryItems.push({
+                key: `${filterKey}-quote`,
+                label: `${pairLabel} Quote USDT: ${quoteFilterSummary(activeReportPairFilter)}`,
+                clear: () => clearFilterField(filterKey, {...activeReportPairFilter, quoteMin: '', quoteMax: '', quoteMissing: []})
+            });
+        }
+    }
+    const serverItems = data.data?.items || [];
+    const items = activeReportPairKind ? sortReportRiskItems(serverItems, activeReportPairKind, riskSort, riskSortOrder) : serverItems;
+    const riskSectionLabel = (label: string, hasSaved: boolean) => (
+        <span className='projects-risk-section-label' aria-label={`${label}${hasSaved ? ', saved filters' : ''}`}>
+            {label}
+            {hasSaved && <span className='projects-risk-section-label__dot' aria-hidden='true' />}
+        </span>
     );
-    const items = data.data?.items || [];
     return (
         <AppPage
             title='Projects'
@@ -931,97 +809,109 @@ export const ProjectsPage = () => {
             }}
             filters={
                 <div className='projects-controls'>
-                    <div className='projects-view-control'>
-                        <Typography.Text strong={true}>View</Typography.Text>
-                        <ChoiceGroup<ProjectsView>
-                            ariaLabel='Projects view'
-                            value={view}
-                            options={[
-                                {label: 'Overview', value: 'overview'},
-                                {label: 'Report Risk', value: 'report-risk'}
-                            ]}
-                            onChange={setView}
-                        />
+                    <div className='projects-controls__toolbar'>
+                        <div className='projects-controls__selectors'>
+                            <div className='projects-view-control'>
+                                <Typography.Text strong={true}>View</Typography.Text>
+                                <ChoiceGroup<ProjectsView>
+                                    ariaLabel='Projects view'
+                                    value={view}
+                                    options={[
+                                        {label: 'Overview', value: 'overview'},
+                                        {label: 'Report Risk', value: 'report-risk'}
+                                    ]}
+                                    onChange={setView}
+                                />
+                            </div>
+                            {reportRiskView && (
+                                <div className='projects-report-risk-section-control'>
+                                    <Typography.Text strong={true}>Risk section</Typography.Text>
+                                    <ChoiceGroup<ReportRiskSection>
+                                        ariaLabel='Report risk section'
+                                        value={riskSection}
+                                        options={[
+                                            {label: 'Status', value: 'status'},
+                                            {label: riskSectionLabel('WETH / WBNB', wethFilterCount > 0), value: 'wrapped-native'},
+                                            {label: riskSectionLabel('USDT', usdtFilterCount > 0), value: 'usdt'}
+                                        ]}
+                                        onChange={setRiskSection}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div className='projects-controls__actions'>
+                            <Badge count={effectiveFilterCount} size='small' overflowCount={99}>
+                                <Button
+                                    aria-label={`Open filters${effectiveFilterCount ? `, ${effectiveFilterCount} active fields` : ''}`}
+                                    icon={<FilterOutlined />}
+                                    onClick={() => setFiltersOpen(true)}>
+                                    Filters
+                                </Button>
+                            </Badge>
+                            <Button disabled={!hasSavedFilters} onClick={clearFilters}>
+                                Clear all
+                            </Button>
+                        </div>
                     </div>
-                    {reportRiskView && (
-                        <div className='projects-report-risk-section-control'>
-                            <Typography.Text strong={true}>Risk section</Typography.Text>
-                            <ChoiceGroup<ReportRiskSection>
-                                ariaLabel='Report risk section'
-                                value={riskSection}
-                                options={[
-                                    {label: 'Status', value: 'status'},
-                                    {label: 'WETH / WBNB', value: 'wrapped-native'},
-                                    {label: 'USDT', value: 'usdt'}
-                                ]}
-                                onChange={setRiskSection}
+                    {activeReportPairKind && (
+                        <div className='projects-compact-sort-control' aria-label={`${pairLabel} current page sorting`}>
+                            <Typography.Text strong={true}>Sort current page</Typography.Text>
+                            <Select
+                                aria-label='Sort field'
+                                value={riskSort || 'default'}
+                                options={reportRiskSortOptions}
+                                onChange={value => (value === 'default' ? setRiskSort() : setRiskSort(value as ReportRiskSortKey, riskSortOrder || 'asc'))}
                             />
+                            <Tooltip title='Ascending; missing values remain last'>
+                                <Button
+                                    aria-label='Sort current page ascending'
+                                    aria-pressed={Boolean(riskSort && riskSortOrder === 'asc')}
+                                    disabled={!riskSort}
+                                    type={riskSort && riskSortOrder === 'asc' ? 'primary' : 'default'}
+                                    icon={<SortAscendingOutlined />}
+                                    onClick={() => setRiskSort(riskSort, 'asc')}
+                                />
+                            </Tooltip>
+                            <Tooltip title='Descending; missing values remain last'>
+                                <Button
+                                    aria-label='Sort current page descending'
+                                    aria-pressed={Boolean(riskSort && riskSortOrder === 'desc')}
+                                    disabled={!riskSort}
+                                    type={riskSort && riskSortOrder === 'desc' ? 'primary' : 'default'}
+                                    icon={<SortDescendingOutlined />}
+                                    onClick={() => setRiskSort(riskSort, 'desc')}
+                                />
+                            </Tooltip>
                         </div>
                     )}
-                    {activeReportPairKind && activeReportPairFilter && (
-                        <div className='projects-compact-pair-filter-region'>
-                            <CompactReportPairFilters
-                                pairLabel={activeReportPairKind === 'weth' ? 'WETH / WBNB' : 'USDT'}
-                                filter={activeReportPairFilter}
-                                onApply={filter => setReportPairFilter(activeReportPairKind, filter)}
-                            />
+                    {filterSummaryItems.length > 0 && (
+                        <div className='projects-filter-summary' aria-label='Applied filters'>
+                            <Typography.Text type='secondary'>Applied</Typography.Text>
+                            <div className='projects-filter-summary__items'>
+                                {filterSummaryItems.map(item => (
+                                    <Tag
+                                        key={item.key}
+                                        closable={true}
+                                        onClose={event => {
+                                            event.preventDefault();
+                                            item.clear();
+                                        }}>
+                                        <span className='projects-filter-summary__label' title={item.label}>
+                                            {item.label}
+                                        </span>
+                                    </Tag>
+                                ))}
+                            </div>
                         </div>
                     )}
-                    <div className='projects-filter-grid'>
-                        <Select
-                            aria-label='Filter by chain'
-                            value={chainID}
-                            allowClear={true}
-                            placeholder='All chains'
-                            options={chainOptions}
-                            onChange={value => setFilter('chainID', value)}
-                        />
-                        <InputNumber
-                            aria-label='Filter by project ID'
-                            value={projectID}
-                            min={1}
-                            precision={0}
-                            placeholder='Project ID'
-                            onChange={value => setFilter('projectID', typeof value === 'number' ? value : undefined)}
-                        />
-                        <SearchBar value={contract} onChange={value => setFilter('contract', value)} placeholder='Contract' />
-                        <SearchBar value={codeHash} onChange={value => setFilter('codeHash', value)} placeholder='Code hash' />
-                        <Select
-                            aria-label='Filter by research status'
-                            value={researchStatus || undefined}
-                            allowClear={true}
-                            placeholder='Research status'
-                            options={statusOptions(researchStatuses)}
-                            onChange={value => setFilter('researchStatus', value)}
-                        />
-                        <Select
-                            aria-label='Filter by report state'
-                            value={reportState || undefined}
-                            allowClear={true}
-                            placeholder='Report state'
-                            options={statusOptions(reportStates, 'No report')}
-                            onChange={value => setFilter('reportState', value)}
-                        />
-                        <Select
-                            aria-label='Filter by evaluation status'
-                            value={evaluationStatus || undefined}
-                            allowClear={true}
-                            placeholder='Evaluation status'
-                            options={statusOptions(evaluationStatuses, 'No evaluation task')}
-                            onChange={value => setFilter('evaluationStatus', value)}
-                        />
-                        <Select
-                            aria-label='Filter by selection outcome'
-                            value={selectionOutcome || undefined}
-                            allowClear={true}
-                            placeholder='Selection outcome'
-                            options={statusOptions(selectionOutcomes, 'No outcome')}
-                            onChange={value => setFilter('selectionOutcome', value)}
-                        />
-                        <Button disabled={!hasFilters} onClick={clearFilters}>
-                            Clear filters
-                        </Button>
-                    </div>
+                    <ProjectsFiltersModal
+                        open={filtersOpen}
+                        filters={filterState}
+                        activePairKind={activeReportPairKind}
+                        chainOptions={chainOptions}
+                        onCancel={() => setFiltersOpen(false)}
+                        onApply={applyFilters}
+                    />
                 </div>
             }>
             <div className={reportRiskView ? 'projects-report-risk-table-region' : undefined}>
@@ -1030,6 +920,7 @@ export const ProjectsPage = () => {
                     rowKey={item => item.project?.projectID || `${item.project?.chainID}-${item.project?.contract}`}
                     items={items}
                     columns={reportRiskView ? reportRiskColumns : overviewColumns}
+                    onChange={activeReportPairKind ? handleReportRiskTableChange : undefined}
                     loading={data.loading}
                     total={data.data?.total}
                     page={page}

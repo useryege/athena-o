@@ -1,5 +1,5 @@
 import {Empty, Pagination, Skeleton, Table, Typography} from 'antd';
-import type {ColumnsType} from 'antd/es/table';
+import type {ColumnsType, TableProps} from 'antd/es/table';
 import type {TableRowSelection} from 'antd/es/table/interface';
 import * as React from 'react';
 import {PAGE_SIZE_OPTIONS} from '../shared/pagination';
@@ -16,6 +16,7 @@ export const ResourceTable = <T,>(props: {
     pageSizeOptions?: number[];
     total?: number;
     onPageChange?: (page: number, pageSize: number) => void;
+    onChange?: TableProps<T>['onChange'];
     onItemClick?: (record: T) => void;
     selectedRowKeys?: React.Key[];
     onSelectionChange?: (keys: React.Key[], records: T[]) => void;
@@ -129,6 +130,7 @@ export const ResourceTable = <T,>(props: {
                 rowSelection={rowSelection}
                 pagination={false}
                 scroll={scroll}
+                onChange={props.onChange}
                 onRow={tableOnRow}
                 rowClassName={props.rowClassName}
             />

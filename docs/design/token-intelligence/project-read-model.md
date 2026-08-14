@@ -30,7 +30,7 @@ read model only composes their committed state.
 | Public HTTP and authorization boundary | [`internal/server/tokenapi/catalog.proto`](../../../internal/server/tokenapi/catalog.proto), [`internal/server/tokenapi/tokenapi.go`](../../../internal/server/tokenapi/tokenapi.go), [`internal/server/authz.go`](../../../internal/server/authz.go) | project HTTP bindings, proxy methods, `rbacGRPCMethods`, and `authorizeGRPC` |
 | Public data contract | [`pkg/apis/application/v1alpha1/tokenapi_types.go`](../../../pkg/apis/application/v1alpha1/tokenapi_types.go) | `TokenProjectListItem`, `TokenProjectReportSummary`, `TokenProjectPairRiskSummary`, `TokenProjectDetail`, `TokenReportRevision`, `TokenProjectSwapActivity` |
 | UI data client | [`ui/src/app/shared/services/token-service.ts`](../../../ui/src/app/shared/services/token-service.ts) | `listProjects`, `getProjectDetail`, `listReportRevisions`, `getProjectSwapActivity` |
-| UI pages and visualizations | [`ui/src/app/pages/projects.tsx`](../../../ui/src/app/pages/projects.tsx), [`ui/src/app/pages/project-detail.tsx`](../../../ui/src/app/pages/project-detail.tsx), [`ui/src/app/pages/project-report-tab.tsx`](../../../ui/src/app/pages/project-report-tab.tsx), [`ui/src/app/pages/project-detail-chart.tsx`](../../../ui/src/app/pages/project-detail-chart.tsx), [`ui/src/app/pages/project-swap-activity.tsx`](../../../ui/src/app/pages/project-swap-activity.tsx) | `ProjectsPage`, `ProjectDetailPage`, `ProjectReportTab`, `ProjectTrendChart`, `ProjectSwapActivityTab` |
+| UI pages and visualizations | [`ui/src/app/pages/projects.tsx`](../../../ui/src/app/pages/projects.tsx), [`ui/src/app/pages/projects-filters-modal.tsx`](../../../ui/src/app/pages/projects-filters-modal.tsx), [`ui/src/app/pages/project-detail.tsx`](../../../ui/src/app/pages/project-detail.tsx), [`ui/src/app/pages/project-report-tab.tsx`](../../../ui/src/app/pages/project-report-tab.tsx), [`ui/src/app/pages/project-detail-chart.tsx`](../../../ui/src/app/pages/project-detail-chart.tsx), [`ui/src/app/pages/project-swap-activity.tsx`](../../../ui/src/app/pages/project-swap-activity.tsx) | `ProjectsPage`, `ProjectsFiltersModal`, `ProjectDetailPage`, `ProjectReportTab`, `ProjectTrendChart`, `ProjectSwapActivityTab` |
 | UI request cache and return context | [`ui/src/app/components/data.ts`](../../../ui/src/app/components/data.ts), [`ui/src/app/pages/project-navigation.tsx`](../../../ui/src/app/pages/project-navigation.tsx) | `useCachedAsyncData`, `clearAsyncDataCache`, Projects return snapshots |
 | Shared detail values | [`ui/src/app/pages/project-detail-values.tsx`](../../../ui/src/app/pages/project-detail-values.tsx) | `ProjectTimeValue`, `ProjectExplorerValue`, `ProjectExactValue`, `ProjectRawTokenAmount` |
 
@@ -145,29 +145,46 @@ parameters. Only the active Pair section's non-empty filter is translated to
 the generic `report_pair_*` request fields; Status applies neither Pair filter.
 Changing sections preserves both drafts and page size, but can select a
 different server request when the destination Pair has an active filter.
-Clearing filters retains the active Report Risk section and page size while
-removing global filters and both Pair drafts.
+The presentation-only `riskSort` and `riskSortOrder` parameters preserve one
+current-page Pair sort across refreshes, shared URLs, section changes, and
+detail round trips. Invalid or incomplete sort combinations normalize away.
+Clearing filters retains the active Report Risk section, page size, and local
+sort while removing global filters and both Pair drafts.
 
 The desktop Status section groups research, Report, Evaluation, and trusted
 Selection fields into summary columns; its Evaluation error can be expanded
 with a keyboard-operable control. Each Pair section presents Report revision
 and completeness context followed by Created, Remove Liquidity, Mint, Quote
-USDT, and Last Swap. Remove Liquidity, Mint, and Quote USDT expose controlled
-server-filter dropdowns in the desktop header; they never filter only the
-currently loaded page. The tables fit the available desktop surface and do not
-render the former combined horizontal risk matrix. At viewport widths up to
-900 pixels, Overview uses semantic project cards. Report Risk switches to its
-semantic cards at 1100 pixels; the Risk section control remains available and
-the active Pair's equivalent filters move above the card list. Each card still
-contains the complete Status data and all five fields for both wrapped-native
-and USDT Pair snapshots. Both compact layouts retain the same rows and
-paginator as their desktop projections.
+USDT, and Last Swap. All global and Pair filters are edited as one draft in a
+centered `Filters` modal with General, WETH/WBNB, and USDT tabs. Applying the
+draft commits every filter to the URL atomically and returns to page one;
+closing the modal discards it. The toolbar counts only filter fields effective
+for the current request, shows removable summaries for those fields, and marks
+Pair sections that retain saved filters. Status and Overview therefore do not
+present inactive Pair drafts as applied conditions.
+
+The six non-logo Pair columns expose only local sort controls in their desktop
+headers. Project text is case-insensitive, Quote uses exact `BigInt` values,
+and Pair booleans and timestamps use their typed values. Missing Pair data
+always follows present values in either direction, and equal values retain the
+server order. Sorting rearranges only the loaded server page and never changes
+the API request or pagination. The tables fit the available desktop surface
+and do not render the former combined horizontal risk matrix. At viewport
+widths up to 900 pixels, Overview uses semantic project cards. Report Risk
+switches to its semantic cards at 1100 pixels; the Risk section control remains
+available and an equivalent current-page sort selector appears above the card
+list for Pair sections. The same centered filter modal becomes a near-full-
+width, single-column form below 768 pixels. Each card still contains the
+complete Status data and all five fields for both wrapped-native and USDT Pair
+snapshots. Both compact layouts retain the same rows and paginator as their
+desktop projections.
 
 The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
 key contains only the server request fields: page, page size, chain, project,
 contract, code hash, research status, Report state, Evaluation status, and
 trusted Selection outcome, plus the effective Report Pair kind and filters.
-Presentation-only `view`, `riskSection`, and inactive Pair drafts are excluded.
+Presentation-only `view`, `riskSection`, `riskSort`, `riskSortOrder`, and
+inactive Pair drafts are excluded.
 A successful list response is fresh for 30 seconds. A fresh hit
 renders synchronously without a request; a stale hit keeps its rows, total, and
 paginator visible while one deduplicated request refreshes the key in the
@@ -442,10 +459,10 @@ There is no runtime configuration specific to this read model.
 - Every project-detail read is scoped by one positive project ID.
 - The aggregate endpoint does not mutate collection, report, selection, or
   transaction state.
-- Projects cache identity is derived only from list request fields. UI view and
-  risk section values and inactive Pair drafts cannot create a second copy of
-  the same server page; selecting a different effective Pair filter creates the
-  corresponding request identity.
+- Projects cache identity is derived only from list request fields. UI view,
+  risk section, local Pair sort, and inactive Pair drafts cannot create a
+  second copy of the same server page; selecting a different effective Pair
+  filter creates the corresponding request identity.
 - Cached project data never crosses a login-session boundary. Return scroll
   snapshots contain only URL, history-entry identity, a random return marker,
   and scroll position.
@@ -528,7 +545,9 @@ or updated timestamps for diagnosis.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
 - [ ] Projects Overview and Report Risk preserve canonical URL state; only the active Report Risk Pair's non-empty filter becomes a request dependency.
 - [ ] Overview omits transaction index and code hash from tables and cards while code hash remains filterable.
-- [ ] Desktop Pair columns use server-backed filters, and compact Report Risk cards retain complete Status and both Pair projections with equivalent controls above the list.
+- [ ] The centered filter modal owns all global and independently saved Pair drafts, while only the active Pair filter becomes a request dependency.
+- [ ] Desktop Pair headers and compact Pair controls apply the same current-page local sort without changing API or cache identity.
+- [ ] Compact Report Risk cards retain complete Status and both Pair projections.
 - [ ] Report risk absence remains distinguishable from safe boolean values in lists, detail, and revision history.
 - [ ] Aggregate composition matches the typed public contract and observation V1 schemas.
 - [ ] Precision-sensitive values remain strings across the API and UI boundary.
