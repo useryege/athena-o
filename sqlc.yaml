@@ -19,30 +19,48 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/worm/store/migrations"
-    queries: "internal/worm/store/queries"
+    schema: "internal/wormmarkets/store/migrations"
+    queries: "internal/wormmarkets/store/queries"
     gen:
       go:
         package: "sqlc"
-        out: "internal/worm/store/sqlc"
+        out: "internal/wormmarkets/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/wormpoly/store/migrations"
-    queries: "internal/wormpoly/store/queries"
+    schema: "internal/fifamarketdashboard/store/migrations"
+    queries: "internal/fifamarketdashboard/store/queries"
     gen:
       go:
         package: "sqlc"
-        out: "internal/wormpoly/store/sqlc"
+        out: "internal/fifamarketdashboard/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/polymarket/store/migrations"
-    queries: "internal/polymarket/store/queries"
+    schema: "internal/sportslive/store/migrations"
+    queries: "internal/sportslive/store/queries"
     gen:
       go:
         package: "sqlc"
-        out: "internal/polymarket/store/sqlc"
+        out: "internal/sportslive/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+  - engine: "postgresql"
+    schema: "internal/sportshistory/store/migrations"
+    queries: "internal/sportshistory/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/sportshistory/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+  - engine: "postgresql"
+    schema: "internal/managedoo/store/migrations"
+    queries: "internal/managedoo/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/managedoo/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"

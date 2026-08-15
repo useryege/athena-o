@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+// FIFA Market Dashboard Service API exposes the aggregated FIFA market view.
+package fifamarketdashboard;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/fifamarketdashboard";
+
+// GetFIFAMarketDashboardStatusRequest queries the FIFA Market Dashboard service runtime status.
+message GetFIFAMarketDashboardStatusRequest {}
+
+// GetFIFAMarketDashboardStatusResponse returns the FIFA Market Dashboard service runtime status.
+message GetFIFAMarketDashboardStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+message GetFIFAMarketDashboardRequest {
+  string requester = 1;
+}
+
+message GetFIFAMarketDashboardResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.FIFAMarketDashboard dashboard = 1;
+}
+
+message UpdateFIFAEventConfigRequest {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.FIFAMarketDashboardEventConfig config = 1;
+}
+
+message UpdateFIFAEventConfigResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.FIFAMarketDashboardEventConfig config = 1;
+}
+
+service FIFAMarketDashboardService {
+  // GetFIFAMarketDashboardStatus returns the FIFA Market Dashboard service runtime status.
+  rpc GetFIFAMarketDashboardStatus(GetFIFAMarketDashboardStatusRequest) returns (GetFIFAMarketDashboardStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/fifa-market-dashboard/status"};
+  }
+
+  rpc GetFIFAMarketDashboard(GetFIFAMarketDashboardRequest) returns (GetFIFAMarketDashboardResponse) {
+    option (google.api.http) = {get: "/api/v1/fifa-market-dashboard"};
+  }
+
+  rpc UpdateFIFAEventConfig(UpdateFIFAEventConfigRequest) returns (UpdateFIFAEventConfigResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/fifa-market-dashboard/event-config"
+      body: "config"
+    };
+  }
+}

@@ -15,8 +15,13 @@ The executable code remains the source of truth. These documents provide the mai
 
 | Subsystem | Capability | Document |
 | --- | --- | --- |
-| Development Runtime | Local process supervision and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
-| Polymarket | Managed Optimistic Oracle log ingestion, market enrichment, and alerts | [Managed OO Alerts](polymarket/managed-oo-alerts.md) |
+| Development Runtime | Local process supervision, capability process composition, and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
+| Market Intelligence | Polymarket hot-market discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
+| Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |
+| Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) |
+| Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) |
+| Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) |
+| Market Intelligence | Configured Worm/Polymarket FIFA composition, balances, and requester holdings | [FIFA Market Dashboard](market-intelligence/fifa-market-dashboard.md) |
 | Token Intelligence | Synchronous EVM block discovery, token validation, and project initialization | [Token Chain Processor](token-intelligence/chain-processor.md) |
 | Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |

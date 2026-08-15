@@ -44,13 +44,13 @@ import {
     NodeStatusesPage,
     NotificationsDetailPage,
     NotificationsPage,
-    PolymarketHotPage,
-    PolymarketMoversPage,
-    PolymarketRealtimePage,
-    PolymarketSportsLivePage,
-    PolymarketSportsHistoryPage,
-    PolymarketUMADisputedPage,
-    PolymarketUMAProposedPage,
+    MarketRadarHotPage,
+    MarketRadarMoversPage,
+    MarketRadarRealtimePage,
+    SportsLivePage,
+    SportsHistoryPage,
+    ManagedOODisputesPage,
+    ManagedOOProposalsPage,
     ProjectDetailPage,
     ProjectsPage,
     SettingsPage,
@@ -59,7 +59,7 @@ import {
     WalletBlocklistPage,
     WalletsPage,
     WorldCupCornersPage,
-    WormPolyPage
+    FIFAMarketDashboardPage
 } from './pages';
 
 services.viewPreferences.init();
@@ -94,8 +94,12 @@ interface AccessState {
 
 const rbacResources = {
     notifications: 'notifications',
-    polymarket: 'polymarket',
-    wormPoly: 'worm-poly',
+    marketRadar: 'market-radar',
+    sportsLive: 'sports-live',
+    sportsHistory: 'sports-history',
+    managedOO: 'managed-oo',
+    fifaMarketDashboard: 'fifa-market-dashboard',
+    worldCupCorners: 'world-cup-corners',
     tokenapi: 'tokenapi',
     serviceStatus: 'service-status',
     wallets: 'wallets'
@@ -124,60 +128,63 @@ const serviceStatusInvokePermission = permission(rbacResources.serviceStatus, rb
 const permissionKey = (perm: Permission) => `${perm.resource}:${perm.action}:${perm.subresource}`;
 const hasPermission = (access: AccessState, perm?: Permission) => !perm || access?.permissions[permissionKey(perm)] === true;
 
-const polymarketNavItem: NavItem = {
-    key: 'polymarket',
-    label: 'Polymarket',
+const marketRadarNavItem: NavItem = {
+    key: 'market-radar',
+    label: 'Market Radar',
     icon: <DashboardOutlined />,
     children: [
-        {key: '/polymarket', label: 'Hot Markets', path: '/polymarket', icon: <DashboardOutlined />, permission: permission(rbacResources.polymarket, rbacActions.get)},
+        {key: '/market-radar', label: 'Hot Markets', path: '/market-radar', icon: <DashboardOutlined />, permission: permission(rbacResources.marketRadar, rbacActions.get)},
         {
-            key: '/polymarket/realtime',
+            key: '/market-radar/realtime',
             label: 'Realtime',
-            path: '/polymarket/realtime',
+            path: '/market-radar/realtime',
             icon: <DashboardOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
+            permission: permission(rbacResources.marketRadar, rbacActions.get)
         },
         {
-            key: '/polymarket/movers',
+            key: '/market-radar/movers',
             label: 'Movers',
-            path: '/polymarket/movers',
-            icon: <DashboardOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
-        },
-        {
-            key: '/polymarket/sports-live',
-            label: 'Sports Live',
-            path: '/polymarket/sports-live',
-            icon: <DashboardOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
-        },
-        {
-            key: '/polymarket/sports-history',
-            label: 'Sports History',
-            path: '/polymarket/sports-history',
-            icon: <DashboardOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
-        },
-        {
-            key: '/polymarket/world-cup-corners',
-            label: 'World Cup Corners',
-            path: '/polymarket/world-cup-corners',
+            path: '/market-radar/movers',
             icon: <BarChartOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
+            permission: permission(rbacResources.marketRadar, rbacActions.get)
+        }
+    ]
+};
+
+const sportsNavItem: NavItem = {
+    key: 'sports',
+    label: 'Sports',
+    icon: <TrophyOutlined />,
+    children: [
+        {key: '/sports-live', label: 'Sports Live', path: '/sports-live', icon: <DashboardOutlined />, permission: permission(rbacResources.sportsLive, rbacActions.get)},
+        {
+            key: '/sports-history',
+            label: 'Sports History',
+            path: '/sports-history',
+            icon: <DashboardOutlined />,
+            permission: permission(rbacResources.sportsHistory, rbacActions.get)
+        }
+    ]
+};
+
+const managedOONavItem: NavItem = {
+    key: 'managed-oo',
+    label: 'Managed OO',
+    icon: <ApiOutlined />,
+    children: [
+        {
+            key: '/managed-oo/proposals',
+            label: 'Proposals',
+            path: '/managed-oo/proposals',
+            icon: <ApiOutlined />,
+            permission: permission(rbacResources.managedOO, rbacActions.get)
         },
         {
-            key: '/polymarket/uma-proposed',
-            label: 'UMA Proposed',
-            path: '/polymarket/uma-proposed',
+            key: '/managed-oo/disputes',
+            label: 'Disputes',
+            path: '/managed-oo/disputes',
             icon: <ApiOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
-        },
-        {
-            key: '/polymarket/uma-disputed',
-            label: 'UMA Disputed',
-            path: '/polymarket/uma-disputed',
-            icon: <ApiOutlined />,
-            permission: permission(rbacResources.polymarket, rbacActions.get)
+            permission: permission(rbacResources.managedOO, rbacActions.get)
         }
     ]
 };
@@ -238,8 +245,23 @@ const navSections: NavSection[] = [
         key: 'markets',
         label: 'Markets',
         children: [
-            polymarketNavItem,
-            {key: '/worm-poly', label: 'Worm Poly', path: '/worm-poly', icon: <TrophyOutlined />, permission: permission(rbacResources.wormPoly, rbacActions.get)}
+            marketRadarNavItem,
+            sportsNavItem,
+            managedOONavItem,
+            {
+                key: '/fifa-market-dashboard',
+                label: 'FIFA Market Dashboard',
+                path: '/fifa-market-dashboard',
+                icon: <TrophyOutlined />,
+                permission: permission(rbacResources.fifaMarketDashboard, rbacActions.get)
+            },
+            {
+                key: '/world-cup-corners',
+                label: 'World Cup Corners',
+                path: '/world-cup-corners',
+                icon: <BarChartOutlined />,
+                permission: permission(rbacResources.worldCupCorners, rbacActions.get)
+            }
         ]
     },
     {
@@ -410,37 +432,37 @@ const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => 
                     />
                 )}
             />
-            <Route path='/polymarket' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketHotPage />)} />
-            <Route path='/polymarket/realtime' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketRealtimePage />)} />
-            <Route path='/polymarket/movers' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketMoversPage />)} />
-            <Route path='/polymarket/sports-live' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <PolymarketSportsLivePage />)} />
+            <Route path='/market-radar' element={withPermission(permission(rbacResources.marketRadar, rbacActions.get), <MarketRadarHotPage />)} />
+            <Route path='/market-radar/realtime' element={withPermission(permission(rbacResources.marketRadar, rbacActions.get), <MarketRadarRealtimePage />)} />
+            <Route path='/market-radar/movers' element={withPermission(permission(rbacResources.marketRadar, rbacActions.get), <MarketRadarMoversPage />)} />
+            <Route path='/sports-live' element={withPermission(permission(rbacResources.sportsLive, rbacActions.get), <SportsLivePage />)} />
             <Route
-                path='/polymarket/sports-history'
+                path='/sports-history'
                 element={withPermission(
-                    permission(rbacResources.polymarket, rbacActions.get),
-                    <PolymarketSportsHistoryPage canRefresh={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
+                    permission(rbacResources.sportsHistory, rbacActions.get),
+                    <SportsHistoryPage canRefresh={hasPermission(props.access, permission(rbacResources.sportsHistory, rbacActions.invoke))} />
                 )}
             />
-            <Route path='/polymarket/world-cup-corners' element={withPermission(permission(rbacResources.polymarket, rbacActions.get), <WorldCupCornersPage />)} />
+            <Route path='/world-cup-corners' element={withPermission(permission(rbacResources.worldCupCorners, rbacActions.get), <WorldCupCornersPage />)} />
             <Route
-                path='/polymarket/uma-proposed'
+                path='/managed-oo/proposals'
                 element={withPermission(
-                    permission(rbacResources.polymarket, rbacActions.get),
-                    <PolymarketUMAProposedPage canScan={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
-                )}
-            />
-            <Route
-                path='/polymarket/uma-disputed'
-                element={withPermission(
-                    permission(rbacResources.polymarket, rbacActions.get),
-                    <PolymarketUMADisputedPage canScan={hasPermission(props.access, permission(rbacResources.polymarket, rbacActions.invoke))} />
+                    permission(rbacResources.managedOO, rbacActions.get),
+                    <ManagedOOProposalsPage canScan={hasPermission(props.access, permission(rbacResources.managedOO, rbacActions.invoke))} />
                 )}
             />
             <Route
-                path='/worm-poly'
+                path='/managed-oo/disputes'
                 element={withPermission(
-                    permission(rbacResources.wormPoly, rbacActions.get),
-                    <WormPolyPage canEdit={hasPermission(props.access, permission(rbacResources.wormPoly, rbacActions.update))} />
+                    permission(rbacResources.managedOO, rbacActions.get),
+                    <ManagedOODisputesPage canScan={hasPermission(props.access, permission(rbacResources.managedOO, rbacActions.invoke))} />
+                )}
+            />
+            <Route
+                path='/fifa-market-dashboard'
+                element={withPermission(
+                    permission(rbacResources.fifaMarketDashboard, rbacActions.get),
+                    <FIFAMarketDashboardPage canEdit={hasPermission(props.access, permission(rbacResources.fifaMarketDashboard, rbacActions.update))} />
                 )}
             />
             <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />

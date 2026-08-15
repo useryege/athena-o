@@ -1,8 +1,8 @@
-SELECT 'CREATE DATABASE worm'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'worm')\gexec
+SELECT 'CREATE DATABASE worm_markets'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'worm_markets')\gexec
 
-SELECT 'CREATE DATABASE wormpoly'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'wormpoly')\gexec
+SELECT 'CREATE DATABASE fifa_market_dashboard'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'fifa_market_dashboard')\gexec
 
 SELECT 'CREATE DATABASE notification'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notification')\gexec
@@ -10,8 +10,14 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notification')\gexec
 SELECT 'CREATE DATABASE wallet'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'wallet')\gexec
 
-SELECT 'CREATE DATABASE polymarket'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket')\gexec
+SELECT 'CREATE DATABASE sports_live'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'sports_live')\gexec
+
+SELECT 'CREATE DATABASE sports_history'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'sports_history')\gexec
+
+SELECT 'CREATE DATABASE managed_oo'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'managed_oo')\gexec
 
 SELECT 'CREATE DATABASE token'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'token')\gexec

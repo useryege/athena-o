@@ -13,14 +13,17 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
+	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
+	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
-	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
+	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
-	wormpolyapiclient "github.com/useryege/athena/internal/wormpoly/apiclient"
+	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
@@ -38,31 +41,34 @@ const (
 // NewCommand returns a new instance of an athena command
 func NewCommand() *cobra.Command {
 	var (
-		staticAssetsDir            string
-		baseHRef                   string
-		rootPath                   string
-		glogLevel                  int
-		disableAuth                bool
-		contentTypes               string
-		enableGZip                 bool
-		listenHost                 string
-		listenPort                 int
-		otlpAddress                string
-		otlpInsecure               bool
-		otlpHeaders                map[string]string
-		otlpAttrs                  []string
-		frameOptions               string
-		contentSecurityPolicy      string
-		notificationServerAddress  string
-		walletServerAddress        string
-		wormServerAddress          string
-		wormPolyServerAddress      string
-		polymarketServerAddress    string
-		tokenAPIServerAddress      string
-		etherscanGatewayIPs        string
-		etherscanGatewayAuthToken  string
-		etherscanAPIKeys           string
-		etherscanProbeQueryAddress string
+		staticAssetsDir                  string
+		baseHRef                         string
+		rootPath                         string
+		glogLevel                        int
+		disableAuth                      bool
+		contentTypes                     string
+		enableGZip                       bool
+		listenHost                       string
+		listenPort                       int
+		otlpAddress                      string
+		otlpInsecure                     bool
+		otlpHeaders                      map[string]string
+		otlpAttrs                        []string
+		frameOptions                     string
+		contentSecurityPolicy            string
+		notificationServerAddress        string
+		walletServerAddress              string
+		marketRadarServerAddress         string
+		sportsLiveServerAddress          string
+		sportsHistoryServerAddress       string
+		managedOOServerAddress           string
+		wormMarketsServerAddress         string
+		fifaMarketDashboardServerAddress string
+		tokenAPIServerAddress            string
+		etherscanGatewayIPs              string
+		etherscanGatewayAuthToken        string
+		etherscanAPIKeys                 string
+		etherscanProbeQueryAddress       string
 		// hydratorEnabled        bool
 		// syncWithReplaceAllowed bool
 
@@ -111,9 +117,12 @@ func NewCommand() *cobra.Command {
 
 			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
 			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
-			wormclientset := wormapiclient.NewWormClientset(wormServerAddress)
-			wormPolyClientset := wormpolyapiclient.NewWormPolyClientset(wormPolyServerAddress)
-			polymarketclientset := polymarketapiclient.NewPolymarketClientset(polymarketServerAddress)
+			marketRadarClientset := marketradarapiclient.NewMarketRadarClientset(marketRadarServerAddress)
+			sportsLiveClientset := sportsliveapiclient.NewSportsLiveClientset(sportsLiveServerAddress)
+			sportsHistoryClientset := sportshistoryapiclient.NewSportsHistoryClientset(sportsHistoryServerAddress)
+			managedOOClientset := managedooapiclient.NewManagedOOClientset(managedOOServerAddress)
+			wormMarketsClientset := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
+			fifaMarketDashboardClientset := fifamarketdashboardapiclient.NewFIFAMarketDashboardClientset(fifaMarketDashboardServerAddress)
 			tokenAPIClientset := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
 
 			athenaOpts := server.AthenaServerOpts{
@@ -131,9 +140,12 @@ func NewCommand() *cobra.Command {
 				Cache:                             cache,
 				NotificationClientset:             notificationclientset,
 				WalletClientset:                   walletclientset,
-				WormClientset:                     wormclientset,
-				WormPolyClientset:                 wormPolyClientset,
-				PolymarketClientset:               polymarketclientset,
+				MarketRadarClientset:              marketRadarClientset,
+				SportsLiveClientset:               sportsLiveClientset,
+				SportsHistoryClientset:            sportsHistoryClientset,
+				ManagedOOClientset:                managedOOClientset,
+				WormMarketsClientset:              wormMarketsClientset,
+				FIFAMarketDashboardClientset:      fifaMarketDashboardClientset,
 				TokenAPIClientset:                 tokenAPIClientset,
 				EtherscanGatewayIPs:               etherscanGatewayIPs,
 				EtherscanGatewayToken:             etherscanGatewayAuthToken,
@@ -202,9 +214,12 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&contentSecurityPolicy, "content-security-policy", env.StringFromEnv("ATHENA_SERVER_CONTENT_SECURITY_POLICY", "frame-ancestors 'self';"), "Set Content-Security-Policy header in HTTP responses to `value`. To disable, set to \"\".")
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
-	command.Flags().StringVar(&wormServerAddress, "worm-server-address", env.StringFromEnv("ATHENA_WORM_SERVER_ADDRESS", "localhost:8084"), "Athena worm server address")
-	command.Flags().StringVar(&wormPolyServerAddress, "worm-poly-server-address", env.StringFromEnv("ATHENA_WORM_POLY_SERVER_ADDRESS", "localhost:8090"), "Athena worm-poly server address")
-	command.Flags().StringVar(&polymarketServerAddress, "polymarket-server-address", env.StringFromEnv("ATHENA_POLYMARKET_SERVER_ADDRESS", "localhost:8092"), "Athena polymarket server address")
+	command.Flags().StringVar(&marketRadarServerAddress, "market-radar-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_SERVER_ADDRESS", "localhost:8092"), "Athena Market Radar server address")
+	command.Flags().StringVar(&sportsLiveServerAddress, "sports-live-server-address", env.StringFromEnv("ATHENA_SPORTS_LIVE_SERVER_ADDRESS", "localhost:8094"), "Athena Sports Live server address")
+	command.Flags().StringVar(&sportsHistoryServerAddress, "sports-history-server-address", env.StringFromEnv("ATHENA_SPORTS_HISTORY_SERVER_ADDRESS", "localhost:8104"), "Athena Sports History server address")
+	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", "localhost:8106"), "Athena Managed OO server address")
+	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", "localhost:8084"), "Athena Worm Markets server address")
+	command.Flags().StringVar(&fifaMarketDashboardServerAddress, "fifa-market-dashboard-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_SERVER_ADDRESS", "localhost:8090"), "Athena FIFA Market Dashboard server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", "localhost:8096"), "Athena token API server address")
 	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")
 	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC status calls")

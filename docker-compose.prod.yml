@@ -63,7 +63,7 @@ services:
       timeout: 5s
       retries: 5
 
-  athena-worm:
+  athena-worm-markets:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
@@ -74,17 +74,34 @@ services:
     env_file:
       - .env
     environment:
-      ATHENA_BINARY_NAME: athena-worm
+      ATHENA_BINARY_NAME: athena-worm-markets
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_WORM_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_WORM_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm sslmode=disable
-      ATHENA_WORM_NOTIFICATION_ENABLED: "true"
-      ATHENA_WORM_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
+      ATHENA_WORM_MARKETS_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
+      ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED: "true"
+      ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
     command: ["athena", "--port", "8084"]
     expose:
       - "8084"
 
-  athena-polymarket:
+  athena-market-radar:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      athena-notification:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-market-radar
+      ATHENA_MARKET_RADAR_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_MARKET_RADAR_NOTIFICATION_ENABLED: "true"
+      ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
+    command: ["athena", "--port", "8092"]
+    expose:
+      - "8092"
+
+  athena-sports-live:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
@@ -95,36 +112,76 @@ services:
     env_file:
       - .env
     environment:
-      ATHENA_BINARY_NAME: athena-polymarket
+      ATHENA_BINARY_NAME: athena-sports-live
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_POLYMARKET_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_POLYMARKET_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
-      ATHENA_POLYMARKET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=polymarket sslmode=disable
-    command: ["athena", "--port", "8092"]
+      ATHENA_SPORTS_LIVE_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
+      ATHENA_SPORTS_LIVE_NOTIFICATION_ENABLED: "true"
+      ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
+    command: ["athena", "--port", "8094"]
     expose:
-      - "8092"
+      - "8094"
 
-  athena-worm-poly:
+  athena-sports-history:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-      athena-worm:
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-sports-history
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_SPORTS_HISTORY_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_SPORTS_HISTORY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_history sslmode=disable
+    command: ["athena", "--port", "8104"]
+    expose:
+      - "8104"
+
+  athena-managed-oo:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      athena-notification:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-managed-oo
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_MANAGED_OO_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_MANAGED_OO_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=managed_oo sslmode=disable
+      ATHENA_MANAGED_OO_NOTIFICATION_ENABLED: "true"
+      ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
+      ATHENA_MANAGED_OO_POLYGON_RPC_URL: ${ATHENA_MANAGED_OO_POLYGON_RPC_URL:-https://polygon-rpc.com}
+    command: ["athena", "--port", "8106"]
+    expose:
+      - "8106"
+
+  athena-fifa-market-dashboard:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      athena-worm-markets:
         condition: service_started
       athena-wallet:
         condition: service_started
     env_file:
       - .env
     environment:
-      ATHENA_BINARY_NAME: athena-worm-poly
+      ATHENA_BINARY_NAME: athena-fifa-market-dashboard
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_WORM_POLY_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_WORM_POLY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wormpoly sslmode=disable
-      ATHENA_WORM_POLY_WORM_SERVER_ADDRESS: athena-worm:8084
-      ATHENA_WORM_POLY_WALLET_SERVER_ADDRESS: athena-wallet:8088
-      ATHENA_WORM_POLY_POLYGON_RPC_URL: ${ATHENA_WORM_POLY_POLYGON_RPC_URL:-https://polygon-rpc.com}
-      ATHENA_WORM_POLY_SOLANA_RPC_URL: ${ATHENA_WORM_POLY_SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      ATHENA_FIFA_MARKET_DASHBOARD_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=fifa_market_dashboard sslmode=disable
+      ATHENA_FIFA_MARKET_DASHBOARD_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084
+      ATHENA_FIFA_MARKET_DASHBOARD_WALLET_SERVER_ADDRESS: athena-wallet:8088
+      ATHENA_FIFA_MARKET_DASHBOARD_POLYGON_RPC_URL: ${ATHENA_FIFA_MARKET_DASHBOARD_POLYGON_RPC_URL:-https://polygon-rpc.com}
+      ATHENA_FIFA_MARKET_DASHBOARD_SOLANA_RPC_URL: ${ATHENA_FIFA_MARKET_DASHBOARD_SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
     command: ["athena", "--port", "8090"]
     expose:
       - "8090"
@@ -322,9 +379,11 @@ services:
       - .env
     environment:
       ATHENA_BINARY_NAME: athena-migrate
-      ATHENA_WORM_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm sslmode=disable
-      ATHENA_WORM_POLY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wormpoly sslmode=disable
-      ATHENA_POLYMARKET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=polymarket sslmode=disable
+      ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
+      ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=fifa_market_dashboard sslmode=disable
+      ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
+      ATHENA_SPORTS_HISTORY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_history sslmode=disable
+      ATHENA_MANAGED_OO_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=managed_oo sslmode=disable
       ATHENA_NOTIFICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=notification sslmode=disable
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
@@ -340,11 +399,17 @@ services:
         condition: service_started
       athena-wallet:
         condition: service_started
-      athena-worm:
+      athena-worm-markets:
         condition: service_started
-      athena-worm-poly:
+      athena-fifa-market-dashboard:
         condition: service_started
-      athena-polymarket:
+      athena-market-radar:
+        condition: service_started
+      athena-sports-live:
+        condition: service_started
+      athena-sports-history:
+        condition: service_started
+      athena-managed-oo:
         condition: service_started
       athena-token-api:
         condition: service_started
@@ -354,9 +419,12 @@ services:
       ATHENA_BINARY_NAME: athena-server
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
-      ATHENA_WORM_SERVER_ADDRESS: athena-worm:8084
-      ATHENA_WORM_POLY_SERVER_ADDRESS: athena-worm-poly:8090
-      ATHENA_POLYMARKET_SERVER_ADDRESS: athena-polymarket:8092
+      ATHENA_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084
+      ATHENA_FIFA_MARKET_DASHBOARD_SERVER_ADDRESS: athena-fifa-market-dashboard:8090
+      ATHENA_MARKET_RADAR_SERVER_ADDRESS: athena-market-radar:8092
+      ATHENA_SPORTS_LIVE_SERVER_ADDRESS: athena-sports-live:8094
+      ATHENA_SPORTS_HISTORY_SERVER_ADDRESS: athena-sports-history:8104
+      ATHENA_MANAGED_OO_SERVER_ADDRESS: athena-managed-oo:8106
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_SERVER_DISABLE_AUTH: ${ATHENA_SERVER_DISABLE_AUTH:-false}

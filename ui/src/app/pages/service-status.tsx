@@ -6,9 +6,12 @@ import {services, ServiceHealthStatus, ServiceStatus} from '../shared/services';
 const serviceLabels: Record<string, string> = {
     'notification': 'Notification',
     'wallet': 'Wallet',
-    'worm': 'Worm',
-    'worm-poly': 'Worm Poly',
-    'polymarket': 'Polymarket',
+    'market-radar': 'Market Radar',
+    'sports-live': 'Sports Live',
+    'sports-history': 'Sports History',
+    'managed-oo': 'Managed OO',
+    'worm-markets': 'Worm Markets',
+    'fifa-market-dashboard': 'FIFA Market Dashboard',
     'token-api': 'Token API'
 };
 

@@ -20,16 +20,18 @@ const (
 const (
 	// Athena API Server
 	DefaultPortAthenaAPIServer = 8080
-	// Athena Worm
-	DefaultPortWorm = 8084
+	// Athena Worm Markets
+	DefaultPortWormMarkets = 8084
 	// Athena Notification
 	DefaultPortNotification = 8086
 	// Athena Wallet
 	DefaultPortWallet = 8088
-	// Athena Worm Poly
-	DefaultPortWormPoly = 8090
-	// Athena Polymarket
-	DefaultPortPolymarket = 8092
+	// Athena FIFA Market Dashboard
+	DefaultPortFIFAMarketDashboard = 8090
+	// Athena Market Radar
+	DefaultPortMarketRadar = 8092
+	// Athena Sports Live
+	DefaultPortSportsLive = 8094
 	// Athena Token API
 	DefaultPortTokenAPI = 8096
 	// Athena Pred Poly
@@ -38,20 +40,27 @@ const (
 	DefaultPortEtherscanManager = 8100
 	// Athena Etherscan Gateway
 	DefaultPortEtherscanGateway = 8102
+	// Athena Sports History
+	DefaultPortSportsHistory = 8104
+	// Athena Managed OO
+	DefaultPortManagedOO = 8106
 )
 
 // DefaultAddressAPIServer for Athena components
 const (
-	DefaultAddressAPIServer        = "0.0.0.0"
-	DefaultAddressWorm             = "0.0.0.0"
-	DefaultAddressNotification     = "0.0.0.0"
-	DefaultAddressWallet           = "0.0.0.0"
-	DefaultAddressWormPoly         = "0.0.0.0"
-	DefaultAddressPolymarket       = "0.0.0.0"
-	DefaultAddressTokenAPI         = "0.0.0.0"
-	DefaultAddressPredPoly         = "0.0.0.0"
-	DefaultAddressEtherscanManager = "0.0.0.0"
-	DefaultAddressEtherscanGateway = "0.0.0.0"
+	DefaultAddressAPIServer           = "0.0.0.0"
+	DefaultAddressWormMarkets         = "0.0.0.0"
+	DefaultAddressNotification        = "0.0.0.0"
+	DefaultAddressWallet              = "0.0.0.0"
+	DefaultAddressFIFAMarketDashboard = "0.0.0.0"
+	DefaultAddressMarketRadar         = "0.0.0.0"
+	DefaultAddressSportsLive          = "0.0.0.0"
+	DefaultAddressSportsHistory       = "0.0.0.0"
+	DefaultAddressManagedOO           = "0.0.0.0"
+	DefaultAddressTokenAPI            = "0.0.0.0"
+	DefaultAddressPredPoly            = "0.0.0.0"
+	DefaultAddressEtherscanManager    = "0.0.0.0"
+	DefaultAddressEtherscanGateway    = "0.0.0.0"
 )
 
 // Default paths on the pod's file system

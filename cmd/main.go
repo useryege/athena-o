@@ -9,11 +9,15 @@ import (
 
 	athenaEtherscanGatewayCommands "github.com/useryege/athena/cmd/athena-etherscan-gateway/commands"
 	athenaEtherscanManagerCommands "github.com/useryege/athena/cmd/athena-etherscan-manager/commands"
+	athenaFIFAMarketDashboardCommands "github.com/useryege/athena/cmd/athena-fifa-market-dashboard/commands"
+	athenaManagedOOCommands "github.com/useryege/athena/cmd/athena-managed-oo/commands"
+	athenaMarketRadarCommands "github.com/useryege/athena/cmd/athena-market-radar/commands"
 	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
-	athenaPolymarketCommands "github.com/useryege/athena/cmd/athena-polymarket/commands"
 	athenaPredPolyCommands "github.com/useryege/athena/cmd/athena-pred-poly/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
+	athenaSportsHistoryCommands "github.com/useryege/athena/cmd/athena-sports-history/commands"
+	athenaSportsLiveCommands "github.com/useryege/athena/cmd/athena-sports-live/commands"
 	athenaTokenAPICommands "github.com/useryege/athena/cmd/athena-token-api/commands"
 	athenaTokenChainProcessorCommands "github.com/useryege/athena/cmd/athena-token-chain-processor/commands"
 	athenaTokenCollectorCommands "github.com/useryege/athena/cmd/athena-token-collector/commands"
@@ -22,8 +26,7 @@ import (
 	athenaTokenSelectorCommands "github.com/useryege/athena/cmd/athena-token-selector/commands"
 	athenaTokenSwapProcessorCommands "github.com/useryege/athena/cmd/athena-token-swap-processor/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
-	athenaWormPolyCommands "github.com/useryege/athena/cmd/athena-worm-poly/commands"
-	athenaWormCommands "github.com/useryege/athena/cmd/athena-worm/commands"
+	athenaWormMarketsCommands "github.com/useryege/athena/cmd/athena-worm-markets/commands"
 	"github.com/useryege/athena/util/log"
 )
 
@@ -55,8 +58,14 @@ func main() {
 		command = athenaEtherscanManagerCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
-	case "athena-polymarket":
-		command = athenaPolymarketCommands.NewCommand()
+	case "athena-market-radar":
+		command = athenaMarketRadarCommands.NewCommand()
+	case "athena-sports-live":
+		command = athenaSportsLiveCommands.NewCommand()
+	case "athena-sports-history":
+		command = athenaSportsHistoryCommands.NewCommand()
+	case "athena-managed-oo":
+		command = athenaManagedOOCommands.NewCommand()
 	case "athena-pred-poly":
 		command = athenaPredPolyCommands.NewCommand()
 	case "athena-token-api":
@@ -75,10 +84,10 @@ func main() {
 		command = athenaTokenSelectorCommands.NewCommand()
 	case "athena-wallet":
 		command = athenaWalletCommands.NewCommand()
-	case "athena-worm":
-		command = athenaWormCommands.NewCommand()
-	case "athena-worm-poly":
-		command = athenaWormPolyCommands.NewCommand()
+	case "athena-worm-markets":
+		command = athenaWormMarketsCommands.NewCommand()
+	case "athena-fifa-market-dashboard":
+		command = athenaFIFAMarketDashboardCommands.NewCommand()
 	case "athena-migrate":
 		command = athenaMigrateCommands.NewCommand()
 	default:

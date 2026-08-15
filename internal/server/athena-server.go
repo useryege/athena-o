@@ -36,26 +36,32 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
+	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
+	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
+	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
-	polymarketapiclient "github.com/useryege/athena/internal/polymarket/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	serverfifamarketdashboard "github.com/useryege/athena/internal/server/fifamarketdashboard"
 	"github.com/useryege/athena/internal/server/logout"
+	servermanagedoo "github.com/useryege/athena/internal/server/managedoo"
+	servermarketradar "github.com/useryege/athena/internal/server/marketradar"
 	servernotification "github.com/useryege/athena/internal/server/notification"
-	serverpolymarket "github.com/useryege/athena/internal/server/polymarket"
 	"github.com/useryege/athena/internal/server/rbacpolicy"
 	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
+	serversportshistory "github.com/useryege/athena/internal/server/sportshistory"
+	serversportslive "github.com/useryege/athena/internal/server/sportslive"
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
-	serverworm "github.com/useryege/athena/internal/server/worm"
-	serverwormpoly "github.com/useryege/athena/internal/server/wormpoly"
+	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
+	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
+	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	wormapiclient "github.com/useryege/athena/internal/worm/apiclient"
-	wormpolyapiclient "github.com/useryege/athena/internal/wormpoly/apiclient"
+	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
@@ -89,13 +95,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
+	fifamarketdashboardpkg "github.com/useryege/athena/pkg/apiclient/fifamarketdashboard"
+	managedoopkg "github.com/useryege/athena/pkg/apiclient/managedoo"
+	marketradarpkg "github.com/useryege/athena/pkg/apiclient/marketradar"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
-	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
+	sportshistorypkg "github.com/useryege/athena/pkg/apiclient/sportshistory"
+	sportslivepkg "github.com/useryege/athena/pkg/apiclient/sportslive"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
-	wormpkg "github.com/useryege/athena/pkg/apiclient/worm"
-	wormpolypkg "github.com/useryege/athena/pkg/apiclient/wormpoly"
+	wormmarketspkg "github.com/useryege/athena/pkg/apiclient/wormmarkets"
 )
 
 const (
@@ -188,9 +197,12 @@ type AthenaServerOpts struct {
 	ContentSecurityPolicy             string
 	NotificationClientset             notificationapiclient.Clientset
 	WalletClientset                   walletapiclient.Clientset
-	WormClientset                     wormapiclient.Clientset
-	WormPolyClientset                 wormpolyapiclient.Clientset
-	PolymarketClientset               polymarketapiclient.Clientset
+	MarketRadarClientset              marketradarapiclient.Clientset
+	SportsLiveClientset               sportsliveapiclient.Clientset
+	SportsHistoryClientset            sportshistoryapiclient.Clientset
+	ManagedOOClientset                managedooapiclient.Clientset
+	WormMarketsClientset              wormmarketsapiclient.Clientset
+	FIFAMarketDashboardClientset      fifamarketdashboardapiclient.Clientset
 	TokenAPIClientset                 tokenapiapiclient.Clientset
 	EtherscanGatewayIPs               string
 	EtherscanGatewayToken             string
@@ -390,9 +402,12 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
-	wormpkg.RegisterWormServiceServer(grpcS, server.serviceSet.WormService)
-	wormpolypkg.RegisterWormPolyServiceServer(grpcS, server.serviceSet.WormPolyService)
-	polymarketpkg.RegisterPolymarketServiceServer(grpcS, server.serviceSet.PolymarketService)
+	marketradarpkg.RegisterMarketRadarServiceServer(grpcS, server.serviceSet.MarketRadarService)
+	sportslivepkg.RegisterSportsLiveServiceServer(grpcS, server.serviceSet.SportsLiveService)
+	sportshistorypkg.RegisterSportsHistoryServiceServer(grpcS, server.serviceSet.SportsHistoryService)
+	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
+	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
+	fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceServer(grpcS, server.serviceSet.FIFAMarketDashboardService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenResearchServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenPolicyServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -407,18 +422,21 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 }
 
 type AthenaServiceSet struct {
-	HealthService        *health.Server
-	SessionService       *session.Server
-	SettingsService      *settings.Server
-	AccountService       *account.Server
-	VersionService       *version.Server
-	NotificationService  *servernotification.Server
-	WalletService        *serverwallet.Server
-	WormService          *serverworm.Server
-	WormPolyService      *serverwormpoly.Server
-	PolymarketService    *serverpolymarket.Server
-	TokenServices        *servertokenapi.Server
-	ServiceStatusService *serverservicestatus.Server
+	HealthService              *health.Server
+	SessionService             *session.Server
+	SettingsService            *settings.Server
+	AccountService             *account.Server
+	VersionService             *version.Server
+	NotificationService        *servernotification.Server
+	WalletService              *serverwallet.Server
+	MarketRadarService         *servermarketradar.Server
+	SportsLiveService          *serversportslive.Server
+	SportsHistoryService       *serversportshistory.Server
+	ManagedOOService           *servermanagedoo.Server
+	WormMarketsService         *serverwormmarkets.Server
+	FIFAMarketDashboardService *serverfifamarketdashboard.Server
+	TokenServices              *servertokenapi.Server
+	ServiceStatusService       *serverservicestatus.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -440,20 +458,23 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
 	walletService := serverwallet.NewServer(server.WalletClientset)
-	// worm service
-	wormService := serverworm.NewServer(server.WormClientset)
-	// worm-poly service
-	wormPolyService := serverwormpoly.NewServer(server.WormPolyClientset)
-	// polymarket service
-	polymarketService := serverpolymarket.NewServer(server.PolymarketClientset)
+	marketRadarService := servermarketradar.NewServer(server.MarketRadarClientset)
+	sportsLiveService := serversportslive.NewServer(server.SportsLiveClientset)
+	sportsHistoryService := serversportshistory.NewServer(server.SportsHistoryClientset)
+	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
+	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
+	fifaMarketDashboardService := serverfifamarketdashboard.NewServer(server.FIFAMarketDashboardClientset)
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
 	serviceStatusService := serverservicestatus.NewServer(
 		server.NotificationClientset,
 		server.WalletClientset,
-		server.WormClientset,
-		server.WormPolyClientset,
-		server.PolymarketClientset,
+		server.MarketRadarClientset,
+		server.SportsLiveClientset,
+		server.SportsHistoryClientset,
+		server.ManagedOOClientset,
+		server.WormMarketsClientset,
+		server.FIFAMarketDashboardClientset,
 		server.TokenAPIClientset,
 		server.EtherscanGatewayIPs,
 		server.EtherscanGatewayToken,
@@ -469,18 +490,21 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:        healthService,
-		SessionService:       sessionService,
-		SettingsService:      settingsService,
-		AccountService:       accountService,
-		VersionService:       versionService,
-		NotificationService:  notificationService,
-		WalletService:        walletService,
-		WormService:          wormService,
-		WormPolyService:      wormPolyService,
-		PolymarketService:    polymarketService,
-		TokenServices:        tokenAPIService,
-		ServiceStatusService: serviceStatusService,
+		HealthService:              healthService,
+		SessionService:             sessionService,
+		SettingsService:            settingsService,
+		AccountService:             accountService,
+		VersionService:             versionService,
+		NotificationService:        notificationService,
+		WalletService:              walletService,
+		MarketRadarService:         marketRadarService,
+		SportsLiveService:          sportsLiveService,
+		SportsHistoryService:       sportsHistoryService,
+		ManagedOOService:           managedOOService,
+		WormMarketsService:         wormMarketsService,
+		FIFAMarketDashboardService: fifaMarketDashboardService,
+		TokenServices:              tokenAPIService,
+		ServiceStatusService:       serviceStatusService,
 	}
 }
 
@@ -779,9 +803,12 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, wormpkg.RegisterWormServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, wormpolypkg.RegisterWormPolyServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, polymarketpkg.RegisterPolymarketServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, marketradarpkg.RegisterMarketRadarServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, sportslivepkg.RegisterSportsLiveServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, sportshistorypkg.RegisterSportsHistoryServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenResearchServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenPolicyServiceHandler, gwmux, conn)

@@ -8,6 +8,358 @@ package github.com.useryege.athena.pkg.apis.application.v1alpha1;
 // Package-wide variables from generator "generated".
 option go_package = "github.com/useryege/athena/pkg/apis/application/v1alpha1";
 
+message FIFAMarketDashboard {
+  optional FIFAMarketDashboardEventConfig config = 1;
+
+  optional WormMarketsEventItem wormEvent = 2;
+
+  optional int64 wormFetchedAt = 3;
+
+  optional string wormError = 4;
+
+  optional PolymarketFIFAMoneylineEventItem polymarketEvent = 5;
+
+  optional int64 polymarketFetchedAt = 6;
+
+  optional string polymarketError = 7;
+
+  repeated FIFAMarketDashboardWalletBalanceItem walletBalances = 8;
+
+  optional int64 walletBalancesFetchedAt = 9;
+
+  optional string walletBalancesError = 10;
+
+  repeated FIFAMarketDashboardWalletHoldingItem walletHoldings = 11;
+
+  optional int64 walletHoldingsFetchedAt = 12;
+
+  optional string walletHoldingsError = 13;
+
+  optional int64 fetchedAt = 14;
+}
+
+message FIFAMarketDashboardEventConfig {
+  optional string wormEventId = 1;
+
+  optional string eventRef = 2;
+}
+
+message FIFAMarketDashboardWalletBalanceItem {
+  optional string chain = 1;
+
+  optional string label = 2;
+
+  optional string walletAddress = 3;
+
+  optional string tokenAddress = 4;
+
+  optional string tokenSymbol = 5;
+
+  optional int32 decimals = 6;
+
+  optional string rawAmount = 7;
+
+  optional string amount = 8;
+
+  optional string explorerUrl = 9;
+
+  optional bool ok = 10;
+
+  optional string errorMessage = 11;
+}
+
+message FIFAMarketDashboardWalletHoldingItem {
+  optional int64 walletId = 1;
+
+  optional string chain = 2;
+
+  optional string type = 3;
+
+  optional string alias = 4;
+
+  optional string walletAddress = 5;
+
+  optional string solRawAmount = 6;
+
+  optional string solAmount = 7;
+
+  optional string usdcRawAmount = 8;
+
+  optional string usdcAmount = 9;
+
+  optional string explorerUrl = 10;
+
+  optional bool ok = 11;
+
+  optional string errorMessage = 12;
+}
+
+message ManagedOODisputeItem {
+  optional string txHash = 1;
+
+  optional int64 logIndex = 2;
+
+  optional int64 blockNumber = 3;
+
+  optional string blockHash = 4;
+
+  optional int64 txIndex = 5;
+
+  optional string contractAddress = 6;
+
+  optional string topic = 7;
+
+  optional string requester = 8;
+
+  optional string proposer = 9;
+
+  optional string disputer = 10;
+
+  optional string identifier = 11;
+
+  optional int64 requestTimestamp = 12;
+
+  optional string ancillaryDataHex = 13;
+
+  optional string ancillaryDataText = 14;
+
+  optional string marketId = 15;
+
+  optional string proposedPrice = 16;
+
+  optional string rawTopics = 17;
+
+  optional string rawData = 18;
+
+  optional string fetchedAt = 19;
+
+  optional string conditionId = 20;
+
+  optional string eventSlug = 21;
+
+  optional string marketSlug = 22;
+
+  optional string question = 23;
+
+  optional string polymarketUrl = 24;
+}
+
+message ManagedOOProposalItem {
+  optional string txHash = 1;
+
+  optional int64 logIndex = 2;
+
+  optional int64 blockNumber = 3;
+
+  optional string blockHash = 4;
+
+  optional int64 txIndex = 5;
+
+  optional string contractAddress = 6;
+
+  optional string topic = 7;
+
+  optional string requester = 8;
+
+  optional string proposer = 9;
+
+  optional string identifier = 10;
+
+  optional int64 requestTimestamp = 11;
+
+  optional string ancillaryDataHex = 12;
+
+  optional string ancillaryDataText = 13;
+
+  optional string marketId = 14;
+
+  optional string proposedPrice = 15;
+
+  optional int64 expirationTimestamp = 16;
+
+  optional string currency = 17;
+
+  optional string rawTopics = 18;
+
+  optional string rawData = 19;
+
+  optional string fetchedAt = 20;
+
+  optional string conditionId = 21;
+
+  optional string eventSlug = 22;
+
+  optional string marketSlug = 23;
+
+  optional string question = 24;
+
+  optional string polymarketUrl = 25;
+}
+
+message MarketRadarHotMarketItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string question = 3;
+
+  optional string image = 4;
+
+  optional double volume24hr = 5;
+
+  optional double volumeNum = 6;
+
+  optional double liquidityNum = 7;
+
+  optional double spread = 8;
+
+  optional double bestBid = 9;
+
+  optional double bestAsk = 10;
+
+  optional double lastTradePrice = 11;
+
+  optional string updatedAt = 12;
+
+  repeated MarketRadarHotMarketTokenItem tokens = 13;
+
+  optional string eventSlug = 14;
+}
+
+message MarketRadarHotMarketTokenItem {
+  optional string tokenId = 1;
+
+  optional string outcome = 2;
+
+  optional double price = 3;
+}
+
+message MarketRadarMoverMarketItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string question = 3;
+
+  optional string image = 4;
+
+  optional double volume24hr = 5;
+
+  optional double volumeNum = 6;
+
+  optional double liquidityNum = 7;
+
+  optional string updatedAt = 8;
+
+  repeated MarketRadarMoverTokenItem tokens = 9;
+
+  optional string eventSlug = 10;
+
+  optional MarketRadarMoverTokenItem leader = 11;
+
+  optional double score = 12;
+
+  optional string direction = 13;
+}
+
+message MarketRadarMoverTokenItem {
+  optional string tokenId = 1;
+
+  optional string outcome = 2;
+
+  optional double price = 3;
+
+  optional double bestBid = 4;
+
+  optional double bestAsk = 5;
+
+  optional double spread = 6;
+
+  optional double lastTradePrice = 7;
+
+  optional double lastTradeSize = 8;
+
+  optional string lastTradeSide = 9;
+
+  optional int64 lastEventAt = 10;
+
+  repeated MarketRadarMoverWindowItem windows = 11;
+
+  optional bool warmup = 12;
+
+  optional double score = 13;
+
+  optional string direction = 14;
+}
+
+message MarketRadarMoverWindowItem {
+  optional string window = 1;
+
+  optional double priceChangePp = 2;
+
+  optional bool warmup = 3;
+
+  optional int32 sampleCount = 4;
+}
+
+message MarketRadarRealtimeMarketItem {
+  optional string conditionId = 1;
+
+  optional string marketSlug = 2;
+
+  optional string question = 3;
+
+  optional string image = 4;
+
+  optional double volume24hr = 5;
+
+  optional double volumeNum = 6;
+
+  optional double liquidityNum = 7;
+
+  optional string updatedAt = 8;
+
+  repeated MarketRadarRealtimeTokenItem tokens = 9;
+
+  optional string eventSlug = 10;
+}
+
+message MarketRadarRealtimeTokenItem {
+  optional string tokenId = 1;
+
+  optional string outcome = 2;
+
+  optional double price = 3;
+
+  optional double bestBid = 4;
+
+  optional double bestAsk = 5;
+
+  optional double spread = 6;
+
+  optional double lastTradePrice = 7;
+
+  optional double lastTradeSize = 8;
+
+  optional string lastTradeSide = 9;
+
+  optional int64 lastEventAt = 10;
+
+  repeated MarketRadarRealtimeWindowItem windows = 11;
+
+  optional bool warmup = 12;
+}
+
+message MarketRadarRealtimeWindowItem {
+  optional string window = 1;
+
+  optional double priceChangePp = 2;
+
+  optional bool warmup = 3;
+
+  optional int32 sampleCount = 4;
+}
+
 message NotificationDeliveryDetail {
   optional int64 id = 1;
 
@@ -115,7 +467,7 @@ message PolymarketFIFAMoneylineEventItem {
 
   optional bool ended = 14;
 
-  repeated PolymarketSportsLiveTeamItem teams = 15;
+  repeated SportsTeamItem teams = 15;
 
   repeated PolymarketFIFAMoneylineOptionItem options = 16;
 }
@@ -148,221 +500,7 @@ message PolymarketFIFAMoneylineOptionItem {
   optional bool negRisk = 13;
 }
 
-message PolymarketFIFAWalletBalanceItem {
-  optional string chain = 1;
-
-  optional string label = 2;
-
-  optional string walletAddress = 3;
-
-  optional string tokenAddress = 4;
-
-  optional string tokenSymbol = 5;
-
-  optional int32 decimals = 6;
-
-  optional string rawAmount = 7;
-
-  optional string amount = 8;
-
-  optional string explorerUrl = 9;
-
-  optional bool ok = 10;
-
-  optional string errorMessage = 11;
-}
-
-message PolymarketFIFAWalletHoldingItem {
-  optional int64 walletId = 1;
-
-  optional string chain = 2;
-
-  optional string type = 3;
-
-  optional string alias = 4;
-
-  optional string walletAddress = 5;
-
-  optional string solRawAmount = 6;
-
-  optional string solAmount = 7;
-
-  optional string usdcRawAmount = 8;
-
-  optional string usdcAmount = 9;
-
-  optional string explorerUrl = 10;
-
-  optional bool ok = 11;
-
-  optional string errorMessage = 12;
-}
-
-message PolymarketHotMarketItem {
-  optional string conditionId = 1;
-
-  optional string marketSlug = 2;
-
-  optional string question = 3;
-
-  optional string image = 4;
-
-  optional double volume24hr = 5;
-
-  optional double volumeNum = 6;
-
-  optional double liquidityNum = 7;
-
-  optional double spread = 8;
-
-  optional double bestBid = 9;
-
-  optional double bestAsk = 10;
-
-  optional double lastTradePrice = 11;
-
-  optional string updatedAt = 12;
-
-  repeated PolymarketHotMarketTokenItem tokens = 13;
-
-  optional string eventSlug = 14;
-}
-
-message PolymarketHotMarketTokenItem {
-  optional string tokenId = 1;
-
-  optional string outcome = 2;
-
-  optional double price = 3;
-}
-
-message PolymarketMoverMarketItem {
-  optional string conditionId = 1;
-
-  optional string marketSlug = 2;
-
-  optional string question = 3;
-
-  optional string image = 4;
-
-  optional double volume24hr = 5;
-
-  optional double volumeNum = 6;
-
-  optional double liquidityNum = 7;
-
-  optional string updatedAt = 8;
-
-  repeated PolymarketMoverTokenItem tokens = 9;
-
-  optional string eventSlug = 10;
-
-  optional PolymarketMoverTokenItem leader = 11;
-
-  optional double score = 12;
-
-  optional string direction = 13;
-}
-
-message PolymarketMoverTokenItem {
-  optional string tokenId = 1;
-
-  optional string outcome = 2;
-
-  optional double price = 3;
-
-  optional double bestBid = 4;
-
-  optional double bestAsk = 5;
-
-  optional double spread = 6;
-
-  optional double lastTradePrice = 7;
-
-  optional double lastTradeSize = 8;
-
-  optional string lastTradeSide = 9;
-
-  optional int64 lastEventAt = 10;
-
-  repeated PolymarketMoverWindowItem windows = 11;
-
-  optional bool warmup = 12;
-
-  optional double score = 13;
-
-  optional string direction = 14;
-}
-
-message PolymarketMoverWindowItem {
-  optional string window = 1;
-
-  optional double priceChangePp = 2;
-
-  optional bool warmup = 3;
-
-  optional int32 sampleCount = 4;
-}
-
-message PolymarketRealtimeMarketItem {
-  optional string conditionId = 1;
-
-  optional string marketSlug = 2;
-
-  optional string question = 3;
-
-  optional string image = 4;
-
-  optional double volume24hr = 5;
-
-  optional double volumeNum = 6;
-
-  optional double liquidityNum = 7;
-
-  optional string updatedAt = 8;
-
-  repeated PolymarketRealtimeTokenItem tokens = 9;
-
-  optional string eventSlug = 10;
-}
-
-message PolymarketRealtimeTokenItem {
-  optional string tokenId = 1;
-
-  optional string outcome = 2;
-
-  optional double price = 3;
-
-  optional double bestBid = 4;
-
-  optional double bestAsk = 5;
-
-  optional double spread = 6;
-
-  optional double lastTradePrice = 7;
-
-  optional double lastTradeSize = 8;
-
-  optional string lastTradeSide = 9;
-
-  optional int64 lastEventAt = 10;
-
-  repeated PolymarketRealtimeWindowItem windows = 11;
-
-  optional bool warmup = 12;
-}
-
-message PolymarketRealtimeWindowItem {
-  optional string window = 1;
-
-  optional double priceChangePp = 2;
-
-  optional bool warmup = 3;
-
-  optional int32 sampleCount = 4;
-}
-
-message PolymarketSportsHistoryEventCardItem {
+message SportsHistoryEventCardItem {
   optional string eventKey = 1;
 
   optional string eventId = 2;
@@ -395,12 +533,24 @@ message PolymarketSportsHistoryEventCardItem {
 
   optional int32 marketCount = 16;
 
-  repeated PolymarketSportsLiveMarketCardItem markets = 17;
+  repeated SportsLiveMarketCardItem markets = 17;
 
-  repeated PolymarketSportsLiveTeamItem teams = 18;
+  repeated SportsTeamItem teams = 18;
 }
 
-message PolymarketSportsHistorySyncStatus {
+message SportsHistoryPriceHistorySeriesItem {
+  optional string marketKey = 1;
+
+  optional string tokenId = 2;
+
+  optional string outcome = 3;
+
+  repeated int64 timestamps = 4;
+
+  repeated double prices = 5;
+}
+
+message SportsHistorySyncStatus {
   optional string state = 1;
 
   optional int64 startedAt = 2;
@@ -412,7 +562,7 @@ message PolymarketSportsHistorySyncStatus {
   optional string errorMessage = 5;
 }
 
-message PolymarketSportsLiveEventCardItem {
+message SportsLiveEventCardItem {
   optional string eventKey = 1;
 
   optional string eventId = 2;
@@ -441,12 +591,12 @@ message PolymarketSportsLiveEventCardItem {
 
   optional int32 marketCount = 14;
 
-  repeated PolymarketSportsLiveMarketCardItem markets = 15;
+  repeated SportsLiveMarketCardItem markets = 15;
 
-  repeated PolymarketSportsLiveTeamItem teams = 16;
+  repeated SportsTeamItem teams = 16;
 }
 
-message PolymarketSportsLiveMarketCardItem {
+message SportsLiveMarketCardItem {
   optional string marketKey = 1;
 
   optional string conditionId = 2;
@@ -476,7 +626,7 @@ message PolymarketSportsLiveMarketCardItem {
   optional string sportsMarketType = 14;
 }
 
-message PolymarketSportsLivePriceHistorySeriesItem {
+message SportsLivePriceHistorySeriesItem {
   optional string marketKey = 1;
 
   optional string tokenId = 2;
@@ -488,7 +638,7 @@ message PolymarketSportsLivePriceHistorySeriesItem {
   repeated double prices = 5;
 }
 
-message PolymarketSportsLiveTeamItem {
+message SportsTeamItem {
   optional string name = 1;
 
   optional string logo = 2;
@@ -496,114 +646,6 @@ message PolymarketSportsLiveTeamItem {
   optional string abbreviation = 3;
 
   optional string alias = 4;
-}
-
-message PolymarketStatus {
-  optional bool started = 1;
-
-  optional string status = 2;
-}
-
-message PolymarketUMADisputeItem {
-  optional string txHash = 1;
-
-  optional int64 logIndex = 2;
-
-  optional int64 blockNumber = 3;
-
-  optional string blockHash = 4;
-
-  optional int64 txIndex = 5;
-
-  optional string contractAddress = 6;
-
-  optional string topic = 7;
-
-  optional string requester = 8;
-
-  optional string proposer = 9;
-
-  optional string disputer = 10;
-
-  optional string identifier = 11;
-
-  optional int64 requestTimestamp = 12;
-
-  optional string ancillaryDataHex = 13;
-
-  optional string ancillaryDataText = 14;
-
-  optional string marketId = 15;
-
-  optional string proposedPrice = 16;
-
-  optional string rawTopics = 17;
-
-  optional string rawData = 18;
-
-  optional string fetchedAt = 19;
-
-  optional string conditionId = 20;
-
-  optional string eventSlug = 21;
-
-  optional string marketSlug = 22;
-
-  optional string question = 23;
-
-  optional string polymarketUrl = 24;
-}
-
-message PolymarketUMAProposalItem {
-  optional string txHash = 1;
-
-  optional int64 logIndex = 2;
-
-  optional int64 blockNumber = 3;
-
-  optional string blockHash = 4;
-
-  optional int64 txIndex = 5;
-
-  optional string contractAddress = 6;
-
-  optional string topic = 7;
-
-  optional string requester = 8;
-
-  optional string proposer = 9;
-
-  optional string identifier = 10;
-
-  optional int64 requestTimestamp = 11;
-
-  optional string ancillaryDataHex = 12;
-
-  optional string ancillaryDataText = 13;
-
-  optional string marketId = 14;
-
-  optional string proposedPrice = 15;
-
-  optional int64 expirationTimestamp = 16;
-
-  optional string currency = 17;
-
-  optional string rawTopics = 18;
-
-  optional string rawData = 19;
-
-  optional string fetchedAt = 20;
-
-  optional string conditionId = 21;
-
-  optional string eventSlug = 22;
-
-  optional string marketSlug = 23;
-
-  optional string question = 24;
-
-  optional string polymarketUrl = 25;
 }
 
 message TokenAveObservation {
@@ -1494,7 +1536,7 @@ message WalletStatus {
   optional string status = 2;
 }
 
-message WormEventItem {
+message WormMarketsEventItem {
   optional string conditionId = 1;
 
   optional string title = 2;
@@ -1505,7 +1547,7 @@ message WormEventItem {
 
   optional int64 marketCount = 5;
 
-  repeated WormMarketItem markets = 6;
+  repeated WormMarketsMarketItem markets = 6;
 
   optional string description = 7;
 
@@ -1514,7 +1556,7 @@ message WormEventItem {
   optional int64 created = 9;
 }
 
-message WormMarginPositionEstimateItem {
+message WormMarketsMarginPositionEstimateItem {
   optional string funds = 1;
 
   optional bool isYes = 2;
@@ -1540,7 +1582,7 @@ message WormMarginPositionEstimateItem {
   optional string liquidationPrice = 12;
 }
 
-message WormMarketItem {
+message WormMarketsMarketItem {
   optional string conditionId = 1;
 
   optional string title = 2;
@@ -1589,44 +1631,8 @@ message WormMarketItem {
 
   optional int32 sharesDecimals = 24;
 
-  optional WormMarginPositionEstimateItem estimate = 25;
+  optional WormMarketsMarginPositionEstimateItem estimate = 25;
 
   optional string tradingDataError = 26;
-}
-
-message WormPolyFIFADashboard {
-  optional WormPolyFIFAEventConfig config = 1;
-
-  optional WormEventItem wormEvent = 2;
-
-  optional int64 wormFetchedAt = 3;
-
-  optional string wormError = 4;
-
-  optional PolymarketFIFAMoneylineEventItem polymarketEvent = 5;
-
-  optional int64 polymarketFetchedAt = 6;
-
-  optional string polymarketError = 7;
-
-  repeated PolymarketFIFAWalletBalanceItem walletBalances = 8;
-
-  optional int64 walletBalancesFetchedAt = 9;
-
-  optional string walletBalancesError = 10;
-
-  repeated PolymarketFIFAWalletHoldingItem walletHoldings = 11;
-
-  optional int64 walletHoldingsFetchedAt = 12;
-
-  optional string walletHoldingsError = 13;
-
-  optional int64 fetchedAt = 14;
-}
-
-message WormPolyFIFAEventConfig {
-  optional string wormEventId = 1;
-
-  optional string eventRef = 2;
 }
 

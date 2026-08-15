@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+// Market Radar Service API exposes hot, realtime, and moving Polymarket markets.
+package marketradar;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/marketradar";
+
+// GetMarketRadarStatusRequest queries the Market Radar service runtime status.
+message GetMarketRadarStatusRequest {}
+
+// GetMarketRadarStatusResponse returns the Market Radar service runtime status.
+message GetMarketRadarStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+// ListHotMarketsRequest queries discovered hot markets.
+message ListHotMarketsRequest {
+  int32 limit = 1;
+}
+
+// ListHotMarketsResponse returns discovered hot markets.
+message ListHotMarketsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.MarketRadarHotMarketItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+  int32 monitored_markets = 4;
+  int32 monitored_tokens = 5;
+  int32 candidate_count = 6;
+}
+
+// ListRealtimeMarketsRequest queries realtime market rows.
+message ListRealtimeMarketsRequest {
+  int32 limit = 1;
+}
+
+// ListRealtimeMarketsResponse returns realtime market rows.
+message ListRealtimeMarketsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.MarketRadarRealtimeMarketItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+  int32 subscribed_markets = 4;
+  int32 subscribed_tokens = 5;
+  bool connected = 6;
+  int64 last_event_at = 7;
+  int32 candidate_count = 8;
+}
+
+// ListMarketMoversRequest queries price mover market rows.
+message ListMarketMoversRequest {
+  int32 limit = 1;
+}
+
+// ListMarketMoversResponse returns price mover market rows.
+message ListMarketMoversResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.MarketRadarMoverMarketItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+  bool connected = 4;
+  int64 last_event_at = 5;
+  int32 monitored_markets = 6;
+  int32 monitored_tokens = 7;
+  int32 candidate_count = 8;
+}
+
+service MarketRadarService {
+  // GetMarketRadarStatus returns the Market Radar service runtime status.
+  rpc GetMarketRadarStatus(GetMarketRadarStatusRequest) returns (GetMarketRadarStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/market-radar/status"};
+  }
+
+  // ListHotMarkets returns discovered hot markets.
+  rpc ListHotMarkets(ListHotMarketsRequest) returns (ListHotMarketsResponse) {
+    option (google.api.http) = {get: "/api/v1/market-radar/hot-markets"};
+  }
+
+  // ListRealtimeMarkets returns realtime market rows.
+  rpc ListRealtimeMarkets(ListRealtimeMarketsRequest) returns (ListRealtimeMarketsResponse) {
+    option (google.api.http) = {get: "/api/v1/market-radar/realtime-markets"};
+  }
+
+  // ListMarketMovers returns price mover market rows.
+  rpc ListMarketMovers(ListMarketMoversRequest) returns (ListMarketMoversResponse) {
+    option (google.api.http) = {get: "/api/v1/market-radar/movers"};
+  }
+}

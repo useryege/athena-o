@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+// Sports Live Service API exposes current sports events and their price history.
+package sportslive;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/sportslive";
+
+// GetSportsLiveStatusRequest queries the Sports Live service runtime status.
+message GetSportsLiveStatusRequest {}
+
+// GetSportsLiveStatusResponse returns the Sports Live service runtime status.
+message GetSportsLiveStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+// ListSportsLiveEventsRequest queries current sports event cards.
+message ListSportsLiveEventsRequest {
+  int32 limit = 1;
+}
+
+// ListSportsLiveEventsResponse returns current sports event cards.
+message ListSportsLiveEventsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SportsLiveEventCardItem items = 1;
+  int64 fetched_at = 2;
+  bool stale = 3;
+}
+
+// BatchGetSportsLivePriceHistoriesRequest queries price history for selected live markets.
+message BatchGetSportsLivePriceHistoriesRequest {
+  repeated string market_keys = 1;
+  int32 limit_per_token = 2;
+}
+
+// BatchGetSportsLivePriceHistoriesResponse returns grouped live-market price histories.
+message BatchGetSportsLivePriceHistoriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SportsLivePriceHistorySeriesItem items = 1;
+}
+
+service SportsLiveService {
+  // GetSportsLiveStatus returns the Sports Live service runtime status.
+  rpc GetSportsLiveStatus(GetSportsLiveStatusRequest) returns (GetSportsLiveStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/sports-live/status"};
+  }
+
+  // ListSportsLiveEvents returns current sports event cards.
+  rpc ListSportsLiveEvents(ListSportsLiveEventsRequest) returns (ListSportsLiveEventsResponse) {
+    option (google.api.http) = {get: "/api/v1/sports-live/events"};
+  }
+
+  // BatchGetSportsLivePriceHistories returns grouped live-market price histories.
+  rpc BatchGetSportsLivePriceHistories(BatchGetSportsLivePriceHistoriesRequest) returns (BatchGetSportsLivePriceHistoriesResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/sports-live/price-history:batchGet"
+      body: "*"
+    };
+  }
+}

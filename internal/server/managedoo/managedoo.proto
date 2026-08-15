@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+// Managed OO Service API exposes Managed Optimistic Oracle scans, proposals, and disputes.
+package managedoo;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/managedoo";
+
+// GetManagedOOStatusRequest queries the Managed OO service runtime status.
+message GetManagedOOStatusRequest {}
+
+// GetManagedOOStatusResponse returns the Managed OO service runtime status.
+message GetManagedOOStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+// ScanManagedOOBlockRequest requests an immediate Managed OO log scan for one Polygon block.
+message ScanManagedOOBlockRequest {
+  uint64 block_number = 1;
+}
+
+// ScanManagedOOBlockResponse returns decoded proposal and dispute counts for the block.
+message ScanManagedOOBlockResponse {
+  uint64 block_number = 1;
+  int32 proposal_count = 2;
+  int32 dispute_count = 3;
+}
+
+// ListManagedOOProposalsRequest queries proposal logs with optional block filtering.
+message ListManagedOOProposalsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  uint64 block_number = 3;
+}
+
+// ListManagedOOProposalsResponse returns proposal logs and pagination metadata.
+message ListManagedOOProposalsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ManagedOOProposalItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// ListManagedOODisputesRequest queries dispute logs with optional block filtering.
+message ListManagedOODisputesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  uint64 block_number = 3;
+}
+
+// ListManagedOODisputesResponse returns dispute logs and pagination metadata.
+message ListManagedOODisputesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ManagedOODisputeItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+service ManagedOOService {
+  // GetManagedOOStatus returns the Managed OO service runtime status.
+  rpc GetManagedOOStatus(GetManagedOOStatusRequest) returns (GetManagedOOStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/managed-oo/status"};
+  }
+
+  // ScanManagedOOBlock immediately scans one Polygon block for Managed OO logs.
+  rpc ScanManagedOOBlock(ScanManagedOOBlockRequest) returns (ScanManagedOOBlockResponse) {
+    option (google.api.http) = {post: "/api/v1/managed-oo/blocks/{block_number}:scan"};
+  }
+
+  // ListManagedOOProposals returns proposal logs.
+  rpc ListManagedOOProposals(ListManagedOOProposalsRequest) returns (ListManagedOOProposalsResponse) {
+    option (google.api.http) = {get: "/api/v1/managed-oo/proposals"};
+  }
+
+  // ListManagedOODisputes returns dispute logs.
+  rpc ListManagedOODisputes(ListManagedOODisputesRequest) returns (ListManagedOODisputesResponse) {
+    option (google.api.http) = {get: "/api/v1/managed-oo/disputes"};
+  }
+}

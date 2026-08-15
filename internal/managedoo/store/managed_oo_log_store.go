@@ -1,0 +1,672 @@
+package store
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"math"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	managedoosqlc "github.com/useryege/athena/internal/managedoo/store/sqlc"
+	v1alpha1 "github.com/useryege/athena/pkg/apis/application/v1alpha1"
+)
+
+func (s *SQLStore) GetManagedOOChainLogCursor(ctx context.Context, syncName string) (*ChainLogCursor, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	row, err := s.queries.GetManagedOOChainLogCursor(ctx, syncName)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get polymarket chain log cursor: %w", err)
+	}
+	cursor, err := mapManagedOOChainLogCursor(row)
+	if err != nil {
+		return nil, err
+	}
+	return cursor, nil
+}
+
+func (s *SQLStore) UpsertManagedOOChainLogCursor(ctx context.Context, cursor ChainLogCursor) (*ChainLogCursor, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	params, err := upsertManagedOOChainLogCursorParams(cursor)
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.queries.UpsertManagedOOChainLogCursor(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("upsert polymarket chain log cursor: %w", err)
+	}
+	mapped, err := mapManagedOOChainLogCursor(row)
+	if err != nil {
+		return nil, err
+	}
+	return mapped, nil
+}
+
+func (s *SQLStore) IngestManagedOOProposePriceLogs(ctx context.Context, cursor ChainLogCursor, logs []ManagedOOProposePriceLog) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo propose price log sync: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if len(logs) > 0 {
+		params, err := batchUpsertManagedOOProposePriceLogsParams(logs)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOOProposePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo propose price logs: %w", err)
+		}
+	}
+	cursorParams, err := upsertManagedOOChainLogCursorParams(cursor)
+	if err != nil {
+		return err
+	}
+	if _, err := queries.UpsertManagedOOChainLogCursor(ctx, cursorParams); err != nil {
+		return fmt.Errorf("upsert managed oo propose price cursor: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo propose price log sync: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) IngestManagedOODisputePriceLogs(ctx context.Context, cursor ChainLogCursor, logs []ManagedOODisputePriceLog) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo dispute price log sync: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if len(logs) > 0 {
+		params, err := batchUpsertManagedOODisputePriceLogsParams(logs)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOODisputePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo dispute price logs: %w", err)
+		}
+	}
+	cursorParams, err := upsertManagedOOChainLogCursorParams(cursor)
+	if err != nil {
+		return err
+	}
+	if _, err := queries.UpsertManagedOOChainLogCursor(ctx, cursorParams); err != nil {
+		return fmt.Errorf("upsert managed oo dispute price cursor: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo dispute price log sync: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) UpsertManagedOOBlockLogs(ctx context.Context, proposals []ManagedOOProposePriceLog, disputes []ManagedOODisputePriceLog) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo block log upsert: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if len(proposals) > 0 {
+		params, err := batchUpsertManagedOOProposePriceLogsParams(proposals)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOOProposePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo propose price logs: %w", err)
+		}
+	}
+	if len(disputes) > 0 {
+		params, err := batchUpsertManagedOODisputePriceLogsParams(disputes)
+		if err != nil {
+			return err
+		}
+		if err := queries.BatchUpsertManagedOODisputePriceLogs(ctx, params); err != nil {
+			return fmt.Errorf("batch upsert managed oo dispute price logs: %w", err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo block log upsert: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ListManagedOOProposals(ctx context.Context, opts ListManagedOOLogsOptions) ([]*v1alpha1.ManagedOOProposalItem, int64, error) {
+	if s == nil || s.queries == nil {
+		return nil, 0, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	blockNumber, err := uint64ToInt64("block_number", opts.BlockNumber)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.queries.CountManagedOOProposePriceLogs(ctx, blockNumber)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count managed oo propose price logs: %w", err)
+	}
+	rows, err := s.queries.ListManagedOOProposePriceLogs(ctx, managedoosqlc.ListManagedOOProposePriceLogsParams{
+		BlockNumber: blockNumber,
+		OffsetValue: int32((opts.Page - 1) * opts.PageSize),
+		LimitValue:  int32(opts.PageSize),
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("list managed oo propose price logs: %w", err)
+	}
+	items := make([]*v1alpha1.ManagedOOProposalItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, &v1alpha1.ManagedOOProposalItem{
+			TxHash: row.TxHash, LogIndex: row.LogIndex, BlockNumber: row.BlockNumber,
+			BlockHash: row.BlockHash, TxIndex: row.TxIndex, ContractAddress: row.ContractAddress,
+			Topic: row.Topic, Requester: row.Requester, Proposer: row.Proposer,
+			Identifier: row.Identifier, RequestTimestamp: row.RequestTimestamp,
+			AncillaryDataHex: row.AncillaryDataHex, AncillaryDataText: row.AncillaryDataText,
+			MarketID: row.MarketID, ProposedPrice: row.ProposedPrice,
+			ExpirationTimestamp: row.ExpirationTimestamp, Currency: row.Currency,
+			RawTopics: string(row.RawTopics), RawData: row.RawData,
+			FetchedAt:   timeValue(row.FetchedAt).UTC().Format(time.RFC3339),
+			ConditionID: row.ConditionID, EventSlug: row.EventSlug,
+			MarketSlug: row.MarketSlug, Question: row.Question,
+		})
+	}
+	return items, total, nil
+}
+
+func (s *SQLStore) ListManagedOODisputes(ctx context.Context, opts ListManagedOOLogsOptions) ([]*v1alpha1.ManagedOODisputeItem, int64, error) {
+	if s == nil || s.queries == nil {
+		return nil, 0, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	blockNumber, err := uint64ToInt64("block_number", opts.BlockNumber)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.queries.CountManagedOODisputePriceLogs(ctx, blockNumber)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count managed oo dispute price logs: %w", err)
+	}
+	rows, err := s.queries.ListManagedOODisputePriceLogs(ctx, managedoosqlc.ListManagedOODisputePriceLogsParams{
+		BlockNumber: blockNumber,
+		OffsetValue: int32((opts.Page - 1) * opts.PageSize),
+		LimitValue:  int32(opts.PageSize),
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("list managed oo dispute price logs: %w", err)
+	}
+	items := make([]*v1alpha1.ManagedOODisputeItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, &v1alpha1.ManagedOODisputeItem{
+			TxHash: row.TxHash, LogIndex: row.LogIndex, BlockNumber: row.BlockNumber,
+			BlockHash: row.BlockHash, TxIndex: row.TxIndex, ContractAddress: row.ContractAddress,
+			Topic: row.Topic, Requester: row.Requester, Proposer: row.Proposer, Disputer: row.Disputer,
+			Identifier: row.Identifier, RequestTimestamp: row.RequestTimestamp,
+			AncillaryDataHex: row.AncillaryDataHex, AncillaryDataText: row.AncillaryDataText,
+			MarketID: row.MarketID, ProposedPrice: row.ProposedPrice,
+			RawTopics: string(row.RawTopics), RawData: row.RawData,
+			FetchedAt:   timeValue(row.FetchedAt).UTC().Format(time.RFC3339),
+			ConditionID: row.ConditionID, EventSlug: row.EventSlug,
+			MarketSlug: row.MarketSlug, Question: row.Question,
+		})
+	}
+	return items, total, nil
+}
+
+func (s *SQLStore) ListManagedOOMarketIDsNeedingRefresh(ctx context.Context, retryBefore time.Time, limit int32) ([]string, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	if limit <= 0 {
+		return nil, nil
+	}
+	ids, err := s.queries.ListManagedOOMarketIDsNeedingRefresh(ctx, managedoosqlc.ListManagedOOMarketIDsNeedingRefreshParams{
+		RetryBefore: nullableTime(retryBefore),
+		LimitValue:  limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list managed oo market ids needing refresh: %w", err)
+	}
+	return ids, nil
+}
+
+func (s *SQLStore) UpsertManagedOOMarket(ctx context.Context, market ManagedOOMarket) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo market upsert: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := s.queries.WithTx(tx)
+	if err := queries.UpsertManagedOOMarket(ctx, upsertManagedOOMarketParams(market)); err != nil {
+		return fmt.Errorf("upsert managed oo market: %w", err)
+	}
+	if err := replaceManagedOOMarketLabels(ctx, queries, market.MarketID, market.Labels); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo market upsert: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ReplaceManagedOOMarketLabels(ctx context.Context, marketID string, labels []ManagedOOMarketLabel) error {
+	if s == nil || s.pool == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin managed oo market label replace: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	if err := replaceManagedOOMarketLabels(ctx, s.queries.WithTx(tx), marketID, labels); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit managed oo market label replace: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) UpsertManagedOOMarketNotFound(ctx context.Context, marketID, lastError string, fetchedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOOMarketNotFound(ctx, managedoosqlc.UpsertManagedOOMarketNotFoundParams{
+		MarketID:    marketID,
+		LastError:   lastError,
+		LastErrorAt: nullableTime(fetchedAt),
+		FetchedAt:   nullableTime(fetchedAt),
+	}); err != nil {
+		return fmt.Errorf("upsert managed oo market not found: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ListManagedOOProposePriceAlertCandidates(ctx context.Context, limit int32) ([]ManagedOOProposePriceAlertCandidate, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	if limit <= 0 {
+		return nil, nil
+	}
+	rows, err := s.queries.ListManagedOOProposePriceAlertCandidates(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list managed oo propose price alert candidates: %w", err)
+	}
+	out := make([]ManagedOOProposePriceAlertCandidate, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, ManagedOOProposePriceAlertCandidate{
+			TxHash:              row.TxHash,
+			LogIndex:            row.LogIndex,
+			BlockNumber:         row.BlockNumber,
+			MarketID:            row.MarketID,
+			Proposer:            row.Proposer,
+			ProposedPrice:       row.ProposedPrice,
+			RequestTimestamp:    row.RequestTimestamp,
+			ExpirationTimestamp: row.ExpirationTimestamp,
+			AncillaryDataText:   row.AncillaryDataText,
+			ConditionID:         row.ConditionID,
+			EventSlug:           row.EventSlug,
+			MarketSlug:          row.MarketSlug,
+			Question:            row.Question,
+			MatchedLabels:       string(row.MatchedLabels),
+		})
+	}
+	return out, nil
+}
+
+func (s *SQLStore) UpsertManagedOOProposePriceAlertState(ctx context.Context, txHash string, logIndex int64, notificationID int64, notifiedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOOProposePriceAlertState(ctx, managedoosqlc.UpsertManagedOOProposePriceAlertStateParams{
+		TxHash:         txHash,
+		LogIndex:       logIndex,
+		NotificationID: notificationID,
+		NotifiedAt:     nullableTime(notifiedAt),
+	}); err != nil {
+		return fmt.Errorf("upsert managed oo propose price alert state: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLStore) ListManagedOODisputePriceAlertCandidates(ctx context.Context, limit int32) ([]ManagedOODisputePriceAlertCandidate, error) {
+	if s == nil || s.queries == nil {
+		return nil, fmt.Errorf("managed oo postgres database is not configured")
+	}
+	if limit <= 0 {
+		return nil, nil
+	}
+	rows, err := s.queries.ListManagedOODisputePriceAlertCandidates(ctx, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list managed oo dispute price alert candidates: %w", err)
+	}
+	out := make([]ManagedOODisputePriceAlertCandidate, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, ManagedOODisputePriceAlertCandidate{
+			TxHash:            row.TxHash,
+			LogIndex:          row.LogIndex,
+			BlockNumber:       row.BlockNumber,
+			MarketID:          row.MarketID,
+			Requester:         row.Requester,
+			Proposer:          row.Proposer,
+			Disputer:          row.Disputer,
+			ProposedPrice:     row.ProposedPrice,
+			RequestTimestamp:  row.RequestTimestamp,
+			AncillaryDataText: row.AncillaryDataText,
+			ConditionID:       row.ConditionID,
+			EventSlug:         row.EventSlug,
+			MarketSlug:        row.MarketSlug,
+			Question:          row.Question,
+			MatchedLabels:     row.MatchedLabels,
+		})
+	}
+	return out, nil
+}
+
+func (s *SQLStore) UpsertManagedOODisputePriceAlertState(ctx context.Context, txHash string, logIndex int64, notificationID int64, notifiedAt time.Time) error {
+	if s == nil || s.queries == nil {
+		return fmt.Errorf("managed oo postgres database is not configured")
+	}
+	if err := s.queries.UpsertManagedOODisputePriceAlertState(ctx, managedoosqlc.UpsertManagedOODisputePriceAlertStateParams{
+		TxHash:         txHash,
+		LogIndex:       logIndex,
+		NotificationID: notificationID,
+		NotifiedAt:     nullableTime(notifiedAt),
+	}); err != nil {
+		return fmt.Errorf("upsert managed oo dispute price alert state: %w", err)
+	}
+	return nil
+}
+
+func upsertManagedOOChainLogCursorParams(cursor ChainLogCursor) (managedoosqlc.UpsertManagedOOChainLogCursorParams, error) {
+	lastBlockNumber, err := uint64ToInt64("last_block_number", cursor.LastBlockNumber)
+	if err != nil {
+		return managedoosqlc.UpsertManagedOOChainLogCursorParams{}, err
+	}
+	return managedoosqlc.UpsertManagedOOChainLogCursorParams{
+		SyncName:        cursor.SyncName,
+		ContractAddress: cursor.ContractAddress,
+		Topic:           cursor.Topic,
+		LastBlockNumber: lastBlockNumber,
+		LastPolledAt:    nullableTime(cursor.LastPolledAt),
+	}, nil
+}
+
+func replaceManagedOOMarketLabels(ctx context.Context, queries *managedoosqlc.Queries, marketID string, labels []ManagedOOMarketLabel) error {
+	if err := queries.DeleteManagedOOMarketLabelsByMarketID(ctx, marketID); err != nil {
+		return fmt.Errorf("delete managed oo market labels: %w", err)
+	}
+	if len(labels) == 0 {
+		return nil
+	}
+	if err := queries.BatchUpsertManagedOOMarketLabels(ctx, batchUpsertManagedOOMarketLabelsParams(marketID, labels)); err != nil {
+		return fmt.Errorf("batch upsert managed oo market labels: %w", err)
+	}
+	return nil
+}
+
+func upsertManagedOOMarketParams(market ManagedOOMarket) managedoosqlc.UpsertManagedOOMarketParams {
+	return managedoosqlc.UpsertManagedOOMarketParams{
+		MarketID:         market.MarketID,
+		ConditionID:      market.ConditionID,
+		Slug:             market.Slug,
+		EventSlug:        market.EventSlug,
+		Question:         market.Question,
+		Description:      market.Description,
+		ResolutionSource: market.ResolutionSource,
+		QuestionID:       market.QuestionID,
+		SportsMarketType: market.SportsMarketType,
+		GroupItemTitle:   market.GroupItemTitle,
+		Image:            market.Image,
+		Icon:             market.Icon,
+		Outcomes:         market.Outcomes,
+		OutcomePrices:    market.OutcomePrices,
+		ClobTokenIds:     market.ClobTokenIDs,
+		Active:           market.Active,
+		Closed:           market.Closed,
+		Archived:         market.Archived,
+		Restricted:       market.Restricted,
+		EnableOrderBook:  market.EnableOrderBook,
+		AcceptingOrders:  market.AcceptingOrders,
+		Volume:           market.Volume,
+		VolumeNum:        market.VolumeNum,
+		LiquidityNum:     market.LiquidityNum,
+		Volume24hr:       market.Volume24hr,
+		Volume1wk:        market.Volume1wk,
+		Volume1mo:        market.Volume1mo,
+		Volume1yr:        market.Volume1yr,
+		Spread:           market.Spread,
+		BestBid:          market.BestBid,
+		BestAsk:          market.BestAsk,
+		LastTradePrice:   market.LastTradePrice,
+		StartDate:        nullableTime(market.StartDate),
+		EndDate:          nullableTime(market.EndDate),
+		CreatedAtGamma:   nullableTime(market.CreatedAtGamma),
+		UpdatedAtGamma:   nullableTime(market.UpdatedAtGamma),
+		Tags:             jsonBytes(market.Tags, jsonArray),
+		Raw:              jsonBytes(market.Raw, jsonObject),
+		FetchedAt:        nullableTime(market.FetchedAt),
+	}
+}
+
+func batchUpsertManagedOOMarketLabelsParams(marketID string, labels []ManagedOOMarketLabel) managedoosqlc.BatchUpsertManagedOOMarketLabelsParams {
+	params := managedoosqlc.BatchUpsertManagedOOMarketLabelsParams{
+		MarketIds:       make([]string, 0, len(labels)),
+		Labels:          make([]string, 0, len(labels)),
+		TagIds:          make([]string, 0, len(labels)),
+		Slugs:           make([]string, 0, len(labels)),
+		Positions:       make([]int64, 0, len(labels)),
+		FetchedAtValues: make([]pgtype.Timestamptz, 0, len(labels)),
+	}
+	for _, label := range labels {
+		labelMarketID := label.MarketID
+		if labelMarketID == "" {
+			labelMarketID = marketID
+		}
+		params.MarketIds = append(params.MarketIds, labelMarketID)
+		params.Labels = append(params.Labels, label.Label)
+		params.TagIds = append(params.TagIds, label.TagID)
+		params.Slugs = append(params.Slugs, label.Slug)
+		params.Positions = append(params.Positions, label.Position)
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(label.FetchedAt))
+	}
+	return params
+}
+
+func batchUpsertManagedOOProposePriceLogsParams(logs []ManagedOOProposePriceLog) (managedoosqlc.BatchUpsertManagedOOProposePriceLogsParams, error) {
+	params := managedoosqlc.BatchUpsertManagedOOProposePriceLogsParams{
+		TxHashes:                make([]string, 0, len(logs)),
+		LogIndexes:              make([]int64, 0, len(logs)),
+		BlockNumbers:            make([]int64, 0, len(logs)),
+		BlockHashes:             make([]string, 0, len(logs)),
+		TxIndexes:               make([]int64, 0, len(logs)),
+		ContractAddresses:       make([]string, 0, len(logs)),
+		Topics:                  make([]string, 0, len(logs)),
+		Requesters:              make([]string, 0, len(logs)),
+		Proposers:               make([]string, 0, len(logs)),
+		Identifiers:             make([]string, 0, len(logs)),
+		RequestTimestamps:       make([]int64, 0, len(logs)),
+		AncillaryDataHexValues:  make([]string, 0, len(logs)),
+		AncillaryDataTextValues: make([]string, 0, len(logs)),
+		MarketIds:               make([]string, 0, len(logs)),
+		ProposedPrices:          make([]string, 0, len(logs)),
+		ExpirationTimestamps:    make([]int64, 0, len(logs)),
+		Currencies:              make([]string, 0, len(logs)),
+		RawTopicsValues:         make([][]byte, 0, len(logs)),
+		RawDataValues:           make([]string, 0, len(logs)),
+		FetchedAtValues:         make([]pgtype.Timestamptz, 0, len(logs)),
+	}
+	for _, item := range logs {
+		logIndex, err := uintToInt64("log_index", item.LogIndex)
+		if err != nil {
+			return params, err
+		}
+		blockNumber, err := uint64ToInt64("block_number", item.BlockNumber)
+		if err != nil {
+			return params, err
+		}
+		txIndex, err := uintToInt64("tx_index", item.TxIndex)
+		if err != nil {
+			return params, err
+		}
+		requestTimestamp, err := uint64ToInt64("request_timestamp", item.RequestTimestamp)
+		if err != nil {
+			return params, err
+		}
+		expirationTimestamp, err := uint64ToInt64("expiration_timestamp", item.ExpirationTimestamp)
+		if err != nil {
+			return params, err
+		}
+		params.TxHashes = append(params.TxHashes, item.TxHash)
+		params.LogIndexes = append(params.LogIndexes, logIndex)
+		params.BlockNumbers = append(params.BlockNumbers, blockNumber)
+		params.BlockHashes = append(params.BlockHashes, item.BlockHash)
+		params.TxIndexes = append(params.TxIndexes, txIndex)
+		params.ContractAddresses = append(params.ContractAddresses, item.ContractAddress)
+		params.Topics = append(params.Topics, item.Topic)
+		params.Requesters = append(params.Requesters, item.Requester)
+		params.Proposers = append(params.Proposers, item.Proposer)
+		params.Identifiers = append(params.Identifiers, item.Identifier)
+		params.RequestTimestamps = append(params.RequestTimestamps, requestTimestamp)
+		params.AncillaryDataHexValues = append(params.AncillaryDataHexValues, item.AncillaryDataHex)
+		params.AncillaryDataTextValues = append(params.AncillaryDataTextValues, item.AncillaryDataText)
+		params.MarketIds = append(params.MarketIds, item.MarketID)
+		params.ProposedPrices = append(params.ProposedPrices, item.ProposedPrice)
+		params.ExpirationTimestamps = append(params.ExpirationTimestamps, expirationTimestamp)
+		params.Currencies = append(params.Currencies, item.Currency)
+		params.RawTopicsValues = append(params.RawTopicsValues, jsonBytes(item.RawTopics, jsonArray))
+		params.RawDataValues = append(params.RawDataValues, item.RawData)
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
+	}
+	return params, nil
+}
+
+func batchUpsertManagedOODisputePriceLogsParams(logs []ManagedOODisputePriceLog) (managedoosqlc.BatchUpsertManagedOODisputePriceLogsParams, error) {
+	params := managedoosqlc.BatchUpsertManagedOODisputePriceLogsParams{
+		TxHashes:                make([]string, 0, len(logs)),
+		LogIndexes:              make([]int64, 0, len(logs)),
+		BlockNumbers:            make([]int64, 0, len(logs)),
+		BlockHashes:             make([]string, 0, len(logs)),
+		TxIndexes:               make([]int64, 0, len(logs)),
+		ContractAddresses:       make([]string, 0, len(logs)),
+		Topics:                  make([]string, 0, len(logs)),
+		Requesters:              make([]string, 0, len(logs)),
+		Proposers:               make([]string, 0, len(logs)),
+		Disputers:               make([]string, 0, len(logs)),
+		Identifiers:             make([]string, 0, len(logs)),
+		RequestTimestamps:       make([]int64, 0, len(logs)),
+		AncillaryDataHexValues:  make([]string, 0, len(logs)),
+		AncillaryDataTextValues: make([]string, 0, len(logs)),
+		MarketIds:               make([]string, 0, len(logs)),
+		ProposedPrices:          make([]string, 0, len(logs)),
+		RawTopicsValues:         make([][]byte, 0, len(logs)),
+		RawDataValues:           make([]string, 0, len(logs)),
+		FetchedAtValues:         make([]pgtype.Timestamptz, 0, len(logs)),
+	}
+	for _, item := range logs {
+		logIndex, err := uintToInt64("log_index", item.LogIndex)
+		if err != nil {
+			return params, err
+		}
+		blockNumber, err := uint64ToInt64("block_number", item.BlockNumber)
+		if err != nil {
+			return params, err
+		}
+		txIndex, err := uintToInt64("tx_index", item.TxIndex)
+		if err != nil {
+			return params, err
+		}
+		requestTimestamp, err := uint64ToInt64("request_timestamp", item.RequestTimestamp)
+		if err != nil {
+			return params, err
+		}
+		params.TxHashes = append(params.TxHashes, item.TxHash)
+		params.LogIndexes = append(params.LogIndexes, logIndex)
+		params.BlockNumbers = append(params.BlockNumbers, blockNumber)
+		params.BlockHashes = append(params.BlockHashes, item.BlockHash)
+		params.TxIndexes = append(params.TxIndexes, txIndex)
+		params.ContractAddresses = append(params.ContractAddresses, item.ContractAddress)
+		params.Topics = append(params.Topics, item.Topic)
+		params.Requesters = append(params.Requesters, item.Requester)
+		params.Proposers = append(params.Proposers, item.Proposer)
+		params.Disputers = append(params.Disputers, item.Disputer)
+		params.Identifiers = append(params.Identifiers, item.Identifier)
+		params.RequestTimestamps = append(params.RequestTimestamps, requestTimestamp)
+		params.AncillaryDataHexValues = append(params.AncillaryDataHexValues, item.AncillaryDataHex)
+		params.AncillaryDataTextValues = append(params.AncillaryDataTextValues, item.AncillaryDataText)
+		params.MarketIds = append(params.MarketIds, item.MarketID)
+		params.ProposedPrices = append(params.ProposedPrices, item.ProposedPrice)
+		params.RawTopicsValues = append(params.RawTopicsValues, jsonBytes(item.RawTopics, jsonArray))
+		params.RawDataValues = append(params.RawDataValues, item.RawData)
+		params.FetchedAtValues = append(params.FetchedAtValues, nullableTime(item.FetchedAt))
+	}
+	return params, nil
+}
+
+func mapManagedOOChainLogCursor(row managedoosqlc.ManagedOoChainLogCursor) (*ChainLogCursor, error) {
+	lastBlockNumber, err := int64ToUint64("last_block_number", row.LastBlockNumber)
+	if err != nil {
+		return nil, err
+	}
+	return &ChainLogCursor{
+		SyncName:        row.SyncName,
+		ContractAddress: row.ContractAddress,
+		Topic:           row.Topic,
+		LastBlockNumber: lastBlockNumber,
+		LastPolledAt:    timeValue(row.LastPolledAt),
+		CreatedAt:       timeValue(row.CreatedAt),
+		UpdatedAt:       timeValue(row.UpdatedAt),
+	}, nil
+}
+
+func uint64ToInt64(name string, value uint64) (int64, error) {
+	if value > math.MaxInt64 {
+		return 0, fmt.Errorf("%s overflows int64: %d", name, value)
+	}
+	return int64(value), nil
+}
+
+func uintToInt64(name string, value uint) (int64, error) {
+	if uint64(value) > math.MaxInt64 {
+		return 0, fmt.Errorf("%s overflows int64: %d", name, value)
+	}
+	return int64(value), nil
+}
+
+func int64ToUint64(name string, value int64) (uint64, error) {
+	if value < 0 {
+		return 0, fmt.Errorf("%s is negative: %d", name, value)
+	}
+	return uint64(value), nil
+}

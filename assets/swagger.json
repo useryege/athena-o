@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1034-g5e9a41e3-dirty"
+    "version": "v1.0.0-1038-g618d9a99-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -281,6 +281,347 @@
         }
       }
     },
+    "/api/v1/fifa-market-dashboard": {
+      "get": {
+        "tags": [
+          "FIFAMarketDashboardService"
+        ],
+        "operationId": "FIFAMarketDashboardService_GetFIFAMarketDashboard",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "requester",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/fifamarketdashboardGetFIFAMarketDashboardResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fifa-market-dashboard/event-config": {
+      "put": {
+        "tags": [
+          "FIFAMarketDashboardService"
+        ],
+        "operationId": "FIFAMarketDashboardService_UpdateFIFAEventConfig",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1FIFAMarketDashboardEventConfig"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/fifamarketdashboardUpdateFIFAEventConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fifa-market-dashboard/status": {
+      "get": {
+        "tags": [
+          "FIFAMarketDashboardService"
+        ],
+        "summary": "GetFIFAMarketDashboardStatus returns the FIFA Market Dashboard service runtime status.",
+        "operationId": "FIFAMarketDashboardService_GetFIFAMarketDashboardStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/fifamarketdashboardGetFIFAMarketDashboardStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/managed-oo/blocks/{block_number}:scan": {
+      "post": {
+        "tags": [
+          "ManagedOOService"
+        ],
+        "summary": "ScanManagedOOBlock immediately scans one Polygon block for Managed OO logs.",
+        "operationId": "ManagedOOService_ScanManagedOOBlock",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/managedooScanManagedOOBlockResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/managed-oo/disputes": {
+      "get": {
+        "tags": [
+          "ManagedOOService"
+        ],
+        "summary": "ListManagedOODisputes returns dispute logs.",
+        "operationId": "ManagedOOService_ListManagedOODisputes",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/managedooListManagedOODisputesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/managed-oo/proposals": {
+      "get": {
+        "tags": [
+          "ManagedOOService"
+        ],
+        "summary": "ListManagedOOProposals returns proposal logs.",
+        "operationId": "ManagedOOService_ListManagedOOProposals",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/managedooListManagedOOProposalsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/managed-oo/status": {
+      "get": {
+        "tags": [
+          "ManagedOOService"
+        ],
+        "summary": "GetManagedOOStatus returns the Managed OO service runtime status.",
+        "operationId": "ManagedOOService_GetManagedOOStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/managedooGetManagedOOStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-radar/hot-markets": {
+      "get": {
+        "tags": [
+          "MarketRadarService"
+        ],
+        "summary": "ListHotMarkets returns discovered hot markets.",
+        "operationId": "MarketRadarService_ListHotMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/marketradarListHotMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-radar/movers": {
+      "get": {
+        "tags": [
+          "MarketRadarService"
+        ],
+        "summary": "ListMarketMovers returns price mover market rows.",
+        "operationId": "MarketRadarService_ListMarketMovers",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/marketradarListMarketMoversResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-radar/realtime-markets": {
+      "get": {
+        "tags": [
+          "MarketRadarService"
+        ],
+        "summary": "ListRealtimeMarkets returns realtime market rows.",
+        "operationId": "MarketRadarService_ListRealtimeMarkets",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/marketradarListRealtimeMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-radar/status": {
+      "get": {
+        "tags": [
+          "MarketRadarService"
+        ],
+        "summary": "GetMarketRadarStatus returns the Market Radar service runtime status.",
+        "operationId": "MarketRadarService_GetMarketRadarStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/marketradarGetMarketRadarStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notification/status": {
       "get": {
         "tags": [
@@ -434,417 +775,6 @@
         }
       }
     },
-    "/api/v1/polymarket/hot-markets": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "ListPolymarketHotMarkets returns discovered hot markets.",
-        "operationId": "PolymarketService_ListPolymarketHotMarkets",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketHotMarketsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/movers": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "ListPolymarketMovers returns price mover market rows.",
-        "operationId": "PolymarketService_ListPolymarketMovers",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketMoversResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/realtime-markets": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "ListPolymarketRealtimeMarkets returns realtime market rows.",
-        "operationId": "PolymarketService_ListPolymarketRealtimeMarkets",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketRealtimeMarketsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/history/events": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_ListPolymarketSportsHistoryEvents",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketSportsHistoryEventsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/history/price-history:batchGet": {
-      "post": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_BatchGetPolymarketSportsHistoryPriceHistory",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/polymarketBatchGetPolymarketSportsHistoryPriceHistoryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketBatchGetPolymarketSportsHistoryPriceHistoryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/history/sync-status": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_GetPolymarketSportsHistorySyncStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketGetPolymarketSportsHistorySyncStatusResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/history:refresh": {
-      "post": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_RefreshPolymarketSportsHistory",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/polymarketRefreshPolymarketSportsHistoryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketRefreshPolymarketSportsHistoryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/live/events": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "ListPolymarketSportsLiveEvents returns sports live event cards.",
-        "operationId": "PolymarketService_ListPolymarketSportsLiveEvents",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketSportsLiveEventsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/sports/live/price-history:batchGet": {
-      "post": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "BatchGetPolymarketSportsLivePriceHistory returns price history for sports live moneyline markets.",
-        "operationId": "PolymarketService_BatchGetPolymarketSportsLivePriceHistory",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/polymarketBatchGetPolymarketSportsLivePriceHistoryRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketBatchGetPolymarketSportsLivePriceHistoryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/status": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "summary": "GetPolymarketStatus returns the polymarket service runtime status.",
-        "operationId": "PolymarketService_GetPolymarketStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1alpha1PolymarketStatus"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/uma/blocks/{block_number}:scan": {
-      "post": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_ScanPolymarketManagedOOBlock",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uint64",
-            "name": "block_number",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketScanPolymarketManagedOOBlockResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/uma/disputes": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_ListPolymarketUMADisputes",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "uint64",
-            "name": "block_number",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketUMADisputesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/polymarket/uma/proposals": {
-      "get": {
-        "tags": [
-          "PolymarketService"
-        ],
-        "operationId": "PolymarketService_ListPolymarketUMAProposals",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "format": "uint64",
-            "name": "block_number",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/polymarketListPolymarketUMAProposalsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/service-statuses": {
       "get": {
         "tags": [
@@ -979,6 +909,236 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/clusterSettings"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-history/events": {
+      "get": {
+        "tags": [
+          "SportsHistoryService"
+        ],
+        "summary": "ListSportsHistoryEvents returns completed sports event cards.",
+        "operationId": "SportsHistoryService_ListSportsHistoryEvents",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportshistoryListSportsHistoryEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-history/price-history:batchGet": {
+      "post": {
+        "tags": [
+          "SportsHistoryService"
+        ],
+        "summary": "BatchGetSportsHistoryPriceHistories returns grouped historical-market price histories.",
+        "operationId": "SportsHistoryService_BatchGetSportsHistoryPriceHistories",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/sportshistoryBatchGetSportsHistoryPriceHistoriesRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportshistoryBatchGetSportsHistoryPriceHistoriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-history/status": {
+      "get": {
+        "tags": [
+          "SportsHistoryService"
+        ],
+        "summary": "GetSportsHistoryStatus returns the Sports History service runtime status.",
+        "operationId": "SportsHistoryService_GetSportsHistoryStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportshistoryGetSportsHistoryStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-history/sync-status": {
+      "get": {
+        "tags": [
+          "SportsHistoryService"
+        ],
+        "summary": "GetSportsHistorySyncStatus returns the current historical synchronization state.",
+        "operationId": "SportsHistoryService_GetSportsHistorySyncStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportshistoryGetSportsHistorySyncStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-history:refresh": {
+      "post": {
+        "tags": [
+          "SportsHistoryService"
+        ],
+        "summary": "RefreshSportsHistory starts a manual historical synchronization pass.",
+        "operationId": "SportsHistoryService_RefreshSportsHistory",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/sportshistoryRefreshSportsHistoryRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportshistoryRefreshSportsHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-live/events": {
+      "get": {
+        "tags": [
+          "SportsLiveService"
+        ],
+        "summary": "ListSportsLiveEvents returns current sports event cards.",
+        "operationId": "SportsLiveService_ListSportsLiveEvents",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportsliveListSportsLiveEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-live/price-history:batchGet": {
+      "post": {
+        "tags": [
+          "SportsLiveService"
+        ],
+        "summary": "BatchGetSportsLivePriceHistories returns grouped live-market price histories.",
+        "operationId": "SportsLiveService_BatchGetSportsLivePriceHistories",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/sportsliveBatchGetSportsLivePriceHistoriesRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportsliveBatchGetSportsLivePriceHistoriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sports-live/status": {
+      "get": {
+        "tags": [
+          "SportsLiveService"
+        ],
+        "summary": "GetSportsLiveStatus returns the Sports Live service runtime status.",
+        "operationId": "SportsLiveService_GetSportsLiveStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/sportsliveGetSportsLiveStatusResponse"
             }
           },
           "default": {
@@ -2359,90 +2519,13 @@
         }
       }
     },
-    "/api/v1/worm-poly/fifa/dashboard": {
+    "/api/v1/worm-markets/events": {
       "get": {
         "tags": [
-          "WormPolyService"
-        ],
-        "operationId": "WormPolyService_GetWormPolyFIFADashboard",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/wormpolyGetWormPolyFIFADashboardResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/worm-poly/fifa/event-config": {
-      "put": {
-        "tags": [
-          "WormPolyService"
-        ],
-        "operationId": "WormPolyService_UpdateWormPolyFIFAEventConfig",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1alpha1WormPolyFIFAEventConfig"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/wormpolyUpdateWormPolyFIFAEventConfigResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/worm-poly/status": {
-      "get": {
-        "tags": [
-          "WormPolyService"
-        ],
-        "summary": "GetWormPolyStatus returns the worm-poly service runtime status.",
-        "operationId": "WormPolyService_GetWormPolyStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/wormpolyGetWormPolyStatusResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/worm/events": {
-      "get": {
-        "tags": [
-          "WormService"
+          "WormMarketsService"
         ],
         "summary": "ListWormEvents returns events for the requested browse filters.",
-        "operationId": "WormService_ListWormEvents",
+        "operationId": "WormMarketsService_ListWormEvents",
         "parameters": [
           {
             "type": "integer",
@@ -2470,7 +2553,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/wormListWormEventsResponse"
+              "$ref": "#/definitions/wormmarketsListWormEventsResponse"
             }
           },
           "default": {
@@ -2482,13 +2565,13 @@
         }
       }
     },
-    "/api/v1/worm/events/{condition_id}": {
+    "/api/v1/worm-markets/events/{condition_id}": {
       "get": {
         "tags": [
-          "WormService"
+          "WormMarketsService"
         ],
-        "summary": "GetWormEvent returns one event and related market summaries by condition id.",
-        "operationId": "WormService_GetWormEvent",
+        "summary": "GetWormEvent returns an event and related market summaries by condition id.",
+        "operationId": "WormMarketsService_GetWormEvent",
         "parameters": [
           {
             "type": "string",
@@ -2501,7 +2584,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/wormGetWormEventResponse"
+              "$ref": "#/definitions/wormmarketsGetWormEventResponse"
             }
           },
           "default": {
@@ -2513,18 +2596,18 @@
         }
       }
     },
-    "/api/v1/worm/status": {
+    "/api/v1/worm-markets/status": {
       "get": {
         "tags": [
-          "WormService"
+          "WormMarketsService"
         ],
-        "summary": "GetWormStatus returns the worm service runtime status.",
-        "operationId": "WormService_GetWormStatus",
+        "summary": "GetWormMarketsStatus returns the Worm Markets service runtime status.",
+        "operationId": "WormMarketsService_GetWormMarketsStatus",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/wormGetWormStatusResponse"
+              "$ref": "#/definitions/wormmarketsGetWormMarketsStatusResponse"
             }
           },
           "default": {
@@ -2785,6 +2868,231 @@
         }
       }
     },
+    "fifamarketdashboardGetFIFAMarketDashboardResponse": {
+      "type": "object",
+      "properties": {
+        "dashboard": {
+          "$ref": "#/definitions/v1alpha1FIFAMarketDashboard"
+        }
+      }
+    },
+    "fifamarketdashboardGetFIFAMarketDashboardStatusResponse": {
+      "description": "GetFIFAMarketDashboardStatusResponse returns the FIFA Market Dashboard service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "fifamarketdashboardUpdateFIFAEventConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1alpha1FIFAMarketDashboardEventConfig"
+        }
+      }
+    },
+    "managedooGetManagedOOStatusResponse": {
+      "description": "GetManagedOOStatusResponse returns the Managed OO service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "managedooListManagedOODisputesResponse": {
+      "description": "ListManagedOODisputesResponse returns dispute logs and pagination metadata.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ManagedOODisputeItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "managedooListManagedOOProposalsResponse": {
+      "description": "ListManagedOOProposalsResponse returns proposal logs and pagination metadata.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1ManagedOOProposalItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "managedooScanManagedOOBlockResponse": {
+      "description": "ScanManagedOOBlockResponse returns decoded proposal and dispute counts for the block.",
+      "type": "object",
+      "properties": {
+        "block_number": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "dispute_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "proposal_count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "marketradarGetMarketRadarStatusResponse": {
+      "description": "GetMarketRadarStatusResponse returns the Market Radar service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "marketradarListHotMarketsResponse": {
+      "description": "ListHotMarketsResponse returns discovered hot markets.",
+      "type": "object",
+      "properties": {
+        "candidate_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarHotMarketItem"
+          }
+        },
+        "monitored_markets": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "monitored_tokens": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
+    },
+    "marketradarListMarketMoversResponse": {
+      "description": "ListMarketMoversResponse returns price mover market rows.",
+      "type": "object",
+      "properties": {
+        "candidate_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarMoverMarketItem"
+          }
+        },
+        "last_event_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "monitored_markets": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "monitored_tokens": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
+    },
+    "marketradarListRealtimeMarketsResponse": {
+      "description": "ListRealtimeMarketsResponse returns realtime market rows.",
+      "type": "object",
+      "properties": {
+        "candidate_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarRealtimeMarketItem"
+          }
+        },
+        "last_event_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "stale": {
+          "type": "boolean"
+        },
+        "subscribed_markets": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "subscribed_tokens": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "notificationGetNotificationDeliveryResponse": {
       "description": "GetNotificationDeliveryResponse returns one notification delivery record.",
       "type": "object",
@@ -2834,286 +3142,6 @@
         },
         "status": {
           "type": "string"
-        }
-      }
-    },
-    "polymarketBatchGetPolymarketSportsHistoryPriceHistoryRequest": {
-      "type": "object",
-      "properties": {
-        "limit_per_token": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "market_keys": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "polymarketBatchGetPolymarketSportsHistoryPriceHistoryResponse": {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLivePriceHistorySeriesItem"
-          }
-        }
-      }
-    },
-    "polymarketBatchGetPolymarketSportsLivePriceHistoryRequest": {
-      "description": "BatchGetPolymarketSportsLivePriceHistoryRequest queries price history for sports live moneyline markets.",
-      "type": "object",
-      "properties": {
-        "limit_per_token": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "market_keys": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "polymarketBatchGetPolymarketSportsLivePriceHistoryResponse": {
-      "description": "BatchGetPolymarketSportsLivePriceHistoryResponse returns grouped price history series.",
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLivePriceHistorySeriesItem"
-          }
-        }
-      }
-    },
-    "polymarketGetPolymarketSportsHistorySyncStatusResponse": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "$ref": "#/definitions/v1alpha1PolymarketSportsHistorySyncStatus"
-        }
-      }
-    },
-    "polymarketListPolymarketHotMarketsResponse": {
-      "description": "ListPolymarketHotMarketsResponse returns discovered hot markets.",
-      "type": "object",
-      "properties": {
-        "candidate_count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketHotMarketItem"
-          }
-        },
-        "monitored_markets": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "monitored_tokens": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "stale": {
-          "type": "boolean"
-        }
-      }
-    },
-    "polymarketListPolymarketMoversResponse": {
-      "description": "ListPolymarketMoversResponse returns price mover market rows.",
-      "type": "object",
-      "properties": {
-        "candidate_count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "connected": {
-          "type": "boolean"
-        },
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketMoverMarketItem"
-          }
-        },
-        "last_event_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "monitored_markets": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "monitored_tokens": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "stale": {
-          "type": "boolean"
-        }
-      }
-    },
-    "polymarketListPolymarketRealtimeMarketsResponse": {
-      "description": "ListPolymarketRealtimeMarketsResponse returns realtime market rows.",
-      "type": "object",
-      "properties": {
-        "candidate_count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "connected": {
-          "type": "boolean"
-        },
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketRealtimeMarketItem"
-          }
-        },
-        "last_event_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "stale": {
-          "type": "boolean"
-        },
-        "subscribed_markets": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "subscribed_tokens": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
-    "polymarketListPolymarketSportsHistoryEventsResponse": {
-      "type": "object",
-      "properties": {
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsHistoryEventCardItem"
-          }
-        },
-        "stale": {
-          "type": "boolean"
-        }
-      }
-    },
-    "polymarketListPolymarketSportsLiveEventsResponse": {
-      "description": "ListPolymarketSportsLiveEventsResponse returns sports live event cards.",
-      "type": "object",
-      "properties": {
-        "fetched_at": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveEventCardItem"
-          }
-        },
-        "stale": {
-          "type": "boolean"
-        }
-      }
-    },
-    "polymarketListPolymarketUMADisputesResponse": {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketUMADisputeItem"
-          }
-        },
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "polymarketListPolymarketUMAProposalsResponse": {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketUMAProposalItem"
-          }
-        },
-        "page": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "total": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "polymarketRefreshPolymarketSportsHistoryRequest": {
-      "type": "object"
-    },
-    "polymarketRefreshPolymarketSportsHistoryResponse": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "$ref": "#/definitions/v1alpha1PolymarketSportsHistorySyncStatus"
-        }
-      }
-    },
-    "polymarketScanPolymarketManagedOOBlockResponse": {
-      "type": "object",
-      "properties": {
-        "block_number": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "dispute_count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "proposal_count": {
-          "type": "integer",
-          "format": "int32"
         }
       }
     },
@@ -3463,6 +3491,146 @@
       "properties": {
         "token": {
           "type": "string"
+        }
+      }
+    },
+    "sportshistoryBatchGetSportsHistoryPriceHistoriesRequest": {
+      "description": "BatchGetSportsHistoryPriceHistoriesRequest queries price history for selected historical markets.",
+      "type": "object",
+      "properties": {
+        "limit_per_token": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "market_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sportshistoryBatchGetSportsHistoryPriceHistoriesResponse": {
+      "description": "BatchGetSportsHistoryPriceHistoriesResponse returns grouped historical-market price histories.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1SportsHistoryPriceHistorySeriesItem"
+          }
+        }
+      }
+    },
+    "sportshistoryGetSportsHistoryStatusResponse": {
+      "description": "GetSportsHistoryStatusResponse returns the Sports History service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "sportshistoryGetSportsHistorySyncStatusResponse": {
+      "description": "GetSportsHistorySyncStatusResponse returns the current historical synchronization state.",
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1alpha1SportsHistorySyncStatus"
+        }
+      }
+    },
+    "sportshistoryListSportsHistoryEventsResponse": {
+      "description": "ListSportsHistoryEventsResponse returns completed sports event cards.",
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1SportsHistoryEventCardItem"
+          }
+        },
+        "stale": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sportshistoryRefreshSportsHistoryRequest": {
+      "description": "RefreshSportsHistoryRequest starts a manual historical synchronization pass.",
+      "type": "object"
+    },
+    "sportshistoryRefreshSportsHistoryResponse": {
+      "description": "RefreshSportsHistoryResponse returns the synchronization state after accepting the refresh.",
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1alpha1SportsHistorySyncStatus"
+        }
+      }
+    },
+    "sportsliveBatchGetSportsLivePriceHistoriesRequest": {
+      "description": "BatchGetSportsLivePriceHistoriesRequest queries price history for selected live markets.",
+      "type": "object",
+      "properties": {
+        "limit_per_token": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "market_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sportsliveBatchGetSportsLivePriceHistoriesResponse": {
+      "description": "BatchGetSportsLivePriceHistoriesResponse returns grouped live-market price histories.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1SportsLivePriceHistorySeriesItem"
+          }
+        }
+      }
+    },
+    "sportsliveGetSportsLiveStatusResponse": {
+      "description": "GetSportsLiveStatusResponse returns the Sports Live service runtime status.",
+      "type": "object",
+      "properties": {
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "sportsliveListSportsLiveEventsResponse": {
+      "description": "ListSportsLiveEventsResponse returns current sports event cards.",
+      "type": "object",
+      "properties": {
+        "fetched_at": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1SportsLiveEventCardItem"
+          }
+        },
+        "stale": {
+          "type": "boolean"
         }
       }
     },
@@ -3923,6 +4091,633 @@
         }
       }
     },
+    "v1alpha1FIFAMarketDashboard": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1alpha1FIFAMarketDashboardEventConfig"
+        },
+        "fetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "polymarketError": {
+          "type": "string"
+        },
+        "polymarketEvent": {
+          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineEventItem"
+        },
+        "polymarketFetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "walletBalances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1FIFAMarketDashboardWalletBalanceItem"
+          }
+        },
+        "walletBalancesError": {
+          "type": "string"
+        },
+        "walletBalancesFetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "walletHoldings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1FIFAMarketDashboardWalletHoldingItem"
+          }
+        },
+        "walletHoldingsError": {
+          "type": "string"
+        },
+        "walletHoldingsFetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "wormError": {
+          "type": "string"
+        },
+        "wormEvent": {
+          "$ref": "#/definitions/v1alpha1WormMarketsEventItem"
+        },
+        "wormFetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1FIFAMarketDashboardEventConfig": {
+      "type": "object",
+      "properties": {
+        "eventRef": {
+          "type": "string"
+        },
+        "wormEventId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1FIFAMarketDashboardWalletBalanceItem": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "explorerUrl": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "rawAmount": {
+          "type": "string"
+        },
+        "tokenAddress": {
+          "type": "string"
+        },
+        "tokenSymbol": {
+          "type": "string"
+        },
+        "walletAddress": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1FIFAMarketDashboardWalletHoldingItem": {
+      "type": "object",
+      "properties": {
+        "alias": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "explorerUrl": {
+          "type": "string"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "solAmount": {
+          "type": "string"
+        },
+        "solRawAmount": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "usdcAmount": {
+          "type": "string"
+        },
+        "usdcRawAmount": {
+          "type": "string"
+        },
+        "walletAddress": {
+          "type": "string"
+        },
+        "walletId": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1ManagedOODisputeItem": {
+      "type": "object",
+      "properties": {
+        "ancillaryDataHex": {
+          "type": "string"
+        },
+        "ancillaryDataText": {
+          "type": "string"
+        },
+        "blockHash": {
+          "type": "string"
+        },
+        "blockNumber": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "contractAddress": {
+          "type": "string"
+        },
+        "disputer": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "logIndex": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "polymarketUrl": {
+          "type": "string"
+        },
+        "proposedPrice": {
+          "type": "string"
+        },
+        "proposer": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "rawData": {
+          "type": "string"
+        },
+        "rawTopics": {
+          "type": "string"
+        },
+        "requestTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "requester": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1ManagedOOProposalItem": {
+      "type": "object",
+      "properties": {
+        "ancillaryDataHex": {
+          "type": "string"
+        },
+        "ancillaryDataText": {
+          "type": "string"
+        },
+        "blockHash": {
+          "type": "string"
+        },
+        "blockNumber": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "contractAddress": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fetchedAt": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "logIndex": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "polymarketUrl": {
+          "type": "string"
+        },
+        "proposedPrice": {
+          "type": "string"
+        },
+        "proposer": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "rawData": {
+          "type": "string"
+        },
+        "rawTopics": {
+          "type": "string"
+        },
+        "requestTimestamp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "requester": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "txHash": {
+          "type": "string"
+        },
+        "txIndex": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1MarketRadarHotMarketItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarHotMarketTokenItem"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume24hr": {
+          "type": "number",
+          "format": "double"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1alpha1MarketRadarHotMarketTokenItem": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokenId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1MarketRadarMoverMarketItem": {
+      "type": "object",
+      "properties": {
+        "conditionId": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "leader": {
+          "$ref": "#/definitions/v1alpha1MarketRadarMoverTokenItem"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarMoverTokenItem"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume24hr": {
+          "type": "number",
+          "format": "double"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1alpha1MarketRadarMoverTokenItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "lastEventAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "lastTradeSide": {
+          "type": "string"
+        },
+        "lastTradeSize": {
+          "type": "number",
+          "format": "double"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokenId": {
+          "type": "string"
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarMoverWindowItem"
+          }
+        }
+      }
+    },
+    "v1alpha1MarketRadarMoverWindowItem": {
+      "type": "object",
+      "properties": {
+        "priceChangePp": {
+          "type": "number",
+          "format": "double"
+        },
+        "sampleCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "window": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1MarketRadarRealtimeMarketItem": {
+      "type": "object",
+      "properties": {
+        "conditionId": {
+          "type": "string"
+        },
+        "eventSlug": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "liquidityNum": {
+          "type": "number",
+          "format": "double"
+        },
+        "marketSlug": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "tokens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarRealtimeTokenItem"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "volume24hr": {
+          "type": "number",
+          "format": "double"
+        },
+        "volumeNum": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1alpha1MarketRadarRealtimeTokenItem": {
+      "type": "object",
+      "properties": {
+        "bestAsk": {
+          "type": "number",
+          "format": "double"
+        },
+        "bestBid": {
+          "type": "number",
+          "format": "double"
+        },
+        "lastEventAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastTradePrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "lastTradeSide": {
+          "type": "string"
+        },
+        "lastTradeSize": {
+          "type": "number",
+          "format": "double"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "spread": {
+          "type": "number",
+          "format": "double"
+        },
+        "tokenId": {
+          "type": "string"
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1MarketRadarRealtimeWindowItem"
+          }
+        }
+      }
+    },
+    "v1alpha1MarketRadarRealtimeWindowItem": {
+      "type": "object",
+      "properties": {
+        "priceChangePp": {
+          "type": "number",
+          "format": "double"
+        },
+        "sampleCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "warmup": {
+          "type": "boolean"
+        },
+        "window": {
+          "type": "string"
+        }
+      }
+    },
     "v1alpha1NotificationDeliveryDetail": {
       "type": "object",
       "properties": {
@@ -4102,7 +4897,7 @@
         "teams": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
+            "$ref": "#/definitions/v1alpha1SportsTeamItem"
           }
         },
         "title": {
@@ -4159,399 +4954,7 @@
         }
       }
     },
-    "v1alpha1PolymarketFIFAWalletBalanceItem": {
-      "type": "object",
-      "properties": {
-        "amount": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "decimals": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "explorerUrl": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "ok": {
-          "type": "boolean"
-        },
-        "rawAmount": {
-          "type": "string"
-        },
-        "tokenAddress": {
-          "type": "string"
-        },
-        "tokenSymbol": {
-          "type": "string"
-        },
-        "walletAddress": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketFIFAWalletHoldingItem": {
-      "type": "object",
-      "properties": {
-        "alias": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "explorerUrl": {
-          "type": "string"
-        },
-        "ok": {
-          "type": "boolean"
-        },
-        "solAmount": {
-          "type": "string"
-        },
-        "solRawAmount": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        },
-        "usdcAmount": {
-          "type": "string"
-        },
-        "usdcRawAmount": {
-          "type": "string"
-        },
-        "walletAddress": {
-          "type": "string"
-        },
-        "walletId": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "v1alpha1PolymarketHotMarketItem": {
-      "type": "object",
-      "properties": {
-        "bestAsk": {
-          "type": "number",
-          "format": "double"
-        },
-        "bestBid": {
-          "type": "number",
-          "format": "double"
-        },
-        "conditionId": {
-          "type": "string"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "lastTradePrice": {
-          "type": "number",
-          "format": "double"
-        },
-        "liquidityNum": {
-          "type": "number",
-          "format": "double"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string"
-        },
-        "spread": {
-          "type": "number",
-          "format": "double"
-        },
-        "tokens": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketHotMarketTokenItem"
-          }
-        },
-        "updatedAt": {
-          "type": "string"
-        },
-        "volume24hr": {
-          "type": "number",
-          "format": "double"
-        },
-        "volumeNum": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
-    "v1alpha1PolymarketHotMarketTokenItem": {
-      "type": "object",
-      "properties": {
-        "outcome": {
-          "type": "string"
-        },
-        "price": {
-          "type": "number",
-          "format": "double"
-        },
-        "tokenId": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketMoverMarketItem": {
-      "type": "object",
-      "properties": {
-        "conditionId": {
-          "type": "string"
-        },
-        "direction": {
-          "type": "string"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "leader": {
-          "$ref": "#/definitions/v1alpha1PolymarketMoverTokenItem"
-        },
-        "liquidityNum": {
-          "type": "number",
-          "format": "double"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string"
-        },
-        "score": {
-          "type": "number",
-          "format": "double"
-        },
-        "tokens": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketMoverTokenItem"
-          }
-        },
-        "updatedAt": {
-          "type": "string"
-        },
-        "volume24hr": {
-          "type": "number",
-          "format": "double"
-        },
-        "volumeNum": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
-    "v1alpha1PolymarketMoverTokenItem": {
-      "type": "object",
-      "properties": {
-        "bestAsk": {
-          "type": "number",
-          "format": "double"
-        },
-        "bestBid": {
-          "type": "number",
-          "format": "double"
-        },
-        "direction": {
-          "type": "string"
-        },
-        "lastEventAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "lastTradePrice": {
-          "type": "number",
-          "format": "double"
-        },
-        "lastTradeSide": {
-          "type": "string"
-        },
-        "lastTradeSize": {
-          "type": "number",
-          "format": "double"
-        },
-        "outcome": {
-          "type": "string"
-        },
-        "price": {
-          "type": "number",
-          "format": "double"
-        },
-        "score": {
-          "type": "number",
-          "format": "double"
-        },
-        "spread": {
-          "type": "number",
-          "format": "double"
-        },
-        "tokenId": {
-          "type": "string"
-        },
-        "warmup": {
-          "type": "boolean"
-        },
-        "windows": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketMoverWindowItem"
-          }
-        }
-      }
-    },
-    "v1alpha1PolymarketMoverWindowItem": {
-      "type": "object",
-      "properties": {
-        "priceChangePp": {
-          "type": "number",
-          "format": "double"
-        },
-        "sampleCount": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "warmup": {
-          "type": "boolean"
-        },
-        "window": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketRealtimeMarketItem": {
-      "type": "object",
-      "properties": {
-        "conditionId": {
-          "type": "string"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "liquidityNum": {
-          "type": "number",
-          "format": "double"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string"
-        },
-        "tokens": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketRealtimeTokenItem"
-          }
-        },
-        "updatedAt": {
-          "type": "string"
-        },
-        "volume24hr": {
-          "type": "number",
-          "format": "double"
-        },
-        "volumeNum": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
-    "v1alpha1PolymarketRealtimeTokenItem": {
-      "type": "object",
-      "properties": {
-        "bestAsk": {
-          "type": "number",
-          "format": "double"
-        },
-        "bestBid": {
-          "type": "number",
-          "format": "double"
-        },
-        "lastEventAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "lastTradePrice": {
-          "type": "number",
-          "format": "double"
-        },
-        "lastTradeSide": {
-          "type": "string"
-        },
-        "lastTradeSize": {
-          "type": "number",
-          "format": "double"
-        },
-        "outcome": {
-          "type": "string"
-        },
-        "price": {
-          "type": "number",
-          "format": "double"
-        },
-        "spread": {
-          "type": "number",
-          "format": "double"
-        },
-        "tokenId": {
-          "type": "string"
-        },
-        "warmup": {
-          "type": "boolean"
-        },
-        "windows": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketRealtimeWindowItem"
-          }
-        }
-      }
-    },
-    "v1alpha1PolymarketRealtimeWindowItem": {
-      "type": "object",
-      "properties": {
-        "priceChangePp": {
-          "type": "number",
-          "format": "double"
-        },
-        "sampleCount": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "warmup": {
-          "type": "boolean"
-        },
-        "window": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketSportsHistoryEventCardItem": {
+    "v1alpha1SportsHistoryEventCardItem": {
       "type": "object",
       "properties": {
         "elapsed": {
@@ -4586,7 +4989,7 @@
         "markets": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketCardItem"
+            "$ref": "#/definitions/v1alpha1SportsLiveMarketCardItem"
           }
         },
         "period": {
@@ -4604,7 +5007,7 @@
         "teams": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
+            "$ref": "#/definitions/v1alpha1SportsTeamItem"
           }
         },
         "title": {
@@ -4619,7 +5022,35 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsHistorySyncStatus": {
+    "v1alpha1SportsHistoryPriceHistorySeriesItem": {
+      "type": "object",
+      "properties": {
+        "marketKey": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "prices": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "timestamps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "tokenId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1SportsHistorySyncStatus": {
       "type": "object",
       "properties": {
         "completedAt": {
@@ -4642,7 +5073,7 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsLiveEventCardItem": {
+    "v1alpha1SportsLiveEventCardItem": {
       "type": "object",
       "properties": {
         "elapsed": {
@@ -4671,7 +5102,7 @@
         "markets": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveMarketCardItem"
+            "$ref": "#/definitions/v1alpha1SportsLiveMarketCardItem"
           }
         },
         "period": {
@@ -4689,7 +5120,7 @@
         "teams": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketSportsLiveTeamItem"
+            "$ref": "#/definitions/v1alpha1SportsTeamItem"
           }
         },
         "title": {
@@ -4704,7 +5135,7 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsLiveMarketCardItem": {
+    "v1alpha1SportsLiveMarketCardItem": {
       "type": "object",
       "properties": {
         "bestAsk": {
@@ -4757,7 +5188,7 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsLivePriceHistorySeriesItem": {
+    "v1alpha1SportsLivePriceHistorySeriesItem": {
       "type": "object",
       "properties": {
         "marketKey": {
@@ -4785,7 +5216,7 @@
         }
       }
     },
-    "v1alpha1PolymarketSportsLiveTeamItem": {
+    "v1alpha1SportsTeamItem": {
       "type": "object",
       "properties": {
         "abbreviation": {
@@ -4799,183 +5230,6 @@
         },
         "name": {
           "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketStatus": {
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketUMADisputeItem": {
-      "type": "object",
-      "properties": {
-        "ancillaryDataHex": {
-          "type": "string"
-        },
-        "ancillaryDataText": {
-          "type": "string"
-        },
-        "blockHash": {
-          "type": "string"
-        },
-        "blockNumber": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "conditionId": {
-          "type": "string"
-        },
-        "contractAddress": {
-          "type": "string"
-        },
-        "disputer": {
-          "type": "string"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "fetchedAt": {
-          "type": "string"
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "logIndex": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "marketId": {
-          "type": "string"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "polymarketUrl": {
-          "type": "string"
-        },
-        "proposedPrice": {
-          "type": "string"
-        },
-        "proposer": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string"
-        },
-        "rawData": {
-          "type": "string"
-        },
-        "rawTopics": {
-          "type": "string"
-        },
-        "requestTimestamp": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "requester": {
-          "type": "string"
-        },
-        "topic": {
-          "type": "string"
-        },
-        "txHash": {
-          "type": "string"
-        },
-        "txIndex": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "v1alpha1PolymarketUMAProposalItem": {
-      "type": "object",
-      "properties": {
-        "ancillaryDataHex": {
-          "type": "string"
-        },
-        "ancillaryDataText": {
-          "type": "string"
-        },
-        "blockHash": {
-          "type": "string"
-        },
-        "blockNumber": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "conditionId": {
-          "type": "string"
-        },
-        "contractAddress": {
-          "type": "string"
-        },
-        "currency": {
-          "type": "string"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "expirationTimestamp": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "fetchedAt": {
-          "type": "string"
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "logIndex": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "marketId": {
-          "type": "string"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "polymarketUrl": {
-          "type": "string"
-        },
-        "proposedPrice": {
-          "type": "string"
-        },
-        "proposer": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string"
-        },
-        "rawData": {
-          "type": "string"
-        },
-        "rawTopics": {
-          "type": "string"
-        },
-        "requestTimestamp": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "requester": {
-          "type": "string"
-        },
-        "topic": {
-          "type": "string"
-        },
-        "txHash": {
-          "type": "string"
-        },
-        "txIndex": {
-          "type": "integer",
-          "format": "int64"
         }
       }
     },
@@ -6536,7 +6790,7 @@
         }
       }
     },
-    "v1alpha1WormEventItem": {
+    "v1alpha1WormMarketsEventItem": {
       "type": "object",
       "properties": {
         "category": {
@@ -6565,7 +6819,7 @@
         "markets": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1WormMarketItem"
+            "$ref": "#/definitions/v1alpha1WormMarketsMarketItem"
           }
         },
         "title": {
@@ -6573,7 +6827,7 @@
         }
       }
     },
-    "v1alpha1WormMarginPositionEstimateItem": {
+    "v1alpha1WormMarketsMarginPositionEstimateItem": {
       "type": "object",
       "properties": {
         "averagePrice": {
@@ -6614,7 +6868,7 @@
         }
       }
     },
-    "v1alpha1WormMarketItem": {
+    "v1alpha1WormMarketsMarketItem": {
       "type": "object",
       "properties": {
         "annualFeeRate": {
@@ -6640,7 +6894,7 @@
           "type": "string"
         },
         "estimate": {
-          "$ref": "#/definitions/v1alpha1WormMarginPositionEstimateItem"
+          "$ref": "#/definitions/v1alpha1WormMarketsMarginPositionEstimateItem"
         },
         "eventConditionId": {
           "type": "string"
@@ -6697,75 +6951,6 @@
           "type": "string"
         },
         "tradingDataError": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1WormPolyFIFADashboard": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1alpha1WormPolyFIFAEventConfig"
-        },
-        "fetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "polymarketError": {
-          "type": "string"
-        },
-        "polymarketEvent": {
-          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineEventItem"
-        },
-        "polymarketFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "walletBalances": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketFIFAWalletBalanceItem"
-          }
-        },
-        "walletBalancesError": {
-          "type": "string"
-        },
-        "walletBalancesFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "walletHoldings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketFIFAWalletHoldingItem"
-          }
-        },
-        "walletHoldingsError": {
-          "type": "string"
-        },
-        "walletHoldingsFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "wormError": {
-          "type": "string"
-        },
-        "wormEvent": {
-          "$ref": "#/definitions/v1alpha1WormEventItem"
-        },
-        "wormFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "v1alpha1WormPolyFIFAEventConfig": {
-      "type": "object",
-      "properties": {
-        "eventRef": {
-          "type": "string"
-        },
-        "wormEventId": {
           "type": "string"
         }
       }
@@ -6948,21 +7133,21 @@
         }
       }
     },
-    "wormGetWormEventResponse": {
+    "wormmarketsGetWormEventResponse": {
       "description": "GetWormEventResponse returns one Worm event and related market summaries.",
       "type": "object",
       "properties": {
+        "event": {
+          "$ref": "#/definitions/v1alpha1WormMarketsEventItem"
+        },
         "fetched_at": {
           "type": "integer",
           "format": "int64"
-        },
-        "item": {
-          "$ref": "#/definitions/v1alpha1WormEventItem"
         }
       }
     },
-    "wormGetWormStatusResponse": {
-      "description": "GetWormStatusResponse returns the worm service runtime status.",
+    "wormmarketsGetWormMarketsStatusResponse": {
+      "description": "GetWormMarketsStatusResponse returns the Worm Markets service runtime status.",
       "type": "object",
       "properties": {
         "started": {
@@ -6973,7 +7158,7 @@
         }
       }
     },
-    "wormListWormEventsResponse": {
+    "wormmarketsListWormEventsResponse": {
       "description": "ListWormEventsResponse returns Worm events and cursor pagination.",
       "type": "object",
       "properties": {
@@ -6984,7 +7169,7 @@
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1WormEventItem"
+            "$ref": "#/definitions/v1alpha1WormMarketsEventItem"
           }
         },
         "next_cursor": {
@@ -6992,34 +7177,6 @@
         },
         "stale": {
           "type": "boolean"
-        }
-      }
-    },
-    "wormpolyGetWormPolyFIFADashboardResponse": {
-      "type": "object",
-      "properties": {
-        "dashboard": {
-          "$ref": "#/definitions/v1alpha1WormPolyFIFADashboard"
-        }
-      }
-    },
-    "wormpolyGetWormPolyStatusResponse": {
-      "description": "GetWormPolyStatusResponse returns the worm-poly service runtime status.",
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
-    "wormpolyUpdateWormPolyFIFAEventConfigResponse": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1alpha1WormPolyFIFAEventConfig"
         }
       }
     }

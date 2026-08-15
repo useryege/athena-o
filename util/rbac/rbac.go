@@ -50,16 +50,20 @@ type CasbinEnforcer interface {
 
 const (
 	// please add new items to Resources
-	ResourceAccounts      = "accounts"
-	ResourceLogs          = "logs"
-	ResourceProjects      = "projects"
-	ResourceNotifications = "notifications"
-	ResourceWallets       = "wallets"
-	ResourceWorm          = "worm"
-	ResourceWormPoly      = "worm-poly"
-	ResourcePolymarket    = "polymarket"
-	ResourceTokenAPI      = "tokenapi"
-	ResourceServiceStatus = "service-status"
+	ResourceAccounts            = "accounts"
+	ResourceLogs                = "logs"
+	ResourceProjects            = "projects"
+	ResourceNotifications       = "notifications"
+	ResourceWallets             = "wallets"
+	ResourceMarketRadar         = "market-radar"
+	ResourceSportsLive          = "sports-live"
+	ResourceSportsHistory       = "sports-history"
+	ResourceManagedOO           = "managed-oo"
+	ResourceWormMarkets         = "worm-markets"
+	ResourceFIFAMarketDashboard = "fifa-market-dashboard"
+	ResourceWorldCupCorners     = "world-cup-corners"
+	ResourceTokenAPI            = "tokenapi"
+	ResourceServiceStatus       = "service-status"
 
 	// please add new items to Actions
 	ActionGet    = "get"
@@ -75,9 +79,13 @@ var (
 		ResourceProjects,
 		ResourceNotifications,
 		ResourceWallets,
-		ResourceWorm,
-		ResourceWormPoly,
-		ResourcePolymarket,
+		ResourceMarketRadar,
+		ResourceSportsLive,
+		ResourceSportsHistory,
+		ResourceManagedOO,
+		ResourceWormMarkets,
+		ResourceFIFAMarketDashboard,
+		ResourceWorldCupCorners,
 		ResourceTokenAPI,
 		ResourceServiceStatus,
 	}

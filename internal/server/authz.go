@@ -8,8 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/useryege/athena/common"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
+	managedoopkg "github.com/useryege/athena/pkg/apiclient/managedoo"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
-	polymarketpkg "github.com/useryege/athena/pkg/apiclient/polymarket"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	"github.com/useryege/athena/util/rbac"
@@ -117,9 +117,9 @@ func walletObject(req any) string {
 	}
 }
 
-func polymarketObject(req any) string {
+func managedOOObject(req any) string {
 	switch r := req.(type) {
-	case *polymarketpkg.ScanPolymarketManagedOOBlockRequest:
+	case *managedoopkg.ScanManagedOOBlockRequest:
 		return fmt.Sprintf("%d", r.GetBlockNumber())
 	default:
 		return "*"
@@ -165,35 +165,40 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/notification.NotificationService/GetNotificationDelivery":    {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
 	"/notification.NotificationService/SendTestNotification":       {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
 
-	"/wallet.WalletService/GetWalletStatus":           fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/ListWallets":               fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/GetWallet":                 {resource: rbac.ResourceWallets, action: rbac.ActionGet, object: walletObject},
-	"/wallet.WalletService/CreateWallet":              fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/ImportPrivateKey":          fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/ImportMnemonic":            fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/UpdateWalletAlias":         {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
-	"/worm.WormService/GetWormStatus":                 fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/GetWormEvent":                  fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/ListWormEvents":                fixedRule(rbac.ResourceWorm, rbac.ActionGet),
-	"/worm.WormService/BatchUpdateWormMarketsIgnored": fixedRule(rbac.ResourceWorm, rbac.ActionUpdate),
+	"/wallet.WalletService/GetWalletStatus":                fixedRule(rbac.ResourceWallets, rbac.ActionGet),
+	"/wallet.WalletService/ListWallets":                    fixedRule(rbac.ResourceWallets, rbac.ActionGet),
+	"/wallet.WalletService/GetWallet":                      {resource: rbac.ResourceWallets, action: rbac.ActionGet, object: walletObject},
+	"/wallet.WalletService/CreateWallet":                   fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
+	"/wallet.WalletService/ImportPrivateKey":               fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
+	"/wallet.WalletService/ImportMnemonic":                 fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
+	"/wallet.WalletService/UpdateWalletAlias":              {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
+	"/marketradar.MarketRadarService/GetMarketRadarStatus": fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
+	"/marketradar.MarketRadarService/ListHotMarkets":       fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
+	"/marketradar.MarketRadarService/ListRealtimeMarkets":  fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
+	"/marketradar.MarketRadarService/ListMarketMovers":     fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
 
-	"/polymarket.PolymarketService/GetPolymarketStatus":                         fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketHotMarkets":                    fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketRealtimeMarkets":               fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketMovers":                        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketSportsLiveEvents":              fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/BatchGetPolymarketSportsLivePriceHistory":    fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketSportsHistoryEvents":           fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/BatchGetPolymarketSportsHistoryPriceHistory": fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/GetPolymarketSportsHistorySyncStatus":        fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/RefreshPolymarketSportsHistory":              fixedRule(rbac.ResourcePolymarket, rbac.ActionInvoke),
-	"/polymarket.PolymarketService/ScanPolymarketManagedOOBlock":                {resource: rbac.ResourcePolymarket, action: rbac.ActionInvoke, object: polymarketObject},
-	"/polymarket.PolymarketService/ListPolymarketUMAProposals":                  fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
-	"/polymarket.PolymarketService/ListPolymarketUMADisputes":                   fixedRule(rbac.ResourcePolymarket, rbac.ActionGet),
+	"/sportslive.SportsLiveService/GetSportsLiveStatus":              fixedRule(rbac.ResourceSportsLive, rbac.ActionGet),
+	"/sportslive.SportsLiveService/ListSportsLiveEvents":             fixedRule(rbac.ResourceSportsLive, rbac.ActionGet),
+	"/sportslive.SportsLiveService/BatchGetSportsLivePriceHistories": fixedRule(rbac.ResourceSportsLive, rbac.ActionGet),
 
-	"/wormpoly.WormPolyService/GetWormPolyStatus":             fixedRule(rbac.ResourceWormPoly, rbac.ActionGet),
-	"/wormpoly.WormPolyService/GetWormPolyFIFADashboard":      fixedRule(rbac.ResourceWormPoly, rbac.ActionGet),
-	"/wormpoly.WormPolyService/UpdateWormPolyFIFAEventConfig": fixedRule(rbac.ResourceWormPoly, rbac.ActionUpdate),
+	"/sportshistory.SportsHistoryService/GetSportsHistoryStatus":              fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
+	"/sportshistory.SportsHistoryService/ListSportsHistoryEvents":             fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
+	"/sportshistory.SportsHistoryService/BatchGetSportsHistoryPriceHistories": fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
+	"/sportshistory.SportsHistoryService/GetSportsHistorySyncStatus":          fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
+	"/sportshistory.SportsHistoryService/RefreshSportsHistory":                fixedRule(rbac.ResourceSportsHistory, rbac.ActionInvoke),
+
+	"/managedoo.ManagedOOService/GetManagedOOStatus":     fixedRule(rbac.ResourceManagedOO, rbac.ActionGet),
+	"/managedoo.ManagedOOService/ScanManagedOOBlock":     {resource: rbac.ResourceManagedOO, action: rbac.ActionInvoke, object: managedOOObject},
+	"/managedoo.ManagedOOService/ListManagedOOProposals": fixedRule(rbac.ResourceManagedOO, rbac.ActionGet),
+	"/managedoo.ManagedOOService/ListManagedOODisputes":  fixedRule(rbac.ResourceManagedOO, rbac.ActionGet),
+
+	"/wormmarkets.WormMarketsService/GetWormMarketsStatus": fixedRule(rbac.ResourceWormMarkets, rbac.ActionGet),
+	"/wormmarkets.WormMarketsService/GetWormEvent":         fixedRule(rbac.ResourceWormMarkets, rbac.ActionGet),
+	"/wormmarkets.WormMarketsService/ListWormEvents":       fixedRule(rbac.ResourceWormMarkets, rbac.ActionGet),
+
+	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboardStatus": fixedRule(rbac.ResourceFIFAMarketDashboard, rbac.ActionGet),
+	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboard":       fixedRule(rbac.ResourceFIFAMarketDashboard, rbac.ActionGet),
+	"/fifamarketdashboard.FIFAMarketDashboardService/UpdateFIFAEventConfig":        fixedRule(rbac.ResourceFIFAMarketDashboard, rbac.ActionUpdate),
 
 	"/tokenapi.TokenCatalogService/GetContractCode":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
 	"/tokenapi.TokenCatalogService/ListContractCodes":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),

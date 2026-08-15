@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+// Worm Markets Service API exposes Worm sports-market workloads.
+package athena.internal.wormmarkets;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+
+option go_package = "github.com/useryege/athena/internal/wormmarkets/apiclient";
+
+// GetWormMarketsStatusRequest queries the Worm Markets service runtime status.
+message GetWormMarketsStatusRequest {}
+
+// GetWormMarketsStatusResponse returns the Worm Markets service runtime status.
+message GetWormMarketsStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+// GetWormEventRequest queries one Worm event by condition id.
+message GetWormEventRequest {
+  string condition_id = 1;
+}
+
+// GetWormEventResponse returns one Worm event and related market summaries.
+message GetWormEventResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketsEventItem event = 1;
+  int64 fetched_at = 2;
+}
+
+// ListWormEventsRequest queries Worm events for the configured browse view.
+message ListWormEventsRequest {
+  int32 limit = 1;
+  string cursor = 2;
+  string sort_option = 3;
+  string category_slug = 4;
+}
+
+// ListWormEventsResponse returns Worm events and cursor pagination.
+message ListWormEventsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WormMarketsEventItem events = 1;
+  string next_cursor = 2;
+  int64 fetched_at = 3;
+  bool stale = 4;
+}
+
+service WormMarketsService {
+  // GetWormMarketsStatus returns the Worm Markets service runtime status.
+  rpc GetWormMarketsStatus(GetWormMarketsStatusRequest) returns (GetWormMarketsStatusResponse);
+
+  // GetWormEvent returns an event and related market summaries by condition id.
+  rpc GetWormEvent(GetWormEventRequest) returns (GetWormEventResponse);
+
+  // ListWormEvents returns events for the requested browse filters.
+  rpc ListWormEvents(ListWormEventsRequest) returns (ListWormEventsResponse);
+}

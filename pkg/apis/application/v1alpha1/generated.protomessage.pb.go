@@ -5,6 +5,34 @@
 
 package v1alpha1
 
+func (*FIFAMarketDashboard) ProtoMessage() {}
+
+func (*FIFAMarketDashboardEventConfig) ProtoMessage() {}
+
+func (*FIFAMarketDashboardWalletBalanceItem) ProtoMessage() {}
+
+func (*FIFAMarketDashboardWalletHoldingItem) ProtoMessage() {}
+
+func (*ManagedOODisputeItem) ProtoMessage() {}
+
+func (*ManagedOOProposalItem) ProtoMessage() {}
+
+func (*MarketRadarHotMarketItem) ProtoMessage() {}
+
+func (*MarketRadarHotMarketTokenItem) ProtoMessage() {}
+
+func (*MarketRadarMoverMarketItem) ProtoMessage() {}
+
+func (*MarketRadarMoverTokenItem) ProtoMessage() {}
+
+func (*MarketRadarMoverWindowItem) ProtoMessage() {}
+
+func (*MarketRadarRealtimeMarketItem) ProtoMessage() {}
+
+func (*MarketRadarRealtimeTokenItem) ProtoMessage() {}
+
+func (*MarketRadarRealtimeWindowItem) ProtoMessage() {}
+
 func (*NotificationDeliveryDetail) ProtoMessage() {}
 
 func (*NotificationDeliveryItem) ProtoMessage() {}
@@ -17,43 +45,19 @@ func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
 
 func (*PolymarketFIFAMoneylineOptionItem) ProtoMessage() {}
 
-func (*PolymarketFIFAWalletBalanceItem) ProtoMessage() {}
+func (*SportsHistoryEventCardItem) ProtoMessage() {}
 
-func (*PolymarketFIFAWalletHoldingItem) ProtoMessage() {}
+func (*SportsHistoryPriceHistorySeriesItem) ProtoMessage() {}
 
-func (*PolymarketHotMarketItem) ProtoMessage() {}
+func (*SportsHistorySyncStatus) ProtoMessage() {}
 
-func (*PolymarketHotMarketTokenItem) ProtoMessage() {}
+func (*SportsLiveEventCardItem) ProtoMessage() {}
 
-func (*PolymarketMoverMarketItem) ProtoMessage() {}
+func (*SportsLiveMarketCardItem) ProtoMessage() {}
 
-func (*PolymarketMoverTokenItem) ProtoMessage() {}
+func (*SportsLivePriceHistorySeriesItem) ProtoMessage() {}
 
-func (*PolymarketMoverWindowItem) ProtoMessage() {}
-
-func (*PolymarketRealtimeMarketItem) ProtoMessage() {}
-
-func (*PolymarketRealtimeTokenItem) ProtoMessage() {}
-
-func (*PolymarketRealtimeWindowItem) ProtoMessage() {}
-
-func (*PolymarketSportsHistoryEventCardItem) ProtoMessage() {}
-
-func (*PolymarketSportsHistorySyncStatus) ProtoMessage() {}
-
-func (*PolymarketSportsLiveEventCardItem) ProtoMessage() {}
-
-func (*PolymarketSportsLiveMarketCardItem) ProtoMessage() {}
-
-func (*PolymarketSportsLivePriceHistorySeriesItem) ProtoMessage() {}
-
-func (*PolymarketSportsLiveTeamItem) ProtoMessage() {}
-
-func (*PolymarketStatus) ProtoMessage() {}
-
-func (*PolymarketUMADisputeItem) ProtoMessage() {}
-
-func (*PolymarketUMAProposalItem) ProtoMessage() {}
+func (*SportsTeamItem) ProtoMessage() {}
 
 func (*TokenAveObservation) ProtoMessage() {}
 
@@ -145,12 +149,8 @@ func (*WalletItem) ProtoMessage() {}
 
 func (*WalletStatus) ProtoMessage() {}
 
-func (*WormEventItem) ProtoMessage() {}
+func (*WormMarketsEventItem) ProtoMessage() {}
 
-func (*WormMarginPositionEstimateItem) ProtoMessage() {}
+func (*WormMarketsMarginPositionEstimateItem) ProtoMessage() {}
 
-func (*WormMarketItem) ProtoMessage() {}
-
-func (*WormPolyFIFADashboard) ProtoMessage() {}
-
-func (*WormPolyFIFAEventConfig) ProtoMessage() {}
+func (*WormMarketsMarketItem) ProtoMessage() {}

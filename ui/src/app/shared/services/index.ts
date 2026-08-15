@@ -1,15 +1,17 @@
 import {AccountsService} from './accounts-service';
 import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
-import {PolymarketService} from './polymarket-service';
+import {FIFAMarketDashboardService} from './fifa-market-dashboard-service';
+import {ManagedOOService} from './managed-oo-service';
+import {MarketRadarService} from './market-radar-service';
 import {ServiceStatusService} from './service-status-service';
 import {TokenService} from './token-service';
 import {UserService} from './user-service';
 import {VersionService} from './version-service';
 import {ViewPreferencesService} from './view-preferences-service';
 import {WalletService} from './wallet-service';
-import {WormPolyService} from './wormpoly-service';
-import {WormService} from './worm-service';
+import {SportsHistoryService} from './sports-history-service';
+import {SportsLiveService} from './sports-live-service';
 
 export interface Services {
     tokenapi: TokenService;
@@ -19,9 +21,11 @@ export interface Services {
     version: VersionService;
     accounts: AccountsService;
     wallet: WalletService;
-    worm: WormService;
-    wormpoly: WormPolyService;
-    polymarket: PolymarketService;
+    marketRadar: MarketRadarService;
+    sportsLive: SportsLiveService;
+    sportsHistory: SportsHistoryService;
+    managedOO: ManagedOOService;
+    fifaMarketDashboard: FIFAMarketDashboardService;
     notification: NotificationService;
     serviceStatus: ServiceStatusService;
 }
@@ -34,9 +38,11 @@ export const services: Services = {
     version: new VersionService(),
     accounts: new AccountsService(),
     wallet: new WalletService(),
-    worm: new WormService(),
-    wormpoly: new WormPolyService(),
-    polymarket: new PolymarketService(),
+    marketRadar: new MarketRadarService(),
+    sportsLive: new SportsLiveService(),
+    sportsHistory: new SportsHistoryService(),
+    managedOO: new ManagedOOService(),
+    fifaMarketDashboard: new FIFAMarketDashboardService(),
     notification: new NotificationService(),
     serviceStatus: new ServiceStatusService()
 };

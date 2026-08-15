@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package athena.internal.managedoo;
+
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+
+option go_package = "github.com/useryege/athena/internal/managedoo/apiclient";
+
+message GetManagedOOStatusRequest {}
+
+message GetManagedOOStatusResponse {
+  bool started = 1;
+  string status = 2;
+}
+
+message ScanManagedOOBlockRequest {
+  uint64 block_number = 1;
+}
+
+message ScanManagedOOBlockResponse {
+  uint64 block_number = 1;
+  int32 proposal_count = 2;
+  int32 dispute_count = 3;
+}
+
+message ListManagedOOProposalsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  uint64 block_number = 3;
+}
+
+message ListManagedOOProposalsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ManagedOOProposalItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListManagedOODisputesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  uint64 block_number = 3;
+}
+
+message ListManagedOODisputesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.ManagedOODisputeItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+service ManagedOOService {
+  rpc GetManagedOOStatus(GetManagedOOStatusRequest) returns (GetManagedOOStatusResponse);
+  rpc ScanManagedOOBlock(ScanManagedOOBlockRequest) returns (ScanManagedOOBlockResponse);
+  rpc ListManagedOOProposals(ListManagedOOProposalsRequest) returns (ListManagedOOProposalsResponse);
+  rpc ListManagedOODisputes(ListManagedOODisputesRequest) returns (ListManagedOODisputesResponse);
+}

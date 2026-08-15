@@ -1,7 +1,10 @@
-# worm: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-worm} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-worm go run ./cmd/main.go --port ${ATHENA_WORM_PORT:-8084}"
-# worm-poly: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-worm-poly} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-worm-poly go run ./cmd/main.go --port ${ATHENA_WORM_POLY_PORT:-8090}"
+worm-markets: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-worm-markets} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-worm-markets go run ./cmd/main.go --port ${ATHENA_WORM_MARKETS_PORT:-8084}"
+fifa-market-dashboard: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-fifa-market-dashboard} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-fifa-market-dashboard go run ./cmd/main.go --port ${ATHENA_FIFA_MARKET_DASHBOARD_PORT:-8090}"
+market-radar: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-market-radar} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-market-radar go run ./cmd/main.go --port ${ATHENA_MARKET_RADAR_PORT:-8092}"
+sports-live: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-sports-live} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-sports-live go run ./cmd/main.go --port ${ATHENA_SPORTS_LIVE_PORT:-8094}"
+sports-history: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-sports-history} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-sports-history go run ./cmd/main.go --port ${ATHENA_SPORTS_HISTORY_PORT:-8104}"
+managed-oo: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-managed-oo} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-managed-oo go run ./cmd/main.go --port ${ATHENA_MANAGED_OO_PORT:-8106}"
 # pred-poly: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-pred-poly} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-pred-poly go run ./cmd/main.go --port ${ATHENA_PRED_POLY_PORT:-8098}"
-# polymarket: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-polymarket} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-polymarket go run ./cmd/main.go --port ${ATHENA_POLYMARKET_PORT:-8092}"
 token-chain-processor: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-chain-processor} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-chain-processor go run ./cmd/main.go"
 token-swap-processor: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-swap-processor} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-swap-processor go run ./cmd/main.go"
 token-scheduler: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-scheduler} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-scheduler go run ./cmd/main.go"
@@ -15,7 +18,7 @@ token-report-builder: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/ath
 token-selector: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-selector} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-selector go run ./cmd/main.go"
 token-api: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-api} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-api go run ./cmd/main.go --port ${ATHENA_TOKEN_API_PORT:-8096}"
 etherscan-manager: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-etherscan-manager} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-etherscan-manager go run ./cmd/main.go --port ${ATHENA_ETHERSCAN_MANAGER_PORT:-8100}"
-# notification: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-notification} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-notification go run ./cmd/main.go --port ${ATHENA_NOTIFICATION_PORT:-8086}"
+notification: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-notification} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-notification go run ./cmd/main.go --port ${ATHENA_NOTIFICATION_PORT:-8086}"
 wallet: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-wallet ATHENA_WALLET_ENCRYPTION_KEY=${ATHENA_WALLET_ENCRYPTION_KEY:-athena-local-wallet-encryption-key} go run ./cmd/main.go --port ${ATHENA_WALLET_PORT:-8088}"
 redis: hack/start-redis-with-password.sh
 postgres: hack/start-postgres-with-password.sh
