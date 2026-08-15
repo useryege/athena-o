@@ -147,7 +147,7 @@ const GeneralFilters = (props: {draft: ProjectsFilterState; chainOptions: Array<
             <div className='projects-filters-modal__section-heading'>
                 <div>
                     <Typography.Title level={4}>General filters</Typography.Title>
-                    <Typography.Text type='secondary'>These conditions apply in Overview and every Report Risk section.</Typography.Text>
+                    <Typography.Text type='secondary'>These conditions apply in every Projects view.</Typography.Text>
                 </div>
                 <Button size='small' onClick={clearGeneral}>
                     Clear section
@@ -398,7 +398,7 @@ export const ProjectsFiltersModal = (props: {
                 ]}
             />
             <Typography.Text className='projects-filters-modal__scope-note' type='secondary'>
-                Pair filters are saved independently and only affect results while their matching Report Risk section is active.
+                Pair filters are saved independently and only affect results while their matching Pair view is active.
             </Typography.Text>
         </Modal>
     );

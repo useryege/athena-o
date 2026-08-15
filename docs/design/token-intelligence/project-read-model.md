@@ -121,47 +121,48 @@ raw JSON for history consumers.
    infinity, or fractional values fail the read. Valid quote values cross the
    API boundary as decimal integer strings.
 
-The Projects page renders the same response as two projections. `Overview` is
-the default URL state; `view=report-risk` selects the Report Risk projection.
-The Overview table and card omit transaction index and code hash from their
-display, while code hash remains an accepted list filter. `view` never reaches
-the API. Report Pair filters remain encoded in the URL when Overview is active
-but are not sent to the API, so switching projections preserves both Pair
-filter drafts while Overview returns the global-filter result set.
+The Projects page renders the same response as four flat projections.
+`Overview` is the default URL state and omits `view`; the other canonical URL
+values are `view=report-status`, `view=wrapped-native`, and `view=usdt`.
+Invalid values normalize to Overview. Projection state has no nested section
+parameter. The Overview table and card omit transaction index and code hash
+from their display, while code hash remains an accepted list filter. `view`
+never reaches the API. Report Pair filters remain encoded in the URL in every
+projection, but only the matching Pair view sends them to the API. Switching
+projections therefore preserves both Pair filter drafts while Overview and
+Report Status return the global-filter result set.
 
 Every desktop Projects projection renders the Ave logo as its fixed first
-column. Overview and Report Risk compact cards place the same logo at the start
-of the card title. List logos are 32 pixels square and fall back to the project
-symbol, or `?` when the symbol is absent, if the current Ave projection has no
-URL or the browser cannot load it.
+column, and every compact card places the same logo at the start of its title.
+List logos are 32 pixels square and fall back to the project symbol, or `?`
+when the symbol is absent, if the current Ave projection has no URL or the
+browser cannot load it.
 
-Report Risk uses a second presentation-only URL parameter, `riskSection`, to
-split the desktop projection into `Status`, `WETH / WBNB`, and `USDT` tables.
-Status is canonical when the parameter is absent; the other canonical values
-are `wrapped-native` and `usdt`. Invalid values normalize to Status, and
-`riskSection` is removed outside
-`view=report-risk`. The URL stores independent `weth*` and `usdt*` Pair filter
-parameters. Only the active Pair section's non-empty filter is translated to
-the generic `report_pair_*` request fields; Status applies neither Pair filter.
-Changing sections preserves both drafts and page size, but can select a
-different server request when the destination Pair has an active filter.
+One `View` control exposes Overview, Report Status, WETH/WBNB, and USDT at the
+same navigation level. Desktop and tablet layouts use four radio buttons;
+viewports at or below 768 pixels replace them with one labeled select so all
+choices remain reachable without horizontal scrolling. WETH/WBNB and USDT
+labels mark independently saved Pair filters. Only the active Pair view's
+non-empty filter is translated to the generic `report_pair_*` request fields.
+Changing views preserves both drafts, pagination, and page size, but can select
+a different server request when the destination Pair has an active filter.
 The presentation-only `riskSort` and `riskSortOrder` parameters preserve one
-current-page Pair sort across refreshes, shared URLs, section changes, and
+current-page Pair sort across refreshes, shared URLs, view changes, and
 detail round trips. Invalid or incomplete sort combinations normalize away.
-Clearing filters retains the active Report Risk section, page size, and local
-sort while removing global filters and both Pair drafts.
+Clearing filters retains the active view, page size, and local sort while
+removing global filters and both Pair drafts.
 
-The desktop Status section groups research, Report, Evaluation, and trusted
+The desktop Report Status view groups research, Report, Evaluation, and trusted
 Selection fields into summary columns; its Evaluation error can be expanded
-with a keyboard-operable control. Each Pair section presents Report revision
-and completeness context followed by Created, Remove Liquidity, Mint, Quote
-USDT, and Last Swap. All global and Pair filters are edited as one draft in a
+with a keyboard-operable control. Each Pair view presents Report revision and
+completeness context followed by Created, Remove Liquidity, Mint, Quote USDT,
+and Last Swap. All global and Pair filters are edited as one draft in a
 centered `Filters` modal with General, WETH/WBNB, and USDT tabs. Applying the
 draft commits every filter to the URL atomically and returns to page one;
 closing the modal discards it. The toolbar counts only filter fields effective
 for the current request, shows removable summaries for those fields, and marks
-Pair sections that retain saved filters. Status and Overview therefore do not
-present inactive Pair drafts as applied conditions.
+Pair views that retain saved filters. Report Status and Overview therefore do
+not present inactive Pair drafts as applied conditions.
 
 The six non-logo Pair columns expose only local sort controls in their desktop
 headers. Project text is case-insensitive, Quote uses exact `BigInt` values,
@@ -169,22 +170,22 @@ and Pair booleans and timestamps use their typed values. Missing Pair data
 always follows present values in either direction, and equal values retain the
 server order. Sorting rearranges only the loaded server page and never changes
 the API request or pagination. The tables fit the available desktop surface
-and do not render the former combined horizontal risk matrix. At viewport
-widths up to 900 pixels, Overview uses semantic project cards. Report Risk
-switches to its semantic cards at 1100 pixels; the Risk section control remains
-available and an equivalent current-page sort selector appears above the card
-list for Pair sections. The same centered filter modal becomes a near-full-
-width, single-column form below 768 pixels. Each card still contains the
-complete Status data and all five fields for both wrapped-native and USDT Pair
-snapshots. Both compact layouts retain the same rows and paginator as their
+and do not render a combined horizontal risk matrix. At viewport widths up to
+900 pixels, Overview uses semantic project cards. Report Status and both Pair
+views switch to semantic cards at 1100 pixels; an equivalent current-page sort
+selector appears above the card list only for Pair views. Report Status cards
+contain only project, Report, Evaluation, and Selection context. Pair cards
+contain project and Report context plus only the active Pair snapshot. The same
+centered filter modal becomes a near-full-width, single-column form below 768
+pixels. Both compact layouts retain the same rows and paginator as their
 desktop projections.
 
 The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
 key contains only the server request fields: page, page size, chain, project,
 contract, code hash, research status, Report state, Evaluation status, and
 trusted Selection outcome, plus the effective Report Pair kind and filters.
-Presentation-only `view`, `riskSection`, `riskSort`, `riskSortOrder`, and
-inactive Pair drafts are excluded.
+Presentation-only `view`, `riskSort`, `riskSortOrder`, and inactive Pair drafts
+are excluded.
 A successful list response is fresh for 30 seconds. A fresh hit
 renders synchronously without a request; a stale hit keeps its rows, total, and
 paginator visible while one deduplicated request refreshes the key in the
@@ -442,7 +443,8 @@ There is no runtime configuration specific to this read model.
 | Transactions compact layout breakpoint | 1440 pixels | The Transactions tab uses the compact table at and above the breakpoint and complete transaction cards below it. |
 | Revision History compact layout breakpoint | 1440 pixels | Revision History uses the fixed comparison table at and above the breakpoint and complete revision cards below it. |
 | Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash, and the shell uses overlay navigation. |
-| Report Risk compact layout breakpoint | 1100 pixels | The root layout may shrink below its desktop minimum and section controls and tables are replaced by cards containing complete Status, wrapped-native, and USDT data; overlay navigation still begins at 900 pixels. |
+| Report projection compact layout breakpoint | 1100 pixels | Report Status and Pair tables become view-specific semantic cards; overlay navigation still begins at 900 pixels. |
+| Projects compact view-control breakpoint | 768 pixels | The four-button flat view control becomes one labeled select without changing URL state. |
 
 ## Invariants
 
@@ -460,9 +462,9 @@ There is no runtime configuration specific to this read model.
 - The aggregate endpoint does not mutate collection, report, selection, or
   transaction state.
 - Projects cache identity is derived only from list request fields. UI view,
-  risk section, local Pair sort, and inactive Pair drafts cannot create a
-  second copy of the same server page; selecting a different effective Pair
-  filter creates the corresponding request identity.
+  local Pair sort, and inactive Pair drafts cannot create a second copy of the
+  same server page; selecting a different effective Pair filter creates the
+  corresponding request identity.
 - Cached project data never crosses a login-session boundary. Return scroll
   snapshots contain only URL, history-entry identity, a random return marker,
   and scroll position.
@@ -543,11 +545,11 @@ or updated timestamps for diagnosis.
 - [ ] The unified project page and six project-scoped endpoints remain aligned with the `projects` permission.
 - [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
-- [ ] Projects Overview and Report Risk preserve canonical URL state; only the active Report Risk Pair's non-empty filter becomes a request dependency.
+- [ ] The four flat Projects views preserve canonical URL state; only the active Pair view's non-empty filter becomes a request dependency.
 - [ ] Overview omits transaction index and code hash from tables and cards while code hash remains filterable.
 - [ ] The centered filter modal owns all global and independently saved Pair drafts, while only the active Pair filter becomes a request dependency.
 - [ ] Desktop Pair headers and compact Pair controls apply the same current-page local sort without changing API or cache identity.
-- [ ] Compact Report Risk cards retain complete Status and both Pair projections.
+- [ ] Compact Report Status and Pair cards contain only their active projection.
 - [ ] Report risk absence remains distinguishable from safe boolean values in lists, detail, and revision history.
 - [ ] Aggregate composition matches the typed public contract and observation V1 schemas.
 - [ ] Precision-sensitive values remain strings across the API and UI boundary.

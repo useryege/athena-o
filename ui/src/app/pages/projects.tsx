@@ -27,12 +27,11 @@ import {
 } from './projects-filters-modal';
 import {ChainBadge, TokenLogo, chainLabel} from './token-shared';
 
-type ProjectsView = 'overview' | 'report-risk';
-type ReportRiskSection = 'status' | 'wrapped-native' | 'usdt';
+type ProjectsView = 'overview' | 'report-status' | 'wrapped-native' | 'usdt';
 type ReportRiskSortKey = 'project' | 'created' | 'removeLiquidity' | 'mint' | 'quoteUsdt' | 'lastSwap';
 type ReportRiskSortOrder = 'asc' | 'desc';
 
-const reportRiskSections = ['status', 'wrapped-native', 'usdt'] as const;
+const projectsViews = ['overview', 'report-status', 'wrapped-native', 'usdt'] as const;
 const reportRiskSortKeys = ['project', 'created', 'removeLiquidity', 'mint', 'quoteUsdt', 'lastSwap'] as const;
 const reportRiskSortOrders = ['asc', 'desc'] as const;
 const reportRiskSortOptions = [
@@ -57,7 +56,6 @@ const enumParam = (value: string | null, allowed: readonly string[]) => (value &
 
 interface ProjectsQueryState extends ProjectsFilterState {
     view: ProjectsView;
-    riskSection: ReportRiskSection;
     riskSort?: ReportRiskSortKey;
     riskSortOrder?: ReportRiskSortOrder;
     page: number;
@@ -102,11 +100,8 @@ const serializeReportPairFilter = (params: URLSearchParams, prefix: ReportPairKi
 
 const serializeQueryState = (state: ProjectsQueryState) => {
     const next = new URLSearchParams();
-    if (state.view === 'report-risk') {
+    if (state.view !== 'overview') {
         next.set('view', state.view);
-        if (state.riskSection !== 'status') {
-            next.set('riskSection', state.riskSection);
-        }
     }
     if (state.chainID !== undefined) {
         next.set('chainID', String(state.chainID));
@@ -394,10 +389,8 @@ const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
     );
 };
 
-const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
+const ProjectRiskCard = (props: {item: TokenProjectListItem; children: React.ReactNode}) => {
     const project = props.item.project;
-    const report = props.item.currentReport;
-    const evaluation = report?.evaluation;
     return (
         <Card
             className='projects-compact-card projects-report-risk-card'
@@ -410,6 +403,17 @@ const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
                 </span>
             }
             extra={projectDetailLink(props.item)}>
+            {props.children}
+        </Card>
+    );
+};
+
+const ProjectReportStatusCard = (props: {item: TokenProjectListItem}) => {
+    const project = props.item.project;
+    const report = props.item.currentReport;
+    const evaluation = report?.evaluation;
+    return (
+        <ProjectRiskCard item={props.item}>
             <div className='projects-report-risk-card__sections'>
                 <section aria-label='Project and report state'>
                     <Typography.Title level={5}>Project & report</Typography.Title>
@@ -441,29 +445,48 @@ const ProjectReportRiskCard = (props: {item: TokenProjectListItem}) => {
                         ]}
                     />
                 </section>
-                <div className='projects-report-risk-card__pair-grid'>
-                    <section aria-label='WETH or WBNB pair report snapshot'>
-                        <Typography.Title level={5}>WETH / WBNB pair</Typography.Title>
-                        <Typography.Text type='secondary'>{!report ? 'No report' : !report.riskSummary?.wethPair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
-                        <KeyValueGrid columns={1} items={pairSnapshotItems(report?.riskSummary?.wethPair, !report)} />
-                    </section>
-                    <section aria-label='USDT pair report snapshot'>
-                        <Typography.Title level={5}>USDT pair</Typography.Title>
-                        <Typography.Text type='secondary'>{!report ? 'No report' : !report.riskSummary?.usdtPair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
-                        <KeyValueGrid columns={1} items={pairSnapshotItems(report?.riskSummary?.usdtPair, !report)} />
-                    </section>
-                </div>
             </div>
-        </Card>
+        </ProjectRiskCard>
+    );
+};
+
+const ProjectPairRiskCard = (props: {item: TokenProjectListItem; kind: ReportPairKind}) => {
+    const project = props.item.project;
+    const report = props.item.currentReport;
+    const label = props.kind === 'weth' ? 'WETH / WBNB' : 'USDT';
+    const pair = props.kind === 'weth' ? report?.riskSummary?.wethPair : report?.riskSummary?.usdtPair;
+    return (
+        <ProjectRiskCard item={props.item}>
+            <div className='projects-report-risk-card__sections'>
+                <section aria-label='Project and report context'>
+                    <Typography.Title level={5}>Project & report</Typography.Title>
+                    <KeyValueGrid
+                        columns={2}
+                        items={[
+                            {label: 'Project ID', value: project?.projectID || '-'},
+                            {label: 'Token', value: tokenValue(props.item)},
+                            {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
+                            {label: 'Report revision', value: report?.revision ?? '-'},
+                            {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
+                            {label: 'Built', value: formatBeijingDateTime(report?.builtAt) || '-'}
+                        ]}
+                    />
+                </section>
+                <section aria-label={`${label} pair report snapshot`}>
+                    <Typography.Title level={5}>{label} pair</Typography.Title>
+                    <Typography.Text type='secondary'>{!report ? 'No report' : !pair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
+                    <KeyValueGrid columns={1} items={pairSnapshotItems(pair, !report)} />
+                </section>
+            </div>
+        </ProjectRiskCard>
     );
 };
 
 export const ProjectsPage = () => {
     const [params, setParams] = useSearchParams();
     const [filtersOpen, setFiltersOpen] = React.useState(false);
-    const view: ProjectsView = params.get('view') === 'report-risk' ? 'report-risk' : 'overview';
-    const reportRiskView = view === 'report-risk';
-    const riskSection = (enumParam(params.get('riskSection'), reportRiskSections) || 'status') as ReportRiskSection;
+    const view = (enumParam(params.get('view'), projectsViews) || 'overview') as ProjectsView;
+    const reportProjection = view !== 'overview';
     const chainID = positiveIntegerParam(params.get('chainID'));
     const projectID = positiveIntegerParam(params.get('projectID'));
     const contract = params.get('contract') || '';
@@ -487,7 +510,6 @@ export const ProjectsPage = () => {
     const queryState = React.useMemo<ProjectsQueryState>(
         () => ({
             view,
-            riskSection,
             chainID,
             projectID,
             contract,
@@ -505,7 +527,6 @@ export const ProjectsPage = () => {
         }),
         [
             view,
-            riskSection,
             chainID,
             projectID,
             contract,
@@ -538,9 +559,6 @@ export const ProjectsPage = () => {
     const setView = (nextView: ProjectsView) => {
         setParams(serializeQueryState({...queryState, view: nextView}));
     };
-    const setRiskSection = (nextRiskSection: ReportRiskSection) => {
-        setParams(serializeQueryState({...queryState, riskSection: nextRiskSection}));
-    };
     const setPage = (nextPage: number, nextPageSize: number) => {
         setParams(serializeQueryState({...queryState, page: nextPage, pageSize: nextPageSize}));
     };
@@ -555,8 +573,7 @@ export const ProjectsPage = () => {
         setParams(serializeQueryState({...queryState, ...emptyProjectsFilterState(), page: 1}));
     };
 
-    const activeReportPairKind: ReportPairKind | undefined =
-        reportRiskView && riskSection === 'wrapped-native' ? 'weth' : reportRiskView && riskSection === 'usdt' ? 'usdt' : undefined;
+    const activeReportPairKind: ReportPairKind | undefined = view === 'wrapped-native' ? 'weth' : view === 'usdt' ? 'usdt' : undefined;
     const activeReportPairFilter = activeReportPairKind === 'weth' ? wethPairFilter : activeReportPairKind === 'usdt' ? usdtPairFilter : undefined;
     const effectiveReportPairKind = activeReportPairFilter && hasReportPairFilter(activeReportPairFilter) ? activeReportPairKind : undefined;
 
@@ -717,12 +734,14 @@ export const ProjectsPage = () => {
         ...pairColumns(pair)
     ];
 
-    const reportRiskColumns =
-        riskSection === 'status'
-            ? reportRiskStatusColumns
-            : riskSection === 'wrapped-native'
-              ? reportRiskPairColumns(item => item.currentReport?.riskSummary?.wethPair)
-              : reportRiskPairColumns(item => item.currentReport?.riskSummary?.usdtPair);
+    const viewColumns =
+        view === 'overview'
+            ? overviewColumns
+            : view === 'report-status'
+              ? reportRiskStatusColumns
+              : view === 'wrapped-native'
+                ? reportRiskPairColumns(item => item.currentReport?.riskSummary?.wethPair)
+                : reportRiskPairColumns(item => item.currentReport?.riskSummary?.usdtPair);
 
     const chainOptions = (options.data?.chains || [])
         .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
@@ -791,12 +810,41 @@ export const ProjectsPage = () => {
     }
     const serverItems = data.data?.items || [];
     const items = activeReportPairKind ? sortReportRiskItems(serverItems, activeReportPairKind, riskSort, riskSortOrder) : serverItems;
-    const riskSectionLabel = (label: string, hasSaved: boolean) => (
-        <span className='projects-risk-section-label' aria-label={`${label}${hasSaved ? ', saved filters' : ''}`}>
+    const pairViewLabel = (label: string, hasSaved: boolean) => (
+        <span className='projects-view-label' aria-label={`${label}${hasSaved ? ', saved filters' : ''}`}>
             {label}
-            {hasSaved && <span className='projects-risk-section-label__dot' aria-hidden='true' />}
+            {hasSaved && <span className='projects-view-label__dot' aria-hidden='true' />}
         </span>
     );
+    const viewOptions = [
+        {label: 'Overview', value: 'overview' as const},
+        {label: 'Report Status', value: 'report-status' as const},
+        {label: pairViewLabel('WETH / WBNB', wethFilterCount > 0), value: 'wrapped-native' as const},
+        {label: pairViewLabel('USDT', usdtFilterCount > 0), value: 'usdt' as const}
+    ];
+    const tableLabel =
+        view === 'overview'
+            ? 'Project overview'
+            : view === 'report-status'
+              ? 'Project report status'
+              : view === 'wrapped-native'
+                ? 'Project WETH or WBNB pair risk'
+                : 'Project USDT pair risk';
+    const compactEmptyDescription =
+        view === 'overview'
+            ? 'No projects match the filters'
+            : view === 'report-status'
+              ? 'No projects match the report status filters'
+              : `No projects match the ${view === 'wrapped-native' ? 'WETH / WBNB' : 'USDT'} pair risk filters`;
+    const compactProject = (item: TokenProjectListItem) => {
+        if (view === 'overview') {
+            return <ProjectOverviewCard item={item} />;
+        }
+        if (view === 'report-status') {
+            return <ProjectReportStatusCard item={item} />;
+        }
+        return <ProjectPairRiskCard item={item} kind={view === 'wrapped-native' ? 'weth' : 'usdt'} />;
+    };
     return (
         <AppPage
             title='Projects'
@@ -814,30 +862,14 @@ export const ProjectsPage = () => {
                             <div className='projects-view-control'>
                                 <Typography.Text strong={true}>View</Typography.Text>
                                 <ChoiceGroup<ProjectsView>
+                                    className='projects-view-control__desktop'
                                     ariaLabel='Projects view'
                                     value={view}
-                                    options={[
-                                        {label: 'Overview', value: 'overview'},
-                                        {label: 'Report Risk', value: 'report-risk'}
-                                    ]}
+                                    options={viewOptions}
                                     onChange={setView}
                                 />
+                                <Select<ProjectsView> className='projects-view-control__compact' aria-label='Projects view' value={view} options={viewOptions} onChange={setView} />
                             </div>
-                            {reportRiskView && (
-                                <div className='projects-report-risk-section-control'>
-                                    <Typography.Text strong={true}>Risk section</Typography.Text>
-                                    <ChoiceGroup<ReportRiskSection>
-                                        ariaLabel='Report risk section'
-                                        value={riskSection}
-                                        options={[
-                                            {label: 'Status', value: 'status'},
-                                            {label: riskSectionLabel('WETH / WBNB', wethFilterCount > 0), value: 'wrapped-native'},
-                                            {label: riskSectionLabel('USDT', usdtFilterCount > 0), value: 'usdt'}
-                                        ]}
-                                        onChange={setRiskSection}
-                                    />
-                                </div>
-                            )}
                         </div>
                         <div className='projects-controls__actions'>
                             <Badge count={effectiveFilterCount} size='small' overflowCount={99}>
@@ -914,22 +946,22 @@ export const ProjectsPage = () => {
                     />
                 </div>
             }>
-            <div className={reportRiskView ? 'projects-report-risk-table-region' : undefined}>
+            <div className={reportProjection ? 'projects-report-risk-table-region' : undefined}>
                 <ResourceTable
-                    label={reportRiskView ? 'Project report risk' : 'Project overview'}
+                    label={tableLabel}
                     rowKey={item => item.project?.projectID || `${item.project?.chainID}-${item.project?.contract}`}
                     items={items}
-                    columns={reportRiskView ? reportRiskColumns : overviewColumns}
+                    columns={viewColumns}
                     onChange={activeReportPairKind ? handleReportRiskTableChange : undefined}
                     loading={data.loading}
                     total={data.data?.total}
                     page={page}
                     pageSize={pageSize}
                     onPageChange={setPage}
-                    scrollX={reportRiskView ? 820 : 1224}
-                    stickyHeader={reportRiskView}
-                    compactRender={item => (reportRiskView ? <ProjectReportRiskCard item={item} /> : <ProjectOverviewCard item={item} />)}
-                    compactEmptyDescription={reportRiskView ? 'No projects match the report risk filters' : 'No projects match the filters'}
+                    scrollX={reportProjection ? 820 : 1224}
+                    stickyHeader={reportProjection}
+                    compactRender={compactProject}
+                    compactEmptyDescription={compactEmptyDescription}
                 />
             </div>
         </AppPage>

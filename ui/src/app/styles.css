@@ -699,26 +699,24 @@ body::-webkit-scrollbar-thumb,
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.projects-report-risk-section-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     min-width: 0;
 }
 
-.projects-report-risk-section-control > .ant-typography {
+.projects-view-control > .ant-typography {
     flex: 0 0 auto;
 }
 
-.projects-risk-section-label {
+.projects-view-control__compact {
+    display: none;
+}
+
+.projects-view-label {
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
-.projects-risk-section-label__dot {
+.projects-view-label__dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
@@ -1032,7 +1030,6 @@ body::-webkit-scrollbar-thumb,
     color: var(--athena-text);
 }
 
-.projects-report-risk-card__pair-grid,
 .project-report-pair-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1040,7 +1037,6 @@ body::-webkit-scrollbar-thumb,
     min-width: 0;
 }
 
-.projects-report-risk-card__pair-grid > section,
 .project-report-pair-grid > .ant-card {
     min-width: 0;
 }
@@ -4254,11 +4250,6 @@ body::-webkit-scrollbar-thumb,
         flex-direction: column;
     }
 
-    .projects-report-risk-section-control {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
     .projects-controls__toolbar,
     .projects-controls__selectors {
         align-items: flex-start;
@@ -4293,7 +4284,6 @@ body::-webkit-scrollbar-thumb,
         width: 100%;
     }
 
-    .projects-report-risk-card__pair-grid,
     .project-report-pair-grid {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -4469,6 +4459,19 @@ body::-webkit-scrollbar-thumb,
     .projects-controls__actions .ant-badge,
     .projects-controls__actions .ant-btn {
         flex: 1 1 0;
+    }
+
+    .projects-view-control {
+        width: 100%;
+    }
+
+    .projects-view-control__desktop {
+        display: none;
+    }
+
+    .projects-view-control__compact {
+        display: block;
+        width: min(320px, 100%);
     }
 
     .projects-compact-sort-control {
