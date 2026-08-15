@@ -24,7 +24,6 @@ coverage_dirs=(
 	"/tmp/coverage/athena-sports-live"
 	"/tmp/coverage/athena-sports-history"
 	"/tmp/coverage/athena-managed-oo"
-	"/tmp/coverage/athena-pred-poly"
 	"/tmp/coverage/athena-token-chain-processor"
 	"/tmp/coverage/athena-token-swap-processor"
 	"/tmp/coverage/athena-token-scheduler"

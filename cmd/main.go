@@ -14,7 +14,6 @@ import (
 	athenaMarketRadarCommands "github.com/useryege/athena/cmd/athena-market-radar/commands"
 	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
-	athenaPredPolyCommands "github.com/useryege/athena/cmd/athena-pred-poly/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	athenaSportsHistoryCommands "github.com/useryege/athena/cmd/athena-sports-history/commands"
 	athenaSportsLiveCommands "github.com/useryege/athena/cmd/athena-sports-live/commands"
@@ -66,8 +65,6 @@ func main() {
 		command = athenaSportsHistoryCommands.NewCommand()
 	case "athena-managed-oo":
 		command = athenaManagedOOCommands.NewCommand()
-	case "athena-pred-poly":
-		command = athenaPredPolyCommands.NewCommand()
 	case "athena-token-api":
 		command = athenaTokenAPICommands.NewCommand()
 	case "athena-token-chain-processor":

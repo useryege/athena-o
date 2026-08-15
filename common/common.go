@@ -34,8 +34,6 @@ const (
 	DefaultPortSportsLive = 8094
 	// Athena Token API
 	DefaultPortTokenAPI = 8096
-	// Athena Pred Poly
-	DefaultPortPredPoly = 8098
 	// Athena Etherscan Manager
 	DefaultPortEtherscanManager = 8100
 	// Athena Etherscan Gateway
@@ -58,7 +56,6 @@ const (
 	DefaultAddressSportsHistory       = "0.0.0.0"
 	DefaultAddressManagedOO           = "0.0.0.0"
 	DefaultAddressTokenAPI            = "0.0.0.0"
-	DefaultAddressPredPoly            = "0.0.0.0"
 	DefaultAddressEtherscanManager    = "0.0.0.0"
 	DefaultAddressEtherscanGateway    = "0.0.0.0"
 )
