@@ -116,13 +116,12 @@ const quoteFilterError = (minimum: string, maximum: string) => {
     return '';
 };
 
-const FilterTabLabel = (props: {label: string; count: number; state?: 'Active' | 'Saved'; error?: boolean}) => (
+const FilterTabLabel = (props: {label: string; count: number; error?: boolean}) => (
     <span className={`projects-filters-modal__tab-label${props.error ? ' projects-filters-modal__tab-label--error' : ''}`}>
         <span>{props.label}</span>
         <span className='projects-filters-modal__tab-count' aria-label={`${props.count} filter fields`}>
             {props.count}
         </span>
-        {props.state && <span className='projects-filters-modal__tab-state'>{props.state}</span>}
         {props.error && <span className='projects-filters-modal__tab-error'>Error</span>}
     </span>
 );
@@ -147,7 +146,7 @@ const GeneralFilters = (props: {draft: ProjectsFilterState; chainOptions: Array<
             <div className='projects-filters-modal__section-heading'>
                 <div>
                     <Typography.Title level={4}>General filters</Typography.Title>
-                    <Typography.Text type='secondary'>These conditions apply in every Projects view.</Typography.Text>
+                    <Typography.Text type='secondary'>These conditions apply to the unified Projects list.</Typography.Text>
                 </div>
                 <Button size='small' onClick={clearGeneral}>
                     Clear section
@@ -336,7 +335,6 @@ const PairFilters = (props: {kind: ReportPairKind; label: string; draft: Project
 export const ProjectsFiltersModal = (props: {
     open: boolean;
     filters: ProjectsFilterState;
-    activePairKind?: ReportPairKind;
     chainOptions: Array<{value: number; label: React.ReactNode}>;
     onCancel: () => void;
     onApply: (filters: ProjectsFilterState) => void;
@@ -346,16 +344,13 @@ export const ProjectsFiltersModal = (props: {
     React.useEffect(() => {
         if (props.open) {
             setDraft(cloneProjectsFilterState(props.filters));
-            setActiveTab(props.activePairKind || 'general');
+            setActiveTab('general');
         }
-    }, [props.activePairKind, props.filters, props.open]);
+    }, [props.filters, props.open]);
 
     const wethError = quoteFilterError(draft.wethPairFilter.quoteMin, draft.wethPairFilter.quoteMax);
     const usdtError = quoteFilterError(draft.usdtPairFilter.quoteMin, draft.usdtPairFilter.quoteMax);
     const hasError = Boolean(wethError || usdtError);
-    const tabState = (kind: ReportPairKind) =>
-        props.activePairKind === kind ? 'Active' : reportPairFilterCount(draft[kind === 'weth' ? 'wethPairFilter' : 'usdtPairFilter']) > 0 ? 'Saved' : undefined;
-
     return (
         <Modal
             className='projects-filters-modal'
@@ -387,18 +382,18 @@ export const ProjectsFiltersModal = (props: {
                     },
                     {
                         key: 'weth',
-                        label: <FilterTabLabel label='WETH / WBNB' count={reportPairFilterCount(draft.wethPairFilter)} state={tabState('weth')} error={Boolean(wethError)} />,
+                        label: <FilterTabLabel label='WETH / WBNB' count={reportPairFilterCount(draft.wethPairFilter)} error={Boolean(wethError)} />,
                         children: <PairFilters kind='weth' label='WETH / WBNB' draft={draft} error={wethError} onChange={setDraft} />
                     },
                     {
                         key: 'usdt',
-                        label: <FilterTabLabel label='USDT' count={reportPairFilterCount(draft.usdtPairFilter)} state={tabState('usdt')} error={Boolean(usdtError)} />,
+                        label: <FilterTabLabel label='USDT' count={reportPairFilterCount(draft.usdtPairFilter)} error={Boolean(usdtError)} />,
                         children: <PairFilters kind='usdt' label='USDT' draft={draft} error={usdtError} onChange={setDraft} />
                     }
                 ]}
             />
             <Typography.Text className='projects-filters-modal__scope-note' type='secondary'>
-                Pair filters are saved independently and only affect results while their matching Pair view is active.
+                WETH / WBNB and USDT filters are applied together. A project must match both non-empty Pair filter groups.
             </Typography.Text>
         </Modal>
     );

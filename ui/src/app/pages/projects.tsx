@@ -1,9 +1,9 @@
-import {FilterOutlined, SortAscendingOutlined, SortDescendingOutlined} from '@ant-design/icons';
-import {Badge, Button, Card, Select, Tag, Tooltip, Typography} from 'antd';
-import type {ColumnsType, TableProps} from 'antd/es/table';
+import {FilterOutlined} from '@ant-design/icons';
+import {Badge, Button, Card, Tag, Typography} from 'antd';
+import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, StatusTag, useCachedAsyncData} from '../components';
+import {AppPage, KeyValueGrid, ResourceTable, StatusTag, useCachedAsyncData} from '../components';
 import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
@@ -13,7 +13,6 @@ import {
     emptyProjectsFilterState,
     evaluationStatuses,
     generalFilterCount,
-    hasReportPairFilter,
     ProjectsFiltersModal,
     ProjectsFilterState,
     ReportPairFilterState,
@@ -27,25 +26,10 @@ import {
 } from './projects-filters-modal';
 import {ChainBadge, TokenLogo, chainLabel} from './token-shared';
 
-type ProjectsView = 'overview' | 'report-status' | 'wrapped-native' | 'usdt';
-type ReportRiskSortKey = 'project' | 'created' | 'removeLiquidity' | 'mint' | 'quoteUsdt' | 'lastSwap';
-type ReportRiskSortOrder = 'asc' | 'desc';
-
-const projectsViews = ['overview', 'report-status', 'wrapped-native', 'usdt'] as const;
-const reportRiskSortKeys = ['project', 'created', 'removeLiquidity', 'mint', 'quoteUsdt', 'lastSwap'] as const;
-const reportRiskSortOrders = ['asc', 'desc'] as const;
-const reportRiskSortOptions = [
-    {label: 'Default order', value: 'default'},
-    {label: 'Project', value: 'project'},
-    {label: 'Created', value: 'created'},
-    {label: 'Remove Liquidity', value: 'removeLiquidity'},
-    {label: 'Mint', value: 'mint'},
-    {label: 'Quote USDT', value: 'quoteUsdt'},
-    {label: 'Last Swap', value: 'lastSwap'}
-];
 const PROJECTS_LIST_STALE_TIME_MS = 30_000;
 const RUNTIME_CONFIGURATION_STALE_TIME_MS = 5 * 60_000;
 const RUNTIME_CONFIGURATION_CACHE_KEY = 'token.runtime-configuration';
+const PROJECTS_TABLE_WIDTH = 2584;
 
 const positiveIntegerParam = (value: string | null) => {
     const parsed = Number(value);
@@ -55,9 +39,6 @@ const positiveIntegerParam = (value: string | null) => {
 const enumParam = (value: string | null, allowed: readonly string[]) => (value && allowed.includes(value) ? value : '');
 
 interface ProjectsQueryState extends ProjectsFilterState {
-    view: ProjectsView;
-    riskSort?: ReportRiskSortKey;
-    riskSortOrder?: ReportRiskSortOrder;
     page: number;
     pageSize: number;
 }
@@ -100,9 +81,6 @@ const serializeReportPairFilter = (params: URLSearchParams, prefix: ReportPairKi
 
 const serializeQueryState = (state: ProjectsQueryState) => {
     const next = new URLSearchParams();
-    if (state.view !== 'overview') {
-        next.set('view', state.view);
-    }
     if (state.chainID !== undefined) {
         next.set('chainID', String(state.chainID));
     }
@@ -129,10 +107,6 @@ const serializeQueryState = (state: ProjectsQueryState) => {
     }
     serializeReportPairFilter(next, 'weth', state.wethPairFilter);
     serializeReportPairFilter(next, 'usdt', state.usdtPairFilter);
-    if (state.riskSort && state.riskSortOrder) {
-        next.set('riskSort', state.riskSort);
-        next.set('riskSortOrder', state.riskSortOrder);
-    }
     if (state.page !== 1) {
         next.set('page', String(state.page));
     }
@@ -195,20 +169,6 @@ const projectIdentity = (item: TokenProjectListItem) => (
     </span>
 );
 
-const compactProjectIdentity = (item: TokenProjectListItem) => (
-    <span className='projects-token'>
-        <Typography.Text>Project #{item.projectID || '-'}</Typography.Text>
-        {item.name && item.name !== item.symbol && <Typography.Text type='secondary'>{item.name}</Typography.Text>}
-    </span>
-);
-
-const reportProjectIdentity = (item: TokenProjectListItem) => (
-    <span className='projects-token'>
-        {projectIdentity(item)}
-        <ChainBadge chainID={item.chainID} />
-    </span>
-);
-
 const reportRiskSummary = (items: Array<{label: string; value: React.ReactNode}>) => (
     <div className='projects-report-risk-summary'>
         {items.map(item => (
@@ -221,31 +181,6 @@ const reportRiskSummary = (items: Array<{label: string; value: React.ReactNode}>
         ))}
     </div>
 );
-
-const reportRiskProjectContext = (item: TokenProjectListItem, includeReportContext: boolean) => {
-    const report = item.currentReport;
-    return (
-        <div className='projects-report-risk-summary'>
-            {reportProjectIdentity(item)}
-            {includeReportContext && (
-                <>
-                    <div className='projects-report-risk-summary__line'>
-                        <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
-                            Report
-                        </Typography.Text>
-                        <div className='projects-report-risk-summary__value'>{report ? `Revision ${report.revision ?? '-'}` : <Tag>No report</Tag>}</div>
-                    </div>
-                    <div className='projects-report-risk-summary__line'>
-                        <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
-                            State
-                        </Typography.Text>
-                        <div className='projects-report-risk-summary__value'>{reportStateTag(report?.completenessStatus)}</div>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-};
 
 const evaluationLastError = (value?: string) =>
     value ? (
@@ -265,74 +200,6 @@ const pairSnapshotItems = (pair: TokenProjectReportPairRisk | undefined, noRepor
     {label: 'Quote USDT', value: pair?.quoteUsdtValueInt ? formatInteger(pair.quoteUsdtValueInt) : unavailablePairValue(noReport)},
     {label: 'Last swap', value: pair?.lastSwapAt ? formatBeijingDateTime(pair.lastSwapAt) || '-' : unavailablePairValue(noReport)}
 ];
-
-const projectCollator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
-
-const projectPair = (item: TokenProjectListItem, kind: ReportPairKind) => (kind === 'weth' ? item.currentReport?.riskSummary?.wethPair : item.currentReport?.riskSummary?.usdtPair);
-
-const comparePresentValues = <T,>(left: T | undefined, right: T | undefined, order: ReportRiskSortOrder, compare: (a: T, b: T) => number) => {
-    if (left === undefined && right === undefined) {
-        return 0;
-    }
-    if (left === undefined) {
-        return 1;
-    }
-    if (right === undefined) {
-        return -1;
-    }
-    const result = compare(left, right);
-    return order === 'asc' ? result : -result;
-};
-
-const sortReportRiskItems = (items: TokenProjectListItem[], kind: ReportPairKind, key?: ReportRiskSortKey, order?: ReportRiskSortOrder) => {
-    if (!key || !order) {
-        return items;
-    }
-    return items
-        .map((item, index) => ({item, index}))
-        .sort((left, right) => {
-            const leftPair = projectPair(left.item, kind);
-            const rightPair = projectPair(right.item, kind);
-            let result = 0;
-            switch (key) {
-                case 'project': {
-                    const leftLabel = left.item.symbol || left.item.name || 'Unnamed token';
-                    const rightLabel = right.item.symbol || right.item.name || 'Unnamed token';
-                    result = projectCollator.compare(leftLabel, rightLabel);
-                    if (result === 0) {
-                        result = (left.item.projectID || 0) - (right.item.projectID || 0);
-                    }
-                    result = order === 'asc' ? result : -result;
-                    break;
-                }
-                case 'created':
-                    result = comparePresentValues(leftPair?.isCreated, rightPair?.isCreated, order, (a, b) => Number(a) - Number(b));
-                    break;
-                case 'removeLiquidity':
-                    result = comparePresentValues(leftPair?.isRemoveLiquidity, rightPair?.isRemoveLiquidity, order, (a, b) => Number(a) - Number(b));
-                    break;
-                case 'mint':
-                    result = comparePresentValues(leftPair?.isMint, rightPair?.isMint, order, (a, b) => Number(a) - Number(b));
-                    break;
-                case 'quoteUsdt':
-                    result = comparePresentValues(
-                        leftPair?.quoteUsdtValueInt ? BigInt(leftPair.quoteUsdtValueInt) : undefined,
-                        rightPair?.quoteUsdtValueInt ? BigInt(rightPair.quoteUsdtValueInt) : undefined,
-                        order,
-                        (a, b) => (a < b ? -1 : a > b ? 1 : 0)
-                    );
-                    break;
-                case 'lastSwap': {
-                    const leftTime = leftPair?.lastSwapAt ? Date.parse(leftPair.lastSwapAt) : Number.NaN;
-                    const rightTime = rightPair?.lastSwapAt ? Date.parse(rightPair.lastSwapAt) : Number.NaN;
-                    result = comparePresentValues(Number.isFinite(leftTime) ? leftTime : undefined, Number.isFinite(rightTime) ? rightTime : undefined, order, (a, b) => a - b);
-                    break;
-                }
-            }
-            return result || left.index - right.index;
-        })
-        .map(entry => entry.item);
-};
 
 const pairStateLabels: Record<string, string> = {
     detected: 'Detected',
@@ -359,124 +226,174 @@ const quoteFilterSummary = (filter: ReportPairFilterState) => {
     return [range, missing].filter(Boolean).join(' or ');
 };
 
-const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
-    return (
-        <Card
-            className='projects-compact-card'
-            size='small'
-            title={
-                <span className='projects-compact-card__title'>
-                    <TokenLogo logoURL={props.item.logoURL} symbol={props.item.symbol} />
-                    <span>{props.item.symbol || props.item.name || 'Unnamed token'}</span>
-                    <ChainBadge chainID={props.item.chainID} />
-                </span>
+const pairColumnGroup = (title: string, pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem>[number] => ({
+    title,
+    children: [
+        {
+            title: 'Created',
+            width: 95,
+            render: item => {
+                if (!item.currentReport) {
+                    return <Tag>No report</Tag>;
+                }
+                const pairRisk = pair(item);
+                return pairRisk ? pairCreatedTag(pairRisk.isCreated) : unavailablePairValue(false);
             }
-            extra={projectDetailLink(props.item)}>
-            <KeyValueGrid
-                columns={1}
-                items={[
-                    {label: 'Project', value: compactProjectIdentity(props.item)},
-                    {label: 'Block Time', value: formatBeijingUnixSeconds(props.item.blockTime) || '-'},
-                    {label: 'Created', value: formatBeijingDateTime(props.item.createdAt) || '-'}
-                ]}
-            />
-        </Card>
-    );
-};
-
-const ProjectRiskCard = (props: {item: TokenProjectListItem; children: React.ReactNode}) => {
-    return (
-        <Card
-            className='projects-compact-card projects-report-risk-card'
-            size='small'
-            title={
-                <span className='projects-compact-card__title'>
-                    <TokenLogo logoURL={props.item.logoURL} symbol={props.item.symbol} />
-                    <span>{props.item.symbol || props.item.name || 'Unnamed token'}</span>
-                    <ChainBadge chainID={props.item.chainID} />
-                </span>
+        },
+        {
+            title: 'Remove Liquidity',
+            width: 130,
+            render: item => {
+                const pairRisk = pair(item);
+                return !item.currentReport ? <Tag>No report</Tag> : pairRisk ? pairRiskTag(pairRisk.isRemoveLiquidity) : unavailablePairValue(false);
             }
-            extra={projectDetailLink(props.item)}>
-            {props.children}
-        </Card>
-    );
-};
+        },
+        {
+            title: 'Mint',
+            width: 85,
+            render: item => {
+                const pairRisk = pair(item);
+                return !item.currentReport ? <Tag>No report</Tag> : pairRisk ? pairRiskTag(pairRisk.isMint) : unavailablePairValue(false);
+            }
+        },
+        {
+            title: 'Quote USDT',
+            width: 120,
+            render: item => (pair(item)?.quoteUsdtValueInt ? formatInteger(pair(item)?.quoteUsdtValueInt) : unavailablePairValue(!item.currentReport))
+        },
+        {
+            title: 'Last Swap',
+            width: 155,
+            render: item => (pair(item)?.lastSwapAt ? formatBeijingDateTime(pair(item)?.lastSwapAt) || '-' : unavailablePairValue(!item.currentReport))
+        }
+    ]
+});
 
-const ProjectReportStatusCard = (props: {item: TokenProjectListItem}) => {
+const projectColumns: ColumnsType<TokenProjectListItem> = [
+    {
+        title: 'Logo',
+        fixed: 'left',
+        width: 64,
+        align: 'center',
+        render: item => <TokenLogo logoURL={item.logoURL} symbol={item.symbol} />
+    },
+    {title: 'Project', fixed: 'left', width: 220, render: projectIdentity},
+    {
+        title: 'Overview',
+        children: [
+            {title: 'Chain', width: 120, render: item => <ChainBadge chainID={item.chainID} />},
+            {title: 'Block Time', width: 185, render: item => formatBeijingUnixSeconds(item.blockTime) || '-'},
+            {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.createdAt) || '-'}
+        ]
+    },
+    {
+        title: 'Report Status',
+        children: [
+            {title: 'Research', width: 100, render: item => researchTag(item.researchStatus)},
+            {
+                title: 'Report',
+                width: 160,
+                render: item =>
+                    reportRiskSummary([
+                        {label: 'Revision', value: item.currentReport?.revision ?? <Tag>No report</Tag>},
+                        {label: 'State', value: reportStateTag(item.currentReport?.completenessStatus)},
+                        {label: 'Built', value: formatBeijingDateTime(item.currentReport?.builtAt) || (item.currentReport ? '-' : 'No report')}
+                    ])
+            },
+            {
+                title: 'Evaluation',
+                width: 220,
+                render: item =>
+                    reportRiskSummary([
+                        {label: 'Status', value: evaluationTag(item.currentReport?.evaluation?.status)},
+                        {label: 'Failed attempts', value: item.currentReport?.evaluation?.failedAttempts ?? '-'},
+                        {label: 'Updated', value: formatBeijingDateTime(item.currentReport?.evaluation?.updatedAt) || '-'},
+                        {label: 'Last error', value: evaluationLastError(item.currentReport?.evaluation?.lastError)}
+                    ])
+            },
+            {
+                title: 'Selection',
+                width: 160,
+                render: item =>
+                    reportRiskSummary([
+                        {label: 'Outcome', value: outcomeTag(item.currentReport?.evaluation?.outcome)},
+                        {label: 'Evaluated', value: formatBeijingDateTime(item.currentReport?.evaluation?.evaluatedAt) || '-'}
+                    ])
+            }
+        ]
+    },
+    pairColumnGroup('WETH / WBNB', item => item.currentReport?.riskSummary?.wethPair),
+    pairColumnGroup('USDT', item => item.currentReport?.riskSummary?.usdtPair)
+];
+
+const ProjectUnifiedCard = (props: {item: TokenProjectListItem}) => {
     const report = props.item.currentReport;
     const evaluation = report?.evaluation;
+    const wethPair = report?.riskSummary?.wethPair;
+    const usdtPair = report?.riskSummary?.usdtPair;
     return (
-        <ProjectRiskCard item={props.item}>
-            <div className='projects-report-risk-card__sections'>
-                <section aria-label='Project and report state'>
-                    <Typography.Title level={5}>Project & report</Typography.Title>
+        <Card
+            className='projects-compact-card projects-unified-card'
+            size='small'
+            title={
+                <span className='projects-compact-card__title'>
+                    <TokenLogo logoURL={props.item.logoURL} symbol={props.item.symbol} />
+                    <span>{props.item.symbol || props.item.name || 'Unnamed token'}</span>
+                    <ChainBadge chainID={props.item.chainID} />
+                </span>
+            }
+            extra={projectDetailLink(props.item)}>
+            <div className='projects-unified-card__sections'>
+                <section aria-label='Project overview'>
+                    <Typography.Title level={5}>Overview</Typography.Title>
                     <KeyValueGrid
                         columns={2}
                         items={[
                             {label: 'Project ID', value: props.item.projectID || '-'},
                             {label: 'Token', value: tokenValue(props.item)},
-                            {label: 'Chain', value: <ChainBadge chainID={props.item.chainID} />},
-                            {label: 'Research', value: researchTag(props.item.researchStatus)},
-                            {label: 'Report revision', value: report?.revision ?? '-'},
-                            {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
-                            {label: 'Built', value: formatBeijingDateTime(report?.builtAt) || '-'}
+                            {label: 'Block Time', value: formatBeijingUnixSeconds(props.item.blockTime) || '-'},
+                            {label: 'Created', value: formatBeijingDateTime(props.item.createdAt) || '-'}
                         ]}
                     />
                 </section>
-                <section aria-label='Current report evaluation'>
-                    <Typography.Title level={5}>Evaluation</Typography.Title>
+                <section aria-label='Current report status'>
+                    <Typography.Title level={5}>Report Status</Typography.Title>
                     <KeyValueGrid
                         columns={2}
                         items={[
-                            {label: 'Status', value: evaluationTag(evaluation?.status)},
+                            {label: 'Research', value: researchTag(props.item.researchStatus)},
+                            {label: 'Report revision', value: report?.revision ?? '-'},
+                            {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
+                            {label: 'Built', value: formatBeijingDateTime(report?.builtAt) || '-'},
+                            {label: 'Evaluation', value: evaluationTag(evaluation?.status)},
                             {label: 'Failed attempts', value: evaluation?.failedAttempts ?? '-'},
-                            {label: 'Last error', value: evaluation?.lastError || '-'},
-                            {label: 'Updated', value: formatBeijingDateTime(evaluation?.updatedAt) || '-'},
-                            {label: 'Outcome', value: outcomeTag(evaluation?.outcome)},
+                            {label: 'Evaluation updated', value: formatBeijingDateTime(evaluation?.updatedAt) || '-'},
+                            {label: 'Last error', value: evaluationLastError(evaluation?.lastError)},
+                            {label: 'Selection', value: outcomeTag(evaluation?.outcome)},
                             {label: 'Evaluated', value: formatBeijingDateTime(evaluation?.evaluatedAt) || '-'}
                         ]}
                     />
                 </section>
+                <div className='projects-unified-card__pairs'>
+                    <section className='projects-unified-card__pair' aria-label='WETH or WBNB pair report snapshot'>
+                        <Typography.Title level={5}>WETH / WBNB</Typography.Title>
+                        <Typography.Text type='secondary'>{!report ? 'No report' : !wethPair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
+                        <KeyValueGrid columns={1} items={pairSnapshotItems(wethPair, !report)} />
+                    </section>
+                    <section className='projects-unified-card__pair' aria-label='USDT pair report snapshot'>
+                        <Typography.Title level={5}>USDT</Typography.Title>
+                        <Typography.Text type='secondary'>{!report ? 'No report' : !usdtPair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
+                        <KeyValueGrid columns={1} items={pairSnapshotItems(usdtPair, !report)} />
+                    </section>
+                </div>
             </div>
-        </ProjectRiskCard>
-    );
-};
-
-const ProjectPairRiskCard = (props: {item: TokenProjectListItem; kind: ReportPairKind}) => {
-    const report = props.item.currentReport;
-    const label = props.kind === 'weth' ? 'WETH / WBNB' : 'USDT';
-    const pair = props.kind === 'weth' ? report?.riskSummary?.wethPair : report?.riskSummary?.usdtPair;
-    return (
-        <ProjectRiskCard item={props.item}>
-            <div className='projects-report-risk-card__sections'>
-                <section aria-label='Project and report context'>
-                    <Typography.Title level={5}>Project & report</Typography.Title>
-                    <KeyValueGrid
-                        columns={2}
-                        items={[
-                            {label: 'Project ID', value: props.item.projectID || '-'},
-                            {label: 'Token', value: tokenValue(props.item)},
-                            {label: 'Report revision', value: report?.revision ?? '-'},
-                            {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
-                            {label: 'Built', value: formatBeijingDateTime(report?.builtAt) || '-'}
-                        ]}
-                    />
-                </section>
-                <section aria-label={`${label} pair report snapshot`}>
-                    <Typography.Title level={5}>{label} pair</Typography.Title>
-                    <Typography.Text type='secondary'>{!report ? 'No report' : !pair ? 'Risk unavailable' : 'Report snapshot'}</Typography.Text>
-                    <KeyValueGrid columns={1} items={pairSnapshotItems(pair, !report)} />
-                </section>
-            </div>
-        </ProjectRiskCard>
+        </Card>
     );
 };
 
 export const ProjectsPage = () => {
     const [params, setParams] = useSearchParams();
     const [filtersOpen, setFiltersOpen] = React.useState(false);
-    const view = (enumParam(params.get('view'), projectsViews) || 'overview') as ProjectsView;
-    const reportProjection = view !== 'overview';
     const chainID = positiveIntegerParam(params.get('chainID'));
     const projectID = positiveIntegerParam(params.get('projectID'));
     const contract = params.get('contract') || '';
@@ -489,17 +406,12 @@ export const ProjectsPage = () => {
     const usdtPairFilterParams = ['usdtRemoveLiquidity', 'usdtMint', 'usdtQuoteMin', 'usdtQuoteMax', 'usdtQuoteMissing'].map(key => params.get(key) || '').join('|');
     const wethPairFilter = React.useMemo(() => reportPairFilterFromParams(params, 'weth'), [wethPairFilterParams]);
     const usdtPairFilter = React.useMemo(() => reportPairFilterFromParams(params, 'usdt'), [usdtPairFilterParams]);
-    const parsedRiskSort = enumParam(params.get('riskSort'), reportRiskSortKeys) as ReportRiskSortKey | '';
-    const parsedRiskSortOrder = enumParam(params.get('riskSortOrder'), reportRiskSortOrders) as ReportRiskSortOrder | '';
-    const riskSort = parsedRiskSort && parsedRiskSortOrder ? parsedRiskSort : undefined;
-    const riskSortOrder = parsedRiskSort && parsedRiskSortOrder ? parsedRiskSortOrder : undefined;
     const page = positiveIntegerParam(params.get('page')) || 1;
     const requestedPageSize = positiveIntegerParam(params.get('pageSize')) || DEFAULT_PAGE_SIZE;
     const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
 
     const queryState = React.useMemo<ProjectsQueryState>(
         () => ({
-            view,
             chainID,
             projectID,
             contract,
@@ -510,28 +422,10 @@ export const ProjectsPage = () => {
             selectionOutcome,
             wethPairFilter,
             usdtPairFilter,
-            riskSort,
-            riskSortOrder,
             page,
             pageSize
         }),
-        [
-            view,
-            chainID,
-            projectID,
-            contract,
-            codeHash,
-            researchStatus,
-            reportState,
-            evaluationStatus,
-            selectionOutcome,
-            wethPairFilter,
-            usdtPairFilter,
-            riskSort,
-            riskSortOrder,
-            page,
-            pageSize
-        ]
+        [chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, wethPairFilter, usdtPairFilter, page, pageSize]
     );
     const filterState = React.useMemo<ProjectsFilterState>(
         () => ({chainID, projectID, contract, codeHash, researchStatus, reportState, evaluationStatus, selectionOutcome, wethPairFilter, usdtPairFilter}),
@@ -546,9 +440,6 @@ export const ProjectsPage = () => {
         }
     }, [queryState, rawSearch, setParams]);
 
-    const setView = (nextView: ProjectsView) => {
-        setParams(serializeQueryState({...queryState, view: nextView}));
-    };
     const setPage = (nextPage: number, nextPageSize: number) => {
         setParams(serializeQueryState({...queryState, page: nextPage, pageSize: nextPageSize}));
     };
@@ -556,16 +447,9 @@ export const ProjectsPage = () => {
         setFiltersOpen(false);
         setParams(serializeQueryState({...queryState, ...nextFilters, page: 1}));
     };
-    const setRiskSort = (nextSort?: ReportRiskSortKey, nextOrder?: ReportRiskSortOrder) => {
-        setParams(serializeQueryState({...queryState, riskSort: nextSort, riskSortOrder: nextSort ? nextOrder || 'asc' : undefined}));
-    };
     const clearFilters = () => {
         setParams(serializeQueryState({...queryState, ...emptyProjectsFilterState(), page: 1}));
     };
-
-    const activeReportPairKind: ReportPairKind | undefined = view === 'wrapped-native' ? 'weth' : view === 'usdt' ? 'usdt' : undefined;
-    const activeReportPairFilter = activeReportPairKind === 'weth' ? wethPairFilter : activeReportPairKind === 'usdt' ? usdtPairFilter : undefined;
-    const effectiveReportPairKind = activeReportPairFilter && hasReportPairFilter(activeReportPairFilter) ? activeReportPairKind : undefined;
 
     const listCacheKey = JSON.stringify([
         'token.projects',
@@ -579,12 +463,16 @@ export const ProjectsPage = () => {
         reportState || null,
         evaluationStatus || null,
         selectionOutcome || null,
-        effectiveReportPairKind || null,
-        effectiveReportPairKind ? activeReportPairFilter?.removeLiquidity : null,
-        effectiveReportPairKind ? activeReportPairFilter?.mint : null,
-        effectiveReportPairKind ? activeReportPairFilter?.quoteMin || null : null,
-        effectiveReportPairKind ? activeReportPairFilter?.quoteMax || null : null,
-        effectiveReportPairKind ? activeReportPairFilter?.quoteMissing : null
+        wethPairFilter.removeLiquidity,
+        wethPairFilter.mint,
+        wethPairFilter.quoteMin || null,
+        wethPairFilter.quoteMax || null,
+        wethPairFilter.quoteMissing,
+        usdtPairFilter.removeLiquidity,
+        usdtPairFilter.mint,
+        usdtPairFilter.quoteMin || null,
+        usdtPairFilter.quoteMax || null,
+        usdtPairFilter.quoteMissing
     ]);
     const options = useCachedAsyncData(RUNTIME_CONFIGURATION_CACHE_KEY, () => services.tokenapi.getRuntimeConfiguration(), {
         staleTimeMs: RUNTIME_CONFIGURATION_STALE_TIME_MS
@@ -603,133 +491,20 @@ export const ProjectsPage = () => {
                 reportState: reportState || undefined,
                 evaluationStatus: evaluationStatus || undefined,
                 selectionOutcome: selectionOutcome || undefined,
-                reportPairKind: effectiveReportPairKind,
-                reportPairRemoveLiquidityStates: effectiveReportPairKind ? activeReportPairFilter?.removeLiquidity : undefined,
-                reportPairMintStates: effectiveReportPairKind ? activeReportPairFilter?.mint : undefined,
-                reportPairQuoteUSDTMin: effectiveReportPairKind ? activeReportPairFilter?.quoteMin || undefined : undefined,
-                reportPairQuoteUSDTMax: effectiveReportPairKind ? activeReportPairFilter?.quoteMax || undefined : undefined,
-                reportPairQuoteMissingStates: effectiveReportPairKind ? activeReportPairFilter?.quoteMissing : undefined
+                wethPairRemoveLiquidityStates: wethPairFilter.removeLiquidity,
+                wethPairMintStates: wethPairFilter.mint,
+                wethPairQuoteUSDTMin: wethPairFilter.quoteMin || undefined,
+                wethPairQuoteUSDTMax: wethPairFilter.quoteMax || undefined,
+                wethPairQuoteMissingStates: wethPairFilter.quoteMissing,
+                usdtPairRemoveLiquidityStates: usdtPairFilter.removeLiquidity,
+                usdtPairMintStates: usdtPairFilter.mint,
+                usdtPairQuoteUSDTMin: usdtPairFilter.quoteMin || undefined,
+                usdtPairQuoteUSDTMax: usdtPairFilter.quoteMax || undefined,
+                usdtPairQuoteMissingStates: usdtPairFilter.quoteMissing
             }),
         {staleTimeMs: PROJECTS_LIST_STALE_TIME_MS}
     );
     useRestoreProjectsScroll(Boolean(data.data));
-
-    const sortColumn = (key: ReportRiskSortKey) => ({
-        key,
-        sorter: true,
-        sortOrder: riskSort === key ? (riskSortOrder === 'asc' ? ('ascend' as const) : ('descend' as const)) : null,
-        showSorterTooltip: {title: 'Sorts current page only'}
-    });
-    const handleReportRiskTableChange: TableProps<TokenProjectListItem>['onChange'] = (_pagination, _filters, sorter) => {
-        const activeSorter = Array.isArray(sorter) ? sorter[0] : sorter;
-        const nextKey = activeSorter?.columnKey;
-        if (!nextKey || !reportRiskSortKeys.includes(nextKey as ReportRiskSortKey) || !activeSorter.order) {
-            setRiskSort();
-            return;
-        }
-        setRiskSort(nextKey as ReportRiskSortKey, activeSorter.order === 'ascend' ? 'asc' : 'desc');
-    };
-
-    const logoColumn: ColumnsType<TokenProjectListItem>[number] = {
-        title: 'Logo',
-        fixed: 'left',
-        width: 64,
-        align: 'center',
-        render: item => <TokenLogo logoURL={item.logoURL} symbol={item.symbol} />
-    };
-
-    const overviewColumns: ColumnsType<TokenProjectListItem> = [
-        logoColumn,
-        {title: 'Project', fixed: 'left', width: 220, render: projectIdentity},
-        {title: 'Chain', width: 120, render: item => <ChainBadge chainID={item.chainID} />},
-        {title: 'Block Time', width: 185, render: item => formatBeijingUnixSeconds(item.blockTime) || '-'},
-        {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.createdAt) || '-'}
-    ];
-
-    const pairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
-        {...sortColumn('created'), title: 'Created', width: 90, render: item => (item.currentReport ? pairCreatedTag(pair(item)?.isCreated) : <Tag>No report</Tag>)},
-        {
-            ...sortColumn('removeLiquidity'),
-            title: 'Remove Liquidity',
-            width: 125,
-            render: item => {
-                const pairRisk = pair(item);
-                return !item.currentReport ? <Tag>No report</Tag> : pairRisk ? pairRiskTag(pairRisk.isRemoveLiquidity) : unavailablePairValue(false);
-            }
-        },
-        {
-            ...sortColumn('mint'),
-            title: 'Mint',
-            width: 80,
-            render: item => {
-                const pairRisk = pair(item);
-                return !item.currentReport ? <Tag>No report</Tag> : pairRisk ? pairRiskTag(pairRisk.isMint) : unavailablePairValue(false);
-            }
-        },
-        {
-            ...sortColumn('quoteUsdt'),
-            title: 'Quote USDT',
-            width: 110,
-            render: item => (pair(item)?.quoteUsdtValueInt ? formatInteger(pair(item)?.quoteUsdtValueInt) : unavailablePairValue(!item.currentReport))
-        },
-        {
-            ...sortColumn('lastSwap'),
-            title: 'Last Swap',
-            width: 145,
-            render: item => (pair(item)?.lastSwapAt ? formatBeijingDateTime(pair(item)?.lastSwapAt) || '-' : unavailablePairValue(!item.currentReport))
-        }
-    ];
-
-    const reportRiskStatusColumns: ColumnsType<TokenProjectListItem> = [
-        logoColumn,
-        {title: 'Project', width: 200, render: item => reportRiskProjectContext(item, false)},
-        {title: 'Research', width: 90, render: item => researchTag(item.researchStatus)},
-        {
-            title: 'Report',
-            width: 150,
-            render: item =>
-                reportRiskSummary([
-                    {label: 'Revision', value: item.currentReport?.revision ?? <Tag>No report</Tag>},
-                    {label: 'Completeness', value: reportStateTag(item.currentReport?.completenessStatus)},
-                    {label: 'Built', value: formatBeijingDateTime(item.currentReport?.builtAt) || (item.currentReport ? '-' : 'No report')}
-                ])
-        },
-        {
-            title: 'Evaluation',
-            width: 210,
-            render: item =>
-                reportRiskSummary([
-                    {label: 'Status', value: evaluationTag(item.currentReport?.evaluation?.status)},
-                    {label: 'Failed attempts', value: item.currentReport?.evaluation?.failedAttempts ?? '-'},
-                    {label: 'Updated', value: formatBeijingDateTime(item.currentReport?.evaluation?.updatedAt) || '-'},
-                    {label: 'Last error', value: evaluationLastError(item.currentReport?.evaluation?.lastError)}
-                ])
-        },
-        {
-            title: 'Selection',
-            width: 150,
-            render: item =>
-                reportRiskSummary([
-                    {label: 'Outcome', value: outcomeTag(item.currentReport?.evaluation?.outcome)},
-                    {label: 'Evaluated', value: formatBeijingDateTime(item.currentReport?.evaluation?.evaluatedAt) || '-'}
-                ])
-        }
-    ];
-
-    const reportRiskPairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
-        logoColumn,
-        {...sortColumn('project'), title: 'Project', width: 200, render: item => reportRiskProjectContext(item, true)},
-        ...pairColumns(pair)
-    ];
-
-    const viewColumns =
-        view === 'overview'
-            ? overviewColumns
-            : view === 'report-status'
-              ? reportRiskStatusColumns
-              : view === 'wrapped-native'
-                ? reportRiskPairColumns(item => item.currentReport?.riskSummary?.wethPair)
-                : reportRiskPairColumns(item => item.currentReport?.riskSummary?.usdtPair);
 
     const chainOptions = (options.data?.chains || [])
         .filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined)
@@ -737,9 +512,7 @@ export const ProjectsPage = () => {
     const generalCount = generalFilterCount(filterState);
     const wethFilterCount = reportPairFilterCount(wethPairFilter);
     const usdtFilterCount = reportPairFilterCount(usdtPairFilter);
-    const effectiveFilterCount = generalCount + (activeReportPairKind === 'weth' ? wethFilterCount : activeReportPairKind === 'usdt' ? usdtFilterCount : 0);
-    const hasSavedFilters = generalCount + wethFilterCount + usdtFilterCount > 0;
-    const pairLabel = activeReportPairKind === 'weth' ? 'WETH / WBNB' : activeReportPairKind === 'usdt' ? 'USDT' : '';
+    const activeFilterCount = generalCount + wethFilterCount + usdtFilterCount;
     const displayStatus = (value: string, noneLabel: string) => (value === 'none' ? noneLabel : value.replace(/_/g, ' '));
     const filterSummaryItems: Array<{key: string; label: string; clear: () => void}> = [];
     const clearFilterField = (key: keyof ProjectsFilterState, value: ProjectsFilterState[keyof ProjectsFilterState]) =>
@@ -772,71 +545,36 @@ export const ProjectsPage = () => {
     if (selectionOutcome) {
         filterSummaryItems.push({key: 'selection', label: `Selection: ${displayStatus(selectionOutcome, 'No outcome')}`, clear: () => clearFilterField('selectionOutcome', '')});
     }
-    if (activeReportPairKind && activeReportPairFilter) {
-        const filterKey = activeReportPairKind === 'weth' ? 'wethPairFilter' : 'usdtPairFilter';
-        if (activeReportPairFilter.removeLiquidity.length > 0) {
+    const appendPairFilterSummaries = (filterKey: 'wethPairFilter' | 'usdtPairFilter', label: string, filter: ReportPairFilterState) => {
+        if (filter.removeLiquidity.length > 0) {
             filterSummaryItems.push({
                 key: `${filterKey}-removeLiquidity`,
-                label: `${pairLabel} Remove Liquidity: ${summarizeStates(activeReportPairFilter.removeLiquidity)}`,
-                clear: () => clearFilterField(filterKey, {...activeReportPairFilter, removeLiquidity: []})
+                label: `${label} Remove Liquidity: ${summarizeStates(filter.removeLiquidity)}`,
+                clear: () => clearFilterField(filterKey, {...filter, removeLiquidity: []})
             });
         }
-        if (activeReportPairFilter.mint.length > 0) {
+        if (filter.mint.length > 0) {
             filterSummaryItems.push({
                 key: `${filterKey}-mint`,
-                label: `${pairLabel} Mint: ${summarizeStates(activeReportPairFilter.mint)}`,
-                clear: () => clearFilterField(filterKey, {...activeReportPairFilter, mint: []})
+                label: `${label} Mint: ${summarizeStates(filter.mint)}`,
+                clear: () => clearFilterField(filterKey, {...filter, mint: []})
             });
         }
-        if (activeReportPairFilter.quoteMin || activeReportPairFilter.quoteMax || activeReportPairFilter.quoteMissing.length > 0) {
+        if (filter.quoteMin || filter.quoteMax || filter.quoteMissing.length > 0) {
             filterSummaryItems.push({
                 key: `${filterKey}-quote`,
-                label: `${pairLabel} Quote USDT: ${quoteFilterSummary(activeReportPairFilter)}`,
-                clear: () => clearFilterField(filterKey, {...activeReportPairFilter, quoteMin: '', quoteMax: '', quoteMissing: []})
+                label: `${label} Quote USDT: ${quoteFilterSummary(filter)}`,
+                clear: () => clearFilterField(filterKey, {...filter, quoteMin: '', quoteMax: '', quoteMissing: []})
             });
         }
-    }
-    const serverItems = data.data?.items || [];
-    const items = activeReportPairKind ? sortReportRiskItems(serverItems, activeReportPairKind, riskSort, riskSortOrder) : serverItems;
-    const pairViewLabel = (label: string, hasSaved: boolean) => (
-        <span className='projects-view-label' aria-label={`${label}${hasSaved ? ', saved filters' : ''}`}>
-            {label}
-            {hasSaved && <span className='projects-view-label__dot' aria-hidden='true' />}
-        </span>
-    );
-    const viewOptions = [
-        {label: 'Overview', value: 'overview' as const},
-        {label: 'Report Status', value: 'report-status' as const},
-        {label: pairViewLabel('WETH / WBNB', wethFilterCount > 0), value: 'wrapped-native' as const},
-        {label: pairViewLabel('USDT', usdtFilterCount > 0), value: 'usdt' as const}
-    ];
-    const tableLabel =
-        view === 'overview'
-            ? 'Project overview'
-            : view === 'report-status'
-              ? 'Project report status'
-              : view === 'wrapped-native'
-                ? 'Project WETH or WBNB pair risk'
-                : 'Project USDT pair risk';
-    const compactEmptyDescription =
-        view === 'overview'
-            ? 'No projects match the filters'
-            : view === 'report-status'
-              ? 'No projects match the report status filters'
-              : `No projects match the ${view === 'wrapped-native' ? 'WETH / WBNB' : 'USDT'} pair risk filters`;
-    const compactProject = (item: TokenProjectListItem) => {
-        if (view === 'overview') {
-            return <ProjectOverviewCard item={item} />;
-        }
-        if (view === 'report-status') {
-            return <ProjectReportStatusCard item={item} />;
-        }
-        return <ProjectPairRiskCard item={item} kind={view === 'wrapped-native' ? 'weth' : 'usdt'} />;
     };
+    appendPairFilterSummaries('wethPairFilter', 'WETH / WBNB', wethPairFilter);
+    appendPairFilterSummaries('usdtPairFilter', 'USDT', usdtPairFilter);
+
     return (
         <AppPage
             title='Projects'
-            subtitle='Browse project identity and current report risk from one project read model.'
+            subtitle='Browse project identity, report status, and both Pair risk snapshots in one unified list.'
             loading={data.loading || data.refreshing || options.loading || options.refreshing}
             error={data.error || options.error}
             onRefresh={() => {
@@ -846,64 +584,20 @@ export const ProjectsPage = () => {
             filters={
                 <div className='projects-controls'>
                     <div className='projects-controls__toolbar'>
-                        <div className='projects-controls__selectors'>
-                            <div className='projects-view-control'>
-                                <Typography.Text strong={true}>View</Typography.Text>
-                                <ChoiceGroup<ProjectsView>
-                                    className='projects-view-control__desktop'
-                                    ariaLabel='Projects view'
-                                    value={view}
-                                    options={viewOptions}
-                                    onChange={setView}
-                                />
-                                <Select<ProjectsView> className='projects-view-control__compact' aria-label='Projects view' value={view} options={viewOptions} onChange={setView} />
-                            </div>
-                        </div>
                         <div className='projects-controls__actions'>
-                            <Badge count={effectiveFilterCount} size='small' overflowCount={99}>
+                            <Badge count={activeFilterCount} size='small' overflowCount={99}>
                                 <Button
-                                    aria-label={`Open filters${effectiveFilterCount ? `, ${effectiveFilterCount} active fields` : ''}`}
+                                    aria-label={`Open filters${activeFilterCount ? `, ${activeFilterCount} active fields` : ''}`}
                                     icon={<FilterOutlined />}
                                     onClick={() => setFiltersOpen(true)}>
                                     Filters
                                 </Button>
                             </Badge>
-                            <Button disabled={!hasSavedFilters} onClick={clearFilters}>
+                            <Button disabled={!activeFilterCount} onClick={clearFilters}>
                                 Clear all
                             </Button>
                         </div>
                     </div>
-                    {activeReportPairKind && (
-                        <div className='projects-compact-sort-control' aria-label={`${pairLabel} current page sorting`}>
-                            <Typography.Text strong={true}>Sort current page</Typography.Text>
-                            <Select
-                                aria-label='Sort field'
-                                value={riskSort || 'default'}
-                                options={reportRiskSortOptions}
-                                onChange={value => (value === 'default' ? setRiskSort() : setRiskSort(value as ReportRiskSortKey, riskSortOrder || 'asc'))}
-                            />
-                            <Tooltip title='Ascending; missing values remain last'>
-                                <Button
-                                    aria-label='Sort current page ascending'
-                                    aria-pressed={Boolean(riskSort && riskSortOrder === 'asc')}
-                                    disabled={!riskSort}
-                                    type={riskSort && riskSortOrder === 'asc' ? 'primary' : 'default'}
-                                    icon={<SortAscendingOutlined />}
-                                    onClick={() => setRiskSort(riskSort, 'asc')}
-                                />
-                            </Tooltip>
-                            <Tooltip title='Descending; missing values remain last'>
-                                <Button
-                                    aria-label='Sort current page descending'
-                                    aria-pressed={Boolean(riskSort && riskSortOrder === 'desc')}
-                                    disabled={!riskSort}
-                                    type={riskSort && riskSortOrder === 'desc' ? 'primary' : 'default'}
-                                    icon={<SortDescendingOutlined />}
-                                    onClick={() => setRiskSort(riskSort, 'desc')}
-                                />
-                            </Tooltip>
-                        </div>
-                    )}
                     {filterSummaryItems.length > 0 && (
                         <div className='projects-filter-summary' aria-label='Applied filters'>
                             <Typography.Text type='secondary'>Applied</Typography.Text>
@@ -924,32 +618,24 @@ export const ProjectsPage = () => {
                             </div>
                         </div>
                     )}
-                    <ProjectsFiltersModal
-                        open={filtersOpen}
-                        filters={filterState}
-                        activePairKind={activeReportPairKind}
-                        chainOptions={chainOptions}
-                        onCancel={() => setFiltersOpen(false)}
-                        onApply={applyFilters}
-                    />
+                    <ProjectsFiltersModal open={filtersOpen} filters={filterState} chainOptions={chainOptions} onCancel={() => setFiltersOpen(false)} onApply={applyFilters} />
                 </div>
             }>
-            <div className={reportProjection ? 'projects-report-risk-table-region' : undefined}>
+            <div className='projects-unified-table-region'>
                 <ResourceTable
-                    label={tableLabel}
+                    label='Project overview, report status, and Pair risk'
                     rowKey='projectID'
-                    items={items}
-                    columns={viewColumns}
-                    onChange={activeReportPairKind ? handleReportRiskTableChange : undefined}
+                    items={data.data?.items || []}
+                    columns={projectColumns}
                     loading={data.loading}
                     total={data.data?.total}
                     page={page}
                     pageSize={pageSize}
                     onPageChange={setPage}
-                    scrollX={reportProjection ? 820 : 774}
-                    stickyHeader={reportProjection}
-                    compactRender={compactProject}
-                    compactEmptyDescription={compactEmptyDescription}
+                    scrollX={PROJECTS_TABLE_WIDTH}
+                    stickyHeader={true}
+                    compactRender={item => <ProjectUnifiedCard item={item} />}
+                    compactEmptyDescription='No projects match the filters'
                 />
             </div>
         </AppPage>

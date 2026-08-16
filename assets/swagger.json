@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1041-g14759a72-dirty"
+    "version": "v1.0.0-1042-gd308c807-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1775,8 +1775,12 @@
             "in": "query"
           },
           {
-            "type": "string",
-            "name": "report_pair_kind",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "name": "weth_pair_remove_liquidity_states",
             "in": "query"
           },
           {
@@ -1785,7 +1789,17 @@
               "type": "string"
             },
             "collectionFormat": "multi",
-            "name": "report_pair_remove_liquidity_states",
+            "name": "weth_pair_mint_states",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "weth_pair_quote_usdt_min",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "weth_pair_quote_usdt_max",
             "in": "query"
           },
           {
@@ -1794,17 +1808,7 @@
               "type": "string"
             },
             "collectionFormat": "multi",
-            "name": "report_pair_mint_states",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "report_pair_quote_usdt_min",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "report_pair_quote_usdt_max",
+            "name": "weth_pair_quote_missing_states",
             "in": "query"
           },
           {
@@ -1813,7 +1817,35 @@
               "type": "string"
             },
             "collectionFormat": "multi",
-            "name": "report_pair_quote_missing_states",
+            "name": "usdt_pair_remove_liquidity_states",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "name": "usdt_pair_mint_states",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "usdt_pair_quote_usdt_min",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "usdt_pair_quote_usdt_max",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "name": "usdt_pair_quote_missing_states",
             "in": "query"
           }
         ],

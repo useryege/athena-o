@@ -8,8 +8,8 @@ current research, Report, Evaluation, and trusted Selection projection, the
 aggregate project-detail snapshot, metric trends, paginated histories, and
 pre-deployment wallet transaction reads. It also exposes independent WETH and
 USDT Swap activity summaries plus paginated events for one sampled block. The
-capability owns the Projects page's two presentation views and the project
-detail page's polling, manual-refresh, lazy-loading, and return-navigation
+capability owns the Projects page's single grouped list and the project detail
+page's polling, manual-refresh, lazy-loading, and return-navigation
 behavior. It also owns the Projects page's tab-local stale-while-revalidate
 cache so a detail round trip can reuse the last successful list snapshot.
 
@@ -22,7 +22,7 @@ read model only composes their committed state.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Read-model types and query logic | [`internal/token/projectview/model.go`](../../../internal/token/projectview/model.go), [`internal/token/projectview/application/queries.go`](../../../internal/token/projectview/application/queries.go) | `ProjectListFilter`, `ProjectListItem`, `ProjectReportSummary`, `Detail`, `SwapActivity`, `TrendResult`, `Queries` |
+| Read-model types and query logic | [`internal/token/projectview/model.go`](../../../internal/token/projectview/model.go), [`internal/token/projectview/application/queries.go`](../../../internal/token/projectview/application/queries.go) | `ProjectListFilter`, `ProjectListPairFilter`, `ProjectListItem`, `ProjectReportSummary`, `Detail`, `SwapActivity`, `TrendResult`, `Queries` |
 | PostgreSQL composition | [`internal/token/adapters/postgres/project_list_view_store.go`](../../../internal/token/adapters/postgres/project_list_view_store.go), [`internal/token/adapters/postgres/project_view_store.go`](../../../internal/token/adapters/postgres/project_view_store.go), [`internal/token/adapters/postgres/project_swap_view_store.go`](../../../internal/token/adapters/postgres/project_swap_view_store.go) | `ProjectViewRepository`, `ListProjectsPage`, `GetProjectDetail`, `GetProjectSwapActivity`, `ListProjectSwapEventsPage` |
 | SQL queries | [`internal/token/adapters/postgres/queries/project_view.sql`](../../../internal/token/adapters/postgres/queries/project_view.sql), [`internal/token/adapters/postgres/queries/project_observation.sql`](../../../internal/token/adapters/postgres/queries/project_observation.sql), [`internal/token/adapters/postgres/queries/project_data_collection_schedule.sql`](../../../internal/token/adapters/postgres/queries/project_data_collection_schedule.sql), [`internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql`](../../../internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql), [`internal/token/adapters/postgres/queries/project_swap_view.sql`](../../../internal/token/adapters/postgres/queries/project_swap_view.sql) | unified project page, trend, history, Swap aggregate, and Swap event queries |
 | Fixed Swap assets | [`internal/token/chainregistry/registry.go`](../../../internal/token/chainregistry/registry.go) | `AssetMetadata`, `ChainAssets`, `FixedAssets` |
@@ -80,10 +80,10 @@ raw JSON for history consumers.
 
 1. The UI requests one page through `ListProjects`. Accepted filters are chain,
    project ID, contract, code hash, research status, Report state, Evaluation
-   status, trusted Selection outcome, and one Report Pair's Remove Liquidity,
-   Mint, and Quote USDT projection. Pair filtering requires `weth` or `usdt`.
-   Empty strings and empty state lists mean no filter; the API rejects values
-   outside the public status sets before querying PostgreSQL.
+   status, trusted Selection outcome, and independent WETH/WBNB and USDT Report
+   Pair filters for Remove Liquidity, Mint, and Quote USDT. Empty strings and
+   empty state lists mean no filter; the API rejects values outside the public
+   status sets before querying PostgreSQL.
 2. `ProjectViewRepository.ListProjectsPage` opens a read-only, repeatable-read
    transaction. `CountProjectListItems` and `ListProjectListItems` execute with
    identical filters inside that transaction, so `total` and rows describe the
@@ -109,9 +109,10 @@ raw JSON for history consumers.
    `no_report`, and `risk_unavailable`; Quote accepts inclusive non-negative
    integer bounds plus the two missing states. States within one field are ORed,
    the numeric range is ORed with selected Quote missing states, and the three
-   Pair fields are ANDed. `no_report` requires no current Report, while
-   `risk_unavailable` requires a Report whose selected Pair projection is
-   absent. All other status filters are exact. Rows are ordered by
+   fields within one Pair are ANDed. The WETH/WBNB and USDT filter groups are
+   also ANDed, so a row must satisfy both non-empty groups. `no_report` requires
+   no current Report, while `risk_unavailable` requires a Report whose selected
+   Pair projection is absent. All other status filters are exact. Rows are ordered by
    `project.created_at DESC, project.id DESC`.
 6. Each WETH/WBNB or USDT Pair risk projection is independently either absent
    or contains all five fields. The outer risk summary is absent only when both
@@ -121,78 +122,41 @@ raw JSON for history consumers.
    infinity, or fractional values fail the read. Valid quote values cross the
    API boundary as decimal integer strings.
 
-The Projects page renders the same response as four flat projections.
-`Overview` is the default URL state and omits `view`; the other canonical URL
-values are `view=report-status`, `view=wrapped-native`, and `view=usdt`.
-Invalid values normalize to Overview. Projection state has no nested section
-parameter. The list response uses a lightweight flat project identity instead
-of embedding the complete `TokenProject`: project ID, chain ID, name, symbol,
-deployment block time, project creation time, logo, research status, and current
-Report are the only list fields. Contract and code hash remain accepted request
-filters and PostgreSQL predicates but are not returned in list items. `view`
-never reaches the API. Report Pair filters remain encoded in the URL in every
-projection, but only the matching Pair view sends them to the API. Switching
-projections therefore preserves both Pair filter drafts while Overview and
-Report Status return the global-filter result set.
+The Projects page renders one row per project. The list response uses a
+lightweight flat project identity instead of embedding the complete
+`TokenProject`: project ID, chain ID, name, symbol, deployment block time,
+project creation time, logo, research status, and current Report are the only
+list fields. Contract and code hash remain accepted request filters and
+PostgreSQL predicates but are not returned in list items.
 
-Every desktop Projects projection renders the Ave logo as its fixed first
-column, and every compact card places the same logo at the start of its title.
-List logos are 32 pixels square and fall back to the project symbol, or `?`
-when the symbol is absent, if the current Ave projection has no URL or the
-browser cannot load it.
+The desktop table fixes Logo and Project on the left and groups the remaining
+columns under Overview, Report Status, WETH/WBNB, and USDT headers. Overview
+contains Chain, Block Time, and Created; Report Status contains Research,
+Report, Evaluation, and trusted Selection; each Pair contains Created, Remove
+Liquidity, Mint, Quote USDT, and Last Swap. The UI converts the authoritative
+deployment-block Unix seconds and all other timestamps to Beijing time. The
+table preserves the server's deterministic order and exposes no presentation-
+only or current-page sort controls.
 
-One `View` control exposes Overview, Report Status, WETH/WBNB, and USDT at the
-same navigation level. Desktop and tablet layouts use four radio buttons;
-viewports at or below 768 pixels replace them with one labeled select so all
-choices remain reachable without horizontal scrolling. WETH/WBNB and USDT
-labels mark independently saved Pair filters. Only the active Pair view's
-non-empty filter is translated to the generic `report_pair_*` request fields.
-Changing views preserves both drafts, pagination, and page size, but can select
-a different server request when the destination Pair has an active filter.
-The presentation-only `riskSort` and `riskSortOrder` parameters preserve one
-current-page Pair sort across refreshes, shared URLs, view changes, and
-detail round trips. Invalid or incomplete sort combinations normalize away.
-Clearing filters retains the active view, page size, and local sort while
-removing global filters and both Pair drafts.
+At widths up to 1100 pixels, the table becomes one semantic card per project.
+Every card contains Overview, Report Status, WETH/WBNB, and USDT without a view
+switch or collapsed section. The two Pair panels are side by side until 768
+pixels and stack below that breakpoint. The Ave logo remains first in the table
+and card title, is 32 pixels square, and falls back to the project symbol or `?`
+when the observation has no URL or the browser cannot load it.
 
-The desktop Report Status view groups research, Report, Evaluation, and trusted
-Selection fields into summary columns; its Evaluation error can be expanded
-with a keyboard-operable control. Every projection identifies the project by
-token metadata and project ID without displaying its contract. Overview shows
-Chain, Block Time, and Created after the project identity; the UI converts the
-authoritative deployment-block Unix seconds to Beijing time. Each Pair view
-presents Report revision and completeness context followed by Created, Remove
-Liquidity, Mint, Quote USDT, and Last Swap. All global and Pair filters are
-edited as one draft in a centered `Filters` modal with General, WETH/WBNB, and
-USDT tabs. Applying the draft commits every filter to the URL atomically and
-returns to page one; closing the modal discards it. The toolbar counts only
-filter fields effective for the current request, shows removable summaries for
-those fields, and marks Pair views that retain saved filters. Report Status and
-Overview therefore do not present inactive Pair drafts as applied conditions.
-
-The six non-logo Pair columns expose only local sort controls in their desktop
-headers. Project text is case-insensitive, Quote uses exact `BigInt` values,
-and Pair booleans and timestamps use their typed values. Missing Pair data
-always follows present values in either direction, and equal values retain the
-server order. Sorting rearranges only the loaded server page and never changes
-the API request or pagination. The tables fit the available desktop surface
-and do not render a combined horizontal risk matrix. At viewport widths up to
-900 pixels, Overview uses semantic project cards. Report Status and both Pair
-views switch to semantic cards at 1100 pixels; an equivalent current-page sort
-selector appears above the card list only for Pair views. Report Status cards
-contain only project, Report, Evaluation, and Selection context. Pair cards
-contain project and Report context plus only the active Pair snapshot. The same
-centered filter modal becomes a near-full-width, single-column form below 768
-pixels. The Overview card keeps Chain in its title and presents Project, Block
-Time, and Created as a single-column value list. Both compact layouts retain
-the same rows and paginator as their desktop projections.
+All global and Pair filters are edited as one draft in a centered `Filters`
+modal with General, WETH/WBNB, and USDT tabs. Applying commits every filter to
+the URL atomically and returns to page one; closing discards the draft. Both
+Pair groups always enter the list request, cache identity, active count, and
+removable toolbar summaries. Clearing filters preserves page size and removes
+the global and both Pair groups. The canonical URL contains only filter and
+pagination state; presentation and sort state are not encoded.
 
 The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
 key contains only the server request fields: page, page size, chain, project,
-contract, code hash, research status, Report state, Evaluation status, and
-trusted Selection outcome, plus the effective Report Pair kind and filters.
-Presentation-only `view`, `riskSort`, `riskSortOrder`, and inactive Pair drafts
-are excluded.
+contract, code hash, research status, Report state, Evaluation status, trusted
+Selection outcome, and both Pair filter groups.
 A successful list response is fresh for 30 seconds. A fresh hit
 renders synchronously without a request; a stale hit keeps its rows, total, and
 paginator visible while one deduplicated request refreshes the key in the
@@ -455,9 +419,8 @@ There is no runtime configuration specific to this read model.
 | Wallet profile card breakpoint | 1440 pixels | The Wallets tab displays two complete profile cards per row at and above the breakpoint and one card per row below it. |
 | Transactions compact layout breakpoint | 1440 pixels | The Transactions tab uses the compact table at and above the breakpoint and complete transaction cards below it. |
 | Revision History compact layout breakpoint | 1440 pixels | Revision History uses the fixed comparison table at and above the breakpoint and complete revision cards below it. |
-| Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card with Chain in the title and a single-column Project, Block Time, and Created body; the shell uses overlay navigation. |
-| Report projection compact layout breakpoint | 1100 pixels | Report Status and Pair tables become view-specific semantic cards; overlay navigation still begins at 900 pixels. |
-| Projects compact view-control breakpoint | 768 pixels | The four-button flat view control becomes one labeled select without changing URL state. |
+| Projects compact layout breakpoint | 1100 pixels | The grouped table becomes one complete semantic project card; overlay navigation still begins at 900 pixels. |
+| Projects Pair stack breakpoint | 768 pixels | WETH/WBNB and USDT card panels stack vertically and the filter modal becomes a near-full-width single-column form. |
 
 ## Invariants
 
@@ -476,9 +439,8 @@ There is no runtime configuration specific to this read model.
 - Every project-detail read is scoped by one positive project ID.
 - The aggregate endpoint does not mutate collection, report, selection, or
   transaction state.
-- Projects cache identity is derived only from list request fields. UI view,
-  local Pair sort, and inactive Pair drafts cannot create a second copy of the
-  same server page; selecting a different effective Pair filter creates the
+- Projects cache identity is derived only from list request fields and always
+  includes both Pair filter groups. Any change to either group creates the
   corresponding request identity.
 - Cached project data never crosses a login-session boundary. Return scroll
   snapshots contain only URL, history-entry identity, a random return marker,
@@ -521,9 +483,9 @@ The capability is read-only, so retrying cannot create duplicate state. Invalid
 IDs, ranges, data types, addresses, and receipt statuses return gRPC validation
 errors that the HTTP gateway maps to request failures.
 
-Invalid project-list status or Pair filters, missing Pair kind, malformed Quote
-bounds, and a minimum above the maximum return `InvalidArgument` before a
-database read. A malformed stored Pair risk projection fails the page or
+Invalid project-list status or Pair filters, malformed Quote bounds, and a
+minimum above the maximum in either Pair group return `InvalidArgument` before
+a database read. A malformed stored Pair risk projection fails the page or
 revision request instead of presenting a partial matrix. The repeatable-read
 page transaction is rolled back on count, list, mapping, or context failure and
 is safe to retry.
@@ -560,11 +522,10 @@ or updated timestamps for diagnosis.
 - [ ] The unified project page and six project-scoped endpoints remain aligned with the `projects` permission.
 - [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
-- [ ] The four flat Projects views preserve canonical URL state; only the active Pair view's non-empty filter becomes a request dependency.
-- [ ] Every Projects projection omits Contract; Overview also omits sender and block number, displays deployment Block Time in Beijing time, and keeps Contract and Code Hash filterable.
-- [ ] The centered filter modal owns all global and independently saved Pair drafts, while only the active Pair filter becomes a request dependency.
-- [ ] Desktop Pair headers and compact Pair controls apply the same current-page local sort without changing API or cache identity.
-- [ ] Compact Report Status and Pair cards contain only their active projection.
+- [ ] The Projects page has one grouped table with fixed Logo and Project columns and no view or current-page sort state.
+- [ ] The list omits Contract, sender, and block number; it displays deployment Block Time in Beijing time while Contract and Code Hash remain filterable.
+- [ ] The centered filter modal owns all global and Pair drafts, and both Pair groups enter the request and cache identity with AND semantics.
+- [ ] Compact cards contain Overview, Report Status, WETH/WBNB, and USDT together; Pair panels stack below 768 pixels.
 - [ ] Report risk absence remains distinguishable from safe boolean values in lists, detail, and revision history.
 - [ ] Aggregate composition matches the typed public contract and observation V1 schemas.
 - [ ] Precision-sensitive values remain strings across the API and UI boundary.

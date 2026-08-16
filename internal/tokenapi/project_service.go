@@ -8,7 +8,6 @@ import (
 	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/selection"
-	"github.com/useryege/athena/internal/token/swap"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -49,68 +48,39 @@ func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsR
 	if err := validateProjectListSelectionOutcome(selectionOutcome); err != nil {
 		return nil, err
 	}
-	reportPairKind, err := validateProjectListReportPairKind(req.GetReportPairKind())
-	if err != nil {
-		return nil, err
-	}
-	reportPairRemoveLiquidityStates, err := normalizeProjectListReportPairStates(
-		"report_pair_remove_liquidity_states",
-		req.GetReportPairRemoveLiquidityStates(),
-		[]string{"detected", "clear", "no_report", "risk_unavailable"},
+	wethPairFilter, err := parseProjectListPairFilter(
+		"weth_pair",
+		req.GetWethPairRemoveLiquidityStates(),
+		req.GetWethPairMintStates(),
+		req.GetWethPairQuoteUsdtMin(),
+		req.GetWethPairQuoteUsdtMax(),
+		req.GetWethPairQuoteMissingStates(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	reportPairMintStates, err := normalizeProjectListReportPairStates(
-		"report_pair_mint_states",
-		req.GetReportPairMintStates(),
-		[]string{"detected", "clear", "no_report", "risk_unavailable"},
+	usdtPairFilter, err := parseProjectListPairFilter(
+		"usdt_pair",
+		req.GetUsdtPairRemoveLiquidityStates(),
+		req.GetUsdtPairMintStates(),
+		req.GetUsdtPairQuoteUsdtMin(),
+		req.GetUsdtPairQuoteUsdtMax(),
+		req.GetUsdtPairQuoteMissingStates(),
 	)
 	if err != nil {
 		return nil, err
-	}
-	reportPairQuoteUSDTMin, err := parseOptionalNonNegativeIntegerField("report_pair_quote_usdt_min", req.GetReportPairQuoteUsdtMin())
-	if err != nil {
-		return nil, err
-	}
-	reportPairQuoteUSDTMax, err := parseOptionalNonNegativeIntegerField("report_pair_quote_usdt_max", req.GetReportPairQuoteUsdtMax())
-	if err != nil {
-		return nil, err
-	}
-	if reportPairQuoteUSDTMin != nil && reportPairQuoteUSDTMax != nil && reportPairQuoteUSDTMin.Cmp(reportPairQuoteUSDTMax) > 0 {
-		return nil, status.Error(codes.InvalidArgument, "report_pair_quote_usdt_min must not exceed report_pair_quote_usdt_max")
-	}
-	reportPairQuoteMissingStates, err := normalizeProjectListReportPairStates(
-		"report_pair_quote_missing_states",
-		req.GetReportPairQuoteMissingStates(),
-		[]string{"no_report", "risk_unavailable"},
-	)
-	if err != nil {
-		return nil, err
-	}
-	hasReportPairFilter := len(reportPairRemoveLiquidityStates) > 0 ||
-		len(reportPairMintStates) > 0 ||
-		reportPairQuoteUSDTMin != nil ||
-		reportPairQuoteUSDTMax != nil ||
-		len(reportPairQuoteMissingStates) > 0
-	if hasReportPairFilter && reportPairKind == "" {
-		return nil, status.Error(codes.InvalidArgument, "report_pair_kind is required when a report Pair filter is set")
 	}
 	page, err := application.ListProjectsPage(ctx, projectview.ProjectListFilter{
-		ChainID:                         req.GetChainId(),
-		ProjectID:                       req.GetProjectId(),
-		CodeHash:                        codeHash,
-		Contract:                        contract,
-		ResearchStatus:                  research.ProjectResearchStatus(researchStatus),
-		ReportState:                     reportState,
-		EvaluationStatus:                selection.TaskStatus(evaluationStatus),
-		SelectionOutcome:                selection.SelectionOutcome(selectionOutcome),
-		ReportPairKind:                  swap.PairKind(reportPairKind),
-		ReportPairRemoveLiquidityStates: reportPairRemoveLiquidityStates,
-		ReportPairMintStates:            reportPairMintStates,
-		ReportPairQuoteUSDTMin:          reportPairQuoteUSDTMin,
-		ReportPairQuoteUSDTMax:          reportPairQuoteUSDTMax,
-		ReportPairQuoteMissingStates:    reportPairQuoteMissingStates,
+		ChainID:          req.GetChainId(),
+		ProjectID:        req.GetProjectId(),
+		CodeHash:         codeHash,
+		Contract:         contract,
+		ResearchStatus:   research.ProjectResearchStatus(researchStatus),
+		ReportState:      reportState,
+		EvaluationStatus: selection.TaskStatus(evaluationStatus),
+		SelectionOutcome: selection.SelectionOutcome(selectionOutcome),
+		WethPair:         wethPairFilter,
+		UsdtPair:         usdtPairFilter,
 	}, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, wrapStoreError("list projects", err)
@@ -174,14 +144,54 @@ func validateProjectListSelectionOutcome(value string) error {
 	}
 }
 
-func validateProjectListReportPairKind(value string) (string, error) {
-	value = strings.TrimSpace(value)
-	switch value {
-	case "", string(swap.PairKindWETH), string(swap.PairKindUSDT):
-		return value, nil
-	default:
-		return "", status.Error(codes.InvalidArgument, "report_pair_kind must be empty, weth, or usdt")
+func parseProjectListPairFilter(
+	prefix string,
+	removeLiquidityStates, mintStates []string,
+	quoteUSDTMinValue, quoteUSDTMaxValue string,
+	quoteMissingStates []string,
+) (projectview.ProjectListPairFilter, error) {
+	removeLiquidity, err := normalizeProjectListReportPairStates(
+		prefix+"_remove_liquidity_states",
+		removeLiquidityStates,
+		[]string{"detected", "clear", "no_report", "risk_unavailable"},
+	)
+	if err != nil {
+		return projectview.ProjectListPairFilter{}, err
 	}
+	mint, err := normalizeProjectListReportPairStates(
+		prefix+"_mint_states",
+		mintStates,
+		[]string{"detected", "clear", "no_report", "risk_unavailable"},
+	)
+	if err != nil {
+		return projectview.ProjectListPairFilter{}, err
+	}
+	quoteUSDTMin, err := parseOptionalNonNegativeIntegerField(prefix+"_quote_usdt_min", quoteUSDTMinValue)
+	if err != nil {
+		return projectview.ProjectListPairFilter{}, err
+	}
+	quoteUSDTMax, err := parseOptionalNonNegativeIntegerField(prefix+"_quote_usdt_max", quoteUSDTMaxValue)
+	if err != nil {
+		return projectview.ProjectListPairFilter{}, err
+	}
+	if quoteUSDTMin != nil && quoteUSDTMax != nil && quoteUSDTMin.Cmp(quoteUSDTMax) > 0 {
+		return projectview.ProjectListPairFilter{}, status.Errorf(codes.InvalidArgument, "%s_quote_usdt_min must not exceed %s_quote_usdt_max", prefix, prefix)
+	}
+	quoteMissing, err := normalizeProjectListReportPairStates(
+		prefix+"_quote_missing_states",
+		quoteMissingStates,
+		[]string{"no_report", "risk_unavailable"},
+	)
+	if err != nil {
+		return projectview.ProjectListPairFilter{}, err
+	}
+	return projectview.ProjectListPairFilter{
+		RemoveLiquidityStates: removeLiquidity,
+		MintStates:            mint,
+		QuoteUSDTMin:          quoteUSDTMin,
+		QuoteUSDTMax:          quoteUSDTMax,
+		QuoteMissingStates:    quoteMissing,
+	}, nil
 }
 
 func normalizeProjectListReportPairStates(field string, values, allowed []string) ([]string, error) {

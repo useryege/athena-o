@@ -1210,12 +1210,16 @@ export class TokenService {
             reportState?: string;
             evaluationStatus?: string;
             selectionOutcome?: string;
-            reportPairKind?: string;
-            reportPairRemoveLiquidityStates?: string[];
-            reportPairMintStates?: string[];
-            reportPairQuoteUSDTMin?: string;
-            reportPairQuoteUSDTMax?: string;
-            reportPairQuoteMissingStates?: string[];
+            wethPairRemoveLiquidityStates?: string[];
+            wethPairMintStates?: string[];
+            wethPairQuoteUSDTMin?: string;
+            wethPairQuoteUSDTMax?: string;
+            wethPairQuoteMissingStates?: string[];
+            usdtPairRemoveLiquidityStates?: string[];
+            usdtPairMintStates?: string[];
+            usdtPairQuoteUSDTMin?: string;
+            usdtPairQuoteUSDTMax?: string;
+            usdtPairQuoteMissingStates?: string[];
         } = {}
     ): Promise<PagedResponse<TokenProjectListItem>> & {abort?: () => void} {
         const req = requests.get('/tokens/projects').query({
@@ -1227,12 +1231,16 @@ export class TokenService {
             report_state: options.reportState || undefined,
             evaluation_status: options.evaluationStatus || undefined,
             selection_outcome: options.selectionOutcome || undefined,
-            report_pair_kind: options.reportPairKind || undefined,
-            report_pair_remove_liquidity_states: options.reportPairRemoveLiquidityStates?.length ? options.reportPairRemoveLiquidityStates : undefined,
-            report_pair_mint_states: options.reportPairMintStates?.length ? options.reportPairMintStates : undefined,
-            report_pair_quote_usdt_min: options.reportPairQuoteUSDTMin || undefined,
-            report_pair_quote_usdt_max: options.reportPairQuoteUSDTMax || undefined,
-            report_pair_quote_missing_states: options.reportPairQuoteMissingStates?.length ? options.reportPairQuoteMissingStates : undefined,
+            weth_pair_remove_liquidity_states: options.wethPairRemoveLiquidityStates?.length ? options.wethPairRemoveLiquidityStates : undefined,
+            weth_pair_mint_states: options.wethPairMintStates?.length ? options.wethPairMintStates : undefined,
+            weth_pair_quote_usdt_min: options.wethPairQuoteUSDTMin || undefined,
+            weth_pair_quote_usdt_max: options.wethPairQuoteUSDTMax || undefined,
+            weth_pair_quote_missing_states: options.wethPairQuoteMissingStates?.length ? options.wethPairQuoteMissingStates : undefined,
+            usdt_pair_remove_liquidity_states: options.usdtPairRemoveLiquidityStates?.length ? options.usdtPairRemoveLiquidityStates : undefined,
+            usdt_pair_mint_states: options.usdtPairMintStates?.length ? options.usdtPairMintStates : undefined,
+            usdt_pair_quote_usdt_min: options.usdtPairQuoteUSDTMin || undefined,
+            usdt_pair_quote_usdt_max: options.usdtPairQuoteUSDTMax || undefined,
+            usdt_pair_quote_missing_states: options.usdtPairQuoteMissingStates?.length ? options.usdtPairQuoteMissingStates : undefined,
             page: options.page,
             page_size: options.pageSize
         });
