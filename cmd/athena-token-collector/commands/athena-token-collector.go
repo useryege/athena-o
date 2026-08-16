@@ -100,7 +100,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&dataTypeValue, "data-type", env.StringFromEnv("ATHENA_TOKEN_DATA_TYPE", ""), "Collection type: ave|chain_state|wallet_asset_state|simulation_result|contract_code_source|wallet_normal_transactions")
 	command.Flags().StringVar(&aveAPIKey, "ave-api-key", env.StringFromEnv("ATHENA_TOKEN_AVE_API_KEY", ""), "Ave API key")
 	command.Flags().StringVar(&aveAPIBaseURL, "ave-api-base-url", env.StringFromEnv("ATHENA_TOKEN_AVE_API_BASE_URL", ave.DefaultBaseURL), "Ave API base URL")
-	command.Flags().StringVar(&etherscanManagerAddress, "etherscan-manager-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortEtherscanManager)), "Etherscan Manager gRPC address")
+	command.Flags().StringVar(&etherscanManagerAddress, "etherscan-manager-server-address", env.StringFromEnv("ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortEtherscanManager)), "Etherscan Manager gRPC address")
 	_ = command.MarkFlagRequired("data-type")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

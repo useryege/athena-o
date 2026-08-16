@@ -28,6 +28,7 @@ access remains in the shared provider adapter under `util/polymarket`.
 | PostgreSQL connection and schema | [internal/sportshistory/store/sql_store.go](../../../internal/sportshistory/store/sql_store.go), [internal/sportshistory/store/migrations/000001_init.sql](../../../internal/sportshistory/store/migrations/000001_init.sql) | `NewSQLStoreSource`, `sports_history_event`, `sports_history_market`, `sports_history_price_point` |
 | Internal service contract | [internal/sportshistory/sports_history.proto](../../../internal/sportshistory/sports_history.proto) | `SportsHistoryService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/sportshistory/sportshistory.proto](../../../internal/server/sportshistory/sportshistory.proto), [internal/server/sportshistory/sportshistory.go](../../../internal/server/sportshistory/sportshistory.go) | `SportsHistoryService`, `Server` |
+| Internal gRPC connection ownership | [internal/sportshistory/apiclient/apiclient.go](../../../internal/sportshistory/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewSportsHistoryClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `SportsHistoryEventCardItem`, `SportsHistoryPriceHistorySeriesItem`, `SportsHistorySyncStatus` |
 | Provider adapters | [util/polymarket](../../../util/polymarket) | `GammaClient`, `CLOBClient` |
 
@@ -52,9 +53,9 @@ successful event-snapshot time are durable. The current
 `idle/syncing/succeeded/failed` execution record is process-local and is
 combined with the durable last-success time for status responses.
 
-The API Server is a thin gRPC proxy. Reads and refresh requests reach Sports
-History only through its service contract; no other capability shares its store
-or synchronization state.
+The API Server is a thin gRPC proxy. It reuses one process-owned Sports History
+channel and typed client for reads, refreshes, and health checks. No other
+capability shares the Sports History store or synchronization state.
 
 ## Runtime Flow
 
@@ -97,7 +98,8 @@ or synchronization state.
     status on success; a failed refresh is returned as `Unavailable`.
 11. On cancellation, gRPC stops gracefully, health changes to `NOT_SERVING`,
     the service context is cancelled, and shutdown waits for the startup refresh
-    if it is still running before closing PostgreSQL.
+    if it is still running before closing PostgreSQL. The API Server closes its
+    channel after its HTTP/gRPC serving lifecycle ends.
 
 The event snapshot, stale-row cleanup, and its last-success timestamp share one
 transaction. Price-history batches run after that transaction and commit

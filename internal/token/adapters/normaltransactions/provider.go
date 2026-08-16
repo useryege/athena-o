@@ -9,14 +9,13 @@ import (
 	etherscanmanagerapiclient "github.com/useryege/athena/internal/etherscanmanager/apiclient"
 	"github.com/useryege/athena/internal/token/research"
 	"github.com/useryege/athena/internal/token/shared"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 const normalTransactionPageSize = int32(300)
 
 type Provider struct {
-	client etherscanmanagerapiclient.EtherscanManagerServiceClient
-	closer utilio.Closer
+	client    etherscanmanagerapiclient.EtherscanManagerServiceClient
+	clientset etherscanmanagerapiclient.Clientset
 }
 
 func New(address string) (*Provider, error) {
@@ -24,11 +23,11 @@ func New(address string) (*Provider, error) {
 	if address == "" {
 		return nil, fmt.Errorf("Etherscan Manager address is required")
 	}
-	closer, client, err := etherscanmanagerapiclient.NewEtherscanManagerClientset(address).NewEtherscanManagerServiceClient()
+	clientset, err := etherscanmanagerapiclient.NewEtherscanManagerClientset(address)
 	if err != nil {
 		return nil, err
 	}
-	return &Provider{client: client, closer: closer}, nil
+	return &Provider{client: clientset.EtherscanManager(), clientset: clientset}, nil
 }
 
 func (provider *Provider) ListNormalTransactions(
@@ -181,11 +180,11 @@ func mapReceiptStatus(
 }
 
 func (provider *Provider) Close() error {
-	if provider == nil || provider.closer == nil {
+	if provider == nil || provider.clientset == nil {
 		return nil
 	}
-	err := provider.closer.Close()
-	provider.closer = nil
+	err := provider.clientset.Close()
+	provider.clientset = nil
 	provider.client = nil
 	return err
 }

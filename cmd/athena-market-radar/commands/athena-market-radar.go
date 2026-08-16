@@ -15,6 +15,7 @@ import (
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
+	utilio "github.com/useryege/athena/util/io"
 )
 
 const cliName = "athena-market-radar"
@@ -38,7 +39,12 @@ func NewCommand() *cobra.Command {
 
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
-				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				var err error
+				notificationClientset, err = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				if err != nil {
+					return fmt.Errorf("create notification clientset: %w", err)
+				}
+				defer utilio.Close(notificationClientset)
 			}
 			server, err := marketradar.NewServer(marketradar.ServerOpts{
 				NotificationClientset:  notificationClientset,
@@ -75,7 +81,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_MARKET_RADAR_LISTEN_ADDRESS", common.DefaultAddressMarketRadar), "Listen address")
 	command.Flags().IntVar(&listenPort, "port", env.ParseNumFromEnv("ATHENA_MARKET_RADAR_LISTEN_PORT", common.DefaultPortMarketRadar, 1, 65535), "Listen port")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_MARKET_RADAR_NOTIFICATION_ENABLED", true), "Enable mover notifications")
-	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Notification service address")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortNotification)), "Notification service address")
 	command.Flags().StringVar(&notificationInviteCode, "notification-invite-code", env.StringFromEnv("ATHENA_MARKET_RADAR_NOTIFICATION_INVITE_CODE", ""), "Polymarket invite code")
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

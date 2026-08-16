@@ -46,6 +46,7 @@ const (
 
 // DefaultAddressAPIServer for Athena components
 const (
+	DefaultLocalGRPCHost              = "127.0.0.1"
 	DefaultAddressAPIServer           = "0.0.0.0"
 	DefaultAddressWormMarkets         = "0.0.0.0"
 	DefaultAddressNotification        = "0.0.0.0"

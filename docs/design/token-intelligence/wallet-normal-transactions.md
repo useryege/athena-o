@@ -88,7 +88,7 @@ for this data type.
 
 | Setting | Behavior |
 | --- | --- |
-| `ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS` / `--etherscan-manager-server-address` | Manager gRPC address; defaults to `localhost:8100`. |
+| `ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS` / `--etherscan-manager-server-address` | Manager gRPC address; local default `127.0.0.1:8100`. Production Compose supplies its service DNS address. |
 | `ATHENA_TOKEN_WALLET_NORMAL_TRANSACTIONS_RETRY_INTERVAL` / `--wallet-normal-transactions-retry-interval` | Delay after a failed collection attempt; defaults to 10 minutes. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Collector telemetry address; this collector defaults to `127.0.0.1:8120`. |
 
@@ -114,6 +114,11 @@ A Manager RPC failure, invalid response field, numeric overflow, or PostgreSQL
 failure fails the task attempt. No transaction rows or success state commit when
 the final database transaction fails. Earlier successful RPC calls in the same
 attempt are not durable and may be repeated by a later attempt.
+
+The provider reuses one nonblocking Etherscan Manager channel for all task
+attempts. A temporary Manager outage is retried by gRPC connection management
+and then by the collector schedule; the provider closes the channel when its
+worker lifecycle ends.
 
 The shared collector returns the same task to pending after the configured
 10-minute retry interval. Attempts one through nine remain retryable. The tenth

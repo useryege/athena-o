@@ -29,6 +29,7 @@ dependencies, not shared capability implementation state.
 | Query and eligibility policy | [internal/managedoo/store/queries/managed_oo_log.sql](../../../internal/managedoo/store/queries/managed_oo_log.sql) | `ListManagedOOMarketIDsNeedingRefresh`, proposal/dispute alert candidate queries |
 | Internal service contract | [internal/managedoo/managed_oo.proto](../../../internal/managedoo/managed_oo.proto) | `ManagedOOService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/managedoo/managedoo.proto](../../../internal/server/managedoo/managedoo.proto), [internal/server/managedoo/managedoo.go](../../../internal/server/managedoo/managedoo.go) | `ManagedOOService`, `Server` |
+| Internal gRPC connection ownership | [internal/managedoo/apiclient/apiclient.go](../../../internal/managedoo/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewManagedOOClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `ManagedOOProposalItem`, `ManagedOODisputeItem` |
 
 ## Architecture
@@ -59,7 +60,8 @@ alert-state write are separate cross-service operations.
 ## Runtime Flow
 
 1. `athena-managed-oo` connects to the `managed_oo` database, optionally
-   applies embedded migrations, creates an optional Notification clientset,
+   applies embedded migrations, creates one optional long-lived Notification
+   clientset,
    binds port `8106`, and constructs the service with the configured Polygon
    RPC URL.
 2. `Service.Start` requires the store, creates a default Gamma client when none
@@ -99,7 +101,8 @@ alert-state write are separate cross-service operations.
     market enrichment.
 11. On cancellation, gRPC stops gracefully, health changes to `NOT_SERVING`,
     the pipeline context is cancelled, and shutdown waits for the goroutine
-    before PostgreSQL closes.
+    before the Notification channel and PostgreSQL close. The API Server reuses
+    one separate Managed OO channel and closes it after serving stops.
 
 ## State / Data
 
@@ -135,7 +138,7 @@ and pipeline serialization.
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_MANAGED_OO_POLYGON_RPC_URL` / `--polygon-rpc-url` | Polygon JSON-RPC endpoint for chain head and log queries; default `https://polygon-rpc.com`. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_ENABLED` / `--notification-enabled` | Enables proposal and dispute enqueueing; default `true`. |
-| `ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; default `localhost:8086`. |
+| `ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket links; default empty. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 
@@ -164,8 +167,10 @@ notification deadlines are implementation constants.
 ## Failure Recovery
 
 Database connection, migration, missing store, failure to construct Gamma, or an
-invalid listener prevents startup. Polygon and Notification availability are
-not probed before health becomes serving.
+invalid listener or Notification target prevents startup. Polygon and
+Notification availability are not probed before health becomes serving; a
+temporarily unavailable Notification service is handled by background gRPC
+reconnection.
 
 A Polygon RPC, decoding, or log-ingest failure stops the current pass before its
 cursor advances and before enrichment or alerts. A proposal-phase failure also

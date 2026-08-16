@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	wormmarketsstore "github.com/useryege/athena/internal/wormmarkets/store"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
@@ -164,15 +163,7 @@ func (s *Service) sendWormNotifications(ctx context.Context, notifications []wor
 		}
 		return results
 	}
-	closer, client, err := s.notificationClientset.NewNotificationServiceClient()
-	if err != nil {
-		log.WithError(err).Warn("failed to create worm notification client")
-		for _, item := range notifications {
-			results = append(results, wormNotificationResult{notification: item, err: err})
-		}
-		return results
-	}
-	defer utilio.Close(closer)
+	client := s.notificationClientset.Notification()
 
 	for _, item := range notifications {
 		result := wormNotificationResult{notification: item}

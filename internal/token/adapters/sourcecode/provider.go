@@ -7,12 +7,11 @@ import (
 
 	etherscanmanagerapiclient "github.com/useryege/athena/internal/etherscanmanager/apiclient"
 	"github.com/useryege/athena/internal/token/shared"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 type Provider struct {
-	client etherscanmanagerapiclient.EtherscanManagerServiceClient
-	closer utilio.Closer
+	client    etherscanmanagerapiclient.EtherscanManagerServiceClient
+	clientset etherscanmanagerapiclient.Clientset
 }
 
 func New(address string) (*Provider, error) {
@@ -20,11 +19,11 @@ func New(address string) (*Provider, error) {
 	if address == "" {
 		return nil, fmt.Errorf("Etherscan Manager address is required")
 	}
-	closer, client, err := etherscanmanagerapiclient.NewEtherscanManagerClientset(address).NewEtherscanManagerServiceClient()
+	clientset, err := etherscanmanagerapiclient.NewEtherscanManagerClientset(address)
 	if err != nil {
 		return nil, err
 	}
-	return &Provider{client: client, closer: closer}, nil
+	return &Provider{client: clientset.EtherscanManager(), clientset: clientset}, nil
 }
 
 func (p *Provider) GetSourceCode(ctx context.Context, chainID int64, contract shared.Address) (string, error) {
@@ -42,11 +41,11 @@ func (p *Provider) GetSourceCode(ctx context.Context, chainID int64, contract sh
 }
 
 func (p *Provider) Close() error {
-	if p == nil || p.closer == nil {
+	if p == nil || p.clientset == nil {
 		return nil
 	}
-	err := p.closer.Close()
-	p.closer = nil
+	err := p.clientset.Close()
+	p.clientset = nil
 	p.client = nil
 	return err
 }

@@ -3,7 +3,6 @@ package fifamarketdashboard
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -147,13 +146,7 @@ func (s *Service) fetchWormEvent(ctx context.Context, conditionID string) (*v1al
 	if s.wormMarketsClientset == nil {
 		return nil, 0, status.Error(codes.FailedPrecondition, "Worm Markets clientset is required")
 	}
-	closer, client, err := s.wormMarketsClientset.NewWormMarketsServiceClient()
-	if err != nil {
-		return nil, 0, fmt.Errorf("create Worm Markets client: %w", err)
-	}
-	defer closer.Close()
-
-	resp, err := client.GetWormEvent(ctx, &wormmarketsapiclient.GetWormEventRequest{ConditionId: conditionID})
+	resp, err := s.wormMarketsClientset.WormMarkets().GetWormEvent(ctx, &wormmarketsapiclient.GetWormEventRequest{ConditionId: conditionID})
 	if err != nil {
 		return nil, 0, err
 	}

@@ -19,23 +19,11 @@ func NewServer(walletClientSet walletapiclient.Clientset) *Server {
 }
 
 func (s *Server) GetWalletStatus(ctx context.Context, _ *walletpkg.GetWalletStatusRequest) (*v1alpha1.WalletStatus, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	return client.GetWalletStatus(ctx, &walletapiclient.GetWalletStatusRequest{})
+	return s.walletClientSet.Wallet().GetWalletStatus(ctx, &walletapiclient.GetWalletStatusRequest{})
 }
 
 func (s *Server) ListWallets(ctx context.Context, req *walletpkg.ListWalletsRequest) (*walletpkg.ListWalletsResponse, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListWallets(ctx, &walletapiclient.ListWalletsRequest{
+	resp, err := s.walletClientSet.Wallet().ListWallets(ctx, &walletapiclient.ListWalletsRequest{
 		Chain:     req.GetChain(),
 		Query:     req.GetQuery(),
 		Page:      req.GetPage(),
@@ -55,13 +43,7 @@ func (s *Server) ListWallets(ctx context.Context, req *walletpkg.ListWalletsRequ
 }
 
 func (s *Server) GetWallet(ctx context.Context, req *walletpkg.GetWalletRequest) (*walletpkg.GetWalletResponse, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetWallet(ctx, &walletapiclient.GetWalletRequest{
+	resp, err := s.walletClientSet.Wallet().GetWallet(ctx, &walletapiclient.GetWalletRequest{
 		Id:            req.GetId(),
 		RevealSecrets: req.GetRevealSecrets(),
 		Requester:     session.GetUserIdentifier(ctx),
@@ -73,13 +55,7 @@ func (s *Server) GetWallet(ctx context.Context, req *walletpkg.GetWalletRequest)
 }
 
 func (s *Server) CreateWallet(ctx context.Context, req *walletpkg.CreateWalletRequest) (*walletpkg.CreateWalletResponse, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.CreateWallet(ctx, &walletapiclient.CreateWalletRequest{
+	resp, err := s.walletClientSet.Wallet().CreateWallet(ctx, &walletapiclient.CreateWalletRequest{
 		Chain:     req.GetChain(),
 		Alias:     req.GetAlias(),
 		Requester: session.GetUserIdentifier(ctx),
@@ -92,13 +68,7 @@ func (s *Server) CreateWallet(ctx context.Context, req *walletpkg.CreateWalletRe
 }
 
 func (s *Server) ImportPrivateKey(ctx context.Context, req *walletpkg.ImportPrivateKeyRequest) (*walletpkg.ImportPrivateKeyResponse, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ImportPrivateKey(ctx, &walletapiclient.ImportPrivateKeyRequest{
+	resp, err := s.walletClientSet.Wallet().ImportPrivateKey(ctx, &walletapiclient.ImportPrivateKeyRequest{
 		Chain:      req.GetChain(),
 		PrivateKey: req.GetPrivateKey(),
 		Alias:      req.GetAlias(),
@@ -112,13 +82,7 @@ func (s *Server) ImportPrivateKey(ctx context.Context, req *walletpkg.ImportPriv
 }
 
 func (s *Server) ImportMnemonic(ctx context.Context, req *walletpkg.ImportMnemonicRequest) (*walletpkg.ImportMnemonicResponse, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ImportMnemonic(ctx, &walletapiclient.ImportMnemonicRequest{
+	resp, err := s.walletClientSet.Wallet().ImportMnemonic(ctx, &walletapiclient.ImportMnemonicRequest{
 		Chain:     req.GetChain(),
 		Mnemonic:  req.GetMnemonic(),
 		Alias:     req.GetAlias(),
@@ -132,13 +96,7 @@ func (s *Server) ImportMnemonic(ctx context.Context, req *walletpkg.ImportMnemon
 }
 
 func (s *Server) UpdateWalletAlias(ctx context.Context, req *walletpkg.UpdateWalletAliasRequest) (*walletpkg.UpdateWalletAliasResponse, error) {
-	closer, client, err := s.walletClientSet.NewWalletServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.UpdateWalletAlias(ctx, &walletapiclient.UpdateWalletAliasRequest{
+	resp, err := s.walletClientSet.Wallet().UpdateWalletAlias(ctx, &walletapiclient.UpdateWalletAliasRequest{
 		Id:        req.GetId(),
 		Alias:     req.GetAlias(),
 		Requester: session.GetUserIdentifier(ctx),

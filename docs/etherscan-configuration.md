@@ -20,7 +20,7 @@ not read standalone Etherscan API keys. They call `athena-etherscan-manager`
 over gRPC:
 
 ```bash
-ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS='localhost:8100'
+ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS='127.0.0.1:8100'
 ```
 
 The wallet normal-transaction collector uses `ListNormalTransactions` to fetch

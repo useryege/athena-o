@@ -17,13 +17,7 @@ func NewServer(sportsLiveClientset sportsliveapiclient.Clientset) *Server {
 }
 
 func (s *Server) GetSportsLiveStatus(ctx context.Context, _ *sportslivepkg.GetSportsLiveStatusRequest) (*sportslivepkg.GetSportsLiveStatusResponse, error) {
-	closer, client, err := s.sportsLiveClientset.NewSportsLiveServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetSportsLiveStatus(ctx, &sportsliveapiclient.GetSportsLiveStatusRequest{})
+	resp, err := s.sportsLiveClientset.SportsLive().GetSportsLiveStatus(ctx, &sportsliveapiclient.GetSportsLiveStatusRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +29,7 @@ func (s *Server) GetSportsLiveStatus(ctx context.Context, _ *sportslivepkg.GetSp
 }
 
 func (s *Server) ListSportsLiveEvents(ctx context.Context, req *sportslivepkg.ListSportsLiveEventsRequest) (*sportslivepkg.ListSportsLiveEventsResponse, error) {
-	closer, client, err := s.sportsLiveClientset.NewSportsLiveServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListSportsLiveEvents(ctx, &sportsliveapiclient.ListSportsLiveEventsRequest{Limit: req.GetLimit()})
+	resp, err := s.sportsLiveClientset.SportsLive().ListSportsLiveEvents(ctx, &sportsliveapiclient.ListSportsLiveEventsRequest{Limit: req.GetLimit()})
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +42,7 @@ func (s *Server) ListSportsLiveEvents(ctx context.Context, req *sportslivepkg.Li
 }
 
 func (s *Server) BatchGetSportsLivePriceHistories(ctx context.Context, req *sportslivepkg.BatchGetSportsLivePriceHistoriesRequest) (*sportslivepkg.BatchGetSportsLivePriceHistoriesResponse, error) {
-	closer, client, err := s.sportsLiveClientset.NewSportsLiveServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.BatchGetSportsLivePriceHistories(ctx, &sportsliveapiclient.BatchGetSportsLivePriceHistoriesRequest{
+	resp, err := s.sportsLiveClientset.SportsLive().BatchGetSportsLivePriceHistories(ctx, &sportsliveapiclient.BatchGetSportsLivePriceHistoriesRequest{
 		MarketKeys:    req.GetMarketKeys(),
 		LimitPerToken: req.GetLimitPerToken(),
 	})

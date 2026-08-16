@@ -24,6 +24,7 @@ must likewise use a PostgreSQL volume initialized with the current database set.
 | Redis persistence | [hack/start-redis-with-password.sh](../../../hack/start-redis-with-password.sh) | `ensure_redis_volume` |
 | Process declarations | [Procfile](../../../Procfile) | six market-intelligence processes, `notification`, `wallet`, `postgres`, `redis`, application processes |
 | Capability ports | [common/common.go](../../../common/common.go) | `DefaultPortWormMarkets`, `DefaultPortFIFAMarketDashboard`, `DefaultPortMarketRadar`, `DefaultPortSportsLive`, `DefaultPortSportsHistory`, `DefaultPortManagedOO` |
+| Internal gRPC client lifecycle | [util/grpc/client.go](../../../util/grpc/client.go) | `ClientConnection`, `NewClientConnection`, `CheckHealth`, `Close` |
 
 ## Architecture
 
@@ -67,6 +68,10 @@ boundaries:
 Notification is active by default on port `8086`, and Wallet is active on port
 `8088`. FIFA Market Dashboard calls Worm Markets and Wallet over gRPC; the
 capability processes do not import one another's application implementations.
+Local process-to-process targets default to numeric loopback
+`127.0.0.1:<port>`, avoiding resolver work for `localhost`. Production Compose
+continues to supply `athena-*:port` service DNS targets and user-provided target
+hostnames are passed to gRPC unchanged.
 World Cup Corners is frontend-only and therefore has no Procfile process,
 listener, or database.
 
@@ -81,6 +86,10 @@ listener, or database.
    processes. It also starts Notification and Wallet, making the default
    notification-enabled settings and FIFA gRPC dependencies usable locally.
    Goreman supervises processes but does not merge their lifecycle or health.
+   Each internal clientset creates one nonblocking gRPC channel and one typed
+   client, reuses that channel for business and health RPCs, reconnects in the
+   background when its dependency is temporarily unavailable, and closes the
+   channel at its owning process lifecycle boundary.
 4. PostgreSQL validates or creates `athena-local-postgres-data`, then its
    initialization scripts create `worm_markets`, `fifa_market_dashboard`,
    `sports_live`, `sports_history`, `managed_oo`, `notification`,
@@ -139,6 +148,7 @@ removed.
 | `ATHENA_RUN_DRY_RUN` | Prints the filtered Procfile without starting processes or cleaning resources. |
 | `ATHENA_PROCFILE` | Overrides the source Procfile; the filtered copy remains repository-local control state. |
 | `ATHENA_WORM_MARKETS_PORT`, `ATHENA_FIFA_MARKET_DASHBOARD_PORT`, `ATHENA_MARKET_RADAR_PORT`, `ATHENA_SPORTS_LIVE_PORT`, `ATHENA_SPORTS_HISTORY_PORT`, `ATHENA_MANAGED_OO_PORT` | Override the six local command ports passed by the Procfile. The same values are covered by stale-port cleanup. |
+| Internal `ATHENA_*_SERVER_ADDRESS` variables | Override dependency targets. Local command defaults use `127.0.0.1`; production Compose supplies service DNS targets and explicit values are not rewritten. |
 | Capability `ATHENA_*_POSTGRES_DSN` variables | Select the owned PostgreSQL database for Worm Markets, FIFA Market Dashboard, Sports Live, Sports History, and Managed OO. Market Radar has no DSN. |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`, `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID`, `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | Required by the default active Notification process. Local configuration must provide all three. |
 | `ATHENA_POSTGRES_PORT`, `ATHENA_POSTGRES_IMAGE_TAG`, `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `ATHENA_POSTGRES_INIT_DIR` | Configure the disposable PostgreSQL container and its initialization fingerprint where applicable. |
@@ -161,6 +171,8 @@ targets are fixed local-runtime boundaries rather than user configuration.
   ports. Every stateful capability uses only its owned PostgreSQL database.
 - Notification-enabled capabilities communicate through Notification gRPC.
   FIFA Market Dashboard communicates with Worm Markets and Wallet through gRPC.
+- Each clientset owns one channel for its configured target. Request paths and
+  health checks reuse that channel and never close it per RPC.
 - Ordinary stop removes containers and control state but never removes either
   data volume.
 - Full reset never restarts services and never deletes broad or user-supplied

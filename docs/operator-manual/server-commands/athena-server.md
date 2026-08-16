@@ -25,41 +25,48 @@ athena-server [flags]
 ### Options
 
 ```
-      --address string                                Listen on given address (default "0.0.0.0")
-      --api-content-types string                      Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty. (default "application/json")
-      --app-state-cache-expiration duration           Cache expiration for app state (default 1h0m0s)
-      --basehref string                               Value for base href in index.html. Used if Athena is running behind reverse proxy under subpath different from / (default "/")
-      --connection-status-cache-expiration duration   Cache expiration for cluster/repo connection status (default 1h0m0s)
-      --content-security-policy value                 Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
-      --default-cache-expiration duration             Cache expiration default (default 24h0m0s)
-      --disable-auth                                  Disable client authentication
-      --enable-gzip                                   Enable GZIP compression (default true)
-      --gloglevel int                                 Set the glog logging level
-  -h, --help                                          help for athena-server
-      --logformat string                              Set the logging format. One of: json|text (default "json")
-      --login-attempts-expiration duration            Cache expiration for failed login attempts. DEPRECATED: this flag is unused and will be removed in a future version. (default 24h0m0s)
-      --loglevel string                               Set the logging level. One of: debug|info|warn|error (default "info")
-      --notification-server-address string            Athena notification server address (default "localhost:8086")
-      --otlp-address string                           OpenTelemetry collector address to send traces to
-      --otlp-attrs strings                            List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)
-      --otlp-headers stringToString                   List of OpenTelemetry collector extra headers sent with traces, headers are comma-separated key-value pairs(e.g. key1=value1,key2=value2) (default [])
-      --otlp-insecure                                 OpenTelemetry collector insecure mode (default true)
-      --polymarket-server-address string              Athena polymarket server address (default "localhost:8092")
-      --port int                                      Listen on given port (default 8080)
-      --redis string                                  Redis server hostname and port (e.g. athena-redis:6379). 
-      --redis-compress string                         Enable compression for data sent to Redis with the required compression algorithm. (possible values: gzip, none) (default "gzip")
-      --redisdb int                                   Redis database.
-      --rootpath string                               Used if Athena is running behind reverse proxy under subpath different from /
-      --sentinel stringArray                          Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379). 
-      --sentinelmaster string                         Redis sentinel master group name. (default "master")
-      --staticassets string                           Directory path that contains additional static assets (default "/shared/app")
-      --token-api-server-address string               Athena token API server address (default "localhost:8096")
-      --wallet-server-address string                  Athena wallet server address (default "localhost:8088")
-      --worm-server-address string                    Athena worm server address (default "localhost:8084")
-      --x-frame-options value                         Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
+      --address string                                 Listen on given address (default "0.0.0.0")
+      --api-content-types string                       Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty. (default "application/json")
+      --app-state-cache-expiration duration            Cache expiration for app state (default 1h0m0s)
+      --basehref string                                Value for base href in index.html. Used if Athena is running behind reverse proxy under subpath different from / (default "/")
+      --connection-status-cache-expiration duration    Cache expiration for cluster/repo connection status (default 1h0m0s)
+      --content-security-policy value                  Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
+      --default-cache-expiration duration              Cache expiration default (default 24h0m0s)
+      --disable-auth                                   Disable client authentication
+      --enable-gzip                                    Enable GZIP compression (default true)
+      --etherscan-api-keys string                      Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs
+      --etherscan-gateway-auth-token string            Bearer token for Etherscan Gateway gRPC status calls
+      --etherscan-gateway-ips string                   Comma, space, or newline-separated Etherscan Gateway IP addresses
+      --etherscan-gateway-probe-query-address string   Ethereum address used by Etherscan Gateway probe runs
+      --fifa-market-dashboard-server-address string    Athena FIFA Market Dashboard server address (default "127.0.0.1:8090")
+      --gloglevel int                                  Set the glog logging level
+  -h, --help                                           help for athena-server
+      --logformat string                               Set the logging format. One of: json|text (default "json")
+      --login-attempts-expiration duration             Cache expiration for failed login attempts. DEPRECATED: this flag is unused and will be removed in a future version. (default 24h0m0s)
+      --loglevel string                                Set the logging level. One of: debug|info|warn|error (default "info")
+      --managed-oo-server-address string               Athena Managed OO server address (default "127.0.0.1:8106")
+      --market-radar-server-address string             Athena Market Radar server address (default "127.0.0.1:8092")
+      --notification-server-address string             Athena notification server address (default "127.0.0.1:8086")
+      --otlp-address string                            OpenTelemetry collector address to send traces to
+      --otlp-attrs strings                             List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)
+      --otlp-headers stringToString                    List of OpenTelemetry collector extra headers sent with traces, headers are comma-separated key-value pairs(e.g. key1=value1,key2=value2) (default [])
+      --otlp-insecure                                  OpenTelemetry collector insecure mode (default true)
+      --port int                                       Listen on given port (default 8080)
+      --redis string                                   Redis server hostname and port (e.g. athena-redis:6379).
+      --redis-compress string                          Enable compression for data sent to Redis with the required compression algorithm. (possible values: gzip, none) (default "gzip")
+      --redisdb int                                    Redis database.
+      --rootpath string                                Used if Athena is running behind reverse proxy under subpath different from /
+      --sentinel stringArray                           Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379).
+      --sentinelmaster string                          Redis sentinel master group name. (default "master")
+      --sports-history-server-address string           Athena Sports History server address (default "127.0.0.1:8104")
+      --sports-live-server-address string              Athena Sports Live server address (default "127.0.0.1:8094")
+      --staticassets string                            Directory path that contains additional static assets (default "/shared/app")
+      --token-api-server-address string                Athena token API server address (default "127.0.0.1:8096")
+      --wallet-server-address string                   Athena wallet server address (default "127.0.0.1:8088")
+      --worm-markets-server-address string             Athena Worm Markets server address (default "127.0.0.1:8084")
+      --x-frame-options value                          Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
 ```
 
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information
-

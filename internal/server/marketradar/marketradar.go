@@ -17,13 +17,7 @@ func NewServer(marketRadarClientset marketradarapiclient.Clientset) *Server {
 }
 
 func (s *Server) GetMarketRadarStatus(ctx context.Context, _ *marketradarpkg.GetMarketRadarStatusRequest) (*marketradarpkg.GetMarketRadarStatusResponse, error) {
-	closer, client, err := s.marketRadarClientset.NewMarketRadarServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetMarketRadarStatus(ctx, &marketradarapiclient.GetMarketRadarStatusRequest{})
+	resp, err := s.marketRadarClientset.MarketRadar().GetMarketRadarStatus(ctx, &marketradarapiclient.GetMarketRadarStatusRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +29,7 @@ func (s *Server) GetMarketRadarStatus(ctx context.Context, _ *marketradarpkg.Get
 }
 
 func (s *Server) ListHotMarkets(ctx context.Context, req *marketradarpkg.ListHotMarketsRequest) (*marketradarpkg.ListHotMarketsResponse, error) {
-	closer, client, err := s.marketRadarClientset.NewMarketRadarServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListHotMarkets(ctx, &marketradarapiclient.ListHotMarketsRequest{Limit: req.GetLimit()})
+	resp, err := s.marketRadarClientset.MarketRadar().ListHotMarkets(ctx, &marketradarapiclient.ListHotMarketsRequest{Limit: req.GetLimit()})
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +45,7 @@ func (s *Server) ListHotMarkets(ctx context.Context, req *marketradarpkg.ListHot
 }
 
 func (s *Server) ListRealtimeMarkets(ctx context.Context, req *marketradarpkg.ListRealtimeMarketsRequest) (*marketradarpkg.ListRealtimeMarketsResponse, error) {
-	closer, client, err := s.marketRadarClientset.NewMarketRadarServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListRealtimeMarkets(ctx, &marketradarapiclient.ListRealtimeMarketsRequest{Limit: req.GetLimit()})
+	resp, err := s.marketRadarClientset.MarketRadar().ListRealtimeMarkets(ctx, &marketradarapiclient.ListRealtimeMarketsRequest{Limit: req.GetLimit()})
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +63,7 @@ func (s *Server) ListRealtimeMarkets(ctx context.Context, req *marketradarpkg.Li
 }
 
 func (s *Server) ListMarketMovers(ctx context.Context, req *marketradarpkg.ListMarketMoversRequest) (*marketradarpkg.ListMarketMoversResponse, error) {
-	closer, client, err := s.marketRadarClientset.NewMarketRadarServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListMarketMovers(ctx, &marketradarapiclient.ListMarketMoversRequest{Limit: req.GetLimit()})
+	resp, err := s.marketRadarClientset.MarketRadar().ListMarketMovers(ctx, &marketradarapiclient.ListMarketMoversRequest{Limit: req.GetLimit()})
 	if err != nil {
 		return nil, err
 	}

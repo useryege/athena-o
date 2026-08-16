@@ -28,8 +28,10 @@ to Athena Notification.
 | Mover ranking and alerts | [internal/marketradar/movers.go](../../../internal/marketradar/movers.go), [internal/marketradar/mover_alerts.go](../../../internal/marketradar/mover_alerts.go) | `ListMarketMovers`, `scoreMoverWindows`, `collectMoverAlertsLocked`, `sendMoverAlerts` |
 | Internal service contract | [internal/marketradar/market_radar.proto](../../../internal/marketradar/market_radar.proto) | `MarketRadarService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/marketradar/marketradar.proto](../../../internal/server/marketradar/marketradar.proto), [internal/server/marketradar/marketradar.go](../../../internal/server/marketradar/marketradar.go) | `MarketRadarService`, `Server` |
+| Internal gRPC connection ownership | [internal/marketradar/apiclient/apiclient.go](../../../internal/marketradar/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewMarketRadarClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `MarketRadarHotMarketItem`, `MarketRadarRealtimeMarketItem`, `MarketRadarMoverMarketItem` |
 | Provider adapter | [util/polymarket](../../../util/polymarket) | `GammaClient`, `ListMarketsKeyset` |
+| Web routes and client pagination | [ui/src/app/pages/market-radar.tsx](../../../ui/src/app/pages/market-radar.tsx), [ui/src/app/components/resource-table.tsx](../../../ui/src/app/components/resource-table.tsx) | `MarketRadarPage`, `ResourceTable` |
 
 ## Architecture
 
@@ -53,7 +55,9 @@ realtime, and mover RPCs never create parallel Gamma scans.
 Realtime and mover values are derived from successive Gamma snapshots. The
 `connected` and `last_event_at` response fields describe recent successful
 sampling; the current implementation does not maintain a provider WebSocket.
-The API Server is a stateless gRPC proxy and does not duplicate the cache.
+The API Server is a stateless gRPC proxy and does not duplicate the cache. It
+keeps one process-owned Market Radar channel and typed client for all proxy and
+health requests instead of dialing on each request.
 
 ## Runtime Flow
 
@@ -90,7 +94,9 @@ The API Server is a stateless gRPC proxy and does not duplicate the cache.
    requests to Athena Notification.
 10. On process cancellation, gRPC stops gracefully, health becomes
     `NOT_SERVING`, the discovery context is cancelled, and `Service.Stop`
-    waits for its goroutine to return.
+    waits for its goroutine to return. The command closes its optional
+    Notification channel only after the loop has stopped; the API Server closes
+    its Market Radar channel after its HTTP/gRPC serving lifecycle ends.
 
 A cache replacement and its sample updates occur under one in-process mutex.
 There is no database, distributed transaction, durable cursor, or cross-process
@@ -122,7 +128,7 @@ notification cooldowns.
 | `ATHENA_MARKET_RADAR_LISTEN_ADDRESS` / `--address` | gRPC bind address; default `0.0.0.0`. |
 | `ATHENA_MARKET_RADAR_LISTEN_PORT` / `--port` | gRPC port; default `8092`. The local Procfile uses `ATHENA_MARKET_RADAR_PORT` to supply this flag. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_ENABLED` / `--notification-enabled` | Creates the Notification clientset and enables mover alerts; default `true`. |
-| `ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; default `localhost:8086`. |
+| `ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket notification links; default empty. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 
@@ -157,11 +163,12 @@ disconnected. The background loop logs the failure and retries on the next
 minute. A first read with no usable snapshot returns `Unavailable` when its
 on-demand refresh fails.
 
-Notification client creation or send failure is logged and does not fail the
-market refresh or read APIs. Alert cooldown state is reserved before the send
-attempt, so a failed enqueue is suppressed until the cooldown expires unless a
-warning escalates to critical. The cooldown is not durable and resets on
-restart.
+An invalid Notification target prevents command startup. Temporary Notification
+unavailability does not: the nonblocking client connection reconnects in the
+background, and send failure is logged without failing market refresh or read
+APIs. Alert cooldown state is reserved before the send attempt, so a failed
+enqueue is suppressed until the cooldown expires unless a warning escalates to
+critical. The cooldown is not durable and resets on restart.
 
 Cancellation propagates to an active Gamma request and notification send.
 Graceful shutdown waits for the single discovery goroutine. There is no
@@ -188,6 +195,13 @@ applicable connection and last-observation fields. Logs distinguish initial and
 periodic discovery failures and include condition IDs for notification failures.
 There are no capability-specific metrics, durable refresh history, or
 freshness-based readiness probe.
+
+Each of the Hot Markets, Realtime Markets, and Movers web routes requests the
+first 100 items and paginates that in-memory result locally. Routes start on
+page 1 with 50 rows, offer page sizes 10, 50, and 100, preserve the current page
+on manual refresh, and clamp it when a smaller result invalidates the page.
+Only the current page is mounted into the table. Market images use browser lazy
+loading and asynchronous decoding while retaining the failed-image hide path.
 
 ## Change Checklist
 

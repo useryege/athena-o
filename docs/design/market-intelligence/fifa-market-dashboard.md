@@ -30,6 +30,7 @@ Solana JSON-RPC endpoints are direct external read dependencies.
 | Internal service contract | [internal/fifamarketdashboard/fifamarketdashboard.proto](../../../internal/fifamarketdashboard/fifamarketdashboard.proto) | `FIFAMarketDashboardService` |
 | Public HTTP/gRPC contract | [internal/server/fifamarketdashboard/fifamarketdashboard.proto](../../../internal/server/fifamarketdashboard/fifamarketdashboard.proto) | `FIFAMarketDashboardService` HTTP annotations |
 | Public proxy and requester propagation | [internal/server/fifamarketdashboard/fifamarketdashboard.go](../../../internal/server/fifamarketdashboard/fifamarketdashboard.go) | `Server`, `GetFIFAMarketDashboard`, `UpdateFIFAEventConfig` |
+| Internal gRPC connection ownership | [internal/fifamarketdashboard/apiclient/apiclient.go](../../../internal/fifamarketdashboard/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewFIFAMarketDashboardClientset`, `ClientConnection` |
 | Event-config persistence | [internal/fifamarketdashboard/store/fifa_event_config_store.go](../../../internal/fifamarketdashboard/store/fifa_event_config_store.go) | `GetFIFAEventConfig`, `UpdateFIFAEventConfig` |
 | PostgreSQL connection and schema | [internal/fifamarketdashboard/store/sql_store.go](../../../internal/fifamarketdashboard/store/sql_store.go), [internal/fifamarketdashboard/store/migrations/000001_init.sql](../../../internal/fifamarketdashboard/store/migrations/000001_init.sql) | `NewSQLStoreSource`, `fifa_market_dashboard_event_config` |
 | Shared API model | [pkg/apis/application/v1alpha1/fifa_market_dashboard_types.go](../../../pkg/apis/application/v1alpha1/fifa_market_dashboard_types.go), [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `FIFAMarketDashboard`, `FIFAMarketDashboardEventConfig`, wallet balance and holding items |
@@ -51,7 +52,8 @@ One `Service` owns all cache state behind `cacheMu`. A dashboard refresh reads
 the durable event pairing and then fetches Worm and Polymarket data concurrently.
 Independent loops refresh fixed treasury balances and known requesters' wallet
 holdings. The service calls Worm Markets and Wallet only through generated gRPC
-clientsets; it does not import their application implementations.
+clients backed by one long-lived channel per dependency; it does not import
+their application implementations.
 
 The API Server proxy replaces the public request's `requester` field with
 `session.GetUserIdentifier(ctx)`. This makes Wallet authorization derive from
@@ -105,7 +107,8 @@ configuration changes.
     a nonblocking refresh signal.
 11. On `SIGINT` or `SIGTERM`, the command gracefully stops gRPC, sets health to
     `NOT_SERVING`, cancels all three loops, waits for them to finish, and closes
-    PostgreSQL.
+    the Worm Markets and Wallet channels before PostgreSQL. The API Server owns
+    and later closes a separate FIFA Market Dashboard channel.
 
 The singleton config update is one atomic SQL statement. External reads and
 cache assignments are not part of that transaction. Cache locking makes each
@@ -153,8 +156,8 @@ is no cross-source transaction, durable refresh cursor, or stale snapshot table.
 | `--port` | gRPC port; default `8090`. The local Procfile maps `ATHENA_FIFA_MARKET_DASHBOARD_PORT` to this flag. |
 | `ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN` | PostgreSQL connection for database `fifa_market_dashboard`; required at startup. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
-| `ATHENA_FIFA_MARKET_DASHBOARD_WORM_MARKETS_SERVER_ADDRESS` / `--worm-markets-server-address` | Worm Markets gRPC target; default `localhost:8084`. |
-| `ATHENA_FIFA_MARKET_DASHBOARD_WALLET_SERVER_ADDRESS` / `--wallet-server-address` | Wallet gRPC target; default `localhost:8088`. |
+| `ATHENA_FIFA_MARKET_DASHBOARD_WORM_MARKETS_SERVER_ADDRESS` / `--worm-markets-server-address` | Worm Markets gRPC target; local default `127.0.0.1:8084`. Production Compose supplies its service DNS address. |
+| `ATHENA_FIFA_MARKET_DASHBOARD_WALLET_SERVER_ADDRESS` / `--wallet-server-address` | Wallet gRPC target; local default `127.0.0.1:8088`. Production Compose supplies its service DNS address. |
 | `ATHENA_FIFA_MARKET_DASHBOARD_POLYGON_RPC_URL` / `--fifa-polygon-rpc-url` | Polygon JSON-RPC endpoint for the fixed pUSD balance; default `https://polygon-rpc.com`. |
 | `ATHENA_FIFA_MARKET_DASHBOARD_SOLANA_RPC_URL` / `--fifa-solana-rpc-url` | Solana JSON-RPC endpoint for treasury USDC and requester holdings; default `https://api.mainnet-beta.solana.com`. |
 | `ATHENA_FIFA_MARKET_DASHBOARD_REFRESH_INTERVAL` / `--fifa-dashboard-refresh-interval` | Config, Worm, and Polymarket refresh cadence; default `1s`, accepted range `1s` through `1h`. |
@@ -191,10 +194,12 @@ are implementation constants.
 
 ## Failure Recovery
 
-Database connection or migration failure, listener failure, a missing store, or
-failure to construct the default Polymarket clients prevents startup. Worm
-Markets, Wallet, Polygon, Solana, Gamma, and CLOB availability is not probed
-before health becomes serving.
+Database connection or migration failure, listener failure, a missing store,
+an invalid internal gRPC target, or failure to construct the default Polymarket
+clients prevents startup. Worm Markets and Wallet connections are initiated
+without blocking; their temporary unavailability is handled by gRPC background
+reconnection. Worm Markets, Wallet, Polygon, Solana, Gamma, and CLOB availability
+is not probed before health becomes serving.
 
 A config read failure or invalid stored config clears both market sections and
 places the error in their dashboard fields. A Worm or Polymarket fetch failure

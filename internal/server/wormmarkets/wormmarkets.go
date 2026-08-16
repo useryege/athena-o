@@ -17,13 +17,7 @@ func NewServer(wormMarketsClientset wormmarketsapiclient.Clientset) *Server {
 }
 
 func (s *Server) GetWormMarketsStatus(ctx context.Context, _ *wormmarketspkg.GetWormMarketsStatusRequest) (*wormmarketspkg.GetWormMarketsStatusResponse, error) {
-	closer, client, err := s.wormMarketsClientset.NewWormMarketsServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetWormMarketsStatus(ctx, &wormmarketsapiclient.GetWormMarketsStatusRequest{})
+	resp, err := s.wormMarketsClientset.WormMarkets().GetWormMarketsStatus(ctx, &wormmarketsapiclient.GetWormMarketsStatusRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +29,7 @@ func (s *Server) GetWormMarketsStatus(ctx context.Context, _ *wormmarketspkg.Get
 }
 
 func (s *Server) GetWormEvent(ctx context.Context, req *wormmarketspkg.GetWormEventRequest) (*wormmarketspkg.GetWormEventResponse, error) {
-	closer, client, err := s.wormMarketsClientset.NewWormMarketsServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetWormEvent(ctx, &wormmarketsapiclient.GetWormEventRequest{ConditionId: req.GetConditionId()})
+	resp, err := s.wormMarketsClientset.WormMarkets().GetWormEvent(ctx, &wormmarketsapiclient.GetWormEventRequest{ConditionId: req.GetConditionId()})
 	if err != nil {
 		return nil, err
 	}
@@ -53,13 +41,7 @@ func (s *Server) GetWormEvent(ctx context.Context, req *wormmarketspkg.GetWormEv
 }
 
 func (s *Server) ListWormEvents(ctx context.Context, req *wormmarketspkg.ListWormEventsRequest) (*wormmarketspkg.ListWormEventsResponse, error) {
-	closer, client, err := s.wormMarketsClientset.NewWormMarketsServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListWormEvents(ctx, &wormmarketsapiclient.ListWormEventsRequest{
+	resp, err := s.wormMarketsClientset.WormMarkets().ListWormEvents(ctx, &wormmarketsapiclient.ListWormEventsRequest{
 		Limit:        req.GetLimit(),
 		Cursor:       req.GetCursor(),
 		SortOption:   req.GetSortOption(),

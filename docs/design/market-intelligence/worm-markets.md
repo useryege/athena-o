@@ -28,6 +28,7 @@ capability's application state.
 | Internal service contract | [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `WormMarketsService` |
 | Public HTTP/gRPC contract | [internal/server/wormmarkets/wormmarkets.proto](../../../internal/server/wormmarkets/wormmarkets.proto) | `WormMarketsService` HTTP annotations |
 | Public proxy | [internal/server/wormmarkets/wormmarkets.go](../../../internal/server/wormmarkets/wormmarkets.go) | `Server`, `GetWormEvent`, `ListWormEvents` |
+| Internal gRPC connection ownership | [internal/wormmarkets/apiclient/apiclient.go](../../../internal/wormmarkets/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewWormMarketsClientset`, `ClientConnection` |
 | Provider adapter | [util/worm/worm.go](../../../util/worm/worm.go) | `Client`, `NewClient`, `DefaultBaseURL` |
 | PostgreSQL connection and migrations | [internal/wormmarkets/store/sql_store.go](../../../internal/wormmarkets/store/sql_store.go) | `SQLStore`, `NewSQLStoreSource`, `Migrations` |
 | Durable store operations | [internal/wormmarkets/store/worm_markets_store.go](../../../internal/wormmarkets/store/worm_markets_store.go) | `BatchUpsertWormMarkets`, `ListWormEventsPage`, `UpdateWormMarketLiveState` |
@@ -58,7 +59,8 @@ The internal API has three unary methods. `ListWormEvents` reads the PostgreSQL
 snapshot. `GetWormEvent` intentionally reads the selected event directly from
 Worm, then enriches its markets concurrently with detail and margin-estimate
 requests. `GetWormMarketsStatus` reports only whether the service lifecycle has
-started. The API Server is a thin proxy and does not duplicate business state.
+started. The API Server is a thin proxy with one process-owned Worm Markets
+channel shared by API and health requests; it does not duplicate business state.
 
 ## Runtime Flow
 
@@ -103,7 +105,9 @@ started. The API Server is a thin proxy and does not duplicate business state.
    the event RPC.
 10. On `SIGINT` or `SIGTERM`, the command first gracefully stops gRPC, marks
     health `NOT_SERVING`, cancels all three loops, waits for them to exit, and
-    closes PostgreSQL.
+    closes its Notification channel and PostgreSQL. The API Server and FIFA
+    Market Dashboard close their independent Worm Markets channels only after
+    their own serving or background-loop lifecycles end.
 
 Each generated SQL call is its own PostgreSQL transaction boundary. A page
 upsert, its price-history write, later stale-row cleanup, live-state changes,
@@ -149,7 +153,7 @@ notification delivery record, or event cache is held in memory.
 | `ATHENA_WORM_MARKETS_POSTGRES_DSN` | PostgreSQL connection for database `worm_markets`; required by store startup. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED` / `--notification-enabled` | Creates the Notification clientset when true; default `true`. Disabling it does not disable synchronization or reads. |
-| `ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; default `localhost:8086`. |
+| `ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
 | `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 
 The one-minute loop intervals, 100-market upstream page size, 30-minute live
@@ -181,10 +185,12 @@ constants rather than runtime configuration.
 
 ## Failure Recovery
 
-Invalid Worm client configuration, database connection or migration failure,
-listener failure, or missing required service dependencies prevents startup.
-The command starts neither gRPC health serving nor background work after such a
-failure.
+Invalid Worm client configuration, Notification target, database connection or
+migration failure, listener failure, or missing required service dependencies
+prevents startup. Temporary Notification unavailability does not prevent
+startup because its nonblocking channel reconnects in the background. The
+command starts neither gRPC health serving nor background work after a local
+construction failure.
 
 Background-loop failures are logged and retried at the next one-minute tick.
 Because a complete sync has no encompassing transaction, successfully written

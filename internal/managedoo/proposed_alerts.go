@@ -9,7 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	managedoostore "github.com/useryege/athena/internal/managedoo/store"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
@@ -62,14 +61,7 @@ func (s *Service) sendManagedOOProposePriceAlerts(ctx context.Context) {
 		return
 	}
 
-	closer, client, err := s.notificationClientset.NewNotificationServiceClient()
-	if err != nil {
-		if ctx.Err() == nil {
-			log.WithError(err).Warn("failed to create polymarket managed oo proposed notification client")
-		}
-		return
-	}
-	defer utilio.Close(closer)
+	client := s.notificationClientset.Notification()
 
 	for _, candidate := range candidates {
 		request := s.renderManagedOOProposePriceAlertNotification(candidate)

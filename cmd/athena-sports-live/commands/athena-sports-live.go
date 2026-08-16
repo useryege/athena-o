@@ -48,7 +48,11 @@ func NewCommand() *cobra.Command {
 			defer utilio.Close(store)
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
-				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				notificationClientset, err = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				if err != nil {
+					return fmt.Errorf("create notification clientset: %w", err)
+				}
+				defer utilio.Close(notificationClientset)
 			}
 			server, err := sportslive.NewServer(sportslive.ServerOpts{
 				Store:                  store,
@@ -90,7 +94,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_SPORTS_LIVE_LISTEN_ADDRESS", common.DefaultAddressSportsLive), "Listen address")
 	command.Flags().IntVar(&listenPort, "port", env.ParseNumFromEnv("ATHENA_SPORTS_LIVE_LISTEN_PORT", common.DefaultPortSportsLive, 1, 65535), "Listen port")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_SPORTS_LIVE_NOTIFICATION_ENABLED", true), "Enable Sports Live notifications")
-	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Notification service address")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortNotification)), "Notification service address")
 	command.Flags().StringVar(&notificationInviteCode, "notification-invite-code", env.StringFromEnv("ATHENA_SPORTS_LIVE_NOTIFICATION_INVITE_CODE", ""), "Polymarket invite code")
 	command.Flags().DurationVar(&priceAlertCooldown, "price-alert-cooldown", env.ParseDurationFromEnv("ATHENA_SPORTS_LIVE_PRICE_ALERT_COOLDOWN", 15*time.Minute, time.Second, 24*time.Hour), "Price alert cooldown")
 	storeSource = sportslivestore.NewSQLStoreSource()

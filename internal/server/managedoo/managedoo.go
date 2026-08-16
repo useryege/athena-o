@@ -17,13 +17,7 @@ func NewServer(managedOOClientset managedooapiclient.Clientset) *Server {
 }
 
 func (s *Server) GetManagedOOStatus(ctx context.Context, _ *managedoopkg.GetManagedOOStatusRequest) (*managedoopkg.GetManagedOOStatusResponse, error) {
-	closer, client, err := s.managedOOClientset.NewManagedOOServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetManagedOOStatus(ctx, &managedooapiclient.GetManagedOOStatusRequest{})
+	resp, err := s.managedOOClientset.ManagedOO().GetManagedOOStatus(ctx, &managedooapiclient.GetManagedOOStatusRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +29,7 @@ func (s *Server) GetManagedOOStatus(ctx context.Context, _ *managedoopkg.GetMana
 }
 
 func (s *Server) ScanManagedOOBlock(ctx context.Context, req *managedoopkg.ScanManagedOOBlockRequest) (*managedoopkg.ScanManagedOOBlockResponse, error) {
-	closer, client, err := s.managedOOClientset.NewManagedOOServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ScanManagedOOBlock(ctx, &managedooapiclient.ScanManagedOOBlockRequest{BlockNumber: req.GetBlockNumber()})
+	resp, err := s.managedOOClientset.ManagedOO().ScanManagedOOBlock(ctx, &managedooapiclient.ScanManagedOOBlockRequest{BlockNumber: req.GetBlockNumber()})
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +42,7 @@ func (s *Server) ScanManagedOOBlock(ctx context.Context, req *managedoopkg.ScanM
 }
 
 func (s *Server) ListManagedOOProposals(ctx context.Context, req *managedoopkg.ListManagedOOProposalsRequest) (*managedoopkg.ListManagedOOProposalsResponse, error) {
-	closer, client, err := s.managedOOClientset.NewManagedOOServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListManagedOOProposals(ctx, &managedooapiclient.ListManagedOOProposalsRequest{
+	resp, err := s.managedOOClientset.ManagedOO().ListManagedOOProposals(ctx, &managedooapiclient.ListManagedOOProposalsRequest{
 		Page:        req.GetPage(),
 		PageSize:    req.GetPageSize(),
 		BlockNumber: req.GetBlockNumber(),
@@ -78,13 +60,7 @@ func (s *Server) ListManagedOOProposals(ctx context.Context, req *managedoopkg.L
 }
 
 func (s *Server) ListManagedOODisputes(ctx context.Context, req *managedoopkg.ListManagedOODisputesRequest) (*managedoopkg.ListManagedOODisputesResponse, error) {
-	closer, client, err := s.managedOOClientset.NewManagedOOServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListManagedOODisputes(ctx, &managedooapiclient.ListManagedOODisputesRequest{
+	resp, err := s.managedOOClientset.ManagedOO().ListManagedOODisputes(ctx, &managedooapiclient.ListManagedOODisputesRequest{
 		Page:        req.GetPage(),
 		PageSize:    req.GetPageSize(),
 		BlockNumber: req.GetBlockNumber(),

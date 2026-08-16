@@ -4,7 +4,7 @@ import * as React from 'react';
 
 export const CardTitle = (props: {title: React.ReactNode; subtitle?: React.ReactNode; image?: string; tags?: React.ReactNode}) => (
     <div className='card-title'>
-        {props.image && <img src={props.image} alt='' onError={event => (event.currentTarget.hidden = true)} />}
+        {props.image && <img src={props.image} alt='' loading='lazy' decoding='async' onError={event => (event.currentTarget.hidden = true)} />}
         <div className='card-title__main'>
             <Typography.Text strong={true}>{props.title || '-'}</Typography.Text>
             {props.subtitle && <Typography.Text type='secondary'>{props.subtitle}</Typography.Text>}

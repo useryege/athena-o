@@ -70,7 +70,11 @@ func NewCommand() *cobra.Command {
 
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
-				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				notificationClientset, err = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				if err != nil {
+					return fmt.Errorf("create notification clientset: %w", err)
+				}
+				defer utilio.Close(notificationClientset)
 			}
 
 			server, err := wormmarkets.NewServer(wormmarkets.ServerOpts{
@@ -129,7 +133,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortWormMarkets, "Listen on given port for incoming connections")
 	command.Flags().StringVar(&wormAPIBaseURL, "worm-api-base-url", env.StringFromEnv("ATHENA_WORM_MARKETS_API_BASE_URL", utilworm.DefaultBaseURL), "Worm API base URL")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED", true), "Enable Worm Markets notifications through Athena Notification")
-	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Athena notification gRPC server address for Worm Markets alerts")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortNotification)), "Athena notification gRPC server address for Worm Markets alerts")
 
 	storeSrc = wormmarketsstore.NewSQLStoreSource()
 

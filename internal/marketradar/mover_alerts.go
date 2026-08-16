@@ -12,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
@@ -281,12 +280,7 @@ func (s *Service) sendMoverAlerts(ctx context.Context, alerts []moverAlertCandid
 	if len(alerts) == 0 || s.notificationClientset == nil {
 		return
 	}
-	closer, client, err := s.notificationClientset.NewNotificationServiceClient()
-	if err != nil {
-		log.WithError(err).Warn("failed to create polymarket mover notification client")
-		return
-	}
-	defer utilio.Close(closer)
+	client := s.notificationClientset.Notification()
 
 	config := normalizeMoverAlertsConfig(s.moverAlertsConfig)
 	for _, alert := range alerts {

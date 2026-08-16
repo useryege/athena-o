@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	sportslivestore "github.com/useryege/athena/internal/sportslive/store"
-	utilio "github.com/useryege/athena/util/io"
 )
 
 const (
@@ -103,12 +102,7 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 		return
 	}
 
-	closer, client, err := s.notificationClientset.NewNotificationServiceClient()
-	if err != nil {
-		log.WithError(err).Warn("failed to create polymarket sports live price alert notification client")
-		return
-	}
-	defer utilio.Close(closer)
+	client := s.notificationClientset.Notification()
 
 	for _, candidate := range candidates {
 		token := candidate.token

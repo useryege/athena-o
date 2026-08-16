@@ -26,23 +26,11 @@ func NewServer(notificationClientSet notificationapiclient.Clientset) *Server {
 }
 
 func (s *Server) GetNotificationStatus(ctx context.Context, _ *notificationpkg.GetNotificationStatusRequest) (*v1alpha1.NotificationStatus, error) {
-	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	return client.GetNotificationStatus(ctx, &notificationapiclient.GetNotificationStatusRequest{})
+	return s.notificationClientSet.Notification().GetNotificationStatus(ctx, &notificationapiclient.GetNotificationStatusRequest{})
 }
 
 func (s *Server) ListNotificationDeliveries(ctx context.Context, req *notificationpkg.ListNotificationDeliveriesRequest) (*notificationpkg.ListNotificationDeliveriesResponse, error) {
-	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListNotificationDeliveries(ctx, &notificationapiclient.ListNotificationDeliveriesRequest{
+	resp, err := s.notificationClientSet.Notification().ListNotificationDeliveries(ctx, &notificationapiclient.ListNotificationDeliveriesRequest{
 		Page:         req.GetPage(),
 		PageSize:     req.GetPageSize(),
 		Status:       req.GetStatus(),
@@ -64,13 +52,7 @@ func (s *Server) ListNotificationDeliveries(ctx context.Context, req *notificati
 }
 
 func (s *Server) GetNotificationDelivery(ctx context.Context, req *notificationpkg.GetNotificationDeliveryRequest) (*notificationpkg.GetNotificationDeliveryResponse, error) {
-	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetNotificationDelivery(ctx, &notificationapiclient.GetNotificationDeliveryRequest{Id: req.GetId()})
+	resp, err := s.notificationClientSet.Notification().GetNotificationDelivery(ctx, &notificationapiclient.GetNotificationDeliveryRequest{Id: req.GetId()})
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +65,7 @@ func (s *Server) SendTestNotification(ctx context.Context, req *notificationpkg.
 		return nil, err
 	}
 
-	closer, client, err := s.notificationClientSet.NewNotificationServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.SendNotification(ctx, &notificationapiclient.SendNotificationRequest{
+	resp, err := s.notificationClientSet.Notification().SendNotification(ctx, &notificationapiclient.SendNotificationRequest{
 		TopicLabel:   topicLabel,
 		Source:       testNotificationSource,
 		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,

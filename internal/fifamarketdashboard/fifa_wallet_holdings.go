@@ -160,11 +160,7 @@ func (s *Service) listFIFAWormPositionWallets(ctx context.Context, requester str
 	queryCtx, cancel := context.WithTimeout(ctx, fifaWalletHoldingRefreshTimeout)
 	defer cancel()
 
-	closer, client, err := s.walletClientset.NewWalletServiceClient()
-	if err != nil {
-		return nil, fmt.Errorf("create wallet client: %w", err)
-	}
-	defer closer.Close()
+	client := s.walletClientset.Wallet()
 
 	items := []*v1alpha1.WalletItem{}
 	for page := int32(1); ; page++ {

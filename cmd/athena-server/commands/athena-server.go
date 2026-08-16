@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	"github.com/useryege/athena/util/errors"
+	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
 	traceutil "github.com/useryege/athena/util/trace"
 )
@@ -80,7 +82,7 @@ func NewCommand() *cobra.Command {
 		Short:             "Run the Athena API server",
 		Long:              "The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems.  This command runs API server in the foreground.  It can be configured by following options.",
 		DisableAutoGenTag: true,
-		Run: func(c *cobra.Command, _ []string) {
+		RunE: func(c *cobra.Command, _ []string) error {
 			ctx := c.Context()
 
 			// Log the startup information
@@ -115,15 +117,51 @@ func NewCommand() *cobra.Command {
 				contentTypesList = strings.Split(contentTypes, ";")
 			}
 
-			notificationclientset := notificationapiclient.NewNotificationClientset(notificationServerAddress)
-			walletclientset := walletapiclient.NewWalletClientset(walletServerAddress)
-			marketRadarClientset := marketradarapiclient.NewMarketRadarClientset(marketRadarServerAddress)
-			sportsLiveClientset := sportsliveapiclient.NewSportsLiveClientset(sportsLiveServerAddress)
-			sportsHistoryClientset := sportshistoryapiclient.NewSportsHistoryClientset(sportsHistoryServerAddress)
-			managedOOClientset := managedooapiclient.NewManagedOOClientset(managedOOServerAddress)
-			wormMarketsClientset := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
-			fifaMarketDashboardClientset := fifamarketdashboardapiclient.NewFIFAMarketDashboardClientset(fifaMarketDashboardServerAddress)
-			tokenAPIClientset := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
+			notificationclientset, err := notificationapiclient.NewNotificationClientset(notificationServerAddress)
+			if err != nil {
+				return fmt.Errorf("create notification clientset: %w", err)
+			}
+			defer utilio.Close(notificationclientset)
+			walletclientset, err := walletapiclient.NewWalletClientset(walletServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Wallet clientset: %w", err)
+			}
+			defer utilio.Close(walletclientset)
+			marketRadarClientset, err := marketradarapiclient.NewMarketRadarClientset(marketRadarServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Market Radar clientset: %w", err)
+			}
+			defer utilio.Close(marketRadarClientset)
+			sportsLiveClientset, err := sportsliveapiclient.NewSportsLiveClientset(sportsLiveServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Sports Live clientset: %w", err)
+			}
+			defer utilio.Close(sportsLiveClientset)
+			sportsHistoryClientset, err := sportshistoryapiclient.NewSportsHistoryClientset(sportsHistoryServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Sports History clientset: %w", err)
+			}
+			defer utilio.Close(sportsHistoryClientset)
+			managedOOClientset, err := managedooapiclient.NewManagedOOClientset(managedOOServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Managed OO clientset: %w", err)
+			}
+			defer utilio.Close(managedOOClientset)
+			wormMarketsClientset, err := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Worm Markets clientset: %w", err)
+			}
+			defer utilio.Close(wormMarketsClientset)
+			fifaMarketDashboardClientset, err := fifamarketdashboardapiclient.NewFIFAMarketDashboardClientset(fifaMarketDashboardServerAddress)
+			if err != nil {
+				return fmt.Errorf("create FIFA Market Dashboard clientset: %w", err)
+			}
+			defer utilio.Close(fifaMarketDashboardClientset)
+			tokenAPIClientset, err := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Token API clientset: %w", err)
+			}
+			defer utilio.Close(tokenAPIClientset)
 
 			athenaOpts := server.AthenaServerOpts{
 				ContentTypes:                      contentTypesList,
@@ -184,6 +222,7 @@ func NewCommand() *cobra.Command {
 					break
 				}
 			}
+			return nil
 		},
 		Example: templates.Examples(`
 			# Start the Athena API server with default settings
@@ -212,15 +251,15 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringSliceVar(&otlpAttrs, "otlp-attrs", env.StringsFromEnv("ATHENA_SERVER_OTLP_ATTRS", []string{}, ","), "List of OpenTelemetry collector extra attrs when send traces, each attribute is separated by a colon(e.g. key:value)")
 	command.Flags().StringVar(&frameOptions, "x-frame-options", env.StringFromEnv("ATHENA_SERVER_X_FRAME_OPTIONS", "sameorigin"), "Set X-Frame-Options header in HTTP responses to `value`. To disable, set to \"\".")
 	command.Flags().StringVar(&contentSecurityPolicy, "content-security-policy", env.StringFromEnv("ATHENA_SERVER_CONTENT_SECURITY_POLICY", "frame-ancestors 'self';"), "Set Content-Security-Policy header in HTTP responses to `value`. To disable, set to \"\".")
-	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", "localhost:8086"), "Athena notification server address")
-	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", "localhost:8088"), "Athena wallet server address")
-	command.Flags().StringVar(&marketRadarServerAddress, "market-radar-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_SERVER_ADDRESS", "localhost:8092"), "Athena Market Radar server address")
-	command.Flags().StringVar(&sportsLiveServerAddress, "sports-live-server-address", env.StringFromEnv("ATHENA_SPORTS_LIVE_SERVER_ADDRESS", "localhost:8094"), "Athena Sports Live server address")
-	command.Flags().StringVar(&sportsHistoryServerAddress, "sports-history-server-address", env.StringFromEnv("ATHENA_SPORTS_HISTORY_SERVER_ADDRESS", "localhost:8104"), "Athena Sports History server address")
-	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", "localhost:8106"), "Athena Managed OO server address")
-	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", "localhost:8084"), "Athena Worm Markets server address")
-	command.Flags().StringVar(&fifaMarketDashboardServerAddress, "fifa-market-dashboard-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_SERVER_ADDRESS", "localhost:8090"), "Athena FIFA Market Dashboard server address")
-	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", "localhost:8096"), "Athena token API server address")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortNotification)), "Athena notification server address")
+	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWallet)), "Athena wallet server address")
+	command.Flags().StringVar(&marketRadarServerAddress, "market-radar-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortMarketRadar)), "Athena Market Radar server address")
+	command.Flags().StringVar(&sportsLiveServerAddress, "sports-live-server-address", env.StringFromEnv("ATHENA_SPORTS_LIVE_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortSportsLive)), "Athena Sports Live server address")
+	command.Flags().StringVar(&sportsHistoryServerAddress, "sports-history-server-address", env.StringFromEnv("ATHENA_SPORTS_HISTORY_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortSportsHistory)), "Athena Sports History server address")
+	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortManagedOO)), "Athena Managed OO server address")
+	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)), "Athena Worm Markets server address")
+	command.Flags().StringVar(&fifaMarketDashboardServerAddress, "fifa-market-dashboard-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortFIFAMarketDashboard)), "Athena FIFA Market Dashboard server address")
+	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortTokenAPI)), "Athena token API server address")
 	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")
 	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC status calls")
 	command.Flags().StringVar(&etherscanAPIKeys, "etherscan-api-keys", env.StringFromEnv("ATHENA_ETHERSCAN_MANAGER_API_KEYS", ""), "Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs")

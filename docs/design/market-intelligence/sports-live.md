@@ -30,6 +30,7 @@ and CLOB clients in `util/polymarket` remain provider adapters.
 | PostgreSQL connection and schema | [internal/sportslive/store/sql_store.go](../../../internal/sportslive/store/sql_store.go), [internal/sportslive/store/migrations/000001_init.sql](../../../internal/sportslive/store/migrations/000001_init.sql) | `NewSQLStoreSource`, `sports_live_event`, `sports_live_market`, `sports_live_price_point` |
 | Internal service contract | [internal/sportslive/sports_live.proto](../../../internal/sportslive/sports_live.proto) | `SportsLiveService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/sportslive/sportslive.proto](../../../internal/server/sportslive/sportslive.proto), [internal/server/sportslive/sportslive.go](../../../internal/server/sportslive/sportslive.go) | `SportsLiveService`, `Server` |
+| Internal gRPC connection ownership | [internal/sportslive/apiclient/apiclient.go](../../../internal/sportslive/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewSportsLiveClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `SportsLiveEventCardItem`, `SportsLivePriceHistorySeriesItem`, `SportsTeamItem` |
 | Provider adapters | [util/polymarket](../../../util/polymarket) | `GammaClient`, `CLOBClient` |
 
@@ -56,7 +57,8 @@ that snapshot and appends CLOB history. Both use one capability-specific
 PostgreSQL database, but they do not share one cross-loop transaction.
 
 Read RPCs are served only from `sports_live` PostgreSQL. Gamma and CLOB are not
-called on the request path. Notification is an optional gRPC dependency; no
+called on the request path. Notification is an optional process-owned gRPC
+channel that is reused by both alert loops; no
 Sports Live implementation code is imported into Notification or another
 capability.
 
@@ -99,7 +101,9 @@ capability.
    720.
 10. On cancellation, gRPC stops gracefully, health becomes `NOT_SERVING`, both
     loop contexts are cancelled, and `Service.Stop` waits for both goroutines
-    before PostgreSQL closes.
+    before the Notification channel and PostgreSQL close. The API Server owns
+    one separate Sports Live channel for all proxy and health requests and
+    closes it after its serving lifecycle ends.
 
 The event snapshot and sync timestamp share one explicit transaction. Each CLOB
 price batch, price-alert state update, score-alert state update, and Notification
@@ -136,7 +140,7 @@ state is limited to lifecycle cancellation and goroutine tracking.
 | `ATHENA_SPORTS_LIVE_POSTGRES_DSN` | PostgreSQL connection for database `sports_live`; required at process startup. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_ENABLED` / `--notification-enabled` | Enables both price and score notifications; default `true`. |
-| `ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; default `localhost:8086`. |
+| `ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket links; default empty. |
 | `ATHENA_SPORTS_LIVE_PRICE_ALERT_COOLDOWN` / `--price-alert-cooldown` | Same-band repeat cooldown; default 15 minutes, accepted range one second through 24 hours. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
@@ -166,7 +170,9 @@ are implementation constants.
 
 Database connection, migration, or missing store failure prevents startup.
 Failure to construct either default provider client also prevents the service
-from becoming healthy.
+from becoming healthy. An invalid Notification target prevents command startup;
+temporary Notification unavailability does not, because the process-owned
+channel reconnects in the background.
 
 A Gamma fetch or event transaction failure leaves the previous complete
 snapshot and last-success timestamp intact. The event loop logs the failure and

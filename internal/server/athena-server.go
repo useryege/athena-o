@@ -989,11 +989,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		case <-shutdownCtx.Done():
 			log.Warn("Graceful shutdown timeout. Exiting...")
 		}
-		if server.TokenAPIClientset != nil {
-			if err := server.TokenAPIClientset.Close(); err != nil {
-				log.WithError(err).Warn("failed to close token API clientset")
-			}
-		}
 	}
 	server.Shutdown = shutdownFunc
 	signal.Notify(server.stopCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

@@ -75,8 +75,16 @@ func NewCommand() *cobra.Command {
 			}
 			defer utilio.Close(store)
 
-			wormMarketsClientset := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
-			walletClientset := walletapiclient.NewWalletClientset(walletServerAddress)
+			wormMarketsClientset, err := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Worm Markets clientset: %w", err)
+			}
+			defer utilio.Close(wormMarketsClientset)
+			walletClientset, err := walletapiclient.NewWalletClientset(walletServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Wallet clientset: %w", err)
+			}
+			defer utilio.Close(walletClientset)
 			server, err := fifamarketdashboard.NewServer(fifamarketdashboard.ServerOpts{
 				Store:                        store,
 				WormMarketsClientset:         wormMarketsClientset,
@@ -135,8 +143,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_LISTEN_ADDRESS", common.DefaultAddressFIFAMarketDashboard), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortFIFAMarketDashboard, "Listen on given port for incoming connections")
-	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortWormMarkets)), "Athena Worm Markets gRPC server address")
-	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_WALLET_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortWallet)), "Athena wallet gRPC server address")
+	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)), "Athena Worm Markets gRPC server address")
+	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_WALLET_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWallet)), "Athena wallet gRPC server address")
 	command.Flags().StringVar(&fifaPolygonRPCURL, "fifa-polygon-rpc-url", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_POLYGON_RPC_URL", "https://polygon-rpc.com"), "Polygon JSON-RPC URL for FIFA wallet balances")
 	command.Flags().StringVar(&fifaSolanaRPCURL, "fifa-solana-rpc-url", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com"), "Solana JSON-RPC URL for FIFA wallet balances")
 	command.Flags().DurationVar(&fifaDashboardRefresh, "fifa-dashboard-refresh-interval", env.ParseDurationFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_REFRESH_INTERVAL", time.Second, time.Second, time.Hour), "Refresh interval for cached FIFA dashboard data")

@@ -47,7 +47,11 @@ func NewCommand() *cobra.Command {
 			defer utilio.Close(store)
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
-				notificationClientset = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				notificationClientset, err = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				if err != nil {
+					return fmt.Errorf("create notification clientset: %w", err)
+				}
+				defer utilio.Close(notificationClientset)
 			}
 			server, err := managedoo.NewServer(managedoo.ServerOpts{
 				Store:                  store,
@@ -87,7 +91,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_MANAGED_OO_LISTEN_ADDRESS", common.DefaultAddressManagedOO), "Listen address")
 	command.Flags().IntVar(&listenPort, "port", env.ParseNumFromEnv("ATHENA_MANAGED_OO_LISTEN_PORT", common.DefaultPortManagedOO, 1, 65535), "Listen port")
 	command.Flags().BoolVar(&notificationEnabled, "notification-enabled", env.ParseBoolFromEnv("ATHENA_MANAGED_OO_NOTIFICATION_ENABLED", true), "Enable Managed OO notifications")
-	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("localhost:%d", common.DefaultPortNotification)), "Notification service address")
+	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortNotification)), "Notification service address")
 	command.Flags().StringVar(&notificationInviteCode, "notification-invite-code", env.StringFromEnv("ATHENA_MANAGED_OO_NOTIFICATION_INVITE_CODE", ""), "Polymarket invite code")
 	command.Flags().StringVar(&polygonRPCURL, "polygon-rpc-url", env.StringFromEnv("ATHENA_MANAGED_OO_POLYGON_RPC_URL", "https://polygon-rpc.com"), "Polygon JSON-RPC URL")
 	storeSource = managedoostore.NewSQLStoreSource()

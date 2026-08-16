@@ -17,13 +17,7 @@ func NewServer(sportsHistoryClientset sportshistoryapiclient.Clientset) *Server 
 }
 
 func (s *Server) GetSportsHistoryStatus(ctx context.Context, _ *sportshistorypkg.GetSportsHistoryStatusRequest) (*sportshistorypkg.GetSportsHistoryStatusResponse, error) {
-	closer, client, err := s.sportsHistoryClientset.NewSportsHistoryServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetSportsHistoryStatus(ctx, &sportshistoryapiclient.GetSportsHistoryStatusRequest{})
+	resp, err := s.sportsHistoryClientset.SportsHistory().GetSportsHistoryStatus(ctx, &sportshistoryapiclient.GetSportsHistoryStatusRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +29,7 @@ func (s *Server) GetSportsHistoryStatus(ctx context.Context, _ *sportshistorypkg
 }
 
 func (s *Server) ListSportsHistoryEvents(ctx context.Context, req *sportshistorypkg.ListSportsHistoryEventsRequest) (*sportshistorypkg.ListSportsHistoryEventsResponse, error) {
-	closer, client, err := s.sportsHistoryClientset.NewSportsHistoryServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.ListSportsHistoryEvents(ctx, &sportshistoryapiclient.ListSportsHistoryEventsRequest{Limit: req.GetLimit()})
+	resp, err := s.sportsHistoryClientset.SportsHistory().ListSportsHistoryEvents(ctx, &sportshistoryapiclient.ListSportsHistoryEventsRequest{Limit: req.GetLimit()})
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +42,7 @@ func (s *Server) ListSportsHistoryEvents(ctx context.Context, req *sportshistory
 }
 
 func (s *Server) BatchGetSportsHistoryPriceHistories(ctx context.Context, req *sportshistorypkg.BatchGetSportsHistoryPriceHistoriesRequest) (*sportshistorypkg.BatchGetSportsHistoryPriceHistoriesResponse, error) {
-	closer, client, err := s.sportsHistoryClientset.NewSportsHistoryServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.BatchGetSportsHistoryPriceHistories(ctx, &sportshistoryapiclient.BatchGetSportsHistoryPriceHistoriesRequest{
+	resp, err := s.sportsHistoryClientset.SportsHistory().BatchGetSportsHistoryPriceHistories(ctx, &sportshistoryapiclient.BatchGetSportsHistoryPriceHistoriesRequest{
 		MarketKeys:    req.GetMarketKeys(),
 		LimitPerToken: req.GetLimitPerToken(),
 	})
@@ -72,13 +54,7 @@ func (s *Server) BatchGetSportsHistoryPriceHistories(ctx context.Context, req *s
 }
 
 func (s *Server) GetSportsHistorySyncStatus(ctx context.Context, _ *sportshistorypkg.GetSportsHistorySyncStatusRequest) (*sportshistorypkg.GetSportsHistorySyncStatusResponse, error) {
-	closer, client, err := s.sportsHistoryClientset.NewSportsHistoryServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.GetSportsHistorySyncStatus(ctx, &sportshistoryapiclient.GetSportsHistorySyncStatusRequest{})
+	resp, err := s.sportsHistoryClientset.SportsHistory().GetSportsHistorySyncStatus(ctx, &sportshistoryapiclient.GetSportsHistorySyncStatusRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -87,13 +63,7 @@ func (s *Server) GetSportsHistorySyncStatus(ctx context.Context, _ *sportshistor
 }
 
 func (s *Server) RefreshSportsHistory(ctx context.Context, _ *sportshistorypkg.RefreshSportsHistoryRequest) (*sportshistorypkg.RefreshSportsHistoryResponse, error) {
-	closer, client, err := s.sportsHistoryClientset.NewSportsHistoryServiceClient()
-	if err != nil {
-		return nil, err
-	}
-	defer closer.Close()
-
-	resp, err := client.RefreshSportsHistory(ctx, &sportshistoryapiclient.RefreshSportsHistoryRequest{})
+	resp, err := s.sportsHistoryClientset.SportsHistory().RefreshSportsHistory(ctx, &sportshistoryapiclient.RefreshSportsHistoryRequest{})
 	if err != nil {
 		return nil, err
 	}
