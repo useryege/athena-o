@@ -27,6 +27,7 @@ export const ResourceTable = <T,>(props: {
     rowClassName?: (record: T, index: number) => string;
     compactRender?: (record: T) => React.ReactNode;
     compactEmptyDescription?: React.ReactNode;
+    expandable?: TableProps<T>['expandable'];
 }) => {
     const selectedKeys = props.selectedRowKeys || [];
     const itemKey = (item: T) => (typeof props.rowKey === 'function' ? props.rowKey(item) : (item[props.rowKey] as React.Key));
@@ -133,6 +134,7 @@ export const ResourceTable = <T,>(props: {
                 onChange={props.onChange}
                 onRow={tableOnRow}
                 rowClassName={props.rowClassName}
+                expandable={props.expandable}
             />
             {props.compactRender && (
                 <div className='resource-table-compact' aria-label={`${props.label || 'Data table'} compact view`}>

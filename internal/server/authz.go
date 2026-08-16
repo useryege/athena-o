@@ -229,6 +229,8 @@ var rbacGRPCMethods = map[string]authzRule{
 	"/tokenapi.TokenOperationsService/GetChainCheckpoint":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
 	"/tokenapi.TokenOperationsService/ListChainCheckpoints":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
 	"/tokenapi.TokenOperationsService/UpdateChainCheckpoint":            {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
+	"/tokenapi.TokenOperationsService/GetChainProcessingSummary":        fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
+	"/tokenapi.TokenOperationsService/ListChainProcessingAttempts":      fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
 
 	"/servicestatus.ServiceStatusService/ListServiceStatuses":               fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
 	"/servicestatus.ServiceStatusService/ListEtherscanGatewayStatuses":      fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),

@@ -764,6 +764,8 @@ message TokenChainCheckpoint {
   optional string status = 5;
 
   optional string createdAt = 6;
+
+  optional string updatedAt = 7;
 }
 
 message TokenChainPair {
@@ -796,6 +798,96 @@ message TokenChainPairLiquidity {
   optional string feeAddressHoldLiquidityBalance = 3;
 
   optional string feeAddressHoldLiquidityRatio = 4;
+}
+
+message TokenChainProcessingAttempt {
+  optional int64 attemptId = 1;
+
+  optional int64 chainId = 2;
+
+  optional uint64 blockNumber = 3;
+
+  optional int32 attemptNumber = 4;
+
+  optional uint64 blockTime = 5;
+
+  optional string status = 6;
+
+  optional string terminalStage = 7;
+
+  optional string errorMessage = 8;
+
+  optional int64 checkpointReadDurationUs = 9;
+
+  optional int64 discoveryDurationUs = 10;
+
+  optional int64 validationDurationUs = 11;
+
+  optional int64 persistenceDurationUs = 12;
+
+  optional int64 totalDurationUs = 13;
+
+  optional int32 candidateCount = 14;
+
+  optional int32 validatedCount = 15;
+
+  optional int32 rejectedCount = 16;
+
+  optional int64 expiredResearchStateCount = 17;
+
+  optional bool timingComplete = 18;
+
+  optional string startedAt = 19;
+
+  optional string completedAt = 20;
+
+  optional string createdAt = 21;
+
+  optional string updatedAt = 22;
+}
+
+message TokenChainProcessingSummary {
+  optional int64 chainId = 1;
+
+  optional uint64 rangeStartBlockTime = 2;
+
+  optional uint64 rangeEndBlockTime = 3;
+
+  optional int64 attemptCount = 4;
+
+  optional int64 runningCount = 5;
+
+  optional int64 succeededCount = 6;
+
+  optional int64 failedCount = 7;
+
+  optional int64 cancelledCount = 8;
+
+  optional int64 interruptedCount = 9;
+
+  optional int64 incompleteSucceededCount = 10;
+
+  optional int64 measuredSucceededCount = 11;
+
+  optional int64 failureRateBps = 12;
+
+  optional int64 averageDurationUs = 13;
+
+  optional int64 averageCheckpointReadDurationUs = 14;
+
+  optional int64 averageDiscoveryDurationUs = 15;
+
+  optional int64 averageValidationDurationUs = 16;
+
+  optional int64 averagePersistenceDurationUs = 17;
+
+  optional uint64 fastestBlockNumber = 18;
+
+  optional int64 fastestDurationUs = 19;
+
+  optional uint64 slowestBlockNumber = 20;
+
+  optional int64 slowestDurationUs = 21;
 }
 
 message TokenChainStateObservation {

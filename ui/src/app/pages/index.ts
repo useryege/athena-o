@@ -1,5 +1,5 @@
 export * from './contract-code-blocklist';
-export * from './chain-checkpoints';
+export * from './chain-processing';
 export * from './collection-tasks';
 export * from './contract-code-detail';
 export * from './contract-codes';

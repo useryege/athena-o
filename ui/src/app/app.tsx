@@ -34,7 +34,7 @@ import {BrandMark, clearAsyncDataCache} from './components';
 import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {
     ContractCodeBlocklistPage,
-    ChainCheckpointsPage,
+    ChainProcessingPage,
     CollectionTasksPage,
     ContractCodeDetailPage,
     ContractCodesPage,
@@ -224,9 +224,9 @@ const tokenNavItem: NavItem = {
             permission: tokenapiPermission(tokenapiSubresources.nodeStatuses)
         },
         {
-            key: '/token/chain-checkpoints',
-            label: 'Chain Checkpoints',
-            path: '/token/chain-checkpoints',
+            key: '/token/chain-processing',
+            label: 'Chain Processing',
+            path: '/token/chain-processing',
             icon: <ApiOutlined />,
             permission: tokenapiPermission(tokenapiSubresources.chainCheckpoints)
         },
@@ -483,7 +483,7 @@ const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => 
             <Route path='/token/contract-code-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodeBlocklist), <ContractCodeBlocklistPage />)} />
             <Route path='/token/wallet-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.walletBlocklist), <WalletBlocklistPage />)} />
             <Route path='/token/node-statuses' element={withPermission(tokenapiPermission(tokenapiSubresources.nodeStatuses), <NodeStatusesPage />)} />
-            <Route path='/token/chain-checkpoints' element={withPermission(tokenapiPermission(tokenapiSubresources.chainCheckpoints), <ChainCheckpointsPage />)} />
+            <Route path='/token/chain-processing' element={withPermission(tokenapiPermission(tokenapiSubresources.chainCheckpoints), <ChainProcessingPage />)} />
             <Route path='/token/collection-tasks' element={withPermission(tokenapiPermission(tokenapiSubresources.collectionTasks), <CollectionTasksPage />)} />
             <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
         </Routes>

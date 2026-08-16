@@ -22,7 +22,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) |
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) |
 | Market Intelligence | Configured Worm/Polymarket FIFA composition, balances, and requester holdings | [FIFA Market Dashboard](market-intelligence/fifa-market-dashboard.md) |
-| Token Intelligence | Synchronous EVM block discovery, token validation, and project initialization | [Token Chain Processor](token-intelligence/chain-processor.md) |
+| Token Intelligence | Synchronous EVM block discovery, token validation, project initialization, and per-attempt processing diagnostics | [Token Chain Processor](token-intelligence/chain-processor.md) |
 | Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |
 | Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |

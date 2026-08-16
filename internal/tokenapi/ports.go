@@ -61,6 +61,8 @@ type OperationsApplication interface {
 	GetChainProcessingCheckpoint(context.Context, int64) (*discovery.ChainProcessingCheckpoint, error)
 	ListChainProcessingCheckpoints(context.Context) ([]discovery.ChainProcessingCheckpoint, error)
 	UpdateChainProcessingCheckpointStatus(context.Context, int64, discovery.ChainProcessingStatus) (*discovery.ChainProcessingCheckpoint, error)
+	GetChainBlockProcessingSummary(context.Context, discovery.ChainBlockProcessingFilter) (*discovery.ChainBlockProcessingSummary, error)
+	ListChainBlockProcessingAttemptsPage(context.Context, discovery.ChainBlockProcessingFilter, int32, int32) (*discovery.ChainBlockProcessingAttemptPage, error)
 	ListNodeStatuses(context.Context) ([]discovery.NodeStatus, error)
 }
 

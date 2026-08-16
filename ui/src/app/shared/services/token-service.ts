@@ -21,6 +21,56 @@ export interface TokenChainCheckpoint {
     cursorBlockNumber?: number;
     status?: string;
     createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface TokenChainProcessingAttempt {
+    attemptID?: number;
+    chainID?: number;
+    blockNumber?: number;
+    attemptNumber?: number;
+    blockTime?: number;
+    status?: string;
+    terminalStage?: string;
+    errorMessage?: string;
+    checkpointReadDurationUS?: number;
+    discoveryDurationUS?: number;
+    validationDurationUS?: number;
+    persistenceDurationUS?: number;
+    totalDurationUS?: number;
+    candidateCount?: number;
+    validatedCount?: number;
+    rejectedCount?: number;
+    expiredResearchStateCount?: number;
+    timingComplete?: boolean;
+    startedAt?: string;
+    completedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface TokenChainProcessingSummary {
+    chainID?: number;
+    rangeStartBlockTime?: number;
+    rangeEndBlockTime?: number;
+    attemptCount?: number;
+    runningCount?: number;
+    succeededCount?: number;
+    failedCount?: number;
+    cancelledCount?: number;
+    interruptedCount?: number;
+    incompleteSucceededCount?: number;
+    measuredSucceededCount?: number;
+    failureRateBPS?: number;
+    averageDurationUS?: number;
+    averageCheckpointReadDurationUS?: number;
+    averageDiscoveryDurationUS?: number;
+    averageValidationDurationUS?: number;
+    averagePersistenceDurationUS?: number;
+    fastestBlockNumber?: number;
+    fastestDurationUS?: number;
+    slowestBlockNumber?: number;
+    slowestDurationUS?: number;
 }
 
 export interface TokenChain {
@@ -546,7 +596,61 @@ function normalizeCheckpoint(item: any): TokenChainCheckpoint {
         enabled: item.enabled,
         cursorBlockNumber: numberValue(item.cursorBlockNumber ?? item.cursor_block_number),
         status: item.status,
-        createdAt: item.createdAt ?? item.created_at
+        createdAt: item.createdAt ?? item.created_at,
+        updatedAt: item.updatedAt ?? item.updated_at
+    };
+}
+
+function normalizeChainProcessingAttempt(item: any): TokenChainProcessingAttempt {
+    return {
+        attemptID: numberValue(item.attemptID ?? item.attemptId ?? item.attempt_id),
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        blockNumber: numberValue(item.blockNumber ?? item.block_number),
+        attemptNumber: numberValue(item.attemptNumber ?? item.attempt_number),
+        blockTime: numberValue(item.blockTime ?? item.block_time),
+        status: item.status,
+        terminalStage: item.terminalStage ?? item.terminal_stage,
+        errorMessage: item.errorMessage ?? item.error_message,
+        checkpointReadDurationUS: numberValue(item.checkpointReadDurationUS ?? item.checkpointReadDurationUs ?? item.checkpoint_read_duration_us),
+        discoveryDurationUS: numberValue(item.discoveryDurationUS ?? item.discoveryDurationUs ?? item.discovery_duration_us),
+        validationDurationUS: numberValue(item.validationDurationUS ?? item.validationDurationUs ?? item.validation_duration_us),
+        persistenceDurationUS: numberValue(item.persistenceDurationUS ?? item.persistenceDurationUs ?? item.persistence_duration_us),
+        totalDurationUS: numberValue(item.totalDurationUS ?? item.totalDurationUs ?? item.total_duration_us),
+        candidateCount: numberValue(item.candidateCount ?? item.candidate_count),
+        validatedCount: numberValue(item.validatedCount ?? item.validated_count),
+        rejectedCount: numberValue(item.rejectedCount ?? item.rejected_count),
+        expiredResearchStateCount: numberValue(item.expiredResearchStateCount ?? item.expired_research_state_count),
+        timingComplete: item.timingComplete ?? item.timing_complete,
+        startedAt: item.startedAt ?? item.started_at,
+        completedAt: item.completedAt ?? item.completed_at,
+        createdAt: item.createdAt ?? item.created_at,
+        updatedAt: item.updatedAt ?? item.updated_at
+    };
+}
+
+function normalizeChainProcessingSummary(item: any): TokenChainProcessingSummary {
+    return {
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        rangeStartBlockTime: numberValue(item.rangeStartBlockTime ?? item.range_start_block_time),
+        rangeEndBlockTime: numberValue(item.rangeEndBlockTime ?? item.range_end_block_time),
+        attemptCount: numberValue(item.attemptCount ?? item.attempt_count),
+        runningCount: numberValue(item.runningCount ?? item.running_count),
+        succeededCount: numberValue(item.succeededCount ?? item.succeeded_count),
+        failedCount: numberValue(item.failedCount ?? item.failed_count),
+        cancelledCount: numberValue(item.cancelledCount ?? item.cancelled_count),
+        interruptedCount: numberValue(item.interruptedCount ?? item.interrupted_count),
+        incompleteSucceededCount: numberValue(item.incompleteSucceededCount ?? item.incomplete_succeeded_count),
+        measuredSucceededCount: numberValue(item.measuredSucceededCount ?? item.measured_succeeded_count),
+        failureRateBPS: numberValue(item.failureRateBPS ?? item.failureRateBps ?? item.failure_rate_bps),
+        averageDurationUS: numberValue(item.averageDurationUS ?? item.averageDurationUs ?? item.average_duration_us),
+        averageCheckpointReadDurationUS: numberValue(item.averageCheckpointReadDurationUS ?? item.averageCheckpointReadDurationUs ?? item.average_checkpoint_read_duration_us),
+        averageDiscoveryDurationUS: numberValue(item.averageDiscoveryDurationUS ?? item.averageDiscoveryDurationUs ?? item.average_discovery_duration_us),
+        averageValidationDurationUS: numberValue(item.averageValidationDurationUS ?? item.averageValidationDurationUs ?? item.average_validation_duration_us),
+        averagePersistenceDurationUS: numberValue(item.averagePersistenceDurationUS ?? item.averagePersistenceDurationUs ?? item.average_persistence_duration_us),
+        fastestBlockNumber: numberValue(item.fastestBlockNumber ?? item.fastest_block_number),
+        fastestDurationUS: numberValue(item.fastestDurationUS ?? item.fastestDurationUs ?? item.fastest_duration_us),
+        slowestBlockNumber: numberValue(item.slowestBlockNumber ?? item.slowest_block_number),
+        slowestDurationUS: numberValue(item.slowestDurationUS ?? item.slowestDurationUs ?? item.slowest_duration_us)
     };
 }
 
@@ -1162,6 +1266,43 @@ export class TokenService {
             const item = res.body?.checkpoint;
             return item ? normalizeCheckpoint(item) : undefined;
         }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getChainProcessingSummary(options: {chainID: number; windowSeconds: number; blockNumber?: number}): Promise<TokenChainProcessingSummary> & {abort?: () => void} {
+        const req = requests.get('/tokens/chain-processing/summary').query({
+            chain_id: options.chainID,
+            window_seconds: options.windowSeconds,
+            block_number: options.blockNumber || undefined
+        });
+        const promise = req.then(res => normalizeChainProcessingSummary(res.body?.summary || {})) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public listChainProcessingAttempts(options: {
+        chainID: number;
+        windowSeconds: number;
+        blockNumber?: number;
+        status?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<PagedResponse<TokenChainProcessingAttempt>> & {abort?: () => void} {
+        const req = requests.get('/tokens/chain-processing/attempts').query({
+            chain_id: options.chainID,
+            window_seconds: options.windowSeconds,
+            block_number: options.blockNumber || undefined,
+            status: options.status || undefined,
+            page: options.page,
+            page_size: options.pageSize
+        });
+        const promise = req.then(res => ({
+            items: ((res.body?.attempts || []) as any[]).map(normalizeChainProcessingAttempt),
+            total: numberValue(res.body?.total) || 0,
+            page: numberValue(res.body?.page) || 1,
+            pageSize: numberValue(res.body?.pageSize ?? res.body?.page_size) || 20
+        })) as any;
         promise.abort = () => req.abort();
         return promise;
     }

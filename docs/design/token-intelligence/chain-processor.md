@@ -7,7 +7,9 @@ EVM chains, validates every candidate from each block, initializes accepted
 Token Intelligence projects, and persists the complete block result before
 advancing to the next block. It owns per-chain scheduling, initial lookback,
 numeric processing checkpoints, candidate inspection, the atomic block commit,
-chain-time research attention expiration, and processor health reporting.
+chain-time research attention expiration, per-attempt processing diagnostics,
+and processor health reporting. Every started block attempt records its outcome,
+four main-stage durations, processing counts, and error for API and UI analysis.
 
 Scheduled research collection, report generation, project selection, and Swap
 log collection are outside this boundary. The processor does initialize the two
@@ -30,9 +32,10 @@ progress and running or stopped status.
 | Candidate inspection | [internal/token/adapters/evm/candidate_inspector.go](../../../internal/token/adapters/evm/candidate_inspector.go) | `CandidateInspector.InspectCandidates` |
 | EVM block source | [internal/token/adapters/evm/block_source.go](../../../internal/token/adapters/evm/block_source.go) | `LatestBlockHeader`, `BlockHeaderByNumber`, `DiscoverProjectBlock` |
 | EVM client lifecycle | [internal/token/adapters/evm/chain_client_registry.go](../../../internal/token/adapters/evm/chain_client_registry.go) | `Client`, `Reset`, `Close` |
-| Chain and checkpoint persistence | [internal/token/adapters/postgres/chain_store.go](../../../internal/token/adapters/postgres/chain_store.go) | `SyncChains`, `GetChainProcessingCheckpoint`, `UpsertChainProcessingCheckpoint` |
+| Chain, checkpoint, and attempt persistence | [internal/token/adapters/postgres/chain_store.go](../../../internal/token/adapters/postgres/chain_store.go), [internal/token/adapters/postgres/chain_block_processing_attempt_store.go](../../../internal/token/adapters/postgres/chain_block_processing_attempt_store.go) | `SyncChains`, `StartChainBlockProcessingAttempt`, `CompleteChainBlockProcessingAttempt`, `GetChainBlockProcessingSummary` |
 | Atomic block persistence | [internal/token/adapters/postgres/chain_processing_store.go](../../../internal/token/adapters/postgres/chain_processing_store.go) | `ChainRepository.CommitProcessedBlock` |
-| Public checkpoint API | [internal/tokenapi/chain_service.go](../../../internal/tokenapi/chain_service.go) | `GetChainCheckpoint`, `ListChainCheckpoints`, `UpdateChainCheckpoint` |
+| Public operations API | [internal/tokenapi/chain_service.go](../../../internal/tokenapi/chain_service.go) | `GetChainCheckpoint`, `GetChainProcessingSummary`, `ListChainProcessingAttempts` |
+| Administrator processing UI | [ui/src/app/pages/chain-processing.tsx](../../../ui/src/app/pages/chain-processing.tsx) | `ChainProcessingPage` |
 | Periodic execution | [internal/token/workerhost/periodic.go](../../../internal/token/workerhost/periodic.go) | `PeriodicWorker`, `runJob` |
 | Process lifecycle | [internal/token/workerhost/host.go](../../../internal/token/workerhost/host.go) | `Host.Run`, `stopResources` |
 | Health and metrics | [internal/token/telemetry/server.go](../../../internal/token/telemetry/server.go), [internal/token/telemetry/tracker.go](../../../internal/token/telemetry/tracker.go) | `Server`, `Tracker` |
@@ -52,6 +55,8 @@ flowchart LR
     C --> R["PostgreSQL block commit"]
     R --> D["final candidates, projects,\nresearch initialization and expiration,\nschedules, and Swap pair targets"]
     R --> K["chain_processing_checkpoint"]
+    C --> M["Block-attempt audit\nexact post-commit timing"]
+    M --> Q["Summary and paginated\nattempt reads"]
     H --> T["Health, readiness, and metrics"]
 ```
 
@@ -90,8 +95,11 @@ same-chain projects that remain `researching`.
    initialized cursor is stored as `start - 1`, so restart resumes from that
    durable position rather than recalculating the range.
 6. The processor handles the inclusive range from `cursor + 1` through the
-   latest snapshot one block at a time. Before each block it reloads the
-   checkpoint so an operator stop takes effect between blocks.
+   latest snapshot one block at a time. It creates a `running` attempt before
+   reloading the checkpoint. Creating a new attempt reconciles older `running`
+   rows for the chain: a block already covered by the cursor becomes
+   `succeeded` with incomplete timing, while an uncommitted attempt becomes
+   `interrupted`. An operator stop completes the new attempt as `cancelled`.
 7. `DiscoverProjectBlock` fetches the block once and always returns its number
    and timestamp, including when no contract creation exists. Every transaction
    with a nil `To` address becomes a candidate whose contract address is derived
@@ -120,12 +128,23 @@ same-chain projects that remain `researching`.
     fails the block. The transaction advances
     `chain_processing_checkpoint` to the current block only after all block data
     has been written.
-11. A block with no candidates skips inspection but still applies chain-time
+11. After the business transaction returns, the processor completes the attempt
+    with exact checkpoint-read, discovery, validation, persistence, and summed
+    total durations in microseconds. Persistence includes the database commit.
+    Failures and cancellations retain every reached stage, the terminal stage,
+    and the error. A failed post-commit attempt update fails the loop without
+    reversing the committed business transaction; the next attempt reconciles
+    it from the cursor as a successful row with incomplete timing.
+12. Completing a successful attempt backfills its block time onto every retry
+    for the same chain and block, then removes rows older than 72 hours relative
+    to that chain timestamp. Unknown-time rows are removed only after a known
+    expired block-number boundary proves that they are outside the window.
+13. A block with no candidates skips inspection but still applies chain-time
     research expiration and commits its checkpoint. The next block is not
     fetched until the current block transaction commits.
-12. Reaching the latest snapshot completes the run. The next poll obtains a new
+14. Reaching the latest snapshot completes the run. The next poll obtains a new
     latest snapshot and continues at the durable cursor plus one.
-13. On `SIGINT` or `SIGTERM`, the host cancels the workers, waits for their
+15. On `SIGINT` or `SIGTERM`, the host cancels the workers, waits for their
     goroutines, marks configured chains `stopped`, stops telemetry, closes EVM
     clients, and closes PostgreSQL.
 
@@ -144,6 +163,22 @@ execution status:
 The checkpoint is numeric. It stores no block hash and does not model chain
 reorganizations. Public `TokenChainCheckpoint` API fields and routes map the
 internal processing cursor and its running or stopped status.
+
+`chain_block_processing_attempt` is the operational audit record for every
+started block attempt. Identity is `(chain_id, block_number, attempt_number)`.
+Statuses are `running`, `succeeded`, `failed`, `cancelled`, and `interrupted`.
+The row stores block time when known, terminal stage, error, four nullable stage
+durations, their total, processing counts, wall-clock audit timestamps, and
+whether successful timing is complete. Total duration is the sum of the four
+processor stages and excludes the audit record's own database writes.
+
+Summary reads anchor one-, 24-, or 72-hour windows at the latest retained
+successful block time. Average, fastest, slowest, and stage averages include
+only successful attempts with complete timing. Failure rate is failed attempts
+divided by succeeded plus failed attempts; other outcome counts remain
+separate. An exact block-number filter overrides the window. Null block-time
+attempts remain available through exact lookup and current-attempt listing but
+do not enter chain-time aggregates.
 
 `project_candidate` is the audit record for every discovered contract creation.
 It stores both the deployment transaction's block index and its sender nonce;
@@ -193,8 +228,9 @@ attempt probes again.
 Every maintained chain setting is required even when that chain is disabled.
 The maintained configuration enables Ethereum and disables BSC. Both chains use
 a `168h` initial lookback. Block-time estimation always uses 100 blocks,
-validation chunks contain at most 100 candidates, and per-candidate inspection
-concurrency is 10; these are application constants rather than configuration.
+validation chunks contain at most 100 candidates, per-candidate inspection
+concurrency is 10, and attempt history retains 72 hours of processed chain
+time. These are application constants rather than configuration.
 
 `make run` supplies the dedicated WSL Token node proxy when applicable and
 removes process-wide proxy variables from children. Manual and production
@@ -221,6 +257,12 @@ deletes that volume and restores fresh-checkpoint behavior.
   reorganize; it performs no block-hash verification, finality delay, or rollback.
 - Swap logs and later observation-state changes are not part of this block
   transaction; only initial WETH and USDT target creation is included.
+- Block-attempt audit writes do not participate in the business transaction. A
+  complete success therefore includes commit latency; a crash in the narrow
+  post-commit window is represented as successful with incomplete timing and
+  excluded from duration aggregates.
+- Retention advances only with successfully processed block timestamps. Wall
+  clock passage while processing is stopped cannot remove attempt history.
 
 ## Failure Recovery
 
@@ -239,6 +281,13 @@ transaction. The periodic job retries
 from the unchanged cursor, so the same block may be read and inspected again
 but cannot become partially committed. Cancellation likewise prevents a
 not-yet-committed block from advancing the checkpoint.
+
+Attempt creation failure prevents block work from starting. When PostgreSQL
+remains available, a stage failure or cancellation completes the durable
+attempt with partial timing. If completion cannot be stored, the next attempt
+reconciles the older `running` row using the cursor. A successful business
+commit followed by an audit-completion failure is recovered as an incomplete
+success and never causes the committed block to be processed again.
 
 The processor intentionally does not detect or repair a chain reorganization.
 Its numeric checkpoint records the latest-state chain observed when each block
@@ -263,6 +312,12 @@ and persistence durations, plus validated and rejected counts. Failures identify
 a completion event for cancellation. EVM client-selection logs identify the
 chain, credential-free endpoint, probe duration, and dedicated proxy state.
 
+The public Token Operations API additionally exposes
+`GetChainProcessingSummary` and `ListChainProcessingAttempts`. The administrator
+UI route `/token/chain-processing` combines checkpoint controls, chain and
+chain-time filters, successful-duration KPIs, average stage bars, and expandable
+attempt history. No per-candidate timing record is stored or exposed.
+
 ## Change Checklist
 
 - [ ] Recheck process wiring, one-job-per-chain creation, and shutdown ordering.
@@ -271,4 +326,5 @@ chain, credential-free endpoint, probe duration, and dedicated proxy state.
 - [ ] Recheck the complete block transaction, final-only candidate states, and
       research expiration plus WETH and USDT Swap-target initialization.
 - [ ] Recheck API checkpoint mapping, retries, health/readiness, logs, and metrics.
+- [ ] Recheck attempt reconciliation, post-commit timing completion, chain-time retention, summary filters, and paginated reads.
 - [ ] Keep the [design index](../README.md) entry current.

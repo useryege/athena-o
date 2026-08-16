@@ -9,4 +9,6 @@ service TokenOperationsService {
   rpc GetChainCheckpoint(GetChainCheckpointRequest) returns (GetChainCheckpointResponse) { option (google.api.http) = {get: "/api/v1/tokens/chain-checkpoints/{chain_id}"}; }
   rpc ListChainCheckpoints(ListChainCheckpointsRequest) returns (ListChainCheckpointsResponse) { option (google.api.http) = {get: "/api/v1/tokens/chain-checkpoints"}; }
   rpc UpdateChainCheckpoint(UpdateChainCheckpointRequest) returns (UpdateChainCheckpointResponse) { option (google.api.http) = {patch: "/api/v1/tokens/chain-checkpoints/{chain_id}" body: "*"}; }
+  rpc GetChainProcessingSummary(GetChainProcessingSummaryRequest) returns (GetChainProcessingSummaryResponse) { option (google.api.http) = {get: "/api/v1/tokens/chain-processing/summary"}; }
+  rpc ListChainProcessingAttempts(ListChainProcessingAttemptsRequest) returns (ListChainProcessingAttemptsResponse) { option (google.api.http) = {get: "/api/v1/tokens/chain-processing/attempts"}; }
 }

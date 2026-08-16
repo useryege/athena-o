@@ -8,4 +8,6 @@ service TokenOperationsService {
   rpc GetChainCheckpoint(GetChainCheckpointRequest) returns (GetChainCheckpointResponse);
   rpc ListChainCheckpoints(ListChainCheckpointsRequest) returns (ListChainCheckpointsResponse);
   rpc UpdateChainCheckpoint(UpdateChainCheckpointRequest) returns (UpdateChainCheckpointResponse);
+  rpc GetChainProcessingSummary(GetChainProcessingSummaryRequest) returns (GetChainProcessingSummaryResponse);
+  rpc ListChainProcessingAttempts(ListChainProcessingAttemptsRequest) returns (ListChainProcessingAttemptsResponse);
 }

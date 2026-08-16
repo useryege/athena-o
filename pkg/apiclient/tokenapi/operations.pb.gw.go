@@ -211,6 +211,78 @@ func local_request_TokenOperationsService_UpdateChainCheckpoint_0(ctx context.Co
 
 }
 
+var (
+	filter_TokenOperationsService_GetChainProcessingSummary_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TokenOperationsService_GetChainProcessingSummary_0(ctx context.Context, marshaler runtime.Marshaler, client TokenOperationsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetChainProcessingSummaryRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenOperationsService_GetChainProcessingSummary_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.GetChainProcessingSummary(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TokenOperationsService_GetChainProcessingSummary_0(ctx context.Context, marshaler runtime.Marshaler, server TokenOperationsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetChainProcessingSummaryRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenOperationsService_GetChainProcessingSummary_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.GetChainProcessingSummary(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+var (
+	filter_TokenOperationsService_ListChainProcessingAttempts_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TokenOperationsService_ListChainProcessingAttempts_0(ctx context.Context, marshaler runtime.Marshaler, client TokenOperationsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListChainProcessingAttemptsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenOperationsService_ListChainProcessingAttempts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListChainProcessingAttempts(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TokenOperationsService_ListChainProcessingAttempts_0(ctx context.Context, marshaler runtime.Marshaler, server TokenOperationsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListChainProcessingAttemptsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TokenOperationsService_ListChainProcessingAttempts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListChainProcessingAttempts(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterTokenOperationsServiceHandlerServer registers the http handlers for service TokenOperationsService to "mux".
 // UnaryRPC     :call TokenOperationsServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -329,6 +401,52 @@ func RegisterTokenOperationsServiceHandlerServer(ctx context.Context, mux *runti
 		}
 
 		forward_TokenOperationsService_UpdateChainCheckpoint_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenOperationsService_GetChainProcessingSummary_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TokenOperationsService_GetChainProcessingSummary_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenOperationsService_GetChainProcessingSummary_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenOperationsService_ListChainProcessingAttempts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TokenOperationsService_ListChainProcessingAttempts_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenOperationsService_ListChainProcessingAttempts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -473,6 +591,46 @@ func RegisterTokenOperationsServiceHandlerClient(ctx context.Context, mux *runti
 
 	})
 
+	mux.Handle("GET", pattern_TokenOperationsService_GetChainProcessingSummary_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TokenOperationsService_GetChainProcessingSummary_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenOperationsService_GetChainProcessingSummary_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TokenOperationsService_ListChainProcessingAttempts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TokenOperationsService_ListChainProcessingAttempts_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TokenOperationsService_ListChainProcessingAttempts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -486,6 +644,10 @@ var (
 	pattern_TokenOperationsService_ListChainCheckpoints_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "tokens", "chain-checkpoints"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_TokenOperationsService_UpdateChainCheckpoint_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "tokens", "chain-checkpoints", "chain_id"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_TokenOperationsService_GetChainProcessingSummary_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "v1", "tokens", "chain-processing", "summary"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_TokenOperationsService_ListChainProcessingAttempts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "v1", "tokens", "chain-processing", "attempts"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -498,4 +660,8 @@ var (
 	forward_TokenOperationsService_ListChainCheckpoints_0 = runtime.ForwardResponseMessage
 
 	forward_TokenOperationsService_UpdateChainCheckpoint_0 = runtime.ForwardResponseMessage
+
+	forward_TokenOperationsService_GetChainProcessingSummary_0 = runtime.ForwardResponseMessage
+
+	forward_TokenOperationsService_ListChainProcessingAttempts_0 = runtime.ForwardResponseMessage
 )

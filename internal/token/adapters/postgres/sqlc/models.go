@@ -15,6 +15,31 @@ type Chain struct {
 	CreatedAt pgtype.Timestamptz
 }
 
+type ChainBlockProcessingAttempt struct {
+	ID                        int64
+	ChainID                   int64
+	BlockNumber               int64
+	AttemptNumber             int32
+	BlockTime                 pgtype.Int8
+	Status                    string
+	TerminalStage             pgtype.Text
+	ErrorMessage              pgtype.Text
+	CheckpointReadDurationUs  pgtype.Int8
+	DiscoveryDurationUs       pgtype.Int8
+	ValidationDurationUs      pgtype.Int8
+	PersistenceDurationUs     pgtype.Int8
+	TotalDurationUs           pgtype.Int8
+	CandidateCount            pgtype.Int4
+	ValidatedCount            pgtype.Int4
+	RejectedCount             pgtype.Int4
+	ExpiredResearchStateCount pgtype.Int8
+	TimingComplete            bool
+	StartedAt                 pgtype.Timestamptz
+	CompletedAt               pgtype.Timestamptz
+	CreatedAt                 pgtype.Timestamptz
+	UpdatedAt                 pgtype.Timestamptz
+}
+
 type ChainProcessingCheckpoint struct {
 	ChainID           int64
 	CursorBlockNumber int64

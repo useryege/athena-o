@@ -34,6 +34,10 @@ message ListChainCheckpointsRequest {}
 message ListChainCheckpointsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainCheckpoint checkpoints = 1; }
 message UpdateChainCheckpointRequest { int64 chain_id = 1; string status = 2; }
 message UpdateChainCheckpointResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainCheckpoint checkpoint = 2; }
+message GetChainProcessingSummaryRequest { int64 chain_id = 1; uint64 block_number = 2; int64 window_seconds = 3; }
+message GetChainProcessingSummaryResponse { github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainProcessingSummary summary = 1; }
+message ListChainProcessingAttemptsRequest { int64 chain_id = 1; uint64 block_number = 2; int64 window_seconds = 3; string status = 4; int32 page = 5; int32 page_size = 6; }
+message ListChainProcessingAttemptsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenChainProcessingAttempt attempts = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
 
 message GetContractCodeRequest { string code_hash = 1; }
 message GetContractCodeResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenContractCode contract_code = 2; }

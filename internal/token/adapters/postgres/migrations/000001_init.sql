@@ -22,6 +22,72 @@ CREATE TABLE chain_processing_checkpoint (
   CONSTRAINT chain_processing_checkpoint_status_check CHECK (status IN ('running', 'stopped'))
 );
 
+CREATE TABLE chain_block_processing_attempt (
+  id BIGSERIAL,
+  chain_id BIGINT NOT NULL,
+  block_number BIGINT NOT NULL,
+  attempt_number INT NOT NULL,
+  block_time BIGINT,
+  status TEXT NOT NULL DEFAULT 'running',
+  terminal_stage TEXT,
+  error_message TEXT,
+  checkpoint_read_duration_us BIGINT,
+  discovery_duration_us BIGINT,
+  validation_duration_us BIGINT,
+  persistence_duration_us BIGINT,
+  total_duration_us BIGINT,
+  candidate_count INT,
+  validated_count INT,
+  rejected_count INT,
+  expired_research_state_count BIGINT,
+  timing_complete BOOLEAN NOT NULL DEFAULT false,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT chain_block_processing_attempt_id_uidx PRIMARY KEY (id),
+  CONSTRAINT chain_block_processing_attempt_chain_fk FOREIGN KEY (chain_id) REFERENCES chain(id),
+  CONSTRAINT chain_block_processing_attempt_position_uidx UNIQUE (chain_id, block_number, attempt_number),
+  CONSTRAINT chain_block_processing_attempt_block_number_check CHECK (block_number >= 0),
+  CONSTRAINT chain_block_processing_attempt_attempt_number_check CHECK (attempt_number > 0),
+  CONSTRAINT chain_block_processing_attempt_block_time_check CHECK (block_time IS NULL OR block_time >= 0),
+  CONSTRAINT chain_block_processing_attempt_status_check CHECK (status IN ('running', 'succeeded', 'failed', 'cancelled', 'interrupted')),
+  CONSTRAINT chain_block_processing_attempt_terminal_stage_check CHECK (
+    terminal_stage IS NULL OR terminal_stage IN ('checkpoint_read', 'candidate_discovery', 'candidate_validation', 'persistence')
+  ),
+  CONSTRAINT chain_block_processing_attempt_checkpoint_read_duration_check CHECK (checkpoint_read_duration_us IS NULL OR checkpoint_read_duration_us >= 0),
+  CONSTRAINT chain_block_processing_attempt_discovery_duration_check CHECK (discovery_duration_us IS NULL OR discovery_duration_us >= 0),
+  CONSTRAINT chain_block_processing_attempt_validation_duration_check CHECK (validation_duration_us IS NULL OR validation_duration_us >= 0),
+  CONSTRAINT chain_block_processing_attempt_persistence_duration_check CHECK (persistence_duration_us IS NULL OR persistence_duration_us >= 0),
+  CONSTRAINT chain_block_processing_attempt_total_duration_check CHECK (total_duration_us IS NULL OR total_duration_us >= 0),
+  CONSTRAINT chain_block_processing_attempt_candidate_count_check CHECK (candidate_count IS NULL OR candidate_count >= 0),
+  CONSTRAINT chain_block_processing_attempt_validated_count_check CHECK (validated_count IS NULL OR validated_count >= 0),
+  CONSTRAINT chain_block_processing_attempt_rejected_count_check CHECK (rejected_count IS NULL OR rejected_count >= 0),
+  CONSTRAINT chain_block_processing_attempt_expired_count_check CHECK (expired_research_state_count IS NULL OR expired_research_state_count >= 0),
+  CONSTRAINT chain_block_processing_attempt_completion_check CHECK (
+    (status = 'running' AND completed_at IS NULL AND timing_complete = false)
+    OR (status <> 'running' AND completed_at IS NOT NULL)
+  ),
+  CONSTRAINT chain_block_processing_attempt_complete_timing_check CHECK (
+    timing_complete = false
+    OR (
+      status = 'succeeded'
+      AND checkpoint_read_duration_us IS NOT NULL
+      AND discovery_duration_us IS NOT NULL
+      AND validation_duration_us IS NOT NULL
+      AND persistence_duration_us IS NOT NULL
+      AND total_duration_us IS NOT NULL
+    )
+  )
+);
+
+CREATE INDEX chain_block_processing_attempt_chain_block_idx
+  ON chain_block_processing_attempt (chain_id, block_number DESC, attempt_number DESC);
+CREATE INDEX chain_block_processing_attempt_chain_block_time_idx
+  ON chain_block_processing_attempt (chain_id, block_time DESC, block_number DESC);
+CREATE INDEX chain_block_processing_attempt_chain_status_block_time_idx
+  ON chain_block_processing_attempt (chain_id, status, block_time DESC, block_number DESC);
+
 CREATE TABLE chain_swap_processing_checkpoint (
   chain_id BIGINT,
   cursor_block_number BIGINT NOT NULL DEFAULT 0,
@@ -723,5 +789,6 @@ DROP FUNCTION IF EXISTS update_contract_code_deployment_count();
 DROP TABLE IF EXISTS contract_code;
 DROP TABLE IF EXISTS project_candidate;
 DROP TABLE IF EXISTS chain_swap_processing_checkpoint;
+DROP TABLE IF EXISTS chain_block_processing_attempt;
 DROP TABLE IF EXISTS chain_processing_checkpoint;
 DROP TABLE IF EXISTS chain;

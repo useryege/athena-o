@@ -84,6 +84,35 @@ func validateChainProcessingStatus(value string) error {
 	}
 }
 
+func validateChainBlockProcessingAttemptStatus(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	switch discovery.ChainBlockProcessingAttemptStatus(value) {
+	case discovery.ChainBlockProcessingAttemptStatusRunning,
+		discovery.ChainBlockProcessingAttemptStatusSucceeded,
+		discovery.ChainBlockProcessingAttemptStatusFailed,
+		discovery.ChainBlockProcessingAttemptStatusCancelled,
+		discovery.ChainBlockProcessingAttemptStatusInterrupted:
+		return nil
+	default:
+		return status.Error(codes.InvalidArgument, "status must be running, succeeded, failed, cancelled, or interrupted")
+	}
+}
+
+func normalizeChainProcessingWindow(value int64) (int64, error) {
+	if value == 0 {
+		return int64(24 * time.Hour / time.Second), nil
+	}
+	switch value {
+	case int64(time.Hour / time.Second), int64(24 * time.Hour / time.Second), int64(72 * time.Hour / time.Second):
+		return value, nil
+	default:
+		return 0, status.Error(codes.InvalidArgument, "window_seconds must be 3600, 86400, or 259200")
+	}
+}
+
 func validateRequiredProjectDataCollectionType(value string) error {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -191,6 +220,68 @@ func mapChainProcessingCheckpoint(item discovery.ChainProcessingCheckpoint) *v1a
 		CursorBlockNumber: item.CursorBlockNumber,
 		Status:            string(item.Status),
 		CreatedAt:         formatTime(item.CreatedAt),
+		UpdatedAt:         formatTime(item.UpdatedAt),
+	}
+}
+
+func mapChainBlockProcessingAttempt(item discovery.ChainBlockProcessingAttempt) *v1alpha1.TokenChainProcessingAttempt {
+	return &v1alpha1.TokenChainProcessingAttempt{
+		AttemptID:                 item.ID,
+		ChainID:                   item.ChainID,
+		BlockNumber:               item.BlockNumber,
+		AttemptNumber:             item.AttemptNumber,
+		BlockTime:                 item.BlockTime,
+		Status:                    string(item.Status),
+		TerminalStage:             string(item.TerminalStage),
+		ErrorMessage:              item.ErrorMessage,
+		CheckpointReadDurationUS:  item.CheckpointReadDurationUS,
+		DiscoveryDurationUS:       item.DiscoveryDurationUS,
+		ValidationDurationUS:      item.ValidationDurationUS,
+		PersistenceDurationUS:     item.PersistenceDurationUS,
+		TotalDurationUS:           item.TotalDurationUS,
+		CandidateCount:            item.CandidateCount,
+		ValidatedCount:            item.ValidatedCount,
+		RejectedCount:             item.RejectedCount,
+		ExpiredResearchStateCount: item.ExpiredResearchStateCount,
+		TimingComplete:            item.TimingComplete,
+		StartedAt:                 formatTime(item.StartedAt),
+		CompletedAt:               formatTime(item.CompletedAt),
+		CreatedAt:                 formatTime(item.CreatedAt),
+		UpdatedAt:                 formatTime(item.UpdatedAt),
+	}
+}
+
+func mapChainBlockProcessingAttempts(items []discovery.ChainBlockProcessingAttempt) []*v1alpha1.TokenChainProcessingAttempt {
+	results := make([]*v1alpha1.TokenChainProcessingAttempt, 0, len(items))
+	for _, item := range items {
+		results = append(results, mapChainBlockProcessingAttempt(item))
+	}
+	return results
+}
+
+func mapChainBlockProcessingSummary(item discovery.ChainBlockProcessingSummary) *v1alpha1.TokenChainProcessingSummary {
+	return &v1alpha1.TokenChainProcessingSummary{
+		ChainID:                         item.ChainID,
+		RangeStartBlockTime:             item.RangeStartBlockTime,
+		RangeEndBlockTime:               item.RangeEndBlockTime,
+		AttemptCount:                    item.AttemptCount,
+		RunningCount:                    item.RunningCount,
+		SucceededCount:                  item.SucceededCount,
+		FailedCount:                     item.FailedCount,
+		CancelledCount:                  item.CancelledCount,
+		InterruptedCount:                item.InterruptedCount,
+		IncompleteSucceededCount:        item.IncompleteSucceededCount,
+		MeasuredSucceededCount:          item.MeasuredSucceededCount,
+		FailureRateBPS:                  item.FailureRateBPS,
+		AverageDurationUS:               item.AverageDurationUS,
+		AverageCheckpointReadDurationUS: item.AverageCheckpointReadDurationUS,
+		AverageDiscoveryDurationUS:      item.AverageDiscoveryDurationUS,
+		AverageValidationDurationUS:     item.AverageValidationDurationUS,
+		AveragePersistenceDurationUS:    item.AveragePersistenceDurationUS,
+		FastestBlockNumber:              item.FastestBlockNumber,
+		FastestDurationUS:               item.FastestDurationUS,
+		SlowestBlockNumber:              item.SlowestBlockNumber,
+		SlowestDurationUS:               item.SlowestDurationUS,
 	}
 }
 

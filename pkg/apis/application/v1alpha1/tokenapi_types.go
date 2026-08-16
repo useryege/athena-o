@@ -21,6 +21,56 @@ type TokenChainCheckpoint struct {
 	CursorBlockNumber uint64 `protobuf:"varint,4,opt,name=cursorBlockNumber" json:"cursorBlockNumber"`
 	Status            string `protobuf:"bytes,5,opt,name=status" json:"status"`
 	CreatedAt         string `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt         string `protobuf:"bytes,7,opt,name=updatedAt" json:"updatedAt"`
+}
+
+type TokenChainProcessingAttempt struct {
+	AttemptID                 int64  `protobuf:"varint,1,opt,name=attemptId" json:"attemptId"`
+	ChainID                   int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	BlockNumber               uint64 `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	AttemptNumber             int32  `protobuf:"varint,4,opt,name=attemptNumber" json:"attemptNumber"`
+	BlockTime                 uint64 `protobuf:"varint,5,opt,name=blockTime" json:"blockTime"`
+	Status                    string `protobuf:"bytes,6,opt,name=status" json:"status"`
+	TerminalStage             string `protobuf:"bytes,7,opt,name=terminalStage" json:"terminalStage"`
+	ErrorMessage              string `protobuf:"bytes,8,opt,name=errorMessage" json:"errorMessage"`
+	CheckpointReadDurationUS  int64  `protobuf:"varint,9,opt,name=checkpointReadDurationUs" json:"checkpointReadDurationUs"`
+	DiscoveryDurationUS       int64  `protobuf:"varint,10,opt,name=discoveryDurationUs" json:"discoveryDurationUs"`
+	ValidationDurationUS      int64  `protobuf:"varint,11,opt,name=validationDurationUs" json:"validationDurationUs"`
+	PersistenceDurationUS     int64  `protobuf:"varint,12,opt,name=persistenceDurationUs" json:"persistenceDurationUs"`
+	TotalDurationUS           int64  `protobuf:"varint,13,opt,name=totalDurationUs" json:"totalDurationUs"`
+	CandidateCount            int32  `protobuf:"varint,14,opt,name=candidateCount" json:"candidateCount"`
+	ValidatedCount            int32  `protobuf:"varint,15,opt,name=validatedCount" json:"validatedCount"`
+	RejectedCount             int32  `protobuf:"varint,16,opt,name=rejectedCount" json:"rejectedCount"`
+	ExpiredResearchStateCount int64  `protobuf:"varint,17,opt,name=expiredResearchStateCount" json:"expiredResearchStateCount"`
+	TimingComplete            bool   `protobuf:"varint,18,opt,name=timingComplete" json:"timingComplete"`
+	StartedAt                 string `protobuf:"bytes,19,opt,name=startedAt" json:"startedAt"`
+	CompletedAt               string `protobuf:"bytes,20,opt,name=completedAt" json:"completedAt"`
+	CreatedAt                 string `protobuf:"bytes,21,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt                 string `protobuf:"bytes,22,opt,name=updatedAt" json:"updatedAt"`
+}
+
+type TokenChainProcessingSummary struct {
+	ChainID                         int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
+	RangeStartBlockTime             uint64 `protobuf:"varint,2,opt,name=rangeStartBlockTime" json:"rangeStartBlockTime"`
+	RangeEndBlockTime               uint64 `protobuf:"varint,3,opt,name=rangeEndBlockTime" json:"rangeEndBlockTime"`
+	AttemptCount                    int64  `protobuf:"varint,4,opt,name=attemptCount" json:"attemptCount"`
+	RunningCount                    int64  `protobuf:"varint,5,opt,name=runningCount" json:"runningCount"`
+	SucceededCount                  int64  `protobuf:"varint,6,opt,name=succeededCount" json:"succeededCount"`
+	FailedCount                     int64  `protobuf:"varint,7,opt,name=failedCount" json:"failedCount"`
+	CancelledCount                  int64  `protobuf:"varint,8,opt,name=cancelledCount" json:"cancelledCount"`
+	InterruptedCount                int64  `protobuf:"varint,9,opt,name=interruptedCount" json:"interruptedCount"`
+	IncompleteSucceededCount        int64  `protobuf:"varint,10,opt,name=incompleteSucceededCount" json:"incompleteSucceededCount"`
+	MeasuredSucceededCount          int64  `protobuf:"varint,11,opt,name=measuredSucceededCount" json:"measuredSucceededCount"`
+	FailureRateBPS                  int64  `protobuf:"varint,12,opt,name=failureRateBps" json:"failureRateBps"`
+	AverageDurationUS               int64  `protobuf:"varint,13,opt,name=averageDurationUs" json:"averageDurationUs"`
+	AverageCheckpointReadDurationUS int64  `protobuf:"varint,14,opt,name=averageCheckpointReadDurationUs" json:"averageCheckpointReadDurationUs"`
+	AverageDiscoveryDurationUS      int64  `protobuf:"varint,15,opt,name=averageDiscoveryDurationUs" json:"averageDiscoveryDurationUs"`
+	AverageValidationDurationUS     int64  `protobuf:"varint,16,opt,name=averageValidationDurationUs" json:"averageValidationDurationUs"`
+	AveragePersistenceDurationUS    int64  `protobuf:"varint,17,opt,name=averagePersistenceDurationUs" json:"averagePersistenceDurationUs"`
+	FastestBlockNumber              uint64 `protobuf:"varint,18,opt,name=fastestBlockNumber" json:"fastestBlockNumber"`
+	FastestDurationUS               int64  `protobuf:"varint,19,opt,name=fastestDurationUs" json:"fastestDurationUs"`
+	SlowestBlockNumber              uint64 `protobuf:"varint,20,opt,name=slowestBlockNumber" json:"slowestBlockNumber"`
+	SlowestDurationUS               int64  `protobuf:"varint,21,opt,name=slowestDurationUs" json:"slowestDurationUs"`
 }
 
 type TokenChain struct {

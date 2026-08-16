@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1042-gd308c807-dirty"
+    "version": "v1.0.0-1043-g052d9178-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -1229,6 +1229,107 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tokenapiUpdateChainCheckpointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/chain-processing/attempts": {
+      "get": {
+        "tags": [
+          "TokenOperationsService"
+        ],
+        "operationId": "TokenOperationsService_ListChainProcessingAttempts",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "window_seconds",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiListChainProcessingAttemptsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/chain-processing/summary": {
+      "get": {
+        "tags": [
+          "TokenOperationsService"
+        ],
+        "operationId": "TokenOperationsService_GetChainProcessingSummary",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "chain_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uint64",
+            "name": "block_number",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "window_seconds",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tokenapiGetChainProcessingSummaryResponse"
             }
           },
           "default": {
@@ -3727,6 +3828,14 @@
         }
       }
     },
+    "tokenapiGetChainProcessingSummaryResponse": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "$ref": "#/definitions/v1alpha1TokenChainProcessingSummary"
+        }
+      }
+    },
     "tokenapiGetCollectionTaskResponse": {
       "type": "object",
       "properties": {
@@ -3809,6 +3918,29 @@
           "items": {
             "$ref": "#/definitions/v1alpha1TokenChainCheckpoint"
           }
+        }
+      }
+    },
+    "tokenapiListChainProcessingAttemptsResponse": {
+      "type": "object",
+      "properties": {
+        "attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TokenChainProcessingAttempt"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -5460,6 +5592,9 @@
         },
         "status": {
           "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
         }
       }
     },
@@ -5512,6 +5647,180 @@
         },
         "totalSupply": {
           "type": "string"
+        }
+      }
+    },
+    "v1alpha1TokenChainProcessingAttempt": {
+      "type": "object",
+      "properties": {
+        "attemptId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "attemptNumber": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "blockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "blockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "candidateCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "checkpointReadDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "completedAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "discoveryDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "expiredResearchStateCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "persistenceDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rejectedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "terminalStage": {
+          "type": "string"
+        },
+        "timingComplete": {
+          "type": "boolean"
+        },
+        "totalDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "validatedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "validationDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "v1alpha1TokenChainProcessingSummary": {
+      "type": "object",
+      "properties": {
+        "attemptCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "averageCheckpointReadDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "averageDiscoveryDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "averageDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "averagePersistenceDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "averageValidationDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "cancelledCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "failedCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "failureRateBps": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fastestBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "fastestDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "incompleteSucceededCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "interruptedCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "measuredSucceededCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rangeEndBlockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "rangeStartBlockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "runningCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slowestBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "slowestDurationUs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "succeededCount": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

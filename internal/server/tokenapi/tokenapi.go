@@ -141,6 +141,33 @@ func (s *Server) UpdateChainCheckpoint(ctx context.Context, req *tokenapipkg.Upd
 	}
 	return &tokenapipkg.UpdateChainCheckpointResponse{Found: r.GetFound(), Checkpoint: r.GetCheckpoint()}, nil
 }
+func (s *Server) GetChainProcessingSummary(ctx context.Context, req *tokenapipkg.GetChainProcessingSummaryRequest) (*tokenapipkg.GetChainProcessingSummaryResponse, error) {
+	client := s.tokenAPIClientSet.Operations()
+	r, e := client.GetChainProcessingSummary(ctx, &tokenapiapiclient.GetChainProcessingSummaryRequest{
+		ChainId:       req.GetChainId(),
+		BlockNumber:   req.GetBlockNumber(),
+		WindowSeconds: req.GetWindowSeconds(),
+	})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.GetChainProcessingSummaryResponse{Summary: r.GetSummary()}, nil
+}
+func (s *Server) ListChainProcessingAttempts(ctx context.Context, req *tokenapipkg.ListChainProcessingAttemptsRequest) (*tokenapipkg.ListChainProcessingAttemptsResponse, error) {
+	client := s.tokenAPIClientSet.Operations()
+	r, e := client.ListChainProcessingAttempts(ctx, &tokenapiapiclient.ListChainProcessingAttemptsRequest{
+		ChainId:       req.GetChainId(),
+		BlockNumber:   req.GetBlockNumber(),
+		WindowSeconds: req.GetWindowSeconds(),
+		Status:        req.GetStatus(),
+		Page:          req.GetPage(),
+		PageSize:      req.GetPageSize(),
+	})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.ListChainProcessingAttemptsResponse{Attempts: r.GetAttempts(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+}
 func (s *Server) GetContractCode(ctx context.Context, req *tokenapipkg.GetContractCodeRequest) (*tokenapipkg.GetContractCodeResponse, error) {
 	client := s.tokenAPIClientSet.Catalog()
 	r, e := client.GetContractCode(ctx, &tokenapiapiclient.GetContractCodeRequest{CodeHash: req.GetCodeHash()})

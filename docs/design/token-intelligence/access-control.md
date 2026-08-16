@@ -53,8 +53,9 @@ existing role hierarchy.
    caller's claims. Administrators receive the concrete Token permissions that
    drive the UI; read-only users receive no Token permissions.
 4. The UI converts the returned permissions into session-scoped `AccessState`.
-   `filterNavItems` removes every inaccessible Token child and consequently
-   removes the empty Token navigation group for a read-only user.
+   `filterNavItems` removes every inaccessible Token child, including the
+   `/token/chain-processing` diagnostics route, and consequently removes the
+   empty Token navigation group for a read-only user.
 5. Each `/token/*` route is wrapped by `RequirePermission`. A direct read-only
    navigation renders the existing 403 result before the Token page component
    mounts, so the page does not initiate Token data requests.
@@ -145,11 +146,13 @@ log format.
 - [ ] Session permission projection still covers every Token navigation and route permission.
 - [ ] Token navigation filtering and direct-route denial remain aligned.
 - [ ] Every public Token API method has a server-side `tokenapi` authorization rule.
+- [ ] Chain processing summaries and attempt history remain mapped to the same
+      `tokenapi/get/chain-checkpoints` permission as checkpoint reads.
 - [ ] Project detail, Swap activity, and Swap event reads remain mapped to
       `tokenapi/get/projects`.
 - [ ] Projects Overview and Report Risk remain mapped to
       `tokenapi/get/projects`, while Report revision history remains mapped to
       `tokenapi/get/report-revisions`.
-- [ ] API and session response schemas remain unchanged.
+- [ ] New Token API response types do not change the session permission schema.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

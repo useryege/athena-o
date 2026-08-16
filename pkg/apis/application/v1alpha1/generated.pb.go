@@ -82,6 +82,10 @@ func (m *TokenChainPair) Reset() { *m = TokenChainPair{} }
 
 func (m *TokenChainPairLiquidity) Reset() { *m = TokenChainPairLiquidity{} }
 
+func (m *TokenChainProcessingAttempt) Reset() { *m = TokenChainProcessingAttempt{} }
+
+func (m *TokenChainProcessingSummary) Reset() { *m = TokenChainProcessingSummary{} }
+
 func (m *TokenChainStateObservation) Reset() { *m = TokenChainStateObservation{} }
 
 func (m *TokenChainToken) Reset() { *m = TokenChainToken{} }
@@ -2824,6 +2828,11 @@ func (m *TokenChainCheckpoint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.UpdatedAt)
+	copy(dAtA[i:], m.UpdatedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
+	i--
+	dAtA[i] = 0x3a
 	i -= len(m.CreatedAt)
 	copy(dAtA[i:], m.CreatedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedAt)))
@@ -2985,6 +2994,226 @@ func (m *TokenChainPairLiquidity) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TotalSupply)))
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *TokenChainProcessingAttempt) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TokenChainProcessingAttempt) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TokenChainProcessingAttempt) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.UpdatedAt)
+	copy(dAtA[i:], m.UpdatedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.UpdatedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xb2
+	i -= len(m.CreatedAt)
+	copy(dAtA[i:], m.CreatedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xaa
+	i -= len(m.CompletedAt)
+	copy(dAtA[i:], m.CompletedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CompletedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa2
+	i -= len(m.StartedAt)
+	copy(dAtA[i:], m.StartedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.StartedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x9a
+	i--
+	if m.TimingComplete {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x90
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ExpiredResearchStateCount))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x88
+	i = encodeVarintGenerated(dAtA, i, uint64(m.RejectedCount))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x80
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ValidatedCount))
+	i--
+	dAtA[i] = 0x78
+	i = encodeVarintGenerated(dAtA, i, uint64(m.CandidateCount))
+	i--
+	dAtA[i] = 0x70
+	i = encodeVarintGenerated(dAtA, i, uint64(m.TotalDurationUS))
+	i--
+	dAtA[i] = 0x68
+	i = encodeVarintGenerated(dAtA, i, uint64(m.PersistenceDurationUS))
+	i--
+	dAtA[i] = 0x60
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ValidationDurationUS))
+	i--
+	dAtA[i] = 0x58
+	i = encodeVarintGenerated(dAtA, i, uint64(m.DiscoveryDurationUS))
+	i--
+	dAtA[i] = 0x50
+	i = encodeVarintGenerated(dAtA, i, uint64(m.CheckpointReadDurationUS))
+	i--
+	dAtA[i] = 0x48
+	i -= len(m.ErrorMessage)
+	copy(dAtA[i:], m.ErrorMessage)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ErrorMessage)))
+	i--
+	dAtA[i] = 0x42
+	i -= len(m.TerminalStage)
+	copy(dAtA[i:], m.TerminalStage)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TerminalStage)))
+	i--
+	dAtA[i] = 0x3a
+	i -= len(m.Status)
+	copy(dAtA[i:], m.Status)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Status)))
+	i--
+	dAtA[i] = 0x32
+	i = encodeVarintGenerated(dAtA, i, uint64(m.BlockTime))
+	i--
+	dAtA[i] = 0x28
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AttemptNumber))
+	i--
+	dAtA[i] = 0x20
+	i = encodeVarintGenerated(dAtA, i, uint64(m.BlockNumber))
+	i--
+	dAtA[i] = 0x18
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ChainID))
+	i--
+	dAtA[i] = 0x10
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AttemptID))
+	i--
+	dAtA[i] = 0x8
+	return len(dAtA) - i, nil
+}
+
+func (m *TokenChainProcessingSummary) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TokenChainProcessingSummary) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TokenChainProcessingSummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i = encodeVarintGenerated(dAtA, i, uint64(m.SlowestDurationUS))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa8
+	i = encodeVarintGenerated(dAtA, i, uint64(m.SlowestBlockNumber))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0xa0
+	i = encodeVarintGenerated(dAtA, i, uint64(m.FastestDurationUS))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x98
+	i = encodeVarintGenerated(dAtA, i, uint64(m.FastestBlockNumber))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x90
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AveragePersistenceDurationUS))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x88
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AverageValidationDurationUS))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x80
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AverageDiscoveryDurationUS))
+	i--
+	dAtA[i] = 0x78
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AverageCheckpointReadDurationUS))
+	i--
+	dAtA[i] = 0x70
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AverageDurationUS))
+	i--
+	dAtA[i] = 0x68
+	i = encodeVarintGenerated(dAtA, i, uint64(m.FailureRateBPS))
+	i--
+	dAtA[i] = 0x60
+	i = encodeVarintGenerated(dAtA, i, uint64(m.MeasuredSucceededCount))
+	i--
+	dAtA[i] = 0x58
+	i = encodeVarintGenerated(dAtA, i, uint64(m.IncompleteSucceededCount))
+	i--
+	dAtA[i] = 0x50
+	i = encodeVarintGenerated(dAtA, i, uint64(m.InterruptedCount))
+	i--
+	dAtA[i] = 0x48
+	i = encodeVarintGenerated(dAtA, i, uint64(m.CancelledCount))
+	i--
+	dAtA[i] = 0x40
+	i = encodeVarintGenerated(dAtA, i, uint64(m.FailedCount))
+	i--
+	dAtA[i] = 0x38
+	i = encodeVarintGenerated(dAtA, i, uint64(m.SucceededCount))
+	i--
+	dAtA[i] = 0x30
+	i = encodeVarintGenerated(dAtA, i, uint64(m.RunningCount))
+	i--
+	dAtA[i] = 0x28
+	i = encodeVarintGenerated(dAtA, i, uint64(m.AttemptCount))
+	i--
+	dAtA[i] = 0x20
+	i = encodeVarintGenerated(dAtA, i, uint64(m.RangeEndBlockTime))
+	i--
+	dAtA[i] = 0x18
+	i = encodeVarintGenerated(dAtA, i, uint64(m.RangeStartBlockTime))
+	i--
+	dAtA[i] = 0x10
+	i = encodeVarintGenerated(dAtA, i, uint64(m.ChainID))
+	i--
+	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
 
@@ -7034,6 +7263,8 @@ func (m *TokenChainCheckpoint) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.CreatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.UpdatedAt)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -7079,6 +7310,74 @@ func (m *TokenChainPairLiquidity) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.FeeAddressHoldLiquidityRatio)
 	n += 1 + l + sovGenerated(uint64(l))
+	return n
+}
+
+func (m *TokenChainProcessingAttempt) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovGenerated(uint64(m.AttemptID))
+	n += 1 + sovGenerated(uint64(m.ChainID))
+	n += 1 + sovGenerated(uint64(m.BlockNumber))
+	n += 1 + sovGenerated(uint64(m.AttemptNumber))
+	n += 1 + sovGenerated(uint64(m.BlockTime))
+	l = len(m.Status)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.TerminalStage)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.ErrorMessage)
+	n += 1 + l + sovGenerated(uint64(l))
+	n += 1 + sovGenerated(uint64(m.CheckpointReadDurationUS))
+	n += 1 + sovGenerated(uint64(m.DiscoveryDurationUS))
+	n += 1 + sovGenerated(uint64(m.ValidationDurationUS))
+	n += 1 + sovGenerated(uint64(m.PersistenceDurationUS))
+	n += 1 + sovGenerated(uint64(m.TotalDurationUS))
+	n += 1 + sovGenerated(uint64(m.CandidateCount))
+	n += 1 + sovGenerated(uint64(m.ValidatedCount))
+	n += 2 + sovGenerated(uint64(m.RejectedCount))
+	n += 2 + sovGenerated(uint64(m.ExpiredResearchStateCount))
+	n += 3
+	l = len(m.StartedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.CompletedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.CreatedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.UpdatedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	return n
+}
+
+func (m *TokenChainProcessingSummary) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + sovGenerated(uint64(m.ChainID))
+	n += 1 + sovGenerated(uint64(m.RangeStartBlockTime))
+	n += 1 + sovGenerated(uint64(m.RangeEndBlockTime))
+	n += 1 + sovGenerated(uint64(m.AttemptCount))
+	n += 1 + sovGenerated(uint64(m.RunningCount))
+	n += 1 + sovGenerated(uint64(m.SucceededCount))
+	n += 1 + sovGenerated(uint64(m.FailedCount))
+	n += 1 + sovGenerated(uint64(m.CancelledCount))
+	n += 1 + sovGenerated(uint64(m.InterruptedCount))
+	n += 1 + sovGenerated(uint64(m.IncompleteSucceededCount))
+	n += 1 + sovGenerated(uint64(m.MeasuredSucceededCount))
+	n += 1 + sovGenerated(uint64(m.FailureRateBPS))
+	n += 1 + sovGenerated(uint64(m.AverageDurationUS))
+	n += 1 + sovGenerated(uint64(m.AverageCheckpointReadDurationUS))
+	n += 1 + sovGenerated(uint64(m.AverageDiscoveryDurationUS))
+	n += 2 + sovGenerated(uint64(m.AverageValidationDurationUS))
+	n += 2 + sovGenerated(uint64(m.AveragePersistenceDurationUS))
+	n += 2 + sovGenerated(uint64(m.FastestBlockNumber))
+	n += 2 + sovGenerated(uint64(m.FastestDurationUS))
+	n += 2 + sovGenerated(uint64(m.SlowestBlockNumber))
+	n += 2 + sovGenerated(uint64(m.SlowestDurationUS))
 	return n
 }
 
@@ -8906,6 +9205,7 @@ func (this *TokenChainCheckpoint) String() string {
 		`CursorBlockNumber:` + fmt.Sprintf("%v", this.CursorBlockNumber) + `,`,
 		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
+		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -8938,6 +9238,67 @@ func (this *TokenChainPairLiquidity) String() string {
 		`LockedLiquidity:` + fmt.Sprintf("%v", this.LockedLiquidity) + `,`,
 		`FeeAddressHoldLiquidityBalance:` + fmt.Sprintf("%v", this.FeeAddressHoldLiquidityBalance) + `,`,
 		`FeeAddressHoldLiquidityRatio:` + fmt.Sprintf("%v", this.FeeAddressHoldLiquidityRatio) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TokenChainProcessingAttempt) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TokenChainProcessingAttempt{`,
+		`AttemptID:` + fmt.Sprintf("%v", this.AttemptID) + `,`,
+		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
+		`BlockNumber:` + fmt.Sprintf("%v", this.BlockNumber) + `,`,
+		`AttemptNumber:` + fmt.Sprintf("%v", this.AttemptNumber) + `,`,
+		`BlockTime:` + fmt.Sprintf("%v", this.BlockTime) + `,`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
+		`TerminalStage:` + fmt.Sprintf("%v", this.TerminalStage) + `,`,
+		`ErrorMessage:` + fmt.Sprintf("%v", this.ErrorMessage) + `,`,
+		`CheckpointReadDurationUS:` + fmt.Sprintf("%v", this.CheckpointReadDurationUS) + `,`,
+		`DiscoveryDurationUS:` + fmt.Sprintf("%v", this.DiscoveryDurationUS) + `,`,
+		`ValidationDurationUS:` + fmt.Sprintf("%v", this.ValidationDurationUS) + `,`,
+		`PersistenceDurationUS:` + fmt.Sprintf("%v", this.PersistenceDurationUS) + `,`,
+		`TotalDurationUS:` + fmt.Sprintf("%v", this.TotalDurationUS) + `,`,
+		`CandidateCount:` + fmt.Sprintf("%v", this.CandidateCount) + `,`,
+		`ValidatedCount:` + fmt.Sprintf("%v", this.ValidatedCount) + `,`,
+		`RejectedCount:` + fmt.Sprintf("%v", this.RejectedCount) + `,`,
+		`ExpiredResearchStateCount:` + fmt.Sprintf("%v", this.ExpiredResearchStateCount) + `,`,
+		`TimingComplete:` + fmt.Sprintf("%v", this.TimingComplete) + `,`,
+		`StartedAt:` + fmt.Sprintf("%v", this.StartedAt) + `,`,
+		`CompletedAt:` + fmt.Sprintf("%v", this.CompletedAt) + `,`,
+		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
+		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TokenChainProcessingSummary) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TokenChainProcessingSummary{`,
+		`ChainID:` + fmt.Sprintf("%v", this.ChainID) + `,`,
+		`RangeStartBlockTime:` + fmt.Sprintf("%v", this.RangeStartBlockTime) + `,`,
+		`RangeEndBlockTime:` + fmt.Sprintf("%v", this.RangeEndBlockTime) + `,`,
+		`AttemptCount:` + fmt.Sprintf("%v", this.AttemptCount) + `,`,
+		`RunningCount:` + fmt.Sprintf("%v", this.RunningCount) + `,`,
+		`SucceededCount:` + fmt.Sprintf("%v", this.SucceededCount) + `,`,
+		`FailedCount:` + fmt.Sprintf("%v", this.FailedCount) + `,`,
+		`CancelledCount:` + fmt.Sprintf("%v", this.CancelledCount) + `,`,
+		`InterruptedCount:` + fmt.Sprintf("%v", this.InterruptedCount) + `,`,
+		`IncompleteSucceededCount:` + fmt.Sprintf("%v", this.IncompleteSucceededCount) + `,`,
+		`MeasuredSucceededCount:` + fmt.Sprintf("%v", this.MeasuredSucceededCount) + `,`,
+		`FailureRateBPS:` + fmt.Sprintf("%v", this.FailureRateBPS) + `,`,
+		`AverageDurationUS:` + fmt.Sprintf("%v", this.AverageDurationUS) + `,`,
+		`AverageCheckpointReadDurationUS:` + fmt.Sprintf("%v", this.AverageCheckpointReadDurationUS) + `,`,
+		`AverageDiscoveryDurationUS:` + fmt.Sprintf("%v", this.AverageDiscoveryDurationUS) + `,`,
+		`AverageValidationDurationUS:` + fmt.Sprintf("%v", this.AverageValidationDurationUS) + `,`,
+		`AveragePersistenceDurationUS:` + fmt.Sprintf("%v", this.AveragePersistenceDurationUS) + `,`,
+		`FastestBlockNumber:` + fmt.Sprintf("%v", this.FastestBlockNumber) + `,`,
+		`FastestDurationUS:` + fmt.Sprintf("%v", this.FastestDurationUS) + `,`,
+		`SlowestBlockNumber:` + fmt.Sprintf("%v", this.SlowestBlockNumber) + `,`,
+		`SlowestDurationUS:` + fmt.Sprintf("%v", this.SlowestDurationUS) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -20905,6 +21266,38 @@ func (m *TokenChainCheckpoint) Unmarshal(dAtA []byte) error {
 			}
 			m.CreatedAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -21421,6 +21814,1015 @@ func (m *TokenChainPairLiquidity) Unmarshal(dAtA []byte) error {
 			}
 			m.FeeAddressHoldLiquidityRatio = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TokenChainProcessingAttempt) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TokenChainProcessingAttempt: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TokenChainProcessingAttempt: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttemptID", wireType)
+			}
+			m.AttemptID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AttemptID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainID", wireType)
+			}
+			m.ChainID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockNumber", wireType)
+			}
+			m.BlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttemptNumber", wireType)
+			}
+			m.AttemptNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AttemptNumber |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockTime", wireType)
+			}
+			m.BlockTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockTime |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Status = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TerminalStage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TerminalStage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CheckpointReadDurationUS", wireType)
+			}
+			m.CheckpointReadDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CheckpointReadDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DiscoveryDurationUS", wireType)
+			}
+			m.DiscoveryDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DiscoveryDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidationDurationUS", wireType)
+			}
+			m.ValidationDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ValidationDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PersistenceDurationUS", wireType)
+			}
+			m.PersistenceDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PersistenceDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalDurationUS", wireType)
+			}
+			m.TotalDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CandidateCount", wireType)
+			}
+			m.CandidateCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CandidateCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatedCount", wireType)
+			}
+			m.ValidatedCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ValidatedCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RejectedCount", wireType)
+			}
+			m.RejectedCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RejectedCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiredResearchStateCount", wireType)
+			}
+			m.ExpiredResearchStateCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpiredResearchStateCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TimingComplete", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.TimingComplete = bool(v != 0)
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StartedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompletedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CompletedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CreatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UpdatedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TokenChainProcessingSummary) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TokenChainProcessingSummary: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TokenChainProcessingSummary: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainID", wireType)
+			}
+			m.ChainID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChainID |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RangeStartBlockTime", wireType)
+			}
+			m.RangeStartBlockTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RangeStartBlockTime |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RangeEndBlockTime", wireType)
+			}
+			m.RangeEndBlockTime = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RangeEndBlockTime |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AttemptCount", wireType)
+			}
+			m.AttemptCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AttemptCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunningCount", wireType)
+			}
+			m.RunningCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RunningCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SucceededCount", wireType)
+			}
+			m.SucceededCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SucceededCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FailedCount", wireType)
+			}
+			m.FailedCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FailedCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CancelledCount", wireType)
+			}
+			m.CancelledCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CancelledCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InterruptedCount", wireType)
+			}
+			m.InterruptedCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.InterruptedCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncompleteSucceededCount", wireType)
+			}
+			m.IncompleteSucceededCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.IncompleteSucceededCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MeasuredSucceededCount", wireType)
+			}
+			m.MeasuredSucceededCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MeasuredSucceededCount |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FailureRateBPS", wireType)
+			}
+			m.FailureRateBPS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FailureRateBPS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AverageDurationUS", wireType)
+			}
+			m.AverageDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AverageDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AverageCheckpointReadDurationUS", wireType)
+			}
+			m.AverageCheckpointReadDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AverageCheckpointReadDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AverageDiscoveryDurationUS", wireType)
+			}
+			m.AverageDiscoveryDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AverageDiscoveryDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AverageValidationDurationUS", wireType)
+			}
+			m.AverageValidationDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AverageValidationDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AveragePersistenceDurationUS", wireType)
+			}
+			m.AveragePersistenceDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AveragePersistenceDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FastestBlockNumber", wireType)
+			}
+			m.FastestBlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FastestBlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 19:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FastestDurationUS", wireType)
+			}
+			m.FastestDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FastestDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 20:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SlowestBlockNumber", wireType)
+			}
+			m.SlowestBlockNumber = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SlowestBlockNumber |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 21:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SlowestDurationUS", wireType)
+			}
+			m.SlowestDurationUS = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SlowestDurationUS |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

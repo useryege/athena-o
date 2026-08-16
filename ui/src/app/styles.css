@@ -4128,6 +4128,205 @@ body::-webkit-scrollbar-thumb,
     margin-bottom: 0;
 }
 
+.chain-processing-summary {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.chain-processing-filters .ant-select {
+    min-width: 160px;
+}
+
+.chain-processing-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.chain-processing-kpi {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+    color: var(--athena-text);
+    box-shadow: var(--athena-shadow-surface);
+    text-align: left;
+}
+
+button.chain-processing-kpi {
+    width: 100%;
+    appearance: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.chain-processing-kpi--interactive:hover {
+    border-color: var(--athena-primary);
+    box-shadow: var(--athena-shadow-tight);
+}
+
+.chain-processing-kpi--interactive:focus-visible {
+    outline: 2px solid var(--athena-focus);
+    outline-offset: 2px;
+}
+
+.chain-processing-kpi > span {
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.chain-processing-kpi > strong {
+    overflow: hidden;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 22px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chain-processing-kpi > small {
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-size: 11px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chain-processing-summary__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-bg-soft);
+}
+
+.chain-processing-stages {
+    display: grid;
+    gap: 12px;
+}
+
+.chain-processing-stage {
+    display: grid;
+    grid-template-columns: 170px minmax(120px, 1fr) 90px;
+    align-items: center;
+    gap: 12px;
+}
+
+.chain-processing-stage > span {
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.chain-processing-stage > strong {
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 12px;
+    text-align: right;
+}
+
+.chain-processing-stage__track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--athena-bg-soft);
+}
+
+.chain-processing-stage__track > i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--athena-primary), var(--athena-blue));
+}
+
+.chain-processing-attempt-details {
+    padding: 8px 0;
+}
+
+.chain-processing-attempt-details .key-value-grid .ant-descriptions-item-content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.chain-processing-attempt-card,
+.chain-processing-checkpoint-card {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.chain-processing-attempt-card__header,
+.chain-processing-attempt-card__footer,
+.chain-processing-checkpoint-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.chain-processing-attempt-card__header > div {
+    display: grid;
+    gap: 2px;
+}
+
+.chain-processing-attempt-card__metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.chain-processing-attempt-card__metrics > span {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+    padding: 8px;
+    border: 1px solid var(--athena-border);
+    border-radius: 7px;
+    color: var(--athena-muted);
+    font-size: 11px;
+}
+
+.chain-processing-attempt-card__metrics strong {
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 13px;
+}
+
+.chain-processing-attempt-card__details {
+    margin-top: 12px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.chain-processing-attempt-card__details summary {
+    padding-top: 10px;
+    color: var(--athena-primary);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.chain-processing-checkpoint-card__header {
+    margin-bottom: 10px;
+}
+
+.chain-processing-checkpoint-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
 .project-detail-not-found {
     padding: 64px 20px;
     border: 1px solid var(--athena-border);
@@ -4390,6 +4589,24 @@ body::-webkit-scrollbar-thumb,
         padding-inline: 14px;
     }
 
+    .chain-processing-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .chain-processing-kpi:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .chain-processing-summary__meta {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .chain-processing-stage {
+        grid-template-columns: 145px minmax(80px, 1fr) 78px;
+        gap: 8px;
+    }
+
     .project-detail .project-detail-kpis,
     .project-detail-tab .project-risk-grid,
     .project-detail-tab .project-collection-grid {
@@ -4457,6 +4674,46 @@ body::-webkit-scrollbar-thumb,
 }
 
 @media (max-width: 767px) {
+    .chain-processing-filters {
+        align-items: stretch !important;
+        flex-direction: column;
+    }
+
+    .chain-processing-filters > .ant-space-item,
+    .chain-processing-filters .ant-select,
+    .chain-processing-filters .ant-space-compact {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .chain-processing-filters .ant-input-number {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .chain-processing-kpi > strong {
+        font-size: 18px;
+    }
+
+    .chain-processing-stage {
+        grid-template-columns: minmax(0, 1fr) 78px;
+    }
+
+    .chain-processing-stage__track {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .chain-processing-stage > strong {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .chain-processing-attempt-card__footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
     .project-transactions__filters {
         align-items: stretch;
         flex-direction: column;

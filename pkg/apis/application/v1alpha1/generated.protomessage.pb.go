@@ -73,6 +73,10 @@ func (*TokenChainPair) ProtoMessage() {}
 
 func (*TokenChainPairLiquidity) ProtoMessage() {}
 
+func (*TokenChainProcessingAttempt) ProtoMessage() {}
+
+func (*TokenChainProcessingSummary) ProtoMessage() {}
+
 func (*TokenChainStateObservation) ProtoMessage() {}
 
 func (*TokenChainToken) ProtoMessage() {}

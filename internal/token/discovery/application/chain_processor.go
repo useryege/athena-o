@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -22,6 +23,8 @@ type ChainProcessorRepository interface {
 	GetChainProcessingCheckpoint(context.Context, int64) (*discovery.ChainProcessingCheckpoint, error)
 	UpsertChainProcessingCheckpoint(context.Context, discovery.ChainProcessingCheckpoint) (*discovery.ChainProcessingCheckpoint, error)
 	UpdateChainProcessingCheckpointStatus(context.Context, int64, discovery.ChainProcessingStatus) (*discovery.ChainProcessingCheckpoint, error)
+	StartChainBlockProcessingAttempt(context.Context, int64, uint64) (*discovery.ChainBlockProcessingAttempt, error)
+	CompleteChainBlockProcessingAttempt(context.Context, discovery.ChainBlockProcessingAttemptCompletion) (*discovery.ChainBlockProcessingAttempt, error)
 	CommitProcessedBlock(context.Context, CommitProcessedBlockCommand) (*CommitProcessedBlockResult, error)
 }
 
@@ -116,6 +119,17 @@ type ChainProcessor struct {
 	blocks     BlockSource
 	inspector  CandidateInspector
 	options    ChainProcessorOptions
+}
+
+type blockAttemptMetrics struct {
+	checkpointRead            *time.Duration
+	discovery                 *time.Duration
+	validation                *time.Duration
+	persistence               *time.Duration
+	candidateCount            *int32
+	validatedCount            *int32
+	rejectedCount             *int32
+	expiredResearchStateCount *int64
 }
 
 func NewChainProcessor(repository ChainProcessorRepository, blocks BlockSource, inspector CandidateInspector, options ChainProcessorOptions) *ChainProcessor {
@@ -242,14 +256,25 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 			return result, err
 		}
 		blockStartedAt := time.Now()
+		attempt, err := processor.repository.StartChainBlockProcessingAttempt(ctx, command.ChainID, next)
+		if err != nil {
+			logProcessorBlockFailure(ctx, command.ChainID, next, "attempt_start", blockStartedAt, time.Since(blockStartedAt), err)
+			return result, err
+		}
+		metrics := blockAttemptMetrics{}
 		blockCheckpointReadStartedAt := time.Now()
 		checkpoint, err = processor.repository.GetChainProcessingCheckpoint(ctx, command.ChainID)
 		blockCheckpointReadDuration := time.Since(blockCheckpointReadStartedAt)
+		metrics.checkpointRead = durationPointer(blockCheckpointReadDuration)
 		if err != nil {
+			err = processor.finishBlockAttempt(ctx, attempt.ID, 0, blockAttemptFailureStatus(ctx), discovery.ChainBlockProcessingStageCheckpointRead, err, metrics, false)
 			logProcessorBlockFailure(ctx, command.ChainID, next, "checkpoint_read", blockStartedAt, blockCheckpointReadDuration, err)
 			return result, err
 		}
 		if checkpoint == nil || !checkpoint.Enabled || checkpoint.Status != discovery.ChainProcessingStatusRunning {
+			if finishErr := processor.finishBlockAttempt(ctx, attempt.ID, 0, discovery.ChainBlockProcessingAttemptStatusCancelled, discovery.ChainBlockProcessingStageCheckpointRead, nil, metrics, false); finishErr != nil {
+				return result, finishErr
+			}
 			return result, nil
 		}
 		log.WithFields(log.Fields{
@@ -263,24 +288,33 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 		discoveryStartedAt := time.Now()
 		discoveredBlock, err := processor.blocks.DiscoverProjectBlock(ctx, command.ChainID, next)
 		discoveryDuration := time.Since(discoveryStartedAt)
+		metrics.discovery = durationPointer(discoveryDuration)
 		if err != nil {
+			err = processor.finishBlockAttempt(ctx, attempt.ID, 0, blockAttemptFailureStatus(ctx), discovery.ChainBlockProcessingStageCandidateDiscovery, err, metrics, false)
 			logProcessorBlockFailure(ctx, command.ChainID, next, "candidate_discovery", blockStartedAt, discoveryDuration, err)
 			return result, err
 		}
 		if discoveredBlock.Header.Number != next {
 			err = fmt.Errorf("token project discovery returned block %d for requested block %d", discoveredBlock.Header.Number, next)
+			err = processor.finishBlockAttempt(ctx, attempt.ID, discoveredBlock.Header.Timestamp, discovery.ChainBlockProcessingAttemptStatusFailed, discovery.ChainBlockProcessingStageCandidateDiscovery, err, metrics, false)
 			logProcessorBlockFailure(ctx, command.ChainID, next, "candidate_discovery", blockStartedAt, discoveryDuration, err)
 			return result, err
 		}
 		candidates := discoveredBlock.Candidates
+		candidateCount := int32(len(candidates))
+		metrics.candidateCount = &candidateCount
 		validationStartedAt := time.Now()
 		inspections, err := processor.inspectCandidateBatches(ctx, command.ChainID, candidates)
 		validationDuration := time.Since(validationStartedAt)
+		metrics.validation = durationPointer(validationDuration)
 		if err != nil {
+			err = processor.finishBlockAttempt(ctx, attempt.ID, discoveredBlock.Header.Timestamp, blockAttemptFailureStatus(ctx), discovery.ChainBlockProcessingStageCandidateValidation, err, metrics, false)
 			logProcessorBlockFailure(ctx, command.ChainID, next, "candidate_validation", blockStartedAt, validationDuration, err)
 			return result, err
 		}
 		validated, rejected := countInspectionOutcomes(inspections)
+		validatedCount, rejectedCount := int32(validated), int32(rejected)
+		metrics.validatedCount, metrics.rejectedCount = &validatedCount, &rejectedCount
 		persistenceStartedAt := time.Now()
 		committed, err := processor.repository.CommitProcessedBlock(ctx, CommitProcessedBlockCommand{
 			Checkpoint: discovery.ChainProcessingCheckpoint{
@@ -294,8 +328,15 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 			ResearchTTL: processor.options.ResearchTTL,
 		})
 		persistenceDuration := time.Since(persistenceStartedAt)
+		metrics.persistence = durationPointer(persistenceDuration)
 		if err != nil {
+			err = processor.finishBlockAttempt(ctx, attempt.ID, discoveredBlock.Header.Timestamp, blockAttemptFailureStatus(ctx), discovery.ChainBlockProcessingStagePersistence, err, metrics, false)
 			logProcessorBlockFailure(ctx, command.ChainID, next, "persistence", blockStartedAt, persistenceDuration, err)
+			return result, err
+		}
+		metrics.expiredResearchStateCount = &committed.ExpiredResearchStates
+		if err := processor.finishBlockAttempt(ctx, attempt.ID, discoveredBlock.Header.Timestamp, discovery.ChainBlockProcessingAttemptStatusSucceeded, discovery.ChainBlockProcessingStagePersistence, nil, metrics, true); err != nil {
+			logProcessorBlockFailure(ctx, command.ChainID, next, "attempt_completion", blockStartedAt, time.Since(blockStartedAt), err)
 			return result, err
 		}
 		log.WithFields(log.Fields{
@@ -310,7 +351,7 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 			"discovery_duration_ms":        discoveryDuration.Milliseconds(),
 			"validation_duration_ms":       validationDuration.Milliseconds(),
 			"persistence_duration_ms":      persistenceDuration.Milliseconds(),
-			"duration_ms":                  time.Since(blockStartedAt).Milliseconds(),
+			"duration_ms":                  blockAttemptDuration(metrics).Milliseconds(),
 		}).Info("token chain block processing completed")
 		result.Blocks++
 		result.Candidates += len(candidates)
@@ -320,6 +361,76 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 		next++
 	}
 	return result, nil
+}
+
+func (processor *ChainProcessor) finishBlockAttempt(
+	ctx context.Context,
+	attemptID int64,
+	blockTime uint64,
+	status discovery.ChainBlockProcessingAttemptStatus,
+	stage discovery.ChainBlockProcessingStage,
+	processingErr error,
+	metrics blockAttemptMetrics,
+	timingComplete bool,
+) error {
+	completionCtx := ctx
+	cancel := func() {}
+	if ctx.Err() != nil {
+		completionCtx, cancel = context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	}
+	defer cancel()
+	errorMessage := ""
+	if processingErr != nil {
+		errorMessage = processingErr.Error()
+	}
+	_, completionErr := processor.repository.CompleteChainBlockProcessingAttempt(completionCtx, discovery.ChainBlockProcessingAttemptCompletion{
+		AttemptID:                 attemptID,
+		BlockTime:                 blockTime,
+		Status:                    status,
+		TerminalStage:             stage,
+		ErrorMessage:              errorMessage,
+		CheckpointReadDuration:    metrics.checkpointRead,
+		DiscoveryDuration:         metrics.discovery,
+		ValidationDuration:        metrics.validation,
+		PersistenceDuration:       metrics.persistence,
+		CandidateCount:            metrics.candidateCount,
+		ValidatedCount:            metrics.validatedCount,
+		RejectedCount:             metrics.rejectedCount,
+		ExpiredResearchStateCount: metrics.expiredResearchStateCount,
+		TimingComplete:            timingComplete,
+	})
+	if processingErr != nil && completionErr != nil {
+		return errors.Join(processingErr, fmt.Errorf("record token chain block processing attempt: %w", completionErr))
+	}
+	if processingErr != nil {
+		return processingErr
+	}
+	if completionErr != nil {
+		return fmt.Errorf("record token chain block processing attempt: %w", completionErr)
+	}
+	return nil
+}
+
+func blockAttemptFailureStatus(ctx context.Context) discovery.ChainBlockProcessingAttemptStatus {
+	if ctx.Err() != nil {
+		return discovery.ChainBlockProcessingAttemptStatusCancelled
+	}
+	return discovery.ChainBlockProcessingAttemptStatusFailed
+}
+
+func durationPointer(value time.Duration) *time.Duration {
+	result := value
+	return &result
+}
+
+func blockAttemptDuration(metrics blockAttemptMetrics) time.Duration {
+	var result time.Duration
+	for _, value := range []*time.Duration{metrics.checkpointRead, metrics.discovery, metrics.validation, metrics.persistence} {
+		if value != nil {
+			result += *value
+		}
+	}
+	return result
 }
 
 func (processor *ChainProcessor) inspectCandidateBatches(ctx context.Context, chainID int64, candidates []discovery.ProjectCandidate) ([]CandidateInspection, error) {

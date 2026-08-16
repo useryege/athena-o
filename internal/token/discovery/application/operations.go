@@ -16,6 +16,8 @@ type OperationsRepository interface {
 	GetChainProcessingCheckpoint(context.Context, int64) (*discovery.ChainProcessingCheckpoint, error)
 	ListChainProcessingCheckpoints(context.Context) ([]discovery.ChainProcessingCheckpoint, error)
 	UpdateChainProcessingCheckpointStatus(context.Context, int64, discovery.ChainProcessingStatus) (*discovery.ChainProcessingCheckpoint, error)
+	GetChainBlockProcessingSummary(context.Context, discovery.ChainBlockProcessingFilter) (*discovery.ChainBlockProcessingSummary, error)
+	ListChainBlockProcessingAttemptsPage(context.Context, discovery.ChainBlockProcessingFilter, int32, int32) (*discovery.ChainBlockProcessingAttemptPage, error)
 }
 
 type NodeStatusProvider interface {
@@ -37,6 +39,12 @@ func (o *Operations) ListChainProcessingCheckpoints(ctx context.Context) ([]disc
 }
 func (o *Operations) UpdateChainProcessingCheckpointStatus(ctx context.Context, chainID int64, status discovery.ChainProcessingStatus) (*discovery.ChainProcessingCheckpoint, error) {
 	return o.repository.UpdateChainProcessingCheckpointStatus(ctx, chainID, status)
+}
+func (o *Operations) GetChainBlockProcessingSummary(ctx context.Context, filter discovery.ChainBlockProcessingFilter) (*discovery.ChainBlockProcessingSummary, error) {
+	return o.repository.GetChainBlockProcessingSummary(ctx, filter)
+}
+func (o *Operations) ListChainBlockProcessingAttemptsPage(ctx context.Context, filter discovery.ChainBlockProcessingFilter, page, pageSize int32) (*discovery.ChainBlockProcessingAttemptPage, error) {
+	return o.repository.ListChainBlockProcessingAttemptsPage(ctx, filter, page, pageSize)
 }
 
 func (o *Operations) ListNodeStatuses(ctx context.Context) ([]discovery.NodeStatus, error) {
