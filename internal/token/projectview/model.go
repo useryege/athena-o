@@ -65,7 +65,12 @@ type ProjectReportSummary struct {
 }
 
 type ProjectListItem struct {
-	Project        catalog.Project
+	ProjectID      int64
+	ChainID        int64
+	Name           string
+	Symbol         string
+	BlockTime      uint64
+	CreatedAt      time.Time
 	LogoURL        string
 	ResearchStatus research.ProjectResearchStatus
 	CurrentReport  *ProjectReportSummary

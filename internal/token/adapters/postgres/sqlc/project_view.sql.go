@@ -193,20 +193,9 @@ const listProjectListItems = `-- name: ListProjectListItems :many
 SELECT
   project.id,
   project.chain_id,
-  project.contract,
-  project.tx_sender,
-  project.tx_hash,
-  project.tx_index,
-  project.deployment_nonce,
-  project.block_number,
   project.block_time,
-  project.code_hash,
   project.name,
   project.symbol,
-  project.decimals,
-  project.total_supply,
-  project.weth_pair,
-  project.usdt_pair,
   project.created_at,
   COALESCE(
     CASE
@@ -406,20 +395,9 @@ type ListProjectListItemsParams struct {
 type ListProjectListItemsRow struct {
 	ID                        int64
 	ChainID                   int64
-	Contract                  []byte
-	TxSender                  []byte
-	TxHash                    []byte
-	TxIndex                   int64
-	DeploymentNonce           int64
-	BlockNumber               int64
 	BlockTime                 int64
-	CodeHash                  []byte
 	Name                      string
 	Symbol                    string
-	Decimals                  int16
-	TotalSupply               pgtype.Numeric
-	WethPair                  []byte
-	UsdtPair                  []byte
 	CreatedAt                 pgtype.Timestamptz
 	LogoUrl                   string
 	ResearchStatus            string
@@ -473,20 +451,9 @@ func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListI
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChainID,
-			&i.Contract,
-			&i.TxSender,
-			&i.TxHash,
-			&i.TxIndex,
-			&i.DeploymentNonce,
-			&i.BlockNumber,
 			&i.BlockTime,
-			&i.CodeHash,
 			&i.Name,
 			&i.Symbol,
-			&i.Decimals,
-			&i.TotalSupply,
-			&i.WethPair,
-			&i.UsdtPair,
 			&i.CreatedAt,
 			&i.LogoUrl,
 			&i.ResearchStatus,

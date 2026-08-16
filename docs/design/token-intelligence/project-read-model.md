@@ -125,8 +125,11 @@ The Projects page renders the same response as four flat projections.
 `Overview` is the default URL state and omits `view`; the other canonical URL
 values are `view=report-status`, `view=wrapped-native`, and `view=usdt`.
 Invalid values normalize to Overview. Projection state has no nested section
-parameter. The Overview table and card omit transaction index and code hash
-from their display, while code hash remains an accepted list filter. `view`
+parameter. The list response uses a lightweight flat project identity instead
+of embedding the complete `TokenProject`: project ID, chain ID, name, symbol,
+deployment block time, project creation time, logo, research status, and current
+Report are the only list fields. Contract and code hash remain accepted request
+filters and PostgreSQL predicates but are not returned in list items. `view`
 never reaches the API. Report Pair filters remain encoded in the URL in every
 projection, but only the matching Pair view sends them to the API. Switching
 projections therefore preserves both Pair filter drafts while Overview and
@@ -154,15 +157,18 @@ removing global filters and both Pair drafts.
 
 The desktop Report Status view groups research, Report, Evaluation, and trusted
 Selection fields into summary columns; its Evaluation error can be expanded
-with a keyboard-operable control. Each Pair view presents Report revision and
-completeness context followed by Created, Remove Liquidity, Mint, Quote USDT,
-and Last Swap. All global and Pair filters are edited as one draft in a
-centered `Filters` modal with General, WETH/WBNB, and USDT tabs. Applying the
-draft commits every filter to the URL atomically and returns to page one;
-closing the modal discards it. The toolbar counts only filter fields effective
-for the current request, shows removable summaries for those fields, and marks
-Pair views that retain saved filters. Report Status and Overview therefore do
-not present inactive Pair drafts as applied conditions.
+with a keyboard-operable control. Every projection identifies the project by
+token metadata and project ID without displaying its contract. Overview shows
+Chain, Block Time, and Created after the project identity; the UI converts the
+authoritative deployment-block Unix seconds to Beijing time. Each Pair view
+presents Report revision and completeness context followed by Created, Remove
+Liquidity, Mint, Quote USDT, and Last Swap. All global and Pair filters are
+edited as one draft in a centered `Filters` modal with General, WETH/WBNB, and
+USDT tabs. Applying the draft commits every filter to the URL atomically and
+returns to page one; closing the modal discards it. The toolbar counts only
+filter fields effective for the current request, shows removable summaries for
+those fields, and marks Pair views that retain saved filters. Report Status and
+Overview therefore do not present inactive Pair drafts as applied conditions.
 
 The six non-logo Pair columns expose only local sort controls in their desktop
 headers. Project text is case-insensitive, Quote uses exact `BigInt` values,
@@ -177,8 +183,9 @@ selector appears above the card list only for Pair views. Report Status cards
 contain only project, Report, Evaluation, and Selection context. Pair cards
 contain project and Report context plus only the active Pair snapshot. The same
 centered filter modal becomes a near-full-width, single-column form below 768
-pixels. Both compact layouts retain the same rows and paginator as their
-desktop projections.
+pixels. The Overview card keeps Chain in its title and presents Project, Block
+Time, and Created as a single-column value list. Both compact layouts retain
+the same rows and paginator as their desktop projections.
 
 The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
 key contains only the server request fields: page, page size, chain, project,
@@ -391,6 +398,12 @@ strings. JavaScript converts values to floating point only for compact visual
 formatting and SVG coordinates; raw values remain available in tooltips, copied
 text, and JSON.
 
+`TokenProjectListItem` is a list-specific flat contract. Its block time is the
+stored deployment-block Unix-second value; the UI formats it in Beijing time.
+Deployment contract, sender, transaction identity, block number, code hash,
+token supply, and Pair addresses remain available through project detail but
+are not queried or serialized for list rows.
+
 The list and revision contracts share `TokenProjectReportRiskSummary`. Its Pair
 objects are optional so missing Report-time chain state remains unknown.
 Whenever a Pair object exists, Created, Remove Liquidity, Mint, Quote USDT, and
@@ -442,7 +455,7 @@ There is no runtime configuration specific to this read model.
 | Wallet profile card breakpoint | 1440 pixels | The Wallets tab displays two complete profile cards per row at and above the breakpoint and one card per row below it. |
 | Transactions compact layout breakpoint | 1440 pixels | The Transactions tab uses the compact table at and above the breakpoint and complete transaction cards below it. |
 | Revision History compact layout breakpoint | 1440 pixels | Revision History uses the fixed comparison table at and above the breakpoint and complete revision cards below it. |
-| Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card that omits transaction index and code hash, and the shell uses overlay navigation. |
+| Overview compact layout breakpoint | 900 pixels | Overview becomes a semantic project card with Chain in the title and a single-column Project, Block Time, and Created body; the shell uses overlay navigation. |
 | Report projection compact layout breakpoint | 1100 pixels | Report Status and Pair tables become view-specific semantic cards; overlay navigation still begins at 900 pixels. |
 | Projects compact view-control breakpoint | 768 pixels | The four-button flat view control becomes one labeled select without changing URL state. |
 
@@ -452,6 +465,8 @@ There is no runtime configuration specific to this read model.
   or Selection rows never remove an otherwise matching project.
 - Project page count and rows use identical filters in one read-only,
   repeatable-read transaction and use the same deterministic ordering.
+- List rows expose only the flat list identity and presentation fields;
+  contract and code hash affect filtering without entering the response.
 - A current outcome requires the exact current Report task to be succeeded, the
   research state's last evaluated revision to match, and `current_selection_id`
   to resolve. A Selection row's original Report revision is not a freshness
@@ -546,7 +561,7 @@ or updated timestamps for diagnosis.
 - [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
 - [ ] The four flat Projects views preserve canonical URL state; only the active Pair view's non-empty filter becomes a request dependency.
-- [ ] Overview omits transaction index and code hash from tables and cards while code hash remains filterable.
+- [ ] Every Projects projection omits Contract; Overview also omits sender and block number, displays deployment Block Time in Beijing time, and keeps Contract and Code Hash filterable.
 - [ ] The centered filter modal owns all global and independently saved Pair drafts, while only the active Pair filter becomes a request dependency.
 - [ ] Desktop Pair headers and compact Pair controls apply the same current-page local sort without changing API or cache identity.
 - [ ] Compact Report Status and Pair cards contain only their active projection.

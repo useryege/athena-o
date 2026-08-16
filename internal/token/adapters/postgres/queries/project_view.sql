@@ -140,20 +140,9 @@ WHERE (sqlc.arg('chain_id')::bigint = 0 OR project.chain_id = sqlc.arg('chain_id
 SELECT
   project.id,
   project.chain_id,
-  project.contract,
-  project.tx_sender,
-  project.tx_hash,
-  project.tx_index,
-  project.deployment_nonce,
-  project.block_number,
   project.block_time,
-  project.code_hash,
   project.name,
   project.symbol,
-  project.decimals,
-  project.total_supply,
-  project.weth_pair,
-  project.usdt_pair,
   project.created_at,
   COALESCE(
     CASE

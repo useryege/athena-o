@@ -94,30 +94,17 @@ func (repository *ProjectViewRepository) ListProjectsPage(
 }
 
 func mapProjectListItem(row tokensqlc.ListProjectListItemsRow) (projectview.ProjectListItem, error) {
-	project, err := mapProject(tokensqlc.Project{
-		ID:              row.ID,
-		ChainID:         row.ChainID,
-		Contract:        row.Contract,
-		TxSender:        row.TxSender,
-		TxHash:          row.TxHash,
-		TxIndex:         row.TxIndex,
-		DeploymentNonce: row.DeploymentNonce,
-		BlockNumber:     row.BlockNumber,
-		BlockTime:       row.BlockTime,
-		CodeHash:        row.CodeHash,
-		Name:            row.Name,
-		Symbol:          row.Symbol,
-		Decimals:        row.Decimals,
-		TotalSupply:     row.TotalSupply,
-		WethPair:        row.WethPair,
-		UsdtPair:        row.UsdtPair,
-		CreatedAt:       row.CreatedAt,
-	})
+	blockTime, err := int64ToUint64("block_time", row.BlockTime)
 	if err != nil {
-		return projectview.ProjectListItem{}, fmt.Errorf("map project list item %d project: %w", row.ID, err)
+		return projectview.ProjectListItem{}, fmt.Errorf("map project list item %d block time: %w", row.ID, err)
 	}
 	item := projectview.ProjectListItem{
-		Project:        *project,
+		ProjectID:      row.ID,
+		ChainID:        row.ChainID,
+		Name:           row.Name,
+		Symbol:         row.Symbol,
+		BlockTime:      blockTime,
+		CreatedAt:      timeValue(row.CreatedAt),
 		LogoURL:        row.LogoUrl,
 		ResearchStatus: research.ProjectResearchStatus(row.ResearchStatus),
 	}

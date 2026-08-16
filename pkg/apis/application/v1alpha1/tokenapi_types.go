@@ -77,10 +77,15 @@ type TokenProject struct {
 }
 
 type TokenProjectListItem struct {
-	Project        *TokenProject              `protobuf:"bytes,1,opt,name=project" json:"project"`
-	ResearchStatus string                     `protobuf:"bytes,2,opt,name=researchStatus" json:"researchStatus"`
-	CurrentReport  *TokenProjectReportSummary `protobuf:"bytes,3,opt,name=currentReport" json:"currentReport"`
-	LogoURL        string                     `protobuf:"bytes,4,opt,name=logoUrl" json:"logoUrl"`
+	ProjectID      int64                      `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
+	ChainID        int64                      `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	Name           string                     `protobuf:"bytes,3,opt,name=name" json:"name"`
+	Symbol         string                     `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
+	BlockTime      uint64                     `protobuf:"varint,5,opt,name=blockTime" json:"blockTime"`
+	CreatedAt      string                     `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
+	LogoURL        string                     `protobuf:"bytes,7,opt,name=logoUrl" json:"logoUrl"`
+	ResearchStatus string                     `protobuf:"bytes,8,opt,name=researchStatus" json:"researchStatus"`
+	CurrentReport  *TokenProjectReportSummary `protobuf:"bytes,9,opt,name=currentReport" json:"currentReport"`
 }
 
 type TokenProjectReportSummary struct {

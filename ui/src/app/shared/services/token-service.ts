@@ -107,7 +107,12 @@ export interface TokenProjectCurrentReport {
 }
 
 export interface TokenProjectListItem {
-    project?: TokenProject;
+    projectID?: number;
+    chainID?: number;
+    name?: string;
+    symbol?: string;
+    blockTime?: number;
+    createdAt?: string;
     researchStatus?: string;
     currentReport?: TokenProjectCurrentReport;
     logoURL?: string;
@@ -654,7 +659,12 @@ function normalizeProjectCurrentReport(item: any): TokenProjectCurrentReport | u
 
 function normalizeProjectListItem(item: any): TokenProjectListItem {
     return {
-        project: item.project ? normalizeProject(item.project) : undefined,
+        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
+        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
+        name: item.name,
+        symbol: item.symbol,
+        blockTime: numberValue(item.blockTime ?? item.block_time),
+        createdAt: item.createdAt ?? item.created_at,
         researchStatus: item.researchStatus ?? item.research_status,
         currentReport: normalizeProjectCurrentReport(item.currentReport ?? item.current_report),
         logoURL: item.logoURL ?? item.logoUrl ?? item.logo_url

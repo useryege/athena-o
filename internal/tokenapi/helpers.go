@@ -303,7 +303,12 @@ func mapProjectReportSummary(item projectview.ProjectReportSummary) *v1alpha1.To
 
 func mapProjectListItem(item projectview.ProjectListItem) *v1alpha1.TokenProjectListItem {
 	result := &v1alpha1.TokenProjectListItem{
-		Project:        mapProject(item.Project),
+		ProjectID:      item.ProjectID,
+		ChainID:        item.ChainID,
+		Name:           item.Name,
+		Symbol:         item.Symbol,
+		BlockTime:      item.BlockTime,
+		CreatedAt:      formatTime(item.CreatedAt),
 		ResearchStatus: string(item.ResearchStatus),
 		LogoURL:        item.LogoURL,
 	}

@@ -3,8 +3,8 @@ import {Badge, Button, Card, Select, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType, TableProps} from 'antd/es/table';
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, StatusTag, TruncatedText, useCachedAsyncData} from '../components';
-import {formatBeijingDateTime, formatBlockNumber} from '../shared/format';
+import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, StatusTag, useCachedAsyncData} from '../components';
+import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
 import {TokenProjectListItem, TokenProjectReportPairRisk} from '../shared/services/token-service';
@@ -177,28 +177,35 @@ const pairRiskTag = (value?: boolean) => {
 };
 
 const projectDetailLink = (item: TokenProjectListItem) =>
-    item.project?.projectID ? <ProjectDetailLink projectID={item.project.projectID} /> : <Typography.Text type='secondary'>Unavailable</Typography.Text>;
+    item.projectID ? <ProjectDetailLink projectID={item.projectID} /> : <Typography.Text type='secondary'>Unavailable</Typography.Text>;
 
 const tokenValue = (item: TokenProjectListItem) => (
     <span className='projects-token'>
-        <Typography.Text strong={true}>{item.project?.symbol || '-'}</Typography.Text>
-        <Typography.Text type='secondary'>{item.project?.name || '-'}</Typography.Text>
+        <Typography.Text strong={true}>{item.symbol || '-'}</Typography.Text>
+        <Typography.Text type='secondary'>{item.name || '-'}</Typography.Text>
     </span>
 );
 
 const projectIdentity = (item: TokenProjectListItem) => (
     <span className='projects-token'>
-        <Typography.Text strong={true}>{item.project?.symbol || item.project?.name || 'Unnamed token'}</Typography.Text>
-        <Typography.Text type='secondary'>Project #{item.project?.projectID || '-'}</Typography.Text>
-        {item.project?.name && item.project.name !== item.project.symbol && <Typography.Text type='secondary'>{item.project.name}</Typography.Text>}
+        <Typography.Text strong={true}>{item.symbol || item.name || 'Unnamed token'}</Typography.Text>
+        <Typography.Text type='secondary'>Project #{item.projectID || '-'}</Typography.Text>
+        {item.name && item.name !== item.symbol && <Typography.Text type='secondary'>{item.name}</Typography.Text>}
         {projectDetailLink(item)}
+    </span>
+);
+
+const compactProjectIdentity = (item: TokenProjectListItem) => (
+    <span className='projects-token'>
+        <Typography.Text>Project #{item.projectID || '-'}</Typography.Text>
+        {item.name && item.name !== item.symbol && <Typography.Text type='secondary'>{item.name}</Typography.Text>}
     </span>
 );
 
 const reportProjectIdentity = (item: TokenProjectListItem) => (
     <span className='projects-token'>
         {projectIdentity(item)}
-        <ChainBadge chainID={item.project?.chainID} />
+        <ChainBadge chainID={item.chainID} />
     </span>
 );
 
@@ -220,14 +227,6 @@ const reportRiskProjectContext = (item: TokenProjectListItem, includeReportConte
     return (
         <div className='projects-report-risk-summary'>
             {reportProjectIdentity(item)}
-            <div className='projects-report-risk-summary__line'>
-                <Typography.Text className='projects-report-risk-summary__label' type='secondary'>
-                    Contract
-                </Typography.Text>
-                <div className='projects-report-risk-summary__value'>
-                    <TruncatedText value={item.project?.contract} copyable={true} singleLine={true} />
-                </div>
-            </div>
             {includeReportContext && (
                 <>
                     <div className='projects-report-risk-summary__line'>
@@ -297,11 +296,11 @@ const sortReportRiskItems = (items: TokenProjectListItem[], kind: ReportPairKind
             let result = 0;
             switch (key) {
                 case 'project': {
-                    const leftLabel = left.item.project?.symbol || left.item.project?.name || 'Unnamed token';
-                    const rightLabel = right.item.project?.symbol || right.item.project?.name || 'Unnamed token';
+                    const leftLabel = left.item.symbol || left.item.name || 'Unnamed token';
+                    const rightLabel = right.item.symbol || right.item.name || 'Unnamed token';
                     result = projectCollator.compare(leftLabel, rightLabel);
                     if (result === 0) {
-                        result = (left.item.project?.projectID || 0) - (right.item.project?.projectID || 0);
+                        result = (left.item.projectID || 0) - (right.item.projectID || 0);
                     }
                     result = order === 'asc' ? result : -result;
                     break;
@@ -361,28 +360,24 @@ const quoteFilterSummary = (filter: ReportPairFilterState) => {
 };
 
 const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
-    const project = props.item.project;
     return (
         <Card
             className='projects-compact-card'
             size='small'
             title={
                 <span className='projects-compact-card__title'>
-                    <TokenLogo logoURL={props.item.logoURL} symbol={project?.symbol} />
-                    <span>{project?.symbol || project?.name || 'Unnamed token'}</span>
-                    <ChainBadge chainID={project?.chainID} />
+                    <TokenLogo logoURL={props.item.logoURL} symbol={props.item.symbol} />
+                    <span>{props.item.symbol || props.item.name || 'Unnamed token'}</span>
+                    <ChainBadge chainID={props.item.chainID} />
                 </span>
             }
             extra={projectDetailLink(props.item)}>
             <KeyValueGrid
-                columns={2}
+                columns={1}
                 items={[
-                    {label: 'Project', value: projectIdentity(props.item)},
-                    {label: 'Chain', value: <ChainBadge chainID={project?.chainID} />},
-                    {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
-                    {label: 'Tx sender', value: <TruncatedText value={project?.txSender} copyable={true} />},
-                    {label: 'Block', value: formatBlockNumber(project?.blockNumber)},
-                    {label: 'Created', value: formatBeijingDateTime(project?.createdAt) || '-'}
+                    {label: 'Project', value: compactProjectIdentity(props.item)},
+                    {label: 'Block Time', value: formatBeijingUnixSeconds(props.item.blockTime) || '-'},
+                    {label: 'Created', value: formatBeijingDateTime(props.item.createdAt) || '-'}
                 ]}
             />
         </Card>
@@ -390,16 +385,15 @@ const ProjectOverviewCard = (props: {item: TokenProjectListItem}) => {
 };
 
 const ProjectRiskCard = (props: {item: TokenProjectListItem; children: React.ReactNode}) => {
-    const project = props.item.project;
     return (
         <Card
             className='projects-compact-card projects-report-risk-card'
             size='small'
             title={
                 <span className='projects-compact-card__title'>
-                    <TokenLogo logoURL={props.item.logoURL} symbol={project?.symbol} />
-                    <span>{project?.symbol || project?.name || 'Unnamed token'}</span>
-                    <ChainBadge chainID={project?.chainID} />
+                    <TokenLogo logoURL={props.item.logoURL} symbol={props.item.symbol} />
+                    <span>{props.item.symbol || props.item.name || 'Unnamed token'}</span>
+                    <ChainBadge chainID={props.item.chainID} />
                 </span>
             }
             extra={projectDetailLink(props.item)}>
@@ -409,7 +403,6 @@ const ProjectRiskCard = (props: {item: TokenProjectListItem; children: React.Rea
 };
 
 const ProjectReportStatusCard = (props: {item: TokenProjectListItem}) => {
-    const project = props.item.project;
     const report = props.item.currentReport;
     const evaluation = report?.evaluation;
     return (
@@ -420,10 +413,9 @@ const ProjectReportStatusCard = (props: {item: TokenProjectListItem}) => {
                     <KeyValueGrid
                         columns={2}
                         items={[
-                            {label: 'Project ID', value: project?.projectID || '-'},
+                            {label: 'Project ID', value: props.item.projectID || '-'},
                             {label: 'Token', value: tokenValue(props.item)},
-                            {label: 'Chain', value: <ChainBadge chainID={project?.chainID} />},
-                            {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
+                            {label: 'Chain', value: <ChainBadge chainID={props.item.chainID} />},
                             {label: 'Research', value: researchTag(props.item.researchStatus)},
                             {label: 'Report revision', value: report?.revision ?? '-'},
                             {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
@@ -451,7 +443,6 @@ const ProjectReportStatusCard = (props: {item: TokenProjectListItem}) => {
 };
 
 const ProjectPairRiskCard = (props: {item: TokenProjectListItem; kind: ReportPairKind}) => {
-    const project = props.item.project;
     const report = props.item.currentReport;
     const label = props.kind === 'weth' ? 'WETH / WBNB' : 'USDT';
     const pair = props.kind === 'weth' ? report?.riskSummary?.wethPair : report?.riskSummary?.usdtPair;
@@ -463,9 +454,8 @@ const ProjectPairRiskCard = (props: {item: TokenProjectListItem; kind: ReportPai
                     <KeyValueGrid
                         columns={2}
                         items={[
-                            {label: 'Project ID', value: project?.projectID || '-'},
+                            {label: 'Project ID', value: props.item.projectID || '-'},
                             {label: 'Token', value: tokenValue(props.item)},
-                            {label: 'Contract', value: <TruncatedText value={project?.contract} copyable={true} />},
                             {label: 'Report revision', value: report?.revision ?? '-'},
                             {label: 'Report state', value: reportStateTag(report?.completenessStatus)},
                             {label: 'Built', value: formatBeijingDateTime(report?.builtAt) || '-'}
@@ -645,17 +635,15 @@ export const ProjectsPage = () => {
         fixed: 'left',
         width: 64,
         align: 'center',
-        render: item => <TokenLogo logoURL={item.logoURL} symbol={item.project?.symbol} />
+        render: item => <TokenLogo logoURL={item.logoURL} symbol={item.symbol} />
     };
 
     const overviewColumns: ColumnsType<TokenProjectListItem> = [
         logoColumn,
         {title: 'Project', fixed: 'left', width: 220, render: projectIdentity},
-        {title: 'Chain', width: 120, render: item => <ChainBadge chainID={item.project?.chainID} />},
-        {title: 'Contract', width: 250, render: item => <TruncatedText value={item.project?.contract} copyable={true} />},
-        {title: 'Tx Sender', width: 240, render: item => <TruncatedText value={item.project?.txSender} copyable={true} />},
-        {title: 'Block', width: 130, render: item => formatBlockNumber(item.project?.blockNumber)},
-        {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.project?.createdAt) || '-'}
+        {title: 'Chain', width: 120, render: item => <ChainBadge chainID={item.chainID} />},
+        {title: 'Block Time', width: 185, render: item => formatBeijingUnixSeconds(item.blockTime) || '-'},
+        {title: 'Created', width: 185, render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
 
     const pairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
@@ -694,7 +682,7 @@ export const ProjectsPage = () => {
 
     const reportRiskStatusColumns: ColumnsType<TokenProjectListItem> = [
         logoColumn,
-        {title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, false)},
+        {title: 'Project', width: 200, render: item => reportRiskProjectContext(item, false)},
         {title: 'Research', width: 90, render: item => researchTag(item.researchStatus)},
         {
             title: 'Report',
@@ -730,7 +718,7 @@ export const ProjectsPage = () => {
 
     const reportRiskPairColumns = (pair: (item: TokenProjectListItem) => TokenProjectReportPairRisk | undefined): ColumnsType<TokenProjectListItem> => [
         logoColumn,
-        {...sortColumn('project'), title: 'Project & Contract', width: 200, render: item => reportRiskProjectContext(item, true)},
+        {...sortColumn('project'), title: 'Project', width: 200, render: item => reportRiskProjectContext(item, true)},
         ...pairColumns(pair)
     ];
 
@@ -949,7 +937,7 @@ export const ProjectsPage = () => {
             <div className={reportProjection ? 'projects-report-risk-table-region' : undefined}>
                 <ResourceTable
                     label={tableLabel}
-                    rowKey={item => item.project?.projectID || `${item.project?.chainID}-${item.project?.contract}`}
+                    rowKey='projectID'
                     items={items}
                     columns={viewColumns}
                     onChange={activeReportPairKind ? handleReportRiskTableChange : undefined}
@@ -958,7 +946,7 @@ export const ProjectsPage = () => {
                     page={page}
                     pageSize={pageSize}
                     onPageChange={setPage}
-                    scrollX={reportProjection ? 820 : 1224}
+                    scrollX={reportProjection ? 820 : 774}
                     stickyHeader={reportProjection}
                     compactRender={compactProject}
                     compactEmptyDescription={compactEmptyDescription}

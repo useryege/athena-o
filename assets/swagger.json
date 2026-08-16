@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1038-g618d9a99-dirty"
+    "version": "v1.0.0-1041-g14759a72-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -5898,16 +5898,34 @@
     "v1alpha1TokenProjectListItem": {
       "type": "object",
       "properties": {
+        "blockTime": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "chainId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string"
+        },
         "currentReport": {
           "$ref": "#/definitions/v1alpha1TokenProjectReportSummary"
         },
         "logoUrl": {
           "type": "string"
         },
-        "project": {
-          "$ref": "#/definitions/v1alpha1TokenProject"
+        "name": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "integer",
+          "format": "int64"
         },
         "researchStatus": {
+          "type": "string"
+        },
+        "symbol": {
           "type": "string"
         }
       }

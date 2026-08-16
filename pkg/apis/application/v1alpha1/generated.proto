@@ -1025,13 +1025,23 @@ message TokenProjectInitialRecipient {
 }
 
 message TokenProjectListItem {
-  optional TokenProject project = 1;
+  optional int64 projectId = 1;
 
-  optional string researchStatus = 2;
+  optional int64 chainId = 2;
 
-  optional TokenProjectReportSummary currentReport = 3;
+  optional string name = 3;
 
-  optional string logoUrl = 4;
+  optional string symbol = 4;
+
+  optional uint64 blockTime = 5;
+
+  optional string createdAt = 6;
+
+  optional string logoUrl = 7;
+
+  optional string researchStatus = 8;
+
+  optional TokenProjectReportSummary currentReport = 9;
 }
 
 message TokenProjectObservation {
