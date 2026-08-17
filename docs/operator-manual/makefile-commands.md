@@ -1,4 +1,4 @@
-# Athena Makefile 常用命令指南
+# Athena Makefile 操作手册
 
 本文档说明项目根目录 `Makefile` 中保留的常用命令，偏向日常本地运行、代码生成和生产部署速查。
 
