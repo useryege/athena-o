@@ -117,7 +117,7 @@ succeeds. Tokens are not deleted or revoked when availability changes.
 | --- | --- |
 | `ATHENA_SERVER_POSTGRES_DSN` | Selects the PostgreSQL connection for account availability state. When absent locally, the shared PostgreSQL helper connects to database `athena` on `127.0.0.1` using the standard PostgreSQL settings. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Defaults to `true`; controls embedded account-access migration at API Server startup. Production Compose sets it to `false` and runs migrations separately. |
-| `ATHENA_ADMIN_ENABLED`, `ATHENA_ACCOUNT_*_ENABLED` | Define baseline enabled state. A matching persisted non-admin override takes precedence. |
+| `ATHENA_ADMIN_ENABLED`, `ATHENA_ACCOUNT_*_ENABLED` | Define baseline enabled state. The bundled production environment and the local workspace environment set every configured ordinary account to `false`; `admin` remains enabled by default. A matching persisted non-admin override takes precedence. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Existing development-only global bypass. It continues to present requests as the local administrator and bypasses availability enforcement with the rest of authentication. |
 
 The maintenance text is fixed in code and is not configurable.
