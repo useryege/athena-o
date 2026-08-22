@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1048-gfdecb1de-dirty"
+    "version": "v1.0.0-1049-g494cd0d8-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -203,6 +203,29 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountEmptyResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/app/bootstrap": {
+      "get": {
+        "tags": [
+          "AppBootstrapService"
+        ],
+        "summary": "GetAppBootstrap returns settings and the initial browser session state.",
+        "operationId": "AppBootstrapService_GetAppBootstrap",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/appbootstrapGetAppBootstrapResponse"
             }
           },
           "default": {
@@ -925,29 +948,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/sessionGetUserInfoResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/settings": {
-      "get": {
-        "tags": [
-          "SettingsService"
-        ],
-        "summary": "Get returns Athena settings",
-        "operationId": "SettingsService_Get",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/clusterSettings"
             }
           },
           "default": {
@@ -2958,6 +2958,38 @@
     },
     "accountUpdatePasswordResponse": {
       "type": "object"
+    },
+    "appbootstrapAppBootstrapSession": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/appbootstrapAppBootstrapSessionStatus"
+        },
+        "user_info": {
+          "$ref": "#/definitions/sessionGetUserInfoResponse"
+        }
+      }
+    },
+    "appbootstrapAppBootstrapSessionStatus": {
+      "type": "string",
+      "default": "APP_BOOTSTRAP_SESSION_STATUS_UNSPECIFIED",
+      "enum": [
+        "APP_BOOTSTRAP_SESSION_STATUS_UNSPECIFIED",
+        "APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS",
+        "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+        "APP_BOOTSTRAP_SESSION_STATUS_ACCOUNT_MAINTENANCE"
+      ]
+    },
+    "appbootstrapGetAppBootstrapResponse": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/appbootstrapAppBootstrapSession"
+        },
+        "settings": {
+          "$ref": "#/definitions/clusterSettings"
+        }
+      }
     },
     "clusterGoogleAnalyticsConfig": {
       "type": "object",

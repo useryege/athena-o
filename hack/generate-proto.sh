@@ -39,7 +39,6 @@ APIMACHINERY_PKGS=(
     +k8s.io/apimachinery/pkg/runtime/schema
     +k8s.io/apimachinery/pkg/runtime
     k8s.io/apimachinery/pkg/apis/meta/v1
-    k8s.io/api/core/v1
     k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
 )
 
@@ -58,7 +57,6 @@ fi
 # go-to-protobuf expects dependency proto files to be in $GOPATH/src. Copy them there.
 rm -rf "${GOPATH}/src/github.com/gogo/protobuf" && mkdir -p "${GOPATH}/src/github.com/gogo" && cp -r "${PROJECT_ROOT}/vendor/github.com/gogo/protobuf" "${GOPATH}/src/github.com/gogo"
 rm -rf "${GOPATH}/src/k8s.io/apimachinery" && mkdir -p "${GOPATH}/src/k8s.io" && cp -r "${PROJECT_ROOT}/vendor/k8s.io/apimachinery" "${GOPATH}/src/k8s.io"
-rm -rf "${GOPATH}/src/k8s.io/api" && mkdir -p "${GOPATH}/src/k8s.io" && cp -r "${PROJECT_ROOT}/vendor/k8s.io/api" "${GOPATH}/src/k8s.io"
 rm -rf "${GOPATH}/src/k8s.io/apiextensions-apiserver" && mkdir -p "${GOPATH}/src/k8s.io" && cp -r "${PROJECT_ROOT}/vendor/k8s.io/apiextensions-apiserver" "${GOPATH}/src/k8s.io"
 
 go-to-protobuf \

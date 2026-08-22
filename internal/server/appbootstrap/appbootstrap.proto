@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+// App Bootstrap Service
+//
+// App Bootstrap Service API returns the public application settings together
+// with the browser's initial session projection.
+package appbootstrap;
+
+import "google/api/annotations.proto";
+import "internal/server/session/session.proto";
+import "internal/server/settings/settings.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/appbootstrap";
+
+message GetAppBootstrapRequest {}
+
+enum AppBootstrapSessionStatus {
+  APP_BOOTSTRAP_SESSION_STATUS_UNSPECIFIED = 0;
+  APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS = 1;
+  APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED = 2;
+  APP_BOOTSTRAP_SESSION_STATUS_ACCOUNT_MAINTENANCE = 3;
+}
+
+message AppBootstrapSession {
+  AppBootstrapSessionStatus status = 1;
+  session.GetUserInfoResponse user_info = 2;
+}
+
+message GetAppBootstrapResponse {
+  cluster.Settings settings = 1;
+  AppBootstrapSession session = 2;
+}
+
+service AppBootstrapService {
+  // GetAppBootstrap returns settings and the initial browser session state.
+  rpc GetAppBootstrap(GetAppBootstrapRequest) returns (GetAppBootstrapResponse) {
+    option (google.api.http).get = "/api/v1/app/bootstrap";
+  }
+}

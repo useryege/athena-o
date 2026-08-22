@@ -36,8 +36,8 @@ var publicGRPCMethods = map[string]bool{
 	"/session.SessionService/Create":      true,
 	"/session.SessionService/Delete":      true,
 
-	"/cluster.SettingsService/Get":    true,
-	"/version.VersionService/Version": true,
+	"/appbootstrap.AppBootstrapService/GetAppBootstrap": true,
+	"/version.VersionService/Version":                   true,
 }
 
 var administratorGRPCMethods = map[string]bool{

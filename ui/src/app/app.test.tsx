@@ -1,8 +1,8 @@
 import * as React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import {Button} from 'antd';
-import {App, loadAuthSettingsWithRetry} from './app';
-import {AuthSettings} from './shared/models';
+import {App, loadAppBootstrapWithRetry} from './app';
+import {AccountDataAccess, AppBootstrap, AppBootstrapSessionStatus, AuthSettings} from './shared/models';
 import {services} from './shared/services';
 
 const authSettings: AuthSettings = {
@@ -31,8 +31,21 @@ const authSettings: AuthSettings = {
     syncWithReplaceAllowed: false
 };
 
-const loggedOutUser = {loggedIn: false, username: '', iss: '', groups: []};
-const loggedInUser = {loggedIn: true, username: 'admin', iss: 'athena', groups: []};
+const authenticatedBootstrap: AppBootstrap = {
+    settings: authSettings,
+    session: {
+        status: AppBootstrapSessionStatus.Authenticated,
+        userInfo: {
+            loggedIn: true,
+            username: 'admin',
+            iss: 'athena',
+            administrator: true,
+            dataAccess: AccountDataAccess.ReadWrite,
+            authorizationRevision: 0
+        }
+    }
+};
+const anonymousBootstrap: AppBootstrap = {settings: authSettings, session: {status: AppBootstrapSessionStatus.Anonymous}};
 
 beforeAll(() => {
     if (typeof globalThis.MessageChannel === 'undefined') {
@@ -83,38 +96,37 @@ const containsText = (node: renderer.ReactTestRendererJSON | renderer.ReactTestR
     return containsText(node.children as renderer.ReactTestRendererJSON[] | string[] | null, text);
 };
 
-test('loadAuthSettingsWithRetry retries transient settings failures', async () => {
+test('loadAppBootstrapWithRetry retries transient bootstrap failures', async () => {
     const load = jest
-        .fn<Promise<AuthSettings>, []>()
+        .fn<Promise<AppBootstrap>, []>()
         .mockRejectedValueOnce(new Error('backend is not ready'))
-        .mockResolvedValue(authSettings);
+        .mockResolvedValue(authenticatedBootstrap);
     const sleep = jest.fn<Promise<void>, [number]>(() => Promise.resolve());
 
-    await expect(loadAuthSettingsWithRetry(load, [500], sleep)).resolves.toEqual(authSettings);
+    await expect(loadAppBootstrapWithRetry(load, [500], sleep)).resolves.toEqual(authenticatedBootstrap);
 
     expect(load).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledWith(500);
 });
 
-test('loadAuthSettingsWithRetry returns the final settings error', async () => {
+test('loadAppBootstrapWithRetry returns the final bootstrap error', async () => {
     const finalError = new Error('still unavailable');
-    const load = jest.fn<Promise<AuthSettings>, []>().mockRejectedValue(finalError);
+    const load = jest.fn<Promise<AppBootstrap>, []>().mockRejectedValue(finalError);
 
-    await expect(loadAuthSettingsWithRetry(load, [500, 1000], () => Promise.resolve())).rejects.toThrow('still unavailable');
+    await expect(loadAppBootstrapWithRetry(load, [500, 1000], () => Promise.resolve())).rejects.toThrow('still unavailable');
     expect(load).toHaveBeenCalledTimes(3);
 });
 
-test('Bootstrap renders recoverable settings failure and retries on demand', async () => {
+test('Bootstrap renders recoverable bootstrap failure and retries on demand', async () => {
     jest.useFakeTimers();
-    const settings = jest
-        .spyOn(services.authService, 'settings')
+    const bootstrap = jest
+        .spyOn(services.authService, 'bootstrap')
         .mockRejectedValueOnce(new Error('api offline'))
         .mockRejectedValueOnce(new Error('api offline'))
         .mockRejectedValueOnce(new Error('api offline'))
         .mockRejectedValueOnce(new Error('api offline'))
         .mockRejectedValueOnce(new Error('api offline'))
-        .mockResolvedValue(authSettings);
-    jest.spyOn(services.users, 'get').mockResolvedValue(loggedInUser);
+        .mockResolvedValue(authenticatedBootstrap);
 
     let tree: renderer.ReactTestRenderer;
     await act(async () => {
@@ -130,14 +142,13 @@ test('Bootstrap renders recoverable settings failure and retries on demand', asy
         tree.root.findAllByType(Button)[0].props.onClick();
     });
 
-    expect(settings).toHaveBeenCalledTimes(6);
-    settings.mockRestore();
+    expect(bootstrap).toHaveBeenCalledTimes(6);
+    bootstrap.mockRestore();
     jest.useRealTimers();
 });
 
 test('Bootstrap redirects logged-out protected routes to login', async () => {
-    jest.spyOn(services.authService, 'settings').mockResolvedValue(authSettings);
-    jest.spyOn(services.users, 'get').mockResolvedValue(loggedOutUser);
+    jest.spyOn(services.authService, 'bootstrap').mockResolvedValue(anonymousBootstrap);
     window.history.replaceState(null, '', '/projects');
 
     let tree: renderer.ReactTestRenderer;

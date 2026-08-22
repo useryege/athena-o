@@ -143,6 +143,11 @@ func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (c
 }
 
 func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest) (*session.GetUserInfoResponse, error) {
+	return ProjectUserInfo(ctx, s.accessController)
+}
+
+// ProjectUserInfo builds the shared session and authorization projection for ctx.
+func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Controller) (*session.GetUserInfoResponse, error) {
 	loggedIn := sessionmgr.LoggedIn(ctx)
 	response := &session.GetUserInfoResponse{
 		LoggedIn: loggedIn,
@@ -152,7 +157,7 @@ func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest)
 	if !loggedIn {
 		return response, nil
 	}
-	access, err := s.accessController.Get(response.Username)
+	access, err := accessController.Get(response.Username)
 	if err != nil {
 		return nil, err
 	}

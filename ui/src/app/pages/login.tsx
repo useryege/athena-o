@@ -9,7 +9,7 @@ import type {CaptchaChallenge} from '../shared/services/user-service';
 
 const postLoginPath = '/settings';
 
-export const LoginPage = () => {
+export const LoginPage = (props: {onAuthenticated: () => Promise<boolean>}) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [form] = Form.useForm();
@@ -46,26 +46,6 @@ export const LoginPage = () => {
     }, [form]);
 
     React.useEffect(() => {
-        let active = true;
-        services.users
-            .get()
-            .then(user => {
-                if (active && user.loggedIn) {
-                    navigate(postLoginPath, {replace: true});
-                }
-            })
-            .catch(err => {
-                if (active && isAccountMaintenanceError(err)) {
-                    setMaintenance(true);
-                    setError('');
-                }
-            });
-        return () => {
-            active = false;
-        };
-    }, [navigate]);
-
-    React.useEffect(() => {
         loadCaptcha();
     }, [loadCaptcha]);
 
@@ -75,7 +55,6 @@ export const LoginPage = () => {
         setError('');
         try {
             await services.users.login(values.username, values.password, captcha?.captchaId || '', values.captchaAnswer);
-            navigate(postLoginPath, {replace: true});
         } catch (err: any) {
             if (isAccountMaintenanceError(err)) {
                 setMaintenance(true);
@@ -83,6 +62,13 @@ export const LoginPage = () => {
                 setError(requestErrorMessage(err, 'Login failed'));
             }
             await loadCaptcha();
+            setLoading(false);
+            return;
+        }
+        try {
+            if (await props.onAuthenticated()) {
+                navigate(postLoginPath, {replace: true});
+            }
         } finally {
             setLoading(false);
         }

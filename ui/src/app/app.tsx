@@ -26,8 +26,8 @@ import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import {Subscription} from 'rxjs';
-import {AuthorizationCtx, AuthSettingsCtx, Provider} from './shared/context';
-import {AccountDataAccess, AuthSettings, UserInfo} from './shared/models';
+import {AuthorizationCtx, Provider} from './shared/context';
+import {AccountDataAccess, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError} from './shared/services/requests';
 import {BrandMark, clearAsyncDataCache} from './components';
@@ -68,7 +68,8 @@ const bases = document.getElementsByTagName('base');
 const base = bases.length > 0 ? bases[0].getAttribute('href') || '/' : '/';
 requests.setBaseHRef(base);
 
-const authSettingsRetryDelays = [500, 1000, 2000, 3000];
+const bootstrapRetryDelays = [500, 1000, 2000, 3000];
+const authorizationFreshnessMs = 15_000;
 const maintenanceLoginPath = '/login?reason=maintenance';
 
 const wait = (delayMs: number) => new Promise(resolve => window.setTimeout(resolve, delayMs));
@@ -331,9 +332,9 @@ const usePreferences = () => {
     return pref;
 };
 
-export async function loadAuthSettingsWithRetry(
-    load: () => Promise<AuthSettings>,
-    delays: number[] = authSettingsRetryDelays,
+export async function loadAppBootstrapWithRetry(
+    load: () => Promise<AppBootstrap>,
+    delays: number[] = bootstrapRetryDelays,
     sleep: (delayMs: number) => Promise<unknown> = wait
 ) {
     let lastError: Error = null;
@@ -357,6 +358,29 @@ const loadAccessState = (user: UserInfo): AccessState => ({
     canWriteData: user.administrator || user.dataAccess >= AccountDataAccess.ReadWrite,
     revision: user.authorizationRevision
 });
+
+type SessionState =
+    | {status: 'anonymous'}
+    | {status: 'resolving'}
+    | {status: 'authenticated'; access: AccessState}
+    | {status: 'maintenance'}
+    | {status: 'error'; error: Error};
+
+const loadInitialSessionState = (session: AppBootstrapSession): SessionState => {
+    switch (session.status) {
+        case AppBootstrapSessionStatus.Anonymous:
+            return {status: 'anonymous'};
+        case AppBootstrapSessionStatus.AccountMaintenance:
+            return {status: 'maintenance'};
+        case AppBootstrapSessionStatus.Authenticated:
+            if (!session.userInfo) {
+                throw new Error('Authenticated app bootstrap session is missing user info');
+            }
+            return {status: 'authenticated', access: loadAccessState(session.userInfo)};
+        default:
+            throw new Error(`Unsupported initial app bootstrap session status: ${String(session.status)}`);
+    }
+};
 
 const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do not have permission to access this page.' />;
 
@@ -416,57 +440,66 @@ const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => 
     );
 };
 
-const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
+const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSession}) => {
     const navigate = useNavigate();
     const location = useLocation();
     const ant = AntApp.useApp();
     const narrowShell = useNarrowShell();
+    const [session, setSession] = React.useState<SessionState>(() => loadInitialSessionState(props.initialSession));
+    const initialAccess = session.status === 'authenticated' ? session.access : null;
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.pref.hideSidebar);
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const sidebarRef = React.useRef<HTMLDivElement>(null);
     const shellBackgroundRef = React.useRef<HTMLElement>(null);
     const mobileSidebarToggleRef = React.useRef<HTMLButtonElement>(null);
     const accessGenerationRef = React.useRef(0);
-    const accessRef = React.useRef<AccessState>(null);
-    const accessRefreshRef = React.useRef<Promise<void>>(null);
+    const accessRef = React.useRef<AccessState>(initialAccess);
+    const accessRefreshRef = React.useRef<Promise<boolean>>(null);
+    const accessRefreshedAtRef = React.useRef(initialAccess ? Date.now() : 0);
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
     const isLoginPath = location.pathname.startsWith('/login');
-    const [access, setAccess] = React.useState<AccessState>(null);
-    const [accessError, setAccessError] = React.useState<Error>(null);
-    const [accessRetry, setAccessRetry] = React.useState(0);
+    const access = session.status === 'authenticated' ? session.access : null;
 
-    const endSession = React.useCallback(() => {
+    const endSession = React.useCallback((status: 'anonymous' | 'maintenance' = 'anonymous') => {
         accessGenerationRef.current += 1;
         accessRef.current = null;
         accessRefreshRef.current = null;
+        accessRefreshedAtRef.current = 0;
         requests.invalidatePendingRequestErrors();
-        setAccess(null);
-        setAccessError(null);
+        setSession(status === 'maintenance' ? {status: 'maintenance'} : {status: 'anonymous'});
         clearAsyncDataCache();
         clearProjectsReturnSnapshots();
     }, []);
 
-    const refreshAccess = React.useCallback((): Promise<void> => {
+    const refreshAccess = React.useCallback((force = false): Promise<boolean> => {
+        if (!force && accessRef.current && Date.now() - accessRefreshedAtRef.current < authorizationFreshnessMs) {
+            return Promise.resolve(true);
+        }
         if (accessRefreshRef.current) {
             return accessRefreshRef.current;
+        }
+        if (!accessRef.current) {
+            setSession({status: 'resolving'});
         }
         const generation = accessGenerationRef.current;
         const request = (async () => {
             try {
                 const user = await services.users.get();
                 if (generation !== accessGenerationRef.current) {
-                    return;
+                    return false;
                 }
                 if (!user.loggedIn) {
-                    endSession();
+                    endSession('anonymous');
                     navigate('/login', {replace: true});
-                    return;
+                    return false;
                 }
                 const next = loadAccessState(user);
                 const previous = accessRef.current;
                 const authorizationChanged =
                     Boolean(previous) &&
-                    (previous.revision !== next.revision ||
+                    (previous.user.username !== next.user.username ||
+                        previous.user.iss !== next.user.iss ||
+                        previous.revision !== next.revision ||
                         previous.isAdmin !== next.isAdmin ||
                         previous.canReadData !== next.canReadData ||
                         previous.canWriteData !== next.canWriteData);
@@ -476,26 +509,25 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                     clearProjectsReturnSnapshots();
                 }
                 accessRef.current = next;
-                if (!previous || authorizationChanged) {
-                    setAccess(next);
-                }
-                setAccessError(null);
+                accessRefreshedAtRef.current = Date.now();
+                setSession({status: 'authenticated', access: next});
+                return true;
             } catch (err: any) {
                 if (generation !== accessGenerationRef.current) {
-                    return;
+                    return false;
                 }
                 if (isAccountMaintenanceError(err)) {
-                    endSession();
+                    endSession('maintenance');
                     navigate(maintenanceLoginPath, {replace: true});
-                    return;
+                    return false;
                 }
                 if (err?.status === 401) {
-                    endSession();
+                    endSession('anonymous');
                     navigate('/login', {replace: true});
-                    return;
+                    return false;
                 }
                 if (!accessRef.current) {
-                    setAccessError(err instanceof Error ? err : new Error(err?.message || String(err)));
+                    setSession({status: 'error', error: err instanceof Error ? err : new Error(err?.message || String(err))});
                 }
                 throw err;
             }
@@ -509,6 +541,14 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         void request.then(clearPendingRefresh, clearPendingRefresh);
         return request;
     }, [endSession, navigate]);
+
+    const establishAuthenticatedSession = React.useCallback(async () => {
+        try {
+            return await refreshAccess(true);
+        } catch {
+            return false;
+        }
+    }, [refreshAccess]);
 
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
@@ -570,15 +610,21 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     }, [mobileSidebarOpen, narrowShell]);
 
     React.useEffect(() => {
-        if (isLoginPath) {
-            endSession();
+        if (session.status === 'anonymous' && !isLoginPath) {
+            navigate('/login', {replace: true});
             return;
         }
-        if (!accessRef.current) {
-            setAccessError(null);
-            void refreshAccess().catch(() => undefined);
+        if (
+            session.status === 'maintenance' &&
+            (!isLoginPath || new URLSearchParams(location.search).get('reason') !== 'maintenance')
+        ) {
+            navigate(maintenanceLoginPath, {replace: true});
+            return;
         }
-    }, [accessRetry, endSession, isLoginPath, refreshAccess]);
+        if (session.status === 'authenticated' && isLoginPath) {
+            navigate('/settings', {replace: true});
+        }
+    }, [isLoginPath, location.search, navigate, session.status]);
 
     React.useEffect(() => {
         if (isLoginPath || !access) {
@@ -586,10 +632,10 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         }
         const refreshVisibleAccess = () => {
             if (document.visibilityState === 'visible') {
-                void refreshAccess().catch(() => undefined);
+                void refreshAccess(false).catch(() => undefined);
             }
         };
-        const interval = window.setInterval(refreshVisibleAccess, 15_000);
+        const interval = window.setInterval(refreshVisibleAccess, authorizationFreshnessMs);
         window.addEventListener('focus', refreshVisibleAccess);
         document.addEventListener('visibilitychange', refreshVisibleAccess);
         return () => {
@@ -605,7 +651,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                 return;
             }
             if (isAccountDataAccessDeniedError(err)) {
-                void refreshAccess().catch(() => undefined);
+                void refreshAccess(true).catch(() => undefined);
                 return;
             }
             const maintenance = isAccountMaintenanceError(err);
@@ -615,7 +661,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             if (window.location.pathname.startsWith(`${base.replace(/\/$/, '')}/login`)) {
                 return;
             }
-            endSession();
+            endSession(maintenance ? 'maintenance' : 'anonymous');
             navigate(maintenance ? maintenanceLoginPath : '/login', {replace: true});
         });
         return () => subscription?.unsubscribe();
@@ -670,7 +716,9 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                       canReadData: access.canReadData,
                       canWriteData: access.canWriteData,
                       revision: access.revision,
-                      refresh: refreshAccess
+                      refresh: async () => {
+                          await refreshAccess(true);
+                      }
                   }
                 : null,
         [access, refreshAccess]
@@ -696,14 +744,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     );
 
     let routes: React.ReactNode;
-    if (isLoginPath) {
-        routes = (
-            <Routes>
-                <Route path='/login' element={<LoginPage />} />
-                <Route path='*' element={<Navigate replace={true} to='/login' />} />
-            </Routes>
-        );
-    } else if (accessError) {
+    if (session.status === 'error') {
         routes = (
             <div className='athena-recoverable'>
                 <Result
@@ -712,26 +753,26 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                     subTitle='Athena could not load your account access. Retry when the service is available.'
                     extra={
                         <Space orientation='vertical' size={12}>
-                            <Button
-                                type='primary'
-                                onClick={() => {
-                                    setAccessError(null);
-                                    setAccessRetry(value => value + 1);
-                                }}>
+                            <Button type='primary' onClick={() => void establishAuthenticatedSession()}>
                                 Retry
                             </Button>
-                            <Typography.Text type='secondary'>{accessError.message}</Typography.Text>
+                            <Typography.Text type='secondary'>{session.error.message}</Typography.Text>
                         </Space>
                     }
                 />
             </div>
         );
-    } else {
-        routes = access ? (
-            <AppRoutes key={`${access.revision}:${access.isAdmin}:${access.user.dataAccess}`} access={access} onSessionEnded={endSession} />
-        ) : (
-            <div className='athena-boot'>Loading Athena...</div>
+    } else if (isLoginPath && (session.status === 'anonymous' || session.status === 'maintenance')) {
+        routes = (
+            <Routes>
+                <Route path='/login' element={<LoginPage onAuthenticated={establishAuthenticatedSession} />} />
+                <Route path='*' element={<Navigate replace={true} to='/login' />} />
+            </Routes>
         );
+    } else if (access && !isLoginPath) {
+        routes = <AppRoutes key={`${access.revision}:${access.isAdmin}:${access.user.dataAccess}`} access={access} onSessionEnded={endSession} />;
+    } else {
+        routes = <div className='athena-boot'>Loading Athena...</div>;
     }
     const content = isLoginPath ? (
         routes
@@ -840,9 +881,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                     </div>
                 </AntLayout.Header>
                 <AntLayout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
-                    <Provider value={contextValue}>
-                        <AuthSettingsCtx.Provider value={props.authSettings}>{routes}</AuthSettingsCtx.Provider>
-                    </Provider>
+                    {routes}
                 </AntLayout.Content>
             </AntLayout>
         </AntLayout>
@@ -850,32 +889,30 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     return (
         <Provider value={contextValue}>
-            <AuthSettingsCtx.Provider value={props.authSettings}>
-                <AuthorizationCtx.Provider value={authorizationValue}>{content}</AuthorizationCtx.Provider>
-            </AuthSettingsCtx.Provider>
+            <AuthorizationCtx.Provider value={authorizationValue}>{content}</AuthorizationCtx.Provider>
         </Provider>
     );
 };
 
 const Bootstrap = () => {
     const pref = usePreferences();
-    const [authSettings, setAuthSettings] = React.useState<AuthSettings>(null);
-    const [settingsError, setSettingsError] = React.useState<Error>(null);
-    const [settingsRetry, setSettingsRetry] = React.useState(0);
+    const [appBootstrap, setAppBootstrap] = React.useState<AppBootstrap>(null);
+    const [bootstrapError, setBootstrapError] = React.useState<Error>(null);
+    const [bootstrapRetry, setBootstrapRetry] = React.useState(0);
 
     React.useEffect(() => {
         let active = true;
-        setSettingsError(null);
-        setAuthSettings(null);
-        loadAuthSettingsWithRetry(() => services.authService.settings())
-            .then(settings => {
+        setBootstrapError(null);
+        setAppBootstrap(null);
+        loadAppBootstrapWithRetry(() => services.authService.bootstrap())
+            .then(result => {
                 if (!active) {
                     return;
                 }
-                setAuthSettings(settings);
-                if (settings.uiCssURL) {
+                setAppBootstrap(result);
+                if (result.settings.uiCssURL) {
                     const link = document.createElement('link');
-                    link.href = settings.uiCssURL;
+                    link.href = result.settings.uiCssURL;
                     link.rel = 'stylesheet';
                     link.type = 'text/css';
                     document.head.appendChild(link);
@@ -883,15 +920,15 @@ const Bootstrap = () => {
             })
             .catch(err => {
                 if (active) {
-                    setSettingsError(err instanceof Error ? err : new Error(String(err)));
+                    setBootstrapError(err instanceof Error ? err : new Error(String(err)));
                 }
             });
         return () => {
             active = false;
         };
-    }, [settingsRetry]);
+    }, [bootstrapRetry]);
 
-    if (settingsError) {
+    if (bootstrapError) {
         return (
             <div className='athena-recoverable'>
                 <Result
@@ -900,10 +937,10 @@ const Bootstrap = () => {
                     subTitle='Athena 后端网关还没有准备好，或正在重启。请稍后重试。'
                     extra={
                         <Space orientation='vertical' size={12}>
-                            <Button type='primary' onClick={() => setSettingsRetry(value => value + 1)}>
+                            <Button type='primary' onClick={() => setBootstrapRetry(value => value + 1)}>
                                 重试
                             </Button>
-                            <Typography.Text type='secondary'>{settingsError.message}</Typography.Text>
+                            <Typography.Text type='secondary'>{bootstrapError.message}</Typography.Text>
                         </Space>
                     }
                 />
@@ -911,7 +948,7 @@ const Bootstrap = () => {
         );
     }
 
-    if (!pref || !authSettings) {
+    if (!pref || !appBootstrap) {
         return <div className='athena-boot'>Loading Athena...</div>;
     }
 
@@ -953,7 +990,7 @@ const Bootstrap = () => {
             }}>
             <AntApp>
                 <BrowserRouter basename={base} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                    <Shell pref={pref} authSettings={authSettings} />
+                    <Shell pref={pref} initialSession={appBootstrap.session} />
                 </BrowserRouter>
             </AntApp>
         </ConfigProvider>

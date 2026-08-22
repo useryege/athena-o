@@ -1,4 +1,4 @@
-import {parseAccountDataAccess, UserInfo} from '../models';
+import {parseUserInfo, UserInfo} from '../models';
 import requests from './requests';
 
 export interface CaptchaChallenge {
@@ -33,13 +33,6 @@ export class UserService {
     }
 
     public get(): Promise<UserInfo> {
-        return requests.get('/session/userinfo').then(res => ({
-            loggedIn: Boolean(res.body?.loggedIn),
-            username: res.body?.username || '',
-            iss: res.body?.iss || '',
-            administrator: Boolean(res.body?.administrator),
-            dataAccess: parseAccountDataAccess(res.body?.dataAccess),
-            authorizationRevision: Number(res.body?.authorizationRevision || 0)
-        }));
+        return requests.get('/session/userinfo').then(res => parseUserInfo(res.body));
     }
 }

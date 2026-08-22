@@ -43,6 +43,7 @@ import (
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/server/account"
+	serverappbootstrap "github.com/useryege/athena/internal/server/appbootstrap"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	serverfifamarketdashboard "github.com/useryege/athena/internal/server/fifamarketdashboard"
 	"github.com/useryege/athena/internal/server/logout"
@@ -65,9 +66,9 @@ import (
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
+	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
-	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
 	"github.com/useryege/athena/util/env"
@@ -408,7 +409,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	grpc_health_v1.RegisterHealthServer(grpcS, server.serviceSet.HealthService)
 	versionpkg.RegisterVersionServiceServer(grpcS, server.serviceSet.VersionService)
 	sessionpkg.RegisterSessionServiceServer(grpcS, server.serviceSet.SessionService)
-	settingspkg.RegisterSettingsServiceServer(grpcS, server.serviceSet.SettingsService)
+	appbootstrappkg.RegisterAppBootstrapServiceServer(grpcS, server.serviceSet.AppBootstrapService)
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
@@ -435,7 +436,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 type AthenaServiceSet struct {
 	HealthService              *health.Server
 	SessionService             *session.Server
-	SettingsService            *settings.Server
+	AppBootstrapService        *serverappbootstrap.Server
 	AccountService             *account.Server
 	VersionService             *version.Server
 	NotificationService        *servernotification.Server
@@ -462,8 +463,8 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// session service
 	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.accessController, loginRateLimiter)
 
-	// settings service
-	settingsService := settings.NewServer(server.settingsMgr, server.accessController, server, server.DisableAuth)
+	settingsProjector := settings.NewProjector(server.settingsMgr, server.accessController)
+	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server)
 	// account service
 	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.accessController)
 	// notification service
@@ -505,7 +506,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	return &AthenaServiceSet{
 		HealthService:              healthService,
 		SessionService:             sessionService,
-		SettingsService:            settingsService,
+		AppBootstrapService:        appBootstrapService,
 		AccountService:             accountService,
 		VersionService:             versionService,
 		NotificationService:        notificationService,
@@ -538,14 +539,18 @@ func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// translateGrpcCookieHeader conditionally sets a cookie on the response.
-func (server *AthenaServer) translateGrpcCookieHeader(_ context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
+// translateGRPCResponseHeaders applies HTTP-only response headers at the gateway boundary.
+func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
 	if sessionResp, ok := resp.(*sessionpkg.SessionResponse); ok {
 		token := sessionResp.Token
 		err := server.setTokenCookie(token, w)
 		if err != nil {
 			return fmt.Errorf("error setting token cookie from session response: %w", err)
 		}
+	}
+	if _, ok := resp.(*appbootstrappkg.GetAppBootstrapResponse); ok {
+		w.Header().Set("Cache-Control", "no-store, private")
+		w.Header().Add("Vary", "Cookie, Authorization")
 	}
 	return nil
 }
@@ -780,8 +785,8 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		md.Append("athena-remote-addr", r.RemoteAddr)
 		return md
 	})
-	gwCookieOpts := runtime.WithForwardResponseOption(server.translateGrpcCookieHeader)
-	gwmux := runtime.NewServeMux(gwMuxOpts, gwHeaderOpts, gwMetadataOpts, gwCookieOpts)
+	gwResponseHeaderOpts := runtime.WithForwardResponseOption(server.translateGRPCResponseHeaders)
+	gwmux := runtime.NewServeMux(gwMuxOpts, gwHeaderOpts, gwMetadataOpts, gwResponseHeaderOpts)
 
 	var handler http.Handler = gwmux
 	if server.EnableGZip {
@@ -830,7 +835,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenOperationsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, settingspkg.RegisterSettingsServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, appbootstrappkg.RegisterAppBootstrapServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, projectpkg.RegisterProjectServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, accountpkg.RegisterAccountServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, certificatepkg.RegisterCertificateServiceHandler, gwmux, conn)

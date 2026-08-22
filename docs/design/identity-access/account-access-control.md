@@ -25,8 +25,8 @@ than a second authorization policy.
 | Schema and migration wiring | [internal/accountaccess/store/migrations](../../../internal/accountaccess/store/migrations), [internal/migration/modules.go](../../../internal/migration/modules.go) | `account_access_override`, `account-access` |
 | Account API | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountAccess`, `AccountDataAccess`, `UpdateAccountAccess`, `toAPIAccount` |
 | Authentication and authorization | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/authz.go](../../../internal/server/authz.go) | `AccountMaintenanceErr`, `VerifyLogin`, `Parse`, `administratorGRPCMethods`, `accountSelfServiceGRPCMethods`, `dataReadGRPCMethods`, `dataWriteGRPCMethods`, `authorizeGRPC` |
-| Session authorization projection | [internal/server/session/session.proto](../../../internal/server/session/session.proto), [internal/server/session/session.go](../../../internal/server/session/session.go) | `GetUserInfoResponse`, `GetUserInfo` |
-| Administration and browser enforcement | [ui/src/app/pages/settings.tsx](../../../ui/src/app/pages/settings.tsx), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | `SettingsPage`, `AuthorizationCtx`, `isAccountMaintenanceError`, `isAccountDataAccessDeniedError` |
+| Application bootstrap and session projection | [internal/server/appbootstrap/appbootstrap.proto](../../../internal/server/appbootstrap/appbootstrap.proto), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go), [internal/server/session/session.go](../../../internal/server/session/session.go) | `GetAppBootstrap`, `AppBootstrapSession`, `GetUserInfo` |
+| Administration and browser enforcement | [ui/src/app/pages/settings.tsx](../../../ui/src/app/pages/settings.tsx), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/services/auth-service.ts](../../../ui/src/app/shared/services/auth-service.ts), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | `SettingsPage`, `Bootstrap`, `AuthorizationCtx`, `isAccountMaintenanceError`, `isAccountDataAccessDeniedError` |
 | Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `NewServer`, `ATHENA_SERVER_POSTGRES_DSN` |
 
 ## Architecture
@@ -40,8 +40,11 @@ flowchart LR
     U --> C
     C --> N["Password, JWT, and API Key login checks"]
     C --> Z["RPC authorization categories"]
-    C --> I["GetUserInfo authorization revision"]
-    I --> B["Browser Authorization Context"]
+    S["SettingsManager UI settings"] --> G["GetAppBootstrap initial settings + session"]
+    C --> G
+    C --> I["GetUserInfo subsequent authorization refresh"]
+    G --> B["Browser Authorization Context"]
+    I --> B
 ```
 
 `SettingsManager` is the identity and credential source. Its account set and
@@ -57,7 +60,7 @@ Each method belongs directly to one of these boundaries:
 
 | Boundary | Access rule | Representative operations |
 | --- | --- | --- |
-| Public | No credential required | login, captcha, logout, version, health, and non-sensitive authentication settings |
+| Public | No credential required | application bootstrap, login, captcha, logout, version, and health |
 | Self-service | An authenticated account identity may target its own account | read own account, change own password, create or revoke own API Keys |
 | Administrator | Built-in administrator only | list accounts, operate on another account, replace account access, Service Status, Etherscan probes, and gRPC reflection |
 | Data read | `READ` or `READ_WRITE` | all market, sports, wallet, notification, Managed OO, Worm, FIFA, World Cup Corners, and Token queries |
@@ -77,10 +80,10 @@ level.
    and `NONE`, fixes `admin` at enabled and `READ_WRITE`, then loads every
    durable override. Rows for unknown accounts and `admin` are ignored. Invalid
    persisted levels or revisions fail startup before the API listener opens.
-3. The session manager, account service, Settings service, and authorization
-   interceptors receive the same controller. Every protected JWT and API Key
-   request resolves the current account and login flag before its RPC category
-   is authorized.
+3. The session manager, account service, application-bootstrap service, and
+   authorization interceptors receive the same controller. Every protected JWT
+   and API Key request resolves the current account and login flag before its
+   RPC category is authorized.
 4. An administrator loads Settings. Each ordinary account exposes its login
    control and `No access`, `Read only`, or `Read & write` data level; the
    administrator row is read-only. An ordinary member sees only its own current
@@ -107,17 +110,36 @@ level.
    queries, including Token reads. `READ_WRITE` additionally permits all
    business mutations. Administrator-only operations remain unavailable at
    every ordinary data level.
-10. `GetUserInfo` returns `administrator`, `data_access`, and
-   `authorization_revision`. While the document is visible, the browser
-   refreshes this projection every 15 seconds and when the window regains
-   focus. A stable data-access denial also triggers one deduplicated refresh;
-   unrelated 403 responses do not.
-11. When the authorization revision or level changes, the browser invalidates
+10. `GET /api/v1/app/bootstrap` returns UI settings and one initial session
+    projection in the same successful response. Missing, invalid, or expired
+    credentials produce `ANONYMOUS`; a valid enabled credential produces
+    `AUTHENTICATED` with a `GetUserInfoResponse` in `session.user_info`; and a
+    valid credential for a disabled account produces `ACCOUNT_MAINTENANCE` with
+    public settings and no user information. The maintenance bootstrap outcome
+    remains HTTP 200. With `ATHENA_SERVER_DISABLE_AUTH`, the projection is the
+    built-in administrator with `READ_WRITE`.
+11. The browser performs this bootstrap once before mounting routes. An
+    authenticated projection initializes the Authorization Context directly,
+    so `/world-cup-corners` cold starts with two requests: application bootstrap
+    and the page dataset. `ANONYMOUS` routes to `/login` without mounting
+    protected content; `ACCOUNT_MAINTENANCE` routes to
+    `/login?reason=maintenance` while retaining the returned settings.
+12. The login page does not issue an initial `GetUserInfo`. After a successful
+    session creation, the shell performs one deduplicated `GetUserInfo` to
+    establish the newly authenticated identity and access level. Logout clears
+    the browser authorization state and returns to login without another
+    application bootstrap.
+13. `GetUserInfo` remains the live authorization projection. While the document
+    is visible, the browser refreshes it every 15 seconds and when the window
+    regains focus. A stable data-access denial also triggers the same
+    deduplicated refresh; unrelated 403 responses do not.
+14. When the authorization revision or level changes, the browser invalidates
     pending request errors, cancels stale data work, clears business caches,
     closes write interactions, and remounts protected routes. A downgrade to
     `READ` keeps the page without write controls, a downgrade to `NONE` routes
     to `/user-info`, and an upgrade adds newly available navigation.
-12. The exact maintenance response clears browser session caches and routes to
+15. After bootstrap, an exact maintenance 503 from `GetUserInfo` or any
+    protected request clears browser session caches and routes to
     `/login?reason=maintenance` without deleting the credential cookie. Normal
     401 and unrelated 503 responses retain their own handling.
 
@@ -154,6 +176,12 @@ or new password/API Key collection. These runtime identity changes are not
 durable and never alter the configured account set, login baseline, data level,
 or access revision.
 
+The browser initializes its session state from `GetAppBootstrap` and then keeps
+the active identity's `data_access` and `authorization_revision` in the shared
+Authorization Context. Later `GetUserInfo` responses replace that projection;
+the bootstrap payload is not a browser-side authorization cache for protected
+requests.
+
 ## Configuration
 
 | Setting | Behavior |
@@ -161,7 +189,7 @@ or access revision.
 | `ATHENA_SERVER_POSTGRES_DSN` | Selects the PostgreSQL connection for account access. The local default connects to database `athena` on `127.0.0.1`; production Compose supplies its service DSN. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Defaults to `true` and controls embedded startup migration. Production disables it and runs the migration process first. |
 | `ATHENA_ACCOUNT_*_ENABLED` | Defines only an ordinary account's login baseline. Configured ordinary accounts default to disabled when the value is absent. Data access always defaults to `NONE`. |
-| `ATHENA_SERVER_DISABLE_AUTH` | Development-only process-wide bypass. Requests receive the built-in administrator identity and bypass both login and authorization enforcement. |
+| `ATHENA_SERVER_DISABLE_AUTH` | Development-only process-wide bypass. Requests receive the built-in administrator identity and bypass both login and authorization enforcement; application bootstrap reports that administrator as authenticated with `READ_WRITE`. |
 
 The `admin` login and data level are fixed. The maintenance text and access
 levels are not configurable.
@@ -180,6 +208,11 @@ levels are not configurable.
   granted to an ordinary account.
 - Every non-public request authenticates against the current login aggregate,
   and every protected business request checks its current data level.
+- `GetAppBootstrap` is public optional authentication, and its session
+  projection never replaces authorization on a protected business request.
+- Initial account maintenance is an in-band HTTP 200 bootstrap status; the same
+  disabled credential receives the stable maintenance 503 from later session
+  refreshes and protected requests.
 - The expected revision must match both the controller snapshot and the
   durable row before a replacement can commit.
 - Persistence succeeds before the effective in-memory aggregate changes.
@@ -209,9 +242,11 @@ Any process-local password or API Key changes are discarded by an API Server
 restart, which reconstructs identity state from the environment baseline;
 ordinary stop does not make those identity changes durable.
 
-If the initial or periodic browser authorization request fails without a stable
-maintenance or data-denial reason, the browser keeps an explicit retry/error
-boundary and does not synthesize a less privileged state.
+If `GetAppBootstrap` cannot be loaded, the browser keeps the application-level
+retry/error boundary and does not mount routes from partial settings or a
+synthetic session. If a post-login or periodic `GetUserInfo` fails without a
+stable maintenance or data-denial reason, the browser keeps an explicit
+retry/error boundary and does not synthesize a less privileged state.
 
 ## Observability
 
@@ -220,8 +255,10 @@ state. Invalid stored rows and dependency failures appear before listener
 startup. Update and compare-and-swap failures travel through the standard gRPC
 and gateway error path.
 
-Disabled credentials are identifiable by gRPC `Unavailable`, HTTP 503, gRPC
-code 14, and `系统维护中`. Data denials carry `ACCOUNT_DATA_ACCESS_DENIED` in
+Initial disabled credentials are identifiable through the
+`ACCOUNT_MAINTENANCE` application-bootstrap status. After bootstrap, disabled
+credentials remain identifiable by gRPC `Unavailable`, HTTP 503, gRPC code 14,
+and `系统维护中`. Data denials carry `ACCOUNT_DATA_ACCESS_DENIED` in
 `google.rpc.ErrorInfo` under the `athena.account_access` domain; administrator
 denials use `ACCOUNT_ADMIN_REQUIRED`, and revision conflicts use
 `ACCOUNT_ACCESS_REVISION_CONFLICT`. The capability adds no dedicated metric or
@@ -234,9 +271,9 @@ health endpoint.
 - [ ] Every RPC remains in exactly one public, self-service, administrator, data-read, or data-write boundary.
 - [ ] Full-row CAS, administrator protection, and persistence-before-memory ordering remain aligned.
 - [ ] Password and API Key self-service remains mutex-protected, process-local, and separate from account-access persistence.
-- [ ] Password, JWT, API Key, and `GetUserInfo` use the same effective controller snapshot.
-- [ ] Maintenance 503, data 403, revision 409, and ordinary authentication errors remain distinguishable.
-- [ ] Browser polling, focus refresh, cache invalidation, and route downgrade behavior remain current.
+- [ ] Password, JWT, API Key, `GetAppBootstrap`, and `GetUserInfo` use the same effective controller snapshot.
+- [ ] Bootstrap maintenance status, subsequent maintenance 503, data 403, revision 409, and ordinary authentication errors remain distinguishable.
+- [ ] Initial bootstrap, browser polling, focus refresh, cache invalidation, and route downgrade behavior remain current.
 - [ ] Restart, reset, and credential restoration semantics are current.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

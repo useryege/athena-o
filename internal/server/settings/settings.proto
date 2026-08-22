@@ -1,17 +1,11 @@
 syntax = "proto3";
 
-// Settings Service
-//
-// Settings Service API retrieves Athena settings
+// Shared application settings projected by the bootstrap API.
 package cluster;
 
 import "gogoproto/gogo.proto";
-import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/settings";
-
-// SettingsQuery is a query for Athena settings
-message SettingsQuery {}
 
 message Settings {
   string url = 1 [(gogoproto.customname) = "URL"];
@@ -64,12 +58,4 @@ message Help {
 message Plugin {
   // the name of the plugin, e.g. "kasane"
   string name = 1;
-}
-
-// SettingsService
-service SettingsService {
-  // Get returns Athena settings
-  rpc Get(SettingsQuery) returns (Settings) {
-    option (google.api.http).get = "/api/v1/settings";
-  }
 }

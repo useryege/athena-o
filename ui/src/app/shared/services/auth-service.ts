@@ -1,8 +1,25 @@
-import {AuthSettings} from '../models';
+import {AppBootstrap, AppBootstrapSessionStatus, parseAppBootstrapSessionStatus, parseUserInfo} from '../models';
 import requests from './requests';
 
 export class AuthService {
-    public settings(): Promise<AuthSettings> {
-        return requests.get('/settings').then(res => res.body as AuthSettings);
+    public bootstrap(): Promise<AppBootstrap> {
+        return requests.get('/app/bootstrap').then(res => {
+            const settings = res.body?.settings;
+            const session = res.body?.session;
+            if (!settings || !session) {
+                throw new Error('App bootstrap response is incomplete');
+            }
+            const status = parseAppBootstrapSessionStatus(session.status);
+            switch (status) {
+                case AppBootstrapSessionStatus.Anonymous:
+                case AppBootstrapSessionStatus.AccountMaintenance:
+                    return {settings, session: {status}};
+                case AppBootstrapSessionStatus.Authenticated:
+                    if (!session.user_info) {
+                        throw new Error('Authenticated app bootstrap response is missing user info');
+                    }
+                    return {settings, session: {status, userInfo: parseUserInfo(session.user_info)}};
+            }
+        });
     }
 }

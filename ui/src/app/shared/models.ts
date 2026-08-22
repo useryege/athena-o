@@ -49,6 +49,38 @@ export interface UserInfo {
     authorizationRevision: number;
 }
 
+export enum AppBootstrapSessionStatus {
+    Anonymous = 'APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS',
+    Authenticated = 'APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED',
+    AccountMaintenance = 'APP_BOOTSTRAP_SESSION_STATUS_ACCOUNT_MAINTENANCE'
+}
+
+export const parseAppBootstrapSessionStatus = (value: unknown): AppBootstrapSessionStatus => {
+    switch (value) {
+        case 1:
+        case AppBootstrapSessionStatus.Anonymous:
+            return AppBootstrapSessionStatus.Anonymous;
+        case 2:
+        case AppBootstrapSessionStatus.Authenticated:
+            return AppBootstrapSessionStatus.Authenticated;
+        case 3:
+        case AppBootstrapSessionStatus.AccountMaintenance:
+            return AppBootstrapSessionStatus.AccountMaintenance;
+        default:
+            throw new Error(`Unsupported app bootstrap session status: ${String(value)}`);
+    }
+};
+
+export interface AppBootstrapSession {
+    status: AppBootstrapSessionStatus;
+    userInfo?: UserInfo;
+}
+
+export interface AppBootstrap {
+    settings: AuthSettings;
+    session: AppBootstrapSession;
+}
+
 export enum AccountDataAccess {
     None = 0,
     Read = 1,
@@ -64,6 +96,15 @@ export const parseAccountDataAccess = (value: unknown): AccountDataAccess => {
     }
     return AccountDataAccess.None;
 };
+
+export const parseUserInfo = (value: any): UserInfo => ({
+    loggedIn: Boolean(value?.loggedIn),
+    username: value?.username || '',
+    iss: value?.iss || '',
+    administrator: Boolean(value?.administrator),
+    dataAccess: parseAccountDataAccess(value?.dataAccess),
+    authorizationRevision: Number(value?.authorizationRevision || 0)
+});
 
 export interface Token {
     id: string;

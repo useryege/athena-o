@@ -20,7 +20,7 @@ and the complete browser authorization lifecycle are documented in
 | Effective access authority | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `DataAccess`, `RequirementDataRead`, `RequirementDataWrite`, `Controller.Authorize` |
 | Token API authorization boundary | [internal/server/authz.go](../../../internal/server/authz.go) | `dataReadGRPCMethods`, `dataWriteGRPCMethods`, `authorizeGRPC` |
 | Token API proxy boundary | [internal/server/tokenapi/tokenapi.go](../../../internal/server/tokenapi/tokenapi.go) | Token catalog, research, policy, and operations methods |
-| Browser authorization state | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts) | `AuthorizationCtx`, `canReadData`, `canWriteData`, Token navigation and routes |
+| Browser authorization state | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/shared/services/auth-service.ts](../../../ui/src/app/shared/services/auth-service.ts) | `Bootstrap`, `AuthorizationCtx`, `canReadData`, `canWriteData`, Token navigation and routes |
 | Token clients and write controls | [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts), [ui/src/app/pages](../../../ui/src/app/pages) | Token request methods and page actions |
 
 ## Architecture
@@ -29,8 +29,10 @@ and the complete browser authorization lifecycle are documented in
 flowchart LR
     C["AccessController"] --> A["Server RPC category authorization"]
     A --> T["Token API services"]
-    C --> I["GetUserInfo data_access + revision"]
-    I --> U["Browser Authorization Context"]
+    C --> B["GetAppBootstrap initial data_access + revision"]
+    C --> I["GetUserInfo subsequent data_access + revision"]
+    B --> U["Browser Authorization Context"]
+    I --> U
     U --> N["Token navigation and routes"]
     U --> W["Token write controls"]
 ```
@@ -62,17 +64,21 @@ Server before it reaches the Token proxy or service implementation.
 3. `Controller.Authorize` permits a data-read request for `READ` or
    `READ_WRITE` and permits a data-write request only for `READ_WRITE`. A denial
    occurs before the Token API dependency is called.
-4. After login, the shell obtains `data_access` and
-   `authorization_revision` from `GetUserInfo`. The shared Authorization
-   Context exposes `canReadData` and `canWriteData`; Token navigation and all
-   `/token/*` routes require the former.
-5. Token query pages mount for `READ` and `READ_WRITE`. Each mutation or
-   sensitive write interaction is rendered and enabled only when
-   `canWriteData` is true. Direct HTTP or gRPC calls remain subject to the same
-   server categorization.
-6. While the page is visible, the shell refreshes authorization every 15
-   seconds and when the window regains focus. A stable account-data 403 starts
-   the same deduplicated refresh immediately.
+4. On a browser cold start, `GetAppBootstrap` returns settings together with an
+   `ANONYMOUS`, `AUTHENTICATED`, or `ACCOUNT_MAINTENANCE` session projection.
+   Only `AUTHENTICATED` supplies `data_access` and `authorization_revision`; the
+   shell initializes the shared Authorization Context directly from it.
+5. Token navigation and all `/token/*` routes require `canReadData`. An
+   authenticated Token cold start therefore makes one application-bootstrap
+   request followed directly by the mounted page's own Token requests, without
+   an initial `GetUserInfo`. Token query pages mount for `READ` and
+   `READ_WRITE`; each mutation or sensitive write interaction is rendered and
+   enabled only when `canWriteData` is true. Direct HTTP or gRPC calls remain
+   subject to the same server categorization.
+6. After successful login and while an authenticated page is visible, the shell
+   uses `GetUserInfo` for the new session projection and subsequent
+   authorization refreshes every 15 seconds and when the window regains focus.
+   A stable account-data 403 starts the same deduplicated refresh immediately.
 7. When a Token user's authorization revision changes, the shell cancels stale
    work, clears shared asynchronous Token data, project list caches, and saved
    return positions, closes write interactions, and remounts the route. A
@@ -89,7 +95,8 @@ level does not create per-page or per-endpoint grants.
 
 This capability adds no Token-specific authorization state. The durable
 account aggregate and its in-memory snapshot belong to Account Access Control.
-The browser keeps the current `data_access` and authorization revision in the
+The browser initializes the current `data_access` and authorization revision
+from application bootstrap, then keeps later `GetUserInfo` projections in the
 shared Authorization Context for the active identity.
 
 Token caches contain business responses rather than authorization decisions.
@@ -102,7 +109,8 @@ identity from rendering a prior snapshot.
 There is no Token-specific access setting. Ordinary accounts default to
 `NONE`, and administrators replace the complete account aggregate through the
 account-access API. `ATHENA_SERVER_DISABLE_AUTH` is the process-wide
-development bypass and supplies the built-in administrator identity.
+development bypass and makes application bootstrap supply the authenticated
+built-in administrator identity with `READ_WRITE`.
 
 ## Invariants
 
@@ -113,6 +121,9 @@ development bypass and supplies the built-in administrator identity.
   per-route or per-resource policy exists.
 - Token navigation, routes, and write controls derive only from the shared
   Authorization Context, not usernames or client-side allowlists.
+- Initial Token route eligibility comes from `GetAppBootstrap`; subsequent
+  eligibility changes come from `GetUserInfo`, and both use the shared account
+  access authority.
 - Hiding a route or action is not authorization; the server independently
   categorizes every public Token RPC.
 - All project and project-scoped reads use the same data-read category as
@@ -123,10 +134,13 @@ development bypass and supplies the built-in administrator identity.
 
 ## Failure Recovery
 
-An unauthenticated Token request follows the normal authentication flow. An
-exact maintenance 503 clears browser session caches and routes to the
-maintenance login page while preserving the credential. An account-data denial
-returns gRPC `PermissionDenied` and HTTP 403 with
+An anonymous application bootstrap routes to login without mounting a Token
+page. An initial disabled credential returns HTTP 200 with the
+`ACCOUNT_MAINTENANCE` bootstrap status so the browser can retain settings and
+show the maintenance login page. A later exact maintenance 503 from
+`GetUserInfo` or a Token request clears browser session caches and routes to
+that page while preserving the credential. An account-data denial returns gRPC
+`PermissionDenied` and HTTP 403 with
 `ACCOUNT_DATA_ACCESS_DENIED`; the browser refreshes authorization without
 clearing the credential.
 
@@ -140,7 +154,8 @@ an access level.
 
 Rejected Token calls use normal request logging and gRPC/gateway status
 mapping. The stable `google.rpc.ErrorInfo` reason distinguishes account-data
-denial from an unrelated 403. Login maintenance remains distinguishable as
+denial from an unrelated 403. Initial account maintenance is visible through
+the application-bootstrap status; later maintenance remains distinguishable as
 gRPC `Unavailable`, HTTP 503, and the fixed maintenance message. This
 capability adds no Token-specific metric or health endpoint.
 
@@ -151,6 +166,6 @@ capability adds no Token-specific metric or health endpoint.
 - [ ] Token navigation, routes, and write controls match `canReadData` and `canWriteData`.
 - [ ] Project, Report, Selection, collection, policy, and checkpoint methods remain in the intended category.
 - [ ] Authorization revision changes clear Token caches and stale work without clearing valid credentials.
-- [ ] Stable data 403, maintenance 503, and ordinary authentication errors remain distinguishable.
+- [ ] Bootstrap maintenance status, later maintenance 503, stable data 403, and ordinary authentication errors remain distinguishable.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

@@ -24,6 +24,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
+	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 
 	// certificatepkg "github.com/useryege/athena/v3/pkg/apiclient/certificate"
 	// clusterpkg "github.com/useryege/athena/v3/pkg/apiclient/cluster"
@@ -33,7 +34,6 @@ import (
 	// repocredspkg "github.com/useryege/athena/v3/pkg/apiclient/repocreds"
 	// repositorypkg "github.com/useryege/athena/v3/pkg/apiclient/repository"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
-	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	// "github.com/useryege/athena/v3/pkg/apis/application/v1alpha1"
@@ -73,8 +73,8 @@ type Client interface {
 	// NewNotificationClientOrDie() (io.Closer, notificationpkg.NotificationServiceClient)
 	NewSessionClient() (io.Closer, sessionpkg.SessionServiceClient, error)
 	NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient)
-	NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error)
-	NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient)
+	NewAppBootstrapClient() (io.Closer, appbootstrappkg.AppBootstrapServiceClient, error)
+	NewAppBootstrapClientOrDie() (io.Closer, appbootstrappkg.AppBootstrapServiceClient)
 	NewVersionClient() (io.Closer, versionpkg.VersionServiceClient, error)
 	NewVersionClientOrDie() (io.Closer, versionpkg.VersionServiceClient)
 	// NewProjectClient() (io.Closer, projectpkg.ProjectServiceClient, error)
@@ -446,21 +446,21 @@ func (c *client) NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceCl
 	return conn, sessionIf
 }
 
-func (c *client) NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error) {
+func (c *client) NewAppBootstrapClient() (io.Closer, appbootstrappkg.AppBootstrapServiceClient, error) {
 	conn, closer, err := c.newConn(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}
-	setIf := settingspkg.NewSettingsServiceClient(conn)
-	return closer, setIf, nil
+	bootstrapIf := appbootstrappkg.NewAppBootstrapServiceClient(conn)
+	return closer, bootstrapIf, nil
 }
 
-func (c *client) NewSettingsClientOrDie() (io.Closer, settingspkg.SettingsServiceClient) {
-	conn, setIf, err := c.NewSettingsClient()
+func (c *client) NewAppBootstrapClientOrDie() (io.Closer, appbootstrappkg.AppBootstrapServiceClient) {
+	conn, bootstrapIf, err := c.NewAppBootstrapClient()
 	if err != nil {
 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
 	}
-	return conn, setIf
+	return conn, bootstrapIf
 }
 
 func (c *client) NewVersionClient() (io.Closer, versionpkg.VersionServiceClient, error) {

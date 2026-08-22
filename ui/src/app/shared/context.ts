@@ -30,8 +30,6 @@ export interface ContextApis {
 export const Context = React.createContext<ContextApis>(null);
 export const {Provider, Consumer} = Context;
 
-export const AuthSettingsCtx = React.createContext<models.AuthSettings>(null);
-
 export interface AuthorizationState {
     user: models.UserInfo;
     isAdmin: boolean;
