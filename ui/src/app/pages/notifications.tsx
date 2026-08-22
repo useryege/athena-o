@@ -5,6 +5,7 @@ import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, useAsyncData} from '../components';
 import {Context, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {NotificationDelivery} from '../shared/services/notification-service';
@@ -13,6 +14,9 @@ import {useKeywordParam, usePagedParams} from './shared';
 export const NotificationsPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.Notifications);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const {page, pageSize, setPage} = usePagedParams();
@@ -25,8 +29,15 @@ export const NotificationsPage = () => {
         () => services.notification.listNotifications({page, pageSize, keyword, status: status || undefined, telegramChat: telegramChat || undefined}),
         [page, pageSize, keyword, status, telegramChat]
     );
+    React.useEffect(() => {
+        if (!canWrite) {
+            setTestOpen(false);
+            setTestSubmitting(false);
+            form.resetFields();
+        }
+    }, [canWrite, form]);
     const sendTest = async (values: {topicLabel: string}) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         setTestSubmitting(true);
@@ -37,7 +48,9 @@ export const NotificationsPage = () => {
             ctx.notifications.success('Test notification queued');
             data.reload();
         } catch (err: any) {
-            ctx.notifications.error('Test notification failed', err?.message || 'Could not send the test notification');
+            if (canWriteRef.current) {
+                ctx.notifications.error('Test notification failed', err?.message || 'Could not send the test notification');
+            }
         } finally {
             setTestSubmitting(false);
         }
@@ -71,7 +84,7 @@ export const NotificationsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                authorization.canWriteData ? (
+                canWrite ? (
                     <Button icon={<SendOutlined />} onClick={() => setTestOpen(true)}>
                         Test Notification
                     </Button>
@@ -108,7 +121,7 @@ export const NotificationsPage = () => {
                 pageSize={pageSize}
                 onPageChange={setPage}
             />
-            <Modal open={authorization.canWriteData && testOpen} title='Test Notification' footer={null} closable={!testSubmitting} onCancel={closeTest}>
+            <Modal open={canWrite && testOpen} title='Test Notification' footer={null} closable={!testSubmitting} onCancel={closeTest}>
                 <Form form={form} layout='vertical' onFinish={sendTest}>
                     <Form.Item
                         name='topicLabel'

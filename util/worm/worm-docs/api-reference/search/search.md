@@ -19,7 +19,9 @@ Discover markets and events with a single text field (`q`), structured filters (
 </ParamField>
 
 <ParamField query="state" type="string">
-  Market lifecycle filter. One of `open`, `resolved`, `canceled` (lowercase). For **events**, a hit matches if any sub-market has that state.
+  Comma-separated lifecycle filters (OR semantics). Each value must be one of `open`, `under_review`, `resolved`, `closed` (lowercase). Examples: `open`, `open,resolved`, `resolved,closed`.
+
+  For **events**, a hit matches if any sub-market falls in the selected bucket(s). See [Lifecycle filters](#lifecycle-filters).
 </ParamField>
 
 <ParamField query="sport" type="string">
@@ -83,8 +85,21 @@ Discover markets and events with a single text field (`q`), structured filters (
 </ParamField>
 
 <Note>
-  At least one filter is required: non-empty `q`, any structured filter above (including `max_leverage_yes_*` / `max_leverage_no_*`), or a valid `sport` / `league` pair from the catalog.
+  At least one filter is required: non-empty `q`, any structured filter above (including `max_leverage_yes_*` / `max_leverage_no_*`), a valid `sport` / `league` pair from the catalog, or a non-empty `state` value.
 </Note>
+
+## Lifecycle filters
+
+Pass one or more buckets, comma-separated; results match if **any** bucket matches (**OR**). These filters are **search-only** lifecycle buckets — not the same as the `state` field on individual market or event resources.
+
+| `state` filter | Meaning                                    |
+| -------------- | ------------------------------------------ |
+| `open`         | Active for trading                         |
+| `under_review` | Outcome proposed or settlement in progress |
+| `resolved`     | Settled with an outcome                    |
+| `closed`       | Ended without a normal settlement          |
+
+Duplicate values in the same request are ignored (`open,open` is the same as `open`). Unknown values return **400**.
 
 ## Leverage filters vs market `config`
 
@@ -127,6 +142,18 @@ Sports + leverage sort:
 
 ```
 GET /search/?sport=basketball&league=nba&sort=leverage&limit=10
+```
+
+Open and resolved markets together:
+
+```
+GET /search/?state=open,resolved&q=election&limit=20
+```
+
+Only markets under review:
+
+```
+GET /search/?state=under_review&sort=ending_soon
 ```
 
 ## Response

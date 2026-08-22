@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {AccountDataModule} from '../shared/access-modules';
 
 export interface AsyncState<T> {
     data?: T;
@@ -13,6 +14,7 @@ export interface CachedAsyncState<T> extends AsyncState<T> {
 
 export interface CachedAsyncDataOptions {
     staleTimeMs: number;
+    module: AccountDataModule;
 }
 
 type AbortablePromise<T> = Promise<T> & {abort?: () => void};
@@ -35,6 +37,7 @@ interface CacheRequest {
 
 interface CacheEntry {
     key: string;
+    module: AccountDataModule;
     generation: number;
     snapshot: CacheSnapshot<unknown>;
     listeners: Set<() => void>;
@@ -117,11 +120,15 @@ const scheduleCachePrune = () => {
     });
 };
 
-const getCacheEntry = (key: string): CacheEntry => {
+const getCacheEntry = (key: string, module: AccountDataModule): CacheEntry => {
     let entry = cacheEntries.get(key);
+    if (entry && entry.module !== module) {
+        throw new Error(`Async data cache key ${key} is already assigned to a different authorization module`);
+    }
     if (!entry) {
         entry = {
             key,
+            module,
             generation: cacheGeneration,
             snapshot: {
                 hasData: false,
@@ -240,10 +247,12 @@ const startCacheRequest = <T>(entry: CacheEntry, load: () => AbortablePromise<T>
     );
 };
 
-export const clearAsyncDataCache = () => {
-    cacheGeneration++;
-    const entries = Array.from(cacheEntries.values());
-    cacheEntries.clear();
+export const clearAsyncDataCache = (module?: AccountDataModule) => {
+    if (module === undefined) {
+        cacheGeneration++;
+    }
+    const entries = Array.from(cacheEntries.values()).filter(entry => module === undefined || entry.module === module);
+    entries.forEach(entry => cacheEntries.delete(entry.key));
 
     entries.forEach(entry => {
         abortCacheRequest(entry);
@@ -298,7 +307,7 @@ export const useCachedAsyncData = <T>(cacheKey: string, load: () => AbortablePro
         loadRef.current = load;
     }, [load]);
 
-    const entry = getCacheEntry(cacheKey);
+    const entry = getCacheEntry(cacheKey, options.module);
     const subscribe = React.useCallback((listener: () => void) => subscribeCacheEntry(entry, listener), [entry]);
     const getSnapshot = React.useCallback(() => entry.snapshot, [entry]);
     const snapshot = React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot) as CacheSnapshot<T>;

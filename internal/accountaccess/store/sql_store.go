@@ -60,54 +60,175 @@ func (s *SQLStore) Close() error {
 }
 
 func (s *SQLStore) ListAccountAccessOverrides(ctx context.Context) (map[string]accountaccess.Access, error) {
-	if s == nil || s.queries == nil {
+	if s == nil || s.pool == nil || s.queries == nil {
 		return nil, fmt.Errorf("account-access postgres database is not configured")
 	}
 
-	rows, err := s.queries.ListAccountAccessOverrides(ctx)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel:   pgx.RepeatableRead,
+		AccessMode: pgx.ReadOnly,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("list account access overrides: %w", err)
+		return nil, fmt.Errorf("begin account-access snapshot transaction: %w", err)
 	}
-	overrides := make(map[string]accountaccess.Access, len(rows))
-	for _, row := range rows {
-		if row.Revision < 0 {
-			return nil, fmt.Errorf("account %q has negative access revision", row.AccountName)
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(context.Background())
 		}
-		overrides[row.AccountName] = accountaccess.Access{
-			LoginEnabled: row.LoginEnabled,
-			DataAccess:   accountaccess.DataAccess(row.DataAccess),
-			Revision:     uint64(row.Revision),
+	}()
+	txQueries := accountaccesssqlc.New(tx)
+
+	heads, err := txQueries.ListAccountAccessOverrideHeads(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list account access override heads: %w", err)
+	}
+	moduleRows, err := txQueries.ListAccountModuleAccessOverrides(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list account module access overrides: %w", err)
+	}
+
+	overrides := make(map[string]accountaccess.Access, len(heads))
+	for _, head := range heads {
+		if head.Revision <= 0 {
+			return nil, fmt.Errorf("account %q has non-positive access revision %d", head.AccountName, head.Revision)
+		}
+		if _, duplicate := overrides[head.AccountName]; duplicate {
+			return nil, fmt.Errorf("account %q has duplicate access override heads", head.AccountName)
+		}
+		overrides[head.AccountName] = accountaccess.Access{
+			LoginEnabled: head.LoginEnabled,
+			Modules:      make(map[accountaccess.Module]accountaccess.AccessLevel, len(accountaccess.AllModules())),
+			Revision:     uint64(head.Revision),
 		}
 	}
+
+	for _, row := range moduleRows {
+		access, exists := overrides[row.AccountName]
+		if !exists {
+			return nil, fmt.Errorf("account module access for %q has no override head", row.AccountName)
+		}
+		module := accountaccess.Module(row.Module)
+		if _, known := accountaccess.MaxAccessLevel(module); !known {
+			return nil, fmt.Errorf("account %q has unknown access module %q", row.AccountName, row.Module)
+		}
+		if _, duplicate := access.Modules[module]; duplicate {
+			return nil, fmt.Errorf("account %q has duplicate access rows for module %q", row.AccountName, row.Module)
+		}
+		access.Modules[module] = accountaccess.AccessLevel(row.AccessLevel)
+		overrides[row.AccountName] = access
+	}
+
+	for name, access := range overrides {
+		if err := access.Validate(); err != nil {
+			return nil, fmt.Errorf("account %q has invalid persisted module access: %w", name, err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit account-access snapshot transaction: %w", err)
+	}
+	committed = true
 	return overrides, nil
 }
 
 func (s *SQLStore) UpdateAccountAccessOverride(ctx context.Context, name string, next accountaccess.Access, expectedRevision uint64) (accountaccess.Access, error) {
-	if s == nil || s.queries == nil {
+	if s == nil || s.pool == nil || s.queries == nil {
 		return accountaccess.Access{}, fmt.Errorf("account-access postgres database is not configured")
 	}
 	if expectedRevision > math.MaxInt64 {
 		return accountaccess.Access{}, fmt.Errorf("account %q expected revision is out of range", name)
 	}
+	if next.Revision != expectedRevision {
+		return accountaccess.Access{}, fmt.Errorf("account %q access revision does not match expected revision", name)
+	}
+	next = next.Clone()
+	if err := next.Validate(); err != nil {
+		return accountaccess.Access{}, fmt.Errorf("validate account %q access override: %w", name, err)
+	}
 
-	updated, err := s.queries.UpdateAccountAccessOverride(ctx, accountaccesssqlc.UpdateAccountAccessOverrideParams{
-		AccountName:      name,
-		LoginEnabled:     next.LoginEnabled,
-		DataAccess:       string(next.DataAccess),
-		ExpectedRevision: int64(expectedRevision),
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return accountaccess.Access{}, accountaccess.ErrRevisionConflict
-	}
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("update account %q access override: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("begin account %q access update: %w", name, err)
 	}
-	if updated.Revision < 0 {
-		return accountaccess.Access{}, fmt.Errorf("account %q has negative access revision", name)
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(context.Background())
+		}
+	}()
+	txQueries := accountaccesssqlc.New(tx)
+
+	var persistedName string
+	var persistedLoginEnabled bool
+	var persistedRevision int64
+	if expectedRevision == 0 {
+		created, err := txQueries.CreateAccountAccessOverrideHead(ctx, accountaccesssqlc.CreateAccountAccessOverrideHeadParams{
+			AccountName:  name,
+			LoginEnabled: next.LoginEnabled,
+		})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return accountaccess.Access{}, accountaccess.ErrRevisionConflict
+		}
+		if err != nil {
+			return accountaccess.Access{}, fmt.Errorf("create account %q access override head: %w", name, err)
+		}
+		persistedName = created.AccountName
+		persistedLoginEnabled = created.LoginEnabled
+		persistedRevision = created.Revision
+	} else {
+		updated, err := txQueries.UpdateAccountAccessOverrideHead(ctx, accountaccesssqlc.UpdateAccountAccessOverrideHeadParams{
+			AccountName:      name,
+			LoginEnabled:     next.LoginEnabled,
+			ExpectedRevision: int64(expectedRevision),
+		})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return accountaccess.Access{}, accountaccess.ErrRevisionConflict
+		}
+		if err != nil {
+			return accountaccess.Access{}, fmt.Errorf("update account %q access override head: %w", name, err)
+		}
+		persistedName = updated.AccountName
+		persistedLoginEnabled = updated.LoginEnabled
+		persistedRevision = updated.Revision
 	}
-	return accountaccess.Access{
-		LoginEnabled: updated.LoginEnabled,
-		DataAccess:   accountaccess.DataAccess(updated.DataAccess),
-		Revision:     uint64(updated.Revision),
-	}, nil
+
+	if persistedName != name || persistedLoginEnabled != next.LoginEnabled {
+		return accountaccess.Access{}, fmt.Errorf("account %q access update returned inconsistent head", name)
+	}
+	if persistedRevision <= 0 || uint64(persistedRevision) != expectedRevision+1 {
+		return accountaccess.Access{}, fmt.Errorf(
+			"account %q access update returned revision %d after expected revision %d",
+			name,
+			persistedRevision,
+			expectedRevision,
+		)
+	}
+
+	if err := txQueries.UpsertAccountModuleAccessOverrides(ctx, accountaccesssqlc.UpsertAccountModuleAccessOverridesParams{
+		AccountName:                    name,
+		MarketRadarAccessLevel:         string(next.Modules[accountaccess.ModuleMarketRadar]),
+		SportsLiveAccessLevel:          string(next.Modules[accountaccess.ModuleSportsLive]),
+		SportsHistoryAccessLevel:       string(next.Modules[accountaccess.ModuleSportsHistory]),
+		ManagedOoAccessLevel:           string(next.Modules[accountaccess.ModuleManagedOO]),
+		WormMarketsAccessLevel:         string(next.Modules[accountaccess.ModuleWormMarkets]),
+		FifaMarketDashboardAccessLevel: string(next.Modules[accountaccess.ModuleFIFAMarketDashboard]),
+		WorldCupCornersAccessLevel:     string(next.Modules[accountaccess.ModuleWorldCupCorners]),
+		TokenAccessLevel:               string(next.Modules[accountaccess.ModuleToken]),
+		WalletAccessLevel:              string(next.Modules[accountaccess.ModuleWallet]),
+		NotificationsAccessLevel:       string(next.Modules[accountaccess.ModuleNotifications]),
+	}); err != nil {
+		return accountaccess.Access{}, fmt.Errorf("replace account %q module access overrides: %w", name, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return accountaccess.Access{}, fmt.Errorf("commit account %q access update: %w", name, err)
+	}
+	committed = true
+	persisted := accountaccess.Access{
+		LoginEnabled: persistedLoginEnabled,
+		Modules:      next.Modules,
+		Revision:     uint64(persistedRevision),
+	}
+	return persisted.Clone(), nil
 }

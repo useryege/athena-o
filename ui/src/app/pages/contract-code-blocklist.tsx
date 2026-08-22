@@ -3,7 +3,8 @@ import {Button, Form, Input, Modal, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
-import {Context, useAuthorization} from '../shared/context';
+import {Context, ModalHandle, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenContractCodeBlocklistEntry} from '../shared/services/token-service';
@@ -12,8 +13,10 @@ import {ChainBadge, chainLabel} from './token-shared';
 export const ContractCodeBlocklistPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.Token);
     const [form] = Form.useForm();
     const [editing, setEditing] = React.useState<TokenContractCodeBlocklistEntry>(null);
+    const deleteConfirmRef = React.useRef<ModalHandle>();
     const data = useAsyncData(() => services.tokenapi.listContractCodeBlocklistEntries(), []);
     const options = useAsyncData(() => services.tokenapi.getRuntimeConfiguration(), []);
     const chainOptions = React.useMemo(
@@ -26,12 +29,26 @@ export const ContractCodeBlocklistPage = () => {
                 })),
         [options.data]
     );
+    React.useEffect(() => {
+        if (!canWrite) {
+            setEditing(null);
+            form.resetFields();
+            deleteConfirmRef.current?.destroy();
+            deleteConfirmRef.current = undefined;
+        }
+    }, [canWrite, form]);
+    React.useEffect(
+        () => () => {
+            deleteConfirmRef.current?.destroy();
+        },
+        []
+    );
     const refresh = React.useCallback(() => {
         options.reload();
         data.reload();
     }, [data, options]);
     const add = async (values: {note?: string; sourceChainID?: number; sourceContract?: string}) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         await services.tokenapi.createContractCodeBlocklistEntry(values);
@@ -40,7 +57,7 @@ export const ContractCodeBlocklistPage = () => {
         data.reload();
     };
     const saveNote = async (values: {note?: string}) => {
-        if (!authorization.canWriteData || !editing?.codeHash) {
+        if (!canWrite || !editing?.codeHash) {
             return;
         }
         await services.tokenapi.updateContractCodeBlocklistEntry(editing.codeHash, values.note || '');
@@ -48,15 +65,22 @@ export const ContractCodeBlocklistPage = () => {
         data.reload();
     };
     const remove = (item: TokenContractCodeBlocklistEntry) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
-        ctx.modal.confirm({
+        deleteConfirmRef.current = ctx.modal.confirm({
             title: 'Delete contract code blocklist entry?',
             content: item.codeHash,
             onOk: async () => {
-                await services.tokenapi.deleteContractCodeBlocklistEntry(item.codeHash || '');
-                data.reload();
+                try {
+                    await services.tokenapi.deleteContractCodeBlocklistEntry(item.codeHash || '');
+                    data.reload();
+                } finally {
+                    deleteConfirmRef.current = undefined;
+                }
+            },
+            onCancel: () => {
+                deleteConfirmRef.current = undefined;
             }
         });
     };
@@ -67,7 +91,7 @@ export const ContractCodeBlocklistPage = () => {
         {title: 'Source Contract', render: item => <TruncatedText value={item.sourceContract} copyable={true} />},
         {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
-    if (authorization.canWriteData) {
+    if (canWrite) {
         columns.push({
             title: 'Actions',
             render: item => (
@@ -89,7 +113,7 @@ export const ContractCodeBlocklistPage = () => {
             error={data.error || options.error}
             onRefresh={refresh}
             filters={
-                authorization.canWriteData ? (
+                canWrite ? (
                     <Form form={form} layout='inline' onFinish={add}>
                         <Form.Item name='sourceChainID' label='Source chain' rules={[{required: true}]}>
                             <ChoiceGroup<number> ariaLabel='Source chain' className='choice-group--form' options={chainOptions} />
@@ -107,7 +131,7 @@ export const ContractCodeBlocklistPage = () => {
                 ) : undefined
             }>
             <ResourceTable rowKey={item => item.codeHash || Math.random()} items={data.data || []} columns={columns} loading={data.loading} />
-            <Modal open={authorization.canWriteData && !!editing} title='Edit Contract Code Note' footer={null} onCancel={() => setEditing(null)}>
+            <Modal open={canWrite && !!editing} title='Edit Contract Code Note' footer={null} onCancel={() => setEditing(null)}>
                 <Form key={editing?.codeHash || 'contract-code-note'} layout='vertical' initialValues={editing || {}} onFinish={saveNote}>
                     <Form.Item label='Code Hash'>
                         <TruncatedText value={editing?.codeHash} copyable={true} />

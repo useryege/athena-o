@@ -24,10 +24,12 @@ import {
 import {App as AntApp, Breadcrumb, Button, ConfigProvider, Dropdown, Layout as AntLayout, Menu, Result, Space, theme as antTheme, Tooltip, Typography} from 'antd';
 import type {MenuProps} from 'antd';
 import * as React from 'react';
-import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
+import {createBrowserRouter, Navigate, Route, RouterProvider, Routes, useLocation, useNavigate} from 'react-router-dom';
 import {Subscription} from 'rxjs';
 import {AuthorizationCtx, Provider} from './shared/context';
-import {AccountDataAccess, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, UserInfo} from './shared/models';
+import {AccountDataAccess, AccountDataModule, accountDataModules} from './shared/access-modules';
+import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from './shared/account-access';
+import {AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError} from './shared/services/requests';
 import {BrandMark, clearAsyncDataCache} from './components';
@@ -80,7 +82,8 @@ interface NavItem {
     icon: React.ReactNode;
     path?: string;
     children?: NavItem[];
-    access?: 'data' | 'admin';
+    access?: 'admin';
+    module?: AccountDataModule;
 }
 
 interface NavSection {
@@ -92,23 +95,22 @@ interface NavSection {
 interface AccessState {
     user: UserInfo;
     isAdmin: boolean;
-    canReadData: boolean;
-    canWriteData: boolean;
+    moduleAccess: ModuleAccessLevels;
     revision: number;
 }
 
 const canAccessItem = (authorization: AccessState, item: NavItem) => {
-    if (!item.access) {
-        return true;
+    if (item.access === 'admin') {
+        return authorization.isAdmin;
     }
-    return item.access === 'admin' ? authorization.isAdmin : authorization.canReadData;
+    return item.module === undefined || authorization.isAdmin || authorization.moduleAccess[item.module] >= AccountDataAccess.Read;
 };
 
 const marketRadarNavItem: NavItem = {
     key: 'market-radar',
     label: 'Market Radar',
     icon: <DashboardOutlined />,
-    access: 'data',
+    module: AccountDataModule.MarketRadar,
     children: [
         {key: '/market-radar', label: 'Hot Markets', path: '/market-radar', icon: <DashboardOutlined />},
         {
@@ -130,14 +132,14 @@ const sportsNavItem: NavItem = {
     key: 'sports',
     label: 'Sports',
     icon: <TrophyOutlined />,
-    access: 'data',
     children: [
-        {key: '/sports-live', label: 'Sports Live', path: '/sports-live', icon: <DashboardOutlined />},
+        {key: '/sports-live', label: 'Sports Live', path: '/sports-live', icon: <DashboardOutlined />, module: AccountDataModule.SportsLive},
         {
             key: '/sports-history',
             label: 'Sports History',
             path: '/sports-history',
-            icon: <DashboardOutlined />
+            icon: <DashboardOutlined />,
+            module: AccountDataModule.SportsHistory
         }
     ]
 };
@@ -146,7 +148,7 @@ const managedOONavItem: NavItem = {
     key: 'managed-oo',
     label: 'Managed OO',
     icon: <ApiOutlined />,
-    access: 'data',
+    module: AccountDataModule.ManagedOO,
     children: [
         {
             key: '/managed-oo/proposals',
@@ -167,7 +169,7 @@ const tokenNavItem: NavItem = {
     key: 'token',
     label: 'Token',
     icon: <DashboardOutlined />,
-    access: 'data',
+    module: AccountDataModule.Token,
     children: [
         {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />},
         {
@@ -222,27 +224,27 @@ const navSections: NavSection[] = [
                 label: 'FIFA Market Dashboard',
                 path: '/fifa-market-dashboard',
                 icon: <TrophyOutlined />,
-                access: 'data'
+                module: AccountDataModule.FIFAMarketDashboard
             },
             {
                 key: '/world-cup-corners',
                 label: 'World Cup Corners',
                 path: '/world-cup-corners',
                 icon: <BarChartOutlined />,
-                access: 'data'
+                module: AccountDataModule.WorldCupCorners
             }
         ]
     },
     {
         key: 'token-risk',
         label: 'Token & Risk',
-        children: [tokenNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, access: 'data'}]
+        children: [tokenNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, module: AccountDataModule.Wallet}]
     },
     {
         key: 'operations',
         label: 'Operations',
         children: [
-            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, access: 'data'},
+            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, module: AccountDataModule.Notifications},
             {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, access: 'admin'},
             {key: '/etherscan-gateways', label: 'Etherscan Gateways', path: '/etherscan-gateways', icon: <ApiOutlined />, access: 'admin'}
         ]
@@ -332,11 +334,7 @@ const usePreferences = () => {
     return pref;
 };
 
-export async function loadAppBootstrapWithRetry(
-    load: () => Promise<AppBootstrap>,
-    delays: number[] = bootstrapRetryDelays,
-    sleep: (delayMs: number) => Promise<unknown> = wait
-) {
+export async function loadAppBootstrapWithRetry(load: () => Promise<AppBootstrap>, delays: number[] = bootstrapRetryDelays, sleep: (delayMs: number) => Promise<unknown> = wait) {
     let lastError: Error = null;
     for (let attempt = 0; attempt <= delays.length; attempt++) {
         try {
@@ -354,17 +352,11 @@ export async function loadAppBootstrapWithRetry(
 const loadAccessState = (user: UserInfo): AccessState => ({
     user,
     isAdmin: user.administrator,
-    canReadData: user.administrator || user.dataAccess >= AccountDataAccess.Read,
-    canWriteData: user.administrator || user.dataAccess >= AccountDataAccess.ReadWrite,
-    revision: user.authorizationRevision
+    moduleAccess: moduleAccessLevels(user.access, user.administrator),
+    revision: user.access.revision
 });
 
-type SessionState =
-    | {status: 'anonymous'}
-    | {status: 'resolving'}
-    | {status: 'authenticated'; access: AccessState}
-    | {status: 'maintenance'}
-    | {status: 'error'; error: Error};
+type SessionState = {status: 'anonymous'} | {status: 'resolving'} | {status: 'authenticated'; access: AccessState} | {status: 'maintenance'} | {status: 'error'; error: Error};
 
 const loadInitialSessionState = (session: AppBootstrapSession): SessionState => {
     switch (session.status) {
@@ -403,38 +395,39 @@ const useNarrowShell = () => {
 };
 
 const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => {
-    const dataRoute = (element: React.ReactElement) => (props.access.canReadData ? element : <Navigate replace={true} to='/user-info' />);
+    const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
+        props.access.isAdmin || props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/user-info' />;
     const adminRoute = (element: React.ReactElement) => (props.access.isAdmin ? element : <ForbiddenPage />);
     return (
         <Routes>
             <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
-            <Route path='/wallet' element={dataRoute(<WalletsPage />)} />
-            <Route path='/market-radar' element={dataRoute(<MarketRadarHotPage />)} />
-            <Route path='/market-radar/realtime' element={dataRoute(<MarketRadarRealtimePage />)} />
-            <Route path='/market-radar/movers' element={dataRoute(<MarketRadarMoversPage />)} />
-            <Route path='/sports-live' element={dataRoute(<SportsLivePage />)} />
-            <Route path='/sports-history' element={dataRoute(<SportsHistoryPage />)} />
-            <Route path='/world-cup-corners' element={dataRoute(<WorldCupCornersPage />)} />
-            <Route path='/managed-oo/proposals' element={dataRoute(<ManagedOOProposalsPage />)} />
-            <Route path='/managed-oo/disputes' element={dataRoute(<ManagedOODisputesPage />)} />
-            <Route path='/fifa-market-dashboard' element={dataRoute(<FIFAMarketDashboardPage />)} />
-            <Route path='/notifications' element={dataRoute(<NotificationsPage />)} />
-            <Route path='/notifications/:id' element={dataRoute(<NotificationsDetailPage />)} />
+            <Route path='/wallet' element={moduleRoute(AccountDataModule.Wallet, <WalletsPage />)} />
+            <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
+            <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
+            <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage />)} />
+            <Route path='/sports-live' element={moduleRoute(AccountDataModule.SportsLive, <SportsLivePage />)} />
+            <Route path='/sports-history' element={moduleRoute(AccountDataModule.SportsHistory, <SportsHistoryPage />)} />
+            <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
+            <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
+            <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
+            <Route path='/fifa-market-dashboard' element={moduleRoute(AccountDataModule.FIFAMarketDashboard, <FIFAMarketDashboardPage />)} />
+            <Route path='/notifications' element={moduleRoute(AccountDataModule.Notifications, <NotificationsPage />)} />
+            <Route path='/notifications/:id' element={moduleRoute(AccountDataModule.Notifications, <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
             <Route path='/service-status' element={adminRoute(<ServiceStatusPage />)} />
             <Route path='/etherscan-gateways' element={adminRoute(<EtherscanGatewaysPage />)} />
             <Route path='/user-info' element={<UserInfoPage onSessionEnded={props.onSessionEnded} />} />
             <Route path='/help' element={<HelpPage />} />
-            <Route path='/token' element={dataRoute(<Navigate replace={true} to='/token/projects' />)} />
-            <Route path='/token/projects' element={dataRoute(<ProjectsPage />)} />
-            <Route path='/token/projects/:projectID' element={dataRoute(<ProjectDetailPage />)} />
-            <Route path='/token/contract-codes' element={dataRoute(<ContractCodesPage />)} />
-            <Route path='/token/contract-codes/:codeHash' element={dataRoute(<ContractCodeDetailPage />)} />
-            <Route path='/token/contract-code-blocklist' element={dataRoute(<ContractCodeBlocklistPage />)} />
-            <Route path='/token/wallet-blocklist' element={dataRoute(<WalletBlocklistPage />)} />
-            <Route path='/token/node-statuses' element={dataRoute(<NodeStatusesPage />)} />
-            <Route path='/token/chain-processing' element={dataRoute(<ChainProcessingPage />)} />
-            <Route path='/token/collection-tasks' element={dataRoute(<CollectionTasksPage />)} />
+            <Route path='/token' element={moduleRoute(AccountDataModule.Token, <Navigate replace={true} to='/token/projects' />)} />
+            <Route path='/token/projects' element={moduleRoute(AccountDataModule.Token, <ProjectsPage />)} />
+            <Route path='/token/projects/:projectID' element={moduleRoute(AccountDataModule.Token, <ProjectDetailPage />)} />
+            <Route path='/token/contract-codes' element={moduleRoute(AccountDataModule.Token, <ContractCodesPage />)} />
+            <Route path='/token/contract-codes/:codeHash' element={moduleRoute(AccountDataModule.Token, <ContractCodeDetailPage />)} />
+            <Route path='/token/contract-code-blocklist' element={moduleRoute(AccountDataModule.Token, <ContractCodeBlocklistPage />)} />
+            <Route path='/token/wallet-blocklist' element={moduleRoute(AccountDataModule.Token, <WalletBlocklistPage />)} />
+            <Route path='/token/node-statuses' element={moduleRoute(AccountDataModule.Token, <NodeStatusesPage />)} />
+            <Route path='/token/chain-processing' element={moduleRoute(AccountDataModule.Token, <ChainProcessingPage />)} />
+            <Route path='/token/collection-tasks' element={moduleRoute(AccountDataModule.Token, <CollectionTasksPage />)} />
             <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
         </Routes>
     );
@@ -455,6 +448,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const accessGenerationRef = React.useRef(0);
     const accessRef = React.useRef<AccessState>(initialAccess);
     const accessRefreshRef = React.useRef<Promise<boolean>>(null);
+    const accessDeniedRefreshRef = React.useRef<Promise<void>>(null);
     const accessRefreshedAtRef = React.useRef(initialAccess ? Date.now() : 0);
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
     const isLoginPath = location.pathname.startsWith('/login');
@@ -464,83 +458,108 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         accessGenerationRef.current += 1;
         accessRef.current = null;
         accessRefreshRef.current = null;
+        accessDeniedRefreshRef.current = null;
         accessRefreshedAtRef.current = 0;
         requests.invalidatePendingRequestErrors();
+        requests.abortAuthorizationRequests();
         setSession(status === 'maintenance' ? {status: 'maintenance'} : {status: 'anonymous'});
         clearAsyncDataCache();
         clearProjectsReturnSnapshots();
     }, []);
 
-    const refreshAccess = React.useCallback((force = false): Promise<boolean> => {
-        if (!force && accessRef.current && Date.now() - accessRefreshedAtRef.current < authorizationFreshnessMs) {
-            return Promise.resolve(true);
-        }
-        if (accessRefreshRef.current) {
-            return accessRefreshRef.current;
-        }
-        if (!accessRef.current) {
-            setSession({status: 'resolving'});
-        }
-        const generation = accessGenerationRef.current;
-        const request = (async () => {
-            try {
-                const user = await services.users.get();
-                if (generation !== accessGenerationRef.current) {
-                    return false;
-                }
-                if (!user.loggedIn) {
-                    endSession('anonymous');
-                    navigate('/login', {replace: true});
-                    return false;
-                }
-                const next = loadAccessState(user);
-                const previous = accessRef.current;
-                const authorizationChanged =
-                    Boolean(previous) &&
-                    (previous.user.username !== next.user.username ||
-                        previous.user.iss !== next.user.iss ||
-                        previous.revision !== next.revision ||
-                        previous.isAdmin !== next.isAdmin ||
-                        previous.canReadData !== next.canReadData ||
-                        previous.canWriteData !== next.canWriteData);
-                if (authorizationChanged) {
-                    requests.invalidatePendingRequestErrors();
-                    clearAsyncDataCache();
-                    clearProjectsReturnSnapshots();
-                }
-                accessRef.current = next;
-                accessRefreshedAtRef.current = Date.now();
-                setSession({status: 'authenticated', access: next});
-                return true;
-            } catch (err: any) {
-                if (generation !== accessGenerationRef.current) {
-                    return false;
-                }
-                if (isAccountMaintenanceError(err)) {
-                    endSession('maintenance');
-                    navigate(maintenanceLoginPath, {replace: true});
-                    return false;
-                }
-                if (err?.status === 401) {
-                    endSession('anonymous');
-                    navigate('/login', {replace: true});
-                    return false;
-                }
-                if (!accessRef.current) {
-                    setSession({status: 'error', error: err instanceof Error ? err : new Error(err?.message || String(err))});
-                }
-                throw err;
+    const refreshAccess = React.useCallback(
+        (force = false): Promise<boolean> => {
+            if (!force && accessRef.current && Date.now() - accessRefreshedAtRef.current < authorizationFreshnessMs) {
+                return Promise.resolve(true);
             }
-        })();
-        accessRefreshRef.current = request;
-        const clearPendingRefresh = () => {
-            if (accessRefreshRef.current === request) {
-                accessRefreshRef.current = null;
+            if (accessRefreshRef.current) {
+                return accessRefreshRef.current;
             }
-        };
-        void request.then(clearPendingRefresh, clearPendingRefresh);
-        return request;
-    }, [endSession, navigate]);
+            if (!accessRef.current) {
+                setSession({status: 'resolving'});
+            }
+            const generation = accessGenerationRef.current;
+            const request = (async () => {
+                try {
+                    const user = await services.users.get();
+                    if (generation !== accessGenerationRef.current) {
+                        return false;
+                    }
+                    if (!user.loggedIn) {
+                        endSession('anonymous');
+                        navigate('/login', {replace: true});
+                        return false;
+                    }
+                    const next = loadAccessState(user);
+                    const previous = accessRef.current;
+                    const authorizationChanged =
+                        Boolean(previous) &&
+                        (previous.user.username !== next.user.username ||
+                            previous.user.iss !== next.user.iss ||
+                            previous.revision !== next.revision ||
+                            previous.isAdmin !== next.isAdmin ||
+                            !moduleAccessLevelsEqual(previous.moduleAccess, next.moduleAccess));
+                    if (authorizationChanged) {
+                        const priorAccess = previous as AccessState;
+                        const identityChanged = priorAccess.user.username !== next.user.username || priorAccess.user.iss !== next.user.iss || priorAccess.isAdmin !== next.isAdmin;
+                        if (identityChanged) {
+                            requests.invalidatePendingRequestErrors();
+                            requests.abortAuthorizationRequests();
+                            clearAsyncDataCache();
+                            clearProjectsReturnSnapshots();
+                        } else {
+                            accountDataModules.forEach(definition => {
+                                const prior = priorAccess.moduleAccess[definition.module];
+                                const current = next.moduleAccess[definition.module];
+                                if (prior >= AccountDataAccess.Read && current < AccountDataAccess.Read) {
+                                    requests.abortAuthorizationRequests(definition.module);
+                                    clearAsyncDataCache(definition.module);
+                                    if (definition.module === AccountDataModule.Token) {
+                                        clearProjectsReturnSnapshots();
+                                    }
+                                } else if (prior >= AccountDataAccess.ReadWrite && current < AccountDataAccess.ReadWrite) {
+                                    requests.abortAuthorizationRequests(definition.module, 'write');
+                                }
+                            });
+                        }
+                    }
+                    accessRefreshedAtRef.current = Date.now();
+                    if (!previous || authorizationChanged) {
+                        accessRef.current = next;
+                        setSession({status: 'authenticated', access: next});
+                    }
+                    return true;
+                } catch (err: any) {
+                    if (generation !== accessGenerationRef.current) {
+                        return false;
+                    }
+                    if (isAccountMaintenanceError(err)) {
+                        endSession('maintenance');
+                        navigate(maintenanceLoginPath, {replace: true});
+                        return false;
+                    }
+                    if (err?.status === 401) {
+                        endSession('anonymous');
+                        navigate('/login', {replace: true});
+                        return false;
+                    }
+                    if (!accessRef.current) {
+                        setSession({status: 'error', error: err instanceof Error ? err : new Error(err?.message || String(err))});
+                    }
+                    throw err;
+                }
+            })();
+            accessRefreshRef.current = request;
+            const clearPendingRefresh = () => {
+                if (accessRefreshRef.current === request) {
+                    accessRefreshRef.current = null;
+                }
+            };
+            void request.then(clearPendingRefresh, clearPendingRefresh);
+            return request;
+        },
+        [endSession, navigate]
+    );
 
     const establishAuthenticatedSession = React.useCallback(async () => {
         try {
@@ -548,6 +567,25 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         } catch {
             return false;
         }
+    }, [refreshAccess]);
+
+    const refreshAfterAccessDenied = React.useCallback(() => {
+        if (accessDeniedRefreshRef.current) {
+            return accessDeniedRefreshRef.current;
+        }
+        const request = refreshAccess(true).then(
+            () => undefined,
+            () => undefined
+        );
+        accessDeniedRefreshRef.current = request;
+        void request.finally(() => {
+            window.setTimeout(() => {
+                if (accessDeniedRefreshRef.current === request) {
+                    accessDeniedRefreshRef.current = null;
+                }
+            }, 250);
+        });
+        return request;
     }, [refreshAccess]);
 
     React.useEffect(() => {
@@ -614,10 +652,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             navigate('/login', {replace: true});
             return;
         }
-        if (
-            session.status === 'maintenance' &&
-            (!isLoginPath || new URLSearchParams(location.search).get('reason') !== 'maintenance')
-        ) {
+        if (session.status === 'maintenance' && (!isLoginPath || new URLSearchParams(location.search).get('reason') !== 'maintenance')) {
             navigate(maintenanceLoginPath, {replace: true});
             return;
         }
@@ -630,20 +665,22 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         if (isLoginPath || !access) {
             return;
         }
-        const refreshVisibleAccess = () => {
+        const refreshVisibleAccess = (force: boolean) => {
             if (document.visibilityState === 'visible') {
-                void refreshAccess(false).catch(() => undefined);
+                void refreshAccess(force).catch(() => undefined);
             }
         };
-        const interval = window.setInterval(refreshVisibleAccess, authorizationFreshnessMs);
-        window.addEventListener('focus', refreshVisibleAccess);
-        document.addEventListener('visibilitychange', refreshVisibleAccess);
+        const refreshOnInterval = () => refreshVisibleAccess(false);
+        const refreshOnAttention = () => refreshVisibleAccess(true);
+        const interval = window.setInterval(refreshOnInterval, authorizationFreshnessMs);
+        window.addEventListener('focus', refreshOnAttention);
+        document.addEventListener('visibilitychange', refreshOnAttention);
         return () => {
             window.clearInterval(interval);
-            window.removeEventListener('focus', refreshVisibleAccess);
-            document.removeEventListener('visibilitychange', refreshVisibleAccess);
+            window.removeEventListener('focus', refreshOnAttention);
+            document.removeEventListener('visibilitychange', refreshOnAttention);
         };
-    }, [access, isLoginPath, refreshAccess]);
+    }, [Boolean(access), isLoginPath, refreshAccess]);
 
     React.useEffect(() => {
         const subscription: Subscription = requests.onError.subscribe(err => {
@@ -651,7 +688,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 return;
             }
             if (isAccountDataAccessDeniedError(err)) {
-                void refreshAccess(true).catch(() => undefined);
+                void refreshAfterAccessDenied();
                 return;
             }
             const maintenance = isAccountMaintenanceError(err);
@@ -665,7 +702,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             navigate(maintenance ? maintenanceLoginPath : '/login', {replace: true});
         });
         return () => subscription?.unsubscribe();
-    }, [endSession, isLoginPath, navigate, refreshAccess]);
+    }, [endSession, isLoginPath, navigate, refreshAfterAccessDenied]);
 
     React.useEffect(() => {
         const current = flattenNav(navItems).find(item => item.key === selectedKey(location.pathname));
@@ -713,8 +750,9 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 ? {
                       user: access.user,
                       isAdmin: access.isAdmin,
-                      canReadData: access.canReadData,
-                      canWriteData: access.canWriteData,
+                      access: (module: AccountDataModule) => access.moduleAccess[module],
+                      canRead: (module: AccountDataModule) => access.moduleAccess[module] >= AccountDataAccess.Read,
+                      canWrite: (module: AccountDataModule) => access.moduleAccess[module] >= AccountDataAccess.ReadWrite,
                       revision: access.revision,
                       refresh: async () => {
                           await refreshAccess(true);
@@ -770,7 +808,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             </Routes>
         );
     } else if (access && !isLoginPath) {
-        routes = <AppRoutes key={`${access.revision}:${access.isAdmin}:${access.user.dataAccess}`} access={access} onSessionEnded={endSession} />;
+        routes = <AppRoutes access={access} onSessionEnded={endSession} />;
     } else {
         routes = <div className='athena-boot'>Loading Athena...</div>;
     }
@@ -989,12 +1027,18 @@ const Bootstrap = () => {
                 }
             }}>
             <AntApp>
-                <BrowserRouter basename={base} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
-                    <Shell pref={pref} initialSession={appBootstrap.session} />
-                </BrowserRouter>
+                <Shell pref={pref} initialSession={appBootstrap.session} />
             </AntApp>
         </ConfigProvider>
     );
 };
 
-export const App = () => <Bootstrap />;
+export const App = () => {
+    const [router] = React.useState(() =>
+        createBrowserRouter([{path: '*', element: <Bootstrap />}], {
+            basename: base,
+            future: {v7_relativeSplatPath: true}
+        })
+    );
+    return <RouterProvider router={router} future={{v7_startTransition: true}} />;
+};

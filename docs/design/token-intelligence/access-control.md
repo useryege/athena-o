@@ -1,171 +1,166 @@
-# Token UI and API Access Control
+# Token Module Access Control
 
 ## Scope
 
-Token Intelligence uses the same hierarchical business-data access level as
-every other ATHENA data capability. This document explains how `READ` exposes
-Token pages and queries, how `READ_WRITE` additionally enables Token mutations,
-and how server authorization and browser presentation stay synchronized.
+Token Intelligence is one product module in the unified account access matrix.
+This document explains how Token `READ` exposes every Token query and page, how
+Token `READ_WRITE` additionally exposes policy and checkpoint mutations, and how
+the API Server and browser enforce that module independently from every other
+product.
 
-Token workers, internal service-to-service calls, project research behavior,
-and persistence behind an authorized request remain owned by their Token
-subsystems. Login availability, administrator operations, durable access state,
-and the complete browser authorization lifecycle are documented in
+Token workers, internal service-to-service activity, research scheduling, and
+persistence behind an authorized request remain owned by their Token
+subsystems. Login availability, administrator operations, durable account
+aggregates, and the full browser session lifecycle are documented in
 [Account Access Control](../identity-access/account-access-control.md).
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Effective access authority | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `DataAccess`, `RequirementDataRead`, `RequirementDataWrite`, `Controller.Authorize` |
-| Token API authorization boundary | [internal/server/authz.go](../../../internal/server/authz.go) | `dataReadGRPCMethods`, `dataWriteGRPCMethods`, `authorizeGRPC` |
-| Token API proxy boundary | [internal/server/tokenapi/tokenapi.go](../../../internal/server/tokenapi/tokenapi.go) | Token catalog, research, policy, and operations methods |
-| Browser authorization state | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/shared/services/auth-service.ts](../../../ui/src/app/shared/services/auth-service.ts) | `Bootstrap`, `AuthorizationCtx`, `canReadData`, `canWriteData`, Token navigation and routes |
-| Token clients and write controls | [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts), [ui/src/app/pages](../../../ui/src/app/pages) | Token request methods and page actions |
+| Effective module authority | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `ModuleToken`, `AccessLevelRead`, `AccessLevelReadWrite`, `RequireModule`, `Controller.Authorize` |
+| Explicit Token RPC rules | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `moduleRead`, `moduleWrite`, `authorizeGRPC` |
+| Token public facade | [internal/server/tokenapi/tokenapi.go](../../../internal/server/tokenapi/tokenapi.go) | Token catalog, research, policy, and operations methods |
+| Browser module registry and context | [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `accountDataModules`, `AccountDataModule.Token`, `AuthorizationCtx.canRead`, `AuthorizationCtx.canWrite` |
+| Token request scopes and caches | [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts), [ui/src/app/pages/project-navigation.tsx](../../../ui/src/app/pages/project-navigation.tsx) | Token read/write request scopes, `clearAsyncDataCache`, `clearProjectsReturnSnapshots` |
+| Token pages and write interactions | [ui/src/app/pages](../../../ui/src/app/pages) | Token routes, blocklist editors, checkpoint editor, delete confirmations |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    C["AccessController"] --> A["Server RPC category authorization"]
-    A --> T["Token API services"]
-    C --> B["GetAppBootstrap initial data_access + revision"]
-    C --> I["GetUserInfo subsequent data_access + revision"]
-    B --> U["Browser Authorization Context"]
-    I --> U
+    C["AccessController Token level"] --> R["Explicit Token RPC rules"]
+    R --> T["Token API facade"]
+    C --> S["Bootstrap and GetUserInfo access matrix"]
+    S --> U["Authorization Context"]
     U --> N["Token navigation and routes"]
     U --> W["Token write controls"]
+    U --> Q["Token-scoped requests and caches"]
 ```
 
-There is no Token-specific account list, role, or policy. The authenticated
-account's effective aggregate is the sole input:
+There is no Token-specific account, role, resource permission, or route grant.
+The active account's Token matrix entry is the sole product-level input:
 
-- `NONE` cannot mount Token routes or call Token API methods.
-- `READ` can open every Token read page and call every Token query, including
-  projects, reports, observations, contract code, collection diagnostics,
-  node status, runtime configuration, policies, and chain checkpoints.
-- `READ_WRITE` includes all reads and can create, update, or delete blocklist
-  entries and update chain checkpoints.
-- The administrator always has `READ_WRITE`; its separate administrator flag
-  is not needed for ordinary Token data operations.
+- Token `NONE` cannot mount Token routes or call public Token business RPCs.
+- Token `READ` can open all Token query pages and call every Token query,
+  including project and contract views, reports, observations, collection
+  diagnostics, node state, runtime configuration, policies, and chain state.
+- Token `READ_WRITE` includes all reads and can create, update, or delete
+  contract-code and wallet blocklist entries and update chain checkpoints.
+- The built-in administrator has Token `READ_WRITE` as part of its fixed maximum
+  matrix. Its administrator boundary is not required for ordinary Token data.
 
-The UI access level improves presentation but is not the security boundary.
-Every public Token RPC is independently categorized and enforced by the API
-Server before it reaches the Token proxy or service implementation.
+A Token grant does not grant Wallet, Notifications, or any market module. The
+UI access level controls presentation, while the API Server remains the security
+boundary for direct HTTP and gRPC callers.
 
 ## Runtime Flow
 
-1. Authentication resolves the current account through `AccessController`.
-   Disabled credentials stop at the account-maintenance boundary before Token
-   authorization runs.
-2. The API Server classifies Token `Get` and `List` methods as data-read. Token
-   `Create`, `Update`, and `Delete` policy methods and checkpoint updates are
-   data-write.
-3. `Controller.Authorize` permits a data-read request for `READ` or
-   `READ_WRITE` and permits a data-write request only for `READ_WRITE`. A denial
-   occurs before the Token API dependency is called.
-4. On a browser cold start, `GetAppBootstrap` returns settings together with an
-   `ANONYMOUS`, `AUTHENTICATED`, or `ACCOUNT_MAINTENANCE` session projection.
-   Only `AUTHENTICATED` supplies `data_access` and `authorization_revision`; the
-   shell initializes the shared Authorization Context directly from it.
-5. Token navigation and all `/token/*` routes require `canReadData`. An
-   authenticated Token cold start therefore makes one application-bootstrap
-   request followed directly by the mounted page's own Token requests, without
-   an initial `GetUserInfo`. Token query pages mount for `READ` and
-   `READ_WRITE`; each mutation or sensitive write interaction is rendered and
-   enabled only when `canWriteData` is true. Direct HTTP or gRPC calls remain
-   subject to the same server categorization.
-6. After successful login and while an authenticated page is visible, the shell
-   uses `GetUserInfo` for the new session projection and subsequent
-   authorization refreshes every 15 seconds and when the window regains focus.
-   A stable account-data 403 starts the same deduplicated refresh immediately.
-7. When a Token user's authorization revision changes, the shell cancels stale
-   work, clears shared asynchronous Token data, project list caches, and saved
-   return positions, closes write interactions, and remounts the route. A
-   downgrade to `READ` retains the current query page without write controls;
-   a downgrade to `NONE` routes to `/user-info`. An upgrade exposes the Token
-   navigation without a new login.
+1. Authentication resolves the account through `AccessController`. A disabled
+   credential stops at account maintenance before a Token rule is evaluated.
+2. `moduleGRPCRules` maps every public Token `Get` or `List` operation to
+   `RequireModule(ModuleToken, AccessLevelRead)`. Contract-code and wallet
+   blocklist creates, updates, and deletes, plus chain checkpoint updates, map
+   to Token `READ_WRITE`.
+3. `authorizeGRPC` checks the explicit rule before invoking the Token proxy.
+   Missing Token access returns the stable module denial; the Token dependency
+   is not called.
+4. `GetAppBootstrap` supplies the complete initial account aggregate, including
+   Token. After login and during the session, `GetUserInfo` supplies the same
+   aggregate. The shell derives `canRead(AccountDataModule.Token)` and
+   `canWrite(AccountDataModule.Token)` from that entry.
+5. Token navigation and every `/token/*` route require Token `READ`. All Token
+   query pages mount at `READ` or `READ_WRITE`; mutation controls and sensitive
+   write interactions render and operate only at `READ_WRITE`.
+6. Token service methods tag each browser request with the Token module and
+   `read` or `write` mode. The shared request layer can therefore abort Token
+   work without affecting another product.
+7. The shell refreshes authorization every 15 seconds while visible, on focus
+   or visibility return, and immediately after a stable module denial. If Token
+   falls below `READ`, it aborts all Token requests, clears Token asynchronous
+   data and saved project return positions, and routes an active Token page to
+   `/user-info`.
+8. If Token falls from `READ_WRITE` to `READ`, only Token write requests are
+   aborted. Query pages and read caches remain mounted. Page effects clear
+   unsaved Token write drafts and destroy active write or delete confirmations.
+   A change to another module leaves Token requests, caches, routes, and
+   interactions untouched.
+9. Raising Token to `READ` or `READ_WRITE` exposes the matching navigation and
+   controls after the next projection without replacing the credential.
 
-Token project list, project detail, trends, observations, wallet normal
-transactions, Swap activity, Swap events, Report revisions, Selections, and
-collection-task reads all share the same data-read category. The unified access
-level does not create per-page or per-endpoint grants.
+Project lists and details, trends, observations, wallet normal transactions,
+Swap activity and events, Report revisions, Selections, and collection-task
+reads all use the same Token `READ` rule. The module level does not create
+per-page or per-project grants.
 
 ## State / Data
 
-This capability adds no Token-specific authorization state. The durable
-account aggregate and its in-memory snapshot belong to Account Access Control.
-The browser initializes the current `data_access` and authorization revision
-from application bootstrap, then keeps later `GetUserInfo` projections in the
-shared Authorization Context for the active identity.
+This capability adds no Token-specific authorization persistence. Token access
+is one child row in the complete account aggregate owned by Account Access
+Control. The API Server reads that value from the controller snapshot on every
+Token request.
 
-Token caches contain business responses rather than authorization decisions.
-They are scoped to the current login and authorization generation and are
-cleared when that generation changes, preventing a downgraded or different
-identity from rendering a prior snapshot.
+The browser stores the active aggregate in Authorization Context. Token caches
+contain business responses, not authorization decisions, and are registered
+under the Token module. Saved project return positions use the same lifecycle.
+They are cleared when Token read access is lost or the authenticated identity
+ends, but not for an unrelated module change.
 
 ## Configuration
 
-There is no Token-specific access setting. Ordinary accounts default to
-`NONE`, and administrators replace the complete account aggregate through the
-account-access API. `ATHENA_SERVER_DISABLE_AUTH` is the process-wide
-development bypass and makes application bootstrap supply the authenticated
-built-in administrator identity with `READ_WRITE`.
+There is no Token-specific environment grant. Ordinary accounts start with
+Token `NONE`, and an administrator replaces the complete account access
+aggregate through the Account API. `ATHENA_SERVER_DISABLE_AUTH` uses the
+built-in administrator projection and therefore Token `READ_WRITE`.
 
 ## Invariants
 
-- Token reads require data-read and therefore accept only `READ` or
-  `READ_WRITE`.
-- Token mutations require data-write and therefore accept only `READ_WRITE`.
-- Every ordinary account at the same data level has the same Token access; no
-  per-route or per-resource policy exists.
-- Token navigation, routes, and write controls derive only from the shared
-  Authorization Context, not usernames or client-side allowlists.
-- Initial Token route eligibility comes from `GetAppBootstrap`; subsequent
-  eligibility changes come from `GetUserInfo`, and both use the shared account
-  access authority.
-- Hiding a route or action is not authorization; the server independently
-  categorizes every public Token RPC.
-- All project and project-scoped reads use the same data-read category as
-  Report, Selection, and collection histories.
-- Cached Token data never crosses a login or authorization-generation boundary.
-- Access changes do not alter Token API paths, domain state, or public business
-  data types.
+- Every public Token query has an explicit Token `READ` rule.
+- Every public Token mutation has an explicit Token `READ_WRITE` rule.
+- Token access is independent from all other product modules.
+- Token navigation, routes, controls, request scopes, and caches use the shared
+  module registry and Authorization Context, not usernames or client allowlists.
+- Hiding a route or action is not authorization; the API Server evaluates the
+  Token rule for every public request.
+- All project and project-scoped reads use the same Token `READ` boundary as
+  reports, selections, and collection histories.
+- Token read loss clears Token business state; write loss clears only pending
+  writes and write UI while preserving readable data.
+- A different module's access change does not invalidate Token state.
+- Access changes do not alter Token paths, domain data, worker scheduling, or
+  public business message types.
 
 ## Failure Recovery
 
-An anonymous application bootstrap routes to login without mounting a Token
-page. An initial disabled credential returns HTTP 200 with the
-`ACCOUNT_MAINTENANCE` bootstrap status so the browser can retain settings and
-show the maintenance login page. A later exact maintenance 503 from
-`GetUserInfo` or a Token request clears browser session caches and routes to
-that page while preserving the credential. An account-data denial returns gRPC
-`PermissionDenied` and HTTP 403 with
-`ACCOUNT_DATA_ACCESS_DENIED`; the browser refreshes authorization without
-clearing the credential.
+An anonymous bootstrap routes to login without mounting Token. An initial
+disabled credential produces the HTTP 200 `ACCOUNT_MAINTENANCE` bootstrap state;
+a later exact maintenance 503 ends the browser session projection and routes to
+the maintenance login page while preserving the credential.
 
-A denied mutation never reaches the Token service and is safe to retry after
-an administrator grants `READ_WRITE`. A denied read is likewise safe to retry
-after `READ` or `READ_WRITE` is granted. If the authorization refresh itself
-fails, the existing retry/error boundary remains visible rather than assuming
-an access level.
+A Token denial returns gRPC `PermissionDenied` and HTTP 403 with
+`ACCOUNT_DATA_ACCESS_DENIED`. Its `google.rpc.ErrorInfo` metadata identifies the
+Token module and required and effective levels. The browser refreshes
+authorization without clearing the credential. A denied read or mutation never
+reaches the Token service and can be retried after the matching grant. If the
+authorization refresh fails, the current retry/error boundary remains instead
+of synthesizing a new level.
 
 ## Observability
 
-Rejected Token calls use normal request logging and gRPC/gateway status
-mapping. The stable `google.rpc.ErrorInfo` reason distinguishes account-data
-denial from an unrelated 403. Initial account maintenance is visible through
-the application-bootstrap status; later maintenance remains distinguishable as
-gRPC `Unavailable`, HTTP 503, and the fixed maintenance message. This
-capability adds no Token-specific metric or health endpoint.
+Rejected Token calls use normal request logging and gRPC/gateway status mapping.
+The stable reason and module metadata distinguish a Token access denial from an
+unrelated 403 or another module denial. Account maintenance remains separately
+identifiable by the bootstrap status or gRPC `Unavailable`, HTTP 503, code 14,
+and `系统维护中`. This capability adds no Token-specific authorization metric or
+health endpoint.
 
 ## Change Checklist
 
-- [ ] Every Token query remains categorized as data-read.
-- [ ] Every Token mutation remains categorized as data-write.
-- [ ] Token navigation, routes, and write controls match `canReadData` and `canWriteData`.
-- [ ] Project, Report, Selection, collection, policy, and checkpoint methods remain in the intended category.
-- [ ] Authorization revision changes clear Token caches and stale work without clearing valid credentials.
-- [ ] Bootstrap maintenance status, later maintenance 503, stable data 403, and ordinary authentication errors remain distinguishable.
+- [ ] Every Token query remains mapped to Token `READ` in `moduleGRPCRules`.
+- [ ] Every Token mutation remains mapped to Token `READ_WRITE`.
+- [ ] Token navigation, routes, request scopes, caches, and write controls use the shared Token module entry.
+- [ ] Project, Report, Selection, collection, policy, and checkpoint methods remain in the intended level.
+- [ ] Token read loss and write loss perform the correct scoped cleanup without affecting another module.
+- [ ] Bootstrap maintenance, later maintenance 503, module 403, and ordinary authentication errors remain distinguishable.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

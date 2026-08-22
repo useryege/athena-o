@@ -15,14 +15,14 @@ The executable code remains the source of truth. These documents provide the mai
 
 | Subsystem | Capability | Document |
 | --- | --- | --- |
-| Development Runtime | Local process supervision, capability process composition, and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
-| Identity and Access | Unified login availability, business-data levels, administrator control, and browser authorization lifecycle | [Account Access Control](identity-access/account-access-control.md) |
-| Market Intelligence | Polymarket hot-market discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
+| Development Runtime | Local process supervision, capability process composition, persistent infrastructure, and account-access reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
+| Identity and Access | Unified login availability, ten-module access matrix, transactional administrator control, and scoped browser authorization lifecycle | [Account Access Control](identity-access/account-access-control.md) |
+| Market Intelligence | Read-only Market Radar module, Polymarket discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
 | Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) |
 | Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) |
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) |
-| Market Intelligence | Configured Worm/Polymarket FIFA composition, balances, and requester holdings | [FIFA Market Dashboard](market-intelligence/fifa-market-dashboard.md) |
+| Market Intelligence | FIFA-module facade for configured Worm/Polymarket composition, balances, requester holdings, and configuration | [FIFA Market Dashboard](market-intelligence/fifa-market-dashboard.md) |
 | Token Intelligence | Synchronous EVM block discovery, token validation, project initialization, and per-attempt processing diagnostics | [Token Chain Processor](token-intelligence/chain-processor.md) |
 | Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |
@@ -30,7 +30,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Token Intelligence | Ave token market data and canonical pair collection | [Ave Market Data Collection](token-intelligence/ave-market-data.md) |
 | Token Intelligence | Unified project pages, current snapshots, Report risk, trends, and history reads | [Token Project Read Model](token-intelligence/project-read-model.md) |
 | Token Intelligence | One-time pre-deployment normal transactions for related wallets | [Project Wallet Pre-Deployment Normal Transactions](token-intelligence/wallet-normal-transactions.md) |
-| Token Intelligence | Unified data-read and data-write authorization for Token UI and APIs | [Token UI and API Access Control](token-intelligence/access-control.md) |
+| Token Intelligence | Independent Token-module READ and READ_WRITE authorization for UI, requests, caches, and APIs | [Token Module Access Control](token-intelligence/access-control.md) |
 | Blockchain Data | Finalized inbound BSC transaction indexing and lookup | [BSC Inbound Normal Transactions](blockchain-data/bsc-inbound-normal-transactions.md) |
 | Blockchain Data | Finalized BSC V2 Swap-topic transaction indexing and lookup | [BSC V2 Swap Transactions](blockchain-data/bsc-v2-swap-transactions.md) |
 | Blockchain Data | Etherscan API-key and Gateway request scheduling | [Etherscan Manager](blockchain-data/etherscan-manager.md) |

@@ -28,14 +28,36 @@ enum AccountDataAccess {
   ACCOUNT_DATA_ACCESS_READ_WRITE = 2;
 }
 
+enum AccountDataModule {
+  ACCOUNT_DATA_MODULE_UNSPECIFIED = 0;
+  ACCOUNT_DATA_MODULE_MARKET_RADAR = 1;
+  ACCOUNT_DATA_MODULE_SPORTS_LIVE = 2;
+  ACCOUNT_DATA_MODULE_SPORTS_HISTORY = 3;
+  ACCOUNT_DATA_MODULE_MANAGED_OO = 4;
+  ACCOUNT_DATA_MODULE_WORM_MARKETS = 5;
+  ACCOUNT_DATA_MODULE_FIFA_MARKET_DASHBOARD = 6;
+  ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS = 7;
+  ACCOUNT_DATA_MODULE_TOKEN = 8;
+  ACCOUNT_DATA_MODULE_WALLET = 9;
+  ACCOUNT_DATA_MODULE_NOTIFICATIONS = 10;
+}
+
+message AccountModuleAccess {
+  AccountDataModule module = 1;
+  AccountDataAccess dataAccess = 2;
+}
+
 message AccountAccess {
   bool loginEnabled = 1;
-  AccountDataAccess dataAccess = 2;
+  reserved 2;
+  reserved "dataAccess";
   uint64 revision = 3;
+  repeated AccountModuleAccess moduleAccess = 4;
 }
 
 message UpdateAccountAccessRequest {
   string name = 1;
+  // access contains the complete supported account data module matrix.
   AccountAccess access = 2;
 }
 

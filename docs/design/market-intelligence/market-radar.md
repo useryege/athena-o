@@ -7,7 +7,8 @@ by the hot-market, realtime, and mover views. It polls Gamma for active markets,
 keeps one shared candidate cache, samples token prices into short rolling
 windows, ranks movers, and optionally enqueues mover notifications. The Athena
 API Server publishes the capability under the `/api/v1/market-radar` HTTP
-namespace.
+namespace. All four public methods belong only to the read-only Market Radar
+account-access module.
 
 The capability does not persist data and does not own live sports, completed
 sports history, Managed Optimistic Oracle logs, Worm markets, or FIFA
@@ -28,6 +29,7 @@ to Athena Notification.
 | Mover ranking and alerts | [internal/marketradar/movers.go](../../../internal/marketradar/movers.go), [internal/marketradar/mover_alerts.go](../../../internal/marketradar/mover_alerts.go) | `ListMarketMovers`, `scoreMoverWindows`, `collectMoverAlertsLocked`, `sendMoverAlerts` |
 | Internal service contract | [internal/marketradar/market_radar.proto](../../../internal/marketradar/market_radar.proto) | `MarketRadarService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/marketradar/marketradar.proto](../../../internal/server/marketradar/marketradar.proto), [internal/server/marketradar/marketradar.go](../../../internal/server/marketradar/marketradar.go) | `MarketRadarService`, `Server` |
+| Public authorization boundary | [internal/server/authz.go](../../../internal/server/authz.go), [internal/accountaccess/access.go](../../../internal/accountaccess/access.go) | `moduleGRPCRules`, `ModuleMarketRadar`, `AccessLevelRead` |
 | Internal gRPC connection ownership | [internal/marketradar/apiclient/apiclient.go](../../../internal/marketradar/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewMarketRadarClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `MarketRadarHotMarketItem`, `MarketRadarRealtimeMarketItem`, `MarketRadarMoverMarketItem` |
 | Provider adapter | [util/polymarket](../../../util/polymarket) | `GammaClient`, `ListMarketsKeyset` |
@@ -56,8 +58,10 @@ Realtime and mover values are derived from successive Gamma snapshots. The
 `connected` and `last_event_at` response fields describe recent successful
 sampling; the current implementation does not maintain a provider WebSocket.
 The API Server is a stateless gRPC proxy and does not duplicate the cache. It
+checks the explicit Market Radar `READ` rule before proxying a public method and
 keeps one process-owned Market Radar channel and typed client for all proxy and
-health requests instead of dialing on each request.
+health requests instead of dialing on each request. Market Radar is read-only,
+so its account-access maximum is `READ` and it has no public write rule.
 
 ## Runtime Flow
 
@@ -153,6 +157,8 @@ refresh.
 - Concurrent initial reads and the periodic loop collapse into one Gamma scan.
 - Health and lifecycle status indicate that the loop is owned by the process,
   not that a snapshot exists or is current.
+- Status, Hot Markets, Realtime, and Movers all require only Market Radar
+  `READ`; access to another module never grants these methods.
 
 ## Failure Recovery
 
@@ -162,6 +168,10 @@ hot and realtime views stale, and reports the derived connection state as
 disconnected. The background loop logs the failure and retries on the next
 minute. A first read with no usable snapshot returns `Unavailable` when its
 on-demand refresh fails.
+
+A caller without Market Radar `READ` is rejected by the API Server before the
+Market Radar dependency is called. Granting the module permits the next request
+without restarting either process.
 
 An invalid Notification target prevents command startup. Temporary Notification
 unavailability does not: the nonblocking client connection reconnects in the
@@ -189,12 +199,13 @@ The API Server exposes:
 - `GET /api/v1/market-radar/realtime-markets`
 - `GET /api/v1/market-radar/movers`
 
-All methods require the `market-radar:get` resource permission. List responses
-carry fetch time, stale state, candidate and monitored counts, and where
-applicable connection and last-observation fields. Logs distinguish initial and
-periodic discovery failures and include condition IDs for notification failures.
-There are no capability-specific metrics, durable refresh history, or
-freshness-based readiness probe.
+All methods require the explicit Market Radar module `READ` rule. A denial uses
+the shared `ACCOUNT_DATA_ACCESS_DENIED` reason with Market Radar module metadata.
+List responses carry fetch time, stale state, candidate and monitored counts,
+and where applicable connection and last-observation fields. Logs distinguish
+initial and periodic discovery failures and include condition IDs for
+notification failures. There are no capability-specific metrics, durable
+refresh history, or freshness-based readiness probe.
 
 Each of the Hot Markets, Realtime Markets, and Movers web routes requests the
 first 100 items and paginates that in-memory result locally. Routes start on
@@ -202,6 +213,9 @@ page 1 with 50 rows, offer page sizes 10, 50, and 100, preserve the current page
 on manual refresh, and clamp it when a smaller result invalidates the page.
 Only the current page is mounted into the table. Market images use browser lazy
 loading and asynchronous decoding while retaining the failed-image hide path.
+Navigation and all three routes require Market Radar `READ`. Losing that module
+aborts Market Radar requests, clears only its browser cache, and routes an active
+view to `/user-info`; changes to another module retain this view's state.
 
 ## Change Checklist
 
@@ -209,5 +223,6 @@ loading and asynchronous decoding while retaining the failed-image hide path.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
 - [ ] Failure recovery, health checks, and observability are current.
+- [ ] All public methods and browser routes remain scoped to read-only Market Radar `READ`.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

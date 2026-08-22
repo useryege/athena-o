@@ -12,6 +12,11 @@ type AccountAccessOverride struct {
 	AccountName  string
 	LoginEnabled bool
 	UpdatedAt    pgtype.Timestamptz
-	DataAccess   string
 	Revision     int64
+}
+
+type AccountModuleAccessOverride struct {
+	AccountName string
+	Module      string
+	AccessLevel string
 }

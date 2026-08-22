@@ -9,8 +9,11 @@ import (
 )
 
 type Querier interface {
-	ListAccountAccessOverrides(ctx context.Context) ([]ListAccountAccessOverridesRow, error)
-	UpdateAccountAccessOverride(ctx context.Context, arg UpdateAccountAccessOverrideParams) (UpdateAccountAccessOverrideRow, error)
+	CreateAccountAccessOverrideHead(ctx context.Context, arg CreateAccountAccessOverrideHeadParams) (CreateAccountAccessOverrideHeadRow, error)
+	ListAccountAccessOverrideHeads(ctx context.Context) ([]ListAccountAccessOverrideHeadsRow, error)
+	ListAccountModuleAccessOverrides(ctx context.Context) ([]AccountModuleAccessOverride, error)
+	UpdateAccountAccessOverrideHead(ctx context.Context, arg UpdateAccountAccessOverrideHeadParams) (UpdateAccountAccessOverrideHeadRow, error)
+	UpsertAccountModuleAccessOverrides(ctx context.Context, arg UpsertAccountModuleAccessOverridesParams) error
 }
 
 var _ Querier = (*Queries)(nil)

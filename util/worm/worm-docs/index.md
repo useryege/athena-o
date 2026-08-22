@@ -24,6 +24,10 @@ Worm brings leverage to prediction markets. Take amplified positions on high-con
   <Card title="Create a Market" icon="plus" href="/creating-markets/creating-a-market">
     Launch your own prediction market for free and earn from volume.
   </Card>
+
+  <Card title="Play WormCup" icon="futbol" href="/wormcup/what-is-wormcup">
+    Predict the 2026 World Cup in our Telegram Mini App and win prizes.
+  </Card>
 </CardGroup>
 
 ## Leverage

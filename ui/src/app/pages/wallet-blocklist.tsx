@@ -3,7 +3,8 @@ import {Button, Form, Input, Modal, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ResourceTable, TruncatedText, useAsyncData} from '../components';
-import {Context, useAuthorization} from '../shared/context';
+import {Context, ModalHandle, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenWalletBlocklistEntry} from '../shared/services/token-service';
@@ -11,11 +12,27 @@ import {TokenWalletBlocklistEntry} from '../shared/services/token-service';
 export const WalletBlocklistPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.Token);
     const [form] = Form.useForm();
     const [editing, setEditing] = React.useState<TokenWalletBlocklistEntry>(null);
+    const deleteConfirmRef = React.useRef<ModalHandle>();
     const data = useAsyncData(() => services.tokenapi.listWalletBlocklistEntries(), []);
+    React.useEffect(() => {
+        if (!canWrite) {
+            setEditing(null);
+            form.resetFields();
+            deleteConfirmRef.current?.destroy();
+            deleteConfirmRef.current = undefined;
+        }
+    }, [canWrite, form]);
+    React.useEffect(
+        () => () => {
+            deleteConfirmRef.current?.destroy();
+        },
+        []
+    );
     const add = async (values: {wallet: string; note?: string}) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         await services.tokenapi.createWalletBlocklistEntry(values.wallet, values.note || '');
@@ -24,7 +41,7 @@ export const WalletBlocklistPage = () => {
         data.reload();
     };
     const saveNote = async (values: {note?: string}) => {
-        if (!authorization.canWriteData || !editing?.wallet) {
+        if (!canWrite || !editing?.wallet) {
             return;
         }
         await services.tokenapi.updateWalletBlocklistEntry(editing.wallet, values.note || '');
@@ -32,15 +49,22 @@ export const WalletBlocklistPage = () => {
         data.reload();
     };
     const remove = (item: TokenWalletBlocklistEntry) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
-        ctx.modal.confirm({
+        deleteConfirmRef.current = ctx.modal.confirm({
             title: 'Delete wallet blocklist entry?',
             content: item.wallet,
             onOk: async () => {
-                await services.tokenapi.deleteWalletBlocklistEntry(item.wallet || '');
-                data.reload();
+                try {
+                    await services.tokenapi.deleteWalletBlocklistEntry(item.wallet || '');
+                    data.reload();
+                } finally {
+                    deleteConfirmRef.current = undefined;
+                }
+            },
+            onCancel: () => {
+                deleteConfirmRef.current = undefined;
             }
         });
     };
@@ -49,7 +73,7 @@ export const WalletBlocklistPage = () => {
         {title: 'Note', dataIndex: 'note'},
         {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
-    if (authorization.canWriteData) {
+    if (canWrite) {
         columns.push({
             title: 'Actions',
             render: item => (
@@ -71,7 +95,7 @@ export const WalletBlocklistPage = () => {
             error={data.error}
             onRefresh={data.reload}
             filters={
-                authorization.canWriteData ? (
+                canWrite ? (
                     <Form form={form} layout='inline' onFinish={add}>
                         <Form.Item name='wallet' rules={[{required: true}]}>
                             <Input aria-label='Wallet address' placeholder='Wallet' />
@@ -86,7 +110,7 @@ export const WalletBlocklistPage = () => {
                 ) : undefined
             }>
             <ResourceTable rowKey={item => item.wallet || Math.random()} items={data.data || []} columns={columns} loading={data.loading} />
-            <Modal open={authorization.canWriteData && !!editing} title='Edit Wallet Note' footer={null} onCancel={() => setEditing(null)}>
+            <Modal open={canWrite && !!editing} title='Edit Wallet Note' footer={null} onCancel={() => setEditing(null)}>
                 <Form key={editing?.wallet || 'wallet-note'} layout='vertical' initialValues={editing || {}} onFinish={saveNote}>
                     <Form.Item label='Wallet'>
                         <TruncatedText value={editing?.wallet} copyable={true} />

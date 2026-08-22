@@ -1,6 +1,7 @@
 import * as agent from 'superagent';
 
 import {Observable, Observer, Subject} from 'rxjs';
+import {AccountDataModule} from '../access-modules';
 
 type Callback = (data: any) => void;
 
@@ -34,6 +35,15 @@ let baseHRef = '/';
 
 const onError = new Subject<agent.ResponseError>();
 let requestErrorGeneration = 0;
+
+export type AuthorizationRequestMode = 'read' | 'write';
+
+export interface AuthorizationRequestScope {
+    module: AccountDataModule;
+    mode: AuthorizationRequestMode;
+}
+
+const scopedRequests = new Map<agent.Request, AuthorizationRequestScope>();
 
 const isRecord = (value: unknown): value is Record<string, any> => Boolean(value) && typeof value === 'object';
 
@@ -171,15 +181,31 @@ function apiRoot(): string {
     return toAbsURL('/api/v1');
 }
 
-function initHandlers(req: agent.Request) {
+function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
     const generation = requestErrorGeneration;
+    if (scope) {
+        scopedRequests.set(req, scope);
+    }
+    const removeScope = () => scopedRequests.delete(req);
     req.on('error', err => {
+        removeScope();
         if (generation === requestErrorGeneration) {
             onError.next(normalizeRequestError(err));
         }
     });
+    req.on('end', removeScope);
+    req.on('abort', removeScope);
     return req;
 }
+
+const abortAuthorizationRequests = (module?: AccountDataModule, mode?: AuthorizationRequestMode) => {
+    Array.from(scopedRequests.entries()).forEach(([request, scope]) => {
+        if ((module === undefined || scope.module === module) && (mode === undefined || scope.mode === mode)) {
+            scopedRequests.delete(request);
+            request.abort();
+        }
+    });
+};
 
 export default {
     setBaseHRef(val: string) {
@@ -191,24 +217,25 @@ export default {
     invalidatePendingRequestErrors() {
         requestErrorGeneration++;
     },
-    get(url: string) {
-        return initHandlers(agent.get(`${apiRoot()}${url}`));
+    abortAuthorizationRequests,
+    get(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.get(`${apiRoot()}${url}`), scope);
     },
 
-    post(url: string) {
-        return initHandlers(agent.post(`${apiRoot()}${url}`)).set('Content-Type', 'application/json');
+    post(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.post(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
-    put(url: string) {
-        return initHandlers(agent.put(`${apiRoot()}${url}`)).set('Content-Type', 'application/json');
+    put(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.put(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
-    patch(url: string) {
-        return initHandlers(agent.patch(`${apiRoot()}${url}`)).set('Content-Type', 'application/json');
+    patch(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.patch(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
-    delete(url: string) {
-        return initHandlers(agent.del(`${apiRoot()}${url}`)).set('Content-Type', 'application/json');
+    delete(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.del(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
     loadEventSource(url: string): Observable<string> {

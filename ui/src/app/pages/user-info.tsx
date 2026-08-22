@@ -3,7 +3,8 @@ import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, KeyValueGrid, Section, useAsyncData} from '../components';
 import {Context, useAuthorization} from '../shared/context';
-import {AccountDataAccess, VersionMessage} from '../shared/models';
+import {moduleAccessSummary} from '../shared/account-access';
+import {VersionMessage} from '../shared/models';
 import {services} from '../shared/services';
 import {boolTag} from './shared';
 
@@ -44,14 +45,10 @@ export const UserInfoPage = (props: {onSessionEnded: () => void}) => {
                         {label: 'Logged In', value: boolTag(authorization.user.loggedIn)},
                         {label: 'Administrator', value: boolTag(authorization.isAdmin)},
                         {
-                            label: 'Data Access',
-                            value:
-                                authorization.user.dataAccess === AccountDataAccess.ReadWrite
-                                    ? 'Read & write'
-                                    : authorization.user.dataAccess === AccountDataAccess.Read
-                                      ? 'Read only'
-                                      : 'No access'
+                            label: 'Module Access',
+                            value: moduleAccessSummary(authorization.user.access, authorization.isAdmin)
                         },
+                        {label: 'Authorization Revision', value: authorization.revision},
                         {label: 'Issuer', value: authorization.user.iss || 'athena'},
                         {label: 'UI Version', value: uiVersion || '-'},
                         {label: 'Version', value: version.data?.Version || version.data?.version || '-'}

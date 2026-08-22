@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {AppPage, CardTitle, MetricRow, TruncatedText} from '../components';
 import {Context, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import {
@@ -605,6 +606,9 @@ const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
 
 export const FIFAMarketDashboardPage = () => {
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.FIFAMarketDashboard);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
     const ctx = React.useContext(Context);
     const [, setParams] = useSearchParams();
     const [dashboard, setDashboard] = React.useState<FIFAMarketDashboard>(null);
@@ -691,8 +695,17 @@ export const FIFAMarketDashboardPage = () => {
         }
     }, [dashboard?.wormEvent, selectedWormConditionId]);
 
+    React.useEffect(() => {
+        if (!canWrite) {
+            setSaving(false);
+            setConfigError(null);
+            setDraftWormEventID(dashboard?.config?.wormEventId || '');
+            setDraftEventRef(dashboard?.config?.eventRef || '');
+        }
+    }, [canWrite, dashboard?.config?.eventRef, dashboard?.config?.wormEventId]);
+
     const saveConfig = async () => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         const wormEventId = draftWormEventID.trim();
@@ -713,8 +726,10 @@ export const FIFAMarketDashboardPage = () => {
             ctx.notifications.success('FIFA market dashboard event config saved');
         } catch (err: any) {
             const nextError = err instanceof Error ? err : new Error(String(err));
-            setConfigError(nextError);
-            ctx.notifications.error('FIFA market dashboard event config save failed', nextError.message);
+            if (canWriteRef.current) {
+                setConfigError(nextError);
+                ctx.notifications.error('FIFA market dashboard event config save failed', nextError.message);
+            }
         } finally {
             setSaving(false);
         }
@@ -739,9 +754,9 @@ export const FIFAMarketDashboardPage = () => {
         <section className='fifa-event-config'>
             <div className='fifa-event-config__header'>
                 <Typography.Text strong={true}>Current Event</Typography.Text>
-                {authorization.canWriteData && <Tag color='blue'>Read & write</Tag>}
+                {canWrite && <Tag color='blue'>Read & write</Tag>}
             </div>
-            {authorization.canWriteData ? (
+            {canWrite ? (
                 <>
                     <div className='fifa-event-config__fields'>
                         <label className='fifa-event-config__field'>

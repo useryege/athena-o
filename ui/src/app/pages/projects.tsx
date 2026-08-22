@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {AppPage, KeyValueGrid, ResourceTable, StatusTag, useCachedAsyncData} from '../components';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
@@ -475,7 +476,8 @@ export const ProjectsPage = () => {
         usdtPairFilter.quoteMissing
     ]);
     const options = useCachedAsyncData(RUNTIME_CONFIGURATION_CACHE_KEY, () => services.tokenapi.getRuntimeConfiguration(), {
-        staleTimeMs: RUNTIME_CONFIGURATION_STALE_TIME_MS
+        staleTimeMs: RUNTIME_CONFIGURATION_STALE_TIME_MS,
+        module: AccountDataModule.Token
     });
     const data = useCachedAsyncData(
         listCacheKey,
@@ -502,7 +504,7 @@ export const ProjectsPage = () => {
                 usdtPairQuoteUSDTMax: usdtPairFilter.quoteMax || undefined,
                 usdtPairQuoteMissingStates: usdtPairFilter.quoteMissing
             }),
-        {staleTimeMs: PROJECTS_LIST_STALE_TIME_MS}
+        {staleTimeMs: PROJECTS_LIST_STALE_TIME_MS, module: AccountDataModule.Token}
     );
     useRestoreProjectsScroll(Boolean(data.data));
 

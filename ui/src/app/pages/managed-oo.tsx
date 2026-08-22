@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, KeyValueGrid, ResourceTable, Section, TruncatedText, useAsyncData} from '../components';
 import {Context, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingDateTime, formatBeijingUnixSeconds, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {ListManagedOOItemsResult, ManagedOODisputeItem, ManagedOOProposalItem} from '../shared/services/managed-oo-service';
@@ -84,6 +85,9 @@ const ManagedOODetailDrawer = (props: {item?: ManagedOOItem; kind: ManagedOOKind
 
 const ManagedOOPage = (props: {kind: ManagedOOKind}) => {
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.ManagedOO);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
     const ctx = React.useContext(Context);
     const {params, setParams, page, pageSize, setPage} = usePagedParams();
     const blockParam = params.get('block') || params.get('block_number') || '';
@@ -101,9 +105,15 @@ const ManagedOOPage = (props: {kind: ManagedOOKind}) => {
     );
 
     React.useEffect(() => setScanBlock(blockNumber || null), [blockNumber]);
+    React.useEffect(() => {
+        if (!canWrite) {
+            setScanning(false);
+            setScanBlock(blockNumber || null);
+        }
+    }, [blockNumber, canWrite]);
 
     const scan = async () => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         if (!scanBlock || !Number.isSafeInteger(scanBlock) || scanBlock <= 0) {
@@ -121,7 +131,9 @@ const ManagedOOPage = (props: {kind: ManagedOOKind}) => {
             ctx.notifications.success(`Block ${result.blockNumber} parsed`, `Proposals: ${result.proposalCount}; Disputes: ${result.disputeCount}`);
             data.reload();
         } catch (err: any) {
-            ctx.notifications.error('Block parse failed', err?.message || 'Could not parse this Polygon block.');
+            if (canWriteRef.current) {
+                ctx.notifications.error('Block parse failed', err?.message || 'Could not parse this Polygon block.');
+            }
         } finally {
             setScanning(false);
         }
@@ -154,7 +166,7 @@ const ManagedOOPage = (props: {kind: ManagedOOKind}) => {
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}>
-            {authorization.canWriteData && (
+            {canWrite && (
                 <Section title='Parse one Polygon block'>
                     <Space wrap={true}>
                         <InputNumber

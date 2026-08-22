@@ -46,8 +46,9 @@ message GetUserInfoResponse {
   string username = 2;
   string iss = 3;
   bool administrator = 4;
-  account.AccountDataAccess dataAccess = 5;
-  uint64 authorizationRevision = 6;
+  reserved 5, 6;
+  reserved "dataAccess", "authorizationRevision";
+  account.AccountAccess access = 7;
 }
 
 // SessionService

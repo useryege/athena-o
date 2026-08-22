@@ -58,87 +58,96 @@ var accountSelfServiceGRPCMethods = map[string]bool{
 	"/account.AccountService/DeleteToken":    true,
 }
 
-var dataReadGRPCMethods = map[string]bool{
-	"/notification.NotificationService/GetNotificationStatus":      true,
-	"/notification.NotificationService/ListNotificationDeliveries": true,
-	"/notification.NotificationService/GetNotificationDelivery":    true,
-
-	"/wallet.WalletService/GetWalletStatus": true,
-	"/wallet.WalletService/ListWallets":     true,
-	"/wallet.WalletService/GetWallet":       true,
-
-	"/marketradar.MarketRadarService/GetMarketRadarStatus": true,
-	"/marketradar.MarketRadarService/ListHotMarkets":       true,
-	"/marketradar.MarketRadarService/ListRealtimeMarkets":  true,
-	"/marketradar.MarketRadarService/ListMarketMovers":     true,
-
-	"/sportslive.SportsLiveService/GetSportsLiveStatus":              true,
-	"/sportslive.SportsLiveService/ListSportsLiveEvents":             true,
-	"/sportslive.SportsLiveService/BatchGetSportsLivePriceHistories": true,
-
-	"/sportshistory.SportsHistoryService/GetSportsHistoryStatus":              true,
-	"/sportshistory.SportsHistoryService/ListSportsHistoryEvents":             true,
-	"/sportshistory.SportsHistoryService/BatchGetSportsHistoryPriceHistories": true,
-	"/sportshistory.SportsHistoryService/GetSportsHistorySyncStatus":          true,
-
-	"/managedoo.ManagedOOService/GetManagedOOStatus":     true,
-	"/managedoo.ManagedOOService/ListManagedOOProposals": true,
-	"/managedoo.ManagedOOService/ListManagedOODisputes":  true,
-
-	"/wormmarkets.WormMarketsService/GetWormMarketsStatus": true,
-	"/wormmarkets.WormMarketsService/GetWormEvent":         true,
-	"/wormmarkets.WormMarketsService/ListWormEvents":       true,
-
-	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboardStatus": true,
-	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboard":       true,
-
-	"/tokenapi.TokenCatalogService/GetContractCode":                     true,
-	"/tokenapi.TokenCatalogService/ListContractCodes":                   true,
-	"/tokenapi.TokenCatalogService/ListProjects":                        true,
-	"/tokenapi.TokenCatalogService/GetProjectDetail":                    true,
-	"/tokenapi.TokenCatalogService/GetProjectSwapActivity":              true,
-	"/tokenapi.TokenCatalogService/ListProjectSwapEvents":               true,
-	"/tokenapi.TokenCatalogService/ListProjectTrends":                   true,
-	"/tokenapi.TokenCatalogService/ListProjectObservations":             true,
-	"/tokenapi.TokenCatalogService/ListProjectWalletNormalTransactions": true,
-	"/tokenapi.TokenResearchService/GetCollectionTask":                  true,
-	"/tokenapi.TokenResearchService/ListCollectionTasks":                true,
-	"/tokenapi.TokenResearchService/ListResearchStates":                 true,
-	"/tokenapi.TokenResearchService/ListReportRevisions":                true,
-	"/tokenapi.TokenResearchService/ListSelections":                     true,
-	"/tokenapi.TokenPolicyService/GetContractCodeBlocklistEntry":        true,
-	"/tokenapi.TokenPolicyService/ListContractCodeBlocklistEntries":     true,
-	"/tokenapi.TokenPolicyService/GetWalletBlocklistEntry":              true,
-	"/tokenapi.TokenPolicyService/ListWalletBlocklistEntries":           true,
-	"/tokenapi.TokenOperationsService/GetRuntimeConfiguration":          true,
-	"/tokenapi.TokenOperationsService/ListNodeStatuses":                 true,
-	"/tokenapi.TokenOperationsService/GetChainCheckpoint":               true,
-	"/tokenapi.TokenOperationsService/ListChainCheckpoints":             true,
-	"/tokenapi.TokenOperationsService/GetChainProcessingSummary":        true,
-	"/tokenapi.TokenOperationsService/ListChainProcessingAttempts":      true,
-
-	"/worldcupcorners.WorldCupCornersService/GetWorldCupCornersDataset": true,
+type grpcModuleRule struct {
+	module accountaccess.Module
+	level  accountaccess.AccessLevel
 }
 
-var dataWriteGRPCMethods = map[string]bool{
-	"/notification.NotificationService/SendTestNotification": true,
+func moduleRead(module accountaccess.Module) grpcModuleRule {
+	return grpcModuleRule{module: module, level: accountaccess.AccessLevelRead}
+}
 
-	"/wallet.WalletService/CreateWallet":      true,
-	"/wallet.WalletService/ImportPrivateKey":  true,
-	"/wallet.WalletService/ImportMnemonic":    true,
-	"/wallet.WalletService/UpdateWalletAlias": true,
+func moduleWrite(module accountaccess.Module) grpcModuleRule {
+	return grpcModuleRule{module: module, level: accountaccess.AccessLevelReadWrite}
+}
 
-	"/sportshistory.SportsHistoryService/RefreshSportsHistory":              true,
-	"/managedoo.ManagedOOService/ScanManagedOOBlock":                        true,
-	"/fifamarketdashboard.FIFAMarketDashboardService/UpdateFIFAEventConfig": true,
+// moduleGRPCRules is the explicit product-module authorization boundary for
+// every public business RPC. Methods missing from every boundary fail closed.
+var moduleGRPCRules = map[string]grpcModuleRule{
+	"/notification.NotificationService/GetNotificationStatus":      moduleRead(accountaccess.ModuleNotifications),
+	"/notification.NotificationService/ListNotificationDeliveries": moduleRead(accountaccess.ModuleNotifications),
+	"/notification.NotificationService/GetNotificationDelivery":    moduleRead(accountaccess.ModuleNotifications),
+	"/notification.NotificationService/SendTestNotification":       moduleWrite(accountaccess.ModuleNotifications),
 
-	"/tokenapi.TokenPolicyService/CreateContractCodeBlocklistEntry": true,
-	"/tokenapi.TokenPolicyService/UpdateContractCodeBlocklistEntry": true,
-	"/tokenapi.TokenPolicyService/DeleteContractCodeBlocklistEntry": true,
-	"/tokenapi.TokenPolicyService/CreateWalletBlocklistEntry":       true,
-	"/tokenapi.TokenPolicyService/UpdateWalletBlocklistEntry":       true,
-	"/tokenapi.TokenPolicyService/DeleteWalletBlocklistEntry":       true,
-	"/tokenapi.TokenOperationsService/UpdateChainCheckpoint":        true,
+	"/wallet.WalletService/GetWalletStatus":   moduleRead(accountaccess.ModuleWallet),
+	"/wallet.WalletService/ListWallets":       moduleRead(accountaccess.ModuleWallet),
+	"/wallet.WalletService/GetWallet":         moduleRead(accountaccess.ModuleWallet),
+	"/wallet.WalletService/CreateWallet":      moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/ImportPrivateKey":  moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/ImportMnemonic":    moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/UpdateWalletAlias": moduleWrite(accountaccess.ModuleWallet),
+
+	"/marketradar.MarketRadarService/GetMarketRadarStatus": moduleRead(accountaccess.ModuleMarketRadar),
+	"/marketradar.MarketRadarService/ListHotMarkets":       moduleRead(accountaccess.ModuleMarketRadar),
+	"/marketradar.MarketRadarService/ListRealtimeMarkets":  moduleRead(accountaccess.ModuleMarketRadar),
+	"/marketradar.MarketRadarService/ListMarketMovers":     moduleRead(accountaccess.ModuleMarketRadar),
+
+	"/sportslive.SportsLiveService/GetSportsLiveStatus":              moduleRead(accountaccess.ModuleSportsLive),
+	"/sportslive.SportsLiveService/ListSportsLiveEvents":             moduleRead(accountaccess.ModuleSportsLive),
+	"/sportslive.SportsLiveService/BatchGetSportsLivePriceHistories": moduleRead(accountaccess.ModuleSportsLive),
+
+	"/sportshistory.SportsHistoryService/GetSportsHistoryStatus":              moduleRead(accountaccess.ModuleSportsHistory),
+	"/sportshistory.SportsHistoryService/ListSportsHistoryEvents":             moduleRead(accountaccess.ModuleSportsHistory),
+	"/sportshistory.SportsHistoryService/BatchGetSportsHistoryPriceHistories": moduleRead(accountaccess.ModuleSportsHistory),
+	"/sportshistory.SportsHistoryService/GetSportsHistorySyncStatus":          moduleRead(accountaccess.ModuleSportsHistory),
+	"/sportshistory.SportsHistoryService/RefreshSportsHistory":                moduleWrite(accountaccess.ModuleSportsHistory),
+
+	"/managedoo.ManagedOOService/GetManagedOOStatus":     moduleRead(accountaccess.ModuleManagedOO),
+	"/managedoo.ManagedOOService/ListManagedOOProposals": moduleRead(accountaccess.ModuleManagedOO),
+	"/managedoo.ManagedOOService/ListManagedOODisputes":  moduleRead(accountaccess.ModuleManagedOO),
+	"/managedoo.ManagedOOService/ScanManagedOOBlock":     moduleWrite(accountaccess.ModuleManagedOO),
+
+	"/wormmarkets.WormMarketsService/GetWormMarketsStatus": moduleRead(accountaccess.ModuleWormMarkets),
+	"/wormmarkets.WormMarketsService/GetWormEvent":         moduleRead(accountaccess.ModuleWormMarkets),
+	"/wormmarkets.WormMarketsService/ListWormEvents":       moduleRead(accountaccess.ModuleWormMarkets),
+
+	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboardStatus": moduleRead(accountaccess.ModuleFIFAMarketDashboard),
+	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboard":       moduleRead(accountaccess.ModuleFIFAMarketDashboard),
+	"/fifamarketdashboard.FIFAMarketDashboardService/UpdateFIFAEventConfig":        moduleWrite(accountaccess.ModuleFIFAMarketDashboard),
+
+	"/worldcupcorners.WorldCupCornersService/GetWorldCupCornersDataset": moduleRead(accountaccess.ModuleWorldCupCorners),
+
+	"/tokenapi.TokenCatalogService/GetContractCode":                     moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/ListContractCodes":                   moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/ListProjects":                        moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/GetProjectDetail":                    moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/GetProjectSwapActivity":              moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/ListProjectSwapEvents":               moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/ListProjectTrends":                   moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/ListProjectObservations":             moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenCatalogService/ListProjectWalletNormalTransactions": moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenResearchService/GetCollectionTask":                  moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenResearchService/ListCollectionTasks":                moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenResearchService/ListResearchStates":                 moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenResearchService/ListReportRevisions":                moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenResearchService/ListSelections":                     moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/GetContractCodeBlocklistEntry":        moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/ListContractCodeBlocklistEntries":     moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/GetWalletBlocklistEntry":              moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/ListWalletBlocklistEntries":           moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/GetRuntimeConfiguration":          moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/ListNodeStatuses":                 moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/GetChainCheckpoint":               moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/ListChainCheckpoints":             moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/GetChainProcessingSummary":        moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/ListChainProcessingAttempts":      moduleRead(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/CreateContractCodeBlocklistEntry":     moduleWrite(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/UpdateContractCodeBlocklistEntry":     moduleWrite(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/DeleteContractCodeBlocklistEntry":     moduleWrite(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/CreateWalletBlocklistEntry":           moduleWrite(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/UpdateWalletBlocklistEntry":           moduleWrite(accountaccess.ModuleToken),
+	"/tokenapi.TokenPolicyService/DeleteWalletBlocklistEntry":           moduleWrite(accountaccess.ModuleToken),
+	"/tokenapi.TokenOperationsService/UpdateChainCheckpoint":            moduleWrite(accountaccess.ModuleToken),
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -193,11 +202,11 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	if accountSelfServiceGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccountSelfService(username, fullMethod, req)
 	}
-	if dataWriteGRPCMethods[fullMethod] || walletSecretsRequested(fullMethod, req) {
-		return authCtx, server.authorizeAccount(username, accountaccess.RequirementDataWrite)
-	}
-	if dataReadGRPCMethods[fullMethod] {
-		return authCtx, server.authorizeAccount(username, accountaccess.RequirementDataRead)
+	if rule, ok := moduleGRPCRules[fullMethod]; ok {
+		if walletSecretsRequested(fullMethod, req) {
+			rule.level = accountaccess.AccessLevelReadWrite
+		}
+		return authCtx, server.authorizeAccount(username, accountaccess.RequireModule(rule.module, rule.level))
 	}
 	return authCtx, status.Errorf(codes.PermissionDenied, "permission denied: no account-access rule configured for %s", fullMethod)
 }

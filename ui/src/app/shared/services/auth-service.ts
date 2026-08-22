@@ -14,11 +14,13 @@ export class AuthService {
                 case AppBootstrapSessionStatus.Anonymous:
                 case AppBootstrapSessionStatus.AccountMaintenance:
                     return {settings, session: {status}};
-                case AppBootstrapSessionStatus.Authenticated:
-                    if (!session.user_info) {
+                case AppBootstrapSessionStatus.Authenticated: {
+                    const userInfo = session.userInfo || session.user_info;
+                    if (!userInfo) {
                         throw new Error('Authenticated app bootstrap response is missing user info');
                     }
-                    return {settings, session: {status, userInfo: parseUserInfo(session.user_info)}};
+                    return {settings, session: {status, userInfo: parseUserInfo(userInfo)}};
+                }
             }
         });
     }

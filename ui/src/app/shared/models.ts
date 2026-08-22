@@ -1,3 +1,5 @@
+import {AccountDataAccess, AccountDataModule, accountDataModules, parseAccountDataAccess, parseAccountDataModule} from './access-modules';
+
 export interface VersionMessage {
     Version: string;
     BuildDate: string;
@@ -40,13 +42,14 @@ export interface AuthSettings {
     syncWithReplaceAllowed: boolean;
 }
 
+export {AccountDataAccess, AccountDataModule, parseAccountDataAccess, parseAccountDataModule} from './access-modules';
+
 export interface UserInfo {
     loggedIn: boolean;
     username: string;
     iss: string;
     administrator: boolean;
-    dataAccess: AccountDataAccess;
-    authorizationRevision: number;
+    access: AccountAccess;
 }
 
 export enum AppBootstrapSessionStatus {
@@ -81,29 +84,12 @@ export interface AppBootstrap {
     session: AppBootstrapSession;
 }
 
-export enum AccountDataAccess {
-    None = 0,
-    Read = 1,
-    ReadWrite = 2
-}
-
-export const parseAccountDataAccess = (value: unknown): AccountDataAccess => {
-    if (value === AccountDataAccess.Read || value === 'ACCOUNT_DATA_ACCESS_READ' || value === 'read') {
-        return AccountDataAccess.Read;
-    }
-    if (value === AccountDataAccess.ReadWrite || value === 'ACCOUNT_DATA_ACCESS_READ_WRITE' || value === 'read_write') {
-        return AccountDataAccess.ReadWrite;
-    }
-    return AccountDataAccess.None;
-};
-
 export const parseUserInfo = (value: any): UserInfo => ({
     loggedIn: Boolean(value?.loggedIn),
     username: value?.username || '',
     iss: value?.iss || '',
     administrator: Boolean(value?.administrator),
-    dataAccess: parseAccountDataAccess(value?.dataAccess),
-    authorizationRevision: Number(value?.authorizationRevision || 0)
+    access: parseAccountAccess(value?.access)
 });
 
 export interface Token {
@@ -122,6 +108,30 @@ export interface Account {
 
 export interface AccountAccess {
     loginEnabled: boolean;
-    dataAccess: AccountDataAccess;
     revision: number;
+    moduleAccess: AccountModuleAccess[];
 }
+
+export interface AccountModuleAccess {
+    module: AccountDataModule;
+    dataAccess: AccountDataAccess;
+}
+
+export const parseAccountAccess = (value: any): AccountAccess => {
+    const values = Array.isArray(value?.moduleAccess) ? value.moduleAccess : Array.isArray(value?.module_access) ? value.module_access : [];
+    const parsed = new Map<AccountDataModule, AccountDataAccess>();
+    values.forEach((item: any) => {
+        const module = parseAccountDataModule(item?.module);
+        if (module !== undefined) {
+            parsed.set(module, parseAccountDataAccess(item?.dataAccess ?? item?.data_access));
+        }
+    });
+    return {
+        loginEnabled: Boolean(value?.loginEnabled ?? value?.login_enabled),
+        revision: Number(value?.revision || 0),
+        moduleAccess: accountDataModules.map(definition => ({
+            module: definition.module,
+            dataAccess: Math.min(parsed.get(definition.module) || AccountDataAccess.None, definition.maxAccess) as AccountDataAccess
+        }))
+    };
+};

@@ -26,6 +26,7 @@ must likewise use a PostgreSQL volume initialized with the current database set.
 | Capability ports | [common/common.go](../../../common/common.go) | `DefaultPortWormMarkets`, `DefaultPortFIFAMarketDashboard`, `DefaultPortMarketRadar`, `DefaultPortSportsLive`, `DefaultPortSportsHistory`, `DefaultPortManagedOO` |
 | Internal gRPC client lifecycle | [util/grpc/client.go](../../../util/grpc/client.go) | `ClientConnection`, `NewClientConnection`, `CheckHealth`, `Close` |
 | API-hosted World Cup dataset | [internal/server/worldcupcorners/worldcupcorners.proto](../../../internal/server/worldcupcorners/worldcupcorners.proto), [internal/server/worldcupcorners/worldcupcorners.go](../../../internal/server/worldcupcorners/worldcupcorners.go) | `WorldCupCornersService`, `GetWorldCupCornersDataset` |
+| API Server account-access schema | [internal/accountaccess/store/migrations](../../../internal/accountaccess/store/migrations), [internal/accountaccess/store/sql_store.go](../../../internal/accountaccess/store/sql_store.go) | `account_access_override`, `account_module_access_override`, `SQLStore` |
 
 ## Architecture
 
@@ -71,17 +72,18 @@ Notification is active by default on port `8086`, and Wallet is active on port
 capability processes do not import one another's application implementations.
 The API Server owns unified account-access state in the default `athena`
 PostgreSQL database. It must connect, validate, and load that state before
-opening its listener; login availability, data levels, and reset behavior are
-documented in [Account Access Control](../identity-access/account-access-control.md).
+opening its listener; login availability, the ten-module matrix, and reset
+behavior are documented in
+[Account Access Control](../identity-access/account-access-control.md).
 Local process-to-process targets default to numeric loopback
 `127.0.0.1:<port>`, avoiding resolver work for `localhost`. Production Compose
 continues to supply `athena-*:port` service DNS targets and user-provided target
 hostnames are passed to gRPC unchanged.
 
 World Cup Corners is a read-only API Server capability. Its dataset is returned
-by the protected `GET /api/v1/world-cup-corners/dataset` data-read endpoint
-instead of being bundled in frontend JavaScript. It has no separate Procfile
-process, listener, or database.
+by `GET /api/v1/world-cup-corners/dataset`, which explicitly requires World Cup
+Corners `READ`, instead of being bundled in frontend JavaScript. It has no
+separate Procfile process, listener, or database.
 
 ## Runtime Flow
 
@@ -105,9 +107,11 @@ process, listener, or database.
    `wallet`, `token`, `temporal`, and `temporal_visibility`. Each
    capability store connects to only its owned database and applies its own
    embedded migration when automatic migration is enabled. The API Server
-   likewise migrates and loads complete `account_access_override` aggregates
-   from `athena`; failure or invalid persisted access prevents that process
-   from serving.
+   likewise migrates and loads complete account-access aggregates from
+   `athena`. Each persisted aggregate is one `account_access_override` parent
+   plus ten `account_module_access_override` children. The read-only,
+   repeatable-read load rejects incomplete or invalid matrices, so dependency
+   or validation failure prevents that process from serving.
 5. Redis validates or creates `athena-local-redis-data`. Each run creates
    attached, labeled, `--rm` PostgreSQL and Redis containers. PostgreSQL mounts
    its complete data directory; Redis enables AOF under `/data`.
@@ -127,15 +131,18 @@ process, listener, or database.
 ## State / Data
 
 `athena-local-postgres-data` stores the complete PostgreSQL cluster, including
-all capability databases and the API Server's `account_access_override` rows in
-`athena`. Each row contains the complete ordinary-account login flag, data
-level, optimistic revision, and update time. Its labels record Athena
-ownership, the `postgres` component, and a SHA-256 fingerprint covering the
-image, initial user, initial database, password, and ordered initialization-file
-paths and contents. Ordinary stop retains the rows. Full reset deletes them, so
-ordinary accounts return to their environment login baselines, `NONE` data
-access, and revision zero on the next start; `admin` remains enabled with
-`READ_WRITE`.
+all capability databases and the API Server's account-access parent and child
+rows in `athena`. A parent stores the ordinary-account login flag, optimistic
+revision, and update time; its ten children store one level per product module.
+Migration `000003_product_module_access` retains each parent login flag, creates
+all ten children at `NONE`, and advances the parent revision and update time
+once. The volume labels record Athena ownership, the `postgres` component, and
+a SHA-256 fingerprint covering the image, initial user, initial database,
+password, and ordered initialization-file paths and contents. Ordinary stop
+retains the rows. Full reset deletes them, so ordinary accounts return to their
+environment login baselines, `NONE` in all ten modules, and revision zero on
+the next start; `admin` remains enabled with each module at its maximum
+supported level.
 
 `athena-local-redis-data` stores Redis AOF data. Its labels record Athena
 ownership and the `redis` component. Redis container settings can change on
@@ -168,7 +175,7 @@ removed.
 | `ATHENA_WORM_MARKETS_PORT`, `ATHENA_FIFA_MARKET_DASHBOARD_PORT`, `ATHENA_MARKET_RADAR_PORT`, `ATHENA_SPORTS_LIVE_PORT`, `ATHENA_SPORTS_HISTORY_PORT`, `ATHENA_MANAGED_OO_PORT` | Override the six local command ports passed by the Procfile. The same values are covered by stale-port cleanup. |
 | Internal `ATHENA_*_SERVER_ADDRESS` variables | Override dependency targets. Local command defaults use `127.0.0.1`; production Compose supplies service DNS targets and explicit values are not rewritten. |
 | Capability `ATHENA_*_POSTGRES_DSN` variables | Select the owned PostgreSQL database for Worm Markets, FIFA Market Dashboard, Sports Live, Sports History, and Managed OO. Market Radar has no DSN. |
-| `ATHENA_SERVER_POSTGRES_DSN` | Selects the API Server's `athena` database for complete account-access overrides. The local default uses the shared PostgreSQL connection settings; production Compose supplies an explicit service DSN. |
+| `ATHENA_SERVER_POSTGRES_DSN` | Selects the API Server's `athena` database for account-access parent rows and ten-row module matrices. The local default uses the shared PostgreSQL connection settings; production Compose supplies an explicit service DSN. |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`, `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID`, `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | Required by the default active Notification process. Local configuration must provide all three. |
 | `ATHENA_POSTGRES_PORT`, `ATHENA_POSTGRES_IMAGE_TAG`, `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `ATHENA_POSTGRES_INIT_DIR` | Configure the disposable PostgreSQL container and its initialization fingerprint where applicable. |
 | `ATHENA_REDIS_PORT`, `ATHENA_REDIS_IMAGE_TAG`, `REDIS_PASSWORD` | Configure the disposable Redis container. |
@@ -188,11 +195,11 @@ targets are fixed local-runtime boundaries rather than user configuration.
   labels.
 - The six capabilities remain distinct Procfile processes and use distinct
   ports. Every stateful capability uses only its owned PostgreSQL database.
-- The API Server must load and validate unified account-access overrides from
-  the `athena` database before serving; it does not fall back to
-  environment-only account state when that dependency fails.
-- World Cup Corners data is served only through the API Server's data-read
-  authorization boundary and is not embedded in the UI bundle.
+- The API Server must load and validate complete parent-plus-ten-child access
+  aggregates from the `athena` database before serving; it does not fall back
+  to environment-only account state when that dependency fails.
+- World Cup Corners data is served only through its explicit module `READ` rule
+  at the API Server and is not embedded in the UI bundle.
 - Notification-enabled capabilities communicate through Notification gRPC.
   FIFA Market Dashboard communicates with Worm Markets and Wallet through gRPC.
 - Each clientset owns one channel for its configured target. Request paths and
@@ -229,8 +236,8 @@ An unavailable `athena` database prevents API Server startup. Once PostgreSQL
 returns, process supervision can restart the API Server and its account-access
 snapshot is reconstructed from the retained volume. A full reset intentionally
 removes those overrides together with the rest of the local PostgreSQL cluster;
-the next start uses the environment login baseline and `NONE` for ordinary
-account data access.
+the next start uses the environment login baseline, all ten modules at `NONE`,
+and revision zero for ordinary accounts.
 
 ## Observability
 
@@ -252,6 +259,6 @@ status, which is described in each market-intelligence document.
 - [ ] Recheck the six capability ports, database ownership, and gRPC dependencies.
 - [ ] Recheck shallow-stop and full-reset resource boundaries.
 - [ ] Recheck container and volume ownership labels and PostgreSQL fingerprint inputs.
-- [ ] Recheck account-access table ownership, reset defaults, and World Cup dataset API hosting.
+- [ ] Recheck account-access parent/child ownership, ten-module reset defaults, and World Cup module-protected API hosting.
 - [ ] Recheck default temporary and coverage paths and avoid broad or custom-path deletion.
 - [ ] Recheck Procfile, database initialization, API Server status wiring, and design-index references.

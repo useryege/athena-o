@@ -100,27 +100,106 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 	return &account.UpdatePasswordResponse{}, nil
 }
 
-func toAPIDataAccess(dataAccess accountaccesscore.DataAccess) account.AccountDataAccess {
+type accountDataModuleMapping struct {
+	module accountaccesscore.Module
+	api    account.AccountDataModule
+}
+
+var canonicalAccountDataModules = []accountDataModuleMapping{
+	{module: accountaccesscore.ModuleMarketRadar, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_MARKET_RADAR},
+	{module: accountaccesscore.ModuleSportsLive, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_SPORTS_LIVE},
+	{module: accountaccesscore.ModuleSportsHistory, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_SPORTS_HISTORY},
+	{module: accountaccesscore.ModuleManagedOO, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_MANAGED_OO},
+	{module: accountaccesscore.ModuleWormMarkets, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORM_MARKETS},
+	{module: accountaccesscore.ModuleFIFAMarketDashboard, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_FIFA_MARKET_DASHBOARD},
+	{module: accountaccesscore.ModuleWorldCupCorners, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS},
+	{module: accountaccesscore.ModuleToken, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_TOKEN},
+	{module: accountaccesscore.ModuleWallet, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WALLET},
+	{module: accountaccesscore.ModuleNotifications, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_NOTIFICATIONS},
+}
+
+func toAPIDataAccess(dataAccess accountaccesscore.AccessLevel) account.AccountDataAccess {
 	switch dataAccess {
-	case accountaccesscore.DataAccessRead:
+	case accountaccesscore.AccessLevelRead:
 		return account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ
-	case accountaccesscore.DataAccessReadWrite:
+	case accountaccesscore.AccessLevelReadWrite:
 		return account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ_WRITE
 	default:
 		return account.AccountDataAccess_ACCOUNT_DATA_ACCESS_NONE
 	}
 }
 
-func fromAPIDataAccess(dataAccess account.AccountDataAccess) (accountaccesscore.DataAccess, error) {
+func fromAPIDataAccess(dataAccess account.AccountDataAccess) (accountaccesscore.AccessLevel, error) {
 	switch dataAccess {
 	case account.AccountDataAccess_ACCOUNT_DATA_ACCESS_NONE:
-		return accountaccesscore.DataAccessNone, nil
+		return accountaccesscore.AccessLevelNone, nil
 	case account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ:
-		return accountaccesscore.DataAccessRead, nil
+		return accountaccesscore.AccessLevelRead, nil
 	case account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ_WRITE:
-		return accountaccesscore.DataAccessReadWrite, nil
+		return accountaccesscore.AccessLevelReadWrite, nil
 	default:
 		return "", status.Errorf(codes.InvalidArgument, "unsupported account data access %d", dataAccess)
+	}
+}
+
+func fromAPIDataModule(dataModule account.AccountDataModule) (accountaccesscore.Module, error) {
+	for _, mapping := range canonicalAccountDataModules {
+		if mapping.api == dataModule {
+			return mapping.module, nil
+		}
+	}
+	return "", status.Errorf(codes.InvalidArgument, "unsupported account data module %d", dataModule)
+}
+
+func fromAPIModuleAccess(moduleAccess []*account.AccountModuleAccess) (map[accountaccesscore.Module]accountaccesscore.AccessLevel, error) {
+	if len(moduleAccess) != len(canonicalAccountDataModules) {
+		return nil, status.Errorf(codes.InvalidArgument, "account access must contain all %d data modules", len(canonicalAccountDataModules))
+	}
+
+	modules := make(map[accountaccesscore.Module]accountaccesscore.AccessLevel, len(canonicalAccountDataModules))
+	for _, item := range moduleAccess {
+		module, err := fromAPIDataModule(item.GetModule())
+		if err != nil {
+			return nil, err
+		}
+		if _, exists := modules[module]; exists {
+			return nil, status.Errorf(codes.InvalidArgument, "account data module %q is duplicated", module)
+		}
+		accessLevel, err := fromAPIDataAccess(item.GetDataAccess())
+		if err != nil {
+			return nil, err
+		}
+		maximum, supported := accountaccesscore.MaxAccessLevel(module)
+		if !supported {
+			return nil, status.Errorf(codes.InvalidArgument, "unsupported account data module %q", module)
+		}
+		if maximum == accountaccesscore.AccessLevelRead && accessLevel == accountaccesscore.AccessLevelReadWrite {
+			return nil, status.Errorf(codes.InvalidArgument, "account data module %q is read-only", module)
+		}
+		modules[module] = accessLevel
+	}
+
+	for _, mapping := range canonicalAccountDataModules {
+		if _, exists := modules[mapping.module]; !exists {
+			return nil, status.Errorf(codes.InvalidArgument, "account data module %q is required", mapping.module)
+		}
+	}
+	return modules, nil
+}
+
+// ToAPIAccountAccess projects a complete access aggregate in stable module order.
+func ToAPIAccountAccess(access accountaccesscore.Access) *account.AccountAccess {
+	moduleAccess := make([]*account.AccountModuleAccess, 0, len(canonicalAccountDataModules))
+	for _, mapping := range canonicalAccountDataModules {
+		moduleAccess = append(moduleAccess, &account.AccountModuleAccess{
+			Module:     mapping.api,
+			DataAccess: toAPIDataAccess(access.Modules[mapping.module]),
+		})
+	}
+	return &account.AccountAccess{
+		LoginEnabled: access.LoginEnabled,
+		Revision:     access.Revision,
+		ModuleAccess: moduleAccess,
 	}
 }
 
@@ -139,13 +218,9 @@ func toAPIAccount(name string, a settings.Account, access accountaccesscore.Acce
 	return &account.Account{
 		Name:          name,
 		Administrator: name == common.AthenaAdminUsername,
-		Access: &account.AccountAccess{
-			LoginEnabled: access.LoginEnabled,
-			DataAccess:   toAPIDataAccess(access.DataAccess),
-			Revision:     access.Revision,
-		},
-		Capabilities: capabilities,
-		Tokens:       tokens,
+		Access:        ToAPIAccountAccess(access),
+		Capabilities:  capabilities,
+		Tokens:        tokens,
 	}
 }
 
@@ -223,13 +298,13 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 	if r.Access == nil {
 		return nil, status.Error(codes.InvalidArgument, "account access is required")
 	}
-	dataAccess, err := fromAPIDataAccess(r.Access.DataAccess)
+	modules, err := fromAPIModuleAccess(r.Access.ModuleAccess)
 	if err != nil {
 		return nil, err
 	}
 	updatedAccess, err := s.accessController.Update(ctx, r.Name, accountaccesscore.Access{
 		LoginEnabled: r.Access.LoginEnabled,
-		DataAccess:   dataAccess,
+		Modules:      modules,
 		Revision:     r.Access.Revision,
 	}, r.Access.Revision)
 	if err != nil {

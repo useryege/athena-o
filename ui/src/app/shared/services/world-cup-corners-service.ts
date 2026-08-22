@@ -1,4 +1,7 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.WorldCupCorners, mode: 'read' as const};
 
 export type WorldCupCornerStageKey = 'group-stage' | 'round-of-16' | 'quarter-finals' | 'semi-finals' | 'third-place' | 'final';
 
@@ -55,7 +58,7 @@ const match = (value: any): WorldCupCornerMatch => ({
 
 export class WorldCupCornersService {
     public getDataset(): Promise<WorldCupCornersDataset> & {abort?: () => void} {
-        const req = requests.get('/world-cup-corners/dataset');
+        const req = requests.get('/world-cup-corners/dataset', readScope);
         const promise = req.then(res => ({
             stages: (res.body?.stages || []).map(stage),
             matches: (res.body?.matches || []).map(match)

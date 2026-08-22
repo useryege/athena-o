@@ -8,6 +8,7 @@ import {formatBeijingDateTime, formatBeijingUnixSeconds, formatBlockNumber} from
 import {PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
 import {useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {TokenChainCheckpoint, TokenChainProcessingAttempt, TokenChainProcessingSummary} from '../shared/services/token-service';
 import {boolTag} from './shared';
 import {ChainBadge} from './token-shared';
@@ -187,6 +188,7 @@ const StageBreakdown = (props: {summary?: TokenChainProcessingSummary}) => {
 
 export const ChainProcessingPage = () => {
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.Token);
     const [params, setParams] = useSearchParams();
     const checkpoints = useAsyncData(() => services.tokenapi.listChainCheckpoints(), []);
     const requestedChainID = positiveInteger(params.get('chain'));
@@ -199,6 +201,12 @@ export const ChainProcessingPage = () => {
     const pageSize = allowedPageSize(params.get('pageSize') || params.get('page_size'));
     const [blockDraft, setBlockDraft] = React.useState<number | null>(blockNumber || null);
     const [updatingStatusByChainID, setUpdatingStatusByChainID] = React.useState<Record<number, ChainProcessingStatus>>({});
+
+    React.useEffect(() => {
+        if (!canWrite) {
+            setUpdatingStatusByChainID({});
+        }
+    }, [canWrite]);
 
     React.useEffect(() => setBlockDraft(blockNumber || null), [blockNumber]);
     React.useEffect(() => {
@@ -249,7 +257,7 @@ export const ChainProcessingPage = () => {
         updateParams({block: value || undefined, page: 1});
     };
     const updateStatus = async (item: TokenChainCheckpoint, nextStatus: ChainProcessingStatus) => {
-        if (!authorization.canWriteData || !item.chainID) {
+        if (!canWrite || !item.chainID) {
             return;
         }
         const targetChainID = item.chainID;
@@ -299,7 +307,7 @@ export const ChainProcessingPage = () => {
         {title: 'Current status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
         {title: 'Updated', render: item => formatBeijingDateTime(item.updatedAt) || '-'}
     ];
-    if (authorization.canWriteData) {
+    if (canWrite) {
         checkpointColumns.push({title: 'Actions', render: checkpointAction});
     }
     const attemptColumns: ColumnsType<TokenChainProcessingAttempt> = [

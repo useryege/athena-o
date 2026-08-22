@@ -1,4 +1,8 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.Token, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.Token, mode: 'write' as const};
 
 export interface TokenContractCodeBlocklistEntry {
     codeHash?: string;
@@ -1173,7 +1177,7 @@ function normalizeWalletNormalTransaction(item: any): TokenWalletNormalTransacti
 
 export class TokenService {
     public getRuntimeConfiguration(): Promise<TokenRuntimeConfiguration> & {abort?: () => void} {
-        const req = requests.get('/tokens/runtime-configuration');
+        const req = requests.get('/tokens/runtime-configuration', readScope);
         const promise = req.then(res => {
             const configuration = res.body?.configuration || {};
             return {
@@ -1185,21 +1189,21 @@ export class TokenService {
     }
 
     public listNodeStatuses(): Promise<TokenNodeStatus[]> & {abort?: () => void} {
-        const req = requests.get('/tokens/node-statuses');
+        const req = requests.get('/tokens/node-statuses', readScope);
         const promise = req.then(res => ((res.body?.nodeStatuses || res.body?.node_statuses || []) as any[]).map(normalizeNodeStatus)) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public listContractCodeBlocklistEntries(): Promise<TokenContractCodeBlocklistEntry[]> & {abort?: () => void} {
-        const req = requests.get('/tokens/policies/contract-code-blocklist-entries');
+        const req = requests.get('/tokens/policies/contract-code-blocklist-entries', readScope);
         const promise = req.then(res => ((res.body?.entries || []) as any[]).map(normalizeContractCodeBlocklistEntry)) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public createContractCodeBlocklistEntry(values: {note?: string; sourceChainID?: number; sourceContract?: string}): Promise<void> & {abort?: () => void} {
-        const req = requests.post('/tokens/policies/contract-code-blocklist-entries').send({
+        const req = requests.post('/tokens/policies/contract-code-blocklist-entries', writeScope).send({
             note: values.note || '',
             sourceChainId: values.sourceChainID,
             source_chain_id: values.sourceChainID,
@@ -1212,56 +1216,56 @@ export class TokenService {
     }
 
     public updateContractCodeBlocklistEntry(codeHash: string, note: string): Promise<number> & {abort?: () => void} {
-        const req = requests.patch(`/tokens/policies/contract-code-blocklist-entries/${encodeURIComponent(codeHash)}`).send({codeHash, code_hash: codeHash, note});
+        const req = requests.patch(`/tokens/policies/contract-code-blocklist-entries/${encodeURIComponent(codeHash)}`, writeScope).send({codeHash, code_hash: codeHash, note});
         const promise = req.then(res => numberValue(res.body?.updatedCount ?? res.body?.updated_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public deleteContractCodeBlocklistEntry(codeHash: string): Promise<number> & {abort?: () => void} {
-        const req = requests.delete(`/tokens/policies/contract-code-blocklist-entries/${encodeURIComponent(codeHash)}`);
+        const req = requests.delete(`/tokens/policies/contract-code-blocklist-entries/${encodeURIComponent(codeHash)}`, writeScope);
         const promise = req.then(res => numberValue(res.body?.deletedCount ?? res.body?.deleted_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public listWalletBlocklistEntries(): Promise<TokenWalletBlocklistEntry[]> & {abort?: () => void} {
-        const req = requests.get('/tokens/policies/wallet-blocklist-entries');
+        const req = requests.get('/tokens/policies/wallet-blocklist-entries', readScope);
         const promise = req.then(res => ((res.body?.entries || []) as any[]).map(normalizeWalletBlocklistEntry)) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public createWalletBlocklistEntry(wallet: string, note: string): Promise<void> & {abort?: () => void} {
-        const req = requests.post('/tokens/policies/wallet-blocklist-entries').send({wallet, note});
+        const req = requests.post('/tokens/policies/wallet-blocklist-entries', writeScope).send({wallet, note});
         const promise = req.then(() => undefined) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public updateWalletBlocklistEntry(wallet: string, note: string): Promise<number> & {abort?: () => void} {
-        const req = requests.patch(`/tokens/policies/wallet-blocklist-entries/${encodeURIComponent(wallet)}`).send({wallet, note});
+        const req = requests.patch(`/tokens/policies/wallet-blocklist-entries/${encodeURIComponent(wallet)}`, writeScope).send({wallet, note});
         const promise = req.then(res => numberValue(res.body?.updatedCount ?? res.body?.updated_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public deleteWalletBlocklistEntry(wallet: string): Promise<number> & {abort?: () => void} {
-        const req = requests.delete(`/tokens/policies/wallet-blocklist-entries/${encodeURIComponent(wallet)}`);
+        const req = requests.delete(`/tokens/policies/wallet-blocklist-entries/${encodeURIComponent(wallet)}`, writeScope);
         const promise = req.then(res => numberValue(res.body?.deletedCount ?? res.body?.deleted_count) || 0) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public listChainCheckpoints(): Promise<TokenChainCheckpoint[]> & {abort?: () => void} {
-        const req = requests.get('/tokens/chain-checkpoints');
+        const req = requests.get('/tokens/chain-checkpoints', readScope);
         const promise = req.then(res => ((res.body?.checkpoints || []) as any[]).map(normalizeCheckpoint)) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public updateChainCheckpoint(chainID: number, status: string): Promise<TokenChainCheckpoint | undefined> & {abort?: () => void} {
-        const req = requests.patch(`/tokens/chain-checkpoints/${encodeURIComponent(String(chainID))}`).send({status});
+        const req = requests.patch(`/tokens/chain-checkpoints/${encodeURIComponent(String(chainID))}`, writeScope).send({status});
         const promise = req.then(res => {
             const item = res.body?.checkpoint;
             return item ? normalizeCheckpoint(item) : undefined;
@@ -1271,7 +1275,7 @@ export class TokenService {
     }
 
     public getChainProcessingSummary(options: {chainID: number; windowSeconds: number; blockNumber?: number}): Promise<TokenChainProcessingSummary> & {abort?: () => void} {
-        const req = requests.get('/tokens/chain-processing/summary').query({
+        const req = requests.get('/tokens/chain-processing/summary', readScope).query({
             chain_id: options.chainID,
             window_seconds: options.windowSeconds,
             block_number: options.blockNumber || undefined
@@ -1289,7 +1293,7 @@ export class TokenService {
         page?: number;
         pageSize?: number;
     }): Promise<PagedResponse<TokenChainProcessingAttempt>> & {abort?: () => void} {
-        const req = requests.get('/tokens/chain-processing/attempts').query({
+        const req = requests.get('/tokens/chain-processing/attempts', readScope).query({
             chain_id: options.chainID,
             window_seconds: options.windowSeconds,
             block_number: options.blockNumber || undefined,
@@ -1310,7 +1314,7 @@ export class TokenService {
     public listContractCodes(
         options: {page?: number; pageSize?: number; codeHash?: string; orderBy?: string} = {}
     ): Promise<PagedResponse<TokenContractCode>> & {abort?: () => void} {
-        const req = requests.get('/tokens/contract-codes').query({
+        const req = requests.get('/tokens/contract-codes', readScope).query({
             code_hash: options.codeHash || undefined,
             page: options.page,
             page_size: options.pageSize,
@@ -1330,7 +1334,7 @@ export class TokenService {
     }
 
     public getContractCode(codeHash: string): Promise<TokenContractCode | undefined> & {abort?: () => void} {
-        const req = requests.get(`/tokens/contract-codes/${encodeURIComponent(codeHash)}`);
+        const req = requests.get(`/tokens/contract-codes/${encodeURIComponent(codeHash)}`, readScope);
         const promise = req.then(res => {
             const item = res.body?.contractCode || res.body?.contract_code;
             return item ? normalizeContractCode(item) : undefined;
@@ -1363,7 +1367,7 @@ export class TokenService {
             usdtPairQuoteMissingStates?: string[];
         } = {}
     ): Promise<PagedResponse<TokenProjectListItem>> & {abort?: () => void} {
-        const req = requests.get('/tokens/projects').query({
+        const req = requests.get('/tokens/projects', readScope).query({
             chain_id: options.chainID,
             project_id: options.projectID,
             code_hash: options.codeHash || undefined,
@@ -1399,7 +1403,7 @@ export class TokenService {
     }
 
     public getProjectDetail(projectID: number): Promise<TokenProjectDetail | undefined> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}`);
+        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}`, readScope);
         const promise = req.then(res => {
             const body = res.body || {};
             return body.found === false || !body.detail ? undefined : normalizeProjectDetail(body.detail);
@@ -1409,7 +1413,7 @@ export class TokenService {
     }
 
     public getProjectSwapActivity(projectID: number): Promise<TokenProjectSwapActivity | undefined> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/swap-activity`);
+        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/swap-activity`, readScope);
         const promise = req.then(res => {
             const body = res.body || {};
             return body.found === false || !body.activity ? undefined : normalizeProjectSwapActivity(body.activity);
@@ -1425,7 +1429,10 @@ export class TokenService {
         options: {page?: number; pageSize?: number} = {}
     ): Promise<PagedResponse<TokenProjectSwapEvent>> & {abort?: () => void} {
         const req = requests
-            .get(`/tokens/projects/${encodeURIComponent(String(projectID))}/swap-pairs/${encodeURIComponent(pairKind)}/blocks/${encodeURIComponent(String(blockNumber))}/events`)
+            .get(
+                `/tokens/projects/${encodeURIComponent(String(projectID))}/swap-pairs/${encodeURIComponent(pairKind)}/blocks/${encodeURIComponent(String(blockNumber))}/events`,
+                readScope
+            )
             .query({page: options.page, page_size: options.pageSize});
         const promise = req.then(res => {
             const body = res.body || {};
@@ -1441,7 +1448,7 @@ export class TokenService {
     }
 
     public listProjectTrends(projectID: number, range = '24h'): Promise<TokenProjectTrends> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/trends`).query({range});
+        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/trends`, readScope).query({range});
         const promise = req.then(res => {
             const item = res.body?.trends || {};
             return {
@@ -1468,7 +1475,7 @@ export class TokenService {
         projectID: number,
         options: {dataType?: string; page?: number; pageSize?: number} = {}
     ): Promise<PagedResponse<TokenProjectObservation>> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/observations`).query({
+        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/observations`, readScope).query({
             data_type: options.dataType || undefined,
             page: options.page,
             page_size: options.pageSize
@@ -1490,7 +1497,7 @@ export class TokenService {
         projectID: number,
         options: {wallet?: string; receiptStatus?: string; methodID?: string; page?: number; pageSize?: number} = {}
     ): Promise<PagedResponse<TokenWalletNormalTransaction>> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/wallet-normal-transactions`).query({
+        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/wallet-normal-transactions`, readScope).query({
             wallet: options.wallet || undefined,
             receipt_status: options.receiptStatus || undefined,
             method_id: options.methodID || undefined,
@@ -1513,7 +1520,7 @@ export class TokenService {
     public listCollectionTasks(
         options: {page?: number; pageSize?: number; projectID?: number; dataType?: string; status?: string} = {}
     ): Promise<PagedResponse<TokenCollectionTask>> & {abort?: () => void} {
-        const req = requests.get('/tokens/collection-tasks').query({
+        const req = requests.get('/tokens/collection-tasks', readScope).query({
             project_id: options.projectID,
             data_type: options.dataType || undefined,
             status: options.status || undefined,
@@ -1536,7 +1543,7 @@ export class TokenService {
     public listReportRevisions(
         options: {projectID?: number; chainID?: number; page?: number; pageSize?: number} = {}
     ): Promise<PagedResponse<TokenReportRevision>> & {abort?: () => void} {
-        const req = requests.get('/tokens/report-revisions').query({
+        const req = requests.get('/tokens/report-revisions', readScope).query({
             project_id: options.projectID,
             chain_id: options.chainID,
             page: options.page,
@@ -1558,7 +1565,7 @@ export class TokenService {
     public listSelections(
         options: {projectID?: number; chainID?: number; outcome?: string; page?: number; pageSize?: number} = {}
     ): Promise<PagedResponse<TokenSelection>> & {abort?: () => void} {
-        const req = requests.get('/tokens/selections').query({
+        const req = requests.get('/tokens/selections', readScope).query({
             project_id: options.projectID,
             chain_id: options.chainID,
             outcome: options.outcome || undefined,

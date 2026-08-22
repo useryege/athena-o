@@ -1,4 +1,8 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.Notifications, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.Notifications, mode: 'write' as const};
 
 export interface NotificationDelivery {
     id: number;
@@ -96,7 +100,7 @@ export class NotificationService {
             query.keyword = options.keyword;
         }
 
-        const req = requests.get('/notifications').query(query);
+        const req = requests.get('/notifications', readScope).query(query);
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -111,14 +115,14 @@ export class NotificationService {
     }
 
     public getNotification(id: number | string): Promise<NotificationDelivery> & {abort?: () => void} {
-        const req = requests.get(`/notifications/${encodeURIComponent(String(id))}`);
+        const req = requests.get(`/notifications/${encodeURIComponent(String(id))}`, readScope);
         const promise = req.then(res => normalizeDelivery((res.body || {}).item || res.body || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public sendTestNotification(topicLabel: string): Promise<SendTestNotificationResult> & {abort?: () => void} {
-        const req = requests.post(`/notifications/test/${encodeURIComponent(topicLabel)}`).send({});
+        const req = requests.post(`/notifications/test/${encodeURIComponent(topicLabel)}`, writeScope).send({});
         const promise = req.then(res => {
             const body = res.body || {};
             return {

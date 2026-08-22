@@ -4,6 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
 import {Context, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {services} from '../shared/services';
 import {WalletDetail, WalletItem, walletTypeLabel, walletTypeOptions} from '../shared/services/wallet-service';
 import {useKeywordParam, usePagedParams} from './shared';
@@ -23,6 +24,9 @@ const SecretInput = (props: {label: string; value?: string; onCopy: () => void})
 export const WalletsPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.Wallet);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
     const {page, pageSize, setPage} = usePagedParams();
     const [query, setQuery] = useKeywordParam();
     const [chain, setChain] = React.useState('');
@@ -36,14 +40,32 @@ export const WalletsPage = () => {
         () => services.wallet.listWallets({page, pageSize, query, chain: chain || undefined, type: walletType || undefined}),
         [page, pageSize, query, chain, walletType]
     );
+    React.useEffect(() => {
+        if (!canWrite) {
+            setCreateOpen(false);
+            setCreating(false);
+            setSecret(null);
+            setBackupWallet(null);
+            setBackupConfirmed(false);
+        }
+    }, [canWrite]);
     const reveal = async (id: number) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
-        setSecret(await services.wallet.getWallet(id, true));
+        try {
+            const detail = await services.wallet.getWallet(id, true);
+            if (canWriteRef.current) {
+                setSecret(detail);
+            }
+        } catch (err: any) {
+            if (canWriteRef.current) {
+                ctx.notifications.error('Could not reveal wallet secret', err?.message || 'The wallet secret request failed.');
+            }
+        }
     };
     const create = async (values: {chain: string; type: string; alias?: string}) => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         setCreating(true);
@@ -54,7 +76,9 @@ export const WalletsPage = () => {
             setBackupWallet(created);
             data.reload();
         } catch (err: any) {
-            ctx.notifications.error('Wallet creation failed', err?.message || 'Could not create this wallet.');
+            if (canWriteRef.current) {
+                ctx.notifications.error('Wallet creation failed', err?.message || 'Could not create this wallet.');
+            }
         } finally {
             setCreating(false);
         }
@@ -82,7 +106,7 @@ export const WalletsPage = () => {
         {title: 'Created By', dataIndex: 'createdBy'},
         {title: 'Source', dataIndex: 'source'}
     ];
-    if (authorization.canWriteData) {
+    if (canWrite) {
         columns.push({
             title: 'Actions',
             render: item => (
@@ -100,7 +124,7 @@ export const WalletsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                authorization.canWriteData ? (
+                canWrite ? (
                     <Button type='primary' icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
                         Create
                     </Button>
@@ -137,7 +161,7 @@ export const WalletsPage = () => {
                 pageSize={pageSize}
                 onPageChange={setPage}
             />
-            <Modal destroyOnHidden={true} open={authorization.canWriteData && createOpen} title='Create Wallet' footer={null} onCancel={() => setCreateOpen(false)}>
+            <Modal destroyOnHidden={true} open={canWrite && createOpen} title='Create Wallet' footer={null} onCancel={() => setCreateOpen(false)}>
                 <Form layout='vertical' onFinish={create}>
                     <Form.Item name='chain' label='Chain' rules={[{required: true}]}>
                         <ChoiceGroup<string> ariaLabel='Wallet chain' className='choice-group--form' options={walletChainOptions} />
@@ -154,7 +178,7 @@ export const WalletsPage = () => {
                 </Form>
             </Modal>
             <Modal
-                open={authorization.canWriteData && !!backupWallet}
+                open={canWrite && !!backupWallet}
                 title='Back Up Wallet'
                 width={680}
                 closable={false}
@@ -191,12 +215,7 @@ export const WalletsPage = () => {
                     </Checkbox>
                 </Space>
             </Modal>
-            <Modal
-                open={authorization.canWriteData && !!secret}
-                title='Wallet Secret'
-                width={680}
-                onCancel={() => setSecret(null)}
-                footer={<Button onClick={() => setSecret(null)}>Close</Button>}>
+            <Modal open={canWrite && !!secret} title='Wallet Secret' width={680} onCancel={() => setSecret(null)} footer={<Button onClick={() => setSecret(null)}>Close</Button>}>
                 <KeyValueGrid
                     columns={1}
                     items={[

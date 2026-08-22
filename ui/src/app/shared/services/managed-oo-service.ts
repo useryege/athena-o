@@ -1,4 +1,8 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.ManagedOO, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.ManagedOO, mode: 'write' as const};
 import {readNumber, readString} from './api-values';
 
 export interface ManagedOOBaseItem {
@@ -88,7 +92,7 @@ const normalizeDispute = (item: any): ManagedOODisputeItem => ({
 
 export class ManagedOOService {
     public scanBlock(blockNumber: number): Promise<ScanManagedOOBlockResult> & {abort?: () => void} {
-        const req = requests.post(`/managed-oo/blocks/${blockNumber}:scan`).send({});
+        const req = requests.post(`/managed-oo/blocks/${blockNumber}:scan`, writeScope).send({});
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -120,7 +124,7 @@ export class ManagedOOService {
         if (blockNumber) {
             query.block_number = blockNumber;
         }
-        const req = requests.get(path).query(query);
+        const req = requests.get(path, readScope).query(query);
         const promise = req.then(res => {
             const body = res.body || {};
             return {

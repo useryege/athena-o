@@ -27,7 +27,7 @@ read model only composes their committed state.
 | SQL queries | [`internal/token/adapters/postgres/queries/project_view.sql`](../../../internal/token/adapters/postgres/queries/project_view.sql), [`internal/token/adapters/postgres/queries/project_observation.sql`](../../../internal/token/adapters/postgres/queries/project_observation.sql), [`internal/token/adapters/postgres/queries/project_data_collection_schedule.sql`](../../../internal/token/adapters/postgres/queries/project_data_collection_schedule.sql), [`internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql`](../../../internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql), [`internal/token/adapters/postgres/queries/project_swap_view.sql`](../../../internal/token/adapters/postgres/queries/project_swap_view.sql) | unified project page, trend, history, Swap aggregate, and Swap event queries |
 | Fixed Swap assets | [`internal/token/chainregistry/registry.go`](../../../internal/token/chainregistry/registry.go) | `AssetMetadata`, `ChainAssets`, `FixedAssets` |
 | Token API application boundary | [`internal/tokenapi/project_service.go`](../../../internal/tokenapi/project_service.go), [`internal/tokenapi/project_detail_service.go`](../../../internal/tokenapi/project_detail_service.go), [`internal/tokenapi/helpers.go`](../../../internal/tokenapi/helpers.go) | `ListProjects`, `GetProjectDetail`, `GetProjectSwapActivity`, `ListProjectSwapEvents`, project-view mappers |
-| Public HTTP and authorization boundary | [`internal/server/tokenapi/catalog.proto`](../../../internal/server/tokenapi/catalog.proto), [`internal/server/tokenapi/tokenapi.go`](../../../internal/server/tokenapi/tokenapi.go), [`internal/server/authz.go`](../../../internal/server/authz.go) | project HTTP bindings, proxy methods, `dataReadGRPCMethods`, and `authorizeGRPC` |
+| Public HTTP and authorization boundary | [`internal/server/tokenapi/catalog.proto`](../../../internal/server/tokenapi/catalog.proto), [`internal/server/tokenapi/tokenapi.go`](../../../internal/server/tokenapi/tokenapi.go), [`internal/server/authz.go`](../../../internal/server/authz.go) | project HTTP bindings, proxy methods, `moduleGRPCRules`, `ModuleToken`, and `authorizeGRPC` |
 | Public data contract | [`pkg/apis/application/v1alpha1/tokenapi_types.go`](../../../pkg/apis/application/v1alpha1/tokenapi_types.go) | `TokenProjectListItem`, `TokenProjectReportSummary`, `TokenProjectPairRiskSummary`, `TokenProjectDetail`, `TokenReportRevision`, `TokenProjectSwapActivity` |
 | UI data client | [`ui/src/app/shared/services/token-service.ts`](../../../ui/src/app/shared/services/token-service.ts) | `listProjects`, `getProjectDetail`, `listReportRevisions`, `getProjectSwapActivity` |
 | UI pages and visualizations | [`ui/src/app/pages/projects.tsx`](../../../ui/src/app/pages/projects.tsx), [`ui/src/app/pages/projects-filters-modal.tsx`](../../../ui/src/app/pages/projects-filters-modal.tsx), [`ui/src/app/pages/project-detail.tsx`](../../../ui/src/app/pages/project-detail.tsx), [`ui/src/app/pages/project-report-tab.tsx`](../../../ui/src/app/pages/project-report-tab.tsx), [`ui/src/app/pages/project-detail-chart.tsx`](../../../ui/src/app/pages/project-detail-chart.tsx), [`ui/src/app/pages/project-swap-activity.tsx`](../../../ui/src/app/pages/project-swap-activity.tsx) | `ProjectsPage`, `ProjectsFiltersModal`, `ProjectDetailPage`, `ProjectReportTab`, `ProjectTrendChart`, `ProjectSwapActivityTab` |
@@ -62,9 +62,9 @@ reads:
 - `GET /api/v1/tokens/projects/{project_id}/swap-pairs/{pair_kind}/blocks/{block_number}/events`
   returns one sampled block's decoded events in transaction and log order.
 
-All seven methods require the account-level data-read category. Report revision,
-selection, and collection-task history retain their existing endpoints but use
-the same category. There are no project-specific or history-specific grants.
+All seven methods require Token module `READ`. Report revision, Selection, and
+collection-task history retain their existing endpoints and use the same Token
+level. There are no project-specific or history-specific grants.
 
 `ProjectViewRepository` is a read adapter over the existing SQLC query set. It
 returns domain models rather than API types. Project pagination belongs to this
@@ -458,8 +458,7 @@ There is no runtime configuration specific to this read model.
   have their own normalized, filterable endpoint.
 - Every returned trend series is chronological, contains no more than 500
   points, and retains its first and last observation.
-- Project-level and adjacent history reads require the account-level data-read
-  category.
+- Project-level and adjacent history reads require Token module `READ`.
 - Report revision history is lazy and independent from the 30-second current
   snapshot poll. Refresh counters are monotonic per tab.
 - Swap activity contains exactly two independently identified targets ordered
@@ -518,7 +517,7 @@ or updated timestamps for diagnosis.
 
 ## Change Checklist
 
-- [ ] The unified project page and six project-scoped endpoints remain aligned with the data-read category.
+- [ ] The unified project page and six project-scoped endpoints remain aligned with Token module `READ` in `moduleGRPCRules`.
 - [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
 - [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
 - [ ] The Projects page has one grouped table with fixed Logo and Project columns and no view or current-page sort state.

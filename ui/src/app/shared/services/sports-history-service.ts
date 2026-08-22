@@ -1,4 +1,8 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.SportsHistory, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.SportsHistory, mode: 'write' as const};
 import {readBoolean, readNumber, readString} from './api-values';
 import {normalizeSportsHistoryEventCard, normalizeSportsPriceHistorySeries, SportsHistoryEventCardItem, SportsPriceHistorySeriesItem} from './sports-models';
 
@@ -35,7 +39,7 @@ const normalizeSyncStatus = (item: any): SportsHistorySyncStatus => {
 
 export class SportsHistoryService {
     public listEvents(limit = 200): Promise<ListSportsHistoryEventsResult> & {abort?: () => void} {
-        const req = requests.get('/sports-history/events').query({limit});
+        const req = requests.get('/sports-history/events', readScope).query({limit});
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -49,7 +53,7 @@ export class SportsHistoryService {
     }
 
     public batchGetPriceHistories(marketKeys: string[], limitPerToken = 360): Promise<BatchGetSportsHistoryPriceHistoriesResult> & {abort?: () => void} {
-        const req = requests.post('/sports-history/price-history:batchGet').send({market_keys: marketKeys, limit_per_token: limitPerToken});
+        const req = requests.post('/sports-history/price-history:batchGet', readScope).send({market_keys: marketKeys, limit_per_token: limitPerToken});
         const promise = req.then(res => ({items: (res.body?.items || []).map(normalizeSportsPriceHistorySeries)})) as Promise<BatchGetSportsHistoryPriceHistoriesResult> & {
             abort?: () => void;
         };
@@ -58,14 +62,14 @@ export class SportsHistoryService {
     }
 
     public getSyncStatus(): Promise<SportsHistorySyncStatus> & {abort?: () => void} {
-        const req = requests.get('/sports-history/sync-status');
+        const req = requests.get('/sports-history/sync-status', readScope);
         const promise = req.then(res => normalizeSyncStatus(res.body?.status || {})) as Promise<SportsHistorySyncStatus> & {abort?: () => void};
         promise.abort = () => req.abort();
         return promise;
     }
 
     public refresh(): Promise<SportsHistorySyncStatus> & {abort?: () => void} {
-        const req = requests.post('/sports-history:refresh').send({});
+        const req = requests.post('/sports-history:refresh', writeScope).send({});
         const promise = req.then(res => normalizeSyncStatus(res.body?.status || {})) as Promise<SportsHistorySyncStatus> & {abort?: () => void};
         promise.abort = () => req.abort();
         return promise;

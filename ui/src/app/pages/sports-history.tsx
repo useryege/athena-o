@@ -3,6 +3,7 @@ import {Button, Empty, Space, Switch, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, useAsyncData} from '../components';
 import {Context, useAuthorization} from '../shared/context';
+import {AccountDataModule} from '../shared/access-modules';
 import {formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import {SportsHistorySyncStatus} from '../shared/services/sports-history-service';
@@ -43,6 +44,9 @@ const SportsHistorySyncStatusBar = (props: {status?: SportsHistorySyncStatus; re
 
 export const SportsHistoryPage = () => {
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.SportsHistory);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
     const ctx = React.useContext(Context);
     const events = useAsyncData(() => services.sportsHistory.listEvents(200), []);
     const syncStatus = useAsyncData(() => services.sportsHistory.getSyncStatus(), []);
@@ -95,13 +99,19 @@ export const SportsHistoryPage = () => {
     const pollingActive = refreshing || serverSyncing;
 
     React.useEffect(() => {
+        if (!canWrite) {
+            setRefreshing(false);
+        }
+    }, [canWrite]);
+
+    React.useEffect(() => {
         const interval = pollingActive ? sportsHistorySyncPollingActiveMs : sportsHistorySyncPollingIdleMs;
         const timer = window.setInterval(() => syncStatusReloadRef.current(), interval);
         return () => window.clearInterval(timer);
     }, [pollingActive]);
 
     const refresh = React.useCallback(async () => {
-        if (!authorization.canWriteData) {
+        if (!canWrite) {
             return;
         }
         setRefreshing(true);
@@ -110,13 +120,15 @@ export const SportsHistoryPage = () => {
             await services.sportsHistory.refresh();
             ctx.notifications.success('Sports history refreshed');
         } catch (err: any) {
-            ctx.notifications.error('Sports history refresh failed', err?.message || 'Could not refresh sports history data.');
+            if (canWriteRef.current) {
+                ctx.notifications.error('Sports history refresh failed', err?.message || 'Could not refresh sports history data.');
+            }
         } finally {
             setRefreshing(false);
             syncStatus.reload();
             reloadAll();
         }
-    }, [authorization.canWriteData, ctx.notifications, reloadAll, syncStatus.reload]);
+    }, [canWrite, ctx.notifications, reloadAll, syncStatus.reload]);
     const toggleScratchMode = React.useCallback((checked: boolean) => {
         setScratchMode(checked);
         if (checked) {
@@ -137,7 +149,7 @@ export const SportsHistoryPage = () => {
                     <Button icon={<ReloadOutlined />} disabled={!scratchMode} onClick={resetScratch}>
                         Reset
                     </Button>
-                    {authorization.canWriteData && (
+                    {canWrite && (
                         <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
                             Refresh data
                         </Button>

@@ -1,4 +1,8 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.FIFAMarketDashboard, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.FIFAMarketDashboard, mode: 'write' as const};
 import type {WormMarketsEventItem, WormMarketsMarketItem} from './worm-markets-models';
 
 export interface FIFAMarketDashboardEventConfig {
@@ -299,14 +303,14 @@ const normalizeDashboard = (item: any): FIFAMarketDashboard => {
 
 export class FIFAMarketDashboardService {
     public getDashboard(): Promise<FIFAMarketDashboard> & {abort?: () => void} {
-        const req = requests.get('/fifa-market-dashboard');
+        const req = requests.get('/fifa-market-dashboard', readScope);
         const promise = req.then(res => normalizeDashboard(res.body?.dashboard || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public updateEventConfig(config: FIFAMarketDashboardEventConfig): Promise<FIFAMarketDashboardEventConfig> & {abort?: () => void} {
-        const req = requests.put('/fifa-market-dashboard/event-config').send({wormEventId: config.wormEventId, eventRef: config.eventRef});
+        const req = requests.put('/fifa-market-dashboard/event-config', writeScope).send({wormEventId: config.wormEventId, eventRef: config.eventRef});
         const promise = req.then(res => normalizeFIFAEventConfig(res.body?.config || {})) as any;
         promise.abort = () => req.abort();
         return promise;

@@ -1,16 +1,10 @@
-import {Account, AccountAccess, parseAccountDataAccess} from '../models';
+import {Account, AccountAccess, parseAccountAccess} from '../models';
 import requests from './requests';
-
-const accountAccess = (value: any): AccountAccess => ({
-    loginEnabled: Boolean(value?.loginEnabled),
-    dataAccess: parseAccountDataAccess(value?.dataAccess),
-    revision: Number(value?.revision || 0)
-});
 
 const account = (value: any): Account => ({
     name: value?.name || '',
     administrator: Boolean(value?.administrator),
-    access: accountAccess(value?.access),
+    access: parseAccountAccess(value?.access),
     capabilities: value?.capabilities || [],
     tokens: value?.tokens || []
 });
@@ -27,7 +21,11 @@ export class AccountsService {
     public updateAccess(name: string, access: AccountAccess): Promise<Account> {
         return requests
             .put(`/account/${encodeURIComponent(name)}/access`)
-            .send({loginEnabled: access.loginEnabled, dataAccess: access.dataAccess, revision: access.revision})
+            .send({
+                loginEnabled: access.loginEnabled,
+                revision: access.revision,
+                moduleAccess: access.moduleAccess.map(item => ({module: item.module, dataAccess: item.dataAccess}))
+            })
             .then(res => account(res.body));
     }
 

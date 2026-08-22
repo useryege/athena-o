@@ -10,7 +10,7 @@ import (
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
-	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
+	accountserver "github.com/useryege/athena/internal/server/account"
 	"github.com/useryege/athena/pkg/apiclient/session"
 	utilio "github.com/useryege/athena/util/io"
 	sessionmgr "github.com/useryege/athena/util/session"
@@ -162,18 +162,6 @@ func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Contro
 		return nil, err
 	}
 	response.Administrator = response.Username == common.AthenaAdminUsername
-	response.DataAccess = toAPIDataAccess(access.DataAccess)
-	response.AuthorizationRevision = access.Revision
+	response.Access = accountserver.ToAPIAccountAccess(access)
 	return response, nil
-}
-
-func toAPIDataAccess(dataAccess accountaccess.DataAccess) accountpkg.AccountDataAccess {
-	switch dataAccess {
-	case accountaccess.DataAccessRead:
-		return accountpkg.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ
-	case accountaccess.DataAccessReadWrite:
-		return accountpkg.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ_WRITE
-	default:
-		return accountpkg.AccountDataAccess_ACCOUNT_DATA_ACCESS_NONE
-	}
 }

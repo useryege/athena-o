@@ -13,6 +13,7 @@ import (
 )
 
 // Store persists complete access aggregates with optimistic concurrency.
+// Every returned persisted aggregate must contain all product modules.
 type Store interface {
 	ListAccountAccessOverrides(ctx context.Context) (map[string]Access, error)
 	UpdateAccountAccessOverride(ctx context.Context, name string, next Access, expectedRevision uint64) (Access, error)
@@ -27,7 +28,7 @@ type Controller struct {
 }
 
 // NewController combines environment login defaults with durable, full-row
-// overrides. Ordinary accounts have no data access until explicitly granted.
+// overrides. Ordinary accounts have no module access until explicitly granted.
 func NewController(ctx context.Context, loginDefaults map[string]bool, store Store) (*Controller, error) {
 	if store == nil {
 		return nil, fmt.Errorf("account-access store is required")
@@ -40,12 +41,12 @@ func NewController(ctx context.Context, loginDefaults map[string]bool, store Sto
 	for name, loginEnabled := range loginDefaults {
 		effective[name] = Access{
 			LoginEnabled: loginEnabled,
-			DataAccess:   DataAccessNone,
+			Modules:      NoModuleAccess(),
 		}
 	}
 	effective[common.AthenaAdminUsername] = Access{
 		LoginEnabled: true,
-		DataAccess:   DataAccessReadWrite,
+		Modules:      MaximumModuleAccess(),
 	}
 
 	overrides, err := store.ListAccountAccessOverrides(ctx)
@@ -62,16 +63,16 @@ func NewController(ctx context.Context, loginDefaults map[string]bool, store Sto
 		if override.Revision == 0 {
 			return nil, fmt.Errorf("account %q has invalid persisted access revision 0", name)
 		}
-		if err := override.validate(); err != nil {
+		if err := override.Validate(); err != nil {
 			return nil, fmt.Errorf("account %q has invalid persisted access: %w", name, err)
 		}
-		effective[name] = override
+		effective[name] = override.Clone()
 	}
 
 	return &Controller{store: store, access: effective}, nil
 }
 
-// Get returns the current effective access for an account.
+// Get returns a detached copy of the current effective access for an account.
 func (c *Controller) Get(name string) (Access, error) {
 	if c == nil {
 		return Access{}, fmt.Errorf("account access controller is not configured")
@@ -82,10 +83,10 @@ func (c *Controller) Get(name string) (Access, error) {
 	if !ok {
 		return Access{}, status.Errorf(codes.NotFound, "account %q does not exist", name)
 	}
-	return access, nil
+	return access.Clone(), nil
 }
 
-// List returns a point-in-time copy of every configured account's access.
+// List returns a detached point-in-time copy of every configured account's access.
 func (c *Controller) List() map[string]Access {
 	if c == nil {
 		return nil
@@ -94,7 +95,7 @@ func (c *Controller) List() map[string]Access {
 	defer c.mu.RUnlock()
 	result := make(map[string]Access, len(c.access))
 	for name, access := range c.access {
-		result[name] = access
+		result[name] = access.Clone()
 	}
 	return result
 }
@@ -114,7 +115,8 @@ func (c *Controller) Update(ctx context.Context, name string, next Access, expec
 	if expectedRevision > math.MaxInt64 {
 		return Access{}, status.Error(codes.InvalidArgument, "account access revision is out of range")
 	}
-	if err := next.validate(); err != nil {
+	next = next.Clone()
+	if err := next.Validate(); err != nil {
 		return Access{}, err
 	}
 
@@ -131,25 +133,29 @@ func (c *Controller) Update(ctx context.Context, name string, next Access, expec
 		return Access{}, ErrRevisionConflict
 	}
 
-	persisted, err := c.store.UpdateAccountAccessOverride(ctx, name, next, expectedRevision)
+	persisted, err := c.store.UpdateAccountAccessOverride(ctx, name, next.Clone(), expectedRevision)
 	if err != nil {
 		return Access{}, err
 	}
 	if persisted.Revision <= expectedRevision {
 		return Access{}, fmt.Errorf("store returned non-incremented account access revision for %q", name)
 	}
-	if err := persisted.validate(); err != nil {
+	if err := persisted.Validate(); err != nil {
 		return Access{}, fmt.Errorf("store returned invalid account access for %q: %w", name, err)
 	}
+	persisted = persisted.Clone()
 
 	c.mu.Lock()
 	c.access[name] = persisted
 	c.mu.Unlock()
-	return persisted, nil
+	return persisted.Clone(), nil
 }
 
-// Authorize checks the current snapshot for one protected-RPC category.
+// Authorize checks the current snapshot for an administrator or module rule.
 func (c *Controller) Authorize(name string, requirement Requirement) error {
+	if err := requirement.validate(); err != nil {
+		return err
+	}
 	access, err := c.Get(name)
 	if err != nil {
 		return err
@@ -157,21 +163,16 @@ func (c *Controller) Authorize(name string, requirement Requirement) error {
 	if name == common.AthenaAdminUsername {
 		return nil
 	}
-
-	switch requirement {
-	case RequirementAdministrator:
+	if requirement.Administrator {
 		return ErrAdministratorAccessDenied
-	case RequirementDataRead:
-		if access.DataAccess == DataAccessRead || access.DataAccess == DataAccessReadWrite {
-			return nil
-		}
-		return ErrDataAccessDenied
-	case RequirementDataWrite:
-		if access.DataAccess == DataAccessReadWrite {
-			return nil
-		}
-		return ErrDataAccessDenied
-	default:
-		return status.Errorf(codes.Internal, "unknown account access requirement %d", requirement)
 	}
+
+	effective, exists := access.Modules[requirement.Module]
+	if !exists {
+		return status.Errorf(codes.Internal, "account %q is missing access for module %q", name, requirement.Module)
+	}
+	if accessLevelSatisfies(effective, requirement.AccessLevel) {
+		return nil
+	}
+	return moduleAccessDeniedError(requirement.Module, requirement.AccessLevel, effective)
 }

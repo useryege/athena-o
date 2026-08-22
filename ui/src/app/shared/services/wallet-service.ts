@@ -1,4 +1,8 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.Wallet, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.Wallet, mode: 'write' as const};
 
 export type WalletChain = 'ETH' | 'BSC' | 'BASE' | 'SOLANA';
 export type WalletType = 'worm_position' | 'polymarket_hedge' | 'polymarket_topup';
@@ -86,7 +90,7 @@ export class WalletService {
         if (options.query) {
             query.query = options.query;
         }
-        const req = requests.get('/wallets').query(query);
+        const req = requests.get('/wallets', readScope).query(query);
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -101,35 +105,35 @@ export class WalletService {
     }
 
     public getWallet(id: number, revealSecrets = false): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.get(`/wallets/${encodeURIComponent(String(id))}`).query({reveal_secrets: revealSecrets});
+        const req = requests.get(`/wallets/${encodeURIComponent(String(id))}`, revealSecrets ? writeScope : readScope).query({reveal_secrets: revealSecrets});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public createWallet(chain: WalletChain | string, walletType: WalletType | string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.post('/wallets/create').send({chain, type: walletType, alias});
+        const req = requests.post('/wallets/create', writeScope).send({chain, type: walletType, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public importPrivateKey(chain: WalletChain | string, walletType: WalletType | string, privateKey: string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.post('/wallets/import-private-key').send({chain, type: walletType, private_key: privateKey, alias});
+        const req = requests.post('/wallets/import-private-key', writeScope).send({chain, type: walletType, private_key: privateKey, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public importMnemonic(chain: WalletChain | string, walletType: WalletType | string, mnemonic: string, alias: string): Promise<WalletDetail> & {abort?: () => void} {
-        const req = requests.post('/wallets/import-mnemonic').send({chain, type: walletType, mnemonic, alias});
+        const req = requests.post('/wallets/import-mnemonic', writeScope).send({chain, type: walletType, mnemonic, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public updateAlias(id: number, alias: string): Promise<WalletItem> & {abort?: () => void} {
-        const req = requests.post(`/wallets/${encodeURIComponent(String(id))}/alias`).send({id, alias});
+        const req = requests.post(`/wallets/${encodeURIComponent(String(id))}/alias`, writeScope).send({id, alias});
         const promise = req.then(res => normalizeWallet((res.body || {}).item || {})) as any;
         promise.abort = () => req.abort();
         return promise;

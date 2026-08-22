@@ -1,4 +1,7 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.MarketRadar, mode: 'read' as const};
 import {readBoolean, readNumber, readString, readValue} from './api-values';
 
 export interface MarketRadarHotMarketTokenItem {
@@ -246,7 +249,7 @@ const normalizeMoverMarket = (item: any): MarketRadarMoverMarketItem => {
 
 export class MarketRadarService {
     public listHotMarkets(limit = 100): Promise<ListMarketRadarHotMarketsResult> & {abort?: () => void} {
-        const req = requests.get('/market-radar/hot-markets').query({limit});
+        const req = requests.get('/market-radar/hot-markets', readScope).query({limit});
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -263,7 +266,7 @@ export class MarketRadarService {
     }
 
     public listRealtimeMarkets(limit = 100): Promise<ListMarketRadarRealtimeMarketsResult> & {abort?: () => void} {
-        const req = requests.get('/market-radar/realtime-markets').query({limit});
+        const req = requests.get('/market-radar/realtime-markets', readScope).query({limit});
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -282,7 +285,7 @@ export class MarketRadarService {
     }
 
     public listMovers(limit = 100): Promise<ListMarketRadarMoversResult> & {abort?: () => void} {
-        const req = requests.get('/market-radar/movers').query({limit});
+        const req = requests.get('/market-radar/movers', readScope).query({limit});
         const promise = req.then(res => {
             const body = res.body || {};
             return {

@@ -7,7 +7,9 @@ Polymarket FIFA event, the cached combined market view, two monitored treasury
 token balances, and requester-scoped Solana wallet holdings. It exposes one
 read RPC and one event-configuration update RPC, while the Athena API Server
 publishes them at `/api/v1/fifa-market-dashboard` and supplies the authenticated
-requester identity used for wallet access.
+requester identity used for wallet access. The facade read requires FIFA Market
+Dashboard `READ`; its configuration update requires that same module's
+`READ_WRITE`.
 
 The service does not synchronize the Worm market catalog, persist wallets, send
 notifications, or own generic Polymarket discovery. Worm event detail comes
@@ -30,6 +32,8 @@ Solana JSON-RPC endpoints are direct external read dependencies.
 | Internal service contract | [internal/fifamarketdashboard/fifamarketdashboard.proto](../../../internal/fifamarketdashboard/fifamarketdashboard.proto) | `FIFAMarketDashboardService` |
 | Public HTTP/gRPC contract | [internal/server/fifamarketdashboard/fifamarketdashboard.proto](../../../internal/server/fifamarketdashboard/fifamarketdashboard.proto) | `FIFAMarketDashboardService` HTTP annotations |
 | Public proxy and requester propagation | [internal/server/fifamarketdashboard/fifamarketdashboard.go](../../../internal/server/fifamarketdashboard/fifamarketdashboard.go) | `Server`, `GetFIFAMarketDashboard`, `UpdateFIFAEventConfig` |
+| Public authorization boundary | [internal/server/authz.go](../../../internal/server/authz.go), [internal/accountaccess/access.go](../../../internal/accountaccess/access.go) | `moduleGRPCRules`, `ModuleFIFAMarketDashboard`, `AccessLevelRead`, `AccessLevelReadWrite` |
+| Browser route, request, and controls | [ui/src/app/pages/fifa-market-dashboard.tsx](../../../ui/src/app/pages/fifa-market-dashboard.tsx), [ui/src/app/shared/services/fifa-market-dashboard-service.ts](../../../ui/src/app/shared/services/fifa-market-dashboard-service.ts) | FIFA route, module-scoped reads and writes, event-config editor |
 | Internal gRPC connection ownership | [internal/fifamarketdashboard/apiclient/apiclient.go](../../../internal/fifamarketdashboard/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewFIFAMarketDashboardClientset`, `ClientConnection` |
 | Event-config persistence | [internal/fifamarketdashboard/store/fifa_event_config_store.go](../../../internal/fifamarketdashboard/store/fifa_event_config_store.go) | `GetFIFAEventConfig`, `UpdateFIFAEventConfig` |
 | PostgreSQL connection and schema | [internal/fifamarketdashboard/store/sql_store.go](../../../internal/fifamarketdashboard/store/sql_store.go), [internal/fifamarketdashboard/store/migrations/000001_init.sql](../../../internal/fifamarketdashboard/store/migrations/000001_init.sql) | `NewSQLStoreSource`, `fifa_market_dashboard_event_config` |
@@ -57,9 +61,11 @@ their application implementations.
 
 The API Server proxy replaces the public request's `requester` field with
 `session.GetUserIdentifier(ctx)`. This makes Wallet authorization derive from
-the authenticated session rather than caller-supplied HTTP input. The public
-`get` permission covers status and dashboard reads, and `update` protects event
-configuration changes.
+the authenticated session rather than caller-supplied HTTP input. The API Server
+authorizes only the public FIFA facade: status and dashboard reads require FIFA
+`READ`, and configuration update requires FIFA `READ_WRITE`. Its internal Worm
+Markets and Wallet calls are implementation dependencies of that facade and do
+not require the requester to hold separate Worm Markets or Wallet module access.
 
 ## Runtime Flow
 
@@ -115,6 +121,11 @@ cache assignments are not part of that transaction. Cache locking makes each
 individual source assignment and read snapshot race-free, but Worm,
 Polymarket, balances, and holdings have independent fetch timestamps and do not
 represent one distributed snapshot.
+
+For public traffic, the API Server evaluates the FIFA module rule before step 7
+or step 10 reaches this process. The downstream Worm Markets and Wallet calls
+run inside the already-authorized FIFA facade and do not evaluate the caller's
+other module entries.
 
 ## State / Data
 
@@ -178,6 +189,9 @@ are implementation constants.
   shares Worm Markets implementation state.
 - Public dashboard reads use the authenticated session identifier as requester;
   arbitrary public request input cannot select another requester's wallets.
+- Public status and dashboard reads require only FIFA Market Dashboard `READ`;
+  event-config updates require FIFA Market Dashboard `READ_WRITE`. Separate
+  Worm Markets or Wallet grants are neither required nor implied.
 - A cached Worm or Polymarket result is stored only while its request key still
   equals the current config. A config change invalidates both market caches.
 - A Polymarket event is publishable only when it is a FIFA event with exactly
@@ -200,6 +214,10 @@ clients prevents startup. Worm Markets and Wallet connections are initiated
 without blocking; their temporary unavailability is handled by gRPC background
 reconnection. Worm Markets, Wallet, Polygon, Solana, Gamma, and CLOB availability
 is not probed before health becomes serving.
+
+A public caller without the required FIFA level is rejected by the API Server
+before the facade or any downstream dependency is called. Granting the level
+permits the next request without restarting this process.
 
 A config read failure or invalid stored config clears both market sections and
 places the error in their dashboard fields. A Worm or Polymarket fetch failure
@@ -246,6 +264,13 @@ API Server exposes status at `GET /api/v1/fifa-market-dashboard/status`, the
 dashboard at `GET /api/v1/fifa-market-dashboard`, and config updates at
 `PUT /api/v1/fifa-market-dashboard/event-config`.
 
+The first two methods carry explicit FIFA `READ` rules and the update carries
+FIFA `READ_WRITE`. Denials use `ACCOUNT_DATA_ACCESS_DENIED` with FIFA module
+metadata. The browser route and reads use the same module scope. Losing FIFA
+read access aborts FIFA requests, clears only its cache, and leaves another
+module's state intact; losing FIFA write access closes the event-config editor
+while preserving the readable dashboard.
+
 Dashboard payloads expose independent fetch timestamps and error text for Worm,
 Polymarket, fixed balances, and holdings. There are no capability-specific
 metrics, freshness-based readiness checks, cache-size diagnostics, or durable
@@ -257,5 +282,6 @@ refresh history.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
 - [ ] Failure recovery, health checks, and observability are current.
+- [ ] The public facade remains authorized only by FIFA `READ` or `READ_WRITE`, independent of Worm Markets and Wallet grants.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

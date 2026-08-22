@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1049-g494cd0d8-dirty"
+    "version": "v1.0.0-1050-g428613ea-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -114,6 +114,7 @@
             "required": true
           },
           {
+            "description": "access contains the complete supported account data module matrix.",
             "name": "body",
             "in": "body",
             "required": true,
@@ -2867,11 +2868,14 @@
     "accountAccountAccess": {
       "type": "object",
       "properties": {
-        "dataAccess": {
-          "$ref": "#/definitions/accountAccountDataAccess"
-        },
         "loginEnabled": {
           "type": "boolean"
+        },
+        "moduleAccess": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/accountAccountModuleAccess"
+          }
         },
         "revision": {
           "type": "string",
@@ -2887,6 +2891,34 @@
         "ACCOUNT_DATA_ACCESS_READ",
         "ACCOUNT_DATA_ACCESS_READ_WRITE"
       ]
+    },
+    "accountAccountDataModule": {
+      "type": "string",
+      "default": "ACCOUNT_DATA_MODULE_UNSPECIFIED",
+      "enum": [
+        "ACCOUNT_DATA_MODULE_UNSPECIFIED",
+        "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+        "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+        "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+        "ACCOUNT_DATA_MODULE_MANAGED_OO",
+        "ACCOUNT_DATA_MODULE_WORM_MARKETS",
+        "ACCOUNT_DATA_MODULE_FIFA_MARKET_DASHBOARD",
+        "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+        "ACCOUNT_DATA_MODULE_TOKEN",
+        "ACCOUNT_DATA_MODULE_WALLET",
+        "ACCOUNT_DATA_MODULE_NOTIFICATIONS"
+      ]
+    },
+    "accountAccountModuleAccess": {
+      "type": "object",
+      "properties": {
+        "dataAccess": {
+          "$ref": "#/definitions/accountAccountDataAccess"
+        },
+        "module": {
+          "$ref": "#/definitions/accountAccountDataModule"
+        }
+      }
     },
     "accountAccountsList": {
       "type": "object",
@@ -3680,15 +3712,11 @@
       "type": "object",
       "title": "The current user's userInfo info",
       "properties": {
+        "access": {
+          "$ref": "#/definitions/accountAccountAccess"
+        },
         "administrator": {
           "type": "boolean"
-        },
-        "authorizationRevision": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "dataAccess": {
-          "$ref": "#/definitions/accountAccountDataAccess"
         },
         "iss": {
           "type": "string"

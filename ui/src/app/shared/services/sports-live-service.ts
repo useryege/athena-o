@@ -1,4 +1,7 @@
 import requests from './requests';
+import {AccountDataModule} from '../access-modules';
+
+const readScope = {module: AccountDataModule.SportsLive, mode: 'read' as const};
 import {readBoolean, readNumber} from './api-values';
 import {normalizeSportsLiveEventCard, normalizeSportsPriceHistorySeries, SportsLiveEventCardItem, SportsPriceHistorySeriesItem} from './sports-models';
 
@@ -14,7 +17,7 @@ export interface BatchGetSportsLivePriceHistoriesResult {
 
 export class SportsLiveService {
     public listEvents(limit = 200): Promise<ListSportsLiveEventsResult> & {abort?: () => void} {
-        const req = requests.get('/sports-live/events').query({limit});
+        const req = requests.get('/sports-live/events', readScope).query({limit});
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -28,7 +31,7 @@ export class SportsLiveService {
     }
 
     public batchGetPriceHistories(marketKeys: string[], limitPerToken = 360): Promise<BatchGetSportsLivePriceHistoriesResult> & {abort?: () => void} {
-        const req = requests.post('/sports-live/price-history:batchGet').send({market_keys: marketKeys, limit_per_token: limitPerToken});
+        const req = requests.post('/sports-live/price-history:batchGet', readScope).send({market_keys: marketKeys, limit_per_token: limitPerToken});
         const promise = req.then(res => ({items: (res.body?.items || []).map(normalizeSportsPriceHistorySeries)})) as Promise<BatchGetSportsLivePriceHistoriesResult> & {
             abort?: () => void;
         };

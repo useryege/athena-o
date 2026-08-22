@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as models from './models';
+import {AccountDataAccess, AccountDataModule} from './access-modules';
 
 export interface NavigationApi {
     goto(path: string): void;
@@ -13,8 +14,12 @@ export interface NotificationsApi {
     warning(message: string, description?: string): void;
 }
 
+export interface ModalHandle {
+    destroy(): void;
+}
+
 export interface ModalApi {
-    confirm(options: {title: string; content?: React.ReactNode; onOk?: () => void | Promise<void>}): void;
+    confirm(options: {title: string; content?: React.ReactNode; okText?: string; cancelText?: string; onOk?: () => void | Promise<void>; onCancel?: () => void}): ModalHandle;
     info(options: {title: string; content?: React.ReactNode}): void;
     error(options: {title: string; content?: React.ReactNode}): void;
 }
@@ -33,8 +38,9 @@ export const {Provider, Consumer} = Context;
 export interface AuthorizationState {
     user: models.UserInfo;
     isAdmin: boolean;
-    canReadData: boolean;
-    canWriteData: boolean;
+    access(module: AccountDataModule): AccountDataAccess;
+    canRead(module: AccountDataModule): boolean;
+    canWrite(module: AccountDataModule): boolean;
     revision: number;
     refresh(): Promise<void>;
 }
