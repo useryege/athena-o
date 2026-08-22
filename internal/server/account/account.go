@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,14 +23,26 @@ import (
 
 // Server provides a Session service
 type Server struct {
-	sessionMgr  *session.SessionManager
-	settingsMgr *settings.SettingsManager
-	enf         *rbac.Enforcer
+	sessionMgr          *session.SessionManager
+	settingsMgr         *settings.SettingsManager
+	enf                 *rbac.Enforcer
+	accountEnabledStore AccountEnabledStore
+	accountEnabledMu    sync.Mutex
+}
+
+// AccountEnabledStore persists the enabled override for an account.
+type AccountEnabledStore interface {
+	SetAccountEnabled(ctx context.Context, name string, enabled bool) error
 }
 
 // NewServer returns a new instance of the Session service
-func NewServer(sessionMgr *session.SessionManager, settingsMgr *settings.SettingsManager, enf *rbac.Enforcer) *Server {
-	return &Server{sessionMgr, settingsMgr, enf}
+func NewServer(sessionMgr *session.SessionManager, settingsMgr *settings.SettingsManager, enf *rbac.Enforcer, accountEnabledStore AccountEnabledStore) *Server {
+	return &Server{
+		sessionMgr:          sessionMgr,
+		settingsMgr:         settingsMgr,
+		enf:                 enf,
+		accountEnabledStore: accountEnabledStore,
+	}
 }
 
 // UpdatePassword updates the password of the currently authenticated account or the account specified in the request.
@@ -174,6 +187,28 @@ func (s *Server) GetAccount(ctx context.Context, r *account.GetAccountRequest) (
 		return nil, fmt.Errorf("failed to get account %s: %w", r.Name, err)
 	}
 	return accountForViewer(ctx, r.Name, *a), nil
+}
+
+// UpdateAccount updates the enabled state of a non-administrator account.
+func (s *Server) UpdateAccount(ctx context.Context, r *account.UpdateAccountRequest) (*account.Account, error) {
+	if r.Name == common.AthenaAdminUsername {
+		return nil, status.Error(codes.InvalidArgument, "admin account is always enabled")
+	}
+	s.accountEnabledMu.Lock()
+	defer s.accountEnabledMu.Unlock()
+
+	if _, err := s.settingsMgr.GetAccount(r.Name); err != nil {
+		return nil, err
+	}
+	if err := s.accountEnabledStore.SetAccountEnabled(ctx, r.Name, r.Enabled); err != nil {
+		return nil, fmt.Errorf("failed to persist enabled state for account %s: %w", r.Name, err)
+	}
+
+	updatedAccount, err := s.settingsMgr.SetAccountEnabled(r.Name, r.Enabled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply enabled state for account %s: %w", r.Name, err)
+	}
+	return accountForViewer(ctx, r.Name, *updatedAccount), nil
 }
 
 // CreateToken creates a token

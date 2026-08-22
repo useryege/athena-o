@@ -22,6 +22,11 @@ message GetAccountRequest {
   string name = 1;
 }
 
+message UpdateAccountRequest {
+  string name = 1;
+  bool enabled = 2;
+}
+
 message Account {
   string name = 1;
   bool enabled = 2;
@@ -80,6 +85,14 @@ service AccountService {
   // GetAccount returns an account
   rpc GetAccount(GetAccountRequest) returns (Account) {
     option (google.api.http).get = "/api/v1/account/{name}";
+  }
+
+  // UpdateAccount updates an account's runtime settings
+  rpc UpdateAccount(UpdateAccountRequest) returns (Account) {
+    option (google.api.http) = {
+      patch: "/api/v1/account/{name}"
+      body: "*"
+    };
   }
 
   // CreateToken creates a token

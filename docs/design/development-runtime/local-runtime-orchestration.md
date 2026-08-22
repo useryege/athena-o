@@ -68,6 +68,10 @@ boundaries:
 Notification is active by default on port `8086`, and Wallet is active on port
 `8088`. FIFA Market Dashboard calls Worm Markets and Wallet over gRPC; the
 capability processes do not import one another's application implementations.
+The API Server owns account-availability state in the default `athena`
+PostgreSQL database. It must connect and load that state before opening its API
+listener; the detailed state and authentication flow is documented in
+[Account Availability](../identity-access/account-availability.md).
 Local process-to-process targets default to numeric loopback
 `127.0.0.1:<port>`, avoiding resolver work for `localhost`. Production Compose
 continues to supply `athena-*:port` service DNS targets and user-provided target
@@ -90,12 +94,15 @@ listener, or database.
    client, reuses that channel for business and health RPCs, reconnects in the
    background when its dependency is temporarily unavailable, and closes the
    channel at its owning process lifecycle boundary.
-4. PostgreSQL validates or creates `athena-local-postgres-data`, then its
-   initialization scripts create `worm_markets`, `fifa_market_dashboard`,
+4. PostgreSQL validates or creates `athena-local-postgres-data`. Its default
+   `POSTGRES_DB` is `athena`, and initialization scripts create `worm_markets`,
+   `fifa_market_dashboard`,
    `sports_live`, `sports_history`, `managed_oo`, `notification`,
    `wallet`, `token`, `temporal`, and `temporal_visibility`. Each
    capability store connects to only its owned database and applies its own
-   embedded migration when automatic migration is enabled.
+   embedded migration when automatic migration is enabled. The API Server
+   likewise migrates and loads its account-availability override from
+   `athena`; failure prevents that process from serving.
 5. Redis validates or creates `athena-local-redis-data`. Each run creates
    attached, labeled, `--rm` PostgreSQL and Redis containers. PostgreSQL mounts
    its complete data directory; Redis enables AOF under `/data`.
@@ -115,9 +122,12 @@ listener, or database.
 ## State / Data
 
 `athena-local-postgres-data` stores the complete PostgreSQL cluster, including
-all capability databases. Its labels record Athena ownership, the `postgres`
-component, and a SHA-256 fingerprint covering the image, initial user, initial
-database, password, and ordered initialization-file paths and contents.
+all capability databases and the API Server's account enabled overrides in
+`athena`. Its labels record Athena ownership, the `postgres` component, and a
+SHA-256 fingerprint covering the image, initial user, initial database,
+password, and ordered initialization-file paths and contents. Ordinary stop
+retains those overrides; full reset deletes them and restores environment
+account defaults on the next start.
 
 `athena-local-redis-data` stores Redis AOF data. Its labels record Athena
 ownership and the `redis` component. Redis container settings can change on
@@ -150,6 +160,7 @@ removed.
 | `ATHENA_WORM_MARKETS_PORT`, `ATHENA_FIFA_MARKET_DASHBOARD_PORT`, `ATHENA_MARKET_RADAR_PORT`, `ATHENA_SPORTS_LIVE_PORT`, `ATHENA_SPORTS_HISTORY_PORT`, `ATHENA_MANAGED_OO_PORT` | Override the six local command ports passed by the Procfile. The same values are covered by stale-port cleanup. |
 | Internal `ATHENA_*_SERVER_ADDRESS` variables | Override dependency targets. Local command defaults use `127.0.0.1`; production Compose supplies service DNS targets and explicit values are not rewritten. |
 | Capability `ATHENA_*_POSTGRES_DSN` variables | Select the owned PostgreSQL database for Worm Markets, FIFA Market Dashboard, Sports Live, Sports History, and Managed OO. Market Radar has no DSN. |
+| `ATHENA_SERVER_POSTGRES_DSN` | Selects the API Server's `athena` database for account availability overrides. The local default uses the shared PostgreSQL connection settings; production Compose supplies an explicit service DSN. |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`, `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID`, `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | Required by the default active Notification process. Local configuration must provide all three. |
 | `ATHENA_POSTGRES_PORT`, `ATHENA_POSTGRES_IMAGE_TAG`, `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `ATHENA_POSTGRES_INIT_DIR` | Configure the disposable PostgreSQL container and its initialization fingerprint where applicable. |
 | `ATHENA_REDIS_PORT`, `ATHENA_REDIS_IMAGE_TAG`, `REDIS_PASSWORD` | Configure the disposable Redis container. |
@@ -169,6 +180,9 @@ targets are fixed local-runtime boundaries rather than user configuration.
   labels.
 - The six capabilities remain distinct Procfile processes and use distinct
   ports. Every stateful capability uses only its owned PostgreSQL database.
+- The API Server must load account-availability overrides from the `athena`
+  database before serving; it does not fall back to environment-only account
+  state when that dependency fails.
 - Notification-enabled capabilities communicate through Notification gRPC.
   FIFA Market Dashboard communicates with Worm Markets and Wallet through gRPC.
 - Each clientset owns one channel for its configured target. Request paths and
@@ -200,6 +214,12 @@ Notification process to fail startup; capability synchronization remains
 process-specific, while notification sends cannot succeed until Notification is
 available. Capability dependency and recovery semantics are documented in their
 individual design documents.
+
+An unavailable `athena` database prevents API Server startup. Once PostgreSQL
+returns, process supervision can restart the API Server and its account
+availability snapshot is reconstructed from the retained volume. A full reset
+intentionally removes those overrides together with the rest of the local
+PostgreSQL cluster.
 
 ## Observability
 

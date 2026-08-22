@@ -161,9 +161,13 @@ func (s *Server) Delete(_ context.Context, _ *session.SessionDeleteRequest) (*se
 // Without this function here, AthenaServer.authenticate would be invoked and credentials checked.
 // Since this service is generally invoked when the user has _no_ credentials, that would create a
 // chicken-and-egg situation if we didn't place this here to allow traffic to pass through.
-func (s *Server) AuthFuncOverride(ctx context.Context, _ string) (context.Context, error) {
-	// this authenticates the user, but ignores any error, so that we have claims populated
-	ctx, _ = s.authenticator.Authenticate(ctx)
+func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	// This authenticates the user so claims are populated. Authentication errors are
+	// normally ignored because login, logout, and captcha endpoints must stay public.
+	ctx, err := s.authenticator.Authenticate(ctx)
+	if fullMethodName == "/session.SessionService/GetUserInfo" && sessionmgr.IsAccountMaintenanceError(err) {
+		return ctx, err
+	}
 	return ctx, nil
 }
 

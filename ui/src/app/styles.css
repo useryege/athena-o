@@ -517,6 +517,47 @@ body::-webkit-scrollbar-thumb,
     padding: 42px 16px;
 }
 
+.account-compact-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.account-compact-card .ant-card-head {
+    min-height: 44px;
+}
+
+.account-compact-card .ant-card-head-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.account-compact-card__details {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.account-compact-card__details > div {
+    display: grid;
+    grid-template-columns: minmax(96px, 0.4fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.account-compact-card__details > div > .ant-typography {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.account-compact-card__details > div > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .resource-table.ant-table-wrapper {
     border: 1px solid var(--athena-border);
     border-radius: 8px;

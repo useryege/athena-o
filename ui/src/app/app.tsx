@@ -29,7 +29,7 @@ import {Subscription} from 'rxjs';
 import {AuthSettingsCtx, Provider} from './shared/context';
 import {AuthSettings, Permission, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
-import requests from './shared/services/requests';
+import requests, {isAccountMaintenanceError} from './shared/services/requests';
 import {BrandMark, clearAsyncDataCache} from './components';
 import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {
@@ -69,6 +69,7 @@ const base = bases.length > 0 ? bases[0].getAttribute('href') || '/' : '/';
 requests.setBaseHRef(base);
 
 const authSettingsRetryDelays = [500, 1000, 2000, 3000];
+const maintenanceLoginPath = '/login?reason=maintenance';
 
 const wait = (delayMs: number) => new Promise(resolve => window.setTimeout(resolve, delayMs));
 
@@ -605,6 +606,11 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                 if (!active || generation !== accessGenerationRef.current) {
                     return;
                 }
+                if (isAccountMaintenanceError(err)) {
+                    endSession();
+                    navigate(maintenanceLoginPath, {replace: true});
+                    return;
+                }
                 if (err?.status === 401) {
                     endSession();
                     navigate('/login', {replace: true});
@@ -619,14 +625,18 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     React.useEffect(() => {
         const subscription: Subscription = requests.onError.subscribe(err => {
-            if (err.status !== 401 || isLoginPath) {
+            if (isLoginPath) {
+                return;
+            }
+            const maintenance = isAccountMaintenanceError(err);
+            if (!maintenance && err.status !== 401) {
                 return;
             }
             if (window.location.pathname.startsWith(`${base.replace(/\/$/, '')}/login`)) {
                 return;
             }
             endSession();
-            navigate('/login', {replace: true});
+            navigate(maintenance ? maintenanceLoginPath : '/login', {replace: true});
         });
         return () => subscription?.unsubscribe();
     }, [endSession, isLoginPath, navigate]);

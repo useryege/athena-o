@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"github.com/useryege/athena/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -42,6 +43,48 @@ func (mgr *SettingsManager) GetAccounts() (map[string]Account, error) {
 	}
 
 	return accounts, nil
+}
+
+// ApplyAccountEnabledOverrides applies persisted availability overrides to
+// accounts that are currently configured by the environment. Overrides for
+// removed accounts and for the built-in administrator are intentionally
+// ignored.
+func (mgr *SettingsManager) ApplyAccountEnabledOverrides(overrides map[string]bool) {
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+
+	for name, enabled := range overrides {
+		if name == common.AthenaAdminUsername {
+			continue
+		}
+		account, ok := mgr.accounts[name]
+		if !ok {
+			continue
+		}
+		account.Enabled = enabled
+		mgr.accounts[name] = account
+	}
+}
+
+// SetAccountEnabled updates the effective in-memory availability of a
+// configured non-administrator account. Persistence is deliberately handled
+// by the caller before this method is invoked.
+func (mgr *SettingsManager) SetAccountEnabled(name string, enabled bool) (*Account, error) {
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+
+	account, ok := mgr.accounts[name]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "account '%s' does not exist", name)
+	}
+	if name == common.AthenaAdminUsername {
+		return nil, status.Errorf(codes.InvalidArgument, "account '%s' is always enabled", name)
+	}
+
+	account.Enabled = enabled
+	mgr.accounts[name] = account
+	accountCopy := copyAccount(account)
+	return &accountCopy, nil
 }
 
 func copyAccount(account Account) Account {

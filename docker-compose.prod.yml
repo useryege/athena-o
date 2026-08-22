@@ -379,6 +379,7 @@ services:
       - .env
     environment:
       ATHENA_BINARY_NAME: athena-migrate
+      ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
       ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
       ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=fifa_market_dashboard sslmode=disable
       ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
@@ -393,6 +394,8 @@ services:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
       athena-notification:
@@ -417,6 +420,8 @@ services:
       - .env
     environment:
       ATHENA_BINARY_NAME: athena-server
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084

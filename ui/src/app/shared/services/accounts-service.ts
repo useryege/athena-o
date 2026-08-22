@@ -10,6 +10,13 @@ export class AccountsService {
         return requests.get(`/account/${name}`).then(res => res.body as Account);
     }
 
+    public update(name: string, enabled: boolean): Promise<Account> {
+        return requests
+            .patch(`/account/${encodeURIComponent(name)}`)
+            .send({name, enabled})
+            .then(res => res.body as Account);
+    }
+
     public changePassword(name: string, currentPassword: string, newPassword: string): Promise<boolean> {
         return requests
             .put('/account/password')

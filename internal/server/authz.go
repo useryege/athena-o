@@ -53,6 +53,8 @@ func accountName(req any) string {
 	switch r := req.(type) {
 	case *accountpkg.GetAccountRequest:
 		return nonEmptyObject(r.GetName())
+	case *accountpkg.UpdateAccountRequest:
+		return nonEmptyObject(r.GetName())
 	case *accountpkg.UpdatePasswordRequest:
 		return nonEmptyObject(r.GetName())
 	case *accountpkg.CreateTokenRequest:
@@ -156,6 +158,7 @@ var publicGRPCMethods = map[string]bool{
 var rbacGRPCMethods = map[string]authzRule{
 	"/account.AccountService/ListAccounts":   fixedRule(rbac.ResourceAccounts, rbac.ActionGet),
 	"/account.AccountService/GetAccount":     {resource: rbac.ResourceAccounts, action: rbac.ActionGet, object: accountName},
+	"/account.AccountService/UpdateAccount":  {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 	"/account.AccountService/UpdatePassword": {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 	"/account.AccountService/CreateToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
 	"/account.AccountService/DeleteToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
@@ -271,8 +274,7 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 
 	if publicGRPCMethods[fullMethod] {
 		if overrideSrv, ok := srv.(serviceAuthFuncOverride); ok {
-			authCtx, _ := overrideSrv.AuthFuncOverride(ctx, fullMethod)
-			return authCtx, nil
+			return overrideSrv.AuthFuncOverride(ctx, fullMethod)
 		}
 		return ctx, nil
 	}

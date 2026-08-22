@@ -7,9 +7,10 @@ available only to administrators. It covers the built-in role policy, the
 permissions projected into the web session, navigation and route filtering,
 and authorization at the server API boundary.
 
-Token worker processes, internal service-to-service connections, authentication,
-and the Token domain behavior behind an authorized request remain outside this
-boundary.
+Token worker processes, internal service-to-service connections, and the Token
+domain behavior behind an authorized request remain outside this boundary.
+Account authentication and availability are documented separately in
+[Account Availability](../identity-access/account-availability.md).
 
 ## Source Locations
 
@@ -74,6 +75,14 @@ every intervening request. Each invalidation also advances the shared request
 error generation, so an error emitted later by a request from the ended session
 cannot terminate the newly authenticated session.
 
+A disabled local account follows a distinct session path. `GetUserInfo` and
+protected API calls return the exact account-maintenance 503 signal, so the
+shell performs the same session-scoped cache invalidation and routes to
+`/login?reason=maintenance`. It does not delete the credential cookie. An
+ordinary 503 does not activate this path, and an ordinary 401 continues to use
+the normal login route. Re-enabling the account allows an otherwise valid
+credential to bootstrap a fresh permission snapshot.
+
 The unified Projects list, both of its UI projections, the project-detail
 snapshot, Swap activity summary, and paginated Swap event methods all map
 explicitly to the existing `tokenapi/get/projects` permission. The Report tab's
@@ -123,11 +132,14 @@ operation always uses the built-in role policy described here.
 ## Failure Recovery
 
 An invalid built-in policy prevents server startup. An unauthenticated session
-request clears browser session state and follows the login flow. If the initial
-user-information request fails for another reason, the shell retains the
-protected-route boundary and presents a retry action; it does not synthesize an
-empty permission set or render a misleading 403. Retrying this recovery state
-is the only session request made without entering a new login session.
+request clears browser session state and follows the normal login flow. An
+exact disabled-account maintenance response clears the same client caches but
+uses the maintenance login route while preserving the credential. If the
+initial user-information request fails for another reason, the shell retains
+the protected-route boundary and presents a retry action; it does not
+synthesize an empty permission set or render a misleading 403. Retrying this
+recovery state is the only session request made without entering a new login
+session.
 
 Authorization failures are safe to retry after the caller's role or session
 changes. They do not reach the Token API service and cannot mutate Token state.

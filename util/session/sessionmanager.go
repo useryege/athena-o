@@ -47,10 +47,12 @@ const (
 	// invalidLoginError, for security purposes, doesn't say whether the username or password was invalid.  This does not mitigate the potential for timing attacks to determine which is which.
 	invalidLoginError         = "Invalid username or password"
 	blankPasswordError        = "Blank passwords are not allowed"
-	accountDisabled           = "Account %s is disabled"
 	usernameTooLongError      = "Username is too long (%d bytes max)"
 	userDoesNotHaveCapability = "Account %s does not have %s capability"
 )
+
+// AccountMaintenanceMessage is the stable client-visible message for disabled accounts.
+const AccountMaintenanceMessage = "系统维护中"
 
 const (
 	// Maximum length of username, too keep the cache's memory signature low
@@ -87,6 +89,22 @@ const (
 )
 
 var InvalidLoginErr = status.Errorf(codes.Unauthenticated, invalidLoginError)
+
+// AccountMaintenanceErr is returned when valid credentials belong to a disabled account.
+// Its gRPC Unavailable code maps to HTTP 503 through grpc-gateway.
+var AccountMaintenanceErr = status.Error(codes.Unavailable, AccountMaintenanceMessage)
+
+// IsAccountMaintenanceError reports whether err is the stable disabled-account error.
+func IsAccountMaintenanceError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, AccountMaintenanceErr) {
+		return true
+	}
+	errStatus, ok := status.FromError(err)
+	return ok && errStatus.Code() == codes.Unavailable && errStatus.Message() == AccountMaintenanceMessage
+}
 
 var errLoginRateLimited = errors.New("login rate limited")
 
@@ -246,7 +264,7 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 	}
 
 	if !account.Enabled {
-		return nil, "", fmt.Errorf("account %s is disabled", subject)
+		return nil, "", AccountMaintenanceErr
 	}
 
 	if !account.HasCapability(capability) {
@@ -343,6 +361,9 @@ func (mgr *SessionManager) VerifyLogin(ctx context.Context, username string, pas
 	}
 
 	if err := mgr.verifyUsernamePassword(username, password); err != nil {
+		if IsAccountMaintenanceError(err) {
+			return err
+		}
 		if recordErr := mgr.storage.RecordLoginFailure(ctx, rules); recordErr != nil {
 			log.Warnf("failed to record login failure: %v", recordErr)
 		}
@@ -389,7 +410,7 @@ func (mgr *SessionManager) verifyUsernamePassword(username string, password stri
 	}
 
 	if !account.Enabled {
-		return status.Errorf(codes.Unauthenticated, accountDisabled, username)
+		return AccountMaintenanceErr
 	}
 
 	if !account.HasCapability(settings.AccountCapabilityLogin) {

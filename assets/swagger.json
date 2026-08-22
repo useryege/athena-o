@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1043-g052d9178-dirty"
+    "version": "v1.0.0-1046-g13c3a6df-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -81,6 +81,43 @@
             "name": "name",
             "in": "path",
             "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/accountAccount"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AccountService"
+        ],
+        "summary": "UpdateAccount updates an account's runtime settings",
+        "operationId": "AccountService_UpdateAccount",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/accountUpdateAccountRequest"
+            }
           }
         ],
         "responses": {
@@ -2851,6 +2888,17 @@
         "issuedAt": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "accountUpdateAccountRequest": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },

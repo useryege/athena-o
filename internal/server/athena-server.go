@@ -36,6 +36,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
+	accountaccessstore "github.com/useryege/athena/internal/accountaccess/store"
 	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
@@ -151,11 +152,12 @@ func init() {
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
 	AthenaServerOpts
-	settings    *settings_util.AthenaSettings
-	log         *log.Entry
-	sessionMgr  *util_session.SessionManager
-	settingsMgr *settings_util.SettingsManager
-	enf         *rbac.Enforcer
+	settings           *settings_util.AthenaSettings
+	log                *log.Entry
+	sessionMgr         *util_session.SessionManager
+	settingsMgr        *settings_util.SettingsManager
+	accountAccessStore *accountaccessstore.SQLStore
+	enf                *rbac.Enforcer
 	// projInformer   cache.SharedIndexInformer
 	policyEnforcer *rbacpolicy.RBACPolicyEnforcer
 	// db db.AthenaDB
@@ -221,6 +223,14 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	errorsutil.CheckError(err)
 	settings, err := settingsMgr.InitializeSettings()
 	errorsutil.CheckError(err)
+	accountAccessStore, err := accountaccessstore.NewSQLStoreSource()(ctx)
+	errorsutil.CheckError(err)
+	accountEnabledOverrides, err := accountAccessStore.ListAccountEnabledOverrides(ctx)
+	if err != nil {
+		_ = accountAccessStore.Close()
+		errorsutil.CheckError(err)
+	}
+	settingsMgr.ApplyAccountEnabledOverrides(accountEnabledOverrides)
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
@@ -256,21 +266,32 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 
 	a := &AthenaServer{
-		AthenaServerOpts: opts,
-		log:              logger,
-		settings:         settings,
-		sessionMgr:       sessionMgr,
-		settingsMgr:      settingsMgr,
-		enf:              enf,
-		policyEnforcer:   policyEnf,
-		userStateStorage: userStateStorage,
-		staticAssets:     http.FS(staticFS),
-		Shutdown:         noopShutdown,
-		stopCh:           make(chan os.Signal, 1),
+		AthenaServerOpts:   opts,
+		log:                logger,
+		settings:           settings,
+		sessionMgr:         sessionMgr,
+		settingsMgr:        settingsMgr,
+		accountAccessStore: accountAccessStore,
+		enf:                enf,
+		policyEnforcer:     policyEnf,
+		userStateStorage:   userStateStorage,
+		staticAssets:       http.FS(staticFS),
+		Shutdown:           noopShutdown,
+		stopCh:             make(chan os.Signal, 1),
 	}
 
 	return a
 
+}
+
+// Close releases process-lifetime resources owned by the API server. It is
+// intentionally separate from Run shutdown because Run may be invoked again
+// during an in-process graceful restart.
+func (server *AthenaServer) Close() error {
+	if server == nil || server.accountAccessStore == nil {
+		return nil
+	}
+	return server.accountAccessStore.Close()
 }
 
 func (server *AthenaServer) healthCheck(r *http.Request) error {
@@ -453,7 +474,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// settings service
 	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)
 	// account service
-	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf)
+	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf, server.accountAccessStore)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
@@ -1059,6 +1080,9 @@ func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, string, 
 	}
 	claims, newToken, err := server.sessionMgr.VerifyToken(ctx, tokenString)
 	if err != nil {
+		if util_session.IsAccountMaintenanceError(err) {
+			return claims, "", err
+		}
 		return claims, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
 	}
 

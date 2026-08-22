@@ -16,6 +16,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Subsystem | Capability | Document |
 | --- | --- | --- |
 | Development Runtime | Local process supervision, capability process composition, and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
+| Identity and Access | Persistent account availability, administrator control, and maintenance signaling | [Account Availability](identity-access/account-availability.md) |
 | Market Intelligence | Polymarket hot-market discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
 | Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) |

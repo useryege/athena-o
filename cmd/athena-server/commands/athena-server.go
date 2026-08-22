@@ -200,6 +200,7 @@ func NewCommand() *cobra.Command {
 
 			// Initialize the Athena server
 			athena := server.NewServer(ctx, athenaOpts)
+			defer utilio.Close(athena)
 			athena.Init(ctx)
 
 			for {
