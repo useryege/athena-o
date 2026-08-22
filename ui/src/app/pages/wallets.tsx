@@ -3,7 +3,7 @@ import {Alert, Button, Checkbox, Form, Input, Modal, Space, Tooltip} from 'antd'
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, SearchBar, TruncatedText, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {services} from '../shared/services';
 import {WalletDetail, WalletItem, walletTypeLabel, walletTypeOptions} from '../shared/services/wallet-service';
 import {useKeywordParam, usePagedParams} from './shared';
@@ -20,8 +20,9 @@ const SecretInput = (props: {label: string; value?: string; onCopy: () => void})
     </Space.Compact>
 );
 
-export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => {
+export const WalletsPage = () => {
     const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
     const {page, pageSize, setPage} = usePagedParams();
     const [query, setQuery] = useKeywordParam();
     const [chain, setChain] = React.useState('');
@@ -36,9 +37,15 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
         [page, pageSize, query, chain, walletType]
     );
     const reveal = async (id: number) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         setSecret(await services.wallet.getWallet(id, true));
     };
     const create = async (values: {chain: string; type: string; alias?: string}) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         setCreating(true);
         try {
             const created = await services.wallet.createWallet(values.chain, values.type, values.alias || '');
@@ -73,17 +80,18 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
         {title: 'Chain', dataIndex: 'chain'},
         {title: 'Address', render: item => <TruncatedText value={item.address} copyable={true} />},
         {title: 'Created By', dataIndex: 'createdBy'},
-        {title: 'Source', dataIndex: 'source'},
-        {
-            title: 'Actions',
-            render: item =>
-                props.canReveal ? (
-                    <Button icon={<EyeOutlined />} onClick={() => reveal(item.id)}>
-                        Reveal
-                    </Button>
-                ) : null
-        }
+        {title: 'Source', dataIndex: 'source'}
     ];
+    if (authorization.canWriteData) {
+        columns.push({
+            title: 'Actions',
+            render: item => (
+                <Button icon={<EyeOutlined />} onClick={() => reveal(item.id)}>
+                    Reveal
+                </Button>
+            )
+        });
+    }
     return (
         <AppPage
             title='Wallets'
@@ -92,7 +100,7 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
             error={data.error}
             onRefresh={data.reload}
             extra={
-                props.canCreate ? (
+                authorization.canWriteData ? (
                     <Button type='primary' icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
                         Create
                     </Button>
@@ -129,7 +137,7 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                 pageSize={pageSize}
                 onPageChange={setPage}
             />
-            <Modal destroyOnHidden={true} open={createOpen} title='Create Wallet' footer={null} onCancel={() => setCreateOpen(false)}>
+            <Modal destroyOnHidden={true} open={authorization.canWriteData && createOpen} title='Create Wallet' footer={null} onCancel={() => setCreateOpen(false)}>
                 <Form layout='vertical' onFinish={create}>
                     <Form.Item name='chain' label='Chain' rules={[{required: true}]}>
                         <ChoiceGroup<string> ariaLabel='Wallet chain' className='choice-group--form' options={walletChainOptions} />
@@ -146,7 +154,7 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                 </Form>
             </Modal>
             <Modal
-                open={!!backupWallet}
+                open={authorization.canWriteData && !!backupWallet}
                 title='Back Up Wallet'
                 width={680}
                 closable={false}
@@ -183,7 +191,12 @@ export const WalletsPage = (props: {canCreate: boolean; canReveal: boolean}) => 
                     </Checkbox>
                 </Space>
             </Modal>
-            <Modal open={!!secret} title='Wallet Secret' width={680} onCancel={() => setSecret(null)} footer={<Button onClick={() => setSecret(null)}>Close</Button>}>
+            <Modal
+                open={authorization.canWriteData && !!secret}
+                title='Wallet Secret'
+                width={680}
+                onCancel={() => setSecret(null)}
+                footer={<Button onClick={() => setSecret(null)}>Close</Button>}>
                 <KeyValueGrid
                     columns={1}
                     items={[

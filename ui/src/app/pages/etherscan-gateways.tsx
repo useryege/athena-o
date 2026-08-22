@@ -2,7 +2,7 @@ import {Button, Empty, Form, InputNumber, Progress, Space, Typography} from 'ant
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, MetricRow, ResourceTable, Section, StatusTag, TruncatedText, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import type {
@@ -218,7 +218,8 @@ const sampleTone = (sample: string): ProbeTone => {
     return 'neutral';
 };
 
-export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
+export const EtherscanGatewaysPage = () => {
+    const authorization = useAuthorization();
     const ctx = React.useContext(Context);
     const [form] = Form.useForm();
     const data = useAsyncData(() => services.serviceStatus.listEtherscanGatewayStatuses(), []);
@@ -317,6 +318,9 @@ export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
     }, [ctx.notifications, probeRun?.runID, probeRun?.status]);
 
     const runProbe = async (values: {intervalMS?: number; requestsPerKey?: number}) => {
+        if (!authorization.isAdmin) {
+            return;
+        }
         const intervalMS = Number(values.intervalMS || 10);
         const requestsPerKey = Number(values.requestsPerKey || 6);
         setProbeSubmitting(true);
@@ -379,7 +383,7 @@ export const EtherscanGatewaysPage = (props: {canRunProbe: boolean}) => {
                         <InputNumber min={1} max={20} precision={0} disabled={probeSubmitting || probeRunning} style={{width: 140}} />
                     </Form.Item>
                     <Form.Item>
-                        <Button type='primary' htmlType='submit' loading={probeSubmitting || probeRunning} disabled={!props.canRunProbe}>
+                        <Button type='primary' htmlType='submit' loading={probeSubmitting || probeRunning} disabled={!authorization.isAdmin}>
                             Run Probe
                         </Button>
                     </Form.Item>

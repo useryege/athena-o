@@ -31,18 +31,19 @@ func NewSettingsManagerFromEnv(ctx context.Context, opts ...SettingsManagerOpts)
 		return nil, err
 	}
 
-	accounts, err := parseAccountsFromRaw(raw)
+	accounts, accountLoginDefaults, err := parseAccountsFromRaw(raw)
 	if err != nil {
 		return nil, err
 	}
 
 	mgr := &SettingsManager{
-		ctx:      ctx,
-		raw:      raw,
-		settings: settings,
-		help:     loadHelpFromEnv(),
-		accounts: accounts,
-		mutex:    &sync.RWMutex{},
+		ctx:                  ctx,
+		raw:                  raw,
+		settings:             settings,
+		help:                 loadHelpFromEnv(),
+		accounts:             accounts,
+		accountLoginDefaults: accountLoginDefaults,
+		mutex:                &sync.RWMutex{},
 	}
 	for i := range opts {
 		opts[i](mgr)
@@ -128,7 +129,7 @@ func (mgr *SettingsManager) InitializeSettings() (*AthenaSettings, error) {
 	log.Debug("InitializeSettings started")
 
 	adminAccount := mgr.accounts[common.AthenaAdminUsername]
-	if adminAccount.Enabled && adminAccount.PasswordHash == "" {
+	if adminAccount.PasswordHash == "" {
 		initialPasswordBytes, err := util.MakeSignature(initialPasswordLength)
 		if err != nil {
 			return nil, err
@@ -146,7 +147,7 @@ func (mgr *SettingsManager) InitializeSettings() (*AthenaSettings, error) {
 		mgr.accounts[common.AthenaAdminUsername] = adminAccount
 
 		log.Warnf("Generated transient admin password because ATHENA_ADMIN_PASSWORD_HASH is not set. It will not persist across restarts: %s", initialPassword)
-	} else if adminAccount.Enabled && (adminAccount.PasswordMtime == nil || adminAccount.PasswordMtime.IsZero()) {
+	} else if adminAccount.PasswordMtime == nil || adminAccount.PasswordMtime.IsZero() {
 		now := time.Now().UTC()
 		adminAccount.PasswordMtime = &now
 		mgr.accounts[common.AthenaAdminUsername] = adminAccount

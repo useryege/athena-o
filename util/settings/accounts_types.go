@@ -32,7 +32,6 @@ type Token struct {
 type Account struct {
 	PasswordHash  string
 	PasswordMtime *time.Time
-	Enabled       bool
 	Capabilities  []AccountCapability
 	Tokens        []Token
 }

@@ -1,21 +1,34 @@
 import {Card, Switch, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {AppPage, ResourceTable, Section, StatusTag, useAsyncData} from '../components';
-import {Context} from '../shared/context';
-import {Account, UserInfo} from '../shared/models';
+import {AppPage, ChoiceGroup, ResourceTable, Section, StatusTag, useAsyncData} from '../components';
+import {Context, useAuthorization} from '../shared/context';
+import {Account, AccountAccess, AccountDataAccess} from '../shared/models';
 import {services} from '../shared/services';
-import {requestErrorMessage} from '../shared/services/requests';
-import {visibleAccountsForUser} from './settings-shared';
+import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
+
+const dataAccessOptions = [
+    {value: AccountDataAccess.None, label: 'No access'},
+    {value: AccountDataAccess.Read, label: 'Read only'},
+    {value: AccountDataAccess.ReadWrite, label: 'Read & write'}
+];
+
+const dataAccessLabel = (value: AccountDataAccess) => dataAccessOptions.find(option => option.value === value)?.label || 'No access';
 
 const accountStatus = (account: Account) => (
-    <StatusTag value={account.enabled ? 'Enabled' : 'Disabled'} positive={account.enabled} negative={!account.enabled} />
+    <StatusTag value={account.access.loginEnabled ? 'Enabled' : 'Disabled'} positive={account.access.loginEnabled} negative={!account.access.loginEnabled} />
 );
 
 export const SettingsPage = () => {
     const ctx = React.useContext(Context);
-    const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
-    const accounts = useAsyncData<Account[]>(() => services.accounts.list() as any, []);
+    const authorization = useAuthorization();
+    const accounts = useAsyncData<Account[]>(
+        () =>
+            (authorization.isAdmin ? services.accounts.list() : services.accounts.get(authorization.user.username).then(account => [account])) as Promise<Account[]> & {
+                abort?: () => void;
+            },
+        [authorization.isAdmin, authorization.user.username]
+    );
     const [accountItems, setAccountItems] = React.useState<Account[]>([]);
     const [updatingAccounts, setUpdatingAccounts] = React.useState<Record<string, boolean>>({});
 
@@ -25,20 +38,25 @@ export const SettingsPage = () => {
         }
     }, [accounts.data]);
 
-    const isAdmin = user.data?.username === 'admin';
-    const visibleAccounts = visibleAccountsForUser(accountItems, user.data);
-
-    const updateLoginAccess = async (account: Account, enabled: boolean) => {
-        if (account.name === 'admin' || updatingAccounts[account.name]) {
+    const updateAccountAccess = async (account: Account, nextAccess: AccountAccess) => {
+        if (account.administrator || updatingAccounts[account.name]) {
             return;
         }
         setUpdatingAccounts(current => ({...current, [account.name]: true}));
         try {
-            const updated = await services.accounts.update(account.name, enabled);
+            const updated = await services.accounts.updateAccess(account.name, nextAccess);
             setAccountItems(current => current.map(item => (item.name === account.name ? updated : item)));
-            ctx.notifications.success('Login access updated', `${account.name} is now ${updated.enabled ? 'enabled' : 'disabled'}.`);
+            ctx.notifications.success(
+                'Account access updated',
+                `${account.name}: login ${updated.access.loginEnabled ? 'allowed' : 'blocked'}, data ${dataAccessLabel(updated.access.dataAccess).toLowerCase()}.`
+            );
         } catch (err) {
-            ctx.notifications.error('Could not update login access', requestErrorMessage(err, 'The account was not changed.'));
+            if (requestErrorDetails(err).status === 409) {
+                accounts.reload();
+                ctx.notifications.warning('Account access changed', 'A newer setting was saved elsewhere. The account list has been reloaded.');
+            } else {
+                ctx.notifications.error('Could not update account access', requestErrorMessage(err, 'The account was not changed.'));
+            }
         } finally {
             setUpdatingAccounts(current => {
                 const next = {...current};
@@ -48,53 +66,92 @@ export const SettingsPage = () => {
         }
     };
 
-    const requestLoginAccessChange = (account: Account, enabled: boolean) => {
-        if (enabled) {
-            void updateLoginAccess(account, true);
+    const requestAccessChange = (account: Account, nextAccess: AccountAccess) => {
+        const loginDisabled = account.access.loginEnabled && !nextAccess.loginEnabled;
+        const dataDowngraded = nextAccess.dataAccess < account.access.dataAccess;
+        const writeGranted = account.access.dataAccess !== AccountDataAccess.ReadWrite && nextAccess.dataAccess === AccountDataAccess.ReadWrite;
+        let confirmation: {title: string; content: string} | undefined;
+        if (loginDisabled) {
+            confirmation = {
+                title: `Disable login for ${account.name}?`,
+                content: 'The account will be unable to use the web console, existing sessions, or API keys until login is enabled again.'
+            };
+        } else if (dataDowngraded) {
+            confirmation = {
+                title: `Reduce data access for ${account.name}?`,
+                content: `Access will change from ${dataAccessLabel(account.access.dataAccess)} to ${dataAccessLabel(nextAccess.dataAccess)} on the account's next request.`
+            };
+        } else if (writeGranted) {
+            confirmation = {
+                title: `Grant read and write access to ${account.name}?`,
+                content: 'This permits data mutations and sensitive operations, including wallet secret access.'
+            };
+        }
+        if (!confirmation) {
+            void updateAccountAccess(account, nextAccess);
             return;
         }
         ctx.modal.confirm({
-            title: `Disable login for ${account.name}?`,
-            content: 'The account will be unable to use the web console, existing sessions, or API keys until it is enabled again.',
-            onOk: () => updateLoginAccess(account, false)
+            ...confirmation,
+            onOk: () => updateAccountAccess(account, nextAccess)
         });
     };
 
-    const loginAccessControl = (account: Account) => {
-        if (!isAdmin) {
-            return null;
+    const loginAccess = (account: Account) => {
+        if (!authorization.isAdmin) {
+            return accountStatus(account);
         }
-        if (account.name === 'admin') {
+        if (account.administrator) {
             return <Typography.Text type='secondary'>Always enabled</Typography.Text>;
         }
+        const updating = Boolean(updatingAccounts[account.name]);
         return (
             <Switch
                 aria-label={`Allow ${account.name} to log in`}
-                checked={account.enabled}
-                loading={Boolean(updatingAccounts[account.name])}
-                disabled={Boolean(updatingAccounts[account.name])}
+                checked={account.access.loginEnabled}
+                loading={updating}
+                disabled={updating}
                 checkedChildren='Allowed'
                 unCheckedChildren='Blocked'
-                onChange={enabled => requestLoginAccessChange(account, enabled)}
+                onChange={loginEnabled => requestAccessChange(account, {...account.access, loginEnabled})}
+            />
+        );
+    };
+
+    const dataAccess = (account: Account) => {
+        if (!authorization.isAdmin || account.administrator) {
+            return <Typography.Text type='secondary'>{account.administrator ? 'Full access' : dataAccessLabel(account.access.dataAccess)}</Typography.Text>;
+        }
+        return (
+            <ChoiceGroup<AccountDataAccess>
+                className='account-data-access-choice'
+                size='small'
+                ariaLabel={`Data access for ${account.name}`}
+                value={account.access.dataAccess}
+                options={dataAccessOptions}
+                disabled={Boolean(updatingAccounts[account.name])}
+                onChange={nextDataAccess => requestAccessChange(account, {...account.access, dataAccess: nextDataAccess})}
             />
         );
     };
 
     const columns: ColumnsType<Account> = [
         {title: 'Name', dataIndex: 'name'},
-        {title: 'Status', render: accountStatus},
+        {title: 'Login access', render: loginAccess},
+        {title: 'Data access', render: dataAccess},
         {title: 'Capabilities', render: item => (item.capabilities || []).join(', ') || '-'}
     ];
-    if (isAdmin) {
-        columns.push({title: 'Login access', render: loginAccessControl});
-    }
 
     const compactAccount = (account: Account) => (
-        <Card className='account-compact-card' size='small' title={account.name} extra={isAdmin ? loginAccessControl(account) : undefined}>
+        <Card className={`account-compact-card${updatingAccounts[account.name] ? ' account-compact-card--updating' : ''}`} size='small' title={account.name}>
             <div className='account-compact-card__details'>
                 <div>
-                    <Typography.Text type='secondary'>Status</Typography.Text>
-                    <span>{accountStatus(account)}</span>
+                    <Typography.Text type='secondary'>Login access</Typography.Text>
+                    <span>{loginAccess(account)}</span>
+                </div>
+                <div>
+                    <Typography.Text type='secondary'>Data access</Typography.Text>
+                    <span>{dataAccess(account)}</span>
                 </div>
                 <div>
                     <Typography.Text type='secondary'>Capabilities</Typography.Text>
@@ -107,21 +164,22 @@ export const SettingsPage = () => {
     return (
         <AppPage
             title='Settings'
-            loading={user.loading || accounts.loading}
-            error={user.error || accounts.error}
+            loading={accounts.loading}
+            error={accounts.error}
             onRefresh={() => {
-                user.reload();
+                void authorization.refresh();
                 accounts.reload();
             }}>
             <Section title='Accounts'>
                 <ResourceTable
                     rowKey='name'
-                    label={isAdmin ? 'Accounts and login access' : 'Accounts'}
-                    items={visibleAccounts}
+                    label={authorization.isAdmin ? 'Account login and data access' : 'Your account access'}
+                    items={accountItems}
                     columns={columns}
-                    loading={user.loading || accounts.loading}
+                    loading={accounts.loading}
+                    rowClassName={account => (updatingAccounts[account.name] ? 'account-access-row--updating' : '')}
                     compactRender={compactAccount}
-                    compactEmptyDescription='No accounts available'
+                    compactEmptyDescription='No account available'
                 />
             </Section>
         </AppPage>

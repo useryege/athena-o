@@ -3,10 +3,14 @@ package store
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
+	"math"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/accountaccess"
 	accountaccesssqlc "github.com/useryege/athena/internal/accountaccess/store/sqlc"
 	"github.com/useryege/athena/util/db/postgres"
 )
@@ -55,32 +59,55 @@ func (s *SQLStore) Close() error {
 	return nil
 }
 
-func (s *SQLStore) ListAccountEnabledOverrides(ctx context.Context) (map[string]bool, error) {
+func (s *SQLStore) ListAccountAccessOverrides(ctx context.Context) (map[string]accountaccess.Access, error) {
 	if s == nil || s.queries == nil {
 		return nil, fmt.Errorf("account-access postgres database is not configured")
 	}
 
-	rows, err := s.queries.ListAccountEnabledOverrides(ctx)
+	rows, err := s.queries.ListAccountAccessOverrides(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list account enabled overrides: %w", err)
+		return nil, fmt.Errorf("list account access overrides: %w", err)
 	}
-	overrides := make(map[string]bool, len(rows))
+	overrides := make(map[string]accountaccess.Access, len(rows))
 	for _, row := range rows {
-		overrides[row.AccountName] = row.Enabled
+		if row.Revision < 0 {
+			return nil, fmt.Errorf("account %q has negative access revision", row.AccountName)
+		}
+		overrides[row.AccountName] = accountaccess.Access{
+			LoginEnabled: row.LoginEnabled,
+			DataAccess:   accountaccess.DataAccess(row.DataAccess),
+			Revision:     uint64(row.Revision),
+		}
 	}
 	return overrides, nil
 }
 
-func (s *SQLStore) SetAccountEnabled(ctx context.Context, name string, enabled bool) error {
+func (s *SQLStore) UpdateAccountAccessOverride(ctx context.Context, name string, next accountaccess.Access, expectedRevision uint64) (accountaccess.Access, error) {
 	if s == nil || s.queries == nil {
-		return fmt.Errorf("account-access postgres database is not configured")
+		return accountaccess.Access{}, fmt.Errorf("account-access postgres database is not configured")
+	}
+	if expectedRevision > math.MaxInt64 {
+		return accountaccess.Access{}, fmt.Errorf("account %q expected revision is out of range", name)
 	}
 
-	if err := s.queries.UpsertAccountEnabledOverride(ctx, accountaccesssqlc.UpsertAccountEnabledOverrideParams{
-		AccountName: name,
-		Enabled:     enabled,
-	}); err != nil {
-		return fmt.Errorf("set account %q enabled override: %w", name, err)
+	updated, err := s.queries.UpdateAccountAccessOverride(ctx, accountaccesssqlc.UpdateAccountAccessOverrideParams{
+		AccountName:      name,
+		LoginEnabled:     next.LoginEnabled,
+		DataAccess:       string(next.DataAccess),
+		ExpectedRevision: int64(expectedRevision),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return accountaccess.Access{}, accountaccess.ErrRevisionConflict
 	}
-	return nil
+	if err != nil {
+		return accountaccess.Access{}, fmt.Errorf("update account %q access override: %w", name, err)
+	}
+	if updated.Revision < 0 {
+		return accountaccess.Access{}, fmt.Errorf("account %q has negative access revision", name)
+	}
+	return accountaccess.Access{
+		LoginEnabled: updated.LoginEnabled,
+		DataAccess:   accountaccess.DataAccess(updated.DataAccess),
+		Revision:     uint64(updated.Revision),
+	}, nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func parseAdminAccount() (*Account, error) {
-	adminAccount := &Account{Enabled: true, Capabilities: []AccountCapability{AccountCapabilityLogin}}
+	adminAccount := &Account{Capabilities: []AccountCapability{AccountCapabilityLogin}}
 	if adminPasswordHash, err := envOrFile("ATHENA_ADMIN_PASSWORD_HASH"); err != nil {
 		return nil, err
 	} else if adminPasswordHash != "" {
@@ -32,14 +32,6 @@ func parseAdminAccount() (*Account, error) {
 	} else if tokensStr != "" {
 		if err := json.Unmarshal([]byte(tokensStr), &adminAccount.Tokens); err != nil {
 			return nil, err
-		}
-	}
-
-	if enabledStr := os.Getenv("ATHENA_ADMIN_ENABLED"); enabledStr != "" {
-		if enabled, err := strconv.ParseBool(enabledStr); err == nil {
-			adminAccount.Enabled = enabled
-		} else {
-			log.Warnf("invalid ATHENA_ADMIN_ENABLED: %v", err)
 		}
 	}
 
@@ -83,14 +75,17 @@ func accountFromEnvKey(key string) (string, string, bool) {
 	return "", "", false
 }
 
-func parseAccountsFromRaw(raw RawSettings) (map[string]Account, error) {
+func parseAccountsFromRaw(raw RawSettings) (map[string]Account, map[string]bool, error) {
 	adminAccount, err := parseAdminAccount()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	accounts := map[string]Account{
 		common.AthenaAdminUsername: *adminAccount,
+	}
+	loginDefaults := map[string]bool{
+		common.AthenaAdminUsername: true,
 	}
 
 	for _, item := range os.Environ() {
@@ -103,26 +98,31 @@ func parseAccountsFromRaw(raw RawSettings) (map[string]Account, error) {
 		if !ok || accountName == "" {
 			continue
 		}
+		if accountName == common.AthenaAdminUsername {
+			// The built-in administrator has dedicated ATHENA_ADMIN_* identity
+			// settings and cannot be shadowed by an ordinary account definition.
+			continue
+		}
 
 		account, ok := accounts[accountName]
 		if !ok {
-			account = Account{Enabled: true}
+			account = Account{}
 		}
 
 		switch suffix {
 		case "CAPABILITIES":
 			account.Capabilities = parseAccountCapabilities(value, key)
 		case "ENABLED":
-			account.Enabled, err = strconv.ParseBool(value)
+			loginDefaults[accountName], err = strconv.ParseBool(value)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		case "PASSWORD_HASH":
 			account.PasswordHash = value
 		case "PASSWORD_MTIME":
 			mTime, err := time.Parse(time.RFC3339, value)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			account.PasswordMtime = &mTime
 		case "TOKENS":
@@ -155,7 +155,7 @@ func parseAccountsFromRaw(raw RawSettings) (map[string]Account, error) {
 
 		account, ok := accounts[name]
 		if !ok {
-			account = Account{Enabled: true}
+			account = Account{}
 		}
 
 		switch suffix {
@@ -164,7 +164,7 @@ func parseAccountsFromRaw(raw RawSettings) (map[string]Account, error) {
 		case accountPasswordMtimeSuffix:
 			mTime, err := time.Parse(time.RFC3339, value)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			account.PasswordMtime = &mTime
 		case accountTokensSuffix:
@@ -179,5 +179,14 @@ func parseAccountsFromRaw(raw RawSettings) (map[string]Account, error) {
 		accounts[name] = account
 	}
 
-	return accounts, nil
+	// Ordinary accounts default to disabled unless an explicit environment
+	// value enabled login. Secret-only accounts are therefore fail-closed.
+	for name := range accounts {
+		if _, ok := loginDefaults[name]; !ok {
+			loginDefaults[name] = false
+		}
+	}
+	loginDefaults[common.AthenaAdminUsername] = true
+
+	return accounts, loginDefaults, nil
 }

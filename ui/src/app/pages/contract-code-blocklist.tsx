@@ -3,7 +3,7 @@ import {Button, Form, Input, Modal, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenContractCodeBlocklistEntry} from '../shared/services/token-service';
@@ -11,6 +11,7 @@ import {ChainBadge, chainLabel} from './token-shared';
 
 export const ContractCodeBlocklistPage = () => {
     const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
     const [form] = Form.useForm();
     const [editing, setEditing] = React.useState<TokenContractCodeBlocklistEntry>(null);
     const data = useAsyncData(() => services.tokenapi.listContractCodeBlocklistEntries(), []);
@@ -30,13 +31,16 @@ export const ContractCodeBlocklistPage = () => {
         data.reload();
     }, [data, options]);
     const add = async (values: {note?: string; sourceChainID?: number; sourceContract?: string}) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         await services.tokenapi.createContractCodeBlocklistEntry(values);
         ctx.notifications.success('Contract code blocklist entry created');
         form.resetFields();
         data.reload();
     };
     const saveNote = async (values: {note?: string}) => {
-        if (!editing?.codeHash) {
+        if (!authorization.canWriteData || !editing?.codeHash) {
             return;
         }
         await services.tokenapi.updateContractCodeBlocklistEntry(editing.codeHash, values.note || '');
@@ -44,6 +48,9 @@ export const ContractCodeBlocklistPage = () => {
         data.reload();
     };
     const remove = (item: TokenContractCodeBlocklistEntry) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         ctx.modal.confirm({
             title: 'Delete contract code blocklist entry?',
             content: item.codeHash,
@@ -58,8 +65,10 @@ export const ContractCodeBlocklistPage = () => {
         {title: 'Note', dataIndex: 'note'},
         {title: 'Source Chain', render: item => <ChainBadge chainID={item.sourceChainID} />},
         {title: 'Source Contract', render: item => <TruncatedText value={item.sourceContract} copyable={true} />},
-        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'},
-        {
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
+    ];
+    if (authorization.canWriteData) {
+        columns.push({
             title: 'Actions',
             render: item => (
                 <Space>
@@ -71,8 +80,8 @@ export const ContractCodeBlocklistPage = () => {
                     </Button>
                 </Space>
             )
-        }
-    ];
+        });
+    }
     return (
         <AppPage
             title='Contract Code Blocklist'
@@ -80,23 +89,25 @@ export const ContractCodeBlocklistPage = () => {
             error={data.error || options.error}
             onRefresh={refresh}
             filters={
-                <Form form={form} layout='inline' onFinish={add}>
-                    <Form.Item name='sourceChainID' label='Source chain' rules={[{required: true}]}>
-                        <ChoiceGroup<number> ariaLabel='Source chain' className='choice-group--form' options={chainOptions} />
-                    </Form.Item>
-                    <Form.Item name='sourceContract' rules={[{required: true}]}>
-                        <Input aria-label='Source contract' placeholder='Source contract' />
-                    </Form.Item>
-                    <Form.Item name='note'>
-                        <Input aria-label='Contract code note' placeholder='Note' />
-                    </Form.Item>
-                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
-                        Add
-                    </Button>
-                </Form>
+                authorization.canWriteData ? (
+                    <Form form={form} layout='inline' onFinish={add}>
+                        <Form.Item name='sourceChainID' label='Source chain' rules={[{required: true}]}>
+                            <ChoiceGroup<number> ariaLabel='Source chain' className='choice-group--form' options={chainOptions} />
+                        </Form.Item>
+                        <Form.Item name='sourceContract' rules={[{required: true}]}>
+                            <Input aria-label='Source contract' placeholder='Source contract' />
+                        </Form.Item>
+                        <Form.Item name='note'>
+                            <Input aria-label='Contract code note' placeholder='Note' />
+                        </Form.Item>
+                        <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
+                            Add
+                        </Button>
+                    </Form>
+                ) : undefined
             }>
             <ResourceTable rowKey={item => item.codeHash || Math.random()} items={data.data || []} columns={columns} loading={data.loading} />
-            <Modal open={!!editing} title='Edit Contract Code Note' footer={null} onCancel={() => setEditing(null)}>
+            <Modal open={authorization.canWriteData && !!editing} title='Edit Contract Code Note' footer={null} onCancel={() => setEditing(null)}>
                 <Form key={editing?.codeHash || 'contract-code-note'} layout='vertical' initialValues={editing || {}} onFinish={saveNote}>
                     <Form.Item label='Code Hash'>
                         <TruncatedText value={editing?.codeHash} copyable={true} />

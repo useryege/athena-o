@@ -2,17 +2,13 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountaccess"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	managedoopkg "github.com/useryege/athena/pkg/apiclient/managedoo"
-	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
-	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
-	"github.com/useryege/athena/util/rbac"
 	util_session "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,120 +19,8 @@ type serviceAuthFuncOverride interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 }
 
-type authzRule struct {
-	resource string
-	action   string
-	object   func(req any) string
-}
-
-func fixedRule(resource, action string) authzRule {
-	return authzRule{
-		resource: resource,
-		action:   action,
-		object: func(any) string {
-			return "*"
-		},
-	}
-}
-
-func fixedObjectRule(resource, action, object string) authzRule {
-	return authzRule{
-		resource: resource,
-		action:   action,
-		object: func(any) string {
-			return object
-		},
-	}
-}
-
-func accountName(req any) string {
-	switch r := req.(type) {
-	case *accountpkg.GetAccountRequest:
-		return nonEmptyObject(r.GetName())
-	case *accountpkg.UpdateAccountRequest:
-		return nonEmptyObject(r.GetName())
-	case *accountpkg.UpdatePasswordRequest:
-		return nonEmptyObject(r.GetName())
-	case *accountpkg.CreateTokenRequest:
-		return nonEmptyObject(r.GetName())
-	case *accountpkg.DeleteTokenRequest:
-		return nonEmptyObject(r.GetName())
-	default:
-		return "*"
-	}
-}
-
-func notificationObject(req any) string {
-	switch r := req.(type) {
-	case *notificationpkg.GetNotificationDeliveryRequest:
-		return fmt.Sprintf("%d", r.GetId())
-	case *notificationpkg.SendTestNotificationRequest:
-		return nonEmptyObject(r.GetTopicLabel())
-	default:
-		return "*"
-	}
-}
-
-func tokenAPIObject(req any) string {
-	switch r := req.(type) {
-	case *tokenapipkg.GetContractCodeBlocklistEntryRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.UpdateContractCodeBlocklistEntryRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.DeleteContractCodeBlocklistEntryRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.GetWalletBlocklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *tokenapipkg.UpdateWalletBlocklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *tokenapipkg.DeleteWalletBlocklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
-	case *tokenapipkg.GetChainCheckpointRequest:
-		return fmt.Sprintf("%d", r.GetChainId())
-	case *tokenapipkg.UpdateChainCheckpointRequest:
-		return fmt.Sprintf("%d", r.GetChainId())
-	case *tokenapipkg.GetContractCodeRequest:
-		return nonEmptyObject(r.GetCodeHash())
-	case *tokenapipkg.GetCollectionTaskRequest:
-		return fmt.Sprintf("%d", r.GetTaskId())
-	case *tokenapipkg.CreateContractCodeBlocklistEntryRequest:
-		return nonEmptyObject(r.GetSourceContract())
-	case *tokenapipkg.CreateWalletBlocklistEntryRequest:
-		return nonEmptyObject(r.GetWallet())
-	default:
-		return "*"
-	}
-}
-
-func walletObject(req any) string {
-	switch r := req.(type) {
-	case *walletpkg.GetWalletRequest:
-		return fmt.Sprintf("%d", r.GetId())
-	case *walletpkg.UpdateWalletAliasRequest:
-		return fmt.Sprintf("%d", r.GetId())
-	default:
-		return "*"
-	}
-}
-
-func managedOOObject(req any) string {
-	switch r := req.(type) {
-	case *managedoopkg.ScanManagedOOBlockRequest:
-		return fmt.Sprintf("%d", r.GetBlockNumber())
-	default:
-		return "*"
-	}
-}
-
-func nonEmptyObject(value string) string {
-	if value == "" {
-		return "*"
-	}
-	return value
-}
-
 func withDisabledAuthClaims(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "claims", jwt.MapClaims{
+	return context.WithValue(ctx, "claims", jwt.MapClaims{ //nolint:staticcheck
 		"sub": common.AthenaAdminUsername,
 		"iss": util_session.SessionManagerClaimsIssuer,
 	})
@@ -144,6 +28,7 @@ func withDisabledAuthClaims(ctx context.Context) context.Context {
 
 var publicGRPCMethods = map[string]bool{
 	"/grpc.health.v1.Health/Check": true,
+	"/grpc.health.v1.Health/List":  true,
 	"/grpc.health.v1.Health/Watch": true,
 
 	"/session.SessionService/GetUserInfo": true,
@@ -155,91 +40,105 @@ var publicGRPCMethods = map[string]bool{
 	"/version.VersionService/Version": true,
 }
 
-var rbacGRPCMethods = map[string]authzRule{
-	"/account.AccountService/ListAccounts":   fixedRule(rbac.ResourceAccounts, rbac.ActionGet),
-	"/account.AccountService/GetAccount":     {resource: rbac.ResourceAccounts, action: rbac.ActionGet, object: accountName},
-	"/account.AccountService/UpdateAccount":  {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
-	"/account.AccountService/UpdatePassword": {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
-	"/account.AccountService/CreateToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
-	"/account.AccountService/DeleteToken":    {resource: rbac.ResourceAccounts, action: rbac.ActionUpdate, object: accountName},
+var administratorGRPCMethods = map[string]bool{
+	"/account.AccountService/ListAccounts":        true,
+	"/account.AccountService/UpdateAccountAccess": true,
 
-	"/notification.NotificationService/GetNotificationStatus":      fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
-	"/notification.NotificationService/ListNotificationDeliveries": fixedRule(rbac.ResourceNotifications, rbac.ActionGet),
-	"/notification.NotificationService/GetNotificationDelivery":    {resource: rbac.ResourceNotifications, action: rbac.ActionGet, object: notificationObject},
-	"/notification.NotificationService/SendTestNotification":       {resource: rbac.ResourceNotifications, action: rbac.ActionInvoke, object: notificationObject},
+	"/servicestatus.ServiceStatusService/ListServiceStatuses":               true,
+	"/servicestatus.ServiceStatusService/ListEtherscanGatewayStatuses":      true,
+	"/servicestatus.ServiceStatusService/RunEtherscanGatewayProbe":          true,
+	"/servicestatus.ServiceStatusService/GetEtherscanGatewayProbeRun":       true,
+	"/servicestatus.ServiceStatusService/GetLatestEtherscanGatewayProbeRun": true,
+}
 
-	"/wallet.WalletService/GetWalletStatus":                fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/ListWallets":                    fixedRule(rbac.ResourceWallets, rbac.ActionGet),
-	"/wallet.WalletService/GetWallet":                      {resource: rbac.ResourceWallets, action: rbac.ActionGet, object: walletObject},
-	"/wallet.WalletService/CreateWallet":                   fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/ImportPrivateKey":               fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/ImportMnemonic":                 fixedRule(rbac.ResourceWallets, rbac.ActionUpdate),
-	"/wallet.WalletService/UpdateWalletAlias":              {resource: rbac.ResourceWallets, action: rbac.ActionUpdate, object: walletObject},
-	"/marketradar.MarketRadarService/GetMarketRadarStatus": fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
-	"/marketradar.MarketRadarService/ListHotMarkets":       fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
-	"/marketradar.MarketRadarService/ListRealtimeMarkets":  fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
-	"/marketradar.MarketRadarService/ListMarketMovers":     fixedRule(rbac.ResourceMarketRadar, rbac.ActionGet),
+var accountSelfServiceGRPCMethods = map[string]bool{
+	"/account.AccountService/GetAccount":     true,
+	"/account.AccountService/UpdatePassword": true,
+	"/account.AccountService/CreateToken":    true,
+	"/account.AccountService/DeleteToken":    true,
+}
 
-	"/sportslive.SportsLiveService/GetSportsLiveStatus":              fixedRule(rbac.ResourceSportsLive, rbac.ActionGet),
-	"/sportslive.SportsLiveService/ListSportsLiveEvents":             fixedRule(rbac.ResourceSportsLive, rbac.ActionGet),
-	"/sportslive.SportsLiveService/BatchGetSportsLivePriceHistories": fixedRule(rbac.ResourceSportsLive, rbac.ActionGet),
+var dataReadGRPCMethods = map[string]bool{
+	"/notification.NotificationService/GetNotificationStatus":      true,
+	"/notification.NotificationService/ListNotificationDeliveries": true,
+	"/notification.NotificationService/GetNotificationDelivery":    true,
 
-	"/sportshistory.SportsHistoryService/GetSportsHistoryStatus":              fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
-	"/sportshistory.SportsHistoryService/ListSportsHistoryEvents":             fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
-	"/sportshistory.SportsHistoryService/BatchGetSportsHistoryPriceHistories": fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
-	"/sportshistory.SportsHistoryService/GetSportsHistorySyncStatus":          fixedRule(rbac.ResourceSportsHistory, rbac.ActionGet),
-	"/sportshistory.SportsHistoryService/RefreshSportsHistory":                fixedRule(rbac.ResourceSportsHistory, rbac.ActionInvoke),
+	"/wallet.WalletService/GetWalletStatus": true,
+	"/wallet.WalletService/ListWallets":     true,
+	"/wallet.WalletService/GetWallet":       true,
 
-	"/managedoo.ManagedOOService/GetManagedOOStatus":     fixedRule(rbac.ResourceManagedOO, rbac.ActionGet),
-	"/managedoo.ManagedOOService/ScanManagedOOBlock":     {resource: rbac.ResourceManagedOO, action: rbac.ActionInvoke, object: managedOOObject},
-	"/managedoo.ManagedOOService/ListManagedOOProposals": fixedRule(rbac.ResourceManagedOO, rbac.ActionGet),
-	"/managedoo.ManagedOOService/ListManagedOODisputes":  fixedRule(rbac.ResourceManagedOO, rbac.ActionGet),
+	"/marketradar.MarketRadarService/GetMarketRadarStatus": true,
+	"/marketradar.MarketRadarService/ListHotMarkets":       true,
+	"/marketradar.MarketRadarService/ListRealtimeMarkets":  true,
+	"/marketradar.MarketRadarService/ListMarketMovers":     true,
 
-	"/wormmarkets.WormMarketsService/GetWormMarketsStatus": fixedRule(rbac.ResourceWormMarkets, rbac.ActionGet),
-	"/wormmarkets.WormMarketsService/GetWormEvent":         fixedRule(rbac.ResourceWormMarkets, rbac.ActionGet),
-	"/wormmarkets.WormMarketsService/ListWormEvents":       fixedRule(rbac.ResourceWormMarkets, rbac.ActionGet),
+	"/sportslive.SportsLiveService/GetSportsLiveStatus":              true,
+	"/sportslive.SportsLiveService/ListSportsLiveEvents":             true,
+	"/sportslive.SportsLiveService/BatchGetSportsLivePriceHistories": true,
 
-	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboardStatus": fixedRule(rbac.ResourceFIFAMarketDashboard, rbac.ActionGet),
-	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboard":       fixedRule(rbac.ResourceFIFAMarketDashboard, rbac.ActionGet),
-	"/fifamarketdashboard.FIFAMarketDashboardService/UpdateFIFAEventConfig":        fixedRule(rbac.ResourceFIFAMarketDashboard, rbac.ActionUpdate),
+	"/sportshistory.SportsHistoryService/GetSportsHistoryStatus":              true,
+	"/sportshistory.SportsHistoryService/ListSportsHistoryEvents":             true,
+	"/sportshistory.SportsHistoryService/BatchGetSportsHistoryPriceHistories": true,
+	"/sportshistory.SportsHistoryService/GetSportsHistorySyncStatus":          true,
 
-	"/tokenapi.TokenCatalogService/GetContractCode":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
-	"/tokenapi.TokenCatalogService/ListContractCodes":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-codes"),
-	"/tokenapi.TokenCatalogService/ListProjects":                        fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenCatalogService/GetProjectDetail":                    fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenCatalogService/GetProjectSwapActivity":              fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenCatalogService/ListProjectSwapEvents":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenCatalogService/ListProjectTrends":                   fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenCatalogService/ListProjectObservations":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenCatalogService/ListProjectWalletNormalTransactions": fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "projects"),
-	"/tokenapi.TokenResearchService/GetCollectionTask":                  fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
-	"/tokenapi.TokenResearchService/ListCollectionTasks":                fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "collection-tasks"),
-	"/tokenapi.TokenResearchService/ListResearchStates":                 fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "research-states"),
-	"/tokenapi.TokenResearchService/ListReportRevisions":                fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "report-revisions"),
-	"/tokenapi.TokenResearchService/ListSelections":                     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "selections"),
-	"/tokenapi.TokenPolicyService/GetContractCodeBlocklistEntry":        fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-code-blocklist-entries"),
-	"/tokenapi.TokenPolicyService/ListContractCodeBlocklistEntries":     fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "contract-code-blocklist-entries"),
-	"/tokenapi.TokenPolicyService/CreateContractCodeBlocklistEntry":     {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenPolicyService/UpdateContractCodeBlocklistEntry":     {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenPolicyService/DeleteContractCodeBlocklistEntry":     {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenPolicyService/GetWalletBlocklistEntry":              fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blocklist-entries"),
-	"/tokenapi.TokenPolicyService/ListWalletBlocklistEntries":           fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "wallet-blocklist-entries"),
-	"/tokenapi.TokenPolicyService/CreateWalletBlocklistEntry":           {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenPolicyService/UpdateWalletBlocklistEntry":           {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenPolicyService/DeleteWalletBlocklistEntry":           {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenOperationsService/GetRuntimeConfiguration":          fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "runtime-configuration"),
-	"/tokenapi.TokenOperationsService/ListNodeStatuses":                 fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "node-statuses"),
-	"/tokenapi.TokenOperationsService/GetChainCheckpoint":               fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
-	"/tokenapi.TokenOperationsService/ListChainCheckpoints":             fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
-	"/tokenapi.TokenOperationsService/UpdateChainCheckpoint":            {resource: rbac.ResourceTokenAPI, action: rbac.ActionUpdate, object: tokenAPIObject},
-	"/tokenapi.TokenOperationsService/GetChainProcessingSummary":        fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
-	"/tokenapi.TokenOperationsService/ListChainProcessingAttempts":      fixedObjectRule(rbac.ResourceTokenAPI, rbac.ActionGet, "chain-checkpoints"),
+	"/managedoo.ManagedOOService/GetManagedOOStatus":     true,
+	"/managedoo.ManagedOOService/ListManagedOOProposals": true,
+	"/managedoo.ManagedOOService/ListManagedOODisputes":  true,
 
-	"/servicestatus.ServiceStatusService/ListServiceStatuses":               fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
-	"/servicestatus.ServiceStatusService/ListEtherscanGatewayStatuses":      fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
-	"/servicestatus.ServiceStatusService/RunEtherscanGatewayProbe":          fixedRule(rbac.ResourceServiceStatus, rbac.ActionInvoke),
-	"/servicestatus.ServiceStatusService/GetEtherscanGatewayProbeRun":       fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
-	"/servicestatus.ServiceStatusService/GetLatestEtherscanGatewayProbeRun": fixedRule(rbac.ResourceServiceStatus, rbac.ActionGet),
+	"/wormmarkets.WormMarketsService/GetWormMarketsStatus": true,
+	"/wormmarkets.WormMarketsService/GetWormEvent":         true,
+	"/wormmarkets.WormMarketsService/ListWormEvents":       true,
+
+	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboardStatus": true,
+	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboard":       true,
+
+	"/tokenapi.TokenCatalogService/GetContractCode":                     true,
+	"/tokenapi.TokenCatalogService/ListContractCodes":                   true,
+	"/tokenapi.TokenCatalogService/ListProjects":                        true,
+	"/tokenapi.TokenCatalogService/GetProjectDetail":                    true,
+	"/tokenapi.TokenCatalogService/GetProjectSwapActivity":              true,
+	"/tokenapi.TokenCatalogService/ListProjectSwapEvents":               true,
+	"/tokenapi.TokenCatalogService/ListProjectTrends":                   true,
+	"/tokenapi.TokenCatalogService/ListProjectObservations":             true,
+	"/tokenapi.TokenCatalogService/ListProjectWalletNormalTransactions": true,
+	"/tokenapi.TokenResearchService/GetCollectionTask":                  true,
+	"/tokenapi.TokenResearchService/ListCollectionTasks":                true,
+	"/tokenapi.TokenResearchService/ListResearchStates":                 true,
+	"/tokenapi.TokenResearchService/ListReportRevisions":                true,
+	"/tokenapi.TokenResearchService/ListSelections":                     true,
+	"/tokenapi.TokenPolicyService/GetContractCodeBlocklistEntry":        true,
+	"/tokenapi.TokenPolicyService/ListContractCodeBlocklistEntries":     true,
+	"/tokenapi.TokenPolicyService/GetWalletBlocklistEntry":              true,
+	"/tokenapi.TokenPolicyService/ListWalletBlocklistEntries":           true,
+	"/tokenapi.TokenOperationsService/GetRuntimeConfiguration":          true,
+	"/tokenapi.TokenOperationsService/ListNodeStatuses":                 true,
+	"/tokenapi.TokenOperationsService/GetChainCheckpoint":               true,
+	"/tokenapi.TokenOperationsService/ListChainCheckpoints":             true,
+	"/tokenapi.TokenOperationsService/GetChainProcessingSummary":        true,
+	"/tokenapi.TokenOperationsService/ListChainProcessingAttempts":      true,
+
+	"/worldcupcorners.WorldCupCornersService/GetWorldCupCornersDataset": true,
+}
+
+var dataWriteGRPCMethods = map[string]bool{
+	"/notification.NotificationService/SendTestNotification": true,
+
+	"/wallet.WalletService/CreateWallet":      true,
+	"/wallet.WalletService/ImportPrivateKey":  true,
+	"/wallet.WalletService/ImportMnemonic":    true,
+	"/wallet.WalletService/UpdateWalletAlias": true,
+
+	"/sportshistory.SportsHistoryService/RefreshSportsHistory":              true,
+	"/managedoo.ManagedOOService/ScanManagedOOBlock":                        true,
+	"/fifamarketdashboard.FIFAMarketDashboardService/UpdateFIFAEventConfig": true,
+
+	"/tokenapi.TokenPolicyService/CreateContractCodeBlocklistEntry": true,
+	"/tokenapi.TokenPolicyService/UpdateContractCodeBlocklistEntry": true,
+	"/tokenapi.TokenPolicyService/DeleteContractCodeBlocklistEntry": true,
+	"/tokenapi.TokenPolicyService/CreateWalletBlocklistEntry":       true,
+	"/tokenapi.TokenPolicyService/UpdateWalletBlocklistEntry":       true,
+	"/tokenapi.TokenPolicyService/DeleteWalletBlocklistEntry":       true,
+	"/tokenapi.TokenOperationsService/UpdateChainCheckpoint":        true,
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -283,37 +182,72 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	if err != nil {
 		return authCtx, err
 	}
-	if isReflectionMethod(fullMethod) {
-		return authCtx, nil
+	username := util_session.GetUserIdentifier(authCtx)
+	if username == "" {
+		return authCtx, status.Error(codes.Unauthenticated, "authenticated account is missing")
 	}
 
-	rule, ok := rbacGRPCMethods[fullMethod]
-	if !ok {
-		return authCtx, status.Errorf(codes.PermissionDenied, "permission denied: no RBAC rule configured for %s", fullMethod)
+	if isReflectionMethod(fullMethod) || administratorGRPCMethods[fullMethod] {
+		return authCtx, server.authorizeAccount(username, accountaccess.RequirementAdministrator)
 	}
+	if accountSelfServiceGRPCMethods[fullMethod] {
+		return authCtx, server.authorizeAccountSelfService(username, fullMethod, req)
+	}
+	if dataWriteGRPCMethods[fullMethod] || walletSecretsRequested(fullMethod, req) {
+		return authCtx, server.authorizeAccount(username, accountaccess.RequirementDataWrite)
+	}
+	if dataReadGRPCMethods[fullMethod] {
+		return authCtx, server.authorizeAccount(username, accountaccess.RequirementDataRead)
+	}
+	return authCtx, status.Errorf(codes.PermissionDenied, "permission denied: no account-access rule configured for %s", fullMethod)
+}
 
-	action := rule.action
-	if fullMethod == "/wallet.WalletService/GetWallet" {
-		if walletReq, ok := req.(*walletpkg.GetWalletRequest); ok && walletReq.GetRevealSecrets() {
-			action = rbac.ActionInvoke
+func (server *AthenaServer) authorizeAccount(username string, requirement accountaccess.Requirement) error {
+	if server.accessController == nil {
+		return status.Error(codes.Internal, "account access controller is not configured")
+	}
+	return server.accessController.Authorize(username, requirement)
+}
+
+func (server *AthenaServer) authorizeAccountSelfService(username, fullMethod string, req any) error {
+	target := accountSelfServiceTarget(fullMethod, req)
+	if target == "" && fullMethod == "/account.AccountService/UpdatePassword" {
+		target = username
+	}
+	if target == username {
+		return nil
+	}
+	return server.authorizeAccount(username, accountaccess.RequirementAdministrator)
+}
+
+func accountSelfServiceTarget(fullMethod string, req any) string {
+	switch fullMethod {
+	case "/account.AccountService/GetAccount":
+		if request, ok := req.(*accountpkg.GetAccountRequest); ok {
+			return request.GetName()
+		}
+	case "/account.AccountService/UpdatePassword":
+		if request, ok := req.(*accountpkg.UpdatePasswordRequest); ok {
+			return request.GetName()
+		}
+	case "/account.AccountService/CreateToken":
+		if request, ok := req.(*accountpkg.CreateTokenRequest); ok {
+			return request.GetName()
+		}
+	case "/account.AccountService/DeleteToken":
+		if request, ok := req.(*accountpkg.DeleteTokenRequest); ok {
+			return request.GetName()
 		}
 	}
+	return ""
+}
 
-	object := "*"
-	if rule.object != nil {
-		object = rule.object(req)
+func walletSecretsRequested(fullMethod string, req any) bool {
+	if fullMethod != "/wallet.WalletService/GetWallet" {
+		return false
 	}
-	if object == "" {
-		object = "*"
-	}
-	if isAccountSelfServiceMethod(fullMethod) && isAccountSelfServiceAllowed(authCtx, fullMethod, object) {
-		return authCtx, nil
-	}
-
-	if err := server.enf.EnforceErr(authCtx.Value("claims"), rule.resource, action, object); err != nil {
-		return authCtx, err
-	}
-	return authCtx, nil
+	request, ok := req.(*walletpkg.GetWalletRequest)
+	return ok && request.GetRevealSecrets()
 }
 
 func (server *AthenaServer) authenticateGRPC(ctx context.Context, fullMethod string, srv any) (context.Context, error) {
@@ -325,29 +259,4 @@ func (server *AthenaServer) authenticateGRPC(ctx context.Context, fullMethod str
 
 func isReflectionMethod(fullMethod string) bool {
 	return strings.HasPrefix(fullMethod, "/grpc.reflection.")
-}
-
-func isAccountSelfServiceMethod(fullMethod string) bool {
-	switch fullMethod {
-	case "/account.AccountService/UpdatePassword",
-		"/account.AccountService/CreateToken",
-		"/account.AccountService/DeleteToken":
-		return true
-	default:
-		return false
-	}
-}
-
-func isAccountSelfServiceAllowed(ctx context.Context, fullMethod string, target string) bool {
-	if util_session.Iss(ctx) != util_session.SessionManagerClaimsIssuer {
-		return false
-	}
-	username := util_session.GetUserIdentifier(ctx)
-	if username == "" {
-		return false
-	}
-	if target == "*" && fullMethod == "/account.AccountService/UpdatePassword" {
-		target = username
-	}
-	return target == username
 }

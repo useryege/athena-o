@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,34 +13,26 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/common"
+	accountaccesscore "github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/util/password"
-	"github.com/useryege/athena/util/rbac"
 	"github.com/useryege/athena/util/session"
 	"github.com/useryege/athena/util/settings"
 )
 
-// Server provides a Session service
+// Server provides the Account service.
 type Server struct {
-	sessionMgr          *session.SessionManager
-	settingsMgr         *settings.SettingsManager
-	enf                 *rbac.Enforcer
-	accountEnabledStore AccountEnabledStore
-	accountEnabledMu    sync.Mutex
+	sessionMgr       *session.SessionManager
+	settingsMgr      *settings.SettingsManager
+	accessController *accountaccesscore.Controller
 }
 
-// AccountEnabledStore persists the enabled override for an account.
-type AccountEnabledStore interface {
-	SetAccountEnabled(ctx context.Context, name string, enabled bool) error
-}
-
-// NewServer returns a new instance of the Session service
-func NewServer(sessionMgr *session.SessionManager, settingsMgr *settings.SettingsManager, enf *rbac.Enforcer, accountEnabledStore AccountEnabledStore) *Server {
+// NewServer returns a new Account service.
+func NewServer(sessionMgr *session.SessionManager, settingsMgr *settings.SettingsManager, accessController *accountaccesscore.Controller) *Server {
 	return &Server{
-		sessionMgr:          sessionMgr,
-		settingsMgr:         settingsMgr,
-		enf:                 enf,
-		accountEnabledStore: accountEnabledStore,
+		sessionMgr:       sessionMgr,
+		settingsMgr:      settingsMgr,
+		accessController: accessController,
 	}
 }
 
@@ -57,14 +48,13 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 
 	// check for permission is user is trying to change someone else's password
 	// assuming user is trying to update someone else if username is different or issuer is not Athena
-	issuer := session.Iss(ctx)
-	if updatedUsername != username || issuer != session.SessionManagerClaimsIssuer {
-		if err := s.enf.EnforceErr(ctx.Value("claims"), rbac.ResourceAccounts, rbac.ActionUpdate, q.Name); err != nil {
-			return nil, fmt.Errorf("permission denied: %w", err)
+	if updatedUsername != username {
+		if err := s.accessController.Authorize(username, accountaccesscore.RequirementAdministrator); err != nil {
+			return nil, err
 		}
 	}
 
-	if updatedUsername == username && issuer == session.SessionManagerClaimsIssuer {
+	if updatedUsername == username {
 		err := s.sessionMgr.VerifyUsernamePassword(username, q.CurrentPassword)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "current password does not match")
@@ -110,7 +100,31 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 	return &account.UpdatePasswordResponse{}, nil
 }
 
-func toAPIAccount(name string, a settings.Account) *account.Account {
+func toAPIDataAccess(dataAccess accountaccesscore.DataAccess) account.AccountDataAccess {
+	switch dataAccess {
+	case accountaccesscore.DataAccessRead:
+		return account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ
+	case accountaccesscore.DataAccessReadWrite:
+		return account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ_WRITE
+	default:
+		return account.AccountDataAccess_ACCOUNT_DATA_ACCESS_NONE
+	}
+}
+
+func fromAPIDataAccess(dataAccess account.AccountDataAccess) (accountaccesscore.DataAccess, error) {
+	switch dataAccess {
+	case account.AccountDataAccess_ACCOUNT_DATA_ACCESS_NONE:
+		return accountaccesscore.DataAccessNone, nil
+	case account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ:
+		return accountaccesscore.DataAccessRead, nil
+	case account.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ_WRITE:
+		return accountaccesscore.DataAccessReadWrite, nil
+	default:
+		return "", status.Errorf(codes.InvalidArgument, "unsupported account data access %d", dataAccess)
+	}
+}
+
+func toAPIAccount(name string, a settings.Account, access accountaccesscore.Access) *account.Account {
 	var capabilities []string
 	for _, c := range a.Capabilities {
 		capabilities = append(capabilities, string(c))
@@ -123,8 +137,13 @@ func toAPIAccount(name string, a settings.Account) *account.Account {
 		return tokens[i].IssuedAt > tokens[j].IssuedAt
 	})
 	return &account.Account{
-		Name:         name,
-		Enabled:      a.Enabled,
+		Name:          name,
+		Administrator: name == common.AthenaAdminUsername,
+		Access: &account.AccountAccess{
+			LoginEnabled: access.LoginEnabled,
+			DataAccess:   toAPIDataAccess(access.DataAccess),
+			Revision:     access.Revision,
+		},
 		Capabilities: capabilities,
 		Tokens:       tokens,
 	}
@@ -135,28 +154,25 @@ func canViewAccount(ctx context.Context, name string) bool {
 	if id == common.AthenaAdminUsername {
 		return true
 	}
-	return name == id || name == common.AthenaAdminUsername
+	return name == id
 }
 
-func accountForViewer(ctx context.Context, name string, a settings.Account) *account.Account {
-	apiAccount := toAPIAccount(name, a)
-	if session.GetUserIdentifier(ctx) != common.AthenaAdminUsername && name == common.AthenaAdminUsername {
-		apiAccount.Tokens = nil
+func (s *Server) accountForViewer(name string, a settings.Account) (*account.Account, error) {
+	access, err := s.accessController.Get(name)
+	if err != nil {
+		return nil, err
 	}
-	return apiAccount
+	return toAPIAccount(name, a, access), nil
 }
 
-func (s *Server) ensureHasAccountPermission(ctx context.Context, action string, account string) error {
+func (s *Server) ensureCanManageAccount(ctx context.Context, account string) error {
 	id := session.GetUserIdentifier(ctx)
 
-	// account has always has access to itself
-	if id == account && session.Iss(ctx) == session.SessionManagerClaimsIssuer {
+	// An account can always manage its own self-service resources.
+	if id == account {
 		return nil
 	}
-	if err := s.enf.EnforceErr(ctx.Value("claims"), rbac.ResourceAccounts, action, account); err != nil {
-		return fmt.Errorf("permission denied for account %s with action %s: %w", account, action, err)
-	}
-	return nil
+	return s.accessController.Authorize(id, accountaccesscore.RequirementAdministrator)
 }
 
 // ListAccounts returns the list of accounts
@@ -168,7 +184,11 @@ func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountRequest
 	}
 	for name, a := range accounts {
 		if canViewAccount(ctx, name) {
-			resp.Items = append(resp.Items, accountForViewer(ctx, name, a))
+			apiAccount, err := s.accountForViewer(name, a)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get access for account %s: %w", name, err)
+			}
+			resp.Items = append(resp.Items, apiAccount)
 		}
 	}
 	sort.Slice(resp.Items, func(i, j int) bool {
@@ -180,40 +200,47 @@ func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountRequest
 // GetAccount returns an account
 func (s *Server) GetAccount(ctx context.Context, r *account.GetAccountRequest) (*account.Account, error) {
 	if !canViewAccount(ctx, r.Name) {
-		return nil, status.Errorf(codes.PermissionDenied, "permission denied to get account %s", r.Name)
+		if err := s.accessController.Authorize(session.GetUserIdentifier(ctx), accountaccesscore.RequirementAdministrator); err != nil {
+			return nil, err
+		}
 	}
 	a, err := s.settingsMgr.GetAccount(r.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account %s: %w", r.Name, err)
 	}
-	return accountForViewer(ctx, r.Name, *a), nil
+	return s.accountForViewer(r.Name, *a)
 }
 
-// UpdateAccount updates the enabled state of a non-administrator account.
-func (s *Server) UpdateAccount(ctx context.Context, r *account.UpdateAccountRequest) (*account.Account, error) {
-	if r.Name == common.AthenaAdminUsername {
-		return nil, status.Error(codes.InvalidArgument, "admin account is always enabled")
-	}
-	s.accountEnabledMu.Lock()
-	defer s.accountEnabledMu.Unlock()
-
-	if _, err := s.settingsMgr.GetAccount(r.Name); err != nil {
+// UpdateAccountAccess replaces a non-administrator account's complete access state.
+func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccountAccessRequest) (*account.Account, error) {
+	if err := s.accessController.Authorize(session.GetUserIdentifier(ctx), accountaccesscore.RequirementAdministrator); err != nil {
 		return nil, err
 	}
-	if err := s.accountEnabledStore.SetAccountEnabled(ctx, r.Name, r.Enabled); err != nil {
-		return nil, fmt.Errorf("failed to persist enabled state for account %s: %w", r.Name, err)
-	}
-
-	updatedAccount, err := s.settingsMgr.SetAccountEnabled(r.Name, r.Enabled)
+	configuredAccount, err := s.settingsMgr.GetAccount(r.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to apply enabled state for account %s: %w", r.Name, err)
+		return nil, err
 	}
-	return accountForViewer(ctx, r.Name, *updatedAccount), nil
+	if r.Access == nil {
+		return nil, status.Error(codes.InvalidArgument, "account access is required")
+	}
+	dataAccess, err := fromAPIDataAccess(r.Access.DataAccess)
+	if err != nil {
+		return nil, err
+	}
+	updatedAccess, err := s.accessController.Update(ctx, r.Name, accountaccesscore.Access{
+		LoginEnabled: r.Access.LoginEnabled,
+		DataAccess:   dataAccess,
+		Revision:     r.Access.Revision,
+	}, r.Access.Revision)
+	if err != nil {
+		return nil, err
+	}
+	return toAPIAccount(r.Name, *configuredAccount, updatedAccess), nil
 }
 
 // CreateToken creates a token
 func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest) (*account.CreateTokenResponse, error) {
-	if err := s.ensureHasAccountPermission(ctx, rbac.ActionUpdate, r.Name); err != nil {
+	if err := s.ensureCanManageAccount(ctx, r.Name); err != nil {
 		return nil, fmt.Errorf("permission denied to create token for account %s: %w", r.Name, err)
 	}
 
@@ -261,7 +288,7 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 
 // DeleteToken deletes a token
 func (s *Server) DeleteToken(ctx context.Context, r *account.DeleteTokenRequest) (*account.EmptyResponse, error) {
-	if err := s.ensureHasAccountPermission(ctx, rbac.ActionUpdate, r.Name); err != nil {
+	if err := s.ensureCanManageAccount(ctx, r.Name); err != nil {
 		return nil, fmt.Errorf("permission denied to delete account %s: %w", r.Name, err)
 	}
 

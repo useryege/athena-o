@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+// World Cup Corners Service API exposes the protected tournament dataset.
+package worldcupcorners;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/worldcupcorners";
+
+message GetWorldCupCornersDatasetRequest {}
+
+message WorldCupCornerStage {
+  string key = 1;
+  string label = 2;
+  string shortLabel = 3;
+  bool knockout = 4;
+}
+
+message WorldCupCornerMatch {
+  int32 id = 1;
+  string stage = 2;
+  string homeTeam = 3;
+  string awayTeam = 4;
+  int32 homeScore = 5;
+  int32 awayScore = 6;
+  bool hasPenaltyShootout = 7;
+  int32 homePenaltyScore = 8;
+  int32 awayPenaltyScore = 9;
+  int32 homeCorners90 = 10;
+  int32 awayCorners90 = 11;
+  int32 homeCornersFull = 12;
+  int32 awayCornersFull = 13;
+}
+
+message GetWorldCupCornersDatasetResponse {
+  repeated WorldCupCornerStage stages = 1;
+  repeated WorldCupCornerMatch matches = 2;
+}
+
+service WorldCupCornersService {
+  rpc GetWorldCupCornersDataset(GetWorldCupCornersDatasetRequest) returns (GetWorldCupCornersDatasetResponse) {
+    option (google.api.http).get = "/api/v1/world-cup-corners/dataset";
+  }
+}

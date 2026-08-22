@@ -8,8 +8,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type AccountEnabledOverride struct {
-	AccountName string
-	Enabled     bool
-	UpdatedAt   pgtype.Timestamptz
+type AccountAccessOverride struct {
+	AccountName  string
+	LoginEnabled bool
+	UpdatedAt    pgtype.Timestamptz
+	DataAccess   string
+	Revision     int64
 }

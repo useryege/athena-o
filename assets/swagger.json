@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1046-g13c3a6df-dirty"
+    "version": "v1.0.0-1048-gfdecb1de-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -97,13 +97,15 @@
             }
           }
         }
-      },
-      "patch": {
+      }
+    },
+    "/api/v1/account/{name}/access": {
+      "put": {
         "tags": [
           "AccountService"
         ],
-        "summary": "UpdateAccount updates an account's runtime settings",
-        "operationId": "AccountService_UpdateAccount",
+        "summary": "UpdateAccountAccess replaces a non-administrator account's access state.",
+        "operationId": "AccountService_UpdateAccountAccess",
         "parameters": [
           {
             "type": "string",
@@ -116,7 +118,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/accountUpdateAccountRequest"
+              "$ref": "#/definitions/accountAccountAccess"
             }
           }
         ],
@@ -2689,6 +2691,28 @@
         }
       }
     },
+    "/api/v1/world-cup-corners/dataset": {
+      "get": {
+        "tags": [
+          "WorldCupCornersService"
+        ],
+        "operationId": "WorldCupCornersService_GetWorldCupCornersDataset",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/worldcupcornersGetWorldCupCornersDatasetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/worm-markets/events": {
       "get": {
         "tags": [
@@ -2817,14 +2841,17 @@
     "accountAccount": {
       "type": "object",
       "properties": {
+        "access": {
+          "$ref": "#/definitions/accountAccountAccess"
+        },
+        "administrator": {
+          "type": "boolean"
+        },
         "capabilities": {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        "enabled": {
-          "type": "boolean"
         },
         "name": {
           "type": "string"
@@ -2836,6 +2863,30 @@
           }
         }
       }
+    },
+    "accountAccountAccess": {
+      "type": "object",
+      "properties": {
+        "dataAccess": {
+          "$ref": "#/definitions/accountAccountDataAccess"
+        },
+        "loginEnabled": {
+          "type": "boolean"
+        },
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "accountAccountDataAccess": {
+      "type": "string",
+      "default": "ACCOUNT_DATA_ACCESS_NONE",
+      "enum": [
+        "ACCOUNT_DATA_ACCESS_NONE",
+        "ACCOUNT_DATA_ACCESS_READ",
+        "ACCOUNT_DATA_ACCESS_READ_WRITE"
+      ]
     },
     "accountAccountsList": {
       "type": "object",
@@ -2888,17 +2939,6 @@
         "issuedAt": {
           "type": "integer",
           "format": "int64"
-        }
-      }
-    },
-    "accountUpdateAccountRequest": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "name": {
-          "type": "string"
         }
       }
     },
@@ -3608,11 +3648,15 @@
       "type": "object",
       "title": "The current user's userInfo info",
       "properties": {
-        "groups": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "administrator": {
+          "type": "boolean"
+        },
+        "authorizationRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "dataAccess": {
+          "$ref": "#/definitions/accountAccountDataAccess"
         },
         "iss": {
           "type": "string"
@@ -3620,27 +3664,7 @@
         "loggedIn": {
           "type": "boolean"
         },
-        "permissions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/sessionResourcePermission"
-          }
-        },
         "username": {
-          "type": "string"
-        }
-      }
-    },
-    "sessionResourcePermission": {
-      "type": "object",
-      "properties": {
-        "action": {
-          "type": "string"
-        },
-        "resource": {
-          "type": "string"
-        },
-        "subresource": {
           "type": "string"
         }
       }
@@ -7537,6 +7561,93 @@
       "properties": {
         "item": {
           "$ref": "#/definitions/v1alpha1WalletItem"
+        }
+      }
+    },
+    "worldcupcornersGetWorldCupCornersDatasetResponse": {
+      "type": "object",
+      "properties": {
+        "matches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/worldcupcornersWorldCupCornerMatch"
+          }
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/worldcupcornersWorldCupCornerStage"
+          }
+        }
+      }
+    },
+    "worldcupcornersWorldCupCornerMatch": {
+      "type": "object",
+      "properties": {
+        "awayCorners90": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "awayCornersFull": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "awayPenaltyScore": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "awayScore": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "awayTeam": {
+          "type": "string"
+        },
+        "hasPenaltyShootout": {
+          "type": "boolean"
+        },
+        "homeCorners90": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "homeCornersFull": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "homePenaltyScore": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "homeScore": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "homeTeam": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "stage": {
+          "type": "string"
+        }
+      }
+    },
+    "worldcupcornersWorldCupCornerStage": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "knockout": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "shortLabel": {
+          "type": "string"
         }
       }
     },

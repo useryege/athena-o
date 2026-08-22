@@ -46,33 +46,6 @@ func Float64Field(claims jwtgo.MapClaims, fieldName string) float64 {
 	return 0
 }
 
-// GetScopeValues extracts the values of specified scopes from the claims
-func GetScopeValues(claims jwtgo.MapClaims, scopes []string) []string {
-	groups := make([]string, 0)
-	for i := range scopes {
-		scopeIf, ok := claims[scopes[i]]
-		if !ok {
-			continue
-		}
-
-		switch val := scopeIf.(type) {
-		case []any:
-			for _, groupIf := range val {
-				group, ok := groupIf.(string)
-				if ok {
-					groups = append(groups, group)
-				}
-			}
-		case []string:
-			groups = append(groups, val...)
-		case string:
-			groups = append(groups, val)
-		}
-	}
-
-	return groups
-}
-
 func numField(m jwtgo.MapClaims, key string) (int64, error) {
 	field, ok := m[key]
 	if !ok {
@@ -113,27 +86,6 @@ func Claims(in any) jwtgo.Claims {
 		return claims
 	}
 	return nil
-}
-
-// IsMember returns whether or not the user's claims is a member of any of the groups
-func IsMember(claims jwtgo.Claims, groups []string, scopes []string) bool {
-	mapClaims, err := MapClaims(claims)
-	if err != nil {
-		return false
-	}
-	// O(n^2) loop
-	for _, userGroup := range GetGroups(mapClaims, scopes) {
-		for _, group := range groups {
-			if userGroup == group {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func GetGroups(mapClaims jwtgo.MapClaims, scopes []string) []string {
-	return GetScopeValues(mapClaims, scopes)
 }
 
 func IsValid(token string) bool {

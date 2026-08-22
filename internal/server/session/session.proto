@@ -5,6 +5,7 @@ syntax = "proto3";
 // Session Service API performs CRUD actions against session resources
 package session;
 
+import "internal/server/account/account.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/session";
@@ -39,19 +40,14 @@ message CaptchaResponse {
   int32 expires_in = 3;
 }
 
-message ResourcePermission {
-  string resource = 1;
-  string action = 2;
-  string subresource = 3;
-}
-
 // The current user's userInfo info
 message GetUserInfoResponse {
   bool loggedIn = 1;
   string username = 2;
   string iss = 3;
-  repeated string groups = 4;
-  repeated ResourcePermission permissions = 5;
+  bool administrator = 4;
+  account.AccountDataAccess dataAccess = 5;
+  uint64 authorizationRevision = 6;
 }
 
 // SessionService

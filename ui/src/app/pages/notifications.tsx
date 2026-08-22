@@ -4,7 +4,7 @@ import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, ChoiceGroup, ResourceTable, SearchBar, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {NotificationDelivery} from '../shared/services/notification-service';
@@ -12,6 +12,7 @@ import {useKeywordParam, usePagedParams} from './shared';
 
 export const NotificationsPage = () => {
     const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const {page, pageSize, setPage} = usePagedParams();
@@ -25,6 +26,9 @@ export const NotificationsPage = () => {
         [page, pageSize, keyword, status, telegramChat]
     );
     const sendTest = async (values: {topicLabel: string}) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         setTestSubmitting(true);
         try {
             await services.notification.sendTestNotification(values.topicLabel.trim());
@@ -67,9 +71,11 @@ export const NotificationsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                <Button icon={<SendOutlined />} onClick={() => setTestOpen(true)}>
-                    Test Notification
-                </Button>
+                authorization.canWriteData ? (
+                    <Button icon={<SendOutlined />} onClick={() => setTestOpen(true)}>
+                        Test Notification
+                    </Button>
+                ) : null
             }
             filters={
                 <Space wrap={true}>
@@ -102,7 +108,7 @@ export const NotificationsPage = () => {
                 pageSize={pageSize}
                 onPageChange={setPage}
             />
-            <Modal open={testOpen} title='Test Notification' footer={null} closable={!testSubmitting} onCancel={closeTest}>
+            <Modal open={authorization.canWriteData && testOpen} title='Test Notification' footer={null} closable={!testSubmitting} onCancel={closeTest}>
                 <Form form={form} layout='vertical' onFinish={sendTest}>
                     <Form.Item
                         name='topicLabel'

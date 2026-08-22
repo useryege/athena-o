@@ -4,18 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/useryege/athena/util/settings"
-
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/useryege/athena/internal/server/rbacpolicy"
+	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountaccess"
+	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/pkg/apiclient/session"
 	utilio "github.com/useryege/athena/util/io"
-	"github.com/useryege/athena/util/rbac"
 	sessionmgr "github.com/useryege/athena/util/session"
+	"github.com/useryege/athena/util/settings"
 )
 
 // Server provides a Session service
@@ -23,7 +22,7 @@ type Server struct {
 	mgr                *sessionmgr.SessionManager
 	settingsMgr        *settings.SettingsManager
 	authenticator      Authenticator
-	policyEnf          *rbacpolicy.RBACPolicyEnforcer
+	accessController   *accountaccess.Controller
 	limitLoginAttempts func() (utilio.Closer, error)
 }
 
@@ -36,39 +35,9 @@ const (
 	failure = "failure"
 )
 
-var uiBootstrapPermissions = []*session.ResourcePermission{
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "options"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "node-statuses"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "projects"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "contract-codes"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "contract-code-blocklist"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "wallet-blocklist"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "research-states"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "report-revisions"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "selections"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "chain-checkpoints"},
-	{Resource: rbac.ResourceTokenAPI, Action: rbac.ActionGet, Subresource: "collection-tasks"},
-	{Resource: rbac.ResourceWallets, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceWallets, Action: rbac.ActionUpdate, Subresource: "*"},
-	{Resource: rbac.ResourceWallets, Action: rbac.ActionInvoke, Subresource: "*"},
-	{Resource: rbac.ResourceMarketRadar, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceSportsLive, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceSportsHistory, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceSportsHistory, Action: rbac.ActionInvoke, Subresource: "*"},
-	{Resource: rbac.ResourceManagedOO, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceManagedOO, Action: rbac.ActionInvoke, Subresource: "*"},
-	{Resource: rbac.ResourceWormMarkets, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceFIFAMarketDashboard, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceFIFAMarketDashboard, Action: rbac.ActionUpdate, Subresource: "*"},
-	{Resource: rbac.ResourceWorldCupCorners, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceNotifications, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceServiceStatus, Action: rbac.ActionGet, Subresource: "*"},
-	{Resource: rbac.ResourceServiceStatus, Action: rbac.ActionInvoke, Subresource: "*"},
-}
-
 // NewServer returns a new instance of the Session service
-func NewServer(mgr *sessionmgr.SessionManager, settingsMgr *settings.SettingsManager, authenticator Authenticator, policyEnf *rbacpolicy.RBACPolicyEnforcer, rateLimiter func() (utilio.Closer, error)) *Server {
-	return &Server{mgr, settingsMgr, authenticator, policyEnf, rateLimiter}
+func NewServer(mgr *sessionmgr.SessionManager, settingsMgr *settings.SettingsManager, authenticator Authenticator, accessController *accountaccess.Controller, rateLimiter func() (utilio.Closer, error)) *Server {
+	return &Server{mgr, settingsMgr, authenticator, accessController, rateLimiter}
 }
 
 // Create generates a JWT token signed by Athena intended for web/CLI logins of the admin user
@@ -108,7 +77,9 @@ func (s *Server) Create(ctx context.Context, q *session.SessionCreateRequest) (*
 	// verify the username and password
 	err := s.mgr.VerifyLogin(ctx, q.Username, q.Password, clientIPFromContext(ctx))
 	if err != nil {
-		s.mgr.IncLoginRequestCounter(failure)
+		if !sessionmgr.IsAccountMaintenanceError(err) {
+			s.mgr.IncLoginRequestCounter(failure)
+		}
 		return nil, err
 	}
 	// generate a unique id for the session
@@ -172,33 +143,32 @@ func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (c
 }
 
 func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest) (*session.GetUserInfoResponse, error) {
-	return &session.GetUserInfoResponse{
-		LoggedIn:    sessionmgr.LoggedIn(ctx),
-		Username:    sessionmgr.Username(ctx),
-		Iss:         sessionmgr.Iss(ctx),
-		Groups:      sessionmgr.Groups(ctx, s.policyEnf.GetScopes()),
-		Permissions: s.userPermissions(ctx),
-	}, nil
+	loggedIn := sessionmgr.LoggedIn(ctx)
+	response := &session.GetUserInfoResponse{
+		LoggedIn: loggedIn,
+		Username: sessionmgr.Username(ctx),
+		Iss:      sessionmgr.Iss(ctx),
+	}
+	if !loggedIn {
+		return response, nil
+	}
+	access, err := s.accessController.Get(response.Username)
+	if err != nil {
+		return nil, err
+	}
+	response.Administrator = response.Username == common.AthenaAdminUsername
+	response.DataAccess = toAPIDataAccess(access.DataAccess)
+	response.AuthorizationRevision = access.Revision
+	return response, nil
 }
 
-func (s *Server) userPermissions(ctx context.Context) []*session.ResourcePermission {
-	if !sessionmgr.LoggedIn(ctx) {
-		return nil
+func toAPIDataAccess(dataAccess accountaccess.DataAccess) accountpkg.AccountDataAccess {
+	switch dataAccess {
+	case accountaccess.DataAccessRead:
+		return accountpkg.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ
+	case accountaccess.DataAccessReadWrite:
+		return accountpkg.AccountDataAccess_ACCOUNT_DATA_ACCESS_READ_WRITE
+	default:
+		return accountpkg.AccountDataAccess_ACCOUNT_DATA_ACCESS_NONE
 	}
-
-	claims, ok := ctx.Value("claims").(jwt.Claims)
-	if !ok {
-		return nil
-	}
-	permissions := make([]*session.ResourcePermission, 0, len(uiBootstrapPermissions))
-	for _, perm := range uiBootstrapPermissions {
-		if s.policyEnf.EnforceClaims(claims, claims, perm.Resource, perm.Action, perm.Subresource) {
-			permissions = append(permissions, &session.ResourcePermission{
-				Resource:    perm.Resource,
-				Action:      perm.Action,
-				Subresource: perm.Subresource,
-			})
-		}
-	}
-	return permissions
 }

@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 
+	"github.com/useryege/athena/internal/accountaccess"
 	sessionmgr "github.com/useryege/athena/util/session"
 
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
@@ -12,6 +13,7 @@ import (
 // Server provides a Settings service
 type Server struct {
 	mgr           *settings.SettingsManager
+	access        *accountaccess.Controller
 	authenticator Authenticator
 	disableAuth   bool
 	// appsInAnyNamespaceEnabled bool
@@ -24,8 +26,8 @@ type Authenticator interface {
 }
 
 // NewServer returns a new instance of the Settings service
-func NewServer(mgr *settings.SettingsManager, authenticator Authenticator, disableAuth bool) *Server {
-	return &Server{mgr: mgr, authenticator: authenticator, disableAuth: disableAuth}
+func NewServer(mgr *settings.SettingsManager, access *accountaccess.Controller, authenticator Authenticator, disableAuth bool) *Server {
+	return &Server{mgr: mgr, access: access, authenticator: authenticator, disableAuth: disableAuth}
 }
 
 // Get returns Athena settings
@@ -47,8 +49,12 @@ func (s *Server) Get(ctx context.Context, _ *settingspkg.SettingsQuery) (*settin
 	if err != nil {
 		return nil, err
 	}
-	for _, account := range accounts {
-		if account.Enabled && account.HasCapability(settings.AccountCapabilityLogin) {
+	for name, account := range accounts {
+		access, err := s.access.Get(name)
+		if err != nil {
+			return nil, err
+		}
+		if access.LoginEnabled && account.HasCapability(settings.AccountCapabilityLogin) {
 			userLoginsDisabled = false
 			break
 		}

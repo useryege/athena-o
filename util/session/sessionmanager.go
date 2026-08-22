@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/util/env"
 	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
@@ -26,7 +27,8 @@ import (
 
 // SessionManager generates and validates JWT tokens for login sessions.
 type SessionManager struct {
-	settingsMgr *settings.SettingsManager
+	settingsMgr      *settings.SettingsManager
+	accessController *accountaccess.Controller
 	// projectsLister                v1alpha1.AppProjectNamespaceLister
 	storage                       UserStateStorage
 	sleep                         func(d time.Duration)
@@ -142,11 +144,12 @@ func newLoginRateLimitConfig() loginRateLimitConfig {
 }
 
 // NewSessionManager creates a new session manager from Athena settings.
-func NewSessionManager(settingsMgr *settings.SettingsManager, storage UserStateStorage) *SessionManager {
+func NewSessionManager(settingsMgr *settings.SettingsManager, storage UserStateStorage, accessController *accountaccess.Controller) *SessionManager {
 	return &SessionManager{
-		settingsMgr: settingsMgr,
-		storage:     storage,
-		sleep:       time.Sleep,
+		settingsMgr:      settingsMgr,
+		accessController: accessController,
+		storage:          storage,
+		sleep:            time.Sleep,
 		// projectsLister:                projectsLister,
 		verificationDelayNoiseEnabled: true,
 		loginRateLimit:                newLoginRateLimitConfig(),
@@ -242,19 +245,6 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 	subject := jwtutil.GetUserIdentifier(claims)
 	id := jwtutil.StringField(claims, "jti")
 
-	// if projName, role, ok := rbacpolicy.GetProjectRoleFromSubject(subject); ok {
-	// 	proj, err := mgr.projectsLister.Get(projName)
-	// 	if err != nil {
-	// 		return nil, "", err
-	// 	}
-	// 	_, _, err = proj.GetJWTToken(role, issuedAt.Unix(), id)
-	// 	if err != nil {
-	// 		return nil, "", err
-	// 	}
-
-	// 	return token.Claims, "", nil
-	// }
-
 	subject, capability := GetSubjectAccountAndCapability(subject)
 	claims["sub"] = subject
 
@@ -263,7 +253,11 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 		return nil, "", err
 	}
 
-	if !account.Enabled {
+	access, err := mgr.accessController.Get(subject)
+	if err != nil {
+		return nil, "", err
+	}
+	if !access.LoginEnabled {
 		return nil, "", AccountMaintenanceErr
 	}
 
@@ -409,7 +403,11 @@ func (mgr *SessionManager) verifyUsernamePassword(username string, password stri
 		return InvalidLoginErr
 	}
 
-	if !account.Enabled {
+	access, err := mgr.accessController.Get(username)
+	if err != nil {
+		return err
+	}
+	if !access.LoginEnabled {
 		return AccountMaintenanceErr
 	}
 
@@ -457,7 +455,7 @@ func WithAuthMiddleware(disabled bool, authn TokenVerifier, next http.Handler) h
 			return
 		}
 
-		// Add claims to the context to inspect for RBAC
+		// Add claims to the request context for account authorization.
 		//nolint:staticcheck
 		ctx = context.WithValue(ctx, "claims", claims)
 		r = r.WithContext(ctx)
@@ -521,14 +519,6 @@ func GetUserIdentifier(ctx context.Context) string {
 		return ""
 	}
 	return jwtutil.GetUserIdentifier(mapClaims)
-}
-
-func Groups(ctx context.Context, scopes []string) []string {
-	mapClaims, ok := mapClaims(ctx)
-	if !ok {
-		return nil
-	}
-	return jwtutil.GetGroups(mapClaims, scopes)
 }
 
 func mapClaims(ctx context.Context) (jwt.MapClaims, bool) {

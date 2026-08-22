@@ -16,7 +16,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Subsystem | Capability | Document |
 | --- | --- | --- |
 | Development Runtime | Local process supervision, capability process composition, and persistent infrastructure lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
-| Identity and Access | Persistent account availability, administrator control, and maintenance signaling | [Account Availability](identity-access/account-availability.md) |
+| Identity and Access | Unified login availability, business-data levels, administrator control, and browser authorization lifecycle | [Account Access Control](identity-access/account-access-control.md) |
 | Market Intelligence | Polymarket hot-market discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
 | Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) |
@@ -30,7 +30,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Token Intelligence | Ave token market data and canonical pair collection | [Ave Market Data Collection](token-intelligence/ave-market-data.md) |
 | Token Intelligence | Unified project pages, current snapshots, Report risk, trends, and history reads | [Token Project Read Model](token-intelligence/project-read-model.md) |
 | Token Intelligence | One-time pre-deployment normal transactions for related wallets | [Project Wallet Pre-Deployment Normal Transactions](token-intelligence/wallet-normal-transactions.md) |
-| Token Intelligence | Administrator-only UI and API access control | [Token UI and API Access Control](token-intelligence/access-control.md) |
+| Token Intelligence | Unified data-read and data-write authorization for Token UI and APIs | [Token UI and API Access Control](token-intelligence/access-control.md) |
 | Blockchain Data | Finalized inbound BSC transaction indexing and lookup | [BSC Inbound Normal Transactions](blockchain-data/bsc-inbound-normal-transactions.md) |
 | Blockchain Data | Finalized BSC V2 Swap-topic transaction indexing and lookup | [BSC V2 Swap Transactions](blockchain-data/bsc-v2-swap-transactions.md) |
 | Blockchain Data | Etherscan API-key and Gateway request scheduling | [Etherscan Manager](blockchain-data/etherscan-manager.md) |

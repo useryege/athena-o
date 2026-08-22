@@ -22,16 +22,29 @@ message GetAccountRequest {
   string name = 1;
 }
 
-message UpdateAccountRequest {
+enum AccountDataAccess {
+  ACCOUNT_DATA_ACCESS_NONE = 0;
+  ACCOUNT_DATA_ACCESS_READ = 1;
+  ACCOUNT_DATA_ACCESS_READ_WRITE = 2;
+}
+
+message AccountAccess {
+  bool loginEnabled = 1;
+  AccountDataAccess dataAccess = 2;
+  uint64 revision = 3;
+}
+
+message UpdateAccountAccessRequest {
   string name = 1;
-  bool enabled = 2;
+  AccountAccess access = 2;
 }
 
 message Account {
   string name = 1;
-  bool enabled = 2;
-  repeated string capabilities = 3;
-  repeated Token tokens = 4;
+  bool administrator = 2;
+  AccountAccess access = 3;
+  repeated string capabilities = 4;
+  repeated Token tokens = 5;
 }
 
 message AccountsList {
@@ -87,11 +100,11 @@ service AccountService {
     option (google.api.http).get = "/api/v1/account/{name}";
   }
 
-  // UpdateAccount updates an account's runtime settings
-  rpc UpdateAccount(UpdateAccountRequest) returns (Account) {
+  // UpdateAccountAccess replaces a non-administrator account's access state.
+  rpc UpdateAccountAccess(UpdateAccountAccessRequest) returns (Account) {
     option (google.api.http) = {
-      patch: "/api/v1/account/{name}"
-      body: "*"
+      put: "/api/v1/account/{name}/access"
+      body: "access"
     };
   }
 

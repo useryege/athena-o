@@ -1,20 +1,34 @@
-import {Account} from '../models';
+import {Account, AccountAccess, parseAccountDataAccess} from '../models';
 import requests from './requests';
+
+const accountAccess = (value: any): AccountAccess => ({
+    loginEnabled: Boolean(value?.loginEnabled),
+    dataAccess: parseAccountDataAccess(value?.dataAccess),
+    revision: Number(value?.revision || 0)
+});
+
+const account = (value: any): Account => ({
+    name: value?.name || '',
+    administrator: Boolean(value?.administrator),
+    access: accountAccess(value?.access),
+    capabilities: value?.capabilities || [],
+    tokens: value?.tokens || []
+});
 
 export class AccountsService {
     public list(): Promise<Account[]> {
-        return requests.get('/account').then(res => (res.body.items || []) as Account[]);
+        return requests.get('/account').then(res => (res.body.items || []).map(account));
     }
 
     public get(name: string): Promise<Account> {
-        return requests.get(`/account/${name}`).then(res => res.body as Account);
+        return requests.get(`/account/${encodeURIComponent(name)}`).then(res => account(res.body));
     }
 
-    public update(name: string, enabled: boolean): Promise<Account> {
+    public updateAccess(name: string, access: AccountAccess): Promise<Account> {
         return requests
-            .patch(`/account/${encodeURIComponent(name)}`)
-            .send({name, enabled})
-            .then(res => res.body as Account);
+            .put(`/account/${encodeURIComponent(name)}/access`)
+            .send({loginEnabled: access.loginEnabled, dataAccess: access.dataAccess, revision: access.revision})
+            .then(res => account(res.body));
     }
 
     public changePassword(name: string, currentPassword: string, newPassword: string): Promise<boolean> {

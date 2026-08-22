@@ -64,7 +64,10 @@ type SettingsManager struct {
 	settings AthenaSettings
 	help     Help
 	accounts map[string]Account
-	mutex    *sync.RWMutex
+	// accountLoginDefaults contains the immutable environment baseline consumed
+	// by accountaccess.Controller. Effective access never lives in settings.
+	accountLoginDefaults map[string]bool
+	mutex                *sync.RWMutex
 }
 
 const (

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"github.com/useryege/athena/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -29,7 +28,19 @@ func (mgr *SettingsManager) GetAccount(name string) (*Account, error) {
 // UpdateAccount runs the callback function against an account that matches to the specified name
 // and persist changes applied by the callback.
 func (mgr *SettingsManager) UpdateAccount(name string, callback func(account *Account) error) error {
-	return status.Error(codes.FailedPrecondition, "account updates are disabled because settings are loaded from environment variables and are read-only at runtime")
+	mgr.mutex.Lock()
+	defer mgr.mutex.Unlock()
+
+	account, ok := mgr.accounts[name]
+	if !ok {
+		return status.Errorf(codes.NotFound, "account '%s' does not exist", name)
+	}
+	updated := copyAccount(account)
+	if err := callback(&updated); err != nil {
+		return err
+	}
+	mgr.accounts[name] = copyAccount(updated)
+	return nil
 }
 
 // GetAccounts returns list of configured accounts
@@ -45,46 +56,17 @@ func (mgr *SettingsManager) GetAccounts() (map[string]Account, error) {
 	return accounts, nil
 }
 
-// ApplyAccountEnabledOverrides applies persisted availability overrides to
-// accounts that are currently configured by the environment. Overrides for
-// removed accounts and for the built-in administrator are intentionally
-// ignored.
-func (mgr *SettingsManager) ApplyAccountEnabledOverrides(overrides map[string]bool) {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
+// GetAccountLoginDefaults returns the immutable environment login baseline for
+// every configured account. Effective access is owned by accountaccess.Controller.
+func (mgr *SettingsManager) GetAccountLoginDefaults() map[string]bool {
+	mgr.mutex.RLock()
+	defer mgr.mutex.RUnlock()
 
-	for name, enabled := range overrides {
-		if name == common.AthenaAdminUsername {
-			continue
-		}
-		account, ok := mgr.accounts[name]
-		if !ok {
-			continue
-		}
-		account.Enabled = enabled
-		mgr.accounts[name] = account
+	defaults := make(map[string]bool, len(mgr.accountLoginDefaults))
+	for name, enabled := range mgr.accountLoginDefaults {
+		defaults[name] = enabled
 	}
-}
-
-// SetAccountEnabled updates the effective in-memory availability of a
-// configured non-administrator account. Persistence is deliberately handled
-// by the caller before this method is invoked.
-func (mgr *SettingsManager) SetAccountEnabled(name string, enabled bool) (*Account, error) {
-	mgr.mutex.Lock()
-	defer mgr.mutex.Unlock()
-
-	account, ok := mgr.accounts[name]
-	if !ok {
-		return nil, status.Errorf(codes.NotFound, "account '%s' does not exist", name)
-	}
-	if name == common.AthenaAdminUsername {
-		return nil, status.Errorf(codes.InvalidArgument, "account '%s' is always enabled", name)
-	}
-
-	account.Enabled = enabled
-	mgr.accounts[name] = account
-	accountCopy := copyAccount(account)
-	return &accountCopy, nil
+	return defaults
 }
 
 func copyAccount(account Account) Account {

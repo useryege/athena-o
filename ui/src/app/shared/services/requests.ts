@@ -5,11 +5,13 @@ import {Observable, Observer, Subject} from 'rxjs';
 type Callback = (data: any) => void;
 
 export const ACCOUNT_MAINTENANCE_MESSAGE = '系统维护中';
+export const ACCOUNT_DATA_ACCESS_DENIED_REASON = 'ACCOUNT_DATA_ACCESS_DENIED';
 
 export interface RequestErrorDetails {
     status?: number;
     code?: number;
     message?: string;
+    reason?: string;
 }
 
 declare class EventSource {
@@ -55,11 +57,48 @@ const parseErrorBody = (value: unknown): Record<string, any> | undefined => {
     }
 };
 
+const findErrorReason = (value: unknown, depth = 0): string | undefined => {
+    if (depth > 6) {
+        return undefined;
+    }
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            const reason = findErrorReason(item, depth + 1);
+            if (reason) {
+                return reason;
+            }
+        }
+        return undefined;
+    }
+    if (!isRecord(value)) {
+        return undefined;
+    }
+    if (typeof value.reason === 'string' && value.reason) {
+        return value.reason;
+    }
+    for (const nested of Object.values(value)) {
+        if (Array.isArray(nested) || isRecord(nested)) {
+            const reason = findErrorReason(nested, depth + 1);
+            if (reason) {
+                return reason;
+            }
+        }
+    }
+    return undefined;
+};
+
 export const requestErrorDetails = (error: unknown): RequestErrorDetails => {
     const source = isRecord(error) ? error : {};
     const response = isRecord(source.response) ? source.response : {};
     const status = asNumber(source.status ?? response.status);
     const bodyCandidates = [response.body, source.body, response.text, source.text];
+    const headers = isRecord(response.headers) ? response.headers : isRecord(source.headers) ? source.headers : {};
+    let code: number | undefined;
+    let message: string | undefined;
+    let reason =
+        (typeof headers['x-athena-error-reason'] === 'string' && headers['x-athena-error-reason']) ||
+        (typeof headers['X-Athena-Error-Reason'] === 'string' && headers['X-Athena-Error-Reason']) ||
+        undefined;
 
     for (const candidate of bodyCandidates) {
         const parsed = parseErrorBody(candidate);
@@ -67,14 +106,12 @@ export const requestErrorDetails = (error: unknown): RequestErrorDetails => {
             continue;
         }
         const gatewayError = isRecord(parsed.error) ? parsed.error : parsed;
-        const code = asNumber(gatewayError.code);
-        const message = typeof gatewayError.message === 'string' ? gatewayError.message : undefined;
-        if (code !== undefined || message !== undefined) {
-            return {status, code, message};
-        }
+        code ??= asNumber(gatewayError.code);
+        message ??= typeof gatewayError.message === 'string' ? gatewayError.message : undefined;
+        reason ??= findErrorReason(parsed);
     }
 
-    return {status};
+    return {status, code, message, reason};
 };
 
 export const requestErrorMessage = (error: unknown, fallback = 'Request failed'): string => {
@@ -93,11 +130,16 @@ export const isAccountMaintenanceError = (error: unknown): boolean => {
     return details.status === 503 && details.code === 14 && details.message === ACCOUNT_MAINTENANCE_MESSAGE;
 };
 
-const normalizeRequestError = <T,>(error: T): T => {
+export const isAccountDataAccessDeniedError = (error: unknown): boolean => {
+    const details = requestErrorDetails(error);
+    return details.status === 403 && (details.reason === ACCOUNT_DATA_ACCESS_DENIED_REASON || (details.code === 7 && details.message === ACCOUNT_DATA_ACCESS_DENIED_REASON));
+};
+
+const normalizeRequestError = <T>(error: T): T => {
     const details = requestErrorDetails(error);
     if (details.message && isRecord(error)) {
         try {
-            error.message = details.message;
+            (error as Record<string, any>).message = details.message;
         } catch {
             // Some third-party errors expose a read-only message. Consumers can
             // still obtain the gateway message through requestErrorMessage.

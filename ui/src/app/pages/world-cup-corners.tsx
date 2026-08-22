@@ -2,8 +2,8 @@ import {InfoCircleOutlined, SearchOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
 import {Alert, Button, Input, Progress, Space, Tag, Typography} from 'antd';
 import * as React from 'react';
-import {AppPage, ChoiceGroup, ResourceTable} from '../components';
-import {WorldCupCornerMatch, WorldCupCornerStageKey, worldCupCornerMatches, worldCupCornerStages} from './world-cup-corners-data';
+import {AppPage, ChoiceGroup, ResourceTable, useAsyncData} from '../components';
+import {services, WorldCupCornerMatch, WorldCupCornerStageKey} from '../shared/services';
 
 type OutcomeFilter = 'all' | 'hit' | 'miss';
 
@@ -23,11 +23,6 @@ const summarize = (items: WorldCupCornerMatch[]) => {
     };
 };
 
-const stageByKey = new Map(worldCupCornerStages.map(stage => [stage.key, stage]));
-const tournamentSummary = summarize(worldCupCornerMatches);
-const knockoutSummary = summarize(worldCupCornerMatches.filter(item => stageByKey.get(item.stage)?.knockout));
-const stageSummaries = worldCupCornerStages.map(stage => ({stage, summary: summarize(worldCupCornerMatches.filter(item => item.stage === stage.key))}));
-
 const formatPair = (home: number, away: number) => `${home}–${away}`;
 const formatRate = (value: number) => `${value.toFixed(1)}%`;
 
@@ -42,22 +37,30 @@ const KpiCard = (props: {label: string; value: string; detail: string; tone?: 'p
 const Score = (props: {item: WorldCupCornerMatch}) => (
     <span className='world-cup-corners-score'>
         <span>{formatPair(props.item.homeScore, props.item.awayScore)}</span>
-        {props.item.homePenaltyScore !== undefined && props.item.awayPenaltyScore !== undefined && (
-            <span className='world-cup-corners-score__penalties'>PEN {formatPair(props.item.homePenaltyScore, props.item.awayPenaltyScore)}</span>
-        )}
+        {props.item.hasPenaltyShootout && <span className='world-cup-corners-score__penalties'>PEN {formatPair(props.item.homePenaltyScore, props.item.awayPenaltyScore)}</span>}
     </span>
 );
 
 export const WorldCupCornersPage = () => {
+    const dataset = useAsyncData(() => services.worldCupCorners.getDataset(), []);
+    const stages = dataset.data?.stages || [];
+    const matches = dataset.data?.matches || [];
     const [search, setSearch] = React.useState('');
     const [stage, setStage] = React.useState<WorldCupCornerStageKey | 'all'>('all');
     const [outcome, setOutcome] = React.useState<OutcomeFilter>('all');
     const stageHeadingID = React.useId();
     const tableHeadingID = React.useId();
+    const stageByKey = React.useMemo(() => new Map(stages.map(item => [item.key, item])), [stages]);
+    const tournamentSummary = React.useMemo(() => summarize(matches), [matches]);
+    const knockoutSummary = React.useMemo(() => summarize(matches.filter(item => stageByKey.get(item.stage)?.knockout)), [matches, stageByKey]);
+    const stageSummaries = React.useMemo(
+        () => stages.map(stageItem => ({stage: stageItem, summary: summarize(matches.filter(item => item.stage === stageItem.key))})),
+        [matches, stages]
+    );
 
     const filteredItems = React.useMemo(() => {
         const query = search.trim().toLowerCase();
-        return worldCupCornerMatches.filter(item => {
+        return matches.filter(item => {
             if (stage !== 'all' && item.stage !== stage) {
                 return false;
             }
@@ -69,7 +72,7 @@ export const WorldCupCornersPage = () => {
             }
             return !query || item.homeTeam.toLowerCase().includes(query) || item.awayTeam.toLowerCase().includes(query);
         });
-    }, [outcome, search, stage]);
+    }, [matches, outcome, search, stage]);
 
     const columns: ColumnsType<WorldCupCornerMatch> = [
         {
@@ -148,6 +151,9 @@ export const WorldCupCornersPage = () => {
     return (
         <AppPage
             title='2022 World Cup Corner Analysis'
+            loading={dataset.loading}
+            error={dataset.error}
+            onRefresh={dataset.reload}
             subtitle={
                 <span>
                     64 matches · Data derived from{' '}
@@ -218,7 +224,7 @@ export const WorldCupCornersPage = () => {
                             Match data
                         </Typography.Title>
                         <Typography.Text type='secondary'>
-                            Showing {filteredItems.length} of {worldCupCornerMatches.length} matches
+                            Showing {filteredItems.length} of {matches.length} matches
                         </Typography.Text>
                     </div>
                     <Space className='world-cup-corners-filters' size={10} wrap={true}>
@@ -233,7 +239,7 @@ export const WorldCupCornersPage = () => {
                         <ChoiceGroup<WorldCupCornerStageKey | 'all'>
                             ariaLabel='Filter by stage'
                             value={stage}
-                            options={[{value: 'all', label: 'All'}, ...worldCupCornerStages.map(item => ({value: item.key, label: item.label}))]}
+                            options={[{value: 'all', label: 'All'}, ...stages.map(item => ({value: item.key, label: item.label}))]}
                             onChange={setStage}
                         />
                         <ChoiceGroup<OutcomeFilter>

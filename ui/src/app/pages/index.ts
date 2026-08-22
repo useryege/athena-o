@@ -16,7 +16,6 @@ export * from './managed-oo';
 export * from './project-detail';
 export * from './projects';
 export * from './settings';
-export * from './settings-shared';
 export * from './service-status';
 export * from './user-info';
 export * from './wallet-blocklist';

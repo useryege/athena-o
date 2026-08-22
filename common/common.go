@@ -90,8 +90,6 @@ const (
 
 // Environment variables for tuning and debugging Athena
 const (
-	// EnvVarRBACDebug is an environment variable to enable additional RBAC debugging in the API server
-	EnvVarRBACDebug = "ATHENA_RBAC_DEBUG"
 	// EnvGnuPGHome is the path to Athena's GnuPG keyring for signature verification
 	EnvGnuPGHome = "ATHENA_GNUPGHOME"
 	// EnvLogFormat log format that is defined by `--logformat` option

@@ -3,7 +3,7 @@ import {Button, Card, Col, Collapse, Empty, Input, Row, Tag, Typography} from 'a
 import * as React from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {AppPage, CardTitle, MetricRow, TruncatedText} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import {
@@ -603,7 +603,8 @@ const FIFAEventSummary = (props: {item: PolymarketFIFAMoneylineEventItem}) => {
     );
 };
 
-export const FIFAMarketDashboardPage = (props: {canEdit: boolean}) => {
+export const FIFAMarketDashboardPage = () => {
+    const authorization = useAuthorization();
     const ctx = React.useContext(Context);
     const [, setParams] = useSearchParams();
     const [dashboard, setDashboard] = React.useState<FIFAMarketDashboard>(null);
@@ -691,6 +692,9 @@ export const FIFAMarketDashboardPage = (props: {canEdit: boolean}) => {
     }, [dashboard?.wormEvent, selectedWormConditionId]);
 
     const saveConfig = async () => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         const wormEventId = draftWormEventID.trim();
         const eventRef = draftEventRef.trim();
         if (!wormEventId || !eventRef) {
@@ -735,9 +739,9 @@ export const FIFAMarketDashboardPage = (props: {canEdit: boolean}) => {
         <section className='fifa-event-config'>
             <div className='fifa-event-config__header'>
                 <Typography.Text strong={true}>Current Event</Typography.Text>
-                {props.canEdit && <Tag color='blue'>Admin</Tag>}
+                {authorization.canWriteData && <Tag color='blue'>Read & write</Tag>}
             </div>
-            {props.canEdit ? (
+            {authorization.canWriteData ? (
                 <>
                     <div className='fifa-event-config__fields'>
                         <label className='fifa-event-config__field'>

@@ -3,24 +3,28 @@ import {Button, Form, Input, Modal, Space} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, ResourceTable, TruncatedText, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingDateTime} from '../shared/format';
 import {services} from '../shared/services';
 import {TokenWalletBlocklistEntry} from '../shared/services/token-service';
 
 export const WalletBlocklistPage = () => {
     const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
     const [form] = Form.useForm();
     const [editing, setEditing] = React.useState<TokenWalletBlocklistEntry>(null);
     const data = useAsyncData(() => services.tokenapi.listWalletBlocklistEntries(), []);
     const add = async (values: {wallet: string; note?: string}) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         await services.tokenapi.createWalletBlocklistEntry(values.wallet, values.note || '');
         ctx.notifications.success('Wallet blocklist entry created');
         form.resetFields();
         data.reload();
     };
     const saveNote = async (values: {note?: string}) => {
-        if (!editing?.wallet) {
+        if (!authorization.canWriteData || !editing?.wallet) {
             return;
         }
         await services.tokenapi.updateWalletBlocklistEntry(editing.wallet, values.note || '');
@@ -28,6 +32,9 @@ export const WalletBlocklistPage = () => {
         data.reload();
     };
     const remove = (item: TokenWalletBlocklistEntry) => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         ctx.modal.confirm({
             title: 'Delete wallet blocklist entry?',
             content: item.wallet,
@@ -40,8 +47,10 @@ export const WalletBlocklistPage = () => {
     const columns: ColumnsType<TokenWalletBlocklistEntry> = [
         {title: 'Wallet', render: item => <TruncatedText value={item.wallet} copyable={true} />},
         {title: 'Note', dataIndex: 'note'},
-        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'},
-        {
+        {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
+    ];
+    if (authorization.canWriteData) {
+        columns.push({
             title: 'Actions',
             render: item => (
                 <Space>
@@ -53,8 +62,8 @@ export const WalletBlocklistPage = () => {
                     </Button>
                 </Space>
             )
-        }
-    ];
+        });
+    }
     return (
         <AppPage
             title='Wallet Blocklist'
@@ -62,20 +71,22 @@ export const WalletBlocklistPage = () => {
             error={data.error}
             onRefresh={data.reload}
             filters={
-                <Form form={form} layout='inline' onFinish={add}>
-                    <Form.Item name='wallet' rules={[{required: true}]}>
-                        <Input aria-label='Wallet address' placeholder='Wallet' />
-                    </Form.Item>
-                    <Form.Item name='note'>
-                        <Input aria-label='Wallet note' placeholder='Note' />
-                    </Form.Item>
-                    <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
-                        Add
-                    </Button>
-                </Form>
+                authorization.canWriteData ? (
+                    <Form form={form} layout='inline' onFinish={add}>
+                        <Form.Item name='wallet' rules={[{required: true}]}>
+                            <Input aria-label='Wallet address' placeholder='Wallet' />
+                        </Form.Item>
+                        <Form.Item name='note'>
+                            <Input aria-label='Wallet note' placeholder='Note' />
+                        </Form.Item>
+                        <Button type='primary' htmlType='submit' icon={<PlusOutlined />}>
+                            Add
+                        </Button>
+                    </Form>
+                ) : undefined
             }>
             <ResourceTable rowKey={item => item.wallet || Math.random()} items={data.data || []} columns={columns} loading={data.loading} />
-            <Modal open={!!editing} title='Edit Wallet Note' footer={null} onCancel={() => setEditing(null)}>
+            <Modal open={authorization.canWriteData && !!editing} title='Edit Wallet Note' footer={null} onCancel={() => setEditing(null)}>
                 <Form key={editing?.wallet || 'wallet-note'} layout='vertical' initialValues={editing || {}} onFinish={saveNote}>
                     <Form.Item label='Wallet'>
                         <TruncatedText value={editing?.wallet} copyable={true} />

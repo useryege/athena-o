@@ -3,7 +3,7 @@ import {Button, Drawer, InputNumber, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {AppPage, KeyValueGrid, ResourceTable, Section, TruncatedText, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingDateTime, formatBeijingUnixSeconds, formatBlockNumber} from '../shared/format';
 import {services} from '../shared/services';
 import {ListManagedOOItemsResult, ManagedOODisputeItem, ManagedOOProposalItem} from '../shared/services/managed-oo-service';
@@ -82,7 +82,8 @@ const ManagedOODetailDrawer = (props: {item?: ManagedOOItem; kind: ManagedOOKind
     );
 };
 
-const ManagedOOPage = (props: {kind: ManagedOOKind; canScan: boolean}) => {
+const ManagedOOPage = (props: {kind: ManagedOOKind}) => {
+    const authorization = useAuthorization();
     const ctx = React.useContext(Context);
     const {params, setParams, page, pageSize, setPage} = usePagedParams();
     const blockParam = params.get('block') || params.get('block_number') || '';
@@ -102,6 +103,9 @@ const ManagedOOPage = (props: {kind: ManagedOOKind; canScan: boolean}) => {
     React.useEffect(() => setScanBlock(blockNumber || null), [blockNumber]);
 
     const scan = async () => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         if (!scanBlock || !Number.isSafeInteger(scanBlock) || scanBlock <= 0) {
             ctx.notifications.error('Invalid block number', 'Enter a positive Polygon block number within JavaScript’s safe integer range.');
             return;
@@ -150,7 +154,7 @@ const ManagedOOPage = (props: {kind: ManagedOOKind; canScan: boolean}) => {
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}>
-            {props.canScan && (
+            {authorization.canWriteData && (
                 <Section title='Parse one Polygon block'>
                     <Space wrap={true}>
                         <InputNumber
@@ -193,5 +197,5 @@ const ManagedOOPage = (props: {kind: ManagedOOKind; canScan: boolean}) => {
     );
 };
 
-export const ManagedOOProposalsPage = (props: {canScan: boolean}) => <ManagedOOPage kind='proposal' canScan={props.canScan} />;
-export const ManagedOODisputesPage = (props: {canScan: boolean}) => <ManagedOOPage kind='dispute' canScan={props.canScan} />;
+export const ManagedOOProposalsPage = () => <ManagedOOPage kind='proposal' />;
+export const ManagedOODisputesPage = () => <ManagedOOPage kind='dispute' />;

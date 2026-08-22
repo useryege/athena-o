@@ -12,6 +12,7 @@ import {ViewPreferencesService} from './view-preferences-service';
 import {WalletService} from './wallet-service';
 import {SportsHistoryService} from './sports-history-service';
 import {SportsLiveService} from './sports-live-service';
+import {WorldCupCornersService} from './world-cup-corners-service';
 
 export interface Services {
     tokenapi: TokenService;
@@ -28,6 +29,7 @@ export interface Services {
     fifaMarketDashboard: FIFAMarketDashboardService;
     notification: NotificationService;
     serviceStatus: ServiceStatusService;
+    worldCupCorners: WorldCupCornersService;
 }
 
 export const services: Services = {
@@ -44,8 +46,10 @@ export const services: Services = {
     managedOO: new ManagedOOService(),
     fifaMarketDashboard: new FIFAMarketDashboardService(),
     notification: new NotificationService(),
-    serviceStatus: new ServiceStatusService()
+    serviceStatus: new ServiceStatusService(),
+    worldCupCorners: new WorldCupCornersService()
 };
 
 export * from './service-status-service';
 export * from './view-preferences-service';
+export * from './world-cup-corners-service';

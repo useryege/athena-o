@@ -31,3 +31,22 @@ export const Context = React.createContext<ContextApis>(null);
 export const {Provider, Consumer} = Context;
 
 export const AuthSettingsCtx = React.createContext<models.AuthSettings>(null);
+
+export interface AuthorizationState {
+    user: models.UserInfo;
+    isAdmin: boolean;
+    canReadData: boolean;
+    canWriteData: boolean;
+    revision: number;
+    refresh(): Promise<void>;
+}
+
+export const AuthorizationCtx = React.createContext<AuthorizationState>(null);
+
+export const useAuthorization = (): AuthorizationState => {
+    const authorization = React.useContext(AuthorizationCtx);
+    if (!authorization) {
+        throw new Error('Authorization context is unavailable');
+    }
+    return authorization;
+};

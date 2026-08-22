@@ -2,25 +2,18 @@ import {Button} from 'antd';
 import * as React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, KeyValueGrid, Section, useAsyncData} from '../components';
-import {Context} from '../shared/context';
-import {UserInfo, VersionMessage} from '../shared/models';
+import {Context, useAuthorization} from '../shared/context';
+import {AccountDataAccess, VersionMessage} from '../shared/models';
 import {services} from '../shared/services';
 import {boolTag} from './shared';
 
 export const UserInfoPage = (props: {onSessionEnded: () => void}) => {
     const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
     const navigate = useNavigate();
     const [loggingOut, setLoggingOut] = React.useState(false);
-    const user = useAsyncData<UserInfo>(() => services.users.get() as any, []);
     const version = useAsyncData<VersionMessage & {version?: string}>(() => services.version.version() as any, []);
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
-
-    React.useEffect(() => {
-        if (user.data?.loggedIn === false) {
-            props.onSessionEnded();
-            navigate('/login', {replace: true});
-        }
-    }, [navigate, props.onSessionEnded, user.data?.loggedIn]);
 
     const logout = async () => {
         setLoggingOut(true);
@@ -38,18 +31,28 @@ export const UserInfoPage = (props: {onSessionEnded: () => void}) => {
         <AppPage
             title='User Info'
             subtitle='Session, version, and account context'
-            loading={user.loading || version.loading}
-            error={user.error || version.error}
+            loading={version.loading}
+            error={version.error}
             onRefresh={() => {
-                user.reload();
+                void authorization.refresh();
                 version.reload();
             }}>
             <Section title='Current Session'>
                 <KeyValueGrid
                     items={[
-                        {label: 'Username', value: user.data?.username},
-                        {label: 'Logged In', value: boolTag(user.data?.loggedIn)},
-                        {label: 'Issuer', value: user.data?.iss || 'athena'},
+                        {label: 'Username', value: authorization.user.username},
+                        {label: 'Logged In', value: boolTag(authorization.user.loggedIn)},
+                        {label: 'Administrator', value: boolTag(authorization.isAdmin)},
+                        {
+                            label: 'Data Access',
+                            value:
+                                authorization.user.dataAccess === AccountDataAccess.ReadWrite
+                                    ? 'Read & write'
+                                    : authorization.user.dataAccess === AccountDataAccess.Read
+                                      ? 'Read only'
+                                      : 'No access'
+                        },
+                        {label: 'Issuer', value: authorization.user.iss || 'athena'},
                         {label: 'UI Version', value: uiVersion || '-'},
                         {label: 'Version', value: version.data?.Version || version.data?.version || '-'}
                     ]}

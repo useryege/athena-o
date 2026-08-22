@@ -36,6 +36,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountaccess"
 	accountaccessstore "github.com/useryege/athena/internal/accountaccess/store"
 	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
@@ -48,7 +49,6 @@ import (
 	servermanagedoo "github.com/useryege/athena/internal/server/managedoo"
 	servermarketradar "github.com/useryege/athena/internal/server/marketradar"
 	servernotification "github.com/useryege/athena/internal/server/notification"
-	"github.com/useryege/athena/internal/server/rbacpolicy"
 	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
@@ -57,6 +57,7 @@ import (
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
+	serverworldcupcorners "github.com/useryege/athena/internal/server/worldcupcorners"
 	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
@@ -77,7 +78,6 @@ import (
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/io/files"
 	jwtutil "github.com/useryege/athena/util/jwt"
-	"github.com/useryege/athena/util/rbac"
 	util_session "github.com/useryege/athena/util/session"
 	settings_util "github.com/useryege/athena/util/settings"
 	"github.com/useryege/athena/util/swagger"
@@ -105,6 +105,7 @@ import (
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
+	worldcupcornerspkg "github.com/useryege/athena/pkg/apiclient/worldcupcorners"
 	wormmarketspkg "github.com/useryege/athena/pkg/apiclient/wormmarkets"
 )
 
@@ -157,9 +158,7 @@ type AthenaServer struct {
 	sessionMgr         *util_session.SessionManager
 	settingsMgr        *settings_util.SettingsManager
 	accountAccessStore *accountaccessstore.SQLStore
-	enf                *rbac.Enforcer
-	// projInformer   cache.SharedIndexInformer
-	policyEnforcer *rbacpolicy.RBACPolicyEnforcer
+	accessController   *accountaccess.Controller
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -225,24 +224,15 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	errorsutil.CheckError(err)
 	accountAccessStore, err := accountaccessstore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
-	accountEnabledOverrides, err := accountAccessStore.ListAccountEnabledOverrides(ctx)
+	accessController, err := accountaccess.NewController(ctx, settingsMgr.GetAccountLoginDefaults(), accountAccessStore)
 	if err != nil {
 		_ = accountAccessStore.Close()
 		errorsutil.CheckError(err)
 	}
-	settingsMgr.ApplyAccountEnabledOverrides(accountEnabledOverrides)
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
-	sessionMgr := util_session.NewSessionManager(settingsMgr, userStateStorage)
-
-	enf := rbac.NewEnforcer(nil)
-	enf.EnableEnforce(!opts.DisableAuth)
-	err = enf.SetBuiltinPolicy(assets.BuiltinPolicyCSV)
-	errorsutil.CheckError(err)
-	enf.EnableLog(os.Getenv(common.EnvVarRBACDebug) == "1")
-	policyEnf := rbacpolicy.NewRBACPolicyEnforcer(enf)
-	enf.SetClaimsEnforcerFunc(policyEnf.EnforceClaims)
+	sessionMgr := util_session.NewSessionManager(settingsMgr, userStateStorage, accessController)
 
 	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
@@ -272,8 +262,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		sessionMgr:         sessionMgr,
 		settingsMgr:        settingsMgr,
 		accountAccessStore: accountAccessStore,
-		enf:                enf,
-		policyEnforcer:     policyEnf,
+		accessController:   accessController,
 		userStateStorage:   userStateStorage,
 		staticAssets:       http.FS(staticFS),
 		Shutdown:           noopShutdown,
@@ -429,6 +418,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
 	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
 	fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceServer(grpcS, server.serviceSet.FIFAMarketDashboardService)
+	worldcupcornerspkg.RegisterWorldCupCornersServiceServer(grpcS, server.serviceSet.WorldCupCornersService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenResearchServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenPolicyServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -456,6 +446,7 @@ type AthenaServiceSet struct {
 	ManagedOOService           *servermanagedoo.Server
 	WormMarketsService         *serverwormmarkets.Server
 	FIFAMarketDashboardService *serverfifamarketdashboard.Server
+	WorldCupCornersService     *serverworldcupcorners.Server
 	TokenServices              *servertokenapi.Server
 	ServiceStatusService       *serverservicestatus.Server
 }
@@ -469,12 +460,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	}
 
 	// session service
-	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.policyEnforcer, loginRateLimiter)
+	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.accessController, loginRateLimiter)
 
 	// settings service
-	settingsService := settings.NewServer(server.settingsMgr, server, server.DisableAuth)
+	settingsService := settings.NewServer(server.settingsMgr, server.accessController, server, server.DisableAuth)
 	// account service
-	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.enf, server.accountAccessStore)
+	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.accessController)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
@@ -485,6 +476,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
 	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
 	fifaMarketDashboardService := serverfifamarketdashboard.NewServer(server.FIFAMarketDashboardClientset)
+	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
 	serviceStatusService := serverservicestatus.NewServer(
@@ -524,6 +516,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		ManagedOOService:           managedOOService,
 		WormMarketsService:         wormMarketsService,
 		FIFAMarketDashboardService: fifaMarketDashboardService,
+		WorldCupCornersService:     worldCupCornersService,
 		TokenServices:              tokenAPIService,
 		ServiceStatusService:       serviceStatusService,
 	}
@@ -830,6 +823,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, worldcupcornerspkg.RegisterWorldCupCornersServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenResearchServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenPolicyServiceHandler, gwmux, conn)
@@ -959,7 +953,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 
 	go func() { server.checkServeErr("gRPC server", grpcS.Serve(grpcL)) }()
 	go func() { server.checkServeErr("HTTP server", httpS.Serve(httpL)) }()
-	// go server.rbacPolicyLoader(ctx)
 	go func() { server.checkServeErr("TCP mux", tcpm.Serve()) }()
 	// if !cache.WaitForCacheSync(ctx.Done(), server.projInformer.HasSynced, server.appInformer.HasSynced) {
 	// 	log.Fatal("Timed out waiting for project cache to sync")
@@ -1056,7 +1049,7 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 
 	claims, _, claimsErr := server.getClaims(ctx)
 	if claims != nil {
-		// Add claims to the context to inspect for RBAC
+		// Add claims to the context for account authorization.
 		//nolint:staticcheck
 		ctx = context.WithValue(ctx, "claims", claims) // ctx {data:data, claims:claims}
 	}

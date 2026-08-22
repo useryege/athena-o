@@ -9,8 +9,8 @@ import (
 )
 
 type Querier interface {
-	ListAccountEnabledOverrides(ctx context.Context) ([]ListAccountEnabledOverridesRow, error)
-	UpsertAccountEnabledOverride(ctx context.Context, arg UpsertAccountEnabledOverrideParams) error
+	ListAccountAccessOverrides(ctx context.Context) ([]ListAccountAccessOverridesRow, error)
+	UpdateAccountAccessOverride(ctx context.Context, arg UpdateAccountAccessOverrideParams) (UpdateAccountAccessOverrideRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

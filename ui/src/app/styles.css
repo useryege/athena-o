@@ -524,6 +524,15 @@ body::-webkit-scrollbar-thumb,
     box-shadow: var(--athena-shadow-surface);
 }
 
+.account-access-row--updating > td,
+.account-compact-card--updating {
+    opacity: 0.68;
+}
+
+.account-data-access-choice {
+    min-width: max-content;
+}
+
 .account-compact-card .ant-card-head {
     min-height: 44px;
 }
@@ -556,6 +565,11 @@ body::-webkit-scrollbar-thumb,
 .account-compact-card__details > div > span:last-child {
     min-width: 0;
     overflow-wrap: anywhere;
+}
+
+.account-compact-card .account-data-access-choice {
+    width: 100%;
+    min-width: 0;
 }
 
 .resource-table.ant-table-wrapper {

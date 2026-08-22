@@ -2,7 +2,7 @@ import {LoadingOutlined, ReloadOutlined} from '@ant-design/icons';
 import {Button, Empty, Space, Switch, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, useAsyncData} from '../components';
-import {Context} from '../shared/context';
+import {Context, useAuthorization} from '../shared/context';
 import {formatBeijingUnixSeconds} from '../shared/format';
 import {services} from '../shared/services';
 import {SportsHistorySyncStatus} from '../shared/services/sports-history-service';
@@ -41,7 +41,8 @@ const SportsHistorySyncStatusBar = (props: {status?: SportsHistorySyncStatus; re
     );
 };
 
-export const SportsHistoryPage = (props: {canRefresh: boolean}) => {
+export const SportsHistoryPage = () => {
+    const authorization = useAuthorization();
     const ctx = React.useContext(Context);
     const events = useAsyncData(() => services.sportsHistory.listEvents(200), []);
     const syncStatus = useAsyncData(() => services.sportsHistory.getSyncStatus(), []);
@@ -100,6 +101,9 @@ export const SportsHistoryPage = (props: {canRefresh: boolean}) => {
     }, [pollingActive]);
 
     const refresh = React.useCallback(async () => {
+        if (!authorization.canWriteData) {
+            return;
+        }
         setRefreshing(true);
         syncStatus.reload();
         try {
@@ -112,7 +116,7 @@ export const SportsHistoryPage = (props: {canRefresh: boolean}) => {
             syncStatus.reload();
             reloadAll();
         }
-    }, [ctx.notifications, reloadAll, syncStatus.reload]);
+    }, [authorization.canWriteData, ctx.notifications, reloadAll, syncStatus.reload]);
     const toggleScratchMode = React.useCallback((checked: boolean) => {
         setScratchMode(checked);
         if (checked) {
@@ -133,7 +137,7 @@ export const SportsHistoryPage = (props: {canRefresh: boolean}) => {
                     <Button icon={<ReloadOutlined />} disabled={!scratchMode} onClick={resetScratch}>
                         Reset
                     </Button>
-                    {props.canRefresh && (
+                    {authorization.canWriteData && (
                         <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
                             Refresh data
                         </Button>

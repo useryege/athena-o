@@ -2,169 +2,155 @@
 
 ## Scope
 
-This capability makes the Token Intelligence web UI and its public Token API
-available only to administrators. It covers the built-in role policy, the
-permissions projected into the web session, navigation and route filtering,
-and authorization at the server API boundary.
+Token Intelligence uses the same hierarchical business-data access level as
+every other ATHENA data capability. This document explains how `READ` exposes
+Token pages and queries, how `READ_WRITE` additionally enables Token mutations,
+and how server authorization and browser presentation stay synchronized.
 
-Token worker processes, internal service-to-service connections, and the Token
-domain behavior behind an authorized request remain outside this boundary.
-Account authentication and availability are documented separately in
-[Account Availability](../identity-access/account-availability.md).
+Token workers, internal service-to-service calls, project research behavior,
+and persistence behind an authorized request remain owned by their Token
+subsystems. Login availability, administrator operations, durable access state,
+and the complete browser authorization lifecycle are documented in
+[Account Access Control](../identity-access/account-access-control.md).
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Built-in role grants | [assets/builtin-policy.csv](../../../assets/builtin-policy.csv) | `role:admin`, `role:readonly`, `tokenapi` policies |
-| RBAC initialization | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer`, `SetBuiltinPolicy` |
-| Web-session permission projection | [internal/server/session/session.go](../../../internal/server/session/session.go) | `uiBootstrapPermissions`, `GetUserInfo`, `userPermissions` |
-| Token API authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `rbacGRPCMethods`, `authorizeGRPC` |
-| UI navigation, session bootstrap, and route guards | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | `Shell`, `invalidatePendingRequestErrors`, `tokenNavItem`, `filterNavItems`, `RequirePermission`, `AppRoutes` |
+| Effective access authority | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `DataAccess`, `RequirementDataRead`, `RequirementDataWrite`, `Controller.Authorize` |
+| Token API authorization boundary | [internal/server/authz.go](../../../internal/server/authz.go) | `dataReadGRPCMethods`, `dataWriteGRPCMethods`, `authorizeGRPC` |
+| Token API proxy boundary | [internal/server/tokenapi/tokenapi.go](../../../internal/server/tokenapi/tokenapi.go) | Token catalog, research, policy, and operations methods |
+| Browser authorization state | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts) | `AuthorizationCtx`, `canReadData`, `canWriteData`, Token navigation and routes |
+| Token clients and write controls | [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts), [ui/src/app/pages](../../../ui/src/app/pages) | Token request methods and page actions |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    P["Built-in RBAC policy"] --> E["Server RBAC enforcer"]
-    E --> S["Session permission projection"]
-    S --> U["UI navigation and route guards"]
-    E --> A["Token API authorization"]
+    C["AccessController"] --> A["Server RPC category authorization"]
+    A --> T["Token API services"]
+    C --> I["GetUserInfo data_access + revision"]
+    I --> U["Browser Authorization Context"]
+    U --> N["Token navigation and routes"]
+    U --> W["Token write controls"]
 ```
 
-The built-in policy is the source of truth for both presentation access and API
-access. The UI does not compare usernames or maintain a separate administrator
-allowlist. It consumes only the concrete permissions returned for the current
-session.
+There is no Token-specific account list, role, or policy. The authenticated
+account's effective aggregate is the sole input:
 
-`role:admin` has wildcard `get` and `update` access to the `tokenapi` resource.
-`role:readonly` has no `tokenapi` grants. The built-in `admin` account is assigned
-to `role:admin`, which inherits the unrelated read-only permissions through the
-existing role hierarchy.
+- `NONE` cannot mount Token routes or call Token API methods.
+- `READ` can open every Token read page and call every Token query, including
+  projects, reports, observations, contract code, collection diagnostics,
+  node status, runtime configuration, policies, and chain checkpoints.
+- `READ_WRITE` includes all reads and can create, update, or delete blocklist
+  entries and update chain checkpoints.
+- The administrator always has `READ_WRITE`; its separate administrator flag
+  is not needed for ordinary Token data operations.
+
+The UI access level improves presentation but is not the security boundary.
+Every public Token RPC is independently categorized and enforced by the API
+Server before it reaches the Token proxy or service implementation.
 
 ## Runtime Flow
 
-1. Server startup loads `assets/builtin-policy.csv` into the RBAC enforcer.
-2. On the first protected route of a browser login session, the web client
-   calls `GetUserInfo`. The shell blocks protected routes only for this initial
-   bootstrap. Protected-to-protected pathname and query changes reuse the
-   resulting access snapshot without unmounting the active route or issuing
-   another session request.
-3. `userPermissions` checks every entry in `uiBootstrapPermissions` against the
-   caller's claims. Administrators receive the concrete Token permissions that
-   drive the UI; read-only users receive no Token permissions.
-4. The UI converts the returned permissions into session-scoped `AccessState`.
-   `filterNavItems` removes every inaccessible Token child, including the
-   `/token/chain-processing` diagnostics route, and consequently removes the
-   empty Token navigation group for a read-only user.
-5. Each `/token/*` route is wrapped by `RequirePermission`. A direct read-only
-   navigation renders the existing 403 result before the Token page component
-   mounts, so the page does not initiate Token data requests.
-6. Every Token API method is independently mapped to the `tokenapi` resource in
-   `rbacGRPCMethods`. `authorizeGRPC` rejects read-only callers before proxying
-   the request to the Token API service.
+1. Authentication resolves the current account through `AccessController`.
+   Disabled credentials stop at the account-maintenance boundary before Token
+   authorization runs.
+2. The API Server classifies Token `Get` and `List` methods as data-read. Token
+   `Create`, `Update`, and `Delete` policy methods and checkpoint updates are
+   data-write.
+3. `Controller.Authorize` permits a data-read request for `READ` or
+   `READ_WRITE` and permits a data-write request only for `READ_WRITE`. A denial
+   occurs before the Token API dependency is called.
+4. After login, the shell obtains `data_access` and
+   `authorization_revision` from `GetUserInfo`. The shared Authorization
+   Context exposes `canReadData` and `canWriteData`; Token navigation and all
+   `/token/*` routes require the former.
+5. Token query pages mount for `READ` and `READ_WRITE`. Each mutation or
+   sensitive write interaction is rendered and enabled only when
+   `canWriteData` is true. Direct HTTP or gRPC calls remain subject to the same
+   server categorization.
+6. While the page is visible, the shell refreshes authorization every 15
+   seconds and when the window regains focus. A stable account-data 403 starts
+   the same deduplicated refresh immediately.
+7. When a Token user's authorization revision changes, the shell cancels stale
+   work, clears shared asynchronous Token data, project list caches, and saved
+   return positions, closes write interactions, and remounts the route. A
+   downgrade to `READ` retains the current query page without write controls;
+   a downgrade to `NONE` routes to `/user-info`. An upgrade exposes the Token
+   navigation without a new login.
 
-Entering the login route clears `AccessState`, tab-local project query caches,
-and saved Projects return positions. A successful login therefore performs a
-new protected-route bootstrap without exposing data from the previous
-identity. A successful logout, `loggedIn=false`, or any API 401 performs the
-same invalidation before replacing the route with `/login`. A server-side role
-change within an otherwise valid session becomes visible to navigation after a
-hard reload or a new login; server authorization remains authoritative for
-every intervening request. Each invalidation also advances the shared request
-error generation, so an error emitted later by a request from the ended session
-cannot terminate the newly authenticated session.
-
-A disabled local account follows a distinct session path. `GetUserInfo` and
-protected API calls return the exact account-maintenance 503 signal, so the
-shell performs the same session-scoped cache invalidation and routes to
-`/login?reason=maintenance`. It does not delete the credential cookie. An
-ordinary 503 does not activate this path, and an ordinary 401 continues to use
-the normal login route. Re-enabling the account allows an otherwise valid
-credential to bootstrap a fresh permission snapshot.
-
-The unified Projects list, both of its UI projections, the project-detail
-snapshot, Swap activity summary, and paginated Swap event methods all map
-explicitly to the existing `tokenapi/get/projects` permission. The Report tab's
-revision history continues to call `ListReportRevisions`, which maps to
-`tokenapi/get/report-revisions` and remains in the session bootstrap permission
-set. There is no separate current-Report list route or permission.
+Token project list, project detail, trends, observations, wallet normal
+transactions, Swap activity, Swap events, Report revisions, Selections, and
+collection-task reads all share the same data-read category. The unified access
+level does not create per-page or per-endpoint grants.
 
 ## State / Data
 
-This capability adds no durable state. Role grants are embedded in the server
-binary through the built-in policy. The RBAC enforcer caches its evaluated
-policy in memory, and the browser keeps the current user's concrete permission
-set in `AccessState` for the active login session.
+This capability adds no Token-specific authorization state. The durable
+account aggregate and its in-memory snapshot belong to Account Access Control.
+The browser keeps the current `data_access` and authorization revision in the
+shared Authorization Context for the active identity.
 
-`GetUserInfoResponse.permissions` remains a list of resource, action, and
-subresource triples. Administrator-only access changes which triples are
-returned; it does not change the response schema.
+Token caches contain business responses rather than authorization decisions.
+They are scoped to the current login and authorization generation and are
+cleared when that generation changes, preventing a downgraded or different
+identity from rendering a prior snapshot.
 
 ## Configuration
 
-There is no Token-specific access configuration. `AthenaServerOpts.DisableAuth`
-is the existing process-wide development override: when enabled, the server
-disables enforcement and supplies administrator claims. Normal authenticated
-operation always uses the built-in role policy described here.
+There is no Token-specific access setting. Ordinary accounts default to
+`NONE`, and administrators replace the complete account aggregate through the
+account-access API. `ATHENA_SERVER_DISABLE_AUTH` is the process-wide
+development bypass and supplies the built-in administrator identity.
 
 ## Invariants
 
-- Only `role:admin` receives `tokenapi` read or update grants.
-- `role:readonly` receives no `tokenapi` grant, including runtime options,
-  projects, and chain checkpoints.
-- Token UI visibility and route access derive from server-provided permissions,
-  not from a client-side username check.
-- Hiding navigation is not the security boundary; every Token API method is
-  also protected by a server-side `tokenapi` authorization rule.
-- `GetProjectSwapActivity` and `ListProjectSwapEvents` require the same
-  `tokenapi/get/projects` permission as `GetProjectDetail`.
-- `ListProjects` and both Projects UI views require `tokenapi/get/projects`;
-  `ListReportRevisions` continues to require
-  `tokenapi/get/report-revisions`.
-- Current Report risk and Evaluation summaries do not introduce a standalone
-  Report-list permission.
-- An inaccessible Token route renders the shared 403 result without mounting
-  its page component.
-- Token API paths, request and response messages, and public data types are
-  unchanged by role assignment.
+- Token reads require data-read and therefore accept only `READ` or
+  `READ_WRITE`.
+- Token mutations require data-write and therefore accept only `READ_WRITE`.
+- Every ordinary account at the same data level has the same Token access; no
+  per-route or per-resource policy exists.
+- Token navigation, routes, and write controls derive only from the shared
+  Authorization Context, not usernames or client-side allowlists.
+- Hiding a route or action is not authorization; the server independently
+  categorizes every public Token RPC.
+- All project and project-scoped reads use the same data-read category as
+  Report, Selection, and collection histories.
+- Cached Token data never crosses a login or authorization-generation boundary.
+- Access changes do not alter Token API paths, domain state, or public business
+  data types.
 
 ## Failure Recovery
 
-An invalid built-in policy prevents server startup. An unauthenticated session
-request clears browser session state and follows the normal login flow. An
-exact disabled-account maintenance response clears the same client caches but
-uses the maintenance login route while preserving the credential. If the
-initial user-information request fails for another reason, the shell retains
-the protected-route boundary and presents a retry action; it does not
-synthesize an empty permission set or render a misleading 403. Retrying this
-recovery state is the only session request made without entering a new login
-session.
+An unauthenticated Token request follows the normal authentication flow. An
+exact maintenance 503 clears browser session caches and routes to the
+maintenance login page while preserving the credential. An account-data denial
+returns gRPC `PermissionDenied` and HTTP 403 with
+`ACCOUNT_DATA_ACCESS_DENIED`; the browser refreshes authorization without
+clearing the credential.
 
-Authorization failures are safe to retry after the caller's role or session
-changes. They do not reach the Token API service and cannot mutate Token state.
+A denied mutation never reaches the Token service and is safe to retry after
+an administrator grants `READ_WRITE`. A denied read is likewise safe to retry
+after `READ` or `READ_WRITE` is granted. If the authorization refresh itself
+fails, the existing retry/error boundary remains visible rather than assuming
+an access level.
 
 ## Observability
 
-Rejected Token API calls use the existing gRPC `PermissionDenied` and HTTP
-authorization error mapping. The UI renders the existing 403 result for denied
-routes. RBAC debug logging remains controlled by the shared
-`ATHENA_RBAC_DEBUG` setting; this capability adds no health endpoint, metric, or
-log format.
+Rejected Token calls use normal request logging and gRPC/gateway status
+mapping. The stable `google.rpc.ErrorInfo` reason distinguishes account-data
+denial from an unrelated 403. Login maintenance remains distinguishable as
+gRPC `Unavailable`, HTTP 503, and the fixed maintenance message. This
+capability adds no Token-specific metric or health endpoint.
 
 ## Change Checklist
 
-- [ ] `role:readonly` has no `tokenapi` policy and `role:admin` retains wildcard access.
-- [ ] Session permission projection still covers every Token navigation and route permission.
-- [ ] Token navigation filtering and direct-route denial remain aligned.
-- [ ] Every public Token API method has a server-side `tokenapi` authorization rule.
-- [ ] Chain processing summaries and attempt history remain mapped to the same
-      `tokenapi/get/chain-checkpoints` permission as checkpoint reads.
-- [ ] Project detail, Swap activity, and Swap event reads remain mapped to
-      `tokenapi/get/projects`.
-- [ ] Projects Overview and Report Risk remain mapped to
-      `tokenapi/get/projects`, while Report revision history remains mapped to
-      `tokenapi/get/report-revisions`.
-- [ ] New Token API response types do not change the session permission schema.
+- [ ] Every Token query remains categorized as data-read.
+- [ ] Every Token mutation remains categorized as data-write.
+- [ ] Token navigation, routes, and write controls match `canReadData` and `canWriteData`.
+- [ ] Project, Report, Selection, collection, policy, and checkpoint methods remain in the intended category.
+- [ ] Authorization revision changes clear Token caches and stale work without clearing valid credentials.
+- [ ] Stable data 403, maintenance 503, and ordinary authentication errors remain distinguishable.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

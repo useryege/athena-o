@@ -7,6 +7,7 @@ import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, Section, StatusTag, u
 import {formatBeijingDateTime, formatBeijingUnixSeconds, formatBlockNumber} from '../shared/format';
 import {PAGE_SIZE_OPTIONS} from '../shared/pagination';
 import {services} from '../shared/services';
+import {useAuthorization} from '../shared/context';
 import {TokenChainCheckpoint, TokenChainProcessingAttempt, TokenChainProcessingSummary} from '../shared/services/token-service';
 import {boolTag} from './shared';
 import {ChainBadge} from './token-shared';
@@ -185,6 +186,7 @@ const StageBreakdown = (props: {summary?: TokenChainProcessingSummary}) => {
 };
 
 export const ChainProcessingPage = () => {
+    const authorization = useAuthorization();
     const [params, setParams] = useSearchParams();
     const checkpoints = useAsyncData(() => services.tokenapi.listChainCheckpoints(), []);
     const requestedChainID = positiveInteger(params.get('chain'));
@@ -247,7 +249,7 @@ export const ChainProcessingPage = () => {
         updateParams({block: value || undefined, page: 1});
     };
     const updateStatus = async (item: TokenChainCheckpoint, nextStatus: ChainProcessingStatus) => {
-        if (!item.chainID) {
+        if (!authorization.canWriteData || !item.chainID) {
             return;
         }
         const targetChainID = item.chainID;
@@ -295,9 +297,11 @@ export const ChainProcessingPage = () => {
         {title: 'Enabled', render: item => boolTag(item.enabled)},
         {title: 'Cursor', render: item => formatBlockNumber(item.cursorBlockNumber)},
         {title: 'Current status', render: item => <StatusTag value={item.status} positive={item.status === 'running'} />},
-        {title: 'Updated', render: item => formatBeijingDateTime(item.updatedAt) || '-'},
-        {title: 'Actions', render: checkpointAction}
+        {title: 'Updated', render: item => formatBeijingDateTime(item.updatedAt) || '-'}
     ];
+    if (authorization.canWriteData) {
+        checkpointColumns.push({title: 'Actions', render: checkpointAction});
+    }
     const attemptColumns: ColumnsType<TokenChainProcessingAttempt> = [
         {
             title: 'Block',

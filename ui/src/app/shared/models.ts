@@ -44,15 +44,26 @@ export interface UserInfo {
     loggedIn: boolean;
     username: string;
     iss: string;
-    groups: string[];
-    permissions: Permission[];
+    administrator: boolean;
+    dataAccess: AccountDataAccess;
+    authorizationRevision: number;
 }
 
-export interface Permission {
-    resource: string;
-    action: string;
-    subresource: string;
+export enum AccountDataAccess {
+    None = 0,
+    Read = 1,
+    ReadWrite = 2
 }
+
+export const parseAccountDataAccess = (value: unknown): AccountDataAccess => {
+    if (value === AccountDataAccess.Read || value === 'ACCOUNT_DATA_ACCESS_READ' || value === 'read') {
+        return AccountDataAccess.Read;
+    }
+    if (value === AccountDataAccess.ReadWrite || value === 'ACCOUNT_DATA_ACCESS_READ_WRITE' || value === 'read_write') {
+        return AccountDataAccess.ReadWrite;
+    }
+    return AccountDataAccess.None;
+};
 
 export interface Token {
     id: string;
@@ -62,7 +73,14 @@ export interface Token {
 
 export interface Account {
     name: string;
-    enabled: boolean;
+    administrator: boolean;
+    access: AccountAccess;
     capabilities: string[];
     tokens: Token[];
+}
+
+export interface AccountAccess {
+    loginEnabled: boolean;
+    dataAccess: AccountDataAccess;
+    revision: number;
 }

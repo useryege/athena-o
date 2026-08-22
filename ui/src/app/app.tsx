@@ -26,10 +26,10 @@ import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import {Subscription} from 'rxjs';
-import {AuthSettingsCtx, Provider} from './shared/context';
-import {AuthSettings, Permission, UserInfo} from './shared/models';
+import {AuthorizationCtx, AuthSettingsCtx, Provider} from './shared/context';
+import {AccountDataAccess, AuthSettings, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
-import requests, {isAccountMaintenanceError} from './shared/services/requests';
+import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError} from './shared/services/requests';
 import {BrandMark, clearAsyncDataCache} from './components';
 import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {
@@ -79,7 +79,7 @@ interface NavItem {
     icon: React.ReactNode;
     path?: string;
     children?: NavItem[];
-    permission?: Permission;
+    access?: 'data' | 'admin';
 }
 
 interface NavSection {
@@ -90,64 +90,37 @@ interface NavSection {
 
 interface AccessState {
     user: UserInfo;
-    permissions: Record<string, boolean>;
+    isAdmin: boolean;
+    canReadData: boolean;
+    canWriteData: boolean;
+    revision: number;
 }
 
-const rbacResources = {
-    notifications: 'notifications',
-    marketRadar: 'market-radar',
-    sportsLive: 'sports-live',
-    sportsHistory: 'sports-history',
-    managedOO: 'managed-oo',
-    fifaMarketDashboard: 'fifa-market-dashboard',
-    worldCupCorners: 'world-cup-corners',
-    tokenapi: 'tokenapi',
-    serviceStatus: 'service-status',
-    wallets: 'wallets'
+const canAccessItem = (authorization: AccessState, item: NavItem) => {
+    if (!item.access) {
+        return true;
+    }
+    return item.access === 'admin' ? authorization.isAdmin : authorization.canReadData;
 };
-
-const rbacActions = {
-    get: 'get',
-    update: 'update',
-    invoke: 'invoke'
-};
-
-const tokenapiSubresources = {
-    projects: 'projects',
-    contractCodes: 'contract-codes',
-    contractCodeBlocklist: 'contract-code-blocklist',
-    walletBlocklist: 'wallet-blocklist',
-    nodeStatuses: 'node-statuses',
-    chainCheckpoints: 'chain-checkpoints',
-    collectionTasks: 'collection-tasks'
-};
-
-const permission = (resource: string, action: string, subresource = '*'): Permission => ({resource, action, subresource});
-const tokenapiPermission = (subresource: string) => permission(rbacResources.tokenapi, rbacActions.get, subresource);
-const serviceStatusPermission = permission(rbacResources.serviceStatus, rbacActions.get);
-const serviceStatusInvokePermission = permission(rbacResources.serviceStatus, rbacActions.invoke);
-const permissionKey = (perm: Permission) => `${perm.resource}:${perm.action}:${perm.subresource}`;
-const hasPermission = (access: AccessState, perm?: Permission) => !perm || access?.permissions[permissionKey(perm)] === true;
 
 const marketRadarNavItem: NavItem = {
     key: 'market-radar',
     label: 'Market Radar',
     icon: <DashboardOutlined />,
+    access: 'data',
     children: [
-        {key: '/market-radar', label: 'Hot Markets', path: '/market-radar', icon: <DashboardOutlined />, permission: permission(rbacResources.marketRadar, rbacActions.get)},
+        {key: '/market-radar', label: 'Hot Markets', path: '/market-radar', icon: <DashboardOutlined />},
         {
             key: '/market-radar/realtime',
             label: 'Realtime',
             path: '/market-radar/realtime',
-            icon: <DashboardOutlined />,
-            permission: permission(rbacResources.marketRadar, rbacActions.get)
+            icon: <DashboardOutlined />
         },
         {
             key: '/market-radar/movers',
             label: 'Movers',
             path: '/market-radar/movers',
-            icon: <BarChartOutlined />,
-            permission: permission(rbacResources.marketRadar, rbacActions.get)
+            icon: <BarChartOutlined />
         }
     ]
 };
@@ -156,14 +129,14 @@ const sportsNavItem: NavItem = {
     key: 'sports',
     label: 'Sports',
     icon: <TrophyOutlined />,
+    access: 'data',
     children: [
-        {key: '/sports-live', label: 'Sports Live', path: '/sports-live', icon: <DashboardOutlined />, permission: permission(rbacResources.sportsLive, rbacActions.get)},
+        {key: '/sports-live', label: 'Sports Live', path: '/sports-live', icon: <DashboardOutlined />},
         {
             key: '/sports-history',
             label: 'Sports History',
             path: '/sports-history',
-            icon: <DashboardOutlined />,
-            permission: permission(rbacResources.sportsHistory, rbacActions.get)
+            icon: <DashboardOutlined />
         }
     ]
 };
@@ -172,20 +145,19 @@ const managedOONavItem: NavItem = {
     key: 'managed-oo',
     label: 'Managed OO',
     icon: <ApiOutlined />,
+    access: 'data',
     children: [
         {
             key: '/managed-oo/proposals',
             label: 'Proposals',
             path: '/managed-oo/proposals',
-            icon: <ApiOutlined />,
-            permission: permission(rbacResources.managedOO, rbacActions.get)
+            icon: <ApiOutlined />
         },
         {
             key: '/managed-oo/disputes',
             label: 'Disputes',
             path: '/managed-oo/disputes',
-            icon: <ApiOutlined />,
-            permission: permission(rbacResources.managedOO, rbacActions.get)
+            icon: <ApiOutlined />
         }
     ]
 };
@@ -194,49 +166,44 @@ const tokenNavItem: NavItem = {
     key: 'token',
     label: 'Token',
     icon: <DashboardOutlined />,
+    access: 'data',
     children: [
-        {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />, permission: tokenapiPermission(tokenapiSubresources.projects)},
+        {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />},
         {
             key: '/token/contract-codes',
             label: 'Contract Codes',
             path: '/token/contract-codes',
-            icon: <CodeOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.contractCodes)
+            icon: <CodeOutlined />
         },
         {
             key: '/token/contract-code-blocklist',
             label: 'Contract Code Blocklist',
             path: '/token/contract-code-blocklist',
-            icon: <ApiOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.contractCodeBlocklist)
+            icon: <ApiOutlined />
         },
         {
             key: '/token/wallet-blocklist',
             label: 'Wallet Blocklist',
             path: '/token/wallet-blocklist',
-            icon: <WalletOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.walletBlocklist)
+            icon: <WalletOutlined />
         },
         {
             key: '/token/node-statuses',
             label: 'Node Status',
             path: '/token/node-statuses',
-            icon: <ApiOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.nodeStatuses)
+            icon: <ApiOutlined />
         },
         {
             key: '/token/chain-processing',
             label: 'Chain Processing',
             path: '/token/chain-processing',
-            icon: <ApiOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.chainCheckpoints)
+            icon: <ApiOutlined />
         },
         {
             key: '/token/collection-tasks',
             label: 'Collection Tasks',
             path: '/token/collection-tasks',
-            icon: <FileTextOutlined />,
-            permission: tokenapiPermission(tokenapiSubresources.collectionTasks)
+            icon: <FileTextOutlined />
         }
     ]
 };
@@ -254,29 +221,29 @@ const navSections: NavSection[] = [
                 label: 'FIFA Market Dashboard',
                 path: '/fifa-market-dashboard',
                 icon: <TrophyOutlined />,
-                permission: permission(rbacResources.fifaMarketDashboard, rbacActions.get)
+                access: 'data'
             },
             {
                 key: '/world-cup-corners',
                 label: 'World Cup Corners',
                 path: '/world-cup-corners',
                 icon: <BarChartOutlined />,
-                permission: permission(rbacResources.worldCupCorners, rbacActions.get)
+                access: 'data'
             }
         ]
     },
     {
         key: 'token-risk',
         label: 'Token & Risk',
-        children: [tokenNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, permission: permission(rbacResources.wallets, rbacActions.get)}]
+        children: [tokenNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, access: 'data'}]
     },
     {
         key: 'operations',
         label: 'Operations',
         children: [
-            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, permission: permission(rbacResources.notifications, rbacActions.get)},
-            {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, permission: serviceStatusPermission},
-            {key: '/etherscan-gateways', label: 'Etherscan Gateways', path: '/etherscan-gateways', icon: <ApiOutlined />, permission: serviceStatusPermission}
+            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, access: 'data'},
+            {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, access: 'admin'},
+            {key: '/etherscan-gateways', label: 'Etherscan Gateways', path: '/etherscan-gateways', icon: <ApiOutlined />, access: 'admin'}
         ]
     },
     {
@@ -299,9 +266,9 @@ const filterNavItems = (items: NavItem[], access: AccessState): NavItem[] =>
         .map(item => {
             const children = item.children ? filterNavItems(item.children, access) : undefined;
             if (children) {
-                return children.length > 0 && hasPermission(access, item.permission) ? {...item, children} : null;
+                return children.length > 0 && canAccessItem(access, item) ? {...item, children} : null;
             }
-            return hasPermission(access, item.permission) ? item : null;
+            return canAccessItem(access, item) ? item : null;
         })
         .filter((item): item is NavItem => item !== null);
 
@@ -385,13 +352,13 @@ export async function loadAuthSettingsWithRetry(
 
 const loadAccessState = (user: UserInfo): AccessState => ({
     user,
-    permissions: Object.fromEntries((user.permissions || []).map(perm => [permissionKey(perm), true]))
+    isAdmin: user.administrator,
+    canReadData: user.administrator || user.dataAccess >= AccountDataAccess.Read,
+    canWriteData: user.administrator || user.dataAccess >= AccountDataAccess.ReadWrite,
+    revision: user.authorizationRevision
 });
 
 const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do not have permission to access this page.' />;
-
-const RequirePermission = (props: {access: AccessState; permission: Permission; children: React.ReactElement}) =>
-    hasPermission(props.access, props.permission) ? props.children : <ForbiddenPage />;
 
 const narrowShellQuery = '(max-width: 900px)';
 
@@ -412,80 +379,38 @@ const useNarrowShell = () => {
 };
 
 const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => {
-    const visibleTokenDefault = filterNavItems(navItems, props.access)
-        .find(item => item.key === 'token')
-        ?.children?.find(item => item.path)?.path;
-    const withPermission = (perm: Permission, element: React.ReactElement) => (
-        <RequirePermission access={props.access} permission={perm}>
-            {element}
-        </RequirePermission>
-    );
+    const dataRoute = (element: React.ReactElement) => (props.access.canReadData ? element : <Navigate replace={true} to='/user-info' />);
+    const adminRoute = (element: React.ReactElement) => (props.access.isAdmin ? element : <ForbiddenPage />);
     return (
         <Routes>
             <Route path='/' element={<Navigate replace={true} to='/user-info' />} />
-            <Route
-                path='/wallet'
-                element={withPermission(
-                    permission(rbacResources.wallets, rbacActions.get),
-                    <WalletsPage
-                        canCreate={hasPermission(props.access, permission(rbacResources.wallets, rbacActions.update))}
-                        canReveal={hasPermission(props.access, permission(rbacResources.wallets, rbacActions.invoke))}
-                    />
-                )}
-            />
-            <Route path='/market-radar' element={withPermission(permission(rbacResources.marketRadar, rbacActions.get), <MarketRadarHotPage />)} />
-            <Route path='/market-radar/realtime' element={withPermission(permission(rbacResources.marketRadar, rbacActions.get), <MarketRadarRealtimePage />)} />
-            <Route path='/market-radar/movers' element={withPermission(permission(rbacResources.marketRadar, rbacActions.get), <MarketRadarMoversPage />)} />
-            <Route path='/sports-live' element={withPermission(permission(rbacResources.sportsLive, rbacActions.get), <SportsLivePage />)} />
-            <Route
-                path='/sports-history'
-                element={withPermission(
-                    permission(rbacResources.sportsHistory, rbacActions.get),
-                    <SportsHistoryPage canRefresh={hasPermission(props.access, permission(rbacResources.sportsHistory, rbacActions.invoke))} />
-                )}
-            />
-            <Route path='/world-cup-corners' element={withPermission(permission(rbacResources.worldCupCorners, rbacActions.get), <WorldCupCornersPage />)} />
-            <Route
-                path='/managed-oo/proposals'
-                element={withPermission(
-                    permission(rbacResources.managedOO, rbacActions.get),
-                    <ManagedOOProposalsPage canScan={hasPermission(props.access, permission(rbacResources.managedOO, rbacActions.invoke))} />
-                )}
-            />
-            <Route
-                path='/managed-oo/disputes'
-                element={withPermission(
-                    permission(rbacResources.managedOO, rbacActions.get),
-                    <ManagedOODisputesPage canScan={hasPermission(props.access, permission(rbacResources.managedOO, rbacActions.invoke))} />
-                )}
-            />
-            <Route
-                path='/fifa-market-dashboard'
-                element={withPermission(
-                    permission(rbacResources.fifaMarketDashboard, rbacActions.get),
-                    <FIFAMarketDashboardPage canEdit={hasPermission(props.access, permission(rbacResources.fifaMarketDashboard, rbacActions.update))} />
-                )}
-            />
-            <Route path='/notifications' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsPage />)} />
-            <Route path='/notifications/:id' element={withPermission(permission(rbacResources.notifications, rbacActions.get), <NotificationsDetailPage />)} />
+            <Route path='/wallet' element={dataRoute(<WalletsPage />)} />
+            <Route path='/market-radar' element={dataRoute(<MarketRadarHotPage />)} />
+            <Route path='/market-radar/realtime' element={dataRoute(<MarketRadarRealtimePage />)} />
+            <Route path='/market-radar/movers' element={dataRoute(<MarketRadarMoversPage />)} />
+            <Route path='/sports-live' element={dataRoute(<SportsLivePage />)} />
+            <Route path='/sports-history' element={dataRoute(<SportsHistoryPage />)} />
+            <Route path='/world-cup-corners' element={dataRoute(<WorldCupCornersPage />)} />
+            <Route path='/managed-oo/proposals' element={dataRoute(<ManagedOOProposalsPage />)} />
+            <Route path='/managed-oo/disputes' element={dataRoute(<ManagedOODisputesPage />)} />
+            <Route path='/fifa-market-dashboard' element={dataRoute(<FIFAMarketDashboardPage />)} />
+            <Route path='/notifications' element={dataRoute(<NotificationsPage />)} />
+            <Route path='/notifications/:id' element={dataRoute(<NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
-            <Route path='/service-status' element={withPermission(serviceStatusPermission, <ServiceStatusPage />)} />
-            <Route
-                path='/etherscan-gateways'
-                element={withPermission(serviceStatusPermission, <EtherscanGatewaysPage canRunProbe={hasPermission(props.access, serviceStatusInvokePermission)} />)}
-            />
+            <Route path='/service-status' element={adminRoute(<ServiceStatusPage />)} />
+            <Route path='/etherscan-gateways' element={adminRoute(<EtherscanGatewaysPage />)} />
             <Route path='/user-info' element={<UserInfoPage onSessionEnded={props.onSessionEnded} />} />
             <Route path='/help' element={<HelpPage />} />
-            <Route path='/token' element={visibleTokenDefault ? <Navigate replace={true} to={visibleTokenDefault} /> : <ForbiddenPage />} />
-            <Route path='/token/projects' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectsPage />)} />
-            <Route path='/token/projects/:projectID' element={withPermission(tokenapiPermission(tokenapiSubresources.projects), <ProjectDetailPage />)} />
-            <Route path='/token/contract-codes' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodesPage />)} />
-            <Route path='/token/contract-codes/:codeHash' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodes), <ContractCodeDetailPage />)} />
-            <Route path='/token/contract-code-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.contractCodeBlocklist), <ContractCodeBlocklistPage />)} />
-            <Route path='/token/wallet-blocklist' element={withPermission(tokenapiPermission(tokenapiSubresources.walletBlocklist), <WalletBlocklistPage />)} />
-            <Route path='/token/node-statuses' element={withPermission(tokenapiPermission(tokenapiSubresources.nodeStatuses), <NodeStatusesPage />)} />
-            <Route path='/token/chain-processing' element={withPermission(tokenapiPermission(tokenapiSubresources.chainCheckpoints), <ChainProcessingPage />)} />
-            <Route path='/token/collection-tasks' element={withPermission(tokenapiPermission(tokenapiSubresources.collectionTasks), <CollectionTasksPage />)} />
+            <Route path='/token' element={dataRoute(<Navigate replace={true} to='/token/projects' />)} />
+            <Route path='/token/projects' element={dataRoute(<ProjectsPage />)} />
+            <Route path='/token/projects/:projectID' element={dataRoute(<ProjectDetailPage />)} />
+            <Route path='/token/contract-codes' element={dataRoute(<ContractCodesPage />)} />
+            <Route path='/token/contract-codes/:codeHash' element={dataRoute(<ContractCodeDetailPage />)} />
+            <Route path='/token/contract-code-blocklist' element={dataRoute(<ContractCodeBlocklistPage />)} />
+            <Route path='/token/wallet-blocklist' element={dataRoute(<WalletBlocklistPage />)} />
+            <Route path='/token/node-statuses' element={dataRoute(<NodeStatusesPage />)} />
+            <Route path='/token/chain-processing' element={dataRoute(<ChainProcessingPage />)} />
+            <Route path='/token/collection-tasks' element={dataRoute(<CollectionTasksPage />)} />
             <Route path='*' element={<Navigate replace={true} to='/user-info' />} />
         </Routes>
     );
@@ -502,6 +427,8 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
     const shellBackgroundRef = React.useRef<HTMLElement>(null);
     const mobileSidebarToggleRef = React.useRef<HTMLButtonElement>(null);
     const accessGenerationRef = React.useRef(0);
+    const accessRef = React.useRef<AccessState>(null);
+    const accessRefreshRef = React.useRef<Promise<void>>(null);
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
     const isLoginPath = location.pathname.startsWith('/login');
     const [access, setAccess] = React.useState<AccessState>(null);
@@ -510,12 +437,78 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     const endSession = React.useCallback(() => {
         accessGenerationRef.current += 1;
+        accessRef.current = null;
+        accessRefreshRef.current = null;
         requests.invalidatePendingRequestErrors();
         setAccess(null);
         setAccessError(null);
         clearAsyncDataCache();
         clearProjectsReturnSnapshots();
     }, []);
+
+    const refreshAccess = React.useCallback((): Promise<void> => {
+        if (accessRefreshRef.current) {
+            return accessRefreshRef.current;
+        }
+        const generation = accessGenerationRef.current;
+        const request = (async () => {
+            try {
+                const user = await services.users.get();
+                if (generation !== accessGenerationRef.current) {
+                    return;
+                }
+                if (!user.loggedIn) {
+                    endSession();
+                    navigate('/login', {replace: true});
+                    return;
+                }
+                const next = loadAccessState(user);
+                const previous = accessRef.current;
+                const authorizationChanged =
+                    Boolean(previous) &&
+                    (previous.revision !== next.revision ||
+                        previous.isAdmin !== next.isAdmin ||
+                        previous.canReadData !== next.canReadData ||
+                        previous.canWriteData !== next.canWriteData);
+                if (authorizationChanged) {
+                    requests.invalidatePendingRequestErrors();
+                    clearAsyncDataCache();
+                    clearProjectsReturnSnapshots();
+                }
+                accessRef.current = next;
+                if (!previous || authorizationChanged) {
+                    setAccess(next);
+                }
+                setAccessError(null);
+            } catch (err: any) {
+                if (generation !== accessGenerationRef.current) {
+                    return;
+                }
+                if (isAccountMaintenanceError(err)) {
+                    endSession();
+                    navigate(maintenanceLoginPath, {replace: true});
+                    return;
+                }
+                if (err?.status === 401) {
+                    endSession();
+                    navigate('/login', {replace: true});
+                    return;
+                }
+                if (!accessRef.current) {
+                    setAccessError(err instanceof Error ? err : new Error(err?.message || String(err)));
+                }
+                throw err;
+            }
+        })();
+        accessRefreshRef.current = request;
+        const clearPendingRefresh = () => {
+            if (accessRefreshRef.current === request) {
+                accessRefreshRef.current = null;
+            }
+        };
+        void request.then(clearPendingRefresh, clearPendingRefresh);
+        return request;
+    }, [endSession, navigate]);
 
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
@@ -581,51 +574,38 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             endSession();
             return;
         }
+        if (!accessRef.current) {
+            setAccessError(null);
+            void refreshAccess().catch(() => undefined);
+        }
+    }, [accessRetry, endSession, isLoginPath, refreshAccess]);
 
-        if (access) {
+    React.useEffect(() => {
+        if (isLoginPath || !access) {
             return;
         }
-
-        let active = true;
-        const generation = accessGenerationRef.current;
-        setAccessError(null);
-        services.users
-            .get()
-            .then(user => {
-                if (!active || generation !== accessGenerationRef.current) {
-                    return;
-                }
-                if (!user.loggedIn) {
-                    endSession();
-                    navigate('/login', {replace: true});
-                    return;
-                }
-                setAccess(loadAccessState(user));
-            })
-            .catch(err => {
-                if (!active || generation !== accessGenerationRef.current) {
-                    return;
-                }
-                if (isAccountMaintenanceError(err)) {
-                    endSession();
-                    navigate(maintenanceLoginPath, {replace: true});
-                    return;
-                }
-                if (err?.status === 401) {
-                    endSession();
-                    navigate('/login', {replace: true});
-                    return;
-                }
-                setAccessError(err instanceof Error ? err : new Error(err?.message || String(err)));
-            });
-        return () => {
-            active = false;
+        const refreshVisibleAccess = () => {
+            if (document.visibilityState === 'visible') {
+                void refreshAccess().catch(() => undefined);
+            }
         };
-    }, [access, accessRetry, endSession, isLoginPath, navigate]);
+        const interval = window.setInterval(refreshVisibleAccess, 15_000);
+        window.addEventListener('focus', refreshVisibleAccess);
+        document.addEventListener('visibilitychange', refreshVisibleAccess);
+        return () => {
+            window.clearInterval(interval);
+            window.removeEventListener('focus', refreshVisibleAccess);
+            document.removeEventListener('visibilitychange', refreshVisibleAccess);
+        };
+    }, [access, isLoginPath, refreshAccess]);
 
     React.useEffect(() => {
         const subscription: Subscription = requests.onError.subscribe(err => {
             if (isLoginPath) {
+                return;
+            }
+            if (isAccountDataAccessDeniedError(err)) {
+                void refreshAccess().catch(() => undefined);
                 return;
             }
             const maintenance = isAccountMaintenanceError(err);
@@ -639,7 +619,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             navigate(maintenance ? maintenanceLoginPath : '/login', {replace: true});
         });
         return () => subscription?.unsubscribe();
-    }, [endSession, isLoginPath, navigate]);
+    }, [endSession, isLoginPath, navigate, refreshAccess]);
 
     React.useEffect(() => {
         const current = flattenNav(navItems).find(item => item.key === selectedKey(location.pathname));
@@ -681,6 +661,20 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
         }),
         [ant.modal, navigate, notifications]
     );
+    const authorizationValue = React.useMemo(
+        () =>
+            access
+                ? {
+                      user: access.user,
+                      isAdmin: access.isAdmin,
+                      canReadData: access.canReadData,
+                      canWriteData: access.canWriteData,
+                      revision: access.revision,
+                      refresh: refreshAccess
+                  }
+                : null,
+        [access, refreshAccess]
+    );
 
     const isDark = props.pref.theme === 'dark';
     const nextTheme: ViewPreferences['theme'] = isDark ? 'light' : 'dark';
@@ -715,7 +709,7 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
                 <Result
                     status='warning'
                     title='Unable to load session'
-                    subTitle='Athena could not load your account and permissions. Retry when the service is available.'
+                    subTitle='Athena could not load your account access. Retry when the service is available.'
                     extra={
                         <Space orientation='vertical' size={12}>
                             <Button
@@ -733,7 +727,11 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
             </div>
         );
     } else {
-        routes = access ? <AppRoutes access={access} onSessionEnded={endSession} /> : <div className='athena-boot'>Loading Athena...</div>;
+        routes = access ? (
+            <AppRoutes key={`${access.revision}:${access.isAdmin}:${access.user.dataAccess}`} access={access} onSessionEnded={endSession} />
+        ) : (
+            <div className='athena-boot'>Loading Athena...</div>
+        );
     }
     const content = isLoginPath ? (
         routes
@@ -852,7 +850,9 @@ const Shell = (props: {pref: ViewPreferences; authSettings: AuthSettings}) => {
 
     return (
         <Provider value={contextValue}>
-            <AuthSettingsCtx.Provider value={props.authSettings}>{content}</AuthSettingsCtx.Provider>
+            <AuthSettingsCtx.Provider value={props.authSettings}>
+                <AuthorizationCtx.Provider value={authorizationValue}>{content}</AuthorizationCtx.Provider>
+            </AuthSettingsCtx.Provider>
         </Provider>
     );
 };
