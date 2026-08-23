@@ -4,6 +4,7 @@ market-radar: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-mark
 sports-live: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-sports-live} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-sports-live go run ./cmd/main.go --port ${ATHENA_SPORTS_LIVE_PORT:-8094}"
 sports-history: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-sports-history} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-sports-history go run ./cmd/main.go --port ${ATHENA_SPORTS_HISTORY_PORT:-8104}"
 managed-oo: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-managed-oo} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-managed-oo go run ./cmd/main.go --port ${ATHENA_MANAGED_OO_PORT:-8106}"
+profit-sharing: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-profit-sharing} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-profit-sharing go run ./cmd/main.go --port ${ATHENA_PROFIT_SHARING_PORT:-8108}"
 token-chain-processor: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-chain-processor} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-chain-processor go run ./cmd/main.go"
 token-swap-processor: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-swap-processor} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-swap-processor go run ./cmd/main.go"
 token-scheduler: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-token-scheduler} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-token-scheduler go run ./cmd/main.go"
@@ -22,4 +23,4 @@ wallet: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-wallet} FO
 redis: hack/start-redis-with-password.sh
 postgres: hack/start-postgres-with-password.sh
 ui:    sh -c 'cd ui && ${ATHENA_YARN_CMD:-yarn} start'
-api-server: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server go run ./cmd/main.go --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
+api-server: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server go run ./cmd/main.go --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'false'} --port ${ATHENA_SERVER_PORT:-8080}"

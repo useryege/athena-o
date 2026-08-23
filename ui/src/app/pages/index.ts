@@ -22,3 +22,5 @@ export * from './wallet-blocklist';
 export * from './wallets';
 export * from './world-cup-corners';
 export * from './fifa-market-dashboard';
+export * from './profit-sharing';
+export * from './profit-sharing-admin';

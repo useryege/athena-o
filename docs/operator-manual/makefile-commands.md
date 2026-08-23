@@ -26,7 +26,7 @@
 | `REMOTE_APP_DIR` | `/root/athena` | 远端服务器上的部署目录。 |
 | `REMOTE_USER` | `root` | SSH 登录远端服务器使用的用户。 |
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
-| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `worm`、`notification`、`wallet`、`polymarket`、`token` 或 `all`。 |
+| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-access`、`worm-markets`、`fifa-market-dashboard`、`notification`、`wallet`、`sports-live`、`sports-history`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
@@ -48,10 +48,10 @@
 make password-hash
 
 # 非交互（密码会出现在 shell history，仅适合临时使用）
-make password-hash PASSWORD='Yudian#2026!'
+make password-hash PASSWORD='temporary-password'
 
 # 也可直接运行
-go run tools/password-hash/main.go -password 'Yudian#2026!'
+go run tools/password-hash/main.go -password 'temporary-password'
 ```
 
 输出为一行 bcrypt hash（例如 `$2a$10$...`）。写入 `.env` 时请用**单引号**包裹 hash，避免 `$` 被 shell 展开导致登录失败：
@@ -151,6 +151,9 @@ PROD_IMAGE=athena:local make prod-build-local
 `make run` 会创建新容器并挂载原数据。PostgreSQL volume 会记录镜像、
 用户、初始数据库、密码和初始化 SQL 的配置指纹；这些初始化设置发生变化
 后必须执行 `make run-reset`，避免以新配置静默打开不兼容的旧数据。
+Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首次使用
+包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
+默认启用 API Server 认证，五个参与账号必须通过登录后才能提交方案或投票。
 
 `make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
 `/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
@@ -303,7 +306,7 @@ make prod-reset-secrets
 make prod-hot-deploy-remote
 ```
 
-该命令会构建并传输新镜像，覆盖远端 `docker-compose.prod.yml` 和 `.env`，在现有 PostgreSQL 数据上执行 migration，然后强制重建全部 Athena 后端服务并最后重建 `athena-server`。PostgreSQL、Redis 和 PostgreSQL volume 不会停止或删除；如果指定的 volume 不存在，命令会直接终止，避免意外创建空数据库。migration 失败时，当前业务容器保持运行且不会进入重建阶段。
+该命令会构建并传输新镜像，覆盖远端 `docker-compose.prod.yml` 和 `.env`，确认 PostgreSQL 就绪并幂等确保精确的 `profit_sharing` 数据库存在，再在现有数据上执行 migration，然后强制重建全部 Athena 后端服务并最后重建 `athena-server`。PostgreSQL、Redis 和 PostgreSQL volume 不会停止或删除；如果指定的 volume 不存在，命令会直接终止，避免意外创建空数据库。数据库创建、连接或 migration 失败时，当前业务容器保持运行且不会进入重建阶段。
 
 热部署不会自动轮换 PostgreSQL、Redis 或 JWT secret。它会短暂重启 Athena 服务，不保证零停机；适用于代码更新和兼容性数据库 migration，不用于修改现有 PostgreSQL 或 Redis 凭据。
 

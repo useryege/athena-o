@@ -19,6 +19,9 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'sports_history')\gexe
 SELECT 'CREATE DATABASE managed_oo'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'managed_oo')\gexec
 
+SELECT 'CREATE DATABASE profit_sharing'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'profit_sharing')\gexec
+
 SELECT 'CREATE DATABASE token'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'token')\gexec
 

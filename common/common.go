@@ -42,6 +42,8 @@ const (
 	DefaultPortSportsHistory = 8104
 	// Athena Managed OO
 	DefaultPortManagedOO = 8106
+	// Athena Profit Sharing
+	DefaultPortProfitSharing = 8108
 )
 
 // DefaultAddressAPIServer for Athena components
@@ -56,6 +58,7 @@ const (
 	DefaultAddressSportsLive          = "0.0.0.0"
 	DefaultAddressSportsHistory       = "0.0.0.0"
 	DefaultAddressManagedOO           = "0.0.0.0"
+	DefaultAddressProfitSharing       = "0.0.0.0"
 	DefaultAddressTokenAPI            = "0.0.0.0"
 	DefaultAddressEtherscanManager    = "0.0.0.0"
 	DefaultAddressEtherscanGateway    = "0.0.0.0"

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1050-g428613ea-dirty"
+    "version": "v1.0.0-1053-gf12a0665-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -827,6 +827,392 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds": {
+      "get": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_ListRounds",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingListRoundsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_CreateRound",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingCreateRoundRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingCreateRoundResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{current_slug}": {
+      "put": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_UpdateRound",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "current_slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingUpdateRoundRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingUpdateRoundResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}": {
+      "get": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_GetRound",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingGetRoundResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}/ballots/current/vote": {
+      "put": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_SubmitVote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingSubmitVoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingSubmitVoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}/ballots/current:close": {
+      "post": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_CloseBallot",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingCloseBallotRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingCloseBallotResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}/proposal": {
+      "put": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_UpdateProposal",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingUpdateProposalRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingUpdateProposalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}/proposal:reopen": {
+      "post": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_ReopenProposal",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingReopenProposalRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingReopenProposalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}/proposal:submit": {
+      "post": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_SubmitProposal",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingSubmitProposalRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingSubmitProposalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}:open": {
+      "post": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_OpenRound",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingOpenRoundRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingOpenRoundResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profit-sharing/rounds/{slug}:publish": {
+      "post": {
+        "tags": [
+          "ProfitSharingService"
+        ],
+        "operationId": "ProfitSharingService_PublishRound",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/profitsharingPublishRoundRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/profitsharingPublishRoundResponse"
             }
           },
           "default": {
@@ -3427,6 +3813,451 @@
         },
         "status": {
           "type": "string"
+        }
+      }
+    },
+    "profitsharingCloseBallotRequest": {
+      "type": "object",
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingCloseBallotResponse": {
+      "type": "object",
+      "properties": {
+        "round": {
+          "$ref": "#/definitions/profitsharingRound"
+        },
+        "runoff_created": {
+          "type": "boolean"
+        }
+      }
+    },
+    "profitsharingCreateRoundRequest": {
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingParticipantInput"
+          }
+        },
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingCreateRoundResponse": {
+      "type": "object",
+      "properties": {
+        "round": {
+          "$ref": "#/definitions/profitsharingRound"
+        }
+      }
+    },
+    "profitsharingGetRoundResponse": {
+      "type": "object",
+      "properties": {
+        "round": {
+          "$ref": "#/definitions/profitsharingRound"
+        }
+      }
+    },
+    "profitsharingListRoundsResponse": {
+      "type": "object",
+      "properties": {
+        "rounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingRound"
+          }
+        }
+      }
+    },
+    "profitsharingOpenRoundRequest": {
+      "type": "object",
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingOpenRoundResponse": {
+      "type": "object",
+      "properties": {
+        "round": {
+          "$ref": "#/definitions/profitsharingRound"
+        }
+      }
+    },
+    "profitsharingParticipant": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string"
+        },
+        "baseline_responsibility": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "proposal_status": {
+          "$ref": "#/definitions/profitsharingProposalStatus"
+        },
+        "sort_order": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "profitsharingParticipantInput": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string"
+        },
+        "baseline_responsibility": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "profitsharingProposal": {
+      "type": "object",
+      "properties": {
+        "author_account": {
+          "type": "string"
+        },
+        "author_display_name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "is_own": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingProposalItem"
+          }
+        },
+        "label": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "$ref": "#/definitions/profitsharingProposalStatus"
+        }
+      }
+    },
+    "profitsharingProposalItem": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "responsibility": {
+          "type": "string"
+        },
+        "share_basis_points": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "share_basis_points_set": {
+          "type": "boolean"
+        }
+      }
+    },
+    "profitsharingProposalItemInput": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string"
+        },
+        "responsibility": {
+          "type": "string"
+        },
+        "share_basis_points": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "share_basis_points_set": {
+          "type": "boolean"
+        }
+      }
+    },
+    "profitsharingProposalStatus": {
+      "type": "string",
+      "default": "PROPOSAL_STATUS_UNSPECIFIED",
+      "enum": [
+        "PROPOSAL_STATUS_UNSPECIFIED",
+        "PROPOSAL_STATUS_DRAFT",
+        "PROPOSAL_STATUS_SUBMITTED"
+      ]
+    },
+    "profitsharingPublishRoundRequest": {
+      "type": "object",
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingPublishRoundResponse": {
+      "type": "object",
+      "properties": {
+        "round": {
+          "$ref": "#/definitions/profitsharingRound"
+        }
+      }
+    },
+    "profitsharingReopenProposalRequest": {
+      "type": "object",
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingReopenProposalResponse": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/profitsharingProposal"
+        }
+      }
+    },
+    "profitsharingResult": {
+      "type": "object",
+      "properties": {
+        "author_account": {
+          "type": "string"
+        },
+        "author_display_name": {
+          "type": "string"
+        },
+        "is_winner": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "proposal_id": {
+          "type": "string"
+        },
+        "vote_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "profitsharingRound": {
+      "description": "Round is the browser-facing flattened projection of a domain round.",
+      "type": "object",
+      "properties": {
+        "ballot_number": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "my_proposal": {
+          "$ref": "#/definitions/profitsharingProposal"
+        },
+        "my_vote_proposal_id": {
+          "type": "string"
+        },
+        "participant_count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingParticipant"
+          }
+        },
+        "phase": {
+          "$ref": "#/definitions/profitsharingRoundPhase"
+        },
+        "proposals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingProposal"
+          }
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingResult"
+          }
+        },
+        "revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "submitted_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "title": {
+          "type": "string"
+        },
+        "voted_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "winner_proposal_id": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingRoundPhase": {
+      "type": "string",
+      "default": "ROUND_PHASE_UNSPECIFIED",
+      "enum": [
+        "ROUND_PHASE_UNSPECIFIED",
+        "ROUND_PHASE_DRAFT",
+        "ROUND_PHASE_COLLECTING",
+        "ROUND_PHASE_VOTING",
+        "ROUND_PHASE_CLOSED"
+      ]
+    },
+    "profitsharingSubmitProposalRequest": {
+      "type": "object",
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingSubmitProposalResponse": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/profitsharingProposal"
+        }
+      }
+    },
+    "profitsharingSubmitVoteRequest": {
+      "type": "object",
+      "properties": {
+        "proposal_id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingSubmitVoteResponse": {
+      "type": "object",
+      "properties": {
+        "ballot_number": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "proposal_id": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingUpdateProposalRequest": {
+      "type": "object",
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingProposalItemInput"
+          }
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingUpdateProposalResponse": {
+      "type": "object",
+      "properties": {
+        "proposal": {
+          "$ref": "#/definitions/profitsharingProposal"
+        }
+      }
+    },
+    "profitsharingUpdateRoundRequest": {
+      "type": "object",
+      "properties": {
+        "current_slug": {
+          "type": "string"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profitsharingParticipantInput"
+          }
+        },
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      }
+    },
+    "profitsharingUpdateRoundResponse": {
+      "type": "object",
+      "properties": {
+        "round": {
+          "$ref": "#/definitions/profitsharingRound"
         }
       }
     },

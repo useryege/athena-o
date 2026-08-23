@@ -161,6 +161,23 @@ services:
     expose:
       - "8106"
 
+  athena-profit-sharing:
+    image: ${PROD_IMAGE:-athena:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ATHENA_BINARY_NAME: athena-profit-sharing
+      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_PROFIT_SHARING_LISTEN_ADDRESS: 0.0.0.0
+      ATHENA_PROFIT_SHARING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=profit_sharing sslmode=disable
+    command: ["athena", "--port", "8108"]
+    expose:
+      - "8108"
+
   athena-fifa-market-dashboard:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -385,6 +402,7 @@ services:
       ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
       ATHENA_SPORTS_HISTORY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_history sslmode=disable
       ATHENA_MANAGED_OO_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=managed_oo sslmode=disable
+      ATHENA_PROFIT_SHARING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=profit_sharing sslmode=disable
       ATHENA_NOTIFICATION_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=notification sslmode=disable
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
       ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
@@ -414,6 +432,8 @@ services:
         condition: service_started
       athena-managed-oo:
         condition: service_started
+      athena-profit-sharing:
+        condition: service_started
       athena-token-api:
         condition: service_started
     env_file:
@@ -430,6 +450,7 @@ services:
       ATHENA_SPORTS_LIVE_SERVER_ADDRESS: athena-sports-live:8094
       ATHENA_SPORTS_HISTORY_SERVER_ADDRESS: athena-sports-history:8104
       ATHENA_MANAGED_OO_SERVER_ADDRESS: athena-managed-oo:8106
+      ATHENA_PROFIT_SHARING_SERVER_ADDRESS: athena-profit-sharing:8108
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_SERVER_DISABLE_AUTH: ${ATHENA_SERVER_DISABLE_AUTH:-false}

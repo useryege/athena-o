@@ -6,8 +6,7 @@ import {BrandMark} from '../components';
 import {services} from '../shared/services';
 import {ACCOUNT_MAINTENANCE_MESSAGE, isAccountMaintenanceError, requestErrorMessage} from '../shared/services/requests';
 import type {CaptchaChallenge} from '../shared/services/user-service';
-
-const postLoginPath = '/settings';
+import {readLoginReturnTo} from '../shared/login-navigation';
 
 export const LoginPage = (props: {onAuthenticated: () => Promise<boolean>}) => {
     const navigate = useNavigate();
@@ -67,7 +66,7 @@ export const LoginPage = (props: {onAuthenticated: () => Promise<boolean>}) => {
         }
         try {
             if (await props.onAuthenticated()) {
-                navigate(postLoginPath, {replace: true});
+                navigate(readLoginReturnTo(location.search), {replace: true});
             }
         } finally {
             setLoading(false);

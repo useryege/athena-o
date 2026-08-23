@@ -1,0 +1,265 @@
+syntax = "proto3";
+
+// Profit Sharing Service API exposes reusable proposal and ballot rounds.
+package profitsharing;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/profitsharing";
+
+enum RoundPhase {
+  ROUND_PHASE_UNSPECIFIED = 0;
+  ROUND_PHASE_DRAFT = 1;
+  ROUND_PHASE_COLLECTING = 2;
+  ROUND_PHASE_VOTING = 3;
+  ROUND_PHASE_CLOSED = 4;
+}
+
+enum ProposalStatus {
+  PROPOSAL_STATUS_UNSPECIFIED = 0;
+  PROPOSAL_STATUS_DRAFT = 1;
+  PROPOSAL_STATUS_SUBMITTED = 2;
+}
+
+message ParticipantInput {
+  string account_name = 1;
+  string display_name = 2;
+  int32 sort_order = 3;
+  string baseline_responsibility = 4;
+}
+
+message Participant {
+  string account_name = 1;
+  string display_name = 2;
+  string baseline_responsibility = 3;
+  int32 sort_order = 4;
+  ProposalStatus proposal_status = 5;
+}
+
+message ProposalItemInput {
+  string account_name = 1;
+  string responsibility = 2;
+  int32 share_basis_points = 3;
+  bool share_basis_points_set = 4;
+}
+
+message ProposalItem {
+  string account_name = 1;
+  string display_name = 2;
+  string responsibility = 3;
+  int32 share_basis_points = 4;
+  bool share_basis_points_set = 5;
+}
+
+message Proposal {
+  string id = 1;
+  string label = 2;
+  bool is_own = 3;
+  string author_account = 4;
+  string author_display_name = 5;
+  ProposalStatus status = 6;
+  int64 revision = 7;
+  repeated ProposalItem items = 8;
+}
+
+message Result {
+  string proposal_id = 1;
+  string label = 2;
+  string author_account = 3;
+  string author_display_name = 4;
+  int64 vote_count = 5;
+  bool is_winner = 6;
+}
+
+// Round is the browser-facing flattened projection of a domain round.
+message Round {
+  string slug = 1;
+  string title = 2;
+  RoundPhase phase = 3;
+  int64 revision = 4;
+  int32 participant_count = 5;
+  int64 submitted_count = 6;
+  int64 voted_count = 7;
+  int32 ballot_number = 8;
+  string winner_proposal_id = 9;
+  repeated Participant participants = 10;
+  Proposal my_proposal = 11;
+  repeated Proposal proposals = 12;
+  string my_vote_proposal_id = 13;
+  repeated Result results = 14;
+}
+
+message ListRoundsRequest {}
+
+message ListRoundsResponse {
+  repeated Round rounds = 1;
+}
+
+message GetRoundRequest {
+  string slug = 1;
+}
+
+message GetRoundResponse {
+  Round round = 1;
+}
+
+message CreateRoundRequest {
+  string slug = 1;
+  string title = 2;
+  repeated ParticipantInput participants = 3;
+}
+
+message CreateRoundResponse {
+  Round round = 1;
+}
+
+message UpdateRoundRequest {
+  string current_slug = 1;
+  string slug = 2;
+  string title = 3;
+  repeated ParticipantInput participants = 4;
+  int64 expected_revision = 5;
+}
+
+message UpdateRoundResponse {
+  Round round = 1;
+}
+
+message OpenRoundRequest {
+  string slug = 1;
+  int64 expected_revision = 2;
+}
+
+message OpenRoundResponse {
+  Round round = 1;
+}
+
+message PublishRoundRequest {
+  string slug = 1;
+  int64 expected_revision = 2;
+}
+
+message PublishRoundResponse {
+  Round round = 1;
+}
+
+message CloseBallotRequest {
+  string slug = 1;
+  int64 expected_revision = 2;
+}
+
+message CloseBallotResponse {
+  Round round = 1;
+  bool runoff_created = 2;
+}
+
+message UpdateProposalRequest {
+  string slug = 1;
+  int64 expected_revision = 2;
+  repeated ProposalItemInput items = 3;
+}
+
+message UpdateProposalResponse {
+  Proposal proposal = 1;
+}
+
+message SubmitProposalRequest {
+  string slug = 1;
+  int64 expected_revision = 2;
+}
+
+message SubmitProposalResponse {
+  Proposal proposal = 1;
+}
+
+message ReopenProposalRequest {
+  string slug = 1;
+  int64 expected_revision = 2;
+}
+
+message ReopenProposalResponse {
+  Proposal proposal = 1;
+}
+
+message SubmitVoteRequest {
+  string slug = 1;
+  string proposal_id = 2;
+}
+
+message SubmitVoteResponse {
+  string proposal_id = 1;
+  int32 ballot_number = 2;
+}
+
+service ProfitSharingService {
+  rpc ListRounds(ListRoundsRequest) returns (ListRoundsResponse) {
+    option (google.api.http) = {get: "/api/v1/profit-sharing/rounds"};
+  }
+
+  rpc GetRound(GetRoundRequest) returns (GetRoundResponse) {
+    option (google.api.http) = {get: "/api/v1/profit-sharing/rounds/{slug}"};
+  }
+
+  rpc CreateRound(CreateRoundRequest) returns (CreateRoundResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/profit-sharing/rounds"
+      body: "*"
+    };
+  }
+
+  rpc UpdateRound(UpdateRoundRequest) returns (UpdateRoundResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/profit-sharing/rounds/{current_slug}"
+      body: "*"
+    };
+  }
+
+  rpc OpenRound(OpenRoundRequest) returns (OpenRoundResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/profit-sharing/rounds/{slug}:open"
+      body: "*"
+    };
+  }
+
+  rpc PublishRound(PublishRoundRequest) returns (PublishRoundResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/profit-sharing/rounds/{slug}:publish"
+      body: "*"
+    };
+  }
+
+  rpc CloseBallot(CloseBallotRequest) returns (CloseBallotResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/profit-sharing/rounds/{slug}/ballots/current:close"
+      body: "*"
+    };
+  }
+
+  rpc UpdateProposal(UpdateProposalRequest) returns (UpdateProposalResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/profit-sharing/rounds/{slug}/proposal"
+      body: "*"
+    };
+  }
+
+  rpc SubmitProposal(SubmitProposalRequest) returns (SubmitProposalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/profit-sharing/rounds/{slug}/proposal:submit"
+      body: "*"
+    };
+  }
+
+  rpc ReopenProposal(ReopenProposalRequest) returns (ReopenProposalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/profit-sharing/rounds/{slug}/proposal:reopen"
+      body: "*"
+    };
+  }
+
+  rpc SubmitVote(SubmitVoteRequest) returns (SubmitVoteResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/profit-sharing/rounds/{slug}/ballots/current/vote"
+      body: "*"
+    };
+  }
+}

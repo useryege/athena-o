@@ -27,6 +27,7 @@ overrides.
 | Account self-service API | [internal/server/account/account.go](../../../internal/server/account/account.go) | `UpdatePassword`, `CreateToken`, `DeleteToken` |
 | Immutable runtime settings projection | [util/settings/manager.go](../../../util/settings/manager.go), [internal/server/settings/settings.go](../../../internal/server/settings/settings.go) | `SettingsManager`, `Projector` |
 | Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer` |
+| Deployment account catalog | [.env.prod](../../../.env.prod) | `ATHENA_ACCOUNT_YEGE_*`, `ATHENA_ACCOUNT_LINGJIE_*`, `ATHENA_ACCOUNT_DONGMEI_*`, `ATHENA_ACCOUNT_DINGZHI_*`, `ATHENA_ACCOUNT_YUDIAN_*` |
 
 ## Architecture
 
@@ -63,6 +64,12 @@ does not make authorization decisions.
 `SettingsManager` owns only immutable application and Help configuration. It
 does not contain accounts, login defaults, or JWT key material, and collection
 values returned to consumers are defensive copies.
+
+The repository deployment catalog includes five enabled ordinary login
+identities used as Profit Sharing participants: `YEGE`, `LINGJIE`, `DONGMEI`,
+`DINGZHI`, and `YUDIAN`. Each account has its own bcrypt hash and credential
+epoch. They remain ordinary accounts; the built-in `admin` identity is separate,
+and the existing `JUN` entry retains its independent configuration.
 
 ## Runtime Flow
 
@@ -146,6 +153,7 @@ metadata when requested.
 | `ATHENA_ADMIN_TOKENS` | Defines administrator API Key metadata at startup. Metadata alone does not bypass capability validation. |
 | `ATHENA_ACCOUNT_<NAME>_PASSWORD_HASH`, `_PASSWORD_MTIME`, `_CAPABILITIES`, and `_TOKENS` | Define each ordinary account's initial credentials and `login` / `apiKey` capabilities. |
 | `ATHENA_ACCOUNT_<NAME>_ENABLED` | Supplies the ordinary account's login baseline to Account Access Control; it is not credential state. Omission defaults to disabled. |
+| Repository Profit Sharing accounts | `YEGE`, `LINGJIE`, `DONGMEI`, `DINGZHI`, and `YUDIAN` are configured with `login` capability and enabled baselines in the local and production environment files. |
 | `ATHENA_SECRET_accounts.<NAME>.*` | Supplies account password, modification time, and token metadata through the process secret map. |
 | `ATHENA_JWT_SECRET` / `_FILE` | Defines the HMAC key copied into `JWTCodec`. Absence generates a transient key and invalidates configured JWT continuity across restart. |
 

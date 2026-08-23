@@ -49,6 +49,15 @@ and the published markdown contract third.
 opens a margin position through the Worm Web JWT flow, signs the returned
 transaction, finalizes it, and polls the position request state.
 
+The signing helper verifies only the configured wallet's required signer slot;
+other required signers may be completed by Worm. For a legacy transaction with
+another empty required signer slot, the test finalizes the same position
+request ID with the wallet `signature`. A fully signed legacy transaction uses
+`signed_transaction`, as does a v0 transaction, which may remain partially
+signed in its other required signer slots. The finalize payload is selected
+before the POST request; after that request is sent, the test never switches to
+the alternate payload or repeats finalize with it.
+
 Enable the live write test with this explicit gate:
 
 - `ATHENA_WORM_LIVE_WEB_POSITION_OPEN=1`

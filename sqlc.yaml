@@ -10,6 +10,15 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
+    schema: "internal/profitsharing/store/migrations"
+    queries: "internal/profitsharing/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/profitsharing/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+  - engine: "postgresql"
     schema: "internal/notification/store/migrations"
     queries: "internal/notification/store/queries"
     gen:

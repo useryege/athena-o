@@ -83,9 +83,30 @@ type liveWormWebPositionOpenRequest struct {
 	Leverage          float64 `json:"leverage"`
 }
 
-type liveWormWebPositionFinalizeRequest struct {
+type liveWormWebPositionFinalizeSignedTransactionRequest struct {
 	PositionRequestID int64  `json:"position_request_id"`
 	SignedTransaction string `json:"signed_transaction"`
+}
+
+type liveWormWebPositionFinalizeSignatureRequest struct {
+	PositionRequestID int64  `json:"position_request_id"`
+	Signature         string `json:"signature"`
+}
+
+type liveWormWebFinalizeMode string
+
+const (
+	liveWormWebFinalizeModeSignedTransaction liveWormWebFinalizeMode = "signed_transaction"
+	liveWormWebFinalizeModeSignature         liveWormWebFinalizeMode = "signature"
+)
+
+type liveWormWebSignedPositionRequest struct {
+	signatureHex         string
+	signedTransactionHex string
+	transactionVersion   string
+	requiredSignatures   int
+	signerIndex          int
+	finalizeMode         liveWormWebFinalizeMode
 }
 
 type liveWormWebRequestID int64
@@ -252,15 +273,41 @@ func TestLiveWormWebPositionOpen(t *testing.T) {
 		liveWormWebState(opened.OrderState),
 	)
 
-	signedTransaction, err := signLiveWormWebTransaction(config.privateKey, opened.Message)
+	signedRequest, err := signLiveWormWebTransaction(config.privateKey, opened.Message)
 	if err != nil {
 		t.Fatalf("sign Worm Web position request %d transaction: %v", opened.ID, err)
 	}
+	t.Logf(
+		"signed Worm Web position request id=%d version=%s required_signatures=%d wallet_signer_index=%d finalize_mode=%s",
+		opened.ID,
+		signedRequest.transactionVersion,
+		signedRequest.requiredSignatures,
+		signedRequest.signerIndex,
+		signedRequest.finalizeMode,
+	)
 
-	finalized, finalizeErr := client.finalizePosition(ctx, liveWormWebPositionFinalizeRequest{
-		PositionRequestID: int64(opened.ID),
-		SignedTransaction: signedTransaction,
-	})
+	var finalized *liveWormWebPositionRequest
+	var finalizeErr error
+	switch signedRequest.finalizeMode {
+	case liveWormWebFinalizeModeSignedTransaction:
+		finalized, finalizeErr = client.finalizePositionWithSignedTransaction(
+			ctx,
+			liveWormWebPositionFinalizeSignedTransactionRequest{
+				PositionRequestID: int64(opened.ID),
+				SignedTransaction: signedRequest.signedTransactionHex,
+			},
+		)
+	case liveWormWebFinalizeModeSignature:
+		finalized, finalizeErr = client.finalizePositionWithSignature(
+			ctx,
+			liveWormWebPositionFinalizeSignatureRequest{
+				PositionRequestID: int64(opened.ID),
+				Signature:         signedRequest.signatureHex,
+			},
+		)
+	default:
+		t.Fatalf("sign Worm Web position request %d selected unsupported finalize mode %q", opened.ID, signedRequest.finalizeMode)
+	}
 	if finalizeErr != nil && !liveWormWebFinalizeNeedsStatusCheck(finalizeErr) {
 		t.Fatalf("finalize Worm Web position request %d: %v", opened.ID, finalizeErr)
 	}
@@ -539,9 +586,20 @@ func (c *liveWormWebClient) openPosition(
 	return &response, nil
 }
 
-func (c *liveWormWebClient) finalizePosition(
+func (c *liveWormWebClient) finalizePositionWithSignedTransaction(
 	ctx context.Context,
-	request liveWormWebPositionFinalizeRequest,
+	request liveWormWebPositionFinalizeSignedTransactionRequest,
+) (*liveWormWebPositionRequest, error) {
+	var response liveWormWebPositionRequest
+	if err := c.do(ctx, http.MethodPost, "/margin/positions/open/finalize/", nil, request, true, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+func (c *liveWormWebClient) finalizePositionWithSignature(
+	ctx context.Context,
+	request liveWormWebPositionFinalizeSignatureRequest,
 ) (*liveWormWebPositionRequest, error) {
 	var response liveWormWebPositionRequest
 	if err := c.do(ctx, http.MethodPost, "/margin/positions/open/finalize/", nil, request, true, &response); err != nil {
@@ -695,10 +753,10 @@ func truncateLiveWormWebErrorMessage(message string) string {
 	return message
 }
 
-func signLiveWormWebTransaction(privateKey ed25519.PrivateKey, message string) (string, error) {
+func signLiveWormWebTransaction(privateKey ed25519.PrivateKey, message string) (*liveWormWebSignedPositionRequest, error) {
 	encodedTransaction := strings.TrimSpace(message)
 	if encodedTransaction == "" {
-		return "", errors.New("Worm Web transaction is required")
+		return nil, errors.New("Worm Web transaction is required")
 	}
 	if strings.HasPrefix(encodedTransaction, "0x") || strings.HasPrefix(encodedTransaction, "0X") {
 		encodedTransaction = encodedTransaction[2:]
@@ -706,18 +764,18 @@ func signLiveWormWebTransaction(privateKey ed25519.PrivateKey, message string) (
 
 	transactionBytes, err := hex.DecodeString(encodedTransaction)
 	if err != nil {
-		return "", fmt.Errorf("decode Worm Web transaction: %w", err)
+		return nil, fmt.Errorf("decode Worm Web transaction: %w", err)
 	}
 	transaction, err := solana.TransactionFromBytes(transactionBytes)
 	if err != nil {
-		return "", fmt.Errorf("parse Worm Web transaction: %w", err)
+		return nil, fmt.Errorf("parse Worm Web transaction: %w", err)
 	}
 
 	solanaPrivateKey := solana.PrivateKey(privateKey)
 	signerPublicKey := solanaPrivateKey.PublicKey()
 	requiredSignatures := int(transaction.Message.Header.NumRequiredSignatures)
 	if requiredSignatures <= 0 || requiredSignatures > len(transaction.Message.AccountKeys) {
-		return "", fmt.Errorf(
+		return nil, fmt.Errorf(
 			"invalid Worm Web transaction signer set: required=%d account_keys=%d",
 			requiredSignatures,
 			len(transaction.Message.AccountKeys),
@@ -732,7 +790,7 @@ func signLiveWormWebTransaction(privateKey ed25519.PrivateKey, message string) (
 		}
 	}
 	if signerIndex < 0 {
-		return "", fmt.Errorf("wallet %s is not a required signer for the Worm Web transaction", signerPublicKey)
+		return nil, fmt.Errorf("wallet %s is not a required signer for the Worm Web transaction", signerPublicKey)
 	}
 
 	signatures, err := transaction.PartialSign(func(candidate solana.PublicKey) *solana.PrivateKey {
@@ -742,37 +800,90 @@ func signLiveWormWebTransaction(privateKey ed25519.PrivateKey, message string) (
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("sign Worm Web transaction: %w", err)
+		return nil, fmt.Errorf("sign Worm Web transaction: %w", err)
 	}
 	if signerIndex >= len(signatures) {
-		return "", fmt.Errorf("Worm Web transaction signature slot %d is missing", signerIndex)
+		return nil, fmt.Errorf("Worm Web transaction signature slot %d is missing", signerIndex)
 	}
 
 	messageBytes, err := transaction.Message.MarshalBinary()
 	if err != nil {
-		return "", fmt.Errorf("marshal Worm Web transaction message: %w", err)
+		return nil, fmt.Errorf("marshal Worm Web transaction message: %w", err)
 	}
-	if len(signatures) != requiredSignatures {
-		return "", fmt.Errorf(
-			"incomplete Worm Web transaction signatures: got %d, want %d",
-			len(signatures),
-			requiredSignatures,
-		)
+	walletSignature := signatures[signerIndex]
+	if err := verifyLiveWormWebWalletSignature(signerPublicKey, messageBytes, walletSignature, signerIndex); err != nil {
+		return nil, err
 	}
-	for index, signature := range signatures {
-		if signature.IsZero() {
-			return "", fmt.Errorf("Worm Web transaction required signature slot %d is empty", index)
+
+	result := &liveWormWebSignedPositionRequest{
+		signatureHex:       hex.EncodeToString(walletSignature[:]),
+		transactionVersion: positionRequestTransactionVersion(transaction.Message.GetVersion()),
+		requiredSignatures: requiredSignatures,
+		signerIndex:        signerIndex,
+	}
+
+	switch transaction.Message.GetVersion() {
+	case solana.MessageVersionLegacy:
+		complete, err := liveWormWebLegacySignaturesComplete(transaction, messageBytes, requiredSignatures)
+		if err != nil {
+			return nil, err
 		}
-		if !transaction.Message.AccountKeys[index].Verify(messageBytes, signature) {
-			return "", fmt.Errorf("Worm Web transaction required signature slot %d failed verification", index)
+		if !complete {
+			result.finalizeMode = liveWormWebFinalizeModeSignature
+			return result, nil
 		}
+	case solana.MessageVersionV0:
+		// Worm Web serializes versioned transactions with any other required
+		// signer slots left untouched so that Worm can complete them later.
+	default:
+		return nil, fmt.Errorf("unsupported Worm Web transaction version %s", result.transactionVersion)
 	}
 
 	signedTransaction, err := transaction.MarshalBinary()
 	if err != nil {
-		return "", fmt.Errorf("marshal signed Worm Web transaction: %w", err)
+		return nil, fmt.Errorf("marshal signed Worm Web transaction: %w", err)
 	}
-	return hex.EncodeToString(signedTransaction), nil
+	result.signedTransactionHex = hex.EncodeToString(signedTransaction)
+	result.finalizeMode = liveWormWebFinalizeModeSignedTransaction
+	return result, nil
+}
+
+func verifyLiveWormWebWalletSignature(
+	publicKey solana.PublicKey,
+	messageBytes []byte,
+	signature solana.Signature,
+	signerIndex int,
+) error {
+	if signature.IsZero() {
+		return fmt.Errorf("Worm Web transaction wallet signature slot %d is empty", signerIndex)
+	}
+	if !publicKey.Verify(messageBytes, signature) {
+		return errors.New("Worm Web transaction wallet signature verification failed")
+	}
+	return nil
+}
+
+func liveWormWebLegacySignaturesComplete(
+	transaction *solana.Transaction,
+	messageBytes []byte,
+	requiredSignatures int,
+) (bool, error) {
+	if len(transaction.Signatures) != requiredSignatures {
+		return false, fmt.Errorf(
+			"invalid Worm Web legacy signature count: got %d, want %d",
+			len(transaction.Signatures),
+			requiredSignatures,
+		)
+	}
+	for index, signature := range transaction.Signatures {
+		if signature.IsZero() {
+			return false, nil
+		}
+		if !transaction.Message.AccountKeys[index].Verify(messageBytes, signature) {
+			return false, fmt.Errorf("Worm Web legacy signature slot %d failed verification", index)
+		}
+	}
+	return true, nil
 }
 
 func liveWormWebFinalizeNeedsStatusCheck(err error) bool {

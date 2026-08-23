@@ -43,6 +43,7 @@ import (
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	serverappbootstrap "github.com/useryege/athena/internal/server/appbootstrap"
 	servercache "github.com/useryege/athena/internal/server/cache"
@@ -51,6 +52,7 @@ import (
 	servermanagedoo "github.com/useryege/athena/internal/server/managedoo"
 	servermarketradar "github.com/useryege/athena/internal/server/marketradar"
 	servernotification "github.com/useryege/athena/internal/server/notification"
+	serverprofitsharing "github.com/useryege/athena/internal/server/profitsharing"
 	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
@@ -102,6 +104,7 @@ import (
 	managedoopkg "github.com/useryege/athena/pkg/apiclient/managedoo"
 	marketradarpkg "github.com/useryege/athena/pkg/apiclient/marketradar"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
+	profitsharingpkg "github.com/useryege/athena/pkg/apiclient/profitsharing"
 	sportshistorypkg "github.com/useryege/athena/pkg/apiclient/sportshistory"
 	sportslivepkg "github.com/useryege/athena/pkg/apiclient/sportslive"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
@@ -207,6 +210,7 @@ type AthenaServerOpts struct {
 	ManagedOOClientset                managedooapiclient.Clientset
 	WormMarketsClientset              wormmarketsapiclient.Clientset
 	FIFAMarketDashboardClientset      fifamarketdashboardapiclient.Clientset
+	ProfitSharingClientset            profitsharingapiclient.Clientset
 	TokenAPIClientset                 tokenapiapiclient.Clientset
 	EtherscanGatewayIPs               string
 	EtherscanGatewayToken             string
@@ -427,6 +431,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
 	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
 	fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceServer(grpcS, server.serviceSet.FIFAMarketDashboardService)
+	profitsharingpkg.RegisterProfitSharingServiceServer(grpcS, server.serviceSet.ProfitSharingService)
 	worldcupcornerspkg.RegisterWorldCupCornersServiceServer(grpcS, server.serviceSet.WorldCupCornersService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenResearchServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -455,6 +460,7 @@ type AthenaServiceSet struct {
 	ManagedOOService           *servermanagedoo.Server
 	WormMarketsService         *serverwormmarkets.Server
 	FIFAMarketDashboardService *serverfifamarketdashboard.Server
+	ProfitSharingService       *serverprofitsharing.Server
 	WorldCupCornersService     *serverworldcupcorners.Server
 	TokenServices              *servertokenapi.Server
 	ServiceStatusService       *serverservicestatus.Server
@@ -485,6 +491,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
 	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
 	fifaMarketDashboardService := serverfifamarketdashboard.NewServer(server.FIFAMarketDashboardClientset)
+	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController)
 	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
@@ -497,6 +504,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.ManagedOOClientset,
 		server.WormMarketsClientset,
 		server.FIFAMarketDashboardClientset,
+		server.ProfitSharingClientset,
 		server.TokenAPIClientset,
 		server.EtherscanGatewayIPs,
 		server.EtherscanGatewayToken,
@@ -525,6 +533,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		ManagedOOService:           managedOOService,
 		WormMarketsService:         wormMarketsService,
 		FIFAMarketDashboardService: fifaMarketDashboardService,
+		ProfitSharingService:       profitSharingService,
 		WorldCupCornersService:     worldCupCornersService,
 		TokenServices:              tokenAPIService,
 		ServiceStatusService:       serviceStatusService,
@@ -836,6 +845,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, profitsharingpkg.RegisterProfitSharingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, worldcupcornerspkg.RegisterWorldCupCornersServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenResearchServiceHandler, gwmux, conn)

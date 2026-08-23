@@ -14,6 +14,7 @@ import (
 	athenaMarketRadarCommands "github.com/useryege/athena/cmd/athena-market-radar/commands"
 	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
 	athenaNotificationCommands "github.com/useryege/athena/cmd/athena-notification/commands"
+	athenaProfitSharingCommands "github.com/useryege/athena/cmd/athena-profit-sharing/commands"
 	athenaServerCommands "github.com/useryege/athena/cmd/athena-server/commands"
 	athenaSportsHistoryCommands "github.com/useryege/athena/cmd/athena-sports-history/commands"
 	athenaSportsLiveCommands "github.com/useryege/athena/cmd/athena-sports-live/commands"
@@ -57,6 +58,8 @@ func main() {
 		command = athenaEtherscanManagerCommands.NewCommand()
 	case "athena-notification":
 		command = athenaNotificationCommands.NewCommand()
+	case "athena-profit-sharing":
+		command = athenaProfitSharingCommands.NewCommand()
 	case "athena-market-radar":
 		command = athenaMarketRadarCommands.NewCommand()
 	case "athena-sports-live":

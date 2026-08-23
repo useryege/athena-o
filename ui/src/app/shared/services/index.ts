@@ -13,6 +13,7 @@ import {WalletService} from './wallet-service';
 import {SportsHistoryService} from './sports-history-service';
 import {SportsLiveService} from './sports-live-service';
 import {WorldCupCornersService} from './world-cup-corners-service';
+import {ProfitSharingService} from './profit-sharing-service';
 
 export interface Services {
     tokenapi: TokenService;
@@ -30,6 +31,7 @@ export interface Services {
     notification: NotificationService;
     serviceStatus: ServiceStatusService;
     worldCupCorners: WorldCupCornersService;
+    profitSharing: ProfitSharingService;
 }
 
 export const services: Services = {
@@ -47,9 +49,11 @@ export const services: Services = {
     fifaMarketDashboard: new FIFAMarketDashboardService(),
     notification: new NotificationService(),
     serviceStatus: new ServiceStatusService(),
-    worldCupCorners: new WorldCupCornersService()
+    worldCupCorners: new WorldCupCornersService(),
+    profitSharing: new ProfitSharingService()
 };
 
 export * from './service-status-service';
 export * from './view-preferences-service';
 export * from './world-cup-corners-service';
+export * from './profit-sharing-service';

@@ -4996,6 +4996,603 @@ button.chain-processing-kpi {
     }
 }
 
+.profit-sharing-round-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel);
+}
+
+.profit-sharing-round-heading > .ant-typography {
+    min-width: 0;
+}
+
+.profit-sharing-round-title {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.profit-sharing-round-title > strong,
+.profit-sharing-round-title > .ant-typography {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profit-sharing-round-card {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.profit-sharing-round-card dl {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.profit-sharing-round-card dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.profit-sharing-round-card dt {
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.profit-sharing-round-card dd {
+    margin: 0;
+    font-weight: 700;
+}
+
+.profit-sharing-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.profit-sharing-metric {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 94px;
+    padding: 15px;
+    border: 1px solid var(--athena-border);
+    border-radius: 9px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.profit-sharing-metric__icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--athena-primary) 11%, var(--athena-panel-elevated));
+    color: var(--athena-primary);
+    font-size: 18px;
+}
+
+.profit-sharing-metric > div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.profit-sharing-metric > div > .ant-typography {
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.profit-sharing-metric > div > strong {
+    color: var(--athena-text);
+    font-size: 20px;
+    line-height: 1.2;
+}
+
+.profit-sharing-metric .ant-progress {
+    margin: 3px 0 0;
+}
+
+.profit-sharing-editor {
+    display: grid;
+    gap: 16px;
+}
+
+.profit-sharing-editor__intro,
+.profit-sharing-editor__footer,
+.profit-sharing-voting__footer,
+.profit-sharing-definition__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.profit-sharing-editor__intro > div {
+    min-width: 0;
+}
+
+.profit-sharing-editor__intro h2,
+.profit-sharing-definition__participants-heading h3 {
+    margin: 0 0 3px;
+    font-size: 16px;
+}
+
+.profit-sharing-editor__rows {
+    overflow: hidden;
+    border: 1px solid var(--athena-border);
+    border-radius: 9px;
+    background: var(--athena-panel-solid);
+}
+
+.profit-sharing-editor__header,
+.profit-sharing-editor-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 0.32fr) minmax(320px, 1fr) 160px;
+    gap: 16px;
+    align-items: center;
+}
+
+.profit-sharing-editor__header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--athena-border);
+    background: var(--athena-panel-elevated);
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.profit-sharing-editor-row {
+    padding: 13px 14px;
+}
+
+.profit-sharing-editor-row + .profit-sharing-editor-row {
+    border-top: 1px solid var(--athena-border);
+}
+
+.profit-sharing-editor-row__member {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.profit-sharing-editor-row__member strong,
+.profit-sharing-editor-row__member small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profit-sharing-editor-row__member small {
+    color: var(--athena-muted);
+    font-size: 11px;
+}
+
+.profit-sharing-editor-row label {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.profit-sharing-editor-row label > span:first-child {
+    display: none;
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.profit-sharing-editor-row__share .ant-input-number-group-wrapper,
+.profit-sharing-editor-row__share .ant-input-number {
+    width: 100%;
+}
+
+.profit-sharing-editor__total {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-bg-soft);
+}
+
+.profit-sharing-editor__total--valid {
+    border-color: color-mix(in srgb, var(--athena-green) 55%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-green) 7%, var(--athena-panel));
+}
+
+.profit-sharing-editor__total--invalid {
+    border-color: color-mix(in srgb, var(--athena-red) 55%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-red) 7%, var(--athena-panel));
+}
+
+.profit-sharing-editor__total > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.profit-sharing-editor__footer,
+.profit-sharing-definition__footer {
+    padding-top: 14px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.profit-sharing-voting,
+.profit-sharing-results {
+    display: grid;
+    gap: 16px;
+}
+
+.profit-sharing-proposal-gallery {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    width: 100%;
+}
+
+.profit-sharing-proposal-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    background: var(--athena-panel-solid);
+    box-shadow: var(--athena-shadow-surface);
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.profit-sharing-proposal-gallery.ant-radio-group .profit-sharing-proposal-card:not(:has(.ant-radio-wrapper-disabled)) {
+    cursor: pointer;
+}
+
+.profit-sharing-proposal-gallery.ant-radio-group .profit-sharing-proposal-card:not(:has(.ant-radio-wrapper-disabled)):hover {
+    border-color: color-mix(in srgb, var(--athena-primary) 55%, var(--athena-border));
+    transform: translateY(-1px);
+}
+
+.profit-sharing-proposal-card--selected {
+    border-color: var(--athena-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--athena-primary) 20%, transparent), var(--athena-shadow-surface);
+}
+
+.profit-sharing-proposal-card--winner {
+    border-color: color-mix(in srgb, var(--athena-green) 65%, var(--athena-border));
+}
+
+.profit-sharing-proposal-card__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 13px;
+}
+
+.profit-sharing-proposal-card__heading > div:first-child {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.profit-sharing-proposal-card__heading h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.profit-sharing-proposal-card__notice,
+.profit-sharing-admin-proposals__notice {
+    margin-bottom: 13px;
+}
+
+.profit-sharing-allocation-list {
+    overflow: hidden;
+    border: 1px solid var(--athena-border);
+    border-radius: 7px;
+}
+
+.profit-sharing-allocation-list__header,
+.profit-sharing-allocation-list__row {
+    display: grid;
+    grid-template-columns: minmax(105px, 0.3fr) minmax(180px, 1fr) 76px;
+    gap: 10px;
+    align-items: start;
+    min-width: 0;
+}
+
+.profit-sharing-allocation-list__header {
+    padding: 8px 10px;
+    background: var(--athena-panel-elevated);
+    color: var(--athena-muted);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.profit-sharing-allocation-list__row {
+    padding: 10px;
+    background: var(--athena-panel);
+}
+
+.profit-sharing-allocation-list__row + .profit-sharing-allocation-list__row {
+    border-top: 1px solid var(--athena-border);
+}
+
+.profit-sharing-allocation-list__member {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.profit-sharing-allocation-list__member small {
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profit-sharing-allocation-list__responsibility {
+    min-width: 0;
+    color: var(--athena-muted);
+    overflow-wrap: anywhere;
+}
+
+.profit-sharing-allocation-list__share {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.profit-sharing-voting__footer {
+    padding: 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+}
+
+.profit-sharing-definition {
+    display: grid;
+    gap: 18px;
+}
+
+.profit-sharing-definition__identity {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(280px, 1fr);
+    gap: 14px;
+}
+
+.profit-sharing-definition__identity .ant-form-item {
+    margin-bottom: 0;
+}
+
+.profit-sharing-definition__participants-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 4px;
+}
+
+.profit-sharing-definition__participants {
+    display: grid;
+    gap: 10px;
+}
+
+.profit-sharing-definition-participant {
+    display: grid;
+    grid-template-columns: 30px minmax(130px, 0.3fr) minmax(150px, 0.35fr) minmax(280px, 1fr) 36px;
+    align-items: start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-solid);
+}
+
+.profit-sharing-definition-participant .ant-form-item {
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.profit-sharing-definition-participant__order {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-top: 29px;
+    border-radius: 50%;
+    background: var(--athena-bg-soft);
+    color: var(--athena-muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.profit-sharing-definition-participant__remove {
+    margin-top: 29px;
+}
+
+.profit-sharing-definition-modal .ant-modal-body {
+    max-height: min(78vh, 760px);
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.profit-sharing-definition-modal .profit-sharing-definition__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 8px -4px 0 0;
+    padding: 14px 4px 2px 0;
+    background: color-mix(in srgb, var(--athena-panel-solid) 96%, transparent);
+    backdrop-filter: blur(10px);
+}
+
+.profit-sharing-participant-card {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+}
+
+.profit-sharing-participant-card .ant-typography-paragraph {
+    margin: 10px 0 0;
+}
+
+.profit-sharing-admin-control {
+    display: grid;
+    gap: 12px;
+}
+
+@media (max-width: 1100px) {
+    .profit-sharing-proposal-gallery {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .profit-sharing-definition-participant {
+        grid-template-columns: 30px minmax(120px, 0.35fr) minmax(150px, 0.45fr) minmax(220px, 1fr) 36px;
+    }
+}
+
+@media (max-width: 900px) {
+    .profit-sharing-round-heading,
+    .profit-sharing-editor__intro {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .profit-sharing-metrics {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .profit-sharing-metric {
+        min-height: 82px;
+    }
+
+    .profit-sharing-editor__header {
+        display: none;
+    }
+
+    .profit-sharing-editor-row {
+        grid-template-columns: minmax(0, 1fr) 145px;
+        gap: 12px;
+    }
+
+    .profit-sharing-editor-row__member {
+        grid-column: 1 / -1;
+    }
+
+    .profit-sharing-editor-row label > span:first-child {
+        display: block;
+    }
+
+    .profit-sharing-editor__footer,
+    .profit-sharing-definition__footer {
+        position: sticky;
+        z-index: 3;
+        bottom: 0;
+        margin-inline: -16px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: color-mix(in srgb, var(--athena-panel-solid) 96%, transparent);
+        box-shadow: 0 -8px 18px rgb(15 23 42 / 10%);
+        backdrop-filter: blur(10px);
+    }
+
+    .profit-sharing-definition__identity {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .profit-sharing-definition-participant {
+        grid-template-columns: 30px minmax(0, 1fr) 36px;
+        grid-template-areas:
+            'order account remove'
+            '. name .'
+            '. responsibility .';
+    }
+
+    .profit-sharing-definition-participant__order {
+        grid-area: order;
+    }
+
+    .profit-sharing-definition-participant__account {
+        grid-area: account;
+    }
+
+    .profit-sharing-definition-participant__name {
+        grid-area: name;
+    }
+
+    .profit-sharing-definition-participant__responsibility {
+        grid-area: responsibility;
+    }
+
+    .profit-sharing-definition-participant__remove {
+        grid-area: remove;
+    }
+}
+
+@media (max-width: 620px) {
+    .profit-sharing-proposal-card__heading,
+    .profit-sharing-voting__footer,
+    .profit-sharing-definition__participants-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .profit-sharing-allocation-list__header {
+        display: none;
+    }
+
+    .profit-sharing-allocation-list__row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .profit-sharing-allocation-list__responsibility {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}
+
+@media (max-width: 520px) {
+    .profit-sharing-editor-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .profit-sharing-editor-row__member {
+        grid-column: auto;
+    }
+
+    .profit-sharing-editor__footer,
+    .profit-sharing-definition__footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .profit-sharing-editor__footer > .ant-space,
+    .profit-sharing-editor__footer > .ant-space > .ant-space-item,
+    .profit-sharing-editor__footer button,
+    .profit-sharing-definition__footer > .ant-space,
+    .profit-sharing-definition__footer > .ant-space > .ant-space-item,
+    .profit-sharing-definition__footer button,
+    .profit-sharing-voting__footer button {
+        width: 100%;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

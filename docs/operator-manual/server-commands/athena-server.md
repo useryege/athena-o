@@ -52,6 +52,7 @@ athena-server [flags]
       --otlp-headers stringToString                    List of OpenTelemetry collector extra headers sent with traces, headers are comma-separated key-value pairs(e.g. key1=value1,key2=value2) (default [])
       --otlp-insecure                                  OpenTelemetry collector insecure mode (default true)
       --port int                                       Listen on given port (default 8080)
+      --profit-sharing-server-address string           Athena Profit Sharing server address (default "127.0.0.1:8108")
       --redis string                                   Redis server hostname and port (e.g. athena-redis:6379).
       --redis-compress string                          Enable compression for data sent to Redis with the required compression algorithm. (possible values: gzip, none) (default "gzip")
       --redisdb int                                    Redis database.

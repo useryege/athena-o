@@ -14,6 +14,7 @@ import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
     MoonOutlined,
+    PieChartOutlined,
     QuestionCircleOutlined,
     SettingOutlined,
     SunOutlined,
@@ -32,6 +33,7 @@ import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from '.
 import {AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, UserInfo} from './shared/models';
 import {services, ViewPreferences} from './shared/services';
 import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError} from './shared/services/requests';
+import {loginPathFor, readLoginReturnTo} from './shared/login-navigation';
 import {BrandMark, clearAsyncDataCache} from './components';
 import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {
@@ -61,7 +63,11 @@ import {
     WalletBlocklistPage,
     WalletsPage,
     WorldCupCornersPage,
-    FIFAMarketDashboardPage
+    FIFAMarketDashboardPage,
+    ProfitSharingRoundsPage,
+    ProfitSharingRoundPage,
+    ProfitSharingAdminRoundsPage,
+    ProfitSharingAdminRoundPage
 } from './pages';
 
 services.viewPreferences.init();
@@ -84,6 +90,7 @@ interface NavItem {
     children?: NavItem[];
     access?: 'admin';
     module?: AccountDataModule;
+    availability?: 'profit-sharing-rounds';
 }
 
 interface NavSection {
@@ -99,7 +106,10 @@ interface AccessState {
     revision: number;
 }
 
-const canAccessItem = (authorization: AccessState, item: NavItem) => {
+const canAccessItem = (authorization: AccessState, item: NavItem, profitSharingAvailable: boolean) => {
+    if (item.availability === 'profit-sharing-rounds' && !profitSharingAvailable) {
+        return false;
+    }
     if (item.access === 'admin') {
         return authorization.isAdmin;
     }
@@ -244,6 +254,8 @@ const navSections: NavSection[] = [
         key: 'operations',
         label: 'Operations',
         children: [
+            {key: '/profit-sharing', label: 'Profit Sharing', path: '/profit-sharing', icon: <PieChartOutlined />, availability: 'profit-sharing-rounds'},
+            {key: '/admin/profit-sharing', label: 'Profit Sharing Admin', path: '/admin/profit-sharing', icon: <SettingOutlined />, access: 'admin'},
             {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, module: AccountDataModule.Notifications},
             {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, access: 'admin'},
             {key: '/etherscan-gateways', label: 'Etherscan Gateways', path: '/etherscan-gateways', icon: <ApiOutlined />, access: 'admin'}
@@ -264,14 +276,14 @@ const navItems = navSections.flatMap(section => section.children);
 
 const flattenNav = (items: NavItem[]): NavItem[] => items.flatMap(item => [item, ...(item.children ? flattenNav(item.children) : [])]);
 
-const filterNavItems = (items: NavItem[], access: AccessState): NavItem[] =>
+const filterNavItems = (items: NavItem[], access: AccessState, profitSharingAvailable: boolean): NavItem[] =>
     items
         .map(item => {
-            const children = item.children ? filterNavItems(item.children, access) : undefined;
+            const children = item.children ? filterNavItems(item.children, access, profitSharingAvailable) : undefined;
             if (children) {
-                return children.length > 0 && canAccessItem(access, item) ? {...item, children} : null;
+                return children.length > 0 && canAccessItem(access, item, profitSharingAvailable) ? {...item, children} : null;
             }
-            return canAccessItem(access, item) ? item : null;
+            return canAccessItem(access, item, profitSharingAvailable) ? item : null;
         })
         .filter((item): item is NavItem => item !== null);
 
@@ -283,8 +295,8 @@ const toMenuItems = (items: NavItem[]): MenuProps['items'] =>
         children: item.children ? toMenuItems(item.children) : undefined
     }));
 
-const filterNavSections = (sections: NavSection[], access: AccessState): NavSection[] =>
-    sections.map(section => ({...section, children: filterNavItems(section.children, access)})).filter(section => section.children.length > 0);
+const filterNavSections = (sections: NavSection[], access: AccessState, profitSharingAvailable: boolean): NavSection[] =>
+    sections.map(section => ({...section, children: filterNavItems(section.children, access, profitSharingAvailable)})).filter(section => section.children.length > 0);
 
 const toSectionMenuItems = (sections: NavSection[]): MenuProps['items'] =>
     sections.map(section => ({
@@ -414,6 +426,10 @@ const AppRoutes = (props: {access: AccessState; onSessionEnded: () => void}) => 
             <Route path='/notifications' element={moduleRoute(AccountDataModule.Notifications, <NotificationsPage />)} />
             <Route path='/notifications/:id' element={moduleRoute(AccountDataModule.Notifications, <NotificationsDetailPage />)} />
             <Route path='/settings/*' element={<SettingsPage />} />
+            <Route path='/profit-sharing' element={<ProfitSharingRoundsPage />} />
+            <Route path='/profit-sharing/:slug' element={<ProfitSharingRoundPage />} />
+            <Route path='/admin/profit-sharing' element={adminRoute(<ProfitSharingAdminRoundsPage />)} />
+            <Route path='/admin/profit-sharing/:slug' element={adminRoute(<ProfitSharingAdminRoundPage />)} />
             <Route path='/service-status' element={adminRoute(<ServiceStatusPage />)} />
             <Route path='/etherscan-gateways' element={adminRoute(<EtherscanGatewaysPage />)} />
             <Route path='/user-info' element={<UserInfoPage onSessionEnded={props.onSessionEnded} />} />
@@ -442,6 +458,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const initialAccess = session.status === 'authenticated' ? session.access : null;
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.pref.hideSidebar);
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+    const [profitSharingAvailable, setProfitSharingAvailable] = React.useState(false);
     const sidebarRef = React.useRef<HTMLDivElement>(null);
     const shellBackgroundRef = React.useRef<HTMLElement>(null);
     const mobileSidebarToggleRef = React.useRef<HTMLButtonElement>(null);
@@ -487,7 +504,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                     }
                     if (!user.loggedIn) {
                         endSession('anonymous');
-                        navigate('/login', {replace: true});
+                        navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
                         return false;
                     }
                     const next = loadAccessState(user);
@@ -540,7 +557,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                     }
                     if (err?.status === 401) {
                         endSession('anonymous');
-                        navigate('/login', {replace: true});
+                        navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
                         return false;
                     }
                     if (!accessRef.current) {
@@ -558,7 +575,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             void request.then(clearPendingRefresh, clearPendingRefresh);
             return request;
         },
-        [endSession, navigate]
+        [endSession, location.hash, location.pathname, location.search, navigate]
     );
 
     const establishAuthenticatedSession = React.useCallback(async () => {
@@ -587,6 +604,31 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         });
         return request;
     }, [refreshAccess]);
+
+    React.useEffect(() => {
+        if (!access) {
+            setProfitSharingAvailable(false);
+            return;
+        }
+        let active = true;
+        const request = services.profitSharing.listRounds();
+        request.then(
+            rounds => {
+                if (active) {
+                    setProfitSharingAvailable(rounds.length > 0);
+                }
+            },
+            () => {
+                if (active) {
+                    setProfitSharingAvailable(false);
+                }
+            }
+        );
+        return () => {
+            active = false;
+            request.abort?.();
+        };
+    }, [access?.user.iss, access?.user.username, location.pathname]);
 
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
@@ -649,7 +691,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
 
     React.useEffect(() => {
         if (session.status === 'anonymous' && !isLoginPath) {
-            navigate('/login', {replace: true});
+            navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
             return;
         }
         if (session.status === 'maintenance' && (!isLoginPath || new URLSearchParams(location.search).get('reason') !== 'maintenance')) {
@@ -657,9 +699,9 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             return;
         }
         if (session.status === 'authenticated' && isLoginPath) {
-            navigate('/settings', {replace: true});
+            navigate(readLoginReturnTo(location.search), {replace: true});
         }
-    }, [isLoginPath, location.search, navigate, session.status]);
+    }, [isLoginPath, location.hash, location.pathname, location.search, navigate, session.status]);
 
     React.useEffect(() => {
         if (isLoginPath || !access) {
@@ -699,17 +741,17 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 return;
             }
             endSession(maintenance ? 'maintenance' : 'anonymous');
-            navigate(maintenance ? maintenanceLoginPath : '/login', {replace: true});
+            navigate(maintenance ? maintenanceLoginPath : loginPathFor(location.pathname, location.search, location.hash), {replace: true});
         });
         return () => subscription?.unsubscribe();
-    }, [endSession, isLoginPath, navigate, refreshAfterAccessDenied]);
+    }, [endSession, isLoginPath, location.hash, location.pathname, location.search, navigate, refreshAfterAccessDenied]);
 
     React.useEffect(() => {
         const current = flattenNav(navItems).find(item => item.key === selectedKey(location.pathname));
         document.title = current ? `${current.label} · Athena` : 'Athena';
     }, [location.pathname]);
 
-    const visibleNavSections = access ? filterNavSections(navSections, access) : [];
+    const visibleNavSections = access ? filterNavSections(navSections, access, profitSharingAvailable) : [];
     const visibleNavItems = visibleNavSections.flatMap(section => section.children);
 
     const onMenuClick: MenuProps['onClick'] = item => {

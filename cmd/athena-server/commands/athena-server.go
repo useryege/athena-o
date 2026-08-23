@@ -18,6 +18,7 @@ import (
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
@@ -66,6 +67,7 @@ func NewCommand() *cobra.Command {
 		managedOOServerAddress           string
 		wormMarketsServerAddress         string
 		fifaMarketDashboardServerAddress string
+		profitSharingServerAddress       string
 		tokenAPIServerAddress            string
 		etherscanGatewayIPs              string
 		etherscanGatewayAuthToken        string
@@ -157,6 +159,11 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("create FIFA Market Dashboard clientset: %w", err)
 			}
 			defer utilio.Close(fifaMarketDashboardClientset)
+			profitSharingClientset, err := profitsharingapiclient.NewProfitSharingClientset(profitSharingServerAddress)
+			if err != nil {
+				return fmt.Errorf("create Profit Sharing clientset: %w", err)
+			}
+			defer utilio.Close(profitSharingClientset)
 			tokenAPIClientset, err := tokenapiapiclient.NewTokenAPIClientset(tokenAPIServerAddress)
 			if err != nil {
 				return fmt.Errorf("create Token API clientset: %w", err)
@@ -184,6 +191,7 @@ func NewCommand() *cobra.Command {
 				ManagedOOClientset:                managedOOClientset,
 				WormMarketsClientset:              wormMarketsClientset,
 				FIFAMarketDashboardClientset:      fifaMarketDashboardClientset,
+				ProfitSharingClientset:            profitSharingClientset,
 				TokenAPIClientset:                 tokenAPIClientset,
 				EtherscanGatewayIPs:               etherscanGatewayIPs,
 				EtherscanGatewayToken:             etherscanGatewayAuthToken,
@@ -260,6 +268,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortManagedOO)), "Athena Managed OO server address")
 	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)), "Athena Worm Markets server address")
 	command.Flags().StringVar(&fifaMarketDashboardServerAddress, "fifa-market-dashboard-server-address", env.StringFromEnv("ATHENA_FIFA_MARKET_DASHBOARD_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortFIFAMarketDashboard)), "Athena FIFA Market Dashboard server address")
+	command.Flags().StringVar(&profitSharingServerAddress, "profit-sharing-server-address", env.StringFromEnv("ATHENA_PROFIT_SHARING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortProfitSharing)), "Athena Profit Sharing server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortTokenAPI)), "Athena token API server address")
 	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")
 	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC status calls")

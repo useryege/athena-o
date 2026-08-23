@@ -99,6 +99,29 @@ tar -C '${REMOTE_APP_DIR}' -xf -"
   echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
   docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
 
+  echo "Ensuring the Profit Sharing database exists on ${REMOTE}..."
+  ssh "${REMOTE}" "set -e
+cd '${REMOTE_APP_DIR}'
+compose() {
+  PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env \"\$@\"
+}
+compose up -d postgres
+postgres_ready=false
+for attempt in \$(seq 1 60); do
+  if compose exec -T postgres sh -c 'pg_isready --username \"\$POSTGRES_USER\" --dbname \"\$POSTGRES_DB\"' >/dev/null 2>&1; then
+    postgres_ready=true
+    break
+  fi
+  sleep 1
+done
+if [ \"\${postgres_ready}\" != 'true' ]; then
+  echo 'PostgreSQL did not become ready before Profit Sharing database creation.'
+  exit 1
+fi
+if ! compose exec -T postgres sh -c 'createdb --username \"\$POSTGRES_USER\" profit_sharing' >/dev/null 2>&1; then
+  compose exec -T postgres sh -c 'psql --username \"\$POSTGRES_USER\" --dbname profit_sharing --command \"SELECT 1\"' >/dev/null
+fi"
+
   echo "Running Athena migrations on ${REMOTE}..."
   ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
 

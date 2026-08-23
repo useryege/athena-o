@@ -8,6 +8,7 @@ import (
 	fifamarketdashboardstore "github.com/useryege/athena/internal/fifamarketdashboard/store"
 	managedoostore "github.com/useryege/athena/internal/managedoo/store"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
+	profitsharingstore "github.com/useryege/athena/internal/profitsharing/store"
 	sportshistorystore "github.com/useryege/athena/internal/sportshistory/store"
 	sportslivestore "github.com/useryege/athena/internal/sportslive/store"
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
@@ -36,6 +37,7 @@ var modules = []Module{
 	{Name: "sports-live", DSNEnv: "ATHENA_SPORTS_LIVE_POSTGRES_DSN", Database: "sports_live", Migrations: sportslivestore.Migrations()},
 	{Name: "sports-history", DSNEnv: "ATHENA_SPORTS_HISTORY_POSTGRES_DSN", Database: "sports_history", Migrations: sportshistorystore.Migrations()},
 	{Name: "managed-oo", DSNEnv: "ATHENA_MANAGED_OO_POSTGRES_DSN", Database: "managed_oo", Migrations: managedoostore.Migrations()},
+	{Name: "profit-sharing", DSNEnv: "ATHENA_PROFIT_SHARING_POSTGRES_DSN", Database: "profit_sharing", Migrations: profitsharingstore.Migrations()},
 	{Name: "token", DSNEnv: "ATHENA_TOKEN_POSTGRES_DSN", Database: "token", Migrations: tokenpostgres.Migrations()},
 }
 

@@ -12,6 +12,7 @@ const serviceLabels: Record<string, string> = {
     'managed-oo': 'Managed OO',
     'worm-markets': 'Worm Markets',
     'fifa-market-dashboard': 'FIFA Market Dashboard',
+    'profit-sharing': 'Profit Sharing',
     'token-api': 'Token API'
 };
 

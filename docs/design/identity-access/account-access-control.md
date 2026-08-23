@@ -47,6 +47,7 @@ flowchart LR
     D --> L["Password, JWT, and API Key validation"]
     C --> L
     C --> R["Explicit RPC module rule"]
+    C --> P["Authenticated Profit Sharing membership boundary"]
     C --> B["GetAppBootstrap and GetUserInfo"]
     B --> X["Browser Authorization Context"]
     X --> Q["Module-scoped routes, requests, caches, and write controls"]
@@ -84,12 +85,22 @@ Protected RPCs use four direct boundaries:
 | Authenticated account identity | An account may get its own account, verify and change its own password, and manage its own API Keys. Targeting another account requires administrator access. |
 | Administrator | The built-in `admin` identity exclusively owns account listing and access replacement, Service Status, Etherscan probes, and gRPC reflection. |
 | Product module | Every public business RPC has one explicit `moduleGRPCRules` entry containing a module and required `READ` or `READ_WRITE` level. |
+| Profit Sharing | Every Profit Sharing RPC requires an enabled authenticated Athena account. Administrator lifecycle RPCs use the administrator boundary; member reads and writes pass the account identity to the Profit Sharing domain, which enforces round membership and rejects administrator proposal or vote mutations. |
 
 An authenticated method absent from all boundaries fails closed. Wallet detail
 normally requires Wallet `READ`; `reveal_secrets=true` raises that same method to
 Wallet `READ_WRITE`. The FIFA public facade is authorized only by the FIFA
 module even though its implementation calls Worm Markets and Wallet internally.
 Token APIs all use the single Token module.
+
+Opening a Profit Sharing round has an additional cross-capability precondition.
+The API Server facade reads every configured participant account from
+`CredentialManager`, requires `login` capability, and requires current
+`AccessController.LoginEnabled`. It rejects `admin`, duplicates, missing
+accounts, and disabled accounts before forwarding the validated account set to
+the Profit Sharing service. The service compares that set with the complete
+draft-round participant roster in its own transaction, avoiding any reverse
+dependency from Profit Sharing to account infrastructure.
 
 ## Runtime Flow
 
@@ -174,6 +185,13 @@ Token APIs all use the single Token module.
     business caches and routes to `/login?reason=maintenance` without deleting
     the credential cookie. Normal 401 and unrelated 503 responses retain their
     ordinary handling.
+14. Profit Sharing methods first establish the same current account identity.
+    Administrator lifecycle actions are authorized at the interceptor. Member
+    methods cross the explicit authenticated boundary and forward the requester
+    account so the Profit Sharing service can enforce per-round membership,
+    proposal ownership, and voting restrictions. `OpenRound` additionally
+    validates the complete draft roster against current credentials and login
+    access before the state-transition request leaves the API Server.
 
 The runtime uses one API Server instance. Its update mutex orders local writes;
 there is no cross-instance snapshot notification mechanism.
@@ -259,6 +277,7 @@ copy helper can bypass permission-loss cancellation for those secrets.
 | `ATHENA_SERVER_POSTGRES_DSN` | Selects PostgreSQL database `athena` for the parent and child access tables. Local defaults use `127.0.0.1`; production Compose supplies its service DSN. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Defaults to `true` and controls embedded startup migration. Production disables it and runs the migration process before API Server. |
 | `ATHENA_ACCOUNT_*_ENABLED` | Defines only an ordinary account's login baseline. An omitted value defaults the ordinary account to disabled. Every module still defaults to `NONE`. |
+| Profit Sharing participant baselines | The repository environment config enables `YEGE`, `LINGJIE`, `DONGMEI`, `DINGZHI`, and `YUDIAN`; these accounts require no product-module grant to participate in a round. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Development-only process-wide bypass. Requests and bootstrap use the built-in administrator identity with the maximum module matrix. |
 
 The administrator baseline, module collection, maximum levels, maintenance
@@ -275,7 +294,13 @@ text, and access levels are implementation constants.
   same module, and read-only modules never accept `READ_WRITE`.
 - Administrator access cannot be granted through a module level.
 - Every authenticated public method matches exactly one self-service,
-  administrator, or explicit module rule; otherwise authorization fails closed.
+  administrator, explicit module, or authenticated Profit Sharing rule;
+  otherwise authorization fails closed.
+- Profit Sharing participant access never derives from the ten-module matrix.
+  The interceptor requires a current authenticated account and the domain owns
+  round membership, proposal ownership, and vote eligibility.
+- A draft round cannot open unless its complete, duplicate-free participant set
+  resolves to enabled, login-capable, non-administrator Athena accounts.
 - Persistence updates the parent and all ten children in one CAS transaction
   and succeeds before the controller snapshot changes.
 - Password validity is established before disabled state is disclosed.

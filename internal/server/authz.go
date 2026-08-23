@@ -50,6 +50,25 @@ var administratorGRPCMethods = map[string]bool{
 	"/servicestatus.ServiceStatusService/RunEtherscanGatewayProbe":          true,
 	"/servicestatus.ServiceStatusService/GetEtherscanGatewayProbeRun":       true,
 	"/servicestatus.ServiceStatusService/GetLatestEtherscanGatewayProbeRun": true,
+
+	"/profitsharing.ProfitSharingService/CreateRound":  true,
+	"/profitsharing.ProfitSharingService/UpdateRound":  true,
+	"/profitsharing.ProfitSharingService/OpenRound":    true,
+	"/profitsharing.ProfitSharingService/PublishRound": true,
+	"/profitsharing.ProfitSharingService/CloseBallot":  true,
+}
+
+// profitSharingAuthenticatedGRPCMethods is an explicit authenticated boundary.
+// Round membership, participant-only writes, and self-vote prevention are
+// enforced by the Profit Sharing domain service with the authenticated account
+// injected by the API facade.
+var profitSharingAuthenticatedGRPCMethods = map[string]bool{
+	"/profitsharing.ProfitSharingService/ListRounds":     true,
+	"/profitsharing.ProfitSharingService/GetRound":       true,
+	"/profitsharing.ProfitSharingService/UpdateProposal": true,
+	"/profitsharing.ProfitSharingService/SubmitProposal": true,
+	"/profitsharing.ProfitSharingService/ReopenProposal": true,
+	"/profitsharing.ProfitSharingService/SubmitVote":     true,
 }
 
 var accountSelfServiceGRPCMethods = map[string]bool{
@@ -199,6 +218,9 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 
 	if isReflectionMethod(fullMethod) || administratorGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccount(username, accountaccess.RequirementAdministrator)
+	}
+	if profitSharingAuthenticatedGRPCMethods[fullMethod] {
+		return authCtx, nil
 	}
 	if accountSelfServiceGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccountSelfService(username, fullMethod, req)
