@@ -68,8 +68,7 @@ values returned to consumers are defensive copies.
 The repository deployment catalog includes five enabled ordinary login
 identities used as Profit Sharing participants: `YEGE`, `LINGJIE`, `DONGMEI`,
 `DINGZHI`, and `YUDIAN`. Each account has its own bcrypt hash and credential
-epoch. They remain ordinary accounts; the built-in `admin` identity is separate,
-and the existing `JUN` entry retains its independent configuration.
+epoch. They remain ordinary accounts; the built-in `admin` identity is separate.
 
 ## Runtime Flow
 
