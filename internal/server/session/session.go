@@ -2,7 +2,7 @@ package session
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -14,16 +14,15 @@ import (
 	"github.com/useryege/athena/pkg/apiclient/session"
 	utilio "github.com/useryege/athena/util/io"
 	sessionmgr "github.com/useryege/athena/util/session"
-	"github.com/useryege/athena/util/settings"
 )
 
 // Server provides a Session service
 type Server struct {
-	mgr                *sessionmgr.SessionManager
-	settingsMgr        *settings.SettingsManager
-	authenticator      Authenticator
-	accessController   *accountaccess.Controller
-	limitLoginAttempts func() (utilio.Closer, error)
+	mgr                 *sessionmgr.SessionManager
+	userSessionDuration time.Duration
+	authenticator       Authenticator
+	accessController    *accountaccess.Controller
+	limitLoginAttempts  func() (utilio.Closer, error)
 }
 
 type Authenticator interface {
@@ -36,8 +35,8 @@ const (
 )
 
 // NewServer returns a new instance of the Session service
-func NewServer(mgr *sessionmgr.SessionManager, settingsMgr *settings.SettingsManager, authenticator Authenticator, accessController *accountaccess.Controller, rateLimiter func() (utilio.Closer, error)) *Server {
-	return &Server{mgr, settingsMgr, authenticator, accessController, rateLimiter}
+func NewServer(mgr *sessionmgr.SessionManager, userSessionDuration time.Duration, authenticator Authenticator, accessController *accountaccess.Controller, rateLimiter func() (utilio.Closer, error)) *Server {
+	return &Server{mgr, userSessionDuration, authenticator, accessController, rateLimiter}
 }
 
 // Create generates a JWT token signed by Athena intended for web/CLI logins of the admin user
@@ -75,7 +74,7 @@ func (s *Server) Create(ctx context.Context, q *session.SessionCreateRequest) (*
 	}
 
 	// verify the username and password
-	err := s.mgr.VerifyLogin(ctx, q.Username, q.Password, clientIPFromContext(ctx))
+	verification, err := s.mgr.VerifyLogin(ctx, q.Username, q.Password, clientIPFromContext(ctx))
 	if err != nil {
 		if !sessionmgr.IsAccountMaintenanceError(err) {
 			s.mgr.IncLoginRequestCounter(failure)
@@ -89,17 +88,10 @@ func (s *Server) Create(ctx context.Context, q *session.SessionCreateRequest) (*
 		return nil, err
 	}
 
-	// get the athena settings from athena-cm and athena-secret
-	athenaSettings, err := s.settingsMgr.GetSettings()
-	if err != nil {
-		s.mgr.IncLoginRequestCounter(failure)
-		return nil, err
-	}
-
 	// create a JWT token for the session
-	jwtToken, err := s.mgr.Create(
-		fmt.Sprintf("%s:%s", q.Username, settings.AccountCapabilityLogin),
-		int64(athenaSettings.UserSessionDuration.Seconds()),
+	jwtToken, err := s.mgr.CreateVerifiedLogin(
+		verification,
+		int64(s.userSessionDuration.Seconds()),
 		uniqueId.String())
 	if err != nil {
 		s.mgr.IncLoginRequestCounter(failure)

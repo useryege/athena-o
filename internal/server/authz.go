@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcredentials"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	util_session "github.com/useryege/athena/util/session"
@@ -22,7 +23,7 @@ type serviceAuthFuncOverride interface {
 func withDisabledAuthClaims(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "claims", jwt.MapClaims{ //nolint:staticcheck
 		"sub": common.AthenaAdminUsername,
-		"iss": util_session.SessionManagerClaimsIssuer,
+		"iss": accountcredentials.ClaimsIssuer,
 	})
 }
 

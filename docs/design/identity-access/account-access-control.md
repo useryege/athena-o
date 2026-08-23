@@ -8,41 +8,44 @@ access matrix, durable administrator overrides, credential-time enforcement,
 explicit RPC authorization rules, account administration, and browser
 authorization synchronization.
 
-Environment settings remain the account registry and startup identity baseline:
-they define names, password hashes, credential capabilities, configured API Keys,
-and each ordinary account's default login flag. `SettingsManager` applies
-thread-safe password and API Key changes for the running process. Business
-services own the data and mutations reached after authorization. Account
-creation, role assignment, resource/action policies, and configurable
-maintenance messages are outside this capability.
+The one-shot `accountcredentials.Catalog` supplies the fixed account names and
+each ordinary account's default login flag. `CredentialManager` and `JWTCodec`
+own process-local passwords, capabilities, API Keys, and JWT operations as
+described in [Account Credentials](account-credentials.md); they do not own
+effective access. Business services own the data and mutations reached after
+authorization. Account creation, role assignment, resource/action policies,
+and configurable maintenance messages are outside this capability.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Environment identities and process-local credentials | [util/settings/accounts_env.go](../../../util/settings/accounts_env.go), [util/settings/accounts_manager.go](../../../util/settings/accounts_manager.go) | `parseAccountsFromRaw`, `GetAccountLoginDefaults`, `GetAccount`, `UpdateAccount`, `SettingsManager` |
+| Environment account registry and login baselines | [internal/accountcredentials/catalog.go](../../../internal/accountcredentials/catalog.go) | `Catalog`, `LoadCatalog`, `LoginDefaults` |
 | Effective access model | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `Module`, `AccessLevel`, `Access`, `AllModules`, `MaxAccessLevel`, `Requirement`, `Controller` |
 | Durable aggregate store | [internal/accountaccess/store/sql_store.go](../../../internal/accountaccess/store/sql_store.go), [internal/accountaccess/store/queries/account_access_override.sql](../../../internal/accountaccess/store/queries/account_access_override.sql) | `SQLStore`, `ListAccountAccessOverrides`, `UpdateAccountAccessOverride` |
 | Schema and migration wiring | [internal/accountaccess/store/migrations](../../../internal/accountaccess/store/migrations), [internal/migration/modules.go](../../../internal/migration/modules.go) | `account_access_override`, `account_module_access_override`, `account-access` |
 | Account API and canonical projection | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountDataModule`, `AccountModuleAccess`, `AccountAccess`, `UpdateAccountAccess`, `ToAPIAccountAccess` |
-| Authentication and explicit RPC rules | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/authz.go](../../../internal/server/authz.go) | `AccountMaintenanceErr`, `VerifyLogin`, `Parse`, `moduleGRPCRules`, `grpcModuleRule`, `authorizeGRPC` |
+| Authentication and explicit RPC rules | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [internal/accountcredentials/jwt_codec.go](../../../internal/accountcredentials/jwt_codec.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/authz.go](../../../internal/server/authz.go) | `CredentialManager`, `PasswordVerification`, `JWTCodec`, `AccountMaintenanceErr`, `VerifyLogin`, `CreateVerifiedLogin`, `Parse`, `moduleGRPCRules`, `grpcModuleRule`, `authorizeGRPC` |
 | Bootstrap and live session projection | [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go), [internal/server/session/session.go](../../../internal/server/session/session.go) | `GetAppBootstrap`, `GetUserInfo`, `ProjectUserInfo` |
 | Browser module registry and authorization state | [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts), [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `accountDataModules`, `moduleAccessLevels`, `AuthorizationCtx`, `access`, `canRead`, `canWrite` |
 | Administration UI | [ui/src/app/pages/settings.tsx](../../../ui/src/app/pages/settings.tsx) | `SettingsPage`, `ResourceTable`, account access draft and expanded row |
 | Request and cache invalidation | [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `abortAuthorizationRequests`, `clearAsyncDataCache`, `isAccountMaintenanceError`, `isAccountDataAccessDeniedError` |
+| Sensitive write lifetime | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx) | `SensitiveWriteScope`, `useSensitiveWriteLease`, `SensitiveTaskResult`, `WalletWriteSurface`, `SecretText` |
 | Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `NewServer`, `ATHENA_SERVER_POSTGRES_DSN` |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    E["Environment identities and login baselines"] --> C["AccessController snapshot"]
+    E["Credential Catalog login baselines"] --> C["AccessController snapshot"]
+    E --> D["CredentialManager and JWTCodec"]
     H["account_access_override parent"] --> S["SQLStore aggregate loader and CAS"]
     M["10 account_module_access_override children"] --> S
     S --> C
     A["Administrator expanded account editor"] --> U["UpdateAccountAccess complete aggregate"]
     U --> S
-    C --> L["Password, JWT, and API Key login enforcement"]
+    D --> L["Password, JWT, and API Key validation"]
+    C --> L
     C --> R["Explicit RPC module rule"]
     C --> B["GetAppBootstrap and GetUserInfo"]
     B --> X["Browser Authorization Context"]
@@ -90,9 +93,10 @@ Token APIs all use the single Token module.
 
 ## Runtime Flow
 
-1. API Server startup reads environment identities and login baselines,
-   connects to the `athena` PostgreSQL database, and applies the embedded
-   `account-access` migrations when automatic migration is enabled.
+1. API Server startup loads the immutable account credential catalog, copies
+   its account seeds into `CredentialManager`, constructs `JWTCodec` from its
+   signing key, connects to the `athena` PostgreSQL database, and applies the
+   embedded `account-access` migrations when automatic migration is enabled.
 2. `NewController` assigns every ordinary account its environment login flag,
    all ten modules at `NONE`, and revision zero. It fixes `admin` at enabled and
    each module's maximum level, then loads persisted aggregates. Unknown account
@@ -100,9 +104,10 @@ Token APIs all use the single Token module.
    have a positive revision and exactly one valid child row for every module;
    invalid or incomplete state prevents listener startup.
 3. The session manager, account service, application-bootstrap service, and
-   authorization interceptor share that controller. Password login, JWTs, and
-   API Keys resolve the current login flag on every relevant request, and every
-   protected business RPC then resolves its current module level.
+   authorization interceptor share that controller. SessionManager composes
+   `CredentialManager` and `JWTCodec` with the controller: password login,
+   JWTs, and API Keys resolve the current login flag on every relevant request,
+   and every protected business RPC then resolves its current module level.
 4. The Account API always projects modules in canonical order. A
    `PUT /api/v1/account/{name}/access` body contains `loginEnabled`, expected
    `revision`, and the complete ten-entry `moduleAccess` matrix. Missing,
@@ -119,7 +124,10 @@ Token APIs all use the single Token module.
 6. Password login verifies the password before consulting `login_enabled`. A
    correct password for a disabled account returns gRPC `Unavailable` and HTTP
    503 with `系统维护中`; a wrong password remains a generic login failure. The
-   maintenance outcome does not increment brute-force failure state.
+   maintenance outcome does not increment brute-force failure state. Successful
+   verification returns an opaque password-version proof; login JWT issuance
+   rechecks that proof under the same account's read lock so a concurrent
+   password replacement cannot mint a session from the old password.
 7. A disabled JWT or API Key returns the same maintenance result on its next
    protected request. The credential is not revoked, so enabling the account
    restores any otherwise valid, unexpired credential.
@@ -128,10 +136,13 @@ Token APIs all use the single Token module.
    `ACCOUNT_DATA_ACCESS_DENIED` plus `module`, `required_access`, and
    `effective_access` metadata. Administrator denial uses the separate
    `ACCOUNT_ADMIN_REQUIRED` reason.
-9. Password and API Key self-service update a copied `SettingsManager` account
-   under its mutex. Own-password changes still verify the current password.
-   These process-local identity changes do not write the account-access tables
-   and return to the environment baseline when API Server restarts.
+9. Password and API Key self-service use typed `CredentialManager` operations.
+   Each account has an independent lock, and API Key signing plus metadata
+   insertion is one serialized operation using dependency-free `JWTCodec`.
+   Own-password changes atomically verify the current password and publish its
+   replacement. These process-local identity changes do not write the
+   account-access tables and return to the environment baseline when API Server
+   restarts.
 10. `GetAppBootstrap` returns settings and the initial optional-authentication
     session projection. A valid enabled credential includes the complete
     `AccountAccess`; a valid disabled credential produces the in-band
@@ -147,10 +158,18 @@ Token APIs all use the single Token module.
     all use the shared `accountDataModules` registry. A module reduced below
     `READ` aborts that module's requests, clears only that module's cache, and
     routes an active page to `/user-info`; Token also clears saved project return
-    positions. A module reduced from `READ_WRITE` to `READ` aborts only writes,
-    preserves the read page and read cache, and lets page effects destroy write
-    drafts, confirmations, overlays, and sensitive Wallet state. Unchanged
-    modules retain their requests and caches.
+    positions. A module reduced from `READ_WRITE` to `READ` aborts only writes
+    and preserves the read page and read cache. Ordinary pages destroy their
+    own write drafts, confirmations, and overlays. Wallet places every create,
+    reveal, backup, secret clipboard task, and secret-bearing state inside
+    `SensitiveWriteScope`; permission loss unmounts that subtree in the same
+    render, then its layout-effect cleanup invalidates the task generation and
+    aborts tracked work. Late success and failure results are discarded and
+    cannot restore state, publish notifications, or reload data. Standard
+    `ABORTED` and `AbortError` failures are also discarded while a permission
+    refresh is between global request cancellation and the React permission
+    commit. Unchanged modules retain their requests, caches, and legitimate
+    write surfaces.
 13. An exact maintenance 503 after bootstrap clears browser session state and
     business caches and routes to `/login?reason=maintenance` without deleting
     the credential cookie. Normal 401 and unrelated 503 responses retain their
@@ -216,13 +235,22 @@ update time once. The current schema contains no aggregate-wide data level.
 
 `Controller.access` is a mutex-protected, deep-copied process snapshot. The
 database commit is the access state transition; memory changes afterward.
-`SettingsManager.accounts` is a separate mutex-protected process identity store.
-JWTs and API Keys are neither stored nor revoked by an access update.
+`CredentialManager` is a separate process-local identity registry with one
+lock per account; `JWTCodec` owns an immutable copy of the signing key. JWTs and
+API Keys are neither stored nor revoked by an access update.
 
 The browser stores the complete active aggregate and derives module access from
 it. Business caches contain responses, not authorization decisions, and are
 tagged with their product module so a change can invalidate only the affected
-scope.
+scope. `SensitiveWriteScope` keys its lease by credential issuer, username,
+administrator flag, and module; it deliberately excludes account revision so
+an unrelated module update cannot remount a valid write surface. Wallet's
+Create, Back Up, and Secret modals use `destroyOnHidden` for ordinary animated
+closure, while loss of Wallet write access unmounts the complete portal subtree
+without waiting for that animation. Wallet private keys and mnemonics use
+explicit `SecretInput` or `SecretText` copy buttons; their only clipboard write
+is the lease-wrapped `navigator.clipboard.writeText` task, so no component-level
+copy helper can bypass permission-loss cancellation for those secrets.
 
 ## Configuration
 
@@ -238,7 +266,7 @@ text, and access levels are implementation constants.
 
 ## Invariants
 
-- Environment configuration is the account registry and credential baseline;
+- The startup credential catalog is the account registry and login baseline;
   access-table rows cannot create identities or change credentials.
 - `Controller` is the only effective login and module-access authority.
 - Every effective `Access` contains exactly the ten canonical modules.
@@ -251,12 +279,17 @@ text, and access levels are implementation constants.
 - Persistence updates the parent and all ten children in one CAS transaction
   and succeeds before the controller snapshot changes.
 - Password validity is established before disabled state is disclosed.
+- Login issuance revalidates the opaque password proof, and every local JWT's
+  exact credential epoch must match the current password epoch.
 - Bootstrap and `GetUserInfo` project the same aggregate used by request-time
   authorization; neither projection replaces server enforcement.
 - Only stable maintenance and data-denial tuples activate their specialized
   browser recovery flows.
 - Module authorization changes invalidate only the affected browser scope;
   identity or maintenance changes clear the whole authenticated scope.
+- Wallet secrets and the create/reveal/copy task lease exist only inside a
+  mounted Wallet `READ_WRITE` sensitive scope. A discarded late task cannot
+  restore secret state, notifications, or a data reload.
 
 ## Failure Recovery
 
@@ -273,8 +306,9 @@ An ordinary restart rebuilds effective state from environment identities and
 the retained PostgreSQL aggregate. `make stop` preserves both access tables.
 `make run-reset` removes the PostgreSQL volume, so ordinary accounts return to
 their environment login flags, ten `NONE` levels, and revision zero; `admin`
-returns to its fixed maximum matrix. Process-local password and API Key changes
-also return to the environment baseline after API Server restart.
+returns to its fixed maximum matrix. Process-local CredentialManager password
+and API Key changes also return to the environment baseline after API Server
+restart.
 
 If bootstrap or authorization refresh fails without a stable maintenance or
 data-denial reason, the browser keeps an explicit retry/error boundary instead
@@ -298,14 +332,14 @@ or health endpoint is added.
 
 ## Change Checklist
 
-- [ ] Environment identity baselines and the fixed administrator matrix are current.
+- [ ] Credential Catalog identity baselines and the fixed administrator matrix are current.
 - [ ] The canonical ten modules and their maximum levels match core, Proto, SQL, RPC rules, and frontend registry.
 - [ ] Parent-plus-ten-child loading remains complete and fail-closed.
 - [ ] Full-aggregate transactional CAS and persistence-before-memory ordering remain aligned.
 - [ ] Every authenticated public RPC has one self-service, administrator, or explicit module rule.
-- [ ] Password, JWT, API Key, bootstrap, and session refresh use the same controller snapshot.
+- [ ] CredentialManager, JWTCodec, bootstrap, and session refresh compose the same controller snapshot.
 - [ ] Settings row expansion, complete drafts, confirmations, conflicts, and responsive layout remain current.
-- [ ] Fifteen-second refresh and module-scoped request, cache, route, and write-state cleanup remain current.
+- [ ] Fifteen-second refresh and module-scoped request, cache, route, and sensitive write-state cleanup remain current.
 - [ ] Maintenance 503, module 403, administrator 403, revision 409, and ordinary authentication errors remain distinguishable.
 - [ ] Restart, reset, and process-local credential recovery semantics are current.
 - [ ] Source links and named symbols resolve to the implementation.

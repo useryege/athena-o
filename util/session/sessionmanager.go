@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"math/rand"
 	"net/http"
@@ -18,16 +17,16 @@ import (
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/util/env"
 	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
-	passwordutil "github.com/useryege/athena/util/password"
-	"github.com/useryege/athena/util/settings"
 )
 
 // SessionManager generates and validates JWT tokens for login sessions.
 type SessionManager struct {
-	settingsMgr      *settings.SettingsManager
+	credentials      *accountcredentials.CredentialManager
+	jwtCodec         *accountcredentials.JWTCodec
 	accessController *accountaccess.Controller
 	// projectsLister                v1alpha1.AppProjectNamespaceLister
 	storage                       UserStateStorage
@@ -42,9 +41,7 @@ type MetricsRegistry interface {
 }
 
 const (
-	// SessionManagerClaimsIssuer fills the "iss" field of the token.
-	SessionManagerClaimsIssuer = "athena"
-	AuthErrorCtxKey            = "auth-error"
+	AuthErrorCtxKey = "auth-error"
 
 	// invalidLoginError, for security purposes, doesn't say whether the username or password was invalid.  This does not mitigate the potential for timing attacks to determine which is which.
 	invalidLoginError         = "Invalid username or password"
@@ -143,10 +140,12 @@ func newLoginRateLimitConfig() loginRateLimitConfig {
 	}
 }
 
-// NewSessionManager creates a new session manager from Athena settings.
-func NewSessionManager(settingsMgr *settings.SettingsManager, storage UserStateStorage, accessController *accountaccess.Controller) *SessionManager {
+// NewSessionManager creates a session manager from independent credential,
+// signing, access, and user-state dependencies.
+func NewSessionManager(credentials *accountcredentials.CredentialManager, jwtCodec *accountcredentials.JWTCodec, storage UserStateStorage, accessController *accountaccess.Controller) *SessionManager {
 	return &SessionManager{
-		settingsMgr:      settingsMgr,
+		credentials:      credentials,
+		jwtCodec:         jwtCodec,
 		accessController: accessController,
 		storage:          storage,
 		sleep:            time.Sleep,
@@ -154,26 +153,6 @@ func NewSessionManager(settingsMgr *settings.SettingsManager, storage UserStateS
 		verificationDelayNoiseEnabled: true,
 		loginRateLimit:                newLoginRateLimitConfig(),
 	}
-}
-
-// Create creates a new token for a given subject (user) and returns it as a string.
-// Passing a value of `0` for secondsBeforeExpiry creates a token that never expires.
-// The id parameter holds an optional unique JWT token identifier and stored as a standard claim "jti" in the JWT token.
-func (mgr *SessionManager) Create(subject string, secondsBeforeExpiry int64, id string) (string, error) {
-	now := time.Now().UTC()
-	claims := jwt.RegisteredClaims{
-		IssuedAt:  jwt.NewNumericDate(now),
-		Issuer:    SessionManagerClaimsIssuer,
-		NotBefore: jwt.NewNumericDate(now),
-		Subject:   subject,
-		ID:        id,
-	}
-	if secondsBeforeExpiry > 0 {
-		expires := now.Add(time.Duration(secondsBeforeExpiry) * time.Second)
-		claims.ExpiresAt = jwt.NewNumericDate(expires)
-	}
-
-	return mgr.signClaims(claims)
 }
 
 func (mgr *SessionManager) CollectMetrics(registry MetricsRegistry) {
@@ -190,70 +169,13 @@ func (mgr *SessionManager) IncLoginRequestCounter(status string) {
 	}
 }
 
-func (mgr *SessionManager) signClaims(claims jwt.Claims) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	settings, err := mgr.settingsMgr.GetSettings()
-	if err != nil {
-		return "", err
-	}
-	return token.SignedString(settings.ServerSignature)
-}
-
-// GetSubjectAccountAndCapability analyzes Athena account token subject and extract account name
-// and the capability it was generated for (default capability is API Key).
-func GetSubjectAccountAndCapability(subject string) (string, settings.AccountCapability) {
-	capability := settings.AccountCapabilityApiKey
-	if parts := strings.Split(subject, ":"); len(parts) > 1 {
-		subject = parts[0]
-		switch parts[1] {
-		case string(settings.AccountCapabilityLogin):
-			capability = settings.AccountCapabilityLogin
-		case string(settings.AccountCapabilityApiKey):
-			capability = settings.AccountCapabilityApiKey
-		}
-	}
-	return subject, capability
-}
-
 // Parse tries to parse the provided string and returns the token claims for local login.
 func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error) {
-	// Parse takes the token string and a function for looking up the key. The latter is especially
-	// useful if you use multiple keys for your application.  The standard is to use 'kid' in the
-	// head of the token to identify which key to use, but the parsed token (head and claims) is provided
-	// to the callback, providing flexibility.
-	var claims jwt.MapClaims
-	athenaSettings, err := mgr.settingsMgr.GetSettings()
+	parsed, err := mgr.jwtCodec.Parse(tokenString)
 	if err != nil {
 		return nil, "", err
 	}
-	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return athenaSettings.ServerSignature, nil
-	})
-	if err != nil {
-		return nil, "", err
-	}
-
-	issuedAt, err := jwtutil.IssuedAtTime(claims)
-	if err != nil {
-		return nil, "", err
-	}
-
-	subject := jwtutil.GetUserIdentifier(claims)
-	id := jwtutil.StringField(claims, "jti")
-
-	subject, capability := GetSubjectAccountAndCapability(subject)
-	claims["sub"] = subject
-
-	account, err := mgr.settingsMgr.GetAccount(subject)
-	if err != nil {
-		return nil, "", err
-	}
-
-	access, err := mgr.accessController.Get(subject)
+	access, err := mgr.accessController.Get(parsed.Account)
 	if err != nil {
 		return nil, "", err
 	}
@@ -261,21 +183,13 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 		return nil, "", AccountMaintenanceErr
 	}
 
-	if !account.HasCapability(capability) {
-		return nil, "", fmt.Errorf("account %s does not have '%s' capability", subject, capability)
+	if err := mgr.credentials.ValidateCredential(parsed.Account, parsed.Capability, parsed.ID, parsed.CredentialEpoch); err != nil {
+		return nil, "", err
 	}
-
-	if id == "" || mgr.storage.IsTokenRevoked(id) {
+	if parsed.ID == "" || mgr.storage.IsTokenRevoked(parsed.ID) {
 		return nil, "", errors.New("token is revoked, please re-login")
-	} else if capability == settings.AccountCapabilityApiKey && account.TokenIndex(id) == -1 {
-		return nil, "", fmt.Errorf("account %s does not have token with id %s", subject, id)
 	}
-
-	if account.PasswordMtime != nil && issuedAt.Before(*account.PasswordMtime) {
-		return nil, "", errors.New("account password has changed since token issued")
-	}
-
-	return token.Claims, "", nil
+	return parsed.Claims, "", nil
 }
 
 func (mgr *SessionManager) loginRateLimitRules(username, clientIP string) []loginRateLimitRule {
@@ -335,15 +249,15 @@ func (mgr *SessionManager) withVerificationDelay(start time.Time) {
 }
 
 // VerifyLogin verifies login credentials and applies Redis-backed brute-force protection.
-func (mgr *SessionManager) VerifyLogin(ctx context.Context, username string, password string, clientIP string) error {
+func (mgr *SessionManager) VerifyLogin(ctx context.Context, username string, password string, clientIP string) (accountcredentials.PasswordVerification, error) {
 	start := time.Now()
 	defer mgr.withVerificationDelay(start)
 
 	if password == "" {
-		return status.Errorf(codes.Unauthenticated, blankPasswordError)
+		return accountcredentials.PasswordVerification{}, status.Errorf(codes.Unauthenticated, blankPasswordError)
 	}
 	if len(username) > maxUsernameLength {
-		return status.Errorf(codes.InvalidArgument, usernameTooLongError, maxUsernameLength)
+		return accountcredentials.PasswordVerification{}, status.Errorf(codes.InvalidArgument, usernameTooLongError, maxUsernameLength)
 	}
 
 	rules := mgr.loginRateLimitRules(username, clientIP)
@@ -351,70 +265,77 @@ func (mgr *SessionManager) VerifyLogin(ctx context.Context, username string, pas
 		if !errors.Is(err, errLoginRateLimited) {
 			log.Warnf("failed to check login rate limit: %v", err)
 		}
-		return InvalidLoginErr
+		return accountcredentials.PasswordVerification{}, InvalidLoginErr
 	}
 
-	if err := mgr.verifyUsernamePassword(username, password); err != nil {
+	verification, err := mgr.verifyUsernamePassword(username, password)
+	if err != nil {
 		if IsAccountMaintenanceError(err) {
-			return err
+			return accountcredentials.PasswordVerification{}, err
 		}
 		if recordErr := mgr.storage.RecordLoginFailure(ctx, rules); recordErr != nil {
 			log.Warnf("failed to record login failure: %v", recordErr)
 		}
-		return InvalidLoginErr
+		return accountcredentials.PasswordVerification{}, InvalidLoginErr
 	}
 
 	if err := mgr.storage.ClearLoginFailures(ctx, mgr.loginRateLimitClearRules(username, clientIP)); err != nil {
 		log.Warnf("failed to clear login failures: %v", err)
-		return InvalidLoginErr
+		return accountcredentials.PasswordVerification{}, InvalidLoginErr
 	}
-	return nil
+	return verification, nil
 }
 
 // VerifyUsernamePassword verifies if a username/password combo is correct.
 func (mgr *SessionManager) VerifyUsernamePassword(username string, password string) error {
 	start := time.Now()
 	defer mgr.withVerificationDelay(start)
-	return mgr.verifyUsernamePassword(username, password)
+	_, err := mgr.verifyUsernamePassword(username, password)
+	return err
 }
 
-func (mgr *SessionManager) verifyUsernamePassword(username string, password string) error {
+func (mgr *SessionManager) verifyUsernamePassword(username string, password string) (accountcredentials.PasswordVerification, error) {
 	if password == "" {
-		return status.Errorf(codes.Unauthenticated, blankPasswordError)
+		return accountcredentials.PasswordVerification{}, status.Errorf(codes.Unauthenticated, blankPasswordError)
 	}
 	if len(username) > maxUsernameLength {
-		return status.Errorf(codes.InvalidArgument, usernameTooLongError, maxUsernameLength)
+		return accountcredentials.PasswordVerification{}, status.Errorf(codes.InvalidArgument, usernameTooLongError, maxUsernameLength)
 	}
 
-	account, err := mgr.settingsMgr.GetAccount(username)
+	verification, err := mgr.credentials.VerifyPassword(username, password)
 	if err != nil {
-		if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.NotFound {
-			err = InvalidLoginErr
+		if errors.Is(err, accountcredentials.ErrInvalidCredentials) {
+			return accountcredentials.PasswordVerification{}, InvalidLoginErr
 		}
-		// to prevent time-based user enumeration, we must perform a password
-		// hash cycle to keep response time consistent (if the function were
-		// to continue and not return here)
-		_, _ = passwordutil.HashPassword("for_consistent_response_time")
-		return err
+		return accountcredentials.PasswordVerification{}, err
 	}
-
-	valid, _ := passwordutil.VerifyPassword(password, account.PasswordHash)
-	if !valid {
-		return InvalidLoginErr
+	account, err := mgr.credentials.Get(username)
+	if err != nil {
+		return accountcredentials.PasswordVerification{}, InvalidLoginErr
 	}
 
 	access, err := mgr.accessController.Get(username)
 	if err != nil {
-		return err
+		return accountcredentials.PasswordVerification{}, err
 	}
 	if !access.LoginEnabled {
-		return AccountMaintenanceErr
+		return accountcredentials.PasswordVerification{}, AccountMaintenanceErr
 	}
 
-	if !account.HasCapability(settings.AccountCapabilityLogin) {
-		return status.Errorf(codes.Unauthenticated, userDoesNotHaveCapability, username, settings.AccountCapabilityLogin)
+	if !account.HasCapability(accountcredentials.CapabilityLogin) {
+		return accountcredentials.PasswordVerification{}, status.Errorf(codes.Unauthenticated, userDoesNotHaveCapability, username, accountcredentials.CapabilityLogin)
 	}
-	return nil
+	return verification, nil
+}
+
+// CreateVerifiedLogin signs a login session only if the password version used
+// by VerifyLogin is still current.
+func (mgr *SessionManager) CreateVerifiedLogin(verification accountcredentials.PasswordVerification, secondsBeforeExpiry int64, id string) (string, error) {
+	token, err := mgr.credentials.IssueLoginSession(verification, id, secondsBeforeExpiry)
+	if errors.Is(err, accountcredentials.ErrInvalidCredentials) {
+		return "", InvalidLoginErr
+	}
+	return token, err
 }
 
 // AuthMiddlewareFunc returns a function that can be used as an
@@ -466,16 +387,6 @@ func WithAuthMiddleware(disabled bool, authn TokenVerifier, next http.Handler) h
 
 // VerifyToken verifies Athena-issued session and API tokens.
 func (mgr *SessionManager) VerifyToken(_ context.Context, tokenString string) (jwt.Claims, string, error) {
-	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
-	claims := jwt.MapClaims{}
-	_, _, err := parser.ParseUnverified(tokenString, &claims)
-	if err != nil {
-		return nil, "", err
-	}
-	issuer, _ := claims["iss"].(string)
-	if issuer != SessionManagerClaimsIssuer {
-		return nil, "", common.ErrTokenVerification
-	}
 	return mgr.Parse(tokenString)
 }
 

@@ -38,6 +38,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	accountaccessstore "github.com/useryege/athena/internal/accountaccess/store"
+	"github.com/useryege/athena/internal/accountcredentials"
 	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
@@ -158,6 +159,7 @@ type AthenaServer struct {
 	log                *log.Entry
 	sessionMgr         *util_session.SessionManager
 	settingsMgr        *settings_util.SettingsManager
+	credentialMgr      *accountcredentials.CredentialManager
 	accountAccessStore *accountaccessstore.SQLStore
 	accessController   *accountaccess.Controller
 	// db db.AthenaDB
@@ -221,11 +223,16 @@ type AthenaServerOpts struct {
 func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
 	errorsutil.CheckError(err)
-	settings, err := settingsMgr.InitializeSettings()
+	settings, err := settingsMgr.GetSettings()
 	errorsutil.CheckError(err)
+	credentialCatalog, err := accountcredentials.LoadCatalog()
+	errorsutil.CheckError(err)
+	jwtCodec, err := accountcredentials.NewJWTCodec(credentialCatalog)
+	errorsutil.CheckError(err)
+	credentialMgr := accountcredentials.NewCredentialManager(credentialCatalog, jwtCodec)
 	accountAccessStore, err := accountaccessstore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
-	accessController, err := accountaccess.NewController(ctx, settingsMgr.GetAccountLoginDefaults(), accountAccessStore)
+	accessController, err := accountaccess.NewController(ctx, credentialCatalog.LoginDefaults(), accountAccessStore)
 	if err != nil {
 		_ = accountAccessStore.Close()
 		errorsutil.CheckError(err)
@@ -233,7 +240,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
-	sessionMgr := util_session.NewSessionManager(settingsMgr, userStateStorage, accessController)
+	sessionMgr := util_session.NewSessionManager(credentialMgr, jwtCodec, userStateStorage, accessController)
 
 	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
@@ -262,6 +269,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		settings:           settings,
 		sessionMgr:         sessionMgr,
 		settingsMgr:        settingsMgr,
+		credentialMgr:      credentialMgr,
 		accountAccessStore: accountAccessStore,
 		accessController:   accessController,
 		userStateStorage:   userStateStorage,
@@ -461,12 +469,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	}
 
 	// session service
-	sessionService := session.NewServer(server.sessionMgr, server.settingsMgr, server, server.accessController, loginRateLimiter)
+	sessionService := session.NewServer(server.sessionMgr, server.settings.UserSessionDuration, server, server.accessController, loginRateLimiter)
 
-	settingsProjector := settings.NewProjector(server.settingsMgr, server.accessController)
+	settingsProjector := settings.NewProjector(server.settingsMgr, server.credentialMgr, server.accessController)
 	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server)
 	// account service
-	accountService := account.NewServer(server.sessionMgr, server.settingsMgr, server.accessController)
+	accountService := account.NewServer(server.credentialMgr, server.settings.PasswordPattern, server.accessController)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service

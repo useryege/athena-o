@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcredentials"
 	settingspkg "github.com/useryege/athena/pkg/apiclient/settings"
 	sessionmgr "github.com/useryege/athena/util/session"
 	"github.com/useryege/athena/util/settings"
@@ -11,16 +12,17 @@ import (
 
 // Projector builds the settings representation returned by application bootstrap.
 type Projector struct {
-	mgr    *settings.SettingsManager
-	access *accountaccess.Controller
+	mgr         *settings.SettingsManager
+	credentials *accountcredentials.CredentialManager
+	access      *accountaccess.Controller
 	// appsInAnyNamespaceEnabled bool
 	// hydratorEnabled        bool
 	// syncWithReplaceAllowed bool
 }
 
 // NewProjector creates the transport-independent settings projector.
-func NewProjector(mgr *settings.SettingsManager, access *accountaccess.Controller) *Projector {
-	return &Projector{mgr: mgr, access: access}
+func NewProjector(mgr *settings.SettingsManager, credentials *accountcredentials.CredentialManager, access *accountaccess.Controller) *Projector {
+	return &Projector{mgr: mgr, credentials: credentials, access: access}
 }
 
 // Project returns settings visible to the identity, if any, in ctx.
@@ -38,16 +40,13 @@ func (p *Projector) Project(ctx context.Context) (*settingspkg.Settings, error) 
 		return nil, err
 	}
 	userLoginsDisabled := true
-	accounts, err := p.mgr.GetAccounts()
-	if err != nil {
-		return nil, err
-	}
+	accounts := p.credentials.List()
 	for name, account := range accounts {
 		access, err := p.access.Get(name)
 		if err != nil {
 			return nil, err
 		}
-		if access.LoginEnabled && account.HasCapability(settings.AccountCapabilityLogin) {
+		if access.LoginEnabled && account.HasCapability(accountcredentials.CapabilityLogin) {
 			userLoginsDisabled = false
 			break
 		}

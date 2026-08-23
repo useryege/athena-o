@@ -1,10 +1,6 @@
 package settings
 
-import (
-	"context"
-	"sync"
-	"time"
-)
+import "time"
 
 // AthenaSettings holds in-memory runtime configuration options.
 type AthenaSettings struct {
@@ -16,10 +12,6 @@ type AthenaSettings struct {
 	StatusBadgeEnabled bool `json:"statusBadgeEnable"`
 	// Indicates if status badge custom root URL should be used.
 	StatusBadgeRootUrl string `json:"statusBadgeRootUrl,omitempty"` //nolint:revive //FIXME(var-naming)
-	// ServerSignature holds the key used to generate JWT tokens.
-	ServerSignature []byte `json:"serverSignature,omitempty"`
-	// Secrets holds all secrets in athena-secret as a map[string]string
-	Secrets map[string]string `json:"secrets,omitempty"`
 	// Indicates if anonymous user is enabled or not
 	AnonymousUserEnabled bool `json:"anonymousUserEnabled,omitempty"`
 	// Specifies token expiration duration
@@ -52,25 +44,8 @@ type Help struct {
 	BinaryURLs map[string]string `json:"binaryUrl,omitempty"`
 }
 
-// RawSettings holds secret values loaded during process startup.
-type RawSettings struct {
-	Secrets map[string]string
-}
-
 // SettingsManager holds immutable runtime settings loaded during process startup.
 type SettingsManager struct {
-	ctx      context.Context
-	raw      RawSettings
 	settings AthenaSettings
 	help     Help
-	accounts map[string]Account
-	// accountLoginDefaults contains the immutable environment baseline consumed
-	// by accountaccess.Controller. Effective access never lives in settings.
-	accountLoginDefaults map[string]bool
-	mutex                *sync.RWMutex
 }
-
-const (
-	// initialPasswordLength defines the length of the generated initial password
-	initialPasswordLength = 16
-)

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -40,12 +39,7 @@ func loadHelpFromEnv() Help {
 	}
 }
 
-func loadSettingsFromEnv(secrets map[string]string) (AthenaSettings, error) {
-	serverSignature, err := envOrFile("ATHENA_JWT_SECRET")
-	if err != nil {
-		return AthenaSettings{}, err
-	}
-
+func loadSettingsFromEnv() (AthenaSettings, error) {
 	settings := AthenaSettings{
 		StatusBadgeEnabled:   env.ParseBoolFromEnv("ATHENA_STATUS_BADGE_ENABLED", false),
 		StatusBadgeRootUrl:   os.Getenv("ATHENA_STATUS_BADGE_ROOT_URL"),
@@ -58,8 +52,6 @@ func loadSettingsFromEnv(secrets map[string]string) (AthenaSettings, error) {
 		UiBannerURL:          os.Getenv("ATHENA_UI_BANNER_URL"),
 		UserSessionDuration:  time.Hour * 24,
 		PasswordPattern:      env.StringFromEnv("ATHENA_PASSWORD_PATTERN", common.PasswordPatten),
-		ServerSignature:      []byte(serverSignature),
-		Secrets:              secrets,
 	}
 
 	settings.URL = os.Getenv("ATHENA_URL")
@@ -91,36 +83,4 @@ func loadSettingsFromEnv(secrets map[string]string) (AthenaSettings, error) {
 	}
 
 	return settings, nil
-}
-
-func envOrFile(envName string) (string, error) {
-	if value := os.Getenv(envName); value != "" {
-		return value, nil
-	}
-
-	fileName := envName + "_FILE"
-	if filePath := os.Getenv(fileName); filePath != "" {
-		data, err := os.ReadFile(filePath)
-		if err != nil {
-			return "", fmt.Errorf("failed reading %s: %w", fileName, err)
-		}
-
-		return strings.TrimSpace(string(data)), nil
-	}
-
-	return "", nil
-}
-
-func loadRawSettingsFromEnv() (RawSettings, error) {
-	raw := RawSettings{Secrets: map[string]string{}}
-	for _, item := range os.Environ() {
-		key, value, ok := strings.Cut(item, "=")
-		if !ok || !strings.HasPrefix(key, "ATHENA_SECRET_") {
-			continue
-		}
-
-		raw.Secrets[strings.TrimPrefix(key, "ATHENA_SECRET_")] = value
-	}
-
-	return raw, nil
 }

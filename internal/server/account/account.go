@@ -2,10 +2,10 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
-	"time"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -14,24 +14,24 @@ import (
 
 	"github.com/useryege/athena/common"
 	accountaccesscore "github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/util/password"
 	"github.com/useryege/athena/util/session"
-	"github.com/useryege/athena/util/settings"
 )
 
 // Server provides the Account service.
 type Server struct {
-	sessionMgr       *session.SessionManager
-	settingsMgr      *settings.SettingsManager
+	credentials      *accountcredentials.CredentialManager
+	passwordPattern  string
 	accessController *accountaccesscore.Controller
 }
 
 // NewServer returns a new Account service.
-func NewServer(sessionMgr *session.SessionManager, settingsMgr *settings.SettingsManager, accessController *accountaccesscore.Controller) *Server {
+func NewServer(credentials *accountcredentials.CredentialManager, passwordPattern string, accessController *accountaccesscore.Controller) *Server {
 	return &Server{
-		sessionMgr:       sessionMgr,
-		settingsMgr:      settingsMgr,
+		credentials:      credentials,
+		passwordPattern:  passwordPattern,
 		accessController: accessController,
 	}
 }
@@ -54,17 +54,10 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 		}
 	}
 
-	if updatedUsername == username {
-		err := s.sessionMgr.VerifyUsernamePassword(username, q.CurrentPassword)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "current password does not match")
-		}
-	}
-
 	// Need to validate password complexity with regular expression
-	passwordPattern, err := s.settingsMgr.GetPasswordPattern()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get password pattern: %w", err)
+	passwordPattern := s.passwordPattern
+	if passwordPattern == "" {
+		passwordPattern = common.PasswordPatten
 	}
 
 	validPasswordRegexp, err := regexp.Compile(passwordPattern)
@@ -82,12 +75,14 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	err = s.settingsMgr.UpdateAccount(updatedUsername, func(acc *settings.Account) error {
-		acc.PasswordHash = hashedPassword
-		now := time.Now().UTC()
-		acc.PasswordMtime = &now
-		return nil
-	})
+	if updatedUsername == username {
+		err = s.credentials.ChangePassword(updatedUsername, q.CurrentPassword, hashedPassword)
+		if errors.Is(err, accountcredentials.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "current password does not match")
+		}
+	} else {
+		err = s.credentials.ResetPassword(updatedUsername, hashedPassword)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account password: %w", err)
 	}
@@ -203,7 +198,7 @@ func ToAPIAccountAccess(access accountaccesscore.Access) *account.AccountAccess 
 	}
 }
 
-func toAPIAccount(name string, a settings.Account, access accountaccesscore.Access) *account.Account {
+func toAPIAccount(name string, a accountcredentials.Account, access accountaccesscore.Access) *account.Account {
 	var capabilities []string
 	for _, c := range a.Capabilities {
 		capabilities = append(capabilities, string(c))
@@ -232,7 +227,7 @@ func canViewAccount(ctx context.Context, name string) bool {
 	return name == id
 }
 
-func (s *Server) accountForViewer(name string, a settings.Account) (*account.Account, error) {
+func (s *Server) accountForViewer(name string, a accountcredentials.Account) (*account.Account, error) {
 	access, err := s.accessController.Get(name)
 	if err != nil {
 		return nil, err
@@ -253,10 +248,7 @@ func (s *Server) ensureCanManageAccount(ctx context.Context, account string) err
 // ListAccounts returns the list of accounts
 func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountRequest) (*account.AccountsList, error) {
 	resp := account.AccountsList{}
-	accounts, err := s.settingsMgr.GetAccounts()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get accounts: %w", err)
-	}
+	accounts := s.credentials.List()
 	for name, a := range accounts {
 		if canViewAccount(ctx, name) {
 			apiAccount, err := s.accountForViewer(name, a)
@@ -279,11 +271,11 @@ func (s *Server) GetAccount(ctx context.Context, r *account.GetAccountRequest) (
 			return nil, err
 		}
 	}
-	a, err := s.settingsMgr.GetAccount(r.Name)
+	a, err := s.credentials.Get(r.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account %s: %w", r.Name, err)
 	}
-	return s.accountForViewer(r.Name, *a)
+	return s.accountForViewer(r.Name, a)
 }
 
 // UpdateAccountAccess replaces a non-administrator account's complete access state.
@@ -291,7 +283,7 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 	if err := s.accessController.Authorize(session.GetUserIdentifier(ctx), accountaccesscore.RequirementAdministrator); err != nil {
 		return nil, err
 	}
-	configuredAccount, err := s.settingsMgr.GetAccount(r.Name)
+	configuredAccount, err := s.credentials.Get(r.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +302,7 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 	if err != nil {
 		return nil, err
 	}
-	return toAPIAccount(r.Name, *configuredAccount, updatedAccess), nil
+	return toAPIAccount(r.Name, configuredAccount, updatedAccess), nil
 }
 
 // CreateToken creates a token
@@ -328,33 +320,7 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 		id = uniqueId.String()
 	}
 
-	var tokenString string
-	err := s.settingsMgr.UpdateAccount(r.Name, func(account *settings.Account) error {
-		if account.TokenIndex(id) > -1 {
-			return fmt.Errorf("account already has token with id '%s'", id)
-		}
-		if !account.HasCapability(settings.AccountCapabilityApiKey) {
-			return fmt.Errorf("account '%s' does not have %s capability", r.Name, settings.AccountCapabilityApiKey)
-		}
-
-		now := time.Now()
-		var err error
-		tokenString, err = s.sessionMgr.Create(fmt.Sprintf("%s:%s", r.Name, settings.AccountCapabilityApiKey), r.ExpiresIn, id)
-		if err != nil {
-			return err
-		}
-
-		var expiresAt int64
-		if r.ExpiresIn > 0 {
-			expiresAt = now.Add(time.Duration(r.ExpiresIn) * time.Second).Unix()
-		}
-		account.Tokens = append(account.Tokens, settings.Token{
-			ID:        id,
-			IssuedAt:  now.Unix(),
-			ExpiresAt: expiresAt,
-		})
-		return nil
-	})
+	tokenString, err := s.credentials.IssueAPIKey(r.Name, id, r.ExpiresIn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account with new token: %w", err)
 	}
@@ -367,13 +333,7 @@ func (s *Server) DeleteToken(ctx context.Context, r *account.DeleteTokenRequest)
 		return nil, fmt.Errorf("permission denied to delete account %s: %w", r.Name, err)
 	}
 
-	err := s.settingsMgr.UpdateAccount(r.Name, func(account *settings.Account) error {
-		if index := account.TokenIndex(r.Id); index > -1 {
-			account.Tokens = append(account.Tokens[:index], account.Tokens[index+1:]...)
-			return nil
-		}
-		return status.Errorf(codes.NotFound, "token with id '%s' does not exist", r.Id)
-	})
+	err := s.credentials.DeleteAPIKey(r.Name, r.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete account %s: %w", r.Name, err)
 	}
