@@ -63,6 +63,40 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: ${MINIO_IMAGE:-athena-minio:9e49d5e7a648}
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-athena-minio-root}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      MINIO_REGION_NAME: ${ATHENA_ACCOUNT_AVATAR_S3_REGION:-us-east-1}
+    command: ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
+    volumes:
+      - minio-data:/data
+    expose:
+      - "9000"
+      - "9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:9000/minio/health/live >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  minio-init:
+    image: ${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8}
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-athena-minio-root}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      ATHENA_ACCOUNT_AVATAR_S3_BUCKET: ${ATHENA_ACCOUNT_AVATAR_S3_BUCKET:-athena-account-avatars}
+      ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID: ${ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID:?ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID is required}
+      ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY: ${ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY:?ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY is required}
+
   athena-worm-markets:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -416,6 +450,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
       athena-notification:
         condition: service_started
       athena-wallet:
@@ -454,6 +490,13 @@ services:
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_SERVER_DISABLE_AUTH: ${ATHENA_SERVER_DISABLE_AUTH:-false}
+      ATHENA_ACCOUNT_AVATAR_S3_ENDPOINT: http://minio:9000
+      ATHENA_ACCOUNT_AVATAR_S3_REGION: ${ATHENA_ACCOUNT_AVATAR_S3_REGION:-us-east-1}
+      ATHENA_ACCOUNT_AVATAR_S3_BUCKET: ${ATHENA_ACCOUNT_AVATAR_S3_BUCKET:-athena-account-avatars}
+      ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID: ${ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID:?ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID is required}
+      ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY: ${ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY:?ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY is required}
+      ATHENA_ACCOUNT_AVATAR_S3_PATH_STYLE: "true"
+      ATHENA_ACCOUNT_AVATAR_MAX_BYTES: ${ATHENA_ACCOUNT_AVATAR_MAX_BYTES:-2097152}
       REDIS_SERVER: redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     command: ["athena", "--port", "8080"]
@@ -463,4 +506,7 @@ services:
 volumes:
   postgres-data:
     name: ${PROD_POSTGRES_VOLUME:-athena-prod-postgres-data}
+    external: true
+  minio-data:
+    name: ${PROD_MINIO_VOLUME:-athena-prod-minio-data}
     external: true

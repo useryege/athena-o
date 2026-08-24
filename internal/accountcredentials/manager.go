@@ -105,19 +105,6 @@ func (m *CredentialManager) ChangePassword(name, currentPassword, passwordHash s
 	return nil
 }
 
-// ResetPassword atomically replaces a password after caller-side administrator authorization.
-func (m *CredentialManager) ResetPassword(name, passwordHash string) error {
-	record, ok := m.accounts[name]
-	if !ok {
-		return status.Errorf(codes.NotFound, "account '%s' does not exist", name)
-	}
-	record.mutex.Lock()
-	defer record.mutex.Unlock()
-	record.passwordHash = passwordHash
-	record.passwordMtime = timePointer(time.Now().UTC())
-	return nil
-}
-
 // IssueAPIKey atomically validates, signs, and records an API key.
 func (m *CredentialManager) IssueAPIKey(name, id string, expiresIn int64) (string, error) {
 	record, ok := m.accounts[name]

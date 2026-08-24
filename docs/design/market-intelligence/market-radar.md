@@ -215,7 +215,7 @@ Only the current page is mounted into the table. Market images use browser lazy
 loading and asynchronous decoding while retaining the failed-image hide path.
 Navigation and all three routes require Market Radar `READ`. Losing that module
 aborts Market Radar requests, clears only its browser cache, and routes an active
-view to `/user-info`; changes to another module retain this view's state.
+view to `/account/access`; changes to another module retain this view's state.
 
 ## Change Checklist
 

@@ -230,12 +230,20 @@ export default {
         return initHandlers(agent.put(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
+    rawPut(url: string) {
+        return initHandlers(agent.put(toAbsURL(url)));
+    },
+
     patch(url: string, scope?: AuthorizationRequestScope) {
         return initHandlers(agent.patch(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
     delete(url: string, scope?: AuthorizationRequestScope) {
         return initHandlers(agent.del(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
+    },
+
+    rawDelete(url: string) {
+        return initHandlers(agent.del(toAbsURL(url)));
     },
 
     loadEventSource(url: string): Observable<string> {

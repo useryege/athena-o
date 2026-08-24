@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/useryege/athena/common"
 	accountaccesscore "github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/util/password"
@@ -25,34 +27,24 @@ type Server struct {
 	credentials      *accountcredentials.CredentialManager
 	passwordPattern  string
 	accessController *accountaccesscore.Controller
+	accountCenter    *accountcenter.Manager
 }
 
+var apiKeyIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
+
 // NewServer returns a new Account service.
-func NewServer(credentials *accountcredentials.CredentialManager, passwordPattern string, accessController *accountaccesscore.Controller) *Server {
+func NewServer(credentials *accountcredentials.CredentialManager, passwordPattern string, accessController *accountaccesscore.Controller, accountCenter *accountcenter.Manager) *Server {
 	return &Server{
 		credentials:      credentials,
 		passwordPattern:  passwordPattern,
 		accessController: accessController,
+		accountCenter:    accountCenter,
 	}
 }
 
-// UpdatePassword updates the password of the currently authenticated account or the account specified in the request.
-func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRequest) (*account.UpdatePasswordResponse, error) {
-	// get the user identifier from the context
+// ChangePassword atomically verifies and changes the current account's password.
+func (s *Server) ChangePassword(ctx context.Context, q *account.ChangePasswordRequest) (*account.ChangePasswordResponse, error) {
 	username := session.GetUserIdentifier(ctx)
-
-	updatedUsername := username
-	if q.Name != "" {
-		updatedUsername = q.Name
-	}
-
-	// check for permission is user is trying to change someone else's password
-	// assuming user is trying to update someone else if username is different or issuer is not Athena
-	if updatedUsername != username {
-		if err := s.accessController.Authorize(username, accountaccesscore.RequirementAdministrator); err != nil {
-			return nil, err
-		}
-	}
 
 	// Need to validate password complexity with regular expression
 	passwordPattern := s.passwordPattern
@@ -66,8 +58,7 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 	}
 
 	if !validPasswordRegexp.MatchString(q.NewPassword) {
-		err := fmt.Errorf("new password does not match the following expression: %s", passwordPattern)
-		return nil, err
+		return nil, status.Errorf(codes.InvalidArgument, "new password does not match the following expression: %s", passwordPattern)
 	}
 
 	hashedPassword, err := password.HashPassword(q.NewPassword)
@@ -75,24 +66,16 @@ func (s *Server) UpdatePassword(ctx context.Context, q *account.UpdatePasswordRe
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	if updatedUsername == username {
-		err = s.credentials.ChangePassword(updatedUsername, q.CurrentPassword, hashedPassword)
-		if errors.Is(err, accountcredentials.ErrInvalidCredentials) {
-			return nil, status.Error(codes.InvalidArgument, "current password does not match")
-		}
-	} else {
-		err = s.credentials.ResetPassword(updatedUsername, hashedPassword)
+	err = s.credentials.ChangePassword(username, q.CurrentPassword, hashedPassword)
+	if errors.Is(err, accountcredentials.ErrInvalidCredentials) {
+		return nil, status.Error(codes.InvalidArgument, "current password does not match")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account password: %w", err)
 	}
 
-	if updatedUsername == username {
-		log.Infof("user '%s' updated password", username)
-	} else {
-		log.Infof("user '%s' updated password of user '%s'", username, updatedUsername)
-	}
-	return &account.UpdatePasswordResponse{}, nil
+	log.Infof("user '%s' updated password", username)
+	return &account.ChangePasswordResponse{}, nil
 }
 
 type accountDataModuleMapping struct {
@@ -198,25 +181,53 @@ func ToAPIAccountAccess(access accountaccesscore.Access) *account.AccountAccess 
 	}
 }
 
-func toAPIAccount(name string, a accountcredentials.Account, access accountaccesscore.Access) *account.Account {
+func toAPIAccount(name string, a accountcredentials.Account, access accountaccesscore.Access, profile accountcenter.Profile) *account.Account {
 	var capabilities []string
 	for _, c := range a.Capabilities {
 		capabilities = append(capabilities, string(c))
 	}
-	var tokens []*account.Token
-	for _, t := range a.Tokens {
-		tokens = append(tokens, &account.Token{Id: t.ID, ExpiresAt: t.ExpiresAt, IssuedAt: t.IssuedAt})
-	}
-	sort.Slice(tokens, func(i, j int) bool {
-		return tokens[i].IssuedAt > tokens[j].IssuedAt
-	})
 	return &account.Account{
 		Name:          name,
 		Administrator: name == common.AthenaAdminUsername,
 		Access:        ToAPIAccountAccess(access),
 		Capabilities:  capabilities,
-		Tokens:        tokens,
+		Profile:       ToAPIAccountProfile(name, profile),
 	}
+}
+
+// ToAPIAccountProfile is the canonical profile projection shared with raw avatar HTTP handlers.
+func ToAPIAccountProfile(name string, profile accountcenter.Profile) *account.AccountProfile {
+	tier := account.AccountTier_ACCOUNT_TIER_UNSPECIFIED
+	switch profile.Tier {
+	case accountcenter.TierStandard:
+		tier = account.AccountTier_ACCOUNT_TIER_STANDARD
+	case accountcenter.TierPro:
+		tier = account.AccountTier_ACCOUNT_TIER_PRO
+	}
+	avatarURL := ""
+	if !profile.Avatar.Empty() {
+		avatarURL = fmt.Sprintf("/api/v1/account/%s/avatar?v=%d", url.PathEscape(name), profile.Revision)
+	}
+	return &account.AccountProfile{
+		DisplayName: profile.DisplayName,
+		Tier:        tier,
+		AvatarUrl:   avatarURL,
+		Revision:    profile.Revision,
+	}
+}
+
+// ToAPIAccountPreferences projects the current account's private UI preferences.
+func ToAPIAccountPreferences(preferences accountcenter.Preferences) *account.AccountPreferences {
+	theme := account.AccountThemeMode_ACCOUNT_THEME_MODE_UNSPECIFIED
+	switch preferences.Theme {
+	case accountcenter.ThemeModeSystem:
+		theme = account.AccountThemeMode_ACCOUNT_THEME_MODE_SYSTEM
+	case accountcenter.ThemeModeLight:
+		theme = account.AccountThemeMode_ACCOUNT_THEME_MODE_LIGHT
+	case accountcenter.ThemeModeDark:
+		theme = account.AccountThemeMode_ACCOUNT_THEME_MODE_DARK
+	}
+	return &account.AccountPreferences{Theme: theme, Revision: preferences.Revision}
 }
 
 func canViewAccount(ctx context.Context, name string) bool {
@@ -227,31 +238,25 @@ func canViewAccount(ctx context.Context, name string) bool {
 	return name == id
 }
 
-func (s *Server) accountForViewer(name string, a accountcredentials.Account) (*account.Account, error) {
+func (s *Server) accountForViewer(ctx context.Context, name string, a accountcredentials.Account) (*account.Account, error) {
 	access, err := s.accessController.Get(name)
 	if err != nil {
 		return nil, err
 	}
-	return toAPIAccount(name, a, access), nil
-}
-
-func (s *Server) ensureCanManageAccount(ctx context.Context, account string) error {
-	id := session.GetUserIdentifier(ctx)
-
-	// An account can always manage its own self-service resources.
-	if id == account {
-		return nil
+	profile, err := s.accountCenter.GetProfile(ctx, name)
+	if err != nil {
+		return nil, err
 	}
-	return s.accessController.Authorize(id, accountaccesscore.RequirementAdministrator)
+	return toAPIAccount(name, a, access, profile), nil
 }
 
 // ListAccounts returns the list of accounts
-func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountRequest) (*account.AccountsList, error) {
+func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountsRequest) (*account.AccountsList, error) {
 	resp := account.AccountsList{}
 	accounts := s.credentials.List()
 	for name, a := range accounts {
 		if canViewAccount(ctx, name) {
-			apiAccount, err := s.accountForViewer(name, a)
+			apiAccount, err := s.accountForViewer(ctx, name, a)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get access for account %s: %w", name, err)
 			}
@@ -275,7 +280,7 @@ func (s *Server) GetAccount(ctx context.Context, r *account.GetAccountRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account %s: %w", r.Name, err)
 	}
-	return s.accountForViewer(r.Name, a)
+	return s.accountForViewer(ctx, r.Name, a)
 }
 
 // UpdateAccountAccess replaces a non-administrator account's complete access state.
@@ -284,6 +289,10 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 		return nil, err
 	}
 	configuredAccount, err := s.credentials.Get(r.Name)
+	if err != nil {
+		return nil, err
+	}
+	profile, err := s.accountCenter.GetProfile(ctx, r.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -302,15 +311,79 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 	if err != nil {
 		return nil, err
 	}
-	return toAPIAccount(r.Name, configuredAccount, updatedAccess), nil
+	return toAPIAccount(r.Name, configuredAccount, updatedAccess, profile), nil
+}
+
+func (s *Server) UpdateAccountProfile(ctx context.Context, r *account.UpdateAccountProfileRequest) (*account.AccountProfile, error) {
+	if !canViewAccount(ctx, r.Name) {
+		if err := s.accessController.Authorize(session.GetUserIdentifier(ctx), accountaccesscore.RequirementAdministrator); err != nil {
+			return nil, err
+		}
+	}
+	profile, err := s.accountCenter.UpdateDisplayName(ctx, r.Name, r.DisplayName, r.ExpectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	return ToAPIAccountProfile(r.Name, profile), nil
+}
+
+func (s *Server) UpdateAccountTier(ctx context.Context, r *account.UpdateAccountTierRequest) (*account.AccountProfile, error) {
+	if err := s.accessController.Authorize(session.GetUserIdentifier(ctx), accountaccesscore.RequirementAdministrator); err != nil {
+		return nil, err
+	}
+	var tier accountcenter.Tier
+	switch r.Tier {
+	case account.AccountTier_ACCOUNT_TIER_STANDARD:
+		tier = accountcenter.TierStandard
+	case account.AccountTier_ACCOUNT_TIER_PRO:
+		tier = accountcenter.TierPro
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported account tier %d", r.Tier)
+	}
+	profile, err := s.accountCenter.UpdateTier(ctx, r.Name, tier, r.ExpectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	return ToAPIAccountProfile(r.Name, profile), nil
+}
+
+func (s *Server) UpdateAccountPreferences(ctx context.Context, r *account.UpdateAccountPreferencesRequest) (*account.AccountPreferences, error) {
+	name := session.GetUserIdentifier(ctx)
+	var theme accountcenter.ThemeMode
+	switch r.Theme {
+	case account.AccountThemeMode_ACCOUNT_THEME_MODE_SYSTEM:
+		theme = accountcenter.ThemeModeSystem
+	case account.AccountThemeMode_ACCOUNT_THEME_MODE_LIGHT:
+		theme = accountcenter.ThemeModeLight
+	case account.AccountThemeMode_ACCOUNT_THEME_MODE_DARK:
+		theme = accountcenter.ThemeModeDark
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported account theme %d", r.Theme)
+	}
+	preferences, err := s.accountCenter.UpdatePreferences(ctx, name, theme, r.ExpectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	return ToAPIAccountPreferences(preferences), nil
+}
+
+// ListTokens returns API Key metadata only for the current authenticated account.
+func (s *Server) ListTokens(ctx context.Context, _ *account.ListTokensRequest) (*account.TokensList, error) {
+	a, err := s.credentials.Get(session.GetUserIdentifier(ctx))
+	if err != nil {
+		return nil, err
+	}
+	tokens := make([]*account.Token, 0, len(a.Tokens))
+	for _, token := range a.Tokens {
+		tokens = append(tokens, &account.Token{Id: token.ID, ExpiresAt: token.ExpiresAt, IssuedAt: token.IssuedAt})
+	}
+	sort.Slice(tokens, func(i, j int) bool { return tokens[i].IssuedAt > tokens[j].IssuedAt })
+	return &account.TokensList{Items: tokens}, nil
 }
 
 // CreateToken creates a token
 func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest) (*account.CreateTokenResponse, error) {
-	if err := s.ensureCanManageAccount(ctx, r.Name); err != nil {
-		return nil, fmt.Errorf("permission denied to create token for account %s: %w", r.Name, err)
-	}
-
+	name := session.GetUserIdentifier(ctx)
 	id := r.Id
 	if id == "" {
 		uniqueId, err := uuid.NewRandom()
@@ -318,9 +391,11 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 			return nil, fmt.Errorf("failed to generate unique ID: %w", err)
 		}
 		id = uniqueId.String()
+	} else if !apiKeyIDPattern.MatchString(id) {
+		return nil, status.Error(codes.InvalidArgument, "API key ID must be 1-64 ASCII letters, digits, dots, underscores, or hyphens and start with a letter or digit")
 	}
 
-	tokenString, err := s.credentials.IssueAPIKey(r.Name, id, r.ExpiresIn)
+	tokenString, err := s.credentials.IssueAPIKey(name, id, r.ExpiresIn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update account with new token: %w", err)
 	}
@@ -329,13 +404,10 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 
 // DeleteToken deletes a token
 func (s *Server) DeleteToken(ctx context.Context, r *account.DeleteTokenRequest) (*account.EmptyResponse, error) {
-	if err := s.ensureCanManageAccount(ctx, r.Name); err != nil {
-		return nil, fmt.Errorf("permission denied to delete account %s: %w", r.Name, err)
-	}
-
-	err := s.credentials.DeleteAPIKey(r.Name, r.Id)
+	name := session.GetUserIdentifier(ctx)
+	err := s.credentials.DeleteAPIKey(name, r.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete account %s: %w", r.Name, err)
+		return nil, fmt.Errorf("failed to delete token from account %s: %w", name, err)
 	}
 	return &account.EmptyResponse{}, nil
 }

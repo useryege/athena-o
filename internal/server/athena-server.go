@@ -37,14 +37,16 @@ import (
 	"github.com/soheilhy/cmux"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
-	accountaccessstore "github.com/useryege/athena/internal/accountaccess/store"
+	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
+	accountstatestore "github.com/useryege/athena/internal/accountstate/store"
 	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	"github.com/useryege/athena/internal/server/account"
+	"github.com/useryege/athena/internal/server/accountavatarhttp"
 	serverappbootstrap "github.com/useryege/athena/internal/server/appbootstrap"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	serverfifamarketdashboard "github.com/useryege/athena/internal/server/fifamarketdashboard"
@@ -158,13 +160,15 @@ func init() {
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
 	AthenaServerOpts
-	settings           *settings_util.AthenaSettings
-	log                *log.Entry
-	sessionMgr         *util_session.SessionManager
-	settingsMgr        *settings_util.SettingsManager
-	credentialMgr      *accountcredentials.CredentialManager
-	accountAccessStore *accountaccessstore.SQLStore
-	accessController   *accountaccess.Controller
+	settings          *settings_util.AthenaSettings
+	log               *log.Entry
+	sessionMgr        *util_session.SessionManager
+	settingsMgr       *settings_util.SettingsManager
+	credentialMgr     *accountcredentials.CredentialManager
+	accountStateStore *accountstatestore.SQLStore
+	accountCenter     *accountcenter.Manager
+	accountAvatarHTTP *accountavatarhttp.Handler
+	accessController  *accountaccess.Controller
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -234,11 +238,20 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	jwtCodec, err := accountcredentials.NewJWTCodec(credentialCatalog)
 	errorsutil.CheckError(err)
 	credentialMgr := accountcredentials.NewCredentialManager(credentialCatalog, jwtCodec)
-	accountAccessStore, err := accountaccessstore.NewSQLStoreSource()(ctx)
+	accountStateStore, err := accountstatestore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
-	accessController, err := accountaccess.NewController(ctx, credentialCatalog.LoginDefaults(), accountAccessStore)
+	accessController, err := accountaccess.NewController(ctx, credentialCatalog.LoginDefaults(), accountStateStore)
 	if err != nil {
-		_ = accountAccessStore.Close()
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
+	}
+	accountNames := make([]string, 0, len(credentialMgr.List()))
+	for name := range credentialMgr.List() {
+		accountNames = append(accountNames, name)
+	}
+	accountCenter, err := accountcenter.NewManager(accountNames, accountStateStore)
+	if err != nil {
+		_ = accountStateStore.Close()
 		errorsutil.CheckError(err)
 	}
 
@@ -268,19 +281,27 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 
 	a := &AthenaServer{
-		AthenaServerOpts:   opts,
-		log:                logger,
-		settings:           settings,
-		sessionMgr:         sessionMgr,
-		settingsMgr:        settingsMgr,
-		credentialMgr:      credentialMgr,
-		accountAccessStore: accountAccessStore,
-		accessController:   accessController,
-		userStateStorage:   userStateStorage,
-		staticAssets:       http.FS(staticFS),
-		Shutdown:           noopShutdown,
-		stopCh:             make(chan os.Signal, 1),
+		AthenaServerOpts:  opts,
+		log:               logger,
+		settings:          settings,
+		sessionMgr:        sessionMgr,
+		settingsMgr:       settingsMgr,
+		credentialMgr:     credentialMgr,
+		accountStateStore: accountStateStore,
+		accountCenter:     accountCenter,
+		accessController:  accessController,
+		userStateStorage:  userStateStorage,
+		staticAssets:      http.FS(staticFS),
+		Shutdown:          noopShutdown,
+		stopCh:            make(chan os.Signal, 1),
 	}
+	accountAvatarHTTP, err := newAccountAvatarHandler(ctx, a)
+	if err != nil {
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
+	}
+	a.accountAvatarHTTP = accountAvatarHTTP
+	go accountAvatarHTTP.RunGarbageCollector(ctx, 0, 0)
 
 	return a
 
@@ -290,10 +311,10 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 // intentionally separate from Run shutdown because Run may be invoked again
 // during an in-process graceful restart.
 func (server *AthenaServer) Close() error {
-	if server == nil || server.accountAccessStore == nil {
+	if server == nil || server.accountStateStore == nil {
 		return nil
 	}
-	return server.accountAccessStore.Close()
+	return server.accountStateStore.Close()
 }
 
 func (server *AthenaServer) healthCheck(r *http.Request) error {
@@ -376,7 +397,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	// 	"/cluster.ClusterService/Create":                               true,
 	// 	"/cluster.ClusterService/Update":                               true,
 	// 	"/session.SessionService/Create":                               true,
-	// 	"/account.AccountService/UpdatePassword":                       true,
+	// 	"/account.AccountService/ChangePassword":                       true,
 	// 	"/gpgkey.GPGKeyService/CreateGnuPGPublicKey":                   true,
 	// 	"/repository.RepositoryService/Create":                         true,
 	// 	"/repository.RepositoryService/Update":                         true,
@@ -475,12 +496,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	}
 
 	// session service
-	sessionService := session.NewServer(server.sessionMgr, server.settings.UserSessionDuration, server, server.accessController, loginRateLimiter)
+	sessionService := session.NewServer(server.sessionMgr, server.settings.UserSessionDuration, server, server.accessController, server.accountCenter, loginRateLimiter)
 
 	settingsProjector := settings.NewProjector(server.settingsMgr, server.credentialMgr, server.accessController)
-	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server)
+	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server.accountCenter, server)
 	// account service
-	accountService := account.NewServer(server.credentialMgr, server.settings.PasswordPattern, server.accessController)
+	accountService := account.NewServer(server.credentialMgr, server.settings.PasswordPattern, server.accessController, server.accountCenter)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
@@ -825,6 +846,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	} else {
 		log.WithField(common.SecurityField, common.SecurityHigh).Warnf("Content-Type enforcement is disabled, which may make your API vulnerable to CSRF attacks")
 	}
+	registerAccountAvatarHandlers(mux, server.accountAvatarHTTP)
 	mux.Handle("/api/", handler)
 
 	// // Proxy extension is currently an alpha feature and is disabled

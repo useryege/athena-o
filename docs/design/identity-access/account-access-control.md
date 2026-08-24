@@ -14,7 +14,9 @@ own process-local passwords, capabilities, API Keys, and JWT operations as
 described in [Account Credentials](account-credentials.md); they do not own
 effective access. Business services own the data and mutations reached after
 authorization. Account creation, role assignment, resource/action policies,
-and configurable maintenance messages are outside this capability.
+and configurable maintenance messages are outside this capability. Durable
+display names, avatars, tiers, and theme preferences belong to [Account Profile
+and Preferences](account-profile-and-preferences.md).
 
 ## Source Locations
 
@@ -22,13 +24,13 @@ and configurable maintenance messages are outside this capability.
 | --- | --- | --- |
 | Environment account registry and login baselines | [internal/accountcredentials/catalog.go](../../../internal/accountcredentials/catalog.go) | `Catalog`, `LoadCatalog`, `LoginDefaults` |
 | Effective access model | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `Module`, `AccessLevel`, `Access`, `AllModules`, `MaxAccessLevel`, `Requirement`, `Controller` |
-| Durable aggregate store | [internal/accountaccess/store/sql_store.go](../../../internal/accountaccess/store/sql_store.go), [internal/accountaccess/store/queries/account_access_override.sql](../../../internal/accountaccess/store/queries/account_access_override.sql) | `SQLStore`, `ListAccountAccessOverrides`, `UpdateAccountAccessOverride` |
-| Schema and migration wiring | [internal/accountaccess/store/migrations](../../../internal/accountaccess/store/migrations), [internal/migration/modules.go](../../../internal/migration/modules.go) | `account_access_override`, `account_module_access_override`, `account-access` |
+| Durable aggregate store | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go), [internal/accountstate/store/queries/account_access_override.sql](../../../internal/accountstate/store/queries/account_access_override.sql) | `SQLStore`, `ListAccountAccessOverrides`, `UpdateAccountAccessOverride` |
+| Schema and migration wiring | [internal/accountstate/store/migrations](../../../internal/accountstate/store/migrations), [internal/migration/modules.go](../../../internal/migration/modules.go) | `account_access_override`, `account_module_access_override`, `account-state` |
 | Account API and canonical projection | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountDataModule`, `AccountModuleAccess`, `AccountAccess`, `UpdateAccountAccess`, `ToAPIAccountAccess` |
 | Authentication and explicit RPC rules | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [internal/accountcredentials/jwt_codec.go](../../../internal/accountcredentials/jwt_codec.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/authz.go](../../../internal/server/authz.go) | `CredentialManager`, `PasswordVerification`, `JWTCodec`, `AccountMaintenanceErr`, `VerifyLogin`, `CreateVerifiedLogin`, `Parse`, `moduleGRPCRules`, `grpcModuleRule`, `authorizeGRPC` |
 | Bootstrap and live session projection | [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go), [internal/server/session/session.go](../../../internal/server/session/session.go) | `GetAppBootstrap`, `GetUserInfo`, `ProjectUserInfo` |
 | Browser module registry and authorization state | [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts), [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `accountDataModules`, `moduleAccessLevels`, `AuthorizationCtx`, `access`, `canRead`, `canWrite` |
-| Administration UI | [ui/src/app/pages/settings.tsx](../../../ui/src/app/pages/settings.tsx) | `SettingsPage`, `ResourceTable`, account access draft and expanded row |
+| Administration UI | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor` |
 | Request and cache invalidation | [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `abortAuthorizationRequests`, `clearAsyncDataCache`, `isAccountMaintenanceError`, `isAccountDataAccessDeniedError` |
 | Sensitive write lifetime | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx) | `SensitiveWriteScope`, `useSensitiveWriteLease`, `SensitiveTaskResult`, `WalletWriteSurface`, `SecretText` |
 | Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `NewServer`, `ATHENA_SERVER_POSTGRES_DSN` |
@@ -82,8 +84,8 @@ Protected RPCs use four direct boundaries:
 | Boundary | Rule |
 | --- | --- |
 | Public | Login, captcha, logout, application bootstrap, version, and health do not require a credential. `GetUserInfo` is public optional authentication so it can project anonymous, authenticated, or maintenance state. |
-| Authenticated account identity | An account may get its own account, verify and change its own password, and manage its own API Keys. Targeting another account requires administrator access. |
-| Administrator | The built-in `admin` identity exclusively owns account listing and access replacement, Service Status, Etherscan probes, and gRPC reflection. |
+| Authenticated account identity | An account may get its own account, change its own profile and preferences, change its own password, and list/create/delete only its own API Keys. An administrator may get or change another account's profile but cannot manage that account's preferences or credentials. |
+| Administrator | The built-in `admin` identity exclusively owns account listing, tier and access replacement, Service Status, Etherscan probes, and gRPC reflection. |
 | Product module | Every public business RPC has one explicit `moduleGRPCRules` entry containing a module and required `READ` or `READ_WRITE` level. |
 | Profit Sharing | Every Profit Sharing RPC requires an enabled authenticated Athena account. Administrator lifecycle RPCs use the administrator boundary; member reads and writes pass the account identity to the Profit Sharing domain, which enforces round membership and rejects administrator proposal or vote mutations. |
 
@@ -107,7 +109,7 @@ dependency from Profit Sharing to account infrastructure.
 1. API Server startup loads the immutable account credential catalog, copies
    its account seeds into `CredentialManager`, constructs `JWTCodec` from its
    signing key, connects to the `athena` PostgreSQL database, and applies the
-   embedded `account-access` migrations when automatic migration is enabled.
+   embedded `account-state` migrations when automatic migration is enabled.
 2. `NewController` assigns every ordinary account its environment login flag,
    all ten modules at `NONE`, and revision zero. It fixes `admin` at enabled and
    each module's maximum level, then loads persisted aggregates. Unknown account
@@ -147,7 +149,8 @@ dependency from Profit Sharing to account infrastructure.
    `ACCOUNT_DATA_ACCESS_DENIED` plus `module`, `required_access`, and
    `effective_access` metadata. Administrator denial uses the separate
    `ACCOUNT_ADMIN_REQUIRED` reason.
-9. Password and API Key self-service use typed `CredentialManager` operations.
+9. Password and API Key self-service use typed `CredentialManager` operations
+   whose target always comes from the authenticated identity.
    Each account has an independent lock, and API Key signing plus metadata
    insertion is one serialized operation using dependency-free `JWTCodec`.
    Own-password changes atomically verify the current password and publish its
@@ -158,8 +161,10 @@ dependency from Profit Sharing to account infrastructure.
     session projection. A valid enabled credential includes the complete
     `AccountAccess`; a valid disabled credential produces the in-band
     `ACCOUNT_MAINTENANCE` status with HTTP 200 and no user projection.
-    `GetUserInfo` returns the same complete aggregate for post-login and live
-    refreshes.
+    `GetUserInfo` returns the same complete aggregate plus the current durable
+    profile and preferences for post-login and live refreshes. Administrator
+    account-list projections include profiles but never another account's
+    preferences or API Key metadata.
 11. The browser initializes `AuthorizationCtx` from bootstrap, refreshes
     `GetUserInfo` at most every 15 seconds while visible, and refreshes on focus,
     visibility return, or a stable data-access denial. Refreshes are deduplicated;
@@ -168,7 +173,7 @@ dependency from Profit Sharing to account infrastructure.
     `canWrite(module)`. Navigation, routes, page controls, requests, and caches
     all use the shared `accountDataModules` registry. A module reduced below
     `READ` aborts that module's requests, clears only that module's cache, and
-    routes an active page to `/user-info`; Token also clears saved project return
+    routes an active page to `/account/access`; Token also clears saved project return
     positions. A module reduced from `READ_WRITE` to `READ` aborts only writes
     and preserves the read page and read cache. Ordinary pages destroy their
     own write drafts, confirmations, and overlays. Wallet places every create,
@@ -198,21 +203,20 @@ there is no cross-instance snapshot notification mechanism.
 
 ## Administration UI
 
-Settings uses one account `ResourceTable`. On desktop, one account at a time is
-opened through an expanded row. At widths up to 900 px, the compact account card
-contains the same inline expansion. `admin` displays `Always enabled` and
-`Full access`. An ordinary account viewing Settings sees only its own read-only
-state.
+`/admin/accounts` is an administrator-only list/detail workspace. The selected
+ordinary account has one complete access draft containing the login flag and
+all ten module levels. Only levels supported by a module are offered. The
+built-in `admin` account displays its fixed enabled and maximum-access state.
+At widths up to 900 px the list and detail become separate navigation steps.
 
-An administrator edits one ordinary account as a complete draft containing the
-login flag and all ten module levels. Only levels supported by a module are
-offered. Switching accounts, collapsing the editor, or leaving with a dirty
-draft requires discard confirmation. Save presents one summary confirmation
-when it disables login, lowers module access, or grants a module
-`READ_WRITE`, then sends one complete aggregate without optimistic row
-replacement. A successful response replaces the account. A revision conflict
-reloads authoritative state and discards the stale draft; another write failure
-retains the draft for correction or retry.
+Switching accounts or leaving with a dirty access draft requires discard
+confirmation. Save presents one summary confirmation when it disables login,
+lowers module access, or grants a module `READ_WRITE`, then sends one complete
+aggregate without optimistic replacement. A successful response replaces the
+account. A revision conflict reloads authoritative state and discards the stale
+access draft; another write failure retains the draft for correction or retry.
+The same administrator workspace may edit profile and display-only tier state,
+but those values use the independent profile revision and never change access.
 
 ## State / Data
 
@@ -318,7 +322,8 @@ text, and access levels are implementation constants.
 
 ## Failure Recovery
 
-A PostgreSQL connection, migration, aggregate-load, validation, or controller
+A PostgreSQL account-state connection, migration, access aggregate-load,
+validation, or controller
 construction failure prevents API Server from opening its listener. It never
 serves an environment-only fallback after the persistent dependency fails.
 
@@ -342,7 +347,7 @@ next successful projection without replacing the credential.
 
 ## Observability
 
-Startup logs report account-access PostgreSQL connection and migration state.
+Startup logs report account-state PostgreSQL connection and migration state.
 Incomplete aggregates, invalid values, and dependency failures are reported
 before listener startup. CAS and transaction failures use the normal gRPC and
 gateway error path.
@@ -363,7 +368,7 @@ or health endpoint is added.
 - [ ] Full-aggregate transactional CAS and persistence-before-memory ordering remain aligned.
 - [ ] Every authenticated public RPC has one self-service, administrator, or explicit module rule.
 - [ ] CredentialManager, JWTCodec, bootstrap, and session refresh compose the same controller snapshot.
-- [ ] Settings row expansion, complete drafts, confirmations, conflicts, and responsive layout remain current.
+- [ ] Administrator account list/detail, complete access drafts, confirmations, conflicts, and responsive layout remain current.
 - [ ] Fifteen-second refresh and module-scoped request, cache, route, and sensitive write-state cleanup remain current.
 - [ ] Maintenance 503, module 403, administrator 403, revision 409, and ordinary authentication errors remain distinguishable.
 - [ ] Restart, reset, and process-local credential recovery semantics are current.

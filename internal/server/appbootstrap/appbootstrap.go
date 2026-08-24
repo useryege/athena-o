@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcenter"
 	sessionserver "github.com/useryege/athena/internal/server/session"
 	settingsserver "github.com/useryege/athena/internal/server/settings"
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
@@ -14,6 +15,7 @@ import (
 type Server struct {
 	settingsProjector *settingsserver.Projector
 	accessController  *accountaccess.Controller
+	accountCenter     *accountcenter.Manager
 	authenticator     Authenticator
 }
 
@@ -22,10 +24,11 @@ type Authenticator interface {
 }
 
 // NewServer creates the application bootstrap service.
-func NewServer(settingsProjector *settingsserver.Projector, accessController *accountaccess.Controller, authenticator Authenticator) *Server {
+func NewServer(settingsProjector *settingsserver.Projector, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager, authenticator Authenticator) *Server {
 	return &Server{
 		settingsProjector: settingsProjector,
 		accessController:  accessController,
+		accountCenter:     accountCenter,
 		authenticator:     authenticator,
 	}
 }
@@ -44,7 +47,7 @@ func (s *Server) GetAppBootstrap(ctx context.Context, _ *appbootstrappkg.GetAppB
 	if sessionmgr.IsAccountMaintenanceError(authErr) {
 		projectedSession.Status = appbootstrappkg.AppBootstrapSessionStatus_APP_BOOTSTRAP_SESSION_STATUS_ACCOUNT_MAINTENANCE
 	} else if sessionmgr.LoggedIn(ctx) {
-		userInfo, err := sessionserver.ProjectUserInfo(ctx, s.accessController)
+		userInfo, err := sessionserver.ProjectUserInfo(ctx, s.accessController, s.accountCenter)
 		if err != nil {
 			return nil, err
 		}

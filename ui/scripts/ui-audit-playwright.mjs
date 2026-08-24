@@ -6,7 +6,10 @@ const BASE = process.env.ATHENA_UI_URL || 'http://127.0.0.1:4000';
 const OUT = process.env.ATHENA_UI_AUDIT_OUT || '/tmp/athena-ui-audit';
 const ROUTES = [
     '/',
-    '/user-info',
+    '/account/profile',
+    '/account/appearance',
+    '/account/security',
+    '/account/access',
     '/projects',
     '/wallet',
     '/wallet-blacklist',
@@ -19,7 +22,7 @@ const ROUTES = [
     '/application/bytecodes',
     '/application/bytecode-blacklist',
     '/application/source-quality/prompts',
-    '/settings',
+    '/admin/accounts',
     '/help'
 ];
 
@@ -98,10 +101,10 @@ for (const route of ROUTES) {
 }
 
 await page.setViewportSize({width: 390, height: 844});
-await page.goto(`${BASE}/user-info`, {waitUntil: 'networkidle', timeout: 45000}).catch(() => {});
+await page.goto(`${BASE}/account/profile`, {waitUntil: 'networkidle', timeout: 45000}).catch(() => {});
 await page.waitForTimeout(1000);
-await page.screenshot({path: path.join(OUT, 'user-info-mobile.png'), fullPage: true});
-report.mobileUserInfo = {viewport: '390x844', url: page.url()};
+await page.screenshot({path: path.join(OUT, 'account-profile-mobile.png'), fullPage: true});
+report.mobileAccountProfile = {viewport: '390x844', url: page.url()};
 
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));

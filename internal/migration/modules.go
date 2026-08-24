@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 
-	accountaccessstore "github.com/useryege/athena/internal/accountaccess/store"
+	accountstatestore "github.com/useryege/athena/internal/accountstate/store"
 	fifamarketdashboardstore "github.com/useryege/athena/internal/fifamarketdashboard/store"
 	managedoostore "github.com/useryege/athena/internal/managedoo/store"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
@@ -29,7 +29,7 @@ type Module struct {
 }
 
 var modules = []Module{
-	{Name: "account-access", DSNEnv: "ATHENA_SERVER_POSTGRES_DSN", Database: "athena", Migrations: accountaccessstore.Migrations()},
+	{Name: "account-state", DSNEnv: "ATHENA_SERVER_POSTGRES_DSN", Database: "athena", Migrations: accountstatestore.Migrations()},
 	{Name: "worm-markets", DSNEnv: "ATHENA_WORM_MARKETS_POSTGRES_DSN", Database: "worm_markets", Migrations: wormmarketsstore.Migrations()},
 	{Name: "fifa-market-dashboard", DSNEnv: "ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN", Database: "fifa_market_dashboard", Migrations: fifamarketdashboardstore.Migrations()},
 	{Name: "notification", DSNEnv: "ATHENA_NOTIFICATION_POSTGRES_DSN", Database: "notification", Migrations: notificationstore.Migrations()},

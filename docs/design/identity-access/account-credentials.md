@@ -9,7 +9,9 @@ the Account and Session services without exposing password hashes through API
 projections.
 
 [Account Access Control](account-access-control.md) separately owns whether an
-account may log in and which product modules it may use. Redis-backed login
+account may log in and which product modules it may use. [Account Profile and
+Preferences](account-profile-and-preferences.md) owns durable presentation and
+theme state. Redis-backed login
 rate limiting and session-token revocation belong to `SessionManager` and
 `UserStateStorage`. Runtime application settings, browser authorization, and
 durable account creation are outside this capability. Password and API Key
@@ -24,7 +26,7 @@ overrides.
 | Account registry and typed mutations | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go) | `CredentialManager`, `PasswordVerification`, `IssueLoginSession`, `Account`, `Capability`, `Token` |
 | JWT signing and parsing | [internal/accountcredentials/jwt_codec.go](../../../internal/accountcredentials/jwt_codec.go) | `JWTCodec`, `ParsedToken`, `ClaimsIssuer`, `Issue`, `Parse` |
 | Login, token validation, and revocation composition | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `SessionManager`, `VerifyLogin`, `VerifyToken`, `Parse` |
-| Account self-service API | [internal/server/account/account.go](../../../internal/server/account/account.go) | `UpdatePassword`, `CreateToken`, `DeleteToken` |
+| Account self-service API | [internal/server/account/account.go](../../../internal/server/account/account.go) | `ChangePassword`, `ListTokens`, `CreateToken`, `DeleteToken` |
 | Immutable runtime settings projection | [util/settings/manager.go](../../../util/settings/manager.go), [internal/server/settings/settings.go](../../../internal/server/settings/settings.go) | `SettingsManager`, `Projector` |
 | Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer` |
 | Deployment account catalog | [.env.prod](../../../.env.prod) | `ATHENA_ACCOUNT_YEGE_*`, `ATHENA_ACCOUNT_LINGJIE_*`, `ATHENA_ACCOUNT_DONGMEI_*`, `ATHENA_ACCOUNT_DINGZHI_*`, `ATHENA_ACCOUNT_YUDIAN_*` |
@@ -101,10 +103,14 @@ epoch. They remain ordinary accounts; the built-in `admin` identity is separate.
    `SessionManager` resolves the subject and capability. It checks current
    login availability before validating current capability, API Key membership,
    exact credential-epoch equality, and Redis revocation state.
-7. API Key issuance obtains the target account's write lock, checks the
-   `apiKey` capability and token-ID uniqueness, creates one issue timestamp,
-   signs the JWT through the dependency-free codec, and appends matching token
-   metadata. The new key is returned only after the in-memory entry is updated.
+7. API Key issuance accepts either an omitted ID, which becomes a generated UUID,
+   or a caller ID of 1-64 ASCII letters, digits, dots, underscores, and hyphens
+   beginning with a letter or digit. The Account API then obtains the current
+   authenticated account's write lock, checks the `apiKey` capability and
+   token-ID uniqueness, creates one issue timestamp, signs the JWT through the
+   dependency-free codec, and appends matching token metadata. The new key is
+   returned only after the in-memory entry is updated. The restricted alphabet
+   keeps every ID stable as the final segment of the revocation route.
 8. API Key deletion removes its metadata under the same account write lock. A
    subsequent request using that JWT fails because its `jti` no longer exists
    in the account's current token metadata.
@@ -133,7 +139,9 @@ name-independent capability and token metadata needed by the Account API.
 Account names and capabilities are environment-defined for the process
 lifetime. Password changes, generated API Keys, and deletions modify only the
 entry in memory. They are not written to the PostgreSQL account-access tables
-or Redis. A durable account-access update changes neither credentials nor JWTs.
+or Redis. A durable account-state update changes neither credentials nor JWTs.
+API Key metadata is available only from the explicit current-account
+`ListTokens` operation; administrator account projections never include it.
 
 The JWT key exists only in the catalog transfer and the codec's private byte
 copy during normal operation. Login-session and API Key JWTs use issuer
@@ -177,6 +185,9 @@ immutable runtime settings rather than account credential state.
 - Current capability, API Key membership, exact credential epoch, login
   availability, expiry, and revocation are checked on every applicable token
   request. Token validity never relies on second-resolution `iat` comparison.
+- Password changes and API Key list/create/delete operations always derive the
+  target from the authenticated identity. Administrators cannot mutate another
+  account's process-local credentials.
 - Access disablement suspends an otherwise valid credential without revoking
   it; enabling the account restores it if all credential checks still pass.
 
@@ -195,7 +206,7 @@ not expose a half-written registry entry: the metadata is already committed in
 memory, and the Account API can list or delete it by ID.
 
 Redis failure affects rate limiting and session revocation according to
-`SessionManager`; it does not corrupt CredentialManager. PostgreSQL access-store
+`SessionManager`; it does not corrupt CredentialManager. PostgreSQL account-state
 failure prevents access startup or access replacement but cannot mutate
 credentials. Restart is the recovery boundary for all process-local changes.
 When a transient JWT key is regenerated, tokens from the previous process are
@@ -205,8 +216,8 @@ cryptographically invalid by design.
 
 Startup logs report the loaded account names and environment-source hints. A
 generated administrator password or JWT key emits a warning explaining its
-transient lifetime. Account service logs identify successful own-password and
-administrator password changes without logging hashes or bearer tokens.
+transient lifetime. Account service logs identify successful own-password
+changes without logging hashes or bearer tokens.
 
 Credential failures use existing gRPC and gateway errors. Login deliberately
 collapses missing accounts and invalid passwords into the generic

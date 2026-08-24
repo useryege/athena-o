@@ -1,0 +1,45 @@
+ARG GO_IMAGE=docker.io/library/golang:1.25.5@sha256:31c1e53dfc1cc2d269deec9c83f58729fa3c53dc9a576f6426109d1e319e9e9a
+ARG RUNTIME_IMAGE=docker.io/library/ubuntu:25.10@sha256:5922638447b1e3ba114332c896a2c7288c876bb94adec923d70d58a17d2fec5e
+
+FROM ${GO_IMAGE} AS build
+
+ARG MINIO_COMMIT=9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y ca-certificates git && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git init && \
+    git remote add origin https://github.com/minio/minio.git && \
+    git fetch --depth 1 origin "${MINIO_COMMIT}" && \
+    git checkout --detach FETCH_HEAD && \
+    test "$(git rev-parse HEAD)" = "${MINIO_COMMIT}"
+
+RUN CGO_ENABLED=0 go build \
+    -tags kqueue \
+    -trimpath \
+    -ldflags "$(MINIO_RELEASE=RELEASE go run buildscripts/gen-ldflags.go)" \
+    -o /out/minio .
+
+FROM ${RUNTIME_IMAGE}
+
+ARG MINIO_COMMIT=9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+
+LABEL org.opencontainers.image.source="https://github.com/minio/minio" \
+      org.opencontainers.image.revision="${MINIO_COMMIT}"
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y ca-certificates curl tini && \
+    install -d -o ubuntu -g ubuntu /data && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /out/minio /usr/local/bin/minio
+COPY --from=build /src/LICENSE /licenses/minio/LICENSE
+COPY --from=build /src/CREDITS /licenses/minio/CREDITS
+
+USER 1000:1000
+VOLUME ["/data"]
+EXPOSE 9000 9001
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/minio"]
+CMD ["server", "/data", "--address", ":9000", "--console-address", ":9001"]

@@ -15,6 +15,9 @@ const servicePasswordAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 var targetKeys = []string{
 	"POSTGRES_PASSWORD",
 	"REDIS_PASSWORD",
+	"MINIO_ROOT_PASSWORD",
+	"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID",
+	"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY",
 	"ATHENA_JWT_SECRET",
 }
 
@@ -52,15 +55,30 @@ func newSecretValues() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	minioRootPassword, err := randomString(40, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
+	minioAccessKey, err := randomString(20, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
+	minioSecretKey, err := randomString(40, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
 	jwtSecretBytes := make([]byte, 32)
 	if _, err := rand.Read(jwtSecretBytes); err != nil {
 		return nil, err
 	}
 
 	return map[string]string{
-		"POSTGRES_PASSWORD": postgresPassword,
-		"REDIS_PASSWORD":    redisPassword,
-		"ATHENA_JWT_SECRET": base64.StdEncoding.EncodeToString(jwtSecretBytes),
+		"POSTGRES_PASSWORD":                          postgresPassword,
+		"REDIS_PASSWORD":                             redisPassword,
+		"MINIO_ROOT_PASSWORD":                        minioRootPassword,
+		"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID":     minioAccessKey,
+		"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY": minioSecretKey,
+		"ATHENA_JWT_SECRET":                          base64.StdEncoding.EncodeToString(jwtSecretBytes),
 	}, nil
 }
 

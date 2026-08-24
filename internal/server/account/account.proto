@@ -10,13 +10,12 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/account";
 
-message UpdatePasswordRequest {
-  string newPassword = 1;
-  string currentPassword = 2;
-  string name = 3;
+message ChangePasswordRequest {
+  string currentPassword = 1;
+  string newPassword = 2;
 }
 
-message UpdatePasswordResponse {}
+message ChangePasswordResponse {}
 
 message GetAccountRequest {
   string name = 1;
@@ -55,6 +54,31 @@ message AccountAccess {
   repeated AccountModuleAccess moduleAccess = 4;
 }
 
+enum AccountTier {
+  ACCOUNT_TIER_UNSPECIFIED = 0;
+  ACCOUNT_TIER_STANDARD = 1;
+  ACCOUNT_TIER_PRO = 2;
+}
+
+enum AccountThemeMode {
+  ACCOUNT_THEME_MODE_UNSPECIFIED = 0;
+  ACCOUNT_THEME_MODE_SYSTEM = 1;
+  ACCOUNT_THEME_MODE_LIGHT = 2;
+  ACCOUNT_THEME_MODE_DARK = 3;
+}
+
+message AccountProfile {
+  string displayName = 1;
+  AccountTier tier = 2;
+  string avatarUrl = 3;
+  uint64 revision = 4;
+}
+
+message AccountPreferences {
+  AccountThemeMode theme = 1;
+  uint64 revision = 2;
+}
+
 message UpdateAccountAccessRequest {
   string name = 1;
   // access contains the complete supported account data module matrix.
@@ -66,7 +90,7 @@ message Account {
   bool administrator = 2;
   AccountAccess access = 3;
   repeated string capabilities = 4;
-  repeated Token tokens = 5;
+  AccountProfile profile = 5;
 }
 
 message AccountsList {
@@ -84,10 +108,9 @@ message TokensList {
 }
 
 message CreateTokenRequest {
-  string name = 1;
   // expiresIn represents a duration in seconds
-  int64 expiresIn = 2;
-  string id = 3;
+  int64 expiresIn = 1;
+  string id = 2;
 }
 
 message CreateTokenResponse {
@@ -95,17 +118,35 @@ message CreateTokenResponse {
 }
 
 message DeleteTokenRequest {
-  string name = 1;
-  string id = 2;
+  string id = 1;
 }
 
-message ListAccountRequest {}
+message ListAccountsRequest {}
+
+message ListTokensRequest {}
+
+message UpdateAccountProfileRequest {
+  string name = 1;
+  string displayName = 2;
+  uint64 expectedRevision = 3;
+}
+
+message UpdateAccountTierRequest {
+  string name = 1;
+  AccountTier tier = 2;
+  uint64 expectedRevision = 3;
+}
+
+message UpdateAccountPreferencesRequest {
+  AccountThemeMode theme = 1;
+  uint64 expectedRevision = 2;
+}
 
 message EmptyResponse {}
 
 service AccountService {
-  // UpdatePassword updates an account's password to a new value
-  rpc UpdatePassword(UpdatePasswordRequest) returns (UpdatePasswordResponse) {
+  // ChangePassword changes the current account's password.
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
     option (google.api.http) = {
       put: "/api/v1/account/password"
       body: "*"
@@ -113,7 +154,7 @@ service AccountService {
   }
 
   // ListAccounts returns the list of accounts
-  rpc ListAccounts(ListAccountRequest) returns (AccountsList) {
+  rpc ListAccounts(ListAccountsRequest) returns (AccountsList) {
     option (google.api.http).get = "/api/v1/account";
   }
 
@@ -130,16 +171,45 @@ service AccountService {
     };
   }
 
+  // UpdateAccountProfile changes an account's public display name.
+  rpc UpdateAccountProfile(UpdateAccountProfileRequest) returns (AccountProfile) {
+    option (google.api.http) = {
+      put: "/api/v1/account/{name}/profile"
+      body: "*"
+    };
+  }
+
+  // UpdateAccountTier changes display-only packaging metadata.
+  rpc UpdateAccountTier(UpdateAccountTierRequest) returns (AccountProfile) {
+    option (google.api.http) = {
+      put: "/api/v1/account/{name}/tier"
+      body: "*"
+    };
+  }
+
+  // UpdateAccountPreferences changes the current account's UI preferences.
+  rpc UpdateAccountPreferences(UpdateAccountPreferencesRequest) returns (AccountPreferences) {
+    option (google.api.http) = {
+      put: "/api/v1/account/preferences"
+      body: "*"
+    };
+  }
+
+  // ListTokens lists API Key metadata for the current account.
+  rpc ListTokens(ListTokensRequest) returns (TokensList) {
+    option (google.api.http).get = "/api/v1/account/security/tokens";
+  }
+
   // CreateToken creates a token
   rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {
     option (google.api.http) = {
-      post: "/api/v1/account/{name}/token"
+      post: "/api/v1/account/security/tokens"
       body: "*"
     };
   }
 
   // DeleteToken deletes a token
   rpc DeleteToken(DeleteTokenRequest) returns (EmptyResponse) {
-    option (google.api.http).delete = "/api/v1/account/{name}/token/{id}";
+    option (google.api.http).delete = "/api/v1/account/security/tokens/{id}";
   }
 }

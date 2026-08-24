@@ -1,4 +1,15 @@
-import {Account, AccountAccess, parseAccountAccess} from '../models';
+import {
+    Account,
+    AccountAccess,
+    AccountPreferences,
+    AccountProfile,
+    AccountThemeMode,
+    AccountTier,
+    parseAccountAccess,
+    parseAccountPreferences,
+    parseAccountProfile,
+    Token
+} from '../models';
 import requests from './requests';
 
 const account = (value: any): Account => ({
@@ -6,8 +17,26 @@ const account = (value: any): Account => ({
     administrator: Boolean(value?.administrator),
     access: parseAccountAccess(value?.access),
     capabilities: value?.capabilities || [],
-    tokens: value?.tokens || []
+    profile: parseAccountProfile(value?.profile, value?.name || '')
 });
+
+const token = (value: any): Token => ({
+    id: String(value?.id || ''),
+    issuedAt: Number(value?.issuedAt ?? value?.issued_at ?? 0),
+    expiresAt: Number(value?.expiresAt ?? value?.expires_at ?? 0)
+});
+
+const avatarProfile = (value: any, name: string): AccountProfile => parseAccountProfile(value?.profile || value, name);
+const accountTierAPIValue = (tier: AccountTier) => (tier === AccountTier.Pro ? 2 : 1);
+const accountThemeAPIValue = (theme: AccountThemeMode) => {
+    if (theme === AccountThemeMode.Dark) {
+        return 3;
+    }
+    if (theme === AccountThemeMode.Light) {
+        return 2;
+    }
+    return 1;
+};
 
 export class AccountsService {
     public list(): Promise<Account[]> {
@@ -29,21 +58,61 @@ export class AccountsService {
             .then(res => account(res.body));
     }
 
-    public changePassword(name: string, currentPassword: string, newPassword: string): Promise<boolean> {
+    public updateProfile(name: string, displayName: string, expectedRevision: number): Promise<AccountProfile> {
+        return requests
+            .put(`/account/${encodeURIComponent(name)}/profile`)
+            .send({displayName, expectedRevision})
+            .then(res => parseAccountProfile(res.body, name));
+    }
+
+    public updateTier(name: string, tier: AccountTier, expectedRevision: number): Promise<AccountProfile> {
+        return requests
+            .put(`/account/${encodeURIComponent(name)}/tier`)
+            .send({tier: accountTierAPIValue(tier), expectedRevision})
+            .then(res => parseAccountProfile(res.body, name));
+    }
+
+    public updatePreferences(theme: AccountThemeMode, expectedRevision: number): Promise<AccountPreferences> {
+        return requests
+            .put('/account/preferences')
+            .send({theme: accountThemeAPIValue(theme), expectedRevision})
+            .then(res => parseAccountPreferences(res.body));
+    }
+
+    public changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
         return requests
             .put('/account/password')
-            .send({currentPassword, name, newPassword})
+            .send({currentPassword, newPassword})
             .then(res => res.status === 200);
     }
 
-    public createToken(name: string, tokenId: string, expiresIn: number): Promise<string> {
-        return requests
-            .post(`/account/${name}/token`)
-            .send({expiresIn, id: tokenId})
-            .then(res => res.body.token as string);
+    public listTokens(): Promise<Token[]> {
+        return requests.get('/account/security/tokens').then(res => (res.body?.items || []).map(token));
     }
 
-    public deleteToken(name: string, id: string): Promise<any> {
-        return requests.delete(`/account/${name}/token/${id}`);
+    public createToken(tokenId: string, expiresIn: number): Promise<string> {
+        return requests
+            .post('/account/security/tokens')
+            .send({expiresIn, id: tokenId})
+            .then(res => String(res.body?.token || ''));
+    }
+
+    public deleteToken(id: string): Promise<void> {
+        return requests.delete(`/account/security/tokens/${encodeURIComponent(id)}`).then(() => undefined);
+    }
+
+    public uploadAvatar(name: string, file: File, expectedRevision: number): Promise<AccountProfile> {
+        return requests
+            .rawPut(`/api/v1/account/${encodeURIComponent(name)}/avatar`)
+            .field('expectedRevision', String(expectedRevision))
+            .attach('file', file as any)
+            .then(res => avatarProfile(res.body, name));
+    }
+
+    public deleteAvatar(name: string, expectedRevision: number): Promise<AccountProfile> {
+        return requests
+            .rawDelete(`/api/v1/account/${encodeURIComponent(name)}/avatar`)
+            .query({expectedRevision})
+            .then(res => avatarProfile(res.body, name));
     }
 }

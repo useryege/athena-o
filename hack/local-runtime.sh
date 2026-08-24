@@ -8,8 +8,10 @@ SUPERVISOR_STATE_FILE="${STATE_DIR}/supervisor.state"
 FILTERED_PROCFILE="${STATE_DIR}/Procfile"
 POSTGRES_CONTAINER="athena-postgres"
 REDIS_CONTAINER="athena-redis"
+MINIO_CONTAINER="athena-minio"
 POSTGRES_VOLUME="athena-local-postgres-data"
 REDIS_VOLUME="athena-local-redis-data"
+MINIO_VOLUME="athena-local-minio-data"
 RESOURCE_OWNER_LABEL="io.athena.local-runtime"
 RESOURCE_OWNER_VALUE="athena"
 RESOURCE_COMPONENT_LABEL="io.athena.component"
@@ -543,6 +545,7 @@ cleanup_local_containers() {
 	fi
 	remove_owned_container "${POSTGRES_CONTAINER}" "postgres" || status=1
 	remove_owned_container "${REDIS_CONTAINER}" "redis" || status=1
+	remove_owned_container "${MINIO_CONTAINER}" "minio" || status=1
 	return "${status}"
 }
 
@@ -718,6 +721,7 @@ reset_runtime() {
 	stop_runtime
 	remove_owned_volume "${POSTGRES_VOLUME}" "postgres"
 	remove_owned_volume "${REDIS_VOLUME}" "redis"
+	remove_owned_volume "${MINIO_VOLUME}" "minio"
 	cleanup_default_runtime_data
 	rm -rf -- "${STATE_DIR}"
 	rmdir "${REPO_ROOT}/.run" 2>/dev/null || true

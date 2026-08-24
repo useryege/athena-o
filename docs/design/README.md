@@ -18,6 +18,9 @@ The executable code remains the source of truth. These documents provide the mai
 | Development Runtime | Local process supervision, capability process composition, persistent infrastructure, and account-access reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
 | Identity and Access | Environment account catalog, process-local passwords and API Keys, per-account mutation isolation, and local JWT encoding | [Account Credentials](identity-access/account-credentials.md) |
 | Identity and Access | Unified login availability, ten-module access matrix, transactional administrator control, and scoped browser authorization lifecycle | [Account Access Control](identity-access/account-access-control.md) |
+| Identity and Access | Durable display profiles, display-only account tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) |
+| Identity and Access | Private account-avatar validation, S3-compatible object storage, authenticated delivery, and orphan recovery | [Account Avatar Storage](identity-access/account-avatar-storage.md) |
+| Web UI | Responsive application shell, business navigation, bottom-left account menu, Account Center routes, and theme projection | [Application Shell](web-ui/application-shell.md) |
 | Governance | Reusable five-member profit-allocation proposals, blind publication, voting, and runoff resolution | [Profit Sharing](governance/profit-sharing.md) |
 | Market Intelligence | Read-only Market Radar module, Polymarket discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
 | Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |

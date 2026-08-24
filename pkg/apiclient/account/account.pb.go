@@ -107,27 +107,85 @@ func (AccountDataModule) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_da6bf34a9e69bf9c, []int{1}
 }
 
-type UpdatePasswordRequest struct {
-	NewPassword          string   `protobuf:"bytes,1,opt,name=newPassword,proto3" json:"newPassword,omitempty"`
-	CurrentPassword      string   `protobuf:"bytes,2,opt,name=currentPassword,proto3" json:"currentPassword,omitempty"`
-	Name                 string   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+type AccountTier int32
+
+const (
+	AccountTier_ACCOUNT_TIER_UNSPECIFIED AccountTier = 0
+	AccountTier_ACCOUNT_TIER_STANDARD    AccountTier = 1
+	AccountTier_ACCOUNT_TIER_PRO         AccountTier = 2
+)
+
+var AccountTier_name = map[int32]string{
+	0: "ACCOUNT_TIER_UNSPECIFIED",
+	1: "ACCOUNT_TIER_STANDARD",
+	2: "ACCOUNT_TIER_PRO",
+}
+
+var AccountTier_value = map[string]int32{
+	"ACCOUNT_TIER_UNSPECIFIED": 0,
+	"ACCOUNT_TIER_STANDARD":    1,
+	"ACCOUNT_TIER_PRO":         2,
+}
+
+func (x AccountTier) String() string {
+	return proto.EnumName(AccountTier_name, int32(x))
+}
+
+func (AccountTier) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{2}
+}
+
+type AccountThemeMode int32
+
+const (
+	AccountThemeMode_ACCOUNT_THEME_MODE_UNSPECIFIED AccountThemeMode = 0
+	AccountThemeMode_ACCOUNT_THEME_MODE_SYSTEM      AccountThemeMode = 1
+	AccountThemeMode_ACCOUNT_THEME_MODE_LIGHT       AccountThemeMode = 2
+	AccountThemeMode_ACCOUNT_THEME_MODE_DARK        AccountThemeMode = 3
+)
+
+var AccountThemeMode_name = map[int32]string{
+	0: "ACCOUNT_THEME_MODE_UNSPECIFIED",
+	1: "ACCOUNT_THEME_MODE_SYSTEM",
+	2: "ACCOUNT_THEME_MODE_LIGHT",
+	3: "ACCOUNT_THEME_MODE_DARK",
+}
+
+var AccountThemeMode_value = map[string]int32{
+	"ACCOUNT_THEME_MODE_UNSPECIFIED": 0,
+	"ACCOUNT_THEME_MODE_SYSTEM":      1,
+	"ACCOUNT_THEME_MODE_LIGHT":       2,
+	"ACCOUNT_THEME_MODE_DARK":        3,
+}
+
+func (x AccountThemeMode) String() string {
+	return proto.EnumName(AccountThemeMode_name, int32(x))
+}
+
+func (AccountThemeMode) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{3}
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword      string   `protobuf:"bytes,1,opt,name=currentPassword,proto3" json:"currentPassword,omitempty"`
+	NewPassword          string   `protobuf:"bytes,2,opt,name=newPassword,proto3" json:"newPassword,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdatePasswordRequest) Reset()         { *m = UpdatePasswordRequest{} }
-func (m *UpdatePasswordRequest) String() string { return proto.CompactTextString(m) }
-func (*UpdatePasswordRequest) ProtoMessage()    {}
-func (*UpdatePasswordRequest) Descriptor() ([]byte, []int) {
+func (m *ChangePasswordRequest) Reset()         { *m = ChangePasswordRequest{} }
+func (m *ChangePasswordRequest) String() string { return proto.CompactTextString(m) }
+func (*ChangePasswordRequest) ProtoMessage()    {}
+func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_da6bf34a9e69bf9c, []int{0}
 }
-func (m *UpdatePasswordRequest) XXX_Unmarshal(b []byte) error {
+func (m *ChangePasswordRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdatePasswordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ChangePasswordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UpdatePasswordRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ChangePasswordRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -137,57 +195,50 @@ func (m *UpdatePasswordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byt
 		return b[:n], nil
 	}
 }
-func (m *UpdatePasswordRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdatePasswordRequest.Merge(m, src)
+func (m *ChangePasswordRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangePasswordRequest.Merge(m, src)
 }
-func (m *UpdatePasswordRequest) XXX_Size() int {
+func (m *ChangePasswordRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *UpdatePasswordRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdatePasswordRequest.DiscardUnknown(m)
+func (m *ChangePasswordRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangePasswordRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdatePasswordRequest proto.InternalMessageInfo
+var xxx_messageInfo_ChangePasswordRequest proto.InternalMessageInfo
 
-func (m *UpdatePasswordRequest) GetNewPassword() string {
-	if m != nil {
-		return m.NewPassword
-	}
-	return ""
-}
-
-func (m *UpdatePasswordRequest) GetCurrentPassword() string {
+func (m *ChangePasswordRequest) GetCurrentPassword() string {
 	if m != nil {
 		return m.CurrentPassword
 	}
 	return ""
 }
 
-func (m *UpdatePasswordRequest) GetName() string {
+func (m *ChangePasswordRequest) GetNewPassword() string {
 	if m != nil {
-		return m.Name
+		return m.NewPassword
 	}
 	return ""
 }
 
-type UpdatePasswordResponse struct {
+type ChangePasswordResponse struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdatePasswordResponse) Reset()         { *m = UpdatePasswordResponse{} }
-func (m *UpdatePasswordResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdatePasswordResponse) ProtoMessage()    {}
-func (*UpdatePasswordResponse) Descriptor() ([]byte, []int) {
+func (m *ChangePasswordResponse) Reset()         { *m = ChangePasswordResponse{} }
+func (m *ChangePasswordResponse) String() string { return proto.CompactTextString(m) }
+func (*ChangePasswordResponse) ProtoMessage()    {}
+func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_da6bf34a9e69bf9c, []int{1}
 }
-func (m *UpdatePasswordResponse) XXX_Unmarshal(b []byte) error {
+func (m *ChangePasswordResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdatePasswordResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ChangePasswordResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UpdatePasswordResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ChangePasswordResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -197,17 +248,17 @@ func (m *UpdatePasswordResponse) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *UpdatePasswordResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdatePasswordResponse.Merge(m, src)
+func (m *ChangePasswordResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangePasswordResponse.Merge(m, src)
 }
-func (m *UpdatePasswordResponse) XXX_Size() int {
+func (m *ChangePasswordResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *UpdatePasswordResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdatePasswordResponse.DiscardUnknown(m)
+func (m *ChangePasswordResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangePasswordResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdatePasswordResponse proto.InternalMessageInfo
+var xxx_messageInfo_ChangePasswordResponse proto.InternalMessageInfo
 
 type GetAccountRequest struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -374,6 +425,132 @@ func (m *AccountAccess) GetModuleAccess() []*AccountModuleAccess {
 	return nil
 }
 
+type AccountProfile struct {
+	DisplayName          string      `protobuf:"bytes,1,opt,name=displayName,proto3" json:"displayName,omitempty"`
+	Tier                 AccountTier `protobuf:"varint,2,opt,name=tier,proto3,enum=account.AccountTier" json:"tier,omitempty"`
+	AvatarUrl            string      `protobuf:"bytes,3,opt,name=avatarUrl,proto3" json:"avatarUrl,omitempty"`
+	Revision             uint64      `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *AccountProfile) Reset()         { *m = AccountProfile{} }
+func (m *AccountProfile) String() string { return proto.CompactTextString(m) }
+func (*AccountProfile) ProtoMessage()    {}
+func (*AccountProfile) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{5}
+}
+func (m *AccountProfile) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AccountProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AccountProfile.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AccountProfile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountProfile.Merge(m, src)
+}
+func (m *AccountProfile) XXX_Size() int {
+	return m.Size()
+}
+func (m *AccountProfile) XXX_DiscardUnknown() {
+	xxx_messageInfo_AccountProfile.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AccountProfile proto.InternalMessageInfo
+
+func (m *AccountProfile) GetDisplayName() string {
+	if m != nil {
+		return m.DisplayName
+	}
+	return ""
+}
+
+func (m *AccountProfile) GetTier() AccountTier {
+	if m != nil {
+		return m.Tier
+	}
+	return AccountTier_ACCOUNT_TIER_UNSPECIFIED
+}
+
+func (m *AccountProfile) GetAvatarUrl() string {
+	if m != nil {
+		return m.AvatarUrl
+	}
+	return ""
+}
+
+func (m *AccountProfile) GetRevision() uint64 {
+	if m != nil {
+		return m.Revision
+	}
+	return 0
+}
+
+type AccountPreferences struct {
+	Theme                AccountThemeMode `protobuf:"varint,1,opt,name=theme,proto3,enum=account.AccountThemeMode" json:"theme,omitempty"`
+	Revision             uint64           `protobuf:"varint,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
+}
+
+func (m *AccountPreferences) Reset()         { *m = AccountPreferences{} }
+func (m *AccountPreferences) String() string { return proto.CompactTextString(m) }
+func (*AccountPreferences) ProtoMessage()    {}
+func (*AccountPreferences) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{6}
+}
+func (m *AccountPreferences) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AccountPreferences) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AccountPreferences.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AccountPreferences) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountPreferences.Merge(m, src)
+}
+func (m *AccountPreferences) XXX_Size() int {
+	return m.Size()
+}
+func (m *AccountPreferences) XXX_DiscardUnknown() {
+	xxx_messageInfo_AccountPreferences.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AccountPreferences proto.InternalMessageInfo
+
+func (m *AccountPreferences) GetTheme() AccountThemeMode {
+	if m != nil {
+		return m.Theme
+	}
+	return AccountThemeMode_ACCOUNT_THEME_MODE_UNSPECIFIED
+}
+
+func (m *AccountPreferences) GetRevision() uint64 {
+	if m != nil {
+		return m.Revision
+	}
+	return 0
+}
+
 type UpdateAccountAccessRequest struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// access contains the complete supported account data module matrix.
@@ -387,7 +564,7 @@ func (m *UpdateAccountAccessRequest) Reset()         { *m = UpdateAccountAccessR
 func (m *UpdateAccountAccessRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateAccountAccessRequest) ProtoMessage()    {}
 func (*UpdateAccountAccessRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{5}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{7}
 }
 func (m *UpdateAccountAccessRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -431,21 +608,21 @@ func (m *UpdateAccountAccessRequest) GetAccess() *AccountAccess {
 }
 
 type Account struct {
-	Name                 string         `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Administrator        bool           `protobuf:"varint,2,opt,name=administrator,proto3" json:"administrator,omitempty"`
-	Access               *AccountAccess `protobuf:"bytes,3,opt,name=access,proto3" json:"access,omitempty"`
-	Capabilities         []string       `protobuf:"bytes,4,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
-	Tokens               []*Token       `protobuf:"bytes,5,rep,name=tokens,proto3" json:"tokens,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
+	Name                 string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Administrator        bool            `protobuf:"varint,2,opt,name=administrator,proto3" json:"administrator,omitempty"`
+	Access               *AccountAccess  `protobuf:"bytes,3,opt,name=access,proto3" json:"access,omitempty"`
+	Capabilities         []string        `protobuf:"bytes,4,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	Profile              *AccountProfile `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *Account) Reset()         { *m = Account{} }
 func (m *Account) String() string { return proto.CompactTextString(m) }
 func (*Account) ProtoMessage()    {}
 func (*Account) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{6}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{8}
 }
 func (m *Account) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -502,9 +679,9 @@ func (m *Account) GetCapabilities() []string {
 	return nil
 }
 
-func (m *Account) GetTokens() []*Token {
+func (m *Account) GetProfile() *AccountProfile {
 	if m != nil {
-		return m.Tokens
+		return m.Profile
 	}
 	return nil
 }
@@ -520,7 +697,7 @@ func (m *AccountsList) Reset()         { *m = AccountsList{} }
 func (m *AccountsList) String() string { return proto.CompactTextString(m) }
 func (*AccountsList) ProtoMessage()    {}
 func (*AccountsList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{7}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{9}
 }
 func (m *AccountsList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -569,7 +746,7 @@ func (m *Token) Reset()         { *m = Token{} }
 func (m *Token) String() string { return proto.CompactTextString(m) }
 func (*Token) ProtoMessage()    {}
 func (*Token) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{8}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{10}
 }
 func (m *Token) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -630,7 +807,7 @@ func (m *TokensList) Reset()         { *m = TokensList{} }
 func (m *TokensList) String() string { return proto.CompactTextString(m) }
 func (*TokensList) ProtoMessage()    {}
 func (*TokensList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{9}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{11}
 }
 func (m *TokensList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -667,10 +844,9 @@ func (m *TokensList) GetItems() []*Token {
 }
 
 type CreateTokenRequest struct {
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// expiresIn represents a duration in seconds
-	ExpiresIn            int64    `protobuf:"varint,2,opt,name=expiresIn,proto3" json:"expiresIn,omitempty"`
-	Id                   string   `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	ExpiresIn            int64    `protobuf:"varint,1,opt,name=expiresIn,proto3" json:"expiresIn,omitempty"`
+	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -680,7 +856,7 @@ func (m *CreateTokenRequest) Reset()         { *m = CreateTokenRequest{} }
 func (m *CreateTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateTokenRequest) ProtoMessage()    {}
 func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{10}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{12}
 }
 func (m *CreateTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -709,13 +885,6 @@ func (m *CreateTokenRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateTokenRequest proto.InternalMessageInfo
 
-func (m *CreateTokenRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
 func (m *CreateTokenRequest) GetExpiresIn() int64 {
 	if m != nil {
 		return m.ExpiresIn
@@ -741,7 +910,7 @@ func (m *CreateTokenResponse) Reset()         { *m = CreateTokenResponse{} }
 func (m *CreateTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateTokenResponse) ProtoMessage()    {}
 func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{11}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{13}
 }
 func (m *CreateTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -778,8 +947,7 @@ func (m *CreateTokenResponse) GetToken() string {
 }
 
 type DeleteTokenRequest struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -789,7 +957,7 @@ func (m *DeleteTokenRequest) Reset()         { *m = DeleteTokenRequest{} }
 func (m *DeleteTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteTokenRequest) ProtoMessage()    {}
 func (*DeleteTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{12}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{14}
 }
 func (m *DeleteTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -818,13 +986,6 @@ func (m *DeleteTokenRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteTokenRequest proto.InternalMessageInfo
 
-func (m *DeleteTokenRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
 func (m *DeleteTokenRequest) GetId() string {
 	if m != nil {
 		return m.Id
@@ -832,24 +993,24 @@ func (m *DeleteTokenRequest) GetId() string {
 	return ""
 }
 
-type ListAccountRequest struct {
+type ListAccountsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListAccountRequest) Reset()         { *m = ListAccountRequest{} }
-func (m *ListAccountRequest) String() string { return proto.CompactTextString(m) }
-func (*ListAccountRequest) ProtoMessage()    {}
-func (*ListAccountRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{13}
+func (m *ListAccountsRequest) Reset()         { *m = ListAccountsRequest{} }
+func (m *ListAccountsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListAccountsRequest) ProtoMessage()    {}
+func (*ListAccountsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{15}
 }
-func (m *ListAccountRequest) XXX_Unmarshal(b []byte) error {
+func (m *ListAccountsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAccountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAccountsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ListAccountRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ListAccountsRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -859,17 +1020,237 @@ func (m *ListAccountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *ListAccountRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListAccountRequest.Merge(m, src)
+func (m *ListAccountsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListAccountsRequest.Merge(m, src)
 }
-func (m *ListAccountRequest) XXX_Size() int {
+func (m *ListAccountsRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *ListAccountRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ListAccountRequest.DiscardUnknown(m)
+func (m *ListAccountsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListAccountsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ListAccountRequest proto.InternalMessageInfo
+var xxx_messageInfo_ListAccountsRequest proto.InternalMessageInfo
+
+type ListTokensRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListTokensRequest) Reset()         { *m = ListTokensRequest{} }
+func (m *ListTokensRequest) String() string { return proto.CompactTextString(m) }
+func (*ListTokensRequest) ProtoMessage()    {}
+func (*ListTokensRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{16}
+}
+func (m *ListTokensRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListTokensRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListTokensRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListTokensRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListTokensRequest.Merge(m, src)
+}
+func (m *ListTokensRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListTokensRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListTokensRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListTokensRequest proto.InternalMessageInfo
+
+type UpdateAccountProfileRequest struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName          string   `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
+	ExpectedRevision     uint64   `protobuf:"varint,3,opt,name=expectedRevision,proto3" json:"expectedRevision,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *UpdateAccountProfileRequest) Reset()         { *m = UpdateAccountProfileRequest{} }
+func (m *UpdateAccountProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateAccountProfileRequest) ProtoMessage()    {}
+func (*UpdateAccountProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{17}
+}
+func (m *UpdateAccountProfileRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateAccountProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateAccountProfileRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateAccountProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateAccountProfileRequest.Merge(m, src)
+}
+func (m *UpdateAccountProfileRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateAccountProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateAccountProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateAccountProfileRequest proto.InternalMessageInfo
+
+func (m *UpdateAccountProfileRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *UpdateAccountProfileRequest) GetDisplayName() string {
+	if m != nil {
+		return m.DisplayName
+	}
+	return ""
+}
+
+func (m *UpdateAccountProfileRequest) GetExpectedRevision() uint64 {
+	if m != nil {
+		return m.ExpectedRevision
+	}
+	return 0
+}
+
+type UpdateAccountTierRequest struct {
+	Name                 string      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Tier                 AccountTier `protobuf:"varint,2,opt,name=tier,proto3,enum=account.AccountTier" json:"tier,omitempty"`
+	ExpectedRevision     uint64      `protobuf:"varint,3,opt,name=expectedRevision,proto3" json:"expectedRevision,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *UpdateAccountTierRequest) Reset()         { *m = UpdateAccountTierRequest{} }
+func (m *UpdateAccountTierRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateAccountTierRequest) ProtoMessage()    {}
+func (*UpdateAccountTierRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{18}
+}
+func (m *UpdateAccountTierRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateAccountTierRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateAccountTierRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateAccountTierRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateAccountTierRequest.Merge(m, src)
+}
+func (m *UpdateAccountTierRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateAccountTierRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateAccountTierRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateAccountTierRequest proto.InternalMessageInfo
+
+func (m *UpdateAccountTierRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *UpdateAccountTierRequest) GetTier() AccountTier {
+	if m != nil {
+		return m.Tier
+	}
+	return AccountTier_ACCOUNT_TIER_UNSPECIFIED
+}
+
+func (m *UpdateAccountTierRequest) GetExpectedRevision() uint64 {
+	if m != nil {
+		return m.ExpectedRevision
+	}
+	return 0
+}
+
+type UpdateAccountPreferencesRequest struct {
+	Theme                AccountThemeMode `protobuf:"varint,1,opt,name=theme,proto3,enum=account.AccountThemeMode" json:"theme,omitempty"`
+	ExpectedRevision     uint64           `protobuf:"varint,2,opt,name=expectedRevision,proto3" json:"expectedRevision,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
+}
+
+func (m *UpdateAccountPreferencesRequest) Reset()         { *m = UpdateAccountPreferencesRequest{} }
+func (m *UpdateAccountPreferencesRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateAccountPreferencesRequest) ProtoMessage()    {}
+func (*UpdateAccountPreferencesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_da6bf34a9e69bf9c, []int{19}
+}
+func (m *UpdateAccountPreferencesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateAccountPreferencesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateAccountPreferencesRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateAccountPreferencesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateAccountPreferencesRequest.Merge(m, src)
+}
+func (m *UpdateAccountPreferencesRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateAccountPreferencesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateAccountPreferencesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateAccountPreferencesRequest proto.InternalMessageInfo
+
+func (m *UpdateAccountPreferencesRequest) GetTheme() AccountThemeMode {
+	if m != nil {
+		return m.Theme
+	}
+	return AccountThemeMode_ACCOUNT_THEME_MODE_UNSPECIFIED
+}
+
+func (m *UpdateAccountPreferencesRequest) GetExpectedRevision() uint64 {
+	if m != nil {
+		return m.ExpectedRevision
+	}
+	return 0
+}
 
 type EmptyResponse struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -881,7 +1262,7 @@ func (m *EmptyResponse) Reset()         { *m = EmptyResponse{} }
 func (m *EmptyResponse) String() string { return proto.CompactTextString(m) }
 func (*EmptyResponse) ProtoMessage()    {}
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_da6bf34a9e69bf9c, []int{14}
+	return fileDescriptor_da6bf34a9e69bf9c, []int{20}
 }
 func (m *EmptyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -913,11 +1294,15 @@ var xxx_messageInfo_EmptyResponse proto.InternalMessageInfo
 func init() {
 	proto.RegisterEnum("account.AccountDataAccess", AccountDataAccess_name, AccountDataAccess_value)
 	proto.RegisterEnum("account.AccountDataModule", AccountDataModule_name, AccountDataModule_value)
-	proto.RegisterType((*UpdatePasswordRequest)(nil), "account.UpdatePasswordRequest")
-	proto.RegisterType((*UpdatePasswordResponse)(nil), "account.UpdatePasswordResponse")
+	proto.RegisterEnum("account.AccountTier", AccountTier_name, AccountTier_value)
+	proto.RegisterEnum("account.AccountThemeMode", AccountThemeMode_name, AccountThemeMode_value)
+	proto.RegisterType((*ChangePasswordRequest)(nil), "account.ChangePasswordRequest")
+	proto.RegisterType((*ChangePasswordResponse)(nil), "account.ChangePasswordResponse")
 	proto.RegisterType((*GetAccountRequest)(nil), "account.GetAccountRequest")
 	proto.RegisterType((*AccountModuleAccess)(nil), "account.AccountModuleAccess")
 	proto.RegisterType((*AccountAccess)(nil), "account.AccountAccess")
+	proto.RegisterType((*AccountProfile)(nil), "account.AccountProfile")
+	proto.RegisterType((*AccountPreferences)(nil), "account.AccountPreferences")
 	proto.RegisterType((*UpdateAccountAccessRequest)(nil), "account.UpdateAccountAccessRequest")
 	proto.RegisterType((*Account)(nil), "account.Account")
 	proto.RegisterType((*AccountsList)(nil), "account.AccountsList")
@@ -926,7 +1311,11 @@ func init() {
 	proto.RegisterType((*CreateTokenRequest)(nil), "account.CreateTokenRequest")
 	proto.RegisterType((*CreateTokenResponse)(nil), "account.CreateTokenResponse")
 	proto.RegisterType((*DeleteTokenRequest)(nil), "account.DeleteTokenRequest")
-	proto.RegisterType((*ListAccountRequest)(nil), "account.ListAccountRequest")
+	proto.RegisterType((*ListAccountsRequest)(nil), "account.ListAccountsRequest")
+	proto.RegisterType((*ListTokensRequest)(nil), "account.ListTokensRequest")
+	proto.RegisterType((*UpdateAccountProfileRequest)(nil), "account.UpdateAccountProfileRequest")
+	proto.RegisterType((*UpdateAccountTierRequest)(nil), "account.UpdateAccountTierRequest")
+	proto.RegisterType((*UpdateAccountPreferencesRequest)(nil), "account.UpdateAccountPreferencesRequest")
 	proto.RegisterType((*EmptyResponse)(nil), "account.EmptyResponse")
 }
 
@@ -935,74 +1324,97 @@ func init() {
 }
 
 var fileDescriptor_da6bf34a9e69bf9c = []byte{
-	// 1065 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x56, 0xcd, 0x6e, 0xdb, 0x46,
-	0x10, 0x0e, 0x25, 0xcb, 0x3f, 0xe3, 0x3f, 0x7a, 0x9d, 0xb8, 0x2a, 0x2b, 0x2b, 0x36, 0xfd, 0x13,
-	0xdb, 0x45, 0xac, 0x56, 0x05, 0x8a, 0xc2, 0x87, 0xa2, 0x8c, 0x48, 0x27, 0x6a, 0x64, 0xd1, 0x5d,
-	0xd2, 0x09, 0x9a, 0x1e, 0x54, 0x5a, 0x5a, 0x28, 0x8b, 0x48, 0xa4, 0xc2, 0x5d, 0xd9, 0x0d, 0x8c,
-	0x5c, 0x0a, 0xf4, 0x09, 0xfa, 0x02, 0x05, 0xfa, 0x0c, 0x3d, 0xf7, 0xda, 0x63, 0x81, 0xbe, 0x40,
-	0x61, 0xf4, 0x41, 0x0a, 0x2d, 0x49, 0x89, 0x94, 0x28, 0x23, 0x27, 0x9b, 0x33, 0xdf, 0x7e, 0xdf,
-	0x37, 0x43, 0xed, 0x0c, 0x61, 0x8f, 0xba, 0x9c, 0xf8, 0xae, 0xd3, 0x29, 0x31, 0xe2, 0x5f, 0x11,
-	0xbf, 0xe4, 0x34, 0x9b, 0x5e, 0xdf, 0xe5, 0xd1, 0xdf, 0xe3, 0x9e, 0xef, 0x71, 0x0f, 0xcd, 0x85,
-	0x8f, 0x4a, 0xa1, 0xed, 0x79, 0xed, 0x0e, 0x29, 0x39, 0x3d, 0x5a, 0x72, 0x5c, 0xd7, 0xe3, 0x0e,
-	0xa7, 0x9e, 0xcb, 0x02, 0x98, 0x7a, 0x0d, 0x0f, 0x2e, 0x7a, 0x2d, 0x87, 0x93, 0x73, 0x87, 0xb1,
-	0x6b, 0xcf, 0x6f, 0x61, 0xf2, 0xb6, 0x4f, 0x18, 0x47, 0x5b, 0xb0, 0xe8, 0x92, 0xeb, 0x28, 0x9a,
-	0x97, 0xb6, 0xa4, 0x83, 0x05, 0x1c, 0x0f, 0xa1, 0x03, 0x58, 0x6d, 0xf6, 0x7d, 0x9f, 0xb8, 0x7c,
-	0x88, 0xca, 0x08, 0xd4, 0x78, 0x18, 0x21, 0x98, 0x71, 0x9d, 0x2e, 0xc9, 0x67, 0x45, 0x5a, 0xfc,
-	0xaf, 0xe6, 0x61, 0x63, 0x5c, 0x98, 0xf5, 0x3c, 0x97, 0x11, 0xf5, 0x11, 0xac, 0x3d, 0x25, 0x5c,
-	0x0b, 0xec, 0x47, 0x76, 0x22, 0x0a, 0x29, 0x46, 0xf1, 0x8b, 0x04, 0xeb, 0x21, 0xec, 0xcc, 0x6b,
-	0xf5, 0x3b, 0x44, 0x6b, 0x36, 0x09, 0x63, 0xa8, 0x0c, 0xb3, 0x5d, 0xf1, 0x2c, 0xd0, 0x2b, 0x65,
-	0xe5, 0x38, 0x6a, 0x4d, 0x88, 0xd6, 0x1d, 0xee, 0x04, 0x27, 0x70, 0x88, 0x44, 0x27, 0x00, 0x2d,
-	0x87, 0x3b, 0x01, 0x83, 0xa8, 0x63, 0xca, 0xb9, 0x00, 0x81, 0x63, 0x68, 0xf5, 0x77, 0x09, 0x96,
-	0x43, 0x44, 0xe8, 0x40, 0x85, 0xa5, 0x8e, 0xd7, 0xa6, 0xae, 0xe1, 0x3a, 0x97, 0x1d, 0x12, 0x74,
-	0x6f, 0x1e, 0x27, 0x62, 0x48, 0x81, 0x79, 0x9f, 0x5c, 0x51, 0x46, 0x3d, 0x57, 0x34, 0x66, 0x06,
-	0x0f, 0x9f, 0xd1, 0x37, 0xb0, 0xd4, 0x8d, 0x55, 0x94, 0x9f, 0xd9, 0xca, 0x1e, 0x2c, 0x96, 0x0b,
-	0xe3, 0x7e, 0xe2, 0x55, 0xe3, 0xc4, 0x89, 0x6f, 0x67, 0xe6, 0x33, 0x72, 0x36, 0xe1, 0xf2, 0x47,
-	0x50, 0x82, 0x86, 0x27, 0xac, 0xde, 0xd1, 0x5f, 0x74, 0x0c, 0xb3, 0xce, 0xa8, 0x1f, 0x8b, 0xe5,
-	0x8d, 0x71, 0xfd, 0x90, 0x22, 0x44, 0xa9, 0x7f, 0x4a, 0x30, 0x17, 0x66, 0x52, 0xf9, 0x76, 0x61,
-	0xd9, 0x69, 0x75, 0xa9, 0x4b, 0x19, 0xf7, 0x1d, 0xee, 0xf9, 0x82, 0x76, 0x1e, 0x27, 0x83, 0x31,
-	0xd5, 0xec, 0x87, 0xa8, 0x0e, 0x7a, 0xdd, 0x74, 0x7a, 0xce, 0x25, 0xed, 0x50, 0x4e, 0x49, 0xd0,
-	0xab, 0x05, 0x9c, 0x88, 0xa1, 0x7d, 0x98, 0xe5, 0xde, 0x1b, 0xe2, 0xb2, 0x7c, 0x4e, 0x74, 0x72,
-	0x65, 0xc8, 0x69, 0x0f, 0xc2, 0x38, 0xcc, 0xaa, 0x5f, 0xc2, 0x52, 0x28, 0xc2, 0x6a, 0x94, 0x71,
-	0xb4, 0x0f, 0x39, 0xca, 0x49, 0x97, 0xe5, 0x25, 0x71, 0x4c, 0x1e, 0xb7, 0x82, 0x83, 0xb4, 0xfa,
-	0x1d, 0xe4, 0x04, 0x11, 0x5a, 0x81, 0x0c, 0x8d, 0x2e, 0x4b, 0x86, 0x8a, 0x97, 0x4c, 0x19, 0xeb,
-	0x93, 0x96, 0xc6, 0x45, 0xb5, 0x59, 0x3c, 0x7c, 0x46, 0x05, 0x58, 0x20, 0x3f, 0xf5, 0xa8, 0x4f,
-	0x98, 0xc6, 0x45, 0xad, 0x59, 0x3c, 0x0a, 0xa8, 0x65, 0x00, 0x41, 0x19, 0x18, 0xd9, 0x4d, 0x1a,
-	0x19, 0xf7, 0x1f, 0xda, 0x78, 0x01, 0xa8, 0xe2, 0x13, 0x87, 0x93, 0x20, 0x7a, 0xc7, 0xab, 0x1d,
-	0x69, 0x57, 0xdd, 0xd0, 0xd8, 0x28, 0x10, 0x56, 0x91, 0x8d, 0xaa, 0x50, 0x3f, 0x85, 0xf5, 0x04,
-	0x6f, 0x70, 0x51, 0xd1, 0x7d, 0xc8, 0x89, 0xbe, 0x85, 0xcc, 0xc1, 0x83, 0xfa, 0x15, 0x20, 0x9d,
-	0x74, 0xc8, 0x07, 0x98, 0x08, 0x64, 0x32, 0x43, 0x99, 0xfb, 0x80, 0x06, 0xc5, 0x26, 0x6f, 0xbe,
-	0xba, 0x0a, 0xcb, 0x46, 0xb7, 0xc7, 0xdf, 0x45, 0xb2, 0x47, 0x0c, 0xd6, 0x26, 0xee, 0x23, 0x2a,
-	0x40, 0x5e, 0xab, 0x54, 0xcc, 0x8b, 0xba, 0xdd, 0xd0, 0x35, 0x5b, 0x6b, 0x68, 0x95, 0x8a, 0x61,
-	0x59, 0x8d, 0xba, 0x59, 0x37, 0xe4, 0x7b, 0xd3, 0xb2, 0xd8, 0xd0, 0x74, 0x59, 0x42, 0x2a, 0x14,
-	0xa7, 0x65, 0x1b, 0x2f, 0x71, 0xd5, 0x36, 0xe4, 0xcc, 0xd1, 0x1f, 0xd9, 0x84, 0x6a, 0x70, 0xf3,
-	0xd0, 0x0e, 0x3c, 0x4c, 0x9c, 0x3c, 0x33, 0xf5, 0x8b, 0x9a, 0xd1, 0xb8, 0xa8, 0x5b, 0xe7, 0x46,
-	0xa5, 0x7a, 0x5a, 0x35, 0x74, 0xf9, 0x1e, 0xda, 0x85, 0xad, 0x34, 0xd0, 0x99, 0x86, 0x9f, 0x1b,
-	0x76, 0x03, 0x6b, 0xba, 0x86, 0x65, 0x69, 0x1a, 0x95, 0x75, 0x6e, 0x62, 0xdb, 0x6a, 0xd4, 0xaa,
-	0x2f, 0x0c, 0x39, 0x83, 0xf6, 0x41, 0xbd, 0x03, 0xf4, 0xac, 0x6a, 0xd9, 0x26, 0xfe, 0x5e, 0xce,
-	0x4e, 0x54, 0x34, 0x94, 0xac, 0x6b, 0x4f, 0x0d, 0xbd, 0x61, 0x9a, 0xf2, 0xcc, 0x34, 0x5b, 0x2f,
-	0x4d, 0x7c, 0x16, 0x7a, 0xb3, 0xe4, 0x1c, 0x7a, 0x0c, 0x87, 0x69, 0xa8, 0xd3, 0xea, 0xa9, 0x16,
-	0x55, 0xa0, 0x6b, 0xd6, 0xb3, 0x27, 0xa6, 0x86, 0x75, 0x79, 0x16, 0x1d, 0xc2, 0xde, 0x14, 0xd2,
-	0x9a, 0xde, 0xa8, 0x5c, 0x9c, 0x37, 0x2a, 0x26, 0xae, 0x1b, 0xd8, 0x92, 0xe7, 0xd0, 0x26, 0x7c,
-	0x9c, 0x06, 0xb5, 0xcd, 0xe7, 0x46, 0x5d, 0x9e, 0x47, 0x45, 0x50, 0x52, 0x99, 0xb4, 0x5a, 0xcd,
-	0xb0, 0xe5, 0x05, 0xb4, 0x07, 0xdb, 0x69, 0xf9, 0xba, 0x69, 0x57, 0x4f, 0xab, 0x15, 0xcd, 0xae,
-	0x9a, 0x75, 0x4b, 0x86, 0xf2, 0x6f, 0x39, 0x58, 0x09, 0xdf, 0x9b, 0x45, 0xfc, 0x2b, 0xda, 0x24,
-	0xe8, 0x0a, 0x56, 0x92, 0x9b, 0x07, 0x15, 0x87, 0xd7, 0x29, 0x75, 0x17, 0x2a, 0x0f, 0xa7, 0xe6,
-	0xc3, 0x95, 0xb5, 0xf3, 0xf3, 0x3f, 0xff, 0xfd, 0x9a, 0xd9, 0x54, 0xf2, 0x62, 0xcb, 0x5e, 0x7d,
-	0x3e, 0xdc, 0xc9, 0xbd, 0x10, 0x79, 0x22, 0x1d, 0xa1, 0x1f, 0x60, 0x29, 0xf6, 0xf3, 0x66, 0xe8,
-	0x93, 0x21, 0xeb, 0xe4, 0xaf, 0x5e, 0x79, 0x30, 0x3e, 0x6a, 0xc4, 0x1c, 0x50, 0x3f, 0x12, 0x42,
-	0x6b, 0x68, 0x75, 0x4c, 0x08, 0xbd, 0x02, 0x18, 0x2d, 0x4d, 0x34, 0xda, 0x5c, 0x13, 0x9b, 0x54,
-	0x99, 0x18, 0x62, 0x6a, 0x51, 0x90, 0xe6, 0xd1, 0xc6, 0xb8, 0xfb, 0x9b, 0xc1, 0x35, 0x7d, 0x8f,
-	0x6e, 0x60, 0x3d, 0x65, 0x73, 0xa0, 0x9d, 0xb1, 0xae, 0xa4, 0xed, 0x95, 0x14, 0xb5, 0xc7, 0x42,
-	0xed, 0x91, 0xb2, 0x99, 0xae, 0x56, 0x0a, 0xc6, 0xfa, 0x49, 0x34, 0xde, 0xdf, 0xc2, 0x62, 0x6c,
-	0xf6, 0xc4, 0x9a, 0x36, 0x39, 0xe9, 0x94, 0x42, 0x7a, 0x32, 0xfa, 0xae, 0x10, 0xc2, 0xdb, 0x6a,
-	0x61, 0x8a, 0xb0, 0x18, 0x5f, 0x83, 0x17, 0xd5, 0x85, 0xc5, 0xd8, 0x04, 0x8b, 0x49, 0x4e, 0xce,
-	0x35, 0x65, 0xb4, 0x9d, 0x12, 0x43, 0x4a, 0x3d, 0x14, 0x62, 0x3b, 0x47, 0xdb, 0x77, 0x89, 0x95,
-	0x6e, 0x68, 0xeb, 0xfd, 0x93, 0xaf, 0xff, 0xba, 0x2d, 0x4a, 0x7f, 0xdf, 0x16, 0xa5, 0x7f, 0x6f,
-	0x8b, 0xd2, 0xab, 0xcf, 0xda, 0x94, 0xbf, 0xee, 0x5f, 0x1e, 0x37, 0xbd, 0x6e, 0xa9, 0xcf, 0x88,
-	0xff, 0x8e, 0xb4, 0x49, 0xc9, 0xe1, 0xaf, 0x89, 0xeb, 0x94, 0x7a, 0x6f, 0xda, 0x03, 0xba, 0x66,
-	0x87, 0x92, 0xd1, 0xf7, 0xde, 0xe5, 0xac, 0xf8, 0x92, 0xfb, 0xe2, 0xff, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0x9e, 0x3c, 0x72, 0xf9, 0x19, 0x0a, 0x00, 0x00,
+	// 1433 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x57, 0x5d, 0x6f, 0xdb, 0x54,
+	0x18, 0x9e, 0x93, 0xf4, 0xeb, 0x6d, 0xd7, 0xb9, 0xa7, 0xed, 0x96, 0xb9, 0x5d, 0xda, 0xb9, 0x59,
+	0xd7, 0x05, 0xd6, 0xb0, 0x22, 0x71, 0xb1, 0x0b, 0x84, 0x97, 0xb8, 0x6b, 0x58, 0x12, 0x97, 0x63,
+	0x97, 0x69, 0xd3, 0xa4, 0xe0, 0x26, 0x67, 0xa9, 0xb5, 0xc4, 0x36, 0xf6, 0x49, 0xb7, 0x6a, 0x1a,
+	0x20, 0x04, 0x17, 0xdc, 0x21, 0x21, 0xc1, 0x0f, 0xe0, 0x37, 0xf0, 0x1f, 0x10, 0x57, 0x48, 0xfc,
+	0x01, 0x54, 0xf1, 0x43, 0x90, 0xbf, 0xe2, 0x8f, 0xd8, 0xdd, 0x76, 0xd5, 0xfa, 0x7d, 0x1f, 0xbf,
+	0xcf, 0xf3, 0x9e, 0xf3, 0xfa, 0x9c, 0x27, 0x70, 0x4b, 0xd3, 0x29, 0xb1, 0x74, 0x75, 0x50, 0xb5,
+	0x89, 0x75, 0x4a, 0xac, 0xaa, 0xda, 0xed, 0x1a, 0x23, 0x9d, 0x06, 0x7f, 0x77, 0x4d, 0xcb, 0xa0,
+	0x06, 0x9a, 0xf1, 0x1f, 0xb9, 0xf5, 0xbe, 0x61, 0xf4, 0x07, 0xa4, 0xaa, 0x9a, 0x5a, 0x55, 0xd5,
+	0x75, 0x83, 0xaa, 0x54, 0x33, 0x74, 0xdb, 0x83, 0xf1, 0x5d, 0x58, 0xad, 0x9d, 0xa8, 0x7a, 0x9f,
+	0x1c, 0xaa, 0xb6, 0xfd, 0xd2, 0xb0, 0x7a, 0x98, 0x7c, 0x3d, 0x22, 0x36, 0x45, 0x3b, 0x70, 0xa5,
+	0x3b, 0xb2, 0x2c, 0xa2, 0xd3, 0x20, 0x53, 0x64, 0x36, 0x99, 0x9d, 0x39, 0x9c, 0x0c, 0xa3, 0x4d,
+	0x98, 0xd7, 0xc9, 0xcb, 0x31, 0x2a, 0xe7, 0xa2, 0xa2, 0x21, 0xbe, 0x08, 0x57, 0x93, 0x24, 0xb6,
+	0x69, 0xe8, 0x36, 0xe1, 0x6f, 0xc3, 0xd2, 0x43, 0x42, 0x05, 0x4f, 0x6a, 0x40, 0x8d, 0xa0, 0xa0,
+	0xab, 0x43, 0xe2, 0xf3, 0xb9, 0xff, 0xf3, 0x3f, 0x32, 0xb0, 0xec, 0xc3, 0x5a, 0x46, 0x6f, 0x34,
+	0x20, 0x42, 0xb7, 0x4b, 0x6c, 0x1b, 0xed, 0xc1, 0xf4, 0xd0, 0x7d, 0x76, 0xd1, 0x8b, 0x7b, 0xdc,
+	0x6e, 0xb0, 0x0c, 0x3e, 0xba, 0xae, 0x52, 0xd5, 0x7b, 0x03, 0xfb, 0x48, 0x74, 0x1f, 0xa0, 0xa7,
+	0x52, 0xd5, 0xab, 0xe0, 0xea, 0xcd, 0x78, 0xcf, 0x43, 0xe0, 0x08, 0x9a, 0xff, 0x9d, 0x81, 0xcb,
+	0x3e, 0xc2, 0x57, 0xc0, 0xc3, 0xc2, 0xc0, 0xe8, 0x6b, 0xba, 0xa8, 0xab, 0xc7, 0x03, 0xe2, 0xad,
+	0xd2, 0x2c, 0x8e, 0xc5, 0x10, 0x07, 0xb3, 0x16, 0x39, 0xd5, 0x6c, 0xcd, 0xd0, 0x8b, 0xf9, 0x4d,
+	0x66, 0xa7, 0x80, 0xc7, 0xcf, 0xe8, 0x33, 0x58, 0x18, 0x46, 0x3a, 0x2a, 0x16, 0x36, 0xf3, 0x3b,
+	0xf3, 0x7b, 0xeb, 0x49, 0x3d, 0xd1, 0xae, 0x71, 0xec, 0x8d, 0xcf, 0x0b, 0xb3, 0x39, 0x36, 0x1f,
+	0x53, 0xf9, 0x2b, 0x03, 0x8b, 0xfe, 0x7b, 0x87, 0x96, 0xf1, 0x5c, 0x1b, 0x10, 0x67, 0x97, 0x7a,
+	0x9a, 0x6d, 0x0e, 0xd4, 0xb3, 0x76, 0xb8, 0xb6, 0xd1, 0x10, 0xda, 0x81, 0x02, 0xd5, 0x88, 0xe5,
+	0x2f, 0xc8, 0x4a, 0x52, 0x80, 0xa2, 0x11, 0x0b, 0xbb, 0x08, 0xb4, 0x0e, 0x73, 0xea, 0xa9, 0x4a,
+	0x55, 0xeb, 0xc8, 0x1a, 0xb8, 0xfd, 0xcc, 0xe1, 0x30, 0x10, 0x6b, 0xb6, 0x10, 0x6f, 0x96, 0x57,
+	0x01, 0x8d, 0x75, 0x91, 0xe7, 0xc4, 0x22, 0x7a, 0x97, 0xd8, 0xa8, 0x0a, 0x53, 0xf4, 0x84, 0x0c,
+	0x83, 0x3d, 0xbc, 0x3e, 0x41, 0xed, 0x24, 0x5b, 0x46, 0x8f, 0x60, 0x0f, 0x17, 0xa3, 0xc8, 0x25,
+	0x28, 0xbe, 0x02, 0xee, 0xc8, 0xec, 0xa9, 0x94, 0xc4, 0xb6, 0xe9, 0x82, 0xd9, 0x42, 0xbb, 0x30,
+	0xad, 0x86, 0xb3, 0x30, 0xbf, 0x77, 0x35, 0xc9, 0xef, 0x97, 0xf0, 0x51, 0xfc, 0x5f, 0x0c, 0xcc,
+	0xf8, 0x99, 0xd4, 0x7a, 0x65, 0xb8, 0xac, 0xf6, 0x86, 0x9a, 0xae, 0xd9, 0xd4, 0x52, 0xa9, 0xe1,
+	0xad, 0xe8, 0x2c, 0x8e, 0x07, 0x23, 0xac, 0xf9, 0x77, 0x61, 0x75, 0xe6, 0xac, 0xab, 0x9a, 0xea,
+	0xb1, 0x36, 0xd0, 0xa8, 0x46, 0xbc, 0x39, 0x99, 0xc3, 0xb1, 0x18, 0xba, 0x07, 0x33, 0xa6, 0xb7,
+	0xdf, 0xc5, 0x29, 0xb7, 0xe8, 0xb5, 0x64, 0x51, 0x7f, 0x1c, 0x70, 0x80, 0xe3, 0x3f, 0x81, 0x05,
+	0x3f, 0x65, 0x37, 0x35, 0x9b, 0xa2, 0x6d, 0x98, 0xd2, 0x28, 0x19, 0xda, 0x45, 0xc6, 0x9d, 0x43,
+	0x36, 0x59, 0x00, 0x7b, 0x69, 0xfe, 0x0b, 0x98, 0x52, 0x8c, 0x17, 0x44, 0x47, 0x8b, 0x90, 0xd3,
+	0x82, 0xb3, 0x21, 0xa7, 0xb9, 0xb3, 0xae, 0xd9, 0xf6, 0x88, 0xf4, 0x04, 0xea, 0x36, 0x9e, 0xc7,
+	0xe3, 0x67, 0x67, 0x70, 0xc8, 0x2b, 0x53, 0xb3, 0x88, 0x2d, 0x50, 0xb7, 0xed, 0x3c, 0x0e, 0x03,
+	0xfc, 0x1e, 0x80, 0x5b, 0xd2, 0x13, 0x52, 0x8e, 0x0b, 0x59, 0x1c, 0x0b, 0x71, 0x31, 0x81, 0x8c,
+	0x07, 0x80, 0x6a, 0x16, 0x51, 0x29, 0xf1, 0xa2, 0xfe, 0x2e, 0x87, 0x3c, 0x0d, 0xdd, 0x95, 0x16,
+	0xf2, 0x34, 0x02, 0xc5, 0xb9, 0x40, 0x31, 0xff, 0x01, 0x2c, 0xc7, 0x6a, 0x78, 0x67, 0x13, 0x5a,
+	0x81, 0x29, 0xea, 0x04, 0xfc, 0xde, 0xbc, 0x07, 0xbe, 0x0c, 0xa8, 0x4e, 0x06, 0x24, 0x41, 0x98,
+	0x58, 0x04, 0x7e, 0x15, 0x96, 0x9d, 0x26, 0x82, 0x95, 0xf5, 0x61, 0xfc, 0x32, 0x2c, 0x39, 0x61,
+	0xaf, 0xcb, 0x20, 0xf8, 0x2d, 0xac, 0xc5, 0x06, 0x36, 0xd8, 0xa2, 0x0b, 0x26, 0x36, 0xf1, 0x31,
+	0xe7, 0x26, 0x3f, 0xe6, 0x0a, 0xb0, 0xe4, 0x95, 0x49, 0xba, 0x94, 0xf4, 0x70, 0xfc, 0xe4, 0x99,
+	0x88, 0xf3, 0x3f, 0x30, 0x50, 0x8c, 0x29, 0x70, 0x3f, 0xf5, 0x0b, 0xe8, 0xdf, 0xfd, 0xa4, 0x78,
+	0x1f, 0x19, 0xdf, 0xc0, 0x46, 0x62, 0x1d, 0xc6, 0x27, 0x44, 0x20, 0xe6, 0xbd, 0x0f, 0x8a, 0x34,
+	0xfe, 0x5c, 0x06, 0xff, 0x15, 0xb8, 0x2c, 0x0e, 0x4d, 0x7a, 0x16, 0x0c, 0x40, 0xc5, 0x86, 0xa5,
+	0x89, 0xcb, 0x00, 0xad, 0x43, 0x51, 0xa8, 0xd5, 0xa4, 0xa3, 0xb6, 0xd2, 0xa9, 0x0b, 0x8a, 0xd0,
+	0x11, 0x6a, 0x35, 0x51, 0x96, 0x3b, 0x6d, 0xa9, 0x2d, 0xb2, 0x97, 0xb2, 0xb2, 0x58, 0x14, 0xea,
+	0x2c, 0x83, 0x78, 0x28, 0x65, 0x65, 0x3b, 0x8f, 0x71, 0x43, 0x11, 0xd9, 0x5c, 0xe5, 0x8f, 0x7c,
+	0x8c, 0xd5, 0x3b, 0xf6, 0xd1, 0x16, 0x6c, 0xc4, 0xde, 0x6c, 0x49, 0xf5, 0xa3, 0xa6, 0xd8, 0x39,
+	0x6a, 0xcb, 0x87, 0x62, 0xad, 0xb1, 0xdf, 0x10, 0xeb, 0xec, 0x25, 0x54, 0x86, 0xcd, 0x34, 0x50,
+	0x4b, 0xc0, 0x8f, 0x44, 0xa5, 0x83, 0x85, 0xba, 0x80, 0x59, 0x26, 0xab, 0x94, 0x7c, 0x28, 0x61,
+	0x45, 0xee, 0x34, 0x1b, 0x5f, 0x8a, 0x6c, 0x0e, 0x6d, 0x03, 0x7f, 0x01, 0xe8, 0xa0, 0x21, 0x2b,
+	0x12, 0x7e, 0xc2, 0xe6, 0x27, 0x3a, 0x1a, 0x53, 0xb6, 0x85, 0x87, 0x62, 0xbd, 0x23, 0x49, 0x6c,
+	0x21, 0x4b, 0xd6, 0x63, 0x09, 0xb7, 0x7c, 0x6d, 0x32, 0x3b, 0x85, 0xee, 0xc2, 0x9d, 0x34, 0xd4,
+	0x7e, 0x63, 0x5f, 0x08, 0x3a, 0xa8, 0x0b, 0xf2, 0xc1, 0x03, 0x49, 0xc0, 0x75, 0x76, 0x1a, 0xdd,
+	0x81, 0x5b, 0x19, 0x45, 0x9b, 0xf5, 0x4e, 0xed, 0xe8, 0xb0, 0x53, 0x93, 0x70, 0x5b, 0xc4, 0x32,
+	0x3b, 0x83, 0x6e, 0xc0, 0xf5, 0x34, 0xa8, 0x22, 0x3d, 0x12, 0xdb, 0xec, 0x2c, 0x2a, 0x01, 0x97,
+	0x5a, 0x49, 0x68, 0x36, 0x45, 0x85, 0x9d, 0x43, 0xb7, 0xe0, 0x66, 0x5a, 0xbe, 0x2d, 0x29, 0x8d,
+	0xfd, 0x46, 0x4d, 0x50, 0x1a, 0x52, 0x5b, 0x66, 0xa1, 0xf2, 0x0c, 0xe6, 0x23, 0xe3, 0x1f, 0x1d,
+	0x04, 0xa5, 0x21, 0xe2, 0xc4, 0x4e, 0x5d, 0x87, 0xd5, 0x58, 0x56, 0x56, 0x84, 0x76, 0xdd, 0x69,
+	0x8c, 0x41, 0x2b, 0xc0, 0xc6, 0x52, 0x87, 0x58, 0x62, 0x73, 0x95, 0x9f, 0x19, 0x60, 0x93, 0x33,
+	0x1e, 0x5d, 0x7c, 0xe5, 0x40, 0x6c, 0x89, 0x8e, 0xb4, 0xe4, 0x4c, 0x44, 0x9a, 0x8f, 0x60, 0xe4,
+	0x27, 0xb2, 0x22, 0xb6, 0x58, 0x26, 0x26, 0x33, 0x4c, 0x37, 0x1b, 0x0f, 0x0f, 0x14, 0x36, 0x87,
+	0xd6, 0xe0, 0x5a, 0x4a, 0xb6, 0x2e, 0xe0, 0x47, 0x6c, 0x7e, 0xef, 0xb7, 0xb9, 0xb1, 0xc7, 0x90,
+	0x89, 0x75, 0xaa, 0x75, 0x09, 0x3a, 0x85, 0xc5, 0xb8, 0xcf, 0x43, 0xa5, 0xf1, 0x17, 0x9a, 0xea,
+	0x32, 0xb9, 0x8d, 0xcc, 0xbc, 0x6f, 0x10, 0xb7, 0xbe, 0xff, 0xe7, 0xbf, 0x5f, 0x72, 0x37, 0xb8,
+	0xa2, 0xeb, 0x5f, 0x4f, 0xef, 0x8d, 0xdd, 0xae, 0xe9, 0x23, 0xef, 0x33, 0x15, 0xf4, 0x0c, 0x16,
+	0xa2, 0xa7, 0x2d, 0x0a, 0xcd, 0x53, 0xca, 0x21, 0xcc, 0xad, 0x26, 0x4f, 0x0d, 0xf7, 0xbe, 0xe1,
+	0xaf, 0xb9, 0x4c, 0x4b, 0xe8, 0x4a, 0x82, 0x09, 0x3d, 0x05, 0x08, 0x3d, 0x2a, 0x0a, 0x8d, 0xe2,
+	0x84, 0x71, 0xe5, 0x26, 0x2e, 0x4b, 0xbe, 0xe4, 0x16, 0x2d, 0xa2, 0xab, 0x49, 0xf9, 0xaf, 0x9d,
+	0x83, 0xf4, 0x0d, 0x7a, 0x0d, 0xcb, 0x29, 0x66, 0x05, 0x6d, 0x8d, 0x0b, 0x65, 0x5b, 0x99, 0x14,
+	0xb6, 0xbb, 0x2e, 0xdb, 0x6d, 0xee, 0x46, 0x3a, 0x5b, 0xd5, 0x73, 0x12, 0xf7, 0x03, 0x47, 0xf1,
+	0x1d, 0x03, 0x2b, 0x69, 0x37, 0x0f, 0x2a, 0xa7, 0xd3, 0xc7, 0x2f, 0x26, 0x2e, 0xcb, 0x5b, 0xf0,
+	0x77, 0x5c, 0x19, 0x5b, 0x5c, 0x29, 0x43, 0x86, 0x6f, 0x3d, 0x9c, 0x9d, 0x7b, 0x09, 0x4b, 0x13,
+	0x37, 0x0f, 0xba, 0x99, 0x4e, 0x1f, 0xb9, 0x95, 0xb2, 0xb9, 0xb7, 0x5d, 0xee, 0x4d, 0x6e, 0x2d,
+	0x83, 0xdb, 0xb9, 0x95, 0x1c, 0xe2, 0x9f, 0x92, 0x77, 0x5e, 0xd4, 0x8f, 0xee, 0x64, 0xf5, 0x9f,
+	0xbc, 0x90, 0xb8, 0xb5, 0x49, 0x1d, 0x63, 0x4c, 0xb6, 0x16, 0x33, 0x04, 0x39, 0x5a, 0x9e, 0x03,
+	0x84, 0xae, 0x20, 0x32, 0x60, 0x13, 0x56, 0x81, 0x5b, 0x8e, 0x9b, 0x20, 0x6f, 0x70, 0x6f, 0xbb,
+	0x34, 0x37, 0xd1, 0x46, 0x92, 0xc6, 0x26, 0xdd, 0x91, 0xa5, 0xd1, 0xb3, 0x2a, 0xf5, 0x2a, 0x53,
+	0x98, 0x8f, 0xf8, 0x1c, 0x14, 0x6a, 0x9f, 0x74, 0x50, 0xdc, 0x7a, 0x7a, 0xd2, 0xff, 0x2a, 0x2b,
+	0x2e, 0x65, 0x99, 0x7f, 0x1b, 0xa5, 0xd3, 0x9d, 0x09, 0xf3, 0x11, 0xc3, 0x14, 0x61, 0x9d, 0xb4,
+	0x51, 0x5c, 0xe8, 0x81, 0x63, 0x37, 0x31, 0xff, 0xa1, 0xcb, 0xb7, 0x5d, 0x29, 0xbf, 0x85, 0xaf,
+	0xfa, 0x5a, 0xeb, 0xbd, 0x79, 0xf0, 0xe9, 0x9f, 0xe7, 0x25, 0xe6, 0xef, 0xf3, 0x12, 0xf3, 0xef,
+	0x79, 0x89, 0x79, 0xfa, 0x51, 0x5f, 0xa3, 0x27, 0xa3, 0xe3, 0xdd, 0xae, 0x31, 0xac, 0x8e, 0x6c,
+	0x62, 0x9d, 0x91, 0x3e, 0xa9, 0xaa, 0xf4, 0x84, 0xe8, 0x6a, 0xd5, 0x7c, 0xd1, 0x77, 0x2a, 0x76,
+	0x07, 0x1a, 0x09, 0x7f, 0x40, 0x1f, 0x4f, 0xbb, 0x3f, 0x8d, 0x3f, 0xfe, 0x3f, 0x00, 0x00, 0xff,
+	0xff, 0xb9, 0x2a, 0x8a, 0x17, 0x6a, 0x0f, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1017,14 +1429,22 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AccountServiceClient interface {
-	// UpdatePassword updates an account's password to a new value
-	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error)
+	// ChangePassword changes the current account's password.
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 	// ListAccounts returns the list of accounts
-	ListAccounts(ctx context.Context, in *ListAccountRequest, opts ...grpc.CallOption) (*AccountsList, error)
+	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*AccountsList, error)
 	// GetAccount returns an account
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*Account, error)
 	// UpdateAccountAccess replaces a non-administrator account's access state.
 	UpdateAccountAccess(ctx context.Context, in *UpdateAccountAccessRequest, opts ...grpc.CallOption) (*Account, error)
+	// UpdateAccountProfile changes an account's public display name.
+	UpdateAccountProfile(ctx context.Context, in *UpdateAccountProfileRequest, opts ...grpc.CallOption) (*AccountProfile, error)
+	// UpdateAccountTier changes display-only packaging metadata.
+	UpdateAccountTier(ctx context.Context, in *UpdateAccountTierRequest, opts ...grpc.CallOption) (*AccountProfile, error)
+	// UpdateAccountPreferences changes the current account's UI preferences.
+	UpdateAccountPreferences(ctx context.Context, in *UpdateAccountPreferencesRequest, opts ...grpc.CallOption) (*AccountPreferences, error)
+	// ListTokens lists API Key metadata for the current account.
+	ListTokens(ctx context.Context, in *ListTokensRequest, opts ...grpc.CallOption) (*TokensList, error)
 	// CreateToken creates a token
 	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error)
 	// DeleteToken deletes a token
@@ -1039,16 +1459,16 @@ func NewAccountServiceClient(cc *grpc.ClientConn) AccountServiceClient {
 	return &accountServiceClient{cc}
 }
 
-func (c *accountServiceClient) UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error) {
-	out := new(UpdatePasswordResponse)
-	err := c.cc.Invoke(ctx, "/account.AccountService/UpdatePassword", in, out, opts...)
+func (c *accountServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, "/account.AccountService/ChangePassword", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *accountServiceClient) ListAccounts(ctx context.Context, in *ListAccountRequest, opts ...grpc.CallOption) (*AccountsList, error) {
+func (c *accountServiceClient) ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*AccountsList, error) {
 	out := new(AccountsList)
 	err := c.cc.Invoke(ctx, "/account.AccountService/ListAccounts", in, out, opts...)
 	if err != nil {
@@ -1075,6 +1495,42 @@ func (c *accountServiceClient) UpdateAccountAccess(ctx context.Context, in *Upda
 	return out, nil
 }
 
+func (c *accountServiceClient) UpdateAccountProfile(ctx context.Context, in *UpdateAccountProfileRequest, opts ...grpc.CallOption) (*AccountProfile, error) {
+	out := new(AccountProfile)
+	err := c.cc.Invoke(ctx, "/account.AccountService/UpdateAccountProfile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) UpdateAccountTier(ctx context.Context, in *UpdateAccountTierRequest, opts ...grpc.CallOption) (*AccountProfile, error) {
+	out := new(AccountProfile)
+	err := c.cc.Invoke(ctx, "/account.AccountService/UpdateAccountTier", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) UpdateAccountPreferences(ctx context.Context, in *UpdateAccountPreferencesRequest, opts ...grpc.CallOption) (*AccountPreferences, error) {
+	out := new(AccountPreferences)
+	err := c.cc.Invoke(ctx, "/account.AccountService/UpdateAccountPreferences", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ListTokens(ctx context.Context, in *ListTokensRequest, opts ...grpc.CallOption) (*TokensList, error) {
+	out := new(TokensList)
+	err := c.cc.Invoke(ctx, "/account.AccountService/ListTokens", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *accountServiceClient) CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error) {
 	out := new(CreateTokenResponse)
 	err := c.cc.Invoke(ctx, "/account.AccountService/CreateToken", in, out, opts...)
@@ -1095,14 +1551,22 @@ func (c *accountServiceClient) DeleteToken(ctx context.Context, in *DeleteTokenR
 
 // AccountServiceServer is the server API for AccountService service.
 type AccountServiceServer interface {
-	// UpdatePassword updates an account's password to a new value
-	UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error)
+	// ChangePassword changes the current account's password.
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 	// ListAccounts returns the list of accounts
-	ListAccounts(context.Context, *ListAccountRequest) (*AccountsList, error)
+	ListAccounts(context.Context, *ListAccountsRequest) (*AccountsList, error)
 	// GetAccount returns an account
 	GetAccount(context.Context, *GetAccountRequest) (*Account, error)
 	// UpdateAccountAccess replaces a non-administrator account's access state.
 	UpdateAccountAccess(context.Context, *UpdateAccountAccessRequest) (*Account, error)
+	// UpdateAccountProfile changes an account's public display name.
+	UpdateAccountProfile(context.Context, *UpdateAccountProfileRequest) (*AccountProfile, error)
+	// UpdateAccountTier changes display-only packaging metadata.
+	UpdateAccountTier(context.Context, *UpdateAccountTierRequest) (*AccountProfile, error)
+	// UpdateAccountPreferences changes the current account's UI preferences.
+	UpdateAccountPreferences(context.Context, *UpdateAccountPreferencesRequest) (*AccountPreferences, error)
+	// ListTokens lists API Key metadata for the current account.
+	ListTokens(context.Context, *ListTokensRequest) (*TokensList, error)
 	// CreateToken creates a token
 	CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error)
 	// DeleteToken deletes a token
@@ -1113,10 +1577,10 @@ type AccountServiceServer interface {
 type UnimplementedAccountServiceServer struct {
 }
 
-func (*UnimplementedAccountServiceServer) UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) (*UpdatePasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
+func (*UnimplementedAccountServiceServer) ChangePassword(ctx context.Context, req *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
-func (*UnimplementedAccountServiceServer) ListAccounts(ctx context.Context, req *ListAccountRequest) (*AccountsList, error) {
+func (*UnimplementedAccountServiceServer) ListAccounts(ctx context.Context, req *ListAccountsRequest) (*AccountsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
 }
 func (*UnimplementedAccountServiceServer) GetAccount(ctx context.Context, req *GetAccountRequest) (*Account, error) {
@@ -1124,6 +1588,18 @@ func (*UnimplementedAccountServiceServer) GetAccount(ctx context.Context, req *G
 }
 func (*UnimplementedAccountServiceServer) UpdateAccountAccess(ctx context.Context, req *UpdateAccountAccessRequest) (*Account, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccountAccess not implemented")
+}
+func (*UnimplementedAccountServiceServer) UpdateAccountProfile(ctx context.Context, req *UpdateAccountProfileRequest) (*AccountProfile, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccountProfile not implemented")
+}
+func (*UnimplementedAccountServiceServer) UpdateAccountTier(ctx context.Context, req *UpdateAccountTierRequest) (*AccountProfile, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccountTier not implemented")
+}
+func (*UnimplementedAccountServiceServer) UpdateAccountPreferences(ctx context.Context, req *UpdateAccountPreferencesRequest) (*AccountPreferences, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccountPreferences not implemented")
+}
+func (*UnimplementedAccountServiceServer) ListTokens(ctx context.Context, req *ListTokensRequest) (*TokensList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTokens not implemented")
 }
 func (*UnimplementedAccountServiceServer) CreateToken(ctx context.Context, req *CreateTokenRequest) (*CreateTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateToken not implemented")
@@ -1136,26 +1612,26 @@ func RegisterAccountServiceServer(s *grpc.Server, srv AccountServiceServer) {
 	s.RegisterService(&_AccountService_serviceDesc, srv)
 }
 
-func _AccountService_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdatePasswordRequest)
+func _AccountService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountServiceServer).UpdatePassword(ctx, in)
+		return srv.(AccountServiceServer).ChangePassword(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/account.AccountService/UpdatePassword",
+		FullMethod: "/account.AccountService/ChangePassword",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).UpdatePassword(ctx, req.(*UpdatePasswordRequest))
+		return srv.(AccountServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AccountService_ListAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListAccountRequest)
+	in := new(ListAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1167,7 +1643,7 @@ func _AccountService_ListAccounts_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/account.AccountService/ListAccounts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).ListAccounts(ctx, req.(*ListAccountRequest))
+		return srv.(AccountServiceServer).ListAccounts(ctx, req.(*ListAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1204,6 +1680,78 @@ func _AccountService_UpdateAccountAccess_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountServiceServer).UpdateAccountAccess(ctx, req.(*UpdateAccountAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UpdateAccountProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAccountProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UpdateAccountProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/account.AccountService/UpdateAccountProfile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UpdateAccountProfile(ctx, req.(*UpdateAccountProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UpdateAccountTier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAccountTierRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UpdateAccountTier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/account.AccountService/UpdateAccountTier",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UpdateAccountTier(ctx, req.(*UpdateAccountTierRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UpdateAccountPreferences_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAccountPreferencesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UpdateAccountPreferences(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/account.AccountService/UpdateAccountPreferences",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UpdateAccountPreferences(ctx, req.(*UpdateAccountPreferencesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ListTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ListTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/account.AccountService/ListTokens",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ListTokens(ctx, req.(*ListTokensRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1249,8 +1797,8 @@ var _AccountService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AccountServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpdatePassword",
-			Handler:    _AccountService_UpdatePassword_Handler,
+			MethodName: "ChangePassword",
+			Handler:    _AccountService_ChangePassword_Handler,
 		},
 		{
 			MethodName: "ListAccounts",
@@ -1265,6 +1813,22 @@ var _AccountService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _AccountService_UpdateAccountAccess_Handler,
 		},
 		{
+			MethodName: "UpdateAccountProfile",
+			Handler:    _AccountService_UpdateAccountProfile_Handler,
+		},
+		{
+			MethodName: "UpdateAccountTier",
+			Handler:    _AccountService_UpdateAccountTier_Handler,
+		},
+		{
+			MethodName: "UpdateAccountPreferences",
+			Handler:    _AccountService_UpdateAccountPreferences_Handler,
+		},
+		{
+			MethodName: "ListTokens",
+			Handler:    _AccountService_ListTokens_Handler,
+		},
+		{
 			MethodName: "CreateToken",
 			Handler:    _AccountService_CreateToken_Handler,
 		},
@@ -1277,7 +1841,7 @@ var _AccountService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internal/server/account/account.proto",
 }
 
-func (m *UpdatePasswordRequest) Marshal() (dAtA []byte, err error) {
+func (m *ChangePasswordRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1287,12 +1851,12 @@ func (m *UpdatePasswordRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdatePasswordRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ChangePasswordRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UpdatePasswordRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ChangePasswordRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1301,31 +1865,24 @@ func (m *UpdatePasswordRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.Name)))
+	if len(m.NewPassword) > 0 {
+		i -= len(m.NewPassword)
+		copy(dAtA[i:], m.NewPassword)
+		i = encodeVarintAccount(dAtA, i, uint64(len(m.NewPassword)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 	}
 	if len(m.CurrentPassword) > 0 {
 		i -= len(m.CurrentPassword)
 		copy(dAtA[i:], m.CurrentPassword)
 		i = encodeVarintAccount(dAtA, i, uint64(len(m.CurrentPassword)))
 		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.NewPassword) > 0 {
-		i -= len(m.NewPassword)
-		copy(dAtA[i:], m.NewPassword)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.NewPassword)))
-		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdatePasswordResponse) Marshal() (dAtA []byte, err error) {
+func (m *ChangePasswordResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1335,12 +1892,12 @@ func (m *UpdatePasswordResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdatePasswordResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ChangePasswordResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UpdatePasswordResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ChangePasswordResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1479,6 +2036,94 @@ func (m *AccountAccess) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *AccountProfile) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AccountProfile) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AccountProfile) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Revision != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.Revision))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.AvatarUrl) > 0 {
+		i -= len(m.AvatarUrl)
+		copy(dAtA[i:], m.AvatarUrl)
+		i = encodeVarintAccount(dAtA, i, uint64(len(m.AvatarUrl)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Tier != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.Tier))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.DisplayName) > 0 {
+		i -= len(m.DisplayName)
+		copy(dAtA[i:], m.DisplayName)
+		i = encodeVarintAccount(dAtA, i, uint64(len(m.DisplayName)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AccountPreferences) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AccountPreferences) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AccountPreferences) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Revision != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.Revision))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Theme != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.Theme))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *UpdateAccountAccessRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1549,19 +2194,17 @@ func (m *Account) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Tokens) > 0 {
-		for iNdEx := len(m.Tokens) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Tokens[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintAccount(dAtA, i, uint64(size))
+	if m.Profile != nil {
+		{
+			size, err := m.Profile.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
 			}
-			i--
-			dAtA[i] = 0x2a
+			i -= size
+			i = encodeVarintAccount(dAtA, i, uint64(size))
 		}
+		i--
+		dAtA[i] = 0x2a
 	}
 	if len(m.Capabilities) > 0 {
 		for iNdEx := len(m.Capabilities) - 1; iNdEx >= 0; iNdEx-- {
@@ -1759,19 +2402,12 @@ func (m *CreateTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintAccount(dAtA, i, uint64(len(m.Id)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 	}
 	if m.ExpiresIn != 0 {
 		i = encodeVarintAccount(dAtA, i, uint64(m.ExpiresIn))
 		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintAccount(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -1839,6 +2475,99 @@ func (m *DeleteTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintAccount(dAtA, i, uint64(len(m.Id)))
 		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListAccountsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListAccountsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListAccountsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListTokensRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListTokensRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListTokensRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateAccountProfileRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateAccountProfileRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateAccountProfileRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ExpectedRevision != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.ExpectedRevision))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.DisplayName) > 0 {
+		i -= len(m.DisplayName)
+		copy(dAtA[i:], m.DisplayName)
+		i = encodeVarintAccount(dAtA, i, uint64(len(m.DisplayName)))
+		i--
 		dAtA[i] = 0x12
 	}
 	if len(m.Name) > 0 {
@@ -1851,7 +2580,7 @@ func (m *DeleteTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAccountRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateAccountTierRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1861,12 +2590,12 @@ func (m *ListAccountRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAccountRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateAccountTierRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ListAccountRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *UpdateAccountTierRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1874,6 +2603,60 @@ func (m *ListAccountRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ExpectedRevision != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.ExpectedRevision))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Tier != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.Tier))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintAccount(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateAccountPreferencesRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateAccountPreferencesRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateAccountPreferencesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ExpectedRevision != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.ExpectedRevision))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Theme != 0 {
+		i = encodeVarintAccount(dAtA, i, uint64(m.Theme))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -1916,21 +2699,17 @@ func encodeVarintAccount(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *UpdatePasswordRequest) Size() (n int) {
+func (m *ChangePasswordRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.NewPassword)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
 	l = len(m.CurrentPassword)
 	if l > 0 {
 		n += 1 + l + sovAccount(uint64(l))
 	}
-	l = len(m.Name)
+	l = len(m.NewPassword)
 	if l > 0 {
 		n += 1 + l + sovAccount(uint64(l))
 	}
@@ -1940,7 +2719,7 @@ func (m *UpdatePasswordRequest) Size() (n int) {
 	return n
 }
 
-func (m *UpdatePasswordResponse) Size() (n int) {
+func (m *ChangePasswordResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2010,6 +2789,50 @@ func (m *AccountAccess) Size() (n int) {
 	return n
 }
 
+func (m *AccountProfile) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DisplayName)
+	if l > 0 {
+		n += 1 + l + sovAccount(uint64(l))
+	}
+	if m.Tier != 0 {
+		n += 1 + sovAccount(uint64(m.Tier))
+	}
+	l = len(m.AvatarUrl)
+	if l > 0 {
+		n += 1 + l + sovAccount(uint64(l))
+	}
+	if m.Revision != 0 {
+		n += 1 + sovAccount(uint64(m.Revision))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AccountPreferences) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Theme != 0 {
+		n += 1 + sovAccount(uint64(m.Theme))
+	}
+	if m.Revision != 0 {
+		n += 1 + sovAccount(uint64(m.Revision))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *UpdateAccountAccessRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2053,11 +2876,9 @@ func (m *Account) Size() (n int) {
 			n += 1 + l + sovAccount(uint64(l))
 		}
 	}
-	if len(m.Tokens) > 0 {
-		for _, e := range m.Tokens {
-			l = e.Size()
-			n += 1 + l + sovAccount(uint64(l))
-		}
+	if m.Profile != nil {
+		l = m.Profile.Size()
+		n += 1 + l + sovAccount(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2129,10 +2950,6 @@ func (m *CreateTokenRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
 	if m.ExpiresIn != 0 {
 		n += 1 + sovAccount(uint64(m.ExpiresIn))
 	}
@@ -2168,10 +2985,6 @@ func (m *DeleteTokenRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovAccount(uint64(l))
-	}
 	l = len(m.Id)
 	if l > 0 {
 		n += 1 + l + sovAccount(uint64(l))
@@ -2182,12 +2995,87 @@ func (m *DeleteTokenRequest) Size() (n int) {
 	return n
 }
 
-func (m *ListAccountRequest) Size() (n int) {
+func (m *ListAccountsRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListTokensRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateAccountProfileRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovAccount(uint64(l))
+	}
+	l = len(m.DisplayName)
+	if l > 0 {
+		n += 1 + l + sovAccount(uint64(l))
+	}
+	if m.ExpectedRevision != 0 {
+		n += 1 + sovAccount(uint64(m.ExpectedRevision))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateAccountTierRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovAccount(uint64(l))
+	}
+	if m.Tier != 0 {
+		n += 1 + sovAccount(uint64(m.Tier))
+	}
+	if m.ExpectedRevision != 0 {
+		n += 1 + sovAccount(uint64(m.ExpectedRevision))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateAccountPreferencesRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Theme != 0 {
+		n += 1 + sovAccount(uint64(m.Theme))
+	}
+	if m.ExpectedRevision != 0 {
+		n += 1 + sovAccount(uint64(m.ExpectedRevision))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -2212,7 +3100,7 @@ func sovAccount(x uint64) (n int) {
 func sozAccount(x uint64) (n int) {
 	return sovAccount(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *UpdatePasswordRequest) Unmarshal(dAtA []byte) error {
+func (m *ChangePasswordRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2235,45 +3123,13 @@ func (m *UpdatePasswordRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UpdatePasswordRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ChangePasswordRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdatePasswordRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ChangePasswordRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NewPassword", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NewPassword = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CurrentPassword", wireType)
 			}
@@ -2305,9 +3161,9 @@ func (m *UpdatePasswordRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.CurrentPassword = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NewPassword", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2335,7 +3191,7 @@ func (m *UpdatePasswordRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Name = string(dAtA[iNdEx:postIndex])
+			m.NewPassword = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2359,7 +3215,7 @@ func (m *UpdatePasswordRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdatePasswordResponse) Unmarshal(dAtA []byte) error {
+func (m *ChangePasswordResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2382,10 +3238,10 @@ func (m *UpdatePasswordResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UpdatePasswordResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ChangePasswordResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdatePasswordResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ChangePasswordResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -2706,6 +3562,248 @@ func (m *AccountAccess) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *AccountProfile) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAccount
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AccountProfile: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AccountProfile: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisplayName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAccount
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DisplayName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tier", wireType)
+			}
+			m.Tier = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tier |= AccountTier(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AvatarUrl", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAccount
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AvatarUrl = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Revision", wireType)
+			}
+			m.Revision = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Revision |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAccount(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AccountPreferences) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAccount
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AccountPreferences: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AccountPreferences: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Theme", wireType)
+			}
+			m.Theme = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Theme |= AccountThemeMode(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Revision", wireType)
+			}
+			m.Revision = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Revision |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAccount(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *UpdateAccountAccessRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2976,7 +4074,7 @@ func (m *Account) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tokens", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Profile", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3003,8 +4101,10 @@ func (m *Account) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Tokens = append(m.Tokens, &Token{})
-			if err := m.Tokens[len(m.Tokens)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if m.Profile == nil {
+				m.Profile = &AccountProfile{}
+			}
+			if err := m.Profile.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3351,38 +4451,6 @@ func (m *CreateTokenRequest) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresIn", wireType)
 			}
@@ -3401,7 +4469,7 @@ func (m *CreateTokenRequest) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
 			}
@@ -3569,38 +4637,6 @@ func (m *DeleteTokenRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAccount
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAccount
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAccount
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
 			}
 			var stringLen uint64
@@ -3653,7 +4689,7 @@ func (m *DeleteTokenRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAccountRequest) Unmarshal(dAtA []byte) error {
+func (m *ListAccountsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3676,12 +4712,407 @@ func (m *ListAccountRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListAccountRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListAccountsRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListAccountRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListAccountsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAccount(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListTokensRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAccount
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListTokensRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListTokensRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAccount(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateAccountProfileRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAccount
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateAccountProfileRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateAccountProfileRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAccount
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisplayName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAccount
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DisplayName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedRevision", wireType)
+			}
+			m.ExpectedRevision = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedRevision |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAccount(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateAccountTierRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAccount
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateAccountTierRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateAccountTierRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAccount
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tier", wireType)
+			}
+			m.Tier = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Tier |= AccountTier(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedRevision", wireType)
+			}
+			m.ExpectedRevision = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedRevision |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAccount(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAccount
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateAccountPreferencesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAccount
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateAccountPreferencesRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateAccountPreferencesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Theme", wireType)
+			}
+			m.Theme = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Theme |= AccountThemeMode(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedRevision", wireType)
+			}
+			m.ExpectedRevision = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAccount
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExpectedRevision |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipAccount(dAtA[iNdEx:])

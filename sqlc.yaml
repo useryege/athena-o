@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    schema: "internal/accountaccess/store/migrations"
-    queries: "internal/accountaccess/store/queries"
+    schema: "internal/accountstate/store/migrations"
+    queries: "internal/accountstate/store/queries"
     gen:
       go:
         package: "sqlc"
-        out: "internal/accountaccess/store/sqlc"
+        out: "internal/accountstate/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"

@@ -10,9 +10,16 @@ import (
 
 type Querier interface {
 	CreateAccountAccessOverrideHead(ctx context.Context, arg CreateAccountAccessOverrideHeadParams) (CreateAccountAccessOverrideHeadRow, error)
+	CreateAccountPreferences(ctx context.Context, arg CreateAccountPreferencesParams) (CreateAccountPreferencesRow, error)
+	CreateAccountProfile(ctx context.Context, arg CreateAccountProfileParams) (CreateAccountProfileRow, error)
+	GetAccountPreferences(ctx context.Context, accountName string) (GetAccountPreferencesRow, error)
+	GetAccountProfile(ctx context.Context, accountName string) (GetAccountProfileRow, error)
 	ListAccountAccessOverrideHeads(ctx context.Context) ([]ListAccountAccessOverrideHeadsRow, error)
 	ListAccountModuleAccessOverrides(ctx context.Context) ([]AccountModuleAccessOverride, error)
+	ListAvatarObjectKeys(ctx context.Context) ([]string, error)
 	UpdateAccountAccessOverrideHead(ctx context.Context, arg UpdateAccountAccessOverrideHeadParams) (UpdateAccountAccessOverrideHeadRow, error)
+	UpdateAccountPreferences(ctx context.Context, arg UpdateAccountPreferencesParams) (UpdateAccountPreferencesRow, error)
+	UpdateAccountProfile(ctx context.Context, arg UpdateAccountProfileParams) (UpdateAccountProfileRow, error)
 	UpsertAccountModuleAccessOverrides(ctx context.Context, arg UpsertAccountModuleAccessOverridesParams) error
 }
 

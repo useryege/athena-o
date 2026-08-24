@@ -26,8 +26,11 @@
 | `REMOTE_APP_DIR` | `/root/athena` | 远端服务器上的部署目录。 |
 | `REMOTE_USER` | `root` | SSH 登录远端服务器使用的用户。 |
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
-| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-access`、`worm-markets`、`fifa-market-dashboard`、`notification`、`wallet`、`sports-live`、`sports-history`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
+| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-state`、`worm-markets`、`fifa-market-dashboard`、`notification`、`wallet`、`sports-live`、`sports-history`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
+| `PROD_MINIO_VOLUME` | `athena-prod-minio-data` | MinIO external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
+| `MINIO_IMAGE` | `athena-minio:9e49d5e7a648` | 从固定 MinIO Server commit 构建的镜像名。 |
+| `MINIO_MC_IMAGE` | `athena-minio-mc:7394ce0dd2a8` | 从固定 mc commit 构建的一次性初始化镜像名。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
 
@@ -38,7 +41,7 @@
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
-| `make service-password` | 生成可用于 `POSTGRES_PASSWORD` / `REDIS_PASSWORD` 的随机密码。 | `make service-password` |
+| `make service-password` | 生成可用于 PostgreSQL、Redis 或 MinIO 的随机密码。 | `make service-password` |
 | `make wallet-private-key-ciphertext` | 生成可用于 `wallet_private_keys.private_key_ciphertext` 的密文 SQL 表达式。 | `make wallet-private-key-ciphertext` |
 
 生成本地账号密码 hash：
@@ -129,7 +132,8 @@ decode('<generated-ciphertext-hex>', 'hex')
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make prod-build-local` | 构建生产部署使用的本地镜像。 | `make prod-build-local` |
+| `make minio-images-local` | 从固定源码 commit 构建 MinIO Server 和 mc 初始化镜像。 | `make minio-images-local` |
+| `make prod-build-local` | 构建 MinIO/mc 镜像及生产部署使用的 Athena 镜像。 | `make prod-build-local` |
 
 常见用法：
 
@@ -141,16 +145,20 @@ PROD_IMAGE=athena:local make prod-build-local
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make run` | 前台启动本地服务，创建可重建的 PostgreSQL/Redis 容器并复用持久化数据。支持 `ATHENA_RUN_EXCLUDE`。 | `make run` |
-| `make stop` | 优雅停止本地服务并删除容器和运行控制状态，保留 PostgreSQL/Redis 数据 volume。 | `make stop` |
+| `make run` | 前台启动本地服务，创建可重建的 PostgreSQL、Redis、MinIO 容器并复用持久化数据。支持 `ATHENA_RUN_EXCLUDE`。 | `make run` |
+| `make stop` | 优雅停止本地服务并删除容器和运行控制状态，保留 PostgreSQL、Redis、MinIO 数据 volume。 | `make stop` |
 | `make run-reset` | 先停止服务，再删除本地容器、数据 volume、运行控制状态和默认临时运行数据。不会重新启动。 | `make run-reset` |
 
-本地 PostgreSQL 和 Redis 数据分别保存在固定命名 volume
-`athena-local-postgres-data` 和 `athena-local-redis-data`。前台按
+本地 PostgreSQL、Redis 和私有头像对象分别保存在固定命名 volume
+`athena-local-postgres-data`、`athena-local-redis-data` 和
+`athena-local-minio-data`。前台按
 `Ctrl+C` 与从另一终端执行 `make stop` 具有相同的浅层清理语义，后续
 `make run` 会创建新容器并挂载原数据。PostgreSQL volume 会记录镜像、
 用户、初始数据库、密码和初始化 SQL 的配置指纹；这些初始化设置发生变化
 后必须执行 `make run-reset`，避免以新配置静默打开不兼容的旧数据。
+MinIO 首次运行会从固定源码 commit 构建 Server/mc 镜像，并初始化
+`athena-account-avatars` 私有 bucket 和最小权限应用账号。本地 API、Console
+默认只绑定 `127.0.0.1:9000` 和 `127.0.0.1:9001`。
 Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首次使用
 包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
 默认启用 API Server 认证，五个参与账号必须通过登录后才能提交方案或投票。
@@ -171,23 +179,26 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make prod-start-local` | 创建本地 PostgreSQL volume、执行 migration 并启动生产 compose 服务。 | `make prod-start-local` |
-| `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL volume。 | `make prod-stop-local` |
+| `make prod-start-local` | 创建本地 PostgreSQL/MinIO volume、执行 migration、初始化私有 bucket 并启动生产 compose 服务。 | `make prod-start-local` |
+| `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL/MinIO volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
-| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis 和 JWT secret。 | `make prod-reset-secrets` |
+| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis、MinIO root、头像应用凭据和 JWT secret。 | `make prod-reset-secrets` |
 | `make prod-deploy-remote` | 自动轮换凭据、构建镜像、清空远程数据库并完成全新部署。 | `make prod-deploy-remote` |
-| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL 数据。 | `make prod-hot-deploy-remote` |
-| `make prod-destroy-remote` | 删除远程 Athena 运行资源和 PostgreSQL volume。 | `make prod-destroy-remote` |
+| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL 和 MinIO 数据。 | `make prod-hot-deploy-remote` |
+| `make prod-destroy-remote` | 删除远程 Athena 运行资源及 PostgreSQL/MinIO volume。 | `make prod-destroy-remote` |
 
 ### 部署前本地预演
 
-部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 会创建 PostgreSQL volume、启动 PostgreSQL、执行 migration，再启动其余服务。
+部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 会创建 PostgreSQL/MinIO volume、启动 PostgreSQL、执行 migration、初始化私有头像 bucket，再启动其余服务。
 
 如果使用 `.env.prod` 作为预演环境文件，至少需要包含：
 
 ```env
 POSTGRES_PASSWORD=your_postgres_password
 REDIS_PASSWORD=your_redis_password
+MINIO_ROOT_PASSWORD=your_minio_root_password
+ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=your_avatar_access_key
+ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=your_avatar_secret_key
 ATHENA_JWT_SECRET=your_jwt_secret
 ATHENA_WALLET_ENCRYPTION_KEY=your_wallet_encryption_key
 ```
@@ -227,7 +238,9 @@ http://127.0.0.1:8080
 make prod-stop-local
 ```
 
-`prod-stop-local` 会删除 compose 容器、孤立容器、网络和 `PROD_POSTGRES_VOLUME` 指定的 PostgreSQL volume，但保留本地构建的 `PROD_IMAGE` 镜像。下一次启动会重新创建空数据库并执行 migration。
+`prod-stop-local` 会删除 compose 容器、孤立容器、网络，以及
+`PROD_POSTGRES_VOLUME` 和 `PROD_MINIO_VOLUME` 指定的两个 volume，但保留本地
+构建的 Athena、MinIO 和 mc 镜像。下一次启动会重新创建空数据库和私有 bucket。
 
 ### 远程部署
 
@@ -238,6 +251,7 @@ REMOTE_HOST=47.245.181.189
 REMOTE_USER=root
 REMOTE_APP_DIR=/root/athena
 PROD_POSTGRES_VOLUME=athena-prod-postgres-data
+PROD_MINIO_VOLUME=athena-prod-minio-data
 ```
 
 部署前先确认远端 Docker 和 Docker Compose v2 可用：
@@ -290,9 +304,16 @@ docker compose version
 make prod-deploy-remote
 ```
 
-该命令会先更新 `$(PROD_ENV_FILE)` 中的 `POSTGRES_PASSWORD`、`REDIS_PASSWORD` 和 `ATHENA_JWT_SECRET`，再构建本地镜像。构建成功后，依次停止远端旧服务、删除并重建 `$(PROD_POSTGRES_VOLUME)`、上传 `docker-compose.prod.yml`、`.env` 和 PostgreSQL init 脚本、传输镜像、启动 PostgreSQL、执行 `athena up --module $(PROD_MIGRATE_MODULE)`，最后启动全部服务并输出容器状态。
+该命令会先更新 `$(PROD_ENV_FILE)` 中的 PostgreSQL、Redis、MinIO root、
+头像 bucket 应用凭据和 JWT secret，再构建 Athena、固定源码 MinIO 和 mc
+镜像。构建成功后，依次停止远端旧服务，删除并重建
+`$(PROD_POSTGRES_VOLUME)` 与 `$(PROD_MINIO_VOLUME)`，上传 Compose、环境文件和
+PostgreSQL init 脚本，传输三个镜像，执行 migration，初始化私有 bucket，
+最后启动全部服务并输出容器状态。
 
-**每次远程部署都会永久删除已有 PostgreSQL 数据，并轮换 PostgreSQL、Redis 和 JWT secret，不会自动备份。** JWT secret 轮换后旧登录 Token 会失效。migration 失败时不会启动业务服务，PostgreSQL 容器会保留以便排查。
+**每次远程部署都会永久删除已有 PostgreSQL 和 MinIO 数据，并轮换
+PostgreSQL、Redis、MinIO 和 JWT 凭据，不会自动备份。** JWT secret 轮换后
+旧登录 Token 会失效。migration 或 bucket 初始化失败时不会启动 API Server。
 
 如需只手动更新生产凭据文件而不部署：
 
@@ -306,9 +327,16 @@ make prod-reset-secrets
 make prod-hot-deploy-remote
 ```
 
-该命令会构建并传输新镜像，覆盖远端 `docker-compose.prod.yml` 和 `.env`，确认 PostgreSQL 就绪并幂等确保精确的 `profit_sharing` 数据库存在，再在现有数据上执行 migration，然后强制重建全部 Athena 后端服务并最后重建 `athena-server`。PostgreSQL、Redis 和 PostgreSQL volume 不会停止或删除；如果指定的 volume 不存在，命令会直接终止，避免意外创建空数据库。数据库创建、连接或 migration 失败时，当前业务容器保持运行且不会进入重建阶段。
+该命令会构建并传输三个新镜像，覆盖远端 Compose 和环境文件，确认
+PostgreSQL 与 MinIO 就绪，幂等确保精确的 `profit_sharing` 数据库和私有头像
+bucket 存在，再在现有数据上执行 migration，然后强制重建全部 Athena
+后端服务并最后重建 `athena-server`。PostgreSQL、Redis、MinIO 和两个持久化
+volume 不会停止或删除；任一指定 volume 不存在时命令直接终止，避免意外
+创建空状态。依赖初始化或 migration 失败时不会进入应用重建阶段。
 
-热部署不会自动轮换 PostgreSQL、Redis 或 JWT secret。它会短暂重启 Athena 服务，不保证零停机；适用于代码更新和兼容性数据库 migration，不用于修改现有 PostgreSQL 或 Redis 凭据。
+热部署不会自动轮换 PostgreSQL、Redis、MinIO 或 JWT secret。它会短暂重启
+Athena 服务，不保证零停机；适用于代码更新和兼容性数据库 migration，不用于
+修改现有持久化服务凭据。
 
 一键删除：
 
@@ -316,7 +344,9 @@ make prod-hot-deploy-remote
 make prod-destroy-remote
 ```
 
-该命令会删除远端 Compose 容器、孤立容器、网络和 `$(PROD_POSTGRES_VOLUME)`。命令可重复执行，不需要额外确认参数；远端 `$(REMOTE_APP_DIR)` 内的部署文件和已加载的 `$(PROD_IMAGE)` 镜像会保留。
+该命令会删除远端 Compose 容器、孤立容器、网络、
+`$(PROD_POSTGRES_VOLUME)` 和 `$(PROD_MINIO_VOLUME)`。命令可重复执行，不需要
+额外确认参数；远端部署文件和已加载的三个镜像会保留。
 
 验证远端服务：
 

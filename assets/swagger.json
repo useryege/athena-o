@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1053-gf12a0665-dirty"
+    "version": "v1.0.0-1055-g747432ed-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -40,15 +40,15 @@
         "tags": [
           "AccountService"
         ],
-        "summary": "UpdatePassword updates an account's password to a new value",
-        "operationId": "AccountService_UpdatePassword",
+        "summary": "ChangePassword changes the current account's password.",
+        "operationId": "AccountService_ChangePassword",
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/accountUpdatePasswordRequest"
+              "$ref": "#/definitions/accountChangePasswordRequest"
             }
           }
         ],
@@ -56,7 +56,125 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/accountUpdatePasswordResponse"
+              "$ref": "#/definitions/accountChangePasswordResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/preferences": {
+      "put": {
+        "tags": [
+          "AccountService"
+        ],
+        "summary": "UpdateAccountPreferences changes the current account's UI preferences.",
+        "operationId": "AccountService_UpdateAccountPreferences",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/accountUpdateAccountPreferencesRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/accountAccountPreferences"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/security/tokens": {
+      "get": {
+        "tags": [
+          "AccountService"
+        ],
+        "summary": "ListTokens lists API Key metadata for the current account.",
+        "operationId": "AccountService_ListTokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/accountTokensList"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AccountService"
+        ],
+        "summary": "CreateToken creates a token",
+        "operationId": "AccountService_CreateToken",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/accountCreateTokenRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/accountCreateTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/security/tokens/{id}": {
+      "delete": {
+        "tags": [
+          "AccountService"
+        ],
+        "summary": "DeleteToken deletes a token",
+        "operationId": "AccountService_DeleteToken",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/accountEmptyResponse"
             }
           },
           "default": {
@@ -139,13 +257,13 @@
         }
       }
     },
-    "/api/v1/account/{name}/token": {
-      "post": {
+    "/api/v1/account/{name}/profile": {
+      "put": {
         "tags": [
           "AccountService"
         ],
-        "summary": "CreateToken creates a token",
-        "operationId": "AccountService_CreateToken",
+        "summary": "UpdateAccountProfile changes an account's public display name.",
+        "operationId": "AccountService_UpdateAccountProfile",
         "parameters": [
           {
             "type": "string",
@@ -158,7 +276,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/accountCreateTokenRequest"
+              "$ref": "#/definitions/accountUpdateAccountProfileRequest"
             }
           }
         ],
@@ -166,7 +284,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/accountCreateTokenResponse"
+              "$ref": "#/definitions/accountAccountProfile"
             }
           },
           "default": {
@@ -178,13 +296,13 @@
         }
       }
     },
-    "/api/v1/account/{name}/token/{id}": {
-      "delete": {
+    "/api/v1/account/{name}/tier": {
+      "put": {
         "tags": [
           "AccountService"
         ],
-        "summary": "DeleteToken deletes a token",
-        "operationId": "AccountService_DeleteToken",
+        "summary": "UpdateAccountTier changes display-only packaging metadata.",
+        "operationId": "AccountService_UpdateAccountTier",
         "parameters": [
           {
             "type": "string",
@@ -193,17 +311,19 @@
             "required": true
           },
           {
-            "type": "string",
-            "name": "id",
-            "in": "path",
-            "required": true
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/accountUpdateAccountTierRequest"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/accountEmptyResponse"
+              "$ref": "#/definitions/accountAccountProfile"
             }
           },
           "default": {
@@ -3243,11 +3363,8 @@
         "name": {
           "type": "string"
         },
-        "tokens": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/accountToken"
-          }
+        "profile": {
+          "$ref": "#/definitions/accountAccountProfile"
         }
       }
     },
@@ -3306,6 +3423,55 @@
         }
       }
     },
+    "accountAccountPreferences": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "theme": {
+          "$ref": "#/definitions/accountAccountThemeMode"
+        }
+      }
+    },
+    "accountAccountProfile": {
+      "type": "object",
+      "properties": {
+        "avatarUrl": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "tier": {
+          "$ref": "#/definitions/accountAccountTier"
+        }
+      }
+    },
+    "accountAccountThemeMode": {
+      "type": "string",
+      "default": "ACCOUNT_THEME_MODE_UNSPECIFIED",
+      "enum": [
+        "ACCOUNT_THEME_MODE_UNSPECIFIED",
+        "ACCOUNT_THEME_MODE_SYSTEM",
+        "ACCOUNT_THEME_MODE_LIGHT",
+        "ACCOUNT_THEME_MODE_DARK"
+      ]
+    },
+    "accountAccountTier": {
+      "type": "string",
+      "default": "ACCOUNT_TIER_UNSPECIFIED",
+      "enum": [
+        "ACCOUNT_TIER_UNSPECIFIED",
+        "ACCOUNT_TIER_STANDARD",
+        "ACCOUNT_TIER_PRO"
+      ]
+    },
     "accountAccountsList": {
       "type": "object",
       "properties": {
@@ -3317,6 +3483,20 @@
         }
       }
     },
+    "accountChangePasswordRequest": {
+      "type": "object",
+      "properties": {
+        "currentPassword": {
+          "type": "string"
+        },
+        "newPassword": {
+          "type": "string"
+        }
+      }
+    },
+    "accountChangePasswordResponse": {
+      "type": "object"
+    },
     "accountCreateTokenRequest": {
       "type": "object",
       "properties": {
@@ -3326,9 +3506,6 @@
           "title": "expiresIn represents a duration in seconds"
         },
         "id": {
-          "type": "string"
-        },
-        "name": {
           "type": "string"
         }
       }
@@ -3360,22 +3537,58 @@
         }
       }
     },
-    "accountUpdatePasswordRequest": {
+    "accountTokensList": {
       "type": "object",
       "properties": {
-        "currentPassword": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/accountToken"
+          }
+        }
+      }
+    },
+    "accountUpdateAccountPreferencesRequest": {
+      "type": "object",
+      "properties": {
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "theme": {
+          "$ref": "#/definitions/accountAccountThemeMode"
+        }
+      }
+    },
+    "accountUpdateAccountProfileRequest": {
+      "type": "object",
+      "properties": {
+        "displayName": {
           "type": "string"
+        },
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
         },
         "name": {
-          "type": "string"
-        },
-        "newPassword": {
           "type": "string"
         }
       }
     },
-    "accountUpdatePasswordResponse": {
-      "type": "object"
+    "accountUpdateAccountTierRequest": {
+      "type": "object",
+      "properties": {
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/definitions/accountAccountTier"
+        }
+      }
     },
     "appbootstrapAppBootstrapSession": {
       "type": "object",
@@ -4554,6 +4767,12 @@
         },
         "loggedIn": {
           "type": "boolean"
+        },
+        "preferences": {
+          "$ref": "#/definitions/accountAccountPreferences"
+        },
+        "profile": {
+          "$ref": "#/definitions/accountAccountProfile"
         },
         "username": {
           "type": "string"

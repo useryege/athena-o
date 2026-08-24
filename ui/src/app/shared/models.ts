@@ -40,6 +40,7 @@ export interface AuthSettings {
     appsInAnyNamespaceEnabled: boolean;
     hydratorEnabled: boolean;
     syncWithReplaceAllowed: boolean;
+    passwordPattern?: string;
 }
 
 export {AccountDataAccess, AccountDataModule, parseAccountDataAccess, parseAccountDataModule} from './access-modules';
@@ -50,7 +51,70 @@ export interface UserInfo {
     iss: string;
     administrator: boolean;
     access: AccountAccess;
+    profile: AccountProfile;
+    preferences: AccountPreferences;
 }
+
+export enum AccountTier {
+    Standard = 'ACCOUNT_TIER_STANDARD',
+    Pro = 'ACCOUNT_TIER_PRO'
+}
+
+export enum AccountThemeMode {
+    System = 'ACCOUNT_THEME_MODE_SYSTEM',
+    Light = 'ACCOUNT_THEME_MODE_LIGHT',
+    Dark = 'ACCOUNT_THEME_MODE_DARK'
+}
+
+export interface AccountProfile {
+    displayName: string;
+    tier: AccountTier;
+    avatarUrl: string;
+    revision: number;
+}
+
+export interface AccountPreferences {
+    theme: AccountThemeMode;
+    revision: number;
+}
+
+export const parseAccountTier = (value: unknown): AccountTier => {
+    switch (value) {
+        case 2:
+        case AccountTier.Pro:
+        case 'pro':
+            return AccountTier.Pro;
+        default:
+            return AccountTier.Standard;
+    }
+};
+
+export const parseAccountThemeMode = (value: unknown): AccountThemeMode => {
+    switch (value) {
+        case 2:
+        case AccountThemeMode.Light:
+        case 'light':
+            return AccountThemeMode.Light;
+        case 3:
+        case AccountThemeMode.Dark:
+        case 'dark':
+            return AccountThemeMode.Dark;
+        default:
+            return AccountThemeMode.System;
+    }
+};
+
+export const parseAccountProfile = (value: any, fallbackName = ''): AccountProfile => ({
+    displayName: String(value?.displayName ?? value?.display_name ?? fallbackName),
+    tier: parseAccountTier(value?.tier),
+    avatarUrl: String(value?.avatarUrl ?? value?.avatar_url ?? ''),
+    revision: Number(value?.revision || 0)
+});
+
+export const parseAccountPreferences = (value: any): AccountPreferences => ({
+    theme: parseAccountThemeMode(value?.theme),
+    revision: Number(value?.revision || 0)
+});
 
 export enum AppBootstrapSessionStatus {
     Anonymous = 'APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS',
@@ -89,7 +153,9 @@ export const parseUserInfo = (value: any): UserInfo => ({
     username: value?.username || '',
     iss: value?.iss || '',
     administrator: Boolean(value?.administrator),
-    access: parseAccountAccess(value?.access)
+    access: parseAccountAccess(value?.access),
+    profile: parseAccountProfile(value?.profile, value?.username || ''),
+    preferences: parseAccountPreferences(value?.preferences)
 });
 
 export interface Token {
@@ -103,7 +169,7 @@ export interface Account {
     administrator: boolean;
     access: AccountAccess;
     capabilities: string[];
-    tokens: Token[];
+    profile: AccountProfile;
 }
 
 export interface AccountAccess {

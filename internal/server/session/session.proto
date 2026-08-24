@@ -49,6 +49,8 @@ message GetUserInfoResponse {
   reserved 5, 6;
   reserved "dataAccess", "authorizationRevision";
   account.AccountAccess access = 7;
+  account.AccountProfile profile = 8;
+  account.AccountPreferences preferences = 9;
 }
 
 // SessionService

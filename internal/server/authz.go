@@ -44,6 +44,7 @@ var publicGRPCMethods = map[string]bool{
 var administratorGRPCMethods = map[string]bool{
 	"/account.AccountService/ListAccounts":        true,
 	"/account.AccountService/UpdateAccountAccess": true,
+	"/account.AccountService/UpdateAccountTier":   true,
 
 	"/servicestatus.ServiceStatusService/ListServiceStatuses":               true,
 	"/servicestatus.ServiceStatusService/ListEtherscanGatewayStatuses":      true,
@@ -71,11 +72,17 @@ var profitSharingAuthenticatedGRPCMethods = map[string]bool{
 	"/profitsharing.ProfitSharingService/SubmitVote":     true,
 }
 
-var accountSelfServiceGRPCMethods = map[string]bool{
-	"/account.AccountService/GetAccount":     true,
-	"/account.AccountService/UpdatePassword": true,
-	"/account.AccountService/CreateToken":    true,
-	"/account.AccountService/DeleteToken":    true,
+var accountAuthenticatedGRPCMethods = map[string]bool{
+	"/account.AccountService/ChangePassword":           true,
+	"/account.AccountService/UpdateAccountPreferences": true,
+	"/account.AccountService/ListTokens":               true,
+	"/account.AccountService/CreateToken":              true,
+	"/account.AccountService/DeleteToken":              true,
+}
+
+var accountSelfOrAdministratorGRPCMethods = map[string]bool{
+	"/account.AccountService/GetAccount":           true,
+	"/account.AccountService/UpdateAccountProfile": true,
 }
 
 type grpcModuleRule struct {
@@ -222,7 +229,10 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	if profitSharingAuthenticatedGRPCMethods[fullMethod] {
 		return authCtx, nil
 	}
-	if accountSelfServiceGRPCMethods[fullMethod] {
+	if accountAuthenticatedGRPCMethods[fullMethod] {
+		return authCtx, nil
+	}
+	if accountSelfOrAdministratorGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccountSelfService(username, fullMethod, req)
 	}
 	if rule, ok := moduleGRPCRules[fullMethod]; ok {
@@ -243,9 +253,6 @@ func (server *AthenaServer) authorizeAccount(username string, requirement accoun
 
 func (server *AthenaServer) authorizeAccountSelfService(username, fullMethod string, req any) error {
 	target := accountSelfServiceTarget(fullMethod, req)
-	if target == "" && fullMethod == "/account.AccountService/UpdatePassword" {
-		target = username
-	}
 	if target == username {
 		return nil
 	}
@@ -258,16 +265,8 @@ func accountSelfServiceTarget(fullMethod string, req any) string {
 		if request, ok := req.(*accountpkg.GetAccountRequest); ok {
 			return request.GetName()
 		}
-	case "/account.AccountService/UpdatePassword":
-		if request, ok := req.(*accountpkg.UpdatePasswordRequest); ok {
-			return request.GetName()
-		}
-	case "/account.AccountService/CreateToken":
-		if request, ok := req.(*accountpkg.CreateTokenRequest); ok {
-			return request.GetName()
-		}
-	case "/account.AccountService/DeleteToken":
-		if request, ok := req.(*accountpkg.DeleteTokenRequest); ok {
+	case "/account.AccountService/UpdateAccountProfile":
+		if request, ok := req.(*accountpkg.UpdateAccountProfileRequest); ok {
 			return request.GetName()
 		}
 	}

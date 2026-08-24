@@ -79,7 +79,7 @@ boundary for direct HTTP and gRPC callers.
    or visibility return, and immediately after a stable module denial. If Token
    falls below `READ`, it aborts all Token requests, clears Token asynchronous
    data and saved project return positions, and routes an active Token page to
-   `/user-info`.
+   `/account/access`.
 8. If Token falls from `READ_WRITE` to `READ`, only Token write requests are
    aborted. Query pages and read caches remain mounted. Page effects clear
    unsaved Token write drafts and destroy active write or delete confirmations.

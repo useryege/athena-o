@@ -10,6 +10,7 @@ import (
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcenter"
 	accountserver "github.com/useryege/athena/internal/server/account"
 	"github.com/useryege/athena/pkg/apiclient/session"
 	utilio "github.com/useryege/athena/util/io"
@@ -22,6 +23,7 @@ type Server struct {
 	userSessionDuration time.Duration
 	authenticator       Authenticator
 	accessController    *accountaccess.Controller
+	accountCenter       *accountcenter.Manager
 	limitLoginAttempts  func() (utilio.Closer, error)
 }
 
@@ -35,8 +37,8 @@ const (
 )
 
 // NewServer returns a new instance of the Session service
-func NewServer(mgr *sessionmgr.SessionManager, userSessionDuration time.Duration, authenticator Authenticator, accessController *accountaccess.Controller, rateLimiter func() (utilio.Closer, error)) *Server {
-	return &Server{mgr, userSessionDuration, authenticator, accessController, rateLimiter}
+func NewServer(mgr *sessionmgr.SessionManager, userSessionDuration time.Duration, authenticator Authenticator, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager, rateLimiter func() (utilio.Closer, error)) *Server {
+	return &Server{mgr, userSessionDuration, authenticator, accessController, accountCenter, rateLimiter}
 }
 
 // Create generates a JWT token signed by Athena intended for web/CLI logins of the admin user
@@ -135,11 +137,11 @@ func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (c
 }
 
 func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest) (*session.GetUserInfoResponse, error) {
-	return ProjectUserInfo(ctx, s.accessController)
+	return ProjectUserInfo(ctx, s.accessController, s.accountCenter)
 }
 
 // ProjectUserInfo builds the shared session and authorization projection for ctx.
-func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Controller) (*session.GetUserInfoResponse, error) {
+func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager) (*session.GetUserInfoResponse, error) {
 	loggedIn := sessionmgr.LoggedIn(ctx)
 	response := &session.GetUserInfoResponse{
 		LoggedIn: loggedIn,
@@ -155,5 +157,15 @@ func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Contro
 	}
 	response.Administrator = response.Username == common.AthenaAdminUsername
 	response.Access = accountserver.ToAPIAccountAccess(access)
+	profile, err := accountCenter.GetProfile(ctx, response.Username)
+	if err != nil {
+		return nil, err
+	}
+	preferences, err := accountCenter.GetPreferences(ctx, response.Username)
+	if err != nil {
+		return nil, err
+	}
+	response.Profile = accountserver.ToAPIAccountProfile(response.Username, profile)
+	response.Preferences = accountserver.ToAPIAccountPreferences(preferences)
 	return response, nil
 }

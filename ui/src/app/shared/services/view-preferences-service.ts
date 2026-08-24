@@ -1,7 +1,8 @@
 import deepMerge from 'deepmerge';
 import {BehaviorSubject, Observable} from 'rxjs';
 
-export type ThemeMode = 'dark' | 'light';
+export type ThemeMode = 'system' | 'dark' | 'light';
+export type ResolvedTheme = 'dark' | 'light';
 
 export interface ViewPreferences {
     version: number;
@@ -23,17 +24,20 @@ const DEFAULT_PREFERENCES: ViewPreferences = {
     hideBannerContent: '',
     hideSidebar: false,
     position: '',
-    theme: 'light'
+    theme: 'system'
 };
 
 export class ViewPreferencesService {
     private preferencesSubj: BehaviorSubject<ViewPreferences>;
+    private systemThemeQuery?: MediaQueryList;
 
     public init() {
         if (!this.preferencesSubj) {
             const preferences = this.loadPreferences();
             this.applyTheme(preferences.theme);
             this.preferencesSubj = new BehaviorSubject(preferences);
+            this.systemThemeQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+            this.systemThemeQuery?.addEventListener('change', this.onSystemThemeChange);
             window.addEventListener('storage', event => {
                 if (event.key !== null && event.key !== VIEW_PREFERENCES_KEY) {
                     return;
@@ -56,16 +60,41 @@ export class ViewPreferencesService {
         this.preferencesSubj.next(nextPref);
     }
 
-    private applyTheme(theme: ThemeMode) {
-        document.documentElement.dataset.theme = theme;
+    public syncServerTheme(theme: ThemeMode) {
+        if (this.preferencesSubj.getValue().theme === theme) {
+            this.applyTheme(theme);
+            return;
+        }
+        this.updatePreferences({theme});
     }
+
+    public resolvedTheme(theme = this.preferencesSubj?.getValue().theme || DEFAULT_PREFERENCES.theme): ResolvedTheme {
+        if (theme === 'system') {
+            return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return theme;
+    }
+
+    private applyTheme(theme: ThemeMode) {
+        document.documentElement.dataset.theme = this.resolvedTheme(theme);
+    }
+
+    private onSystemThemeChange = () => {
+        if (this.preferencesSubj?.getValue().theme !== 'system') {
+            return;
+        }
+        const current = this.preferencesSubj.getValue();
+        this.applyTheme(current.theme);
+        this.preferencesSubj.next({...current});
+    };
 
     private loadPreferences(): ViewPreferences {
         let preferences: ViewPreferences;
         const preferencesStr = window.localStorage.getItem(VIEW_PREFERENCES_KEY);
         if (preferencesStr) {
             try {
-                preferences = JSON.parse(preferencesStr);
+                const parsed = JSON.parse(preferencesStr);
+                preferences = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : DEFAULT_PREFERENCES;
             } catch (e) {
                 preferences = DEFAULT_PREFERENCES;
             }
@@ -75,6 +104,10 @@ export class ViewPreferencesService {
         } else {
             preferences = DEFAULT_PREFERENCES;
         }
-        return deepMerge(DEFAULT_PREFERENCES, preferences);
+        const merged = deepMerge(DEFAULT_PREFERENCES, preferences);
+        if (!['system', 'light', 'dark'].includes(merged.theme)) {
+            merged.theme = 'system';
+        }
+        return merged;
     }
 }
