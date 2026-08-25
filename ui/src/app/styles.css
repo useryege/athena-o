@@ -2630,41 +2630,39 @@ body::-webkit-scrollbar-thumb,
     text-transform: uppercase;
 }
 
-.login-panel .ant-alert {
+.login-panel__alerts:not(:empty) {
     margin-bottom: 20px;
 }
 
-.login-panel .ant-form-item {
-    margin-bottom: 20px;
-}
-
-.login-panel .ant-form-item-label > label {
-    color: var(--athena-text);
-    font-weight: 600;
-}
-
-.login-panel .ant-btn-primary {
-    height: 40px;
-}
-
-.login-captcha {
+.login-panel__actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 132px;
-    gap: 10px;
-    align-items: stretch;
+    gap: 14px;
 }
 
-.login-captcha__image {
-    height: 40px;
-    padding: 0;
-    overflow: hidden;
+.login-google-button.ant-btn {
+    min-height: 44px;
+    border-color: var(--athena-border-strong);
+    background: var(--athena-panel-solid);
+    color: var(--athena-text);
+    box-shadow: var(--athena-shadow-surface);
 }
 
-.login-captcha__image img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.login-google-button.ant-btn:not(:disabled):hover {
+    border-color: var(--athena-focus);
+    background: var(--athena-panel-elevated);
+    color: var(--athena-text);
+}
+
+.login-google-button img {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
+.login-panel__hint.ant-typography {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
 }
 
 .fifa-page {
@@ -5919,8 +5917,7 @@ button.chain-processing-kpi {
     display: none;
 }
 
-.account-profile-form,
-.account-security-form {
+.account-profile-form {
     width: min(100%, 680px);
 }
 
@@ -6282,6 +6279,14 @@ button.chain-processing-kpi {
 }
 
 @media (max-width: 520px) {
+    .login-screen {
+        padding: 12px;
+    }
+
+    .login-panel .ant-card-body {
+        padding: 24px;
+    }
+
     .account-center-hero,
     .admin-account-detail__heading,
     .account-profile-avatar,

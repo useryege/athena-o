@@ -22,7 +22,7 @@ The `Procfile` is used by Goreman when running Athena locally with the local too
 
 Example for `api-server` configuration in `Procfile`:
 ``` text
-api-server: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_BINARY_NAME=athena-server go run ./cmd/main.go --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'true'} --port ${ATHENA_SERVER_PORT:-8080}"
+api-server: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/api-server} FORCE_LOG_COLORS=1 ATHENA_SSH_DATA_PATH=${ATHENA_SSH_DATA_PATH:-/tmp/athena-local/ssh} ATHENA_GOOGLE_OIDC_REDIRECT_URI=${ATHENA_GOOGLE_OIDC_REDIRECT_URI:-http://localhost:4000/auth/google/callback} ATHENA_BINARY_NAME=athena-server go run ./cmd/main.go --redis localhost:${ATHENA_REDIS_PORT:-6379} --disable-auth=${ATHENA_SERVER_DISABLE_AUTH:-'false'} --address ${ATHENA_SERVER_LISTEN_ADDRESS:-127.0.0.1} --port ${ATHENA_SERVER_PORT:-8080}"
 ```
 This configuration example will be used as the basis for the next steps.
 
@@ -43,6 +43,10 @@ ATHENA_LOG_FORMAT_ENABLE_FULL_TIMESTAMP=1
 ATHENA_SSH_DATA_PATH=/tmp/athena-local/ssh
 ATHENA_TRACING_ENABLED=1
 FORCE_LOG_COLORS=1
+ATHENA_GOOGLE_OIDC_CLIENT_ID=<local-web-client-id>
+ATHENA_GOOGLE_OIDC_CLIENT_SECRET=<local-web-client-secret>
+ATHENA_GOOGLE_OIDC_REDIRECT_URI=http://localhost:4000/auth/google/callback
+# Also add all ATHENA_ACCOUNT_<NAME>_GOOGLE_SUB values and ATHENA_ADMIN_GOOGLE_SUB.
 ... 
 # and so on for the component-specific settings you are testing.
 ```

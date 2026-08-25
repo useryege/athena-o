@@ -19,7 +19,7 @@ import (
 type Handler struct {
 	settingsMgr *settings.SettingsManager
 	rootPath    string
-	verifyToken func(ctx context.Context, tokenString string) (jwt.Claims, string, error)
+	parseToken  func(tokenString string) (jwt.Claims, error)
 	revokeToken func(ctx context.Context, id string, expiringAt time.Duration) error
 	baseHRef    string
 }
@@ -30,14 +30,31 @@ func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.Sessi
 		settingsMgr: settingsMrg,
 		rootPath:    rootPath,
 		baseHRef:    baseHRef,
-		verifyToken: sessionMgr.VerifyToken,
+		parseToken:  sessionMgr.ParseLoginForRevocation,
 		revokeToken: sessionMgr.RevokeToken,
 	}
 }
 
 // ServeHTTP clears the Athena auth cookie, revokes the local session token when possible, and redirects to Athena.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var tokenString string
+	cookies := r.Cookies()
+	for _, cookie := range cookies {
+		if !strings.HasPrefix(cookie.Name, common.AuthCookieName) {
+			continue
+		}
+
+		athenaCookie := http.Cookie{
+			Name:     cookie.Name,
+			Value:    "",
+			MaxAge:   -1,
+			Expires:  time.Unix(1, 0),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		}
+
+		athenaCookie.Path = "/" + strings.TrimRight(strings.TrimLeft(h.baseHRef, "/"), "/")
+		w.Header().Add("Set-Cookie", athenaCookie.String())
+	}
 
 	athenaSettings, err := h.settingsMgr.GetSettings()
 	if err != nil {
@@ -59,29 +76,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	logoutRedirectURL := strings.TrimRight(strings.TrimLeft(athenaURL, "/"), "/")
 
-	cookies := r.Cookies()
-	tokenString, err = httputil.JoinCookies(common.AuthCookieName, cookies)
+	tokenString, err := httputil.JoinCookies(common.AuthCookieName, cookies)
 	if tokenString == "" || err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		http.Error(w, "Failed to retrieve Athena auth token: "+err.Error(), http.StatusBadRequest)
+		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
 	}
 
-	for _, cookie := range cookies {
-		if !strings.HasPrefix(cookie.Name, common.AuthCookieName) {
-			continue
-		}
-
-		athenaCookie := http.Cookie{
-			Name:  cookie.Name,
-			Value: "",
-		}
-
-		athenaCookie.Path = "/" + strings.TrimRight(strings.TrimLeft(h.baseHRef, "/"), "/")
-		w.Header().Add("Set-Cookie", athenaCookie.String())
-	}
-
-	claims, _, err := h.verifyToken(r.Context(), tokenString)
+	claims, err := h.parseToken(tokenString)
 	if err != nil {
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
@@ -96,7 +97,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := jwtutil.StringField(mapClaims, "jti")
 	if exp, err := jwtutil.ExpirationTime(mapClaims); err == nil && id != "" {
 		if err := h.revokeToken(context.Background(), id, time.Until(exp)); err != nil {
-			log.Warnf("failed to invalidate token '%s': %v", id, err)
+			log.Warnf("failed to invalidate logout token: %v", err)
 		}
 	}
 

@@ -26,10 +26,15 @@ Athena 是一个面向区块链与预测市场的情报分析平台，用于采�
 make run
 ```
 
-服务启动后默认通过以下地址访问：
+认证默认开启。首次启动前，需要在 `.env` 中配置本地 Google Web OAuth client、
+精确回调地址 `http://localhost:4000/auth/google/callback`，以及五个成员账号和
+`admin` 的唯一 Google `sub`；配置缺失或重复时 API Server 会拒绝启动。完整步骤
+参见 [本地运行指南](docs/developer-guide/running-locally.md)。
+
+服务启动后通过以下地址打开 UI 并使用已批准的 Google 账号登录：
 
 ```text
-http://127.0.0.1:8080
+http://localhost:4000
 ```
 
 停止本地服务：

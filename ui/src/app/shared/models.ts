@@ -40,7 +40,6 @@ export interface AuthSettings {
     appsInAnyNamespaceEnabled: boolean;
     hydratorEnabled: boolean;
     syncWithReplaceAllowed: boolean;
-    passwordPattern?: string;
 }
 
 export {AccountDataAccess, AccountDataModule, parseAccountDataAccess, parseAccountDataModule} from './access-modules';

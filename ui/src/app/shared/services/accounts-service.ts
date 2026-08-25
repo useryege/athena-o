@@ -79,13 +79,6 @@ export class AccountsService {
             .then(res => parseAccountPreferences(res.body));
     }
 
-    public changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
-        return requests
-            .put('/account/password')
-            .send({currentPassword, newPassword})
-            .then(res => res.status === 200);
-    }
-
     public listTokens(): Promise<Token[]> {
         return requests.get('/account/security/tokens').then(res => (res.body?.items || []).map(token));
     }

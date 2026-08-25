@@ -5,7 +5,7 @@ x-token-worker: &token-worker
     postgres:
       condition: service_healthy
   env_file:
-    - .env
+    - ${ATHENA_COMPOSE_ENV_FILE:-.env}
   command: ["athena"]
 
 x-token-chain-environment: &token-chain-environment
@@ -22,8 +22,24 @@ x-token-chain-environment: &token-chain-environment
   ATHENA_TOKEN_BSC_PROCESSOR_POLL_INTERVAL: ${ATHENA_TOKEN_BSC_PROCESSOR_POLL_INTERVAL:?ATHENA_TOKEN_BSC_PROCESSOR_POLL_INTERVAL is required}
   ATHENA_TOKEN_BSC_SWAP_POLL_INTERVAL: ${ATHENA_TOKEN_BSC_SWAP_POLL_INTERVAL:?ATHENA_TOKEN_BSC_SWAP_POLL_INTERVAL is required}
 
+x-without-auth-secrets: &without-auth-secrets
+  ATHENA_JWT_SECRET: ""
+  ATHENA_JWT_SECRET_FILE: ""
+  ATHENA_GOOGLE_OIDC_CLIENT_ID: ""
+  ATHENA_GOOGLE_OIDC_CLIENT_SECRET: ""
+  ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE: ""
+  ATHENA_GOOGLE_OIDC_REDIRECT_URI: ""
+  ATHENA_ACCOUNT_YEGE_GOOGLE_SUB: ""
+  ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB: ""
+  ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB: ""
+  ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB: ""
+  ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB: ""
+  ATHENA_ADMIN_GOOGLE_SUB: ""
+  REDIS_SERVER: ""
+  REDIS_PASSWORD: ""
+
 x-token-worker-environment: &token-worker-environment
-  <<: *token-chain-environment
+  <<: [*token-chain-environment, *without-auth-secrets]
   ATHENA_POSTGRES_AUTO_MIGRATE: "false"
   ATHENA_TOKEN_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=token sslmode=disable
 
@@ -54,9 +70,13 @@ services:
       - --save
       - ""
       - --appendonly
-      - "no"
+      - "yes"
+      - --appendfsync
+      - everysec
       - --requirepass
       - ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - redis-data:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
       interval: 10s
@@ -106,8 +126,9 @@ services:
       athena-notification:
         condition: service_started
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-worm-markets
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_WORM_MARKETS_LISTEN_ADDRESS: 0.0.0.0
@@ -125,8 +146,9 @@ services:
       athena-notification:
         condition: service_started
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-market-radar
       ATHENA_MARKET_RADAR_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_MARKET_RADAR_NOTIFICATION_ENABLED: "true"
@@ -144,8 +166,9 @@ services:
       athena-notification:
         condition: service_started
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-sports-live
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_SPORTS_LIVE_LISTEN_ADDRESS: 0.0.0.0
@@ -163,8 +186,9 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-sports-history
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_SPORTS_HISTORY_LISTEN_ADDRESS: 0.0.0.0
@@ -182,8 +206,9 @@ services:
       athena-notification:
         condition: service_started
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-managed-oo
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_MANAGED_OO_LISTEN_ADDRESS: 0.0.0.0
@@ -202,8 +227,9 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-profit-sharing
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_PROFIT_SHARING_LISTEN_ADDRESS: 0.0.0.0
@@ -223,8 +249,9 @@ services:
       athena-wallet:
         condition: service_started
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-fifa-market-dashboard
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_FIFA_MARKET_DASHBOARD_LISTEN_ADDRESS: 0.0.0.0
@@ -244,8 +271,9 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-notification
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_NOTIFICATION_LISTEN_ADDRESS: 0.0.0.0
@@ -263,8 +291,9 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-wallet
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_WALLET_LISTEN_ADDRESS: 0.0.0.0
@@ -281,9 +310,9 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
-      <<: *token-chain-environment
+      <<: [*token-chain-environment, *without-auth-secrets]
       ATHENA_BINARY_NAME: athena-token-api
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_TOKEN_API_LISTEN_ADDRESS: 0.0.0.0
@@ -296,8 +325,9 @@ services:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-etherscan-manager
       ATHENA_ETHERSCAN_MANAGER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_ETHERSCAN_MANAGER_API_KEYS: ${ATHENA_ETHERSCAN_MANAGER_API_KEYS:?ATHENA_ETHERSCAN_MANAGER_API_KEYS is required}
@@ -427,8 +457,9 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
+      <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-migrate
       ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
       ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
@@ -444,6 +475,7 @@ services:
 
   athena-server:
     image: ${PROD_IMAGE:-athena:local}
+    user: ${ATHENA_SERVER_CONTAINER_USER:-999:999}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -473,7 +505,9 @@ services:
       athena-token-api:
         condition: service_started
     env_file:
-      - .env
+      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
+    secrets:
+      - google-oidc-client-secret
     environment:
       ATHENA_BINARY_NAME: athena-server
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
@@ -489,7 +523,19 @@ services:
       ATHENA_PROFIT_SHARING_SERVER_ADDRESS: athena-profit-sharing:8108
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_SERVER_DISABLE_AUTH: ${ATHENA_SERVER_DISABLE_AUTH:-false}
+      ATHENA_SERVER_DISABLE_AUTH: "false"
+      ATHENA_JWT_SECRET: ${ATHENA_JWT_SECRET:?ATHENA_JWT_SECRET is required}
+      ATHENA_JWT_SECRET_FILE: ""
+      ATHENA_GOOGLE_OIDC_CLIENT_ID: ${ATHENA_GOOGLE_OIDC_CLIENT_ID:-}
+      ATHENA_GOOGLE_OIDC_CLIENT_SECRET: ""
+      ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE: /run/secrets/google-oidc-client-secret
+      ATHENA_GOOGLE_OIDC_REDIRECT_URI: ${ATHENA_GOOGLE_OIDC_REDIRECT_URI:-}
+      ATHENA_ACCOUNT_YEGE_GOOGLE_SUB: ${ATHENA_ACCOUNT_YEGE_GOOGLE_SUB:-}
+      ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB: ${ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB:-}
+      ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB: ${ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB:-}
+      ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB: ${ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB:-}
+      ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB: ${ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB:-}
+      ATHENA_ADMIN_GOOGLE_SUB: ${ATHENA_ADMIN_GOOGLE_SUB:-}
       ATHENA_ACCOUNT_AVATAR_S3_ENDPOINT: http://minio:9000
       ATHENA_ACCOUNT_AVATAR_S3_REGION: ${ATHENA_ACCOUNT_AVATAR_S3_REGION:-us-east-1}
       ATHENA_ACCOUNT_AVATAR_S3_BUCKET: ${ATHENA_ACCOUNT_AVATAR_S3_BUCKET:-athena-account-avatars}
@@ -503,9 +549,16 @@ services:
     ports:
       - "${ATHENA_SERVER_BIND_ADDR:-127.0.0.1}:${ATHENA_SERVER_PORT:-8080}:8080"
 
+secrets:
+  google-oidc-client-secret:
+    file: ${ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE:-/dev/null}
+
 volumes:
   postgres-data:
     name: ${PROD_POSTGRES_VOLUME:-athena-prod-postgres-data}
+    external: true
+  redis-data:
+    name: ${PROD_REDIS_VOLUME:-athena-prod-redis-data}
     external: true
   minio-data:
     name: ${PROD_MINIO_VOLUME:-athena-prod-minio-data}

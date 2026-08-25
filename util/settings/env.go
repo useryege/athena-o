@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 
-	"github.com/useryege/athena/common"
 	timeutil "github.com/useryege/athena/pkg/time"
 	"github.com/useryege/athena/util/env"
 )
@@ -51,7 +50,6 @@ func loadSettingsFromEnv() (AthenaSettings, error) {
 		BinaryUrls:           getDownloadBinaryUrlsFromEnv(),
 		UiBannerURL:          os.Getenv("ATHENA_UI_BANNER_URL"),
 		UserSessionDuration:  time.Hour * 24,
-		PasswordPattern:      env.StringFromEnv("ATHENA_PASSWORD_PATTERN", common.PasswordPatten),
 	}
 
 	settings.URL = os.Getenv("ATHENA_URL")

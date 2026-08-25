@@ -1,15 +1,4 @@
-import {
-    BgColorsOutlined,
-    CheckOutlined,
-    CopyOutlined,
-    DeleteOutlined,
-    KeyOutlined,
-    LockOutlined,
-    PlusOutlined,
-    SafetyCertificateOutlined,
-    UploadOutlined,
-    UserOutlined
-} from '@ant-design/icons';
+import {BgColorsOutlined, CheckOutlined, CopyOutlined, DeleteOutlined, KeyOutlined, PlusOutlined, SafetyCertificateOutlined, UploadOutlined, UserOutlined} from '@ant-design/icons';
 import {Alert, Avatar, Button, Form, Input, Modal, Select, Space, Tag, Typography, Upload} from 'antd';
 import * as React from 'react';
 import {useBlocker, useNavigate} from 'react-router-dom';
@@ -17,7 +6,7 @@ import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, Section, StatusTag, u
 import {moduleAccessSummary} from '../shared/account-access';
 import {accountDataAccessLabel, accountDataModules} from '../shared/access-modules';
 import {Context, useAuthorization} from '../shared/context';
-import {Account, AccountProfile, AccountThemeMode, AccountTier, AuthSettings, Token} from '../shared/models';
+import {Account, AccountProfile, AccountThemeMode, AccountTier, Token} from '../shared/models';
 import {services, ThemeMode, ViewPreferences} from '../shared/services';
 import requests, {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
 import {boolTag} from './shared';
@@ -27,7 +16,7 @@ export type AccountCenterSection = 'profile' | 'appearance' | 'security' | 'acce
 const accountSections: Array<{key: AccountCenterSection; label: string; description: string; icon: React.ReactNode}> = [
     {key: 'profile', label: 'Profile', description: 'Name and avatar', icon: <UserOutlined />},
     {key: 'appearance', label: 'Appearance', description: 'Theme across devices', icon: <BgColorsOutlined />},
-    {key: 'security', label: 'Security', description: 'Password and API keys', icon: <SafetyCertificateOutlined />},
+    {key: 'security', label: 'Security', description: 'API key management', icon: <SafetyCertificateOutlined />},
     {key: 'access', label: 'Access & session', description: 'Permissions and versions', icon: <KeyOutlined />}
 ];
 
@@ -128,7 +117,7 @@ const AccountCenterLayout = (props: {active: AccountCenterSection; children: Rea
     const authorization = useAuthorization();
     const profile = authorization.user.profile;
     return (
-        <AppPage title='Account Center' subtitle='Manage your Athena identity, appearance, credentials, and current access.'>
+        <AppPage title='Account Center' subtitle='Manage your Athena identity, appearance, API keys, and current access.'>
             <div className='account-center-hero'>
                 <AccountAvatar profile={profile} username={authorization.user.username} size={64} />
                 <div className='account-center-hero__copy'>
@@ -322,7 +311,9 @@ const AppearancePage = (props: {preferences: ViewPreferences; changing: boolean;
             <div className='account-theme-options'>
                 <div>
                     <Typography.Text strong={true}>Color theme</Typography.Text>
-                    <Typography.Paragraph type='secondary'>This preference follows you across signed-in devices. System tracks your operating-system appearance.</Typography.Paragraph>
+                    <Typography.Paragraph type='secondary'>
+                        This preference follows you across signed-in devices. System tracks your operating-system appearance.
+                    </Typography.Paragraph>
                 </div>
                 <ChoiceGroup<ThemeMode>
                     className='account-theme-choice'
@@ -349,12 +340,10 @@ const AppearancePage = (props: {preferences: ViewPreferences; changing: boolean;
 
 const tokenTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Never');
 
-const SecurityPage = (props: {settings: AuthSettings; onPasswordChanged: () => void}) => {
+const SecurityPage = () => {
     const authorization = useAuthorization();
     const ctx = React.useContext(Context);
-    const [passwordForm] = Form.useForm();
     const [tokenForm] = Form.useForm();
-    const [changingPassword, setChangingPassword] = React.useState(false);
     const [createOpen, setCreateOpen] = React.useState(false);
     const [creatingToken, setCreatingToken] = React.useState(false);
     const [deletingToken, setDeletingToken] = React.useState('');
@@ -362,20 +351,6 @@ const SecurityPage = (props: {settings: AuthSettings; onPasswordChanged: () => v
     const account = useAsyncData<Account>(() => services.accounts.get(authorization.user.username) as Promise<Account> & {abort?: () => void}, [authorization.user.username]);
     const mayUseAPIKeys = Boolean(account.data?.capabilities.some(capability => capability.toLowerCase() === 'apikey'));
     const tokens = useAsyncData<Token[]>(() => (mayUseAPIKeys ? services.accounts.listTokens() : Promise.resolve([])) as Promise<Token[]> & {abort?: () => void}, [mayUseAPIKeys]);
-
-    const changePassword = async (values: {currentPassword: string; newPassword: string}) => {
-        setChangingPassword(true);
-        try {
-            await services.accounts.changePassword(values.currentPassword, values.newPassword);
-            passwordForm.resetFields();
-            ctx.notifications.success('Password updated', 'Your existing session and API keys are no longer valid.');
-            props.onPasswordChanged();
-        } catch (err) {
-            ctx.notifications.error('Could not update password', requestErrorMessage(err));
-        } finally {
-            setChangingPassword(false);
-        }
-    };
 
     const createToken = async (values: {id: string; expiresIn: number}) => {
         setCreatingToken(true);
@@ -415,37 +390,6 @@ const SecurityPage = (props: {settings: AuthSettings; onPasswordChanged: () => v
 
     return (
         <>
-            <Section title='Password'>
-                <Alert
-                    className='account-security-warning'
-                    type='warning'
-                    showIcon={true}
-                    title='Changing your password signs you out everywhere'
-                    description='All current sessions and API keys use the current credential epoch and become invalid immediately.'
-                />
-                <Form form={passwordForm} layout='vertical' className='account-security-form' onFinish={changePassword}>
-                    <Form.Item name='currentPassword' label='Current password' rules={[{required: true, message: 'Enter your current password.'}]}>
-                        <Input.Password autoComplete='current-password' />
-                    </Form.Item>
-                    <Form.Item name='newPassword' label='New password' rules={[{required: true, message: 'Enter a new password.'}]}>
-                        <Input.Password autoComplete='new-password' />
-                    </Form.Item>
-                    <Form.Item
-                        name='confirmPassword'
-                        label='Confirm new password'
-                        dependencies={['newPassword']}
-                        rules={[
-                            {required: true, message: 'Confirm your new password.'},
-                            ({getFieldValue}) => ({validator: (_, value) => (!value || getFieldValue('newPassword') === value ? Promise.resolve() : Promise.reject(new Error('Passwords do not match.')))})
-                        ]}>
-                        <Input.Password autoComplete='new-password' />
-                    </Form.Item>
-                    {props.settings.passwordPattern && <Typography.Paragraph type='secondary'>Password policy: {props.settings.passwordPattern}</Typography.Paragraph>}
-                    <Button type='primary' htmlType='submit' icon={<LockOutlined />} loading={changingPassword}>
-                        Change password
-                    </Button>
-                </Form>
-            </Section>
             <Section
                 title='API keys'
                 extra={
@@ -463,7 +407,9 @@ const SecurityPage = (props: {settings: AuthSettings; onPasswordChanged: () => v
                     <Alert type='info' showIcon={true} title='API keys are not enabled for this account' />
                 ) : (
                     <>
-                        {tokens.error && <Alert className='account-security-warning' type='error' showIcon={true} title='Could not load API keys' description={tokens.error.message} />}
+                        {tokens.error && (
+                            <Alert className='account-security-warning' type='error' showIcon={true} title='Could not load API keys' description={tokens.error.message} />
+                        )}
                         <ResourceTable<Token>
                             rowKey='id'
                             label='Your API keys'
@@ -510,8 +456,7 @@ const SecurityPage = (props: {settings: AuthSettings; onPasswordChanged: () => v
                             {required: true},
                             {max: 64},
                             {pattern: /^[A-Za-z0-9][A-Za-z0-9._-]*$/, message: 'Start with a letter or digit; use only letters, digits, dots, underscores, or hyphens.'}
-                        ]}
-                    >
+                        ]}>
                         <Input autoComplete='off' placeholder='automation-client' />
                     </Form.Item>
                     <Form.Item name='expiresIn' label='Expiration' rules={[{required: true}]}>
@@ -606,14 +551,12 @@ export const AccountCenterPage = (props: {
     section: AccountCenterSection;
     preferences: ViewPreferences;
     themeChanging: boolean;
-    settings: AuthSettings;
     onThemeChange: (theme: ThemeMode) => Promise<void>;
-    onPasswordChanged: () => void;
 }) => (
     <AccountCenterLayout active={props.section}>
         {props.section === 'profile' && <ProfilePage />}
         {props.section === 'appearance' && <AppearancePage preferences={props.preferences} changing={props.themeChanging} onThemeChange={props.onThemeChange} />}
-        {props.section === 'security' && <SecurityPage settings={props.settings} onPasswordChanged={props.onPasswordChanged} />}
+        {props.section === 'security' && <SecurityPage />}
         {props.section === 'access' && <AccessPage />}
     </AccountCenterLayout>
 );

@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1055-g747432ed-dirty"
+    "version": "v1.0.0-1057-gc306344c-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -24,39 +24,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountAccountsList"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/account/password": {
-      "put": {
-        "tags": [
-          "AccountService"
-        ],
-        "summary": "ChangePassword changes the current account's password.",
-        "operationId": "AccountService_ChangePassword",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/accountChangePasswordRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/accountChangePasswordResponse"
             }
           },
           "default": {
@@ -1355,83 +1322,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/servicestatusListServiceStatusesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/session": {
-      "post": {
-        "tags": [
-          "SessionService"
-        ],
-        "summary": "Create a new JWT for authentication and set a cookie if using HTTP",
-        "operationId": "SessionService_Create",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/sessionSessionCreateRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/sessionSessionResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "SessionService"
-        ],
-        "summary": "Delete an existing JWT cookie if using HTTP",
-        "operationId": "SessionService_Delete",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/sessionSessionResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/session/captcha": {
-      "get": {
-        "tags": [
-          "SessionService"
-        ],
-        "summary": "GetCaptcha returns a fresh login captcha for web login.",
-        "operationId": "SessionService_GetCaptcha",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/sessionCaptchaResponse"
             }
           },
           "default": {
@@ -3483,20 +3373,6 @@
         }
       }
     },
-    "accountChangePasswordRequest": {
-      "type": "object",
-      "properties": {
-        "currentPassword": {
-          "type": "string"
-        },
-        "newPassword": {
-          "type": "string"
-        }
-      }
-    },
-    "accountChangePasswordResponse": {
-      "type": "object"
-    },
     "accountCreateTokenRequest": {
       "type": "object",
       "properties": {
@@ -3706,9 +3582,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "passwordPattern": {
-          "type": "string"
         },
         "plugins": {
           "type": "array",
@@ -4736,22 +4609,6 @@
         }
       }
     },
-    "sessionCaptchaResponse": {
-      "description": "CaptchaResponse returns a one-time login captcha challenge.",
-      "type": "object",
-      "properties": {
-        "captcha_id": {
-          "type": "string"
-        },
-        "expires_in": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "image_data_url": {
-          "type": "string"
-        }
-      }
-    },
     "sessionGetUserInfoResponse": {
       "type": "object",
       "title": "The current user's userInfo info",
@@ -4775,36 +4632,6 @@
           "$ref": "#/definitions/accountAccountProfile"
         },
         "username": {
-          "type": "string"
-        }
-      }
-    },
-    "sessionSessionCreateRequest": {
-      "description": "SessionCreateRequest is for logging in.",
-      "type": "object",
-      "properties": {
-        "captcha_answer": {
-          "type": "string"
-        },
-        "captcha_id": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        },
-        "token": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        }
-      }
-    },
-    "sessionSessionResponse": {
-      "description": "SessionResponse wraps the created token or returns an empty string if deleted.",
-      "type": "object",
-      "properties": {
-        "token": {
           "type": "string"
         }
       }

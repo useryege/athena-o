@@ -10,13 +10,6 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/account";
 
-message ChangePasswordRequest {
-  string currentPassword = 1;
-  string newPassword = 2;
-}
-
-message ChangePasswordResponse {}
-
 message GetAccountRequest {
   string name = 1;
 }
@@ -145,14 +138,6 @@ message UpdateAccountPreferencesRequest {
 message EmptyResponse {}
 
 service AccountService {
-  // ChangePassword changes the current account's password.
-  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
-    option (google.api.http) = {
-      put: "/api/v1/account/password"
-      body: "*"
-    };
-  }
-
   // ListAccounts returns the list of accounts
   rpc ListAccounts(ListAccountsRequest) returns (AccountsList) {
     option (google.api.http).get = "/api/v1/account";

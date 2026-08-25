@@ -45,12 +45,13 @@ IP_GENERATOR_REMOTE_PATH?=/root/ip-generator
 PROD_LOG_SERVICE?=
 PROD_MIGRATE_MODULE?=all
 PROD_POSTGRES_VOLUME?=athena-prod-postgres-data
+PROD_REDIS_VOLUME?=athena-prod-redis-data
 PROD_MINIO_VOLUME?=athena-prod-minio-data
 MINIO_IMAGE?=athena-minio:9e49d5e7a648
 MINIO_MC_IMAGE?=athena-minio-mc:7394ce0dd2a8
 MINIO_SERVER_DOCKERFILE?=deploy/minio/Dockerfile.server
 MINIO_MC_DOCKERFILE?=deploy/minio/Dockerfile.mc
-PROD_COMPOSE_LOCAL=PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE)
+PROD_COMPOSE_LOCAL=ATHENA_COMPOSE_ENV_FILE=$(PROD_ENV_FILE) ATHENA_SERVER_CONTAINER_USER=$(shell id -u):0 PROD_IMAGE=$(PROD_IMAGE) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_REDIS_VOLUME=$(PROD_REDIS_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) $(DOCKER) compose -f $(PROD_COMPOSE_FILE) --env-file $(PROD_ENV_FILE)
 BSC_INDEXER_IMAGE?=athena-bsc-transaction-indexer:local
 BSC_INDEXER_DOCKERFILE?=deploy/bsc-transaction-indexer/Dockerfile
 BSC_INDEXER_COMPOSE_FILE?=deploy/bsc-transaction-indexer/docker-compose.yml
@@ -123,14 +124,6 @@ clientgen:
 .PHONY: clidocsgen
 clidocsgen:
 	go run tools/cmd-docs/main.go
-
-.PHONY: password-hash
-password-hash:
-ifeq ($(PASSWORD),)
-	go run tools/password-hash/main.go
-else
-	go run tools/password-hash/main.go -password '$(PASSWORD)'
-endif
 
 .PHONY: jwt-secret
 jwt-secret:
@@ -350,6 +343,7 @@ prod-build-local: minio-images-local
 .PHONY: prod-start-local
 prod-start-local:
 	$(DOCKER) volume create $(PROD_POSTGRES_VOLUME) >/dev/null
+	$(DOCKER) volume create $(PROD_REDIS_VOLUME) >/dev/null
 	$(DOCKER) volume create $(PROD_MINIO_VOLUME) >/dev/null
 	$(PROD_COMPOSE_LOCAL) up -d postgres
 	$(PROD_COMPOSE_LOCAL) --profile tools run --rm athena-migrate athena up --module $(PROD_MIGRATE_MODULE)
@@ -360,6 +354,9 @@ prod-stop-local:
 	$(PROD_COMPOSE_LOCAL) down --remove-orphans
 	@if $(DOCKER) volume inspect $(PROD_POSTGRES_VOLUME) >/dev/null 2>&1; then \
 		$(DOCKER) volume rm $(PROD_POSTGRES_VOLUME); \
+	fi
+	@if $(DOCKER) volume inspect $(PROD_REDIS_VOLUME) >/dev/null 2>&1; then \
+		$(DOCKER) volume rm $(PROD_REDIS_VOLUME); \
 	fi
 	@if $(DOCKER) volume inspect $(PROD_MINIO_VOLUME) >/dev/null 2>&1; then \
 		$(DOCKER) volume rm $(PROD_MINIO_VOLUME); \
@@ -373,15 +370,15 @@ prod-logs-local:
 # use http://127.0.0.1:8080
 .PHONY: prod-deploy-remote
 prod-deploy-remote: prod-reset-secrets prod-build-local
-	PROD_IMAGE=$(PROD_IMAGE) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) PROD_MIGRATE_MODULE=$(PROD_MIGRATE_MODULE) bash ./hack/prod-remote-deploy.sh deploy
+	PROD_IMAGE=$(PROD_IMAGE) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_REDIS_VOLUME=$(PROD_REDIS_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) PROD_MIGRATE_MODULE=$(PROD_MIGRATE_MODULE) bash ./hack/prod-remote-deploy.sh deploy
 
 .PHONY: prod-hot-deploy-remote
 prod-hot-deploy-remote: prod-build-local
-	PROD_IMAGE=$(PROD_IMAGE) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) PROD_MIGRATE_MODULE=$(PROD_MIGRATE_MODULE) bash ./hack/prod-remote-deploy.sh hot-deploy
+	PROD_IMAGE=$(PROD_IMAGE) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) PROD_COMPOSE_FILE=$(PROD_COMPOSE_FILE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_REDIS_VOLUME=$(PROD_REDIS_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) PROD_MIGRATE_MODULE=$(PROD_MIGRATE_MODULE) bash ./hack/prod-remote-deploy.sh hot-deploy
 
 .PHONY: prod-destroy-remote
 prod-destroy-remote:
-	PROD_IMAGE=$(PROD_IMAGE) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) bash ./hack/prod-remote-deploy.sh destroy
+	PROD_IMAGE=$(PROD_IMAGE) MINIO_IMAGE=$(MINIO_IMAGE) MINIO_MC_IMAGE=$(MINIO_MC_IMAGE) PROD_ENV_FILE=$(PROD_ENV_FILE) REMOTE_APP_DIR=$(REMOTE_APP_DIR) PROD_POSTGRES_VOLUME=$(PROD_POSTGRES_VOLUME) PROD_REDIS_VOLUME=$(PROD_REDIS_VOLUME) PROD_MINIO_VOLUME=$(PROD_MINIO_VOLUME) bash ./hack/prod-remote-deploy.sh destroy
 
 .PHONY: cm
 cm:

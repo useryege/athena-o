@@ -6,7 +6,6 @@ import (
 	"fmt"
 	goio "io"
 	"io/fs"
-	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -41,6 +40,7 @@ import (
 	"github.com/useryege/athena/internal/accountcredentials"
 	accountstatestore "github.com/useryege/athena/internal/accountstate/store"
 	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
+	"github.com/useryege/athena/internal/googleoidc"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
@@ -76,7 +76,6 @@ import (
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
-	"github.com/useryege/athena/util/env"
 	errorsutil "github.com/useryege/athena/util/errors"
 	grpc_util "github.com/useryege/athena/util/grpc"
 	"github.com/useryege/athena/util/healthz"
@@ -116,11 +115,6 @@ import (
 	wormmarketspkg "github.com/useryege/athena/pkg/apiclient/wormmarkets"
 )
 
-const (
-	maxConcurrentLoginRequestsCountEnv = "ATHENA_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT"
-	replicasCountEnv                   = "ATHENA_API_SERVER_REPLICAS"
-)
-
 // ErrNoSession indicates no auth token was supplied as part of a request
 var ErrNoSession = status.Errorf(codes.Unauthenticated, "no session information")
 
@@ -143,19 +137,7 @@ var backoff = wait.Backoff{
 var (
 	// clientConstraint = ">= " + common.MinClientVersion
 	baseHRefRegex = regexp.MustCompile(`<base href="(.*?)">`)
-	// limits number of concurrent login requests to prevent password brute forcing. If set to 0 then no limit is enforced.
-	maxConcurrentLoginRequestsCount = 50
-	replicasCount                   = 1
 )
-
-func init() {
-	// parse the max concurrent login requests count from the environment variable
-	maxConcurrentLoginRequestsCount = env.ParseNumFromEnv(maxConcurrentLoginRequestsCountEnv, maxConcurrentLoginRequestsCount, 0, math.MaxInt32)
-	replicasCount = env.ParseNumFromEnv(replicasCountEnv, replicasCount, 0, math.MaxInt32)
-	if replicasCount > 0 {
-		maxConcurrentLoginRequestsCount = maxConcurrentLoginRequestsCount / replicasCount
-	}
-}
 
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
@@ -169,6 +151,7 @@ type AthenaServer struct {
 	accountCenter     *accountcenter.Manager
 	accountAvatarHTTP *accountavatarhttp.Handler
 	accessController  *accountaccess.Controller
+	googleOIDC        *googleoidc.Handler
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -229,12 +212,18 @@ type AthenaServerOpts struct {
 
 // NewServer returns a new instance of the Athena API server
 func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
+	if opts.DisableAuth && !isLoopbackListenHost(opts.ListenHost) {
+		errorsutil.CheckError(fmt.Errorf("disabled authentication is allowed only on a loopback listen address"))
+	}
 	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
 	errorsutil.CheckError(err)
 	settings, err := settingsMgr.GetSettings()
 	errorsutil.CheckError(err)
 	credentialCatalog, err := accountcredentials.LoadCatalog()
 	errorsutil.CheckError(err)
+	if !opts.DisableAuth {
+		errorsutil.CheckError(credentialCatalog.ValidateGoogleBindings())
+	}
 	jwtCodec, err := accountcredentials.NewJWTCodec(credentialCatalog)
 	errorsutil.CheckError(err)
 	credentialMgr := accountcredentials.NewCredentialManager(credentialCatalog, jwtCodec)
@@ -258,6 +247,20 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
 	sessionMgr := util_session.NewSessionManager(credentialMgr, jwtCodec, userStateStorage, accessController)
+	var googleOIDCHandler *googleoidc.Handler
+	if !opts.DisableAuth {
+		googleOIDCConfig, err := googleoidc.LoadConfigFromEnv()
+		errorsutil.CheckError(err)
+		googleOIDCHandler, err = googleoidc.NewHandler(
+			googleOIDCConfig,
+			opts.RedisClient,
+			credentialMgr,
+			sessionMgr,
+			settings.UserSessionDuration,
+			opts.BaseHRef,
+		)
+		errorsutil.CheckError(err)
+	}
 
 	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
@@ -290,6 +293,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		accountStateStore: accountStateStore,
 		accountCenter:     accountCenter,
 		accessController:  accessController,
+		googleOIDC:        googleOIDCHandler,
 		userStateStorage:  userStateStorage,
 		staticAssets:      http.FS(staticFS),
 		Shutdown:          noopShutdown,
@@ -305,6 +309,15 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 
 	return a
 
+}
+
+func isLoopbackListenHost(host string) bool {
+	host = strings.Trim(strings.TrimSpace(host), "[]")
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	address := net.ParseIP(host)
+	return address != nil && address.IsLoopback()
 }
 
 // Close releases process-lifetime resources owned by the API server. It is
@@ -396,8 +409,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	// sensitiveMethods := map[string]bool{
 	// 	"/cluster.ClusterService/Create":                               true,
 	// 	"/cluster.ClusterService/Update":                               true,
-	// 	"/session.SessionService/Create":                               true,
-	// 	"/account.AccountService/ChangePassword":                       true,
 	// 	"/gpgkey.GPGKeyService/CreateGnuPGPublicKey":                   true,
 	// 	"/repository.RepositoryService/Create":                         true,
 	// 	"/repository.RepositoryService/Update":                         true,
@@ -488,20 +499,13 @@ type AthenaServiceSet struct {
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
-	// create a login rate limiter
-	// used by the session service
-	var loginRateLimiter func() (utilio.Closer, error)
-	if maxConcurrentLoginRequestsCount > 0 {
-		loginRateLimiter = session.NewLoginRateLimiter(maxConcurrentLoginRequestsCount)
-	}
-
 	// session service
-	sessionService := session.NewServer(server.sessionMgr, server.settings.UserSessionDuration, server, server.accessController, server.accountCenter, loginRateLimiter)
+	sessionService := session.NewServer(server, server.accessController, server.accountCenter)
 
 	settingsProjector := settings.NewProjector(server.settingsMgr, server.credentialMgr, server.accessController)
 	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server.accountCenter, server)
 	// account service
-	accountService := account.NewServer(server.credentialMgr, server.settings.PasswordPattern, server.accessController, server.accountCenter)
+	accountService := account.NewServer(server.credentialMgr, server.accessController, server.accountCenter)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
@@ -579,33 +583,12 @@ func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // translateGRPCResponseHeaders applies HTTP-only response headers at the gateway boundary.
 func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
-	if sessionResp, ok := resp.(*sessionpkg.SessionResponse); ok {
-		token := sessionResp.Token
-		err := server.setTokenCookie(token, w)
-		if err != nil {
-			return fmt.Errorf("error setting token cookie from session response: %w", err)
-		}
-	}
 	if _, ok := resp.(*appbootstrappkg.GetAppBootstrapResponse); ok {
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Add("Vary", "Cookie, Authorization")
 	}
 	return nil
 }
-
-func (server *AthenaServer) setTokenCookie(token string, w http.ResponseWriter) error {
-	return httputil.SetTokenCookie(token, server.BaseHRef, !server.DisableAuth, w)
-}
-
-func athenaIncomingHeaderMatcher(key string) (string, bool) {
-	switch strings.ToLower(key) {
-	case "x-forwarded-for", "x-real-ip", "forwarded":
-		return strings.ToLower(key), true
-	default:
-		return runtime.DefaultHeaderMatcher(key)
-	}
-}
-
 func compressHandler(handler http.Handler) http.Handler {
 	compr := handlers.CompressHandler(handler)
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -793,14 +776,18 @@ func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *
 func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWebHandler http.Handler, conn *grpc.ClientConn) *http.Server {
 	endpoint := fmt.Sprintf("localhost:%d", port)
 	mux := http.NewServeMux()
+	publicHandlers := map[string]http.Handler{
+		common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
+	}
+	if server.googleOIDC != nil {
+		publicHandlers["/auth/google/login"] = http.HandlerFunc(server.googleOIDC.Login)
+		publicHandlers["/auth/google/callback"] = http.HandlerFunc(server.googleOIDC.Callback)
+	}
 	httpS := http.Server{
 		Addr: endpoint,
 		Handler: &handlerSwitcher{
-			handler: mux,
-			// do not need to be authenticated methods
-			urlToHandler: map[string]http.Handler{
-				common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
-			},
+			handler:      mux,
+			urlToHandler: publicHandlers,
 			contentTypeToHandler: map[string]http.Handler{
 				"application/grpc-web+proto": grpcWebHandler,
 			},
@@ -814,17 +801,8 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// time.Time, but does not support custom UnmarshalJSON() and MarshalJSON() methods. Therefore
 	// we use our own Marshaler
 	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
-	gwHeaderOpts := runtime.WithIncomingHeaderMatcher(athenaIncomingHeaderMatcher)
-	gwMetadataOpts := runtime.WithMetadata(func(_ context.Context, r *http.Request) metadata.MD {
-		md := metadata.Pairs("athena-http-gateway", "true")
-		if r.RemoteAddr == "" {
-			return md
-		}
-		md.Append("athena-remote-addr", r.RemoteAddr)
-		return md
-	})
 	gwResponseHeaderOpts := runtime.WithForwardResponseOption(server.translateGRPCResponseHeaders)
-	gwmux := runtime.NewServeMux(gwMuxOpts, gwHeaderOpts, gwMetadataOpts, gwResponseHeaderOpts)
+	gwmux := runtime.NewServeMux(gwMuxOpts, gwResponseHeaderOpts)
 
 	var handler http.Handler = gwmux
 	if server.EnableGZip {
@@ -971,7 +949,9 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 		}
 	}()
 
-	server.userStateStorage.Init(ctx)
+	if !server.DisableAuth {
+		server.userStateStorage.Init(ctx)
+	}
 
 	// Prepare all services for the athena server
 	svcSet := newAthenaServiceSet(server)

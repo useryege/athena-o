@@ -2,14 +2,11 @@ package account
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"sort"
 
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,64 +15,23 @@ import (
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/pkg/apiclient/account"
-	"github.com/useryege/athena/util/password"
 	"github.com/useryege/athena/util/session"
 )
 
 // Server provides the Account service.
 type Server struct {
 	credentials      *accountcredentials.CredentialManager
-	passwordPattern  string
 	accessController *accountaccesscore.Controller
 	accountCenter    *accountcenter.Manager
 }
 
-var apiKeyIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
-
 // NewServer returns a new Account service.
-func NewServer(credentials *accountcredentials.CredentialManager, passwordPattern string, accessController *accountaccesscore.Controller, accountCenter *accountcenter.Manager) *Server {
+func NewServer(credentials *accountcredentials.CredentialManager, accessController *accountaccesscore.Controller, accountCenter *accountcenter.Manager) *Server {
 	return &Server{
 		credentials:      credentials,
-		passwordPattern:  passwordPattern,
 		accessController: accessController,
 		accountCenter:    accountCenter,
 	}
-}
-
-// ChangePassword atomically verifies and changes the current account's password.
-func (s *Server) ChangePassword(ctx context.Context, q *account.ChangePasswordRequest) (*account.ChangePasswordResponse, error) {
-	username := session.GetUserIdentifier(ctx)
-
-	// Need to validate password complexity with regular expression
-	passwordPattern := s.passwordPattern
-	if passwordPattern == "" {
-		passwordPattern = common.PasswordPatten
-	}
-
-	validPasswordRegexp, err := regexp.Compile(passwordPattern)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile password regex: %w", err)
-	}
-
-	if !validPasswordRegexp.MatchString(q.NewPassword) {
-		return nil, status.Errorf(codes.InvalidArgument, "new password does not match the following expression: %s", passwordPattern)
-	}
-
-	hashedPassword, err := password.HashPassword(q.NewPassword)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	err = s.credentials.ChangePassword(username, q.CurrentPassword, hashedPassword)
-	if errors.Is(err, accountcredentials.ErrInvalidCredentials) {
-		return nil, status.Error(codes.InvalidArgument, "current password does not match")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to update account password: %w", err)
-	}
-
-	log.Infof("user '%s' updated password", username)
-	return &account.ChangePasswordResponse{}, nil
 }
 
 type accountDataModuleMapping struct {
@@ -391,7 +347,7 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 			return nil, fmt.Errorf("failed to generate unique ID: %w", err)
 		}
 		id = uniqueId.String()
-	} else if !apiKeyIDPattern.MatchString(id) {
+	} else if !accountcredentials.IsValidAPIKeyDisplayID(id) {
 		return nil, status.Error(codes.InvalidArgument, "API key ID must be 1-64 ASCII letters, digits, dots, underscores, or hyphens and start with a letter or digit")
 	}
 

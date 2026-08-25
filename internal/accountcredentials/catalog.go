@@ -1,23 +1,18 @@
 package accountcredentials
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/util"
-	"github.com/useryege/athena/util/password"
 )
-
-const initialPasswordLength = 16
 
 // Catalog is the immutable startup result for process-local credentials and
 // environment login baselines. Its secrets are copied into runtime consumers
@@ -28,14 +23,10 @@ type Catalog struct {
 	signingKey    []byte
 }
 
-// LoadCatalog reads the environment account registry and JWT signing key once.
+// LoadCatalog reads the fixed account registry and JWT signing key once.
 func LoadCatalog() (*Catalog, error) {
-	secrets := loadSecretsFromEnv()
-	accounts, loginDefaults, err := parseAccounts(secrets)
+	accounts, loginDefaults, err := parseAccounts()
 	if err != nil {
-		return nil, err
-	}
-	if err := initializeAdmin(accounts); err != nil {
 		return nil, err
 	}
 
@@ -49,10 +40,13 @@ func LoadCatalog() (*Catalog, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error setting JWT signature: %w", err)
 		}
-		log.Warnf("Generated transient JWT secret because ATHENA_JWT_SECRET is not set, existing sessions will be invalid after restart: %s", string(signingKey))
+		log.Warn("Generated transient JWT secret because ATHENA_JWT_SECRET is not set; existing sessions and API Keys will be invalid after restart")
+	}
+	if len(signingKey) < minimumJWTSigningKeyBytes {
+		return nil, fmt.Errorf("ATHENA_JWT_SECRET must contain at least %d bytes", minimumJWTSigningKeyBytes)
 	}
 
-	logLoadedAccounts(accounts, secrets)
+	logLoadedAccounts(accounts)
 	return &Catalog{
 		accounts:      accounts,
 		loginDefaults: loginDefaults,
@@ -69,35 +63,36 @@ func (c *Catalog) LoginDefaults() map[string]bool {
 	return defaults
 }
 
-func initializeAdmin(accounts map[string]accountSeed) error {
-	admin := accounts[common.AthenaAdminUsername]
-	if admin.passwordHash == "" {
-		initialPasswordBytes, err := util.MakeSignature(initialPasswordLength)
-		if err != nil {
-			return err
+// ValidateGoogleBindings validates the fail-closed Google login identity map.
+// It is intentionally invoked only when authentication is enabled.
+func (c *Catalog) ValidateGoogleBindings() error {
+	if c == nil {
+		return fmt.Errorf("account credential catalog is nil")
+	}
+	seen := make(map[string]string, len(c.accounts))
+	for name, seed := range c.accounts {
+		subject := strings.TrimSpace(seed.googleSubject)
+		if hasCapability(seed.capabilities, CapabilityLogin) && subject == "" {
+			return fmt.Errorf("Google subject is required for login-capable account %q", name)
 		}
-		initialPassword := base64.RawURLEncoding.EncodeToString(initialPasswordBytes)
-		admin.passwordHash, err = password.HashPassword(initialPassword)
-		if err != nil {
-			return err
+		if subject == "" {
+			continue
 		}
-		now := time.Now().UTC()
-		admin.passwordMtime = &now
-		accounts[common.AthenaAdminUsername] = admin
-		log.Warnf("Generated transient admin password because ATHENA_ADMIN_PASSWORD_HASH is not set. It will not persist across restarts: %s", initialPassword)
-	} else if admin.passwordMtime == nil || admin.passwordMtime.IsZero() {
-		now := time.Now().UTC()
-		admin.passwordMtime = &now
-		accounts[common.AthenaAdminUsername] = admin
+		if existing, ok := seen[subject]; ok {
+			return fmt.Errorf("Google subject is bound to multiple Athena accounts: %q and %q", existing, name)
+		}
+		seen[subject] = name
+	}
+	admin, ok := c.accounts[common.AthenaAdminUsername]
+	if !ok || !hasCapability(admin.capabilities, CapabilityLogin) || strings.TrimSpace(admin.googleSubject) == "" {
+		return fmt.Errorf("admin must have a unique Google subject and login capability")
 	}
 	return nil
 }
 
-func parseAccounts(secrets map[string]string) (map[string]accountSeed, map[string]bool, error) {
-	admin, err := parseAdminAccount()
-	if err != nil {
-		return nil, nil, err
-	}
+func parseAccounts() (map[string]accountSeed, map[string]bool, error) {
+	admin := parseAdminAccount()
+	var err error
 	accounts := map[string]accountSeed{common.AthenaAdminUsername: admin}
 	loginDefaults := map[string]bool{common.AthenaAdminUsername: true}
 
@@ -117,52 +112,16 @@ func parseAccounts(secrets map[string]string) (map[string]accountSeed, map[strin
 		case "ENABLED":
 			loginDefaults[name], err = strconv.ParseBool(value)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("invalid %s: %w", key, err)
 			}
-		case "PASSWORD_HASH":
-			seed.passwordHash = value
-		case "PASSWORD_MTIME":
-			modifiedAt, parseErr := time.Parse(time.RFC3339, value)
-			if parseErr != nil {
-				return nil, nil, parseErr
-			}
-			seed.passwordMtime = &modifiedAt
+		case "GOOGLE_SUB":
+			seed.googleSubject = strings.TrimSpace(value)
 		case "TOKENS":
 			seed.tokens = []Token{}
-			if value != "" && json.Unmarshal([]byte(value), &seed.tokens) != nil {
-				log.Errorf("Account '%s' has invalid token in %s", name, key)
-			}
-		}
-		accounts[name] = seed
-	}
-
-	for key, value := range secrets {
-		if !strings.HasPrefix(key, "accounts.") {
-			continue
-		}
-		parts := strings.Split(key, ".")
-		if len(parts) != 3 {
-			log.Warnf("Unexpected account secret key %s", key)
-			continue
-		}
-		name, suffix := parts[1], parts[2]
-		if name == common.AthenaAdminUsername {
-			continue
-		}
-		seed := accounts[name]
-		switch suffix {
-		case "password":
-			seed.passwordHash = value
-		case "passwordMtime":
-			modifiedAt, parseErr := time.Parse(time.RFC3339, value)
-			if parseErr != nil {
-				return nil, nil, parseErr
-			}
-			seed.passwordMtime = &modifiedAt
-		case "tokens":
-			seed.tokens = []Token{}
-			if value != "" && json.Unmarshal([]byte(value), &seed.tokens) != nil {
-				log.Errorf("Account '%s' has invalid token in settings", name)
+			if value != "" {
+				if err := json.Unmarshal([]byte(value), &seed.tokens); err != nil {
+					return nil, nil, fmt.Errorf("invalid API Key metadata in %s: %w", key, err)
+				}
 			}
 		}
 		accounts[name] = seed
@@ -174,41 +133,66 @@ func parseAccounts(secrets map[string]string) (map[string]accountSeed, map[strin
 		}
 	}
 	loginDefaults[common.AthenaAdminUsername] = true
+	if err := validateTokenMetadata(accounts); err != nil {
+		return nil, nil, err
+	}
 	return accounts, loginDefaults, nil
 }
 
-func parseAdminAccount() (accountSeed, error) {
-	seed := accountSeed{capabilities: []Capability{CapabilityLogin}}
-	passwordHash, err := envOrFile("ATHENA_ADMIN_PASSWORD_HASH")
-	if err != nil {
-		return accountSeed{}, err
+func parseAdminAccount() accountSeed {
+	return accountSeed{
+		googleSubject: strings.TrimSpace(os.Getenv("ATHENA_ADMIN_GOOGLE_SUB")),
+		capabilities:  []Capability{CapabilityLogin},
+		tokens:        []Token{},
 	}
-	seed.passwordHash = passwordHash
-	if value := os.Getenv("ATHENA_ADMIN_PASSWORD_MTIME"); value != "" {
-		if modifiedAt, parseErr := time.Parse(time.RFC3339, value); parseErr == nil {
-			seed.passwordMtime = &modifiedAt
+}
+
+func validateTokenMetadata(accounts map[string]accountSeed) error {
+	names := make([]string, 0, len(accounts))
+	for name := range accounts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	globalJTIs := make(map[string]string)
+	for _, name := range names {
+		if len(accounts[name].tokens) > 0 && !hasCapability(accounts[name].capabilities, CapabilityAPIKey) {
+			return fmt.Errorf("account %q has API Key metadata without the apiKey capability", name)
+		}
+		ids := make(map[string]bool)
+		for index, token := range accounts[name].tokens {
+			if !IsValidAPIKeyDisplayID(token.ID) {
+				return fmt.Errorf("API Key metadata %s[%d] has an invalid display ID", name, index)
+			}
+			if token.JTI == "" || strings.TrimSpace(token.JTI) != token.JTI {
+				return fmt.Errorf("API Key metadata %s[%d] has an invalid JTI", name, index)
+			}
+			if token.IssuedAt <= 0 || (token.ExpiresAt != 0 && token.ExpiresAt <= token.IssuedAt) {
+				return fmt.Errorf("API Key metadata %s[%d] has invalid time values", name, index)
+			}
+			if ids[token.ID] {
+				return fmt.Errorf("API Key display ID %q is duplicated for account %q", token.ID, name)
+			}
+			ids[token.ID] = true
+			if owner, exists := globalJTIs[token.JTI]; exists {
+				return fmt.Errorf("API Key JTI is duplicated across accounts %q and %q", owner, name)
+			}
+			globalJTIs[token.JTI] = name
 		}
 	}
-	tokens, err := envOrFile("ATHENA_ADMIN_TOKENS")
-	if err != nil {
-		return accountSeed{}, err
-	}
-	seed.tokens = []Token{}
-	if tokens != "" {
-		if err := json.Unmarshal([]byte(tokens), &seed.tokens); err != nil {
-			return accountSeed{}, err
-		}
-	}
-	return seed, nil
+	return nil
 }
 
 func parseCapabilities(value, key string) []Capability {
 	capabilities := []Capability{}
+	seen := map[Capability]bool{}
 	for _, value := range strings.Split(value, ",") {
 		capability := Capability(strings.TrimSpace(value))
 		switch capability {
 		case CapabilityLogin, CapabilityAPIKey:
-			capabilities = append(capabilities, capability)
+			if !seen[capability] {
+				capabilities = append(capabilities, capability)
+				seen[capability] = true
+			}
 		case "":
 		default:
 			log.Warnf("not supported account capability '%s' in %s", capability, key)
@@ -223,23 +207,12 @@ func accountFromEnvKey(key string) (string, string, bool) {
 		return "", "", false
 	}
 	raw := strings.TrimPrefix(key, prefix)
-	for _, suffix := range []string{"_CAPABILITIES", "_ENABLED", "_PASSWORD_HASH", "_PASSWORD_MTIME", "_TOKENS"} {
+	for _, suffix := range []string{"_CAPABILITIES", "_ENABLED", "_GOOGLE_SUB", "_TOKENS"} {
 		if strings.HasSuffix(raw, suffix) {
 			return strings.TrimSuffix(raw, suffix), strings.TrimPrefix(suffix, "_"), true
 		}
 	}
 	return "", "", false
-}
-
-func loadSecretsFromEnv() map[string]string {
-	secrets := map[string]string{}
-	for _, item := range os.Environ() {
-		key, value, ok := strings.Cut(item, "=")
-		if ok && strings.HasPrefix(key, "ATHENA_SECRET_") {
-			secrets[strings.TrimPrefix(key, "ATHENA_SECRET_")] = value
-		}
-	}
-	return secrets
 }
 
 func envOrFile(name string) (string, error) {
@@ -256,7 +229,7 @@ func envOrFile(name string) (string, error) {
 	return "", nil
 }
 
-func logLoadedAccounts(accounts map[string]accountSeed, secrets map[string]string) {
+func logLoadedAccounts(accounts map[string]accountSeed) {
 	names := make([]string, 0, len(accounts))
 	for name := range accounts {
 		names = append(names, name)
@@ -269,12 +242,6 @@ func logLoadedAccounts(accounts map[string]accountSeed, secrets map[string]strin
 			envVars++
 		}
 	}
-	secretKeys := 0
-	for key := range secrets {
-		if strings.HasPrefix(key, "accounts.") {
-			secretKeys++
-		}
-	}
-	log.Infof("Loaded local accounts from env: count=%d accounts=%v", len(names), names)
-	log.Infof("Account source hints: ATHENA_ACCOUNT_* variables=%d, ATHENA_SECRET_accounts.* keys=%d", envVars, secretKeys)
+	log.Infof("Loaded Athena accounts from environment: count=%d accounts=%v", len(names), names)
+	log.Infof("Account source hints: ATHENA_ACCOUNT_* variables=%d", envVars)
 }

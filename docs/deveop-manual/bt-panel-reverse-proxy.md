@@ -14,7 +14,9 @@
 
 1. 域名已经解析到 Athena 所在服务器，例如 `47.245.181.189`。
 2. Athena 已经完成远程部署并启动。
-3. 服务器本机可以访问 Athena API：
+3. Google Cloud 生产 Web OAuth client 已登记精确回调 URI
+   `https://<你的域名>/auth/google/callback`。
+4. 服务器本机可以访问 Athena API：
 
 ```bash
 ssh root@47.245.181.189
@@ -75,6 +77,36 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
+现有整站反向代理必须原样转发 `/auth/google/login` 和
+`/auth/google/callback`。不要为 `/auth/google/*` 添加路径重写，也不要剥离
+`/auth` 前缀。Google callback 的查询串包含一次性 authorization code 和 state，
+因此必须用精确 location 关闭该请求的 Nginx access log；应用响应还会设置
+`Referrer-Policy: no-referrer`。如果站点按 location 分开配置，可使用以下规则；
+`proxy_pass` 后不要附加会替换请求路径的 URI：
+
+```nginx
+location = /auth/google/callback {
+    access_log off;
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location ^~ /auth/google/ {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Athena 使用显式配置的 `ATHENA_GOOGLE_OIDC_REDIRECT_URI`，不会信任这些 header
+来动态构造 OAuth 回调地址；保留 header 是为了让应用日志和其他请求保持正确的
+外部请求上下文。
+
 如果宝塔提供 WebSocket 相关开关，可以一并开启。基础 UI 和 API 访问通常不依赖该开关，但开启后更稳妥。
 
 ## 配置 HTTPS
@@ -88,6 +120,20 @@ proxy_set_header X-Forwarded-Proto $scheme;
 ```text
 https://athena.example.com
 ```
+
+## 配置 Google Cloud 回调
+
+在 Google Cloud Console 中使用独立的生产 **Web application** OAuth client，
+配置 consent screen/audience，并把以下值登记为 Authorized redirect URI：
+
+```text
+https://athena.example.com/auth/google/callback
+```
+
+该值必须与生产环境中的 `ATHENA_GOOGLE_OIDC_REDIRECT_URI` 逐字符一致，包括
+scheme、域名、端口（如有）和路径。不要登记 HTTP 生产回调，也不要使用通配符。
+本地开发应使用另一个 client，其回调为
+`http://localhost:4000/auth/google/callback`。
 
 ## 验证
 
@@ -114,7 +160,12 @@ ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.pro
 - 不需要在云服务器安全组或系统防火墙中开放公网 `8080`。
 - 公网只需要开放 `80` 和 `443` 给宝塔/Nginx。
 - 不建议将 `ATHENA_SERVER_BIND_ADDR` 改成 `0.0.0.0` 后直接暴露 `8080`。
-- 如果启用登录，生产环境应确认账号和密码 hash 配置稳定，避免使用重启后变化的临时 admin 密码。
+- 生产必须配置六个互不相同的 Google `sub`；邮箱不能代替 `sub`，也没有临时
+  `admin` 密码或密码兜底入口。
+- `/auth/google/callback` 的精确 Nginx location 必须保持 `access_log off`，避免
+  code/state 进入默认 `$request` 日志。
+- Google client secret 只保存在远端由容器 UID/GID `999` 持有的 `0600` 文件中，
+  并由 Compose 只读挂载给 `athena-server`。
 
 ## 常见问题
 
@@ -139,3 +190,16 @@ ssh root@47.245.181.189 'cd /root/athena && PROD_POSTGRES_VOLUME=athena-prod-pos
 ### HTTPS 正常但接口请求失败
 
 检查反向代理配置中是否保留了 `Host`、`X-Forwarded-For` 和 `X-Forwarded-Proto` 等代理头，并确认没有额外路径重写。
+
+### Google 提示 redirect_uri_mismatch
+
+对比 Google Cloud Authorized redirect URI 和
+`ATHENA_GOOGLE_OIDC_REDIRECT_URI`，确认两者逐字符一致，并检查 Nginx 是否原样转发
+`/auth/google/callback`。生产回调必须使用公开域名的 HTTPS URI。
+
+### 更换 Google client 或账号绑定后仍使用旧身份
+
+重启 `athena-server` 使新配置生效。修改账号 Google `sub` 会立即使该账号已有
+网页登录会话在下次请求失效，但不会自动撤销 API Key；账号交接时应显式删除并
+重新创建 API Key。切换认证版本上线时轮换 `ATHENA_JWT_SECRET`，会同时使全部旧
+会话和旧 API Key 失效。

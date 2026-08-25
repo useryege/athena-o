@@ -42,6 +42,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", *envFile, err)
 		os.Exit(1)
 	}
+	if err := os.Chmod(*envFile, 0o600); err != nil {
+		fmt.Fprintf(os.Stderr, "error securing %s: %v\n", *envFile, err)
+		os.Exit(1)
+	}
 
 	fmt.Fprintf(os.Stderr, "updated %s: %s\n", *envFile, strings.Join(targetKeys, ", "))
 }

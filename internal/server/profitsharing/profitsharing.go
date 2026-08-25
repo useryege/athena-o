@@ -307,6 +307,9 @@ func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]st
 		if !account.HasCapability(accountcredentials.CapabilityLogin) {
 			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q does not have login capability", accountName)
 		}
+		if !account.HasGoogleBinding() {
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q does not have a Google identity binding", accountName)
+		}
 		access, err := s.accessController.Get(accountName)
 		if err != nil {
 			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has no access configuration", accountName)

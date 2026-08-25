@@ -80,9 +80,6 @@ const (
 	AthenaUserAgentName = "athena-client"
 	// AuthCookieName is the HTTP cookie name where we store our auth token
 	AuthCookieName = "athena.token"
-
-	// PasswordPatten is the default password patten
-	PasswordPatten = `^.{8,32}$`
 )
 
 // Auth endpoint constants

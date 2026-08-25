@@ -8,11 +8,13 @@ System/Light/Dark theme choice for the fixed environment account catalog. It
 provides uncached reads and independent optimistic-concurrency boundaries for
 profile and preference state.
 
-[Account Credentials](account-credentials.md) owns process-local passwords and
-API Keys. [Account Access Control](account-access-control.md) owns login and
-product-module authorization. The avatar object store, upload validation,
-private binary delivery, and orphan collection are separate from this
-capability; this capability commits only the avatar object metadata reference.
+[Account Credentials](account-credentials.md) owns fixed Google subject bindings
+and API Keys. [Google OIDC Login](google-oidc-login.md) owns external identity
+verification, while [Account Access Control](account-access-control.md) owns
+login and product-module authorization. The avatar object store, upload
+validation, private binary delivery, and orphan collection are separate from
+this capability; this capability commits only the avatar object metadata
+reference.
 
 ## Source Locations
 
@@ -52,6 +54,11 @@ revision. A theme update advances only the preferences revision. Tier is
 presentation metadata and is never consulted by authentication or
 authorization.
 
+Google identity data is outside both aggregates. A verified Google subject
+selects an existing Athena account, but Google name, email, and picture claims
+do not initialize, replace, or otherwise mutate that account's display name,
+avatar, tier, or preferences.
+
 ## Runtime Flow
 
 1. API Server startup loads the fixed credential catalog, connects the shared
@@ -78,9 +85,11 @@ authorization.
    subsystem reads the previous profile, performs its object lifecycle, and
    calls these methods to atomically replace or clear only the durable object
    reference.
-7. `GetUserInfo` and authenticated bootstrap read the current profile and
-   preferences on every projection. Account administration reads profiles for
-   its account list but never receives another account's preferences.
+7. After Google authentication establishes an Athena session, `GetUserInfo`
+   and authenticated bootstrap read the current Athena profile and preferences
+   on every projection. They do not project Google profile claims. Account
+   administration reads profiles for its account list but never receives
+   another account's preferences.
 
 ## State / Data
 
@@ -105,6 +114,10 @@ session projection contains only the current account's preferences. Profit
 Sharing display-name snapshots remain domain-local and do not consume this
 global profile.
 
+Neither table stores a Google subject, email address, Google display name, or
+Google picture URL. Those external authentication attributes cannot become an
+alternate profile source.
+
 ## Configuration
 
 | Setting | Behavior |
@@ -121,6 +134,8 @@ are implementation constants rather than runtime configuration.
   catalog are addressable.
 - Username is immutable. Display name may be duplicated and never changes
   credentials, access, or Profit Sharing snapshots.
+- Google sign-in never synchronizes Google name, email, or picture claims into
+  profile or preference state.
 - Tier never grants login, administrator, module, or credential capability.
 - Profile and preferences revisions are independent and each committed mutation
   advances exactly one revision once.

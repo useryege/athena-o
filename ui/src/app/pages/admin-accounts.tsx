@@ -37,8 +37,8 @@ const AccountAccessEditor = (props: {
     <div className='account-access-editor' aria-busy={props.updating || undefined}>
         <div className='account-access-editor__login'>
             <div>
-                <Typography.Text strong={true}>Login access</Typography.Text>
-                <Typography.Paragraph type='secondary'>Controls web sessions, bearer tokens, and API keys for this account.</Typography.Paragraph>
+                <Typography.Text strong={true}>Google sign-in access</Typography.Text>
+                <Typography.Paragraph type='secondary'>Controls new Google sign-ins and use of existing Athena sessions and API keys for this account.</Typography.Paragraph>
             </div>
             {props.editable ? (
                 <Switch
@@ -340,7 +340,9 @@ export const AdminAccountsPage = () => {
         const loginDisabled = selected.access.loginEnabled && !accessDraft.loginEnabled;
         const reduced = accountDataModules.filter(definition => moduleAccessLevel(accessDraft, definition.module) < moduleAccessLevel(selected.access, definition.module));
         const writeGranted = accountDataModules.filter(
-            definition => moduleAccessLevel(selected.access, definition.module) < AccountDataAccess.ReadWrite && moduleAccessLevel(accessDraft, definition.module) === AccountDataAccess.ReadWrite
+            definition =>
+                moduleAccessLevel(selected.access, definition.module) < AccountDataAccess.ReadWrite &&
+                moduleAccessLevel(accessDraft, definition.module) === AccountDataAccess.ReadWrite
         );
         if (!loginDisabled && reduced.length === 0 && writeGranted.length === 0) {
             void commitAccess();
@@ -350,7 +352,7 @@ export const AdminAccountsPage = () => {
             title: `Confirm access changes for ${selected.name}`,
             content: (
                 <ul className='account-access-confirmation'>
-                    {loginDisabled && <li>Disable login and suspend all existing credentials.</li>}
+                    {loginDisabled && <li>Disable Google sign-in and suspend existing Athena sessions and API keys.</li>}
                     {reduced.length > 0 && <li>Reduce access: {reduced.map(item => item.label).join(', ')}.</li>}
                     {writeGranted.length > 0 && <li>Grant sensitive write access: {writeGranted.map(item => item.label).join(', ')}.</li>}
                 </ul>
@@ -361,7 +363,12 @@ export const AdminAccountsPage = () => {
     };
 
     return (
-        <AppPage title='Account Administration' subtitle='Manage account profiles, presentation tiers, and effective module access.' loading={accounts.loading} error={accounts.error} onRefresh={accounts.reload}>
+        <AppPage
+            title='Account Administration'
+            subtitle='Manage account profiles, presentation tiers, and effective module access.'
+            loading={accounts.loading}
+            error={accounts.error}
+            onRefresh={accounts.reload}>
             <div className={mobileAccountName ? 'admin-accounts-mobile-list admin-accounts-mobile-list--hidden' : 'admin-accounts-mobile-list'}>
                 <div className='admin-accounts-mobile-list__heading'>
                     <Typography.Title level={2}>Accounts</Typography.Title>
@@ -426,7 +433,9 @@ export const AdminAccountsPage = () => {
                                     </Space>
                                 </div>
                             </div>
-                            {!profileEditable && <Alert className='admin-account-self-notice' type='info' showIcon={true} title='Manage your own profile and security in Account Center' />}
+                            {!profileEditable && (
+                                <Alert className='admin-account-self-notice' type='info' showIcon={true} title='Manage your own profile and security in Account Center' />
+                            )}
                             <Section title='Profile & tier'>
                                 <div className='admin-account-profile-grid'>
                                     <div className='admin-account-avatar-editor'>
@@ -445,7 +454,12 @@ export const AdminAccountsPage = () => {
                                                 </Button>
                                             </Upload>
                                             {selected.profile.avatarUrl && (
-                                                <Button danger={true} icon={<DeleteOutlined />} loading={uploadingAvatar} disabled={!profileEditable || uploadingAvatar} onClick={() => void changeAvatar()}>
+                                                <Button
+                                                    danger={true}
+                                                    icon={<DeleteOutlined />}
+                                                    loading={uploadingAvatar}
+                                                    disabled={!profileEditable || uploadingAvatar}
+                                                    onClick={() => void changeAvatar()}>
                                                     Remove
                                                 </Button>
                                             )}
@@ -465,7 +479,12 @@ export const AdminAccountsPage = () => {
                                         </Form.Item>
                                         <div className='admin-account-field-actions'>
                                             <Typography.Text type={displayNameDirty ? 'warning' : 'secondary'}>Revision {selected.profile.revision}</Typography.Text>
-                                            <Button type='primary' icon={<SaveOutlined />} loading={savingProfile} disabled={!profileEditable || !displayNameDirty || !displayNameValid} onClick={() => void saveDisplayName()}>
+                                            <Button
+                                                type='primary'
+                                                icon={<SaveOutlined />}
+                                                loading={savingProfile}
+                                                disabled={!profileEditable || !displayNameDirty || !displayNameValid}
+                                                onClick={() => void saveDisplayName()}>
                                                 Save name
                                             </Button>
                                         </div>
@@ -483,14 +502,18 @@ export const AdminAccountsPage = () => {
                                         </Form.Item>
                                         <div className='admin-account-field-actions'>
                                             <Typography.Text type='secondary'>Display only; does not grant access.</Typography.Text>
-                                            <Button icon={<CheckOutlined />} loading={savingTier} disabled={!profileEditable || !tierDirty || displayNameDirty} onClick={() => void saveTier()}>
+                                            <Button
+                                                icon={<CheckOutlined />}
+                                                loading={savingTier}
+                                                disabled={!profileEditable || !tierDirty || displayNameDirty}
+                                                onClick={() => void saveTier()}>
                                                 Apply tier
                                             </Button>
                                         </div>
                                     </Form>
                                 </div>
                             </Section>
-                            <Section title='Login & module access'>
+                            <Section title='Google sign-in & module access'>
                                 <AccountAccessEditor
                                     account={selected}
                                     access={accessDraft || selected.access}

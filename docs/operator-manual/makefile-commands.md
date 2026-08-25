@@ -28,6 +28,7 @@
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
 | `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-state`、`worm-markets`、`fifa-market-dashboard`、`notification`、`wallet`、`sports-live`、`sports-history`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
+| `PROD_REDIS_VOLUME` | `athena-prod-redis-data` | Redis AOF external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
 | `PROD_MINIO_VOLUME` | `athena-prod-minio-data` | MinIO external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
 | `MINIO_IMAGE` | `athena-minio:9e49d5e7a648` | 从固定 MinIO Server commit 构建的镜像名。 |
 | `MINIO_MC_IMAGE` | `athena-minio-mc:7394ce0dd2a8` | 从固定 mc commit 构建的一次性初始化镜像名。 |
@@ -39,29 +40,9 @@
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
-| `make password-hash` | 将明文密码转换为 bcrypt hash，用于配置 `.env` 中的 `ATHENA_ACCOUNT_*_PASSWORD_HASH`。 | `make password-hash` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
 | `make service-password` | 生成可用于 PostgreSQL、Redis 或 MinIO 的随机密码。 | `make service-password` |
 | `make wallet-private-key-ciphertext` | 生成可用于 `wallet_private_keys.private_key_ciphertext` 的密文 SQL 表达式。 | `make wallet-private-key-ciphertext` |
-
-生成本地账号密码 hash：
-
-```bash
-# 交互式输入（推荐，密码不回显）
-make password-hash
-
-# 非交互（密码会出现在 shell history，仅适合临时使用）
-make password-hash PASSWORD='temporary-password'
-
-# 也可直接运行
-go run tools/password-hash/main.go -password 'temporary-password'
-```
-
-输出为一行 bcrypt hash（例如 `$2a$10$...`）。写入 `.env` 时请用**单引号**包裹 hash，避免 `$` 被 shell 展开导致登录失败：
-
-```bash
-ATHENA_ACCOUNT_LINGJIE_PASSWORD_HASH='$2a$10$...'
-```
 
 生成 HS256 JWT secret：
 
@@ -81,6 +62,10 @@ go run tools/jwt-secret/main.go -format hex
 ```bash
 ATHENA_JWT_SECRET='<generated-secret>'
 ```
+
+Google OIDC 登录和 API Key 都使用 Athena 自有 JWT v2。切换认证方案或需要强制
+所有浏览器会话与 API Key 失效时，生成新值并替换 `ATHENA_JWT_SECRET`；随后所有
+用户需要重新登录，自动化调用方需要重新创建 API Key。
 
 生成数据库和 Redis 密码：
 
@@ -120,6 +105,62 @@ ATHENA_WALLET_ENCRYPTION_KEY='<wallet-encryption-key>' go run tools/wallet-priva
 ```sql
 decode('<generated-ciphertext-hex>', 'hex')
 ```
+
+## Google OIDC 配置
+
+Google 只负责确认外部身份。Athena 使用稳定的 Google `sub` 一对一查找固定内部
+账号，邮箱不参与映射，也不会自动创建账号。认证启用时，以下变量必须完整且六个
+`sub` 互不相同，否则 API Server 在监听前关闭失败：
+
+```env
+ATHENA_GOOGLE_OIDC_CLIENT_ID='<google-web-client-id>'
+ATHENA_GOOGLE_OIDC_REDIRECT_URI='<exact-callback-uri>'
+ATHENA_ACCOUNT_YEGE_GOOGLE_SUB='<yege-google-sub>'
+ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB='<lingjie-google-sub>'
+ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB='<dongmei-google-sub>'
+ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB='<dingzhi-google-sub>'
+ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB='<yudian-google-sub>'
+ATHENA_ADMIN_GOOGLE_SUB='<admin-google-sub>'
+```
+
+在 Google Cloud 中分别创建本地和生产 **Web application** OAuth client，配置
+consent screen/audience，并登记完全一致的 authorized redirect URI：
+
+- 本地：`http://localhost:4000/auth/google/callback`
+- 生产：`https://<athena-domain>/auth/google/callback`
+
+生产 URI 必须显式使用 HTTPS。Athena 不会从请求的 `Host`、
+`X-Forwarded-Host` 等 header 推断回调地址。Google `sub` 必须从已经验证的身份
+声明取得，不能用邮箱代替；部署前由身份管理员确认五个成员和唯一 `admin` 的绑定。
+
+本地开发可直接设置 `ATHENA_GOOGLE_OIDC_CLIENT_SECRET`。生产必须保持该变量为空，
+只使用独立文件：
+
+```env
+ATHENA_GOOGLE_OIDC_CLIENT_SECRET=''
+ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE='./secrets/google-oidc-client-secret'
+```
+
+准备文件时不要把 secret 写入环境文件或提交到 Git：
+
+```bash
+mkdir -p secrets
+install -m 0600 /secure/source/google-oidc-client-secret secrets/google-oidc-client-secret
+```
+
+生产 Compose 将文件以只读 secret 仅挂载到 `athena-server` 的
+`/run/secrets/google-oidc-client-secret`；migration 和其他业务容器不会获得文件
+内容。本地生产预演让 `athena-server` 使用当前宿主机 UID 读取该用户自己的 `0600`
+文件；远程部署脚本把上传副本改为容器 UID/GID `999` 持有并保持 `0600`。设置
+`ATHENA_SERVER_DISABLE_AUTH=true` 时保留开发管理员旁路，不要求 Google 配置；
+该旁路只允许非 Compose 的开发进程监听 loopback 地址。生产 Compose 固定启用认证，
+部署脚本会拒绝该旁路。
+
+虽然其他生产服务仍复用选定的部署 env 文件读取各自业务配置，Compose 会把
+`ATHENA_JWT_SECRET`、全部 Google OIDC/subject 输入以及 `REDIS_PASSWORD` 在所有
+非 API Server 容器中显式覆盖为空；只有 `athena-server` 能解析身份目录、签发
+Athena JWT 或访问认证 Redis。
+远端上传后的 `.env` 同样改为当前部署用户持有且权限为 `0600`。
 
 ## 代码生成
 
@@ -161,7 +202,8 @@ MinIO 首次运行会从固定源码 commit 构建 Server/mc 镜像，并初始�
 默认只绑定 `127.0.0.1:9000` 和 `127.0.0.1:9001`。
 Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首次使用
 包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
-默认启用 API Server 认证，五个参与账号必须通过登录后才能提交方案或投票。
+默认启用 API Server 认证，五个参与账号必须使用各自已批准的 Google 身份登录后
+才能提交方案或投票；`admin` 使用其唯一 Google `sub` 保持管理员身份。
 
 `make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
 `/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
@@ -179,17 +221,17 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make prod-start-local` | 创建本地 PostgreSQL/MinIO volume、执行 migration、初始化私有 bucket 并启动生产 compose 服务。 | `make prod-start-local` |
-| `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL/MinIO volume。 | `make prod-stop-local` |
+| `make prod-start-local` | 创建本地 PostgreSQL/Redis/MinIO volume、执行 migration、初始化私有 bucket 并启动生产 compose 服务。 | `make prod-start-local` |
+| `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL/Redis/MinIO volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
 | `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis、MinIO root、头像应用凭据和 JWT secret。 | `make prod-reset-secrets` |
 | `make prod-deploy-remote` | 自动轮换凭据、构建镜像、清空远程数据库并完成全新部署。 | `make prod-deploy-remote` |
-| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL 和 MinIO 数据。 | `make prod-hot-deploy-remote` |
-| `make prod-destroy-remote` | 删除远程 Athena 运行资源及 PostgreSQL/MinIO volume。 | `make prod-destroy-remote` |
+| `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL、Redis 和 MinIO 数据。 | `make prod-hot-deploy-remote` |
+| `make prod-destroy-remote` | 删除远程 Athena 运行资源及 PostgreSQL/Redis/MinIO volume。 | `make prod-destroy-remote` |
 
 ### 部署前本地预演
 
-部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 会创建 PostgreSQL/MinIO volume、启动 PostgreSQL、执行 migration、初始化私有头像 bucket，再启动其余服务。
+部署远端服务器前，可以先用生产镜像和生产 compose 在本机跑一次。`prod-start-local` 会创建 PostgreSQL/Redis/MinIO volume、启动 PostgreSQL、执行 migration、初始化私有头像 bucket，再启动其余服务。Redis 使用 AOF 持久化未过期的会话撤销记录。
 
 如果使用 `.env.prod` 作为预演环境文件，至少需要包含：
 
@@ -199,8 +241,18 @@ REDIS_PASSWORD=your_redis_password
 MINIO_ROOT_PASSWORD=your_minio_root_password
 ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=your_avatar_access_key
 ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=your_avatar_secret_key
-ATHENA_JWT_SECRET=your_jwt_secret
+ATHENA_JWT_SECRET=your_at_least_32_byte_jwt_secret
 ATHENA_WALLET_ENCRYPTION_KEY=your_wallet_encryption_key
+ATHENA_GOOGLE_OIDC_CLIENT_ID=your_production_web_client_id
+ATHENA_GOOGLE_OIDC_CLIENT_SECRET=
+ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE=./secrets/google-oidc-client-secret
+ATHENA_GOOGLE_OIDC_REDIRECT_URI=https://athena.example.com/auth/google/callback
+ATHENA_ACCOUNT_YEGE_GOOGLE_SUB=your_yege_google_sub
+ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB=your_lingjie_google_sub
+ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB=your_dongmei_google_sub
+ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB=your_dingzhi_google_sub
+ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB=your_yudian_google_sub
+ATHENA_ADMIN_GOOGLE_SUB=your_admin_google_sub
 ```
 
 `ATHENA_WALLET_ENCRYPTION_KEY` 可用以下命令生成：
@@ -218,7 +270,12 @@ make prod-build-local
 make prod-start-local
 ```
 
-`prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为 `true`，本地生产预演仍会启用服务端认证。
+`prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为
+`true`，本地生产预演仍会启用服务端认证。运行前必须创建
+`./secrets/google-oidc-client-secret` 并配置真实的 client ID、生产预演回调 URI 和
+六个唯一 `sub`；缺失配置会使 API Server 拒绝启动。
+Compose 会同时使用 `$(PROD_ENV_FILE)` 做变量插值和容器 `env_file` 注入，不会回退
+读取仓库根目录的 `.env`。`prod-reset-secrets` 会把该文件权限收紧为 `0600`。
 
 生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`。`prod-start-local` 会在启动业务服务前自动执行 `athena up --module $(PROD_MIGRATE_MODULE)`，默认迁移全部模块；迁移失败时命令会终止并保留 PostgreSQL 容器，便于排查。
 
@@ -239,7 +296,8 @@ make prod-stop-local
 ```
 
 `prod-stop-local` 会删除 compose 容器、孤立容器、网络，以及
-`PROD_POSTGRES_VOLUME` 和 `PROD_MINIO_VOLUME` 指定的两个 volume，但保留本地
+`PROD_POSTGRES_VOLUME`、`PROD_REDIS_VOLUME` 和 `PROD_MINIO_VOLUME` 指定的三个
+volume，但保留本地
 构建的 Athena、MinIO 和 mc 镜像。下一次启动会重新创建空数据库和私有 bucket。
 
 ### 远程部署
@@ -251,6 +309,7 @@ REMOTE_HOST=47.245.181.189
 REMOTE_USER=root
 REMOTE_APP_DIR=/root/athena
 PROD_POSTGRES_VOLUME=athena-prod-postgres-data
+PROD_REDIS_VOLUME=athena-prod-redis-data
 PROD_MINIO_VOLUME=athena-prod-minio-data
 ```
 
@@ -307,13 +366,20 @@ make prod-deploy-remote
 该命令会先更新 `$(PROD_ENV_FILE)` 中的 PostgreSQL、Redis、MinIO root、
 头像 bucket 应用凭据和 JWT secret，再构建 Athena、固定源码 MinIO 和 mc
 镜像。构建成功后，依次停止远端旧服务，删除并重建
-`$(PROD_POSTGRES_VOLUME)` 与 `$(PROD_MINIO_VOLUME)`，上传 Compose、环境文件和
-PostgreSQL init 脚本，传输三个镜像，执行 migration，初始化私有 bucket，
-最后启动全部服务并输出容器状态。
+`$(PROD_POSTGRES_VOLUME)`、`$(PROD_REDIS_VOLUME)` 与
+`$(PROD_MINIO_VOLUME)`，上传 Compose、环境文件和
+Google OIDC client secret 文件以及 PostgreSQL init 脚本，传输三个镜像，执行
+migration，初始化私有 bucket，最后启动全部服务并输出容器状态。部署脚本会在
+上传前拒绝直接环境变量形式的 client secret、空 client/binding、重复 `sub`、
+非 HTTPS 生产回调 URI、少于 32 字节的 JWT signing secret 或空 Google secret
+文件，也拒绝生产环境使用 `ATHENA_SERVER_DISABLE_AUTH=true`。Docker 构建上下文会
+排除所有 `.env` 文件和 `secrets/` 目录，避免部署凭据进入镜像构建缓存。
 
-**每次远程部署都会永久删除已有 PostgreSQL 和 MinIO 数据，并轮换
+**每次远程部署都会永久删除已有 PostgreSQL、Redis 和 MinIO 数据，并轮换
 PostgreSQL、Redis、MinIO 和 JWT 凭据，不会自动备份。** JWT secret 轮换后
-旧登录 Token 会失效。migration 或 bucket 初始化失败时不会启动 API Server。
+旧登录会话和旧 API Key 都会失效；所有用户必须使用 Google 重新登录，需要自动化
+访问的账号必须创建新的 v2 API Key。migration 或 bucket 初始化失败时不会启动
+API Server。
 
 如需只手动更新生产凭据文件而不部署：
 
@@ -327,14 +393,17 @@ make prod-reset-secrets
 make prod-hot-deploy-remote
 ```
 
-该命令会构建并传输三个新镜像，覆盖远端 Compose 和环境文件，确认
-PostgreSQL 与 MinIO 就绪，幂等确保精确的 `profit_sharing` 数据库和私有头像
-bucket 存在，再在现有数据上执行 migration，然后强制重建全部 Athena
-后端服务并最后重建 `athena-server`。PostgreSQL、Redis、MinIO 和两个持久化
-volume 不会停止或删除；任一指定 volume 不存在时命令直接终止，避免意外
-创建空状态。依赖初始化或 migration 失败时不会进入应用重建阶段。
+该命令会构建并传输三个新镜像，覆盖远端 Compose、环境文件和 Google OIDC
+client secret 文件，等待 PostgreSQL 和 Redis 就绪，随后启动并等待 MinIO，幂等确保
+精确的 `profit_sharing` 数据库和私有头像 bucket 存在，再在现有数据上执行
+migration，然后强制重建全部 Athena
+后端服务并最后重建 `athena-server`。PostgreSQL、Redis 和 MinIO 的三个持久化
+volume 数据都会保留；Compose 仅在配置变化要求时重建对应 stateful container，
+不会删除 volume。任一指定 volume 不存在时命令直接终止，避免意外创建空状态。
+依赖初始化或 migration 失败时不会进入应用重建阶段。
 
-热部署不会自动轮换 PostgreSQL、Redis、MinIO 或 JWT secret。它会短暂重启
+热部署不会自动轮换 PostgreSQL、Redis、MinIO 或 JWT secret。它会校验并重新
+上传当前独立的 Google OIDC client secret，然后短暂重启
 Athena 服务，不保证零停机；适用于代码更新和兼容性数据库 migration，不用于
 修改现有持久化服务凭据。
 
@@ -345,8 +414,11 @@ make prod-destroy-remote
 ```
 
 该命令会删除远端 Compose 容器、孤立容器、网络、
-`$(PROD_POSTGRES_VOLUME)` 和 `$(PROD_MINIO_VOLUME)`。命令可重复执行，不需要
-额外确认参数；远端部署文件和已加载的三个镜像会保留。
+`$(PROD_POSTGRES_VOLUME)`、`$(PROD_REDIS_VOLUME)` 和
+`$(PROD_MINIO_VOLUME)`。命令可重复执行，不需要
+额外确认参数；不存在的 volume 会被忽略，但任何仍存在的 volume 删除失败都会使
+命令失败，不会继续宣称销毁完成或在全新部署中复用旧数据。远端部署文件和已加载的
+三个镜像会保留。
 
 验证远端服务：
 
@@ -367,7 +439,9 @@ ssh -L 8080:127.0.0.1:8080 root@47.245.181.189
 http://127.0.0.1:8080
 ```
 
-如果日志出现 `ATHENA_ADMIN_PASSWORD_HASH is not set`，表示服务生成了临时 admin 密码，重启后会变化。生产环境建议配置固定的 `ATHENA_ADMIN_PASSWORD_HASH`。
+如果日志报告 Google OIDC client、redirect URI、账号 `sub` 为空或重复，表示
+认证配置未完成。正常生产部署不会生成临时管理员凭据，也没有密码兜底入口；修正
+配置并重启 `athena-server`，不要通过关闭认证绕过问题。
 
 远端日志和状态不再提供独立 Makefile 目标，可直接使用 SSH：
 

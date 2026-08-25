@@ -10,7 +10,7 @@ authorization synchronization.
 
 The one-shot `accountcredentials.Catalog` supplies the fixed account names and
 each ordinary account's default login flag. `CredentialManager` and `JWTCodec`
-own process-local passwords, capabilities, API Keys, and JWT operations as
+own Google subject bindings, capabilities, API Keys, and Athena JWT v2 operations as
 described in [Account Credentials](account-credentials.md); they do not own
 effective access. Business services own the data and mutations reached after
 authorization. Account creation, role assignment, resource/action policies,
@@ -27,7 +27,7 @@ and Preferences](account-profile-and-preferences.md).
 | Durable aggregate store | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go), [internal/accountstate/store/queries/account_access_override.sql](../../../internal/accountstate/store/queries/account_access_override.sql) | `SQLStore`, `ListAccountAccessOverrides`, `UpdateAccountAccessOverride` |
 | Schema and migration wiring | [internal/accountstate/store/migrations](../../../internal/accountstate/store/migrations), [internal/migration/modules.go](../../../internal/migration/modules.go) | `account_access_override`, `account_module_access_override`, `account-state` |
 | Account API and canonical projection | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountDataModule`, `AccountModuleAccess`, `AccountAccess`, `UpdateAccountAccess`, `ToAPIAccountAccess` |
-| Authentication and explicit RPC rules | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [internal/accountcredentials/jwt_codec.go](../../../internal/accountcredentials/jwt_codec.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/authz.go](../../../internal/server/authz.go) | `CredentialManager`, `PasswordVerification`, `JWTCodec`, `AccountMaintenanceErr`, `VerifyLogin`, `CreateVerifiedLogin`, `Parse`, `moduleGRPCRules`, `grpcModuleRule`, `authorizeGRPC` |
+| Google login and explicit authorization rules | [internal/googleoidc/handler.go](../../../internal/googleoidc/handler.go), [internal/googleoidc/store.go](../../../internal/googleoidc/store.go), [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [internal/accountcredentials/jwt_codec.go](../../../internal/accountcredentials/jwt_codec.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/authz.go](../../../internal/server/authz.go) | `Handler`, `TransactionStore`, `ResolveGoogleSubject`, `IssueGoogleLoginSession`, `JWTCodec`, `AccountMaintenanceErr`, `CreateGoogleLogin`, `Parse`, `moduleGRPCRules`, `grpcModuleRule`, `authorizeGRPC` |
 | Bootstrap and live session projection | [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go), [internal/server/session/session.go](../../../internal/server/session/session.go) | `GetAppBootstrap`, `GetUserInfo`, `ProjectUserInfo` |
 | Browser module registry and authorization state | [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts), [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `accountDataModules`, `moduleAccessLevels`, `AuthorizationCtx`, `access`, `canRead`, `canWrite` |
 | Administration UI | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor` |
@@ -46,7 +46,9 @@ flowchart LR
     S --> C
     A["Administrator expanded account editor"] --> U["UpdateAccountAccess complete aggregate"]
     U --> S
-    D --> L["Password, JWT, and API Key validation"]
+    O["Direct HTTP Google OIDC handlers"] --> D
+    O --> T["One-time Redis OAuth transaction"]
+    D --> L["JWT v2 identity binding and API Key validation"]
     C --> L
     C --> R["Explicit RPC module rule"]
     C --> P["Authenticated Profit Sharing membership boundary"]
@@ -79,12 +81,12 @@ The canonical matrix and maximum meaningful levels are:
 `READ_WRITE`; administrator full access means the maximum shown above for every
 module. A grant in one module never grants another module.
 
-Protected RPCs use four direct boundaries:
+Public entry points and protected RPCs use five direct boundaries:
 
 | Boundary | Rule |
 | --- | --- |
-| Public | Login, captcha, logout, application bootstrap, version, and health do not require a credential. `GetUserInfo` is public optional authentication so it can project anonymous, authenticated, or maintenance state. |
-| Authenticated account identity | An account may get its own account, change its own profile and preferences, change its own password, and list/create/delete only its own API Keys. An administrator may get or change another account's profile but cannot manage that account's preferences or credentials. |
+| Public | Direct HTTP `/auth/google/login`, `/auth/google/callback`, and `/auth/logout`, plus application bootstrap, version, and health, do not pass through authenticated gRPC authorization. `GetUserInfo` is public optional authentication so it can project anonymous, authenticated, or maintenance state. |
+| Authenticated account identity | An account may get its own account, change its own profile and preferences, and list/create/delete only its own API Keys. An administrator may get or change another account's profile but cannot manage that account's preferences or API Keys. |
 | Administrator | The built-in `admin` identity exclusively owns account listing, tier and access replacement, Service Status, Etherscan probes, and gRPC reflection. |
 | Product module | Every public business RPC has one explicit `moduleGRPCRules` entry containing a module and required `READ` or `READ_WRITE` level. |
 | Profit Sharing | Every Profit Sharing RPC requires an enabled authenticated Athena account. Administrator lifecycle RPCs use the administrator boundary; member reads and writes pass the account identity to the Profit Sharing domain, which enforces round membership and rejects administrator proposal or vote mutations. |
@@ -97,19 +99,23 @@ Token APIs all use the single Token module.
 
 Opening a Profit Sharing round has an additional cross-capability precondition.
 The API Server facade reads every configured participant account from
-`CredentialManager`, requires `login` capability, and requires current
-`AccessController.LoginEnabled`. It rejects `admin`, duplicates, missing
-accounts, and disabled accounts before forwarding the validated account set to
-the Profit Sharing service. The service compares that set with the complete
-draft-round participant roster in its own transaction, avoiding any reverse
-dependency from Profit Sharing to account infrastructure.
+`CredentialManager`, requires `login` capability and a non-empty Google identity
+binding, and requires current `AccessController.LoginEnabled`. It rejects
+`admin`, duplicates, missing accounts, unbound accounts, and disabled accounts
+before forwarding the validated account set to the Profit Sharing service. The
+service compares that set with the complete draft-round participant roster in
+its own transaction, avoiding any reverse dependency from Profit Sharing to
+account infrastructure.
 
 ## Runtime Flow
 
 1. API Server startup loads the immutable account credential catalog, copies
    its account seeds into `CredentialManager`, constructs `JWTCodec` from its
-   signing key, connects to the `athena` PostgreSQL database, and applies the
-   embedded `account-state` migrations when automatic migration is enabled.
+   signing key, and, when authentication is enabled, validates that every
+   login-capable account has one unique Google subject and that `admin` retains
+   its unique binding. It connects to the `athena` PostgreSQL database and
+   applies the embedded `account-state` migrations when automatic migration is
+   enabled.
 2. `NewController` assigns every ordinary account its environment login flag,
    all ten modules at `NONE`, and revision zero. It fixes `admin` at enabled and
    each module's maximum level, then loads persisted aggregates. Unknown account
@@ -118,9 +124,10 @@ dependency from Profit Sharing to account infrastructure.
    invalid or incomplete state prevents listener startup.
 3. The session manager, account service, application-bootstrap service, and
    authorization interceptor share that controller. SessionManager composes
-   `CredentialManager` and `JWTCodec` with the controller: password login,
-   JWTs, and API Keys resolve the current login flag on every relevant request,
-   and every protected business RPC then resolves its current module level.
+   `CredentialManager` and `JWTCodec` with the controller: Google login issuance,
+   Athena browser sessions, and API Keys resolve the current login flag on every
+   relevant request, and every protected business RPC then resolves its current
+   module level.
 4. The Account API always projects modules in canonical order. A
    `PUT /api/v1/account/{name}/access` body contains `loginEnabled`, expected
    `revision`, and the complete ten-entry `moduleAccess` matrix. Missing,
@@ -134,14 +141,18 @@ dependency from Profit Sharing to account infrastructure.
    and advances it once. The transaction then upserts all ten fixed child rows
    and commits. A parent CAS miss or statement failure rolls back both tables.
    Only a committed, revalidated aggregate replaces the controller snapshot.
-6. Password login verifies the password before consulting `login_enabled`. A
-   correct password for a disabled account returns gRPC `Unavailable` and HTTP
-   503 with `系统维护中`; a wrong password remains a generic login failure. The
-   maintenance outcome does not increment brute-force failure state. Successful
-   verification returns an opaque password-version proof; login JWT issuance
-   rechecks that proof under the same account's read lock so a concurrent
-   password replacement cannot mint a session from the old password.
-7. A disabled JWT or API Key returns the same maintenance result on its next
+6. `/auth/google/callback` consumes its one-time Redis transaction, verifies the
+   Google ID token, resolves the verified `sub` to one fixed Athena account, and
+   calls `CreateGoogleLogin`. Session issuance requires current `login`
+   capability, the same Google binding, and `LoginEnabled`; a disabled account
+   returns the maintenance reason and receives no Athena cookie. Successful
+   issuance creates a version-2 Athena JWT whose irreversible identity-binding
+   claim is derived from the provider and current Google subject.
+7. Every browser session and API Key must carry `athenaTokenVersion=2`, an
+   Athena issuer, valid registered time claims, and a JTI. A login session must
+   also carry an expiration and the current Google identity-binding digest; an
+   API Key instead requires matching current process-local JTI metadata. A
+   disabled credential returns the maintenance result on its next
    protected request. The credential is not revoked, so enabling the account
    restores any otherwise valid, unexpired credential.
 8. A module denial occurs before its business service or API proxy is invoked.
@@ -149,12 +160,10 @@ dependency from Profit Sharing to account infrastructure.
    `ACCOUNT_DATA_ACCESS_DENIED` plus `module`, `required_access`, and
    `effective_access` metadata. Administrator denial uses the separate
    `ACCOUNT_ADMIN_REQUIRED` reason.
-9. Password and API Key self-service use typed `CredentialManager` operations
-   whose target always comes from the authenticated identity.
-   Each account has an independent lock, and API Key signing plus metadata
-   insertion is one serialized operation using dependency-free `JWTCodec`.
-   Own-password changes atomically verify the current password and publish its
-   replacement. These process-local identity changes do not write the
+9. API Key self-service uses typed `CredentialManager` operations whose target
+   always comes from the authenticated identity. Each account has an independent
+   lock, and API Key signing plus metadata insertion is one serialized operation
+   using dependency-free `JWTCodec`. API Key metadata changes do not write the
    account-access tables and return to the environment baseline when API Server
    restarts.
 10. `GetAppBootstrap` returns settings and the initial optional-authentication
@@ -195,8 +204,9 @@ dependency from Profit Sharing to account infrastructure.
     methods cross the explicit authenticated boundary and forward the requester
     account so the Profit Sharing service can enforce per-round membership,
     proposal ownership, and voting restrictions. `OpenRound` additionally
-    validates the complete draft roster against current credentials and login
-    access before the state-transition request leaves the API Server.
+    validates the complete draft roster against current login capability,
+    Google binding, and login access before the state-transition request leaves
+    the API Server.
 
 The runtime uses one API Server instance. Its update mutex orders local writes;
 there is no cross-instance snapshot notification mechanism.
@@ -258,8 +268,10 @@ update time once. The current schema contains no aggregate-wide data level.
 `Controller.access` is a mutex-protected, deep-copied process snapshot. The
 database commit is the access state transition; memory changes afterward.
 `CredentialManager` is a separate process-local identity registry with one
-lock per account; `JWTCodec` owns an immutable copy of the signing key. JWTs and
-API Keys are neither stored nor revoked by an access update.
+lock per account, a fixed Google-subject lookup, and API Key metadata;
+`JWTCodec` owns an immutable copy of the signing key. Login JWTs are bound to the
+current Google subject digest, while API Keys remain independent of that
+binding. Neither credential kind is stored or revoked by an access update.
 
 The browser stores the complete active aggregate and derives module access from
 it. Business caches contain responses, not authorization decisions, and are
@@ -281,7 +293,10 @@ copy helper can bypass permission-loss cancellation for those secrets.
 | `ATHENA_SERVER_POSTGRES_DSN` | Selects PostgreSQL database `athena` for the parent and child access tables. Local defaults use `127.0.0.1`; production Compose supplies its service DSN. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Defaults to `true` and controls embedded startup migration. Production disables it and runs the migration process before API Server. |
 | `ATHENA_ACCOUNT_*_ENABLED` | Defines only an ordinary account's login baseline. An omitted value defaults the ordinary account to disabled. Every module still defaults to `NONE`. |
-| Profit Sharing participant baselines | The repository environment config enables `YEGE`, `LINGJIE`, `DONGMEI`, `DINGZHI`, and `YUDIAN`; these accounts require no product-module grant to participate in a round. |
+| `ATHENA_ACCOUNT_<NAME>_GOOGLE_SUB`, `ATHENA_ADMIN_GOOGLE_SUB` | Bind each login-capable account to one stable Google identity. Authentication-enabled startup rejects empty required bindings and duplicate subjects. |
+| `ATHENA_GOOGLE_OIDC_CLIENT_ID`, `ATHENA_GOOGLE_OIDC_CLIENT_SECRET` / `_FILE`, `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Configure the direct HTTP Google Authorization Code flow. The redirect URI is fixed at startup and is never inferred from request headers. |
+| `ATHENA_JWT_SECRET` / `_FILE`, `ATHENA_SESSION_DURATION` | Configure Athena JWT v2 signing with a key of at least 32 bytes and the browser-session lifetime, which defaults to 24 hours. |
+| Profit Sharing participant baselines | The repository environment config enables and Google-binds `YEGE`, `LINGJIE`, `DONGMEI`, `DINGZHI`, and `YUDIAN`; these accounts require no product-module grant to participate in a round. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Development-only process-wide bypass. Requests and bootstrap use the built-in administrator identity with the maximum module matrix. |
 
 The administrator baseline, module collection, maximum levels, maintenance
@@ -304,12 +319,16 @@ text, and access levels are implementation constants.
   The interceptor requires a current authenticated account and the domain owns
   round membership, proposal ownership, and vote eligibility.
 - A draft round cannot open unless its complete, duplicate-free participant set
-  resolves to enabled, login-capable, non-administrator Athena accounts.
+  resolves to enabled, login-capable, Google-bound, non-administrator Athena
+  accounts.
 - Persistence updates the parent and all ten children in one CAS transaction
   and succeeds before the controller snapshot changes.
-- Password validity is established before disabled state is disclosed.
-- Login issuance revalidates the opaque password proof, and every local JWT's
-  exact credential epoch must match the current password epoch.
+- Every accepted Athena credential is JWT v2. Browser sessions must match the
+  current Google identity-binding digest; API Keys must match current JTI
+  metadata and do not change when a Google subject is rebound.
+- Both browser sessions and API Keys consult current `LoginEnabled` and Redis
+  revocation state on every protected request. Disabling access suspends rather
+  than deletes an otherwise valid credential.
 - Bootstrap and `GetUserInfo` project the same aggregate used by request-time
   authorization; neither projection replaces server enforcement.
 - Only stable maintenance and data-denial tuples activate their specialized
@@ -321,6 +340,12 @@ text, and access levels are implementation constants.
   restore secret state, notifications, or a data reload.
 
 ## Failure Recovery
+
+When authentication is enabled, an invalid Google binding map or OIDC client
+configuration prevents API Server listener startup. Redis or Google/JWKS
+failure prevents a new OAuth transaction or callback from issuing a partial
+session, but the API Server remains running and existing Athena JWT validation
+does not contact Google.
 
 A PostgreSQL account-state connection, migration, access aggregate-load,
 validation, or controller
@@ -336,9 +361,9 @@ An ordinary restart rebuilds effective state from environment identities and
 the retained PostgreSQL aggregate. `make stop` preserves both access tables.
 `make run-reset` removes the PostgreSQL volume, so ordinary accounts return to
 their environment login flags, ten `NONE` levels, and revision zero; `admin`
-returns to its fixed maximum matrix. Process-local CredentialManager password
-and API Key changes also return to the environment baseline after API Server
-restart.
+returns to its fixed maximum matrix. Process-local API Key metadata changes
+also return to the environment baseline after API Server restart. Google
+bindings are rebuilt directly from the environment catalog.
 
 If bootstrap or authorization refresh fails without a stable maintenance or
 data-denial reason, the browser keeps an explicit retry/error boundary instead
@@ -358,7 +383,9 @@ status. Later maintenance uses gRPC `Unavailable`, HTTP 503, code 14, and
 `google.rpc.ErrorInfo` under `athena.account_access`, together with module and
 required/effective levels. Administrator denials use `ACCOUNT_ADMIN_REQUIRED`;
 revision conflicts use `ACCOUNT_ACCESS_REVISION_CONFLICT`. No dedicated metric
-or health endpoint is added.
+or health endpoint is added. Google login failures are logged by stable stage
+and reason without authorization codes, Google tokens, Athena JWTs, or client
+secrets; login counters retain only success/failure status.
 
 ## Change Checklist
 
@@ -367,10 +394,10 @@ or health endpoint is added.
 - [ ] Parent-plus-ten-child loading remains complete and fail-closed.
 - [ ] Full-aggregate transactional CAS and persistence-before-memory ordering remain aligned.
 - [ ] Every authenticated public RPC has one self-service, administrator, or explicit module rule.
-- [ ] CredentialManager, JWTCodec, bootstrap, and session refresh compose the same controller snapshot.
+- [ ] Google OIDC, CredentialManager, JWTCodec v2, bootstrap, and session refresh compose the same controller snapshot.
 - [ ] Administrator account list/detail, complete access drafts, confirmations, conflicts, and responsive layout remain current.
 - [ ] Fifteen-second refresh and module-scoped request, cache, route, and sensitive write-state cleanup remain current.
 - [ ] Maintenance 503, module 403, administrator 403, revision 409, and ordinary authentication errors remain distinguishable.
-- [ ] Restart, reset, and process-local credential recovery semantics are current.
+- [ ] Google rebinding, API Key metadata, restart, reset, and process-local credential recovery semantics are current.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

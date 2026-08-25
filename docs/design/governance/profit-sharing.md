@@ -9,11 +9,11 @@ ties through runoff ballots. Each round is independent, so later rounds reuse
 the same state machine and storage model without copying application code.
 
 Athena Account Credentials and Account Access Control remain responsible for
-login identity and current login availability. The API Server facade validates
-the configured roster when a draft opens and injects trusted requester data;
-the Profit Sharing process does not read the account catalog or account-access
-database directly. Profit Sharing is not one of the product-module access
-matrix entries.
+Google-bound login identity, login capability, and current login availability.
+The API Server facade validates the configured roster when a draft opens and
+injects trusted requester data; the Profit Sharing process does not read the
+account catalog or account-access database directly. Profit Sharing is not one
+of the product-module access matrix entries.
 
 ## Source Locations
 
@@ -25,7 +25,7 @@ matrix entries.
 | Transactional domain store | [internal/profitsharing/store/operations.go](../../../internal/profitsharing/store/operations.go), [internal/profitsharing/store/records.go](../../../internal/profitsharing/store/records.go), [internal/profitsharing/store/sql_store.go](../../../internal/profitsharing/store/sql_store.go) | `SQLStore`, `withTx`, `RoundSnapshot` |
 | Durable schema and queries | [internal/profitsharing/store/migrations/000001_init.sql](../../../internal/profitsharing/store/migrations/000001_init.sql), [internal/profitsharing/store/queries/profit_sharing.sql](../../../internal/profitsharing/store/queries/profit_sharing.sql) | round, participant, proposal, ballot, and vote tables |
 | Browser API contract | [internal/server/profitsharing/profitsharing.proto](../../../internal/server/profitsharing/profitsharing.proto) | `ProfitSharingService`, flattened `Round` |
-| API facade and roster validation | [internal/server/profitsharing/profitsharing.go](../../../internal/server/profitsharing/profitsharing.go) | `Server`, `validateParticipants`, `projectRound` |
+| API facade and roster validation | [internal/server/profitsharing/profitsharing.go](../../../internal/server/profitsharing/profitsharing.go), [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go) | `Server`, `validateParticipants`, `HasGoogleBinding`, `projectRound` |
 | Authentication boundary | [internal/server/authz.go](../../../internal/server/authz.go) | `administratorGRPCMethods`, `profitSharingAuthenticatedGRPCMethods` |
 | API Server and health wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/servicestatus/service_status.go](../../../internal/server/servicestatus/service_status.go) | `AthenaServerOpts.ProfitSharingClientset`, `newAthenaServiceSet`, `NewServer` |
 | Migration and runtime wiring | [internal/migration/modules.go](../../../internal/migration/modules.go), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `profit-sharing`, port `8108`, database `profit_sharing` |
@@ -37,7 +37,7 @@ flowchart LR
     B["Authenticated browser"] --> A["Athena API Server"]
     A --> Z["Explicit auth boundary"]
     Z --> F["Profit Sharing facade"]
-    F --> C["CredentialManager"]
+    F --> C["CredentialManager login capability and Google binding"]
     F --> X["AccessController"]
     F --> G["Internal ProfitSharingService"]
     G --> S["Transactional SQLStore"]
@@ -79,8 +79,9 @@ responses.
 3. To open a draft, the facade first reads its current roster through the
    internal service. It requires exactly five distinct, non-administrator
    accounts. Every account must exist in `CredentialManager`, carry the `login`
-   capability, and have `AccessController.LoginEnabled` at that point in time.
-   The facade forwards the complete validated account set with the transition.
+   capability, have a non-empty Google identity binding, and have
+   `AccessController.LoginEnabled` at that point in time. The facade forwards
+   the complete validated account set with the transition.
 4. `OpenRound` locks the draft row and compares its revision. In the same SQL
    transaction it requires a title, display name and baseline responsibility
    for every participant, and exact set equality between the stored roster and
@@ -146,14 +147,14 @@ durable rows; there is no process-local workflow cache or background scheduler.
 | `ATHENA_PROFIT_SHARING_POSTGRES_DSN` | PostgreSQL connection for the owned `profit_sharing` database. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Enables embedded startup migration locally; production Compose disables it and uses `athena-migrate`. |
 | `ATHENA_PROFIT_SHARING_SERVER_ADDRESS` | API Server internal gRPC target; defaults to `127.0.0.1:8108` and uses Compose service DNS in production. |
-| `ATHENA_ACCOUNT_YEGE_*`, `ATHENA_ACCOUNT_LINGJIE_*`, `ATHENA_ACCOUNT_DONGMEI_*`, `ATHENA_ACCOUNT_DINGZHI_*`, `ATHENA_ACCOUNT_YUDIAN_*` | Repository account catalog entries for the five enabled, login-capable members. A draft roster still stores explicit account names and is not seeded from these settings. |
+| `ATHENA_ACCOUNT_YEGE_*`, `ATHENA_ACCOUNT_LINGJIE_*`, `ATHENA_ACCOUNT_DONGMEI_*`, `ATHENA_ACCOUNT_DINGZHI_*`, `ATHENA_ACCOUNT_YUDIAN_*` | Repository account catalog entries for the five enabled, login-capable, Google-bound members. Each `*_GOOGLE_SUB` is a stable identity binding. A draft roster still stores explicit Athena account names and is not seeded from these settings. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Defaults to `false` in local and production orchestration. Normal Profit Sharing use requires authentication. |
 
 ## Invariants
 
 - A round may be created blank, but only a draft is configurable and it cannot
-  open until it has exactly five valid participant accounts plus complete round
-  and participant metadata.
+  open until it has exactly five valid, login-capable, Google-bound, enabled
+  participant accounts plus complete round and participant metadata.
 - The account set validated by API Server must exactly equal the set locked by
   the domain transaction. The Profit Sharing process never queries account
   infrastructure directly.
@@ -188,14 +189,18 @@ process calls. The expected round revision and exact roster comparison prevent a
 concurrent roster edit from opening with stale validation. Account availability
 is a current snapshot rather than a distributed transaction; subsequent
 requests still pass normal Athena authentication, so disabling login prevents
-that account from continuing to act.
+that account from continuing to act. Changing the configured Google binding and
+restarting API Server invalidates its existing browser session through the
+Athena JWT v2 identity-binding check; it does not mutate a round or
+automatically revoke that account's API Keys.
 
 The internal gRPC client uses a reconnecting channel. Dependency failure leaves
 durable state unchanged and appears as an unreachable Service Status entry or a
 request error. Process restart reconstructs the service from PostgreSQL without
 in-memory recovery work. Production hot deploy starts and checks PostgreSQL,
-idempotently ensures only the `profit_sharing` database exists on a retained
-volume, and runs its registered migration before recreating services.
+preserves the separate Redis revocation volume, idempotently ensures only the
+`profit_sharing` database exists on a retained volume, and runs its registered
+migration before recreating services.
 
 ## Observability
 
@@ -211,7 +216,7 @@ status endpoint.
 
 - [ ] Recheck public versus internal RPC fields and authenticated identity injection.
 - [ ] Recheck the four phases, administrator transitions, and participant-only mutations.
-- [ ] Recheck five-account roster validation and its account-service dependency direction.
+- [ ] Recheck five-account roster validation, Google binding and login-access requirements, and its account-service dependency direction.
 - [ ] Recheck proposal completeness, blind projection, self-vote rejection, tally visibility, and runoff behavior.
 - [ ] Recheck transaction locks, revisions, constraints, database ownership, migrations, and port wiring.
 - [ ] Recheck health registration, Service Status naming, and runtime documentation.

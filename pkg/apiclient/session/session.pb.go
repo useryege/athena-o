@@ -3,7 +3,7 @@
 
 // Session Service
 //
-// Session Service API performs CRUD actions against session resources
+// Session Service API projects the current Athena identity.
 
 package session
 
@@ -32,174 +32,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// SessionCreateRequest is for logging in.
-type SessionCreateRequest struct {
-	Username             string   `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	Token                string   `protobuf:"bytes,3,opt,name=token,proto3" json:"token,omitempty"`
-	CaptchaId            string   `protobuf:"bytes,4,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`
-	CaptchaAnswer        string   `protobuf:"bytes,5,opt,name=captcha_answer,json=captchaAnswer,proto3" json:"captcha_answer,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SessionCreateRequest) Reset()         { *m = SessionCreateRequest{} }
-func (m *SessionCreateRequest) String() string { return proto.CompactTextString(m) }
-func (*SessionCreateRequest) ProtoMessage()    {}
-func (*SessionCreateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{0}
-}
-func (m *SessionCreateRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *SessionCreateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_SessionCreateRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *SessionCreateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SessionCreateRequest.Merge(m, src)
-}
-func (m *SessionCreateRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *SessionCreateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SessionCreateRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SessionCreateRequest proto.InternalMessageInfo
-
-func (m *SessionCreateRequest) GetUsername() string {
-	if m != nil {
-		return m.Username
-	}
-	return ""
-}
-
-func (m *SessionCreateRequest) GetPassword() string {
-	if m != nil {
-		return m.Password
-	}
-	return ""
-}
-
-func (m *SessionCreateRequest) GetToken() string {
-	if m != nil {
-		return m.Token
-	}
-	return ""
-}
-
-func (m *SessionCreateRequest) GetCaptchaId() string {
-	if m != nil {
-		return m.CaptchaId
-	}
-	return ""
-}
-
-func (m *SessionCreateRequest) GetCaptchaAnswer() string {
-	if m != nil {
-		return m.CaptchaAnswer
-	}
-	return ""
-}
-
-// SessionDeleteRequest is for logging out.
-type SessionDeleteRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SessionDeleteRequest) Reset()         { *m = SessionDeleteRequest{} }
-func (m *SessionDeleteRequest) String() string { return proto.CompactTextString(m) }
-func (*SessionDeleteRequest) ProtoMessage()    {}
-func (*SessionDeleteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{1}
-}
-func (m *SessionDeleteRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *SessionDeleteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_SessionDeleteRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *SessionDeleteRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SessionDeleteRequest.Merge(m, src)
-}
-func (m *SessionDeleteRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *SessionDeleteRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SessionDeleteRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SessionDeleteRequest proto.InternalMessageInfo
-
-// SessionResponse wraps the created token or returns an empty string if deleted.
-type SessionResponse struct {
-	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SessionResponse) Reset()         { *m = SessionResponse{} }
-func (m *SessionResponse) String() string { return proto.CompactTextString(m) }
-func (*SessionResponse) ProtoMessage()    {}
-func (*SessionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{2}
-}
-func (m *SessionResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *SessionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_SessionResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *SessionResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SessionResponse.Merge(m, src)
-}
-func (m *SessionResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *SessionResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SessionResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SessionResponse proto.InternalMessageInfo
-
-func (m *SessionResponse) GetToken() string {
-	if m != nil {
-		return m.Token
-	}
-	return ""
-}
-
 // Get the current user's userInfo info
 type GetUserInfoRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -211,7 +43,7 @@ func (m *GetUserInfoRequest) Reset()         { *m = GetUserInfoRequest{} }
 func (m *GetUserInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*GetUserInfoRequest) ProtoMessage()    {}
 func (*GetUserInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{3}
+	return fileDescriptor_8e8dbe1db8b11b5c, []int{0}
 }
 func (m *GetUserInfoRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -240,110 +72,6 @@ func (m *GetUserInfoRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetUserInfoRequest proto.InternalMessageInfo
 
-// CaptchaRequest requests a fresh login captcha.
-type CaptchaRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CaptchaRequest) Reset()         { *m = CaptchaRequest{} }
-func (m *CaptchaRequest) String() string { return proto.CompactTextString(m) }
-func (*CaptchaRequest) ProtoMessage()    {}
-func (*CaptchaRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{4}
-}
-func (m *CaptchaRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CaptchaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CaptchaRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CaptchaRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CaptchaRequest.Merge(m, src)
-}
-func (m *CaptchaRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *CaptchaRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_CaptchaRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CaptchaRequest proto.InternalMessageInfo
-
-// CaptchaResponse returns a one-time login captcha challenge.
-type CaptchaResponse struct {
-	CaptchaId            string   `protobuf:"bytes,1,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`
-	ImageDataUrl         string   `protobuf:"bytes,2,opt,name=image_data_url,json=imageDataUrl,proto3" json:"image_data_url,omitempty"`
-	ExpiresIn            int32    `protobuf:"varint,3,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CaptchaResponse) Reset()         { *m = CaptchaResponse{} }
-func (m *CaptchaResponse) String() string { return proto.CompactTextString(m) }
-func (*CaptchaResponse) ProtoMessage()    {}
-func (*CaptchaResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{5}
-}
-func (m *CaptchaResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CaptchaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CaptchaResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CaptchaResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CaptchaResponse.Merge(m, src)
-}
-func (m *CaptchaResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *CaptchaResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CaptchaResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CaptchaResponse proto.InternalMessageInfo
-
-func (m *CaptchaResponse) GetCaptchaId() string {
-	if m != nil {
-		return m.CaptchaId
-	}
-	return ""
-}
-
-func (m *CaptchaResponse) GetImageDataUrl() string {
-	if m != nil {
-		return m.ImageDataUrl
-	}
-	return ""
-}
-
-func (m *CaptchaResponse) GetExpiresIn() int32 {
-	if m != nil {
-		return m.ExpiresIn
-	}
-	return 0
-}
-
 // The current user's userInfo info
 type GetUserInfoResponse struct {
 	LoggedIn             bool                        `protobuf:"varint,1,opt,name=loggedIn,proto3" json:"loggedIn,omitempty"`
@@ -362,7 +90,7 @@ func (m *GetUserInfoResponse) Reset()         { *m = GetUserInfoResponse{} }
 func (m *GetUserInfoResponse) String() string { return proto.CompactTextString(m) }
 func (*GetUserInfoResponse) ProtoMessage()    {}
 func (*GetUserInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8e8dbe1db8b11b5c, []int{6}
+	return fileDescriptor_8e8dbe1db8b11b5c, []int{1}
 }
 func (m *GetUserInfoResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -441,12 +169,7 @@ func (m *GetUserInfoResponse) GetPreferences() *account.AccountPreferences {
 }
 
 func init() {
-	proto.RegisterType((*SessionCreateRequest)(nil), "session.SessionCreateRequest")
-	proto.RegisterType((*SessionDeleteRequest)(nil), "session.SessionDeleteRequest")
-	proto.RegisterType((*SessionResponse)(nil), "session.SessionResponse")
 	proto.RegisterType((*GetUserInfoRequest)(nil), "session.GetUserInfoRequest")
-	proto.RegisterType((*CaptchaRequest)(nil), "session.CaptchaRequest")
-	proto.RegisterType((*CaptchaResponse)(nil), "session.CaptchaResponse")
 	proto.RegisterType((*GetUserInfoResponse)(nil), "session.GetUserInfoResponse")
 }
 
@@ -455,48 +178,33 @@ func init() {
 }
 
 var fileDescriptor_8e8dbe1db8b11b5c = []byte{
-	// 654 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0x96, 0xd3, 0x26, 0x71, 0xb6, 0x34, 0x0d, 0x4b, 0x68, 0x8c, 0xfb, 0x43, 0x65, 0xb5, 0xa2,
-	0xea, 0x21, 0xa1, 0xe5, 0x86, 0x04, 0x52, 0x69, 0xa5, 0x2a, 0x3d, 0x21, 0x57, 0xbd, 0x54, 0x42,
-	0x61, 0xeb, 0x4c, 0x9d, 0xa5, 0xce, 0xae, 0xd9, 0x5d, 0xa7, 0xc0, 0x91, 0x57, 0xe0, 0xc4, 0x2b,
-	0xf0, 0x24, 0x1c, 0x91, 0x90, 0x38, 0xa3, 0x8a, 0x07, 0x41, 0x5e, 0xaf, 0x4d, 0xe2, 0x54, 0x9c,
-	0x9c, 0xf9, 0xbe, 0x99, 0x6f, 0x66, 0xe7, 0x27, 0x68, 0x87, 0x32, 0x05, 0x82, 0x91, 0xa8, 0x27,
-	0x41, 0x4c, 0x40, 0xf4, 0x24, 0x48, 0x49, 0x39, 0xcb, 0xbf, 0xdd, 0x58, 0x70, 0xc5, 0x71, 0xdd,
-	0x98, 0xee, 0x9c, 0x3f, 0x09, 0x02, 0x9e, 0x30, 0x95, 0x7f, 0x33, 0x7f, 0x77, 0x3d, 0xe4, 0x3c,
-	0x8c, 0xa0, 0x47, 0x62, 0xda, 0x23, 0x8c, 0x71, 0x45, 0x14, 0xe5, 0x4c, 0x66, 0xac, 0xf7, 0xcd,
-	0x42, 0xed, 0xb3, 0x4c, 0xf0, 0x48, 0x00, 0x51, 0xe0, 0xc3, 0xfb, 0x04, 0xa4, 0xc2, 0x2e, 0xb2,
-	0x13, 0x99, 0xca, 0x8f, 0xc1, 0xb1, 0xb6, 0xac, 0xdd, 0x86, 0x5f, 0xd8, 0x29, 0x17, 0x13, 0x29,
-	0x6f, 0xb8, 0x18, 0x3a, 0x95, 0x8c, 0xcb, 0x6d, 0xdc, 0x46, 0x55, 0xc5, 0xaf, 0x81, 0x39, 0x0b,
-	0x9a, 0xc8, 0x0c, 0xbc, 0x81, 0x50, 0x40, 0x62, 0x15, 0x8c, 0xc8, 0x80, 0x0e, 0x9d, 0x45, 0x4d,
-	0x35, 0x0c, 0xd2, 0x1f, 0xe2, 0x1d, 0xd4, 0xcc, 0x69, 0xc2, 0xe4, 0x0d, 0x08, 0xa7, 0xaa, 0x5d,
-	0x96, 0x0d, 0x7a, 0xa8, 0x41, 0x6f, 0xb5, 0xa8, 0xf5, 0x18, 0x22, 0x28, 0x6a, 0xf5, 0x9e, 0xa0,
-	0x15, 0x83, 0xfb, 0x20, 0x63, 0xce, 0x24, 0xfc, 0x2b, 0xc3, 0x9a, 0x2a, 0xc3, 0x6b, 0x23, 0x7c,
-	0x02, 0xea, 0x5c, 0x82, 0xe8, 0xb3, 0x2b, 0x9e, 0x87, 0xb7, 0x50, 0xf3, 0x28, 0xcb, 0x93, 0x23,
-	0x09, 0x5a, 0x29, 0x10, 0x23, 0x38, 0xfb, 0x02, 0xab, 0xfc, 0x82, 0x6d, 0xd4, 0xa4, 0x63, 0x12,
-	0xc2, 0x60, 0x48, 0x14, 0x19, 0x24, 0x22, 0x32, 0x8d, 0xb9, 0xa7, 0xd1, 0x63, 0xa2, 0xc8, 0xb9,
-	0x88, 0x52, 0x11, 0xf8, 0x10, 0x53, 0x01, 0x72, 0x40, 0xb3, 0x0e, 0x55, 0xfd, 0x86, 0x41, 0xfa,
-	0xcc, 0xfb, 0x55, 0x41, 0x0f, 0x66, 0xea, 0x33, 0xb9, 0x5d, 0x64, 0x47, 0x3c, 0x0c, 0x61, 0xd8,
-	0xcf, 0xde, 0x63, 0xfb, 0x85, 0x3d, 0x33, 0xa7, 0x4a, 0x69, 0x4e, 0x2d, 0xb4, 0x40, 0xa5, 0x34,
-	0x93, 0x48, 0x7f, 0xe2, 0x6d, 0xb4, 0x4c, 0x86, 0x63, 0xca, 0xa8, 0x54, 0x82, 0x28, 0x2e, 0xf4,
-	0x28, 0x6c, 0x7f, 0x16, 0xc4, 0x5d, 0x54, 0x23, 0x41, 0x00, 0x52, 0x3a, 0xf5, 0x2d, 0x6b, 0x77,
-	0xe9, 0x60, 0xb5, 0x9b, 0xaf, 0xd4, 0x61, 0xf6, 0x3d, 0xd4, 0xac, 0x6f, 0xbc, 0xf0, 0x3e, 0xaa,
-	0xc7, 0x82, 0x5f, 0xd1, 0x08, 0x1c, 0x5b, 0x07, 0x74, 0xca, 0x01, 0xaf, 0x33, 0xda, 0xcf, 0xfd,
-	0xf0, 0x0b, 0xb4, 0x14, 0x0b, 0xb8, 0x02, 0x01, 0x2c, 0x00, 0xe9, 0x34, 0x74, 0xd8, 0xda, 0x7c,
-	0x58, 0xe1, 0xe2, 0x4f, 0xfb, 0x9f, 0x2e, 0xda, 0xd5, 0x56, 0xed, 0x74, 0xd1, 0xae, 0xb5, 0xea,
-	0x3e, 0x4a, 0x5b, 0x6e, 0x2a, 0x7a, 0x48, 0x12, 0x35, 0xe2, 0x82, 0x7e, 0xd2, 0x4b, 0xee, 0xc3,
-	0x84, 0xa6, 0x5b, 0x71, 0xf0, 0x75, 0x01, 0x35, 0xcd, 0x86, 0x9c, 0x81, 0x98, 0xd0, 0x00, 0xf0,
-	0x3b, 0xb4, 0x34, 0xd5, 0x6a, 0xbc, 0xd6, 0xcd, 0xaf, 0x6c, 0x7e, 0x41, 0xdc, 0xf5, 0xbb, 0xc9,
-	0x6c, 0x3a, 0xde, 0xd6, 0xe7, 0x9f, 0x7f, 0xbe, 0x54, 0x5c, 0xec, 0xe8, 0x13, 0x9b, 0xec, 0x17,
-	0x77, 0x9b, 0xce, 0x81, 0xa6, 0xe2, 0x6f, 0x11, 0x3a, 0x01, 0x65, 0x36, 0x0a, 0x77, 0x0a, 0xb5,
-	0xd9, 0xad, 0x73, 0x9d, 0x79, 0xc2, 0xa4, 0x78, 0xac, 0x53, 0x3c, 0xc2, 0x9d, 0x72, 0x0a, 0xb3,
-	0x80, 0xf8, 0x0d, 0xaa, 0x65, 0xe7, 0x8b, 0x37, 0x0a, 0x91, 0xbb, 0xce, 0x7a, 0x2a, 0x47, 0xe9,
-	0x62, 0x3c, 0x57, 0xe7, 0x68, 0x7b, 0x2b, 0xa5, 0x1c, 0xcf, 0xad, 0x3d, 0x7c, 0x81, 0x6a, 0xd9,
-	0xc5, 0xcd, 0xcb, 0xcf, 0x5c, 0xe2, 0x7f, 0xe4, 0x3b, 0x5a, 0xfe, 0xfe, 0x5e, 0x59, 0xfe, 0xd5,
-	0xcb, 0xef, 0xb7, 0x9b, 0xd6, 0x8f, 0xdb, 0x4d, 0xeb, 0xf7, 0xed, 0xa6, 0x75, 0xf1, 0x34, 0xa4,
-	0x6a, 0x94, 0x5c, 0x76, 0x03, 0x3e, 0xd6, 0xfd, 0xfb, 0x08, 0x21, 0xf4, 0x88, 0x1a, 0x01, 0x23,
-	0xbd, 0xf8, 0x3a, 0x4c, 0x83, 0x83, 0x88, 0x02, 0x53, 0x79, 0xfc, 0x65, 0x4d, 0xff, 0x91, 0x3d,
-	0xfb, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xd2, 0xd9, 0xf5, 0x23, 0x3f, 0x05, 0x00, 0x00,
+	// 416 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x52, 0x4d, 0x8b, 0x13, 0x41,
+	0x10, 0x65, 0xb2, 0x31, 0x99, 0xed, 0xa0, 0x84, 0xf6, 0xab, 0x99, 0x5d, 0x42, 0x08, 0x0a, 0x39,
+	0xcd, 0xb8, 0xeb, 0x59, 0x61, 0xbd, 0xc8, 0xee, 0x49, 0x7a, 0xf1, 0xe2, 0xad, 0xb7, 0x53, 0x99,
+	0xb4, 0x4e, 0xba, 0xc6, 0xae, 0x9e, 0x80, 0xe2, 0xc9, 0xbf, 0xe0, 0x9f, 0xf2, 0x28, 0x08, 0x9e,
+	0x25, 0xf8, 0x43, 0x64, 0x7a, 0x32, 0xc3, 0xc6, 0x78, 0xaa, 0xae, 0x7a, 0xef, 0x15, 0xd5, 0xf5,
+	0x8a, 0x3d, 0x35, 0xd6, 0x83, 0xb3, 0xaa, 0xc8, 0x08, 0xdc, 0x06, 0x5c, 0x46, 0x40, 0x64, 0xd0,
+	0xb6, 0x31, 0x2d, 0x1d, 0x7a, 0xe4, 0xc3, 0x5d, 0x9a, 0x1c, 0xf0, 0x95, 0xd6, 0x58, 0x59, 0xdf,
+	0xc6, 0x86, 0x9f, 0x9c, 0xe6, 0x88, 0x79, 0x01, 0x99, 0x2a, 0x4d, 0xa6, 0xac, 0x45, 0xaf, 0xbc,
+	0x41, 0x4b, 0x0d, 0x3a, 0x7b, 0xc0, 0xf8, 0x6b, 0xf0, 0x6f, 0x09, 0xdc, 0xa5, 0x5d, 0xa2, 0x84,
+	0x8f, 0x15, 0x90, 0x9f, 0xfd, 0xea, 0xb1, 0xfb, 0x7b, 0x65, 0x2a, 0xd1, 0x12, 0xf0, 0x84, 0xc5,
+	0x05, 0xe6, 0x39, 0x2c, 0x2e, 0xad, 0x88, 0xa6, 0xd1, 0x3c, 0x96, 0x5d, 0x5e, 0x63, 0x15, 0xd5,
+	0xf3, 0xac, 0x41, 0xf4, 0xa6, 0xd1, 0xfc, 0x58, 0x76, 0x39, 0x1f, 0xb3, 0x23, 0x43, 0x24, 0x8e,
+	0x42, 0xb9, 0x7e, 0xf2, 0x27, 0xec, 0xae, 0x5a, 0xac, 0x8d, 0x35, 0xe4, 0x9d, 0xf2, 0xe8, 0x44,
+	0x3f, 0xb4, 0xdb, 0x2f, 0xf2, 0x94, 0x0d, 0x94, 0xd6, 0x40, 0x24, 0x86, 0xd3, 0x68, 0x3e, 0x3a,
+	0x7f, 0x94, 0xb6, 0x7f, 0xbb, 0x68, 0xe2, 0x45, 0x40, 0xe5, 0x8e, 0xc5, 0xcf, 0xd8, 0xb0, 0x74,
+	0xb8, 0x34, 0x05, 0x88, 0x38, 0x08, 0x1e, 0xff, 0x2b, 0x78, 0xd3, 0xc0, 0xb2, 0xe5, 0xf1, 0x17,
+	0x6c, 0x54, 0x3a, 0x58, 0x82, 0x03, 0xab, 0x81, 0xc4, 0x71, 0x90, 0x9d, 0x1c, 0xca, 0x3a, 0x8a,
+	0xbc, 0xcd, 0xbf, 0xea, 0xc7, 0x77, 0xc6, 0x83, 0xab, 0x7e, 0x3c, 0x18, 0x0f, 0x25, 0x5b, 0x28,
+	0xaf, 0x76, 0x13, 0x3d, 0x54, 0x95, 0x5f, 0xa1, 0x33, 0x9f, 0xc3, 0xb6, 0x25, 0x6c, 0x4c, 0xed,
+	0xd9, 0xf9, 0x17, 0x76, 0xef, 0xba, 0xb1, 0xef, 0x1a, 0xdc, 0xc6, 0x68, 0xe0, 0xef, 0xd9, 0xe8,
+	0xd6, 0xa6, 0xf9, 0x49, 0xda, 0xba, 0x7d, 0x68, 0x4b, 0x72, 0xfa, 0x7f, 0xb0, 0x31, 0x67, 0x36,
+	0xfd, 0xfa, 0xf3, 0xcf, 0xb7, 0x5e, 0xc2, 0x45, 0xb0, 0x7a, 0x73, 0xd6, 0xdd, 0x4f, 0x6d, 0x83,
+	0xb1, 0x4b, 0x7c, 0xf5, 0xf2, 0xfb, 0x76, 0x12, 0xfd, 0xd8, 0x4e, 0xa2, 0xdf, 0xdb, 0x49, 0xf4,
+	0xee, 0x59, 0x6e, 0xfc, 0xaa, 0xba, 0x49, 0x35, 0xae, 0x03, 0xe5, 0x13, 0xe4, 0x90, 0x29, 0xbf,
+	0x02, 0xab, 0xb2, 0xf2, 0x43, 0x5e, 0x77, 0xd1, 0x85, 0x01, 0xeb, 0xdb, 0x46, 0x37, 0x83, 0x70,
+	0x33, 0xcf, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0x42, 0x37, 0xb1, 0xc7, 0xaa, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -513,12 +221,6 @@ const _ = grpc.SupportPackageIsVersion4
 type SessionServiceClient interface {
 	// Get the current user's info
 	GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error)
-	// GetCaptcha returns a fresh login captcha for web login.
-	GetCaptcha(ctx context.Context, in *CaptchaRequest, opts ...grpc.CallOption) (*CaptchaResponse, error)
-	// Create a new JWT for authentication and set a cookie if using HTTP
-	Create(ctx context.Context, in *SessionCreateRequest, opts ...grpc.CallOption) (*SessionResponse, error)
-	// Delete an existing JWT cookie if using HTTP
-	Delete(ctx context.Context, in *SessionDeleteRequest, opts ...grpc.CallOption) (*SessionResponse, error)
 }
 
 type sessionServiceClient struct {
@@ -538,43 +240,10 @@ func (c *sessionServiceClient) GetUserInfo(ctx context.Context, in *GetUserInfoR
 	return out, nil
 }
 
-func (c *sessionServiceClient) GetCaptcha(ctx context.Context, in *CaptchaRequest, opts ...grpc.CallOption) (*CaptchaResponse, error) {
-	out := new(CaptchaResponse)
-	err := c.cc.Invoke(ctx, "/session.SessionService/GetCaptcha", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *sessionServiceClient) Create(ctx context.Context, in *SessionCreateRequest, opts ...grpc.CallOption) (*SessionResponse, error) {
-	out := new(SessionResponse)
-	err := c.cc.Invoke(ctx, "/session.SessionService/Create", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *sessionServiceClient) Delete(ctx context.Context, in *SessionDeleteRequest, opts ...grpc.CallOption) (*SessionResponse, error) {
-	out := new(SessionResponse)
-	err := c.cc.Invoke(ctx, "/session.SessionService/Delete", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // SessionServiceServer is the server API for SessionService service.
 type SessionServiceServer interface {
 	// Get the current user's info
 	GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error)
-	// GetCaptcha returns a fresh login captcha for web login.
-	GetCaptcha(context.Context, *CaptchaRequest) (*CaptchaResponse, error)
-	// Create a new JWT for authentication and set a cookie if using HTTP
-	Create(context.Context, *SessionCreateRequest) (*SessionResponse, error)
-	// Delete an existing JWT cookie if using HTTP
-	Delete(context.Context, *SessionDeleteRequest) (*SessionResponse, error)
 }
 
 // UnimplementedSessionServiceServer can be embedded to have forward compatible implementations.
@@ -583,15 +252,6 @@ type UnimplementedSessionServiceServer struct {
 
 func (*UnimplementedSessionServiceServer) GetUserInfo(ctx context.Context, req *GetUserInfoRequest) (*GetUserInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
-}
-func (*UnimplementedSessionServiceServer) GetCaptcha(ctx context.Context, req *CaptchaRequest) (*CaptchaResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCaptcha not implemented")
-}
-func (*UnimplementedSessionServiceServer) Create(ctx context.Context, req *SessionCreateRequest) (*SessionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
-}
-func (*UnimplementedSessionServiceServer) Delete(ctx context.Context, req *SessionDeleteRequest) (*SessionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 
 func RegisterSessionServiceServer(s *grpc.Server, srv SessionServiceServer) {
@@ -616,60 +276,6 @@ func _SessionService_GetUserInfo_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SessionService_GetCaptcha_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CaptchaRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SessionServiceServer).GetCaptcha(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/session.SessionService/GetCaptcha",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SessionServiceServer).GetCaptcha(ctx, req.(*CaptchaRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SessionService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SessionCreateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SessionServiceServer).Create(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/session.SessionService/Create",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SessionServiceServer).Create(ctx, req.(*SessionCreateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SessionService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SessionDeleteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SessionServiceServer).Delete(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/session.SessionService/Delete",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SessionServiceServer).Delete(ctx, req.(*SessionDeleteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _SessionService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "session.SessionService",
 	HandlerType: (*SessionServiceServer)(nil),
@@ -678,144 +284,9 @@ var _SessionService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "GetUserInfo",
 			Handler:    _SessionService_GetUserInfo_Handler,
 		},
-		{
-			MethodName: "GetCaptcha",
-			Handler:    _SessionService_GetCaptcha_Handler,
-		},
-		{
-			MethodName: "Create",
-			Handler:    _SessionService_Create_Handler,
-		},
-		{
-			MethodName: "Delete",
-			Handler:    _SessionService_Delete_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/server/session/session.proto",
-}
-
-func (m *SessionCreateRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *SessionCreateRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SessionCreateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.CaptchaAnswer) > 0 {
-		i -= len(m.CaptchaAnswer)
-		copy(dAtA[i:], m.CaptchaAnswer)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.CaptchaAnswer)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.CaptchaId) > 0 {
-		i -= len(m.CaptchaId)
-		copy(dAtA[i:], m.CaptchaId)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.CaptchaId)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Token) > 0 {
-		i -= len(m.Token)
-		copy(dAtA[i:], m.Token)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.Token)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Password) > 0 {
-		i -= len(m.Password)
-		copy(dAtA[i:], m.Password)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.Password)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Username) > 0 {
-		i -= len(m.Username)
-		copy(dAtA[i:], m.Username)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.Username)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *SessionDeleteRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *SessionDeleteRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SessionDeleteRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *SessionResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *SessionResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *SessionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Token) > 0 {
-		i -= len(m.Token)
-		copy(dAtA[i:], m.Token)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.Token)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
 }
 
 func (m *GetUserInfoRequest) Marshal() (dAtA []byte, err error) {
@@ -841,79 +312,6 @@ func (m *GetUserInfoRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CaptchaRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CaptchaRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CaptchaRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CaptchaResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CaptchaResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CaptchaResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.ExpiresIn != 0 {
-		i = encodeVarintSession(dAtA, i, uint64(m.ExpiresIn))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.ImageDataUrl) > 0 {
-		i -= len(m.ImageDataUrl)
-		copy(dAtA[i:], m.ImageDataUrl)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.ImageDataUrl)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.CaptchaId) > 0 {
-		i -= len(m.CaptchaId)
-		copy(dAtA[i:], m.CaptchaId)
-		i = encodeVarintSession(dAtA, i, uint64(len(m.CaptchaId)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1026,107 +424,12 @@ func encodeVarintSession(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *SessionCreateRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Username)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	l = len(m.Password)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	l = len(m.CaptchaId)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	l = len(m.CaptchaAnswer)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *SessionDeleteRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *SessionResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *GetUserInfoRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *CaptchaRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *CaptchaResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.CaptchaId)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	l = len(m.ImageDataUrl)
-	if l > 0 {
-		n += 1 + l + sovSession(uint64(l))
-	}
-	if m.ExpiresIn != 0 {
-		n += 1 + sovSession(uint64(m.ExpiresIn))
-	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -1177,351 +480,6 @@ func sovSession(x uint64) (n int) {
 func sozSession(x uint64) (n int) {
 	return sovSession(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SessionCreateRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSession
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SessionCreateRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SessionCreateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Username", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Username = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Password", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Password = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CaptchaId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CaptchaId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CaptchaAnswer", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CaptchaAnswer = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSession(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthSession
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *SessionDeleteRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSession
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SessionDeleteRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SessionDeleteRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSession(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthSession
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *SessionResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSession
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SessionResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SessionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSession(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthSession
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *GetUserInfoRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1551,191 +509,6 @@ func (m *GetUserInfoRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: GetUserInfoRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSession(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthSession
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CaptchaRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSession
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CaptchaRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CaptchaRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipSession(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthSession
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CaptchaResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowSession
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CaptchaResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CaptchaResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CaptchaId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CaptchaId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageDataUrl", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthSession
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthSession
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ImageDataUrl = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresIn", wireType)
-			}
-			m.ExpiresIn = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowSession
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpiresIn |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSession(dAtA[iNdEx:])

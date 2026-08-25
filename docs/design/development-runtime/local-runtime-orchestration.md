@@ -11,9 +11,13 @@ UI, and the API Server.
 
 Application behavior remains inside each command and `internal` package.
 Production Compose lifecycle is outside this capability, although production
-must likewise use PostgreSQL and MinIO volumes. The hot-deploy path preserves
-both volumes, idempotently initializes the private avatar bucket, and creates
-only the missing `profit_sharing` database before running module migrations.
+must likewise use PostgreSQL, Redis, and MinIO volumes. The hot-deploy path
+preserves all three volumes, idempotently initializes the private avatar bucket,
+and creates only the missing `profit_sharing` database before running module
+migrations.
+Local Google OIDC remains API Server behavior, while this runtime supplies its
+fixed localhost callback configuration and the Redis dependency used for
+one-time login transactions.
 
 ## Source Locations
 
@@ -24,7 +28,8 @@ only the missing `profit_sharing` database before running module migrations.
 | PostgreSQL persistence | [hack/start-postgres-with-password.sh](../../../hack/start-postgres-with-password.sh) | `postgres_config_fingerprint`, `ensure_postgres_volume` |
 | PostgreSQL database initialization | [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql) | capability database creation |
 | Preserved-volume production upgrade | [hack/prod-remote-deploy.sh](../../../hack/prod-remote-deploy.sh) | exact `profit_sharing` database readiness and private MinIO initialization |
-| Redis persistence | [hack/start-redis-with-password.sh](../../../hack/start-redis-with-password.sh) | `ensure_redis_volume` |
+| Redis persistence | [hack/start-redis-with-password.sh](../../../hack/start-redis-with-password.sh), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `ensure_redis_volume`, `redis-data` |
+| Google OIDC local wiring | [Procfile](../../../Procfile), [internal/googleoidc/handler.go](../../../internal/googleoidc/handler.go), [internal/googleoidc/store.go](../../../internal/googleoidc/store.go) | `ATHENA_GOOGLE_OIDC_REDIRECT_URI`, `Handler`, `TransactionStore` |
 | MinIO persistence and initialization | [hack/start-minio.sh](../../../hack/start-minio.sh), [deploy/minio/init-avatar-bucket.sh](../../../deploy/minio/init-avatar-bucket.sh) | `ensure_volume`, private avatar bucket and application policy |
 | Process declarations | [Procfile](../../../Procfile) | six market-intelligence processes, `profit-sharing`, `notification`, `wallet`, `postgres`, `redis`, `minio`, application processes |
 | Capability ports | [common/common.go](../../../common/common.go) | market-intelligence port constants and `DefaultPortProfitSharing` |
@@ -50,6 +55,8 @@ flowchart TD
     F --> P
     A --> F
     A --> M
+    B["Browser Google login"] --> A
+    A --> R
     P --> PV["athena-local-postgres-data"]
     R --> RV["athena-local-redis-data"]
     M --> MV["athena-local-minio-data"]
@@ -97,6 +104,13 @@ by `GET /api/v1/world-cup-corners/dataset`, which explicitly requires World Cup
 Corners `READ`, instead of being bundled in frontend JavaScript. It has no
 separate Procfile process, listener, or database.
 
+The UI development server listens on `localhost:4000` and proxies `/auth` to
+the API Server. The Procfile therefore defaults the explicit Google callback to
+`http://localhost:4000/auth/google/callback`. API Server registers
+`/auth/google/login` and `/auth/google/callback` as direct HTTP handlers beside
+the gateway rather than adding gRPC methods. The callback URI is never derived
+from `Host` or forwarded headers.
+
 ## Runtime Flow
 
 1. `make run` rejects a verified live supervisor and removes stale state only
@@ -108,8 +122,13 @@ separate Procfile process, listener, or database.
    as independent `go run` processes. It also starts Notification and Wallet,
    making the default notification-enabled settings, FIFA dependencies, and
    authenticated Profit Sharing facade usable locally. API Server
-   authentication defaults to enabled so Profit Sharing can resolve members by
-   their configured Athena accounts.
+   authentication defaults to enabled, so local configuration must provide the
+   Google Web OAuth client and one unique Google `sub` for every login-capable
+   Athena account. The only local redirect is
+   `http://localhost:4000/auth/google/callback`; the browser begins login through
+   Vite's `/auth` proxy. `ATHENA_SERVER_DISABLE_AUTH=true` retains the
+   development administrator bypass and skips Google configuration and handler
+   construction.
    Goreman supervises processes but does not merge their lifecycle or health.
    Each internal clientset creates one nonblocking gRPC channel and one typed
    client, reuses that channel for business and health RPCs, reconnects in the
@@ -128,11 +147,17 @@ separate Procfile process, listener, or database.
    plus ten `account_module_access_override` children. The read-only,
    repeatable-read load rejects incomplete or invalid matrices, so dependency
    or validation failure prevents that process from serving.
-5. Redis validates or creates `athena-local-redis-data`. MinIO validates or
-   creates `athena-local-minio-data`, builds the repository-pinned MinIO and mc
-   images when absent, starts the server on loopback ports 9000/9001, and runs
-   the mc initializer in the server network namespace. The initializer creates
-   the private avatar bucket, removes anonymous access, and attaches the
+5. Redis validates or creates `athena-local-redis-data`. API Server uses it for
+   session revocation and for five-minute Google OIDC transactions containing
+   only nonce, PKCE verifier, validated `returnTo`, and creation time. Callback
+   consumption atomically reads and deletes the transaction, so replay cannot
+   mint another session. An authentication-enabled API Server completes its
+   initial revocation scan before serving and retains the last complete snapshot
+   through later Redis interruptions. MinIO validates or creates
+   `athena-local-minio-data`, builds the repository-pinned MinIO and mc images
+   when absent, starts the server on loopback ports 9000/9001, and runs the mc
+   initializer in the server network namespace. The initializer creates the
+   private avatar bucket, removes anonymous access, and attaches the
    bucket-scoped application policy. Each run creates attached, labeled,
    `--rm` PostgreSQL, Redis, and MinIO containers. PostgreSQL mounts its
    complete data directory; Redis enables AOF under `/data`; MinIO stores all
@@ -149,11 +174,12 @@ separate Procfile process, listener, or database.
    fingerprint. Before the first local run with the current capability database
    set, an existing local volume must be cleared with `make run-reset`; the
    next `make run` creates the databases from a clean volume.
-9. A production hot deploy requires both external volumes, starts and waits for
-   the existing PostgreSQL and MinIO services, reruns private-bucket
+9. A production hot deploy requires all three external volumes, starts the
+   existing PostgreSQL, Redis, and MinIO services, waits for the stateful
+   dependencies it initializes directly, reruns private-bucket
    initialization, attempts the exact `profit_sharing` database creation, and
    accepts a failed create only when connecting to that database succeeds. It
-   then runs the normal migrations without resetting either retained volume.
+   then runs the normal migrations without resetting any retained volume.
 
 ## State / Data
 
@@ -175,7 +201,11 @@ supported level.
 
 `athena-local-redis-data` stores Redis AOF data. Its labels record Athena
 ownership and the `redis` component. Redis container settings can change on
-the next run because the container is always recreated.
+the next run because the container is always recreated. Revoked Athena JTIs use
+the `revoked-token|` namespace. Google authorization transactions use
+`google-oidc-transaction|<state>`, expire after five minutes, and are atomically
+deleted on the first callback attempt. They contain no Google token, Athena JWT,
+client secret, email, or subject.
 
 `athena-local-minio-data` stores the private account-avatar bucket, image
 objects, and MinIO IAM metadata. Its labels record Athena ownership and the
@@ -213,6 +243,10 @@ removed.
 | Capability `ATHENA_*_POSTGRES_DSN` variables | Select each capability-owned PostgreSQL database, including `ATHENA_PROFIT_SHARING_POSTGRES_DSN` for `profit_sharing`. Market Radar has no DSN. |
 | `ATHENA_SERVER_POSTGRES_DSN` | Selects the API Server's `athena` database for access matrices, profiles, and preferences. The local default uses the shared PostgreSQL connection settings; production Compose supplies an explicit service DSN. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Defaults to `false` in the Procfile. Profit Sharing requires authenticated account identity and must not use the development auth bypass for normal local operation. |
+| `ATHENA_GOOGLE_OIDC_CLIENT_ID`, `ATHENA_GOOGLE_OIDC_CLIENT_SECRET` / `_FILE` | Configure the local Google Web OAuth client. Direct client-secret configuration is allowed locally; the file form reads a separate file. |
+| `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Defaults in the Procfile to exactly `http://localhost:4000/auth/google/callback`. Only localhost may use HTTP. |
+| `ATHENA_ACCOUNT_<NAME>_GOOGLE_SUB`, `ATHENA_ADMIN_GOOGLE_SUB` | Bind every login-capable fixed Athena account to one unique stable Google subject. Authentication-enabled startup rejects empty or duplicate bindings. |
+| `ATHENA_SESSION_DURATION` | Sets Athena browser-session lifetime; the application default is 24 hours. The OIDC flow requests no offline access and stores no Google refresh token. |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`, `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID`, `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | Required by the default active Notification process. Local configuration must provide all three. |
 | `ATHENA_POSTGRES_PORT`, `ATHENA_POSTGRES_IMAGE_TAG`, `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `ATHENA_POSTGRES_INIT_DIR` | Configure the disposable PostgreSQL container and its initialization fingerprint where applicable. |
 | `ATHENA_REDIS_PORT`, `ATHENA_REDIS_IMAGE_TAG`, `REDIS_PASSWORD` | Configure the disposable Redis container. |
@@ -241,6 +275,13 @@ targets are fixed local-runtime boundaries rather than user configuration.
 - The API Server must load and validate complete parent-plus-ten-child access
   aggregates from the `athena` database before serving; it does not fall back
   to environment-only account state when that dependency fails.
+- With authentication enabled, the API Server must validate the complete Google
+   binding map and OIDC client configuration before serving. Google discovery or
+   JWKS availability is not a startup dependency. Disabled-auth development mode
+   is accepted only with a loopback API Server listen address.
+- Google authorization state lives only in the dedicated Redis transaction
+  namespace and is consumed once. Session revocation state remains a separate
+  Redis concern.
 - World Cup Corners data is served only through its explicit module `READ` rule
   at the API Server and is not embedded in the UI bundle.
 - Notification-enabled capabilities communicate through Notification gRPC.
@@ -275,6 +316,17 @@ without preventing unrelated API capabilities; the retained volume restores
 objects and IAM state after restart. An unowned MinIO container or volume with
 the reserved name is never removed automatically.
 
+A Redis outage prevents creation or consumption of Google OIDC transactions,
+so no partial Athena session is issued. Existing Athena sessions continue to
+use local JWT validation and the session manager's current revocation snapshot;
+revocation resynchronization retries when Redis returns. A newly started API
+Server does not begin serving application traffic until its first Redis
+revocation scan succeeds. A Google token or JWKS
+outage affects only callbacks for new login attempts. API Server startup and
+health do not probe Google, so authenticated business traffic remains available.
+Full reset removes Redis AOF state, including revocations and any unexpired OIDC
+transactions.
+
 The production hot-deploy database step is idempotent. An already existing
 `profit_sharing` database is accepted only after a successful direct connection;
 readiness timeout, creation failure without an existing database, or connection
@@ -303,7 +355,9 @@ port ownership conflicts, container deletion, volume creation or deletion,
 reset paths, excluded Procfile services, pinned MinIO image builds and bucket
 initialization, and ownership or fingerprint failures.
 Goreman streams every capability, dependency, database, UI, and API Server log
-in the foreground.
+in the foreground. Google login logs add a bounded failure stage and stable
+reason without recording authorization codes, Google tokens, Athena JWTs, or
+client secrets.
 
 `ATHENA_RUN_DRY_RUN=true make run` is the non-mutating view of the effective
 process set. The API Server's Service Status view checks every registered
@@ -316,6 +370,7 @@ capability-specific freshness or sync status documented by each subsystem.
 - [ ] Recheck capability ports, database ownership, and gRPC dependencies, including Profit Sharing on `8108`.
 - [ ] Recheck shallow-stop and full-reset resource boundaries.
 - [ ] Recheck PostgreSQL, Redis, and MinIO container/volume ownership labels and PostgreSQL fingerprint inputs.
+- [ ] Recheck local Google client, exact localhost callback, unique account bindings, and Redis OAuth transaction ownership.
 - [ ] Recheck account-state ownership, access/profile/preference reset defaults, and World Cup module-protected API hosting.
 - [ ] Recheck default temporary and coverage paths and avoid broad or custom-path deletion.
 - [ ] Recheck Procfile, database initialization, API Server status wiring, and design-index references.

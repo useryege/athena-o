@@ -33,9 +33,6 @@ var publicGRPCMethods = map[string]bool{
 	"/grpc.health.v1.Health/Watch": true,
 
 	"/session.SessionService/GetUserInfo": true,
-	"/session.SessionService/GetCaptcha":  true,
-	"/session.SessionService/Create":      true,
-	"/session.SessionService/Delete":      true,
 
 	"/appbootstrap.AppBootstrapService/GetAppBootstrap": true,
 	"/version.VersionService/Version":                   true,
@@ -73,7 +70,6 @@ var profitSharingAuthenticatedGRPCMethods = map[string]bool{
 }
 
 var accountAuthenticatedGRPCMethods = map[string]bool{
-	"/account.AccountService/ChangePassword":           true,
 	"/account.AccountService/UpdateAccountPreferences": true,
 	"/account.AccountService/ListTokens":               true,
 	"/account.AccountService/CreateToken":              true,

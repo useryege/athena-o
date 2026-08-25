@@ -24,7 +24,8 @@ message Settings {
   string uiCssURL = 14;
   string uiBannerContent = 15;
   string uiBannerURL = 16;
-  string passwordPattern = 17;
+  reserved 17;
+  reserved "passwordPattern";
   string trackingMethod = 18;
   bool uiBannerPermanent = 19;
   string uiBannerPosition = 20;

@@ -347,7 +347,9 @@ const breadcrumbItems = (pathname: string) => {
     if (section) {
         return [section.label, ...trail.map(item => item.label)].map(title => ({title}));
     }
-    const accountRoute = [...accountRouteMetadata].sort((left, right) => right.path.length - left.path.length).find(item => pathname === item.path || pathname.startsWith(`${item.path}/`));
+    const accountRoute = [...accountRouteMetadata]
+        .sort((left, right) => right.path.length - left.path.length)
+        .find(item => pathname === item.path || pathname.startsWith(`${item.path}/`));
     return accountRoute ? [{title: accountRoute.section}, {title: accountRoute.label}] : [];
 };
 
@@ -357,7 +359,8 @@ const routeTitle = (pathname: string) => {
     if (business) {
         return business.label;
     }
-    return [...accountRouteMetadata].sort((left, right) => right.path.length - left.path.length).find(item => pathname === item.path || pathname.startsWith(`${item.path}/`))?.label;
+    return [...accountRouteMetadata].sort((left, right) => right.path.length - left.path.length).find(item => pathname === item.path || pathname.startsWith(`${item.path}/`))
+        ?.label;
 };
 
 const usePreferences = () => {
@@ -447,7 +450,6 @@ const AppRoutes = (props: {
     settings: AuthSettings;
     themeChanging: boolean;
     onThemeChange: (theme: ThemeMode) => Promise<void>;
-    onPasswordChanged: () => void;
 }) => {
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.isAdmin || props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
@@ -467,10 +469,22 @@ const AppRoutes = (props: {
             <Route path='/fifa-market-dashboard' element={moduleRoute(AccountDataModule.FIFAMarketDashboard, <FIFAMarketDashboardPage />)} />
             <Route path='/notifications' element={moduleRoute(AccountDataModule.Notifications, <NotificationsPage />)} />
             <Route path='/notifications/:id' element={moduleRoute(AccountDataModule.Notifications, <NotificationsDetailPage />)} />
-            <Route path='/account/profile' element={<AccountCenterPage section='profile' preferences={props.preferences} themeChanging={props.themeChanging} settings={props.settings} onThemeChange={props.onThemeChange} onPasswordChanged={props.onPasswordChanged} />} />
-            <Route path='/account/appearance' element={<AccountCenterPage section='appearance' preferences={props.preferences} themeChanging={props.themeChanging} settings={props.settings} onThemeChange={props.onThemeChange} onPasswordChanged={props.onPasswordChanged} />} />
-            <Route path='/account/security' element={<AccountCenterPage section='security' preferences={props.preferences} themeChanging={props.themeChanging} settings={props.settings} onThemeChange={props.onThemeChange} onPasswordChanged={props.onPasswordChanged} />} />
-            <Route path='/account/access' element={<AccountCenterPage section='access' preferences={props.preferences} themeChanging={props.themeChanging} settings={props.settings} onThemeChange={props.onThemeChange} onPasswordChanged={props.onPasswordChanged} />} />
+            <Route
+                path='/account/profile'
+                element={<AccountCenterPage section='profile' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
+            />
+            <Route
+                path='/account/appearance'
+                element={<AccountCenterPage section='appearance' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
+            />
+            <Route
+                path='/account/security'
+                element={<AccountCenterPage section='security' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
+            />
+            <Route
+                path='/account/access'
+                element={<AccountCenterPage section='access' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
+            />
             <Route path='/admin/accounts' element={adminRoute(<AdminAccountsPage />)} />
             <Route path='/profit-sharing' element={<ProfitSharingRoundsPage />} />
             <Route path='/profit-sharing/:slug' element={<ProfitSharingRoundPage />} />
@@ -537,95 +551,92 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         clearProjectsReturnSnapshots();
     }, []);
 
-    const startAccessRefresh = React.useCallback(
-        (): Promise<boolean> => {
-            if (!accessRefreshAllowedRef.current) {
-                return Promise.resolve(false);
-            }
-            if (!accessRef.current) {
-                setSession({status: 'resolving'});
-            }
-            const generation = accessGenerationRef.current;
-            const request = (async () => {
-                try {
-                    const user = await services.users.get();
-                    if (generation !== accessGenerationRef.current) {
-                        return false;
-                    }
-                    if (!user.loggedIn) {
-                        endSession('anonymous');
-                        navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
-                        return false;
-                    }
-                    const previous = accessRef.current;
-                    const next = mergeMonotonicAccountProjection(previous, loadAccessState(user));
-                    services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
-                    const authorizationChanged =
-                        Boolean(previous) &&
-                        (previous.user.username !== next.user.username ||
-                            previous.user.iss !== next.user.iss ||
-                            previous.revision !== next.revision ||
-                            previous.isAdmin !== next.isAdmin ||
-                            !moduleAccessLevelsEqual(previous.moduleAccess, next.moduleAccess));
-                    if (authorizationChanged) {
-                        const priorAccess = previous as AccessState;
-                        const identityChanged = priorAccess.user.username !== next.user.username || priorAccess.user.iss !== next.user.iss || priorAccess.isAdmin !== next.isAdmin;
-                        if (identityChanged) {
-                            requests.invalidatePendingRequestErrors();
-                            requests.abortAuthorizationRequests();
-                            clearAsyncDataCache();
-                            clearProjectsReturnSnapshots();
-                        } else {
-                            accountDataModules.forEach(definition => {
-                                const prior = priorAccess.moduleAccess[definition.module];
-                                const current = next.moduleAccess[definition.module];
-                                if (prior >= AccountDataAccess.Read && current < AccountDataAccess.Read) {
-                                    requests.abortAuthorizationRequests(definition.module);
-                                    clearAsyncDataCache(definition.module);
-                                    if (definition.module === AccountDataModule.Token) {
-                                        clearProjectsReturnSnapshots();
-                                    }
-                                } else if (prior >= AccountDataAccess.ReadWrite && current < AccountDataAccess.ReadWrite) {
-                                    requests.abortAuthorizationRequests(definition.module, 'write');
+    const startAccessRefresh = React.useCallback((): Promise<boolean> => {
+        if (!accessRefreshAllowedRef.current) {
+            return Promise.resolve(false);
+        }
+        if (!accessRef.current) {
+            setSession({status: 'resolving'});
+        }
+        const generation = accessGenerationRef.current;
+        const request = (async () => {
+            try {
+                const user = await services.users.get();
+                if (generation !== accessGenerationRef.current) {
+                    return false;
+                }
+                if (!user.loggedIn) {
+                    endSession('anonymous');
+                    navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
+                    return false;
+                }
+                const previous = accessRef.current;
+                const next = mergeMonotonicAccountProjection(previous, loadAccessState(user));
+                services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
+                const authorizationChanged =
+                    Boolean(previous) &&
+                    (previous.user.username !== next.user.username ||
+                        previous.user.iss !== next.user.iss ||
+                        previous.revision !== next.revision ||
+                        previous.isAdmin !== next.isAdmin ||
+                        !moduleAccessLevelsEqual(previous.moduleAccess, next.moduleAccess));
+                if (authorizationChanged) {
+                    const priorAccess = previous as AccessState;
+                    const identityChanged = priorAccess.user.username !== next.user.username || priorAccess.user.iss !== next.user.iss || priorAccess.isAdmin !== next.isAdmin;
+                    if (identityChanged) {
+                        requests.invalidatePendingRequestErrors();
+                        requests.abortAuthorizationRequests();
+                        clearAsyncDataCache();
+                        clearProjectsReturnSnapshots();
+                    } else {
+                        accountDataModules.forEach(definition => {
+                            const prior = priorAccess.moduleAccess[definition.module];
+                            const current = next.moduleAccess[definition.module];
+                            if (prior >= AccountDataAccess.Read && current < AccountDataAccess.Read) {
+                                requests.abortAuthorizationRequests(definition.module);
+                                clearAsyncDataCache(definition.module);
+                                if (definition.module === AccountDataModule.Token) {
+                                    clearProjectsReturnSnapshots();
                                 }
-                            });
-                        }
+                            } else if (prior >= AccountDataAccess.ReadWrite && current < AccountDataAccess.ReadWrite) {
+                                requests.abortAuthorizationRequests(definition.module, 'write');
+                            }
+                        });
                     }
-                    accessRefreshedAtRef.current = Date.now();
-                    accessRef.current = next;
-                    setSession({status: 'authenticated', access: next});
-                    return true;
-                } catch (err: any) {
-                    if (generation !== accessGenerationRef.current) {
-                        return false;
-                    }
-                    if (isAccountMaintenanceError(err)) {
-                        endSession('maintenance');
-                        navigate(maintenanceLoginPath, {replace: true});
-                        return false;
-                    }
-                    if (err?.status === 401) {
-                        endSession('anonymous');
-                        navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
-                        return false;
-                    }
-                    if (!accessRef.current) {
-                        setSession({status: 'error', error: err instanceof Error ? err : new Error(err?.message || String(err))});
-                    }
-                    throw err;
                 }
-            })();
-            accessRefreshRef.current = request;
-            const clearPendingRefresh = () => {
-                if (accessRefreshRef.current === request) {
-                    accessRefreshRef.current = null;
+                accessRefreshedAtRef.current = Date.now();
+                accessRef.current = next;
+                setSession({status: 'authenticated', access: next});
+                return true;
+            } catch (err: any) {
+                if (generation !== accessGenerationRef.current) {
+                    return false;
                 }
-            };
-            void request.then(clearPendingRefresh, clearPendingRefresh);
-            return request;
-        },
-        [endSession, location.hash, location.pathname, location.search, navigate]
-    );
+                if (isAccountMaintenanceError(err)) {
+                    endSession('maintenance');
+                    navigate(maintenanceLoginPath, {replace: true});
+                    return false;
+                }
+                if (err?.status === 401) {
+                    endSession('anonymous');
+                    navigate(loginPathFor(location.pathname, location.search, location.hash), {replace: true});
+                    return false;
+                }
+                if (!accessRef.current) {
+                    setSession({status: 'error', error: err instanceof Error ? err : new Error(err?.message || String(err))});
+                }
+                throw err;
+            }
+        })();
+        accessRefreshRef.current = request;
+        const clearPendingRefresh = () => {
+            if (accessRefreshRef.current === request) {
+                accessRefreshRef.current = null;
+            }
+        };
+        void request.then(clearPendingRefresh, clearPendingRefresh);
+        return request;
+    }, [endSession, location.hash, location.pathname, location.search, navigate]);
 
     const refreshAccess = React.useCallback(
         (force = false): Promise<boolean> => {
@@ -973,12 +984,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         }
     }, [endSession, loggingOut, navigate, notifications]);
 
-    const passwordChanged = React.useCallback(() => {
-        setAccountMenuOpen(false);
-        endSession();
-        navigate('/login', {replace: true});
-    }, [endSession, navigate]);
-
     const navigateFromAccountMenu = (path: string) => {
         setAccountMenuOpen(false);
         if (narrowShell) {
@@ -1009,7 +1014,9 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                   type: 'group',
                   label: (
                       <span className='athena-account-menu__label'>
-                          <span><BgColorsOutlined /> Appearance</span>
+                          <span>
+                              <BgColorsOutlined /> Appearance
+                          </span>
                           <small>{themeChanging ? 'Saving…' : accountThemeLabel(props.pref.theme)}</small>
                       </span>
                   ),
@@ -1023,7 +1030,20 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
               ...(access.isAdmin ? [{key: '/admin/accounts', label: 'Manage accounts', icon: <UserOutlined />}] : []),
               {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
               {type: 'divider'},
-              {key: 'logout', label: loggingOut ? <Space size={8}><Spin size='small' />Logging out…</Space> : 'Log out', icon: <LogoutOutlined />, danger: true, disabled: loggingOut}
+              {
+                  key: 'logout',
+                  label: loggingOut ? (
+                      <Space size={8}>
+                          <Spin size='small' />
+                          Logging out…
+                      </Space>
+                  ) : (
+                      'Log out'
+                  ),
+                  icon: <LogoutOutlined />,
+                  danger: true,
+                  disabled: loggingOut
+              }
           ]
         : [];
 
@@ -1073,21 +1093,12 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     } else if (isLoginPath && (session.status === 'anonymous' || session.status === 'maintenance')) {
         routes = (
             <Routes>
-                <Route path='/login' element={<LoginPage onAuthenticated={establishAuthenticatedSession} />} />
+                <Route path='/login' element={<LoginPage />} />
                 <Route path='*' element={<Navigate replace={true} to='/login' />} />
             </Routes>
         );
     } else if (access && !isLoginPath) {
-        routes = (
-            <AppRoutes
-                access={access}
-                preferences={props.pref}
-                settings={props.settings}
-                themeChanging={themeChanging}
-                onThemeChange={changeTheme}
-                onPasswordChanged={passwordChanged}
-            />
-        );
+        routes = <AppRoutes access={access} preferences={props.pref} settings={props.settings} themeChanging={themeChanging} onThemeChange={changeTheme} />;
     } else {
         routes = <div className='athena-boot'>Loading Athena...</div>;
     }
@@ -1158,7 +1169,11 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                                         <small>@{access.user.username}</small>
                                     </span>
                                 )}
-                                {!sidebarCollapsed && <span className='athena-account-trigger__more' aria-hidden='true'>•••</span>}
+                                {!sidebarCollapsed && (
+                                    <span className='athena-account-trigger__more' aria-hidden='true'>
+                                        •••
+                                    </span>
+                                )}
                             </button>
                         </Dropdown>
                     </div>

@@ -26,6 +26,7 @@ rerunreport.txt
 .env
 .env.bsc-transaction-indexer
 .env.bsc-swap-indexer
+secrets/
 
 # ignore built binaries
 cmd/athena/athena

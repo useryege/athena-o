@@ -32,7 +32,7 @@ athena-server [flags]
       --connection-status-cache-expiration duration    Cache expiration for cluster/repo connection status (default 1h0m0s)
       --content-security-policy value                  Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
       --default-cache-expiration duration              Cache expiration default (default 24h0m0s)
-      --disable-auth                                   Disable client authentication
+      --disable-auth                                   Disable client authentication (loopback listen address only)
       --enable-gzip                                    Enable GZIP compression (default true)
       --etherscan-api-keys string                      Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs
       --etherscan-gateway-auth-token string            Bearer token for Etherscan Gateway gRPC status calls
@@ -42,7 +42,6 @@ athena-server [flags]
       --gloglevel int                                  Set the glog logging level
   -h, --help                                           help for athena-server
       --logformat string                               Set the logging format. One of: json|text (default "json")
-      --login-attempts-expiration duration             Cache expiration for failed login attempts. DEPRECATED: this flag is unused and will be removed in a future version. (default 24h0m0s)
       --loglevel string                                Set the logging level. One of: debug|info|warn|error (default "info")
       --managed-oo-server-address string               Athena Managed OO server address (default "127.0.0.1:8106")
       --market-radar-server-address string             Athena Market Radar server address (default "127.0.0.1:8092")

@@ -16,7 +16,8 @@ The executable code remains the source of truth. These documents provide the mai
 | Subsystem | Capability | Document |
 | --- | --- | --- |
 | Development Runtime | Local process supervision, capability process composition, persistent infrastructure, and account-access reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
-| Identity and Access | Environment account catalog, process-local passwords and API Keys, per-account mutation isolation, and local JWT encoding | [Account Credentials](identity-access/account-credentials.md) |
+| Identity and Access | Fixed account catalog, Google subject bindings, process-local API Keys, per-account mutation isolation, and Athena JWT v2 encoding | [Account Credentials](identity-access/account-credentials.md) |
+| Identity and Access | Browser Google Authorization Code flow, PKCE, one-time Redis transactions, verified subject mapping, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
 | Identity and Access | Unified login availability, ten-module access matrix, transactional administrator control, and scoped browser authorization lifecycle | [Account Access Control](identity-access/account-access-control.md) |
 | Identity and Access | Durable display profiles, display-only account tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) |
 | Identity and Access | Private account-avatar validation, S3-compatible object storage, authenticated delivery, and orphan recovery | [Account Avatar Storage](identity-access/account-avatar-storage.md) |

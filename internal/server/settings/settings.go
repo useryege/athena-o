@@ -46,7 +46,7 @@ func (p *Projector) Project(ctx context.Context) (*settingspkg.Settings, error) 
 		if err != nil {
 			return nil, err
 		}
-		if access.LoginEnabled && account.HasCapability(accountcredentials.CapabilityLogin) {
+		if access.LoginEnabled && account.HasCapability(accountcredentials.CapabilityLogin) && account.HasGoogleBinding() {
 			userLoginsDisabled = false
 			break
 		}
@@ -88,9 +88,6 @@ func (p *Projector) Project(ctx context.Context) (*settingspkg.Settings, error) 
 		settings.UiBannerURL = athenaSettings.UiBannerURL
 		settings.UiBannerPermanent = athenaSettings.UiBannerPermanent
 		settings.UiBannerPosition = athenaSettings.UiBannerPosition
-	}
-	if sessionmgr.LoggedIn(ctx) {
-		settings.PasswordPattern = athenaSettings.PasswordPattern
 	}
 	return &settings, nil
 }

@@ -1,76 +1,32 @@
-import {LoginOutlined, ReloadOutlined} from '@ant-design/icons';
-import {Alert, Button, Card, Form, Input, Typography} from 'antd';
+import {Alert, Button, Card, Typography} from 'antd';
 import * as React from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useLocation} from 'react-router-dom';
+import googleMark from '../../assets/images/google-g.svg';
 import {BrandMark} from '../components';
-import {services} from '../shared/services';
-import {ACCOUNT_MAINTENANCE_MESSAGE, isAccountMaintenanceError, requestErrorMessage} from '../shared/services/requests';
-import type {CaptchaChallenge} from '../shared/services/user-service';
 import {readLoginReturnTo} from '../shared/login-navigation';
+import requests, {ACCOUNT_MAINTENANCE_MESSAGE} from '../shared/services/requests';
 
-export const LoginPage = (props: {onAuthenticated: () => Promise<boolean>}) => {
-    const navigate = useNavigate();
+const loginReasonAlerts: Record<string, {type: 'error' | 'warning'; message: string}> = {
+    google_cancelled: {type: 'warning', message: 'Google sign-in was cancelled. Try again when you are ready.'},
+    google_not_allowed: {type: 'error', message: 'This Google account is not approved for Athena.'},
+    google_state_invalid: {type: 'error', message: 'This sign-in request has expired or is no longer valid. Please try again.'},
+    google_unavailable: {type: 'error', message: 'Google sign-in is temporarily unavailable. Please try again later.'},
+    maintenance: {type: 'warning', message: ACCOUNT_MAINTENANCE_MESSAGE}
+};
+
+export const LoginPage = () => {
     const location = useLocation();
-    const [form] = Form.useForm();
-    const maintenanceReason = new URLSearchParams(location.search).get('reason') === 'maintenance';
     const [loading, setLoading] = React.useState(false);
-    const [captchaLoading, setCaptchaLoading] = React.useState(false);
-    const [captcha, setCaptcha] = React.useState<CaptchaChallenge | null>(null);
-    const [maintenance, setMaintenance] = React.useState(maintenanceReason);
-    const [error, setError] = React.useState('');
+    const reason = new URLSearchParams(location.search).get('reason') || '';
+    const alert = loginReasonAlerts[reason];
 
-    React.useEffect(() => {
-        if (maintenanceReason) {
-            setMaintenance(true);
-        }
-    }, [maintenanceReason]);
-
-    const loadCaptcha = React.useCallback(async () => {
-        setCaptchaLoading(true);
-        try {
-            const nextCaptcha = await services.users.getCaptcha();
-            setCaptcha(nextCaptcha);
-            form.setFieldsValue({captchaAnswer: ''});
-        } catch (err: any) {
-            setCaptcha(null);
-            if (isAccountMaintenanceError(err)) {
-                setMaintenance(true);
-                setError('');
-            } else {
-                setError(requestErrorMessage(err, 'Failed to load captcha'));
-            }
-        } finally {
-            setCaptchaLoading(false);
-        }
-    }, [form]);
-
-    React.useEffect(() => {
-        loadCaptcha();
-    }, [loadCaptcha]);
-
-    const submit = async (values: {username: string; password: string; captchaAnswer: string}) => {
-        setLoading(true);
-        setMaintenance(maintenanceReason);
-        setError('');
-        try {
-            await services.users.login(values.username, values.password, captcha?.captchaId || '', values.captchaAnswer);
-        } catch (err: any) {
-            if (isAccountMaintenanceError(err)) {
-                setMaintenance(true);
-            } else {
-                setError(requestErrorMessage(err, 'Login failed'));
-            }
-            await loadCaptcha();
-            setLoading(false);
+    const continueWithGoogle = () => {
+        if (loading) {
             return;
         }
-        try {
-            if (await props.onAuthenticated()) {
-                navigate(readLoginReturnTo(location.search), {replace: true});
-            }
-        } finally {
-            setLoading(false);
-        }
+        setLoading(true);
+        const query = new URLSearchParams({returnTo: readLoginReturnTo(location.search)});
+        window.location.assign(`${requests.toAbsURL('/auth/google/login')}?${query.toString()}`);
     };
 
     return (
@@ -81,34 +37,18 @@ export const LoginPage = (props: {onAuthenticated: () => Promise<boolean>}) => {
                     <Typography.Title level={3}>Athena</Typography.Title>
                     <Typography.Text type='secondary'>Operations Console</Typography.Text>
                 </div>
-                {maintenance && <Alert type='warning' title={ACCOUNT_MAINTENANCE_MESSAGE} showIcon={true} />}
-                {error && <Alert type='error' title={error} showIcon={true} />}
-                <Form form={form} layout='vertical' aria-label='Athena login' onFinish={submit}>
-                    <Form.Item name='username' label='Username' rules={[{required: true}]}>
-                        <Input autoComplete='username' />
-                    </Form.Item>
-                    <Form.Item name='password' label='Password' rules={[{required: true}]}>
-                        <Input.Password autoComplete='current-password' />
-                    </Form.Item>
-                    <Form.Item label='Captcha' required={true}>
-                        <div className='login-captcha'>
-                            <Form.Item name='captchaAnswer' noStyle={true} rules={[{required: true}]}>
-                                <Input autoComplete='off' maxLength={5} />
-                            </Form.Item>
-                            <Button
-                                className='login-captcha__image'
-                                aria-label='Refresh captcha'
-                                loading={captchaLoading}
-                                onClick={loadCaptcha}
-                                icon={!captcha ? <ReloadOutlined /> : undefined}>
-                                {captcha && <img src={captcha.imageDataUrl} alt='Captcha' />}
-                            </Button>
-                        </div>
-                    </Form.Item>
-                    <Button block={true} type='primary' htmlType='submit' loading={loading} icon={<LoginOutlined />}>
-                        Log in
+                <div className='login-panel__alerts' aria-live='polite' aria-atomic='true'>
+                    {alert && <Alert type={alert.type} title={alert.message} showIcon={true} />}
+                </div>
+                <div className='login-panel__actions' aria-busy={loading || undefined}>
+                    <Button className='login-google-button' block={true} htmlType='button' loading={loading} disabled={loading} onClick={continueWithGoogle}>
+                        {!loading && <img src={googleMark} alt='' aria-hidden='true' />}
+                        <span>Continue with Google</span>
                     </Button>
-                </Form>
+                    <Typography.Paragraph className='login-panel__hint' type='secondary'>
+                        Use an approved Google account.
+                    </Typography.Paragraph>
+                </div>
             </Card>
         </main>
     );
