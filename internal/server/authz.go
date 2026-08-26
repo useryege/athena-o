@@ -56,10 +56,9 @@ var administratorGRPCMethods = map[string]bool{
 	"/profitsharing.ProfitSharingService/CloseBallot":  true,
 }
 
-// profitSharingAuthenticatedGRPCMethods is an explicit authenticated boundary.
-// Round membership, participant-only writes, and self-vote prevention are
-// enforced by the Profit Sharing domain service with the authenticated account
-// injected by the API facade.
+// profitSharingAuthenticatedGRPCMethods require the independently administered
+// Profit Sharing entitlement. Round membership and participant-only writes are
+// additionally enforced by the Profit Sharing domain service.
 var profitSharingAuthenticatedGRPCMethods = map[string]bool{
 	"/profitsharing.ProfitSharingService/ListRounds":     true,
 	"/profitsharing.ProfitSharingService/GetRound":       true,
@@ -223,7 +222,7 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 		return authCtx, server.authorizeAccount(username, accountaccess.RequirementAdministrator)
 	}
 	if profitSharingAuthenticatedGRPCMethods[fullMethod] {
-		return authCtx, nil
+		return authCtx, server.authorizeAccount(username, accountaccess.RequirementProfitSharing)
 	}
 	if accountAuthenticatedGRPCMethods[fullMethod] {
 		return authCtx, nil

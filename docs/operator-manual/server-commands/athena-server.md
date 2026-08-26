@@ -67,6 +67,21 @@ athena-server [flags]
       --x-frame-options value                          Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
 ```
 
+### Authentication environment
+
+Normal authentication requires `ATHENA_GOOGLE_OIDC_CLIENT_ID`, a client secret
+from `ATHENA_GOOGLE_OIDC_CLIENT_SECRET` or its `_FILE` form, the exact
+`ATHENA_GOOGLE_OIDC_REDIRECT_URI`, `ATHENA_ADMIN_GOOGLE_EMAIL`, and an Athena JWT
+key from `ATHENA_JWT_SECRET` or its `_FILE` form. The redirect path must be
+`/auth/google/callback`; production uses HTTPS and localhost development may use
+HTTP.
+
+Any fully verified Google user may sign in. The server persists an unknown
+subject as `user-<UUID>` with Pending access; the configured administrator email
+may claim the initially unbound `admin` exactly once. No per-user subject
+environment variables or password login are used. `--disable-auth` skips these
+OIDC inputs only for the loopback development bypass.
+
 ### SEE ALSO
 
 * [athena-server version](athena-server_version.md)	 - Print version information

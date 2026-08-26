@@ -108,30 +108,29 @@ decode('<generated-ciphertext-hex>', 'hex')
 
 ## Google OIDC 配置
 
-Google 只负责确认外部身份。Athena 使用稳定的 Google `sub` 一对一查找固定内部
-账号，邮箱不参与映射，也不会自动创建账号。认证启用时，以下变量必须完整且六个
-`sub` 互不相同，否则 API Server 在监听前关闭失败：
+Google 只负责确认外部身份。任意通过完整 OIDC 校验且邮箱已验证的 Google 用户都可
+登录；未知 `sub` 会创建一个 `user-<UUID>` 内部账号，初始没有业务、API Key 或
+Profit Sharing 权限。认证启用时必须配置以下变量：
 
 ```env
 ATHENA_GOOGLE_OIDC_CLIENT_ID='<google-web-client-id>'
 ATHENA_GOOGLE_OIDC_REDIRECT_URI='<exact-callback-uri>'
-ATHENA_ACCOUNT_YEGE_GOOGLE_SUB='<yege-google-sub>'
-ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB='<lingjie-google-sub>'
-ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB='<dongmei-google-sub>'
-ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB='<dingzhi-google-sub>'
-ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB='<yudian-google-sub>'
-ATHENA_ADMIN_GOOGLE_SUB='<admin-google-sub>'
+ATHENA_ADMIN_GOOGLE_EMAIL='<administrator-google-email>'
 ```
 
 在 Google Cloud 中分别创建本地和生产 **Web application** OAuth client，配置
-consent screen/audience，并登记完全一致的 authorized redirect URI：
+consent screen/audience。要允许任意 Google 用户，Audience 必须为 **External** 且
+应用必须发布；Testing 状态仍只允许 Test users。登记完全一致的 authorized
+redirect URI：
 
 - 本地：`http://localhost:4000/auth/google/callback`
 - 生产：`https://<athena-domain>/auth/google/callback`
 
 生产 URI 必须显式使用 HTTPS。Athena 不会从请求的 `Host`、
-`X-Forwarded-Host` 等 header 推断回调地址。Google `sub` 必须从已经验证的身份
-声明取得，不能用邮箱代替；部署前由身份管理员确认五个成员和唯一 `admin` 的绑定。
+`X-Forwarded-Host` 等 header 推断回调地址。普通账号始终按 Google `sub` 查找；
+邮箱只用于安全审计，以及未绑定 `admin` 的首次认领。管理员邮箱比较仅去除首尾空白
+并忽略大小写，不归并 Gmail 点号或 `+alias`。认领后持久化 `sub` 永久优先，修改
+环境邮箱不能替换管理员身份。
 
 本地开发可直接设置 `ATHENA_GOOGLE_OIDC_CLIENT_SECRET`。生产必须保持该变量为空，
 只使用独立文件：
@@ -157,9 +156,9 @@ install -m 0600 /secure/source/google-oidc-client-secret secrets/google-oidc-cli
 部署脚本会拒绝该旁路。
 
 虽然其他生产服务仍复用选定的部署 env 文件读取各自业务配置，Compose 会把
-`ATHENA_JWT_SECRET`、全部 Google OIDC/subject 输入以及 `REDIS_PASSWORD` 在所有
-非 API Server 容器中显式覆盖为空；只有 `athena-server` 能解析身份目录、签发
-Athena JWT 或访问认证 Redis。
+`ATHENA_JWT_SECRET`、全部 Google OIDC/管理员邮箱输入以及 `REDIS_PASSWORD` 在所有
+非 API Server 容器中显式覆盖为空；只有 `athena-server` 能签发 Athena JWT、访问
+持久账号目录或访问认证 Redis。
 远端上传后的 `.env` 同样改为当前部署用户持有且权限为 `0600`。
 
 ## 代码生成
@@ -202,8 +201,9 @@ MinIO 首次运行会从固定源码 commit 构建 Server/mc 镜像，并初始�
 默认只绑定 `127.0.0.1:9000` 和 `127.0.0.1:9001`。
 Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首次使用
 包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
-默认启用 API Server 认证，五个参与账号必须使用各自已批准的 Google 身份登录后
-才能提交方案或投票；`admin` 使用其唯一 Google `sub` 保持管理员身份。
+默认启用 API Server 认证。普通用户首次登录创建 Pending 动态账号，管理员授予独立
+Profit Sharing 权限并把账号加入轮次后，用户才能提交方案或投票；`admin` 首次按
+配置邮箱认领，此后始终按持久化 Google `sub` 保持管理员身份。
 
 `make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
 `/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
@@ -247,12 +247,7 @@ ATHENA_GOOGLE_OIDC_CLIENT_ID=your_production_web_client_id
 ATHENA_GOOGLE_OIDC_CLIENT_SECRET=
 ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE=./secrets/google-oidc-client-secret
 ATHENA_GOOGLE_OIDC_REDIRECT_URI=https://athena.example.com/auth/google/callback
-ATHENA_ACCOUNT_YEGE_GOOGLE_SUB=your_yege_google_sub
-ATHENA_ACCOUNT_LINGJIE_GOOGLE_SUB=your_lingjie_google_sub
-ATHENA_ACCOUNT_DONGMEI_GOOGLE_SUB=your_dongmei_google_sub
-ATHENA_ACCOUNT_DINGZHI_GOOGLE_SUB=your_dingzhi_google_sub
-ATHENA_ACCOUNT_YUDIAN_GOOGLE_SUB=your_yudian_google_sub
-ATHENA_ADMIN_GOOGLE_SUB=your_admin_google_sub
+ATHENA_ADMIN_GOOGLE_EMAIL=owner@example.com
 ```
 
 `ATHENA_WALLET_ENCRYPTION_KEY` 可用以下命令生成：
@@ -273,7 +268,8 @@ make prod-start-local
 `prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为
 `true`，本地生产预演仍会启用服务端认证。运行前必须创建
 `./secrets/google-oidc-client-secret` 并配置真实的 client ID、生产预演回调 URI 和
-六个唯一 `sub`；缺失配置会使 API Server 拒绝启动。
+管理员 Google 邮箱；缺失配置会使 API Server 拒绝启动。首次验证登录会认领
+`admin` 或创建 Pending 动态账号，不需要预先提取 `sub`。
 Compose 会同时使用 `$(PROD_ENV_FILE)` 做变量插值和容器 `env_file` 注入，不会回退
 读取仓库根目录的 `.env`。`prod-reset-secrets` 会把该文件权限收紧为 `0600`。
 
@@ -370,16 +366,16 @@ make prod-deploy-remote
 `$(PROD_MINIO_VOLUME)`，上传 Compose、环境文件和
 Google OIDC client secret 文件以及 PostgreSQL init 脚本，传输三个镜像，执行
 migration，初始化私有 bucket，最后启动全部服务并输出容器状态。部署脚本会在
-上传前拒绝直接环境变量形式的 client secret、空 client/binding、重复 `sub`、
+上传前拒绝直接环境变量形式的 client secret、空 client/管理员邮箱、
 非 HTTPS 生产回调 URI、少于 32 字节的 JWT signing secret 或空 Google secret
 文件，也拒绝生产环境使用 `ATHENA_SERVER_DISABLE_AUTH=true`。Docker 构建上下文会
 排除所有 `.env` 文件和 `secrets/` 目录，避免部署凭据进入镜像构建缓存。
 
 **每次远程部署都会永久删除已有 PostgreSQL、Redis 和 MinIO 数据，并轮换
-PostgreSQL、Redis、MinIO 和 JWT 凭据，不会自动备份。** JWT secret 轮换后
-旧登录会话和旧 API Key 都会失效；所有用户必须使用 Google 重新登录，需要自动化
-访问的账号必须创建新的 v2 API Key。migration 或 bucket 初始化失败时不会启动
-API Server。
+PostgreSQL、Redis、MinIO 和 JWT 凭据，不会自动备份。** 动态账号、管理员绑定、
+Profile、权限、Profit Sharing 引用、头像、会话和 API Key 都不会迁移。所有用户
+必须重新使用 Google 登录，管理员重新授权；需要自动化访问的账号必须在获得 API Key
+权限后创建新的 v2 Key。migration 或 bucket 初始化失败时不会启动 API Server。
 
 如需只手动更新生产凭据文件而不部署：
 
@@ -439,9 +435,9 @@ ssh -L 8080:127.0.0.1:8080 root@47.245.181.189
 http://127.0.0.1:8080
 ```
 
-如果日志报告 Google OIDC client、redirect URI、账号 `sub` 为空或重复，表示
-认证配置未完成。正常生产部署不会生成临时管理员凭据，也没有密码兜底入口；修正
-配置并重启 `athena-server`，不要通过关闭认证绕过问题。
+如果日志报告 Google OIDC client、redirect URI 或管理员邮箱为空，表示认证配置未
+完成。正常生产部署不会生成临时管理员凭据，也没有密码兜底入口；修正配置并重启
+`athena-server`，不要通过关闭认证绕过问题。
 
 远端日志和状态不再提供独立 Makefile 目标，可直接使用 SSH：
 

@@ -2,179 +2,112 @@
 
 ## Scope
 
-Account Profile and Preferences owns durable display names, display-only
-Standard/Pro tiers, private avatar object references, and the cross-device
-System/Light/Dark theme choice for the fixed environment account catalog. It
-provides uncached reads and independent optimistic-concurrency boundaries for
-profile and preference state.
+Account Profile and Preferences owns each durable account's display name,
+display-only Standard/Pro tier, private avatar metadata, and System/Light/Dark
+theme choice. It provides uncached reads and separate optimistic-concurrency
+boundaries for profile and preference state.
 
-[Account Credentials](account-credentials.md) owns fixed Google subject bindings
-and API Keys. [Google OIDC Login](google-oidc-login.md) owns external identity
-verification, while [Account Access Control](account-access-control.md) owns
-login and product-module authorization. The avatar object store, upload
-validation, private binary delivery, and orphan collection are separate from
-this capability; this capability commits only the avatar object metadata
-reference.
+[Google OIDC Login](google-oidc-login.md) creates an initial ordinary-account
+profile from the verified email. Later Google logins may update identity audit
+email but never overwrite display name, tier, avatar, or theme. [Account
+Credentials](account-credentials.md) owns identity and API Keys, while [Account
+Access Control](account-access-control.md) owns authorization.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | Domain state and validation | [internal/accountcenter/types.go](../../../internal/accountcenter/types.go) | `Profile`, `Preferences`, `AvatarMetadata`, `Tier`, `ThemeMode` |
-| Uncached application boundary | [internal/accountcenter/manager.go](../../../internal/accountcenter/manager.go) | `Manager`, `GetProfile`, `UpdateDisplayName`, `UpdateTier`, `ReplaceAvatar`, `DeleteAvatar`, `UpdatePreferences` |
-| Shared PostgreSQL adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `SQLStore`, `GetProfile`, `UpdateProfile`, `GetPreferences`, `UpdatePreferences` |
-| Schema and queries | [internal/accountstate/store/migrations](../../../internal/accountstate/store/migrations), [internal/accountstate/store/queries/account_center.sql](../../../internal/accountstate/store/queries/account_center.sql) | `account_profile`, `account_preferences`, profile and preference CAS queries |
+| Application boundary | [internal/accountcenter/manager.go](../../../internal/accountcenter/manager.go) | `Manager`, `GetProfile`, `UpdateDisplayName`, `UpdateTier`, `ReplaceAvatar`, `DeleteAvatar`, `UpdatePreferences` |
+| Shared PostgreSQL adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `SQLStore`, `AccountExists`, `GetProfile`, `UpdateProfile`, `GetPreferences`, `UpdatePreferences` |
+| Schema and queries | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_center.sql](../../../internal/accountstate/store/queries/account_center.sql) | `account_profile`, `account_preferences` |
 | API projection and mutations | [internal/server/account/account.go](../../../internal/server/account/account.go), [internal/server/account/account.proto](../../../internal/server/account/account.proto) | `ToAPIAccountProfile`, `ToAPIAccountPreferences`, `UpdateAccountProfile`, `UpdateAccountTier`, `UpdateAccountPreferences` |
-| Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
-| Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer`, `accountStateStore`, `accountCenter` |
+| Browser surfaces | [ui/src/app/pages/account-center.tsx](../../../ui/src/app/pages/account-center.tsx) | `AccountCenterPage` |
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    C["Fixed Credential Catalog"] --> M["Account Center Manager"]
-    A["Account API"] --> M
-    S["Session and Bootstrap"] --> M
-    H["Avatar HTTP capability"] --> M
-    M --> P["Shared Account State SQLStore"]
-    P --> DB["PostgreSQL athena database"]
-    P --> X["Account Access Controller store boundary"]
-```
+`accountcenter.Manager` validates account existence through the durable
+`athena_account` parent. It delegates every
+read and CAS mutation to the shared account-state PostgreSQL adapter and keeps no
+profile cache. Profile and preferences have independent revisions, so a theme
+write cannot conflict with a display-name or avatar write.
 
-`Manager` receives the configured account names once at startup. Database rows
-cannot introduce an identity: every public manager operation first requires a
-name from that fixed set. The manager has no cache, background snapshot, or
-cross-instance notification. Each read reaches PostgreSQL through the shared
-account-state store, so successful writes are visible to another API instance
-on its next read.
-
-The profile and preferences are independent aggregates. A profile update can
-change a display name, tier, or avatar reference and advances only the profile
-revision. A theme update advances only the preferences revision. Tier is
-presentation metadata and is never consulted by authentication or
-authorization.
-
-Google identity data is outside both aggregates. A verified Google subject
-selects an existing Athena account, but Google name, email, and picture claims
-do not initialize, replace, or otherwise mutate that account's display name,
-avatar, tier, or preferences.
+Ordinary users may change their own display name, avatar, and preferences.
+Administrators may view account-safe identity/profile data and change an
+ordinary account's display-only tier; they do not receive another user's private
+preferences or API Key metadata.
 
 ## Runtime Flow
 
-1. API Server startup loads the fixed credential catalog, connects the shared
-   account-state store, applies its single migration stream when enabled, and
-   constructs `Manager` with every configured account name. Profile and
-   preference rows are not loaded eagerly.
-2. A profile read queries `account_profile`. Absence projects display name equal
-   to username, tier `standard`, no avatar, and revision zero. A preferences
-   read queries `account_preferences`; absence projects theme `system` and
-   revision zero.
-3. A display-name mutation trims surrounding Unicode whitespace, requires 1–80
-   Unicode characters, and rejects control characters. A tier or theme mutation
-   rejects unspecified and unknown enum values before persistence.
-4. The manager reads the current aggregate and compares its revision with the
-   client's expected revision. It changes only the requested field while
-   retaining all other current fields, then submits the complete aggregate to
-   `SQLStore`.
-5. Expected revision zero uses `INSERT ... ON CONFLICT DO NOTHING` and commits
-   revision one. A positive expectation uses one conditional `UPDATE` and
-   advances the revision exactly once. A miss at either boundary returns the
-   aggregate-specific stable conflict error. The PostgreSQL statement is the
-   commit point; there is no later memory publication step.
-6. `ReplaceAvatar` and `DeleteAvatar` use the same profile CAS. The avatar
-   subsystem reads the previous profile, performs its object lifecycle, and
-   calls these methods to atomically replace or clear only the durable object
-   reference.
-7. After Google authentication establishes an Athena session, `GetUserInfo`
-   and authenticated bootstrap read the current Athena profile and preferences
-   on every projection. They do not project Google profile claims. Account
-   administration reads profiles for its account list but never receives
-   another account's preferences.
+1. The database migration creates the fixed administrator profile. Preferences
+   default to System through `Manager` and are inserted by the first successful
+   preferences CAS. An ordinary OIDC provisioning transaction creates the
+   account, access rows, all ten module rows, and initial profile together. Its
+   display name is initialized from the verified email only once.
+2. A read first verifies the account parent and then returns current PostgreSQL
+   state. Missing preference state uses its explicit persisted/default boundary;
+   it is not derived from Google.
+3. A profile or preference update validates the complete request and expected
+   revision. The SQL CAS advances exactly one revision on success. A stale
+   revision returns a conflict without modifying other account state.
+4. Avatar upload validates and stores the private object before the profile CAS.
+   Successful replacement schedules the prior object for collection; failed CAS
+   leaves the unreferenced new object eligible for orphan collection. Raw avatar
+   delivery authorizes the viewer and resolves the current metadata reference.
+5. Session and bootstrap projections combine current profile/preferences with
+   current access and safe identity metadata. They never include Google subject,
+   API Key JTI, or bearer material.
 
 ## State / Data
 
-`account_profile` stores one optional aggregate per configured account:
+`account_profile` and `account_preferences` reference `athena_account` by foreign
+key. Profile owns display name, tier, optional avatar object metadata, and a
+positive revision. Preferences owns theme and its own positive revision.
 
-| Column group | Meaning |
-| --- | --- |
-| `account_name` | Primary key; it has no database foreign key to environment configuration |
-| `display_name` | Trimmed 1–80-character public presentation name |
-| `account_tier` | `standard` or `pro`; display-only |
-| `avatar_object_key`, `avatar_content_type`, `avatar_etag`, `avatar_size_bytes` | Either one complete private-object reference or the all-empty no-avatar state |
-| `revision` | Positive profile CAS version |
-| `created_at`, `updated_at` | Persistence timestamps |
+The identity directory's `verified_email` is separate from the profile display
+name. Email may change on a successful Google login; profile fields remain user-
+or administrator-controlled. Deleting or disabling an account is not a profile
+operation, and dynamic accounts are retained permanently.
 
-`account_preferences` stores `account_name`, theme `system|light|dark`, an
-independent positive revision, and persistence timestamps. Missing rows are
-intentional revision-zero defaults, not startup errors.
-
-The API profile exposes a same-origin avatar URL only when object metadata is
-present. It never exposes the object key, ETag, content type, or size. The
-session projection contains only the current account's preferences. Profit
-Sharing display-name snapshots remain domain-local and do not consume this
-global profile.
-
-Neither table stores a Google subject, email address, Google display name, or
-Google picture URL. Those external authentication attributes cannot become an
-alternate profile source.
+Avatar bytes remain private S3 objects. Public Account projections expose only
+an authenticated Athena URL with the profile revision as a cache-busting query,
+not an object-store credential or key.
 
 ## Configuration
 
-| Setting | Behavior |
-| --- | --- |
-| `ATHENA_SERVER_POSTGRES_DSN` | Selects the shared `athena` PostgreSQL database for access, profile, and preference state. |
-| `ATHENA_POSTGRES_AUTO_MIGRATE` | Defaults to `true`; controls the single embedded account-state migration stream. Production runs that stream in the migration process. |
-
-Tier values, theme values, display-name limits, and revision conflict reasons
-are implementation constants rather than runtime configuration.
+Profile/preferences have no per-account environment settings. Avatar object
+store settings are documented in [Account Avatar Storage](account-avatar-storage.md).
+Theme defaults to System and ordinary accounts start at the standard display
+tier unless the current schema explicitly supplies another value.
 
 ## Invariants
 
-- Durable rows cannot create identities; only names in the startup credential
-  catalog are addressable.
-- Username is immutable. Display name may be duplicated and never changes
-  credentials, access, or Profit Sharing snapshots.
-- Google sign-in never synchronizes Google name, email, or picture claims into
-  profile or preference state.
-- Tier never grants login, administrator, module, or credential capability.
-- Profile and preferences revisions are independent and each committed mutation
-  advances exactly one revision once.
-- Profile updates preserve fields outside the requested operation; preference
-  updates cannot change another account's theme.
-- An avatar reference is either wholly absent or contains a key, supported
-  content type, ETag, and positive byte size.
-- Account and administrator projections do not contain API Key metadata or
-  another account's preferences.
+- Every profile and preference row belongs to a durable Athena account.
+- Google email, name, and avatar are not synchronized after provisioning.
+- Profile and preference revisions advance independently by CAS.
+- Ordinary callers mutate only their own profile/preferences; administrator tier
+  mutation follows the fixed administrator boundary.
+- Safe account/session projections exclude subjects, private preferences of
+  other users, API Key metadata, and object-store secrets.
 
 ## Failure Recovery
 
-Missing PostgreSQL configuration, connection failure, or migration failure
-prevents listener startup because account-state is required. A database failure
-during a later profile or preference read fails that request; the service does
-not invent a persisted value after a dependency error.
-
-Stale profile updates return `ACCOUNT_PROFILE_REVISION_CONFLICT`; stale theme
-updates return `ACCOUNT_PREFERENCES_REVISION_CONFLICT`. Both use gRPC `Aborted`,
-HTTP 409, and `athena.account_center` ErrorInfo. Database constraints reject an
-invalid durable aggregate. A restart preserves committed rows and reconstructs
-only the uncached manager; removing the local PostgreSQL volume through
-`make run-reset` restores revision-zero defaults.
+Provisioning rolls back account, access, module, and initial profile state as one
+transaction. A stale revision or SQL failure leaves the corresponding row
+unchanged. Avatar object-write and profile-CAS failures are reconciled by the
+orphan collector; a referenced object remains available until replacement
+commits.
 
 ## Observability
 
-Startup logs report the shared account-state connection and migration status.
-Profile and preference database failures use the normal gRPC/gateway error
-path. Stable conflict reasons identify which aggregate must be reloaded. No
-dedicated cache, health endpoint, or metric exists for this capability.
+Mutation failures identify the Athena account and operation without logging
+avatar bytes, Google subjects, JWTs, or API Key material. Profile reads are not a
+health dependency beyond the shared account-state PostgreSQL connection.
 
 ## Change Checklist
 
-- [ ] The fixed catalog remains the only identity source.
-- [ ] Profile and preference defaults, validation, and independent revisions match the domain and SQL constraints.
-- [ ] Every field-specific mutation preserves unrelated fields and uses CAS.
-- [ ] Tier remains display-only and preferences remain current-account-only.
-- [ ] Session, bootstrap, account administration, and avatar metadata projections remain aligned.
-- [ ] Account-state migration, sqlc queries, and SQLStore implement both access and account-center boundaries.
-- [ ] Conflict reasons, reset behavior, and observability remain current.
-- [ ] Source links and named symbols resolve to the implementation.
-- [ ] The [design index](../README.md) contains the correct entry.
+- [ ] Dynamic account parent and provisioning semantics remain current.
+- [ ] Profile, preferences, and avatar CAS boundaries remain independent.
+- [ ] Google identity data does not overwrite Athena display state.
+- [ ] Authorization and public projections remain current.
+- [ ] The [design index](../README.md) contains the current summary.

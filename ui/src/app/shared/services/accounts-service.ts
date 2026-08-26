@@ -1,11 +1,14 @@
 import {
     Account,
     AccountAccess,
+    AccountStatus,
     AccountPreferences,
     AccountProfile,
     AccountThemeMode,
     AccountTier,
     parseAccountAccess,
+    parseAccountIdentity,
+    parseAccountStatus,
     parseAccountPreferences,
     parseAccountProfile,
     Token
@@ -16,9 +19,23 @@ const account = (value: any): Account => ({
     name: value?.name || '',
     administrator: Boolean(value?.administrator),
     access: parseAccountAccess(value?.access),
-    capabilities: value?.capabilities || [],
-    profile: parseAccountProfile(value?.profile, value?.name || '')
+    profile: parseAccountProfile(value?.profile, value?.name || ''),
+    identity: parseAccountIdentity(value?.identity),
+    status: parseAccountStatus(value?.status)
 });
+
+export interface AccountListOptions {
+    query?: string;
+    status?: AccountStatus;
+    page?: number;
+    pageSize?: number;
+    profitSharingEligibleOnly?: boolean;
+}
+
+export interface AccountsPage {
+    items: Account[];
+    totalSize: number;
+}
 
 const token = (value: any): Token => ({
     id: String(value?.id || ''),
@@ -39,8 +56,17 @@ const accountThemeAPIValue = (theme: AccountThemeMode) => {
 };
 
 export class AccountsService {
-    public list(): Promise<Account[]> {
-        return requests.get('/account').then(res => (res.body.items || []).map(account));
+    public list(options: AccountListOptions = {}): Promise<AccountsPage> {
+        return requests
+            .get('/account')
+            .query({
+                query: options.query || undefined,
+                status: options.status === AccountStatus.Unspecified ? undefined : options.status,
+                page: options.page || 1,
+                pageSize: options.pageSize || 50,
+                profitSharingEligibleOnly: options.profitSharingEligibleOnly || undefined
+            })
+            .then(res => ({items: (res.body?.items || []).map(account), totalSize: Number(res.body?.totalSize ?? res.body?.total_size ?? 0)}));
     }
 
     public get(name: string): Promise<Account> {
@@ -52,6 +78,8 @@ export class AccountsService {
             .put(`/account/${encodeURIComponent(name)}/access`)
             .send({
                 loginEnabled: access.loginEnabled,
+                apiKeyEnabled: access.apiKeyEnabled,
+                profitSharingEnabled: access.profitSharingEnabled,
                 revision: access.revision,
                 moduleAccess: access.moduleAccess.map(item => ({module: item.module, dataAccess: item.dataAccess}))
             })

@@ -8,14 +8,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type AccountAccessOverride struct {
-	AccountName  string
-	LoginEnabled bool
-	UpdatedAt    pgtype.Timestamptz
-	Revision     int64
+type AccountAccess struct {
+	AccountName          string
+	LoginEnabled         bool
+	ApiKeyEnabled        bool
+	ProfitSharingEnabled bool
+	Revision             int64
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
 }
 
-type AccountModuleAccessOverride struct {
+type AccountApiKey struct {
+	AccountName string
+	DisplayID   string
+	Jti         string
+	IssuedAt    pgtype.Timestamptz
+	ExpiresAt   pgtype.Timestamptz
+}
+
+type AccountModuleAccess struct {
 	AccountName string
 	Module      string
 	AccessLevel string
@@ -40,4 +51,14 @@ type AccountProfile struct {
 	Revision          int64
 	CreatedAt         pgtype.Timestamptz
 	UpdatedAt         pgtype.Timestamptz
+}
+
+type AthenaAccount struct {
+	AccountName   string
+	GoogleSubject pgtype.Text
+	VerifiedEmail string
+	Administrator bool
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+	LastLoginAt   pgtype.Timestamptz
 }

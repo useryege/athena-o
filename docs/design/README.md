@@ -15,14 +15,14 @@ The executable code remains the source of truth. These documents provide the mai
 
 | Subsystem | Capability | Document |
 | --- | --- | --- |
-| Development Runtime | Local process supervision, capability process composition, persistent infrastructure, and account-access reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
-| Identity and Access | Fixed account catalog, Google subject bindings, process-local API Keys, per-account mutation isolation, and Athena JWT v2 encoding | [Account Credentials](identity-access/account-credentials.md) |
-| Identity and Access | Browser Google Authorization Code flow, PKCE, one-time Redis transactions, verified subject mapping, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
-| Identity and Access | Unified login availability, ten-module access matrix, transactional administrator control, and scoped browser authorization lifecycle | [Account Access Control](identity-access/account-access-control.md) |
-| Identity and Access | Durable display profiles, display-only account tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) |
+| Development Runtime | Local process supervision, persistent infrastructure, open-registration configuration, and full current-state reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
+| Identity and Access | Durable dynamic identities, permanent Google subject bindings, persistent API Keys, and Athena JWT v2 encoding | [Account Credentials](identity-access/account-credentials.md) |
+| Identity and Access | Browser Google Authorization Code flow, PKCE, one-time Redis transactions, open registration, administrator bootstrap, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
+| Identity and Access | Login, API Key, Profit Sharing, ten-module authorization, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) |
+| Identity and Access | Dynamic-account display profiles, display-only tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) |
 | Identity and Access | Private account-avatar validation, S3-compatible object storage, authenticated delivery, and orphan recovery | [Account Avatar Storage](identity-access/account-avatar-storage.md) |
-| Web UI | Responsive application shell, business navigation, bottom-left account menu, Account Center routes, and theme projection | [Application Shell](web-ui/application-shell.md) |
-| Governance | Reusable five-member profit-allocation proposals, blind publication, voting, and runoff resolution | [Profit Sharing](governance/profit-sharing.md) |
+| Web UI | Responsive application shell, Pending-access experience, entitlement-aware navigation, account routes, and administrator directory | [Application Shell](web-ui/application-shell.md) |
+| Governance | Entitlement- and membership-gated profit-allocation rounds, proposals, voting, and runoff resolution for dynamic accounts | [Profit Sharing](governance/profit-sharing.md) |
 | Market Intelligence | Read-only Market Radar module, Polymarket discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
 | Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) |

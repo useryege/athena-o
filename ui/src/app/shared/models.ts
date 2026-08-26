@@ -50,6 +50,7 @@ export interface UserInfo {
     iss: string;
     administrator: boolean;
     access: AccountAccess;
+    identity: AccountIdentity;
     profile: AccountProfile;
     preferences: AccountPreferences;
 }
@@ -153,6 +154,7 @@ export const parseUserInfo = (value: any): UserInfo => ({
     iss: value?.iss || '',
     administrator: Boolean(value?.administrator),
     access: parseAccountAccess(value?.access),
+    identity: parseAccountIdentity(value?.identity),
     profile: parseAccountProfile(value?.profile, value?.username || ''),
     preferences: parseAccountPreferences(value?.preferences)
 });
@@ -167,12 +169,15 @@ export interface Account {
     name: string;
     administrator: boolean;
     access: AccountAccess;
-    capabilities: string[];
     profile: AccountProfile;
+    identity: AccountIdentity;
+    status: AccountStatus;
 }
 
 export interface AccountAccess {
     loginEnabled: boolean;
+    apiKeyEnabled: boolean;
+    profitSharingEnabled: boolean;
     revision: number;
     moduleAccess: AccountModuleAccess[];
 }
@@ -193,10 +198,78 @@ export const parseAccountAccess = (value: any): AccountAccess => {
     });
     return {
         loginEnabled: Boolean(value?.loginEnabled ?? value?.login_enabled),
+        apiKeyEnabled: Boolean(value?.apiKeyEnabled ?? value?.api_key_enabled),
+        profitSharingEnabled: Boolean(value?.profitSharingEnabled ?? value?.profit_sharing_enabled),
         revision: Number(value?.revision || 0),
         moduleAccess: accountDataModules.map(definition => ({
             module: definition.module,
             dataAccess: Math.min(parsed.get(definition.module) || AccountDataAccess.None, definition.maxAccess) as AccountDataAccess
         }))
     };
+};
+
+export enum AccountIdentityProvider {
+    Unspecified = 'ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED',
+    Google = 'ACCOUNT_IDENTITY_PROVIDER_GOOGLE'
+}
+
+export interface AccountIdentity {
+    provider: AccountIdentityProvider;
+    verifiedEmail: string;
+    createdAt: number;
+    lastLoginAt: number;
+}
+
+export const parseAccountIdentityProvider = (value: unknown): AccountIdentityProvider => {
+    switch (value) {
+        case 1:
+        case AccountIdentityProvider.Google:
+        case 'google':
+            return AccountIdentityProvider.Google;
+        default:
+            return AccountIdentityProvider.Unspecified;
+    }
+};
+
+export const parseAccountIdentity = (value: any): AccountIdentity => ({
+    provider: parseAccountIdentityProvider(value?.provider),
+    verifiedEmail: String(value?.verifiedEmail ?? value?.verified_email ?? ''),
+    createdAt: Number(value?.createdAt ?? value?.created_at ?? 0),
+    lastLoginAt: Number(value?.lastLoginAt ?? value?.last_login_at ?? 0)
+});
+
+export enum AccountStatus {
+    Unspecified = 'ACCOUNT_STATUS_UNSPECIFIED',
+    Pending = 'ACCOUNT_STATUS_PENDING',
+    Active = 'ACCOUNT_STATUS_ACTIVE',
+    Blocked = 'ACCOUNT_STATUS_BLOCKED'
+}
+
+export const parseAccountStatus = (value: unknown): AccountStatus => {
+    switch (value) {
+        case 1:
+        case AccountStatus.Pending:
+        case 'pending':
+            return AccountStatus.Pending;
+        case 2:
+        case AccountStatus.Active:
+        case 'active':
+            return AccountStatus.Active;
+        case 3:
+        case AccountStatus.Blocked:
+        case 'blocked':
+            return AccountStatus.Blocked;
+        default:
+            return AccountStatus.Unspecified;
+    }
+};
+
+export const accountStatusForAccess = (access: AccountAccess, administrator = false): AccountStatus => {
+    if (!access.loginEnabled) {
+        return AccountStatus.Blocked;
+    }
+    if (administrator || access.profitSharingEnabled || access.moduleAccess.some(item => item.dataAccess > AccountDataAccess.None)) {
+        return AccountStatus.Active;
+    }
+    return AccountStatus.Pending;
 };

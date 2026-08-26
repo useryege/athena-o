@@ -9,7 +9,8 @@ OIDC callback server-side and stores its own session token in an HttpOnly cookie
 tokens are never used for API requests.
 
 CLI and automation clients must create an Athena API Key from **Account Center →
-Security** after signing in. Copy the key when it is issued, then export it locally:
+Security** after an administrator enables the account's independent API Key access.
+Copy the key when it is issued, then export it locally:
 
 ```bash
 export ATHENA_TOKEN='<newly-issued-athena-api-key>'
@@ -23,4 +24,5 @@ $ curl $ATHENA_SERVER/api/v1/version -H "Authorization: Bearer $ATHENA_TOKEN"
 ```
 
 Only Athena token version 2 is accepted. Rotating `ATHENA_JWT_SECRET`, deleting the API
-Key, disabling its account, or removing its JTI from account metadata invalidates it.
+Key, or disabling its account invalidates it. Turning off API Key access pauses existing
+keys without deleting them; re-enabling access restores undeleted, unexpired keys.

@@ -29,6 +29,8 @@ export const replaceModuleAccess = (access: AccountAccess, module: AccountDataMo
 
 export const cloneAccountAccess = (access: AccountAccess): AccountAccess => ({
     loginEnabled: access.loginEnabled,
+    apiKeyEnabled: access.apiKeyEnabled,
+    profitSharingEnabled: access.profitSharingEnabled,
     revision: access.revision,
     moduleAccess: accountDataModules.map(definition => ({
         module: definition.module,
@@ -39,6 +41,8 @@ export const cloneAccountAccess = (access: AccountAccess): AccountAccess => ({
 export const accountAccessEqual = (left?: AccountAccess, right?: AccountAccess): boolean =>
     Boolean(left && right) &&
     left?.loginEnabled === right?.loginEnabled &&
+    left?.apiKeyEnabled === right?.apiKeyEnabled &&
+    left?.profitSharingEnabled === right?.profitSharingEnabled &&
     accountDataModules.every(definition => moduleAccessLevel(left, definition.module) === moduleAccessLevel(right, definition.module));
 
 export const moduleAccessSummary = (access: AccountAccess | undefined, administrator = false): string => {

@@ -20,18 +20,20 @@ Athena 是一个面向区块链与预测市场的情报分析平台，用于采�
 - Docker
 - Yarn
 
-在项目根目录启动本地服务：
+首次初始化当前数据模型时清空本地运行状态，然后启动服务：
 
 ```bash
+make run-reset
 make run
 ```
 
 认证默认开启。首次启动前，需要在 `.env` 中配置本地 Google Web OAuth client、
-精确回调地址 `http://localhost:4000/auth/google/callback`，以及五个成员账号和
-`admin` 的唯一 Google `sub`；配置缺失或重复时 API Server 会拒绝启动。完整步骤
-参见 [本地运行指南](docs/developer-guide/running-locally.md)。
+精确回调地址 `http://localhost:4000/auth/google/callback` 和
+`ATHENA_ADMIN_GOOGLE_EMAIL`。普通 Google 用户不需要预先登记 `sub`：首次登录会
+创建无业务权限的动态账号，由管理员在账号管理页授权。完整步骤参见
+[本地运行指南](docs/developer-guide/running-locally.md)。
 
-服务启动后通过以下地址打开 UI 并使用已批准的 Google 账号登录：
+服务启动后通过以下地址打开 UI，并使用任意已验证邮箱的 Google 账号登录：
 
 ```text
 http://localhost:4000

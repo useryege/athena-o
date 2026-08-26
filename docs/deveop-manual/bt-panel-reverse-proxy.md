@@ -124,7 +124,8 @@ https://athena.example.com
 ## 配置 Google Cloud 回调
 
 在 Google Cloud Console 中使用独立的生产 **Web application** OAuth client，
-配置 consent screen/audience，并把以下值登记为 Authorized redirect URI：
+把 consent audience 配置为 **External** 并发布应用，然后把以下值登记为
+Authorized redirect URI。Testing 状态仍只允许 Test users，不能提供开放注册：
 
 ```text
 https://athena.example.com/auth/google/callback
@@ -160,8 +161,9 @@ ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.pro
 - 不需要在云服务器安全组或系统防火墙中开放公网 `8080`。
 - 公网只需要开放 `80` 和 `443` 给宝塔/Nginx。
 - 不建议将 `ATHENA_SERVER_BIND_ADDR` 改成 `0.0.0.0` 后直接暴露 `8080`。
-- 生产必须配置六个互不相同的 Google `sub`；邮箱不能代替 `sub`，也没有临时
-  `admin` 密码或密码兜底入口。
+- 生产必须配置 `ATHENA_ADMIN_GOOGLE_EMAIL` 供未绑定管理员首次认领。普通用户无需
+  预登记 Google `sub`；任意 verified Google account 首次登录会创建 Pending 动态
+  账号，等待管理员授权。系统没有临时 `admin` 密码或密码兜底入口。
 - `/auth/google/callback` 的精确 Nginx location 必须保持 `access_log off`，避免
   code/state 进入默认 `$request` 日志。
 - Google client secret 只保存在远端由容器 UID/GID `999` 持有的 `0600` 文件中，
@@ -197,9 +199,9 @@ ssh root@47.245.181.189 'cd /root/athena && PROD_POSTGRES_VOLUME=athena-prod-pos
 `ATHENA_GOOGLE_OIDC_REDIRECT_URI`，确认两者逐字符一致，并检查 Nginx 是否原样转发
 `/auth/google/callback`。生产回调必须使用公开域名的 HTTPS URI。
 
-### 更换 Google client 或账号绑定后仍使用旧身份
+### 更换 Google client 或管理员邮箱后仍使用旧管理员身份
 
-重启 `athena-server` 使新配置生效。修改账号 Google `sub` 会立即使该账号已有
-网页登录会话在下次请求失效，但不会自动撤销 API Key；账号交接时应显式删除并
-重新创建 API Key。切换认证版本上线时轮换 `ATHENA_JWT_SECRET`，会同时使全部旧
-会话和旧 API Key 失效。
+重启 `athena-server` 使新的 client 或管理员邮箱配置生效。管理员邮箱只用于未绑定
+`admin` 的首次认领；认领后持久化 Google `sub` 永久优先，修改邮箱配置不会转让或
+重绑管理员。需要重新初始化身份时使用全新 PostgreSQL/Redis/MinIO 状态并轮换
+`ATHENA_JWT_SECRET`；这会删除动态账号与权限，并使全部旧会话和 API Key 失效。

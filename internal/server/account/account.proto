@@ -45,6 +45,27 @@ message AccountAccess {
   reserved "dataAccess";
   uint64 revision = 3;
   repeated AccountModuleAccess moduleAccess = 4;
+  bool apiKeyEnabled = 5;
+  bool profitSharingEnabled = 6;
+}
+
+enum AccountIdentityProvider {
+  ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED = 0;
+  ACCOUNT_IDENTITY_PROVIDER_GOOGLE = 1;
+}
+
+message AccountIdentity {
+  AccountIdentityProvider provider = 1;
+  string verifiedEmail = 2;
+  int64 createdAt = 3;
+  int64 lastLoginAt = 4;
+}
+
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_PENDING = 1;
+  ACCOUNT_STATUS_ACTIVE = 2;
+  ACCOUNT_STATUS_BLOCKED = 3;
 }
 
 enum AccountTier {
@@ -82,12 +103,16 @@ message Account {
   string name = 1;
   bool administrator = 2;
   AccountAccess access = 3;
-  repeated string capabilities = 4;
+  reserved 4;
+  reserved "capabilities";
   AccountProfile profile = 5;
+  AccountIdentity identity = 6;
+  AccountStatus status = 7;
 }
 
 message AccountsList {
   repeated Account items = 1;
+  int64 totalSize = 2;
 }
 
 message Token {
@@ -114,7 +139,13 @@ message DeleteTokenRequest {
   string id = 1;
 }
 
-message ListAccountsRequest {}
+message ListAccountsRequest {
+  string query = 1;
+  AccountStatus status = 2;
+  int32 page = 3;
+  int32 pageSize = 4;
+  bool profitSharingEligibleOnly = 5;
+}
 
 message ListTokensRequest {}
 

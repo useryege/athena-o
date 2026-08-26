@@ -57,11 +57,16 @@ body,
 }
 
 body {
-    background:
-        radial-gradient(circle at 88% -18%, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 34rem),
-        var(--athena-bg);
+    background: radial-gradient(circle at 88% -18%, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 34rem), var(--athena-bg);
     color: var(--athena-text);
-    font-family: Heebo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family:
+        Heebo,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -566,6 +571,40 @@ body::-webkit-scrollbar-thumb,
     margin-top: 3px;
 }
 
+.account-access-editor__entitlements {
+    overflow: hidden;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-solid);
+}
+
+.account-access-editor__entitlement {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 74px;
+    padding: 13px 14px;
+}
+
+.account-access-editor__entitlement + .account-access-editor__entitlement {
+    border-top: 1px solid var(--athena-border);
+}
+
+.account-access-editor__entitlement > div {
+    min-width: 0;
+}
+
+.account-access-editor__entitlement .ant-typography {
+    margin-bottom: 0;
+}
+
+.account-access-editor__entitlement .ant-typography-secondary {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+}
+
 .account-access-editor__groups {
     display: grid;
     gap: 16px;
@@ -837,7 +876,9 @@ body::-webkit-scrollbar-thumb,
 
 .resource-table__row--clickable:focus-visible > td {
     background: color-mix(in srgb, var(--athena-blue) 10%, var(--athena-panel-solid)) !important;
-    box-shadow: inset 0 2px 0 var(--athena-focus), inset 0 -2px 0 var(--athena-focus);
+    box-shadow:
+        inset 0 2px 0 var(--athena-focus),
+        inset 0 -2px 0 var(--athena-focus);
 }
 
 .resource-table--paint-select {
@@ -2592,10 +2633,8 @@ body::-webkit-scrollbar-thumb,
     display: grid;
     place-items: center;
     padding: 18px;
-    background:
-        radial-gradient(circle at 50% 0, color-mix(in srgb, var(--athena-brand) 11%, transparent), transparent 30rem),
-        linear-gradient(180deg, color-mix(in srgb, var(--athena-panel) 48%, transparent), transparent 44%),
-        var(--athena-bg);
+    background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--athena-brand) 11%, transparent), transparent 30rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--athena-panel) 48%, transparent), transparent 44%), var(--athena-bg);
 }
 
 .login-panel {
@@ -3244,8 +3283,7 @@ body::-webkit-scrollbar-thumb,
 
 .fifa-moneyline-direction--selected {
     border-color: color-mix(in srgb, var(--athena-green) 72%, var(--athena-border));
-    background: linear-gradient(135deg, color-mix(in srgb, var(--athena-green) 13%, transparent), transparent 58%),
-        color-mix(in srgb, var(--athena-panel-solid) 92%, transparent);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--athena-green) 13%, transparent), transparent 58%), color-mix(in srgb, var(--athena-panel-solid) 92%, transparent);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--athena-green) 32%, transparent);
 }
 
@@ -3745,9 +3783,7 @@ body::-webkit-scrollbar-thumb,
     overflow: hidden;
     border: 1px solid var(--athena-border);
     border-radius: 9px;
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--athena-blue) 4%, transparent), transparent 65%),
-        var(--athena-panel);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--athena-blue) 4%, transparent), transparent 65%), var(--athena-panel);
 }
 
 .project-trend__canvas svg {
@@ -4004,8 +4040,7 @@ body::-webkit-scrollbar-thumb,
 
 .swap-heatmap__cell--level-2 {
     border-color: color-mix(in srgb, var(--athena-blue) 42%, var(--athena-border));
-    background:
-        repeating-linear-gradient(
+    background: repeating-linear-gradient(
             -45deg,
             transparent,
             transparent 5px,
@@ -4017,8 +4052,7 @@ body::-webkit-scrollbar-thumb,
 
 .swap-heatmap__cell--level-3 {
     border-color: color-mix(in srgb, var(--athena-blue) 60%, var(--athena-border));
-    background:
-        repeating-linear-gradient(
+    background: repeating-linear-gradient(
             45deg,
             transparent,
             transparent 4px,
@@ -4038,8 +4072,7 @@ body::-webkit-scrollbar-thumb,
 .swap-heatmap__cell--level-4 {
     border-width: 2px;
     border-color: color-mix(in srgb, var(--athena-blue) 78%, var(--athena-border));
-    background:
-        radial-gradient(circle at center, color-mix(in srgb, #ffffff 32%, transparent) 1px, transparent 1.5px),
+    background: radial-gradient(circle at center, color-mix(in srgb, #ffffff 32%, transparent) 1px, transparent 1.5px),
         color-mix(in srgb, var(--athena-blue) 68%, var(--athena-panel-solid));
     background-size:
         6px 6px,
@@ -4055,8 +4088,7 @@ body::-webkit-scrollbar-thumb,
 
 .swap-heatmap__cell--unavailable {
     border-color: color-mix(in srgb, var(--athena-muted) 28%, var(--athena-border));
-    background:
-        repeating-linear-gradient(
+    background: repeating-linear-gradient(
             -45deg,
             transparent,
             transparent 4px,
@@ -4101,9 +4133,7 @@ body::-webkit-scrollbar-thumb,
     overflow: hidden;
     border: 1px solid var(--athena-border);
     border-radius: 9px;
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--athena-blue) 4%, transparent), transparent 70%),
-        var(--athena-panel);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--athena-blue) 4%, transparent), transparent 70%), var(--athena-panel);
 }
 
 .swap-timeline-panel__heading {
@@ -4740,7 +4770,6 @@ button.chain-processing-kpi {
     .fifa-wallet-holding__amount--usdc {
         grid-area: usdc;
     }
-
 }
 
 @media (max-width: 1439px) {
@@ -4863,7 +4892,6 @@ button.chain-processing-kpi {
     .projects-controls__actions .ant-btn {
         flex: 1 1 0;
     }
-
 
     .projects-unified-card__pairs {
         grid-template-columns: minmax(0, 1fr);
@@ -5267,7 +5295,9 @@ button.chain-processing-kpi {
 
 .profit-sharing-proposal-card--selected {
     border-color: var(--athena-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--athena-primary) 20%, transparent), var(--athena-shadow-surface);
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--athena-primary) 20%, transparent),
+        var(--athena-shadow-surface);
 }
 
 .profit-sharing-proposal-card--winner {
@@ -5811,9 +5841,7 @@ button.chain-processing-kpi {
     padding: 18px;
     border: 1px solid var(--athena-border);
     border-radius: 12px;
-    background:
-        linear-gradient(120deg, color-mix(in srgb, var(--athena-primary) 7%, transparent), transparent 54%),
-        var(--athena-panel);
+    background: linear-gradient(120deg, color-mix(in srgb, var(--athena-primary) 7%, transparent), transparent 54%), var(--athena-panel);
     box-shadow: var(--athena-shadow-surface);
 }
 
@@ -6022,6 +6050,50 @@ button.chain-processing-kpi {
     color: var(--athena-muted);
 }
 
+.account-access-pending {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 680px);
+    align-items: start;
+    gap: 18px;
+    padding: 10px 4px 4px;
+}
+
+.account-access-pending__icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--athena-primary) 12%, var(--athena-panel));
+    color: var(--athena-primary);
+    font-size: 26px;
+}
+
+.account-access-pending__copy {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+}
+
+.account-access-pending__copy h2,
+.account-access-pending__copy .ant-typography {
+    margin: 0;
+}
+
+.account-access-pending__identity {
+    display: grid;
+    gap: 3px;
+    padding: 12px 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+    overflow-wrap: anywhere;
+}
+
+.account-access-pending__checked {
+    font-size: 12px;
+}
+
 .help-resource-list {
     align-items: flex-start;
 }
@@ -6032,6 +6104,27 @@ button.chain-processing-kpi {
 }
 
 /* Account administration */
+.admin-account-directory-toolbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) 160px auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 10px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.admin-account-directory-toolbar .ant-pagination {
+    justify-self: end;
+}
+
+.admin-account-directory-toolbar--hidden {
+    display: none;
+}
+
 .admin-accounts-layout {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
@@ -6186,6 +6279,15 @@ button.chain-processing-kpi {
         display: block;
     }
 
+    .admin-account-directory-toolbar {
+        grid-template-columns: minmax(0, 1fr) 132px;
+    }
+
+    .admin-account-directory-toolbar .ant-pagination {
+        grid-column: 1 / -1;
+        justify-self: stretch;
+    }
+
     .admin-accounts-mobile-list--hidden {
         display: none;
     }
@@ -6287,6 +6389,14 @@ button.chain-processing-kpi {
         padding: 24px;
     }
 
+    .admin-account-directory-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-account-directory-toolbar .ant-pagination {
+        grid-column: 1;
+    }
+
     .account-center-hero,
     .admin-account-detail__heading,
     .account-profile-avatar,
@@ -6296,6 +6406,21 @@ button.chain-processing-kpi {
     .account-token-card {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .account-access-pending {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .account-access-editor__entitlement {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .account-access-editor__entitlement .ant-switch,
+    .account-access-editor__entitlement .ant-tag {
+        align-self: flex-start;
     }
 
     .account-center-hero,

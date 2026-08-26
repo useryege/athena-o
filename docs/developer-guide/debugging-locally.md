@@ -46,7 +46,8 @@ FORCE_LOG_COLORS=1
 ATHENA_GOOGLE_OIDC_CLIENT_ID=<local-web-client-id>
 ATHENA_GOOGLE_OIDC_CLIENT_SECRET=<local-web-client-secret>
 ATHENA_GOOGLE_OIDC_REDIRECT_URI=http://localhost:4000/auth/google/callback
-# Also add all ATHENA_ACCOUNT_<NAME>_GOOGLE_SUB values and ATHENA_ADMIN_GOOGLE_SUB.
+ATHENA_ADMIN_GOOGLE_EMAIL=<administrator-google-email>
+ATHENA_JWT_SECRET=<at-least-32-byte-signing-secret>
 ... 
 # and so on for the component-specific settings you are testing.
 ```

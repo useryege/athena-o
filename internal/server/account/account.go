@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"sort"
@@ -23,14 +24,21 @@ type Server struct {
 	credentials      *accountcredentials.CredentialManager
 	accessController *accountaccesscore.Controller
 	accountCenter    *accountcenter.Manager
+	directory        AccountDirectory
+}
+
+// AccountDirectory provides the server-side filtered durable account index.
+type AccountDirectory interface {
+	ListAccountDirectory(ctx context.Context, query, status string, page, pageSize int32, profitSharingEligibleOnly bool) ([]string, int64, error)
 }
 
 // NewServer returns a new Account service.
-func NewServer(credentials *accountcredentials.CredentialManager, accessController *accountaccesscore.Controller, accountCenter *accountcenter.Manager) *Server {
+func NewServer(credentials *accountcredentials.CredentialManager, accessController *accountaccesscore.Controller, accountCenter *accountcenter.Manager, directory AccountDirectory) *Server {
 	return &Server{
 		credentials:      credentials,
 		accessController: accessController,
 		accountCenter:    accountCenter,
+		directory:        directory,
 	}
 }
 
@@ -131,24 +139,50 @@ func ToAPIAccountAccess(access accountaccesscore.Access) *account.AccountAccess 
 		})
 	}
 	return &account.AccountAccess{
-		LoginEnabled: access.LoginEnabled,
-		Revision:     access.Revision,
-		ModuleAccess: moduleAccess,
+		LoginEnabled:         access.LoginEnabled,
+		Revision:             access.Revision,
+		ModuleAccess:         moduleAccess,
+		ApiKeyEnabled:        access.APIKeyEnabled,
+		ProfitSharingEnabled: access.ProfitSharingEnabled,
 	}
 }
 
 func toAPIAccount(name string, a accountcredentials.Account, access accountaccesscore.Access, profile accountcenter.Profile) *account.Account {
-	var capabilities []string
-	for _, c := range a.Capabilities {
-		capabilities = append(capabilities, string(c))
-	}
 	return &account.Account{
 		Name:          name,
-		Administrator: name == common.AthenaAdminUsername,
+		Administrator: a.Administrator,
 		Access:        ToAPIAccountAccess(access),
-		Capabilities:  capabilities,
 		Profile:       ToAPIAccountProfile(name, profile),
+		Identity:      ToAPIAccountIdentity(a),
+		Status:        toAPIAccountStatus(access),
 	}
+}
+
+// ToAPIAccountIdentity projects safe Google identity metadata without its subject.
+func ToAPIAccountIdentity(a accountcredentials.Account) *account.AccountIdentity {
+	identity := &account.AccountIdentity{
+		VerifiedEmail: a.VerifiedEmail,
+	}
+	if a.HasGoogleBinding() {
+		identity.Provider = account.AccountIdentityProvider_ACCOUNT_IDENTITY_PROVIDER_GOOGLE
+	}
+	if !a.CreatedAt.IsZero() {
+		identity.CreatedAt = a.CreatedAt.Unix()
+	}
+	if !a.LastLoginAt.IsZero() {
+		identity.LastLoginAt = a.LastLoginAt.Unix()
+	}
+	return identity
+}
+
+func toAPIAccountStatus(access accountaccesscore.Access) account.AccountStatus {
+	if !access.LoginEnabled {
+		return account.AccountStatus_ACCOUNT_STATUS_BLOCKED
+	}
+	if access.IsPending() {
+		return account.AccountStatus_ACCOUNT_STATUS_PENDING
+	}
+	return account.AccountStatus_ACCOUNT_STATUS_ACTIVE
 }
 
 // ToAPIAccountProfile is the canonical profile projection shared with raw avatar HTTP handlers.
@@ -206,23 +240,74 @@ func (s *Server) accountForViewer(ctx context.Context, name string, a accountcre
 	return toAPIAccount(name, a, access, profile), nil
 }
 
-// ListAccounts returns the list of accounts
-func (s *Server) ListAccounts(ctx context.Context, _ *account.ListAccountsRequest) (*account.AccountsList, error) {
-	resp := account.AccountsList{}
-	accounts := s.credentials.List()
-	for name, a := range accounts {
-		if canViewAccount(ctx, name) {
-			apiAccount, err := s.accountForViewer(ctx, name, a)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get access for account %s: %w", name, err)
-			}
-			resp.Items = append(resp.Items, apiAccount)
+// ListAccounts returns a server-side filtered account directory for the
+// administrator, while ordinary users can project only themselves.
+func (s *Server) ListAccounts(ctx context.Context, r *account.ListAccountsRequest) (*account.AccountsList, error) {
+	viewer := session.GetUserIdentifier(ctx)
+	if viewer != common.AthenaAdminUsername {
+		a, err := s.credentials.Get(viewer)
+		if err != nil {
+			return nil, err
 		}
+		projected, err := s.accountForViewer(ctx, viewer, a)
+		if err != nil {
+			return nil, err
+		}
+		if r.ProfitSharingEligibleOnly && (!projected.Access.LoginEnabled || !projected.Access.ProfitSharingEnabled || projected.Administrator) {
+			return &account.AccountsList{}, nil
+		}
+		return &account.AccountsList{Items: []*account.Account{projected}, TotalSize: 1}, nil
 	}
-	sort.Slice(resp.Items, func(i, j int) bool {
-		return resp.Items[i].Name < resp.Items[j].Name
-	})
-	return &resp, nil
+	if s.directory == nil {
+		return nil, status.Error(codes.Internal, "account directory is not configured")
+	}
+	page := r.Page
+	if page == 0 {
+		page = 1
+	}
+	pageSize := r.PageSize
+	if pageSize == 0 {
+		pageSize = 50
+	}
+	if page < 1 || pageSize < 1 || pageSize > 100 {
+		return nil, status.Error(codes.InvalidArgument, "page must be positive and pageSize must be between 1 and 100")
+	}
+	statusFilter, err := accountStatusFilter(r.Status)
+	if err != nil {
+		return nil, err
+	}
+	names, total, err := s.directory.ListAccountDirectory(ctx, r.Query, statusFilter, page, pageSize, r.ProfitSharingEligibleOnly)
+	if err != nil {
+		return nil, err
+	}
+	response := &account.AccountsList{Items: make([]*account.Account, 0, len(names)), TotalSize: total}
+	for _, name := range names {
+		a, err := s.credentials.Get(name)
+		if err != nil {
+			return nil, fmt.Errorf("get directory account %q: %w", name, err)
+		}
+		projected, err := s.accountForViewer(ctx, name, a)
+		if err != nil {
+			return nil, fmt.Errorf("project directory account %q: %w", name, err)
+		}
+		response.Items = append(response.Items, projected)
+	}
+	return response, nil
+}
+
+func accountStatusFilter(value account.AccountStatus) (string, error) {
+	switch value {
+	case account.AccountStatus_ACCOUNT_STATUS_UNSPECIFIED:
+		return "all", nil
+	case account.AccountStatus_ACCOUNT_STATUS_PENDING:
+		return "pending", nil
+	case account.AccountStatus_ACCOUNT_STATUS_ACTIVE:
+		return "active", nil
+	case account.AccountStatus_ACCOUNT_STATUS_BLOCKED:
+		return "blocked", nil
+	default:
+		return "", status.Errorf(codes.InvalidArgument, "unsupported account status %d", value)
+	}
 }
 
 // GetAccount returns an account
@@ -260,9 +345,11 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 		return nil, err
 	}
 	updatedAccess, err := s.accessController.Update(ctx, r.Name, accountaccesscore.Access{
-		LoginEnabled: r.Access.LoginEnabled,
-		Modules:      modules,
-		Revision:     r.Access.Revision,
+		LoginEnabled:         r.Access.LoginEnabled,
+		APIKeyEnabled:        r.Access.ApiKeyEnabled,
+		ProfitSharingEnabled: r.Access.ProfitSharingEnabled,
+		Modules:              modules,
+		Revision:             r.Access.Revision,
 	}, r.Access.Revision)
 	if err != nil {
 		return nil, err
@@ -325,7 +412,11 @@ func (s *Server) UpdateAccountPreferences(ctx context.Context, r *account.Update
 
 // ListTokens returns API Key metadata only for the current authenticated account.
 func (s *Server) ListTokens(ctx context.Context, _ *account.ListTokensRequest) (*account.TokensList, error) {
-	a, err := s.credentials.Get(session.GetUserIdentifier(ctx))
+	name := session.GetUserIdentifier(ctx)
+	if err := s.requireAPIKeyAccess(name); err != nil {
+		return nil, err
+	}
+	a, err := s.credentials.Get(name)
 	if err != nil {
 		return nil, err
 	}
@@ -340,6 +431,12 @@ func (s *Server) ListTokens(ctx context.Context, _ *account.ListTokensRequest) (
 // CreateToken creates a token
 func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest) (*account.CreateTokenResponse, error) {
 	name := session.GetUserIdentifier(ctx)
+	if err := s.requireAPIKeyAccess(name); err != nil {
+		return nil, err
+	}
+	if r.ExpiresIn < 0 {
+		return nil, status.Error(codes.InvalidArgument, "API Key expiration must not be negative")
+	}
 	id := r.Id
 	if id == "" {
 		uniqueId, err := uuid.NewRandom()
@@ -351,8 +448,11 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 		return nil, status.Error(codes.InvalidArgument, "API key ID must be 1-64 ASCII letters, digits, dots, underscores, or hyphens and start with a letter or digit")
 	}
 
-	tokenString, err := s.credentials.IssueAPIKey(name, id, r.ExpiresIn)
+	tokenString, err := s.credentials.IssueAPIKey(ctx, name, id, r.ExpiresIn)
 	if err != nil {
+		if errors.Is(err, accountcredentials.ErrAPIKeyAccessDisabled) {
+			return nil, status.Error(codes.PermissionDenied, "API Key access is disabled")
+		}
 		return nil, fmt.Errorf("failed to update account with new token: %w", err)
 	}
 	return &account.CreateTokenResponse{Token: tokenString}, nil
@@ -361,9 +461,23 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 // DeleteToken deletes a token
 func (s *Server) DeleteToken(ctx context.Context, r *account.DeleteTokenRequest) (*account.EmptyResponse, error) {
 	name := session.GetUserIdentifier(ctx)
-	err := s.credentials.DeleteAPIKey(name, r.Id)
+	if err := s.requireAPIKeyAccess(name); err != nil {
+		return nil, err
+	}
+	err := s.credentials.DeleteAPIKey(ctx, name, r.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete token from account %s: %w", name, err)
 	}
 	return &account.EmptyResponse{}, nil
+}
+
+func (s *Server) requireAPIKeyAccess(name string) error {
+	access, err := s.accessController.Get(name)
+	if err != nil {
+		return err
+	}
+	if !access.LoginEnabled || !access.APIKeyEnabled {
+		return status.Error(codes.PermissionDenied, "API Key access is disabled")
+	}
+	return nil
 }

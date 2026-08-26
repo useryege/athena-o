@@ -15,6 +15,7 @@ import {
     FileTextOutlined,
     HeartOutlined,
     IdcardOutlined,
+    KeyOutlined,
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
@@ -35,7 +36,7 @@ import {Subscription} from 'rxjs';
 import {AuthorizationCtx, Provider} from './shared/context';
 import {AccountDataAccess, AccountDataModule, accountDataModules} from './shared/access-modules';
 import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from './shared/account-access';
-import {AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, AuthSettings, UserInfo} from './shared/models';
+import {accountStatusForAccess, AccountStatus, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, AuthSettings, UserInfo} from './shared/models';
 import {services, ThemeMode, ViewPreferences} from './shared/services';
 import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError, requestErrorMessage} from './shared/services/requests';
 import {loginPathFor, readLoginReturnTo} from './shared/login-navigation';
@@ -100,7 +101,7 @@ interface NavItem {
     children?: NavItem[];
     access?: 'admin';
     module?: AccountDataModule;
-    availability?: 'profit-sharing-rounds';
+    availability?: 'profit-sharing';
 }
 
 interface NavSection {
@@ -116,8 +117,8 @@ interface AccessState {
     revision: number;
 }
 
-const canAccessItem = (authorization: AccessState, item: NavItem, profitSharingAvailable: boolean) => {
-    if (item.availability === 'profit-sharing-rounds' && !profitSharingAvailable) {
+const canAccessItem = (authorization: AccessState, item: NavItem) => {
+    if (item.availability === 'profit-sharing' && !authorization.isAdmin && !authorization.user.access.profitSharingEnabled) {
         return false;
     }
     if (item.access === 'admin') {
@@ -264,7 +265,7 @@ const navSections: NavSection[] = [
         key: 'operations',
         label: 'Operations',
         children: [
-            {key: '/profit-sharing', label: 'Profit Sharing', path: '/profit-sharing', icon: <PieChartOutlined />, availability: 'profit-sharing-rounds'},
+            {key: '/profit-sharing', label: 'Profit Sharing', path: '/profit-sharing', icon: <PieChartOutlined />, availability: 'profit-sharing'},
             {key: '/admin/profit-sharing', label: 'Profit Sharing Admin', path: '/admin/profit-sharing', icon: <SettingOutlined />, access: 'admin'},
             {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, module: AccountDataModule.Notifications},
             {key: '/service-status', label: 'Service Status', path: '/service-status', icon: <HeartOutlined />, access: 'admin'},
@@ -286,14 +287,14 @@ const accountRouteMetadata = [
 
 const flattenNav = (items: NavItem[]): NavItem[] => items.flatMap(item => [item, ...(item.children ? flattenNav(item.children) : [])]);
 
-const filterNavItems = (items: NavItem[], access: AccessState, profitSharingAvailable: boolean): NavItem[] =>
+const filterNavItems = (items: NavItem[], access: AccessState): NavItem[] =>
     items
         .map(item => {
-            const children = item.children ? filterNavItems(item.children, access, profitSharingAvailable) : undefined;
+            const children = item.children ? filterNavItems(item.children, access) : undefined;
             if (children) {
-                return children.length > 0 && canAccessItem(access, item, profitSharingAvailable) ? {...item, children} : null;
+                return children.length > 0 && canAccessItem(access, item) ? {...item, children} : null;
             }
-            return canAccessItem(access, item, profitSharingAvailable) ? item : null;
+            return canAccessItem(access, item) ? item : null;
         })
         .filter((item): item is NavItem => item !== null);
 
@@ -305,8 +306,8 @@ const toMenuItems = (items: NavItem[]): MenuProps['items'] =>
         children: item.children ? toMenuItems(item.children) : undefined
     }));
 
-const filterNavSections = (sections: NavSection[], access: AccessState, profitSharingAvailable: boolean): NavSection[] =>
-    sections.map(section => ({...section, children: filterNavItems(section.children, access, profitSharingAvailable)})).filter(section => section.children.length > 0);
+const filterNavSections = (sections: NavSection[], access: AccessState): NavSection[] =>
+    sections.map(section => ({...section, children: filterNavItems(section.children, access)})).filter(section => section.children.length > 0);
 
 const toSectionMenuItems = (sections: NavSection[]): MenuProps['items'] =>
     sections.map(section => ({
@@ -394,6 +395,30 @@ const loadAccessState = (user: UserInfo): AccessState => ({
     revision: user.access.revision
 });
 
+const isPendingAccess = (access: AccessState) => accountStatusForAccess(access.user.access, access.isAdmin) === AccountStatus.Pending;
+
+const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
+    [AccountDataModule.MarketRadar]: '/market-radar',
+    [AccountDataModule.SportsLive]: '/sports-live',
+    [AccountDataModule.SportsHistory]: '/sports-history',
+    [AccountDataModule.ManagedOO]: '/managed-oo/proposals',
+    [AccountDataModule.FIFAMarketDashboard]: '/fifa-market-dashboard',
+    [AccountDataModule.WorldCupCorners]: '/world-cup-corners',
+    [AccountDataModule.Token]: '/token/projects',
+    [AccountDataModule.Wallet]: '/wallet',
+    [AccountDataModule.Notifications]: '/notifications'
+};
+
+const firstAuthorizedBusinessPath = (access: AccessState): string | undefined => {
+    for (const definition of accountDataModules) {
+        const path = moduleLandingPaths[definition.module];
+        if (path && (access.isAdmin || access.moduleAccess[definition.module] >= AccountDataAccess.Read)) {
+            return path;
+        }
+    }
+    return access.isAdmin || access.user.access.profitSharingEnabled ? '/profit-sharing' : undefined;
+};
+
 const mergeMonotonicAccountProjection = (previous: AccessState | null, incoming: AccessState): AccessState => {
     if (!previous || previous.user.username !== incoming.user.username || previous.user.iss !== incoming.user.iss) {
         return incoming;
@@ -450,13 +475,25 @@ const AppRoutes = (props: {
     settings: AuthSettings;
     themeChanging: boolean;
     onThemeChange: (theme: ThemeMode) => Promise<void>;
+    loggingOut: boolean;
+    onLogout: () => void;
 }) => {
+    const pending = isPendingAccess(props.access);
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.isAdmin || props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
-    const adminRoute = (element: React.ReactElement) => (props.access.isAdmin ? element : <ForbiddenPage />);
+    const profitSharingRoute = (element: React.ReactElement) =>
+        props.access.isAdmin || props.access.user.access.profitSharingEnabled ? element : <Navigate replace={true} to='/account/access' />;
+    const adminRoute = (element: React.ReactElement) => (props.access.isAdmin ? element : pending ? <Navigate replace={true} to='/account/access' /> : <ForbiddenPage />);
+    const accountCenterProps = {
+        preferences: props.preferences,
+        themeChanging: props.themeChanging,
+        onThemeChange: props.onThemeChange,
+        loggingOut: props.loggingOut,
+        onLogout: props.onLogout
+    };
     return (
         <Routes>
-            <Route path='/' element={<Navigate replace={true} to='/account/profile' />} />
+            <Route path='/' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
             <Route path='/wallet' element={moduleRoute(AccountDataModule.Wallet, <WalletsPage />)} />
             <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
             <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
@@ -469,25 +506,18 @@ const AppRoutes = (props: {
             <Route path='/fifa-market-dashboard' element={moduleRoute(AccountDataModule.FIFAMarketDashboard, <FIFAMarketDashboardPage />)} />
             <Route path='/notifications' element={moduleRoute(AccountDataModule.Notifications, <NotificationsPage />)} />
             <Route path='/notifications/:id' element={moduleRoute(AccountDataModule.Notifications, <NotificationsDetailPage />)} />
-            <Route
-                path='/account/profile'
-                element={<AccountCenterPage section='profile' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
-            />
-            <Route
-                path='/account/appearance'
-                element={<AccountCenterPage section='appearance' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
-            />
+            <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
+            <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountCenterProps} />} />
             <Route
                 path='/account/security'
-                element={<AccountCenterPage section='security' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
+                element={
+                    props.access.user.access.apiKeyEnabled ? <AccountCenterPage section='security' {...accountCenterProps} /> : <Navigate replace={true} to='/account/access' />
+                }
             />
-            <Route
-                path='/account/access'
-                element={<AccountCenterPage section='access' preferences={props.preferences} themeChanging={props.themeChanging} onThemeChange={props.onThemeChange} />}
-            />
+            <Route path='/account/access' element={<AccountCenterPage section='access' {...accountCenterProps} />} />
             <Route path='/admin/accounts' element={adminRoute(<AdminAccountsPage />)} />
-            <Route path='/profit-sharing' element={<ProfitSharingRoundsPage />} />
-            <Route path='/profit-sharing/:slug' element={<ProfitSharingRoundPage />} />
+            <Route path='/profit-sharing' element={profitSharingRoute(<ProfitSharingRoundsPage />)} />
+            <Route path='/profit-sharing/:slug' element={profitSharingRoute(<ProfitSharingRoundPage />)} />
             <Route path='/admin/profit-sharing' element={adminRoute(<ProfitSharingAdminRoundsPage />)} />
             <Route path='/admin/profit-sharing/:slug' element={adminRoute(<ProfitSharingAdminRoundPage />)} />
             <Route path='/service-status' element={adminRoute(<ServiceStatusPage />)} />
@@ -503,7 +533,7 @@ const AppRoutes = (props: {
             <Route path='/token/node-statuses' element={moduleRoute(AccountDataModule.Token, <NodeStatusesPage />)} />
             <Route path='/token/chain-processing' element={moduleRoute(AccountDataModule.Token, <ChainProcessingPage />)} />
             <Route path='/token/collection-tasks' element={moduleRoute(AccountDataModule.Token, <CollectionTasksPage />)} />
-            <Route path='*' element={<Navigate replace={true} to='/account/profile' />} />
+            <Route path='*' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
         </Routes>
     );
 };
@@ -517,7 +547,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const initialAccess = session.status === 'authenticated' ? session.access : null;
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.pref.hideSidebar);
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
-    const [profitSharingAvailable, setProfitSharingAvailable] = React.useState(false);
+    const [accessRefreshedAt, setAccessRefreshedAt] = React.useState(initialAccess ? Date.now() : 0);
     const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
     const [themeChanging, setThemeChanging] = React.useState(false);
     const [loggingOut, setLoggingOut] = React.useState(false);
@@ -530,6 +560,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const accessRefreshRef = React.useRef<Promise<boolean>>(null);
     const accessDeniedRefreshRef = React.useRef<Promise<void>>(null);
     const accessRefreshedAtRef = React.useRef(initialAccess ? Date.now() : 0);
+    const pendingAccessRef = React.useRef(Boolean(initialAccess && isPendingAccess(initialAccess)));
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
     const isLoginPath = location.pathname.startsWith('/login');
     const access = session.status === 'authenticated' ? session.access : null;
@@ -541,6 +572,8 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         accessRefreshRef.current = null;
         accessDeniedRefreshRef.current = null;
         accessRefreshedAtRef.current = 0;
+        pendingAccessRef.current = false;
+        setAccessRefreshedAt(0);
         requests.invalidatePendingRequestErrors();
         requests.abortAuthorizationRequests();
         setAccountMenuOpen(false);
@@ -605,6 +638,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                     }
                 }
                 accessRefreshedAtRef.current = Date.now();
+                setAccessRefreshedAt(accessRefreshedAtRef.current);
                 accessRef.current = next;
                 setSession({status: 'authenticated', access: next});
                 return true;
@@ -696,28 +730,20 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
 
     React.useEffect(() => {
         if (!access) {
-            setProfitSharingAvailable(false);
+            pendingAccessRef.current = false;
             return;
         }
-        let active = true;
-        const request = services.profitSharing.listRounds();
-        request.then(
-            rounds => {
-                if (active) {
-                    setProfitSharingAvailable(rounds.length > 0);
-                }
-            },
-            () => {
-                if (active) {
-                    setProfitSharingAvailable(false);
-                }
-            }
-        );
-        return () => {
-            active = false;
-            request.abort?.();
-        };
-    }, [access?.user.iss, access?.user.username, location.pathname]);
+        const pending = isPendingAccess(access);
+        const wasPending = pendingAccessRef.current;
+        pendingAccessRef.current = pending;
+        if (!wasPending || pending) {
+            return;
+        }
+        const destination = firstAuthorizedBusinessPath(access);
+        if (destination && (location.pathname.startsWith('/account/') || location.pathname === '/help')) {
+            navigate(destination, {replace: true});
+        }
+    }, [access?.revision, access?.user.access.profitSharingEnabled, access?.user.username, location.pathname, navigate]);
 
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
@@ -847,7 +873,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         document.title = current ? `${current} · Athena` : 'Athena';
     }, [location.pathname]);
 
-    const visibleNavSections = access ? filterNavSections(navSections, access, profitSharingAvailable) : [];
+    const visibleNavSections = access ? filterNavSections(navSections, access) : [];
     const visibleNavItems = visibleNavSections.flatMap(section => section.children);
 
     const onMenuClick: MenuProps['onClick'] = item => {
@@ -896,6 +922,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             canRead: (module: AccountDataModule) => access.moduleAccess[module] >= AccountDataAccess.Read,
             canWrite: (module: AccountDataModule) => access.moduleAccess[module] >= AccountDataAccess.ReadWrite,
             revision: access.revision,
+            lastCheckedAt: accessRefreshedAt,
             refresh: async () => {
                 const current = accessRef.current;
                 if (
@@ -910,7 +937,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 await refreshAccess(true);
             }
         };
-    }, [access, refreshAccess]);
+    }, [access, accessRefreshedAt, refreshAccess]);
 
     const changeTheme = React.useCallback(
         async (theme: ThemeMode) => {
@@ -1026,7 +1053,8 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                       {key: 'theme:dark', label: 'Dark', disabled: themeChanging, icon: props.pref.theme === 'dark' ? <CheckOutlined /> : <MoonOutlined />}
                   ]
               },
-              {key: '/account/security', label: 'Settings', icon: <SettingOutlined />},
+              {key: '/account/access', label: 'Access', icon: <KeyOutlined />},
+              ...(access.user.access.apiKeyEnabled ? [{key: '/account/security', label: 'Security', icon: <SettingOutlined />}] : []),
               ...(access.isAdmin ? [{key: '/admin/accounts', label: 'Manage accounts', icon: <UserOutlined />}] : []),
               {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
               {type: 'divider'},
@@ -1098,7 +1126,17 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             </Routes>
         );
     } else if (access && !isLoginPath) {
-        routes = <AppRoutes access={access} preferences={props.pref} settings={props.settings} themeChanging={themeChanging} onThemeChange={changeTheme} />;
+        routes = (
+            <AppRoutes
+                access={access}
+                preferences={props.pref}
+                settings={props.settings}
+                themeChanging={themeChanging}
+                onThemeChange={changeTheme}
+                loggingOut={loggingOut}
+                onLogout={() => void logout()}
+            />
+        );
     } else {
         routes = <div className='athena-boot'>Loading Athena...</div>;
     }

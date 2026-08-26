@@ -12,6 +12,7 @@ import (
 
 // Store persists profile and preference aggregates with independent CAS revisions.
 type Store interface {
+	AccountExists(ctx context.Context, name string) (bool, error)
 	GetProfile(ctx context.Context, name string) (Profile, bool, error)
 	ListAvatarObjectKeys(ctx context.Context) ([]string, error)
 	UpdateProfile(ctx context.Context, name string, next Profile, expectedRevision uint64) (Profile, error)
@@ -19,34 +20,27 @@ type Store interface {
 	UpdatePreferences(ctx context.Context, name string, next Preferences, expectedRevision uint64) (Preferences, error)
 }
 
-// Manager provides uncached account-center state for the fixed credential catalog.
+// Manager provides uncached account-center state for durable accounts.
 type Manager struct {
-	accounts map[string]struct{}
-	store    Store
+	store Store
 }
 
-func NewManager(accountNames []string, store Store) (*Manager, error) {
+func NewManager(store Store) (*Manager, error) {
 	if store == nil {
 		return nil, fmt.Errorf("account-center store is required")
 	}
-	accounts := make(map[string]struct{}, len(accountNames))
-	for _, name := range accountNames {
-		if name == "" {
-			return nil, fmt.Errorf("account-center account name is empty")
-		}
-		accounts[name] = struct{}{}
-	}
-	if len(accounts) == 0 {
-		return nil, fmt.Errorf("account-center account catalog is empty")
-	}
-	return &Manager{accounts: accounts, store: store}, nil
+	return &Manager{store: store}, nil
 }
 
-func (m *Manager) requireAccount(name string) error {
+func (m *Manager) requireAccount(ctx context.Context, name string) error {
 	if m == nil || m.store == nil {
 		return status.Error(codes.Internal, "account center is not configured")
 	}
-	if _, ok := m.accounts[name]; !ok {
+	exists, err := m.store.AccountExists(ctx, name)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		return status.Errorf(codes.NotFound, "account %q does not exist", name)
 	}
 	return nil
@@ -61,7 +55,7 @@ func defaultPreferences() Preferences {
 }
 
 func (m *Manager) GetProfile(ctx context.Context, name string) (Profile, error) {
-	if err := m.requireAccount(name); err != nil {
+	if err := m.requireAccount(ctx, name); err != nil {
 		return Profile{}, err
 	}
 	profile, found, err := m.store.GetProfile(ctx, name)
@@ -90,7 +84,7 @@ func (m *Manager) ListAvatarObjectKeys(ctx context.Context) ([]string, error) {
 }
 
 func (m *Manager) GetPreferences(ctx context.Context, name string) (Preferences, error) {
-	if err := m.requireAccount(name); err != nil {
+	if err := m.requireAccount(ctx, name); err != nil {
 		return Preferences{}, err
 	}
 	preferences, found, err := m.store.GetPreferences(ctx, name)

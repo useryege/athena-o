@@ -13,10 +13,11 @@ import (
 )
 
 // Store persists complete access aggregates with optimistic concurrency.
-// Every returned persisted aggregate must contain all product modules.
+// Every returned aggregate must contain all product modules.
 type Store interface {
-	ListAccountAccessOverrides(ctx context.Context) (map[string]Access, error)
-	UpdateAccountAccessOverride(ctx context.Context, name string, next Access, expectedRevision uint64) (Access, error)
+	ListAccountAccess(ctx context.Context) (map[string]Access, error)
+	GetAccountAccess(ctx context.Context, name string) (Access, error)
+	UpdateAccountAccess(ctx context.Context, name string, next Access, expectedRevision uint64) (Access, error)
 }
 
 // Controller is the sole process-local source of effective account access.
@@ -27,49 +28,65 @@ type Controller struct {
 	updates sync.Mutex
 }
 
-// NewController combines environment login defaults with durable, full-row
-// overrides. Ordinary accounts have no module access until explicitly granted.
-func NewController(ctx context.Context, loginDefaults map[string]bool, store Store) (*Controller, error) {
+// NewController loads the durable, complete access state for every account.
+func NewController(ctx context.Context, store Store) (*Controller, error) {
 	if store == nil {
 		return nil, fmt.Errorf("account-access store is required")
 	}
-	if _, ok := loginDefaults[common.AthenaAdminUsername]; !ok {
-		return nil, fmt.Errorf("built-in administrator account is not configured")
-	}
-
-	effective := make(map[string]Access, len(loginDefaults))
-	for name, loginEnabled := range loginDefaults {
-		effective[name] = Access{
-			LoginEnabled: loginEnabled,
-			Modules:      NoModuleAccess(),
-		}
-	}
-	effective[common.AthenaAdminUsername] = Access{
-		LoginEnabled: true,
-		Modules:      MaximumModuleAccess(),
-	}
-
-	overrides, err := store.ListAccountAccessOverrides(ctx)
+	effective, err := store.ListAccountAccess(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("load account access overrides: %w", err)
+		return nil, fmt.Errorf("load account access: %w", err)
 	}
-	for name, override := range overrides {
-		if name == common.AthenaAdminUsername {
-			continue
-		}
-		if _, ok := effective[name]; !ok {
-			continue
-		}
-		if override.Revision == 0 {
+	for name, access := range effective {
+		if access.Revision == 0 {
 			return nil, fmt.Errorf("account %q has invalid persisted access revision 0", name)
 		}
-		if err := override.Validate(); err != nil {
+		if err := access.Validate(); err != nil {
 			return nil, fmt.Errorf("account %q has invalid persisted access: %w", name, err)
 		}
-		effective[name] = override.Clone()
+		effective[name] = access.Clone()
+	}
+	administrator, ok := effective[common.AthenaAdminUsername]
+	if !ok {
+		return nil, fmt.Errorf("built-in administrator account is not configured")
+	}
+	if !administrator.LoginEnabled || !administrator.ProfitSharingEnabled || administrator.APIKeyEnabled {
+		return nil, fmt.Errorf("built-in administrator access flags are invalid")
+	}
+	for module, maximum := range MaximumModuleAccess() {
+		if administrator.Modules[module] != maximum {
+			return nil, fmt.Errorf("built-in administrator module %q is not at maximum access", module)
+		}
 	}
 
 	return &Controller{store: store, access: effective}, nil
+}
+
+// Register publishes a newly committed durable account into the current
+// process snapshot. A newer revision already present is never overwritten.
+func (c *Controller) Register(ctx context.Context, name string) (Access, error) {
+	if c == nil || c.store == nil {
+		return Access{}, fmt.Errorf("account access controller is not configured")
+	}
+	persisted, err := c.store.GetAccountAccess(ctx, name)
+	if err != nil {
+		return Access{}, err
+	}
+	if persisted.Revision == 0 {
+		return Access{}, fmt.Errorf("account %q has invalid persisted access revision 0", name)
+	}
+	if err := persisted.Validate(); err != nil {
+		return Access{}, fmt.Errorf("account %q has invalid persisted access: %w", name, err)
+	}
+	persisted = persisted.Clone()
+	c.mu.Lock()
+	current, exists := c.access[name]
+	if !exists || current.Revision < persisted.Revision {
+		c.access[name] = persisted
+		current = persisted
+	}
+	c.mu.Unlock()
+	return current.Clone(), nil
 }
 
 // Get returns a detached copy of the current effective access for an account.
@@ -112,7 +129,7 @@ func (c *Controller) Update(ctx context.Context, name string, next Access, expec
 	if next.Revision != expectedRevision {
 		return Access{}, status.Error(codes.InvalidArgument, "account access revision must match expected revision")
 	}
-	if expectedRevision > math.MaxInt64 {
+	if expectedRevision >= math.MaxInt64 {
 		return Access{}, status.Error(codes.InvalidArgument, "account access revision is out of range")
 	}
 	next = next.Clone()
@@ -133,7 +150,7 @@ func (c *Controller) Update(ctx context.Context, name string, next Access, expec
 		return Access{}, ErrRevisionConflict
 	}
 
-	persisted, err := c.store.UpdateAccountAccessOverride(ctx, name, next.Clone(), expectedRevision)
+	persisted, err := c.store.UpdateAccountAccess(ctx, name, next.Clone(), expectedRevision)
 	if err != nil {
 		return Access{}, err
 	}
@@ -165,6 +182,12 @@ func (c *Controller) Authorize(name string, requirement Requirement) error {
 	}
 	if requirement.Administrator {
 		return ErrAdministratorAccessDenied
+	}
+	if requirement.ProfitSharing {
+		if access.ProfitSharingEnabled {
+			return nil
+		}
+		return ErrProfitSharingAccessDenied
 	}
 
 	effective, exists := access.Modules[requirement.Module]

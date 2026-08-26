@@ -85,20 +85,41 @@ func MaximumModuleAccess() map[Module]AccessLevel {
 	return modules
 }
 
-// Access is the effective access aggregate for one environment-defined account.
-// Revision is zero while the account is using its environment baseline and is
-// positive after the first persisted administrator update.
+// Access is one durable account's complete effective access aggregate.
 type Access struct {
-	LoginEnabled bool
-	Modules      map[Module]AccessLevel
-	Revision     uint64
+	LoginEnabled         bool
+	APIKeyEnabled        bool
+	ProfitSharingEnabled bool
+	Modules              map[Module]AccessLevel
+	Revision             uint64
+}
+
+// HasBusinessAccess reports whether the account can enter any business area.
+// API Key access is deliberately excluded from account activation status.
+func (a Access) HasBusinessAccess() bool {
+	if a.ProfitSharingEnabled {
+		return true
+	}
+	for _, level := range a.Modules {
+		if level != AccessLevelNone {
+			return true
+		}
+	}
+	return false
+}
+
+// IsPending reports the stable logged-in, not-yet-authorized account state.
+func (a Access) IsPending() bool {
+	return a.LoginEnabled && !a.HasBusinessAccess()
 }
 
 // Clone returns an aggregate that shares no mutable module map with the source.
 func (a Access) Clone() Access {
 	clone := Access{
-		LoginEnabled: a.LoginEnabled,
-		Revision:     a.Revision,
+		LoginEnabled:         a.LoginEnabled,
+		APIKeyEnabled:        a.APIKeyEnabled,
+		ProfitSharingEnabled: a.ProfitSharingEnabled,
+		Revision:             a.Revision,
 	}
 	if a.Modules != nil {
 		clone.Modules = make(map[Module]AccessLevel, len(a.Modules))
@@ -152,12 +173,17 @@ func validateModuleAccessLevel(module Module, level AccessLevel) error {
 // Requirement describes either the administrator boundary or a module level.
 type Requirement struct {
 	Administrator bool
+	ProfitSharing bool
 	Module        Module
 	AccessLevel   AccessLevel
 }
 
 // RequirementAdministrator is the fixed built-in-administrator boundary.
 var RequirementAdministrator = Requirement{Administrator: true}
+
+// RequirementProfitSharing is the independently administered Profit Sharing
+// entitlement. Round membership remains enforced by the Profit Sharing domain.
+var RequirementProfitSharing = Requirement{ProfitSharing: true}
 
 // RequireModule builds a product-module authorization requirement.
 func RequireModule(module Module, level AccessLevel) Requirement {
@@ -166,8 +192,14 @@ func RequireModule(module Module, level AccessLevel) Requirement {
 
 func (r Requirement) validate() error {
 	if r.Administrator {
-		if r.Module != "" || r.AccessLevel != "" {
+		if r.ProfitSharing || r.Module != "" || r.AccessLevel != "" {
 			return status.Error(codes.Internal, "administrator requirement cannot include a product module")
+		}
+		return nil
+	}
+	if r.ProfitSharing {
+		if r.Module != "" || r.AccessLevel != "" {
+			return status.Error(codes.Internal, "Profit Sharing requirement cannot include a product module")
 		}
 		return nil
 	}
@@ -190,12 +222,14 @@ func accessLevelSatisfies(effective, required AccessLevel) bool {
 const (
 	DataAccessDeniedReason          = "ACCOUNT_DATA_ACCESS_DENIED"
 	AdministratorAccessDeniedReason = "ACCOUNT_ADMIN_REQUIRED"
+	ProfitSharingAccessDeniedReason = "ACCOUNT_PROFIT_SHARING_ACCESS_DENIED"
 	RevisionConflictReason          = "ACCOUNT_ACCESS_REVISION_CONFLICT"
 	ErrorDomain                     = "athena.account_access"
 )
 
 var (
 	ErrAdministratorAccessDenied = stableError(codes.PermissionDenied, AdministratorAccessDeniedReason, nil)
+	ErrProfitSharingAccessDenied = stableError(codes.PermissionDenied, ProfitSharingAccessDeniedReason, nil)
 	ErrRevisionConflict          = stableError(codes.Aborted, RevisionConflictReason, nil)
 )
 

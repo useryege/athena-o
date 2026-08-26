@@ -76,22 +76,32 @@ func (mgr *SessionManager) IncLoginRequestCounter(status string) {
 }
 
 // CreateGoogleLogin validates current account state and issues a bound session.
-func (mgr *SessionManager) CreateGoogleLogin(accountName, verifiedGoogleSubject string, secondsBeforeExpiry int64, id string) (string, error) {
+func (mgr *SessionManager) CreateGoogleLogin(ctx context.Context, accountName, verifiedGoogleSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
 	account, err := mgr.credentials.Get(accountName)
 	if err != nil {
 		return "", err
 	}
-	if !account.HasCapability(accountcredentials.CapabilityLogin) || !account.HasGoogleBinding() || account.GoogleSubject != verifiedGoogleSubject {
+	if !account.HasGoogleBinding() || account.GoogleSubject != verifiedGoogleSubject {
 		return "", status.Error(codes.PermissionDenied, "Google identity is not authorized for login")
 	}
-	access, err := mgr.accessController.Get(accountName)
+	access, err := mgr.accessController.Register(ctx, accountName)
 	if err != nil {
 		return "", err
 	}
 	if !access.LoginEnabled {
 		return "", AccountMaintenanceErr
 	}
-	return mgr.credentials.IssueGoogleLoginSession(accountName, verifiedGoogleSubject, id, secondsBeforeExpiry)
+	token, err := mgr.credentials.IssueGoogleLoginSession(accountName, verifiedGoogleSubject, id, secondsBeforeExpiry)
+	if err != nil {
+		return "", err
+	}
+	if _, err := mgr.credentials.RecordGoogleLogin(ctx, accountName, verifiedGoogleSubject, verifiedEmail); err != nil {
+		if errors.Is(err, accountcredentials.ErrLoginDisabled) {
+			return "", AccountMaintenanceErr
+		}
+		return "", err
+	}
+	return token, nil
 }
 
 // Parse validates a local JWT and current credential, access, and revocation state.
@@ -106,6 +116,9 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 	}
 	if !access.LoginEnabled {
 		return nil, "", AccountMaintenanceErr
+	}
+	if parsed.Capability == accountcredentials.CapabilityAPIKey && !access.APIKeyEnabled {
+		return nil, "", status.Error(codes.PermissionDenied, "API Key access is disabled")
 	}
 	if err := mgr.credentials.ValidateCredential(parsed.Account, parsed.Capability, parsed.JTI, parsed.IdentityBinding); err != nil {
 		return nil, "", err

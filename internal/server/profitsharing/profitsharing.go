@@ -304,9 +304,6 @@ func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]st
 		if err != nil {
 			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is not configured", accountName)
 		}
-		if !account.HasCapability(accountcredentials.CapabilityLogin) {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q does not have login capability", accountName)
-		}
 		if !account.HasGoogleBinding() {
 			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q does not have a Google identity binding", accountName)
 		}
@@ -316,6 +313,9 @@ func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]st
 		}
 		if !access.LoginEnabled {
 			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has login disabled", accountName)
+		}
+		if !access.ProfitSharingEnabled {
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is not authorized for Profit Sharing", accountName)
 		}
 		validated = append(validated, accountName)
 	}

@@ -8,7 +8,7 @@ import requests, {ACCOUNT_MAINTENANCE_MESSAGE} from '../shared/services/requests
 
 const loginReasonAlerts: Record<string, {type: 'error' | 'warning'; message: string}> = {
     google_cancelled: {type: 'warning', message: 'Google sign-in was cancelled. Try again when you are ready.'},
-    google_not_allowed: {type: 'error', message: 'This Google account is not approved for Athena.'},
+    google_not_allowed: {type: 'error', message: 'This Google identity could not be used for Athena. Contact the administrator if the problem continues.'},
     google_state_invalid: {type: 'error', message: 'This sign-in request has expired or is no longer valid. Please try again.'},
     google_unavailable: {type: 'error', message: 'Google sign-in is temporarily unavailable. Please try again later.'},
     maintenance: {type: 'warning', message: ACCOUNT_MAINTENANCE_MESSAGE}
@@ -46,7 +46,7 @@ export const LoginPage = () => {
                         <span>Continue with Google</span>
                     </Button>
                     <Typography.Paragraph className='login-panel__hint' type='secondary'>
-                        Use an approved Google account.
+                        Continue with any verified Google account. Business access is granted separately by an Athena administrator.
                     </Typography.Paragraph>
                 </div>
             </Card>

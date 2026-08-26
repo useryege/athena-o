@@ -38,12 +38,12 @@ type JWTCodec struct {
 	signingKey []byte
 }
 
-// NewJWTCodec copies the minimum-strength key loaded into the catalog.
-func NewJWTCodec(catalog *Catalog) (*JWTCodec, error) {
-	if catalog == nil || len(catalog.signingKey) < minimumJWTSigningKeyBytes {
+// NewJWTCodec copies a minimum-strength HMAC signing key.
+func NewJWTCodec(signingKey []byte) (*JWTCodec, error) {
+	if len(signingKey) < minimumJWTSigningKeyBytes {
 		return nil, fmt.Errorf("JWT signing key must contain at least %d bytes", minimumJWTSigningKeyBytes)
 	}
-	return &JWTCodec{signingKey: append([]byte(nil), catalog.signingKey...)}, nil
+	return &JWTCodec{signingKey: append([]byte(nil), signingKey...)}, nil
 }
 
 // Issue signs one v2 local login or API Key credential.

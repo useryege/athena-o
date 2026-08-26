@@ -6,6 +6,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
+	"github.com/useryege/athena/internal/accountcredentials"
 	accountserver "github.com/useryege/athena/internal/server/account"
 	"github.com/useryege/athena/pkg/apiclient/session"
 	sessionmgr "github.com/useryege/athena/util/session"
@@ -16,6 +17,7 @@ type Server struct {
 	authenticator    Authenticator
 	accessController *accountaccess.Controller
 	accountCenter    *accountcenter.Manager
+	credentials      *accountcredentials.CredentialManager
 }
 
 type Authenticator interface {
@@ -23,11 +25,12 @@ type Authenticator interface {
 }
 
 // NewServer returns a Session service that only exposes GetUserInfo.
-func NewServer(authenticator Authenticator, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager) *Server {
+func NewServer(authenticator Authenticator, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager, credentials *accountcredentials.CredentialManager) *Server {
 	return &Server{
 		authenticator:    authenticator,
 		accessController: accessController,
 		accountCenter:    accountCenter,
+		credentials:      credentials,
 	}
 }
 
@@ -41,11 +44,11 @@ func (s *Server) AuthFuncOverride(ctx context.Context, _ string) (context.Contex
 }
 
 func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest) (*session.GetUserInfoResponse, error) {
-	return ProjectUserInfo(ctx, s.accessController, s.accountCenter)
+	return ProjectUserInfo(ctx, s.accessController, s.accountCenter, s.credentials)
 }
 
 // ProjectUserInfo builds the shared session and authorization projection for ctx.
-func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager) (*session.GetUserInfoResponse, error) {
+func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager, credentials *accountcredentials.CredentialManager) (*session.GetUserInfoResponse, error) {
 	loggedIn := sessionmgr.LoggedIn(ctx)
 	response := &session.GetUserInfoResponse{
 		LoggedIn: loggedIn,
@@ -71,5 +74,10 @@ func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Contro
 	}
 	response.Profile = accountserver.ToAPIAccountProfile(response.Username, profile)
 	response.Preferences = accountserver.ToAPIAccountPreferences(preferences)
+	identity, err := credentials.Get(response.Username)
+	if err != nil {
+		return nil, err
+	}
+	response.Identity = accountserver.ToAPIAccountIdentity(identity)
 	return response, nil
 }

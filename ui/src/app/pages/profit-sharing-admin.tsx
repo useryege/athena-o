@@ -5,7 +5,6 @@ import * as React from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {AppPage, ResourceTable, Section, useAsyncData} from '../components';
 import {Context} from '../shared/context';
-import {Account} from '../shared/models';
 import {ProfitSharingParticipant, ProfitSharingParticipantDefinition, ProfitSharingRound, ProfitSharingRoundPhase, services} from '../shared/services';
 import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
 import {ProfitSharingPhaseTag, ProfitSharingProposalGallery, ProfitSharingRoundMetrics, ProfitSharingSealedNotice, useProfitSharingUnsavedChanges} from './profit-sharing-shared';
@@ -18,10 +17,21 @@ const blankParticipants = (): ProfitSharingParticipantDefinition[] =>
         sortOrder: index + 1
     }));
 
-const eligibleAccountOptions = (accounts: Account[] = []) =>
-    accounts
-        .filter(account => !account.administrator && account.access.loginEnabled && account.capabilities.some(capability => capability.toLowerCase() === 'login'))
-        .map(account => ({value: account.name, label: account.name}));
+interface EligibleAccountOption {
+    value: string;
+    label: string;
+}
+
+const useEligibleAccountOptions = () => {
+    const [search, setSearch] = React.useState('');
+    const deferredSearch = React.useDeferredValue(search.trim());
+    const accounts = useAsyncData(() => services.accounts.list({query: deferredSearch, page: 1, pageSize: 100, profitSharingEligibleOnly: true}), [deferredSearch]);
+    const options: EligibleAccountOption[] = (accounts.data?.items || []).map(account => {
+        const values = [account.profile.displayName, account.identity.verifiedEmail, `@${account.name}`].filter(Boolean);
+        return {value: account.name, label: Array.from(new Set(values)).join(' · ')};
+    });
+    return {...accounts, options, search: setSearch};
+};
 
 interface RoundDefinitionDraft {
     slug: string;
@@ -56,11 +66,6 @@ const definitionsEqual = (left: RoundDefinitionDraft, right: RoundDefinitionDraf
 const hasDuplicateAccounts = (participants: Array<{accountName: string}>) => {
     const names = participants.map(item => item.accountName.trim().toLowerCase()).filter(Boolean);
     return new Set(names).size !== names.length;
-};
-
-const hasIneligibleAccounts = (participants: Array<{accountName: string}>, options: Array<{value: string}>) => {
-    const eligible = new Set(options.map(option => option.value.toLowerCase()));
-    return participants.some(participant => !eligible.has(participant.accountName.toLowerCase()));
 };
 
 const roundColumns: ColumnsType<ProfitSharingRound> = [
@@ -109,7 +114,13 @@ const AdminRoundCompactCard = (props: {round: ProfitSharingRound}) => (
     </Card>
 );
 
-const RoundDefinitionFields = (props: {accountOptions: Array<{value: string; label: string}>; disabled?: boolean; slugDisabled?: boolean}) => (
+const RoundDefinitionFields = (props: {
+    accountOptions: EligibleAccountOption[];
+    accountsLoading?: boolean;
+    disabled?: boolean;
+    slugDisabled?: boolean;
+    onAccountSearch: (query: string) => void;
+}) => (
     <>
         <div className='profit-sharing-definition__identity'>
             <Form.Item name='title' label='Round title' rules={[{required: true, whitespace: true, max: 120}]}>
@@ -129,7 +140,7 @@ const RoundDefinitionFields = (props: {accountOptions: Array<{value: string; lab
             <div>
                 <Typography.Title level={3}>Participants</Typography.Title>
                 <Typography.Text type='secondary'>
-                    Choose exactly five enabled, non-administrator Athena login accounts before opening collection. Draft definitions may contain fewer.
+                    Search for exactly five non-administrator accounts with Google sign-in and Profit Sharing access. Draft definitions may contain fewer.
                 </Typography.Text>
             </div>
         </div>
@@ -148,9 +159,12 @@ const RoundDefinitionFields = (props: {accountOptions: Array<{value: string; lab
                                 <Select
                                     disabled={props.disabled}
                                     showSearch={true}
-                                    optionFilterProp='label'
+                                    filterOption={false}
+                                    loading={props.accountsLoading}
                                     options={props.accountOptions}
-                                    placeholder='Choose an enabled login account'
+                                    placeholder='Search an authorized member'
+                                    onSearch={props.onAccountSearch}
+                                    onOpenChange={open => open && props.onAccountSearch('')}
                                 />
                             </Form.Item>
                             <Form.Item
@@ -193,7 +207,14 @@ const RoundDefinitionFields = (props: {accountOptions: Array<{value: string; lab
     </>
 );
 
-const CreateRoundModal = (props: {open: boolean; accountOptions: Array<{value: string; label: string}>; onClose: () => void; onCreated: (round: ProfitSharingRound) => void}) => {
+const CreateRoundModal = (props: {
+    open: boolean;
+    accountOptions: EligibleAccountOption[];
+    accountsLoading?: boolean;
+    onAccountSearch: (query: string) => void;
+    onClose: () => void;
+    onCreated: (round: ProfitSharingRound) => void;
+}) => {
     const ctx = React.useContext(Context);
     const [form] = Form.useForm<RoundDefinitionDraft>();
     const [submitting, setSubmitting] = React.useState(false);
@@ -208,10 +229,6 @@ const CreateRoundModal = (props: {open: boolean; accountOptions: Array<{value: s
         const definition = normalizeDefinition(values);
         if (hasDuplicateAccounts(definition.participants)) {
             ctx.notifications.error('Participant accounts must be unique');
-            return;
-        }
-        if (hasIneligibleAccounts(definition.participants, props.accountOptions)) {
-            ctx.notifications.error('Every participant must be an enabled Athena login account');
             return;
         }
         setSubmitting(true);
@@ -254,7 +271,12 @@ const CreateRoundModal = (props: {open: boolean; accountOptions: Array<{value: s
             closable={!submitting}
             onCancel={close}>
             <Form form={form} layout='vertical' disabled={submitting} onFinish={submit}>
-                <RoundDefinitionFields accountOptions={props.accountOptions} disabled={submitting} />
+                <RoundDefinitionFields
+                    accountOptions={props.accountOptions}
+                    accountsLoading={props.accountsLoading}
+                    disabled={submitting}
+                    onAccountSearch={props.onAccountSearch}
+                />
                 <div className='profit-sharing-definition__footer'>
                     <Button disabled={submitting} onClick={close}>
                         Cancel
@@ -271,9 +293,9 @@ const CreateRoundModal = (props: {open: boolean; accountOptions: Array<{value: s
 export const ProfitSharingAdminRoundsPage = () => {
     const navigate = useNavigate();
     const rounds = useAsyncData(() => services.profitSharing.listRounds(), []);
-    const accounts = useAsyncData(() => services.accounts.list(), []);
+    const accounts = useEligibleAccountOptions();
     const [createOpen, setCreateOpen] = React.useState(false);
-    const accountOptions = eligibleAccountOptions(accounts.data);
+    const accountOptions = accounts.options;
     return (
         <AppPage
             title='Profit Sharing Administration'
@@ -311,6 +333,8 @@ export const ProfitSharingAdminRoundsPage = () => {
             <CreateRoundModal
                 open={createOpen}
                 accountOptions={accountOptions}
+                accountsLoading={accounts.loading}
+                onAccountSearch={accounts.search}
                 onClose={() => setCreateOpen(false)}
                 onCreated={round => {
                     setCreateOpen(false);
@@ -384,9 +408,9 @@ export const ProfitSharingAdminRoundPage = () => {
     const navigate = useNavigate();
     const ctx = React.useContext(Context);
     const roundData = useAsyncData(() => services.profitSharing.getRound(slug), [slug]);
-    const accounts = useAsyncData(() => services.accounts.list(), []);
+    const accounts = useEligibleAccountOptions();
     const round = roundData.data;
-    const accountOptions = eligibleAccountOptions(accounts.data);
+    const accountOptions = accounts.options;
     const [form] = Form.useForm<RoundDefinitionDraft>();
     const watched = Form.useWatch([], form) as RoundDefinitionDraft | undefined;
     const [savedDefinition, setSavedDefinition] = React.useState<RoundDefinitionDraft>({slug: '', title: '', participants: []});
@@ -394,13 +418,7 @@ export const ProfitSharingAdminRoundPage = () => {
     const currentDefinition = watched || savedDefinition;
     const dirty = Boolean(round?.phase === ProfitSharingRoundPhase.Draft && !definitionsEqual(currentDefinition, savedDefinition));
     const rosterIsEligible = Boolean(
-        round &&
-            !accounts.loading &&
-            !accounts.error &&
-            round.participantCount === 5 &&
-            round.participants.length === 5 &&
-            !hasDuplicateAccounts(round.participants) &&
-            !hasIneligibleAccounts(round.participants, accountOptions)
+        round && !accounts.loading && !accounts.error && round.participantCount === 5 && round.participants.length === 5 && !hasDuplicateAccounts(round.participants)
     );
 
     React.useEffect(() => {
@@ -438,10 +456,6 @@ export const ProfitSharingAdminRoundPage = () => {
         const definition = normalizeDefinition(values);
         if (hasDuplicateAccounts(definition.participants)) {
             ctx.notifications.error('Participant accounts must be unique');
-            return;
-        }
-        if (hasIneligibleAccounts(definition.participants, accountOptions)) {
-            ctx.notifications.error('Every participant must be an enabled Athena login account');
             return;
         }
         setSaving(true);
@@ -594,7 +608,7 @@ export const ProfitSharingAdminRoundPage = () => {
                                             : rosterIsEligible
                                               ? 'Opening collection locks the five-person roster and creates one proposal workspace per participant.'
                                               : round.participantCount === 5
-                                                ? 'Every participant must remain an enabled, non-administrator Athena login account before collection can open.'
+                                                ? 'Every participant must remain signed-in eligible and authorized for Profit Sharing before collection can open.'
                                                 : `Exactly five eligible participants are required. This draft currently has ${round.participantCount}.`
                                     }
                                 />
@@ -622,7 +636,13 @@ export const ProfitSharingAdminRoundPage = () => {
                     {round.phase === ProfitSharingRoundPhase.Draft && (
                         <Section title='Round definition'>
                             <Form form={form} className='profit-sharing-definition' layout='vertical' disabled={saving}>
-                                <RoundDefinitionFields accountOptions={accountOptions} disabled={saving || accounts.loading || Boolean(accounts.error)} slugDisabled={true} />
+                                <RoundDefinitionFields
+                                    accountOptions={accountOptions}
+                                    accountsLoading={accounts.loading}
+                                    disabled={saving || Boolean(accounts.error)}
+                                    slugDisabled={true}
+                                    onAccountSearch={accounts.search}
+                                />
                                 <div className='profit-sharing-definition__footer'>
                                     <Typography.Text type={dirty ? 'warning' : 'secondary'}>{dirty ? 'Unsaved round definition' : 'Definition saved'}</Typography.Text>
                                     <Space wrap={true}>

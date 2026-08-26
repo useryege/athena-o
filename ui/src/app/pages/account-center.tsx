@@ -1,4 +1,17 @@
-import {BgColorsOutlined, CheckOutlined, CopyOutlined, DeleteOutlined, KeyOutlined, PlusOutlined, SafetyCertificateOutlined, UploadOutlined, UserOutlined} from '@ant-design/icons';
+import {
+    BgColorsOutlined,
+    CheckOutlined,
+    ClockCircleOutlined,
+    CopyOutlined,
+    DeleteOutlined,
+    KeyOutlined,
+    LogoutOutlined,
+    PlusOutlined,
+    ReloadOutlined,
+    SafetyCertificateOutlined,
+    UploadOutlined,
+    UserOutlined
+} from '@ant-design/icons';
 import {Alert, Avatar, Button, Form, Input, Modal, Select, Space, Tag, Typography, Upload} from 'antd';
 import * as React from 'react';
 import {useBlocker, useNavigate} from 'react-router-dom';
@@ -6,17 +19,17 @@ import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, Section, StatusTag, u
 import {moduleAccessSummary} from '../shared/account-access';
 import {accountDataAccessLabel, accountDataModules} from '../shared/access-modules';
 import {Context, useAuthorization} from '../shared/context';
-import {Account, AccountProfile, AccountThemeMode, AccountTier, Token} from '../shared/models';
+import {accountStatusForAccess, AccountProfile, AccountStatus, AccountThemeMode, AccountTier, Token} from '../shared/models';
 import {services, ThemeMode, ViewPreferences} from '../shared/services';
 import requests, {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
 import {boolTag} from './shared';
 
 export type AccountCenterSection = 'profile' | 'appearance' | 'security' | 'access';
 
-const accountSections: Array<{key: AccountCenterSection; label: string; description: string; icon: React.ReactNode}> = [
+const accountSections: Array<{key: AccountCenterSection; label: string; description: string; icon: React.ReactNode; requiresAPIKey?: boolean}> = [
     {key: 'profile', label: 'Profile', description: 'Name and avatar', icon: <UserOutlined />},
     {key: 'appearance', label: 'Appearance', description: 'Theme across devices', icon: <BgColorsOutlined />},
-    {key: 'security', label: 'Security', description: 'API key management', icon: <SafetyCertificateOutlined />},
+    {key: 'security', label: 'Security', description: 'API key management', icon: <SafetyCertificateOutlined />, requiresAPIKey: true},
     {key: 'access', label: 'Access & session', description: 'Permissions and versions', icon: <KeyOutlined />}
 ];
 
@@ -116,6 +129,7 @@ const AccountCenterLayout = (props: {active: AccountCenterSection; children: Rea
     const navigate = useNavigate();
     const authorization = useAuthorization();
     const profile = authorization.user.profile;
+    const visibleSections = accountSections.filter(section => !section.requiresAPIKey || authorization.user.access.apiKeyEnabled);
     return (
         <AppPage title='Account Center' subtitle='Manage your Athena identity, appearance, API keys, and current access.'>
             <div className='account-center-hero'>
@@ -134,14 +148,14 @@ const AccountCenterLayout = (props: {active: AccountCenterSection; children: Rea
                 <Select
                     id='account-center-section'
                     value={props.active}
-                    options={accountSections.map(section => ({value: section.key, label: section.label}))}
+                    options={visibleSections.map(section => ({value: section.key, label: section.label}))}
                     onChange={section => navigate(`/account/${section}`)}
                     getPopupContainer={trigger => trigger.parentElement || document.body}
                 />
             </div>
             <div className='account-center-layout'>
                 <nav className='account-center-nav' aria-label='Account Center sections'>
-                    {accountSections.map(section => (
+                    {visibleSections.map(section => (
                         <button
                             key={section.key}
                             type='button'
@@ -348,8 +362,7 @@ const SecurityPage = () => {
     const [creatingToken, setCreatingToken] = React.useState(false);
     const [deletingToken, setDeletingToken] = React.useState('');
     const [secret, setSecret] = React.useState('');
-    const account = useAsyncData<Account>(() => services.accounts.get(authorization.user.username) as Promise<Account> & {abort?: () => void}, [authorization.user.username]);
-    const mayUseAPIKeys = Boolean(account.data?.capabilities.some(capability => capability.toLowerCase() === 'apikey'));
+    const mayUseAPIKeys = authorization.user.access.apiKeyEnabled;
     const tokens = useAsyncData<Token[]>(() => (mayUseAPIKeys ? services.accounts.listTokens() : Promise.resolve([])) as Promise<Token[]> & {abort?: () => void}, [mayUseAPIKeys]);
 
     const createToken = async (values: {id: string; expiresIn: number}) => {
@@ -399,11 +412,7 @@ const SecurityPage = () => {
                         </Button>
                     ) : undefined
                 }>
-                {account.error ? (
-                    <Alert type='error' showIcon={true} title='Could not load account capabilities' description={account.error.message} />
-                ) : account.loading ? (
-                    <Typography.Text type='secondary'>Loading account capabilities…</Typography.Text>
-                ) : !mayUseAPIKeys ? (
+                {!mayUseAPIKeys ? (
                     <Alert type='info' showIcon={true} title='API keys are not enabled for this account' />
                 ) : (
                     <>
@@ -509,7 +518,63 @@ const SecurityPage = () => {
     );
 };
 
-const AccessPage = () => {
+const identityProviderLabel = (provider: string) => (provider.endsWith('_GOOGLE') ? 'Google' : 'Not available');
+const identityTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Not yet');
+
+const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
+    const authorization = useAuthorization();
+    const ctx = React.useContext(Context);
+    const [refreshing, setRefreshing] = React.useState(false);
+    const refresh = async () => {
+        if (refreshing) {
+            return;
+        }
+        setRefreshing(true);
+        try {
+            await authorization.refresh();
+            ctx.notifications.success('Access checked', 'Your latest Athena permissions have been loaded.');
+        } catch (err) {
+            ctx.notifications.error('Could not refresh access', requestErrorMessage(err));
+        } finally {
+            setRefreshing(false);
+        }
+    };
+    return (
+        <Section title='Access pending'>
+            <div className='account-access-pending'>
+                <div className='account-access-pending__icon' aria-hidden='true'>
+                    <ClockCircleOutlined />
+                </div>
+                <div className='account-access-pending__copy'>
+                    <Typography.Title level={2}>Your Google identity is verified</Typography.Title>
+                    <Typography.Paragraph>
+                        Your Athena account is ready, but an administrator has not granted business access yet. You can update your profile and appearance while you wait.
+                    </Typography.Paragraph>
+                    <div className='account-access-pending__identity'>
+                        <Typography.Text type='secondary'>Verified Google email</Typography.Text>
+                        <Typography.Text copyable={Boolean(authorization.user.identity.verifiedEmail)}>
+                            {authorization.user.identity.verifiedEmail || 'Unavailable'}
+                        </Typography.Text>
+                    </div>
+                    <Typography.Text className='account-access-pending__checked' type='secondary' aria-live='polite'>
+                        Permissions are checked every 15 seconds and when this window regains focus. Last checked{' '}
+                        {authorization.lastCheckedAt > 0 ? new Date(authorization.lastCheckedAt).toLocaleTimeString() : 'not yet'}.
+                    </Typography.Text>
+                    <Space wrap={true}>
+                        <Button type='primary' icon={<ReloadOutlined />} loading={refreshing} disabled={refreshing || props.loggingOut} onClick={() => void refresh()}>
+                            Refresh permissions
+                        </Button>
+                        <Button danger={true} icon={<LogoutOutlined />} loading={props.loggingOut} disabled={refreshing || props.loggingOut} onClick={props.onLogout}>
+                            Log out
+                        </Button>
+                    </Space>
+                </div>
+            </div>
+        </Section>
+    );
+};
+
+const ActiveAccessPage = () => {
     const authorization = useAuthorization();
     const version = useAsyncData<any>(() => services.version.version() as any, []);
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
@@ -519,10 +584,16 @@ const AccessPage = () => {
                 <KeyValueGrid
                     items={[
                         {label: 'Username', value: authorization.user.username},
+                        {label: 'Verified email', value: authorization.user.identity.verifiedEmail || '-'},
+                        {label: 'Identity provider', value: identityProviderLabel(authorization.user.identity.provider)},
+                        {label: 'Account created', value: identityTime(authorization.user.identity.createdAt)},
+                        {label: 'Last Google login', value: identityTime(authorization.user.identity.lastLoginAt)},
                         {label: 'Logged in', value: boolTag(authorization.user.loggedIn)},
                         {label: 'Role', value: authorization.isAdmin ? <StatusTag value='Administrator' positive={true} /> : 'Member'},
                         {label: 'Tier', value: accountTierLabel(authorization.user.profile.tier)},
                         {label: 'Module access', value: moduleAccessSummary(authorization.user.access, authorization.isAdmin)},
+                        {label: 'API key access', value: boolTag(authorization.user.access.apiKeyEnabled)},
+                        {label: 'Profit Sharing access', value: boolTag(authorization.user.access.profitSharingEnabled)},
                         {label: 'Access revision', value: authorization.revision},
                         {label: 'Issuer', value: authorization.user.iss || 'athena'},
                         {label: 'UI version', value: uiVersion || '-'},
@@ -547,16 +618,27 @@ const AccessPage = () => {
     );
 };
 
+const AccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
+    const authorization = useAuthorization();
+    return accountStatusForAccess(authorization.user.access, authorization.isAdmin) === AccountStatus.Pending ? (
+        <PendingAccessPage loggingOut={props.loggingOut} onLogout={props.onLogout} />
+    ) : (
+        <ActiveAccessPage />
+    );
+};
+
 export const AccountCenterPage = (props: {
     section: AccountCenterSection;
     preferences: ViewPreferences;
     themeChanging: boolean;
     onThemeChange: (theme: ThemeMode) => Promise<void>;
+    loggingOut: boolean;
+    onLogout: () => void;
 }) => (
     <AccountCenterLayout active={props.section}>
         {props.section === 'profile' && <ProfilePage />}
         {props.section === 'appearance' && <AppearancePage preferences={props.preferences} changing={props.themeChanging} onThemeChange={props.onThemeChange} />}
         {props.section === 'security' && <SecurityPage />}
-        {props.section === 'access' && <AccessPage />}
+        {props.section === 'access' && <AccessPage loggingOut={props.loggingOut} onLogout={props.onLogout} />}
     </AccountCenterLayout>
 );

@@ -1,6 +1,6 @@
 const hasUnsafeReturnToCharacter = (value: string) => value.includes('\\') || Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 
-export const readLoginReturnTo = (search: string, fallback = '/account/profile') => {
+export const readLoginReturnTo = (search: string, fallback = '/account/access') => {
     const candidate = new URLSearchParams(search).get('returnTo');
     if (!candidate || !candidate.startsWith('/') || candidate.startsWith('//') || hasUnsafeReturnToCharacter(candidate)) {
         return fallback;

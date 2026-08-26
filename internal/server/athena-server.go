@@ -219,26 +219,29 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	errorsutil.CheckError(err)
 	settings, err := settingsMgr.GetSettings()
 	errorsutil.CheckError(err)
-	credentialCatalog, err := accountcredentials.LoadCatalog()
-	errorsutil.CheckError(err)
-	if !opts.DisableAuth {
-		errorsutil.CheckError(credentialCatalog.ValidateGoogleBindings())
-	}
-	jwtCodec, err := accountcredentials.NewJWTCodec(credentialCatalog)
-	errorsutil.CheckError(err)
-	credentialMgr := accountcredentials.NewCredentialManager(credentialCatalog, jwtCodec)
 	accountStateStore, err := accountstatestore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
-	accessController, err := accountaccess.NewController(ctx, credentialCatalog.LoginDefaults(), accountStateStore)
+	jwtSigningKey, err := accountcredentials.LoadJWTSigningKey()
 	if err != nil {
 		_ = accountStateStore.Close()
 		errorsutil.CheckError(err)
 	}
-	accountNames := make([]string, 0, len(credentialMgr.List()))
-	for name := range credentialMgr.List() {
-		accountNames = append(accountNames, name)
+	jwtCodec, err := accountcredentials.NewJWTCodec(jwtSigningKey)
+	if err != nil {
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
 	}
-	accountCenter, err := accountcenter.NewManager(accountNames, accountStateStore)
+	credentialMgr, err := accountcredentials.NewCredentialManager(ctx, accountStateStore, jwtCodec)
+	if err != nil {
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
+	}
+	accessController, err := accountaccess.NewController(ctx, accountStateStore)
+	if err != nil {
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
+	}
+	accountCenter, err := accountcenter.NewManager(accountStateStore)
 	if err != nil {
 		_ = accountStateStore.Close()
 		errorsutil.CheckError(err)
@@ -500,12 +503,12 @@ type AthenaServiceSet struct {
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// session service
-	sessionService := session.NewServer(server, server.accessController, server.accountCenter)
+	sessionService := session.NewServer(server, server.accessController, server.accountCenter, server.credentialMgr)
 
-	settingsProjector := settings.NewProjector(server.settingsMgr, server.credentialMgr, server.accessController)
-	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server.accountCenter, server)
+	settingsProjector := settings.NewProjector(server.settingsMgr)
+	appBootstrapService := serverappbootstrap.NewServer(settingsProjector, server.accessController, server.accountCenter, server.credentialMgr, server)
 	// account service
-	accountService := account.NewServer(server.credentialMgr, server.accessController, server.accountCenter)
+	accountService := account.NewServer(server.credentialMgr, server.accessController, server.accountCenter, server.accountStateStore)
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service

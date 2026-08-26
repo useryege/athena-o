@@ -42,6 +42,7 @@ export interface AuthorizationState {
     canRead(module: AccountDataModule): boolean;
     canWrite(module: AccountDataModule): boolean;
     revision: number;
+    lastCheckedAt: number;
     refresh(): Promise<void>;
 }
 

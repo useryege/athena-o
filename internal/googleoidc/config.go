@@ -11,8 +11,9 @@ const (
 	envClientID         = "ATHENA_GOOGLE_OIDC_CLIENT_ID"
 	envClientSecret     = "ATHENA_GOOGLE_OIDC_CLIENT_SECRET"
 	envRedirectURI      = "ATHENA_GOOGLE_OIDC_REDIRECT_URI"
+	envAdminEmail       = "ATHENA_ADMIN_GOOGLE_EMAIL"
 	callbackPath        = "/auth/google/callback"
-	defaultReturnTo     = "/account/profile"
+	defaultReturnTo     = "/account/access"
 	googleAuthorization = "https://accounts.google.com/o/oauth2/v2/auth"
 	googleToken         = "https://oauth2.googleapis.com/token"
 	googleJWKS          = "https://www.googleapis.com/oauth2/v3/certs"
@@ -23,6 +24,7 @@ type Config struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURI  string
+	AdminEmail   string
 	secureCookie bool
 }
 
@@ -37,12 +39,16 @@ func LoadConfigFromEnv() (Config, error) {
 		ClientID:     strings.TrimSpace(os.Getenv(envClientID)),
 		ClientSecret: secret,
 		RedirectURI:  strings.TrimSpace(os.Getenv(envRedirectURI)),
+		AdminEmail:   strings.TrimSpace(os.Getenv(envAdminEmail)),
 	}
 	if config.ClientID == "" {
 		return Config{}, fmt.Errorf("%s is required", envClientID)
 	}
 	if config.ClientSecret == "" {
 		return Config{}, fmt.Errorf("%s or %s_FILE is required", envClientSecret, envClientSecret)
+	}
+	if config.AdminEmail == "" {
+		return Config{}, fmt.Errorf("%s is required", envAdminEmail)
 	}
 	redirect, err := url.Parse(config.RedirectURI)
 	if err != nil || !redirect.IsAbs() || redirect.Host == "" || redirect.User != nil || redirect.Opaque != "" {

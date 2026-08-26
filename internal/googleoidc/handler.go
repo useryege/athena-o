@@ -21,6 +21,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/internal/accountcredentials"
 	httputil "github.com/useryege/athena/util/http"
@@ -49,6 +51,7 @@ type Handler struct {
 	sessionDuration time.Duration
 	baseHRef        string
 	secureCookie    bool
+	adminEmail      string
 }
 
 // NewHandler constructs the flow without contacting Google. Remote JWKS are
@@ -73,8 +76,12 @@ func NewHandler(
 	}
 	keySetContext := oidc.ClientContext(context.Background(), &http.Client{Timeout: 15 * time.Second})
 	keySet := oidc.NewRemoteKeySet(keySetContext, googleJWKS)
+	// Google documents both the HTTPS and bare-host issuer values. The library's
+	// issuer comparison accepts only one exact string, so verify the supported
+	// pair explicitly after signature, audience, and time validation below.
 	verifier := oidc.NewVerifier("https://accounts.google.com", keySet, &oidc.Config{
-		ClientID: config.ClientID,
+		ClientID:        config.ClientID,
+		SkipIssuerCheck: true,
 	})
 	return &Handler{
 		oauth2Config: oauth2.Config{
@@ -94,6 +101,7 @@ func NewHandler(
 		sessionDuration: sessionDuration,
 		baseHRef:        baseHRef,
 		secureCookie:    config.secureCookie,
+		adminEmail:      config.AdminEmail,
 	}, nil
 }
 
@@ -203,19 +211,29 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var claims googleClaims
-	if err := idToken.Claims(&claims); err != nil || !claims.EmailVerified {
+	if err := idToken.Claims(&claims); err != nil || !claims.EmailVerified || strings.TrimSpace(claims.Email) == "" {
 		h.fail(w, r, "google_not_allowed", returnTo, "email_verify", err)
 		return
 	}
-	accountName, err := h.credentials.ResolveGoogleSubject(idToken.Subject)
+	account, _, err := h.credentials.ResolveOrProvisionGoogleAccount(
+		r.Context(),
+		idToken.Subject,
+		claims.Email,
+		h.adminEmail,
+	)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"stage":        "identity_map",
-			"google_email": claims.Email,
-			"google_sub":   idToken.Subject,
-		}).Warn("Verified Google identity is not mapped to an Athena account")
-		h.sessions.IncLoginRequestCounter(loginFailure)
-		h.redirectFailure(w, r, "google_not_allowed", returnTo)
+		reason := "google_unavailable"
+		stage := "identity_provision"
+		if errors.Is(err, accountcredentials.ErrAdministratorIdentityConflict) {
+			reason = "google_not_allowed"
+			stage = "administrator_identity_conflict"
+			log.WithFields(log.Fields{
+				"stage":        stage,
+				"google_email": claims.Email,
+				"google_sub":   idToken.Subject,
+			}).Warn("Verified Google identity could not claim the Athena administrator")
+		}
+		h.fail(w, r, reason, returnTo, stage, err)
 		return
 	}
 	jti, err := uuid.NewRandom()
@@ -224,8 +242,10 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	athenaToken, err := h.sessions.CreateGoogleLogin(
-		accountName,
+		r.Context(),
+		account.Name,
 		idToken.Subject,
+		claims.Email,
 		int64(h.sessionDuration.Seconds()),
 		jti.String(),
 	)
@@ -234,7 +254,11 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 			h.fail(w, r, "maintenance", returnTo, "account_maintenance", err)
 			return
 		}
-		h.fail(w, r, "google_not_allowed", returnTo, "session_issue", err)
+		reason := "google_unavailable"
+		if status.Code(err) == codes.PermissionDenied {
+			reason = "google_not_allowed"
+		}
+		h.fail(w, r, reason, returnTo, "session_issue", err)
 		return
 	}
 	if err := httputil.SetTokenCookie(athenaToken, h.baseHRef, h.secureCookie, w); err != nil {
@@ -242,12 +266,12 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.sessions.IncLoginRequestCounter(loginSuccess)
-	log.WithFields(log.Fields{"stage": "complete", "account": accountName}).Info("Google OIDC login succeeded")
+	log.WithFields(log.Fields{"stage": "complete", "account": account.Name}).Info("Google OIDC login succeeded")
 	http.Redirect(w, r, returnTo, http.StatusSeeOther)
 }
 
 // ValidateReturnTo accepts only same-origin absolute paths and supplies the
-// canonical Account Center fallback for malformed or looping values.
+// canonical pending-access fallback for malformed or looping values.
 func ValidateReturnTo(raw string) string {
 	if raw == "" || len(raw) > maxReturnToBytes || !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") || strings.Contains(raw, "\\") {
 		return defaultReturnTo

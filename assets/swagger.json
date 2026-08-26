@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1057-gc306344c-dirty"
+    "version": "v1.0.0-1058-g4dce26bb-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -19,6 +19,42 @@
         ],
         "summary": "ListAccounts returns the list of accounts",
         "operationId": "AccountService_ListAccounts",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "query",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "ACCOUNT_STATUS_UNSPECIFIED",
+              "ACCOUNT_STATUS_PENDING",
+              "ACCOUNT_STATUS_ACTIVE",
+              "ACCOUNT_STATUS_BLOCKED"
+            ],
+            "type": "string",
+            "default": "ACCOUNT_STATUS_UNSPECIFIED",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "name": "profitSharingEligibleOnly",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -3244,23 +3280,26 @@
         "administrator": {
           "type": "boolean"
         },
-        "capabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "identity": {
+          "$ref": "#/definitions/accountAccountIdentity"
         },
         "name": {
           "type": "string"
         },
         "profile": {
           "$ref": "#/definitions/accountAccountProfile"
+        },
+        "status": {
+          "$ref": "#/definitions/accountAccountStatus"
         }
       }
     },
     "accountAccountAccess": {
       "type": "object",
       "properties": {
+        "apiKeyEnabled": {
+          "type": "boolean"
+        },
         "loginEnabled": {
           "type": "boolean"
         },
@@ -3269,6 +3308,9 @@
           "items": {
             "$ref": "#/definitions/accountAccountModuleAccess"
           }
+        },
+        "profitSharingEnabled": {
+          "type": "boolean"
         },
         "revision": {
           "type": "string",
@@ -3300,6 +3342,33 @@
         "ACCOUNT_DATA_MODULE_TOKEN",
         "ACCOUNT_DATA_MODULE_WALLET",
         "ACCOUNT_DATA_MODULE_NOTIFICATIONS"
+      ]
+    },
+    "accountAccountIdentity": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastLoginAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "provider": {
+          "$ref": "#/definitions/accountAccountIdentityProvider"
+        },
+        "verifiedEmail": {
+          "type": "string"
+        }
+      }
+    },
+    "accountAccountIdentityProvider": {
+      "type": "string",
+      "default": "ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED",
+      "enum": [
+        "ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED",
+        "ACCOUNT_IDENTITY_PROVIDER_GOOGLE"
       ]
     },
     "accountAccountModuleAccess": {
@@ -3343,6 +3412,16 @@
         }
       }
     },
+    "accountAccountStatus": {
+      "type": "string",
+      "default": "ACCOUNT_STATUS_UNSPECIFIED",
+      "enum": [
+        "ACCOUNT_STATUS_UNSPECIFIED",
+        "ACCOUNT_STATUS_PENDING",
+        "ACCOUNT_STATUS_ACTIVE",
+        "ACCOUNT_STATUS_BLOCKED"
+      ]
+    },
     "accountAccountThemeMode": {
       "type": "string",
       "default": "ACCOUNT_THEME_MODE_UNSPECIFIED",
@@ -3370,6 +3449,10 @@
           "items": {
             "$ref": "#/definitions/accountAccount"
           }
+        },
+        "totalSize": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -4618,6 +4701,9 @@
         },
         "administrator": {
           "type": "boolean"
+        },
+        "identity": {
+          "$ref": "#/definitions/accountAccountIdentity"
         },
         "iss": {
           "type": "string"

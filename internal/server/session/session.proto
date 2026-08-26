@@ -24,6 +24,7 @@ message GetUserInfoResponse {
   account.AccountAccess access = 7;
   account.AccountProfile profile = 8;
   account.AccountPreferences preferences = 9;
+  account.AccountIdentity identity = 10;
 }
 
 // SessionService
