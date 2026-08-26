@@ -16,6 +16,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Subsystem | Capability | Document |
 | --- | --- | --- |
 | Development Runtime | Local process supervision, persistent infrastructure, Google and Phantom authentication state, isolated disabled-auth identity, and full current-state reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
+| Developer Experience | Public LLM discovery documents, Swagger generation and embedding, unauthenticated documentation delivery, and root-path and safety boundaries | [AI Discovery Documentation](developer-experience/ai-discovery-documentation.md) |
 | Identity and Access | UUID account identities, immutable public usernames, permanent single-provider Google or Solana bindings, persistent API Keys, and Athena JWT v3 encoding | [Account Credentials](identity-access/account-credentials.md) |
 | Identity and Access | Browser Google Authorization Code flow, PKCE, one-time OAuth state, shared anonymous username registration, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
 | Identity and Access | Browser-injected Phantom Solana authentication, one-time SIWS challenges, Ed25519 verification, and wallet-first username registration | [Solana Wallet Authentication](identity-access/solana-wallet-authentication.md) |

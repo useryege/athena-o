@@ -7,9 +7,9 @@
   ],
   "swagger": "2.0",
   "info": {
-    "description": "Athena Service APIs",
+    "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1060-ga2c179b7-dirty"
+    "version": "v1.0.0-1061-gb0f06082-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -358,7 +358,8 @@
               "$ref": "#/definitions/runtimeError"
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/v1/etherscan-gateway-probe-runs": {
@@ -1382,7 +1383,8 @@
               "$ref": "#/definitions/runtimeError"
             }
           }
-        }
+        },
+        "security": []
       }
     },
     "/api/v1/sports-history/events": {
@@ -3259,7 +3261,8 @@
               "$ref": "#/definitions/runtimeError"
             }
           }
-        }
+        },
+        "security": []
       }
     }
   },
@@ -8746,5 +8749,18 @@
         }
       }
     }
-  }
+  },
+  "securityDefinitions": {
+    "athenaBearer": {
+      "description": "An Athena API Key supplied as Authorization: Bearer <token>. The account must have API Key access enabled and satisfy the server-side permission required by the operation.",
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "athenaBearer": []
+    }
+  ]
 }

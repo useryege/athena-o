@@ -1,0 +1,21 @@
+# Athena
+
+> Athena is a permissioned market-intelligence and token-research platform with same-origin HTTP APIs for Polymarket data, sports markets, oracle activity, token intelligence, wallets, notifications, and governed collaboration.
+
+Use the machine-readable Swagger document as the source of truth for paths, methods, parameters, and response schemas. Athena's server evaluates the authenticated account's current role, feature entitlements, and module access on every protected request.
+
+## Start Here
+
+- [Overview](/docs/ai/overview.md): Product capabilities, API conventions, and data-freshness guidance.
+- [Authentication](/docs/ai/authentication.md): Browser sessions, account-level API Keys, expiration, and revocation.
+- [Safety](/docs/ai/safety.md): Current integration posture and operations that must remain outside AI automation.
+
+## API Reference
+
+- [Swagger 2.0 Specification](/swagger.json): Authoritative HTTP operations and schemas.
+- [Modules and Permissions](/docs/ai/modules.md): The ten product modules and their maximum access levels.
+- [Errors and Pagination](/docs/ai/errors-and-pagination.md): Gateway error envelopes and the supported list patterns.
+
+## Optional
+
+- [ReDoc API Reference](/swagger-ui): Human-readable rendering of the Swagger specification.

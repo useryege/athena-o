@@ -2,6 +2,24 @@
 
 You can find the Swagger docs by setting the path to `/swagger-ui` in your Athena UI. E.g. [http://localhost:8080/swagger-ui](http://localhost:8080/swagger-ui) or [http://localhost:4000/swagger-ui](http://localhost:4000/swagger-ui).
 
+On a deployed Athena server, machine-oriented discovery starts at
+[`/llms.txt`](/llms.txt). The curated API overview is available at
+[`/docs/ai/overview.md`](/docs/ai/overview.md), and the complete machine-readable
+Swagger 2.0 contract is available at [`/swagger.json`](/swagger.json).
+
+## Public Version Endpoint
+
+The server version endpoint is public and does not require a browser session or
+an API Key:
+
+```bash
+curl "$ATHENA_SERVER/api/version"
+```
+
+```json
+{"Version":"...","BuildDate":"...","GitCommit":"...","GitTreeState":"...","GoVersion":"...","Compiler":"...","Platform":"..."}
+```
+
 ## Authorization
 
 Browser users authenticate either through Google at `/auth/google/login` or a desktop
@@ -35,9 +53,16 @@ export ATHENA_TOKEN='<newly-issued-athena-api-key>'
 Pass it using the HTTP `Authorization` header, prefixing with `Bearer `:
 
 ```bash
-$ curl $ATHENA_SERVER/api/v1/version -H "Authorization: Bearer $ATHENA_TOKEN"
-{"Version":"...","BuildDate":"...","GitCommit":"...","GitTreeState":"...","GoVersion":"...","Compiler":"...","Platform":"..."}
+curl "$ATHENA_SERVER/api/v1/market-radar/status" \
+  -H "Authorization: Bearer $ATHENA_TOKEN"
 ```
+
+```json
+{"started":true,"status":"running"}
+```
+
+This request also requires `READ` access to the Market Radar module. API Key
+authentication does not bypass Athena's account or module authorization.
 
 Only Athena token version 3 is accepted. Rotating `ATHENA_JWT_SECRET`, deleting the API
 Key, or disabling its account invalidates it. Turning off API Key access pauses existing

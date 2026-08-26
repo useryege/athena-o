@@ -143,9 +143,22 @@ collect_swagger() {
   "swagger": "2.0",
   "info": {
     "title": "Athena API",
-    "description": "Athena Service APIs",
+    "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "version": "${SWAGGER_VERSION}"
   },
+  "securityDefinitions": {
+    "athenaBearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "An Athena API Key supplied as Authorization: Bearer <token>. The account must have API Key access enabled and satisfy the server-side permission required by the operation."
+    }
+  },
+  "security": [
+    {
+      "athenaBearer": []
+    }
+  ],
   "paths": {}
 }
 EOF
@@ -158,10 +171,20 @@ EOF
     else
         find "${SWAGGER_ROOT}" -type f -name '*.swagger.json' -exec swagger mixin --ignore-conflicts "${PRIMARY_SWAGGER}" '{}' \+ >"${COMBINED_SWAGGER}"
         jq -r '
+          def mark_public_get($path):
+            if (.paths[$path].get? | type) == "object" then
+              .paths[$path].get.security = []
+            else
+              error("expected GET operation at \($path)")
+            end;
+
           del(.definitions[]?.properties[]? | select(."$ref" != null and .description != null).description) |
           del(.definitions[]?.properties[]? | select(."$ref" != null and .title != null).title) |
           # grpc-gateway may emit int64 fields as strings in swagger; normalize them for JSON clients.
-          (.definitions[]?.properties[]? | select(.type == "string" and .format == "int64")) |= (.type = "integer")
+          (.definitions[]?.properties[]? | select(.type == "string" and .format == "int64")) |= (.type = "integer") |
+          mark_public_get("/api/version") |
+          mark_public_get("/api/v1/session/userinfo") |
+          mark_public_get("/api/v1/app/bootstrap")
         ' "${COMBINED_SWAGGER}" >"${SWAGGER_OUT}"
     fi
 
