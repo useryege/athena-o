@@ -15,11 +15,15 @@ import {
 } from '../models';
 import requests from './requests';
 
+const apiKeyReadScope = {feature: 'api-key' as const, mode: 'read' as const};
+const apiKeyWriteScope = {feature: 'api-key' as const, mode: 'write' as const};
+
 const account = (value: any): Account => ({
-    name: value?.name || '',
+    id: String(value?.id || ''),
+    username: String(value?.username || ''),
     administrator: Boolean(value?.administrator),
     access: parseAccountAccess(value?.access),
-    profile: parseAccountProfile(value?.profile, value?.name || ''),
+    profile: parseAccountProfile(value?.profile, value?.username || ''),
     identity: parseAccountIdentity(value?.identity),
     status: parseAccountStatus(value?.status)
 });
@@ -43,7 +47,7 @@ const token = (value: any): Token => ({
     expiresAt: Number(value?.expiresAt ?? value?.expires_at ?? 0)
 });
 
-const avatarProfile = (value: any, name: string): AccountProfile => parseAccountProfile(value?.profile || value, name);
+const avatarProfile = (value: any, username: string): AccountProfile => parseAccountProfile(value?.profile || value, username);
 const accountTierAPIValue = (tier: AccountTier) => (tier === AccountTier.Pro ? 2 : 1);
 const accountThemeAPIValue = (theme: AccountThemeMode) => {
     if (theme === AccountThemeMode.Dark) {
@@ -69,13 +73,13 @@ export class AccountsService {
             .then(res => ({items: (res.body?.items || []).map(account), totalSize: Number(res.body?.totalSize ?? res.body?.total_size ?? 0)}));
     }
 
-    public get(name: string): Promise<Account> {
-        return requests.get(`/account/${encodeURIComponent(name)}`).then(res => account(res.body));
+    public get(id: string): Promise<Account> {
+        return requests.get(`/account/${encodeURIComponent(id)}`).then(res => account(res.body));
     }
 
-    public updateAccess(name: string, access: AccountAccess): Promise<Account> {
+    public updateAccess(id: string, access: AccountAccess): Promise<Account> {
         return requests
-            .put(`/account/${encodeURIComponent(name)}/access`)
+            .put(`/account/${encodeURIComponent(id)}/access`)
             .send({
                 loginEnabled: access.loginEnabled,
                 apiKeyEnabled: access.apiKeyEnabled,
@@ -86,18 +90,18 @@ export class AccountsService {
             .then(res => account(res.body));
     }
 
-    public updateProfile(name: string, displayName: string, expectedRevision: number): Promise<AccountProfile> {
+    public updateProfile(id: string, displayName: string, expectedRevision: number): Promise<AccountProfile> {
         return requests
-            .put(`/account/${encodeURIComponent(name)}/profile`)
+            .put(`/account/${encodeURIComponent(id)}/profile`)
             .send({displayName, expectedRevision})
-            .then(res => parseAccountProfile(res.body, name));
+            .then(res => parseAccountProfile(res.body));
     }
 
-    public updateTier(name: string, tier: AccountTier, expectedRevision: number): Promise<AccountProfile> {
+    public updateTier(id: string, tier: AccountTier, expectedRevision: number): Promise<AccountProfile> {
         return requests
-            .put(`/account/${encodeURIComponent(name)}/tier`)
+            .put(`/account/${encodeURIComponent(id)}/tier`)
             .send({tier: accountTierAPIValue(tier), expectedRevision})
-            .then(res => parseAccountProfile(res.body, name));
+            .then(res => parseAccountProfile(res.body));
     }
 
     public updatePreferences(theme: AccountThemeMode, expectedRevision: number): Promise<AccountPreferences> {
@@ -108,32 +112,32 @@ export class AccountsService {
     }
 
     public listTokens(): Promise<Token[]> {
-        return requests.get('/account/security/tokens').then(res => (res.body?.items || []).map(token));
+        return requests.get('/account/security/tokens', apiKeyReadScope).then(res => (res.body?.items || []).map(token));
     }
 
     public createToken(tokenId: string, expiresIn: number): Promise<string> {
         return requests
-            .post('/account/security/tokens')
+            .post('/account/security/tokens', apiKeyWriteScope)
             .send({expiresIn, id: tokenId})
             .then(res => String(res.body?.token || ''));
     }
 
     public deleteToken(id: string): Promise<void> {
-        return requests.delete(`/account/security/tokens/${encodeURIComponent(id)}`).then(() => undefined);
+        return requests.delete(`/account/security/tokens/${encodeURIComponent(id)}`, apiKeyWriteScope).then(() => undefined);
     }
 
-    public uploadAvatar(name: string, file: File, expectedRevision: number): Promise<AccountProfile> {
+    public uploadAvatar(id: string, username: string, file: File, expectedRevision: number): Promise<AccountProfile> {
         return requests
-            .rawPut(`/api/v1/account/${encodeURIComponent(name)}/avatar`)
+            .rawPut(`/api/v1/account/${encodeURIComponent(id)}/avatar`)
             .field('expectedRevision', String(expectedRevision))
             .attach('file', file as any)
-            .then(res => avatarProfile(res.body, name));
+            .then(res => avatarProfile(res.body, username));
     }
 
-    public deleteAvatar(name: string, expectedRevision: number): Promise<AccountProfile> {
+    public deleteAvatar(id: string, username: string, expectedRevision: number): Promise<AccountProfile> {
         return requests
-            .rawDelete(`/api/v1/account/${encodeURIComponent(name)}/avatar`)
+            .rawDelete(`/api/v1/account/${encodeURIComponent(id)}/avatar`)
             .query({expectedRevision})
-            .then(res => avatarProfile(res.body, name));
+            .then(res => avatarProfile(res.body, username));
     }
 }

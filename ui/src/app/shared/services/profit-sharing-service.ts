@@ -11,7 +11,8 @@ export enum ProfitSharingRoundPhase {
 export type ProfitSharingProposalStatus = 'DRAFT' | 'SUBMITTED';
 
 export interface ProfitSharingParticipant {
-    accountName: string;
+    accountId: string;
+    username: string;
     displayName: string;
     baselineResponsibility: string;
     sortOrder: number;
@@ -19,7 +20,8 @@ export interface ProfitSharingParticipant {
 }
 
 export interface ProfitSharingProposalItem {
-    accountName: string;
+    accountId: string;
+    username: string;
     displayName: string;
     responsibility: string;
     shareBasisPoints?: number;
@@ -29,7 +31,8 @@ export interface ProfitSharingProposal {
     id: string;
     label: string;
     isOwn: boolean;
-    authorAccount: string;
+    authorAccountId: string;
+    authorUsername: string;
     authorDisplayName: string;
     status: ProfitSharingProposalStatus;
     revision: number;
@@ -42,7 +45,8 @@ export interface ProfitSharingProposal {
 export interface ProfitSharingResult {
     proposalId: string;
     label: string;
-    authorAccount: string;
+    authorAccountId: string;
+    authorUsername: string;
     authorDisplayName: string;
     voteCount: number;
     isWinner: boolean;
@@ -66,7 +70,8 @@ export interface ProfitSharingRound {
 }
 
 export interface ProfitSharingParticipantDefinition {
-    accountName: string;
+    accountId: string;
+    username: string;
     displayName: string;
     baselineResponsibility: string;
     sortOrder: number;
@@ -82,13 +87,16 @@ export interface ProfitSharingRoundDefinition {
 export interface ProfitSharingProposalDraft {
     expectedRevision: number;
     items: Array<{
-        accountName: string;
+        accountId: string;
         responsibility: string;
         shareBasisPoints?: number;
     }>;
 }
 
 type AbortablePromise<T> = Promise<T> & {abort?: () => void};
+
+const profitSharingReadScope = {feature: 'profit-sharing' as const, mode: 'read' as const};
+const profitSharingWriteScope = {feature: 'profit-sharing' as const, mode: 'write' as const};
 
 const parsePhase = (value: unknown): ProfitSharingRoundPhase => {
     if (value === 1 || value === '1') {
@@ -148,7 +156,8 @@ const optionalString = (item: any, ...names: string[]) => {
 };
 
 const participant = (item: any): ProfitSharingParticipant => ({
-    accountName: readString(item, 'accountName', 'account_name', 'account'),
+    accountId: readString(item, 'accountId', 'account_id'),
+    username: readString(item, 'username'),
     displayName: readString(item, 'displayName', 'display_name'),
     baselineResponsibility: readString(item, 'baselineResponsibility', 'baseline_responsibility'),
     sortOrder: readNumber(item, 'sortOrder', 'sort_order', 'displayOrder', 'display_order') || 0,
@@ -160,8 +169,9 @@ const proposalItem = (item: any): ProfitSharingProposalItem => {
     const basisPoints = optionalNumber(item, 'basisPoints', 'basis_points');
     const basisPointsSet = readBoolean(item, 'shareBasisPointsSet', 'share_basis_points_set', 'basisPointsSet', 'basis_points_set');
     return {
-        accountName: readString(item, 'accountName', 'account_name', 'participantAccount', 'participant_account'),
-        displayName: readString(item, 'displayName', 'display_name', 'participantDisplayName', 'participant_display_name'),
+        accountId: readString(item, 'participantAccountId', 'participant_account_id'),
+        username: readString(item, 'participantUsername', 'participant_username'),
+        displayName: readString(item, 'participantDisplayName', 'participant_display_name'),
         responsibility: readString(item, 'responsibility'),
         shareBasisPoints: directShare ?? (basisPointsSet ? basisPoints ?? 0 : undefined)
     };
@@ -173,7 +183,8 @@ export const parseProfitSharingProposal = (item: any): ProfitSharingProposal => 
         id: readString(item, 'id'),
         label: readString(item, 'label'),
         isOwn: readBoolean(item, 'isOwn', 'is_own'),
-        authorAccount: readString(item, 'authorAccount', 'author_account'),
+        authorAccountId: readString(item, 'authorAccountId', 'author_account_id'),
+        authorUsername: readString(item, 'authorUsername', 'author_username'),
         authorDisplayName: readString(item, 'authorDisplayName', 'author_display_name'),
         status: parseProposalStatus(readValue(item, 'status')),
         revision: readNumber(item, 'revision') || 0,
@@ -187,7 +198,8 @@ export const parseProfitSharingProposal = (item: any): ProfitSharingProposal => 
 const result = (item: any): ProfitSharingResult => ({
     proposalId: readString(item, 'proposalId', 'proposal_id'),
     label: readString(item, 'label'),
-    authorAccount: readString(item, 'authorAccount', 'author_account'),
+    authorAccountId: readString(item, 'authorAccountId', 'author_account_id'),
+    authorUsername: readString(item, 'authorUsername', 'author_username'),
     authorDisplayName: readString(item, 'authorDisplayName', 'author_display_name'),
     voteCount: readNumber(item, 'voteCount', 'vote_count') || 0,
     isWinner: readBoolean(item, 'isWinner', 'is_winner')
@@ -209,7 +221,8 @@ export const parseProfitSharingRound = (item: any): ProfitSharingRound => {
               .map(proposal => ({
                   proposalId: proposal.id,
                   label: proposal.label,
-                  authorAccount: proposal.authorAccount,
+                  authorAccountId: proposal.authorAccountId,
+                  authorUsername: proposal.authorUsername,
                   authorDisplayName: proposal.authorDisplayName,
                   voteCount: proposal.voteCount,
                   isWinner: proposal.isFinal || proposal.id === winnerProposalId
@@ -240,7 +253,7 @@ const roundBody = (body: any) => parseProfitSharingRound(readValue(body, 'round'
 
 export class ProfitSharingService {
     public listRounds(): AbortablePromise<ProfitSharingRound[]> {
-        const req = requests.get('/profit-sharing/rounds');
+        const req = requests.get('/profit-sharing/rounds', profitSharingReadScope);
         const promise = req.then(res => {
             const values = readValue(res.body, 'rounds', 'items');
             return (Array.isArray(values) ? values : []).map(parseProfitSharingRound);
@@ -250,18 +263,19 @@ export class ProfitSharingService {
     }
 
     public getRound(slug: string): AbortablePromise<ProfitSharingRound> {
-        const req = requests.get(`/profit-sharing/rounds/${encodeURIComponent(slug)}`);
+        const req = requests.get(`/profit-sharing/rounds/${encodeURIComponent(slug)}`, profitSharingReadScope);
         const promise = req.then(res => roundBody(res.body)) as AbortablePromise<ProfitSharingRound>;
         promise.abort = () => req.abort();
         return promise;
     }
 
     public createRound(definition: ProfitSharingRoundDefinition): AbortablePromise<ProfitSharingRound> {
-        const req = requests.post('/profit-sharing/rounds').send({
+        const req = requests.post('/profit-sharing/rounds', profitSharingWriteScope).send({
             slug: definition.slug,
             title: definition.title,
             participants: definition.participants.map(participant => ({
-                account_name: participant.accountName,
+                account_id: participant.accountId,
+                username: participant.username,
                 display_name: participant.displayName,
                 sort_order: participant.sortOrder,
                 baseline_responsibility: participant.baselineResponsibility
@@ -273,12 +287,13 @@ export class ProfitSharingService {
     }
 
     public updateRound(slug: string, definition: ProfitSharingRoundDefinition): AbortablePromise<ProfitSharingRound> {
-        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}`).send({
+        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}`, profitSharingWriteScope).send({
             slug: definition.slug,
             title: definition.title,
             expected_revision: definition.expectedRevision,
             participants: definition.participants.map(participant => ({
-                account_name: participant.accountName,
+                account_id: participant.accountId,
+                username: participant.username,
                 display_name: participant.displayName,
                 sort_order: participant.sortOrder,
                 baseline_responsibility: participant.baselineResponsibility
@@ -302,10 +317,10 @@ export class ProfitSharingService {
     }
 
     public updateProposal(slug: string, proposal: ProfitSharingProposalDraft): AbortablePromise<ProfitSharingProposal | undefined> {
-        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}/proposal`).send({
+        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}/proposal`, profitSharingWriteScope).send({
             expected_revision: proposal.expectedRevision,
             items: proposal.items.map(item => ({
-                account_name: item.accountName,
+                participant_account_id: item.accountId,
                 responsibility: item.responsibility,
                 share_basis_points: item.shareBasisPoints ?? 0,
                 share_basis_points_set: item.shareBasisPoints !== undefined
@@ -328,21 +343,21 @@ export class ProfitSharingService {
     }
 
     public submitVote(slug: string, proposalId: string): AbortablePromise<void> {
-        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}/ballots/current/vote`).send({proposal_id: proposalId});
+        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}/ballots/current/vote`, profitSharingWriteScope).send({proposal_id: proposalId});
         const promise = req.then(() => undefined) as AbortablePromise<void>;
         promise.abort = () => req.abort();
         return promise;
     }
 
     private roundAction(path: string, expectedRevision: number): AbortablePromise<void> {
-        const req = requests.post(path).send({expected_revision: expectedRevision});
+        const req = requests.post(path, profitSharingWriteScope).send({expected_revision: expectedRevision});
         const promise = req.then(() => undefined) as AbortablePromise<void>;
         promise.abort = () => req.abort();
         return promise;
     }
 
     private proposalAction(path: string, expectedRevision: number): AbortablePromise<void> {
-        const req = requests.post(path).send({expected_revision: expectedRevision});
+        const req = requests.post(path, profitSharingWriteScope).send({expected_revision: expectedRevision});
         const promise = req.then(() => undefined) as AbortablePromise<void>;
         promise.abort = () => req.abort();
         return promise;

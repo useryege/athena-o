@@ -46,6 +46,7 @@ export {AccountDataAccess, AccountDataModule, parseAccountDataAccess, parseAccou
 
 export interface UserInfo {
     loggedIn: boolean;
+    accountId: string;
     username: string;
     iss: string;
     administrator: boolean;
@@ -150,6 +151,7 @@ export interface AppBootstrap {
 
 export const parseUserInfo = (value: any): UserInfo => ({
     loggedIn: Boolean(value?.loggedIn),
+    accountId: String(value?.accountId ?? value?.account_id ?? ''),
     username: value?.username || '',
     iss: value?.iss || '',
     administrator: Boolean(value?.administrator),
@@ -166,7 +168,8 @@ export interface Token {
 }
 
 export interface Account {
-    name: string;
+    id: string;
+    username: string;
     administrator: boolean;
     access: AccountAccess;
     profile: AccountProfile;
@@ -210,7 +213,8 @@ export const parseAccountAccess = (value: any): AccountAccess => {
 
 export enum AccountIdentityProvider {
     Unspecified = 'ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED',
-    Google = 'ACCOUNT_IDENTITY_PROVIDER_GOOGLE'
+    Google = 'ACCOUNT_IDENTITY_PROVIDER_GOOGLE',
+    Development = 'ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT'
 }
 
 export interface AccountIdentity {
@@ -226,6 +230,10 @@ export const parseAccountIdentityProvider = (value: unknown): AccountIdentityPro
         case AccountIdentityProvider.Google:
         case 'google':
             return AccountIdentityProvider.Google;
+        case 2:
+        case AccountIdentityProvider.Development:
+        case 'development':
+            return AccountIdentityProvider.Development;
         default:
             return AccountIdentityProvider.Unspecified;
     }

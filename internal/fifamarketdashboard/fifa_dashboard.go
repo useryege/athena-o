@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	fifamarketdashboardstore "github.com/useryege/athena/internal/fifamarketdashboard/store"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
@@ -19,9 +20,9 @@ import (
 var errCacheNotReady = errors.New("FIFA Market Dashboard cache is not ready")
 
 func (s *Service) GetFIFAMarketDashboard(ctx context.Context, req *apiclient.GetFIFAMarketDashboardRequest) (*apiclient.GetFIFAMarketDashboardResponse, error) {
-	requester := ""
-	if req != nil {
-		requester = strings.TrimSpace(req.GetRequester())
+	requester, err := fifaWalletRequesterFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
 
 	dashboard := s.currentDashboard()
@@ -180,11 +181,7 @@ func (s *Service) currentDashboard() *v1alpha1.FIFAMarketDashboard {
 	}
 }
 
-func (s *Service) dashboardWalletHoldings(ctx context.Context, requester string) ([]*v1alpha1.FIFAMarketDashboardWalletHoldingItem, int64, error) {
-	if requester == "" {
-		return nil, 0, status.Error(codes.InvalidArgument, "requester is required")
-	}
-
+func (s *Service) dashboardWalletHoldings(ctx context.Context, requester fifaWalletRequester) ([]*v1alpha1.FIFAMarketDashboardWalletHoldingItem, int64, error) {
 	items, fetchedAt, needsRefresh := s.currentFIFAWalletHoldings(requester)
 	if needsRefresh && fetchedAt == 0 {
 		result, err := s.loadFIFAWalletHoldings(ctx, requester)
@@ -197,6 +194,20 @@ func (s *Service) dashboardWalletHoldings(ctx context.Context, requester string)
 		s.refreshFIFAWalletHoldingsAsync(requester)
 	}
 	return items, fetchedAt, walletHoldingError(items)
+}
+
+func fifaWalletRequesterFromRequest(req *apiclient.GetFIFAMarketDashboardRequest) (fifaWalletRequester, error) {
+	accountID := ""
+	administrator := false
+	if req != nil {
+		accountID = req.GetRequesterAccountId()
+		administrator = req.GetRequesterAdministrator()
+	}
+	canonicalAccountID, err := accountcredentials.CanonicalAccountID(accountID)
+	if err != nil {
+		return fifaWalletRequester{}, status.Error(codes.Unauthenticated, "FIFA wallet requester account ID is invalid")
+	}
+	return fifaWalletRequester{accountID: canonicalAccountID, administrator: administrator}, nil
 }
 
 func (s *Service) applyConfig(config *v1alpha1.FIFAMarketDashboardEventConfig) {

@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
@@ -51,33 +50,34 @@ func (s *Server) GetUserInfo(ctx context.Context, _ *session.GetUserInfoRequest)
 func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Controller, accountCenter *accountcenter.Manager, credentials *accountcredentials.CredentialManager) (*session.GetUserInfoResponse, error) {
 	loggedIn := sessionmgr.LoggedIn(ctx)
 	response := &session.GetUserInfoResponse{
-		LoggedIn: loggedIn,
-		Username: sessionmgr.Username(ctx),
-		Iss:      sessionmgr.Iss(ctx),
+		LoggedIn:  loggedIn,
+		AccountId: sessionmgr.AccountID(ctx),
+		Iss:       sessionmgr.Iss(ctx),
 	}
 	if !loggedIn {
 		return response, nil
 	}
-	access, err := accessController.Get(response.Username)
+	identity, err := credentials.Get(response.AccountId)
 	if err != nil {
 		return nil, err
 	}
-	response.Administrator = response.Username == common.AthenaAdminUsername
+	response.Username = identity.Username
+	response.Administrator = identity.Administrator
+	access, err := accessController.Get(response.AccountId)
+	if err != nil {
+		return nil, err
+	}
 	response.Access = accountserver.ToAPIAccountAccess(access)
-	profile, err := accountCenter.GetProfile(ctx, response.Username)
+	profile, err := accountCenter.GetProfile(ctx, response.AccountId)
 	if err != nil {
 		return nil, err
 	}
-	preferences, err := accountCenter.GetPreferences(ctx, response.Username)
+	preferences, err := accountCenter.GetPreferences(ctx, response.AccountId)
 	if err != nil {
 		return nil, err
 	}
-	response.Profile = accountserver.ToAPIAccountProfile(response.Username, profile)
+	response.Profile = accountserver.ToAPIAccountProfile(response.AccountId, profile)
 	response.Preferences = accountserver.ToAPIAccountPreferences(preferences)
-	identity, err := credentials.Get(response.Username)
-	if err != nil {
-		return nil, err
-	}
 	response.Identity = accountserver.ToAPIAccountIdentity(identity)
 	return response, nil
 }

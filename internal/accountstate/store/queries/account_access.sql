@@ -1,52 +1,61 @@
 -- name: ListAccountAccessHeads :many
-SELECT account_name,
-       login_enabled,
-       api_key_enabled,
-       profit_sharing_enabled,
-       revision
-FROM account_access
-ORDER BY account_name;
+SELECT access.account_id,
+       account.administrator,
+       access.login_enabled,
+       access.api_key_enabled,
+       access.profit_sharing_enabled,
+       access.revision
+FROM account_access AS access
+JOIN athena_account AS account USING (account_id)
+ORDER BY access.account_id;
 
 -- name: GetAccountAccessHead :one
-SELECT account_name,
-       login_enabled,
-       api_key_enabled,
-       profit_sharing_enabled,
-       revision
-FROM account_access
-WHERE account_name = sqlc.arg(account_name)::text;
+SELECT access.account_id,
+       account.administrator,
+       access.login_enabled,
+       access.api_key_enabled,
+       access.profit_sharing_enabled,
+       access.revision
+FROM account_access AS access
+JOIN athena_account AS account USING (account_id)
+WHERE access.account_id = sqlc.arg(account_id)::uuid;
 
 -- name: ListAccountModuleAccess :many
-SELECT account_name, module, access_level
+SELECT account_id, module, access_level
 FROM account_module_access
-ORDER BY account_name, module;
+ORDER BY account_id, module;
 
 -- name: ListAccountModuleAccessByAccount :many
-SELECT account_name, module, access_level
+SELECT account_id, module, access_level
 FROM account_module_access
-WHERE account_name = sqlc.arg(account_name)::text
+WHERE account_id = sqlc.arg(account_id)::uuid
 ORDER BY module;
 
 -- name: UpdateAccountAccessHead :one
-UPDATE account_access
+UPDATE account_access AS access
 SET login_enabled = sqlc.arg(login_enabled)::boolean,
     api_key_enabled = sqlc.arg(api_key_enabled)::boolean,
     profit_sharing_enabled = sqlc.arg(profit_sharing_enabled)::boolean,
-    revision = account_access.revision + 1,
+    revision = access.revision + 1,
     updated_at = NOW()
-WHERE account_name = sqlc.arg(account_name)::text
-  AND account_name <> 'admin'
+WHERE access.account_id = sqlc.arg(account_id)::uuid
+  AND EXISTS (
+    SELECT 1
+    FROM athena_account AS account
+    WHERE account.account_id = access.account_id
+      AND NOT account.administrator
+  )
   AND sqlc.arg(expected_revision)::bigint > 0
-  AND revision = sqlc.arg(expected_revision)::bigint
-RETURNING account_name,
-          login_enabled,
-          api_key_enabled,
-          profit_sharing_enabled,
-          revision;
+  AND access.revision = sqlc.arg(expected_revision)::bigint
+RETURNING access.account_id,
+          access.login_enabled,
+          access.api_key_enabled,
+          access.profit_sharing_enabled,
+          access.revision;
 
 -- name: ReplaceAccountModuleAccess :execrows
-UPDATE account_module_access
-SET access_level = CASE module
+UPDATE account_module_access AS module_access
+SET access_level = CASE module_access.module
   WHEN 'market_radar' THEN sqlc.arg(market_radar_access_level)::text
   WHEN 'sports_live' THEN sqlc.arg(sports_live_access_level)::text
   WHEN 'sports_history' THEN sqlc.arg(sports_history_access_level)::text
@@ -57,6 +66,12 @@ SET access_level = CASE module
   WHEN 'token' THEN sqlc.arg(token_access_level)::text
   WHEN 'wallet' THEN sqlc.arg(wallet_access_level)::text
   WHEN 'notifications' THEN sqlc.arg(notifications_access_level)::text
-  ELSE access_level
+  ELSE module_access.access_level
 END
-WHERE account_name = sqlc.arg(account_name)::text;
+WHERE module_access.account_id = sqlc.arg(account_id)::uuid
+  AND EXISTS (
+    SELECT 1
+    FROM athena_account AS account
+    WHERE account.account_id = module_access.account_id
+      AND NOT account.administrator
+  );

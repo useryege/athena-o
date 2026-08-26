@@ -14,26 +14,34 @@ import (
 const countWallets = `-- name: CountWallets :one
 SELECT COUNT(*)::bigint
 FROM wallet_private_keys
-WHERE ($1::text IS NULL OR created_by = $1)
-  AND ($2::text IS NULL OR chain = $2)
-  AND ($3::text IS NULL OR type = $3)
+WHERE (
+    $1::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = $2::uuid
+    )
+  )
+  AND ($3::text IS NULL OR chain = $3)
+  AND ($4::text IS NULL OR type = $4)
   AND (
-    $4::text IS NULL
-    OR address ILIKE $4
-    OR alias ILIKE $4
+    $5::text IS NULL
+    OR address ILIKE $5
+    OR alias ILIKE $5
   )
 `
 
 type CountWalletsParams struct {
-	CreatedBy pgtype.Text
-	Chain     pgtype.Text
-	Type      pgtype.Text
-	Query     pgtype.Text
+	RequesterAdministrator bool
+	RequesterAccountID     pgtype.UUID
+	Chain                  pgtype.Text
+	Type                   pgtype.Text
+	Query                  pgtype.Text
 }
 
 func (q *Queries) CountWallets(ctx context.Context, arg CountWalletsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countWallets,
-		arg.CreatedBy,
+		arg.RequesterAdministrator,
+		arg.RequesterAccountID,
 		arg.Chain,
 		arg.Type,
 		arg.Query,
@@ -44,13 +52,13 @@ func (q *Queries) CountWallets(ctx context.Context, arg CountWalletsParams) (int
 }
 
 const createWallet = `-- name: CreateWallet :one
-INSERT INTO wallet_private_keys (created_by, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, created_by, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
+INSERT INTO wallet_private_keys (owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
+VALUES ($1::uuid, FALSE, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
 `
 
 type CreateWalletParams struct {
-	CreatedBy            string
+	OwnerAccountID       pgtype.UUID
 	Chain                string
 	Type                 string
 	Address              string
@@ -64,7 +72,7 @@ type CreateWalletParams struct {
 
 func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (WalletPrivateKey, error) {
 	row := q.db.QueryRow(ctx, createWallet,
-		arg.CreatedBy,
+		arg.OwnerAccountID,
 		arg.Chain,
 		arg.Type,
 		arg.Address,
@@ -78,7 +86,8 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 	var i WalletPrivateKey
 	err := row.Scan(
 		&i.ID,
-		&i.CreatedBy,
+		&i.OwnerAccountID,
+		&i.SystemOwned,
 		&i.Chain,
 		&i.Type,
 		&i.Address,
@@ -95,23 +104,31 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 }
 
 const getWallet = `-- name: GetWallet :one
-SELECT id, created_by, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
+SELECT id, owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
 FROM wallet_private_keys
 WHERE id = $1
-  AND ($2::text IS NULL OR created_by = $2)
+  AND (
+    $2::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = $3::uuid
+    )
+  )
 `
 
 type GetWalletParams struct {
-	ID        int64
-	CreatedBy pgtype.Text
+	ID                     int64
+	RequesterAdministrator bool
+	RequesterAccountID     pgtype.UUID
 }
 
 func (q *Queries) GetWallet(ctx context.Context, arg GetWalletParams) (WalletPrivateKey, error) {
-	row := q.db.QueryRow(ctx, getWallet, arg.ID, arg.CreatedBy)
+	row := q.db.QueryRow(ctx, getWallet, arg.ID, arg.RequesterAdministrator, arg.RequesterAccountID)
 	var i WalletPrivateKey
 	err := row.Scan(
 		&i.ID,
-		&i.CreatedBy,
+		&i.OwnerAccountID,
+		&i.SystemOwned,
 		&i.Chain,
 		&i.Type,
 		&i.Address,
@@ -128,32 +145,40 @@ func (q *Queries) GetWallet(ctx context.Context, arg GetWalletParams) (WalletPri
 }
 
 const listWallets = `-- name: ListWallets :many
-SELECT id, created_by, chain, type, address, alias, source, derivation_path, created_at, updated_at
+SELECT id, owner_account_id, system_owned, chain, type, address, alias, source, derivation_path, created_at, updated_at
 FROM wallet_private_keys
-WHERE ($3::text IS NULL OR created_by = $3)
-  AND ($4::text IS NULL OR chain = $4)
-  AND ($5::text IS NULL OR type = $5)
+WHERE (
+    $3::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = $4::uuid
+    )
+  )
+  AND ($5::text IS NULL OR chain = $5)
+  AND ($6::text IS NULL OR type = $6)
   AND (
-    $6::text IS NULL
-    OR address ILIKE $6
-    OR alias ILIKE $6
+    $7::text IS NULL
+    OR address ILIKE $7
+    OR alias ILIKE $7
   )
 ORDER BY created_at DESC, id DESC
 LIMIT $1 OFFSET $2
 `
 
 type ListWalletsParams struct {
-	Limit     int32
-	Offset    int32
-	CreatedBy pgtype.Text
-	Chain     pgtype.Text
-	Type      pgtype.Text
-	Query     pgtype.Text
+	Limit                  int32
+	Offset                 int32
+	RequesterAdministrator bool
+	RequesterAccountID     pgtype.UUID
+	Chain                  pgtype.Text
+	Type                   pgtype.Text
+	Query                  pgtype.Text
 }
 
 type ListWalletsRow struct {
 	ID             int64
-	CreatedBy      string
+	OwnerAccountID pgtype.UUID
+	SystemOwned    bool
 	Chain          string
 	Type           string
 	Address        string
@@ -168,7 +193,8 @@ func (q *Queries) ListWallets(ctx context.Context, arg ListWalletsParams) ([]Lis
 	rows, err := q.db.Query(ctx, listWallets,
 		arg.Limit,
 		arg.Offset,
-		arg.CreatedBy,
+		arg.RequesterAdministrator,
+		arg.RequesterAccountID,
 		arg.Chain,
 		arg.Type,
 		arg.Query,
@@ -182,7 +208,8 @@ func (q *Queries) ListWallets(ctx context.Context, arg ListWalletsParams) ([]Lis
 		var i ListWalletsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.CreatedBy,
+			&i.OwnerAccountID,
+			&i.SystemOwned,
 			&i.Chain,
 			&i.Type,
 			&i.Address,
@@ -206,19 +233,27 @@ const updateWalletAlias = `-- name: UpdateWalletAlias :one
 UPDATE wallet_private_keys
 SET alias = $1, updated_at = NOW()
 WHERE id = $2
-  AND ($3::text IS NULL OR created_by = $3)
-RETURNING id, created_by, chain, type, address, alias, source, derivation_path, created_at, updated_at
+  AND (
+    $3::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = $4::uuid
+    )
+  )
+RETURNING id, owner_account_id, system_owned, chain, type, address, alias, source, derivation_path, created_at, updated_at
 `
 
 type UpdateWalletAliasParams struct {
-	Alias     string
-	ID        int64
-	CreatedBy pgtype.Text
+	Alias                  string
+	ID                     int64
+	RequesterAdministrator bool
+	RequesterAccountID     pgtype.UUID
 }
 
 type UpdateWalletAliasRow struct {
 	ID             int64
-	CreatedBy      string
+	OwnerAccountID pgtype.UUID
+	SystemOwned    bool
 	Chain          string
 	Type           string
 	Address        string
@@ -230,11 +265,17 @@ type UpdateWalletAliasRow struct {
 }
 
 func (q *Queries) UpdateWalletAlias(ctx context.Context, arg UpdateWalletAliasParams) (UpdateWalletAliasRow, error) {
-	row := q.db.QueryRow(ctx, updateWalletAlias, arg.Alias, arg.ID, arg.CreatedBy)
+	row := q.db.QueryRow(ctx, updateWalletAlias,
+		arg.Alias,
+		arg.ID,
+		arg.RequesterAdministrator,
+		arg.RequesterAccountID,
+	)
 	var i UpdateWalletAliasRow
 	err := row.Scan(
 		&i.ID,
-		&i.CreatedBy,
+		&i.OwnerAccountID,
+		&i.SystemOwned,
 		&i.Chain,
 		&i.Type,
 		&i.Address,

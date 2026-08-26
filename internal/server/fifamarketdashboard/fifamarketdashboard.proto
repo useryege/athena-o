@@ -17,9 +17,7 @@ message GetFIFAMarketDashboardStatusResponse {
   string status = 2;
 }
 
-message GetFIFAMarketDashboardRequest {
-  string requester = 1;
-}
+message GetFIFAMarketDashboardRequest {}
 
 message GetFIFAMarketDashboardResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.FIFAMarketDashboard dashboard = 1;

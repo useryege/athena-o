@@ -7,18 +7,20 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createAccountPreferences = `-- name: CreateAccountPreferences :one
-INSERT INTO account_preferences (account_name, theme, revision)
-VALUES ($1::text, $2::text, 1)
-ON CONFLICT (account_name) DO NOTHING
+INSERT INTO account_preferences (account_id, theme, revision)
+VALUES ($1::uuid, $2::text, 1)
+ON CONFLICT (account_id) DO NOTHING
 RETURNING theme, revision
 `
 
 type CreateAccountPreferencesParams struct {
-	AccountName string
-	Theme       string
+	AccountID pgtype.UUID
+	Theme     string
 }
 
 type CreateAccountPreferencesRow struct {
@@ -27,7 +29,7 @@ type CreateAccountPreferencesRow struct {
 }
 
 func (q *Queries) CreateAccountPreferences(ctx context.Context, arg CreateAccountPreferencesParams) (CreateAccountPreferencesRow, error) {
-	row := q.db.QueryRow(ctx, createAccountPreferences, arg.AccountName, arg.Theme)
+	row := q.db.QueryRow(ctx, createAccountPreferences, arg.AccountID, arg.Theme)
 	var i CreateAccountPreferencesRow
 	err := row.Scan(&i.Theme, &i.Revision)
 	return i, err
@@ -35,11 +37,11 @@ func (q *Queries) CreateAccountPreferences(ctx context.Context, arg CreateAccoun
 
 const createAccountProfile = `-- name: CreateAccountProfile :one
 INSERT INTO account_profile (
-  account_name, display_name, account_tier, avatar_object_key,
+  account_id, display_name, account_tier, avatar_object_key,
   avatar_content_type, avatar_etag, avatar_size_bytes, revision
 )
 VALUES (
-  $1::text,
+  $1::uuid,
   $2::text,
   $3::text,
   $4::text,
@@ -48,13 +50,13 @@ VALUES (
   $7::bigint,
   1
 )
-ON CONFLICT (account_name) DO NOTHING
+ON CONFLICT (account_id) DO NOTHING
 RETURNING display_name, account_tier, avatar_object_key, avatar_content_type,
           avatar_etag, avatar_size_bytes, revision
 `
 
 type CreateAccountProfileParams struct {
-	AccountName       string
+	AccountID         pgtype.UUID
 	DisplayName       string
 	AccountTier       string
 	AvatarObjectKey   string
@@ -75,7 +77,7 @@ type CreateAccountProfileRow struct {
 
 func (q *Queries) CreateAccountProfile(ctx context.Context, arg CreateAccountProfileParams) (CreateAccountProfileRow, error) {
 	row := q.db.QueryRow(ctx, createAccountProfile,
-		arg.AccountName,
+		arg.AccountID,
 		arg.DisplayName,
 		arg.AccountTier,
 		arg.AvatarObjectKey,
@@ -99,7 +101,7 @@ func (q *Queries) CreateAccountProfile(ctx context.Context, arg CreateAccountPro
 const getAccountPreferences = `-- name: GetAccountPreferences :one
 SELECT theme, revision
 FROM account_preferences
-WHERE account_name = $1::text
+WHERE account_id = $1::uuid
 `
 
 type GetAccountPreferencesRow struct {
@@ -107,8 +109,8 @@ type GetAccountPreferencesRow struct {
 	Revision int64
 }
 
-func (q *Queries) GetAccountPreferences(ctx context.Context, accountName string) (GetAccountPreferencesRow, error) {
-	row := q.db.QueryRow(ctx, getAccountPreferences, accountName)
+func (q *Queries) GetAccountPreferences(ctx context.Context, accountID pgtype.UUID) (GetAccountPreferencesRow, error) {
+	row := q.db.QueryRow(ctx, getAccountPreferences, accountID)
 	var i GetAccountPreferencesRow
 	err := row.Scan(&i.Theme, &i.Revision)
 	return i, err
@@ -118,7 +120,7 @@ const getAccountProfile = `-- name: GetAccountProfile :one
 SELECT display_name, account_tier, avatar_object_key, avatar_content_type,
        avatar_etag, avatar_size_bytes, revision
 FROM account_profile
-WHERE account_name = $1::text
+WHERE account_id = $1::uuid
 `
 
 type GetAccountProfileRow struct {
@@ -131,8 +133,8 @@ type GetAccountProfileRow struct {
 	Revision          int64
 }
 
-func (q *Queries) GetAccountProfile(ctx context.Context, accountName string) (GetAccountProfileRow, error) {
-	row := q.db.QueryRow(ctx, getAccountProfile, accountName)
+func (q *Queries) GetAccountProfile(ctx context.Context, accountID pgtype.UUID) (GetAccountProfileRow, error) {
+	row := q.db.QueryRow(ctx, getAccountProfile, accountID)
 	var i GetAccountProfileRow
 	err := row.Scan(
 		&i.DisplayName,
@@ -178,7 +180,7 @@ UPDATE account_preferences
 SET theme = $1::text,
     revision = account_preferences.revision + 1,
     updated_at = NOW()
-WHERE account_name = $2::text
+WHERE account_id = $2::uuid
   AND $3::bigint > 0
   AND revision = $3::bigint
 RETURNING theme, revision
@@ -186,7 +188,7 @@ RETURNING theme, revision
 
 type UpdateAccountPreferencesParams struct {
 	Theme            string
-	AccountName      string
+	AccountID        pgtype.UUID
 	ExpectedRevision int64
 }
 
@@ -196,7 +198,7 @@ type UpdateAccountPreferencesRow struct {
 }
 
 func (q *Queries) UpdateAccountPreferences(ctx context.Context, arg UpdateAccountPreferencesParams) (UpdateAccountPreferencesRow, error) {
-	row := q.db.QueryRow(ctx, updateAccountPreferences, arg.Theme, arg.AccountName, arg.ExpectedRevision)
+	row := q.db.QueryRow(ctx, updateAccountPreferences, arg.Theme, arg.AccountID, arg.ExpectedRevision)
 	var i UpdateAccountPreferencesRow
 	err := row.Scan(&i.Theme, &i.Revision)
 	return i, err
@@ -212,7 +214,7 @@ SET display_name = $1::text,
     avatar_size_bytes = $6::bigint,
     revision = account_profile.revision + 1,
     updated_at = NOW()
-WHERE account_name = $7::text
+WHERE account_id = $7::uuid
   AND $8::bigint > 0
   AND revision = $8::bigint
 RETURNING display_name, account_tier, avatar_object_key, avatar_content_type,
@@ -226,7 +228,7 @@ type UpdateAccountProfileParams struct {
 	AvatarContentType string
 	AvatarEtag        string
 	AvatarSizeBytes   int64
-	AccountName       string
+	AccountID         pgtype.UUID
 	ExpectedRevision  int64
 }
 
@@ -248,7 +250,7 @@ func (q *Queries) UpdateAccountProfile(ctx context.Context, arg UpdateAccountPro
 		arg.AvatarContentType,
 		arg.AvatarEtag,
 		arg.AvatarSizeBytes,
-		arg.AccountName,
+		arg.AccountID,
 		arg.ExpectedRevision,
 	)
 	var i UpdateAccountProfileRow

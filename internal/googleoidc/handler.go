@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -30,15 +31,41 @@ import (
 )
 
 const (
-	stateCookieName  = "athena.google.state"
-	maxReturnToBytes = 2048
-	loginSuccess     = "success"
-	loginFailure     = "failure"
+	stateCookieName        = "athena.google.state"
+	registrationCookieName = "athena.google.registration"
+	maxReturnToBytes       = 2048
+	loginSuccess           = "success"
+	loginFailure           = "failure"
 )
 
 type googleClaims struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified"`
+}
+
+type registrationView struct {
+	Provider      string `json:"provider"`
+	VerifiedEmail string `json:"verifiedEmail"`
+	Administrator bool   `json:"administrator"`
+	ExpiresAt     int64  `json:"expiresAt"`
+	CSRFToken     string `json:"csrfToken"`
+}
+
+type registrationSubmission struct {
+	Username  string `json:"username"`
+	CSRFToken string `json:"csrfToken"`
+}
+
+type registrationAvailability struct {
+	Status string `json:"status"`
+}
+
+type registrationRedirect struct {
+	RedirectTo string `json:"redirectTo"`
+}
+
+type registrationError struct {
+	Reason string `json:"reason"`
 }
 
 // Handler implements the browser Google Authorization Code + PKCE flow.
@@ -215,59 +242,331 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, "google_not_allowed", returnTo, "email_verify", err)
 		return
 	}
-	account, _, err := h.credentials.ResolveOrProvisionGoogleAccount(
-		r.Context(),
-		idToken.Subject,
-		claims.Email,
-		h.adminEmail,
-	)
+	account, found, err := h.credentials.GetByGoogleSubject(r.Context(), idToken.Subject)
 	if err != nil {
-		reason := "google_unavailable"
-		stage := "identity_provision"
-		if errors.Is(err, accountcredentials.ErrAdministratorIdentityConflict) {
-			reason = "google_not_allowed"
-			stage = "administrator_identity_conflict"
-			log.WithFields(log.Fields{
-				"stage":        stage,
-				"google_email": claims.Email,
-				"google_sub":   idToken.Subject,
-			}).Warn("Verified Google identity could not claim the Athena administrator")
-		}
-		h.fail(w, r, reason, returnTo, stage, err)
+		h.fail(w, r, "google_unavailable", returnTo, "identity_lookup", err)
 		return
 	}
+	if !found {
+		ticketID, ticketErr := randomOpaqueValue()
+		if ticketErr != nil {
+			h.fail(w, r, "google_unavailable", returnTo, "registration_ticket_generation", ticketErr)
+			return
+		}
+		csrfSecret, csrfErr := randomOpaqueValue()
+		if csrfErr != nil {
+			h.fail(w, r, "google_unavailable", returnTo, "registration_csrf_generation", csrfErr)
+			return
+		}
+		createdAt := time.Now().UTC()
+		if ticketErr := h.store.CreateRegistration(r.Context(), ticketID, registrationTicket{
+			Subject:                idToken.Subject,
+			VerifiedEmail:          strings.TrimSpace(claims.Email),
+			AdministratorCandidate: strings.EqualFold(strings.TrimSpace(claims.Email), h.adminEmail),
+			ReturnTo:               returnTo,
+			CSRFSecret:             csrfSecret,
+			CreatedAt:              createdAt,
+		}); ticketErr != nil {
+			h.fail(w, r, "google_unavailable", returnTo, "registration_ticket_create", ticketErr)
+			return
+		}
+		h.setRegistrationCookie(w, ticketID, int(registrationTTL.Seconds()))
+		h.clearStateCookie(w)
+		log.WithField("stage", "registration_required").Info("Verified Google identity requires Athena username registration")
+		http.Redirect(w, r, "/register", http.StatusSeeOther)
+		return
+	}
+	h.completeGoogleLogin(w, r, account, idToken.Subject, claims.Email, returnTo)
+}
+
+func (h *Handler) completeGoogleLogin(w http.ResponseWriter, r *http.Request, account accountcredentials.Account, subject, verifiedEmail, returnTo string) bool {
 	jti, err := uuid.NewRandom()
 	if err != nil {
 		h.fail(w, r, "google_unavailable", returnTo, "jti_generation", err)
-		return
+		return false
 	}
 	athenaToken, err := h.sessions.CreateGoogleLogin(
 		r.Context(),
-		account.Name,
-		idToken.Subject,
-		claims.Email,
+		account.ID,
+		subject,
+		verifiedEmail,
 		int64(h.sessionDuration.Seconds()),
 		jti.String(),
 	)
 	if err != nil {
 		if sessionmgr.IsAccountMaintenanceError(err) {
 			h.fail(w, r, "maintenance", returnTo, "account_maintenance", err)
-			return
+			return false
 		}
 		reason := "google_unavailable"
 		if status.Code(err) == codes.PermissionDenied {
 			reason = "google_not_allowed"
 		}
 		h.fail(w, r, reason, returnTo, "session_issue", err)
-		return
+		return false
 	}
 	if err := httputil.SetTokenCookie(athenaToken, h.baseHRef, h.secureCookie, w); err != nil {
 		h.fail(w, r, "google_unavailable", returnTo, "cookie_issue", err)
+		return false
+	}
+	h.sessions.IncLoginRequestCounter(loginSuccess)
+	log.WithFields(log.Fields{"stage": "complete", "account_id": account.ID}).Info("Google OIDC login succeeded")
+	http.Redirect(w, r, returnTo, http.StatusSeeOther)
+	return true
+}
+
+// Registration serves the anonymous username setup resource. A valid,
+// browser-bound registration cookie is required for every method.
+func (h *Handler) Registration(w http.ResponseWriter, r *http.Request) {
+	setOAuthResponseHeaders(w)
+	switch r.Method {
+	case http.MethodGet:
+		h.getRegistration(w, r)
+	case http.MethodPost:
+		h.createRegistration(w, r)
+	case http.MethodDelete:
+		h.deleteRegistration(w, r)
+	default:
+		w.Header().Set("Allow", "GET, POST, DELETE")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// UsernameAvailability returns only the coarse state needed by the setup UI.
+func (h *Handler) UsernameAvailability(w http.ResponseWriter, r *http.Request) {
+	setOAuthResponseHeaders(w)
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	_, ticket, ok := h.registrationFromRequest(w, r)
+	if !ok {
+		return
+	}
+	available, err := h.credentials.UsernameAvailable(r.Context(), r.URL.Query().Get("username"), ticket.AdministratorCandidate)
+	if errors.Is(err, accountcredentials.ErrUsernameInvalid) {
+		h.writeJSON(w, http.StatusOK, registrationAvailability{Status: "invalid"})
+		return
+	}
+	if err != nil {
+		h.writeRegistrationError(w, http.StatusServiceUnavailable, "registration_unavailable")
+		return
+	}
+	statusValue := "unavailable"
+	if available {
+		statusValue = "available"
+	}
+	h.writeJSON(w, http.StatusOK, registrationAvailability{Status: statusValue})
+}
+
+func (h *Handler) getRegistration(w http.ResponseWriter, r *http.Request) {
+	_, ticket, ok := h.registrationFromRequest(w, r)
+	if !ok {
+		return
+	}
+	h.writeJSON(w, http.StatusOK, registrationView{
+		Provider:      accountcredentials.IdentityProviderGoogle,
+		VerifiedEmail: ticket.VerifiedEmail,
+		Administrator: ticket.AdministratorCandidate,
+		ExpiresAt:     ticket.CreatedAt.Add(registrationTTL).Unix(),
+		CSRFToken:     ticket.CSRFSecret,
+	})
+}
+
+func (h *Handler) createRegistration(w http.ResponseWriter, r *http.Request) {
+	ticketID, ticket, ok := h.registrationFromRequest(w, r)
+	if !ok {
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4096)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	var input registrationSubmission
+	if err := decoder.Decode(&input); err != nil {
+		h.registrationFailed(w, http.StatusBadRequest, "username_invalid", "registration_decode", err)
+		return
+	}
+	if !constantTimeEqual(input.CSRFToken, ticket.CSRFSecret) {
+		h.registrationFailed(w, http.StatusForbidden, "registration_expired", "registration_csrf", nil)
+		return
+	}
+	if err := accountcredentials.ValidateUsername(input.Username, ticket.AdministratorCandidate); err != nil {
+		h.registrationFailed(w, http.StatusBadRequest, "username_invalid", "username_validate", err)
+		return
+	}
+	claimID, err := randomOpaqueValue()
+	if err != nil {
+		h.registrationFailed(w, http.StatusServiceUnavailable, "registration_unavailable", "registration_claim_generation", err)
+		return
+	}
+	claimedTicket, err := h.store.ClaimRegistration(r.Context(), ticketID, claimID)
+	if err != nil {
+		reason := "registration_unavailable"
+		statusCode := http.StatusServiceUnavailable
+		if errors.Is(err, errRegistrationNotFound) {
+			reason = "registration_expired"
+			statusCode = http.StatusUnauthorized
+			h.clearRegistrationCookie(w)
+		} else if errors.Is(err, errRegistrationInProgress) {
+			statusCode = http.StatusConflict
+		}
+		h.registrationFailed(w, statusCode, reason, "registration_claim", err)
+		return
+	}
+	if !constantTimeEqual(input.CSRFToken, claimedTicket.CSRFSecret) {
+		_ = h.store.ReleaseRegistrationClaim(r.Context(), ticketID, claimID)
+		h.registrationFailed(w, http.StatusForbidden, "registration_expired", "registration_claim_binding", nil)
+		return
+	}
+	ticket = claimedTicket
+	claimComplete := false
+	defer func() {
+		if !claimComplete {
+			_ = h.store.ReleaseRegistrationClaim(context.Background(), ticketID, claimID)
+		}
+	}()
+	registered, _, err := h.credentials.RegisterGoogleAccount(
+		r.Context(),
+		ticket.Subject,
+		ticket.VerifiedEmail,
+		input.Username,
+		ticket.AdministratorCandidate,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, accountcredentials.ErrUsernameInvalid):
+			h.registrationFailed(w, http.StatusBadRequest, "username_invalid", "username_validate", err)
+		case errors.Is(err, accountcredentials.ErrUsernameUnavailable):
+			h.registrationFailed(w, http.StatusConflict, "username_unavailable", "username_conflict", err)
+		case errors.Is(err, accountcredentials.ErrAdministratorIdentityConflict):
+			h.registrationFailed(w, http.StatusForbidden, "google_not_allowed", "administrator_conflict", err)
+		default:
+			h.registrationFailed(w, http.StatusServiceUnavailable, "registration_unavailable", "account_create", err)
+		}
+		return
+	}
+	if err := h.sessions.RegisterCommittedAccountAccess(r.Context(), registered.ID); err != nil {
+		h.registrationFailed(w, http.StatusServiceUnavailable, "registration_unavailable", "access_publish", err)
+		return
+	}
+	if err := h.store.CompleteRegistration(r.Context(), ticketID, claimID); err != nil {
+		reason := "registration_unavailable"
+		statusCode := http.StatusServiceUnavailable
+		if errors.Is(err, errRegistrationNotFound) {
+			reason = "registration_expired"
+			statusCode = http.StatusUnauthorized
+			h.clearRegistrationCookie(w)
+		} else if errors.Is(err, errRegistrationInProgress) {
+			statusCode = http.StatusConflict
+		}
+		h.registrationFailed(w, statusCode, reason, "registration_consume", err)
+		return
+	}
+	claimComplete = true
+	h.clearRegistrationCookie(w)
+	jti, err := uuid.NewRandom()
+	if err != nil {
+		h.registrationFailed(w, http.StatusServiceUnavailable, "registration_unavailable", "jti_generation", err)
+		return
+	}
+	athenaToken, err := h.sessions.CreateGoogleLogin(
+		r.Context(),
+		registered.ID,
+		ticket.Subject,
+		ticket.VerifiedEmail,
+		int64(h.sessionDuration.Seconds()),
+		jti.String(),
+	)
+	if err != nil {
+		if sessionmgr.IsAccountMaintenanceError(err) {
+			h.registrationFailed(w, http.StatusServiceUnavailable, "maintenance", "account_maintenance", err)
+			return
+		}
+		reason := "registration_unavailable"
+		statusCode := http.StatusServiceUnavailable
+		if status.Code(err) == codes.PermissionDenied {
+			reason = "google_not_allowed"
+			statusCode = http.StatusForbidden
+		}
+		h.registrationFailed(w, statusCode, reason, "session_issue", err)
+		return
+	}
+	if err := httputil.SetTokenCookie(athenaToken, h.baseHRef, h.secureCookie, w); err != nil {
+		h.registrationFailed(w, http.StatusServiceUnavailable, "registration_unavailable", "cookie_issue", err)
 		return
 	}
 	h.sessions.IncLoginRequestCounter(loginSuccess)
-	log.WithFields(log.Fields{"stage": "complete", "account": account.Name}).Info("Google OIDC login succeeded")
-	http.Redirect(w, r, returnTo, http.StatusSeeOther)
+	log.WithFields(log.Fields{"stage": "registration_complete", "account_id": registered.ID}).Info("Google OIDC registration succeeded")
+	h.writeJSON(w, http.StatusOK, registrationRedirect{RedirectTo: defaultReturnTo})
+}
+
+func (h *Handler) deleteRegistration(w http.ResponseWriter, r *http.Request) {
+	ticketID, ticket, ok := h.registrationFromRequest(w, r)
+	if !ok {
+		h.clearRegistrationCookie(w)
+		return
+	}
+	if !constantTimeEqual(r.Header.Get("X-Athena-CSRF-Token"), ticket.CSRFSecret) {
+		h.writeRegistrationError(w, http.StatusForbidden, "registration_expired")
+		return
+	}
+	if err := h.store.DeleteRegistration(r.Context(), ticketID); err != nil {
+		h.writeRegistrationError(w, http.StatusServiceUnavailable, "registration_unavailable")
+		return
+	}
+	h.clearRegistrationCookie(w)
+	query := url.Values{"returnTo": []string{ValidateReturnTo(ticket.ReturnTo)}}
+	h.writeJSON(w, http.StatusOK, registrationRedirect{RedirectTo: "/auth/google/login?" + query.Encode()})
+}
+
+func (h *Handler) registrationFromRequest(w http.ResponseWriter, r *http.Request) (string, registrationTicket, bool) {
+	cookie, err := r.Cookie(registrationCookieName)
+	if err != nil || !validOpaqueValue(cookie.Value) {
+		h.clearRegistrationCookie(w)
+		h.writeRegistrationError(w, http.StatusUnauthorized, "registration_expired")
+		return "", registrationTicket{}, false
+	}
+	ticket, err := h.store.GetRegistration(r.Context(), cookie.Value)
+	if err != nil {
+		reason := "registration_unavailable"
+		statusCode := http.StatusServiceUnavailable
+		if errors.Is(err, errRegistrationNotFound) {
+			reason = "registration_expired"
+			statusCode = http.StatusUnauthorized
+			h.clearRegistrationCookie(w)
+		} else if !errors.Is(err, errRegistrationUnavailable) {
+			// A malformed server-side ticket cannot be recovered by this
+			// browser, but it remains a dependency failure rather than an
+			// authentication-policy denial.
+			h.clearRegistrationCookie(w)
+		}
+		h.writeRegistrationError(w, statusCode, reason)
+		return "", registrationTicket{}, false
+	}
+	return cookie.Value, ticket, true
+}
+
+func (h *Handler) registrationFailed(w http.ResponseWriter, statusCode int, reason, stage string, err error) {
+	fields := log.Fields{"stage": stage, "reason": reason}
+	if err != nil {
+		fields["error_type"] = fmt.Sprintf("%T", err)
+	}
+	log.WithFields(fields).Warn("Google OIDC registration failed")
+	h.sessions.IncLoginRequestCounter(loginFailure)
+	h.writeRegistrationError(w, statusCode, reason)
+}
+
+func (h *Handler) writeRegistrationError(w http.ResponseWriter, statusCode int, reason string) {
+	h.writeJSON(w, statusCode, registrationError{Reason: reason})
+}
+
+func (h *Handler) writeJSON(w http.ResponseWriter, statusCode int, value any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
+	if err := json.NewEncoder(w).Encode(value); err != nil {
+		log.WithError(err).Warn("Google OIDC response encoding failed")
+	}
 }
 
 // ValidateReturnTo accepts only same-origin absolute paths and supplies the
@@ -297,7 +596,7 @@ func ValidateReturnTo(raw string) string {
 	if strings.Contains(parsed.Fragment, "\\") {
 		return defaultReturnTo
 	}
-	if parsed.Path == "/login" || strings.HasPrefix(parsed.Path, "/login/") {
+	if parsed.Path == "/login" || strings.HasPrefix(parsed.Path, "/login/") || parsed.Path == "/register" || strings.HasPrefix(parsed.Path, "/register/") {
 		return defaultReturnTo
 	}
 	return parsed.String()
@@ -377,6 +676,32 @@ func (h *Handler) clearStateCookie(w http.ResponseWriter) {
 		HttpOnly: true,
 		Secure:   h.secureCookie,
 		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func (h *Handler) setRegistrationCookie(w http.ResponseWriter, value string, maxAge int) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     registrationCookieName,
+		Value:    value,
+		Path:     "/auth/google/registration",
+		MaxAge:   maxAge,
+		Expires:  time.Now().Add(registrationTTL),
+		HttpOnly: true,
+		Secure:   h.secureCookie,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func (h *Handler) clearRegistrationCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     registrationCookieName,
+		Value:    "",
+		Path:     "/auth/google/registration",
+		MaxAge:   -1,
+		Expires:  time.Unix(1, 0),
+		HttpOnly: true,
+		Secure:   h.secureCookie,
+		SameSite: http.SameSiteStrictMode,
 	})
 }
 

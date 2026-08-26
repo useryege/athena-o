@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1058-g4dce26bb-dirty"
+    "version": "v1.0.0-1059-g64b76795-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -189,7 +189,7 @@
         }
       }
     },
-    "/api/v1/account/{name}": {
+    "/api/v1/account/{id}": {
       "get": {
         "tags": [
           "AccountService"
@@ -199,7 +199,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "name",
+            "name": "id",
             "in": "path",
             "required": true
           }
@@ -220,7 +220,7 @@
         }
       }
     },
-    "/api/v1/account/{name}/access": {
+    "/api/v1/account/{id}/access": {
       "put": {
         "tags": [
           "AccountService"
@@ -230,7 +230,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "name",
+            "name": "id",
             "in": "path",
             "required": true
           },
@@ -260,7 +260,7 @@
         }
       }
     },
-    "/api/v1/account/{name}/profile": {
+    "/api/v1/account/{id}/profile": {
       "put": {
         "tags": [
           "AccountService"
@@ -270,7 +270,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "name",
+            "name": "id",
             "in": "path",
             "required": true
           },
@@ -299,7 +299,7 @@
         }
       }
     },
-    "/api/v1/account/{name}/tier": {
+    "/api/v1/account/{id}/tier": {
       "put": {
         "tags": [
           "AccountService"
@@ -309,7 +309,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "name",
+            "name": "id",
             "in": "path",
             "required": true
           },
@@ -473,13 +473,6 @@
           "FIFAMarketDashboardService"
         ],
         "operationId": "FIFAMarketDashboardService_GetFIFAMarketDashboard",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "requester",
-            "in": "query"
-          }
-        ],
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -3280,17 +3273,20 @@
         "administrator": {
           "type": "boolean"
         },
+        "id": {
+          "type": "string"
+        },
         "identity": {
           "$ref": "#/definitions/accountAccountIdentity"
-        },
-        "name": {
-          "type": "string"
         },
         "profile": {
           "$ref": "#/definitions/accountAccountProfile"
         },
         "status": {
           "$ref": "#/definitions/accountAccountStatus"
+        },
+        "username": {
+          "type": "string"
         }
       }
     },
@@ -3368,7 +3364,8 @@
       "default": "ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED",
       "enum": [
         "ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED",
-        "ACCOUNT_IDENTITY_PROVIDER_GOOGLE"
+        "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+        "ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT"
       ]
     },
     "accountAccountModuleAccess": {
@@ -3529,7 +3526,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "name": {
+        "id": {
           "type": "string"
         }
       }
@@ -3541,7 +3538,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "name": {
+        "id": {
           "type": "string"
         },
         "tier": {
@@ -4075,7 +4072,7 @@
     "profitsharingParticipant": {
       "type": "object",
       "properties": {
-        "account_name": {
+        "account_id": {
           "type": "string"
         },
         "baseline_responsibility": {
@@ -4090,13 +4087,16 @@
         "sort_order": {
           "type": "integer",
           "format": "int32"
+        },
+        "username": {
+          "type": "string"
         }
       }
     },
     "profitsharingParticipantInput": {
       "type": "object",
       "properties": {
-        "account_name": {
+        "account_id": {
           "type": "string"
         },
         "baseline_responsibility": {
@@ -4108,16 +4108,22 @@
         "sort_order": {
           "type": "integer",
           "format": "int32"
+        },
+        "username": {
+          "type": "string"
         }
       }
     },
     "profitsharingProposal": {
       "type": "object",
       "properties": {
-        "author_account": {
+        "author_account_id": {
           "type": "string"
         },
         "author_display_name": {
+          "type": "string"
+        },
+        "author_username": {
           "type": "string"
         },
         "id": {
@@ -4147,10 +4153,13 @@
     "profitsharingProposalItem": {
       "type": "object",
       "properties": {
-        "account_name": {
+        "participant_account_id": {
           "type": "string"
         },
-        "display_name": {
+        "participant_display_name": {
+          "type": "string"
+        },
+        "participant_username": {
           "type": "string"
         },
         "responsibility": {
@@ -4168,7 +4177,7 @@
     "profitsharingProposalItemInput": {
       "type": "object",
       "properties": {
-        "account_name": {
+        "participant_account_id": {
           "type": "string"
         },
         "responsibility": {
@@ -4235,10 +4244,13 @@
     "profitsharingResult": {
       "type": "object",
       "properties": {
-        "author_account": {
+        "author_account_id": {
           "type": "string"
         },
         "author_display_name": {
+          "type": "string"
+        },
+        "author_username": {
           "type": "string"
         },
         "is_winner": {
@@ -4698,6 +4710,9 @@
       "properties": {
         "access": {
           "$ref": "#/definitions/accountAccountAccess"
+        },
+        "accountId": {
+          "type": "string"
         },
         "administrator": {
           "type": "boolean"
@@ -8170,9 +8185,6 @@
         "created_at": {
           "type": "string"
         },
-        "created_by": {
-          "type": "string"
-        },
         "derivation_path": {
           "type": "string"
         },
@@ -8183,11 +8195,17 @@
         "mnemonic": {
           "type": "string"
         },
+        "owner_account_id": {
+          "type": "string"
+        },
         "private_key": {
           "type": "string"
         },
         "source": {
           "type": "string"
+        },
+        "system_owned": {
+          "type": "boolean"
         },
         "type": {
           "type": "string"
@@ -8212,9 +8230,6 @@
         "created_at": {
           "type": "string"
         },
-        "created_by": {
-          "type": "string"
-        },
         "derivation_path": {
           "type": "string"
         },
@@ -8222,8 +8237,14 @@
           "type": "integer",
           "format": "int64"
         },
+        "owner_account_id": {
+          "type": "string"
+        },
         "source": {
           "type": "string"
+        },
+        "system_owned": {
+          "type": "boolean"
         },
         "type": {
           "type": "string"

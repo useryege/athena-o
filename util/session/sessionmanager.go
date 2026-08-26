@@ -19,7 +19,7 @@ import (
 	jwtutil "github.com/useryege/athena/util/jwt"
 )
 
-// SessionManager issues and validates Athena JWT v2 credentials.
+// SessionManager issues and validates Athena JWT v3 credentials.
 type SessionManager struct {
 	credentials      *accountcredentials.CredentialManager
 	jwtCodec         *accountcredentials.JWTCodec
@@ -75,27 +75,41 @@ func (mgr *SessionManager) IncLoginRequestCounter(status string) {
 	}
 }
 
+// RegisterCommittedAccountAccess publishes the access half of a newly
+// committed account aggregate before its one-time registration ticket is
+// consumed. CredentialManager has already published the identity at this
+// point; keeping this explicit boundary ahead of cookie issuance prevents a
+// durable account from remaining absent from the process authorization
+// snapshot when Redis completion fails.
+func (mgr *SessionManager) RegisterCommittedAccountAccess(ctx context.Context, accountID string) error {
+	if mgr == nil || mgr.accessController == nil {
+		return fmt.Errorf("account access controller is not configured")
+	}
+	_, err := mgr.accessController.Register(ctx, accountID)
+	return err
+}
+
 // CreateGoogleLogin validates current account state and issues a bound session.
-func (mgr *SessionManager) CreateGoogleLogin(ctx context.Context, accountName, verifiedGoogleSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
-	account, err := mgr.credentials.Get(accountName)
+func (mgr *SessionManager) CreateGoogleLogin(ctx context.Context, accountID, verifiedGoogleSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
+	account, err := mgr.credentials.Get(accountID)
 	if err != nil {
 		return "", err
 	}
 	if !account.HasGoogleBinding() || account.GoogleSubject != verifiedGoogleSubject {
 		return "", status.Error(codes.PermissionDenied, "Google identity is not authorized for login")
 	}
-	access, err := mgr.accessController.Register(ctx, accountName)
+	access, err := mgr.accessController.Register(ctx, accountID)
 	if err != nil {
 		return "", err
 	}
 	if !access.LoginEnabled {
 		return "", AccountMaintenanceErr
 	}
-	token, err := mgr.credentials.IssueGoogleLoginSession(accountName, verifiedGoogleSubject, id, secondsBeforeExpiry)
+	token, err := mgr.credentials.IssueGoogleLoginSession(accountID, verifiedGoogleSubject, id, secondsBeforeExpiry)
 	if err != nil {
 		return "", err
 	}
-	if _, err := mgr.credentials.RecordGoogleLogin(ctx, accountName, verifiedGoogleSubject, verifiedEmail); err != nil {
+	if _, err := mgr.credentials.RecordGoogleLogin(ctx, accountID, verifiedGoogleSubject, verifiedEmail); err != nil {
 		if errors.Is(err, accountcredentials.ErrLoginDisabled) {
 			return "", AccountMaintenanceErr
 		}
@@ -195,8 +209,8 @@ func LoggedIn(ctx context.Context) bool {
 	return GetUserIdentifier(ctx) != "" && ctx.Value(AuthErrorCtxKey) == nil
 }
 
-// Username extracts the Athena account name from a context.
-func Username(ctx context.Context) string {
+// AccountID extracts the stable Athena account UUID from a context.
+func AccountID(ctx context.Context) string {
 	mapClaims, ok := mapClaims(ctx)
 	if !ok {
 		return ""
@@ -220,7 +234,7 @@ func Iat(ctx context.Context) (time.Time, error) {
 	return jwtutil.IssuedAtTime(mapClaims)
 }
 
-// GetUserIdentifier returns the Athena account name from context.
+// GetUserIdentifier returns the stable Athena account UUID from context.
 func GetUserIdentifier(ctx context.Context) string {
 	mapClaims, ok := mapClaims(ctx)
 	if !ok {

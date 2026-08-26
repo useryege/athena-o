@@ -161,9 +161,11 @@ ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.pro
 - 不需要在云服务器安全组或系统防火墙中开放公网 `8080`。
 - 公网只需要开放 `80` 和 `443` 给宝塔/Nginx。
 - 不建议将 `ATHENA_SERVER_BIND_ADDR` 改成 `0.0.0.0` 后直接暴露 `8080`。
-- 生产必须配置 `ATHENA_ADMIN_GOOGLE_EMAIL` 供未绑定管理员首次认领。普通用户无需
-  预登记 Google `sub`；任意 verified Google account 首次登录会创建 Pending 动态
-  账号，等待管理员授权。系统没有临时 `admin` 密码或密码兜底入口。
+- 生产必须配置 `ATHENA_ADMIN_GOOGLE_EMAIL`，用于在未知 Google 身份注册时标记唯一的
+  管理员候选。普通用户无需预登记 Google `sub`；任意 verified Google account 都会先
+  进入 `/register` 选择永久 username，提交成功后才创建 UUID `account_id` 和 Pending
+  账号。管理员角色来自持久化的 `administrator` 字段，不来自 username。系统没有临时
+  管理员密码或密码兜底入口。
 - `/auth/google/callback` 的精确 Nginx location 必须保持 `access_log off`，避免
   code/state 进入默认 `$request` 日志。
 - Google client secret 只保存在远端由容器 UID/GID `999` 持有的 `0600` 文件中，
@@ -201,7 +203,8 @@ ssh root@47.245.181.189 'cd /root/athena && PROD_POSTGRES_VOLUME=athena-prod-pos
 
 ### 更换 Google client 或管理员邮箱后仍使用旧管理员身份
 
-重启 `athena-server` 使新的 client 或管理员邮箱配置生效。管理员邮箱只用于未绑定
-`admin` 的首次认领；认领后持久化 Google `sub` 永久优先，修改邮箱配置不会转让或
-重绑管理员。需要重新初始化身份时使用全新 PostgreSQL/Redis/MinIO 状态并轮换
-`ATHENA_JWT_SECRET`；这会删除动态账号与权限，并使全部旧会话和 API Key 失效。
+重启 `athena-server` 使新的 client 或管理员邮箱配置生效。管理员邮箱只用于未知身份
+创建注册票据时标记管理员候选；提交 username 后，唯一管理员角色和 Google `sub`
+绑定都成为持久化账号状态。修改邮箱配置不会转让或重绑管理员。需要重新初始化身份时
+使用全新 PostgreSQL/Redis/MinIO 状态并轮换 `ATHENA_JWT_SECRET`；这会删除账号、
+username、权限与注册票据，并使全部旧会话和 API Key 失效。

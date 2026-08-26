@@ -2,7 +2,7 @@
 SELECT display_name, account_tier, avatar_object_key, avatar_content_type,
        avatar_etag, avatar_size_bytes, revision
 FROM account_profile
-WHERE account_name = sqlc.arg(account_name)::text;
+WHERE account_id = sqlc.arg(account_id)::uuid;
 
 -- name: ListAvatarObjectKeys :many
 SELECT avatar_object_key
@@ -12,11 +12,11 @@ ORDER BY avatar_object_key;
 
 -- name: CreateAccountProfile :one
 INSERT INTO account_profile (
-  account_name, display_name, account_tier, avatar_object_key,
+  account_id, display_name, account_tier, avatar_object_key,
   avatar_content_type, avatar_etag, avatar_size_bytes, revision
 )
 VALUES (
-  sqlc.arg(account_name)::text,
+  sqlc.arg(account_id)::uuid,
   sqlc.arg(display_name)::text,
   sqlc.arg(account_tier)::text,
   sqlc.arg(avatar_object_key)::text,
@@ -25,7 +25,7 @@ VALUES (
   sqlc.arg(avatar_size_bytes)::bigint,
   1
 )
-ON CONFLICT (account_name) DO NOTHING
+ON CONFLICT (account_id) DO NOTHING
 RETURNING display_name, account_tier, avatar_object_key, avatar_content_type,
           avatar_etag, avatar_size_bytes, revision;
 
@@ -39,7 +39,7 @@ SET display_name = sqlc.arg(display_name)::text,
     avatar_size_bytes = sqlc.arg(avatar_size_bytes)::bigint,
     revision = account_profile.revision + 1,
     updated_at = NOW()
-WHERE account_name = sqlc.arg(account_name)::text
+WHERE account_id = sqlc.arg(account_id)::uuid
   AND sqlc.arg(expected_revision)::bigint > 0
   AND revision = sqlc.arg(expected_revision)::bigint
 RETURNING display_name, account_tier, avatar_object_key, avatar_content_type,
@@ -48,12 +48,12 @@ RETURNING display_name, account_tier, avatar_object_key, avatar_content_type,
 -- name: GetAccountPreferences :one
 SELECT theme, revision
 FROM account_preferences
-WHERE account_name = sqlc.arg(account_name)::text;
+WHERE account_id = sqlc.arg(account_id)::uuid;
 
 -- name: CreateAccountPreferences :one
-INSERT INTO account_preferences (account_name, theme, revision)
-VALUES (sqlc.arg(account_name)::text, sqlc.arg(theme)::text, 1)
-ON CONFLICT (account_name) DO NOTHING
+INSERT INTO account_preferences (account_id, theme, revision)
+VALUES (sqlc.arg(account_id)::uuid, sqlc.arg(theme)::text, 1)
+ON CONFLICT (account_id) DO NOTHING
 RETURNING theme, revision;
 
 -- name: UpdateAccountPreferences :one
@@ -61,7 +61,7 @@ UPDATE account_preferences
 SET theme = sqlc.arg(theme)::text,
     revision = account_preferences.revision + 1,
     updated_at = NOW()
-WHERE account_name = sqlc.arg(account_name)::text
+WHERE account_id = sqlc.arg(account_id)::uuid
   AND sqlc.arg(expected_revision)::bigint > 0
   AND revision = sqlc.arg(expected_revision)::bigint
 RETURNING theme, revision;

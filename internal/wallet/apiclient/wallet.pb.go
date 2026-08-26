@@ -71,15 +71,16 @@ var xxx_messageInfo_GetWalletStatusRequest proto.InternalMessageInfo
 
 // ListWalletsRequest queries persisted wallet records.
 type ListWalletsRequest struct {
-	Chain                string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
-	Query                string   `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	Page                 int32    `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize             int32    `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	Requester            string   `protobuf:"bytes,5,opt,name=requester,proto3" json:"requester,omitempty"`
-	Type                 string   `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Chain                  string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	Query                  string   `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	Page                   int32    `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize               int32    `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	RequesterAccountId     string   `protobuf:"bytes,5,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	Type                   string   `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
+	RequesterAdministrator bool     `protobuf:"varint,7,opt,name=requester_administrator,json=requesterAdministrator,proto3" json:"requester_administrator,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *ListWalletsRequest) Reset()         { *m = ListWalletsRequest{} }
@@ -143,9 +144,9 @@ func (m *ListWalletsRequest) GetPageSize() int32 {
 	return 0
 }
 
-func (m *ListWalletsRequest) GetRequester() string {
+func (m *ListWalletsRequest) GetRequesterAccountId() string {
 	if m != nil {
-		return m.Requester
+		return m.RequesterAccountId
 	}
 	return ""
 }
@@ -155,6 +156,13 @@ func (m *ListWalletsRequest) GetType() string {
 		return m.Type
 	}
 	return ""
+}
+
+func (m *ListWalletsRequest) GetRequesterAdministrator() bool {
+	if m != nil {
+		return m.RequesterAdministrator
+	}
+	return false
 }
 
 // ListWalletsResponse returns persisted wallet records without secret material.
@@ -231,12 +239,13 @@ func (m *ListWalletsResponse) GetPageSize() int32 {
 
 // GetWalletRequest queries one persisted wallet record.
 type GetWalletRequest struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	RevealSecrets        bool     `protobuf:"varint,2,opt,name=reveal_secrets,json=revealSecrets,proto3" json:"reveal_secrets,omitempty"`
-	Requester            string   `protobuf:"bytes,3,opt,name=requester,proto3" json:"requester,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Id                     int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	RevealSecrets          bool     `protobuf:"varint,2,opt,name=reveal_secrets,json=revealSecrets,proto3" json:"reveal_secrets,omitempty"`
+	RequesterAccountId     string   `protobuf:"bytes,3,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	RequesterAdministrator bool     `protobuf:"varint,4,opt,name=requester_administrator,json=requesterAdministrator,proto3" json:"requester_administrator,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *GetWalletRequest) Reset()         { *m = GetWalletRequest{} }
@@ -286,11 +295,18 @@ func (m *GetWalletRequest) GetRevealSecrets() bool {
 	return false
 }
 
-func (m *GetWalletRequest) GetRequester() string {
+func (m *GetWalletRequest) GetRequesterAccountId() string {
 	if m != nil {
-		return m.Requester
+		return m.RequesterAccountId
 	}
 	return ""
+}
+
+func (m *GetWalletRequest) GetRequesterAdministrator() bool {
+	if m != nil {
+		return m.RequesterAdministrator
+	}
+	return false
 }
 
 // GetWalletResponse returns one persisted wallet record.
@@ -343,13 +359,14 @@ func (m *GetWalletResponse) GetItem() *v1alpha1.WalletDetail {
 
 // CreateWalletRequest creates a new wallet for one chain.
 type CreateWalletRequest struct {
-	Chain                string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
-	Alias                string   `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
-	Requester            string   `protobuf:"bytes,3,opt,name=requester,proto3" json:"requester,omitempty"`
-	Type                 string   `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Chain                  string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	Alias                  string   `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
+	RequesterAccountId     string   `protobuf:"bytes,3,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	Type                   string   `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	RequesterAdministrator bool     `protobuf:"varint,5,opt,name=requester_administrator,json=requesterAdministrator,proto3" json:"requester_administrator,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *CreateWalletRequest) Reset()         { *m = CreateWalletRequest{} }
@@ -399,9 +416,9 @@ func (m *CreateWalletRequest) GetAlias() string {
 	return ""
 }
 
-func (m *CreateWalletRequest) GetRequester() string {
+func (m *CreateWalletRequest) GetRequesterAccountId() string {
 	if m != nil {
-		return m.Requester
+		return m.RequesterAccountId
 	}
 	return ""
 }
@@ -411,6 +428,13 @@ func (m *CreateWalletRequest) GetType() string {
 		return m.Type
 	}
 	return ""
+}
+
+func (m *CreateWalletRequest) GetRequesterAdministrator() bool {
+	if m != nil {
+		return m.RequesterAdministrator
+	}
+	return false
 }
 
 // CreateWalletResponse returns the created wallet record.
@@ -463,14 +487,15 @@ func (m *CreateWalletResponse) GetItem() *v1alpha1.WalletDetail {
 
 // ImportPrivateKeyRequest imports a private key for one chain.
 type ImportPrivateKeyRequest struct {
-	Chain                string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
-	PrivateKey           string   `protobuf:"bytes,2,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
-	Alias                string   `protobuf:"bytes,3,opt,name=alias,proto3" json:"alias,omitempty"`
-	Requester            string   `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
-	Type                 string   `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Chain                  string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	PrivateKey             string   `protobuf:"bytes,2,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
+	Alias                  string   `protobuf:"bytes,3,opt,name=alias,proto3" json:"alias,omitempty"`
+	RequesterAccountId     string   `protobuf:"bytes,4,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	Type                   string   `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	RequesterAdministrator bool     `protobuf:"varint,6,opt,name=requester_administrator,json=requesterAdministrator,proto3" json:"requester_administrator,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *ImportPrivateKeyRequest) Reset()         { *m = ImportPrivateKeyRequest{} }
@@ -527,9 +552,9 @@ func (m *ImportPrivateKeyRequest) GetAlias() string {
 	return ""
 }
 
-func (m *ImportPrivateKeyRequest) GetRequester() string {
+func (m *ImportPrivateKeyRequest) GetRequesterAccountId() string {
 	if m != nil {
-		return m.Requester
+		return m.RequesterAccountId
 	}
 	return ""
 }
@@ -539,6 +564,13 @@ func (m *ImportPrivateKeyRequest) GetType() string {
 		return m.Type
 	}
 	return ""
+}
+
+func (m *ImportPrivateKeyRequest) GetRequesterAdministrator() bool {
+	if m != nil {
+		return m.RequesterAdministrator
+	}
+	return false
 }
 
 // ImportPrivateKeyResponse returns the imported wallet record.
@@ -591,14 +623,15 @@ func (m *ImportPrivateKeyResponse) GetItem() *v1alpha1.WalletDetail {
 
 // ImportMnemonicRequest imports a mnemonic-derived wallet for one chain.
 type ImportMnemonicRequest struct {
-	Chain                string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
-	Mnemonic             string   `protobuf:"bytes,2,opt,name=mnemonic,proto3" json:"mnemonic,omitempty"`
-	Alias                string   `protobuf:"bytes,3,opt,name=alias,proto3" json:"alias,omitempty"`
-	Requester            string   `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
-	Type                 string   `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Chain                  string   `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	Mnemonic               string   `protobuf:"bytes,2,opt,name=mnemonic,proto3" json:"mnemonic,omitempty"`
+	Alias                  string   `protobuf:"bytes,3,opt,name=alias,proto3" json:"alias,omitempty"`
+	RequesterAccountId     string   `protobuf:"bytes,4,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	Type                   string   `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	RequesterAdministrator bool     `protobuf:"varint,6,opt,name=requester_administrator,json=requesterAdministrator,proto3" json:"requester_administrator,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *ImportMnemonicRequest) Reset()         { *m = ImportMnemonicRequest{} }
@@ -655,9 +688,9 @@ func (m *ImportMnemonicRequest) GetAlias() string {
 	return ""
 }
 
-func (m *ImportMnemonicRequest) GetRequester() string {
+func (m *ImportMnemonicRequest) GetRequesterAccountId() string {
 	if m != nil {
-		return m.Requester
+		return m.RequesterAccountId
 	}
 	return ""
 }
@@ -667,6 +700,13 @@ func (m *ImportMnemonicRequest) GetType() string {
 		return m.Type
 	}
 	return ""
+}
+
+func (m *ImportMnemonicRequest) GetRequesterAdministrator() bool {
+	if m != nil {
+		return m.RequesterAdministrator
+	}
+	return false
 }
 
 // ImportMnemonicResponse returns the imported wallet record.
@@ -719,12 +759,13 @@ func (m *ImportMnemonicResponse) GetItem() *v1alpha1.WalletDetail {
 
 // UpdateWalletAliasRequest updates wallet alias text without changing secret material.
 type UpdateWalletAliasRequest struct {
-	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Alias                string   `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
-	Requester            string   `protobuf:"bytes,3,opt,name=requester,proto3" json:"requester,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Id                     int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Alias                  string   `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
+	RequesterAccountId     string   `protobuf:"bytes,3,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	RequesterAdministrator bool     `protobuf:"varint,4,opt,name=requester_administrator,json=requesterAdministrator,proto3" json:"requester_administrator,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
 }
 
 func (m *UpdateWalletAliasRequest) Reset()         { *m = UpdateWalletAliasRequest{} }
@@ -774,11 +815,18 @@ func (m *UpdateWalletAliasRequest) GetAlias() string {
 	return ""
 }
 
-func (m *UpdateWalletAliasRequest) GetRequester() string {
+func (m *UpdateWalletAliasRequest) GetRequesterAccountId() string {
 	if m != nil {
-		return m.Requester
+		return m.RequesterAccountId
 	}
 	return ""
+}
+
+func (m *UpdateWalletAliasRequest) GetRequesterAdministrator() bool {
+	if m != nil {
+		return m.RequesterAdministrator
+	}
+	return false
 }
 
 // UpdateWalletAliasResponse returns the updated wallet record.
@@ -848,53 +896,57 @@ func init() {
 func init() { proto.RegisterFile("internal/wallet/wallet.proto", fileDescriptor_8911caa6983012d2) }
 
 var fileDescriptor_8911caa6983012d2 = []byte{
-	// 729 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x96, 0xdf, 0x4e, 0x13, 0x4f,
-	0x14, 0xc7, 0xb3, 0xb4, 0x25, 0xf4, 0xf4, 0x07, 0x3f, 0x18, 0x10, 0xd7, 0x95, 0x20, 0x69, 0x62,
-	0x52, 0xff, 0xcd, 0x0a, 0xfa, 0x02, 0x22, 0x51, 0x89, 0x9a, 0x98, 0x25, 0x46, 0xc3, 0x85, 0x38,
-	0xb4, 0xc7, 0x76, 0xc2, 0x76, 0x77, 0x98, 0x9d, 0x56, 0xcb, 0x1b, 0x78, 0xe9, 0x9d, 0xf7, 0xbe,
-	0x81, 0x57, 0x3e, 0x82, 0x97, 0x3e, 0x82, 0xe1, 0x49, 0xcc, 0xce, 0xec, 0x2e, 0x6d, 0xe9, 0xd6,
-	0x22, 0x84, 0xab, 0xdd, 0x39, 0x73, 0xf6, 0x7c, 0xcf, 0xf7, 0x93, 0xf9, 0xb3, 0xb0, 0xc2, 0x03,
-	0x85, 0x32, 0x60, 0xbe, 0xfb, 0x91, 0xf9, 0x3e, 0xaa, 0xe4, 0x41, 0x85, 0x0c, 0x55, 0x48, 0x96,
-	0x99, 0x6a, 0x61, 0xc0, 0x68, 0x9a, 0x44, 0xcd, 0xac, 0xf3, 0xac, 0xc9, 0x55, 0xab, 0xb3, 0x4f,
-	0xeb, 0x61, 0xdb, 0xed, 0x44, 0x28, 0x7b, 0xd8, 0x44, 0xd7, 0xe4, 0xba, 0xe2, 0xa0, 0xe9, 0x32,
-	0xc1, 0x23, 0x97, 0x09, 0xe1, 0xf3, 0x3a, 0x53, 0x3c, 0x0c, 0xdc, 0xee, 0x3a, 0xf3, 0x45, 0x8b,
-	0xad, 0xbb, 0x4d, 0x0c, 0x50, 0x32, 0x85, 0x0d, 0xa3, 0x50, 0xb5, 0x61, 0xf9, 0x29, 0xaa, 0x37,
-	0xba, 0xec, 0x8e, 0x62, 0xaa, 0x13, 0x79, 0x78, 0xd8, 0xc1, 0x48, 0x55, 0xbf, 0x59, 0x40, 0x5e,
-	0xf0, 0x28, 0x99, 0x4b, 0xc3, 0x64, 0x09, 0x4a, 0xf5, 0x16, 0xe3, 0x81, 0x6d, 0xad, 0x59, 0xb5,
-	0xb2, 0x67, 0x06, 0x71, 0xf4, 0xb0, 0x83, 0xb2, 0x67, 0x4f, 0x99, 0xa8, 0x1e, 0x10, 0x02, 0x45,
-	0xc1, 0x9a, 0x68, 0x17, 0xd6, 0xac, 0x5a, 0xc9, 0xd3, 0xef, 0xe4, 0x3a, 0x94, 0xe3, 0xe7, 0x5e,
-	0xc4, 0x8f, 0xd0, 0x2e, 0xea, 0x89, 0x99, 0x38, 0xb0, 0xc3, 0x8f, 0x90, 0xac, 0x40, 0x59, 0x1a,
-	0x1d, 0x94, 0x76, 0x49, 0x97, 0x3a, 0x09, 0xc4, 0xe5, 0x54, 0x4f, 0xa0, 0x3d, 0xad, 0x27, 0xf4,
-	0x7b, 0xf5, 0x87, 0x05, 0x8b, 0x03, 0x5d, 0x46, 0x22, 0x0c, 0x22, 0x24, 0xbb, 0x50, 0xe2, 0x0a,
-	0xdb, 0x91, 0x6d, 0xad, 0x15, 0x6a, 0x95, 0x8d, 0x2d, 0x7a, 0x42, 0x8c, 0xa6, 0xc4, 0x68, 0x42,
-	0x57, 0x1c, 0x34, 0x69, 0x4c, 0x8c, 0xf6, 0x11, 0xa3, 0x29, 0x31, 0x6a, 0x2a, 0x6f, 0x2b, 0x6c,
-	0x7b, 0xa6, 0x64, 0x6c, 0x56, 0x85, 0x8a, 0xf9, 0xda, 0x6c, 0xc1, 0x33, 0x83, 0x33, 0x9b, 0xad,
-	0x36, 0x61, 0x3e, 0x43, 0x9f, 0xd2, 0x9d, 0x83, 0x29, 0xde, 0xd0, 0x68, 0x0b, 0xde, 0x14, 0x6f,
-	0x90, 0x9b, 0x30, 0x27, 0xb1, 0x8b, 0xcc, 0xdf, 0x8b, 0xb0, 0x2e, 0x51, 0x45, 0x5a, 0x73, 0xc6,
-	0x9b, 0x35, 0xd1, 0x1d, 0x13, 0x1c, 0xe4, 0x56, 0x18, 0xe2, 0x56, 0x0d, 0x61, 0xa1, 0x4f, 0x28,
-	0x03, 0x54, 0x8c, 0xdd, 0x68, 0xad, 0xca, 0xc6, 0x93, 0xf3, 0xf2, 0xd9, 0x42, 0xc5, 0xb8, 0xef,
-	0xe9, 0x9a, 0xd5, 0x08, 0x16, 0x1f, 0x4b, 0x64, 0x0a, 0x07, 0xcd, 0xe5, 0x2e, 0x1d, 0xe6, 0x73,
-	0x16, 0xa5, 0x4b, 0x47, 0x0f, 0xc6, 0x3b, 0xca, 0x56, 0x42, 0xb1, 0x6f, 0x25, 0x48, 0x58, 0x1a,
-	0x14, 0xbd, 0x04, 0xa3, 0x5f, 0x2d, 0xb8, 0xba, 0xdd, 0x16, 0xa1, 0x54, 0xaf, 0x24, 0xef, 0x32,
-	0x85, 0xcf, 0xb1, 0x37, 0xde, 0xed, 0x0d, 0xa8, 0x08, 0x93, 0xba, 0x77, 0x80, 0xe9, 0x76, 0x01,
-	0x91, 0x7d, 0x7d, 0x82, 0xa3, 0x90, 0x8b, 0xa3, 0x98, 0x87, 0xa3, 0xd4, 0x87, 0xa3, 0x0b, 0xf6,
-	0xe9, 0xce, 0x2e, 0x01, 0xc9, 0x17, 0x0b, 0xae, 0x18, 0xe1, 0x97, 0x01, 0xb6, 0xc3, 0x80, 0xd7,
-	0xc7, 0x03, 0x71, 0x60, 0xa6, 0x9d, 0x24, 0x26, 0x34, 0xb2, 0xf1, 0x85, 0xb1, 0x50, 0xb0, 0x3c,
-	0xdc, 0xd2, 0x25, 0x90, 0x78, 0x07, 0xf6, 0x6b, 0xd1, 0xc8, 0x16, 0xe4, 0xa3, 0xb8, 0xf9, 0xbc,
-	0x7d, 0xfe, 0x0f, 0x9b, 0xa0, 0xda, 0x81, 0x6b, 0x23, 0xea, 0x27, 0xc6, 0xde, 0x0e, 0x18, 0xbb,
-	0x98, 0xe3, 0x4f, 0x57, 0xdc, 0xf8, 0x3e, 0x0d, 0xb3, 0xc9, 0x7d, 0x81, 0xb2, 0xcb, 0xeb, 0x48,
-	0x3e, 0x5b, 0xf0, 0xff, 0xd0, 0x25, 0x42, 0x28, 0x1d, 0x7d, 0x75, 0xd1, 0xd1, 0xb7, 0x8d, 0x73,
-	0x6e, 0xf4, 0x89, 0xee, 0x07, 0xa8, 0xf4, 0x5d, 0x07, 0xe4, 0x76, 0x5e, 0x1b, 0xa7, 0x6f, 0x36,
-	0xe7, 0xce, 0x44, 0xb9, 0x09, 0xdf, 0xf7, 0x50, 0xce, 0x9c, 0x90, 0xda, 0x5f, 0xcd, 0xa6, 0x1a,
-	0xb7, 0x26, 0xc8, 0x4c, 0x14, 0x38, 0xfc, 0xd7, 0x7f, 0x9e, 0x91, 0xdc, 0xf6, 0x46, 0x1c, 0xb5,
-	0xce, 0xdd, 0xc9, 0x92, 0x13, 0xa9, 0x0e, 0xcc, 0x0f, 0x9f, 0x15, 0xc4, 0xcd, 0xab, 0x90, 0x73,
-	0xde, 0x39, 0xf7, 0x27, 0xff, 0x20, 0x91, 0x0d, 0x61, 0x6e, 0x70, 0x5b, 0x92, 0x7b, 0xe3, 0x6b,
-	0x0c, 0x9d, 0x28, 0x0e, 0x9d, 0x34, 0x3d, 0x11, 0xfc, 0x04, 0x0b, 0xa7, 0x76, 0x0c, 0xc9, 0xed,
-	0x3b, 0x6f, 0xf3, 0x3a, 0xeb, 0x67, 0xf8, 0xc2, 0x28, 0x6f, 0x6e, 0xfe, 0x3c, 0x5e, 0xb5, 0x7e,
-	0x1d, 0xaf, 0x5a, 0xbf, 0x8f, 0x57, 0xad, 0xdd, 0x87, 0x63, 0x7e, 0xdf, 0x86, 0xff, 0x07, 0x99,
-	0xe0, 0x75, 0x9f, 0x63, 0xa0, 0xf6, 0xa7, 0xf5, 0x1f, 0xdb, 0x83, 0x3f, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0xb0, 0x95, 0x30, 0xbd, 0x33, 0x0a, 0x00, 0x00,
+	// 795 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x96, 0xdd, 0x6e, 0xd3, 0x48,
+	0x14, 0xc7, 0x35, 0xcd, 0xc7, 0xa6, 0x27, 0xdb, 0x6e, 0x3b, 0xed, 0xa6, 0x5e, 0xef, 0xaa, 0x1b,
+	0x45, 0x5a, 0x29, 0xbb, 0x0b, 0x76, 0x5b, 0x90, 0xb8, 0x6e, 0xa9, 0x80, 0x0a, 0x90, 0x90, 0x2b,
+	0x04, 0xea, 0x4d, 0x98, 0x3a, 0x87, 0x64, 0x54, 0xc7, 0x76, 0xc7, 0xe3, 0x40, 0xfa, 0x06, 0x3c,
+	0x0b, 0x77, 0x88, 0x0b, 0x2e, 0xb9, 0xe4, 0x92, 0x27, 0x40, 0xa8, 0x12, 0xf7, 0x3c, 0x02, 0xf2,
+	0x57, 0x9a, 0xa4, 0xb1, 0xeb, 0x7e, 0xa8, 0xe2, 0xca, 0x9e, 0x99, 0xe3, 0xf3, 0x9f, 0xf3, 0x3b,
+	0x33, 0xc7, 0x07, 0xfe, 0xe2, 0xb6, 0x44, 0x61, 0x33, 0x4b, 0x7f, 0xc5, 0x2c, 0x0b, 0x65, 0xfc,
+	0xd0, 0x5c, 0xe1, 0x48, 0x87, 0xd6, 0x98, 0xec, 0xa2, 0xcd, 0xb4, 0xc4, 0x48, 0x8b, 0x56, 0xd5,
+	0x07, 0x1d, 0x2e, 0xbb, 0xfe, 0xbe, 0x66, 0x3a, 0x3d, 0xdd, 0xf7, 0x50, 0x0c, 0xb0, 0x83, 0x7a,
+	0x64, 0xab, 0xbb, 0x07, 0x1d, 0x9d, 0xb9, 0xdc, 0xd3, 0x99, 0xeb, 0x5a, 0xdc, 0x64, 0x92, 0x3b,
+	0xb6, 0xde, 0x5f, 0x67, 0x96, 0xdb, 0x65, 0xeb, 0x7a, 0x07, 0x6d, 0x14, 0x4c, 0x62, 0x3b, 0x52,
+	0x68, 0x28, 0x50, 0xbb, 0x8f, 0xf2, 0x59, 0xe8, 0x76, 0x57, 0x32, 0xe9, 0x7b, 0x06, 0x1e, 0xfa,
+	0xe8, 0xc9, 0xc6, 0x77, 0x02, 0xf4, 0x11, 0xf7, 0xe2, 0xb5, 0x64, 0x9a, 0x2e, 0x43, 0xc9, 0xec,
+	0x32, 0x6e, 0x2b, 0xa4, 0x4e, 0x9a, 0xb3, 0x46, 0x34, 0x08, 0x66, 0x0f, 0x7d, 0x14, 0x03, 0x65,
+	0x26, 0x9a, 0x0d, 0x07, 0x94, 0x42, 0xd1, 0x65, 0x1d, 0x54, 0x0a, 0x75, 0xd2, 0x2c, 0x19, 0xe1,
+	0x3b, 0xfd, 0x13, 0x66, 0x83, 0x67, 0xcb, 0xe3, 0x47, 0xa8, 0x14, 0xc3, 0x85, 0x4a, 0x30, 0xb1,
+	0xcb, 0x8f, 0x90, 0xae, 0xc1, 0xb2, 0x88, 0x74, 0x50, 0xb4, 0x98, 0x69, 0x3a, 0xbe, 0x2d, 0x5b,
+	0xbc, 0xad, 0x94, 0x42, 0xaf, 0x74, 0xb8, 0xb6, 0x19, 0x2d, 0xed, 0xb4, 0x03, 0x09, 0x39, 0x70,
+	0x51, 0x29, 0x87, 0x16, 0xe1, 0x3b, 0xbd, 0x03, 0x2b, 0x23, 0x5e, 0xda, 0x3d, 0x6e, 0x73, 0x4f,
+	0x0a, 0x26, 0x1d, 0xa1, 0xfc, 0x52, 0x27, 0xcd, 0x8a, 0x51, 0x3b, 0x71, 0x34, 0xba, 0xda, 0xf8,
+	0x40, 0x60, 0x69, 0x2c, 0x64, 0xcf, 0x75, 0x6c, 0x0f, 0xe9, 0x1e, 0x94, 0xb8, 0xc4, 0x9e, 0xa7,
+	0x90, 0x7a, 0xa1, 0x59, 0xdd, 0xd8, 0xd6, 0x4e, 0xf0, 0x6b, 0x09, 0x7e, 0x2d, 0x4e, 0x95, 0x7b,
+	0xd0, 0xd1, 0x02, 0xfc, 0xda, 0x08, 0x7e, 0x2d, 0xc1, 0xaf, 0x45, 0x9e, 0x77, 0x24, 0xf6, 0x8c,
+	0xc8, 0x65, 0x40, 0x4e, 0x3a, 0x92, 0x59, 0x21, 0xb9, 0x82, 0x11, 0x0d, 0xce, 0x4d, 0xae, 0xf1,
+	0x9e, 0xc0, 0xc2, 0x30, 0x91, 0x49, 0xae, 0xe6, 0x61, 0x86, 0xb7, 0xc3, 0x44, 0x15, 0x8c, 0x19,
+	0xde, 0xa6, 0xff, 0xc0, 0xbc, 0xc0, 0x3e, 0x32, 0xab, 0xe5, 0xa1, 0x29, 0x50, 0x7a, 0xa1, 0x68,
+	0xc5, 0x98, 0x8b, 0x66, 0x77, 0xa3, 0xc9, 0xd4, 0x2c, 0x14, 0x52, 0xb3, 0x90, 0x41, 0xbc, 0x98,
+	0x49, 0xdc, 0x81, 0xc5, 0x91, 0x5d, 0x0f, 0x71, 0x17, 0x03, 0x36, 0xe1, 0xc6, 0xab, 0x1b, 0xf7,
+	0x2e, 0x4b, 0x7b, 0x1b, 0x25, 0xe3, 0x96, 0x11, 0xfa, 0x6c, 0x7c, 0x24, 0xb0, 0x74, 0x57, 0x20,
+	0x93, 0x38, 0x8e, 0x2a, 0xf5, 0x58, 0x33, 0x8b, 0x33, 0x2f, 0x39, 0xd6, 0xe1, 0xe0, 0x02, 0x7c,
+	0x92, 0x53, 0x5a, 0xcc, 0x77, 0x4a, 0x4b, 0x99, 0xcc, 0x04, 0x2c, 0x8f, 0x47, 0x70, 0x0d, 0xd8,
+	0xbe, 0x11, 0x58, 0xd9, 0xe9, 0xb9, 0x8e, 0x90, 0x4f, 0x04, 0xef, 0x33, 0x89, 0x0f, 0x71, 0x90,
+	0x8d, 0xee, 0x6f, 0xa8, 0xba, 0x91, 0x69, 0xeb, 0x00, 0x93, 0xba, 0x00, 0xee, 0xf0, 0xeb, 0x13,
+	0xb6, 0x85, 0x3c, 0x6c, 0x8b, 0x67, 0xb2, 0x2d, 0xe5, 0x63, 0x5b, 0xce, 0x64, 0xdb, 0x07, 0xe5,
+	0x74, 0x98, 0xd7, 0xc0, 0xf7, 0x0b, 0x81, 0xdf, 0x23, 0xe1, 0xc7, 0x36, 0xf6, 0x1c, 0x9b, 0x9b,
+	0xd9, 0x74, 0x55, 0xa8, 0xf4, 0x62, 0xc3, 0x18, 0xed, 0x70, 0xfc, 0x73, 0x82, 0x95, 0x50, 0x9b,
+	0x8c, 0xef, 0x1a, 0xb0, 0xbe, 0x25, 0xa0, 0x3c, 0x75, 0xdb, 0xc3, 0xbb, 0xb2, 0x19, 0xa0, 0x48,
+	0xab, 0x8e, 0x57, 0x75, 0xd9, 0x2f, 0x5c, 0x0c, 0x7d, 0xf8, 0x63, 0xca, 0x66, 0x63, 0x4c, 0xcf,
+	0xc7, 0x30, 0x5d, 0xcd, 0x2f, 0x28, 0xf4, 0xb8, 0xf1, 0xae, 0x0c, 0x73, 0x71, 0x03, 0x80, 0xa2,
+	0xcf, 0x4d, 0xa4, 0x6f, 0x08, 0xfc, 0x36, 0xd1, 0x15, 0x50, 0x4d, 0x9b, 0xde, 0x8b, 0x68, 0xd3,
+	0xdb, 0x07, 0xf5, 0xd2, 0x89, 0x8c, 0x75, 0x5f, 0x42, 0x75, 0xe4, 0x97, 0x4c, 0xff, 0x4b, 0xdb,
+	0xc6, 0xe9, 0x56, 0x45, 0xfd, 0x3f, 0x97, 0x6d, 0xcc, 0xf7, 0x05, 0xcc, 0x0e, 0x23, 0xa1, 0xcd,
+	0x33, 0x83, 0x4d, 0x34, 0xfe, 0xcd, 0x61, 0x19, 0x2b, 0x70, 0xf8, 0x75, 0xb4, 0x6e, 0xd3, 0xd4,
+	0xed, 0x4d, 0xf9, 0x3f, 0xa9, 0x37, 0xf2, 0x19, 0xc7, 0x52, 0x3e, 0x2c, 0x4c, 0x96, 0x31, 0xaa,
+	0xa7, 0x79, 0x48, 0xa9, 0xeb, 0xea, 0x5a, 0xfe, 0x0f, 0x62, 0x59, 0x07, 0xe6, 0xc7, 0x2f, 0x39,
+	0xbd, 0x99, 0xed, 0x63, 0xa2, 0xd8, 0xa9, 0x5a, 0x5e, 0xf3, 0x58, 0xf0, 0x35, 0x2c, 0x9e, 0xba,
+	0x31, 0x34, 0x75, 0xdf, 0x69, 0x95, 0x40, 0x5d, 0x3f, 0xc7, 0x17, 0x91, 0xf2, 0xd6, 0xd6, 0xa7,
+	0xe3, 0x55, 0xf2, 0xf9, 0x78, 0x95, 0x7c, 0x3d, 0x5e, 0x25, 0x7b, 0xb7, 0x33, 0xfa, 0xf1, 0xc9,
+	0x06, 0x9f, 0xb9, 0xdc, 0xb4, 0x38, 0xda, 0x72, 0xbf, 0x1c, 0xb6, 0xe0, 0xb7, 0x7e, 0x04, 0x00,
+	0x00, 0xff, 0xff, 0x4f, 0x37, 0x39, 0xce, 0x04, 0x0c, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1258,6 +1310,16 @@ func (m *ListWalletsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.RequesterAdministrator {
+		i--
+		if m.RequesterAdministrator {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
 	if len(m.Type) > 0 {
 		i -= len(m.Type)
 		copy(dAtA[i:], m.Type)
@@ -1265,10 +1327,10 @@ func (m *ListWalletsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x32
 	}
-	if len(m.Requester) > 0 {
-		i -= len(m.Requester)
-		copy(dAtA[i:], m.Requester)
-		i = encodeVarintWallet(dAtA, i, uint64(len(m.Requester)))
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -1379,10 +1441,20 @@ func (m *GetWalletRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Requester) > 0 {
-		i -= len(m.Requester)
-		copy(dAtA[i:], m.Requester)
-		i = encodeVarintWallet(dAtA, i, uint64(len(m.Requester)))
+	if m.RequesterAdministrator {
+		i--
+		if m.RequesterAdministrator {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -1467,6 +1539,16 @@ func (m *CreateWalletRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.RequesterAdministrator {
+		i--
+		if m.RequesterAdministrator {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
 	if len(m.Type) > 0 {
 		i -= len(m.Type)
 		copy(dAtA[i:], m.Type)
@@ -1474,10 +1556,10 @@ func (m *CreateWalletRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x22
 	}
-	if len(m.Requester) > 0 {
-		i -= len(m.Requester)
-		copy(dAtA[i:], m.Requester)
-		i = encodeVarintWallet(dAtA, i, uint64(len(m.Requester)))
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -1561,6 +1643,16 @@ func (m *ImportPrivateKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.RequesterAdministrator {
+		i--
+		if m.RequesterAdministrator {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
 	if len(m.Type) > 0 {
 		i -= len(m.Type)
 		copy(dAtA[i:], m.Type)
@@ -1568,10 +1660,10 @@ func (m *ImportPrivateKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.Requester) > 0 {
-		i -= len(m.Requester)
-		copy(dAtA[i:], m.Requester)
-		i = encodeVarintWallet(dAtA, i, uint64(len(m.Requester)))
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
 		i--
 		dAtA[i] = 0x22
 	}
@@ -1662,6 +1754,16 @@ func (m *ImportMnemonicRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.RequesterAdministrator {
+		i--
+		if m.RequesterAdministrator {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
 	if len(m.Type) > 0 {
 		i -= len(m.Type)
 		copy(dAtA[i:], m.Type)
@@ -1669,10 +1771,10 @@ func (m *ImportMnemonicRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.Requester) > 0 {
-		i -= len(m.Requester)
-		copy(dAtA[i:], m.Requester)
-		i = encodeVarintWallet(dAtA, i, uint64(len(m.Requester)))
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
 		i--
 		dAtA[i] = 0x22
 	}
@@ -1763,10 +1865,20 @@ func (m *UpdateWalletAliasRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Requester) > 0 {
-		i -= len(m.Requester)
-		copy(dAtA[i:], m.Requester)
-		i = encodeVarintWallet(dAtA, i, uint64(len(m.Requester)))
+	if m.RequesterAdministrator {
+		i--
+		if m.RequesterAdministrator {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -1867,13 +1979,16 @@ func (m *ListWalletsRequest) Size() (n int) {
 	if m.PageSize != 0 {
 		n += 1 + sovWallet(uint64(m.PageSize))
 	}
-	l = len(m.Requester)
+	l = len(m.RequesterAccountId)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
 	l = len(m.Type)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequesterAdministrator {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1920,9 +2035,12 @@ func (m *GetWalletRequest) Size() (n int) {
 	if m.RevealSecrets {
 		n += 2
 	}
-	l = len(m.Requester)
+	l = len(m.RequesterAccountId)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequesterAdministrator {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1960,13 +2078,16 @@ func (m *CreateWalletRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
-	l = len(m.Requester)
+	l = len(m.RequesterAccountId)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
 	l = len(m.Type)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequesterAdministrator {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2008,13 +2129,16 @@ func (m *ImportPrivateKeyRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
-	l = len(m.Requester)
+	l = len(m.RequesterAccountId)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
 	l = len(m.Type)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequesterAdministrator {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2056,13 +2180,16 @@ func (m *ImportMnemonicRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
-	l = len(m.Requester)
+	l = len(m.RequesterAccountId)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
 	l = len(m.Type)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequesterAdministrator {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2099,9 +2226,12 @@ func (m *UpdateWalletAliasRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
 	}
-	l = len(m.Requester)
+	l = len(m.RequesterAccountId)
 	if l > 0 {
 		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequesterAdministrator {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2315,7 +2445,7 @@ func (m *ListWalletsRequest) Unmarshal(dAtA []byte) error {
 			}
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2343,7 +2473,7 @@ func (m *ListWalletsRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requester = string(dAtA[iNdEx:postIndex])
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
@@ -2377,6 +2507,26 @@ func (m *ListWalletsRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAdministrator", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RequesterAdministrator = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])
@@ -2611,7 +2761,7 @@ func (m *GetWalletRequest) Unmarshal(dAtA []byte) error {
 			m.RevealSecrets = bool(v != 0)
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2639,8 +2789,28 @@ func (m *GetWalletRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requester = string(dAtA[iNdEx:postIndex])
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAdministrator", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RequesterAdministrator = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])
@@ -2845,7 +3015,7 @@ func (m *CreateWalletRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2873,7 +3043,7 @@ func (m *CreateWalletRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requester = string(dAtA[iNdEx:postIndex])
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -2907,6 +3077,26 @@ func (m *CreateWalletRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAdministrator", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RequesterAdministrator = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])
@@ -3143,7 +3333,7 @@ func (m *ImportPrivateKeyRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3171,7 +3361,7 @@ func (m *ImportPrivateKeyRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requester = string(dAtA[iNdEx:postIndex])
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -3205,6 +3395,26 @@ func (m *ImportPrivateKeyRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAdministrator", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RequesterAdministrator = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])
@@ -3441,7 +3651,7 @@ func (m *ImportMnemonicRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3469,7 +3679,7 @@ func (m *ImportMnemonicRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requester = string(dAtA[iNdEx:postIndex])
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -3503,6 +3713,26 @@ func (m *ImportMnemonicRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAdministrator", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RequesterAdministrator = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])
@@ -3694,7 +3924,7 @@ func (m *UpdateWalletAliasRequest) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -3722,8 +3952,28 @@ func (m *UpdateWalletAliasRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requester = string(dAtA[iNdEx:postIndex])
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAdministrator", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RequesterAdministrator = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])

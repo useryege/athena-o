@@ -3,7 +3,8 @@
 
 CREATE TABLE IF NOT EXISTS wallet_private_keys (
   id BIGSERIAL PRIMARY KEY,
-  created_by TEXT NOT NULL,
+  owner_account_id UUID,
+  system_owned BOOLEAN NOT NULL DEFAULT FALSE,
   chain TEXT NOT NULL CHECK (chain IN ('ETH', 'BSC', 'BASE', 'SOLANA')),
   type TEXT NOT NULL CHECK (type IN ('worm_position', 'polymarket_hedge', 'polymarket_topup')),
   address TEXT NOT NULL,
@@ -15,11 +16,15 @@ CREATE TABLE IF NOT EXISTS wallet_private_keys (
   derivation_path TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (created_by, chain, address_key)
+  CHECK (
+    (system_owned AND owner_account_id IS NULL)
+    OR (NOT system_owned AND owner_account_id IS NOT NULL)
+  )
 );
 
 INSERT INTO wallet_private_keys (
-  created_by,
+  owner_account_id,
+  system_owned,
   chain,
   type,
   address,
@@ -30,7 +35,8 @@ INSERT INTO wallet_private_keys (
   source,
   derivation_path
 ) VALUES (
-  'admin',
+  NULL,
+  TRUE,
   'SOLANA',
   'worm_position',
   'HYug9d9sMK6G6tf72PfMTH2NmnMfzJqPNo8kbwkyDPrC',
@@ -41,7 +47,8 @@ INSERT INTO wallet_private_keys (
   'private_key',
   ''
 ), (
-  'admin',
+  NULL,
+  TRUE,
   'SOLANA',
   'worm_position',
   'DbYhbC6FdyNaMvy5aBPo2ntsCR6WwFqcfuatQqZNHVoT',
@@ -57,7 +64,14 @@ INSERT INTO wallet_private_keys (
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_chain ON wallet_private_keys (chain);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_type ON wallet_private_keys (type);
 CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_at ON wallet_private_keys (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_created_by_created_at ON wallet_private_keys (created_by, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wallet_private_keys_owner_created_at ON wallet_private_keys (owner_account_id, created_at DESC)
+  WHERE NOT system_owned;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_wallet_private_keys_owner_chain_address
+  ON wallet_private_keys (owner_account_id, chain, address_key)
+  WHERE NOT system_owned;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_wallet_private_keys_system_chain_address
+  ON wallet_private_keys (chain, address_key)
+  WHERE system_owned;
 
 -- +goose Down
 

@@ -88,10 +88,10 @@ export const ProfitSharingAllocationList = (props: {items: ProfitSharingProposal
             <span role='columnheader'>Share</span>
         </div>
         {props.items.map(item => (
-            <div className='profit-sharing-allocation-list__row' role='row' key={item.accountName}>
+            <div className='profit-sharing-allocation-list__row' role='row' key={item.accountId}>
                 <span className='profit-sharing-allocation-list__member' role='cell'>
-                    <strong>{item.displayName || item.accountName}</strong>
-                    {item.displayName && <small>{item.accountName}</small>}
+                    <strong>{item.displayName || `@${item.username}`}</strong>
+                    {item.username && <small>@{item.username}</small>}
                 </span>
                 <span className='profit-sharing-allocation-list__responsibility' role='cell'>
                     {item.responsibility || '—'}
@@ -136,7 +136,9 @@ export const ProfitSharingProposalCard = (props: {
                         <Typography.Title level={3}>{props.proposal.label || `Proposal ${props.proposal.id}`}</Typography.Title>
                     )}
                     {props.showAuthor && (
-                        <Typography.Text type='secondary'>Proposed by {props.proposal.authorDisplayName || props.proposal.authorAccount || 'Unknown member'}</Typography.Text>
+                        <Typography.Text type='secondary'>
+                            Proposed by {props.proposal.authorDisplayName || (props.proposal.authorUsername ? `@${props.proposal.authorUsername}` : 'Unknown member')}
+                        </Typography.Text>
                     )}
                 </div>
                 <Space size={6} wrap={true}>

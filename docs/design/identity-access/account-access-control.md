@@ -2,41 +2,45 @@
 
 ## Scope
 
-Account Access Control is Athena's durable authorization model. It owns current
+Account Access Control owns Athena's durable role-aware authorization model:
 Google sign-in availability, independent API Key and Profit Sharing
-entitlements, the complete ten-module access matrix, optimistic revision
-updates, Pending/Active/Blocked status, service authorization, and browser
-authorization synchronization.
+entitlements, a complete ten-module access matrix, optimistic revision updates,
+Pending/Active/Blocked status, RPC authorization, and browser authorization
+synchronization. Every access aggregate and authorization lookup is keyed by
+stable account UUID.
 
-[Account Credentials](account-credentials.md) owns durable identity and JWT
-validation. [Google OIDC Login](google-oidc-login.md) creates zero-access
-ordinary accounts. Business services own their domain state after authorization,
-and [Account Profile and Preferences](account-profile-and-preferences.md) owns
-display data.
+[Account Credentials](account-credentials.md) owns UUID identity, immutable
+username, JWT validation, and the persisted administrator fact. [Google OIDC
+Login](google-oidc-login.md) creates complete zero-access ordinary accounts only
+after username setup. Business services own their domain state after this layer
+authorizes the request.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Access model and requirements | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go) | `Access`, `Module`, `AccessLevel`, `Requirement`, `IsPending`, `MaxAccessLevel` |
+| Access model and requirements | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go) | `Access`, `Module`, `AccessLevel`, `Requirement`, `IsPending`, `Validate` |
 | Snapshot and durable CAS | [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `Controller`, `NewController`, `Register`, `Get`, `Update`, `Authorize` |
-| PostgreSQL aggregate adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go), [internal/accountstate/store/queries/account_access.sql](../../../internal/accountstate/store/queries/account_access.sql) | `ListAccountAccess`, `GetAccountAccess`, `UpdateAccountAccess` |
-| Public Account API | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountAccess`, `AccountStatus`, `ListAccounts`, `UpdateAccountAccess`, `ToAPIAccountAccess` |
-| RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC` |
-| Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `GetUserInfo`, `ProjectUserInfo`, `GetAppBootstrap` |
-| Browser authorization and routing | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `accountDataModules`, `AuthorizationCtx`, `canRead`, `canWrite` |
+| PostgreSQL adapter and queries | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go), [internal/accountstate/store/queries/account_access.sql](../../../internal/accountstate/store/queries/account_access.sql) | `ListAccountAccess`, `GetAccountAccess`, `UpdateAccountAccess` |
+| Account directory | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CountAccountDirectory`, `ListAccountDirectoryPage` |
+| Public Account contract | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountAccess`, `AccountStatus`, `ListAccounts`, `UpdateAccountAccess` |
+| RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC`, `authorizeAccountSelfService` |
+| Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
+| Browser routing and refresh | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `AuthorizationCtx`, `canRead`, `canWrite`, authorization refresh |
 | Administrator workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor` |
 
 ## Architecture
 
-`Access` contains `LoginEnabled`, `APIKeyEnabled`,
-`ProfitSharingEnabled`, all ten module levels, and a positive `Revision`.
-PostgreSQL is authoritative. `Controller` holds a cloned single-server snapshot
-for fast request authorization and publishes only committed, validated
-aggregates. `Register` idempotently introduces a newly provisioned account after
-its database transaction commits.
+`Access` contains the persisted `Administrator` projection, `LoginEnabled`,
+`APIKeyEnabled`, `ProfitSharingEnabled`, ten module levels, and a positive
+`Revision`. PostgreSQL is authoritative. `Controller` holds detached snapshots
+for the single API Server and publishes only committed, validated aggregates.
+`Register(accountID)` idempotently introduces a newly committed registration.
 
-The module matrix is:
+The administrator role originates in `athena_account.administrator` and is
+joined into access reads. It is never inferred from username, email, JWT text,
+or request input. `Access.Validate` fixes an administrator at login enabled, API
+Key disabled, Profit Sharing enabled, and maximum access for every module.
 
 | Module | Maximum |
 | --- | --- |
@@ -51,106 +55,108 @@ The module matrix is:
 | `wallet` | `READ_WRITE` |
 | `notifications` | `READ_WRITE` |
 
-`NONE < READ < READ_WRITE`; read-only modules reject `READ_WRITE`. A grant in
-one module never grants another module or either independent entitlement.
+`NONE < READ < READ_WRITE`; read-only modules reject `READ_WRITE`. Grants do not
+flow between modules or into API Key and Profit Sharing entitlements.
 
 ## Runtime Flow
 
-1. Startup loads every persisted access head and ten-row module matrix. Missing,
-   duplicate, unknown, incomplete, or invalid aggregates fail before serving.
-   The fixed administrator must be login-enabled, API Key-disabled, Profit
-   Sharing-enabled, and at maximum access for every module.
-2. New ordinary accounts commit with login enabled, API Key disabled, Profit
-   Sharing disabled, revision one, and all modules `NONE`. The controller then
-   registers the committed aggregate without restarting the process.
-3. Every valid login session and API Key checks `LoginEnabled`. API Keys also
-   check `APIKeyEnabled`; member Profit Sharing RPCs also check
+1. Startup loads every persisted access head, its database role, and all ten
+   module rows. Zero accounts is valid. Any durable account with a missing,
+   duplicate, unknown, incomplete, or invalid aggregate fails startup closed.
+2. Username registration commits an ordinary access head with login enabled,
+   API Key and Profit Sharing disabled, revision one, and ten `NONE` rows. An
+   administrator registration commits its fixed maximum aggregate. The
+   controller learns either by UUID only after database commit.
+3. Every login session and API Key checks `LoginEnabled` on each request. API
+   Keys additionally check `APIKeyEnabled`; ordinary Profit Sharing RPCs check
    `ProfitSharingEnabled`; product RPCs check their explicit module and level.
-4. Administrator updates replace login, API Key, Profit Sharing, and all ten
-   module values in one expected-revision CAS. The database advances the
-   revision and updates the complete aggregate in one transaction. Only the
-   committed result replaces the process snapshot.
-5. Public status is derived as `BLOCKED` when login is disabled, `PENDING` when
-   login is enabled while every module is `NONE` and Profit Sharing is disabled,
-   and `ACTIVE` otherwise. API Key access alone does not make an account Active.
-6. `ListAccounts` provides server-side search across verified email, profile
-   display name, and internal ID; status filtering; one-based pagination with a
-   default of 50 and maximum of 100; total size; and a Profit Sharing eligibility
-   filter. Pending accounts sort first, then by most recent login.
-7. The browser refreshes authorization every 15 seconds while visible, on focus,
-   on manual Pending-page refresh, and after a stable access denial. Module loss
-   cancels affected requests, clears affected caches, and routes to
-   `/account/access` without requiring a new login.
-8. A newly provisioned Pending user loads only Profile, Appearance, Access,
-   Help, logout, bootstrap, and user-info surfaces. Security becomes available
-   if API Key access is later enabled even though that flag alone leaves status
-   Pending. Business routes redirect to the Access page and do not start
-   business requests. The first new UI-backed module grant routes to the first
-   canonical accessible module; Profit Sharing-only access routes to
-   `/profit-sharing`. API-only module access makes status Active but leaves the
-   user in Account Center when no UI landing route exists.
+   A persisted administrator satisfies role and module requirements through the
+   role-aware snapshot.
+4. An administrator may replace one ordinary account's three flags and full
+   module matrix in one expected-revision CAS. The SQL transaction advances the
+   revision and replaces all ten rows together. Administrator aggregates cannot
+   be edited through this path.
+5. Status derives as `BLOCKED` when login is disabled, `PENDING` when login is
+   enabled with all modules `NONE` and Profit Sharing disabled, and `ACTIVE`
+   otherwise. API Key access alone does not make an account Active.
+6. The administrator directory searches username, verified email, profile
+   display name, and an exact UUID. It supports All/Pending/Active/Blocked,
+   one-based pagination defaulting to 50 and capped at 100, total count, and a
+   Profit-Sharing-eligible filter. Pending sorts first, then most recent login,
+   username, and UUID.
+7. The browser refreshes authorization at most every 15 seconds while visible,
+   on focus or visibility return, on manual Pending-page refresh, and after a
+   stable access denial. Module loss cancels affected work, clears UUID-scoped
+   caches, and redirects an inaccessible route to `/account/access`.
+8. Pending users can use Profile, Appearance, Access, Help, and Logout without
+   starting business requests. Security appears only when API Key access is
+   enabled. The first UI-backed module grant routes to the first canonical
+   readable module; Profit Sharing-only access routes to `/profit-sharing`.
 
 ## State / Data
 
-`account_access` stores the three booleans and revision. Exactly ten
-`account_module_access` rows belong to each account. Both tables reference
-`athena_account`; an identity cannot exist without its complete access state.
+`account_access.account_id UUID` owns the three flags and revision.
+`account_module_access` has primary key `(account_id, module)` and exactly ten
+rows per account. Both reference the UUID account parent. The role is stored on
+that parent and joined into every access aggregate; username is absent from
+authorization tables.
 
-The fixed `admin` row is not editable through the account access API. Ordinary
-accounts are permanent and may only be blocked or have entitlements changed.
-There is no account deletion, administrator promotion, subject rebind, or
-transfer API.
+Ordinary accounts are retained and may be blocked or have grants changed. There
+is no delete, role promotion, username mutation, Google rebind, or transfer API.
+The sole administrator is created by registration and protected by the role
+unique index plus fixed-access validation.
 
-Stable denial reasons distinguish account maintenance, administrator-required,
-module access denial, API Key access denial, and Profit Sharing access denial.
-Authorization happens before domain service code runs.
+Stable denials distinguish maintenance, administrator-required, module access,
+API Key access, Profit Sharing access, and access-revision conflict.
+Authorization completes before domain service code receives the request.
 
 ## Configuration
 
-Access has no per-account environment variables. Account identities and access
-aggregates come from PostgreSQL. `ATHENA_SERVER_DISABLE_AUTH=true` retains only
-the loopback development administrator bypass; normal local and production
-runs use the durable model.
+Access has no per-account environment variables. Identities, roles, and access
+aggregates come from PostgreSQL. `ATHENA_SERVER_DISABLE_AUTH=true` creates the
+isolated loopback `local-admin` development aggregate and synthesizes its UUID
+in request claims. Normal OIDC mode rejects that development identity.
 
 ## Invariants
 
-- Every account has one positive-revision access head and exactly ten module
-  rows.
-- Ordinary first-login state is Pending and cannot read business APIs.
-- The fixed administrator remains unique and fixed at maximum access.
-- Login disablement immediately pauses browser sessions and all API Keys without
-  deleting them.
+- Every durable account has one positive-revision access head and exactly ten
+  module rows, all keyed by the same UUID.
+- Ordinary first-registration state is Pending and cannot read business APIs.
+- Role comes only from the persisted administrator boolean; username has no
+  authorization meaning.
+- The administrator aggregate remains maximum and uneditable.
+- Login disablement immediately pauses sessions and API Keys without deleting
+  them.
 - API Key and Profit Sharing controls are independent from module access.
-- Profit Sharing member RPCs require both entitlement and current round
-  membership.
+- Profit Sharing member RPCs require both entitlement and round membership.
 - Every authenticated RPC has an explicit account, administrator, module, or
-  Profit Sharing authorization boundary; unknown methods fail closed.
-- A CAS update publishes all flags and all module levels together or none.
+  Profit Sharing boundary; unknown methods fail closed.
+- CAS publishes all flags and all module levels together or none.
 
 ## Failure Recovery
 
-Invalid startup state fails closed. A revision mismatch returns a conflict and
-preserves both database and snapshot state. SQL statement failure rolls back the
-complete aggregate. If a callback commits a new account but snapshot
-registration fails, no cookie is issued; a later login reloads the durable
-account.
+Invalid startup state fails closed. A revision mismatch preserves the database
+and runtime snapshot. Any SQL failure rolls back the complete aggregate. If
+account registration commits but runtime access publication or cookie issuance
+fails, the account remains durable and a later known-subject login reloads its
+access before issuing a session.
 
-Disabling API Key access pauses keys rather than deleting their metadata.
-Re-enabling restores only undeleted, unexpired keys. Disabling login takes
-priority over all other entitlements and is reflected on the next request.
+Disabling API Key access pauses metadata rather than deleting it; re-enabling
+restores only undeleted, unexpired keys. Disabling login takes priority over all
+other entitlements on the next authenticated request.
 
 ## Observability
 
-Authorization failures expose stable reason metadata appropriate to the client,
-including module, required level, and effective level for module denials. Logs
-identify the Athena account and authorization boundary; Google subjects, JWTs,
-JTIs, and bearer values are excluded. The administrator directory exposes safe
-verified email and timestamps but never the Google subject.
+Authorization errors expose stable reason metadata including module, required
+level, and effective level for module denials. Logs identify account UUID and
+authorization boundary; Google subjects, JWTs, JTIs, and bearer values are
+excluded. The administrator directory exposes UUID, username, safe email, and
+timestamps, never Google subject.
 
 ## Change Checklist
 
-- [ ] The three entitlements, ten-module matrix, and status derivation remain current.
-- [ ] Provisioning, CAS, and controller publication boundaries remain current.
+- [ ] Persisted role, three entitlements, ten-module matrix, and status derivation remain current.
+- [ ] UUID registration, CAS, and controller publication boundaries remain current.
 - [ ] RPC rules and Pending browser behavior remain synchronized.
-- [ ] Administrator directory filters and pagination remain current.
+- [ ] Administrator directory search, filters, sorting, and pagination remain current.
 - [ ] The [design index](../README.md) contains the current summary.

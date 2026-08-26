@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -36,7 +37,7 @@ var (
 )
 
 type CreateWalletRecordRequest struct {
-	CreatedBy            string
+	OwnerAccountID       string
 	Chain                string
 	Type                 string
 	Address              string
@@ -49,17 +50,19 @@ type CreateWalletRecordRequest struct {
 }
 
 type ListWalletsOptions struct {
-	CreatedBy string
-	Chain     string
-	Type      string
-	Query     string
-	Page      int
-	PageSize  int
+	RequesterAccountID     string
+	RequesterAdministrator bool
+	Chain                  string
+	Type                   string
+	Query                  string
+	Page                   int
+	PageSize               int
 }
 
 type WalletRecord struct {
 	ID                   int64
-	CreatedBy            string
+	OwnerAccountID       string
+	SystemOwned          bool
 	Chain                string
 	Type                 string
 	Address              string
@@ -113,8 +116,12 @@ func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordReque
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
+	ownerAccountID, err := requiredUUID(req.OwnerAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
+	}
 	row, err := s.queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
-		CreatedBy:            req.CreatedBy,
+		OwnerAccountID:       ownerAccountID,
 		Chain:                req.Chain,
 		Type:                 req.Type,
 		Address:              req.Address,
@@ -138,12 +145,16 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 	if s.queries == nil {
 		return nil, 0, fmt.Errorf("wallet postgres database is not configured")
 	}
-	filters := walletFilterParams(opts)
+	filters, err := walletFilterParams(opts)
+	if err != nil {
+		return nil, 0, err
+	}
 	total, err := s.queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
-		CreatedBy: filters.CreatedBy,
-		Chain:     filters.Chain,
-		Type:      filters.Type,
-		Query:     filters.Query,
+		RequesterAccountID:     filters.RequesterAccountID,
+		RequesterAdministrator: filters.RequesterAdministrator,
+		Chain:                  filters.Chain,
+		Type:                   filters.Type,
+		Query:                  filters.Query,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("count wallets: %w", err)
@@ -158,12 +169,13 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 		pageSize = 20
 	}
 	rows, err := s.queries.ListWallets(ctx, walletsqlc.ListWalletsParams{
-		Limit:     int32(pageSize),
-		Offset:    int32((page - 1) * pageSize),
-		CreatedBy: filters.CreatedBy,
-		Chain:     filters.Chain,
-		Type:      filters.Type,
-		Query:     filters.Query,
+		Limit:                  int32(pageSize),
+		Offset:                 int32((page - 1) * pageSize),
+		RequesterAccountID:     filters.RequesterAccountID,
+		RequesterAdministrator: filters.RequesterAdministrator,
+		Chain:                  filters.Chain,
+		Type:                   filters.Type,
+		Query:                  filters.Query,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list wallets: %w", err)
@@ -176,13 +188,18 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 	return items, total, nil
 }
 
-func (s *SQLStore) GetWallet(ctx context.Context, id int64, createdBy string) (*WalletRecord, error) {
+func (s *SQLStore) GetWallet(ctx context.Context, id int64, requesterAccountID string, requesterAdministrator bool) (*WalletRecord, error) {
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
+	requesterUUID, err := requiredUUID(requesterAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("validate wallet requester account ID: %w", err)
+	}
 	row, err := s.queries.GetWallet(ctx, walletsqlc.GetWalletParams{
-		ID:        id,
-		CreatedBy: nullableTrimmedText(createdBy),
+		ID:                     id,
+		RequesterAccountID:     requesterUUID,
+		RequesterAdministrator: requesterAdministrator,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -193,14 +210,19 @@ func (s *SQLStore) GetWallet(ctx context.Context, id int64, createdBy string) (*
 	return walletRecordFromSQLC(row), nil
 }
 
-func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, createdBy string, alias string) (*v1alpha1.WalletItem, error) {
+func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, requesterAccountID string, requesterAdministrator bool, alias string) (*v1alpha1.WalletItem, error) {
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
+	requesterUUID, err := requiredUUID(requesterAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("validate wallet requester account ID: %w", err)
+	}
 	row, err := s.queries.UpdateWalletAlias(ctx, walletsqlc.UpdateWalletAliasParams{
-		ID:        id,
-		CreatedBy: nullableTrimmedText(createdBy),
-		Alias:     alias,
+		ID:                     id,
+		RequesterAccountID:     requesterUUID,
+		RequesterAdministrator: requesterAdministrator,
+		Alias:                  alias,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -212,25 +234,32 @@ func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, createdBy st
 }
 
 type walletFilters struct {
-	CreatedBy pgtype.Text
-	Chain     pgtype.Text
-	Type      pgtype.Text
-	Query     pgtype.Text
+	RequesterAccountID     pgtype.UUID
+	RequesterAdministrator bool
+	Chain                  pgtype.Text
+	Type                   pgtype.Text
+	Query                  pgtype.Text
 }
 
-func walletFilterParams(opts ListWalletsOptions) walletFilters {
-	return walletFilters{
-		CreatedBy: nullableTrimmedText(opts.CreatedBy),
-		Chain:     nullableTrimmedText(opts.Chain),
-		Type:      nullableTrimmedText(opts.Type),
-		Query:     nullableKeyword(opts.Query),
+func walletFilterParams(opts ListWalletsOptions) (walletFilters, error) {
+	requesterAccountID, err := requiredUUID(opts.RequesterAccountID)
+	if err != nil {
+		return walletFilters{}, fmt.Errorf("validate wallet requester account ID: %w", err)
 	}
+	return walletFilters{
+		RequesterAccountID:     requesterAccountID,
+		RequesterAdministrator: opts.RequesterAdministrator,
+		Chain:                  nullableTrimmedText(opts.Chain),
+		Type:                   nullableTrimmedText(opts.Type),
+		Query:                  nullableKeyword(opts.Query),
+	}, nil
 }
 
 func walletRecordFromSQLC(row walletsqlc.WalletPrivateKey) *WalletRecord {
 	return &WalletRecord{
 		ID:                   row.ID,
-		CreatedBy:            row.CreatedBy,
+		OwnerAccountID:       uuidString(row.OwnerAccountID),
+		SystemOwned:          row.SystemOwned,
 		Chain:                row.Chain,
 		Type:                 row.Type,
 		Address:              row.Address,
@@ -248,7 +277,8 @@ func walletRecordFromSQLC(row walletsqlc.WalletPrivateKey) *WalletRecord {
 func walletItemFromListRow(row walletsqlc.ListWalletsRow) *v1alpha1.WalletItem {
 	return &v1alpha1.WalletItem{
 		ID:             row.ID,
-		CreatedBy:      row.CreatedBy,
+		OwnerAccountID: uuidString(row.OwnerAccountID),
+		SystemOwned:    row.SystemOwned,
 		Chain:          row.Chain,
 		Type:           row.Type,
 		Address:        row.Address,
@@ -263,7 +293,8 @@ func walletItemFromListRow(row walletsqlc.ListWalletsRow) *v1alpha1.WalletItem {
 func walletItemFromUpdateRow(row walletsqlc.UpdateWalletAliasRow) *v1alpha1.WalletItem {
 	return &v1alpha1.WalletItem{
 		ID:             row.ID,
-		CreatedBy:      row.CreatedBy,
+		OwnerAccountID: uuidString(row.OwnerAccountID),
+		SystemOwned:    row.SystemOwned,
 		Chain:          row.Chain,
 		Type:           row.Type,
 		Address:        row.Address,
@@ -281,7 +312,8 @@ func (r *WalletRecord) ToDetail() *v1alpha1.WalletDetail {
 	}
 	return &v1alpha1.WalletDetail{
 		ID:             r.ID,
-		CreatedBy:      r.CreatedBy,
+		OwnerAccountID: r.OwnerAccountID,
+		SystemOwned:    r.SystemOwned,
 		Chain:          r.Chain,
 		Type:           r.Type,
 		Address:        r.Address,
@@ -298,6 +330,28 @@ func nullableBytes(value []byte) []byte {
 		return nil
 	}
 	return value
+}
+
+func requiredUUID(value string) (pgtype.UUID, error) {
+	parsed, err := uuid.Parse(strings.TrimSpace(value))
+	if err != nil {
+		return pgtype.UUID{}, fmt.Errorf("must be a UUID")
+	}
+	if parsed == uuid.Nil {
+		return pgtype.UUID{}, fmt.Errorf("must not be the zero UUID")
+	}
+	return pgtype.UUID{Bytes: parsed, Valid: true}, nil
+}
+
+func uuidString(value pgtype.UUID) string {
+	if !value.Valid {
+		return ""
+	}
+	parsed := uuid.UUID(value.Bytes)
+	if parsed == uuid.Nil {
+		return ""
+	}
+	return parsed.String()
 }
 
 func nullableTrimmedText(value string) pgtype.Text {

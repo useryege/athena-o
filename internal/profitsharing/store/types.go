@@ -36,7 +36,8 @@ var (
 )
 
 type ParticipantInput struct {
-	Account                string
+	AccountID              string
+	Username               string
 	DisplayName            string
 	DisplayOrder           int32
 	BaselineResponsibility string
@@ -44,7 +45,8 @@ type ParticipantInput struct {
 
 type Participant struct {
 	RoundID                int64
-	Account                string
+	AccountID              string
+	Username               string
 	DisplayName            string
 	DisplayOrder           int32
 	BaselineResponsibility string
@@ -66,30 +68,30 @@ type Round struct {
 }
 
 type ProposalItemInput struct {
-	ParticipantAccount string
-	Responsibility     string
-	BasisPoints        *int32
+	ParticipantAccountID string
+	Responsibility       string
+	BasisPoints          *int32
 }
 
 type ProposalItem struct {
-	RoundID            int64
-	ProposalID         string
-	ParticipantAccount string
-	Responsibility     string
-	BasisPoints        *int32
+	RoundID              int64
+	ProposalID           string
+	ParticipantAccountID string
+	Responsibility       string
+	BasisPoints          *int32
 }
 
 type Proposal struct {
-	ID             string
-	RoundID        int64
-	AuthorAccount  string
-	Status         string
-	AnonymousLabel *string
-	Revision       int64
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	SubmittedAt    *time.Time
-	Items          []ProposalItem
+	ID              string
+	RoundID         int64
+	AuthorAccountID string
+	Status          string
+	AnonymousLabel  *string
+	Revision        int64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	SubmittedAt     *time.Time
+	Items           []ProposalItem
 }
 
 type Ballot struct {
@@ -105,13 +107,13 @@ type Ballot struct {
 }
 
 type Vote struct {
-	RoundID               int64
-	BallotNumber          int32
-	VoterAccount          string
-	ProposalID            string
-	ProposalAuthorAccount string
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
+	RoundID                 int64
+	BallotNumber            int32
+	VoterAccountID          string
+	ProposalID              string
+	ProposalAuthorAccountID string
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }
 
 type RoundSnapshot struct {

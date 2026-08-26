@@ -11,7 +11,8 @@ import {ProfitSharingPhaseTag, ProfitSharingProposalGallery, ProfitSharingRoundM
 
 const blankParticipants = (): ProfitSharingParticipantDefinition[] =>
     Array.from({length: 5}, (_, index) => ({
-        accountName: '',
+        accountId: '',
+        username: '',
         displayName: '',
         baselineResponsibility: '',
         sortOrder: index + 1
@@ -20,18 +21,45 @@ const blankParticipants = (): ProfitSharingParticipantDefinition[] =>
 interface EligibleAccountOption {
     value: string;
     label: string;
+    username: string;
+    displayName: string;
 }
 
 const useEligibleAccountOptions = () => {
     const [search, setSearch] = React.useState('');
+    const [knownOptions, setKnownOptions] = React.useState<Map<string, EligibleAccountOption>>(new Map());
     const deferredSearch = React.useDeferredValue(search.trim());
     const accounts = useAsyncData(() => services.accounts.list({query: deferredSearch, page: 1, pageSize: 100, profitSharingEligibleOnly: true}), [deferredSearch]);
-    const options: EligibleAccountOption[] = (accounts.data?.items || []).map(account => {
-        const values = [account.profile.displayName, account.identity.verifiedEmail, `@${account.name}`].filter(Boolean);
-        return {value: account.name, label: Array.from(new Set(values)).join(' · ')};
-    });
-    return {...accounts, options, search: setSearch};
+    React.useEffect(() => {
+        if (!accounts.data) {
+            return;
+        }
+        setKnownOptions(current => {
+            const next = new Map(current);
+            accounts.data.items.forEach(account => {
+                const values = [account.profile.displayName, account.identity.verifiedEmail, `@${account.username}`].filter(Boolean);
+                next.set(account.id, {
+                    value: account.id,
+                    label: Array.from(new Set(values)).join(' · '),
+                    username: account.username,
+                    displayName: account.profile.displayName
+                });
+            });
+            return next;
+        });
+    }, [accounts.data]);
+    return {...accounts, options: Array.from(knownOptions.values()), search: setSearch};
 };
+
+const snapshotAccountOptions = (participants: ProfitSharingParticipant[]): EligibleAccountOption[] =>
+    participants.map(participant => ({
+        value: participant.accountId,
+        label: [participant.displayName, `@${participant.username}`].filter(Boolean).join(' · '),
+        username: participant.username,
+        displayName: participant.displayName
+    }));
+
+const mergeAccountOptions = (...groups: EligibleAccountOption[][]) => Array.from(new Map(groups.flat().map(option => [option.value, option])).values());
 
 interface RoundDefinitionDraft {
     slug: string;
@@ -43,7 +71,8 @@ const definitionFor = (round: ProfitSharingRound): RoundDefinitionDraft => ({
     slug: round.slug,
     title: round.title,
     participants: round.participants.map((participant, index) => ({
-        accountName: participant.accountName,
+        accountId: participant.accountId,
+        username: participant.username,
         displayName: participant.displayName,
         baselineResponsibility: participant.baselineResponsibility,
         sortOrder: participant.sortOrder || index + 1
@@ -54,7 +83,8 @@ const normalizeDefinition = (definition: RoundDefinitionDraft): RoundDefinitionD
     slug: (definition.slug || '').trim().toLowerCase(),
     title: (definition.title || '').trim(),
     participants: (definition.participants || []).map((participant, index) => ({
-        accountName: (participant.accountName || '').trim(),
+        accountId: (participant.accountId || '').trim(),
+        username: (participant.username || '').trim(),
         displayName: (participant.displayName || '').trim(),
         baselineResponsibility: (participant.baselineResponsibility || '').trim(),
         sortOrder: index + 1
@@ -63,9 +93,9 @@ const normalizeDefinition = (definition: RoundDefinitionDraft): RoundDefinitionD
 
 const definitionsEqual = (left: RoundDefinitionDraft, right: RoundDefinitionDraft) => JSON.stringify(normalizeDefinition(left)) === JSON.stringify(normalizeDefinition(right));
 
-const hasDuplicateAccounts = (participants: Array<{accountName: string}>) => {
-    const names = participants.map(item => item.accountName.trim().toLowerCase()).filter(Boolean);
-    return new Set(names).size !== names.length;
+const hasDuplicateAccounts = (participants: Array<{accountId: string}>) => {
+    const ids = participants.map(item => item.accountId.trim()).filter(Boolean);
+    return new Set(ids).size !== ids.length;
 };
 
 const roundColumns: ColumnsType<ProfitSharingRound> = [
@@ -120,92 +150,104 @@ const RoundDefinitionFields = (props: {
     disabled?: boolean;
     slugDisabled?: boolean;
     onAccountSearch: (query: string) => void;
-}) => (
-    <>
-        <div className='profit-sharing-definition__identity'>
-            <Form.Item name='title' label='Round title' rules={[{required: true, whitespace: true, max: 120}]}>
-                <Input disabled={props.disabled} placeholder='Profit Sharing · Phase 1' />
-            </Form.Item>
-            <Form.Item
-                name='slug'
-                label='Round URL slug'
-                rules={[
-                    {required: true, whitespace: true},
-                    {pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: 'Use lowercase letters, numbers, and single hyphens.'}
-                ]}>
-                <Input disabled={props.disabled || props.slugDisabled} addonBefore='/profit-sharing/' placeholder='phase-1' />
-            </Form.Item>
-        </div>
-        <div className='profit-sharing-definition__participants-heading'>
-            <div>
-                <Typography.Title level={3}>Participants</Typography.Title>
-                <Typography.Text type='secondary'>
-                    Search for exactly five non-administrator accounts with Google sign-in and Profit Sharing access. Draft definitions may contain fewer.
-                </Typography.Text>
+}) => {
+    const form = Form.useFormInstance<RoundDefinitionDraft>();
+    const selectAccount = (index: number, accountID: string) => {
+        const account = props.accountOptions.find(option => option.value === accountID);
+        form.setFieldValue(['participants', index, 'username'], account?.username || '');
+        form.setFieldValue(['participants', index, 'displayName'], account?.displayName || '');
+    };
+    return (
+        <>
+            <div className='profit-sharing-definition__identity'>
+                <Form.Item name='title' label='Round title' rules={[{required: true, whitespace: true, max: 120}]}>
+                    <Input disabled={props.disabled} placeholder='Profit Sharing · Phase 1' />
+                </Form.Item>
+                <Form.Item
+                    name='slug'
+                    label='Round URL slug'
+                    rules={[
+                        {required: true, whitespace: true},
+                        {pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: 'Use lowercase letters, numbers, and single hyphens.'}
+                    ]}>
+                    <Input disabled={props.disabled || props.slugDisabled} addonBefore='/profit-sharing/' placeholder='phase-1' />
+                </Form.Item>
             </div>
-        </div>
-        <Form.List name='participants'>
-            {(fields, {add, remove}) => (
-                <div className='profit-sharing-definition__participants'>
-                    {fields.map((field, index) => (
-                        <div className='profit-sharing-definition-participant' key={field.key}>
-                            <span className='profit-sharing-definition-participant__order'>{index + 1}</span>
-                            <Form.Item
-                                {...field}
-                                className='profit-sharing-definition-participant__account'
-                                name={[field.name, 'accountName']}
-                                label='Account'
-                                rules={[{required: true, whitespace: true}]}>
-                                <Select
-                                    disabled={props.disabled}
-                                    showSearch={true}
-                                    filterOption={false}
-                                    loading={props.accountsLoading}
-                                    options={props.accountOptions}
-                                    placeholder='Search an authorized member'
-                                    onSearch={props.onAccountSearch}
-                                    onOpenChange={open => open && props.onAccountSearch('')}
-                                />
-                            </Form.Item>
-                            <Form.Item
-                                {...field}
-                                className='profit-sharing-definition-participant__name'
-                                name={[field.name, 'displayName']}
-                                label='Display name'
-                                rules={[{required: true, whitespace: true}]}>
-                                <Input disabled={props.disabled} placeholder='Member name' />
-                            </Form.Item>
-                            <Form.Item
-                                {...field}
-                                className='profit-sharing-definition-participant__responsibility'
-                                name={[field.name, 'baselineResponsibility']}
-                                label='Baseline responsibility'
-                                rules={[{required: true, whitespace: true, max: 500}]}>
-                                <Input.TextArea disabled={props.disabled} autoSize={{minRows: 1, maxRows: 4}} placeholder='Initial responsibility description' />
-                            </Form.Item>
-                            <Button
-                                className='profit-sharing-definition-participant__remove'
-                                type='text'
-                                danger={true}
-                                icon={<DeleteOutlined />}
-                                aria-label={`Remove participant ${index + 1}`}
-                                disabled={props.disabled}
-                                onClick={() => remove(field.name)}
-                            />
-                        </div>
-                    ))}
-                    <Button
-                        block={true}
-                        icon={<PlusOutlined />}
-                        disabled={props.disabled || fields.length >= 5}
-                        onClick={() => add({accountName: '', displayName: '', baselineResponsibility: '', sortOrder: fields.length + 1})}>
-                        Add participant
-                    </Button>
+            <div className='profit-sharing-definition__participants-heading'>
+                <div>
+                    <Typography.Title level={3}>Participants</Typography.Title>
+                    <Typography.Text type='secondary'>
+                        Search for exactly five non-administrator accounts with Google sign-in and Profit Sharing access. Draft definitions may contain fewer.
+                    </Typography.Text>
                 </div>
-            )}
-        </Form.List>
-    </>
-);
+            </div>
+            <Form.List name='participants'>
+                {(fields, {add, remove}) => (
+                    <div className='profit-sharing-definition__participants'>
+                        {fields.map((field, index) => (
+                            <div className='profit-sharing-definition-participant' key={field.key}>
+                                <span className='profit-sharing-definition-participant__order'>{index + 1}</span>
+                                <Form.Item
+                                    {...field}
+                                    className='profit-sharing-definition-participant__account'
+                                    name={[field.name, 'accountId']}
+                                    label='Account'
+                                    rules={[{required: true, whitespace: true}]}>
+                                    <Select
+                                        disabled={props.disabled}
+                                        showSearch={true}
+                                        filterOption={false}
+                                        loading={props.accountsLoading}
+                                        options={props.accountOptions}
+                                        placeholder='Search an authorized member'
+                                        onChange={value => selectAccount(field.name, value)}
+                                        onSearch={props.onAccountSearch}
+                                        onOpenChange={open => open && props.onAccountSearch('')}
+                                    />
+                                </Form.Item>
+                                <Form.Item {...field} name={[field.name, 'username']} hidden={true}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item
+                                    {...field}
+                                    className='profit-sharing-definition-participant__name'
+                                    name={[field.name, 'displayName']}
+                                    label='Display name'
+                                    rules={[{required: true, whitespace: true}]}>
+                                    <Input disabled={true} placeholder='Selected account display name' />
+                                </Form.Item>
+                                <Form.Item
+                                    {...field}
+                                    className='profit-sharing-definition-participant__responsibility'
+                                    name={[field.name, 'baselineResponsibility']}
+                                    label='Baseline responsibility'
+                                    rules={[{required: true, whitespace: true, max: 500}]}>
+                                    <Input.TextArea disabled={props.disabled} autoSize={{minRows: 1, maxRows: 4}} placeholder='Initial responsibility description' />
+                                </Form.Item>
+                                <Button
+                                    className='profit-sharing-definition-participant__remove'
+                                    type='text'
+                                    danger={true}
+                                    icon={<DeleteOutlined />}
+                                    aria-label={`Remove participant ${index + 1}`}
+                                    disabled={props.disabled}
+                                    onClick={() => remove(field.name)}
+                                />
+                            </div>
+                        ))}
+                        <Button
+                            block={true}
+                            icon={<PlusOutlined />}
+                            disabled={props.disabled || fields.length >= 5}
+                            onClick={() => add({accountId: '', username: '', displayName: '', baselineResponsibility: '', sortOrder: fields.length + 1})}>
+                            Add participant
+                        </Button>
+                    </div>
+                )}
+            </Form.List>
+        </>
+    );
+};
 
 const CreateRoundModal = (props: {
     open: boolean;
@@ -349,11 +391,11 @@ const ParticipantStatusCard = (props: {participant: ProfitSharingParticipant}) =
     <Card
         className='profit-sharing-participant-card'
         size='small'
-        title={props.participant.displayName || props.participant.accountName}
+        title={props.participant.displayName || `@${props.participant.username}`}
         extra={
             <Tag color={props.participant.proposalStatus === 'SUBMITTED' ? 'green' : 'default'}>{props.participant.proposalStatus === 'SUBMITTED' ? 'Submitted' : 'Draft'}</Tag>
         }>
-        <Typography.Text type='secondary'>{props.participant.accountName}</Typography.Text>
+        <Typography.Text type='secondary'>@{props.participant.username}</Typography.Text>
         <Typography.Paragraph>{props.participant.baselineResponsibility}</Typography.Paragraph>
     </Card>
 );
@@ -363,8 +405,8 @@ const participantColumns: ColumnsType<ProfitSharingParticipant> = [
         title: 'Participant',
         render: item => (
             <div className='profit-sharing-round-title'>
-                <strong>{item.displayName || item.accountName}</strong>
-                {item.displayName && <Typography.Text type='secondary'>{item.accountName}</Typography.Text>}
+                <strong>{item.displayName || `@${item.username}`}</strong>
+                {item.username && <Typography.Text type='secondary'>@{item.username}</Typography.Text>}
             </div>
         )
     },
@@ -387,7 +429,7 @@ const AdminClosedResult = (props: {round: ProfitSharingRound}) => {
                         showIcon={true}
                         icon={<TrophyOutlined />}
                         title={`${winner.label || `Proposal ${winner.proposalId}`} won the ballot.`}
-                        description={`${winner.authorDisplayName || winner.authorAccount} · ${winner.voteCount} vote${winner.voteCount === 1 ? '' : 's'}`}
+                        description={`${winner.authorDisplayName || (winner.authorUsername ? `@${winner.authorUsername}` : 'Unknown member')} · ${winner.voteCount} vote${winner.voteCount === 1 ? '' : 's'}`}
                     />
                 ) : (
                     <Alert type='warning' showIcon={true} title='The ballot closed without a single winner.' />
@@ -410,15 +452,22 @@ export const ProfitSharingAdminRoundPage = () => {
     const roundData = useAsyncData(() => services.profitSharing.getRound(slug), [slug]);
     const accounts = useEligibleAccountOptions();
     const round = roundData.data;
-    const accountOptions = accounts.options;
+    const accountOptions = mergeAccountOptions(accounts.options, snapshotAccountOptions(round?.participants || []));
     const [form] = Form.useForm<RoundDefinitionDraft>();
     const watched = Form.useWatch([], form) as RoundDefinitionDraft | undefined;
     const [savedDefinition, setSavedDefinition] = React.useState<RoundDefinitionDraft>({slug: '', title: '', participants: []});
     const [saving, setSaving] = React.useState(false);
     const currentDefinition = watched || savedDefinition;
     const dirty = Boolean(round?.phase === ProfitSharingRoundPhase.Draft && !definitionsEqual(currentDefinition, savedDefinition));
+    const eligibleAccountIDs = new Set(accounts.options.map(option => option.value));
     const rosterIsEligible = Boolean(
-        round && !accounts.loading && !accounts.error && round.participantCount === 5 && round.participants.length === 5 && !hasDuplicateAccounts(round.participants)
+        round &&
+            !accounts.loading &&
+            !accounts.error &&
+            round.participantCount === 5 &&
+            round.participants.length === 5 &&
+            !hasDuplicateAccounts(round.participants) &&
+            round.participants.every(participant => eligibleAccountIDs.has(participant.accountId))
     );
 
     React.useEffect(() => {
@@ -660,7 +709,7 @@ export const ProfitSharingAdminRoundPage = () => {
 
                     <Section title='Participant status'>
                         <ResourceTable
-                            rowKey='accountName'
+                            rowKey='accountId'
                             label='Profit-sharing participant submission status'
                             items={round.participants}
                             columns={participantColumns}

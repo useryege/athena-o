@@ -77,6 +77,7 @@ import {
     ProfitSharingRoundPage,
     ProfitSharingAdminRoundsPage,
     ProfitSharingAdminRoundPage,
+    RegisterPage,
     localThemeMode,
     serverThemeMode
 } from './pages';
@@ -420,7 +421,7 @@ const firstAuthorizedBusinessPath = (access: AccessState): string | undefined =>
 };
 
 const mergeMonotonicAccountProjection = (previous: AccessState | null, incoming: AccessState): AccessState => {
-    if (!previous || previous.user.username !== incoming.user.username || previous.user.iss !== incoming.user.iss) {
+    if (!previous || previous.user.accountId !== incoming.user.accountId || previous.user.iss !== incoming.user.iss) {
         return incoming;
     }
     const profile = incoming.user.profile.revision < previous.user.profile.revision ? previous.user.profile : incoming.user.profile;
@@ -608,20 +609,26 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
                 const authorizationChanged =
                     Boolean(previous) &&
-                    (previous.user.username !== next.user.username ||
+                    (previous.user.accountId !== next.user.accountId ||
                         previous.user.iss !== next.user.iss ||
                         previous.revision !== next.revision ||
                         previous.isAdmin !== next.isAdmin ||
                         !moduleAccessLevelsEqual(previous.moduleAccess, next.moduleAccess));
                 if (authorizationChanged) {
                     const priorAccess = previous as AccessState;
-                    const identityChanged = priorAccess.user.username !== next.user.username || priorAccess.user.iss !== next.user.iss || priorAccess.isAdmin !== next.isAdmin;
+                    const identityChanged = priorAccess.user.accountId !== next.user.accountId || priorAccess.user.iss !== next.user.iss || priorAccess.isAdmin !== next.isAdmin;
                     if (identityChanged) {
                         requests.invalidatePendingRequestErrors();
                         requests.abortAuthorizationRequests();
                         clearAsyncDataCache();
                         clearProjectsReturnSnapshots();
                     } else {
+                        if (priorAccess.user.access.apiKeyEnabled && !next.user.access.apiKeyEnabled) {
+                            requests.abortAuthorizationFeatureRequests('api-key');
+                        }
+                        if (priorAccess.user.access.profitSharingEnabled && !next.user.access.profitSharingEnabled) {
+                            requests.abortAuthorizationFeatureRequests('profit-sharing');
+                        }
                         accountDataModules.forEach(definition => {
                             const prior = priorAccess.moduleAccess[definition.module];
                             const current = next.moduleAccess[definition.module];
@@ -635,6 +642,10 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                                 requests.abortAuthorizationRequests(definition.module, 'write');
                             }
                         });
+                        if (!isPendingAccess(priorAccess) && isPendingAccess(next)) {
+                            clearAsyncDataCache();
+                            clearProjectsReturnSnapshots();
+                        }
                     }
                 }
                 accessRefreshedAtRef.current = Date.now();
@@ -743,7 +754,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         if (destination && (location.pathname.startsWith('/account/') || location.pathname === '/help')) {
             navigate(destination, {replace: true});
         }
-    }, [access?.revision, access?.user.access.profitSharingEnabled, access?.user.username, location.pathname, navigate]);
+    }, [access?.revision, access?.user.access.profitSharingEnabled, access?.user.accountId, location.pathname, navigate]);
 
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
@@ -753,7 +764,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         if (access) {
             services.viewPreferences.syncServerTheme(localThemeMode(access.user.preferences.theme));
         }
-    }, [access?.user.preferences.revision, access?.user.username]);
+    }, [access?.user.preferences.revision, access?.user.accountId]);
 
     React.useEffect(() => {
         if (narrowShell) {
@@ -913,7 +924,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             return null;
         }
         const generation = accessGenerationRef.current;
-        const username = access.user.username;
+        const accountId = access.user.accountId;
         const issuer = access.user.iss;
         return {
             user: access.user,
@@ -929,7 +940,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                     generation !== accessGenerationRef.current ||
                     !accessRefreshAllowedRef.current ||
                     !current ||
-                    current.user.username !== username ||
+                    current.user.accountId !== accountId ||
                     current.user.iss !== issuer
                 ) {
                     return;
@@ -953,7 +964,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                     generation === accessGenerationRef.current &&
                     accessRefreshAllowedRef.current &&
                     latest !== null &&
-                    latest.user.username === current.user.username &&
+                    latest.user.accountId === current.user.accountId &&
                     latest.user.iss === current.user.iss
                 );
             };
@@ -1375,10 +1386,23 @@ const Bootstrap = () => {
 
 export const App = () => {
     const [router] = React.useState(() =>
-        createBrowserRouter([{path: '*', element: <Bootstrap />}], {
+        createBrowserRouter([{path: '*', element: <AppEntry />}], {
             basename: base,
             future: {v7_relativeSplatPath: true}
         })
     );
     return <RouterProvider router={router} future={{v7_startTransition: true}} />;
+};
+
+const RegistrationBootstrap = () => (
+    <ConfigProvider>
+        <AntApp>
+            <RegisterPage />
+        </AntApp>
+    </ConfigProvider>
+);
+
+const AppEntry = () => {
+    const location = useLocation();
+    return location.pathname === '/register' ? <RegistrationBootstrap /> : <Bootstrap />;
 };

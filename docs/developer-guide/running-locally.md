@@ -30,16 +30,25 @@ ATHENA_ADMIN_GOOGLE_EMAIL='<administrator-google-email>'
 ATHENA_JWT_SECRET='<at-least-32-byte-signing-secret>'
 ```
 
-No Google subject is configured ahead of time. A verified unknown subject creates one
-durable `user-<UUID>` account with login enabled and no business, API Key, or Profit
-Sharing access. The first verified identity whose email matches
-`ATHENA_ADMIN_GOOGLE_EMAIL` claims the fixed `admin` account; after that, its persisted
-Google subject is permanent. Comparison trims surrounding whitespace and ignores case,
-but does not normalize Gmail dots or `+alias` values. When authentication is enabled,
-missing OIDC settings or administrator email prevent the API Server from listening. Setting
-`ATHENA_SERVER_DISABLE_AUTH=true` keeps the development administrator bypass and does not
-require Google configuration. That bypass is accepted only when the API Server listens on
-`localhost`, `127.0.0.0/8`, or `::1`; the local Procfile defaults to `127.0.0.1`.
+No Google subject is configured ahead of time. After Athena verifies an unknown subject,
+the callback creates a 15-minute browser-bound registration ticket and redirects to
+`/register`; it does not create an account or issue an Athena session. The user selects a
+permanent, case-preserving username there. A successful submission atomically creates a
+UUID `account_id`, the immutable username, the initial profile, and the complete access
+matrix. Ordinary accounts start with login enabled and no business, API Key, or Profit
+Sharing access. The UUID is the internal identity used by sessions, authorization, API
+Keys, Wallet, and Profit Sharing; the UI displays `@username` instead.
+
+When the verified email matches `ATHENA_ADMIN_GOOGLE_EMAIL`, the registration ticket marks
+that identity as the administrator candidate. Its submitted account is created with
+`administrator=true` and fixed maximum module access; no username confers the role. The
+persisted Google subject is permanent after registration. Email comparison trims surrounding
+whitespace and ignores case, but does not normalize Gmail dots or `+alias` values. When
+authentication is enabled, missing OIDC settings or administrator email prevent the API
+Server from listening. Setting `ATHENA_SERVER_DISABLE_AUTH=true` creates the isolated
+`local-admin` development identity and does not require Google configuration. That mode is
+accepted only when the API Server listens on `localhost`, `127.0.0.0/8`, or `::1`; reset all
+local state before switching back to OIDC. The local Procfile defaults to `127.0.0.1`.
 
 The direct client-secret variable is permitted only for local development. To exercise the
 file-based path instead, leave it empty, write the secret to a separate `0600` file, and set
@@ -67,13 +76,15 @@ export ATHENA_SERVER=127.0.0.1:8080
 ```
 
 Open `http://localhost:4000` for interactive login. Vite proxies `/auth/google/*` to the
-API Server, so the callback URI must continue to use port `4000`; Athena never derives it
-from `Host` or forwarded headers.
+API Server, including the registration resource and username-availability endpoint, so the
+callback URI must continue to use port `4000`; Athena never derives it from `Host` or
+forwarded headers.
 
-The new account lands on `/account/access`. It can use Profile, Appearance, Access, Help,
-and Logout, but starts no business requests until the administrator grants a module or
-Profit Sharing access. API Key management appears only when its independent entitlement
-is enabled.
+An unknown identity first lands on `/register`. After it chooses an available permanent
+username and account creation succeeds, the new account lands on `/account/access`. It can
+use Profile, Appearance, Access, Help, and Logout, but starts no business requests until the
+administrator grants a module or Profit Sharing access. API Key management appears only
+when its independent entitlement is enabled.
 
 ## Local Data
 
@@ -83,10 +94,11 @@ fixed `athena-local-redis-data`, `athena-local-postgres-data`, and
 but preserves those volumes; `make run-reset` removes both containers and owned
 data volumes.
 
-The current dynamic-account schema intentionally replaces fixed development account state.
-Before first use of this implementation, run `make run-reset`, then `make run`. Reset removes
-accounts, administrator binding, profiles, access grants, API Keys, sessions, Profit Sharing
-references, and avatars; there is no compatibility import.
+The current schema uses UUID account IDs throughout account state, Profit Sharing, Wallet,
+and related service boundaries. Before first use of this implementation, run
+`make run-reset`, then `make run`. Reset removes accounts, administrator binding, profiles,
+access grants, API Keys, sessions, registration tickets, Profit Sharing references, and
+avatars; there is no compatibility import.
 
 Supported variables:
 

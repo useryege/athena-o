@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
@@ -20,9 +19,9 @@ type serviceAuthFuncOverride interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 }
 
-func withDisabledAuthClaims(ctx context.Context) context.Context {
+func withDisabledAuthClaims(ctx context.Context, accountID string) context.Context {
 	return context.WithValue(ctx, "claims", jwt.MapClaims{ //nolint:staticcheck
-		"sub": common.AthenaAdminUsername,
+		"sub": accountID,
 		"iss": accountcredentials.ClaimsIssuer,
 	})
 }
@@ -199,7 +198,7 @@ func (s *authenticatedServerStream) Context() context.Context {
 
 func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string, srv any, req any) (context.Context, error) {
 	if server.DisableAuth {
-		return withDisabledAuthClaims(ctx), nil
+		return withDisabledAuthClaims(ctx, server.developmentAccountID), nil
 	}
 
 	if publicGRPCMethods[fullMethod] {
@@ -213,56 +212,59 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	if err != nil {
 		return authCtx, err
 	}
-	username := util_session.GetUserIdentifier(authCtx)
-	if username == "" {
+	accountID := util_session.GetUserIdentifier(authCtx)
+	if accountID == "" {
 		return authCtx, status.Error(codes.Unauthenticated, "authenticated account is missing")
 	}
 
 	if isReflectionMethod(fullMethod) || administratorGRPCMethods[fullMethod] {
-		return authCtx, server.authorizeAccount(username, accountaccess.RequirementAdministrator)
+		return authCtx, server.authorizeAccount(accountID, accountaccess.RequirementAdministrator)
 	}
 	if profitSharingAuthenticatedGRPCMethods[fullMethod] {
-		return authCtx, server.authorizeAccount(username, accountaccess.RequirementProfitSharing)
+		return authCtx, server.authorizeAccount(accountID, accountaccess.RequirementProfitSharing)
 	}
 	if accountAuthenticatedGRPCMethods[fullMethod] {
 		return authCtx, nil
 	}
 	if accountSelfOrAdministratorGRPCMethods[fullMethod] {
-		return authCtx, server.authorizeAccountSelfService(username, fullMethod, req)
+		return authCtx, server.authorizeAccountSelfService(accountID, fullMethod, req)
 	}
 	if rule, ok := moduleGRPCRules[fullMethod]; ok {
 		if walletSecretsRequested(fullMethod, req) {
 			rule.level = accountaccess.AccessLevelReadWrite
 		}
-		return authCtx, server.authorizeAccount(username, accountaccess.RequireModule(rule.module, rule.level))
+		return authCtx, server.authorizeAccount(accountID, accountaccess.RequireModule(rule.module, rule.level))
 	}
 	return authCtx, status.Errorf(codes.PermissionDenied, "permission denied: no account-access rule configured for %s", fullMethod)
 }
 
-func (server *AthenaServer) authorizeAccount(username string, requirement accountaccess.Requirement) error {
+func (server *AthenaServer) authorizeAccount(accountID string, requirement accountaccess.Requirement) error {
 	if server.accessController == nil {
 		return status.Error(codes.Internal, "account access controller is not configured")
 	}
-	return server.accessController.Authorize(username, requirement)
+	return server.accessController.Authorize(accountID, requirement)
 }
 
-func (server *AthenaServer) authorizeAccountSelfService(username, fullMethod string, req any) error {
-	target := accountSelfServiceTarget(fullMethod, req)
-	if target == username {
+func (server *AthenaServer) authorizeAccountSelfService(accountID, fullMethod string, req any) error {
+	target, err := accountcredentials.CanonicalAccountID(accountSelfServiceTarget(fullMethod, req))
+	if err != nil {
+		return status.Error(codes.InvalidArgument, "account ID must be a UUID")
+	}
+	if target == accountID {
 		return nil
 	}
-	return server.authorizeAccount(username, accountaccess.RequirementAdministrator)
+	return server.authorizeAccount(accountID, accountaccess.RequirementAdministrator)
 }
 
 func accountSelfServiceTarget(fullMethod string, req any) string {
 	switch fullMethod {
 	case "/account.AccountService/GetAccount":
 		if request, ok := req.(*accountpkg.GetAccountRequest); ok {
-			return request.GetName()
+			return request.GetId()
 		}
 	case "/account.AccountService/UpdateAccountProfile":
 		if request, ok := req.(*accountpkg.UpdateAccountProfileRequest); ok {
-			return request.GetName()
+			return request.GetId()
 		}
 	}
 	return ""

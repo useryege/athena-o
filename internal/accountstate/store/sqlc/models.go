@@ -9,7 +9,7 @@ import (
 )
 
 type AccountAccess struct {
-	AccountName          string
+	AccountID            pgtype.UUID
 	LoginEnabled         bool
 	ApiKeyEnabled        bool
 	ProfitSharingEnabled bool
@@ -19,29 +19,29 @@ type AccountAccess struct {
 }
 
 type AccountApiKey struct {
-	AccountName string
-	DisplayID   string
-	Jti         string
-	IssuedAt    pgtype.Timestamptz
-	ExpiresAt   pgtype.Timestamptz
+	AccountID pgtype.UUID
+	DisplayID string
+	Jti       string
+	IssuedAt  pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
 }
 
 type AccountModuleAccess struct {
-	AccountName string
+	AccountID   pgtype.UUID
 	Module      string
 	AccessLevel string
 }
 
 type AccountPreference struct {
-	AccountName string
-	Theme       string
-	Revision    int64
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	AccountID pgtype.UUID
+	Theme     string
+	Revision  int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 }
 
 type AccountProfile struct {
-	AccountName       string
+	AccountID         pgtype.UUID
 	DisplayName       string
 	AccountTier       string
 	AvatarObjectKey   string
@@ -54,11 +54,13 @@ type AccountProfile struct {
 }
 
 type AthenaAccount struct {
-	AccountName   string
-	GoogleSubject pgtype.Text
-	VerifiedEmail string
-	Administrator bool
-	CreatedAt     pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
-	LastLoginAt   pgtype.Timestamptz
+	AccountID        pgtype.UUID
+	Username         string
+	IdentityProvider string
+	GoogleSubject    pgtype.Text
+	VerifiedEmail    string
+	Administrator    bool
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	LastLoginAt      pgtype.Timestamptz
 }

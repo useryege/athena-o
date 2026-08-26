@@ -87,6 +87,7 @@ func MaximumModuleAccess() map[Module]AccessLevel {
 
 // Access is one durable account's complete effective access aggregate.
 type Access struct {
+	Administrator        bool
 	LoginEnabled         bool
 	APIKeyEnabled        bool
 	ProfitSharingEnabled bool
@@ -116,6 +117,7 @@ func (a Access) IsPending() bool {
 // Clone returns an aggregate that shares no mutable module map with the source.
 func (a Access) Clone() Access {
 	clone := Access{
+		Administrator:        a.Administrator,
 		LoginEnabled:         a.LoginEnabled,
 		APIKeyEnabled:        a.APIKeyEnabled,
 		ProfitSharingEnabled: a.ProfitSharingEnabled,
@@ -147,6 +149,16 @@ func (a Access) Validate() error {
 		}
 		if err := validateModuleAccessLevel(module, level); err != nil {
 			return err
+		}
+	}
+	if a.Administrator {
+		if !a.LoginEnabled || a.APIKeyEnabled || !a.ProfitSharingEnabled {
+			return status.Error(codes.InvalidArgument, "administrator access flags are fixed")
+		}
+		for module, maximum := range MaximumModuleAccess() {
+			if a.Modules[module] != maximum {
+				return status.Errorf(codes.InvalidArgument, "administrator module %q must use maximum access", module)
+			}
 		}
 	}
 	return nil

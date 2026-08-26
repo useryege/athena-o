@@ -204,6 +204,7 @@ interface WalletsViewProps {
     walletType: string;
     setWalletType: (walletType: string) => void;
     canWrite: boolean;
+    currentAccountId: string;
     onOpenCreate: () => void;
     onReveal: (id: number) => void;
     writeSurface: React.ReactNode;
@@ -215,7 +216,18 @@ const WalletsView = (props: WalletsViewProps) => {
         {title: 'Type', render: item => walletTypeLabel(item.type)},
         {title: 'Chain', dataIndex: 'chain'},
         {title: 'Address', render: item => <TruncatedText value={item.address} copyable={true} />},
-        {title: 'Created By', dataIndex: 'createdBy'},
+        {
+            title: 'Owner',
+            render: item => {
+                if (item.systemOwned) {
+                    return 'System';
+                }
+                if (item.ownerAccountId === props.currentAccountId) {
+                    return 'You';
+                }
+                return 'Member account';
+            }
+        },
         {title: 'Source', dataIndex: 'source'}
     ];
     if (props.canWrite) {
@@ -301,6 +313,7 @@ export const WalletsPage = () => {
             walletType={walletType}
             setWalletType={setWalletType}
             canWrite={canWrite}
+            currentAccountId={authorization.user.accountId}
             onOpenCreate={() => writeHandle.current?.openCreate()}
             onReveal={id => writeHandle.current?.reveal(id)}
             writeSurface={

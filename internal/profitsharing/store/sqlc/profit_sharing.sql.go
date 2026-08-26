@@ -56,7 +56,7 @@ WHERE id = $2::text
   AND round_id = $3::bigint
   AND status = 'submitted'
   AND anonymous_label IS NULL
-RETURNING id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+RETURNING id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 `
 
 type AssignProfitSharingProposalLabelParams struct {
@@ -71,7 +71,7 @@ func (q *Queries) AssignProfitSharingProposalLabel(ctx context.Context, arg Assi
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -105,22 +105,25 @@ func (q *Queries) BatchCreateProfitSharingBallotCandidates(ctx context.Context, 
 const batchCreateProfitSharingParticipants = `-- name: BatchCreateProfitSharingParticipants :exec
 INSERT INTO profit_sharing_participant (
   round_id,
-  account,
+  account_id,
+  username,
   display_name,
   display_order,
   baseline_responsibility
 )
 SELECT
   $1::bigint,
-  unnest($2::text[]),
+  unnest($2::uuid[]),
   unnest($3::text[]),
-  unnest($4::integer[]),
-  unnest($5::text[])
+  unnest($4::text[]),
+  unnest($5::integer[]),
+  unnest($6::text[])
 `
 
 type BatchCreateProfitSharingParticipantsParams struct {
 	RoundID                  int64
-	Accounts                 []string
+	AccountIds               []pgtype.UUID
+	Usernames                []string
 	DisplayNames             []string
 	DisplayOrders            []int32
 	BaselineResponsibilities []string
@@ -129,7 +132,8 @@ type BatchCreateProfitSharingParticipantsParams struct {
 func (q *Queries) BatchCreateProfitSharingParticipants(ctx context.Context, arg BatchCreateProfitSharingParticipantsParams) error {
 	_, err := q.db.Exec(ctx, batchCreateProfitSharingParticipants,
 		arg.RoundID,
-		arg.Accounts,
+		arg.AccountIds,
+		arg.Usernames,
 		arg.DisplayNames,
 		arg.DisplayOrders,
 		arg.BaselineResponsibilities,
@@ -141,31 +145,31 @@ const batchCreateProfitSharingProposalItems = `-- name: BatchCreateProfitSharing
 INSERT INTO profit_sharing_proposal_item (
   round_id,
   proposal_id,
-  participant_account,
+  participant_account_id,
   responsibility,
   basis_points
 )
 SELECT
   $1::bigint,
   $2::text,
-  unnest($3::text[]),
+  unnest($3::uuid[]),
   unnest($4::text[]),
   NULLIF(unnest($5::integer[]), -1)
 `
 
 type BatchCreateProfitSharingProposalItemsParams struct {
-	RoundID             int64
-	ProposalID          string
-	ParticipantAccounts []string
-	Responsibilities    []string
-	BasisPointsValues   []int32
+	RoundID               int64
+	ProposalID            string
+	ParticipantAccountIds []pgtype.UUID
+	Responsibilities      []string
+	BasisPointsValues     []int32
 }
 
 func (q *Queries) BatchCreateProfitSharingProposalItems(ctx context.Context, arg BatchCreateProfitSharingProposalItemsParams) error {
 	_, err := q.db.Exec(ctx, batchCreateProfitSharingProposalItems,
 		arg.RoundID,
 		arg.ProposalID,
-		arg.ParticipantAccounts,
+		arg.ParticipantAccountIds,
 		arg.Responsibilities,
 		arg.BasisPointsValues,
 	)
@@ -173,21 +177,21 @@ func (q *Queries) BatchCreateProfitSharingProposalItems(ctx context.Context, arg
 }
 
 const batchCreateProfitSharingProposals = `-- name: BatchCreateProfitSharingProposals :exec
-INSERT INTO profit_sharing_proposal (id, round_id, author_account)
+INSERT INTO profit_sharing_proposal (id, round_id, author_account_id)
 SELECT
   unnest($1::text[]),
   $2::bigint,
-  unnest($3::text[])
+  unnest($3::uuid[])
 `
 
 type BatchCreateProfitSharingProposalsParams struct {
-	ProposalIds    []string
-	RoundID        int64
-	AuthorAccounts []string
+	ProposalIds      []string
+	RoundID          int64
+	AuthorAccountIds []pgtype.UUID
 }
 
 func (q *Queries) BatchCreateProfitSharingProposals(ctx context.Context, arg BatchCreateProfitSharingProposalsParams) error {
-	_, err := q.db.Exec(ctx, batchCreateProfitSharingProposals, arg.ProposalIds, arg.RoundID, arg.AuthorAccounts)
+	_, err := q.db.Exec(ctx, batchCreateProfitSharingProposals, arg.ProposalIds, arg.RoundID, arg.AuthorAccountIds)
 	return err
 }
 
@@ -295,14 +299,14 @@ const createInitialProfitSharingProposalItems = `-- name: CreateInitialProfitSha
 INSERT INTO profit_sharing_proposal_item (
   round_id,
   proposal_id,
-  participant_account,
+  participant_account_id,
   responsibility,
   basis_points
 )
 SELECT
   proposal.round_id,
   proposal.id,
-  participant.account,
+  participant.account_id,
   participant.baseline_responsibility,
   NULL
 FROM profit_sharing_proposal AS proposal
@@ -421,23 +425,24 @@ func (q *Queries) GetActiveProfitSharingBallotForUpdate(ctx context.Context, rou
 }
 
 const getProfitSharingParticipant = `-- name: GetProfitSharingParticipant :one
-SELECT round_id, account, display_name, display_order, baseline_responsibility
+SELECT round_id, account_id, username, display_name, display_order, baseline_responsibility
 FROM profit_sharing_participant
 WHERE round_id = $1::bigint
-  AND account = $2::text
+  AND account_id = $2::uuid
 `
 
 type GetProfitSharingParticipantParams struct {
-	RoundID int64
-	Account string
+	RoundID   int64
+	AccountID pgtype.UUID
 }
 
 func (q *Queries) GetProfitSharingParticipant(ctx context.Context, arg GetProfitSharingParticipantParams) (ProfitSharingParticipant, error) {
-	row := q.db.QueryRow(ctx, getProfitSharingParticipant, arg.RoundID, arg.Account)
+	row := q.db.QueryRow(ctx, getProfitSharingParticipant, arg.RoundID, arg.AccountID)
 	var i ProfitSharingParticipant
 	err := row.Scan(
 		&i.RoundID,
-		&i.Account,
+		&i.AccountID,
+		&i.Username,
 		&i.DisplayName,
 		&i.DisplayOrder,
 		&i.BaselineResponsibility,
@@ -446,7 +451,7 @@ func (q *Queries) GetProfitSharingParticipant(ctx context.Context, arg GetProfit
 }
 
 const getProfitSharingProposal = `-- name: GetProfitSharingProposal :one
-SELECT id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+SELECT id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 FROM profit_sharing_proposal
 WHERE id = $1::text
   AND round_id = $2::bigint
@@ -463,7 +468,7 @@ func (q *Queries) GetProfitSharingProposal(ctx context.Context, arg GetProfitSha
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -475,24 +480,24 @@ func (q *Queries) GetProfitSharingProposal(ctx context.Context, arg GetProfitSha
 }
 
 const getProfitSharingProposalByAuthor = `-- name: GetProfitSharingProposalByAuthor :one
-SELECT id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+SELECT id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 FROM profit_sharing_proposal
 WHERE round_id = $1::bigint
-  AND author_account = $2::text
+  AND author_account_id = $2::uuid
 `
 
 type GetProfitSharingProposalByAuthorParams struct {
-	RoundID       int64
-	AuthorAccount string
+	RoundID         int64
+	AuthorAccountID pgtype.UUID
 }
 
 func (q *Queries) GetProfitSharingProposalByAuthor(ctx context.Context, arg GetProfitSharingProposalByAuthorParams) (ProfitSharingProposal, error) {
-	row := q.db.QueryRow(ctx, getProfitSharingProposalByAuthor, arg.RoundID, arg.AuthorAccount)
+	row := q.db.QueryRow(ctx, getProfitSharingProposalByAuthor, arg.RoundID, arg.AuthorAccountID)
 	var i ProfitSharingProposal
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -504,25 +509,25 @@ func (q *Queries) GetProfitSharingProposalByAuthor(ctx context.Context, arg GetP
 }
 
 const getProfitSharingProposalByAuthorForUpdate = `-- name: GetProfitSharingProposalByAuthorForUpdate :one
-SELECT id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+SELECT id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 FROM profit_sharing_proposal
 WHERE round_id = $1::bigint
-  AND author_account = $2::text
+  AND author_account_id = $2::uuid
 FOR UPDATE
 `
 
 type GetProfitSharingProposalByAuthorForUpdateParams struct {
-	RoundID       int64
-	AuthorAccount string
+	RoundID         int64
+	AuthorAccountID pgtype.UUID
 }
 
 func (q *Queries) GetProfitSharingProposalByAuthorForUpdate(ctx context.Context, arg GetProfitSharingProposalByAuthorForUpdateParams) (ProfitSharingProposal, error) {
-	row := q.db.QueryRow(ctx, getProfitSharingProposalByAuthorForUpdate, arg.RoundID, arg.AuthorAccount)
+	row := q.db.QueryRow(ctx, getProfitSharingProposalByAuthorForUpdate, arg.RoundID, arg.AuthorAccountID)
 	var i ProfitSharingProposal
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -640,28 +645,28 @@ func (q *Queries) GetProfitSharingRoundForUpdate(ctx context.Context, roundID in
 }
 
 const getProfitSharingVote = `-- name: GetProfitSharingVote :one
-SELECT round_id, ballot_number, voter_account, proposal_id, proposal_author_account, created_at, updated_at
+SELECT round_id, ballot_number, voter_account_id, proposal_id, proposal_author_account_id, created_at, updated_at
 FROM profit_sharing_vote
 WHERE round_id = $1::bigint
   AND ballot_number = $2::integer
-  AND voter_account = $3::text
+  AND voter_account_id = $3::uuid
 `
 
 type GetProfitSharingVoteParams struct {
-	RoundID      int64
-	BallotNumber int32
-	VoterAccount string
+	RoundID        int64
+	BallotNumber   int32
+	VoterAccountID pgtype.UUID
 }
 
 func (q *Queries) GetProfitSharingVote(ctx context.Context, arg GetProfitSharingVoteParams) (ProfitSharingVote, error) {
-	row := q.db.QueryRow(ctx, getProfitSharingVote, arg.RoundID, arg.BallotNumber, arg.VoterAccount)
+	row := q.db.QueryRow(ctx, getProfitSharingVote, arg.RoundID, arg.BallotNumber, arg.VoterAccountID)
 	var i ProfitSharingVote
 	err := row.Scan(
 		&i.RoundID,
 		&i.BallotNumber,
-		&i.VoterAccount,
+		&i.VoterAccountID,
 		&i.ProposalID,
-		&i.ProposalAuthorAccount,
+		&i.ProposalAuthorAccountID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -669,7 +674,7 @@ func (q *Queries) GetProfitSharingVote(ctx context.Context, arg GetProfitSharing
 }
 
 const listProfitSharingBallotCandidates = `-- name: ListProfitSharingBallotCandidates :many
-SELECT proposal.id, proposal.round_id, proposal.author_account, proposal.status, proposal.anonymous_label, proposal.revision, proposal.created_at, proposal.updated_at, proposal.submitted_at
+SELECT proposal.id, proposal.round_id, proposal.author_account_id, proposal.status, proposal.anonymous_label, proposal.revision, proposal.created_at, proposal.updated_at, proposal.submitted_at
 FROM profit_sharing_ballot_candidate AS candidate
 JOIN profit_sharing_proposal AS proposal
   ON proposal.id = candidate.proposal_id
@@ -696,7 +701,7 @@ func (q *Queries) ListProfitSharingBallotCandidates(ctx context.Context, arg Lis
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoundID,
-			&i.AuthorAccount,
+			&i.AuthorAccountID,
 			&i.Status,
 			&i.AnonymousLabel,
 			&i.Revision,
@@ -717,7 +722,7 @@ func (q *Queries) ListProfitSharingBallotCandidates(ctx context.Context, arg Lis
 const listProfitSharingBallotTallies = `-- name: ListProfitSharingBallotTallies :many
 SELECT
   candidate.proposal_id,
-  COUNT(vote.voter_account)::bigint AS vote_count
+  COUNT(vote.voter_account_id)::bigint AS vote_count
 FROM profit_sharing_ballot_candidate AS candidate
 LEFT JOIN profit_sharing_vote AS vote
   ON vote.round_id = candidate.round_id
@@ -796,9 +801,9 @@ const listProfitSharingClosedTallies = `-- name: ListProfitSharingClosedTallies 
 SELECT
   ballot.ballot_number,
   proposal.id AS proposal_id,
-  proposal.author_account,
+  proposal.author_account_id,
   proposal.anonymous_label,
-  COUNT(vote.voter_account)::bigint AS vote_count
+  COUNT(vote.voter_account_id)::bigint AS vote_count
 FROM profit_sharing_ballot AS ballot
 JOIN profit_sharing_ballot_candidate AS candidate
   ON candidate.round_id = ballot.round_id
@@ -812,16 +817,16 @@ LEFT JOIN profit_sharing_vote AS vote
  AND vote.proposal_id = candidate.proposal_id
 WHERE ballot.round_id = $1::bigint
   AND ballot.status = 'closed'
-GROUP BY ballot.ballot_number, proposal.id, proposal.author_account, proposal.anonymous_label
+GROUP BY ballot.ballot_number, proposal.id, proposal.author_account_id, proposal.anonymous_label
 ORDER BY ballot.ballot_number, vote_count DESC, proposal.anonymous_label, proposal.id
 `
 
 type ListProfitSharingClosedTalliesRow struct {
-	BallotNumber   int32
-	ProposalID     string
-	AuthorAccount  string
-	AnonymousLabel pgtype.Text
-	VoteCount      int64
+	BallotNumber    int32
+	ProposalID      string
+	AuthorAccountID pgtype.UUID
+	AnonymousLabel  pgtype.Text
+	VoteCount       int64
 }
 
 func (q *Queries) ListProfitSharingClosedTallies(ctx context.Context, roundID int64) ([]ListProfitSharingClosedTalliesRow, error) {
@@ -836,7 +841,7 @@ func (q *Queries) ListProfitSharingClosedTallies(ctx context.Context, roundID in
 		if err := rows.Scan(
 			&i.BallotNumber,
 			&i.ProposalID,
-			&i.AuthorAccount,
+			&i.AuthorAccountID,
 			&i.AnonymousLabel,
 			&i.VoteCount,
 		); err != nil {
@@ -851,10 +856,10 @@ func (q *Queries) ListProfitSharingClosedTallies(ctx context.Context, roundID in
 }
 
 const listProfitSharingParticipants = `-- name: ListProfitSharingParticipants :many
-SELECT round_id, account, display_name, display_order, baseline_responsibility
+SELECT round_id, account_id, username, display_name, display_order, baseline_responsibility
 FROM profit_sharing_participant
 WHERE round_id = $1::bigint
-ORDER BY display_order, account
+ORDER BY display_order, account_id
 `
 
 func (q *Queries) ListProfitSharingParticipants(ctx context.Context, roundID int64) ([]ProfitSharingParticipant, error) {
@@ -868,7 +873,8 @@ func (q *Queries) ListProfitSharingParticipants(ctx context.Context, roundID int
 		var i ProfitSharingParticipant
 		if err := rows.Scan(
 			&i.RoundID,
-			&i.Account,
+			&i.AccountID,
+			&i.Username,
 			&i.DisplayName,
 			&i.DisplayOrder,
 			&i.BaselineResponsibility,
@@ -884,14 +890,14 @@ func (q *Queries) ListProfitSharingParticipants(ctx context.Context, roundID int
 }
 
 const listProfitSharingProposalItems = `-- name: ListProfitSharingProposalItems :many
-SELECT item.round_id, item.proposal_id, item.participant_account, item.responsibility, item.basis_points
+SELECT item.round_id, item.proposal_id, item.participant_account_id, item.responsibility, item.basis_points
 FROM profit_sharing_proposal_item AS item
 JOIN profit_sharing_participant AS participant
   ON participant.round_id = item.round_id
- AND participant.account = item.participant_account
+ AND participant.account_id = item.participant_account_id
 WHERE item.round_id = $1::bigint
   AND item.proposal_id = $2::text
-ORDER BY participant.display_order, participant.account
+ORDER BY participant.display_order, participant.account_id
 `
 
 type ListProfitSharingProposalItemsParams struct {
@@ -911,7 +917,7 @@ func (q *Queries) ListProfitSharingProposalItems(ctx context.Context, arg ListPr
 		if err := rows.Scan(
 			&i.RoundID,
 			&i.ProposalID,
-			&i.ParticipantAccount,
+			&i.ParticipantAccountID,
 			&i.Responsibility,
 			&i.BasisPoints,
 		); err != nil {
@@ -926,7 +932,7 @@ func (q *Queries) ListProfitSharingProposalItems(ctx context.Context, arg ListPr
 }
 
 const listProfitSharingProposals = `-- name: ListProfitSharingProposals :many
-SELECT id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+SELECT id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 FROM profit_sharing_proposal
 WHERE round_id = $1::bigint
 ORDER BY anonymous_label NULLS LAST, id
@@ -944,7 +950,7 @@ func (q *Queries) ListProfitSharingProposals(ctx context.Context, roundID int64)
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoundID,
-			&i.AuthorAccount,
+			&i.AuthorAccountID,
 			&i.Status,
 			&i.AnonymousLabel,
 			&i.Revision,
@@ -970,18 +976,18 @@ WHERE $1::boolean
      SELECT 1
      FROM profit_sharing_participant AS participant
      WHERE participant.round_id = round.id
-       AND participant.account = $2::text
+       AND participant.account_id = $2::uuid
    )
 ORDER BY round.created_at DESC, round.id DESC
 `
 
 type ListProfitSharingRoundsParams struct {
-	RequesterIsAdmin bool
-	RequesterAccount string
+	RequesterIsAdmin   bool
+	RequesterAccountID pgtype.UUID
 }
 
 func (q *Queries) ListProfitSharingRounds(ctx context.Context, arg ListProfitSharingRoundsParams) ([]ProfitSharingRound, error) {
-	rows, err := q.db.Query(ctx, listProfitSharingRounds, arg.RequesterIsAdmin, arg.RequesterAccount)
+	rows, err := q.db.Query(ctx, listProfitSharingRounds, arg.RequesterIsAdmin, arg.RequesterAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -1096,16 +1102,16 @@ SET status = 'draft',
     submitted_at = NULL
 WHERE id = $1::text
   AND round_id = $2::bigint
-  AND author_account = $3::text
+  AND author_account_id = $3::uuid
   AND status = 'submitted'
   AND revision = $4::bigint
-RETURNING id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+RETURNING id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 `
 
 type ReopenProfitSharingProposalParams struct {
 	ProposalID       string
 	RoundID          int64
-	AuthorAccount    string
+	AuthorAccountID  pgtype.UUID
 	ExpectedRevision int64
 }
 
@@ -1113,14 +1119,14 @@ func (q *Queries) ReopenProfitSharingProposal(ctx context.Context, arg ReopenPro
 	row := q.db.QueryRow(ctx, reopenProfitSharingProposal,
 		arg.ProposalID,
 		arg.RoundID,
-		arg.AuthorAccount,
+		arg.AuthorAccountID,
 		arg.ExpectedRevision,
 	)
 	var i ProfitSharingProposal
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -1139,16 +1145,16 @@ SET status = 'submitted',
     submitted_at = NOW()
 WHERE id = $1::text
   AND round_id = $2::bigint
-  AND author_account = $3::text
+  AND author_account_id = $3::uuid
   AND status = 'draft'
   AND revision = $4::bigint
-RETURNING id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+RETURNING id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 `
 
 type SubmitProfitSharingProposalParams struct {
 	ProposalID       string
 	RoundID          int64
-	AuthorAccount    string
+	AuthorAccountID  pgtype.UUID
 	ExpectedRevision int64
 }
 
@@ -1156,14 +1162,14 @@ func (q *Queries) SubmitProfitSharingProposal(ctx context.Context, arg SubmitPro
 	row := q.db.QueryRow(ctx, submitProfitSharingProposal,
 		arg.ProposalID,
 		arg.RoundID,
-		arg.AuthorAccount,
+		arg.AuthorAccountID,
 		arg.ExpectedRevision,
 	)
 	var i ProfitSharingProposal
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -1180,16 +1186,16 @@ SET revision = revision + 1,
     updated_at = NOW()
 WHERE id = $1::text
   AND round_id = $2::bigint
-  AND author_account = $3::text
+  AND author_account_id = $3::uuid
   AND status = 'draft'
   AND revision = $4::bigint
-RETURNING id, round_id, author_account, status, anonymous_label, revision, created_at, updated_at, submitted_at
+RETURNING id, round_id, author_account_id, status, anonymous_label, revision, created_at, updated_at, submitted_at
 `
 
 type UpdateProfitSharingProposalDraftParams struct {
 	ProposalID       string
 	RoundID          int64
-	AuthorAccount    string
+	AuthorAccountID  pgtype.UUID
 	ExpectedRevision int64
 }
 
@@ -1197,14 +1203,14 @@ func (q *Queries) UpdateProfitSharingProposalDraft(ctx context.Context, arg Upda
 	row := q.db.QueryRow(ctx, updateProfitSharingProposalDraft,
 		arg.ProposalID,
 		arg.RoundID,
-		arg.AuthorAccount,
+		arg.AuthorAccountID,
 		arg.ExpectedRevision,
 	)
 	var i ProfitSharingProposal
 	err := row.Scan(
 		&i.ID,
 		&i.RoundID,
-		&i.AuthorAccount,
+		&i.AuthorAccountID,
 		&i.Status,
 		&i.AnonymousLabel,
 		&i.Revision,
@@ -1263,47 +1269,47 @@ const upsertProfitSharingVote = `-- name: UpsertProfitSharingVote :one
 INSERT INTO profit_sharing_vote (
   round_id,
   ballot_number,
-  voter_account,
+  voter_account_id,
   proposal_id,
-  proposal_author_account
+  proposal_author_account_id
 )
 VALUES (
   $1::bigint,
   $2::integer,
-  $3::text,
+  $3::uuid,
   $4::text,
-  $5::text
+  $5::uuid
 )
-ON CONFLICT (round_id, ballot_number, voter_account) DO UPDATE
+ON CONFLICT (round_id, ballot_number, voter_account_id) DO UPDATE
 SET proposal_id = EXCLUDED.proposal_id,
-    proposal_author_account = EXCLUDED.proposal_author_account,
+    proposal_author_account_id = EXCLUDED.proposal_author_account_id,
     updated_at = NOW()
-RETURNING round_id, ballot_number, voter_account, proposal_id, proposal_author_account, created_at, updated_at
+RETURNING round_id, ballot_number, voter_account_id, proposal_id, proposal_author_account_id, created_at, updated_at
 `
 
 type UpsertProfitSharingVoteParams struct {
-	RoundID               int64
-	BallotNumber          int32
-	VoterAccount          string
-	ProposalID            string
-	ProposalAuthorAccount string
+	RoundID                 int64
+	BallotNumber            int32
+	VoterAccountID          pgtype.UUID
+	ProposalID              string
+	ProposalAuthorAccountID pgtype.UUID
 }
 
 func (q *Queries) UpsertProfitSharingVote(ctx context.Context, arg UpsertProfitSharingVoteParams) (ProfitSharingVote, error) {
 	row := q.db.QueryRow(ctx, upsertProfitSharingVote,
 		arg.RoundID,
 		arg.BallotNumber,
-		arg.VoterAccount,
+		arg.VoterAccountID,
 		arg.ProposalID,
-		arg.ProposalAuthorAccount,
+		arg.ProposalAuthorAccountID,
 	)
 	var i ProfitSharingVote
 	err := row.Scan(
 		&i.RoundID,
 		&i.BallotNumber,
-		&i.VoterAccount,
+		&i.VoterAccountID,
 		&i.ProposalID,
-		&i.ProposalAuthorAccount,
+		&i.ProposalAuthorAccountID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

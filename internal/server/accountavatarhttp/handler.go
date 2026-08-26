@@ -36,8 +36,8 @@ const (
 )
 
 // Authenticator establishes the authenticated request context and enforces
-// self-or-administrator access to targetAccount.
-type Authenticator func(request *http.Request, targetAccount string) (context.Context, error)
+// self-or-administrator access to targetAccountID.
+type Authenticator func(request *http.Request, targetAccountID string) (context.Context, error)
 
 type objectStore interface {
 	Put(ctx context.Context, key string, body io.Reader, size int64, contentType string) (accountavatar.ObjectInfo, error)
@@ -86,8 +86,12 @@ func NewHandler(
 }
 
 func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
-	ctx, err := h.authenticate(r, name)
+	accountID, err := requestAccountID(r)
+	if err != nil {
+		writeStatusError(w, err)
+		return
+	}
+	ctx, err := h.authenticate(r, accountID)
 	if err != nil {
 		writeStatusError(w, err)
 		return
@@ -133,7 +137,7 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current, err := h.profiles.GetProfile(ctx, name)
+	current, err := h.profiles.GetProfile(ctx, accountID)
 	if err != nil {
 		writeStatusError(w, err)
 		return
@@ -143,15 +147,15 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := objectKey(name)
+	key := objectKey(accountID)
 	object, err := h.objects.Put(ctx, key, bytes.NewReader(image.data), int64(len(image.data)), image.contentType)
 	if err != nil {
-		h.log.WithError(err).WithField("account", name).Warn("account avatar upload failed")
+		h.log.WithError(err).WithField("account_id", accountID).Warn("account avatar upload failed")
 		writeError(w, http.StatusServiceUnavailable, codes.Unavailable, avatarStorageUnavailableReason, "avatar storage is unavailable")
 		return
 	}
 
-	updated, err := h.profiles.ReplaceAvatar(ctx, name, accountcenter.AvatarMetadata{
+	updated, err := h.profiles.ReplaceAvatar(ctx, accountID, accountcenter.AvatarMetadata{
 		ObjectKey:   object.Key,
 		ContentType: image.contentType,
 		ETag:        object.ETag,
@@ -160,19 +164,19 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		updateErr := err
 		reconcileCtx, cancel := context.WithTimeout(context.Background(), compensationTimeout)
-		persisted, reconcileErr := h.profiles.GetProfile(reconcileCtx, name)
+		persisted, reconcileErr := h.profiles.GetProfile(reconcileCtx, accountID)
 		cancel()
 		if reconcileErr == nil && persisted.Avatar.ObjectKey == object.Key {
 			// PostgreSQL may have committed even when the client observed an
 			// ambiguous transport error. Preserve the now-live object and return
 			// the durable aggregate rather than compensating it away.
 			updated = persisted
-			h.log.WithError(updateErr).WithField("account", name).Warn("recovered committed account avatar after ambiguous profile update")
+			h.log.WithError(updateErr).WithField("account_id", accountID).Warn("recovered committed account avatar after ambiguous profile update")
 		} else {
 			if reconcileErr == nil {
 				h.deleteBestEffort(object.Key, "discard candidate avatar")
 			} else {
-				h.log.WithError(reconcileErr).WithField("account", name).Warn("could not reconcile candidate avatar; leaving it for garbage collection")
+				h.log.WithError(reconcileErr).WithField("account_id", accountID).Warn("could not reconcile candidate avatar; leaving it for garbage collection")
 			}
 			writeStatusError(w, updateErr)
 			return
@@ -182,18 +186,22 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		h.deleteBestEffort(current.Avatar.ObjectKey, "delete replaced avatar")
 	}
 
-	writeProfile(w, name, updated)
+	writeProfile(w, accountID, updated)
 }
 
 func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
-	ctx, err := h.authenticate(r, name)
+	accountID, err := requestAccountID(r)
+	if err != nil {
+		writeStatusError(w, err)
+		return
+	}
+	ctx, err := h.authenticate(r, accountID)
 	if err != nil {
 		writeStatusError(w, err)
 		return
 	}
 
-	profile, err := h.profiles.GetProfile(ctx, name)
+	profile, err := h.profiles.GetProfile(ctx, accountID)
 	if err != nil {
 		writeStatusError(w, err)
 		return
@@ -209,13 +217,13 @@ func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, codes.NotFound, avatarNotFoundReason, "avatar not found")
 			return
 		}
-		h.log.WithError(err).WithField("account", name).Warn("account avatar read failed")
+		h.log.WithError(err).WithField("account_id", accountID).Warn("account avatar read failed")
 		writeError(w, http.StatusServiceUnavailable, codes.Unavailable, avatarStorageUnavailableReason, "avatar storage is unavailable")
 		return
 	}
 	defer func() {
 		if err := object.Body.Close(); err != nil {
-			h.log.WithError(err).WithField("account", name).Warn("failed to close account avatar object")
+			h.log.WithError(err).WithField("account_id", accountID).Warn("failed to close account avatar object")
 		}
 	}()
 
@@ -233,13 +241,17 @@ func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Last-Modified", object.LastModified.UTC().Format(http.TimeFormat))
 	}
 	if _, err := io.Copy(w, object.Body); err != nil {
-		h.log.WithError(err).WithField("account", name).Warn("failed to stream account avatar")
+		h.log.WithError(err).WithField("account_id", accountID).Warn("failed to stream account avatar")
 	}
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
-	ctx, err := h.authenticate(r, name)
+	accountID, err := requestAccountID(r)
+	if err != nil {
+		writeStatusError(w, err)
+		return
+	}
+	ctx, err := h.authenticate(r, accountID)
 	if err != nil {
 		writeStatusError(w, err)
 		return
@@ -250,7 +262,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeStatusError(w, err)
 		return
 	}
-	current, err := h.profiles.GetProfile(ctx, name)
+	current, err := h.profiles.GetProfile(ctx, accountID)
 	if err != nil {
 		writeStatusError(w, err)
 		return
@@ -260,17 +272,17 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if current.Avatar.Empty() {
-		writeProfile(w, name, current)
+		writeProfile(w, accountID, current)
 		return
 	}
 
-	updated, err := h.profiles.DeleteAvatar(ctx, name, expectedRevision)
+	updated, err := h.profiles.DeleteAvatar(ctx, accountID, expectedRevision)
 	if err != nil {
 		writeStatusError(w, err)
 		return
 	}
 	h.deleteBestEffort(current.Avatar.ObjectKey, "delete account avatar")
-	writeProfile(w, name, updated)
+	writeProfile(w, accountID, updated)
 }
 
 func (h *Handler) writeValidationError(w http.ResponseWriter, err error) {
@@ -294,9 +306,17 @@ func (h *Handler) deleteBestEffort(key, operation string) {
 	}
 }
 
-func objectKey(name string) string {
-	digest := sha256.Sum256([]byte(name))
+func objectKey(accountID string) string {
+	digest := sha256.Sum256([]byte(accountID))
 	return objectPrefix + hex.EncodeToString(digest[:]) + "/" + uuid.NewString()
+}
+
+func requestAccountID(r *http.Request) (string, error) {
+	parsed, err := uuid.Parse(strings.TrimSpace(r.PathValue("id")))
+	if err != nil || parsed == uuid.Nil {
+		return "", status.Error(codes.InvalidArgument, "account ID must be a UUID")
+	}
+	return parsed.String(), nil
 }
 
 func parseExpectedRevision(raw string) (uint64, error) {
@@ -333,10 +353,10 @@ func setPrivateAvatarCacheHeaders(w http.ResponseWriter, etag string) {
 	w.Header().Set("Vary", "Cookie, Authorization")
 }
 
-func writeProfile(w http.ResponseWriter, name string, profile accountcenter.Profile) {
+func writeProfile(w http.ResponseWriter, accountID string, profile accountcenter.Profile) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store, private")
-	if err := json.NewEncoder(w).Encode(accountserver.ToAPIAccountProfile(name, profile)); err != nil {
+	if err := json.NewEncoder(w).Encode(accountserver.ToAPIAccountProfile(accountID, profile)); err != nil {
 		log.WithError(err).Warn("failed to encode account avatar profile response")
 	}
 }

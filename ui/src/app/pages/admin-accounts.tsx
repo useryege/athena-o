@@ -33,7 +33,12 @@ const accountStatus = (account: Account) => {
     return <StatusTag value={accountStatusLabel(status)} positive={status === AccountStatus.Active} negative={status === AccountStatus.Blocked} />;
 };
 
-const identityProviderLabel = (provider: AccountIdentityProvider) => (provider === AccountIdentityProvider.Google ? 'Google' : 'Unavailable');
+const identityProviderLabel = (provider: AccountIdentityProvider) => {
+    if (provider === AccountIdentityProvider.Google) {
+        return 'Google';
+    }
+    return provider === AccountIdentityProvider.Development ? 'Development' : 'Unavailable';
+};
 const identityTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Not yet');
 const identityListTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleDateString() : 'Not yet');
 
@@ -85,7 +90,7 @@ const AccountAccessEditor = (props: {
                     </div>
                     {props.editable ? (
                         <Switch
-                            aria-label={`${item.label} for ${props.account.name}`}
+                            aria-label={`${item.label} for @${props.account.username}`}
                             checked={item.checked}
                             disabled={props.updating}
                             checkedChildren='Enabled'
@@ -120,7 +125,7 @@ const AccountAccessEditor = (props: {
                                             <ChoiceGroup<AccountDataAccess>
                                                 className='account-access-module__choice'
                                                 size='small'
-                                                ariaLabel={`${definition.label} data access for ${props.account.name}`}
+                                                ariaLabel={`${definition.label} data access for @${props.account.username}`}
                                                 value={value}
                                                 options={moduleOptions(definition)}
                                                 disabled={props.updating}
@@ -160,7 +165,7 @@ export const AdminAccountsPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
     const [searchParams, setSearchParams] = useSearchParams();
-    const mobileAccountName = searchParams.get('account') || '';
+    const mobileAccountId = searchParams.get('account') || '';
     const [queryDraft, setQueryDraft] = React.useState('');
     const [query, setQuery] = React.useState('');
     const [status, setStatus] = React.useState<AccountStatus | undefined>();
@@ -171,7 +176,7 @@ export const AdminAccountsPage = () => {
         [query, status, page, pageSize]
     );
     const [items, setItems] = React.useState<Account[]>([]);
-    const [selectedName, setSelectedName] = React.useState('');
+    const [selectedId, setSelectedId] = React.useState('');
     const [displayName, setDisplayName] = React.useState('');
     const [tier, setTier] = React.useState<AccountTier>(AccountTier.Standard);
     const [accessDraft, setAccessDraft] = React.useState<AccountAccess>();
@@ -185,22 +190,22 @@ export const AdminAccountsPage = () => {
             return;
         }
         setItems(accounts.data.items);
-        setSelectedName(current => {
-            if (mobileAccountName && accounts.data?.items.some(account => account.name === mobileAccountName)) {
-                return mobileAccountName;
+        setSelectedId(current => {
+            if (mobileAccountId && accounts.data?.items.some(account => account.id === mobileAccountId)) {
+                return mobileAccountId;
             }
-            return current && accounts.data?.items.some(account => account.name === current) ? current : accounts.data?.items[0]?.name || '';
+            return current && accounts.data?.items.some(account => account.id === current) ? current : accounts.data?.items[0]?.id || '';
         });
-    }, [accounts.data, mobileAccountName]);
+    }, [accounts.data, mobileAccountId]);
 
     React.useEffect(() => {
-        if (accounts.data && mobileAccountName && !accounts.data.items.some(account => account.name === mobileAccountName)) {
+        if (accounts.data && mobileAccountId && !accounts.data.items.some(account => account.id === mobileAccountId)) {
             setSearchParams({}, {replace: true});
         }
-    }, [accounts.data, mobileAccountName, setSearchParams]);
+    }, [accounts.data, mobileAccountId, setSearchParams]);
 
-    const selected = items.find(account => account.name === selectedName);
-    const profileEditable = Boolean(selected && selected.name !== authorization.user.username);
+    const selected = items.find(account => account.id === selectedId);
+    const profileEditable = Boolean(selected && selected.id !== authorization.user.accountId);
     const accessEditable = Boolean(selected && !selected.administrator);
     const displayNameLength = unicodeCharacterCount(displayName.trim());
     const displayNameValid = displayNameLength >= 1 && displayNameLength <= 80 && !hasControlCharacters(displayName.trim());
@@ -218,7 +223,7 @@ export const AdminAccountsPage = () => {
 
     React.useEffect(() => {
         loadDraft(selected);
-    }, [selected?.name]);
+    }, [selected?.id]);
 
     const changeListScope = (change: () => void) => {
         if (!dirty) {
@@ -226,7 +231,7 @@ export const AdminAccountsPage = () => {
             return;
         }
         ctx.modal.confirm({
-            title: `Discard changes for ${selectedName}?`,
+            title: `Discard changes for @${selected?.username || 'account'}?`,
             content: 'Filtering or paging the account directory will discard the current drafts.',
             okText: 'Discard and continue',
             onOk: () => {
@@ -275,7 +280,7 @@ export const AdminAccountsPage = () => {
         let resolved = false;
         const handle = ctx.modal.confirm({
             title: 'Discard unsaved account changes?',
-            content: selected ? `Changes for ${selected.name} have not been saved.` : undefined,
+            content: selected ? `Changes for @${selected.username} have not been saved.` : undefined,
             okText: 'Discard and leave',
             onOk: () => {
                 resolved = true;
@@ -294,11 +299,11 @@ export const AdminAccountsPage = () => {
         };
     }, [blocker.state, ctx.modal, loadDraft, selected]);
 
-    const chooseAccount = (name: string, openMobileDetail = false) => {
+    const chooseAccount = (id: string, openMobileDetail = false) => {
         const choose = () => {
-            setSelectedName(name);
+            setSelectedId(id);
             if (openMobileDetail) {
-                setSearchParams({account: name});
+                setSearchParams({account: id});
             }
         };
         if (!dirty) {
@@ -306,23 +311,23 @@ export const AdminAccountsPage = () => {
             return;
         }
         ctx.modal.confirm({
-            title: `Discard changes for ${selectedName}?`,
-            content: `Open ${name} after discarding the current drafts.`,
+            title: `Discard changes for @${selected?.username || 'account'}?`,
+            content: 'Open the selected account after discarding the current drafts.',
             okText: 'Discard and switch',
             onOk: choose
         });
     };
 
-    const replaceProfile = (name: string, profile: AccountProfile) => {
-        setItems(current => current.map(account => (account.name === name ? {...account, profile} : account)));
+    const replaceProfile = (id: string, profile: AccountProfile) => {
+        setItems(current => current.map(account => (account.id === id ? {...account, profile} : account)));
     };
 
     const conflict = async (message: string) => {
         if (!selected) {
             return undefined;
         }
-        const latest = await services.accounts.get(selected.name);
-        setItems(current => current.map(account => (account.name === latest.name ? latest : account)));
+        const latest = await services.accounts.get(selected.id);
+        setItems(current => current.map(account => (account.id === latest.id ? latest : account)));
         ctx.notifications.warning('Account changed elsewhere', message);
         return latest;
     };
@@ -333,10 +338,10 @@ export const AdminAccountsPage = () => {
         }
         setSavingProfile(true);
         try {
-            const profile = await services.accounts.updateProfile(selected.name, displayName.trim(), selected.profile.revision);
-            replaceProfile(selected.name, profile);
+            const profile = await services.accounts.updateProfile(selected.id, displayName.trim(), selected.profile.revision);
+            replaceProfile(selected.id, profile);
             setDisplayName(profile.displayName);
-            ctx.notifications.success('Account profile updated', selected.name);
+            ctx.notifications.success('Account profile updated', `@${selected.username}`);
         } catch (err) {
             if (requestErrorDetails(err).status === 409) {
                 await conflict('The latest profile was reloaded. Your display-name draft was kept; review it before saving again.');
@@ -354,10 +359,10 @@ export const AdminAccountsPage = () => {
         }
         setSavingTier(true);
         try {
-            const profile = await services.accounts.updateTier(selected.name, tier, selected.profile.revision);
-            replaceProfile(selected.name, profile);
+            const profile = await services.accounts.updateTier(selected.id, tier, selected.profile.revision);
+            replaceProfile(selected.id, profile);
             setTier(profile.tier);
-            ctx.notifications.success('Account tier updated', `${selected.name} is now ${accountTierLabel(profile.tier)}.`);
+            ctx.notifications.success('Account tier updated', `@${selected.username} is now ${accountTierLabel(profile.tier)}.`);
         } catch (err) {
             if (requestErrorDetails(err).status === 409) {
                 const latest = await conflict('The latest profile was reloaded. Choose the tier again before saving.');
@@ -383,10 +388,10 @@ export const AdminAccountsPage = () => {
         setUploadingAvatar(true);
         try {
             const profile = file
-                ? await services.accounts.uploadAvatar(selected.name, file, selected.profile.revision)
-                : await services.accounts.deleteAvatar(selected.name, selected.profile.revision);
-            replaceProfile(selected.name, profile);
-            ctx.notifications.success(file ? 'Account avatar updated' : 'Account avatar removed', selected.name);
+                ? await services.accounts.uploadAvatar(selected.id, selected.username, file, selected.profile.revision)
+                : await services.accounts.deleteAvatar(selected.id, selected.username, selected.profile.revision);
+            replaceProfile(selected.id, profile);
+            ctx.notifications.success(file ? 'Account avatar updated' : 'Account avatar removed', `@${selected.username}`);
         } catch (err) {
             if (requestErrorDetails(err).status === 409) {
                 await conflict('The latest profile is being reloaded. Try the avatar change again.');
@@ -404,10 +409,10 @@ export const AdminAccountsPage = () => {
         }
         setSavingAccess(true);
         try {
-            const updated = await services.accounts.updateAccess(selected.name, accessDraft);
-            setItems(current => current.map(account => (account.name === updated.name ? updated : account)));
+            const updated = await services.accounts.updateAccess(selected.id, accessDraft);
+            setItems(current => current.map(account => (account.id === updated.id ? updated : account)));
             setAccessDraft(cloneAccountAccess(updated.access));
-            ctx.notifications.success('Account access updated', `${updated.name}: ${moduleAccessSummary(updated.access)}.`);
+            ctx.notifications.success('Account access updated', `@${updated.username}: ${moduleAccessSummary(updated.access)}.`);
             accounts.reload();
         } catch (err) {
             if (requestErrorDetails(err).status === 409) {
@@ -441,7 +446,7 @@ export const AdminAccountsPage = () => {
             return;
         }
         ctx.modal.confirm({
-            title: `Confirm access changes for ${selected.name}`,
+            title: `Confirm access changes for @${selected.username}`,
             content: (
                 <ul className='account-access-confirmation'>
                     {loginDisabled && <li>Disable Google sign-in and suspend existing Athena sessions and API keys.</li>}
@@ -463,12 +468,12 @@ export const AdminAccountsPage = () => {
             loading={accounts.loading}
             error={accounts.error}
             onRefresh={accounts.reload}>
-            <div className={mobileAccountName ? 'admin-account-directory-toolbar admin-account-directory-toolbar--hidden' : 'admin-account-directory-toolbar'}>
+            <div className={mobileAccountId ? 'admin-account-directory-toolbar admin-account-directory-toolbar--hidden' : 'admin-account-directory-toolbar'}>
                 <Input.Search
                     allowClear={true}
                     aria-label='Search accounts'
                     value={queryDraft}
-                    placeholder='Search email, display name, or account ID'
+                    placeholder='Search username, email, display name, or account ID'
                     enterButton='Search'
                     onChange={event => setQueryDraft(event.target.value)}
                     onSearch={searchAccounts}
@@ -494,7 +499,7 @@ export const AdminAccountsPage = () => {
                     onChange={paginateAccounts}
                 />
             </div>
-            <div className={mobileAccountName ? 'admin-accounts-mobile-list admin-accounts-mobile-list--hidden' : 'admin-accounts-mobile-list'}>
+            <div className={mobileAccountId ? 'admin-accounts-mobile-list admin-accounts-mobile-list--hidden' : 'admin-accounts-mobile-list'}>
                 <div className='admin-accounts-mobile-list__heading'>
                     <Typography.Title level={2}>Accounts</Typography.Title>
                     <Typography.Text type='secondary'>
@@ -504,12 +509,12 @@ export const AdminAccountsPage = () => {
                 <div className='admin-accounts-mobile-list__items'>
                     {items.length > 0 ? (
                         items.map(account => (
-                            <button key={account.name} type='button' className='admin-accounts-mobile-card' onClick={() => chooseAccount(account.name, true)}>
-                                <AccountAvatar profile={account.profile} username={account.name} size={44} />
+                            <button key={account.id} type='button' className='admin-accounts-mobile-card' onClick={() => chooseAccount(account.id, true)}>
+                                <AccountAvatar profile={account.profile} username={account.username} size={44} />
                                 <span>
-                                    <strong>{account.profile.displayName || account.identity.verifiedEmail || account.name}</strong>
+                                    <strong>{account.profile.displayName || account.identity.verifiedEmail || account.username}</strong>
                                     <small>{account.identity.verifiedEmail || 'Email unavailable'}</small>
-                                    <small>@{account.name}</small>
+                                    <small>@{account.username}</small>
                                     <small>
                                         Created {identityListTime(account.identity.createdAt)} · Last login {identityListTime(account.identity.lastLoginAt)}
                                     </small>
@@ -525,7 +530,7 @@ export const AdminAccountsPage = () => {
                     )}
                 </div>
             </div>
-            <div className={mobileAccountName ? 'admin-accounts-layout admin-accounts-layout--mobile-detail' : 'admin-accounts-layout'}>
+            <div className={mobileAccountId ? 'admin-accounts-layout admin-accounts-layout--mobile-detail' : 'admin-accounts-layout'}>
                 <aside className='admin-account-list' aria-label='Athena accounts'>
                     <div className='admin-account-list__heading'>
                         <strong>Accounts</strong>
@@ -535,16 +540,16 @@ export const AdminAccountsPage = () => {
                         {items.length > 0 ? (
                             items.map(account => (
                                 <button
-                                    key={account.name}
+                                    key={account.id}
                                     type='button'
-                                    className={account.name === selectedName ? 'admin-account-list__item admin-account-list__item--active' : 'admin-account-list__item'}
-                                    aria-current={account.name === selectedName ? 'true' : undefined}
-                                    onClick={() => chooseAccount(account.name, Boolean(mobileAccountName))}>
-                                    <AccountAvatar profile={account.profile} username={account.name} size={38} />
+                                    className={account.id === selectedId ? 'admin-account-list__item admin-account-list__item--active' : 'admin-account-list__item'}
+                                    aria-current={account.id === selectedId ? 'true' : undefined}
+                                    onClick={() => chooseAccount(account.id, Boolean(mobileAccountId))}>
+                                    <AccountAvatar profile={account.profile} username={account.username} size={38} />
                                     <span>
-                                        <strong>{account.profile.displayName || account.identity.verifiedEmail || account.name}</strong>
+                                        <strong>{account.profile.displayName || account.identity.verifiedEmail || account.username}</strong>
                                         <small>{account.identity.verifiedEmail || 'Email unavailable'}</small>
-                                        <small>@{account.name}</small>
+                                        <small>@{account.username}</small>
                                         <small>
                                             {identityProviderLabel(account.identity.provider)} · Created {identityListTime(account.identity.createdAt)}
                                         </small>
@@ -567,11 +572,11 @@ export const AdminAccountsPage = () => {
                     ) : (
                         <>
                             <div className='admin-account-detail__heading'>
-                                <AccountAvatar profile={selected.profile} username={selected.name} size={56} />
+                                <AccountAvatar profile={selected.profile} username={selected.username} size={56} />
                                 <div>
-                                    <Typography.Title level={2}>{selected.profile.displayName || selected.identity.verifiedEmail || selected.name}</Typography.Title>
+                                    <Typography.Title level={2}>{selected.profile.displayName || selected.identity.verifiedEmail || selected.username}</Typography.Title>
                                     <Space size={6} wrap={true}>
-                                        <Typography.Text type='secondary'>@{selected.name}</Typography.Text>
+                                        <Typography.Text type='secondary'>@{selected.username}</Typography.Text>
                                         {selected.identity.verifiedEmail && <Typography.Text type='secondary'>{selected.identity.verifiedEmail}</Typography.Text>}
                                         {accountStatus(selected)}
                                         {selected.administrator && <Tag color='gold'>Administrator</Tag>}
@@ -586,7 +591,7 @@ export const AdminAccountsPage = () => {
                                     items={[
                                         {label: 'Provider', value: identityProviderLabel(selected.identity.provider)},
                                         {label: 'Verified email', value: selected.identity.verifiedEmail || 'Unavailable'},
-                                        {label: 'Internal account ID', value: selected.name},
+                                        {label: 'Technical account ID', value: <Typography.Text copyable={true}>{selected.id}</Typography.Text>},
                                         {label: 'Status', value: accountStatus(selected)},
                                         {label: 'Created', value: identityTime(selected.identity.createdAt)},
                                         {label: 'Last login', value: identityTime(selected.identity.lastLoginAt)}
@@ -596,7 +601,7 @@ export const AdminAccountsPage = () => {
                             <Section title='Profile & tier'>
                                 <div className='admin-account-profile-grid'>
                                     <div className='admin-account-avatar-editor'>
-                                        <AccountAvatar profile={selected.profile} username={selected.name} size={80} />
+                                        <AccountAvatar profile={selected.profile} username={selected.username} size={80} />
                                         <Space wrap={true}>
                                             <Upload
                                                 accept='image/jpeg,image/png,image/webp'
@@ -624,7 +629,7 @@ export const AdminAccountsPage = () => {
                                     </div>
                                     <Form layout='vertical'>
                                         <Form.Item label='Username'>
-                                            <Input value={selected.name} disabled={true} />
+                                            <Input value={`@${selected.username}`} readOnly={true} />
                                         </Form.Item>
                                         <Form.Item label='Display name' validateStatus={!displayNameValid ? 'error' : undefined}>
                                             <Input
@@ -647,7 +652,7 @@ export const AdminAccountsPage = () => {
                                         </div>
                                         <Form.Item label='Presentation tier'>
                                             <ChoiceGroup<AccountTier>
-                                                ariaLabel={`Presentation tier for ${selected.name}`}
+                                                ariaLabel={`Presentation tier for @${selected.username}`}
                                                 value={tier}
                                                 disabled={!profileEditable || savingTier}
                                                 options={[

@@ -11,21 +11,25 @@ import (
 	profitsharingsqlc "github.com/useryege/athena/internal/profitsharing/store/sqlc"
 )
 
-func (s *SQLStore) ListRounds(ctx context.Context, requesterAccount string, requesterIsAdmin bool) ([]RoundSnapshot, error) {
+func (s *SQLStore) ListRounds(ctx context.Context, requesterAccountID string, requesterIsAdmin bool) ([]RoundSnapshot, error) {
 	queries, err := s.requireQueries()
 	if err != nil {
 		return nil, err
 	}
+	requesterUUID, err := accountUUID(requesterAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("list profit sharing rounds: %w", err)
+	}
 	rows, err := queries.ListProfitSharingRounds(ctx, profitsharingsqlc.ListProfitSharingRoundsParams{
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		RequesterAccountID: requesterUUID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("list profit sharing rounds: %w", err)
 	}
 	snapshots := make([]RoundSnapshot, 0, len(rows))
 	for _, row := range rows {
-		snapshot, err := loadRoundSnapshot(ctx, queries, row, requesterAccount)
+		snapshot, err := loadRoundSnapshot(ctx, queries, row, requesterAccountID)
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +38,7 @@ func (s *SQLStore) ListRounds(ctx context.Context, requesterAccount string, requ
 	return snapshots, nil
 }
 
-func (s *SQLStore) GetRound(ctx context.Context, slug, requesterAccount string) (*RoundSnapshot, error) {
+func (s *SQLStore) GetRound(ctx context.Context, slug, requesterAccountID string) (*RoundSnapshot, error) {
 	queries, err := s.requireQueries()
 	if err != nil {
 		return nil, err
@@ -46,14 +50,14 @@ func (s *SQLStore) GetRound(ctx context.Context, slug, requesterAccount string) 
 	if err != nil {
 		return nil, fmt.Errorf("get profit sharing round %q: %w", slug, err)
 	}
-	snapshot, err := loadRoundSnapshot(ctx, queries, row, requesterAccount)
+	snapshot, err := loadRoundSnapshot(ctx, queries, row, requesterAccountID)
 	if err != nil {
 		return nil, err
 	}
 	return &snapshot, nil
 }
 
-func loadRoundSnapshot(ctx context.Context, queries profitsharingsqlc.Querier, row profitsharingsqlc.ProfitSharingRound, requesterAccount string) (RoundSnapshot, error) {
+func loadRoundSnapshot(ctx context.Context, queries profitsharingsqlc.Querier, row profitsharingsqlc.ProfitSharingRound, requesterAccountID string) (RoundSnapshot, error) {
 	participants, err := queries.ListProfitSharingParticipants(ctx, row.ID)
 	if err != nil {
 		return RoundSnapshot{}, fmt.Errorf("list participants for profit sharing round %q: %w", row.Slug, err)
@@ -148,11 +152,15 @@ func loadRoundSnapshot(ctx context.Context, queries profitsharingsqlc.Querier, r
 			ballot.VoteCounts[tally.ProposalID] = tally.VoteCount
 		}
 	}
-	if requesterAccount != "" {
+	if requesterAccountID != "" {
+		requesterUUID, err := accountUUID(requesterAccountID)
+		if err != nil {
+			return RoundSnapshot{}, fmt.Errorf("read requester vote for profit sharing round %q: %w", row.Slug, err)
+		}
 		vote, err := queries.GetProfitSharingVote(ctx, profitsharingsqlc.GetProfitSharingVoteParams{
-			RoundID:      row.ID,
-			BallotNumber: ballot.Number,
-			VoterAccount: requesterAccount,
+			RoundID:        row.ID,
+			BallotNumber:   ballot.Number,
+			VoterAccountID: requesterUUID,
 		})
 		if err == nil {
 			converted := voteFromSQLC(vote)
@@ -185,7 +193,8 @@ func roundFromSQLC(row profitsharingsqlc.ProfitSharingRound) Round {
 func participantFromSQLC(row profitsharingsqlc.ProfitSharingParticipant) Participant {
 	return Participant{
 		RoundID:                row.RoundID,
-		Account:                row.Account,
+		AccountID:              accountIDFromUUID(row.AccountID),
+		Username:               row.Username,
 		DisplayName:            row.DisplayName,
 		DisplayOrder:           row.DisplayOrder,
 		BaselineResponsibility: row.BaselineResponsibility,
@@ -194,37 +203,37 @@ func participantFromSQLC(row profitsharingsqlc.ProfitSharingParticipant) Partici
 
 func proposalFromSQLC(row profitsharingsqlc.ProfitSharingProposal) Proposal {
 	return Proposal{
-		ID:             row.ID,
-		RoundID:        row.RoundID,
-		AuthorAccount:  row.AuthorAccount,
-		Status:         row.Status,
-		AnonymousLabel: textPtr(row.AnonymousLabel),
-		Revision:       row.Revision,
-		CreatedAt:      row.CreatedAt.Time,
-		UpdatedAt:      row.UpdatedAt.Time,
-		SubmittedAt:    timestamptzPtr(row.SubmittedAt),
+		ID:              row.ID,
+		RoundID:         row.RoundID,
+		AuthorAccountID: accountIDFromUUID(row.AuthorAccountID),
+		Status:          row.Status,
+		AnonymousLabel:  textPtr(row.AnonymousLabel),
+		Revision:        row.Revision,
+		CreatedAt:       row.CreatedAt.Time,
+		UpdatedAt:       row.UpdatedAt.Time,
+		SubmittedAt:     timestamptzPtr(row.SubmittedAt),
 	}
 }
 
 func proposalItemFromSQLC(row profitsharingsqlc.ProfitSharingProposalItem) ProposalItem {
 	return ProposalItem{
-		RoundID:            row.RoundID,
-		ProposalID:         row.ProposalID,
-		ParticipantAccount: row.ParticipantAccount,
-		Responsibility:     row.Responsibility,
-		BasisPoints:        int4Ptr(row.BasisPoints),
+		RoundID:              row.RoundID,
+		ProposalID:           row.ProposalID,
+		ParticipantAccountID: accountIDFromUUID(row.ParticipantAccountID),
+		Responsibility:       row.Responsibility,
+		BasisPoints:          int4Ptr(row.BasisPoints),
 	}
 }
 
 func voteFromSQLC(row profitsharingsqlc.ProfitSharingVote) Vote {
 	return Vote{
-		RoundID:               row.RoundID,
-		BallotNumber:          row.BallotNumber,
-		VoterAccount:          row.VoterAccount,
-		ProposalID:            row.ProposalID,
-		ProposalAuthorAccount: row.ProposalAuthorAccount,
-		CreatedAt:             row.CreatedAt.Time,
-		UpdatedAt:             row.UpdatedAt.Time,
+		RoundID:                 row.RoundID,
+		BallotNumber:            row.BallotNumber,
+		VoterAccountID:          accountIDFromUUID(row.VoterAccountID),
+		ProposalID:              row.ProposalID,
+		ProposalAuthorAccountID: accountIDFromUUID(row.ProposalAuthorAccountID),
+		CreatedAt:               row.CreatedAt.Time,
+		UpdatedAt:               row.UpdatedAt.Time,
 	}
 }
 

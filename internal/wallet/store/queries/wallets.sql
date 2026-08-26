@@ -1,12 +1,18 @@
 -- name: CreateWallet :one
-INSERT INTO wallet_private_keys (created_by, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, created_by, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at;
+INSERT INTO wallet_private_keys (owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
+VALUES (sqlc.arg('owner_account_id')::uuid, FALSE, sqlc.arg('chain'), sqlc.arg('type'), sqlc.arg('address'), sqlc.arg('address_key'), sqlc.arg('alias'), sqlc.arg('private_key_ciphertext'), sqlc.narg('mnemonic_ciphertext'), sqlc.arg('source'), sqlc.arg('derivation_path'))
+RETURNING id, owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at;
 
 -- name: CountWallets :one
 SELECT COUNT(*)::bigint
 FROM wallet_private_keys
-WHERE (sqlc.narg('created_by')::text IS NULL OR created_by = sqlc.narg('created_by'))
+WHERE (
+    sqlc.arg('requester_administrator')::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = sqlc.arg('requester_account_id')::uuid
+    )
+  )
   AND (sqlc.narg('chain')::text IS NULL OR chain = sqlc.narg('chain'))
   AND (sqlc.narg('type')::text IS NULL OR type = sqlc.narg('type'))
   AND (
@@ -16,9 +22,15 @@ WHERE (sqlc.narg('created_by')::text IS NULL OR created_by = sqlc.narg('created_
   );
 
 -- name: ListWallets :many
-SELECT id, created_by, chain, type, address, alias, source, derivation_path, created_at, updated_at
+SELECT id, owner_account_id, system_owned, chain, type, address, alias, source, derivation_path, created_at, updated_at
 FROM wallet_private_keys
-WHERE (sqlc.narg('created_by')::text IS NULL OR created_by = sqlc.narg('created_by'))
+WHERE (
+    sqlc.arg('requester_administrator')::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = sqlc.arg('requester_account_id')::uuid
+    )
+  )
   AND (sqlc.narg('chain')::text IS NULL OR chain = sqlc.narg('chain'))
   AND (sqlc.narg('type')::text IS NULL OR type = sqlc.narg('type'))
   AND (
@@ -30,14 +42,26 @@ ORDER BY created_at DESC, id DESC
 LIMIT $1 OFFSET $2;
 
 -- name: GetWallet :one
-SELECT id, created_by, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
+SELECT id, owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
 FROM wallet_private_keys
 WHERE id = sqlc.arg('id')
-  AND (sqlc.narg('created_by')::text IS NULL OR created_by = sqlc.narg('created_by'));
+  AND (
+    sqlc.arg('requester_administrator')::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = sqlc.arg('requester_account_id')::uuid
+    )
+  );
 
 -- name: UpdateWalletAlias :one
 UPDATE wallet_private_keys
 SET alias = sqlc.arg('alias'), updated_at = NOW()
 WHERE id = sqlc.arg('id')
-  AND (sqlc.narg('created_by')::text IS NULL OR created_by = sqlc.narg('created_by'))
-RETURNING id, created_by, chain, type, address, alias, source, derivation_path, created_at, updated_at;
+  AND (
+    sqlc.arg('requester_administrator')::boolean
+    OR (
+      NOT system_owned
+      AND owner_account_id = sqlc.arg('requester_account_id')::uuid
+    )
+  )
+RETURNING id, owner_account_id, system_owned, chain, type, address, alias, source, derivation_path, created_at, updated_at;

@@ -8,6 +8,12 @@ Browser users authenticate with Google at `/auth/google/login`. Athena completes
 OIDC callback server-side and stores its own session token in an HttpOnly cookie; Google
 tokens are never used for API requests.
 
+For an unknown Google subject, the callback creates a short-lived registration ticket and
+redirects to `/register`; it does not create an account or issue the session cookie. The
+user must first choose a permanent username. Successful registration creates the UUID
+`account_id` used by JWT subjects and authorization, while API and UI display the username
+separately.
+
 CLI and automation clients must create an Athena API Key from **Account Center →
 Security** after an administrator enables the account's independent API Key access.
 Copy the key when it is issued, then export it locally:
@@ -23,6 +29,6 @@ $ curl $ATHENA_SERVER/api/v1/version -H "Authorization: Bearer $ATHENA_TOKEN"
 {"Version":"...","BuildDate":"...","GitCommit":"...","GitTreeState":"...","GoVersion":"...","Compiler":"...","Platform":"..."}
 ```
 
-Only Athena token version 2 is accepted. Rotating `ATHENA_JWT_SECRET`, deleting the API
+Only Athena token version 3 is accepted. Rotating `ATHENA_JWT_SECRET`, deleting the API
 Key, or disabling its account invalidates it. Turning off API Key access pauses existing
 keys without deleting them; re-enabling access restores undeleted, unexpired keys.

@@ -24,30 +24,31 @@ type ProfitSharingBallotCandidate struct {
 
 type ProfitSharingParticipant struct {
 	RoundID                int64
-	Account                string
+	AccountID              pgtype.UUID
+	Username               string
 	DisplayName            string
 	DisplayOrder           int32
 	BaselineResponsibility string
 }
 
 type ProfitSharingProposal struct {
-	ID             string
-	RoundID        int64
-	AuthorAccount  string
-	Status         string
-	AnonymousLabel pgtype.Text
-	Revision       int64
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
-	SubmittedAt    pgtype.Timestamptz
+	ID              string
+	RoundID         int64
+	AuthorAccountID pgtype.UUID
+	Status          string
+	AnonymousLabel  pgtype.Text
+	Revision        int64
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	SubmittedAt     pgtype.Timestamptz
 }
 
 type ProfitSharingProposalItem struct {
-	RoundID            int64
-	ProposalID         string
-	ParticipantAccount string
-	Responsibility     string
-	BasisPoints        pgtype.Int4
+	RoundID              int64
+	ProposalID           string
+	ParticipantAccountID pgtype.UUID
+	Responsibility       string
+	BasisPoints          pgtype.Int4
 }
 
 type ProfitSharingRound struct {
@@ -66,11 +67,11 @@ type ProfitSharingRound struct {
 }
 
 type ProfitSharingVote struct {
-	RoundID               int64
-	BallotNumber          int32
-	VoterAccount          string
-	ProposalID            string
-	ProposalAuthorAccount string
-	CreatedAt             pgtype.Timestamptz
-	UpdatedAt             pgtype.Timestamptz
+	RoundID                 int64
+	BallotNumber            int32
+	VoterAccountID          pgtype.UUID
+	ProposalID              string
+	ProposalAuthorAccountID pgtype.UUID
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
 }

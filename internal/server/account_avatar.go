@@ -66,7 +66,7 @@ func stringEnv(name, fallback string) string {
 	return value
 }
 
-func (server *AthenaServer) authenticateAccountAvatarHTTP(request *http.Request, targetAccount string) (context.Context, error) {
+func (server *AthenaServer) authenticateAccountAvatarHTTP(request *http.Request, targetAccountID string) (context.Context, error) {
 	md := metadata.MD{}
 	if authorization := request.Header.Get("Authorization"); authorization != "" {
 		md.Set("authorization", authorization)
@@ -79,11 +79,11 @@ func (server *AthenaServer) authenticateAccountAvatarHTTP(request *http.Request,
 	if err != nil {
 		return authenticated, err
 	}
-	username := utilsession.GetUserIdentifier(authenticated)
-	if username == targetAccount {
+	accountID := utilsession.GetUserIdentifier(authenticated)
+	if accountID == targetAccountID {
 		return authenticated, nil
 	}
-	if err := server.authorizeAccount(username, accountaccess.RequirementAdministrator); err != nil {
+	if err := server.authorizeAccount(accountID, accountaccess.RequirementAdministrator); err != nil {
 		return authenticated, err
 	}
 	return authenticated, nil
@@ -93,9 +93,9 @@ func registerAccountAvatarHandlers(mux *http.ServeMux, handler *accountavatarhtt
 	if handler == nil {
 		return
 	}
-	mux.Handle("PUT /api/v1/account/{name}/avatar", traceHTTP(http.HandlerFunc(handler.Upload)))
-	mux.Handle("GET /api/v1/account/{name}/avatar", traceHTTP(http.HandlerFunc(handler.Download)))
-	mux.Handle("DELETE /api/v1/account/{name}/avatar", traceHTTP(http.HandlerFunc(handler.Delete)))
+	mux.Handle("PUT /api/v1/account/{id}/avatar", traceHTTP(http.HandlerFunc(handler.Upload)))
+	mux.Handle("GET /api/v1/account/{id}/avatar", traceHTTP(http.HandlerFunc(handler.Download)))
+	mux.Handle("DELETE /api/v1/account/{id}/avatar", traceHTTP(http.HandlerFunc(handler.Delete)))
 }
 
 func traceHTTP(next http.Handler) http.Handler {

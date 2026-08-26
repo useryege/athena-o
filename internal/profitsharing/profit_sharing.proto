@@ -20,35 +20,38 @@ enum ProposalStatus {
 }
 
 message ParticipantInput {
-  string account = 1;
-  string display_name = 2;
-  int32 display_order = 3;
-  string baseline_responsibility = 4;
+  string account_id = 1;
+  string username = 2;
+  string display_name = 3;
+  int32 display_order = 4;
+  string baseline_responsibility = 5;
 }
 
 message Participant {
-  string account = 1;
-  string display_name = 2;
-  int32 display_order = 3;
-  string baseline_responsibility = 4;
-  bool proposal_progress_visible = 5;
-  bool submitted = 6;
+  string account_id = 1;
+  string username = 2;
+  string display_name = 3;
+  int32 display_order = 4;
+  string baseline_responsibility = 5;
+  bool proposal_progress_visible = 6;
+  bool submitted = 7;
 }
 
 message ProposalItemInput {
-  string participant_account = 1;
+  string participant_account_id = 1;
   string responsibility = 2;
   int32 basis_points = 3;
   bool basis_points_set = 4;
 }
 
 message ProposalItem {
-  string participant_account = 1;
-  string participant_display_name = 2;
-  int32 participant_display_order = 3;
-  string responsibility = 4;
-  int32 basis_points = 5;
-  bool basis_points_set = 6;
+  string participant_account_id = 1;
+  string participant_username = 2;
+  string participant_display_name = 3;
+  int32 participant_display_order = 4;
+  string responsibility = 5;
+  int32 basis_points = 6;
+  bool basis_points_set = 7;
 }
 
 message Proposal {
@@ -56,13 +59,14 @@ message Proposal {
   string label = 2;
   ProposalStatus status = 3;
   int64 revision = 4;
-  string author_account = 5;
-  string author_display_name = 6;
-  bool is_own = 7;
-  repeated ProposalItem items = 8;
-  bool vote_count_visible = 9;
-  int64 vote_count = 10;
-  bool is_final = 11;
+  string author_account_id = 5;
+  string author_username = 6;
+  string author_display_name = 7;
+  bool is_own = 8;
+  repeated ProposalItem items = 9;
+  bool vote_count_visible = 10;
+  int64 vote_count = 11;
+  bool is_final = 12;
 }
 
 message Ballot {
@@ -98,7 +102,7 @@ message Round {
 }
 
 message ListRoundsRequest {
-  string requester_account = 1;
+  string requester_account_id = 1;
   bool requester_is_admin = 2;
 }
 
@@ -108,7 +112,7 @@ message ListRoundsResponse {
 
 message GetRoundRequest {
   string slug = 1;
-  string requester_account = 2;
+  string requester_account_id = 2;
   bool requester_is_admin = 3;
 }
 
@@ -120,7 +124,7 @@ message CreateRoundRequest {
   string slug = 1;
   string title = 2;
   repeated ParticipantInput participants = 3;
-  string requester_account = 4;
+  string requester_account_id = 4;
   bool requester_is_admin = 5;
 }
 
@@ -134,7 +138,7 @@ message UpdateRoundRequest {
   string title = 3;
   repeated ParticipantInput participants = 4;
   int64 expected_revision = 5;
-  string requester_account = 6;
+  string requester_account_id = 6;
   bool requester_is_admin = 7;
 }
 
@@ -145,9 +149,9 @@ message UpdateRoundResponse {
 message OpenRoundRequest {
   string slug = 1;
   int64 expected_revision = 2;
-  string requester_account = 3;
+  string requester_account_id = 3;
   bool requester_is_admin = 4;
-  repeated string validated_participant_accounts = 5;
+  repeated string validated_participant_account_ids = 5;
 }
 
 message OpenRoundResponse {
@@ -157,7 +161,7 @@ message OpenRoundResponse {
 message PublishRoundRequest {
   string slug = 1;
   int64 expected_revision = 2;
-  string requester_account = 3;
+  string requester_account_id = 3;
   bool requester_is_admin = 4;
 }
 
@@ -168,7 +172,7 @@ message PublishRoundResponse {
 message CloseBallotRequest {
   string slug = 1;
   int64 expected_revision = 2;
-  string requester_account = 3;
+  string requester_account_id = 3;
   bool requester_is_admin = 4;
 }
 
@@ -181,7 +185,7 @@ message UpdateProposalRequest {
   string slug = 1;
   int64 expected_revision = 2;
   repeated ProposalItemInput items = 3;
-  string requester_account = 4;
+  string requester_account_id = 4;
   bool requester_is_admin = 5;
 }
 
@@ -192,7 +196,7 @@ message UpdateProposalResponse {
 message SubmitProposalRequest {
   string slug = 1;
   int64 expected_revision = 2;
-  string requester_account = 3;
+  string requester_account_id = 3;
   bool requester_is_admin = 4;
 }
 
@@ -203,7 +207,7 @@ message SubmitProposalResponse {
 message ReopenProposalRequest {
   string slug = 1;
   int64 expected_revision = 2;
-  string requester_account = 3;
+  string requester_account_id = 3;
   bool requester_is_admin = 4;
 }
 
@@ -215,7 +219,7 @@ message SubmitVoteRequest {
   string slug = 1;
   int32 ballot_number = 2;
   string proposal_id = 3;
-  string requester_account = 4;
+  string requester_account_id = 4;
   bool requester_is_admin = 5;
 }
 

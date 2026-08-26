@@ -9,14 +9,13 @@ import {ProfitSharingProposalItem, ProfitSharingProposalStatus, ProfitSharingRou
 import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
 import {formatShareBasisPoints, ProfitSharingPhaseTag, ProfitSharingProposalGallery, ProfitSharingRoundMetrics, useProfitSharingUnsavedChanges} from './profit-sharing-shared';
 
-const normalizeAccount = (value: string) => value.trim().toLowerCase();
-
 const proposalItemsFor = (round: ProfitSharingRound): ProfitSharingProposalItem[] => {
-    const proposalByAccount = new Map((round.myProposal?.items || []).map(item => [normalizeAccount(item.accountName), item]));
+    const proposalByAccount = new Map((round.myProposal?.items || []).map(item => [item.accountId, item]));
     return round.participants.map(participant => {
-        const item = proposalByAccount.get(normalizeAccount(participant.accountName));
+        const item = proposalByAccount.get(participant.accountId);
         return {
-            accountName: participant.accountName,
+            accountId: participant.accountId,
+            username: participant.username,
             displayName: participant.displayName,
             responsibility: item?.responsibility ?? participant.baselineResponsibility,
             shareBasisPoints: item?.shareBasisPoints
@@ -28,7 +27,7 @@ const proposalItemsEqual = (left: ProfitSharingProposalItem[], right: ProfitShar
     left.length === right.length &&
     left.every((item, index) => {
         const other = right[index];
-        return Boolean(other) && item.accountName === other.accountName && item.responsibility === other.responsibility && item.shareBasisPoints === other.shareBasisPoints;
+        return Boolean(other) && item.accountId === other.accountId && item.responsibility === other.responsibility && item.shareBasisPoints === other.shareBasisPoints;
     });
 
 const proposalIsComplete = (items: ProfitSharingProposalItem[]) =>
@@ -166,10 +165,10 @@ const ProposalEditor = (props: {
                             <span>Share</span>
                         </div>
                         {props.items.map((item, index) => (
-                            <article className='profit-sharing-editor-row' key={item.accountName}>
+                            <article className='profit-sharing-editor-row' key={item.accountId}>
                                 <div className='profit-sharing-editor-row__member'>
-                                    <strong>{item.displayName || item.accountName}</strong>
-                                    {item.displayName && <small>{item.accountName}</small>}
+                                    <strong>{item.displayName || `@${item.username}`}</strong>
+                                    {item.username && <small>@{item.username}</small>}
                                 </div>
                                 <label className='profit-sharing-editor-row__responsibility'>
                                     <span>Responsibility</span>
@@ -318,7 +317,7 @@ const ClosedPanel = (props: {round: ProfitSharingRound}) => {
                         showIcon={true}
                         icon={<TrophyOutlined />}
                         title={`${winner.label || `Proposal ${winner.proposalId}`} is the selected proposal.`}
-                        description={`Proposed by ${winner.authorDisplayName || winner.authorAccount}. It received ${winner.voteCount} vote${winner.voteCount === 1 ? '' : 's'}.`}
+                        description={`Proposed by ${winner.authorDisplayName || (winner.authorUsername ? `@${winner.authorUsername}` : 'Unknown member')}. It received ${winner.voteCount} vote${winner.voteCount === 1 ? '' : 's'}.`}
                     />
                 ) : (
                     <Alert type='warning' showIcon={true} title='This ballot closed without a single winning proposal.' />
@@ -386,15 +385,15 @@ export const ProfitSharingRoundPage = () => {
             const updated = await services.profitSharing.updateProposal(round.slug, {
                 expectedRevision: proposalRevision,
                 items: draft.map(item => ({
-                    accountName: item.accountName,
+                    accountId: item.accountId,
                     responsibility: item.responsibility,
                     shareBasisPoints: item.shareBasisPoints
                 }))
             });
             const nextItems = updated?.items?.length
                 ? source.map(sourceItem => {
-                      const item = updated.items.find(candidate => normalizeAccount(candidate.accountName) === normalizeAccount(sourceItem.accountName));
-                      return item ? {...item, displayName: sourceItem.displayName} : sourceItem;
+                      const item = updated.items.find(candidate => candidate.accountId === sourceItem.accountId);
+                      return item ? {...item, username: sourceItem.username, displayName: sourceItem.displayName} : sourceItem;
                   })
                 : draft;
             const nextRevision = updated?.revision ?? proposalRevision + 1;
@@ -491,7 +490,7 @@ export const ProfitSharingRoundPage = () => {
         return <Result status='warning' title='Round not specified' extra={<Button onClick={() => navigate('/profit-sharing')}>View all rounds</Button>} />;
     }
 
-    const isParticipant = Boolean(round?.participants.some(item => normalizeAccount(item.accountName) === normalizeAccount(authorization.user.username)));
+    const isParticipant = Boolean(round?.participants.some(item => item.accountId === authorization.user.accountId));
     return (
         <AppPage
             title={round?.title || 'Profit Sharing Round'}

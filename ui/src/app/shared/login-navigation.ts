@@ -9,7 +9,13 @@ export const readLoginReturnTo = (search: string, fallback = '/account/access') 
         const expectedOrigin = 'https://athena.local';
         const target = new URL(candidate, expectedOrigin);
         const decodedPath = decodeURIComponent(target.pathname).toLowerCase();
-        if (target.origin !== expectedOrigin || decodedPath === '/login' || decodedPath.startsWith('/login/')) {
+        if (
+            target.origin !== expectedOrigin ||
+            decodedPath === '/login' ||
+            decodedPath.startsWith('/login/') ||
+            decodedPath === '/register' ||
+            decodedPath.startsWith('/register/')
+        ) {
             return fallback;
         }
         return `${target.pathname}${target.search}${target.hash}`;

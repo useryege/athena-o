@@ -29,8 +29,10 @@ make run
 
 认证默认开启。首次启动前，需要在 `.env` 中配置本地 Google Web OAuth client、
 精确回调地址 `http://localhost:4000/auth/google/callback` 和
-`ATHENA_ADMIN_GOOGLE_EMAIL`。普通 Google 用户不需要预先登记 `sub`：首次登录会
-创建无业务权限的动态账号，由管理员在账号管理页授权。完整步骤参见
+`ATHENA_ADMIN_GOOGLE_EMAIL`。普通 Google 用户不需要预先登记 `sub`：未知身份通过
+OIDC 校验后会进入 `/register` 选择永久 username；提交成功时系统才创建以 UUID
+`account_id` 为内部身份、默认无业务权限的账号，由管理员在账号管理页授权。匹配管理员
+邮箱的注册者只是管理员候选，最终角色由账号记录的 `administrator` 字段确定。完整步骤参见
 [本地运行指南](docs/developer-guide/running-locally.md)。
 
 服务启动后通过以下地址打开 UI，并使用任意已验证邮箱的 Google 账号登录：

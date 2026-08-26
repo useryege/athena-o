@@ -142,16 +142,17 @@ var (
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
 	AthenaServerOpts
-	settings          *settings_util.AthenaSettings
-	log               *log.Entry
-	sessionMgr        *util_session.SessionManager
-	settingsMgr       *settings_util.SettingsManager
-	credentialMgr     *accountcredentials.CredentialManager
-	accountStateStore *accountstatestore.SQLStore
-	accountCenter     *accountcenter.Manager
-	accountAvatarHTTP *accountavatarhttp.Handler
-	accessController  *accountaccess.Controller
-	googleOIDC        *googleoidc.Handler
+	settings             *settings_util.AthenaSettings
+	log                  *log.Entry
+	sessionMgr           *util_session.SessionManager
+	settingsMgr          *settings_util.SettingsManager
+	credentialMgr        *accountcredentials.CredentialManager
+	accountStateStore    *accountstatestore.SQLStore
+	accountCenter        *accountcenter.Manager
+	accountAvatarHTTP    *accountavatarhttp.Handler
+	accessController     *accountaccess.Controller
+	googleOIDC           *googleoidc.Handler
+	developmentAccountID string
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -221,6 +222,15 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	errorsutil.CheckError(err)
 	accountStateStore, err := accountstatestore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
+	developmentAccountID := ""
+	if opts.DisableAuth {
+		developmentAccount, ensureErr := accountStateStore.EnsureDevelopmentAdministrator(ctx)
+		if ensureErr != nil {
+			_ = accountStateStore.Close()
+			errorsutil.CheckError(ensureErr)
+		}
+		developmentAccountID = developmentAccount.ID
+	}
 	jwtSigningKey, err := accountcredentials.LoadJWTSigningKey()
 	if err != nil {
 		_ = accountStateStore.Close()
@@ -235,6 +245,14 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	if err != nil {
 		_ = accountStateStore.Close()
 		errorsutil.CheckError(err)
+	}
+	if !opts.DisableAuth {
+		for _, configuredAccount := range credentialMgr.List() {
+			if configuredAccount.IdentityProvider == accountcredentials.IdentityProviderDevelopment {
+				_ = accountStateStore.Close()
+				errorsutil.CheckError(fmt.Errorf("development identity exists while authentication is enabled; reset account state before using Google OIDC"))
+			}
+		}
 	}
 	accessController, err := accountaccess.NewController(ctx, accountStateStore)
 	if err != nil {
@@ -287,20 +305,21 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 
 	a := &AthenaServer{
-		AthenaServerOpts:  opts,
-		log:               logger,
-		settings:          settings,
-		sessionMgr:        sessionMgr,
-		settingsMgr:       settingsMgr,
-		credentialMgr:     credentialMgr,
-		accountStateStore: accountStateStore,
-		accountCenter:     accountCenter,
-		accessController:  accessController,
-		googleOIDC:        googleOIDCHandler,
-		userStateStorage:  userStateStorage,
-		staticAssets:      http.FS(staticFS),
-		Shutdown:          noopShutdown,
-		stopCh:            make(chan os.Signal, 1),
+		AthenaServerOpts:     opts,
+		log:                  logger,
+		settings:             settings,
+		sessionMgr:           sessionMgr,
+		settingsMgr:          settingsMgr,
+		credentialMgr:        credentialMgr,
+		accountStateStore:    accountStateStore,
+		accountCenter:        accountCenter,
+		accessController:     accessController,
+		googleOIDC:           googleOIDCHandler,
+		developmentAccountID: developmentAccountID,
+		userStateStorage:     userStateStorage,
+		staticAssets:         http.FS(staticFS),
+		Shutdown:             noopShutdown,
+		stopCh:               make(chan os.Signal, 1),
 	}
 	accountAvatarHTTP, err := newAccountAvatarHandler(ctx, a)
 	if err != nil {
@@ -512,14 +531,14 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
-	walletService := serverwallet.NewServer(server.WalletClientset)
+	walletService := serverwallet.NewServer(server.WalletClientset, server.accessController)
 	marketRadarService := servermarketradar.NewServer(server.MarketRadarClientset)
 	sportsLiveService := serversportslive.NewServer(server.SportsLiveClientset)
 	sportsHistoryService := serversportshistory.NewServer(server.SportsHistoryClientset)
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
 	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
-	fifaMarketDashboardService := serverfifamarketdashboard.NewServer(server.FIFAMarketDashboardClientset)
-	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController)
+	fifaMarketDashboardService := serverfifamarketdashboard.NewServer(server.FIFAMarketDashboardClientset, server.accessController)
+	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController, server.accountCenter)
 	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
@@ -785,6 +804,8 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	if server.googleOIDC != nil {
 		publicHandlers["/auth/google/login"] = http.HandlerFunc(server.googleOIDC.Login)
 		publicHandlers["/auth/google/callback"] = http.HandlerFunc(server.googleOIDC.Callback)
+		publicHandlers["/auth/google/registration"] = http.HandlerFunc(server.googleOIDC.Registration)
+		publicHandlers["/auth/google/registration/username-availability"] = http.HandlerFunc(server.googleOIDC.UsernameAvailability)
 	}
 	httpS := http.Server{
 		Addr: endpoint,
@@ -1072,7 +1093,7 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
 	// if authentication is disabled, present the request as a local admin session
 	if server.DisableAuth {
-		return withDisabledAuthClaims(ctx), nil
+		return withDisabledAuthClaims(ctx, server.developmentAccountID), nil
 	}
 
 	claims, _, claimsErr := server.getClaims(ctx)

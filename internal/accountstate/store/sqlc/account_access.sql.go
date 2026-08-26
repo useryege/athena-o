@@ -7,31 +7,37 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getAccountAccessHead = `-- name: GetAccountAccessHead :one
-SELECT account_name,
-       login_enabled,
-       api_key_enabled,
-       profit_sharing_enabled,
-       revision
-FROM account_access
-WHERE account_name = $1::text
+SELECT access.account_id,
+       account.administrator,
+       access.login_enabled,
+       access.api_key_enabled,
+       access.profit_sharing_enabled,
+       access.revision
+FROM account_access AS access
+JOIN athena_account AS account USING (account_id)
+WHERE access.account_id = $1::uuid
 `
 
 type GetAccountAccessHeadRow struct {
-	AccountName          string
+	AccountID            pgtype.UUID
+	Administrator        bool
 	LoginEnabled         bool
 	ApiKeyEnabled        bool
 	ProfitSharingEnabled bool
 	Revision             int64
 }
 
-func (q *Queries) GetAccountAccessHead(ctx context.Context, accountName string) (GetAccountAccessHeadRow, error) {
-	row := q.db.QueryRow(ctx, getAccountAccessHead, accountName)
+func (q *Queries) GetAccountAccessHead(ctx context.Context, accountID pgtype.UUID) (GetAccountAccessHeadRow, error) {
+	row := q.db.QueryRow(ctx, getAccountAccessHead, accountID)
 	var i GetAccountAccessHeadRow
 	err := row.Scan(
-		&i.AccountName,
+		&i.AccountID,
+		&i.Administrator,
 		&i.LoginEnabled,
 		&i.ApiKeyEnabled,
 		&i.ProfitSharingEnabled,
@@ -41,17 +47,20 @@ func (q *Queries) GetAccountAccessHead(ctx context.Context, accountName string) 
 }
 
 const listAccountAccessHeads = `-- name: ListAccountAccessHeads :many
-SELECT account_name,
-       login_enabled,
-       api_key_enabled,
-       profit_sharing_enabled,
-       revision
-FROM account_access
-ORDER BY account_name
+SELECT access.account_id,
+       account.administrator,
+       access.login_enabled,
+       access.api_key_enabled,
+       access.profit_sharing_enabled,
+       access.revision
+FROM account_access AS access
+JOIN athena_account AS account USING (account_id)
+ORDER BY access.account_id
 `
 
 type ListAccountAccessHeadsRow struct {
-	AccountName          string
+	AccountID            pgtype.UUID
+	Administrator        bool
 	LoginEnabled         bool
 	ApiKeyEnabled        bool
 	ProfitSharingEnabled bool
@@ -68,7 +77,8 @@ func (q *Queries) ListAccountAccessHeads(ctx context.Context) ([]ListAccountAcce
 	for rows.Next() {
 		var i ListAccountAccessHeadsRow
 		if err := rows.Scan(
-			&i.AccountName,
+			&i.AccountID,
+			&i.Administrator,
 			&i.LoginEnabled,
 			&i.ApiKeyEnabled,
 			&i.ProfitSharingEnabled,
@@ -85,9 +95,9 @@ func (q *Queries) ListAccountAccessHeads(ctx context.Context) ([]ListAccountAcce
 }
 
 const listAccountModuleAccess = `-- name: ListAccountModuleAccess :many
-SELECT account_name, module, access_level
+SELECT account_id, module, access_level
 FROM account_module_access
-ORDER BY account_name, module
+ORDER BY account_id, module
 `
 
 func (q *Queries) ListAccountModuleAccess(ctx context.Context) ([]AccountModuleAccess, error) {
@@ -99,7 +109,7 @@ func (q *Queries) ListAccountModuleAccess(ctx context.Context) ([]AccountModuleA
 	var items []AccountModuleAccess
 	for rows.Next() {
 		var i AccountModuleAccess
-		if err := rows.Scan(&i.AccountName, &i.Module, &i.AccessLevel); err != nil {
+		if err := rows.Scan(&i.AccountID, &i.Module, &i.AccessLevel); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -111,14 +121,14 @@ func (q *Queries) ListAccountModuleAccess(ctx context.Context) ([]AccountModuleA
 }
 
 const listAccountModuleAccessByAccount = `-- name: ListAccountModuleAccessByAccount :many
-SELECT account_name, module, access_level
+SELECT account_id, module, access_level
 FROM account_module_access
-WHERE account_name = $1::text
+WHERE account_id = $1::uuid
 ORDER BY module
 `
 
-func (q *Queries) ListAccountModuleAccessByAccount(ctx context.Context, accountName string) ([]AccountModuleAccess, error) {
-	rows, err := q.db.Query(ctx, listAccountModuleAccessByAccount, accountName)
+func (q *Queries) ListAccountModuleAccessByAccount(ctx context.Context, accountID pgtype.UUID) ([]AccountModuleAccess, error) {
+	rows, err := q.db.Query(ctx, listAccountModuleAccessByAccount, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +136,7 @@ func (q *Queries) ListAccountModuleAccessByAccount(ctx context.Context, accountN
 	var items []AccountModuleAccess
 	for rows.Next() {
 		var i AccountModuleAccess
-		if err := rows.Scan(&i.AccountName, &i.Module, &i.AccessLevel); err != nil {
+		if err := rows.Scan(&i.AccountID, &i.Module, &i.AccessLevel); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -138,8 +148,8 @@ func (q *Queries) ListAccountModuleAccessByAccount(ctx context.Context, accountN
 }
 
 const replaceAccountModuleAccess = `-- name: ReplaceAccountModuleAccess :execrows
-UPDATE account_module_access
-SET access_level = CASE module
+UPDATE account_module_access AS module_access
+SET access_level = CASE module_access.module
   WHEN 'market_radar' THEN $1::text
   WHEN 'sports_live' THEN $2::text
   WHEN 'sports_history' THEN $3::text
@@ -150,9 +160,15 @@ SET access_level = CASE module
   WHEN 'token' THEN $8::text
   WHEN 'wallet' THEN $9::text
   WHEN 'notifications' THEN $10::text
-  ELSE access_level
+  ELSE module_access.access_level
 END
-WHERE account_name = $11::text
+WHERE module_access.account_id = $11::uuid
+  AND EXISTS (
+    SELECT 1
+    FROM athena_account AS account
+    WHERE account.account_id = module_access.account_id
+      AND NOT account.administrator
+  )
 `
 
 type ReplaceAccountModuleAccessParams struct {
@@ -166,7 +182,7 @@ type ReplaceAccountModuleAccessParams struct {
 	TokenAccessLevel               string
 	WalletAccessLevel              string
 	NotificationsAccessLevel       string
-	AccountName                    string
+	AccountID                      pgtype.UUID
 }
 
 func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAccountModuleAccessParams) (int64, error) {
@@ -181,7 +197,7 @@ func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAcc
 		arg.TokenAccessLevel,
 		arg.WalletAccessLevel,
 		arg.NotificationsAccessLevel,
-		arg.AccountName,
+		arg.AccountID,
 	)
 	if err != nil {
 		return 0, err
@@ -190,33 +206,38 @@ func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAcc
 }
 
 const updateAccountAccessHead = `-- name: UpdateAccountAccessHead :one
-UPDATE account_access
+UPDATE account_access AS access
 SET login_enabled = $1::boolean,
     api_key_enabled = $2::boolean,
     profit_sharing_enabled = $3::boolean,
-    revision = account_access.revision + 1,
+    revision = access.revision + 1,
     updated_at = NOW()
-WHERE account_name = $4::text
-  AND account_name <> 'admin'
+WHERE access.account_id = $4::uuid
+  AND EXISTS (
+    SELECT 1
+    FROM athena_account AS account
+    WHERE account.account_id = access.account_id
+      AND NOT account.administrator
+  )
   AND $5::bigint > 0
-  AND revision = $5::bigint
-RETURNING account_name,
-          login_enabled,
-          api_key_enabled,
-          profit_sharing_enabled,
-          revision
+  AND access.revision = $5::bigint
+RETURNING access.account_id,
+          access.login_enabled,
+          access.api_key_enabled,
+          access.profit_sharing_enabled,
+          access.revision
 `
 
 type UpdateAccountAccessHeadParams struct {
 	LoginEnabled         bool
 	ApiKeyEnabled        bool
 	ProfitSharingEnabled bool
-	AccountName          string
+	AccountID            pgtype.UUID
 	ExpectedRevision     int64
 }
 
 type UpdateAccountAccessHeadRow struct {
-	AccountName          string
+	AccountID            pgtype.UUID
 	LoginEnabled         bool
 	ApiKeyEnabled        bool
 	ProfitSharingEnabled bool
@@ -228,12 +249,12 @@ func (q *Queries) UpdateAccountAccessHead(ctx context.Context, arg UpdateAccount
 		arg.LoginEnabled,
 		arg.ApiKeyEnabled,
 		arg.ProfitSharingEnabled,
-		arg.AccountName,
+		arg.AccountID,
 		arg.ExpectedRevision,
 	)
 	var i UpdateAccountAccessHeadRow
 	err := row.Scan(
-		&i.AccountName,
+		&i.AccountID,
 		&i.LoginEnabled,
 		&i.ApiKeyEnabled,
 		&i.ProfitSharingEnabled,

@@ -118,7 +118,7 @@ type Service struct {
 	fifaWalletBalances               []*v1alpha1.FIFAMarketDashboardWalletBalanceItem
 	fifaWalletBalancesFetched        int64
 	fifaWalletBalancesCachedAt       time.Time
-	fifaWalletHoldings               map[string]*fifaWalletHoldingsCacheEntry
+	fifaWalletHoldings               map[fifaWalletRequester]*fifaWalletHoldingsCacheEntry
 	syncGroup                        singleflight.Group
 }
 
@@ -134,7 +134,7 @@ func NewService(store *fifamarketdashboardstore.SQLStore, opts ...ServiceOption)
 		configErr:                        errCacheNotReady,
 		wormErr:                          errCacheNotReady,
 		polymarketErr:                    errCacheNotReady,
-		fifaWalletHoldings:               make(map[string]*fifaWalletHoldingsCacheEntry),
+		fifaWalletHoldings:               make(map[fifaWalletRequester]*fifaWalletHoldingsCacheEntry),
 	}
 	for _, opt := range opts {
 		opt(s)

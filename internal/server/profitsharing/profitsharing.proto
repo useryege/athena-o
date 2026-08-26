@@ -22,53 +22,58 @@ enum ProposalStatus {
 }
 
 message ParticipantInput {
-  string account_name = 1;
-  string display_name = 2;
-  int32 sort_order = 3;
-  string baseline_responsibility = 4;
+  string account_id = 1;
+  string username = 2;
+  string display_name = 3;
+  int32 sort_order = 4;
+  string baseline_responsibility = 5;
 }
 
 message Participant {
-  string account_name = 1;
-  string display_name = 2;
-  string baseline_responsibility = 3;
-  int32 sort_order = 4;
-  ProposalStatus proposal_status = 5;
+  string account_id = 1;
+  string username = 2;
+  string display_name = 3;
+  string baseline_responsibility = 4;
+  int32 sort_order = 5;
+  ProposalStatus proposal_status = 6;
 }
 
 message ProposalItemInput {
-  string account_name = 1;
+  string participant_account_id = 1;
   string responsibility = 2;
   int32 share_basis_points = 3;
   bool share_basis_points_set = 4;
 }
 
 message ProposalItem {
-  string account_name = 1;
-  string display_name = 2;
-  string responsibility = 3;
-  int32 share_basis_points = 4;
-  bool share_basis_points_set = 5;
+  string participant_account_id = 1;
+  string participant_username = 2;
+  string participant_display_name = 3;
+  string responsibility = 4;
+  int32 share_basis_points = 5;
+  bool share_basis_points_set = 6;
 }
 
 message Proposal {
   string id = 1;
   string label = 2;
   bool is_own = 3;
-  string author_account = 4;
-  string author_display_name = 5;
-  ProposalStatus status = 6;
-  int64 revision = 7;
-  repeated ProposalItem items = 8;
+  string author_account_id = 4;
+  string author_username = 5;
+  string author_display_name = 6;
+  ProposalStatus status = 7;
+  int64 revision = 8;
+  repeated ProposalItem items = 9;
 }
 
 message Result {
   string proposal_id = 1;
   string label = 2;
-  string author_account = 3;
-  string author_display_name = 4;
-  int64 vote_count = 5;
-  bool is_winner = 6;
+  string author_account_id = 3;
+  string author_username = 4;
+  string author_display_name = 5;
+  int64 vote_count = 6;
+  bool is_winner = 7;
 }
 
 // Round is the browser-facing flattened projection of a domain round.

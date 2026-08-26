@@ -37,6 +37,19 @@ type fifaWalletHoldingsCacheEntry struct {
 	lastAccess time.Time
 }
 
+type fifaWalletRequester struct {
+	accountID     string
+	administrator bool
+}
+
+func (r fifaWalletRequester) cacheKey() string {
+	return fmt.Sprintf("%s:%t", r.accountID, r.administrator)
+}
+
+func (r fifaWalletRequester) logFields() log.Fields {
+	return log.Fields{"account_id": r.accountID, "administrator": r.administrator}
+}
+
 type fifaWalletHoldingsResult struct {
 	items     []*v1alpha1.FIFAMarketDashboardWalletHoldingItem
 	fetchedAt int64
@@ -58,14 +71,14 @@ func (s *Service) runFIFAWalletHoldingRefreshLoop(ctx context.Context) {
 		case <-ticker.C:
 			for _, requester := range s.fifaWalletHoldingRequesters() {
 				if _, err := s.loadFIFAWalletHoldings(ctx, requester); err != nil {
-					log.WithError(err).WithField("requester", requester).Warn("failed to refresh FIFA wallet holdings")
+					log.WithError(err).WithFields(requester.logFields()).Warn("failed to refresh FIFA wallet holdings")
 				}
 			}
 		}
 	}
 }
 
-func (s *Service) currentFIFAWalletHoldings(requester string) ([]*v1alpha1.FIFAMarketDashboardWalletHoldingItem, int64, bool) {
+func (s *Service) currentFIFAWalletHoldings(requester fifaWalletRequester) ([]*v1alpha1.FIFAMarketDashboardWalletHoldingItem, int64, bool) {
 	now := s.nowTime()
 	interval := s.fifaWalletBalanceRefreshInterval
 	if interval <= 0 {
@@ -75,7 +88,7 @@ func (s *Service) currentFIFAWalletHoldings(requester string) ([]*v1alpha1.FIFAM
 	s.cacheMu.Lock()
 	defer s.cacheMu.Unlock()
 	if s.fifaWalletHoldings == nil {
-		s.fifaWalletHoldings = make(map[string]*fifaWalletHoldingsCacheEntry)
+		s.fifaWalletHoldings = make(map[fifaWalletRequester]*fifaWalletHoldingsCacheEntry)
 	}
 	entry := s.fifaWalletHoldings[requester]
 	if entry == nil {
@@ -87,29 +100,29 @@ func (s *Service) currentFIFAWalletHoldings(requester string) ([]*v1alpha1.FIFAM
 	return cloneFIFAWalletHoldingItems(entry.items), entry.fetchedAt, needsRefresh
 }
 
-func (s *Service) refreshFIFAWalletHoldingsAsync(requester string) {
+func (s *Service) refreshFIFAWalletHoldingsAsync(requester fifaWalletRequester) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), fifaWalletHoldingRefreshTimeout)
 		defer cancel()
 		if _, err := s.loadFIFAWalletHoldings(ctx, requester); err != nil {
-			log.WithError(err).WithField("requester", requester).Warn("failed to refresh FIFA wallet holdings")
+			log.WithError(err).WithFields(requester.logFields()).Warn("failed to refresh FIFA wallet holdings")
 		}
 	}()
 }
 
-func (s *Service) fifaWalletHoldingRequesters() []string {
+func (s *Service) fifaWalletHoldingRequesters() []fifaWalletRequester {
 	s.cacheMu.RLock()
 	defer s.cacheMu.RUnlock()
 
-	requesters := make([]string, 0, len(s.fifaWalletHoldings))
+	requesters := make([]fifaWalletRequester, 0, len(s.fifaWalletHoldings))
 	for requester := range s.fifaWalletHoldings {
 		requesters = append(requesters, requester)
 	}
 	return requesters
 }
 
-func (s *Service) loadFIFAWalletHoldings(ctx context.Context, requester string) (fifaWalletHoldingsResult, error) {
-	value, err, _ := s.syncGroup.Do(fifaWalletHoldingRefreshKeyPrefix+requester, func() (any, error) {
+func (s *Service) loadFIFAWalletHoldings(ctx context.Context, requester fifaWalletRequester) (fifaWalletHoldingsResult, error) {
+	value, err, _ := s.syncGroup.Do(fifaWalletHoldingRefreshKeyPrefix+requester.cacheKey(), func() (any, error) {
 		return s.loadFIFAWalletHoldingsOnce(ctx, requester)
 	})
 	if err != nil {
@@ -122,7 +135,7 @@ func (s *Service) loadFIFAWalletHoldings(ctx context.Context, requester string) 
 	return result, nil
 }
 
-func (s *Service) loadFIFAWalletHoldingsOnce(ctx context.Context, requester string) (fifaWalletHoldingsResult, error) {
+func (s *Service) loadFIFAWalletHoldingsOnce(ctx context.Context, requester fifaWalletRequester) (fifaWalletHoldingsResult, error) {
 	wallets, err := s.listFIFAWormPositionWallets(ctx, requester)
 	if err != nil {
 		return fifaWalletHoldingsResult{}, err
@@ -136,7 +149,7 @@ func (s *Service) loadFIFAWalletHoldingsOnce(ctx context.Context, requester stri
 
 	s.cacheMu.Lock()
 	if s.fifaWalletHoldings == nil {
-		s.fifaWalletHoldings = make(map[string]*fifaWalletHoldingsCacheEntry)
+		s.fifaWalletHoldings = make(map[fifaWalletRequester]*fifaWalletHoldingsCacheEntry)
 	}
 	entry := s.fifaWalletHoldings[requester]
 	if entry == nil {
@@ -152,7 +165,7 @@ func (s *Service) loadFIFAWalletHoldingsOnce(ctx context.Context, requester stri
 	return fifaWalletHoldingsResult{items: items, fetchedAt: fetchedAt}, nil
 }
 
-func (s *Service) listFIFAWormPositionWallets(ctx context.Context, requester string) ([]*v1alpha1.WalletItem, error) {
+func (s *Service) listFIFAWormPositionWallets(ctx context.Context, requester fifaWalletRequester) ([]*v1alpha1.WalletItem, error) {
 	if s.walletClientset == nil {
 		return nil, status.Error(codes.FailedPrecondition, "wallet clientset is required")
 	}
@@ -165,11 +178,12 @@ func (s *Service) listFIFAWormPositionWallets(ctx context.Context, requester str
 	items := []*v1alpha1.WalletItem{}
 	for page := int32(1); ; page++ {
 		resp, err := client.ListWallets(queryCtx, &walletapiclient.ListWalletsRequest{
-			Chain:     fifaWalletHoldingChainSolana,
-			Type:      fifaWalletHoldingTypeWormPosition,
-			Requester: requester,
-			Page:      page,
-			PageSize:  fifaWalletHoldingPageSize,
+			Chain:                  fifaWalletHoldingChainSolana,
+			Type:                   fifaWalletHoldingTypeWormPosition,
+			RequesterAccountId:     requester.accountID,
+			RequesterAdministrator: requester.administrator,
+			Page:                   page,
+			PageSize:               fifaWalletHoldingPageSize,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("list %s %s wallets: %w", fifaWalletHoldingChainSolana, fifaWalletHoldingTypeWormPosition, err)

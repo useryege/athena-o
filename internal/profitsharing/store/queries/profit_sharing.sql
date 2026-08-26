@@ -33,7 +33,7 @@ WHERE sqlc.arg(requester_is_admin)::boolean
      SELECT 1
      FROM profit_sharing_participant AS participant
      WHERE participant.round_id = round.id
-       AND participant.account = sqlc.arg(requester_account)::text
+       AND participant.account_id = sqlc.arg(requester_account_id)::uuid
    )
 ORDER BY round.created_at DESC, round.id DESC;
 
@@ -55,14 +55,16 @@ WHERE round_id = sqlc.arg(round_id)::bigint;
 -- name: BatchCreateProfitSharingParticipants :exec
 INSERT INTO profit_sharing_participant (
   round_id,
-  account,
+  account_id,
+  username,
   display_name,
   display_order,
   baseline_responsibility
 )
 SELECT
   sqlc.arg(round_id)::bigint,
-  unnest(sqlc.arg(accounts)::text[]),
+  unnest(sqlc.arg(account_ids)::uuid[]),
+  unnest(sqlc.arg(usernames)::text[]),
   unnest(sqlc.arg(display_names)::text[]),
   unnest(sqlc.arg(display_orders)::integer[]),
   unnest(sqlc.arg(baseline_responsibilities)::text[]);
@@ -71,13 +73,13 @@ SELECT
 SELECT *
 FROM profit_sharing_participant
 WHERE round_id = sqlc.arg(round_id)::bigint
-ORDER BY display_order, account;
+ORDER BY display_order, account_id;
 
 -- name: GetProfitSharingParticipant :one
 SELECT *
 FROM profit_sharing_participant
 WHERE round_id = sqlc.arg(round_id)::bigint
-  AND account = sqlc.arg(account)::text;
+  AND account_id = sqlc.arg(account_id)::uuid;
 
 -- name: OpenProfitSharingRound :one
 UPDATE profit_sharing_round
@@ -91,24 +93,24 @@ WHERE id = sqlc.arg(round_id)::bigint
 RETURNING *;
 
 -- name: BatchCreateProfitSharingProposals :exec
-INSERT INTO profit_sharing_proposal (id, round_id, author_account)
+INSERT INTO profit_sharing_proposal (id, round_id, author_account_id)
 SELECT
   unnest(sqlc.arg(proposal_ids)::text[]),
   sqlc.arg(round_id)::bigint,
-  unnest(sqlc.arg(author_accounts)::text[]);
+  unnest(sqlc.arg(author_account_ids)::uuid[]);
 
 -- name: CreateInitialProfitSharingProposalItems :exec
 INSERT INTO profit_sharing_proposal_item (
   round_id,
   proposal_id,
-  participant_account,
+  participant_account_id,
   responsibility,
   basis_points
 )
 SELECT
   proposal.round_id,
   proposal.id,
-  participant.account,
+  participant.account_id,
   participant.baseline_responsibility,
   NULL
 FROM profit_sharing_proposal AS proposal
@@ -126,13 +128,13 @@ WHERE id = sqlc.arg(proposal_id)::text
 SELECT *
 FROM profit_sharing_proposal
 WHERE round_id = sqlc.arg(round_id)::bigint
-  AND author_account = sqlc.arg(author_account)::text;
+  AND author_account_id = sqlc.arg(author_account_id)::uuid;
 
 -- name: GetProfitSharingProposalByAuthorForUpdate :one
 SELECT *
 FROM profit_sharing_proposal
 WHERE round_id = sqlc.arg(round_id)::bigint
-  AND author_account = sqlc.arg(author_account)::text
+  AND author_account_id = sqlc.arg(author_account_id)::uuid
 FOR UPDATE;
 
 -- name: ListProfitSharingProposals :many
@@ -146,10 +148,10 @@ SELECT item.*
 FROM profit_sharing_proposal_item AS item
 JOIN profit_sharing_participant AS participant
   ON participant.round_id = item.round_id
- AND participant.account = item.participant_account
+ AND participant.account_id = item.participant_account_id
 WHERE item.round_id = sqlc.arg(round_id)::bigint
   AND item.proposal_id = sqlc.arg(proposal_id)::text
-ORDER BY participant.display_order, participant.account;
+ORDER BY participant.display_order, participant.account_id;
 
 -- name: DeleteProfitSharingProposalItems :exec
 DELETE FROM profit_sharing_proposal_item
@@ -160,14 +162,14 @@ WHERE round_id = sqlc.arg(round_id)::bigint
 INSERT INTO profit_sharing_proposal_item (
   round_id,
   proposal_id,
-  participant_account,
+  participant_account_id,
   responsibility,
   basis_points
 )
 SELECT
   sqlc.arg(round_id)::bigint,
   sqlc.arg(proposal_id)::text,
-  unnest(sqlc.arg(participant_accounts)::text[]),
+  unnest(sqlc.arg(participant_account_ids)::uuid[]),
   unnest(sqlc.arg(responsibilities)::text[]),
   NULLIF(unnest(sqlc.arg(basis_points_values)::integer[]), -1);
 
@@ -177,7 +179,7 @@ SET revision = revision + 1,
     updated_at = NOW()
 WHERE id = sqlc.arg(proposal_id)::text
   AND round_id = sqlc.arg(round_id)::bigint
-  AND author_account = sqlc.arg(author_account)::text
+  AND author_account_id = sqlc.arg(author_account_id)::uuid
   AND status = 'draft'
   AND revision = sqlc.arg(expected_revision)::bigint
 RETURNING *;
@@ -190,7 +192,7 @@ SET status = 'submitted',
     submitted_at = NOW()
 WHERE id = sqlc.arg(proposal_id)::text
   AND round_id = sqlc.arg(round_id)::bigint
-  AND author_account = sqlc.arg(author_account)::text
+  AND author_account_id = sqlc.arg(author_account_id)::uuid
   AND status = 'draft'
   AND revision = sqlc.arg(expected_revision)::bigint
 RETURNING *;
@@ -203,7 +205,7 @@ SET status = 'draft',
     submitted_at = NULL
 WHERE id = sqlc.arg(proposal_id)::text
   AND round_id = sqlc.arg(round_id)::bigint
-  AND author_account = sqlc.arg(author_account)::text
+  AND author_account_id = sqlc.arg(author_account_id)::uuid
   AND status = 'submitted'
   AND revision = sqlc.arg(expected_revision)::bigint
 RETURNING *;
@@ -273,26 +275,26 @@ SELECT *
 FROM profit_sharing_vote
 WHERE round_id = sqlc.arg(round_id)::bigint
   AND ballot_number = sqlc.arg(ballot_number)::integer
-  AND voter_account = sqlc.arg(voter_account)::text;
+  AND voter_account_id = sqlc.arg(voter_account_id)::uuid;
 
 -- name: UpsertProfitSharingVote :one
 INSERT INTO profit_sharing_vote (
   round_id,
   ballot_number,
-  voter_account,
+  voter_account_id,
   proposal_id,
-  proposal_author_account
+  proposal_author_account_id
 )
 VALUES (
   sqlc.arg(round_id)::bigint,
   sqlc.arg(ballot_number)::integer,
-  sqlc.arg(voter_account)::text,
+  sqlc.arg(voter_account_id)::uuid,
   sqlc.arg(proposal_id)::text,
-  sqlc.arg(proposal_author_account)::text
+  sqlc.arg(proposal_author_account_id)::uuid
 )
-ON CONFLICT (round_id, ballot_number, voter_account) DO UPDATE
+ON CONFLICT (round_id, ballot_number, voter_account_id) DO UPDATE
 SET proposal_id = EXCLUDED.proposal_id,
-    proposal_author_account = EXCLUDED.proposal_author_account,
+    proposal_author_account_id = EXCLUDED.proposal_author_account_id,
     updated_at = NOW()
 RETURNING *;
 
@@ -305,7 +307,7 @@ WHERE round_id = sqlc.arg(round_id)::bigint
 -- name: ListProfitSharingBallotTallies :many
 SELECT
   candidate.proposal_id,
-  COUNT(vote.voter_account)::bigint AS vote_count
+  COUNT(vote.voter_account_id)::bigint AS vote_count
 FROM profit_sharing_ballot_candidate AS candidate
 LEFT JOIN profit_sharing_vote AS vote
   ON vote.round_id = candidate.round_id
@@ -357,9 +359,9 @@ ORDER BY ballot_number;
 SELECT
   ballot.ballot_number,
   proposal.id AS proposal_id,
-  proposal.author_account,
+  proposal.author_account_id,
   proposal.anonymous_label,
-  COUNT(vote.voter_account)::bigint AS vote_count
+  COUNT(vote.voter_account_id)::bigint AS vote_count
 FROM profit_sharing_ballot AS ballot
 JOIN profit_sharing_ballot_candidate AS candidate
   ON candidate.round_id = ballot.round_id
@@ -373,5 +375,5 @@ LEFT JOIN profit_sharing_vote AS vote
  AND vote.proposal_id = candidate.proposal_id
 WHERE ballot.round_id = sqlc.arg(round_id)::bigint
   AND ballot.status = 'closed'
-GROUP BY ballot.ballot_number, proposal.id, proposal.author_account, proposal.anonymous_label
+GROUP BY ballot.ballot_number, proposal.id, proposal.author_account_id, proposal.anonymous_label
 ORDER BY ballot.ballot_number, vote_count DESC, proposal.anonymous_label, proposal.id;

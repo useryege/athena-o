@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/profitsharing/apiclient"
 	profitsharingstore "github.com/useryege/athena/internal/profitsharing/store"
 	"google.golang.org/grpc/codes"
@@ -42,7 +43,7 @@ func (s *Service) Stop() error {
 }
 
 func (s *Service) ListRounds(ctx context.Context, req *apiclient.ListRoundsRequest) (*apiclient.ListRoundsResponse, error) {
-	requester, requesterIsAdmin, err := requestIdentity(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, requesterIsAdmin, err := requestIdentity(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func (s *Service) ListRounds(ctx context.Context, req *apiclient.ListRoundsReque
 }
 
 func (s *Service) GetRound(ctx context.Context, req *apiclient.GetRoundRequest) (*apiclient.GetRoundResponse, error) {
-	requester, requesterIsAdmin, err := requestIdentity(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, requesterIsAdmin, err := requestIdentity(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (s *Service) GetRound(ctx context.Context, req *apiclient.GetRoundRequest) 
 }
 
 func (s *Service) CreateRound(ctx context.Context, req *apiclient.CreateRoundRequest) (*apiclient.CreateRoundResponse, error) {
-	requester, err := requireAdmin(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireAdmin(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +91,7 @@ func (s *Service) CreateRound(ctx context.Context, req *apiclient.CreateRoundReq
 }
 
 func (s *Service) UpdateRound(ctx context.Context, req *apiclient.UpdateRoundRequest) (*apiclient.UpdateRoundResponse, error) {
-	requester, err := requireAdmin(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireAdmin(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +114,14 @@ func (s *Service) UpdateRound(ctx context.Context, req *apiclient.UpdateRoundReq
 }
 
 func (s *Service) OpenRound(ctx context.Context, req *apiclient.OpenRoundRequest) (*apiclient.OpenRoundResponse, error) {
-	requester, err := requireAdmin(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireAdmin(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
 	if req.GetExpectedRevision() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "expected_revision must be positive")
 	}
-	opened, err := s.store.OpenRound(ctx, req.GetSlug(), req.GetExpectedRevision(), req.GetValidatedParticipantAccounts())
+	opened, err := s.store.OpenRound(ctx, req.GetSlug(), req.GetExpectedRevision(), req.GetValidatedParticipantAccountIds())
 	if err != nil {
 		return nil, serviceError(err)
 	}
@@ -132,7 +133,7 @@ func (s *Service) OpenRound(ctx context.Context, req *apiclient.OpenRoundRequest
 }
 
 func (s *Service) PublishRound(ctx context.Context, req *apiclient.PublishRoundRequest) (*apiclient.PublishRoundResponse, error) {
-	requester, err := requireAdmin(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireAdmin(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +152,7 @@ func (s *Service) PublishRound(ctx context.Context, req *apiclient.PublishRoundR
 }
 
 func (s *Service) CloseBallot(ctx context.Context, req *apiclient.CloseBallotRequest) (*apiclient.CloseBallotResponse, error) {
-	requester, err := requireAdmin(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireAdmin(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +174,7 @@ func (s *Service) CloseBallot(ctx context.Context, req *apiclient.CloseBallotReq
 }
 
 func (s *Service) UpdateProposal(ctx context.Context, req *apiclient.UpdateProposalRequest) (*apiclient.UpdateProposalResponse, error) {
-	requester, err := requireParticipantActor(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireParticipantActor(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +200,7 @@ func (s *Service) UpdateProposal(ctx context.Context, req *apiclient.UpdatePropo
 }
 
 func (s *Service) SubmitProposal(ctx context.Context, req *apiclient.SubmitProposalRequest) (*apiclient.SubmitProposalResponse, error) {
-	requester, err := requireParticipantActor(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireParticipantActor(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +222,7 @@ func (s *Service) SubmitProposal(ctx context.Context, req *apiclient.SubmitPropo
 }
 
 func (s *Service) ReopenProposal(ctx context.Context, req *apiclient.ReopenProposalRequest) (*apiclient.ReopenProposalResponse, error) {
-	requester, err := requireParticipantActor(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireParticipantActor(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +244,7 @@ func (s *Service) ReopenProposal(ctx context.Context, req *apiclient.ReopenPropo
 }
 
 func (s *Service) SubmitVote(ctx context.Context, req *apiclient.SubmitVoteRequest) (*apiclient.SubmitVoteResponse, error) {
-	requester, err := requireParticipantActor(req.GetRequesterAccount(), req.GetRequesterIsAdmin())
+	requester, err := requireParticipantActor(req.GetRequesterAccountId(), req.GetRequesterIsAdmin())
 	if err != nil {
 		return nil, err
 	}
@@ -282,34 +283,34 @@ func (s *Service) authorizeParticipant(ctx context.Context, slug, requester stri
 	return err
 }
 
-func requestIdentity(account string, requesterIsAdmin bool) (string, bool, error) {
-	account = strings.TrimSpace(account)
-	if account == "" {
-		return "", false, status.Error(codes.Unauthenticated, "requester_account is required")
+func requestIdentity(accountID string, requesterIsAdmin bool) (string, bool, error) {
+	parsed, err := uuid.Parse(strings.TrimSpace(accountID))
+	if err != nil || parsed == uuid.Nil {
+		return "", false, status.Error(codes.Unauthenticated, "requester_account_id must be a valid UUID")
 	}
-	return account, requesterIsAdmin, nil
+	return parsed.String(), requesterIsAdmin, nil
 }
 
-func requireAdmin(account string, requesterIsAdmin bool) (string, error) {
-	account, _, err := requestIdentity(account, requesterIsAdmin)
+func requireAdmin(accountID string, requesterIsAdmin bool) (string, error) {
+	accountID, _, err := requestIdentity(accountID, requesterIsAdmin)
 	if err != nil {
 		return "", err
 	}
 	if !requesterIsAdmin {
 		return "", status.Error(codes.PermissionDenied, "administrator access is required")
 	}
-	return account, nil
+	return accountID, nil
 }
 
-func requireParticipantActor(account string, requesterIsAdmin bool) (string, error) {
-	account, _, err := requestIdentity(account, requesterIsAdmin)
+func requireParticipantActor(accountID string, requesterIsAdmin bool) (string, error) {
+	accountID, _, err := requestIdentity(accountID, requesterIsAdmin)
 	if err != nil {
 		return "", err
 	}
 	if requesterIsAdmin {
 		return "", status.Error(codes.PermissionDenied, "administrators cannot propose or vote")
 	}
-	return account, nil
+	return accountID, nil
 }
 
 func participantInputsFromProto(inputs []*apiclient.ParticipantInput) ([]profitsharingstore.ParticipantInput, error) {
@@ -319,7 +320,8 @@ func participantInputsFromProto(inputs []*apiclient.ParticipantInput) ([]profits
 			return nil, status.Error(codes.InvalidArgument, "participant cannot be null")
 		}
 		converted = append(converted, profitsharingstore.ParticipantInput{
-			Account:                input.GetAccount(),
+			AccountID:              input.GetAccountId(),
+			Username:               input.GetUsername(),
 			DisplayName:            input.GetDisplayName(),
 			DisplayOrder:           input.GetDisplayOrder(),
 			BaselineResponsibility: input.GetBaselineResponsibility(),
@@ -340,9 +342,9 @@ func proposalItemInputsFromProto(inputs []*apiclient.ProposalItemInput) ([]profi
 			basisPoints = &value
 		}
 		converted = append(converted, profitsharingstore.ProposalItemInput{
-			ParticipantAccount: input.GetParticipantAccount(),
-			Responsibility:     input.GetResponsibility(),
-			BasisPoints:        basisPoints,
+			ParticipantAccountID: input.GetParticipantAccountId(),
+			Responsibility:       input.GetResponsibility(),
+			BasisPoints:          basisPoints,
 		})
 	}
 	return converted, nil
@@ -362,18 +364,19 @@ func roundToProto(snapshot *profitsharingstore.RoundSnapshot, requester string, 
 
 	proposalByAuthor := make(map[string]*profitsharingstore.Proposal, len(snapshot.Proposals))
 	for i := range snapshot.Proposals {
-		proposalByAuthor[snapshot.Proposals[i].AuthorAccount] = &snapshot.Proposals[i]
+		proposalByAuthor[snapshot.Proposals[i].AuthorAccountID] = &snapshot.Proposals[i]
 	}
 	for _, participant := range snapshot.Participants {
 		item := &apiclient.Participant{
-			Account:                participant.Account,
+			AccountId:              participant.AccountID,
+			Username:               participant.Username,
 			DisplayName:            participant.DisplayName,
 			DisplayOrder:           participant.DisplayOrder,
 			BaselineResponsibility: participant.BaselineResponsibility,
 		}
 		if requesterIsAdmin && snapshot.Round.Phase != profitsharingstore.RoundPhaseDraft {
 			item.ProposalProgressVisible = true
-			item.Submitted = proposalByAuthor[participant.Account] != nil && proposalByAuthor[participant.Account].Status == profitsharingstore.ProposalStatusSubmitted
+			item.Submitted = proposalByAuthor[participant.AccountID] != nil && proposalByAuthor[participant.AccountID].Status == profitsharingstore.ProposalStatusSubmitted
 		}
 		result.Participants = append(result.Participants, item)
 	}
@@ -433,7 +436,7 @@ func proposalToProto(proposal *profitsharingstore.Proposal, participants []profi
 	result := &apiclient.Proposal{
 		Id:               proposal.ID,
 		Status:           proposalStatusToProto(proposal.Status),
-		IsOwn:            proposal.AuthorAccount == requester,
+		IsOwn:            proposal.AuthorAccountID == requester,
 		VoteCountVisible: showVoteCount,
 		VoteCount:        voteCount,
 		IsFinal:          isFinal,
@@ -447,16 +450,19 @@ func proposalToProto(proposal *profitsharingstore.Proposal, participants []profi
 	}
 	participantByAccount := make(map[string]profitsharingstore.Participant, len(participants))
 	for _, participant := range participants {
-		participantByAccount[participant.Account] = participant
+		participantByAccount[participant.AccountID] = participant
 	}
 	if showAuthor {
-		result.AuthorAccount = proposal.AuthorAccount
-		result.AuthorDisplayName = participantByAccount[proposal.AuthorAccount].DisplayName
+		author := participantByAccount[proposal.AuthorAccountID]
+		result.AuthorAccountId = proposal.AuthorAccountID
+		result.AuthorUsername = author.Username
+		result.AuthorDisplayName = author.DisplayName
 	}
 	for _, item := range proposal.Items {
-		participant := participantByAccount[item.ParticipantAccount]
+		participant := participantByAccount[item.ParticipantAccountID]
 		converted := &apiclient.ProposalItem{
-			ParticipantAccount:      item.ParticipantAccount,
+			ParticipantAccountId:    item.ParticipantAccountID,
+			ParticipantUsername:     participant.Username,
 			ParticipantDisplayName:  participant.DisplayName,
 			ParticipantDisplayOrder: participant.DisplayOrder,
 			Responsibility:          item.Responsibility,
@@ -470,9 +476,9 @@ func proposalToProto(proposal *profitsharingstore.Proposal, participants []profi
 	return result
 }
 
-func containsParticipant(participants []profitsharingstore.Participant, account string) bool {
+func containsParticipant(participants []profitsharingstore.Participant, accountID string) bool {
 	for _, participant := range participants {
-		if participant.Account == account {
+		if participant.AccountID == accountID {
 			return true
 		}
 	}

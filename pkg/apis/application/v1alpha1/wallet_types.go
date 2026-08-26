@@ -15,7 +15,8 @@ type WalletItem struct {
 	DerivationPath string `protobuf:"bytes,6,opt,name=derivation_path,json=derivationPath" json:"derivationPath"`
 	CreatedAt      string `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"createdAt"`
 	UpdatedAt      string `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt" json:"updatedAt"`
-	CreatedBy      string `protobuf:"bytes,9,opt,name=created_by,json=createdBy" json:"createdBy"`
+	OwnerAccountID string `protobuf:"bytes,9,opt,name=owner_account_id,json=ownerAccountId" json:"ownerAccountId"`
+	SystemOwned    bool   `protobuf:"varint,11,opt,name=system_owned,json=systemOwned" json:"systemOwned"`
 }
 
 type WalletDetail struct {
@@ -30,5 +31,6 @@ type WalletDetail struct {
 	UpdatedAt      string `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt" json:"updatedAt"`
 	PrivateKey     string `protobuf:"bytes,9,opt,name=private_key,json=privateKey" json:"privateKey"`
 	Mnemonic       string `protobuf:"bytes,10,opt,name=mnemonic" json:"mnemonic"`
-	CreatedBy      string `protobuf:"bytes,11,opt,name=created_by,json=createdBy" json:"createdBy"`
+	OwnerAccountID string `protobuf:"bytes,11,opt,name=owner_account_id,json=ownerAccountId" json:"ownerAccountId"`
+	SystemOwned    bool   `protobuf:"varint,13,opt,name=system_owned,json=systemOwned" json:"systemOwned"`
 }

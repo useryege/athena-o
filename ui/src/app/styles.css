@@ -2704,6 +2704,176 @@ body::-webkit-scrollbar-thumb,
     font-size: 12px;
 }
 
+.registration-screen {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--athena-brand) 11%, transparent), transparent 30rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--athena-panel) 48%, transparent), transparent 44%), var(--athena-bg);
+}
+
+.registration-panel {
+    width: min(100%, 460px);
+    border-color: var(--athena-border);
+    border-radius: 10px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow);
+}
+
+.registration-panel .ant-card-body {
+    padding: 32px;
+}
+
+.registration-panel__header {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.registration-panel__header h2.ant-typography,
+.registration-panel__header .ant-typography {
+    margin: 0;
+}
+
+.registration-panel__header h2.ant-typography {
+    color: var(--athena-text);
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+}
+
+.registration-panel__header .ant-typography-secondary {
+    margin-top: 5px;
+    font-size: 13px;
+}
+
+.registration-panel__loading,
+.registration-panel__failure {
+    display: grid;
+    gap: 16px;
+}
+
+.registration-panel__loading {
+    min-height: 128px;
+    place-content: center;
+    justify-items: center;
+}
+
+.registration-identity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+}
+
+.registration-identity > div {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.registration-identity strong {
+    overflow-wrap: anywhere;
+    color: var(--athena-text);
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.registration-identity .ant-typography-secondary {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.registration-identity__administrator.ant-tag {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.registration-form {
+    display: grid;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.registration-form__field {
+    display: grid;
+    gap: 8px;
+}
+
+.registration-form__field > label {
+    color: var(--athena-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.registration-username-input.ant-input-affix-wrapper {
+    min-height: 48px;
+    padding-inline: 14px;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.registration-username-input--available.ant-input-affix-wrapper {
+    border-color: color-mix(in srgb, var(--athena-green) 68%, var(--athena-border-strong)) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--athena-green) 12%, transparent);
+}
+
+.registration-username-input__prefix {
+    color: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-weight: 700;
+}
+
+.registration-username-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 20px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.registration-username-status .ant-spin {
+    line-height: 0;
+}
+
+.registration-username-status--muted {
+    color: var(--athena-muted);
+}
+
+.registration-username-status--success {
+    color: var(--athena-green);
+}
+
+.registration-username-status--error {
+    color: var(--athena-red);
+}
+
+.registration-form__permanence.ant-typography {
+    font-size: 12px;
+}
+
+.registration-form__error {
+    margin-top: -4px;
+}
+
+.registration-form__actions {
+    display: grid;
+    gap: 10px;
+}
+
+.registration-form__actions .ant-btn,
+.registration-panel__failure .ant-btn {
+    min-height: 44px;
+}
+
 .fifa-page {
     display: grid;
     gap: 14px;
@@ -6387,6 +6557,30 @@ button.chain-processing-kpi {
 
     .login-panel .ant-card-body {
         padding: 24px;
+    }
+
+    .registration-screen {
+        align-items: start;
+        padding: 12px;
+    }
+
+    .registration-panel {
+        margin-top: max(12px, env(safe-area-inset-top, 0px));
+    }
+
+    .registration-panel .ant-card-body {
+        padding: 24px;
+    }
+
+    .registration-identity {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .registration-form__actions,
+    .registration-form__actions .ant-btn,
+    .registration-panel__failure .ant-btn {
+        width: 100%;
     }
 
     .admin-account-directory-toolbar {

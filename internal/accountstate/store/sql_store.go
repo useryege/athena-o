@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
@@ -75,6 +75,29 @@ func (s *SQLStore) requireDatabase() error {
 	return nil
 }
 
+func accountIDParam(value string) (pgtype.UUID, string, error) {
+	canonical, err := accountcredentials.CanonicalAccountID(value)
+	if err != nil {
+		return pgtype.UUID{}, "", fmt.Errorf("account ID %q is not a UUID: %w", value, err)
+	}
+	parsed, err := uuid.Parse(canonical)
+	if err != nil || parsed == uuid.Nil {
+		return pgtype.UUID{}, "", fmt.Errorf("account ID %q is not a non-zero UUID", value)
+	}
+	return pgtype.UUID{Bytes: [16]byte(parsed), Valid: true}, canonical, nil
+}
+
+func accountIDFromPG(value pgtype.UUID) (string, error) {
+	if !value.Valid {
+		return "", fmt.Errorf("account ID is missing")
+	}
+	parsed := uuid.UUID(value.Bytes)
+	if parsed == uuid.Nil {
+		return "", fmt.Errorf("account ID is the zero UUID")
+	}
+	return parsed.String(), nil
+}
+
 // ListAccountAccess returns one complete, consistent access aggregate for
 // every durable account.
 func (s *SQLStore) ListAccountAccess(ctx context.Context) (map[string]accountaccess.Access, error) {
@@ -108,36 +131,44 @@ func (s *SQLStore) ListAccountAccess(ctx context.Context) (map[string]accountacc
 
 	durableAccounts := make(map[string]struct{}, len(accountRows))
 	for _, row := range accountRows {
-		if _, duplicate := durableAccounts[row.AccountName]; duplicate {
-			return nil, fmt.Errorf("durable account %q is duplicated", row.AccountName)
+		accountID, err := accountIDFromPG(row.AccountID)
+		if err != nil {
+			return nil, fmt.Errorf("project durable account ID: %w", err)
 		}
-		durableAccounts[row.AccountName] = struct{}{}
+		if _, duplicate := durableAccounts[accountID]; duplicate {
+			return nil, fmt.Errorf("durable account %q is duplicated", accountID)
+		}
+		durableAccounts[accountID] = struct{}{}
 	}
 	result := make(map[string]accountaccess.Access, len(heads))
 	for _, head := range heads {
-		if _, exists := durableAccounts[head.AccountName]; !exists {
-			return nil, fmt.Errorf("account access head references unknown account %q", head.AccountName)
+		accountID, err := accountIDFromPG(head.AccountID)
+		if err != nil {
+			return nil, fmt.Errorf("project account access head ID: %w", err)
 		}
-		if _, duplicate := result[head.AccountName]; duplicate {
-			return nil, fmt.Errorf("account %q has duplicate access heads", head.AccountName)
+		if _, exists := durableAccounts[accountID]; !exists {
+			return nil, fmt.Errorf("account access head references unknown account %q", accountID)
 		}
-		access, err := accessFromHead(head.AccountName, head.LoginEnabled, head.ApiKeyEnabled, head.ProfitSharingEnabled, head.Revision)
+		if _, duplicate := result[accountID]; duplicate {
+			return nil, fmt.Errorf("account %q has duplicate access heads", accountID)
+		}
+		access, err := accessFromHead(accountID, head.Administrator, head.LoginEnabled, head.ApiKeyEnabled, head.ProfitSharingEnabled, head.Revision)
 		if err != nil {
 			return nil, err
 		}
-		result[head.AccountName] = access
+		result[accountID] = access
 	}
-	for name := range durableAccounts {
-		if _, exists := result[name]; !exists {
-			return nil, fmt.Errorf("durable account %q has no access head", name)
+	for accountID := range durableAccounts {
+		if _, exists := result[accountID]; !exists {
+			return nil, fmt.Errorf("durable account %q has no access head", accountID)
 		}
 	}
 	if err := attachModuleAccess(result, moduleRows); err != nil {
 		return nil, err
 	}
-	for name, access := range result {
+	for accountID, access := range result {
 		if err := access.Validate(); err != nil {
-			return nil, fmt.Errorf("account %q has invalid persisted access: %w", name, err)
+			return nil, fmt.Errorf("account %q has invalid persisted access: %w", accountID, err)
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -149,13 +180,17 @@ func (s *SQLStore) ListAccountAccess(ctx context.Context) (map[string]accountacc
 
 // GetAccountAccess returns one complete access aggregate from a consistent
 // head-and-module snapshot.
-func (s *SQLStore) GetAccountAccess(ctx context.Context, name string) (accountaccess.Access, error) {
+func (s *SQLStore) GetAccountAccess(ctx context.Context, accountID string) (accountaccess.Access, error) {
 	if err := s.requireDatabase(); err != nil {
+		return accountaccess.Access{}, err
+	}
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
 		return accountaccess.Access{}, err
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("begin account %q access snapshot: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("begin account %q access snapshot: %w", canonicalID, err)
 	}
 	committed := false
 	defer func() {
@@ -165,31 +200,35 @@ func (s *SQLStore) GetAccountAccess(ctx context.Context, name string) (accountac
 	}()
 	txQueries := accountstatesqlc.New(tx)
 
-	head, err := txQueries.GetAccountAccessHead(ctx, name)
+	head, err := txQueries.GetAccountAccessHead(ctx, accountIDValue)
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("get account %q access head: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("get account %q access head: %w", canonicalID, err)
 	}
-	access, err := accessFromHead(head.AccountName, head.LoginEnabled, head.ApiKeyEnabled, head.ProfitSharingEnabled, head.Revision)
+	returnedID, err := accountIDFromPG(head.AccountID)
+	if err != nil {
+		return accountaccess.Access{}, fmt.Errorf("project account %q access head ID: %w", canonicalID, err)
+	}
+	if returnedID != canonicalID {
+		return accountaccess.Access{}, fmt.Errorf("account %q access query returned head for %q", canonicalID, returnedID)
+	}
+	access, err := accessFromHead(returnedID, head.Administrator, head.LoginEnabled, head.ApiKeyEnabled, head.ProfitSharingEnabled, head.Revision)
 	if err != nil {
 		return accountaccess.Access{}, err
 	}
-	if head.AccountName != name {
-		return accountaccess.Access{}, fmt.Errorf("account %q access query returned head for %q", name, head.AccountName)
-	}
-	moduleRows, err := txQueries.ListAccountModuleAccessByAccount(ctx, name)
+	moduleRows, err := txQueries.ListAccountModuleAccessByAccount(ctx, accountIDValue)
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("list account %q module access: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("list account %q module access: %w", canonicalID, err)
 	}
-	result := map[string]accountaccess.Access{name: access}
+	result := map[string]accountaccess.Access{canonicalID: access}
 	if err := attachModuleAccess(result, moduleRows); err != nil {
 		return accountaccess.Access{}, err
 	}
-	access = result[name]
+	access = result[canonicalID]
 	if err := access.Validate(); err != nil {
-		return accountaccess.Access{}, fmt.Errorf("account %q has invalid persisted access: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("account %q has invalid persisted access: %w", canonicalID, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return accountaccess.Access{}, fmt.Errorf("commit account %q access snapshot: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("commit account %q access snapshot: %w", canonicalID, err)
 	}
 	committed = true
 	return access.Clone(), nil
@@ -197,24 +236,31 @@ func (s *SQLStore) GetAccountAccess(ctx context.Context, name string) (accountac
 
 // UpdateAccountAccess replaces one ordinary account's full access aggregate.
 // The head CAS and all ten module updates commit atomically.
-func (s *SQLStore) UpdateAccountAccess(ctx context.Context, name string, next accountaccess.Access, expectedRevision uint64) (accountaccess.Access, error) {
+func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, next accountaccess.Access, expectedRevision uint64) (accountaccess.Access, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountaccess.Access{}, err
 	}
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
+		return accountaccess.Access{}, err
+	}
 	if expectedRevision == 0 || expectedRevision >= math.MaxInt64 {
-		return accountaccess.Access{}, fmt.Errorf("account %q expected access revision is out of range", name)
+		return accountaccess.Access{}, fmt.Errorf("account %q expected access revision is out of range", canonicalID)
 	}
 	if next.Revision != expectedRevision {
-		return accountaccess.Access{}, fmt.Errorf("account %q access revision does not match expected revision", name)
+		return accountaccess.Access{}, fmt.Errorf("account %q access revision does not match expected revision", canonicalID)
+	}
+	if next.Administrator {
+		return accountaccess.Access{}, fmt.Errorf("account %q administrator role cannot be supplied by an access update", canonicalID)
 	}
 	next = next.Clone()
 	if err := next.Validate(); err != nil {
-		return accountaccess.Access{}, fmt.Errorf("validate account %q access: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("validate account %q access: %w", canonicalID, err)
 	}
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("begin account %q access update: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("begin account %q access update: %w", canonicalID, err)
 	}
 	committed := false
 	defer func() {
@@ -225,20 +271,24 @@ func (s *SQLStore) UpdateAccountAccess(ctx context.Context, name string, next ac
 	txQueries := accountstatesqlc.New(tx)
 	head, err := txQueries.UpdateAccountAccessHead(ctx, accountstatesqlc.UpdateAccountAccessHeadParams{
 		LoginEnabled: next.LoginEnabled, ApiKeyEnabled: next.APIKeyEnabled,
-		ProfitSharingEnabled: next.ProfitSharingEnabled, AccountName: name,
+		ProfitSharingEnabled: next.ProfitSharingEnabled, AccountID: accountIDValue,
 		ExpectedRevision: int64(expectedRevision),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountaccess.Access{}, accountaccess.ErrRevisionConflict
 	}
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("update account %q access head: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("update account %q access head: %w", canonicalID, err)
 	}
-	if head.AccountName != name || head.LoginEnabled != next.LoginEnabled || head.ApiKeyEnabled != next.APIKeyEnabled || head.ProfitSharingEnabled != next.ProfitSharingEnabled {
-		return accountaccess.Access{}, fmt.Errorf("account %q access update returned an inconsistent head", name)
+	returnedID, err := accountIDFromPG(head.AccountID)
+	if err != nil {
+		return accountaccess.Access{}, fmt.Errorf("project updated account %q access head ID: %w", canonicalID, err)
+	}
+	if returnedID != canonicalID || head.LoginEnabled != next.LoginEnabled || head.ApiKeyEnabled != next.APIKeyEnabled || head.ProfitSharingEnabled != next.ProfitSharingEnabled {
+		return accountaccess.Access{}, fmt.Errorf("account %q access update returned an inconsistent head", canonicalID)
 	}
 	if head.Revision <= 0 || uint64(head.Revision) != expectedRevision+1 {
-		return accountaccess.Access{}, fmt.Errorf("account %q access update returned revision %d after expected revision %d", name, head.Revision, expectedRevision)
+		return accountaccess.Access{}, fmt.Errorf("account %q access update returned revision %d after expected revision %d", canonicalID, head.Revision, expectedRevision)
 	}
 	rowsAffected, err := txQueries.ReplaceAccountModuleAccess(ctx, accountstatesqlc.ReplaceAccountModuleAccessParams{
 		MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), SportsLiveAccessLevel: string(next.Modules[accountaccess.ModuleSportsLive]),
@@ -246,56 +296,62 @@ func (s *SQLStore) UpdateAccountAccess(ctx context.Context, name string, next ac
 		WormMarketsAccessLevel: string(next.Modules[accountaccess.ModuleWormMarkets]), FifaMarketDashboardAccessLevel: string(next.Modules[accountaccess.ModuleFIFAMarketDashboard]),
 		WorldCupCornersAccessLevel: string(next.Modules[accountaccess.ModuleWorldCupCorners]), TokenAccessLevel: string(next.Modules[accountaccess.ModuleToken]),
 		WalletAccessLevel: string(next.Modules[accountaccess.ModuleWallet]), NotificationsAccessLevel: string(next.Modules[accountaccess.ModuleNotifications]),
-		AccountName: name,
+		AccountID: accountIDValue,
 	})
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("replace account %q module access: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("replace account %q module access: %w", canonicalID, err)
 	}
 	expectedModuleRows := int64(len(accountaccess.AllModules()))
 	if rowsAffected != expectedModuleRows {
-		return accountaccess.Access{}, fmt.Errorf("replace account %q module access affected %d rows, expected %d", name, rowsAffected, expectedModuleRows)
+		return accountaccess.Access{}, fmt.Errorf("replace account %q module access affected %d rows, expected %d", canonicalID, rowsAffected, expectedModuleRows)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return accountaccess.Access{}, fmt.Errorf("commit account %q access update: %w", name, err)
+		return accountaccess.Access{}, fmt.Errorf("commit account %q access update: %w", canonicalID, err)
 	}
 	committed = true
 	return accountaccess.Access{
-		LoginEnabled: head.LoginEnabled, APIKeyEnabled: head.ApiKeyEnabled,
+		Administrator: false,
+		LoginEnabled:  head.LoginEnabled, APIKeyEnabled: head.ApiKeyEnabled,
 		ProfitSharingEnabled: head.ProfitSharingEnabled, Modules: next.Modules,
 		Revision: uint64(head.Revision),
 	}.Clone(), nil
 }
 
-func accessFromHead(name string, loginEnabled, apiKeyEnabled, profitSharingEnabled bool, revision int64) (accountaccess.Access, error) {
-	if strings.TrimSpace(name) == "" || strings.Contains(name, ":") {
-		return accountaccess.Access{}, fmt.Errorf("persisted account access name %q is invalid", name)
+func accessFromHead(accountID string, administrator, loginEnabled, apiKeyEnabled, profitSharingEnabled bool, revision int64) (accountaccess.Access, error) {
+	if canonicalID, err := accountcredentials.CanonicalAccountID(accountID); err != nil || canonicalID != accountID {
+		return accountaccess.Access{}, fmt.Errorf("persisted account access ID %q is invalid", accountID)
 	}
 	if revision <= 0 {
-		return accountaccess.Access{}, fmt.Errorf("account %q has non-positive access revision %d", name, revision)
+		return accountaccess.Access{}, fmt.Errorf("account %q has non-positive access revision %d", accountID, revision)
 	}
 	return accountaccess.Access{
-		LoginEnabled: loginEnabled, APIKeyEnabled: apiKeyEnabled,
+		Administrator: administrator,
+		LoginEnabled:  loginEnabled, APIKeyEnabled: apiKeyEnabled,
 		ProfitSharingEnabled: profitSharingEnabled,
 		Modules:              make(map[accountaccess.Module]accountaccess.AccessLevel, len(accountaccess.AllModules())),
 		Revision:             uint64(revision),
 	}, nil
 }
 
-func attachModuleAccess(accessByName map[string]accountaccess.Access, rows []accountstatesqlc.AccountModuleAccess) error {
+func attachModuleAccess(accessByID map[string]accountaccess.Access, rows []accountstatesqlc.AccountModuleAccess) error {
 	for _, row := range rows {
-		access, exists := accessByName[row.AccountName]
+		accountID, err := accountIDFromPG(row.AccountID)
+		if err != nil {
+			return fmt.Errorf("project account module access ID: %w", err)
+		}
+		access, exists := accessByID[accountID]
 		if !exists {
-			return fmt.Errorf("account module access for %q has no access head", row.AccountName)
+			return fmt.Errorf("account module access for %q has no access head", accountID)
 		}
 		module := accountaccess.Module(row.Module)
 		if _, known := accountaccess.MaxAccessLevel(module); !known {
-			return fmt.Errorf("account %q has unknown access module %q", row.AccountName, row.Module)
+			return fmt.Errorf("account %q has unknown access module %q", accountID, row.Module)
 		}
 		if _, duplicate := access.Modules[module]; duplicate {
-			return fmt.Errorf("account %q has duplicate access rows for module %q", row.AccountName, row.Module)
+			return fmt.Errorf("account %q has duplicate access rows for module %q", accountID, row.Module)
 		}
 		access.Modules[module] = accountaccess.AccessLevel(row.AccessLevel)
-		accessByName[row.AccountName] = access
+		accessByID[accountID] = access
 	}
 	return nil
 }
@@ -328,16 +384,16 @@ func (s *SQLStore) ListCredentialAccounts(ctx context.Context) (map[string]accou
 		if err != nil {
 			return nil, err
 		}
-		if _, duplicate := accounts[account.Name]; duplicate {
-			return nil, fmt.Errorf("credential account %q is duplicated", account.Name)
+		if _, duplicate := accounts[account.ID]; duplicate {
+			return nil, fmt.Errorf("credential account %q is duplicated", account.ID)
 		}
 		if account.GoogleSubject != "" {
 			if previous := seenSubject[account.GoogleSubject]; previous != "" {
-				return nil, fmt.Errorf("Google subject is assigned to both %q and %q", previous, account.Name)
+				return nil, fmt.Errorf("Google subject is assigned to both %q and %q", previous, account.ID)
 			}
-			seenSubject[account.GoogleSubject] = account.Name
+			seenSubject[account.GoogleSubject] = account.ID
 		}
-		accounts[account.Name] = account
+		accounts[account.ID] = account
 	}
 	keyRows, err := txQueries.ListAccountAPIKeyRecords(ctx)
 	if err != nil {
@@ -346,25 +402,29 @@ func (s *SQLStore) ListCredentialAccounts(ctx context.Context) (map[string]accou
 	seenJTI := make(map[string]string, len(keyRows))
 	seenDisplayID := make(map[string]struct{}, len(keyRows))
 	for _, row := range keyRows {
-		account, exists := accounts[row.AccountName]
+		accountID, err := accountIDFromPG(row.AccountID)
+		if err != nil {
+			return nil, fmt.Errorf("project API Key account ID: %w", err)
+		}
+		account, exists := accounts[accountID]
 		if !exists {
-			return nil, fmt.Errorf("API Key metadata references unknown account %q", row.AccountName)
+			return nil, fmt.Errorf("API Key metadata references unknown account %q", accountID)
 		}
 		token, err := credentialTokenFromRow(row.DisplayID, row.Jti, row.IssuedAt, row.ExpiresAt)
 		if err != nil {
-			return nil, fmt.Errorf("project account %q API Key %q: %w", row.AccountName, row.DisplayID, err)
+			return nil, fmt.Errorf("project account %q API Key %q: %w", accountID, row.DisplayID, err)
 		}
 		if previous := seenJTI[token.JTI]; previous != "" {
-			return nil, fmt.Errorf("API Key JTI is duplicated across accounts %q and %q", previous, row.AccountName)
+			return nil, fmt.Errorf("API Key JTI is duplicated across accounts %q and %q", previous, accountID)
 		}
-		seenJTI[token.JTI] = row.AccountName
-		displayKey := row.AccountName + "\x00" + token.ID
+		seenJTI[token.JTI] = accountID
+		displayKey := accountID + "\x00" + token.ID
 		if _, duplicate := seenDisplayID[displayKey]; duplicate {
-			return nil, fmt.Errorf("account %q has duplicate API Key display ID %q", row.AccountName, token.ID)
+			return nil, fmt.Errorf("account %q has duplicate API Key display ID %q", accountID, token.ID)
 		}
 		seenDisplayID[displayKey] = struct{}{}
 		account.Tokens = append(account.Tokens, token)
-		accounts[row.AccountName] = account
+		accounts[accountID] = account
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit credential account snapshot transaction: %w", err)
@@ -373,129 +433,172 @@ func (s *SQLStore) ListCredentialAccounts(ctx context.Context) (map[string]accou
 	return accounts, nil
 }
 
-// ResolveOrProvisionGoogleAccount resolves an existing subject before
-// considering administrator bootstrap or ordinary-account creation.
-func (s *SQLStore) ResolveOrProvisionGoogleAccount(ctx context.Context, subject, verifiedEmail, administratorEmail string) (accountcredentials.Account, bool, error) {
+// GetCredentialAccountByGoogleSubject resolves only an already-registered
+// Google subject. Unknown subjects remain outside the durable account model
+// until the separate username registration flow commits.
+func (s *SQLStore) GetCredentialAccountByGoogleSubject(ctx context.Context, subject string) (accountcredentials.Account, bool, error) {
+	if err := s.requireDatabase(); err != nil {
+		return accountcredentials.Account{}, false, err
+	}
+	subject = strings.TrimSpace(subject)
+	if subject == "" {
+		return accountcredentials.Account{}, false, nil
+	}
+	return credentialAccountByGoogleSubject(ctx, s.queries, subject)
+}
+
+func (s *SQLStore) UsernameExists(ctx context.Context, username string) (bool, error) {
+	if err := s.requireDatabase(); err != nil {
+		return false, err
+	}
+	exists, err := s.queries.UsernameExists(ctx, username)
+	if err != nil {
+		return false, fmt.Errorf("check username availability: %w", err)
+	}
+	return exists, nil
+}
+
+// RegisterGoogleAccount creates the complete identity, access, module, profile,
+// and preference aggregate in one SQL statement. A concurrent registration for
+// the same subject converges on the first committed account.
+func (s *SQLStore) RegisterGoogleAccount(ctx context.Context, subject, verifiedEmail, username string, administrator bool) (accountcredentials.Account, bool, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcredentials.Account{}, false, err
 	}
 	subject = strings.TrimSpace(subject)
 	verifiedEmail = strings.TrimSpace(verifiedEmail)
-	administratorEmail = strings.TrimSpace(administratorEmail)
 	if subject == "" || verifiedEmail == "" {
 		return accountcredentials.Account{}, false, fmt.Errorf("verified Google subject and email are required")
 	}
-	account, found, err := credentialAccountByGoogleSubject(ctx, s.queries, subject)
-	if err != nil {
+	if err := accountcredentials.ValidateUsername(username, administrator); err != nil {
 		return accountcredentials.Account{}, false, err
 	}
-	if found {
-		return account, false, nil
+	if existing, found, err := credentialAccountByGoogleSubject(ctx, s.queries, subject); err != nil || found {
+		return existing, false, err
 	}
-	if administratorEmail != "" && strings.EqualFold(verifiedEmail, administratorEmail) {
-		return s.claimAdministratorIdentity(ctx, subject, verifiedEmail)
-	}
-	row, err := s.queries.CreateOrdinaryAccount(ctx, accountstatesqlc.CreateOrdinaryAccountParams{GoogleSubject: subject, VerifiedEmail: verifiedEmail})
-	if errors.Is(err, pgx.ErrNoRows) || isUniqueViolation(err) {
-		return s.resolveConcurrentIdentity(ctx, subject, false)
+
+	var account accountcredentials.Account
+	var err error
+	if administrator {
+		row, queryErr := s.queries.CreateAdministratorAccount(ctx, accountstatesqlc.CreateAdministratorAccountParams{
+			Username: username, GoogleSubject: subject, VerifiedEmail: verifiedEmail,
+		})
+		if queryErr != nil {
+			return s.resolveRegistrationConflict(ctx, subject, true, queryErr)
+		}
+		account, err = credentialAccountFromFields(
+			row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+			row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
+		)
+	} else {
+		row, queryErr := s.queries.CreateOrdinaryAccount(ctx, accountstatesqlc.CreateOrdinaryAccountParams{
+			Username: username, GoogleSubject: subject, VerifiedEmail: verifiedEmail,
+		})
+		if queryErr != nil {
+			return s.resolveRegistrationConflict(ctx, subject, false, queryErr)
+		}
+		account, err = credentialAccountFromFields(
+			row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+			row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
+		)
 	}
 	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("create ordinary account for Google subject: %w", err)
+		return accountcredentials.Account{}, false, fmt.Errorf("project registered Google account: %w", err)
 	}
-	account, err = credentialAccountFromCreateRow(row)
-	if err != nil {
-		return accountcredentials.Account{}, false, err
-	}
-	if account.GoogleSubject != subject || account.Administrator {
-		return accountcredentials.Account{}, false, fmt.Errorf("ordinary account creation returned an inconsistent identity")
+	if account.Username != username || account.GoogleSubject != subject || account.Administrator != administrator || account.IdentityProvider != accountcredentials.IdentityProviderGoogle {
+		return accountcredentials.Account{}, false, fmt.Errorf("Google registration returned an inconsistent identity")
 	}
 	return account, true, nil
 }
 
-func (s *SQLStore) claimAdministratorIdentity(ctx context.Context, subject, verifiedEmail string) (accountcredentials.Account, bool, error) {
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
-	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("begin administrator identity claim: %w", err)
-	}
-	finished := false
-	defer func() {
-		if !finished {
-			_ = tx.Rollback(context.Background())
-		}
-	}()
-	txQueries := accountstatesqlc.New(tx)
-	adminRow, err := txQueries.GetAdministratorForUpdate(ctx)
-	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("lock administrator identity: %w", err)
-	}
-	existing, found, err := credentialAccountByGoogleSubject(ctx, txQueries, subject)
-	if err != nil {
-		return accountcredentials.Account{}, false, err
-	}
-	if found {
-		if err := tx.Commit(ctx); err != nil {
-			return accountcredentials.Account{}, false, fmt.Errorf("commit existing Google identity lookup: %w", err)
-		}
-		finished = true
-		return existing, false, nil
-	}
-	administrator, err := credentialAccountFromAthenaRow(adminRow)
-	if err != nil {
-		return accountcredentials.Account{}, false, err
-	}
-	if !administrator.Administrator || administrator.Name != common.AthenaAdminUsername {
-		return accountcredentials.Account{}, false, fmt.Errorf("persisted administrator identity is invalid")
-	}
-	if administrator.GoogleSubject != "" {
-		return accountcredentials.Account{}, false, accountcredentials.ErrAdministratorIdentityConflict
-	}
-	claimedRow, err := txQueries.ClaimAdministratorIdentity(ctx, accountstatesqlc.ClaimAdministratorIdentityParams{GoogleSubject: subject, VerifiedEmail: verifiedEmail})
-	if errors.Is(err, pgx.ErrNoRows) || isUniqueViolation(err) {
-		if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil && !errors.Is(rollbackErr, pgx.ErrTxClosed) {
-			return accountcredentials.Account{}, false, fmt.Errorf("rollback contested administrator identity claim: %w", rollbackErr)
-		}
-		finished = true
-		return s.resolveConcurrentIdentity(ctx, subject, true)
-	}
-	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("claim administrator Google identity: %w", err)
-	}
-	claimed, err := credentialAccountFromAthenaRow(claimedRow)
-	if err != nil {
-		return accountcredentials.Account{}, false, err
-	}
-	if !claimed.Administrator || claimed.Name != common.AthenaAdminUsername || claimed.GoogleSubject != subject {
-		return accountcredentials.Account{}, false, fmt.Errorf("administrator identity claim returned an inconsistent account")
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("commit administrator identity claim: %w", err)
-	}
-	finished = true
-	return claimed, false, nil
-}
-
-func (s *SQLStore) resolveConcurrentIdentity(ctx context.Context, subject string, administratorClaim bool) (accountcredentials.Account, bool, error) {
-	account, found, err := credentialAccountByGoogleSubject(ctx, s.queries, subject)
-	if err != nil {
-		return accountcredentials.Account{}, false, err
+func (s *SQLStore) resolveRegistrationConflict(ctx context.Context, subject string, administrator bool, registrationErr error) (accountcredentials.Account, bool, error) {
+	// Re-read first for every conflict. A single registration can violate both
+	// subject and username/admin uniqueness, but an existing subject must always
+	// converge instead of being reported as an unrelated username conflict.
+	account, found, lookupErr := credentialAccountByGoogleSubject(ctx, s.queries, subject)
+	if lookupErr != nil {
+		return accountcredentials.Account{}, false, lookupErr
 	}
 	if found {
 		return account, false, nil
 	}
-	if administratorClaim {
-		row, err := s.queries.GetAccountRecord(ctx, common.AthenaAdminUsername)
+	if errors.Is(registrationErr, pgx.ErrNoRows) {
+		return accountcredentials.Account{}, false, fmt.Errorf("Google registration conflict completed without a durable subject mapping")
+	}
+	constraint, unique := uniqueViolationConstraint(registrationErr)
+	if !unique {
+		return accountcredentials.Account{}, false, fmt.Errorf("register Google account: %w", registrationErr)
+	}
+	if administrator {
+		accounts, err := s.queries.ListAccountRecords(ctx)
 		if err != nil {
-			return accountcredentials.Account{}, false, fmt.Errorf("re-read administrator identity after claim conflict: %w", err)
+			return accountcredentials.Account{}, false, fmt.Errorf("check administrator registration conflict: %w", err)
 		}
-		administrator, err := credentialAccountFromAthenaRow(row)
-		if err != nil {
-			return accountcredentials.Account{}, false, err
-		}
-		if administrator.GoogleSubject != "" && administrator.GoogleSubject != subject {
-			return accountcredentials.Account{}, false, accountcredentials.ErrAdministratorIdentityConflict
+		for _, existing := range accounts {
+			if existing.Administrator {
+				return accountcredentials.Account{}, false, accountcredentials.ErrAdministratorIdentityConflict
+			}
 		}
 	}
-	return accountcredentials.Account{}, false, fmt.Errorf("Google identity conflict completed without a durable subject mapping")
+	switch constraint {
+	case "athena_account_username_lower_uidx":
+		return accountcredentials.Account{}, false, accountcredentials.ErrUsernameUnavailable
+	case "athena_account_single_administrator_uidx":
+		return accountcredentials.Account{}, false, accountcredentials.ErrAdministratorIdentityConflict
+	default:
+		return accountcredentials.Account{}, false, fmt.Errorf("register Google account violated unique constraint %q: %w", constraint, registrationErr)
+	}
+}
+
+// EnsureDevelopmentAdministrator returns the existing isolated disabled-auth
+// identity or creates its complete administrator aggregate. A normal Google
+// administrator intentionally conflicts, requiring a full state reset before
+// changing authentication modes.
+func (s *SQLStore) EnsureDevelopmentAdministrator(ctx context.Context) (accountcredentials.Account, error) {
+	if err := s.requireDatabase(); err != nil {
+		return accountcredentials.Account{}, err
+	}
+	if account, found, err := developmentAdministrator(ctx, s.queries); err != nil || found {
+		return account, err
+	}
+	row, err := s.queries.CreateDevelopmentAdministrator(ctx)
+	if err != nil {
+		if account, found, lookupErr := developmentAdministrator(ctx, s.queries); lookupErr != nil {
+			return accountcredentials.Account{}, lookupErr
+		} else if found {
+			return account, nil
+		}
+		if constraint, unique := uniqueViolationConstraint(err); unique && constraint == "athena_account_single_administrator_uidx" {
+			return accountcredentials.Account{}, accountcredentials.ErrAdministratorIdentityConflict
+		}
+		return accountcredentials.Account{}, fmt.Errorf("create development administrator: %w", err)
+	}
+	account, err := credentialAccountFromFields(
+		row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+		row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
+	)
+	if err != nil {
+		return accountcredentials.Account{}, fmt.Errorf("project development administrator: %w", err)
+	}
+	if account.IdentityProvider != accountcredentials.IdentityProviderDevelopment || !account.Administrator || account.Username != "local-admin" {
+		return accountcredentials.Account{}, fmt.Errorf("development administrator creation returned an inconsistent identity")
+	}
+	return account, nil
+}
+
+func developmentAdministrator(ctx context.Context, queries accountstatesqlc.Querier) (accountcredentials.Account, bool, error) {
+	row, err := queries.GetDevelopmentAdministrator(ctx)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return accountcredentials.Account{}, false, nil
+	}
+	if err != nil {
+		return accountcredentials.Account{}, false, fmt.Errorf("get development administrator: %w", err)
+	}
+	account, err := credentialAccountFromAthenaRow(row)
+	if err != nil {
+		return accountcredentials.Account{}, false, err
+	}
+	return account, true, nil
 }
 
 func credentialAccountByGoogleSubject(ctx context.Context, queries accountstatesqlc.Querier, subject string) (accountcredentials.Account, bool, error) {
@@ -515,37 +618,44 @@ func credentialAccountByGoogleSubject(ctx context.Context, queries accountstates
 
 // RecordGoogleLogin updates mutable identity audit fields only for the current
 // permanent subject and an account whose login remains enabled.
-func (s *SQLStore) RecordGoogleLogin(ctx context.Context, name, subject, verifiedEmail string) (accountcredentials.Account, error) {
+func (s *SQLStore) RecordGoogleLogin(ctx context.Context, accountID, subject, verifiedEmail string) (accountcredentials.Account, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcredentials.Account{}, err
 	}
-	name = strings.TrimSpace(name)
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
+		return accountcredentials.Account{}, err
+	}
 	subject = strings.TrimSpace(subject)
 	verifiedEmail = strings.TrimSpace(verifiedEmail)
-	if name == "" || subject == "" || verifiedEmail == "" {
-		return accountcredentials.Account{}, fmt.Errorf("account name, Google subject, and verified email are required")
+	if subject == "" || verifiedEmail == "" {
+		return accountcredentials.Account{}, fmt.Errorf("account ID, Google subject, and verified email are required")
 	}
-	row, err := s.queries.RecordAccountLogin(ctx, accountstatesqlc.RecordAccountLoginParams{VerifiedEmail: verifiedEmail, AccountName: name, GoogleSubject: subject})
+	row, err := s.queries.RecordAccountLogin(ctx, accountstatesqlc.RecordAccountLoginParams{VerifiedEmail: verifiedEmail, AccountID: accountIDValue, GoogleSubject: subject})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcredentials.Account{}, accountcredentials.ErrLoginDisabled
 	}
 	if err != nil {
-		return accountcredentials.Account{}, fmt.Errorf("record account %q Google login: %w", name, err)
+		return accountcredentials.Account{}, fmt.Errorf("record account %q Google login: %w", canonicalID, err)
 	}
 	account, err := credentialAccountFromAthenaRow(row)
 	if err != nil {
 		return accountcredentials.Account{}, err
 	}
-	if account.Name != name || account.GoogleSubject != subject || account.LastLoginAt.IsZero() {
-		return accountcredentials.Account{}, fmt.Errorf("record account %q Google login returned an inconsistent identity", name)
+	if account.ID != canonicalID || account.GoogleSubject != subject || account.LastLoginAt.IsZero() {
+		return accountcredentials.Account{}, fmt.Errorf("record account %q Google login returned an inconsistent identity", canonicalID)
 	}
 	return account, nil
 }
 
 // CreateAPIKeyMetadata commits API Key metadata only while both login and API
 // Key access remain enabled.
-func (s *SQLStore) CreateAPIKeyMetadata(ctx context.Context, name string, token accountcredentials.Token) error {
+func (s *SQLStore) CreateAPIKeyMetadata(ctx context.Context, accountID string, token accountcredentials.Token) error {
 	if err := s.requireDatabase(); err != nil {
+		return err
+	}
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
 		return err
 	}
 	if !accountcredentials.IsValidAPIKeyDisplayID(token.ID) {
@@ -567,84 +677,98 @@ func (s *SQLStore) CreateAPIKeyMetadata(ctx context.Context, name string, token 
 	row, err := s.queries.CreateAccountAPIKey(ctx, accountstatesqlc.CreateAccountAPIKeyParams{
 		DisplayID: token.ID, Jti: token.JTI,
 		IssuedAt:  pgtype.Timestamptz{Time: time.Unix(token.IssuedAt, 0).UTC(), Valid: true},
-		ExpiresAt: expiresAt, AccountName: name,
+		ExpiresAt: expiresAt, AccountID: accountIDValue,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcredentials.ErrAPIKeyAccessDisabled
 	}
 	if err != nil {
-		return fmt.Errorf("create account %q API Key metadata: %w", name, err)
+		return fmt.Errorf("create account %q API Key metadata: %w", canonicalID, err)
 	}
 	persisted, err := credentialTokenFromRow(row.DisplayID, row.Jti, row.IssuedAt, row.ExpiresAt)
 	if err != nil {
-		return fmt.Errorf("project created account %q API Key metadata: %w", name, err)
+		return fmt.Errorf("project created account %q API Key metadata: %w", canonicalID, err)
 	}
-	if row.AccountName != name || persisted != token {
-		return fmt.Errorf("create account %q API Key metadata returned inconsistent values", name)
+	returnedID, err := accountIDFromPG(row.AccountID)
+	if err != nil {
+		return fmt.Errorf("project created account %q API Key account ID: %w", canonicalID, err)
+	}
+	if returnedID != canonicalID || persisted != token {
+		return fmt.Errorf("create account %q API Key metadata returned inconsistent values", canonicalID)
 	}
 	return nil
 }
 
-func (s *SQLStore) DeleteAPIKeyMetadata(ctx context.Context, name, id string) error {
+func (s *SQLStore) DeleteAPIKeyMetadata(ctx context.Context, accountID, id string) error {
 	if err := s.requireDatabase(); err != nil {
 		return err
 	}
-	jti, err := s.queries.DeleteAccountAPIKey(ctx, accountstatesqlc.DeleteAccountAPIKeyParams{AccountName: name, DisplayID: id})
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
 	if err != nil {
-		return fmt.Errorf("delete account %q API Key %q: %w", name, id, err)
+		return err
+	}
+	jti, err := s.queries.DeleteAccountAPIKey(ctx, accountstatesqlc.DeleteAccountAPIKeyParams{AccountID: accountIDValue, DisplayID: id})
+	if err != nil {
+		return fmt.Errorf("delete account %q API Key %q: %w", canonicalID, id, err)
 	}
 	if strings.TrimSpace(jti) == "" {
-		return fmt.Errorf("delete account %q API Key %q returned an empty JTI", name, id)
+		return fmt.Errorf("delete account %q API Key %q returned an empty JTI", canonicalID, id)
 	}
 	return nil
 }
 
 func credentialAccountFromAthenaRow(row accountstatesqlc.AthenaAccount) (accountcredentials.Account, error) {
-	return credentialAccountFromFields(row.AccountName, row.GoogleSubject, row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt)
+	return credentialAccountFromFields(
+		row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+		row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
+	)
 }
 
-func credentialAccountFromCreateRow(row accountstatesqlc.CreateOrdinaryAccountRow) (accountcredentials.Account, error) {
-	return credentialAccountFromFields(row.AccountName, row.GoogleSubject, row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt)
-}
-
-func credentialAccountFromFields(name string, googleSubject pgtype.Text, verifiedEmail string, administrator bool, createdAt, lastLoginAt pgtype.Timestamptz) (accountcredentials.Account, error) {
-	if strings.TrimSpace(name) == "" || name != strings.TrimSpace(name) || strings.Contains(name, ":") {
-		return accountcredentials.Account{}, fmt.Errorf("persisted credential account name %q is invalid", name)
-	}
-	if administrator != (name == common.AthenaAdminUsername) {
-		return accountcredentials.Account{}, fmt.Errorf("persisted account %q has an invalid administrator flag", name)
+func credentialAccountFromFields(accountID pgtype.UUID, username, identityProvider string, googleSubject pgtype.Text, verifiedEmail string, administrator bool, createdAt, lastLoginAt pgtype.Timestamptz) (accountcredentials.Account, error) {
+	id, err := accountIDFromPG(accountID)
+	if err != nil {
+		return accountcredentials.Account{}, fmt.Errorf("persisted credential account ID: %w", err)
 	}
 	created, err := finiteTimestamp(createdAt, true)
 	if err != nil {
-		return accountcredentials.Account{}, fmt.Errorf("account %q created time: %w", name, err)
+		return accountcredentials.Account{}, fmt.Errorf("account %q created time: %w", id, err)
 	}
 	lastLogin, err := finiteTimestamp(lastLoginAt, false)
 	if err != nil {
-		return accountcredentials.Account{}, fmt.Errorf("account %q last login time: %w", name, err)
+		return accountcredentials.Account{}, fmt.Errorf("account %q last login time: %w", id, err)
 	}
 	if !lastLogin.IsZero() && lastLogin.Before(created) {
-		return accountcredentials.Account{}, fmt.Errorf("account %q last login predates account creation", name)
+		return accountcredentials.Account{}, fmt.Errorf("account %q last login predates account creation", id)
 	}
 	subject := ""
 	if googleSubject.Valid {
 		subject = strings.TrimSpace(googleSubject.String)
 		if subject == "" || subject != googleSubject.String {
-			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid Google subject", name)
+			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid Google subject", id)
 		}
 	}
 	email := strings.TrimSpace(verifiedEmail)
 	if email != verifiedEmail {
-		return accountcredentials.Account{}, fmt.Errorf("account %q has an untrimmed verified email", name)
+		return accountcredentials.Account{}, fmt.Errorf("account %q has an untrimmed verified email", id)
 	}
-	if subject == "" {
-		if !administrator || email != "" {
-			return accountcredentials.Account{}, fmt.Errorf("account %q has an incomplete Google identity binding", name)
+	switch identityProvider {
+	case accountcredentials.IdentityProviderGoogle:
+		if subject == "" || email == "" {
+			return accountcredentials.Account{}, fmt.Errorf("account %q has an incomplete Google identity binding", id)
 		}
-	} else if email == "" {
-		return accountcredentials.Account{}, fmt.Errorf("account %q has a Google subject without a verified email", name)
+		if err := accountcredentials.ValidateUsername(username, administrator); err != nil {
+			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid username: %w", id, err)
+		}
+	case accountcredentials.IdentityProviderDevelopment:
+		if !administrator || username != "local-admin" || subject != "" || email != "" {
+			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid development identity", id)
+		}
+	default:
+		return accountcredentials.Account{}, fmt.Errorf("account %q has unsupported identity provider %q", id, identityProvider)
 	}
 	return accountcredentials.Account{
-		Name: name, GoogleSubject: subject, VerifiedEmail: email,
+		ID: id, Username: username, IdentityProvider: identityProvider,
+		GoogleSubject: subject, VerifiedEmail: email,
 		Administrator: administrator, CreatedAt: created, LastLoginAt: lastLogin,
 	}, nil
 }
@@ -690,12 +814,15 @@ func finiteTimestamp(value pgtype.Timestamptz, required bool) (time.Time, error)
 	return value.Time.UTC(), nil
 }
 
-func isUniqueViolation(err error) bool {
+func uniqueViolationConstraint(err error) (string, bool) {
 	var postgresError *pgconn.PgError
-	return errors.As(err, &postgresError) && postgresError.Code == "23505"
+	if !errors.As(err, &postgresError) || postgresError.Code != "23505" {
+		return "", false
+	}
+	return postgresError.ConstraintName, true
 }
 
-// ListAccountDirectory returns a stable page of account names and the matching
+// ListAccountDirectory returns a stable page of account IDs and the matching
 // total from one repeatable-read snapshot.
 func (s *SQLStore) ListAccountDirectory(ctx context.Context, query, status string, page, pageSize int32, profitSharingEligibleOnly bool) ([]string, int64, error) {
 	if err := s.requireDatabase(); err != nil {
@@ -755,49 +882,61 @@ func (s *SQLStore) ListAccountDirectory(ctx context.Context, query, status strin
 	if err != nil {
 		return nil, 0, fmt.Errorf("list account directory page: %w", err)
 	}
-	names := make([]string, 0, len(rows))
+	accountIDs := make([]string, 0, len(rows))
 	seen := make(map[string]struct{}, len(rows))
 	for _, row := range rows {
-		if strings.TrimSpace(row.AccountName) == "" {
-			return nil, 0, fmt.Errorf("account directory returned an empty account name")
+		accountID, err := accountIDFromPG(row.AccountID)
+		if err != nil {
+			return nil, 0, fmt.Errorf("project account directory ID: %w", err)
 		}
-		if _, duplicate := seen[row.AccountName]; duplicate {
-			return nil, 0, fmt.Errorf("account directory returned duplicate account %q", row.AccountName)
+		if _, duplicate := seen[accountID]; duplicate {
+			return nil, 0, fmt.Errorf("account directory returned duplicate account %q", accountID)
 		}
-		seen[row.AccountName] = struct{}{}
-		names = append(names, row.AccountName)
+		seen[accountID] = struct{}{}
+		accountIDs = append(accountIDs, accountID)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, 0, fmt.Errorf("commit account directory snapshot: %w", err)
 	}
 	committed = true
-	return names, total, nil
+	return accountIDs, total, nil
 }
 
-func (s *SQLStore) AccountExists(ctx context.Context, name string) (bool, error) {
+func (s *SQLStore) AccountExists(ctx context.Context, accountID string) (bool, error) {
 	if err := s.requireDatabase(); err != nil {
 		return false, err
 	}
-	exists, err := s.queries.AccountExists(ctx, name)
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
 	if err != nil {
-		return false, fmt.Errorf("check account %q existence: %w", name, err)
+		return false, err
+	}
+	exists, err := s.queries.AccountExists(ctx, accountIDValue)
+	if err != nil {
+		return false, fmt.Errorf("check account %q existence: %w", canonicalID, err)
 	}
 	return exists, nil
 }
 
-func (s *SQLStore) GetProfile(ctx context.Context, name string) (accountcenter.Profile, bool, error) {
+func (s *SQLStore) GetProfile(ctx context.Context, accountID string) (accountcenter.Profile, bool, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcenter.Profile{}, false, err
 	}
-	row, err := s.queries.GetAccountProfile(ctx, name)
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
+		return accountcenter.Profile{}, false, err
+	}
+	row, err := s.queries.GetAccountProfile(ctx, accountIDValue)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcenter.Profile{}, false, nil
 	}
 	if err != nil {
-		return accountcenter.Profile{}, false, fmt.Errorf("get account %q profile: %w", name, err)
+		return accountcenter.Profile{}, false, fmt.Errorf("get account %q profile: %w", canonicalID, err)
 	}
 	profile, err := profileFromRow(row.DisplayName, row.AccountTier, row.AvatarObjectKey, row.AvatarContentType, row.AvatarEtag, row.AvatarSizeBytes, row.Revision)
-	return profile, true, err
+	if err != nil {
+		return accountcenter.Profile{}, false, fmt.Errorf("project account %q profile: %w", canonicalID, err)
+	}
+	return profile, true, nil
 }
 
 func (s *SQLStore) ListAvatarObjectKeys(ctx context.Context) ([]string, error) {
@@ -811,49 +950,35 @@ func (s *SQLStore) ListAvatarObjectKeys(ctx context.Context) ([]string, error) {
 	return keys, nil
 }
 
-func (s *SQLStore) UpdateProfile(ctx context.Context, name string, next accountcenter.Profile, expectedRevision uint64) (accountcenter.Profile, error) {
+func (s *SQLStore) UpdateProfile(ctx context.Context, accountID string, next accountcenter.Profile, expectedRevision uint64) (accountcenter.Profile, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcenter.Profile{}, err
 	}
-	if expectedRevision >= math.MaxInt64 || next.Revision != expectedRevision {
-		return accountcenter.Profile{}, fmt.Errorf("account %q profile revision does not match expected revision", name)
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
+		return accountcenter.Profile{}, err
 	}
-	params := accountstatesqlc.CreateAccountProfileParams{
-		AccountName: name, DisplayName: next.DisplayName, AccountTier: string(next.Tier),
+	if expectedRevision == 0 || expectedRevision >= math.MaxInt64 || next.Revision != expectedRevision {
+		return accountcenter.Profile{}, fmt.Errorf("account %q profile revision does not match expected revision", canonicalID)
+	}
+	row, queryErr := s.queries.UpdateAccountProfile(ctx, accountstatesqlc.UpdateAccountProfileParams{
+		DisplayName: next.DisplayName, AccountTier: string(next.Tier),
 		AvatarObjectKey: next.Avatar.ObjectKey, AvatarContentType: next.Avatar.ContentType,
 		AvatarEtag: next.Avatar.ETag, AvatarSizeBytes: next.Avatar.SizeBytes,
+		AccountID: accountIDValue, ExpectedRevision: int64(expectedRevision),
+	})
+	if errors.Is(queryErr, pgx.ErrNoRows) {
+		return accountcenter.Profile{}, accountcenter.ErrProfileRevisionConflict
 	}
-	var profile accountcenter.Profile
-	var err error
-	if expectedRevision == 0 {
-		row, queryErr := s.queries.CreateAccountProfile(ctx, params)
-		if errors.Is(queryErr, pgx.ErrNoRows) {
-			return accountcenter.Profile{}, accountcenter.ErrProfileRevisionConflict
-		}
-		if queryErr != nil {
-			return accountcenter.Profile{}, fmt.Errorf("create account %q profile: %w", name, queryErr)
-		}
-		profile, err = profileFromRow(row.DisplayName, row.AccountTier, row.AvatarObjectKey, row.AvatarContentType, row.AvatarEtag, row.AvatarSizeBytes, row.Revision)
-	} else {
-		row, queryErr := s.queries.UpdateAccountProfile(ctx, accountstatesqlc.UpdateAccountProfileParams{
-			DisplayName: params.DisplayName, AccountTier: params.AccountTier,
-			AvatarObjectKey: params.AvatarObjectKey, AvatarContentType: params.AvatarContentType,
-			AvatarEtag: params.AvatarEtag, AvatarSizeBytes: params.AvatarSizeBytes,
-			AccountName: name, ExpectedRevision: int64(expectedRevision),
-		})
-		if errors.Is(queryErr, pgx.ErrNoRows) {
-			return accountcenter.Profile{}, accountcenter.ErrProfileRevisionConflict
-		}
-		if queryErr != nil {
-			return accountcenter.Profile{}, fmt.Errorf("update account %q profile: %w", name, queryErr)
-		}
-		profile, err = profileFromRow(row.DisplayName, row.AccountTier, row.AvatarObjectKey, row.AvatarContentType, row.AvatarEtag, row.AvatarSizeBytes, row.Revision)
+	if queryErr != nil {
+		return accountcenter.Profile{}, fmt.Errorf("update account %q profile: %w", canonicalID, queryErr)
 	}
+	profile, err := profileFromRow(row.DisplayName, row.AccountTier, row.AvatarObjectKey, row.AvatarContentType, row.AvatarEtag, row.AvatarSizeBytes, row.Revision)
 	if err != nil {
-		return accountcenter.Profile{}, fmt.Errorf("project account %q profile: %w", name, err)
+		return accountcenter.Profile{}, fmt.Errorf("project account %q profile: %w", canonicalID, err)
 	}
 	if profile.Revision != expectedRevision+1 {
-		return accountcenter.Profile{}, fmt.Errorf("account %q profile update returned revision %d after expected revision %d", name, profile.Revision, expectedRevision)
+		return accountcenter.Profile{}, fmt.Errorf("account %q profile update returned revision %d after expected revision %d", canonicalID, profile.Revision, expectedRevision)
 	}
 	return profile, nil
 }
@@ -869,55 +994,50 @@ func profileFromRow(displayName, tier, objectKey, contentType, etag string, size
 	}, nil
 }
 
-func (s *SQLStore) GetPreferences(ctx context.Context, name string) (accountcenter.Preferences, bool, error) {
+func (s *SQLStore) GetPreferences(ctx context.Context, accountID string) (accountcenter.Preferences, bool, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcenter.Preferences{}, false, err
 	}
-	row, err := s.queries.GetAccountPreferences(ctx, name)
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
+		return accountcenter.Preferences{}, false, err
+	}
+	row, err := s.queries.GetAccountPreferences(ctx, accountIDValue)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcenter.Preferences{}, false, nil
 	}
 	if err != nil {
-		return accountcenter.Preferences{}, false, fmt.Errorf("get account %q preferences: %w", name, err)
+		return accountcenter.Preferences{}, false, fmt.Errorf("get account %q preferences: %w", canonicalID, err)
 	}
 	if row.Revision <= 0 {
-		return accountcenter.Preferences{}, false, fmt.Errorf("account %q has non-positive preferences revision", name)
+		return accountcenter.Preferences{}, false, fmt.Errorf("account %q has non-positive preferences revision", canonicalID)
 	}
 	return accountcenter.Preferences{Theme: accountcenter.ThemeMode(row.Theme), Revision: uint64(row.Revision)}, true, nil
 }
 
-func (s *SQLStore) UpdatePreferences(ctx context.Context, name string, next accountcenter.Preferences, expectedRevision uint64) (accountcenter.Preferences, error) {
+func (s *SQLStore) UpdatePreferences(ctx context.Context, accountID string, next accountcenter.Preferences, expectedRevision uint64) (accountcenter.Preferences, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcenter.Preferences{}, err
 	}
-	if expectedRevision >= math.MaxInt64 || next.Revision != expectedRevision {
-		return accountcenter.Preferences{}, fmt.Errorf("account %q preferences revision does not match expected revision", name)
+	accountIDValue, canonicalID, err := accountIDParam(accountID)
+	if err != nil {
+		return accountcenter.Preferences{}, err
 	}
-	var theme string
-	var revision int64
-	if expectedRevision == 0 {
-		row, err := s.queries.CreateAccountPreferences(ctx, accountstatesqlc.CreateAccountPreferencesParams{AccountName: name, Theme: string(next.Theme)})
-		if errors.Is(err, pgx.ErrNoRows) {
-			return accountcenter.Preferences{}, accountcenter.ErrPreferencesRevisionConflict
-		}
-		if err != nil {
-			return accountcenter.Preferences{}, fmt.Errorf("create account %q preferences: %w", name, err)
-		}
-		theme, revision = row.Theme, row.Revision
-	} else {
-		row, err := s.queries.UpdateAccountPreferences(ctx, accountstatesqlc.UpdateAccountPreferencesParams{
-			Theme: string(next.Theme), AccountName: name, ExpectedRevision: int64(expectedRevision),
-		})
-		if errors.Is(err, pgx.ErrNoRows) {
-			return accountcenter.Preferences{}, accountcenter.ErrPreferencesRevisionConflict
-		}
-		if err != nil {
-			return accountcenter.Preferences{}, fmt.Errorf("update account %q preferences: %w", name, err)
-		}
-		theme, revision = row.Theme, row.Revision
+	if expectedRevision == 0 || expectedRevision >= math.MaxInt64 || next.Revision != expectedRevision {
+		return accountcenter.Preferences{}, fmt.Errorf("account %q preferences revision does not match expected revision", canonicalID)
 	}
+	row, err := s.queries.UpdateAccountPreferences(ctx, accountstatesqlc.UpdateAccountPreferencesParams{
+		Theme: string(next.Theme), AccountID: accountIDValue, ExpectedRevision: int64(expectedRevision),
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return accountcenter.Preferences{}, accountcenter.ErrPreferencesRevisionConflict
+	}
+	if err != nil {
+		return accountcenter.Preferences{}, fmt.Errorf("update account %q preferences: %w", canonicalID, err)
+	}
+	theme, revision := row.Theme, row.Revision
 	if revision <= 0 || uint64(revision) != expectedRevision+1 {
-		return accountcenter.Preferences{}, fmt.Errorf("account %q preferences update returned revision %d after expected revision %d", name, revision, expectedRevision)
+		return accountcenter.Preferences{}, fmt.Errorf("account %q preferences update returned revision %d after expected revision %d", canonicalID, revision, expectedRevision)
 	}
 	return accountcenter.Preferences{Theme: accountcenter.ThemeMode(theme), Revision: uint64(revision)}, nil
 }

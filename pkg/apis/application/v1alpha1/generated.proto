@@ -1607,7 +1607,9 @@ message WalletDetail {
 
   optional string mnemonic = 10;
 
-  optional string created_by = 11;
+  optional string owner_account_id = 11;
+
+  optional bool system_owned = 13;
 }
 
 message WalletItem {
@@ -1629,7 +1631,9 @@ message WalletItem {
 
   optional string updated_at = 8;
 
-  optional string created_by = 9;
+  optional string owner_account_id = 9;
+
+  optional bool system_owned = 11;
 }
 
 message WalletStatus {

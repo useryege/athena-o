@@ -10,7 +10,8 @@ import (
 
 type WalletPrivateKey struct {
 	ID                   int64
-	CreatedBy            string
+	OwnerAccountID       pgtype.UUID
+	SystemOwned          bool
 	Chain                string
 	Type                 string
 	Address              string

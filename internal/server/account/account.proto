@@ -11,7 +11,7 @@ import "google/api/annotations.proto";
 option go_package = "github.com/useryege/athena/pkg/apiclient/account";
 
 message GetAccountRequest {
-  string name = 1;
+  string id = 1;
 }
 
 enum AccountDataAccess {
@@ -52,6 +52,7 @@ message AccountAccess {
 enum AccountIdentityProvider {
   ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED = 0;
   ACCOUNT_IDENTITY_PROVIDER_GOOGLE = 1;
+  ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT = 2;
 }
 
 message AccountIdentity {
@@ -94,13 +95,13 @@ message AccountPreferences {
 }
 
 message UpdateAccountAccessRequest {
-  string name = 1;
+  string id = 1;
   // access contains the complete supported account data module matrix.
   AccountAccess access = 2;
 }
 
 message Account {
-  string name = 1;
+  string id = 1;
   bool administrator = 2;
   AccountAccess access = 3;
   reserved 4;
@@ -108,6 +109,7 @@ message Account {
   AccountProfile profile = 5;
   AccountIdentity identity = 6;
   AccountStatus status = 7;
+  string username = 8;
 }
 
 message AccountsList {
@@ -150,13 +152,13 @@ message ListAccountsRequest {
 message ListTokensRequest {}
 
 message UpdateAccountProfileRequest {
-  string name = 1;
+  string id = 1;
   string displayName = 2;
   uint64 expectedRevision = 3;
 }
 
 message UpdateAccountTierRequest {
-  string name = 1;
+  string id = 1;
   AccountTier tier = 2;
   uint64 expectedRevision = 3;
 }
@@ -176,13 +178,13 @@ service AccountService {
 
   // GetAccount returns an account
   rpc GetAccount(GetAccountRequest) returns (Account) {
-    option (google.api.http).get = "/api/v1/account/{name}";
+    option (google.api.http).get = "/api/v1/account/{id}";
   }
 
   // UpdateAccountAccess replaces a non-administrator account's access state.
   rpc UpdateAccountAccess(UpdateAccountAccessRequest) returns (Account) {
     option (google.api.http) = {
-      put: "/api/v1/account/{name}/access"
+      put: "/api/v1/account/{id}/access"
       body: "access"
     };
   }
@@ -190,7 +192,7 @@ service AccountService {
   // UpdateAccountProfile changes an account's public display name.
   rpc UpdateAccountProfile(UpdateAccountProfileRequest) returns (AccountProfile) {
     option (google.api.http) = {
-      put: "/api/v1/account/{name}/profile"
+      put: "/api/v1/account/{id}/profile"
       body: "*"
     };
   }
@@ -198,7 +200,7 @@ service AccountService {
   // UpdateAccountTier changes display-only packaging metadata.
   rpc UpdateAccountTier(UpdateAccountTierRequest) returns (AccountProfile) {
     option (google.api.http) = {
-      put: "/api/v1/account/{name}/tier"
+      put: "/api/v1/account/{id}/tier"
       body: "*"
     };
   }

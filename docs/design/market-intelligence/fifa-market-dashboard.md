@@ -4,12 +4,12 @@
 
 FIFA Market Dashboard owns the configured pairing of one Worm event and one
 Polymarket FIFA event, the cached combined market view, two monitored treasury
-token balances, and requester-scoped Solana wallet holdings. It exposes one
-read RPC and one event-configuration update RPC, while the Athena API Server
+token balances, and account-scoped Solana wallet holdings. It exposes one read
+RPC and one event-configuration update RPC, while the Athena API Server
 publishes them at `/api/v1/fifa-market-dashboard` and supplies the authenticated
-requester identity used for wallet access. The facade read requires FIFA Market
-Dashboard `READ`; its configuration update requires that same module's
-`READ_WRITE`.
+account UUID plus persisted administrator role used for Wallet access. The
+facade read requires FIFA Market Dashboard `READ`; its configuration update
+requires that same module's `READ_WRITE`.
 
 The service does not synchronize the Worm market catalog, persist wallets, send
 notifications, or own generic Polymarket discovery. Worm event detail comes
@@ -31,7 +31,7 @@ Solana JSON-RPC endpoints are direct external read dependencies.
 | Requester wallet holdings | [internal/fifamarketdashboard/fifa_wallet_holdings.go](../../../internal/fifamarketdashboard/fifa_wallet_holdings.go) | `dashboardWalletHoldings`, `loadFIFAWalletHoldings`, `listFIFAWormPositionWallets` |
 | Internal service contract | [internal/fifamarketdashboard/fifamarketdashboard.proto](../../../internal/fifamarketdashboard/fifamarketdashboard.proto) | `FIFAMarketDashboardService` |
 | Public HTTP/gRPC contract | [internal/server/fifamarketdashboard/fifamarketdashboard.proto](../../../internal/server/fifamarketdashboard/fifamarketdashboard.proto) | `FIFAMarketDashboardService` HTTP annotations |
-| Public proxy and requester propagation | [internal/server/fifamarketdashboard/fifamarketdashboard.go](../../../internal/server/fifamarketdashboard/fifamarketdashboard.go) | `Server`, `GetFIFAMarketDashboard`, `UpdateFIFAEventConfig` |
+| Public proxy and requester derivation | [internal/server/fifamarketdashboard/fifamarketdashboard.go](../../../internal/server/fifamarketdashboard/fifamarketdashboard.go) | `Server`, `requester`, `GetFIFAMarketDashboard`, `UpdateFIFAEventConfig` |
 | Public authorization boundary | [internal/server/authz.go](../../../internal/server/authz.go), [internal/accountaccess/access.go](../../../internal/accountaccess/access.go) | `moduleGRPCRules`, `ModuleFIFAMarketDashboard`, `AccessLevelRead`, `AccessLevelReadWrite` |
 | Browser route, request, and controls | [ui/src/app/pages/fifa-market-dashboard.tsx](../../../ui/src/app/pages/fifa-market-dashboard.tsx), [ui/src/app/shared/services/fifa-market-dashboard-service.ts](../../../ui/src/app/shared/services/fifa-market-dashboard-service.ts) | FIFA route, module-scoped reads and writes, event-config editor |
 | Internal gRPC connection ownership | [internal/fifamarketdashboard/apiclient/apiclient.go](../../../internal/fifamarketdashboard/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewFIFAMarketDashboardClientset`, `ClientConnection` |
@@ -43,7 +43,7 @@ Solana JSON-RPC endpoints are direct external read dependencies.
 
 ```mermaid
 flowchart LR
-    A["Athena API Server\nauthenticated requester"] --> D["FIFA Market Dashboard gRPC"]
+    A["Athena API Server\naccount UUID + role"] --> D["FIFA Market Dashboard gRPC"]
     D --> C["In-memory dashboard caches"]
     D --> P["fifa_market_dashboard PostgreSQL\nevent config only"]
     D --> W["Worm Markets gRPC"]
@@ -59,13 +59,15 @@ holdings. The service calls Worm Markets and Wallet only through generated gRPC
 clients backed by one long-lived channel per dependency; it does not import
 their application implementations.
 
-The API Server proxy replaces the public request's `requester` field with
-`session.GetUserIdentifier(ctx)`. This makes Wallet authorization derive from
-the authenticated session rather than caller-supplied HTTP input. The API Server
-authorizes only the public FIFA facade: status and dashboard reads require FIFA
-`READ`, and configuration update requires FIFA `READ_WRITE`. Its internal Worm
-Markets and Wallet calls are implementation dependencies of that facade and do
-not require the requester to hold separate Worm Markets or Wallet module access.
+The public dashboard request has no requester field. The API Server proxy reads
+the canonical UUID from `session.AccountID(ctx)` and obtains the administrator
+boolean from `AccessController.Get(accountID)`, then sends both only on the
+internal gRPC request. This makes Wallet authorization independent of
+caller-supplied HTTP input and prevents username from entering the identity
+chain. The API Server authorizes only the public FIFA facade: status and
+dashboard reads require FIFA `READ`, and configuration update requires FIFA
+`READ_WRITE`. Internal Worm Markets and Wallet calls are implementation
+dependencies and do not require separate Worm Markets or Wallet module grants.
 
 ## Runtime Flow
 
@@ -95,18 +97,21 @@ not require the requester to hold separate Worm Markets or Wallet module access.
    one fixed wallet's pUSD ERC-20 balance and the Solana RPC for one fixed USDC
    token account. Each item has an independent five-second query deadline and
    carries its own success or error fields.
-7. `GetFIFAMarketDashboard` copies the config, Worm event, Polymarket event, and
-   fixed balances from their caches, then resolves holdings for the authenticated
-   requester. A requester's first holdings load is synchronous. A later stale
-   entry is returned immediately while one asynchronous refresh is started.
-8. Holdings load all Wallet records matching `chain=SOLANA` and
-   `type=worm_position` in pages of 100. For each wallet, the service reads native
-   SOL and all owner accounts for the USDC mint, formats their amounts, and
-   stores per-wallet errors without discarding successful wallets. `singleflight`
-   permits only one load per requester at a time.
+7. `GetFIFAMarketDashboard` validates the internal requester UUID, copies the
+   config, Worm event, Polymarket event, and fixed balances from their caches,
+   then resolves holdings for the exact `(account_id, administrator)` requester.
+   The first holdings load for that pair is synchronous. A later stale entry is
+   returned immediately while one asynchronous refresh is started.
+8. Holdings forward the same UUID and role to Wallet and load all visible
+   records matching `chain=SOLANA` and `type=worm_position` in pages of 100.
+   Ordinary callers therefore see only their UUID-owned wallets; administrators
+   additionally see system-owned and other accounts' wallets. For each wallet,
+   the service reads native SOL and all owner accounts for the USDC mint,
+   formats amounts, and retains per-wallet errors. `singleflight` permits one
+   load per UUID-and-role pair at a time.
 9. The holdings loop wakes at the wallet-balance interval and refreshes every
-   requester already present in the in-memory map. The map is populated by reads
-   and currently has no idle-entry eviction.
+   UUID-and-role key already present in the in-memory map. Reads populate the
+   map; it currently has no idle-entry eviction.
 10. `UpdateFIFAEventConfig` requires nonempty `worm_event_id` and `event_ref`,
     upserts the singleton row, applies the committed config, invalidates Worm and
     Polymarket caches when the pair changed, increments the revision, and sends
@@ -149,11 +154,13 @@ shared fetch time. The Polygon item monitors pUSD token
 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` in token account
 `HhpThriqRFyYr7fA8PT5ArV4D32uitzLx7HCNCh4SXjH`.
 
-Wallet holdings are cached by exact requester string. Each entry contains
-copied items, fetch and cache timestamps, and last access. The cache is fresh
-for the configured wallet-balance refresh interval. `lastAccess` is recorded
-but is not currently used for eviction. Dashboard payloads receive copies of
-all cached protobuf objects, so callers cannot mutate shared cache state.
+Wallet holdings are cached by the `fifaWalletRequester` value: canonical account
+UUID plus administrator boolean. The pair prevents a role change from reusing a
+cache populated under different Wallet visibility. Each entry contains copied
+items, fetch and cache timestamps, and last access. The cache is fresh for the
+configured wallet-balance refresh interval. `lastAccess` is recorded but is not
+currently used for eviction. Dashboard payloads receive copies of all cached
+protobuf objects, so callers cannot mutate shared cache state.
 
 Dashboard market data, quote data, treasury balances, requester holdings,
 errors, and fetch timestamps are process-local and disappear on restart. There
@@ -187,8 +194,9 @@ are implementation constants.
   references. An update replaces both references together.
 - Worm data is obtained through Worm Markets gRPC; this service never imports or
   shares Worm Markets implementation state.
-- Public dashboard reads use the authenticated session identifier as requester;
-  arbitrary public request input cannot select another requester's wallets.
+- Public dashboard reads derive canonical account UUID and persisted role from
+  the authenticated session; public input cannot select another account or
+  claim administrator visibility.
 - Public status and dashboard reads require only FIFA Market Dashboard `READ`;
   event-config updates require FIFA Market Dashboard `READ_WRITE`. Separate
   Worm Markets or Wallet grants are neither required nor implied.
@@ -198,8 +206,8 @@ are implementation constants.
   one resolved home, draw, and away moneyline option and usable YES/NO token IDs.
 - Different dashboard sections retain their own fetch times and error fields;
   their successful values do not imply a common observation instant.
-- The first requester holdings read is synchronous. Later stale data remains
-  readable while refresh proceeds, and concurrent loads for one requester are
+- The first UUID-and-role holdings read is synchronous. Later stale data remains
+  readable while refresh proceeds, and concurrent loads for the same pair are
   collapsed with `singleflight`.
 - Cache contents returned to RPC callers are copies, never shared mutable
   pointers.
@@ -230,7 +238,7 @@ Fixed-balance refresh always caches two items. A provider failure is represented
 on the affected item and does not suppress the other balance. If refresh has not
 completed, placeholder items explicitly report that state.
 
-A Wallet list failure does not overwrite an existing requester cache. It is
+A Wallet list failure does not overwrite an existing UUID-and-role cache. It is
 returned to a first synchronous read or logged by background refresh. SOL and
 USDC failures for an individual wallet are combined into that item's error while
 other wallets remain usable. Stale cached items are returned before an
@@ -252,7 +260,7 @@ service wait group.
 
 Startup logs include the gRPC port, dependency addresses, credential-free RPC
 hosts, and configured refresh intervals. Cache-refresh warnings identify config,
-Worm, Polymarket, requester holdings, and RPC failures. Worm and Polymarket
+Worm, Polymarket, UUID-and-role holdings, and RPC failures. Worm and Polymarket
 warnings are emitted only when the stored error text changes, reducing repeated
 messages at short refresh intervals.
 

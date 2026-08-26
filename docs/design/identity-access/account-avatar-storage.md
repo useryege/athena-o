@@ -45,10 +45,11 @@ with configurable path-style addressing. It deliberately performs no startup
 network probe. Every object operation targets one fixed private bucket and
 never sets a public ACL.
 
-The HTTP handler accepts only a target account name, never an object key. It
-authenticates the request through the normal session/bearer boundary and allows
-the current account or an administrator. It resolves the durable object key
-from Account Center before reading MinIO.
+The HTTP handler accepts only a canonical target account UUID, never username
+or an object key. It authenticates through the normal session/bearer boundary
+and allows the matching UUID or an account whose persisted role is
+administrator. It resolves the durable object key from Account Center before
+reading MinIO.
 
 ## Runtime Flow
 
@@ -62,7 +63,8 @@ from Account Center before reading MinIO.
 2. API Server startup validates the endpoint, region, bucket, access key,
    secret key, and endpoint URL. Missing or malformed configuration prevents
    startup. Client construction does not require MinIO to be reachable.
-3. `PUT /api/v1/account/{name}/avatar` accepts multipart fields `file` and
+3. `PUT /api/v1/account/{id}/avatar` parses `{id}` as a canonical UUID and
+   accepts multipart fields `file` and
    `expectedRevision`. It limits the complete request, reads at most the
    configured image limit plus one byte, inspects image configuration before
    allocation, verifies an extended WebP canvas against its VP8/VP8L frame
@@ -71,20 +73,20 @@ from Account Center before reading MinIO.
    4096 pixels per dimension and 16,777,216 total pixels while retaining the
    original bytes for storage.
 4. The handler verifies the current profile revision, writes a candidate under
-   `objects/<sha256(account)>/<uuid>`, and commits its key, content type, ETag,
+   `objects/<sha256(account_id)>/<uuid>`, and commits its key, content type, ETag,
    and size with profile CAS. After an update error it re-reads the durable
    profile with an independent bounded context: a candidate that was committed
    despite an ambiguous database response is preserved and returned, a
    confirmed unreferenced candidate is deleted best effort, and an
    unreconcilable candidate is left for grace-period collection. A successful
    replacement commits first and then best-effort deletes the previous object.
-5. `GET /api/v1/account/{name}/avatar?v=<profile revision>` reads the current
+5. `GET /api/v1/account/{id}/avatar?v=<profile revision>` reads the current
    profile reference and streams that object with its persisted content type,
    size, ETag, `nosniff`, and a private cache policy that requires authenticated
    revalidation on every reuse. A matching `If-None-Match` returns 304 without
    streaming the body. `Vary: Cookie, Authorization` separates credential
    contexts within the browser cache.
-6. `DELETE /api/v1/account/{name}/avatar?expectedRevision=<revision>` clears
+6. `DELETE /api/v1/account/{id}/avatar?expectedRevision=<revision>` clears
    the profile reference with CAS and then deletes the old object best effort.
    Deleting an already empty avatar returns the unchanged profile.
 7. Garbage collection runs once when its server context starts and then every
@@ -100,8 +102,9 @@ from Account Center before reading MinIO.
 
 The private bucket contains validated original image bytes. Object names carry
 no display name, username, file name, or extension: the account component is a
-SHA-256 digest and the final component is a random UUID. S3 metadata supplies
-the content type, content length, ETag, and last-modified time.
+SHA-256 digest of the canonical account UUID and the final component is a random
+UUID. S3 metadata supplies content type, content length, ETag, and last-modified
+time.
 
 PostgreSQL is the reference source of truth. An object becomes live only when
 its metadata is committed in `account_profile`; an object-store write alone is
@@ -137,9 +140,10 @@ The repository images build MinIO Server from commit
   bucket, or durable object key.
 - The bucket has no anonymous policy; the application user is limited to
   bucket location, listing, and object get/put/delete for that bucket.
-- An authenticated caller can address only its own avatar unless it is an
-  administrator. Object delivery always starts from the current profile, and
-  cached bytes cannot be reused after a credential change without revalidation.
+- An authenticated caller can address only the avatar whose UUID matches the
+  session unless its persisted role is administrator. Username is not a routing
+  concept. Object delivery always starts from the current profile, and cached
+  bytes cannot be reused after a credential change without revalidation.
 - Stored bytes have passed format, animation, size, and dimension validation.
   SVG, GIF, animated WebP, and content-type-only claims are rejected.
 - A profile CAS is the live-reference commit point. Compensation and garbage
@@ -172,9 +176,10 @@ object state from the retained volume; the initializer is safe to rerun.
 MinIO logs are streamed by Goreman locally and retained by Compose in
 production. Lifecycle logs identify image builds, volume creation/removal,
 readiness failure, and successful private-bucket initialization. Avatar HTTP
-logs include the account for storage or streaming failures but never log image
-bytes or credentials. Garbage collection logs load/list failures, per-object
-delete failures, and deleted/scanned counts when it removes objects.
+logs include the account UUID for storage or streaming failures but never log
+username, image bytes, or credentials. Garbage collection logs load/list
+failures, per-object delete failures, and deleted/scanned counts when it removes
+objects.
 
 ## Change Checklist
 

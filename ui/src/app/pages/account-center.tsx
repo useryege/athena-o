@@ -180,6 +180,7 @@ const ProfilePage = () => {
     const authorization = useAuthorization();
     const ctx = React.useContext(Context);
     const username = authorization.user.username;
+    const accountId = authorization.user.accountId;
     const [profile, setProfile] = React.useState(authorization.user.profile);
     const [displayName, setDisplayName] = React.useState(profile.displayName);
     const [saving, setSaving] = React.useState(false);
@@ -206,7 +207,7 @@ const ProfilePage = () => {
         }
         setSaving(true);
         try {
-            const updated = await services.accounts.updateProfile(username, normalizedDisplayName, profile.revision);
+            const updated = await services.accounts.updateProfile(accountId, normalizedDisplayName, profile.revision);
             setProfile(updated);
             setDisplayName(updated.displayName);
             await authorization.refresh();
@@ -233,7 +234,9 @@ const ProfilePage = () => {
         }
         setUploading(true);
         try {
-            const updated = file ? await services.accounts.uploadAvatar(username, file, profile.revision) : await services.accounts.deleteAvatar(username, profile.revision);
+            const updated = file
+                ? await services.accounts.uploadAvatar(accountId, username, file, profile.revision)
+                : await services.accounts.deleteAvatar(accountId, username, profile.revision);
             setProfile(updated);
             await authorization.refresh();
             ctx.notifications.success(file ? 'Avatar updated' : 'Avatar removed');
@@ -278,7 +281,7 @@ const ProfilePage = () => {
                 </div>
                 <Form layout='vertical' onFinish={() => void commitProfile()}>
                     <Form.Item label='Username'>
-                        <Input value={username} disabled={true} />
+                        <Input value={`@${username}`} readOnly={true} />
                     </Form.Item>
                     <Form.Item
                         label='Display name'
@@ -518,7 +521,7 @@ const SecurityPage = () => {
     );
 };
 
-const identityProviderLabel = (provider: string) => (provider.endsWith('_GOOGLE') ? 'Google' : 'Not available');
+const identityProviderLabel = (provider: string) => (provider.endsWith('_GOOGLE') ? 'Google' : provider.endsWith('_DEVELOPMENT') ? 'Development' : 'Not available');
 const identityTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Not yet');
 
 const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
@@ -583,7 +586,7 @@ const ActiveAccessPage = () => {
             <Section title='Current session'>
                 <KeyValueGrid
                     items={[
-                        {label: 'Username', value: authorization.user.username},
+                        {label: 'Username', value: `@${authorization.user.username}`},
                         {label: 'Verified email', value: authorization.user.identity.verifiedEmail || '-'},
                         {label: 'Identity provider', value: identityProviderLabel(authorization.user.identity.provider)},
                         {label: 'Account created', value: identityTime(authorization.user.identity.createdAt)},

@@ -37,11 +37,17 @@ const onError = new Subject<agent.ResponseError>();
 let requestErrorGeneration = 0;
 
 export type AuthorizationRequestMode = 'read' | 'write';
+export type AuthorizationRequestFeature = 'api-key' | 'profit-sharing';
 
-export interface AuthorizationRequestScope {
-    module: AccountDataModule;
-    mode: AuthorizationRequestMode;
-}
+export type AuthorizationRequestScope =
+    | {
+          module: AccountDataModule;
+          mode: AuthorizationRequestMode;
+      }
+    | {
+          feature: AuthorizationRequestFeature;
+          mode: AuthorizationRequestMode;
+      };
 
 const scopedRequests = new Map<agent.Request, AuthorizationRequestScope>();
 
@@ -200,7 +206,16 @@ function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
 
 const abortAuthorizationRequests = (module?: AccountDataModule, mode?: AuthorizationRequestMode) => {
     Array.from(scopedRequests.entries()).forEach(([request, scope]) => {
-        if ((module === undefined || scope.module === module) && (mode === undefined || scope.mode === mode)) {
+        if ((module === undefined || ('module' in scope && scope.module === module)) && (mode === undefined || scope.mode === mode)) {
+            scopedRequests.delete(request);
+            request.abort();
+        }
+    });
+};
+
+const abortAuthorizationFeatureRequests = (feature: AuthorizationRequestFeature, mode?: AuthorizationRequestMode) => {
+    Array.from(scopedRequests.entries()).forEach(([request, scope]) => {
+        if ('feature' in scope && scope.feature === feature && (mode === undefined || scope.mode === mode)) {
             scopedRequests.delete(request);
             request.abort();
         }
@@ -218,6 +233,7 @@ export default {
         requestErrorGeneration++;
     },
     abortAuthorizationRequests,
+    abortAuthorizationFeatureRequests,
     get(url: string, scope?: AuthorizationRequestScope) {
         return initHandlers(agent.get(`${apiRoot()}${url}`), scope);
     },

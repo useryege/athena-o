@@ -14,7 +14,7 @@ const (
 	// ClaimsIssuer is the fixed issuer for local Athena credentials.
 	ClaimsIssuer = "athena"
 	// TokenVersion is required on every current Athena session and API Key.
-	TokenVersion              = 2
+	TokenVersion              = 3
 	minimumJWTSigningKeyBytes = 32
 )
 
@@ -46,9 +46,10 @@ func NewJWTCodec(signingKey []byte) (*JWTCodec, error) {
 	return &JWTCodec{signingKey: append([]byte(nil), signingKey...)}, nil
 }
 
-// Issue signs one v2 local login or API Key credential.
+// Issue signs one v3 local login or API Key credential.
 func (c *JWTCodec) Issue(account string, capability Capability, jti string, expiresIn int64, now time.Time, identityBinding string) (string, Token, error) {
-	if account == "" || jti == "" {
+	canonicalAccount, err := CanonicalAccountID(account)
+	if err != nil || jti == "" {
 		return "", Token{}, fmt.Errorf("token account and JTI are required")
 	}
 	if capability != CapabilityLogin && capability != CapabilityAPIKey {
@@ -62,7 +63,7 @@ func (c *JWTCodec) Issue(account string, capability Capability, jti string, expi
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    ClaimsIssuer,
 			NotBefore: jwt.NewNumericDate(now),
-			Subject:   formatSubject(account, capability),
+			Subject:   formatSubject(canonicalAccount, capability),
 			ID:        jti,
 		},
 		AthenaTokenVersion: TokenVersion,
@@ -79,7 +80,7 @@ func (c *JWTCodec) Issue(account string, capability Capability, jti string, expi
 	return signed, metadata, err
 }
 
-// Parse validates and projects an Athena-issued v2 login or API Key credential.
+// Parse validates and projects an Athena-issued v3 login or API Key credential.
 func (c *JWTCodec) Parse(tokenString string) (ParsedToken, error) {
 	claims := jwt.MapClaims{}
 	_, err := jwt.ParseWithClaims(
@@ -155,5 +156,9 @@ func parseSubject(subject string) (string, Capability, error) {
 	if capability != CapabilityLogin && capability != CapabilityAPIKey {
 		return "", "", fmt.Errorf("unsupported token capability %q", rawCapability)
 	}
-	return account, capability, nil
+	canonicalAccount, err := CanonicalAccountID(account)
+	if err != nil || canonicalAccount != account {
+		return "", "", fmt.Errorf("token subject account must be a canonical UUID")
+	}
+	return canonicalAccount, capability, nil
 }

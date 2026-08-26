@@ -17,7 +17,8 @@ message GetFIFAMarketDashboardStatusResponse {
 }
 
 message GetFIFAMarketDashboardRequest {
-  string requester = 1;
+  string requester_account_id = 1;
+  bool requester_administrator = 2;
 }
 
 message GetFIFAMarketDashboardResponse {

@@ -8,6 +8,7 @@ export * from './help';
 export * from './account-center';
 export * from './admin-accounts';
 export * from './login';
+export * from './register';
 export * from './node-statuses';
 export * from './notification-detail';
 export * from './notifications';

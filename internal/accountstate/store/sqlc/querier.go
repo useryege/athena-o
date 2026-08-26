@@ -6,31 +6,34 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
-	AccountExists(ctx context.Context, accountName string) (bool, error)
-	ClaimAdministratorIdentity(ctx context.Context, arg ClaimAdministratorIdentityParams) (AthenaAccount, error)
+	AccountExists(ctx context.Context, accountID pgtype.UUID) (bool, error)
 	CountAccountDirectory(ctx context.Context, arg CountAccountDirectoryParams) (int64, error)
 	CreateAccountAPIKey(ctx context.Context, arg CreateAccountAPIKeyParams) (AccountApiKey, error)
 	CreateAccountPreferences(ctx context.Context, arg CreateAccountPreferencesParams) (CreateAccountPreferencesRow, error)
 	CreateAccountProfile(ctx context.Context, arg CreateAccountProfileParams) (CreateAccountProfileRow, error)
+	CreateAdministratorAccount(ctx context.Context, arg CreateAdministratorAccountParams) (CreateAdministratorAccountRow, error)
+	CreateDevelopmentAdministrator(ctx context.Context) (CreateDevelopmentAdministratorRow, error)
 	CreateOrdinaryAccount(ctx context.Context, arg CreateOrdinaryAccountParams) (CreateOrdinaryAccountRow, error)
 	DeleteAccountAPIKey(ctx context.Context, arg DeleteAccountAPIKeyParams) (string, error)
 	GetAccountAPIKeyByJTI(ctx context.Context, jti string) (GetAccountAPIKeyByJTIRow, error)
-	GetAccountAccessHead(ctx context.Context, accountName string) (GetAccountAccessHeadRow, error)
+	GetAccountAccessHead(ctx context.Context, accountID pgtype.UUID) (GetAccountAccessHeadRow, error)
 	GetAccountByGoogleSubject(ctx context.Context, googleSubject string) (AthenaAccount, error)
-	GetAccountPreferences(ctx context.Context, accountName string) (GetAccountPreferencesRow, error)
-	GetAccountProfile(ctx context.Context, accountName string) (GetAccountProfileRow, error)
-	GetAccountRecord(ctx context.Context, accountName string) (AthenaAccount, error)
-	GetAdministratorForUpdate(ctx context.Context) (AthenaAccount, error)
+	GetAccountPreferences(ctx context.Context, accountID pgtype.UUID) (GetAccountPreferencesRow, error)
+	GetAccountProfile(ctx context.Context, accountID pgtype.UUID) (GetAccountProfileRow, error)
+	GetAccountRecord(ctx context.Context, accountID pgtype.UUID) (AthenaAccount, error)
+	GetDevelopmentAdministrator(ctx context.Context) (AthenaAccount, error)
 	GetUsableAccountAPIKeyByJTI(ctx context.Context, jti string) (AccountApiKey, error)
 	ListAccountAPIKeyRecords(ctx context.Context) ([]AccountApiKey, error)
-	ListAccountAPIKeys(ctx context.Context, accountName string) ([]ListAccountAPIKeysRow, error)
+	ListAccountAPIKeys(ctx context.Context, accountID pgtype.UUID) ([]ListAccountAPIKeysRow, error)
 	ListAccountAccessHeads(ctx context.Context) ([]ListAccountAccessHeadsRow, error)
 	ListAccountDirectoryPage(ctx context.Context, arg ListAccountDirectoryPageParams) ([]ListAccountDirectoryPageRow, error)
 	ListAccountModuleAccess(ctx context.Context) ([]AccountModuleAccess, error)
-	ListAccountModuleAccessByAccount(ctx context.Context, accountName string) ([]AccountModuleAccess, error)
+	ListAccountModuleAccessByAccount(ctx context.Context, accountID pgtype.UUID) ([]AccountModuleAccess, error)
 	ListAccountRecords(ctx context.Context) ([]AthenaAccount, error)
 	ListAvatarObjectKeys(ctx context.Context) ([]string, error)
 	RecordAccountLogin(ctx context.Context, arg RecordAccountLoginParams) (AthenaAccount, error)
@@ -38,6 +41,7 @@ type Querier interface {
 	UpdateAccountAccessHead(ctx context.Context, arg UpdateAccountAccessHeadParams) (UpdateAccountAccessHeadRow, error)
 	UpdateAccountPreferences(ctx context.Context, arg UpdateAccountPreferencesParams) (UpdateAccountPreferencesRow, error)
 	UpdateAccountProfile(ctx context.Context, arg UpdateAccountProfileParams) (UpdateAccountProfileRow, error)
+	UsernameExists(ctx context.Context, username string) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -5792,14 +5792,22 @@ func (m *WalletDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i--
+	if m.SystemOwned {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x68
 	i -= len(m.Type)
 	copy(dAtA[i:], m.Type)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Type)))
 	i--
 	dAtA[i] = 0x62
-	i -= len(m.CreatedBy)
-	copy(dAtA[i:], m.CreatedBy)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedBy)))
+	i -= len(m.OwnerAccountID)
+	copy(dAtA[i:], m.OwnerAccountID)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.OwnerAccountID)))
 	i--
 	dAtA[i] = 0x5a
 	i -= len(m.Mnemonic)
@@ -5873,14 +5881,22 @@ func (m *WalletItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i--
+	if m.SystemOwned {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x58
 	i -= len(m.Type)
 	copy(dAtA[i:], m.Type)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Type)))
 	i--
 	dAtA[i] = 0x52
-	i -= len(m.CreatedBy)
-	copy(dAtA[i:], m.CreatedBy)
-	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CreatedBy)))
+	i -= len(m.OwnerAccountID)
+	copy(dAtA[i:], m.OwnerAccountID)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.OwnerAccountID)))
 	i--
 	dAtA[i] = 0x4a
 	i -= len(m.UpdatedAt)
@@ -8334,10 +8350,11 @@ func (m *WalletDetail) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Mnemonic)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.CreatedBy)
+	l = len(m.OwnerAccountID)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Type)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
 	return n
 }
 
@@ -8362,10 +8379,11 @@ func (m *WalletItem) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.UpdatedAt)
 	n += 1 + l + sovGenerated(uint64(l))
-	l = len(m.CreatedBy)
+	l = len(m.OwnerAccountID)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Type)
 	n += 1 + l + sovGenerated(uint64(l))
+	n += 2
 	return n
 }
 
@@ -10005,8 +10023,9 @@ func (this *WalletDetail) String() string {
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
 		`PrivateKey:` + fmt.Sprintf("%v", this.PrivateKey) + `,`,
 		`Mnemonic:` + fmt.Sprintf("%v", this.Mnemonic) + `,`,
-		`CreatedBy:` + fmt.Sprintf("%v", this.CreatedBy) + `,`,
+		`OwnerAccountID:` + fmt.Sprintf("%v", this.OwnerAccountID) + `,`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
+		`SystemOwned:` + fmt.Sprintf("%v", this.SystemOwned) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -10024,8 +10043,9 @@ func (this *WalletItem) String() string {
 		`DerivationPath:` + fmt.Sprintf("%v", this.DerivationPath) + `,`,
 		`CreatedAt:` + fmt.Sprintf("%v", this.CreatedAt) + `,`,
 		`UpdatedAt:` + fmt.Sprintf("%v", this.UpdatedAt) + `,`,
-		`CreatedBy:` + fmt.Sprintf("%v", this.CreatedBy) + `,`,
+		`OwnerAccountID:` + fmt.Sprintf("%v", this.OwnerAccountID) + `,`,
 		`Type:` + fmt.Sprintf("%v", this.Type) + `,`,
+		`SystemOwned:` + fmt.Sprintf("%v", this.SystemOwned) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -33718,7 +33738,7 @@ func (m *WalletDetail) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedBy", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAccountID", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -33746,7 +33766,7 @@ func (m *WalletDetail) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CreatedBy = string(dAtA[iNdEx:postIndex])
+			m.OwnerAccountID = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
@@ -33780,6 +33800,26 @@ func (m *WalletDetail) Unmarshal(dAtA []byte) error {
 			}
 			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SystemOwned", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SystemOwned = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -34075,7 +34115,7 @@ func (m *WalletItem) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedBy", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAccountID", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -34103,7 +34143,7 @@ func (m *WalletItem) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CreatedBy = string(dAtA[iNdEx:postIndex])
+			m.OwnerAccountID = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
@@ -34137,6 +34177,26 @@ func (m *WalletItem) Unmarshal(dAtA []byte) error {
 			}
 			m.Type = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SystemOwned", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SystemOwned = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])

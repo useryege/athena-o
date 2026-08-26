@@ -77,10 +77,16 @@ key from `ATHENA_JWT_SECRET` or its `_FILE` form. The redirect path must be
 HTTP.
 
 Any fully verified Google user may sign in. The server persists an unknown
-subject as `user-<UUID>` with Pending access; the configured administrator email
-may claim the initially unbound `admin` exactly once. No per-user subject
-environment variables or password login are used. `--disable-auth` skips these
-OIDC inputs only for the loopback development bypass.
+subject only in a 15-minute registration ticket and redirects the browser to
+`/register`; no account or Athena cookie exists until the user submits an
+available permanent username. Successful registration creates a UUID
+`account_id` as the internal identity and gives an ordinary account Pending
+access. A verified email matching `ATHENA_ADMIN_GOOGLE_EMAIL` marks an
+administrator candidate whose new account receives `administrator=true`; the
+role never comes from its username. No per-user subject environment variables
+or password login are used. `--disable-auth` skips these OIDC inputs only for the
+loopback development identity. Reset local state before switching between that
+identity and normal OIDC.
 
 ### SEE ALSO
 

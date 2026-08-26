@@ -13,30 +13,30 @@ import (
 
 const createAccountAPIKey = `-- name: CreateAccountAPIKey :one
 INSERT INTO account_api_key (
-  account_name,
+  account_id,
   display_id,
   jti,
   issued_at,
   expires_at
 )
-SELECT access.account_name,
+SELECT access.account_id,
        $1::text,
        $2::text,
        $3::timestamptz,
        $4::timestamptz
 FROM account_access AS access
-WHERE access.account_name = $5::text
+WHERE access.account_id = $5::uuid
   AND access.login_enabled
   AND access.api_key_enabled
-RETURNING account_name, display_id, jti, issued_at, expires_at
+RETURNING account_id, display_id, jti, issued_at, expires_at
 `
 
 type CreateAccountAPIKeyParams struct {
-	DisplayID   string
-	Jti         string
-	IssuedAt    pgtype.Timestamptz
-	ExpiresAt   pgtype.Timestamptz
-	AccountName string
+	DisplayID string
+	Jti       string
+	IssuedAt  pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+	AccountID pgtype.UUID
 }
 
 func (q *Queries) CreateAccountAPIKey(ctx context.Context, arg CreateAccountAPIKeyParams) (AccountApiKey, error) {
@@ -45,11 +45,11 @@ func (q *Queries) CreateAccountAPIKey(ctx context.Context, arg CreateAccountAPIK
 		arg.Jti,
 		arg.IssuedAt,
 		arg.ExpiresAt,
-		arg.AccountName,
+		arg.AccountID,
 	)
 	var i AccountApiKey
 	err := row.Scan(
-		&i.AccountName,
+		&i.AccountID,
 		&i.DisplayID,
 		&i.Jti,
 		&i.IssuedAt,
@@ -60,25 +60,25 @@ func (q *Queries) CreateAccountAPIKey(ctx context.Context, arg CreateAccountAPIK
 
 const deleteAccountAPIKey = `-- name: DeleteAccountAPIKey :one
 DELETE FROM account_api_key
-WHERE account_name = $1::text
+WHERE account_id = $1::uuid
   AND display_id = $2::text
 RETURNING jti
 `
 
 type DeleteAccountAPIKeyParams struct {
-	AccountName string
-	DisplayID   string
+	AccountID pgtype.UUID
+	DisplayID string
 }
 
 func (q *Queries) DeleteAccountAPIKey(ctx context.Context, arg DeleteAccountAPIKeyParams) (string, error) {
-	row := q.db.QueryRow(ctx, deleteAccountAPIKey, arg.AccountName, arg.DisplayID)
+	row := q.db.QueryRow(ctx, deleteAccountAPIKey, arg.AccountID, arg.DisplayID)
 	var jti string
 	err := row.Scan(&jti)
 	return jti, err
 }
 
 const getAccountAPIKeyByJTI = `-- name: GetAccountAPIKeyByJTI :one
-SELECT key.account_name,
+SELECT key.account_id,
        key.display_id,
        key.jti,
        key.issued_at,
@@ -86,12 +86,12 @@ SELECT key.account_name,
        access.login_enabled,
        access.api_key_enabled
 FROM account_api_key AS key
-JOIN account_access AS access USING (account_name)
+JOIN account_access AS access USING (account_id)
 WHERE key.jti = $1::text
 `
 
 type GetAccountAPIKeyByJTIRow struct {
-	AccountName   string
+	AccountID     pgtype.UUID
 	DisplayID     string
 	Jti           string
 	IssuedAt      pgtype.Timestamptz
@@ -104,7 +104,7 @@ func (q *Queries) GetAccountAPIKeyByJTI(ctx context.Context, jti string) (GetAcc
 	row := q.db.QueryRow(ctx, getAccountAPIKeyByJTI, jti)
 	var i GetAccountAPIKeyByJTIRow
 	err := row.Scan(
-		&i.AccountName,
+		&i.AccountID,
 		&i.DisplayID,
 		&i.Jti,
 		&i.IssuedAt,
@@ -116,13 +116,13 @@ func (q *Queries) GetAccountAPIKeyByJTI(ctx context.Context, jti string) (GetAcc
 }
 
 const getUsableAccountAPIKeyByJTI = `-- name: GetUsableAccountAPIKeyByJTI :one
-SELECT key.account_name,
+SELECT key.account_id,
        key.display_id,
        key.jti,
        key.issued_at,
        key.expires_at
 FROM account_api_key AS key
-JOIN account_access AS access USING (account_name)
+JOIN account_access AS access USING (account_id)
 WHERE key.jti = $1::text
   AND access.login_enabled
   AND access.api_key_enabled
@@ -133,7 +133,7 @@ func (q *Queries) GetUsableAccountAPIKeyByJTI(ctx context.Context, jti string) (
 	row := q.db.QueryRow(ctx, getUsableAccountAPIKeyByJTI, jti)
 	var i AccountApiKey
 	err := row.Scan(
-		&i.AccountName,
+		&i.AccountID,
 		&i.DisplayID,
 		&i.Jti,
 		&i.IssuedAt,
@@ -143,9 +143,9 @@ func (q *Queries) GetUsableAccountAPIKeyByJTI(ctx context.Context, jti string) (
 }
 
 const listAccountAPIKeyRecords = `-- name: ListAccountAPIKeyRecords :many
-SELECT account_name, display_id, jti, issued_at, expires_at
+SELECT account_id, display_id, jti, issued_at, expires_at
 FROM account_api_key
-ORDER BY account_name, issued_at DESC, display_id
+ORDER BY account_id, issued_at DESC, display_id
 `
 
 func (q *Queries) ListAccountAPIKeyRecords(ctx context.Context) ([]AccountApiKey, error) {
@@ -158,7 +158,7 @@ func (q *Queries) ListAccountAPIKeyRecords(ctx context.Context) ([]AccountApiKey
 	for rows.Next() {
 		var i AccountApiKey
 		if err := rows.Scan(
-			&i.AccountName,
+			&i.AccountID,
 			&i.DisplayID,
 			&i.Jti,
 			&i.IssuedAt,
@@ -177,7 +177,7 @@ func (q *Queries) ListAccountAPIKeyRecords(ctx context.Context) ([]AccountApiKey
 const listAccountAPIKeys = `-- name: ListAccountAPIKeys :many
 SELECT display_id, issued_at, expires_at
 FROM account_api_key
-WHERE account_name = $1::text
+WHERE account_id = $1::uuid
 ORDER BY issued_at DESC, display_id
 `
 
@@ -187,8 +187,8 @@ type ListAccountAPIKeysRow struct {
 	ExpiresAt pgtype.Timestamptz
 }
 
-func (q *Queries) ListAccountAPIKeys(ctx context.Context, accountName string) ([]ListAccountAPIKeysRow, error) {
-	rows, err := q.db.Query(ctx, listAccountAPIKeys, accountName)
+func (q *Queries) ListAccountAPIKeys(ctx context.Context, accountID pgtype.UUID) ([]ListAccountAPIKeysRow, error) {
+	rows, err := q.db.Query(ctx, listAccountAPIKeys, accountID)
 	if err != nil {
 		return nil, err
 	}

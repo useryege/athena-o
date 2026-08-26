@@ -74,8 +74,6 @@ const (
 
 // Athena application related constants
 const (
-	// AthenaAdminUsername is the username of the 'admin' user
-	AthenaAdminUsername = "admin"
 	// AthenaUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
 	AthenaUserAgentName = "athena-client"
 	// AuthCookieName is the HTTP cookie name where we store our auth token

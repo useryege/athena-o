@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
+	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	profitsharingpkg "github.com/useryege/athena/pkg/apiclient/profitsharing"
@@ -21,28 +21,31 @@ type Server struct {
 	clientset        profitsharingapiclient.Clientset
 	credentialMgr    *accountcredentials.CredentialManager
 	accessController *accountaccess.Controller
+	accountCenter    *accountcenter.Manager
 }
 
 func NewServer(
 	clientset profitsharingapiclient.Clientset,
 	credentialMgr *accountcredentials.CredentialManager,
 	accessController *accountaccess.Controller,
+	accountCenter *accountcenter.Manager,
 ) *Server {
 	return &Server{
 		clientset:        clientset,
 		credentialMgr:    credentialMgr,
 		accessController: accessController,
+		accountCenter:    accountCenter,
 	}
 }
 
 func (s *Server) ListRounds(ctx context.Context, _ *profitsharingpkg.ListRoundsRequest) (*profitsharingpkg.ListRoundsResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().ListRounds(ctx, &profitsharingapiclient.ListRoundsRequest{
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -56,14 +59,14 @@ func (s *Server) ListRounds(ctx context.Context, _ *profitsharingpkg.ListRoundsR
 }
 
 func (s *Server) GetRound(ctx context.Context, request *profitsharingpkg.GetRoundRequest) (*profitsharingpkg.GetRoundResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().GetRound(ctx, &profitsharingapiclient.GetRoundRequest{
-		Slug:             request.GetSlug(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -72,16 +75,20 @@ func (s *Server) GetRound(ctx context.Context, request *profitsharingpkg.GetRoun
 }
 
 func (s *Server) CreateRound(ctx context.Context, request *profitsharingpkg.CreateRoundRequest) (*profitsharingpkg.CreateRoundResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
+	if err != nil {
+		return nil, err
+	}
+	participants, err := s.canonicalParticipantInputs(ctx, request.GetParticipants())
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().CreateRound(ctx, &profitsharingapiclient.CreateRoundRequest{
-		Slug:             request.GetSlug(),
-		Title:            request.GetTitle(),
-		Participants:     projectParticipantInputs(request.GetParticipants()),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		Title:              request.GetTitle(),
+		Participants:       participants,
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -90,18 +97,22 @@ func (s *Server) CreateRound(ctx context.Context, request *profitsharingpkg.Crea
 }
 
 func (s *Server) UpdateRound(ctx context.Context, request *profitsharingpkg.UpdateRoundRequest) (*profitsharingpkg.UpdateRoundResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
+	if err != nil {
+		return nil, err
+	}
+	participants, err := s.canonicalParticipantInputs(ctx, request.GetParticipants())
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().UpdateRound(ctx, &profitsharingapiclient.UpdateRoundRequest{
-		CurrentSlug:      request.GetCurrentSlug(),
-		Slug:             request.GetSlug(),
-		Title:            request.GetTitle(),
-		Participants:     projectParticipantInputs(request.GetParticipants()),
-		ExpectedRevision: request.GetExpectedRevision(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		CurrentSlug:        request.GetCurrentSlug(),
+		Slug:               request.GetSlug(),
+		Title:              request.GetTitle(),
+		Participants:       participants,
+		ExpectedRevision:   request.GetExpectedRevision(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -110,29 +121,29 @@ func (s *Server) UpdateRound(ctx context.Context, request *profitsharingpkg.Upda
 }
 
 func (s *Server) OpenRound(ctx context.Context, request *profitsharingpkg.OpenRoundRequest) (*profitsharingpkg.OpenRoundResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	roundResponse, err := s.clientset.ProfitSharing().GetRound(ctx, &profitsharingapiclient.GetRoundRequest{
-		Slug:             request.GetSlug(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
 	}
-	validatedAccounts, err := s.validateParticipants(roundResponse.GetRound())
+	validatedAccountIDs, err := s.validateParticipants(roundResponse.GetRound())
 	if err != nil {
 		return nil, err
 	}
 
 	response, err := s.clientset.ProfitSharing().OpenRound(ctx, &profitsharingapiclient.OpenRoundRequest{
-		Slug:                         request.GetSlug(),
-		ExpectedRevision:             request.GetExpectedRevision(),
-		RequesterAccount:             requesterAccount,
-		RequesterIsAdmin:             requesterIsAdmin,
-		ValidatedParticipantAccounts: validatedAccounts,
+		Slug:                           request.GetSlug(),
+		ExpectedRevision:               request.GetExpectedRevision(),
+		RequesterAccountId:             requesterAccountID,
+		RequesterIsAdmin:               requesterIsAdmin,
+		ValidatedParticipantAccountIds: validatedAccountIDs,
 	})
 	if err != nil {
 		return nil, err
@@ -141,15 +152,15 @@ func (s *Server) OpenRound(ctx context.Context, request *profitsharingpkg.OpenRo
 }
 
 func (s *Server) PublishRound(ctx context.Context, request *profitsharingpkg.PublishRoundRequest) (*profitsharingpkg.PublishRoundResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().PublishRound(ctx, &profitsharingapiclient.PublishRoundRequest{
-		Slug:             request.GetSlug(),
-		ExpectedRevision: request.GetExpectedRevision(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		ExpectedRevision:   request.GetExpectedRevision(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -158,15 +169,15 @@ func (s *Server) PublishRound(ctx context.Context, request *profitsharingpkg.Pub
 }
 
 func (s *Server) CloseBallot(ctx context.Context, request *profitsharingpkg.CloseBallotRequest) (*profitsharingpkg.CloseBallotResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().CloseBallot(ctx, &profitsharingapiclient.CloseBallotRequest{
-		Slug:             request.GetSlug(),
-		ExpectedRevision: request.GetExpectedRevision(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		ExpectedRevision:   request.GetExpectedRevision(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -178,16 +189,16 @@ func (s *Server) CloseBallot(ctx context.Context, request *profitsharingpkg.Clos
 }
 
 func (s *Server) UpdateProposal(ctx context.Context, request *profitsharingpkg.UpdateProposalRequest) (*profitsharingpkg.UpdateProposalResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().UpdateProposal(ctx, &profitsharingapiclient.UpdateProposalRequest{
-		Slug:             request.GetSlug(),
-		ExpectedRevision: request.GetExpectedRevision(),
-		Items:            projectProposalItemInputs(request.GetItems()),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		ExpectedRevision:   request.GetExpectedRevision(),
+		Items:              projectProposalItemInputs(request.GetItems()),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -196,15 +207,15 @@ func (s *Server) UpdateProposal(ctx context.Context, request *profitsharingpkg.U
 }
 
 func (s *Server) SubmitProposal(ctx context.Context, request *profitsharingpkg.SubmitProposalRequest) (*profitsharingpkg.SubmitProposalResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().SubmitProposal(ctx, &profitsharingapiclient.SubmitProposalRequest{
-		Slug:             request.GetSlug(),
-		ExpectedRevision: request.GetExpectedRevision(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		ExpectedRevision:   request.GetExpectedRevision(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -213,15 +224,15 @@ func (s *Server) SubmitProposal(ctx context.Context, request *profitsharingpkg.S
 }
 
 func (s *Server) ReopenProposal(ctx context.Context, request *profitsharingpkg.ReopenProposalRequest) (*profitsharingpkg.ReopenProposalResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	response, err := s.clientset.ProfitSharing().ReopenProposal(ctx, &profitsharingapiclient.ReopenProposalRequest{
-		Slug:             request.GetSlug(),
-		ExpectedRevision: request.GetExpectedRevision(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		ExpectedRevision:   request.GetExpectedRevision(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -230,14 +241,14 @@ func (s *Server) ReopenProposal(ctx context.Context, request *profitsharingpkg.R
 }
 
 func (s *Server) SubmitVote(ctx context.Context, request *profitsharingpkg.SubmitVoteRequest) (*profitsharingpkg.SubmitVoteResponse, error) {
-	requesterAccount, requesterIsAdmin, err := requester(ctx)
+	requesterAccountID, requesterIsAdmin, err := s.requester(ctx)
 	if err != nil {
 		return nil, err
 	}
 	roundResponse, err := s.clientset.ProfitSharing().GetRound(ctx, &profitsharingapiclient.GetRoundRequest{
-		Slug:             request.GetSlug(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -248,11 +259,11 @@ func (s *Server) SubmitVote(ctx context.Context, request *profitsharingpkg.Submi
 	}
 
 	response, err := s.clientset.ProfitSharing().SubmitVote(ctx, &profitsharingapiclient.SubmitVoteRequest{
-		Slug:             request.GetSlug(),
-		BallotNumber:     activeBallot.GetNumber(),
-		ProposalId:       request.GetProposalId(),
-		RequesterAccount: requesterAccount,
-		RequesterIsAdmin: requesterIsAdmin,
+		Slug:               request.GetSlug(),
+		BallotNumber:       activeBallot.GetNumber(),
+		ProposalId:         request.GetProposalId(),
+		RequesterAccountId: requesterAccountID,
+		RequesterIsAdmin:   requesterIsAdmin,
 	})
 	if err != nil {
 		return nil, err
@@ -263,12 +274,19 @@ func (s *Server) SubmitVote(ctx context.Context, request *profitsharingpkg.Submi
 	}, nil
 }
 
-func requester(ctx context.Context) (string, bool, error) {
-	account := utilsession.GetUserIdentifier(ctx)
-	if account == "" {
+func (s *Server) requester(ctx context.Context) (string, bool, error) {
+	accountID := utilsession.AccountID(ctx)
+	if accountID == "" {
 		return "", false, status.Error(codes.Unauthenticated, "authenticated account is missing")
 	}
-	return account, account == common.AthenaAdminUsername, nil
+	if s.credentialMgr == nil {
+		return "", false, status.Error(codes.Internal, "profit sharing account directory is not configured")
+	}
+	account, err := s.credentialMgr.Get(accountID)
+	if err != nil {
+		return "", false, status.Error(codes.Unauthenticated, "authenticated account is not registered")
+	}
+	return account.ID, account.Administrator, nil
 }
 
 func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]string, error) {
@@ -285,64 +303,82 @@ func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]st
 		return nil, status.Error(codes.Internal, "profit sharing participant account validation is not configured")
 	}
 
-	validated := make([]string, 0, len(round.GetParticipants()))
+	validatedAccountIDs := make([]string, 0, len(round.GetParticipants()))
 	seen := make(map[string]struct{}, len(round.GetParticipants()))
 	for _, participant := range round.GetParticipants() {
-		accountName := participant.GetAccount()
-		if strings.TrimSpace(accountName) == "" {
-			return nil, status.Error(codes.FailedPrecondition, "profit sharing participant account is empty")
+		accountID := strings.TrimSpace(participant.GetAccountId())
+		account, err := s.credentialMgr.Get(accountID)
+		if err != nil {
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is not registered", accountID)
 		}
-		if accountName == common.AthenaAdminUsername {
+		if account.Administrator {
 			return nil, status.Error(codes.FailedPrecondition, "the administrator cannot be a profit sharing participant")
 		}
-		if _, exists := seen[accountName]; exists {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is duplicated", accountName)
-		}
-		seen[accountName] = struct{}{}
-
-		account, err := s.credentialMgr.Get(accountName)
-		if err != nil {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is not configured", accountName)
-		}
 		if !account.HasGoogleBinding() {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q does not have a Google identity binding", accountName)
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has no Google identity binding", account.ID)
 		}
-		access, err := s.accessController.Get(accountName)
+		if _, exists := seen[account.ID]; exists {
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is duplicated", account.ID)
+		}
+		seen[account.ID] = struct{}{}
+
+		access, err := s.accessController.Get(account.ID)
 		if err != nil {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has no access configuration", accountName)
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has no access configuration", account.ID)
+		}
+		if access.Administrator {
+			return nil, status.Error(codes.FailedPrecondition, "the administrator cannot be a profit sharing participant")
 		}
 		if !access.LoginEnabled {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has login disabled", accountName)
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has login disabled", account.ID)
 		}
 		if !access.ProfitSharingEnabled {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is not authorized for Profit Sharing", accountName)
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is not authorized for Profit Sharing", account.ID)
 		}
-		validated = append(validated, accountName)
+		validatedAccountIDs = append(validatedAccountIDs, account.ID)
 	}
-	return validated, nil
+	return validatedAccountIDs, nil
 }
 
-func projectParticipantInputs(inputs []*profitsharingpkg.ParticipantInput) []*profitsharingapiclient.ParticipantInput {
+func (s *Server) canonicalParticipantInputs(ctx context.Context, inputs []*profitsharingpkg.ParticipantInput) ([]*profitsharingapiclient.ParticipantInput, error) {
+	if s.credentialMgr == nil || s.accountCenter == nil {
+		return nil, status.Error(codes.Internal, "profit sharing account projection is not configured")
+	}
 	result := make([]*profitsharingapiclient.ParticipantInput, 0, len(inputs))
 	for _, input := range inputs {
+		if input == nil {
+			return nil, status.Error(codes.InvalidArgument, "profit sharing participant cannot be null")
+		}
+		account, err := s.credentialMgr.Get(input.GetAccountId())
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "profit sharing participant account %q is not registered", input.GetAccountId())
+		}
+		if account.Administrator {
+			return nil, status.Error(codes.InvalidArgument, "the administrator cannot be a profit sharing participant")
+		}
+		profile, err := s.accountCenter.GetProfile(ctx, account.ID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "load canonical profile for profit sharing participant %q: %v", account.ID, err)
+		}
 		result = append(result, &profitsharingapiclient.ParticipantInput{
-			Account:                input.GetAccountName(),
-			DisplayName:            input.GetDisplayName(),
+			AccountId:              account.ID,
+			Username:               account.Username,
+			DisplayName:            profile.DisplayName,
 			DisplayOrder:           input.GetSortOrder(),
 			BaselineResponsibility: input.GetBaselineResponsibility(),
 		})
 	}
-	return result
+	return result, nil
 }
 
 func projectProposalItemInputs(inputs []*profitsharingpkg.ProposalItemInput) []*profitsharingapiclient.ProposalItemInput {
 	result := make([]*profitsharingapiclient.ProposalItemInput, 0, len(inputs))
 	for _, input := range inputs {
 		result = append(result, &profitsharingapiclient.ProposalItemInput{
-			ParticipantAccount: input.GetAccountName(),
-			Responsibility:     input.GetResponsibility(),
-			BasisPoints:        input.GetShareBasisPoints(),
-			BasisPointsSet:     input.GetShareBasisPointsSet(),
+			ParticipantAccountId: input.GetParticipantAccountId(),
+			Responsibility:       input.GetResponsibility(),
+			BasisPoints:          input.GetShareBasisPoints(),
+			BasisPointsSet:       input.GetShareBasisPointsSet(),
 		})
 	}
 	return result
@@ -397,7 +433,8 @@ func projectParticipants(participants []*profitsharingapiclient.Participant) []*
 			}
 		}
 		result = append(result, &profitsharingpkg.Participant{
-			AccountName:            participant.GetAccount(),
+			AccountId:              participant.GetAccountId(),
+			Username:               participant.GetUsername(),
 			DisplayName:            participant.GetDisplayName(),
 			BaselineResponsibility: participant.GetBaselineResponsibility(),
 			SortOrder:              participant.GetDisplayOrder(),
@@ -422,18 +459,20 @@ func projectProposal(proposal *profitsharingapiclient.Proposal) *profitsharingpk
 	items := make([]*profitsharingpkg.ProposalItem, 0, len(proposal.GetItems()))
 	for _, item := range proposal.GetItems() {
 		items = append(items, &profitsharingpkg.ProposalItem{
-			AccountName:         item.GetParticipantAccount(),
-			DisplayName:         item.GetParticipantDisplayName(),
-			Responsibility:      item.GetResponsibility(),
-			ShareBasisPoints:    item.GetBasisPoints(),
-			ShareBasisPointsSet: item.GetBasisPointsSet(),
+			ParticipantAccountId:   item.GetParticipantAccountId(),
+			ParticipantUsername:    item.GetParticipantUsername(),
+			ParticipantDisplayName: item.GetParticipantDisplayName(),
+			Responsibility:         item.GetResponsibility(),
+			ShareBasisPoints:       item.GetBasisPoints(),
+			ShareBasisPointsSet:    item.GetBasisPointsSet(),
 		})
 	}
 	return &profitsharingpkg.Proposal{
 		Id:                proposal.GetId(),
 		Label:             proposal.GetLabel(),
 		IsOwn:             proposal.GetIsOwn(),
-		AuthorAccount:     proposal.GetAuthorAccount(),
+		AuthorAccountId:   proposal.GetAuthorAccountId(),
+		AuthorUsername:    proposal.GetAuthorUsername(),
 		AuthorDisplayName: proposal.GetAuthorDisplayName(),
 		Status:            profitsharingpkg.ProposalStatus(proposal.GetStatus()),
 		Revision:          proposal.GetRevision(),
@@ -450,7 +489,8 @@ func projectResults(proposals []*profitsharingapiclient.Proposal) []*profitshari
 		results = append(results, &profitsharingpkg.Result{
 			ProposalId:        proposal.GetId(),
 			Label:             proposal.GetLabel(),
-			AuthorAccount:     proposal.GetAuthorAccount(),
+			AuthorAccountId:   proposal.GetAuthorAccountId(),
+			AuthorUsername:    proposal.GetAuthorUsername(),
 			AuthorDisplayName: proposal.GetAuthorDisplayName(),
 			VoteCount:         proposal.GetVoteCount(),
 			IsWinner:          proposal.GetIsFinal(),

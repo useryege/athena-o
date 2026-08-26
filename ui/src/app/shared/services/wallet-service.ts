@@ -25,7 +25,8 @@ export interface WalletItem {
     derivationPath?: string;
     createdAt?: string;
     updatedAt?: string;
-    createdBy?: string;
+    ownerAccountId?: string;
+    systemOwned: boolean;
 }
 
 export interface WalletDetail extends WalletItem {
@@ -70,7 +71,8 @@ const normalizeWallet = (item: any = {}): WalletDetail => ({
     derivationPath: readString(item, 'derivationPath', 'derivation_path'),
     createdAt: readString(item, 'createdAt', 'created_at'),
     updatedAt: readString(item, 'updatedAt', 'updated_at'),
-    createdBy: readString(item, 'createdBy', 'created_by'),
+    ownerAccountId: readString(item, 'ownerAccountId', 'owner_account_id'),
+    systemOwned: Boolean(readValue(item, 'systemOwned', 'system_owned')),
     privateKey: readString(item, 'privateKey', 'private_key'),
     mnemonic: readString(item, 'mnemonic')
 });

@@ -98,7 +98,7 @@ export const SensitiveWriteScope = (props: {module: AccountDataModule; children:
         return null;
     }
 
-    const identity = JSON.stringify([authorization.user.iss || '', authorization.user.username, authorization.user.administrator, props.module]);
+    const identity = JSON.stringify([authorization.user.iss || '', authorization.user.accountId, authorization.user.administrator, props.module]);
     return <SensitiveWriteLeaseProvider key={identity}>{props.children}</SensitiveWriteLeaseProvider>;
 };
 
