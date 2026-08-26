@@ -6195,6 +6195,131 @@ button.chain-processing-kpi {
     margin-bottom: 18px;
 }
 
+.account-ai-connect {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.account-ai-connect__icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--athena-primary) 24%, var(--athena-border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--athena-primary) 9%, var(--athena-panel));
+    color: var(--athena-primary);
+    font-size: 22px;
+}
+
+.account-ai-connect__copy {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.account-ai-connect__copy .ant-typography {
+    margin: 0;
+}
+
+.account-ai-connect-action.ant-btn {
+    min-height: 40px;
+}
+
+.account-ai-authority-alert {
+    margin-bottom: 18px;
+}
+
+.account-ai-verification {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: var(--athena-panel-elevated);
+}
+
+.account-ai-verification--checking {
+    border-color: color-mix(in srgb, var(--athena-primary) 34%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-primary) 7%, var(--athena-panel));
+}
+
+.account-ai-verification--ready {
+    border-color: color-mix(in srgb, var(--athena-green) 38%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-green) 8%, var(--athena-panel));
+}
+
+.account-ai-verification--failed {
+    border-color: color-mix(in srgb, var(--athena-red) 34%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-red) 7%, var(--athena-panel));
+}
+
+.account-ai-verification__icon {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--athena-primary);
+    font-size: 18px;
+}
+
+.account-ai-verification--ready .account-ai-verification__icon {
+    color: var(--athena-green);
+}
+
+.account-ai-verification--failed .account-ai-verification__icon {
+    color: var(--athena-red);
+}
+
+.account-ai-verification__copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.account-ai-verification__copy strong {
+    color: var(--athena-text);
+    font-size: 13px;
+}
+
+.account-ai-verification__copy small {
+    color: var(--athena-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.account-ai-result-alert {
+    margin-bottom: 12px;
+}
+
+.account-ai-instructions {
+    margin-top: 2px;
+    font-family: var(--athena-data-font);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.account-ai-result-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.account-ai-result-modal .ant-modal-body {
+    max-height: min(76vh, 760px);
+    overflow-y: auto;
+}
+
 .account-token-card {
     display: flex;
     align-items: center;
@@ -6297,6 +6422,10 @@ button.chain-processing-kpi {
 
 .help-resource-list {
     align-items: flex-start;
+}
+
+.help-connect-ai-action.ant-btn {
+    min-height: 40px;
 }
 
 .help-resource-list .ant-btn-link {
@@ -6633,9 +6762,16 @@ button.chain-processing-kpi {
     .account-theme-options,
     .account-form-footer,
     .admin-account-field-actions,
-    .account-token-card {
+    .account-token-card,
+    .account-ai-connect,
+    .account-ai-result-actions {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .account-ai-connect__icon {
+        width: 44px;
+        height: 44px;
     }
 
     .account-access-pending {
@@ -6676,12 +6812,38 @@ button.chain-processing-kpi {
     .account-form-footer button,
     .account-modal-actions button,
     .account-token-card button,
-    .admin-account-field-actions button {
+    .admin-account-field-actions button,
+    .account-ai-connect-action.ant-btn,
+    .account-ai-result-actions,
+    .account-ai-result-actions > .ant-space,
+    .account-ai-result-actions > .ant-space > .ant-space-item,
+    .account-ai-result-actions button {
         width: 100%;
+        min-height: 44px;
     }
 
     .account-modal-actions {
         align-items: stretch;
+    }
+
+    .account-ai-verification {
+        grid-template-columns: 28px minmax(0, 1fr);
+    }
+
+    .account-ai-verification > .ant-btn {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .help-resource-list,
+    .help-resource-list > .ant-space-item,
+    .help-connect-ai-action.ant-btn {
+        width: 100%;
+    }
+
+    .help-connect-ai-action.ant-btn {
+        min-height: 44px;
     }
 
     .account-module-summary > div {

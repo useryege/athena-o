@@ -12,7 +12,11 @@ API Keys are account-level bearer credentials for command-line clients, automati
 
 This is direct use of the user's account credential. It is not OAuth delegation, an agent-specific credential, or a separately permissioned integration.
 
-An administrator must first enable an ordinary account's independent API Key entitlement. The account holder can then open **Account Center > Security**, choose **Create API key**, provide a display ID and expiration, and copy the secret from the one-time display. The Web UI offers 30 days, 90 days, one year, or no expiration; the API accepts a non-negative `expiresIn` duration in seconds, where zero means no expiration. Athena's fixed administrator account does not support API Keys.
+An administrator must first enable an ordinary account's independent API Key entitlement. To connect an AI, the account holder opens **Account Center > Security > Connect AI**, chooses **Create connection**, and then selects **Copy connection instructions**. The resulting one-time block contains the complete bearer, the expected account ID, and absolute Athena discovery, Swagger, and verification URLs. Paste that block into an AI product that can make HTTP requests. Athena's fixed administrator account does not support API Keys.
+
+The Web UI verifies the newly created bearer directly against `/api/v1/session/userinfo` without sending the browser session cookie. A successful check confirms only that the bearer authenticates as the expected account; it does not prove that an external AI has received the instructions or can reach Athena. A failed check can be retried and does not prevent copying the one-time instructions.
+
+The ordinary **Create API key** action remains available for command-line clients and other automation. Its form accepts a display ID and offers 30 days, 90 days, one year, or no expiration. **Connect AI** instead starts with an editable generated connection name and a 90-day expiration. Both flows use the same account-level API Key behavior; the API accepts a non-negative `expiresIn` duration in seconds, where zero means no expiration.
 
 Send the secret in the HTTP `Authorization` header:
 
@@ -41,7 +45,7 @@ Full-account access does not bypass Athena authorization. Every API Key request 
 
 A bearer that can manage API Keys may create another key. Revoking one key does not revoke other keys retained by the account; disable the account's API Key entitlement when every retained key must be paused.
 
-The API lists only key metadata after creation. Athena does not display the bearer secret again.
+The API lists only key metadata after creation. Athena does not display the bearer secret again, and the Web UI cannot reconstruct connection instructions for an existing key. If the one-time instructions were not retained, create a new AI connection and revoke the old key when appropriate.
 
 ## Authentication and Authorization Errors
 

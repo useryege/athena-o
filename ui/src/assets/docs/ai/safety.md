@@ -22,17 +22,24 @@ Any confirmation workflow, tool-selection policy, prompt-injection defense, or s
 
 ## Connecting an AI
 
-Give the selected AI:
+Use the browser workflow:
 
-1. The Athena origin that serves the Web UI.
-2. The API Key copied from its one-time creation display.
-3. The discovery document at `/llms.txt`.
+1. Open **Account Center > Security > Connect AI**.
+2. Choose **Create connection**.
+3. Choose **Copy connection instructions** from the one-time result.
+4. Paste the complete instructions into the selected AI.
 
-The AI can use `/llms.txt` to locate the API documentation and `/swagger.json` to discover the authoritative operations and schemas. It sends the key as:
+The instruction block contains absolute URLs for the Athena base, `/llms.txt`, the Swagger 2.0 contract at `/swagger.json`, and `/api/v1/session/userinfo`; the expected account ID; and the complete Bearer authorization value. It directs the AI to read the discovery document first, use Swagger as the source of truth for operations and schemas, verify its account identity, and then act with that ordinary account's complete current authority.
+
+The selected AI must support HTTP requests or custom API tools. Pasting the instructions into a chat product without that capability does not give it network access to Athena. The AI sends the key as:
 
 ```http
 Authorization: Bearer <athena-api-key>
 ```
+
+While presenting the result, the Web UI checks the new credential against `/api/v1/session/userinfo` without sending ambient browser credentials. This check validates the bearer and expected account identity only; it does not prove that the external AI is connected. Verification failure does not hide the instructions, and the user can retry the check or copy the block for manual use.
+
+The result is available only during creation. **Done** clears the bearer and assembled instructions from the page. Existing API Key rows contain metadata only and cannot recreate a connection block, so a lost block requires a new connection. The separate **Create API key** workflow remains available for non-AI clients.
 
 ## Credential Lifetime
 

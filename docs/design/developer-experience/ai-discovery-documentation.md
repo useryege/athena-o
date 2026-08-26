@@ -5,7 +5,10 @@
 AI Discovery Documentation owns Athena's public, build-time documentation
 surface for LLMs and API clients: the curated `/llms.txt` entry point, focused
 Markdown guidance under `/docs/ai/`, and the generated Swagger 2.0 description
-served at `/swagger.json` and rendered at `/swagger-ui`.
+served at `/swagger.json` and rendered at `/swagger-ui`. The Web UI's Connect AI
+workflow packages absolute runtime locations for these resources with a newly
+issued bearer and verification instructions so the user can transfer one
+self-contained block to an HTTP-capable AI.
 
 This capability describes and exposes the current HTTP API; it does not define
 business RPC contracts, authenticate callers, authorize modules, or provide an
@@ -14,7 +17,10 @@ account-level API Key to an AI, which then uses the same authorized read and
 write operations as any other bearer client. Athena does not publish its
 internal `docs/design/` tree through this surface, and this capability does not
 implement MCP, OAuth delegation, scoped API Keys, `llms-full.txt`, or separate
-AI-specific operations.
+AI-specific operations. Connect AI is a browser convenience over the existing
+ordinary-account API Key contract; it does not add a server-side connection or
+credential type. The fixed administrator remains outside the API Key and AI
+connection path.
 
 ## Source Locations
 
@@ -22,6 +28,8 @@ AI-specific operations.
 | --- | --- | --- |
 | Curated public discovery entry | [ui/src/assets/llms.txt](../../../ui/src/assets/llms.txt) | `Start Here`, `API Reference`, `Optional` link groups |
 | Public AI guidance | [ui/src/assets/docs/ai/](../../../ui/src/assets/docs/ai/) | overview, authentication, modules, errors and pagination, and safety documents |
+| Browser connection assembly | [ui/src/app/shared/ai-connection.ts](../../../ui/src/app/shared/ai-connection.ts), [ui/src/app/pages/account-center.tsx](../../../ui/src/app/pages/account-center.tsx) | `AIConnectionDetails`, `buildAIConnectionDetails`, `verifyAIConnectionCredential`, `SecurityPage` |
+| User-facing discovery entry | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Vite public-file pipeline | [ui/vite.config.ts](../../../ui/vite.config.ts), [ui/package.json](../../../ui/package.json) | `publicDir`, `build.outDir`, `build` |
 | Embedded static-file serving | [ui/embed.go](../../../ui/embed.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `ui.Embedded`, `NewServer`, `uiAssetExists`, `newStaticAssetsHandler`, `withRootPath` |
 | Swagger source and generation | [internal/server/](../../../internal/server/), [hack/generate-proto.sh](../../../hack/generate-proto.sh) | protobuf HTTP annotations, `collect_swagger`, `clean_swagger` |
@@ -44,6 +52,13 @@ flowchart LR
     J --> AE["assets.Embedded / SwaggerJSON"]
     AE --> W["ServeSwaggerUI"]
     W --> O["/swagger.json and /swagger-ui"]
+
+    B["document.baseURI"] --> C["Connect AI assembly"]
+    K["New account API Key"] --> C
+    C --> I["One-time connection instructions"]
+    C --> X["Bearer-only /api/v1/session/userinfo check"]
+    C -. "absolute discovery URL" .-> L
+    C -. "absolute Swagger URL" .-> O
 ```
 
 The curated documents and the Swagger contract use separate build and embed
@@ -61,6 +76,15 @@ security declaration, normalizes the result, and writes `assets/swagger.json`.
 The root `assets` package embeds that generated file; `util/assets` loads it as
 `SwaggerJSON`; and `ServeSwaggerUI` registers both the JSON response and ReDoc
 handler on the HTTP mux.
+
+The browser connection path does not fetch or duplicate either discovery
+artifact while assembling a connection. `buildAIConnectionDetails` resolves
+the Athena base, `llms.txt`, `swagger.json`, and `api/v1/session/userinfo`
+against the live document base URI and includes those absolute URLs, the
+expected account ID, and the complete Bearer header in one instruction block.
+That block directs the receiving AI to read discovery first, treat Swagger 2.0
+as the contract source, validate its identity, and then act with the ordinary
+account's complete current HTTP API authority.
 
 All discovery routes are readable without authentication. The Swagger global
 Bearer declaration documents the normal API requirement, while these optional-
@@ -95,9 +119,27 @@ guidance describes the request.
 6. When `RootPath` is non-empty, `withRootPath` mounts the complete handler below
    that prefix and strips the prefix before dispatch. No separate origin-root
    discovery handler is registered.
+7. An eligible ordinary user starts Connect AI above the normal API Key list in
+   Account Center Security. The editable generated name defaults to
+   `ai-<UTC time>-<random suffix>`, expiration defaults to 90 days, and Create
+   connection calls the same API Key creation endpoint as ordinary Create API
+   key. The ordinary flow remains available and unchanged in purpose.
+8. On successful issuance, the browser assembles the one-time instructions and
+   immediately calls the absolute user-info URL with the new Authorization
+   header, `credentials: 'omit'`, and `cache: 'no-store'`. Ready requires an
+   HTTP-success response with `loggedIn=true` and `accountId` equal to the
+   current account. Failure is retryable and never blocks either copy action.
+   The one-time result is bound to the account ID that requested issuance.
+9. The protected result offers the complete instruction block, bearer-only
+   copy, manual selection, and a deliberate Done action. Done aborts an
+   in-flight verification and removes the secret and instructions from React
+   state. Help links eligible users to Security and exposes `llms.txt` and
+   Full-Account AI Access as public resources.
 
-There is no background work, shutdown action, transaction, or mutable runtime
-state associated with discovery documents.
+Discovery delivery and browser-side connection assembly add no background work,
+shutdown action, or transaction. Connect AI still invokes the existing API Key
+issuance flow owned by Account Credentials; it adds no dedicated durable
+AI-connection state beyond that key's normal metadata.
 
 ## State / Data
 
@@ -110,6 +152,14 @@ catalog. The focused Markdown pages provide stable conceptual guidance, while
 `/swagger.json` is the machine-readable source for concrete paths, methods,
 parameters, responses, and schemas. Executable proto and server code remain the
 ultimate source of truth when public prose or a generated artifact is stale.
+
+The new bearer, Authorization header, assembled instructions, and connection
+verification state exist only in the current Account Center React state. They
+are not written to a URL, localStorage, sessionStorage, logs, or a server-side
+AI integration record. The persistent API Key list contains metadata only, so
+neither an old key's secret nor its connection block can be reconstructed. Both
+the issued result and the loaded metadata snapshot carry an owning account ID;
+the UI renders them only while that ID matches the current authorization.
 
 ## Configuration
 
@@ -126,6 +176,11 @@ discovery layout therefore assumes Athena is deployed at the domain root. With
 a non-empty `ATHENA_SERVER_ROOTPATH`, a caller may reach the files below the
 configured prefix, but Athena does not guarantee an origin-root `/llms.txt`, and
 the root-relative links inside the documents are not rewritten for that prefix.
+
+Connect AI derives its absolute URLs from `document.baseURI`, so it does not
+hard-code a deployment domain. This runtime resolution does not change the
+formal domain-root support boundary: it does not rewrite root-relative links
+inside Markdown or Swagger for an arbitrary reverse-proxy subpath.
 
 ## Invariants
 
@@ -148,6 +203,15 @@ the root-relative links inside the documents are not rewritten for that prefix.
   self-hosted, or third-party AI, which receives the ordinary account's complete
   current HTTP API authority without a separate scope, read-only mode, agent
   identity, or approval gate. The fixed administrator cannot issue API Keys.
+- Connect AI creates that same credential and adds only a one-time browser
+  transfer format. Ordinary Create API key, key metadata listing, revocation,
+  expiration, and account authorization semantics remain shared and available.
+- Bearer verification never sends the ambient browser session and never claims
+  that the receiving AI has completed a connection. An existing key cannot
+  regenerate a bearer or instruction block.
+- A current-account change closes the creation/result stages, aborts bearer
+  verification, and discards any late secret rather than exposing prior-account
+  state under a new expected account ID.
 - Origin-root-relative discovery links assume an empty server root path.
 
 ## Failure Recovery
@@ -165,6 +229,15 @@ patched in `assets/swagger.json`. Documentation drift never changes runtime
 authorization: server interceptors continue to allow or deny the request from
 the current credential and access state.
 
+Connect AI creation errors retain the editable form. User-info verification
+errors produce a stable retryable message and leave both copy paths available.
+Clipboard failure leaves the read-only instruction text selectable for manual
+copy. The protected result cannot be dismissed through the normal modal close,
+mask, or Escape paths; Done intentionally clears its one-time state. Account
+change is handled separately as an identity boundary: it invalidates the
+pending UI request generation and discards a late secret, while a completed
+normal API Key record remains reviewable from its owning account.
+
 ## Observability
 
 Discovery delivery adds no dedicated metrics, health state, or tracing. Normal
@@ -173,11 +246,18 @@ the static copy, and protobuf generation output plus the generated Swagger diff
 diagnose contract production. Operators can inspect `/llms.txt`, each linked
 Markdown path, `/swagger.json`, and `/swagger-ui` on the deployed origin.
 
+Connect AI reports credential checking, readiness, retryable failure, and copy
+failure in the current UI only. It neither logs the bearer or instruction block
+nor records a durable external-AI connection status. Credential readiness means
+only that Athena accepted the new bearer for the expected account.
+
 ## Change Checklist
 
 - [ ] Curated public documents and their links match the current API and safety boundaries.
 - [ ] The Vite-to-UI-embed and Swagger-to-assets-embed delivery paths remain current.
 - [ ] Swagger metadata, global Bearer security, and public operation exceptions match server behavior.
 - [ ] Authentication and authorization guidance matches the credential and module implementation.
+- [ ] Connect AI instructions contain the runtime discovery, Swagger, verification, expected-account, and full-authority contract.
+- [ ] The one-time secret, bearer-only verification, and existing-key reconstruction boundaries remain current.
 - [ ] Root-path constraints and static-asset precedence remain current.
 - [ ] Source links resolve, and the [design index](../README.md) contains the current summary.

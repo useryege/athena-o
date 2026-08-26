@@ -512,7 +512,11 @@ const AppRoutes = (props: {
             <Route
                 path='/account/security'
                 element={
-                    props.access.user.access.apiKeyEnabled ? <AccountCenterPage section='security' {...accountCenterProps} /> : <Navigate replace={true} to='/account/access' />
+                    props.access.user.access.apiKeyEnabled && !props.access.isAdmin ? (
+                        <AccountCenterPage section='security' {...accountCenterProps} />
+                    ) : (
+                        <Navigate replace={true} to='/account/access' />
+                    )
                 }
             />
             <Route path='/account/access' element={<AccountCenterPage section='access' {...accountCenterProps} />} />
@@ -1065,7 +1069,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                   ]
               },
               {key: '/account/access', label: 'Access', icon: <KeyOutlined />},
-              ...(access.user.access.apiKeyEnabled ? [{key: '/account/security', label: 'Security', icon: <SettingOutlined />}] : []),
+              ...(access.user.access.apiKeyEnabled && !access.isAdmin ? [{key: '/account/security', label: 'Security', icon: <SettingOutlined />}] : []),
               ...(access.isAdmin ? [{key: '/admin/accounts', label: 'Manage accounts', icon: <UserOutlined />}] : []),
               {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
               {type: 'divider'},
