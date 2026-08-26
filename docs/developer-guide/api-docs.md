@@ -42,9 +42,11 @@ accepts `{address, returnTo}` and returns `{message, expiresAt}`; verification a
 raw-base64url `{signature}` and returns `{redirectTo}`. The server performs Ed25519
 verification without Solana RPC and never asks for a transaction, private key, or fee.
 
-CLI and automation clients must create an Athena API Key from **Account Center →
-Security** after an administrator enables the account's independent API Key access.
-Copy the key when it is issued, then export it locally:
+CLI, automation, and AI clients use an ordinary account's Athena API Key from
+**Account Center → Security** after an administrator enables the account's
+independent API Key access. The fixed administrator account cannot issue API
+Keys. Copy the key when it is issued, then export it locally or give it directly
+to the AI selected by the account holder:
 
 ```bash
 export ATHENA_TOKEN='<newly-issued-athena-api-key>'
@@ -61,9 +63,13 @@ curl "$ATHENA_SERVER/api/v1/market-radar/status" \
 {"started":true,"status":"running"}
 ```
 
-This request also requires `READ` access to the Market Radar module. API Key
-authentication does not bypass Athena's account or module authorization.
+This request also requires `READ` access to the Market Radar module. An API Key
+has no separate scope, read-only mode, operation allowlist, or approval gate. It
+can perform every HTTP API operation currently authorized for the ordinary
+account, but it does not bypass Athena's account, module, entitlement,
+membership, ownership, or operation-specific authorization.
 
-Only Athena token version 3 is accepted. Rotating `ATHENA_JWT_SECRET`, deleting the API
-Key, or disabling its account invalidates it. Turning off API Key access pauses existing
-keys without deleting them; re-enabling access restores undeleted, unexpired keys.
+Only Athena token version 3 is accepted. Rotating `ATHENA_JWT_SECRET` or deleting the API
+Key invalidates it. Disabling account login blocks it while login remains disabled.
+Turning off API Key access pauses existing keys without deleting them; re-enabling access
+restores undeleted, unexpired keys.

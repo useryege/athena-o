@@ -35,4 +35,4 @@ Clients should preserve source identifiers and numeric strings exactly, tolerate
 - [Authentication](/docs/ai/authentication.md)
 - [Modules and Permissions](/docs/ai/modules.md)
 - [Errors and Pagination](/docs/ai/errors-and-pagination.md)
-- [Safety](/docs/ai/safety.md)
+- [Full-Account AI Access](/docs/ai/safety.md)

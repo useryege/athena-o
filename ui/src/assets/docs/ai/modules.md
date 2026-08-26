@@ -21,12 +21,14 @@ Grants do not flow between modules. For example, FIFA Market Dashboard access do
 
 ## Account-Level Credentials
 
-Browser sessions and API Keys use the same current module matrix. API Keys do not have separate scopes or a private copy of the matrix. Disabling login or API Key access is evaluated before module authorization. See [Authentication](/docs/ai/authentication.md).
+Browser sessions and API Keys resolve to the same current account authorization. An API Key has no separate module matrix, scope, read-only flag, operation allowlist, or approval workflow. When an ordinary user gives a key to an AI, the AI receives the account's complete current authority within Athena's HTTP API.
+
+Complete current authority does not bypass authorization. Disabling login or API Key access is evaluated before module authorization, and module levels, entitlements, memberships, resource ownership, and operation-specific rules continue to apply. See [Authentication](/docs/ai/authentication.md).
 
 ## Separate Authorization Boundaries
 
-Administrator is a persisted role, not a module. Administrator-only account management, service operations, and Profit Sharing lifecycle methods require that role. The fixed administrator account has maximum module access but API Key access disabled.
+Administrator is a persisted role, not a module. Administrator-only account management, service operations, and Profit Sharing lifecycle methods require that role. The fixed administrator account has maximum module access but API Key access disabled, so administrator authority is unavailable through the API Key and AI-access path.
 
-Profit Sharing is an independent entitlement, not one of the ten modules. Member operations also require membership in the relevant round, while lifecycle operations require the administrator role. Enabling Profit Sharing does not grant any product module, and a product module does not grant Profit Sharing.
+Profit Sharing is an independent entitlement, not one of the ten modules. Member operations also require membership in the relevant round, while lifecycle operations require the administrator role. Enabling Profit Sharing does not grant any product module, and a product module does not grant Profit Sharing. An ordinary account's entitlement and membership are evaluated normally when its API Key is used; administrator-only lifecycle operations remain unavailable.
 
 Resource-level checks can further restrict an authorized module operation. In particular, ordinary Wallet users see only wallets owned by their account, and secret reveal requires Wallet `READ_WRITE` in addition to ownership.

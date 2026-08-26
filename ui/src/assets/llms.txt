@@ -4,11 +4,19 @@
 
 Use the machine-readable Swagger document as the source of truth for paths, methods, parameters, and response schemas. Athena's server evaluates the authenticated account's current role, feature entitlements, and module access on every protected request.
 
+## AI Access Model
+
+An ordinary account holder may give an Athena API Key to an AI system and allow it to act as the user. The key is a full-account bearer credential: it has no OAuth delegation, key-specific scopes, read-only mode, agent identity, or per-request approval gate.
+
+The bearer can perform every HTTP API operation currently authorized for the owning account. Athena still applies the account's current module levels, entitlements, memberships, resource ownership, and other server-side rules when they are relevant to the requested operation. The fixed administrator account does not support API Keys.
+
+Resolve `/llms.txt`, `/swagger.json`, and every API path against the Athena origin supplied by the user. Send the supplied API Key as `Authorization: Bearer <key>`. Do not invent an OAuth flow, narrower key scope, or Athena approval step that is not present in the API.
+
 ## Start Here
 
 - [Overview](/docs/ai/overview.md): Product capabilities, API conventions, and data-freshness guidance.
 - [Authentication](/docs/ai/authentication.md): Browser sessions, account-level API Keys, expiration, and revocation.
-- [Safety](/docs/ai/safety.md): Current integration posture and operations that must remain outside AI automation.
+- [Full-Account AI Access](/docs/ai/safety.md): Direct API Key handoff, bearer authority, execution behavior, and revocation.
 
 ## API Reference
 

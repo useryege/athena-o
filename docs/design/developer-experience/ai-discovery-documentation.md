@@ -9,9 +9,12 @@ served at `/swagger.json` and rendered at `/swagger-ui`.
 
 This capability describes and exposes the current HTTP API; it does not define
 business RPC contracts, authenticate callers, authorize modules, or provide an
-agent execution protocol. Athena does not publish its internal `docs/design/`
-tree through this surface, and this capability does not implement MCP, OAuth,
-scoped API Keys, `llms-full.txt`, or AI-specific write operations.
+agent execution protocol. An ordinary account holder may directly give an
+account-level API Key to an AI, which then uses the same authorized read and
+write operations as any other bearer client. Athena does not publish its
+internal `docs/design/` tree through this surface, and this capability does not
+implement MCP, OAuth delegation, scoped API Keys, `llms-full.txt`, or separate
+AI-specific operations.
 
 ## Source Locations
 
@@ -138,10 +141,13 @@ the root-relative links inside the documents are not rewritten for that prefix.
   Profit Sharing entitlement, and module requirements remain server decisions.
 - Public documents contain no bearer values, wallet secrets, external-provider
   credentials, internal implementation details, or claims that unavailable
-  MCP, OAuth, scoped-key, or AI-write capabilities exist.
-- Existing API Keys are described only for trusted CLI and self-hosted
-  automation. They inherit the account's current access and are not presented
-  as credentials to hand to third-party AI services.
+  MCP, OAuth-delegation, scoped-key, or AI-specific-operation capabilities
+  exist.
+- Existing API Keys are described as full-account bearer credentials for
+  ordinary users. The account holder may hand one directly to a local,
+  self-hosted, or third-party AI, which receives the ordinary account's complete
+  current HTTP API authority without a separate scope, read-only mode, agent
+  identity, or approval gate. The fixed administrator cannot issue API Keys.
 - Origin-root-relative discovery links assume an empty server root path.
 
 ## Failure Recovery

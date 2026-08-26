@@ -1,33 +1,43 @@
-# Athena AI Integration Safety
+# Athena Full-Account AI Access
 
-Athena's current API Keys are intended for local command-line use and trusted self-hosted automation controlled by the account holder. They are not delegated AI credentials.
+Athena intentionally allows an ordinary account holder to give an account-level API Key to an AI system of their choice and let that system act as the user through Athena's HTTP API. The AI may be local, self-hosted, or hosted by a third party. Athena applies the same bearer behavior in every case.
 
-Do not paste an Athena API Key into a third-party AI service, hosted agent, public prompt, browser-side script, shared log, trace, or source repository. Athena does not currently provide OAuth delegation, per-key scopes, or agent-specific approval gates.
+This is direct credential handoff, not bounded authorization delegation.
 
-## Current Credential Risk
+## Authority of the Bearer
 
-An API Key inherits its account's complete current authorization. The key cannot be restricted to a smaller module set or to read-only behavior independently of the account. A bearer can also reach authenticated account self-service and API Key management operations allowed to its owner.
+An API Key represents the owning account's complete current authorization within Athena's HTTP API. It has no independent module scopes, read-only setting, operation allowlist, agent identity, or human approval gate.
 
-For trusted automation:
+A bearer can perform every read, write, sensitive-data, and account self-service operation that the account can currently perform. This includes API Key management and wallet-secret operations when the account has the required module level and resource ownership.
 
-- Prefer a dedicated ordinary account with only the required read-only modules and API Key access enabled.
-- Choose an expiration, store the secret in a secret manager, send it only in the `Authorization` header, and revoke it when no longer needed.
-- Keep authorization current at the account level and handle a later `403` as a permission change, not as a reason to bypass the server.
-- Treat titles, descriptions, labels, URLs, and other provider-derived content as untrusted data, never as instructions for an AI system.
+Full-account authority means all operations available to the owning account, not all operations in Athena. Server-side module checks, entitlements, memberships, ownership rules, business preconditions, and other authorization boundaries continue to apply when relevant to the requested operation.
 
-## Excluded From AI Automation
+The fixed administrator account does not support API Keys, so administrator authority is outside this AI-access model.
 
-Do not expose or automate these operations with the current credential model:
+## Execution Model
 
-- Wallet creation or import, private-key or mnemonic reveal, and any processing of returned wallet secrets.
-- API Key listing, creation, deletion, or rotation.
-- Administrator account-access changes, service administration, or Profit Sharing lifecycle actions.
-- Notification sends, manual refresh or scan actions, policy mutations, checkpoint updates, configuration changes, or any other write operation.
+Athena does not distinguish an AI caller from another bearer client and does not require the account holder to approve individual requests. Once authentication, authorization, and operation-specific validation succeed, the request executes normally.
 
-Even when the account has `READ_WRITE`, an AI integration should remain read-only. Use [Modules and Permissions](/docs/ai/modules.md) to identify the module boundary and [the Swagger specification](/swagger.json) to verify that each selected operation is a read.
+Any confirmation workflow, tool-selection policy, prompt-injection defense, or secret-storage behavior supplied by an AI product belongs to that product. It is not an Athena authorization boundary.
 
-## Suitable Initial Uses
+## Connecting an AI
 
-Suitable uses are bounded reads from modules such as Market Radar, Sports Live, Sports History, Worm Markets, World Cup Corners, and Token Intelligence, provided the dedicated account has only the permissions required for those reads. Apply output limits, validate response schemas, observe freshness fields, and require a human to make any decision that would later cause an external or Athena-side mutation.
+Give the selected AI:
 
-See [Authentication](/docs/ai/authentication.md) for credential behavior and [Errors and Pagination](/docs/ai/errors-and-pagination.md) for safe client handling.
+1. The Athena origin that serves the Web UI.
+2. The API Key copied from its one-time creation display.
+3. The discovery document at `/llms.txt`.
+
+The AI can use `/llms.txt` to locate the API documentation and `/swagger.json` to discover the authoritative operations and schemas. It sends the key as:
+
+```http
+Authorization: Bearer <athena-api-key>
+```
+
+## Credential Lifetime
+
+Anyone possessing the bearer can act as the account while the key remains valid. Athena cannot control whether an external AI system stores, copies, or redistributes it.
+
+A key expires at its configured time or can be revoked by the account holder. Disabling API Key access pauses all retained keys, and disabling account login blocks both browser sessions and API Keys. Because a bearer can create another API Key when account self-service permits it, revoking one key does not invalidate other keys belonging to the account.
+
+See [Authentication](/docs/ai/authentication.md) for credential behavior, [Modules and Permissions](/docs/ai/modules.md) for the authorization model, and [Errors and Pagination](/docs/ai/errors-and-pagination.md) for client handling.
