@@ -6,11 +6,11 @@ import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} fr
 import {accountAccessEqual, cloneAccountAccess, moduleAccessLevel, moduleAccessSummary, replaceModuleAccess} from '../shared/account-access';
 import {AccountDataAccess, AccountDataModuleDefinition, accountDataAccessLabel, accountDataModuleGroups, accountDataModules} from '../shared/access-modules';
 import {Context, useAuthorization} from '../shared/context';
-import {accountStatusForAccess, Account, AccountAccess, AccountIdentityProvider, AccountProfile, AccountStatus, AccountTier} from '../shared/models';
+import {accountStatusForAccess, Account, AccountAccess, AccountProfile, AccountStatus, AccountTier} from '../shared/models';
 import {services} from '../shared/services';
 import {AccountsPage} from '../shared/services/accounts-service';
 import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
-import {AccountAvatar, accountTierLabel, hasControlCharacters, unicodeCharacterCount} from './account-center';
+import {AccountAvatar, accountTierLabel, hasControlCharacters, identityPresentation, identityProviderLabel, unicodeCharacterCount} from './account-center';
 
 const effectiveAccountStatus = (account: Account) =>
     account.status === AccountStatus.Unspecified ? accountStatusForAccess(account.access, account.administrator) : account.status;
@@ -33,14 +33,10 @@ const accountStatus = (account: Account) => {
     return <StatusTag value={accountStatusLabel(status)} positive={status === AccountStatus.Active} negative={status === AccountStatus.Blocked} />;
 };
 
-const identityProviderLabel = (provider: AccountIdentityProvider) => {
-    if (provider === AccountIdentityProvider.Google) {
-        return 'Google';
-    }
-    return provider === AccountIdentityProvider.Development ? 'Development' : 'Unavailable';
-};
 const identityTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Not yet');
 const identityListTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleDateString() : 'Not yet');
+const accountIdentityValue = (account: Account) => identityPresentation(account.identity).value;
+const accountPrimaryLabel = (account: Account) => account.profile.displayName || accountIdentityValue(account) || account.username;
 
 const moduleOptions = (definition: AccountDataModuleDefinition) => [
     {value: AccountDataAccess.None, label: 'No access'},
@@ -63,8 +59,8 @@ const AccountAccessEditor = (props: {
             {[
                 {
                     key: 'login',
-                    label: 'Google sign-in',
-                    description: 'Controls new Google sign-ins and all existing Athena sessions and API keys.',
+                    label: identityPresentation(props.account.identity).signInLabel,
+                    description: 'Controls new sign-ins through this identity and all existing Athena sessions and API keys.',
                     checked: props.access.loginEnabled,
                     onChange: (loginEnabled: boolean) => props.onChange({...props.access, loginEnabled})
                 },
@@ -449,7 +445,7 @@ export const AdminAccountsPage = () => {
             title: `Confirm access changes for @${selected.username}`,
             content: (
                 <ul className='account-access-confirmation'>
-                    {loginDisabled && <li>Disable Google sign-in and suspend existing Athena sessions and API keys.</li>}
+                    {loginDisabled && <li>Disable sign-in and suspend existing Athena sessions and API keys.</li>}
                     {apiKeyDisabled && <li>Pause every existing API key. Keys are not deleted and resume if API Key access is enabled again.</li>}
                     {profitSharingDisabled && <li>Remove Profit Sharing eligibility and block member requests immediately.</li>}
                     {reduced.length > 0 && <li>Reduce access: {reduced.map(item => item.label).join(', ')}.</li>}
@@ -464,7 +460,7 @@ export const AdminAccountsPage = () => {
     return (
         <AppPage
             title='Account Administration'
-            subtitle='Search registered Google identities and grant sign-in, API Key, Profit Sharing, and module access.'
+            subtitle='Search registered Google or Phantom identities and grant sign-in, API Key, Profit Sharing, and module access.'
             loading={accounts.loading}
             error={accounts.error}
             onRefresh={accounts.reload}>
@@ -473,7 +469,7 @@ export const AdminAccountsPage = () => {
                     allowClear={true}
                     aria-label='Search accounts'
                     value={queryDraft}
-                    placeholder='Search username, email, display name, or account ID'
+                    placeholder='Search username, email, wallet address, display name, or account ID'
                     enterButton='Search'
                     onChange={event => setQueryDraft(event.target.value)}
                     onSearch={searchAccounts}
@@ -512,8 +508,8 @@ export const AdminAccountsPage = () => {
                             <button key={account.id} type='button' className='admin-accounts-mobile-card' onClick={() => chooseAccount(account.id, true)}>
                                 <AccountAvatar profile={account.profile} username={account.username} size={44} />
                                 <span>
-                                    <strong>{account.profile.displayName || account.identity.verifiedEmail || account.username}</strong>
-                                    <small>{account.identity.verifiedEmail || 'Email unavailable'}</small>
+                                    <strong>{accountPrimaryLabel(account)}</strong>
+                                    <small>{accountIdentityValue(account) || 'Identity unavailable'}</small>
                                     <small>@{account.username}</small>
                                     <small>
                                         Created {identityListTime(account.identity.createdAt)} · Last login {identityListTime(account.identity.lastLoginAt)}
@@ -547,8 +543,8 @@ export const AdminAccountsPage = () => {
                                     onClick={() => chooseAccount(account.id, Boolean(mobileAccountId))}>
                                     <AccountAvatar profile={account.profile} username={account.username} size={38} />
                                     <span>
-                                        <strong>{account.profile.displayName || account.identity.verifiedEmail || account.username}</strong>
-                                        <small>{account.identity.verifiedEmail || 'Email unavailable'}</small>
+                                        <strong>{accountPrimaryLabel(account)}</strong>
+                                        <small>{accountIdentityValue(account) || 'Identity unavailable'}</small>
                                         <small>@{account.username}</small>
                                         <small>
                                             {identityProviderLabel(account.identity.provider)} · Created {identityListTime(account.identity.createdAt)}
@@ -574,10 +570,14 @@ export const AdminAccountsPage = () => {
                             <div className='admin-account-detail__heading'>
                                 <AccountAvatar profile={selected.profile} username={selected.username} size={56} />
                                 <div>
-                                    <Typography.Title level={2}>{selected.profile.displayName || selected.identity.verifiedEmail || selected.username}</Typography.Title>
+                                    <Typography.Title level={2}>{accountPrimaryLabel(selected)}</Typography.Title>
                                     <Space size={6} wrap={true}>
                                         <Typography.Text type='secondary'>@{selected.username}</Typography.Text>
-                                        {selected.identity.verifiedEmail && <Typography.Text type='secondary'>{selected.identity.verifiedEmail}</Typography.Text>}
+                                        {accountIdentityValue(selected) && (
+                                            <Typography.Text className='account-identity-value' type='secondary'>
+                                                {accountIdentityValue(selected)}
+                                            </Typography.Text>
+                                        )}
                                         {accountStatus(selected)}
                                         {selected.administrator && <Tag color='gold'>Administrator</Tag>}
                                     </Space>
@@ -586,11 +586,18 @@ export const AdminAccountsPage = () => {
                             {!profileEditable && (
                                 <Alert className='admin-account-self-notice' type='info' showIcon={true} title='Manage your own profile and security in Account Center' />
                             )}
-                            <Section title='Google identity'>
+                            <Section title='Identity'>
                                 <KeyValueGrid
                                     items={[
                                         {label: 'Provider', value: identityProviderLabel(selected.identity.provider)},
-                                        {label: 'Verified email', value: selected.identity.verifiedEmail || 'Unavailable'},
+                                        {
+                                            label: identityPresentation(selected.identity).label,
+                                            value: (
+                                                <Typography.Text className='account-identity-value' copyable={Boolean(accountIdentityValue(selected))}>
+                                                    {accountIdentityValue(selected) || 'Unavailable'}
+                                                </Typography.Text>
+                                            )
+                                        },
                                         {label: 'Technical account ID', value: <Typography.Text copyable={true}>{selected.id}</Typography.Text>},
                                         {label: 'Status', value: accountStatus(selected)},
                                         {label: 'Created', value: identityTime(selected.identity.createdAt)},

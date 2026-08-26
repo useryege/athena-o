@@ -378,7 +378,7 @@ func (s *SQLStore) ListCredentialAccounts(ctx context.Context) (map[string]accou
 		return nil, fmt.Errorf("list credential accounts: %w", err)
 	}
 	accounts := make(map[string]accountcredentials.Account, len(rows))
-	seenSubject := make(map[string]string, len(rows))
+	seenIdentity := make(map[string]string, len(rows))
 	for _, row := range rows {
 		account, err := credentialAccountFromAthenaRow(row)
 		if err != nil {
@@ -387,11 +387,12 @@ func (s *SQLStore) ListCredentialAccounts(ctx context.Context) (map[string]accou
 		if _, duplicate := accounts[account.ID]; duplicate {
 			return nil, fmt.Errorf("credential account %q is duplicated", account.ID)
 		}
-		if account.GoogleSubject != "" {
-			if previous := seenSubject[account.GoogleSubject]; previous != "" {
-				return nil, fmt.Errorf("Google subject is assigned to both %q and %q", previous, account.ID)
+		if account.HasExternalIdentity() {
+			key := credentialIdentityKey(account.IdentityProvider, account.IdentitySubject)
+			if previous := seenIdentity[key]; previous != "" {
+				return nil, fmt.Errorf("external identity is assigned to both %q and %q", previous, account.ID)
 			}
-			seenSubject[account.GoogleSubject] = account.ID
+			seenIdentity[key] = account.ID
 		}
 		accounts[account.ID] = account
 	}
@@ -433,18 +434,18 @@ func (s *SQLStore) ListCredentialAccounts(ctx context.Context) (map[string]accou
 	return accounts, nil
 }
 
-// GetCredentialAccountByGoogleSubject resolves only an already-registered
-// Google subject. Unknown subjects remain outside the durable account model
-// until the separate username registration flow commits.
-func (s *SQLStore) GetCredentialAccountByGoogleSubject(ctx context.Context, subject string) (accountcredentials.Account, bool, error) {
+// GetCredentialAccountByIdentity resolves only an already-registered external
+// provider identity. Unknown identities remain outside the durable account
+// model until their provider's username registration flow commits.
+func (s *SQLStore) GetCredentialAccountByIdentity(ctx context.Context, provider accountcredentials.IdentityProvider, subject string) (accountcredentials.Account, bool, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcredentials.Account{}, false, err
 	}
-	subject = strings.TrimSpace(subject)
-	if subject == "" {
+	subject, err := accountcredentials.NormalizeIdentitySubject(provider, subject)
+	if err != nil {
 		return accountcredentials.Account{}, false, nil
 	}
-	return credentialAccountByGoogleSubject(ctx, s.queries, subject)
+	return credentialAccountByIdentity(ctx, s.queries, provider, subject)
 }
 
 func (s *SQLStore) UsernameExists(ctx context.Context, username string) (bool, error) {
@@ -458,64 +459,65 @@ func (s *SQLStore) UsernameExists(ctx context.Context, username string) (bool, e
 	return exists, nil
 }
 
-// RegisterGoogleAccount creates the complete identity, access, module, profile,
-// and preference aggregate in one SQL statement. A concurrent registration for
-// the same subject converges on the first committed account.
-func (s *SQLStore) RegisterGoogleAccount(ctx context.Context, subject, verifiedEmail, username string, administrator bool) (accountcredentials.Account, bool, error) {
+// RegisterExternalAccount creates the complete identity, access, module,
+// profile, and preference aggregate in one SQL statement. A concurrent
+// registration for the same provider identity converges on the first commit.
+func (s *SQLStore) RegisterExternalAccount(ctx context.Context, provider accountcredentials.IdentityProvider, subject, verifiedEmail, username string, administrator bool) (accountcredentials.Account, bool, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcredentials.Account{}, false, err
 	}
-	subject = strings.TrimSpace(subject)
-	verifiedEmail = strings.TrimSpace(verifiedEmail)
-	if subject == "" || verifiedEmail == "" {
-		return accountcredentials.Account{}, false, fmt.Errorf("verified Google subject and email are required")
+	subject, verifiedEmail, err := accountcredentials.NormalizeExternalIdentity(provider, subject, verifiedEmail, administrator)
+	if err != nil {
+		return accountcredentials.Account{}, false, fmt.Errorf("validate external identity: %w", err)
+	}
+	if administrator && provider != accountcredentials.IdentityProviderGoogle {
+		return accountcredentials.Account{}, false, fmt.Errorf("administrator registration requires Google")
 	}
 	if err := accountcredentials.ValidateUsername(username, administrator); err != nil {
 		return accountcredentials.Account{}, false, err
 	}
-	if existing, found, err := credentialAccountByGoogleSubject(ctx, s.queries, subject); err != nil || found {
+	if existing, found, err := credentialAccountByIdentity(ctx, s.queries, provider, subject); err != nil || found {
 		return existing, false, err
 	}
 
 	var account accountcredentials.Account
-	var err error
 	if administrator {
 		row, queryErr := s.queries.CreateAdministratorAccount(ctx, accountstatesqlc.CreateAdministratorAccountParams{
-			Username: username, GoogleSubject: subject, VerifiedEmail: verifiedEmail,
+			Username: username, IdentityProvider: string(provider), IdentitySubject: subject, VerifiedEmail: verifiedEmail,
 		})
 		if queryErr != nil {
-			return s.resolveRegistrationConflict(ctx, subject, true, queryErr)
+			return s.resolveRegistrationConflict(ctx, provider, subject, true, queryErr)
 		}
 		account, err = credentialAccountFromFields(
-			row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+			row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
 			row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
 		)
 	} else {
 		row, queryErr := s.queries.CreateOrdinaryAccount(ctx, accountstatesqlc.CreateOrdinaryAccountParams{
-			Username: username, GoogleSubject: subject, VerifiedEmail: verifiedEmail,
+			Username: username, IdentityProvider: string(provider), IdentitySubject: subject, VerifiedEmail: verifiedEmail,
 		})
 		if queryErr != nil {
-			return s.resolveRegistrationConflict(ctx, subject, false, queryErr)
+			return s.resolveRegistrationConflict(ctx, provider, subject, false, queryErr)
 		}
 		account, err = credentialAccountFromFields(
-			row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+			row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
 			row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
 		)
 	}
 	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("project registered Google account: %w", err)
+		return accountcredentials.Account{}, false, fmt.Errorf("project registered external account: %w", err)
 	}
-	if account.Username != username || account.GoogleSubject != subject || account.Administrator != administrator || account.IdentityProvider != accountcredentials.IdentityProviderGoogle {
-		return accountcredentials.Account{}, false, fmt.Errorf("Google registration returned an inconsistent identity")
+	if account.Username != username || account.IdentitySubject != subject || account.Administrator != administrator || account.IdentityProvider != provider {
+		return accountcredentials.Account{}, false, fmt.Errorf("external registration returned an inconsistent identity")
 	}
 	return account, true, nil
 }
 
-func (s *SQLStore) resolveRegistrationConflict(ctx context.Context, subject string, administrator bool, registrationErr error) (accountcredentials.Account, bool, error) {
+func (s *SQLStore) resolveRegistrationConflict(ctx context.Context, provider accountcredentials.IdentityProvider, subject string, administrator bool, registrationErr error) (accountcredentials.Account, bool, error) {
 	// Re-read first for every conflict. A single registration can violate both
 	// subject and username/admin uniqueness, but an existing subject must always
 	// converge instead of being reported as an unrelated username conflict.
-	account, found, lookupErr := credentialAccountByGoogleSubject(ctx, s.queries, subject)
+	account, found, lookupErr := credentialAccountByIdentity(ctx, s.queries, provider, subject)
 	if lookupErr != nil {
 		return accountcredentials.Account{}, false, lookupErr
 	}
@@ -523,11 +525,11 @@ func (s *SQLStore) resolveRegistrationConflict(ctx context.Context, subject stri
 		return account, false, nil
 	}
 	if errors.Is(registrationErr, pgx.ErrNoRows) {
-		return accountcredentials.Account{}, false, fmt.Errorf("Google registration conflict completed without a durable subject mapping")
+		return accountcredentials.Account{}, false, fmt.Errorf("external registration conflict completed without a durable identity mapping")
 	}
 	constraint, unique := uniqueViolationConstraint(registrationErr)
 	if !unique {
-		return accountcredentials.Account{}, false, fmt.Errorf("register Google account: %w", registrationErr)
+		return accountcredentials.Account{}, false, fmt.Errorf("register external account: %w", registrationErr)
 	}
 	if administrator {
 		accounts, err := s.queries.ListAccountRecords(ctx)
@@ -546,7 +548,7 @@ func (s *SQLStore) resolveRegistrationConflict(ctx context.Context, subject stri
 	case "athena_account_single_administrator_uidx":
 		return accountcredentials.Account{}, false, accountcredentials.ErrAdministratorIdentityConflict
 	default:
-		return accountcredentials.Account{}, false, fmt.Errorf("register Google account violated unique constraint %q: %w", constraint, registrationErr)
+		return accountcredentials.Account{}, false, fmt.Errorf("register external account violated unique constraint %q: %w", constraint, registrationErr)
 	}
 }
 
@@ -574,7 +576,7 @@ func (s *SQLStore) EnsureDevelopmentAdministrator(ctx context.Context) (accountc
 		return accountcredentials.Account{}, fmt.Errorf("create development administrator: %w", err)
 	}
 	account, err := credentialAccountFromFields(
-		row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+		row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
 		row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
 	)
 	if err != nil {
@@ -601,13 +603,16 @@ func developmentAdministrator(ctx context.Context, queries accountstatesqlc.Quer
 	return account, true, nil
 }
 
-func credentialAccountByGoogleSubject(ctx context.Context, queries accountstatesqlc.Querier, subject string) (accountcredentials.Account, bool, error) {
-	row, err := queries.GetAccountByGoogleSubject(ctx, subject)
+func credentialAccountByIdentity(ctx context.Context, queries accountstatesqlc.Querier, provider accountcredentials.IdentityProvider, subject string) (accountcredentials.Account, bool, error) {
+	row, err := queries.GetAccountByIdentity(ctx, accountstatesqlc.GetAccountByIdentityParams{
+		IdentityProvider: string(provider),
+		IdentitySubject:  subject,
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcredentials.Account{}, false, nil
 	}
 	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("resolve Google subject: %w", err)
+		return accountcredentials.Account{}, false, fmt.Errorf("resolve external identity: %w", err)
 	}
 	account, err := credentialAccountFromAthenaRow(row)
 	if err != nil {
@@ -616,9 +621,9 @@ func credentialAccountByGoogleSubject(ctx context.Context, queries accountstates
 	return account, true, nil
 }
 
-// RecordGoogleLogin updates mutable identity audit fields only for the current
-// permanent subject and an account whose login remains enabled.
-func (s *SQLStore) RecordGoogleLogin(ctx context.Context, accountID, subject, verifiedEmail string) (accountcredentials.Account, error) {
+// RecordLogin updates mutable identity audit fields only for the current
+// permanent provider identity and an account whose login remains enabled.
+func (s *SQLStore) RecordLogin(ctx context.Context, accountID string, provider accountcredentials.IdentityProvider, subject, verifiedEmail string) (accountcredentials.Account, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcredentials.Account{}, err
 	}
@@ -626,24 +631,26 @@ func (s *SQLStore) RecordGoogleLogin(ctx context.Context, accountID, subject, ve
 	if err != nil {
 		return accountcredentials.Account{}, err
 	}
-	subject = strings.TrimSpace(subject)
-	verifiedEmail = strings.TrimSpace(verifiedEmail)
-	if subject == "" || verifiedEmail == "" {
-		return accountcredentials.Account{}, fmt.Errorf("account ID, Google subject, and verified email are required")
+	subject, verifiedEmail, err = accountcredentials.NormalizeExternalIdentity(provider, subject, verifiedEmail, false)
+	if err != nil {
+		return accountcredentials.Account{}, fmt.Errorf("validate account %q external login identity: %w", canonicalID, err)
 	}
-	row, err := s.queries.RecordAccountLogin(ctx, accountstatesqlc.RecordAccountLoginParams{VerifiedEmail: verifiedEmail, AccountID: accountIDValue, GoogleSubject: subject})
+	row, err := s.queries.RecordAccountLogin(ctx, accountstatesqlc.RecordAccountLoginParams{
+		VerifiedEmail: verifiedEmail, AccountID: accountIDValue,
+		IdentityProvider: string(provider), IdentitySubject: subject,
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcredentials.Account{}, accountcredentials.ErrLoginDisabled
 	}
 	if err != nil {
-		return accountcredentials.Account{}, fmt.Errorf("record account %q Google login: %w", canonicalID, err)
+		return accountcredentials.Account{}, fmt.Errorf("record account %q external login: %w", canonicalID, err)
 	}
 	account, err := credentialAccountFromAthenaRow(row)
 	if err != nil {
 		return accountcredentials.Account{}, err
 	}
-	if account.ID != canonicalID || account.GoogleSubject != subject || account.LastLoginAt.IsZero() {
-		return accountcredentials.Account{}, fmt.Errorf("record account %q Google login returned an inconsistent identity", canonicalID)
+	if account.ID != canonicalID || account.IdentityProvider != provider || account.IdentitySubject != subject || account.VerifiedEmail != verifiedEmail || account.LastLoginAt.IsZero() {
+		return accountcredentials.Account{}, fmt.Errorf("record account %q external login returned an inconsistent identity", canonicalID)
 	}
 	return account, nil
 }
@@ -719,12 +726,12 @@ func (s *SQLStore) DeleteAPIKeyMetadata(ctx context.Context, accountID, id strin
 
 func credentialAccountFromAthenaRow(row accountstatesqlc.AthenaAccount) (accountcredentials.Account, error) {
 	return credentialAccountFromFields(
-		row.AccountID, row.Username, row.IdentityProvider, row.GoogleSubject,
+		row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
 		row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
 	)
 }
 
-func credentialAccountFromFields(accountID pgtype.UUID, username, identityProvider string, googleSubject pgtype.Text, verifiedEmail string, administrator bool, createdAt, lastLoginAt pgtype.Timestamptz) (accountcredentials.Account, error) {
+func credentialAccountFromFields(accountID pgtype.UUID, username, identityProvider string, identitySubject pgtype.Text, verifiedEmail string, administrator bool, createdAt, lastLoginAt pgtype.Timestamptz) (accountcredentials.Account, error) {
 	id, err := accountIDFromPG(accountID)
 	if err != nil {
 		return accountcredentials.Account{}, fmt.Errorf("persisted credential account ID: %w", err)
@@ -741,20 +748,19 @@ func credentialAccountFromFields(accountID pgtype.UUID, username, identityProvid
 		return accountcredentials.Account{}, fmt.Errorf("account %q last login predates account creation", id)
 	}
 	subject := ""
-	if googleSubject.Valid {
-		subject = strings.TrimSpace(googleSubject.String)
-		if subject == "" || subject != googleSubject.String {
-			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid Google subject", id)
+	if identitySubject.Valid {
+		subject = identitySubject.String
+		if strings.TrimSpace(subject) == "" || subject != strings.TrimSpace(subject) {
+			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid identity subject", id)
 		}
 	}
-	email := strings.TrimSpace(verifiedEmail)
-	if email != verifiedEmail {
-		return accountcredentials.Account{}, fmt.Errorf("account %q has an untrimmed verified email", id)
-	}
-	switch identityProvider {
-	case accountcredentials.IdentityProviderGoogle:
-		if subject == "" || email == "" {
-			return accountcredentials.Account{}, fmt.Errorf("account %q has an incomplete Google identity binding", id)
+	provider := accountcredentials.IdentityProvider(identityProvider)
+	email := verifiedEmail
+	switch provider {
+	case accountcredentials.IdentityProviderGoogle, accountcredentials.IdentityProviderSolanaWallet:
+		normalizedSubject, normalizedEmail, err := accountcredentials.NormalizeExternalIdentity(provider, subject, email, administrator)
+		if err != nil || normalizedSubject != subject || normalizedEmail != email {
+			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid external identity binding", id)
 		}
 		if err := accountcredentials.ValidateUsername(username, administrator); err != nil {
 			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid username: %w", id, err)
@@ -767,10 +773,14 @@ func credentialAccountFromFields(accountID pgtype.UUID, username, identityProvid
 		return accountcredentials.Account{}, fmt.Errorf("account %q has unsupported identity provider %q", id, identityProvider)
 	}
 	return accountcredentials.Account{
-		ID: id, Username: username, IdentityProvider: identityProvider,
-		GoogleSubject: subject, VerifiedEmail: email,
+		ID: id, Username: username, IdentityProvider: provider,
+		IdentitySubject: subject, VerifiedEmail: email,
 		Administrator: administrator, CreatedAt: created, LastLoginAt: lastLogin,
 	}, nil
+}
+
+func credentialIdentityKey(provider accountcredentials.IdentityProvider, subject string) string {
+	return string(provider) + "\x00" + subject
 }
 
 func credentialTokenFromRow(id, jti string, issuedAt, expiresAt pgtype.Timestamptz) (accountcredentials.Token, error) {

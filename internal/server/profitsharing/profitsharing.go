@@ -314,8 +314,8 @@ func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]st
 		if account.Administrator {
 			return nil, status.Error(codes.FailedPrecondition, "the administrator cannot be a profit sharing participant")
 		}
-		if !account.HasGoogleBinding() {
-			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has no Google identity binding", account.ID)
+		if !account.HasExternalIdentity() {
+			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q has no external login identity", account.ID)
 		}
 		if _, exists := seen[account.ID]; exists {
 			return nil, status.Errorf(codes.FailedPrecondition, "profit sharing participant account %q is duplicated", account.ID)

@@ -2,6 +2,7 @@ package googleoidc
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"strings"
@@ -13,7 +14,6 @@ const (
 	envRedirectURI      = "ATHENA_GOOGLE_OIDC_REDIRECT_URI"
 	envAdminEmail       = "ATHENA_ADMIN_GOOGLE_EMAIL"
 	callbackPath        = "/auth/google/callback"
-	defaultReturnTo     = "/account/access"
 	googleAuthorization = "https://accounts.google.com/o/oauth2/v2/auth"
 	googleToken         = "https://oauth2.googleapis.com/token"
 	googleJWKS          = "https://www.googleapis.com/oauth2/v3/certs"
@@ -26,6 +26,34 @@ type Config struct {
 	RedirectURI  string
 	AdminEmail   string
 	secureCookie bool
+}
+
+// PublicOrigin returns the canonical authority used by same-origin wallet
+// authentication. It is derived only from the already validated redirect URI,
+// never from request Host or forwarding headers.
+func (config Config) PublicOrigin() string {
+	redirect, err := url.Parse(config.RedirectURI)
+	if err != nil {
+		return ""
+	}
+	scheme := strings.ToLower(redirect.Scheme)
+	hostname := strings.ToLower(redirect.Hostname())
+	port := redirect.Port()
+	if (scheme == "https" && port == "443") || (scheme == "http" && port == "80") {
+		port = ""
+	}
+	authority := hostname
+	if port != "" {
+		authority = net.JoinHostPort(hostname, port)
+	} else if strings.Contains(hostname, ":") {
+		authority = "[" + hostname + "]"
+	}
+	return scheme + "://" + authority
+}
+
+// SecureCookie reports the cookie transport policy derived from RedirectURI.
+func (config Config) SecureCookie() bool {
+	return config.secureCookie
 }
 
 // LoadConfigFromEnv reads and validates Google OIDC settings without making a

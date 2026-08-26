@@ -15,14 +15,15 @@ The executable code remains the source of truth. These documents provide the mai
 
 | Subsystem | Capability | Document |
 | --- | --- | --- |
-| Development Runtime | Local process supervision, persistent infrastructure, Google registration configuration, isolated disabled-auth identity, and full current-state reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
-| Identity and Access | UUID account identities, immutable public usernames, permanent Google subject bindings, persistent API Keys, and Athena JWT v3 encoding | [Account Credentials](identity-access/account-credentials.md) |
-| Identity and Access | Browser Google Authorization Code flow, PKCE, one-time OAuth state, anonymous username registration tickets, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
+| Development Runtime | Local process supervision, persistent infrastructure, Google and Phantom authentication state, isolated disabled-auth identity, and full current-state reset lifecycle | [Local Runtime Orchestration](development-runtime/local-runtime-orchestration.md) |
+| Identity and Access | UUID account identities, immutable public usernames, permanent single-provider Google or Solana bindings, persistent API Keys, and Athena JWT v3 encoding | [Account Credentials](identity-access/account-credentials.md) |
+| Identity and Access | Browser Google Authorization Code flow, PKCE, one-time OAuth state, shared anonymous username registration, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
+| Identity and Access | Browser-injected Phantom Solana authentication, one-time SIWS challenges, Ed25519 verification, and wallet-first username registration | [Solana Wallet Authentication](identity-access/solana-wallet-authentication.md) |
 | Identity and Access | Database-role authorization, login, API Key, Profit Sharing, ten-module access, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) |
 | Identity and Access | UUID-owned display profiles, immutable username presentation, display-only tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) |
 | Identity and Access | UUID-keyed private account-avatar validation, S3-compatible object storage, authenticated delivery, and orphan recovery | [Account Avatar Storage](identity-access/account-avatar-storage.md) |
 | Identity and Access | UUID wallet ownership, system-owned wallets, server-derived requester identity, and owner-scoped secret access | [Wallet Ownership](identity-access/wallet-ownership.md) |
-| Web UI | Anonymous username setup, responsive application shell, Pending-access experience, UUID-scoped caches, and administrator directory | [Application Shell](web-ui/application-shell.md) |
+| Web UI | Google and Phantom login, provider-aware anonymous username setup, responsive shell, Pending-access experience, UUID-scoped caches, and administrator directory | [Application Shell](web-ui/application-shell.md) |
 | Governance | UUID membership, immutable participant-name snapshots, entitlement-gated profit-allocation rounds, proposals, voting, and runoff resolution | [Profit Sharing](governance/profit-sharing.md) |
 | Market Intelligence | Read-only Market Radar module, Polymarket discovery, rolling price windows, mover ranking, and alerts | [Market Radar](market-intelligence/market-radar.md) |
 | Market Intelligence | Current Polymarket sports synchronization, price history, and price/score alerts | [Sports Live](market-intelligence/sports-live.md) |

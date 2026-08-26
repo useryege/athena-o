@@ -2,11 +2,14 @@ package accountcredentials
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/mr-tron/base58/base58"
 )
 
 var apiKeyDisplayIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
@@ -27,18 +30,24 @@ type Token struct {
 	ExpiresAt int64  `json:"exp,omitempty"`
 }
 
+// IdentityProvider identifies the external or isolated development identity
+// bound permanently to an Athena account.
+type IdentityProvider string
+
 const (
-	IdentityProviderGoogle      = "google"
-	IdentityProviderDevelopment = "development"
+	IdentityProviderGoogle       IdentityProvider = "google"
+	IdentityProviderSolanaWallet IdentityProvider = "solana_wallet"
+	IdentityProviderDevelopment  IdentityProvider = "development"
 )
 
 // Account is the internal, bearer-secret-free projection of one durable
-// Athena account. GoogleSubject is never projected through the public API.
+// Athena account. IdentitySubject is authentication state and must not be
+// exposed through public account or session APIs.
 type Account struct {
 	ID               string
 	Username         string
-	IdentityProvider string
-	GoogleSubject    string
+	IdentityProvider IdentityProvider
+	IdentitySubject  string
 	VerifiedEmail    string
 	Administrator    bool
 	CreatedAt        time.Time
@@ -58,9 +67,61 @@ func CanonicalAccountID(value string) (string, error) {
 	return parsed.String(), nil
 }
 
-// HasGoogleBinding reports whether the account can resolve a Google identity.
-func (a Account) HasGoogleBinding() bool {
-	return strings.TrimSpace(a.GoogleSubject) != ""
+// NormalizeIdentitySubject validates and canonicalizes an external login key.
+func NormalizeIdentitySubject(provider IdentityProvider, subject string) (string, error) {
+	subject = strings.TrimSpace(subject)
+	if subject == "" || strings.IndexFunc(subject, unicode.IsControl) >= 0 {
+		return "", fmt.Errorf("identity subject is required")
+	}
+
+	switch provider {
+	case IdentityProviderGoogle:
+	case IdentityProviderSolanaWallet:
+		if len(subject) < 32 || len(subject) > 44 {
+			return "", fmt.Errorf("Solana wallet identity must be a canonical public key")
+		}
+		decoded, err := base58.Decode(subject)
+		if err != nil || len(decoded) != 32 || base58.Encode(decoded) != subject {
+			return "", fmt.Errorf("Solana wallet identity must be a canonical 32-byte public key")
+		}
+	default:
+		return "", fmt.Errorf("identity provider %q is not an external login provider", provider)
+	}
+	return subject, nil
+}
+
+// NormalizeExternalIdentity validates and canonicalizes a complete login
+// identity before it is written to PostgreSQL.
+func NormalizeExternalIdentity(provider IdentityProvider, subject, verifiedEmail string, administrator bool) (string, string, error) {
+	subject, err := NormalizeIdentitySubject(provider, subject)
+	if err != nil {
+		return "", "", err
+	}
+	verifiedEmail = strings.TrimSpace(verifiedEmail)
+	switch provider {
+	case IdentityProviderGoogle:
+		if verifiedEmail == "" || strings.IndexFunc(verifiedEmail, unicode.IsControl) >= 0 {
+			return "", "", fmt.Errorf("verified Google email is required")
+		}
+	case IdentityProviderSolanaWallet:
+		if administrator {
+			return "", "", fmt.Errorf("Solana wallet identities cannot be administrators")
+		}
+		if verifiedEmail != "" {
+			return "", "", fmt.Errorf("Solana wallet identities cannot have a verified email")
+		}
+	}
+	return subject, verifiedEmail, nil
+}
+
+// HasExternalIdentity reports whether the account can resolve a supported
+// external login identity.
+func (a Account) HasExternalIdentity() bool {
+	if a.IdentityProvider != IdentityProviderGoogle && a.IdentityProvider != IdentityProviderSolanaWallet {
+		return false
+	}
+	_, _, err := NormalizeExternalIdentity(a.IdentityProvider, a.IdentitySubject, a.VerifiedEmail, a.Administrator)
+	return err == nil
 }
 
 // IsValidAPIKeyDisplayID reports whether id is a valid user-visible API Key

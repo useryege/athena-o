@@ -2,11 +2,14 @@ import requests from './requests';
 
 export type UsernameAvailability = 'available' | 'invalid' | 'unavailable';
 
-export type RegistrationErrorReason = 'username_invalid' | 'username_unavailable' | 'registration_expired' | 'registration_unavailable' | 'google_not_allowed';
+export type RegistrationErrorReason = 'username_invalid' | 'username_unavailable' | 'registration_expired' | 'registration_unavailable' | 'google_not_allowed' | 'maintenance';
 
-export interface GoogleRegistration {
-    provider: string;
+export type RegistrationIdentityProvider = 'google' | 'solana_wallet';
+
+export interface Registration {
+    provider: RegistrationIdentityProvider;
     verifiedEmail: string;
+    solanaAddress: string;
     administrator: boolean;
     expiresAt: number;
     csrfToken: string;
@@ -28,7 +31,7 @@ export class RegistrationRequestError extends Error {
     }
 }
 
-const registrationPath = '/auth/google/registration';
+const registrationPath = '/auth/registration';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object';
 
@@ -55,6 +58,7 @@ const registrationReason = (response: Response, body: Record<string, unknown>): 
         case 'registration_expired':
         case 'registration_unavailable':
         case 'google_not_allowed':
+        case 'maintenance':
             return value;
         default:
             return undefined;
@@ -79,13 +83,23 @@ const requestJSON = async (path: string, init?: RequestInit): Promise<Record<str
 };
 
 const stringValue = (value: unknown) => (typeof value === 'string' ? value : '');
+const registrationProvider = (value: unknown): RegistrationIdentityProvider => {
+    if (value === 1 || value === 'google' || value === 'ACCOUNT_IDENTITY_PROVIDER_GOOGLE') {
+        return 'google';
+    }
+    if (value === 3 || value === 'solana_wallet' || value === 'ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET') {
+        return 'solana_wallet';
+    }
+    throw new Error('Registration identity provider is invalid');
+};
 
 export class RegistrationService {
-    public async get(): Promise<GoogleRegistration> {
+    public async get(): Promise<Registration> {
         const body = await requestJSON(registrationPath);
         return {
-            provider: stringValue(body.provider),
+            provider: registrationProvider(body.provider),
             verifiedEmail: stringValue(body.verifiedEmail ?? body.verified_email),
+            solanaAddress: stringValue(body.solanaAddress ?? body.solana_address),
             administrator: Boolean(body.administrator),
             expiresAt: Number(body.expiresAt ?? body.expires_at ?? 0),
             csrfToken: stringValue(body.csrfToken ?? body.csrf_token)

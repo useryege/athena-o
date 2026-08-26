@@ -8,10 +8,12 @@ theme. It exposes uncached reads and independent optimistic-concurrency
 boundaries for public profile and private preference state.
 
 The immutable username belongs to [Account Credentials](account-credentials.md)
-and appears read-only as `@username`. [Google OIDC
-Login](google-oidc-login.md) initializes both username and display name only when
-registration commits. Later Google logins may refresh verified-email audit data
-but never overwrite username, display name, avatar, tier, or theme.
+and appears read-only as `@username`. The shared registration reached from
+[Google OIDC Login](google-oidc-login.md) or [Solana Wallet
+Authentication](solana-wallet-authentication.md) initializes both username and
+display name only when registration commits. Later external logins never
+overwrite username, display name, avatar, tier, or theme; Google may refresh
+only verified-email audit data.
 
 ## Source Locations
 
@@ -46,11 +48,12 @@ private preferences or API Key metadata. Tier never grants authorization.
 
 ## Runtime Flow
 
-1. A successful Google username registration creates `athena_account`, access,
-   all module rows, profile, and preferences together. Profile display name is
-   initialized to the exact chosen username, tier to Standard, theme to System,
-   and both revisions to one. The disabled-auth development aggregate uses the
-   same complete state shape with username/display name `local-admin`.
+1. A successful Google or Solana-wallet username registration creates
+   `athena_account`, access, all module rows, profile, and preferences together.
+   Profile display name is initialized to the exact chosen username, tier to
+   Standard, theme to System, and both revisions to one. The disabled-auth
+   development aggregate uses the same complete state shape with
+   username/display name `local-admin`.
 2. Reads require the UUID parent and require an already-persisted positive-
    revision row. Missing or malformed profile/preferences state is treated as
    an invalid aggregate, not synthesized from email or username.
@@ -61,9 +64,9 @@ private preferences or API Key metadata. Tier never grants authorization.
    CAS. Successful replacement commits its reference before old-object cleanup;
    failed or ambiguous CAS is reconciled through a read and orphan collection.
 5. Session and bootstrap projections combine UUID, immutable username, current
-   profile/preferences, current access, role, and safe identity timestamps.
-   Google subject, API Key JTI, bearer material, and avatar object key remain
-   private.
+   profile/preferences, current access, role, and safe provider-specific
+   identity presentation. Google subject, API Key JTI, wallet signatures,
+   bearer material, and avatar object key remain private.
 6. Account Center shows `@username` in a disabled input and permits editing only
    display name and other mutable profile fields. The administrator detail adds
    a copyable Technical account ID; ordinary UI does not present UUID as the
@@ -76,9 +79,11 @@ primary keys and foreign keys to `athena_account`. Profile owns display name,
 tier, optional avatar object metadata, and revision. Preferences owns theme and
 its own revision. Neither table stores username, email, subject, or role.
 
-The account directory's immutable `username` and mutable `verified_email` remain
-separate. An email change on successful login does not alter any profile field.
-An account can be disabled without deleting or rewriting presentation state.
+The account directory's immutable `username`, provider binding, and mutable
+Google-only `verified_email` remain separate. An email change on successful
+Google login does not alter any profile field; a Solana address is never used to
+initialize or overwrite display name. An account can be disabled without
+deleting or rewriting presentation state.
 
 Avatar bytes remain private S3 objects. Public profile projections expose only
 an authenticated UUID route such as `/api/v1/account/{id}/avatar?v={revision}`.
@@ -95,8 +100,8 @@ as System and tier starts as Standard. Object-store configuration belongs to
 - Every profile and preferences row belongs to the same durable UUID account.
 - Username is read-only identity presentation; display name is the editable
   profile label and starts equal to username.
-- Google email, name, and avatar never synchronize into Athena presentation
-  state after registration.
+- Google email, name, and avatar and Solana-wallet metadata never synchronize
+  into Athena presentation state after registration.
 - Profile and preference revisions advance independently by CAS.
 - Tier is presentation metadata and cannot grant a module or role.
 - Safe public/session projections exclude subject, private preferences of other
@@ -113,14 +118,15 @@ live until its UUID profile reference commits.
 ## Observability
 
 Mutation and avatar failures identify account UUID and operation without logging
-avatar bytes, Google subjects, JWTs, or API Key material. Profile reads add no
-health dependency beyond the shared account-state PostgreSQL connection.
+avatar bytes, external identity subjects, wallet signatures, JWTs, or API Key
+material. Profile reads add no health dependency beyond the shared
+account-state PostgreSQL connection.
 
 ## Change Checklist
 
 - [ ] UUID account parent and registration defaults remain current.
 - [ ] Immutable username and editable display-name presentation remain separate.
 - [ ] Profile, preferences, and avatar CAS boundaries remain independent.
-- [ ] Google identity data does not overwrite Athena display state.
+- [ ] External identity data does not overwrite Athena display state.
 - [ ] Authorization and public projections remain current.
 - [ ] The [design index](../README.md) contains the current summary.

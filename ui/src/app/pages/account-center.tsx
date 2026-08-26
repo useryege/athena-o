@@ -19,7 +19,7 @@ import {AppPage, ChoiceGroup, KeyValueGrid, ResourceTable, Section, StatusTag, u
 import {moduleAccessSummary} from '../shared/account-access';
 import {accountDataAccessLabel, accountDataModules} from '../shared/access-modules';
 import {Context, useAuthorization} from '../shared/context';
-import {accountStatusForAccess, AccountProfile, AccountStatus, AccountThemeMode, AccountTier, Token} from '../shared/models';
+import {accountStatusForAccess, AccountIdentity, AccountIdentityProvider, AccountProfile, AccountStatus, AccountThemeMode, AccountTier, Token} from '../shared/models';
 import {services, ThemeMode, ViewPreferences} from '../shared/services';
 import requests, {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
 import {boolTag} from './shared';
@@ -521,12 +521,50 @@ const SecurityPage = () => {
     );
 };
 
-const identityProviderLabel = (provider: string) => (provider.endsWith('_GOOGLE') ? 'Google' : provider.endsWith('_DEVELOPMENT') ? 'Development' : 'Not available');
+export const identityProviderLabel = (provider: AccountIdentityProvider) => {
+    switch (provider) {
+        case AccountIdentityProvider.Google:
+            return 'Google';
+        case AccountIdentityProvider.SolanaWallet:
+            return 'Phantom';
+        case AccountIdentityProvider.Development:
+            return 'Development';
+        default:
+            return 'Not available';
+    }
+};
+
+export const identityPresentation = (identity: AccountIdentity) => {
+    switch (identity.provider) {
+        case AccountIdentityProvider.Google:
+            return {
+                label: 'Verified email',
+                value: identity.verifiedEmail,
+                pendingTitle: 'Your Google identity is verified',
+                signInLabel: 'Google sign-in'
+            };
+        case AccountIdentityProvider.SolanaWallet:
+            return {
+                label: 'Solana address',
+                value: identity.solanaAddress,
+                pendingTitle: 'Your Phantom wallet ownership is verified',
+                signInLabel: 'Phantom sign-in'
+            };
+        default:
+            return {
+                label: 'Identity',
+                value: identity.verifiedEmail || identity.solanaAddress,
+                pendingTitle: 'Your identity is verified',
+                signInLabel: 'Sign-in'
+            };
+    }
+};
 const identityTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Not yet');
 
 const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
     const authorization = useAuthorization();
     const ctx = React.useContext(Context);
+    const identity = identityPresentation(authorization.user.identity);
     const [refreshing, setRefreshing] = React.useState(false);
     const refresh = async () => {
         if (refreshing) {
@@ -549,14 +587,14 @@ const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) =
                     <ClockCircleOutlined />
                 </div>
                 <div className='account-access-pending__copy'>
-                    <Typography.Title level={2}>Your Google identity is verified</Typography.Title>
+                    <Typography.Title level={2}>{identity.pendingTitle}</Typography.Title>
                     <Typography.Paragraph>
                         Your Athena account is ready, but an administrator has not granted business access yet. You can update your profile and appearance while you wait.
                     </Typography.Paragraph>
                     <div className='account-access-pending__identity'>
-                        <Typography.Text type='secondary'>Verified Google email</Typography.Text>
-                        <Typography.Text copyable={Boolean(authorization.user.identity.verifiedEmail)}>
-                            {authorization.user.identity.verifiedEmail || 'Unavailable'}
+                        <Typography.Text type='secondary'>{identity.label}</Typography.Text>
+                        <Typography.Text className='account-identity-value' copyable={Boolean(identity.value)}>
+                            {identity.value || 'Unavailable'}
                         </Typography.Text>
                     </div>
                     <Typography.Text className='account-access-pending__checked' type='secondary' aria-live='polite'>
@@ -579,6 +617,7 @@ const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) =
 
 const ActiveAccessPage = () => {
     const authorization = useAuthorization();
+    const identity = identityPresentation(authorization.user.identity);
     const version = useAsyncData<any>(() => services.version.version() as any, []);
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
     return (
@@ -587,10 +626,17 @@ const ActiveAccessPage = () => {
                 <KeyValueGrid
                     items={[
                         {label: 'Username', value: `@${authorization.user.username}`},
-                        {label: 'Verified email', value: authorization.user.identity.verifiedEmail || '-'},
                         {label: 'Identity provider', value: identityProviderLabel(authorization.user.identity.provider)},
+                        {
+                            label: identity.label,
+                            value: (
+                                <Typography.Text className='account-identity-value' copyable={Boolean(identity.value)}>
+                                    {identity.value || '-'}
+                                </Typography.Text>
+                            )
+                        },
                         {label: 'Account created', value: identityTime(authorization.user.identity.createdAt)},
-                        {label: 'Last Google login', value: identityTime(authorization.user.identity.lastLoginAt)},
+                        {label: 'Last sign-in', value: identityTime(authorization.user.identity.lastLoginAt)},
                         {label: 'Logged in', value: boolTag(authorization.user.loggedIn)},
                         {label: 'Role', value: authorization.isAdmin ? <StatusTag value='Administrator' positive={true} /> : 'Member'},
                         {label: 'Tier', value: accountTierLabel(authorization.user.profile.tier)},

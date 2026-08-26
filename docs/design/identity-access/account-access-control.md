@@ -3,7 +3,7 @@
 ## Scope
 
 Account Access Control owns Athena's durable role-aware authorization model:
-Google sign-in availability, independent API Key and Profit Sharing
+external sign-in availability, independent API Key and Profit Sharing
 entitlements, a complete ten-module access matrix, optimistic revision updates,
 Pending/Active/Blocked status, RPC authorization, and browser authorization
 synchronization. Every access aggregate and authorization lookup is keyed by
@@ -11,9 +11,11 @@ stable account UUID.
 
 [Account Credentials](account-credentials.md) owns UUID identity, immutable
 username, JWT validation, and the persisted administrator fact. [Google OIDC
-Login](google-oidc-login.md) creates complete zero-access ordinary accounts only
-after username setup. Business services own their domain state after this layer
-authorizes the request.
+Login](google-oidc-login.md) and [Solana Wallet
+Authentication](solana-wallet-authentication.md) hand verified identities to
+the same registration boundary, which creates complete zero-access ordinary
+accounts only after username setup. Business services own their domain state
+after this layer authorizes the request.
 
 ## Source Locations
 
@@ -63,10 +65,11 @@ flow between modules or into API Key and Profit Sharing entitlements.
 1. Startup loads every persisted access head, its database role, and all ten
    module rows. Zero accounts is valid. Any durable account with a missing,
    duplicate, unknown, incomplete, or invalid aggregate fails startup closed.
-2. Username registration commits an ordinary access head with login enabled,
-   API Key and Profit Sharing disabled, revision one, and ten `NONE` rows. An
-   administrator registration commits its fixed maximum aggregate. The
-   controller learns either by UUID only after database commit.
+2. Shared username registration commits an ordinary Google or Solana-wallet
+   access head with login enabled, API Key and Profit Sharing disabled, revision
+   one, and ten `NONE` rows. Only a Google administrator-candidate registration
+   can commit the fixed maximum administrator aggregate. The controller learns
+   either by UUID only after database commit.
 3. Every login session and API Key checks `LoginEnabled` on each request. API
    Keys additionally check `APIKeyEnabled`; ordinary Profit Sharing RPCs check
    `ProfitSharingEnabled`; product RPCs check their explicit module and level.
@@ -79,11 +82,11 @@ flow between modules or into API Key and Profit Sharing entitlements.
 5. Status derives as `BLOCKED` when login is disabled, `PENDING` when login is
    enabled with all modules `NONE` and Profit Sharing disabled, and `ACTIVE`
    otherwise. API Key access alone does not make an account Active.
-6. The administrator directory searches username, verified email, profile
-   display name, and an exact UUID. It supports All/Pending/Active/Blocked,
-   one-based pagination defaulting to 50 and capped at 100, total count, and a
-   Profit-Sharing-eligible filter. Pending sorts first, then most recent login,
-   username, and UUID.
+6. The administrator directory searches username, verified Google email,
+   Solana address, profile display name, and an exact UUID. It supports
+   All/Pending/Active/Blocked, one-based pagination defaulting to 50 and capped
+   at 100, total count, and a Profit-Sharing-eligible filter. Pending sorts
+   first, then most recent login, username, and UUID.
 7. The browser refreshes authorization at most every 15 seconds while visible,
    on focus or visibility return, on manual Pending-page refresh, and after a
    stable access denial. Module loss cancels affected work, clears UUID-scoped
@@ -102,7 +105,8 @@ that parent and joined into every access aggregate; username is absent from
 authorization tables.
 
 Ordinary accounts are retained and may be blocked or have grants changed. There
-is no delete, role promotion, username mutation, Google rebind, or transfer API.
+is no delete, role promotion, username mutation, external-identity rebind,
+merge, or transfer API.
 The sole administrator is created by registration and protected by the role
 unique index plus fixed-access validation.
 
@@ -115,7 +119,8 @@ Authorization completes before domain service code receives the request.
 Access has no per-account environment variables. Identities, roles, and access
 aggregates come from PostgreSQL. `ATHENA_SERVER_DISABLE_AUTH=true` creates the
 isolated loopback `local-admin` development aggregate and synthesizes its UUID
-in request claims. Normal OIDC mode rejects that development identity.
+in request claims. Normal external-authentication mode rejects that development
+identity.
 
 ## Invariants
 
@@ -149,9 +154,9 @@ other entitlements on the next authenticated request.
 
 Authorization errors expose stable reason metadata including module, required
 level, and effective level for module denials. Logs identify account UUID and
-authorization boundary; Google subjects, JWTs, JTIs, and bearer values are
-excluded. The administrator directory exposes UUID, username, safe email, and
-timestamps, never Google subject.
+authorization boundary; identity subjects, wallet signatures, JWTs, JTIs, and
+bearer values are excluded. The administrator directory exposes UUID, username,
+safe provider-specific presentation data, and timestamps, never Google subject.
 
 ## Change Checklist
 

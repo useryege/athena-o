@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 )
 
 var (
-	ErrAdministratorIdentityConflict = errors.New("administrator Google identity is already registered")
+	ErrAdministratorIdentityConflict = errors.New("administrator identity is already registered")
 	ErrUsernameUnavailable           = errors.New("username is unavailable")
 	ErrLoginDisabled                 = errors.New("account login is disabled")
 	ErrAPIKeyAccessDisabled          = errors.New("account API Key access is disabled")
@@ -26,10 +25,10 @@ var (
 // mutations before exposing them to the process-local registry.
 type Store interface {
 	ListCredentialAccounts(ctx context.Context) (map[string]Account, error)
-	GetCredentialAccountByGoogleSubject(ctx context.Context, subject string) (Account, bool, error)
+	GetCredentialAccountByIdentity(ctx context.Context, provider IdentityProvider, subject string) (Account, bool, error)
 	UsernameExists(ctx context.Context, username string) (bool, error)
-	RegisterGoogleAccount(ctx context.Context, subject, verifiedEmail, username string, administrator bool) (Account, bool, error)
-	RecordGoogleLogin(ctx context.Context, accountID, subject, verifiedEmail string) (Account, error)
+	RegisterExternalAccount(ctx context.Context, provider IdentityProvider, subject, verifiedEmail, username string, administrator bool) (Account, bool, error)
+	RecordLogin(ctx context.Context, accountID string, provider IdentityProvider, subject, verifiedEmail string) (Account, error)
 	CreateAPIKeyMetadata(ctx context.Context, accountID string, token Token) error
 	DeleteAPIKeyMetadata(ctx context.Context, accountID, id string) error
 }
@@ -39,14 +38,19 @@ type accountRecord struct {
 	account Account
 }
 
+type identityKey struct {
+	provider IdentityProvider
+	subject  string
+}
+
 // CredentialManager is keyed exclusively by canonical account UUID. Username
 // is immutable presentation metadata and never participates in authentication.
 type CredentialManager struct {
-	mutex          sync.RWMutex
-	accounts       map[string]*accountRecord
-	googleAccounts map[string]string
-	store          Store
-	jwtCodec       *JWTCodec
+	mutex            sync.RWMutex
+	accounts         map[string]*accountRecord
+	identityAccounts map[identityKey]string
+	store            Store
+	jwtCodec         *JWTCodec
 }
 
 func NewCredentialManager(ctx context.Context, store Store, jwtCodec *JWTCodec) (*CredentialManager, error) {
@@ -58,10 +62,10 @@ func NewCredentialManager(ctx context.Context, store Store, jwtCodec *JWTCodec) 
 		return nil, fmt.Errorf("load credential accounts: %w", err)
 	}
 	manager := &CredentialManager{
-		accounts:       make(map[string]*accountRecord, len(accounts)),
-		googleAccounts: make(map[string]string, len(accounts)),
-		store:          store,
-		jwtCodec:       jwtCodec,
+		accounts:         make(map[string]*accountRecord, len(accounts)),
+		identityAccounts: make(map[identityKey]string, len(accounts)),
+		store:            store,
+		jwtCodec:         jwtCodec,
 	}
 	for id, account := range accounts {
 		if account.ID == "" {
@@ -109,21 +113,22 @@ func (m *CredentialManager) List() map[string]Account {
 	return accounts
 }
 
-// GetByGoogleSubject resolves only already-registered identities. Unknown
-// verified identities must complete the separate username registration flow.
-func (m *CredentialManager) GetByGoogleSubject(ctx context.Context, subject string) (Account, bool, error) {
-	subject = strings.TrimSpace(subject)
-	if subject == "" {
+// GetByIdentity resolves only an already-registered external identity. Unknown
+// identities must complete their provider's separate username registration flow.
+func (m *CredentialManager) GetByIdentity(ctx context.Context, provider IdentityProvider, subject string) (Account, bool, error) {
+	subject, err := NormalizeIdentitySubject(provider, subject)
+	if err != nil {
 		return Account{}, false, nil
 	}
+	key := identityKey{provider: provider, subject: subject}
 	m.mutex.RLock()
-	accountID := m.googleAccounts[subject]
+	accountID := m.identityAccounts[key]
 	m.mutex.RUnlock()
 	if accountID != "" {
 		account, err := m.Get(accountID)
 		return account, err == nil, err
 	}
-	account, found, err := m.store.GetCredentialAccountByGoogleSubject(ctx, subject)
+	account, found, err := m.store.GetCredentialAccountByIdentity(ctx, provider, subject)
 	if err != nil || !found {
 		return Account{}, found, err
 	}
@@ -144,26 +149,28 @@ func (m *CredentialManager) UsernameAvailable(ctx context.Context, username stri
 	return !exists, err
 }
 
-// RegisterGoogleAccount atomically creates the complete account aggregate or
-// converges on an account concurrently created for the same Google subject.
-func (m *CredentialManager) RegisterGoogleAccount(ctx context.Context, subject, verifiedEmail, username string, administrator bool) (Account, bool, error) {
-	subject = strings.TrimSpace(subject)
-	verifiedEmail = strings.TrimSpace(verifiedEmail)
-	if subject == "" || verifiedEmail == "" {
-		return Account{}, false, status.Error(codes.PermissionDenied, "verified Google identity is required")
+// RegisterExternalAccount atomically creates a complete account aggregate or
+// converges on an account concurrently created for the same provider identity.
+func (m *CredentialManager) RegisterExternalAccount(ctx context.Context, provider IdentityProvider, subject, verifiedEmail, username string, administrator bool) (Account, bool, error) {
+	subject, verifiedEmail, err := NormalizeExternalIdentity(provider, subject, verifiedEmail, administrator)
+	if err != nil {
+		return Account{}, false, status.Error(codes.PermissionDenied, "verified external identity is required")
 	}
-	if existing, found, err := m.GetByGoogleSubject(ctx, subject); err != nil || found {
+	if administrator && provider != IdentityProviderGoogle {
+		return Account{}, false, status.Error(codes.PermissionDenied, "administrator registration requires Google")
+	}
+	if existing, found, err := m.GetByIdentity(ctx, provider, subject); err != nil || found {
 		return existing, false, err
 	}
 	if err := ValidateUsername(username, administrator); err != nil {
 		return Account{}, false, err
 	}
-	account, created, err := m.store.RegisterGoogleAccount(ctx, subject, verifiedEmail, username, administrator)
+	account, created, err := m.store.RegisterExternalAccount(ctx, provider, subject, verifiedEmail, username, administrator)
 	if err != nil {
 		return Account{}, false, err
 	}
-	if account.GoogleSubject != subject || account.IdentityProvider != IdentityProviderGoogle {
-		return Account{}, false, fmt.Errorf("durable Google registration returned an inconsistent identity")
+	if account.IdentitySubject != subject || account.IdentityProvider != provider {
+		return Account{}, false, fmt.Errorf("durable external registration returned an inconsistent identity")
 	}
 	if err := m.publish(account); err != nil {
 		return Account{}, false, err
@@ -172,13 +179,17 @@ func (m *CredentialManager) RegisterGoogleAccount(ctx context.Context, subject, 
 	return snapshot, created, err
 }
 
-func (m *CredentialManager) RecordGoogleLogin(ctx context.Context, accountID, subject, verifiedEmail string) (Account, error) {
-	account, err := m.store.RecordGoogleLogin(ctx, accountID, subject, strings.TrimSpace(verifiedEmail))
+func (m *CredentialManager) RecordLogin(ctx context.Context, accountID string, provider IdentityProvider, subject, verifiedEmail string) (Account, error) {
+	subject, verifiedEmail, err := NormalizeExternalIdentity(provider, subject, verifiedEmail, false)
+	if err != nil {
+		return Account{}, status.Error(codes.PermissionDenied, "verified external identity is required")
+	}
+	account, err := m.store.RecordLogin(ctx, accountID, provider, subject, verifiedEmail)
 	if err != nil {
 		return Account{}, err
 	}
-	if account.ID != accountID || account.GoogleSubject != subject {
-		return Account{}, fmt.Errorf("record Google login returned an inconsistent account")
+	if account.ID != accountID || account.IdentityProvider != provider || account.IdentitySubject != subject {
+		return Account{}, fmt.Errorf("record external login returned an inconsistent account")
 	}
 	if err := m.publish(account); err != nil {
 		return Account{}, err
@@ -216,18 +227,25 @@ func (m *CredentialManager) IssueAPIKey(ctx context.Context, accountID, id strin
 	return tokenString, nil
 }
 
-func (m *CredentialManager) IssueGoogleLoginSession(accountID, verifiedSubject, id string, expiresIn int64) (string, error) {
+// IssueLoginSession binds an Athena session to the currently persisted
+// external provider identity. Changing either half of that identity invalidates
+// the session on its next request.
+func (m *CredentialManager) IssueLoginSession(accountID string, verifiedProvider IdentityProvider, verifiedSubject, id string, expiresIn int64) (string, error) {
+	verifiedSubject, err := NormalizeIdentitySubject(verifiedProvider, verifiedSubject)
+	if err != nil {
+		return "", status.Error(codes.PermissionDenied, "external identity binding changed")
+	}
 	record, err := m.record(accountID)
 	if err != nil {
 		return "", err
 	}
 	record.mutex.RLock()
 	defer record.mutex.RUnlock()
-	if verifiedSubject == "" || record.account.IdentityProvider != IdentityProviderGoogle || record.account.GoogleSubject != verifiedSubject {
-		return "", status.Error(codes.PermissionDenied, "Google identity binding changed")
+	if !record.account.HasExternalIdentity() || record.account.IdentityProvider != verifiedProvider || record.account.IdentitySubject != verifiedSubject {
+		return "", status.Error(codes.PermissionDenied, "external identity binding changed")
 	}
 	now := time.Now().UTC()
-	tokenString, _, err := m.jwtCodec.Issue(record.account.ID, CapabilityLogin, id, expiresIn, now, googleIdentityBinding(record.account.GoogleSubject))
+	tokenString, _, err := m.jwtCodec.Issue(record.account.ID, CapabilityLogin, id, expiresIn, now, identityBinding(record.account.IdentityProvider, record.account.IdentitySubject))
 	return tokenString, err
 }
 
@@ -258,8 +276,8 @@ func (m *CredentialManager) ValidateCredential(accountID string, capability Capa
 	defer record.mutex.RUnlock()
 	switch capability {
 	case CapabilityLogin:
-		if record.account.IdentityProvider != IdentityProviderGoogle || record.account.GoogleSubject == "" || tokenIdentityBinding != googleIdentityBinding(record.account.GoogleSubject) {
-			return fmt.Errorf("account Google identity binding has changed")
+		if !record.account.HasExternalIdentity() || tokenIdentityBinding != identityBinding(record.account.IdentityProvider, record.account.IdentitySubject) {
+			return fmt.Errorf("account external identity binding has changed")
 		}
 	case CapabilityAPIKey:
 		if tokenJTIIndex(record.account.Tokens, jti) < 0 {
@@ -297,49 +315,51 @@ func (m *CredentialManager) publishLocked(account Account) error {
 		return fmt.Errorf("credential account ID %q is not a canonical UUID", account.ID)
 	}
 	switch account.IdentityProvider {
-	case IdentityProviderGoogle:
-		if !account.HasGoogleBinding() || strings.TrimSpace(account.VerifiedEmail) == "" {
-			return fmt.Errorf("credential account %q has an incomplete Google identity", account.ID)
+	case IdentityProviderGoogle, IdentityProviderSolanaWallet:
+		subject, email, err := NormalizeExternalIdentity(account.IdentityProvider, account.IdentitySubject, account.VerifiedEmail, account.Administrator)
+		if err != nil || subject != account.IdentitySubject || email != account.VerifiedEmail {
+			return fmt.Errorf("credential account %q has an invalid external identity", account.ID)
 		}
 		if err := ValidateUsername(account.Username, account.Administrator); err != nil {
 			return fmt.Errorf("credential account %q has an invalid username: %w", account.ID, err)
 		}
 	case IdentityProviderDevelopment:
-		if !account.Administrator || account.Username != "local-admin" || account.GoogleSubject != "" || account.VerifiedEmail != "" {
+		if !account.Administrator || account.Username != "local-admin" || account.IdentitySubject != "" || account.VerifiedEmail != "" {
 			return fmt.Errorf("credential account %q has an invalid development identity", account.ID)
 		}
 	default:
 		return fmt.Errorf("credential account %q has unsupported identity provider %q", account.ID, account.IdentityProvider)
 	}
-	if account.GoogleSubject != "" {
-		if existing := m.googleAccounts[account.GoogleSubject]; existing != "" && existing != account.ID {
-			return fmt.Errorf("Google subject is assigned to multiple accounts")
+	if account.HasExternalIdentity() {
+		key := identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject}
+		if existing := m.identityAccounts[key]; existing != "" && existing != account.ID {
+			return fmt.Errorf("external identity is assigned to multiple accounts")
 		}
 	}
 	record, exists := m.accounts[account.ID]
 	if !exists {
 		m.accounts[account.ID] = &accountRecord{account: cloneAccount(account)}
-		if account.GoogleSubject != "" {
-			m.googleAccounts[account.GoogleSubject] = account.ID
+		if account.HasExternalIdentity() {
+			m.identityAccounts[identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject}] = account.ID
 		}
 		return nil
 	}
 	record.mutex.Lock()
 	defer record.mutex.Unlock()
 	previous := record.account
-	if previous.Username != account.Username || previous.IdentityProvider != account.IdentityProvider || previous.GoogleSubject != account.GoogleSubject || previous.Administrator != account.Administrator {
+	if previous.Username != account.Username || previous.IdentityProvider != account.IdentityProvider || previous.IdentitySubject != account.IdentitySubject || previous.Administrator != account.Administrator {
 		return fmt.Errorf("credential account %q immutable identity changed unexpectedly", account.ID)
 	}
 	account.Tokens = append([]Token(nil), previous.Tokens...)
 	record.account = cloneAccount(account)
-	if account.GoogleSubject != "" {
-		m.googleAccounts[account.GoogleSubject] = account.ID
+	if account.HasExternalIdentity() {
+		m.identityAccounts[identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject}] = account.ID
 	}
 	return nil
 }
 
-func googleIdentityBinding(subject string) string {
-	digest := sha256.Sum256([]byte("google\x00" + subject))
+func identityBinding(provider IdentityProvider, subject string) string {
+	digest := sha256.Sum256([]byte(string(provider) + "\x00" + subject))
 	return hex.EncodeToString(digest[:])
 }
 

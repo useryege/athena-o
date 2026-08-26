@@ -77,9 +77,9 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
-现有整站反向代理必须原样转发 `/auth/google/login` 和
-`/auth/google/callback`。不要为 `/auth/google/*` 添加路径重写，也不要剥离
-`/auth` 前缀。Google callback 的查询串包含一次性 authorization code 和 state，
+现有整站反向代理必须原样转发 `/auth/google/*`、`/auth/phantom/*`、
+`/auth/registration*` 和 `/auth/logout`。不要为 `/auth/*` 添加路径重写，也不要
+剥离 `/auth` 前缀。Google callback 的查询串包含一次性 authorization code 和 state，
 因此必须用精确 location 关闭该请求的 Nginx access log；应用响应还会设置
 `Referrer-Policy: no-referrer`。如果站点按 location 分开配置，可使用以下规则；
 `proxy_pass` 后不要附加会替换请求路径的 URI：
@@ -94,7 +94,7 @@ location = /auth/google/callback {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 
-location ^~ /auth/google/ {
+location ^~ /auth/ {
     proxy_pass http://127.0.0.1:8080;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -104,8 +104,10 @@ location ^~ /auth/google/ {
 ```
 
 Athena 使用显式配置的 `ATHENA_GOOGLE_OIDC_REDIRECT_URI`，不会信任这些 header
-来动态构造 OAuth 回调地址；保留 header 是为了让应用日志和其他请求保持正确的
-外部请求上下文。
+来动态构造 OAuth 回调地址。该配置的 scheme 和 authority 同时固定 Phantom SIWS
+消息的 domain/URI；`POST /auth/phantom/*` 还会严格比较浏览器 `Origin`，因此不要
+在代理层覆盖或删除该 header。保留其他代理 header 是为了让应用日志和其他请求
+保持正确的外部请求上下文。
 
 如果宝塔提供 WebSocket 相关开关，可以一并开启。基础 UI 和 API 访问通常不依赖该开关，但开启后更稳妥。
 
@@ -166,6 +168,10 @@ ssh root@47.245.181.189 'cd /root/athena && docker compose -f docker-compose.pro
   进入 `/register` 选择永久 username，提交成功后才创建 UUID `account_id` 和 Pending
   账号。管理员角色来自持久化的 `administrator` 字段，不来自 username。系统没有临时
   管理员密码或密码兜底入口。
+- Phantom 桌面扩展登录无需 App ID、secret、callback 或 Solana RPC；它通过
+  `/auth/phantom/challenge` 和 `/auth/phantom/verify` 签署并验证一次性 SIWS 消息。
+  Phantom 注册永远是普通 Pending 账号，与 Google 账号不合并，也不会创建 Athena
+  Wallet 记录、导入私钥或授予 Wallet 权限。
 - `/auth/google/callback` 的精确 Nginx location 必须保持 `access_log off`，避免
   code/state 进入默认 `$request` 日志。
 - Google client secret 只保存在远端由容器 UID/GID `999` 持有的 `0600` 文件中，

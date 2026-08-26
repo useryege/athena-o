@@ -53,6 +53,7 @@ enum AccountIdentityProvider {
   ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED = 0;
   ACCOUNT_IDENTITY_PROVIDER_GOOGLE = 1;
   ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT = 2;
+  ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET = 3;
 }
 
 message AccountIdentity {
@@ -60,6 +61,7 @@ message AccountIdentity {
   string verifiedEmail = 2;
   int64 createdAt = 3;
   int64 lastLoginAt = 4;
+  string solanaAddress = 5;
 }
 
 enum AccountStatus {

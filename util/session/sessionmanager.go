@@ -89,14 +89,16 @@ func (mgr *SessionManager) RegisterCommittedAccountAccess(ctx context.Context, a
 	return err
 }
 
-// CreateGoogleLogin validates current account state and issues a bound session.
-func (mgr *SessionManager) CreateGoogleLogin(ctx context.Context, accountID, verifiedGoogleSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
+// CreateExternalLogin validates current account state and issues a session
+// bound to the provider identity that completed external authentication.
+func (mgr *SessionManager) CreateExternalLogin(ctx context.Context, accountID string, verifiedProvider accountcredentials.IdentityProvider, verifiedSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
 	account, err := mgr.credentials.Get(accountID)
 	if err != nil {
 		return "", err
 	}
-	if !account.HasGoogleBinding() || account.GoogleSubject != verifiedGoogleSubject {
-		return "", status.Error(codes.PermissionDenied, "Google identity is not authorized for login")
+	subject, email, err := accountcredentials.NormalizeExternalIdentity(verifiedProvider, verifiedSubject, verifiedEmail, account.Administrator)
+	if err != nil || !account.HasExternalIdentity() || account.IdentityProvider != verifiedProvider || account.IdentitySubject != subject {
+		return "", status.Error(codes.PermissionDenied, "external identity is not authorized for login")
 	}
 	access, err := mgr.accessController.Register(ctx, accountID)
 	if err != nil {
@@ -105,11 +107,11 @@ func (mgr *SessionManager) CreateGoogleLogin(ctx context.Context, accountID, ver
 	if !access.LoginEnabled {
 		return "", AccountMaintenanceErr
 	}
-	token, err := mgr.credentials.IssueGoogleLoginSession(accountID, verifiedGoogleSubject, id, secondsBeforeExpiry)
+	token, err := mgr.credentials.IssueLoginSession(accountID, verifiedProvider, subject, id, secondsBeforeExpiry)
 	if err != nil {
 		return "", err
 	}
-	if _, err := mgr.credentials.RecordGoogleLogin(ctx, accountID, verifiedGoogleSubject, verifiedEmail); err != nil {
+	if _, err := mgr.credentials.RecordLogin(ctx, accountID, verifiedProvider, subject, email); err != nil {
 		if errors.Is(err, accountcredentials.ErrLoginDisabled) {
 			return "", AccountMaintenanceErr
 		}
@@ -186,7 +188,7 @@ func (mgr *SessionManager) VerifyToken(_ context.Context, tokenString string) (j
 // ParseLoginForRevocation validates the signed shape of a current login token
 // without consulting mutable account or revocation state. This deliberately
 // narrow boundary lets logout revoke a session after its account is disabled or
-// its Google identity binding changes.
+// its external identity binding changes.
 func (mgr *SessionManager) ParseLoginForRevocation(tokenString string) (jwt.Claims, error) {
 	parsed, err := mgr.jwtCodec.Parse(tokenString)
 	if err != nil {

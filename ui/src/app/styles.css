@@ -2675,10 +2675,15 @@ body::-webkit-scrollbar-thumb,
 
 .login-panel__actions {
     display: grid;
-    gap: 14px;
+    gap: 10px;
 }
 
-.login-google-button.ant-btn {
+.login-method-buttons {
+    display: grid;
+    gap: 10px;
+}
+
+.login-provider-button.ant-btn {
     min-height: 44px;
     border-color: var(--athena-border-strong);
     background: var(--athena-panel-solid);
@@ -2686,22 +2691,42 @@ body::-webkit-scrollbar-thumb,
     box-shadow: var(--athena-shadow-surface);
 }
 
-.login-google-button.ant-btn:not(:disabled):hover {
+.login-provider-button.ant-btn:not(:disabled):hover {
     border-color: var(--athena-focus);
     background: var(--athena-panel-elevated);
     color: var(--athena-text);
 }
 
-.login-google-button img {
+.login-provider-button img {
     width: 18px;
     height: 18px;
     flex: 0 0 auto;
+}
+
+.login-phantom-button img {
+    border-radius: 5px;
+}
+
+.login-panel__status {
+    min-height: 20px;
+    color: var(--athena-muted);
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
 }
 
 .login-panel__hint.ant-typography {
     margin: 0;
     text-align: center;
     font-size: 12px;
+}
+
+.login-panel__wallet-note.ant-typography {
+    margin: 0;
+    color: var(--athena-muted);
+    font-size: 11px;
+    line-height: 1.45;
+    text-align: center;
 }
 
 .registration-screen {
@@ -2779,10 +2804,12 @@ body::-webkit-scrollbar-thumb,
     min-width: 0;
 }
 
-.registration-identity strong {
+.registration-identity strong,
+.registration-identity__value.ant-typography {
     overflow-wrap: anywhere;
     color: var(--athena-text);
     font-size: 14px;
+    font-weight: 700;
     line-height: 1.35;
 }
 
@@ -6264,6 +6291,10 @@ button.chain-processing-kpi {
     font-size: 12px;
 }
 
+.account-identity-value.ant-typography {
+    overflow-wrap: anywhere;
+}
+
 .help-resource-list {
     align-items: flex-start;
 }
@@ -6557,6 +6588,11 @@ button.chain-processing-kpi {
 
     .login-panel .ant-card-body {
         padding: 24px;
+    }
+
+    .login-method-buttons .ant-btn {
+        width: 100%;
+        min-height: 44px;
     }
 
     .registration-screen {

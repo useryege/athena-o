@@ -5,15 +5,17 @@
 Wallet Ownership defines which UUID account may list, read, create, import,
 rename, or reveal each Athena Wallet record. User wallets belong to one stable
 `owner_account_id`; repository-defined operational wallets are explicitly
-`system_owned` and have no account owner. Username, display name, email, and
-Google subject never identify a wallet owner.
+`system_owned` and have no account owner. Username, display name, email, Google
+subject, and Solana login address never identify a wallet owner.
 
 This document covers the public API Server facade, the trusted internal Wallet
 contract, durable ownership predicates, and UI labels. Key generation,
 chain-specific address derivation, and cryptographic implementation remain in
 the Wallet service. [Account Credentials](account-credentials.md) owns account
 UUID and role, while [FIFA Market Dashboard](../market-intelligence/fifa-market-dashboard.md)
-describes a downstream consumer of scoped Wallet listings.
+describes a downstream consumer of scoped Wallet listings. [Solana Wallet
+Authentication](solana-wallet-authentication.md) proves control of an external
+login address and is deliberately separate from this custodial Wallet model.
 
 ## Source Locations
 
@@ -54,6 +56,11 @@ over the internal gRPC boundary. SQL repeats the ownership predicate for list,
 get, and alias updates. FIFA uses the same requester pair already derived from
 its authenticated public request and keeps its holdings cache separated by both
 UUID and role.
+
+A Phantom sign-in never creates, imports, looks up, or claims a Wallet record.
+The Solana public key stored as an external identity subject is not copied into
+`owner_account_id` and grants no Wallet module permission. Conversely, an
+Athena-managed Solana wallet and its private key cannot authenticate a browser.
 
 ## Runtime Flow
 
@@ -127,6 +134,8 @@ environment variable.
 - Ordinary access is restricted to exact owner UUID and excludes system wallets.
 - System wallets are visible and manageable only to administrators.
 - New create/import operations always create account-owned rows.
+- External wallet authentication never creates a row, supplies an owner UUID,
+  imports key material, or grants Wallet access.
 - Module authorization and row ownership are both required; either boundary may
   deny an operation.
 - Private key and mnemonic plaintext are neither stored nor returned by list
@@ -151,8 +160,9 @@ their reusable channels.
 Wallet service status and standard gRPC health report process lifecycle, not
 account-state reachability. Operational logs may include wallet row ID, chain,
 and account UUID but must not log private keys, mnemonics, encryption keys,
-Google subjects, or Athena credentials. FIFA holding warnings include the UUID
-and administrator boolean that define the cache/visibility scope.
+external identity subjects, Phantom signatures, or Athena credentials. FIFA
+holding warnings include the UUID and administrator boolean that define the
+cache/visibility scope.
 
 ## Change Checklist
 
@@ -160,6 +170,7 @@ and administrator boolean that define the cache/visibility scope.
 - [ ] API Server and FIFA derive and forward canonical UUID plus persisted role.
 - [ ] List, count, get, alias, create, import, and secret reveal preserve ownership predicates.
 - [ ] System-wallet constraints, seed rows, and administrator-only visibility remain current.
+- [ ] Solana login identity and custodial Wallet ownership remain isolated.
 - [ ] UI Owner labels use System/You/Member account without exposing UUID or using username as ownership identity.
 - [ ] Configuration, failure behavior, and source links remain current.
 - [ ] The [design index](../README.md) contains the correct entry.

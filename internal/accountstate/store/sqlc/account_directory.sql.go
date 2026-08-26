@@ -30,6 +30,8 @@ const countAccountDirectory = `-- name: CountAccountDirectory :one
 WITH directory AS (
   SELECT account.account_id,
          account.username,
+         account.identity_provider,
+         account.identity_subject,
          account.verified_email,
          account.administrator,
          access.login_enabled,
@@ -56,6 +58,10 @@ WHERE (
     OR position(lower($1::text) IN lower(username)) > 0
     OR position(lower($1::text) IN lower(verified_email)) > 0
     OR position(lower($1::text) IN lower(display_name)) > 0
+    OR (
+      identity_provider = 'solana_wallet'
+      AND position($1::text IN identity_subject) > 0
+    )
     OR lower($1::text) = account_id::text
   )
   AND (
@@ -90,22 +96,22 @@ WITH inserted_account AS (
   INSERT INTO athena_account (
     username,
     identity_provider,
-    google_subject,
+    identity_subject,
     verified_email,
     administrator
   )
   VALUES (
     $1::text,
-    'google',
     $2::text,
     $3::text,
+    $4::text,
     TRUE
   )
-  ON CONFLICT (google_subject) WHERE google_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
-            google_subject,
+            identity_subject,
             verified_email,
             administrator,
             created_at,
@@ -159,7 +165,7 @@ WITH inserted_account AS (
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -173,16 +179,17 @@ WHERE EXISTS (SELECT 1 FROM inserted_access)
 `
 
 type CreateAdministratorAccountParams struct {
-	Username      string
-	GoogleSubject string
-	VerifiedEmail string
+	Username         string
+	IdentityProvider string
+	IdentitySubject  string
+	VerifiedEmail    string
 }
 
 type CreateAdministratorAccountRow struct {
 	AccountID        pgtype.UUID
 	Username         string
 	IdentityProvider string
-	GoogleSubject    pgtype.Text
+	IdentitySubject  pgtype.Text
 	VerifiedEmail    string
 	Administrator    bool
 	CreatedAt        pgtype.Timestamptz
@@ -191,13 +198,18 @@ type CreateAdministratorAccountRow struct {
 }
 
 func (q *Queries) CreateAdministratorAccount(ctx context.Context, arg CreateAdministratorAccountParams) (CreateAdministratorAccountRow, error) {
-	row := q.db.QueryRow(ctx, createAdministratorAccount, arg.Username, arg.GoogleSubject, arg.VerifiedEmail)
+	row := q.db.QueryRow(ctx, createAdministratorAccount,
+		arg.Username,
+		arg.IdentityProvider,
+		arg.IdentitySubject,
+		arg.VerifiedEmail,
+	)
 	var i CreateAdministratorAccountRow
 	err := row.Scan(
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,
@@ -212,7 +224,7 @@ WITH inserted_account AS (
   INSERT INTO athena_account (
     username,
     identity_provider,
-    google_subject,
+    identity_subject,
     verified_email,
     administrator
   )
@@ -220,7 +232,7 @@ WITH inserted_account AS (
   RETURNING account_id,
             username,
             identity_provider,
-            google_subject,
+            identity_subject,
             verified_email,
             administrator,
             created_at,
@@ -274,7 +286,7 @@ WITH inserted_account AS (
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -291,7 +303,7 @@ type CreateDevelopmentAdministratorRow struct {
 	AccountID        pgtype.UUID
 	Username         string
 	IdentityProvider string
-	GoogleSubject    pgtype.Text
+	IdentitySubject  pgtype.Text
 	VerifiedEmail    string
 	Administrator    bool
 	CreatedAt        pgtype.Timestamptz
@@ -306,7 +318,7 @@ func (q *Queries) CreateDevelopmentAdministrator(ctx context.Context) (CreateDev
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,
@@ -321,22 +333,22 @@ WITH inserted_account AS (
   INSERT INTO athena_account (
     username,
     identity_provider,
-    google_subject,
+    identity_subject,
     verified_email,
     administrator
   )
   VALUES (
     $1::text,
-    'google',
     $2::text,
     $3::text,
+    $4::text,
     FALSE
   )
-  ON CONFLICT (google_subject) WHERE google_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
-            google_subject,
+            identity_subject,
             verified_email,
             administrator,
             created_at,
@@ -390,7 +402,7 @@ WITH inserted_account AS (
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -404,16 +416,17 @@ WHERE EXISTS (SELECT 1 FROM inserted_access)
 `
 
 type CreateOrdinaryAccountParams struct {
-	Username      string
-	GoogleSubject string
-	VerifiedEmail string
+	Username         string
+	IdentityProvider string
+	IdentitySubject  string
+	VerifiedEmail    string
 }
 
 type CreateOrdinaryAccountRow struct {
 	AccountID        pgtype.UUID
 	Username         string
 	IdentityProvider string
-	GoogleSubject    pgtype.Text
+	IdentitySubject  pgtype.Text
 	VerifiedEmail    string
 	Administrator    bool
 	CreatedAt        pgtype.Timestamptz
@@ -422,13 +435,18 @@ type CreateOrdinaryAccountRow struct {
 }
 
 func (q *Queries) CreateOrdinaryAccount(ctx context.Context, arg CreateOrdinaryAccountParams) (CreateOrdinaryAccountRow, error) {
-	row := q.db.QueryRow(ctx, createOrdinaryAccount, arg.Username, arg.GoogleSubject, arg.VerifiedEmail)
+	row := q.db.QueryRow(ctx, createOrdinaryAccount,
+		arg.Username,
+		arg.IdentityProvider,
+		arg.IdentitySubject,
+		arg.VerifiedEmail,
+	)
 	var i CreateOrdinaryAccountRow
 	err := row.Scan(
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,
@@ -438,29 +456,34 @@ func (q *Queries) CreateOrdinaryAccount(ctx context.Context, arg CreateOrdinaryA
 	return i, err
 }
 
-const getAccountByGoogleSubject = `-- name: GetAccountByGoogleSubject :one
+const getAccountByIdentity = `-- name: GetAccountByIdentity :one
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
        updated_at,
        last_login_at
 FROM athena_account
-WHERE identity_provider = 'google'
-  AND google_subject = $1::text
+WHERE identity_provider = $1::text
+  AND identity_subject = $2::text
 `
 
-func (q *Queries) GetAccountByGoogleSubject(ctx context.Context, googleSubject string) (AthenaAccount, error) {
-	row := q.db.QueryRow(ctx, getAccountByGoogleSubject, googleSubject)
+type GetAccountByIdentityParams struct {
+	IdentityProvider string
+	IdentitySubject  string
+}
+
+func (q *Queries) GetAccountByIdentity(ctx context.Context, arg GetAccountByIdentityParams) (AthenaAccount, error) {
+	row := q.db.QueryRow(ctx, getAccountByIdentity, arg.IdentityProvider, arg.IdentitySubject)
 	var i AthenaAccount
 	err := row.Scan(
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,
@@ -474,7 +497,7 @@ const getAccountRecord = `-- name: GetAccountRecord :one
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -491,7 +514,7 @@ func (q *Queries) GetAccountRecord(ctx context.Context, accountID pgtype.UUID) (
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,
@@ -505,7 +528,7 @@ const getDevelopmentAdministrator = `-- name: GetDevelopmentAdministrator :one
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -524,7 +547,7 @@ func (q *Queries) GetDevelopmentAdministrator(ctx context.Context) (AthenaAccoun
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,
@@ -538,6 +561,8 @@ const listAccountDirectoryPage = `-- name: ListAccountDirectoryPage :many
 WITH directory AS (
   SELECT account.account_id,
          account.username,
+         account.identity_provider,
+         account.identity_subject,
          account.verified_email,
          account.administrator,
          account.created_at,
@@ -579,6 +604,10 @@ WHERE (
     OR position(lower($1::text) IN lower(username)) > 0
     OR position(lower($1::text) IN lower(verified_email)) > 0
     OR position(lower($1::text) IN lower(display_name)) > 0
+    OR (
+      identity_provider = 'solana_wallet'
+      AND position($1::text IN identity_subject) > 0
+    )
     OR lower($1::text) = account_id::text
   )
   AND (
@@ -667,7 +696,7 @@ const listAccountRecords = `-- name: ListAccountRecords :many
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -690,7 +719,7 @@ func (q *Queries) ListAccountRecords(ctx context.Context) ([]AthenaAccount, erro
 			&i.AccountID,
 			&i.Username,
 			&i.IdentityProvider,
-			&i.GoogleSubject,
+			&i.IdentitySubject,
 			&i.VerifiedEmail,
 			&i.Administrator,
 			&i.CreatedAt,
@@ -713,8 +742,8 @@ SET verified_email = $1::text,
     last_login_at = NOW(),
     updated_at = NOW()
 WHERE account_id = $2::uuid
-  AND identity_provider = 'google'
-  AND google_subject = $3::text
+  AND identity_provider = $3::text
+  AND identity_subject = $4::text
   AND EXISTS (
     SELECT 1
     FROM account_access
@@ -724,7 +753,7 @@ WHERE account_id = $2::uuid
 RETURNING account_id,
           username,
           identity_provider,
-          google_subject,
+          identity_subject,
           verified_email,
           administrator,
           created_at,
@@ -733,19 +762,25 @@ RETURNING account_id,
 `
 
 type RecordAccountLoginParams struct {
-	VerifiedEmail string
-	AccountID     pgtype.UUID
-	GoogleSubject string
+	VerifiedEmail    string
+	AccountID        pgtype.UUID
+	IdentityProvider string
+	IdentitySubject  string
 }
 
 func (q *Queries) RecordAccountLogin(ctx context.Context, arg RecordAccountLoginParams) (AthenaAccount, error) {
-	row := q.db.QueryRow(ctx, recordAccountLogin, arg.VerifiedEmail, arg.AccountID, arg.GoogleSubject)
+	row := q.db.QueryRow(ctx, recordAccountLogin,
+		arg.VerifiedEmail,
+		arg.AccountID,
+		arg.IdentityProvider,
+		arg.IdentitySubject,
+	)
 	var i AthenaAccount
 	err := row.Scan(
 		&i.AccountID,
 		&i.Username,
 		&i.IdentityProvider,
-		&i.GoogleSubject,
+		&i.IdentitySubject,
 		&i.VerifiedEmail,
 		&i.Administrator,
 		&i.CreatedAt,

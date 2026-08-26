@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena Service APIs",
     "title": "Athena API",
-    "version": "v1.0.0-1059-g64b76795-dirty"
+    "version": "v1.0.0-1060-ga2c179b7-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3354,6 +3354,9 @@
         "provider": {
           "$ref": "#/definitions/accountAccountIdentityProvider"
         },
+        "solanaAddress": {
+          "type": "string"
+        },
         "verifiedEmail": {
           "type": "string"
         }
@@ -3365,7 +3368,8 @@
       "enum": [
         "ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED",
         "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
-        "ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT"
+        "ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT",
+        "ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET"
       ]
     },
     "accountAccountModuleAccess": {

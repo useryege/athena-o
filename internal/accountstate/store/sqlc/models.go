@@ -57,7 +57,7 @@ type AthenaAccount struct {
 	AccountID        pgtype.UUID
 	Username         string
 	IdentityProvider string
-	GoogleSubject    pgtype.Text
+	IdentitySubject  pgtype.Text
 	VerifiedEmail    string
 	Administrator    bool
 	CreatedAt        pgtype.Timestamptz

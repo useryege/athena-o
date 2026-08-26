@@ -2,7 +2,7 @@
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -15,7 +15,7 @@ ORDER BY account_id;
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -24,25 +24,25 @@ SELECT account_id,
 FROM athena_account
 WHERE account_id = sqlc.arg(account_id)::uuid;
 
--- name: GetAccountByGoogleSubject :one
+-- name: GetAccountByIdentity :one
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
        updated_at,
        last_login_at
 FROM athena_account
-WHERE identity_provider = 'google'
-  AND google_subject = sqlc.arg(google_subject)::text;
+WHERE identity_provider = sqlc.arg(identity_provider)::text
+  AND identity_subject = sqlc.arg(identity_subject)::text;
 
 -- name: GetDevelopmentAdministrator :one
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -72,22 +72,22 @@ WITH inserted_account AS (
   INSERT INTO athena_account (
     username,
     identity_provider,
-    google_subject,
+    identity_subject,
     verified_email,
     administrator
   )
   VALUES (
     sqlc.arg(username)::text,
-    'google',
-    sqlc.arg(google_subject)::text,
+    sqlc.arg(identity_provider)::text,
+    sqlc.arg(identity_subject)::text,
     sqlc.arg(verified_email)::text,
     FALSE
   )
-  ON CONFLICT (google_subject) WHERE google_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
-            google_subject,
+            identity_subject,
             verified_email,
             administrator,
             created_at,
@@ -141,7 +141,7 @@ WITH inserted_account AS (
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -158,22 +158,22 @@ WITH inserted_account AS (
   INSERT INTO athena_account (
     username,
     identity_provider,
-    google_subject,
+    identity_subject,
     verified_email,
     administrator
   )
   VALUES (
     sqlc.arg(username)::text,
-    'google',
-    sqlc.arg(google_subject)::text,
+    sqlc.arg(identity_provider)::text,
+    sqlc.arg(identity_subject)::text,
     sqlc.arg(verified_email)::text,
     TRUE
   )
-  ON CONFLICT (google_subject) WHERE google_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
-            google_subject,
+            identity_subject,
             verified_email,
             administrator,
             created_at,
@@ -227,7 +227,7 @@ WITH inserted_account AS (
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -244,7 +244,7 @@ WITH inserted_account AS (
   INSERT INTO athena_account (
     username,
     identity_provider,
-    google_subject,
+    identity_subject,
     verified_email,
     administrator
   )
@@ -252,7 +252,7 @@ WITH inserted_account AS (
   RETURNING account_id,
             username,
             identity_provider,
-            google_subject,
+            identity_subject,
             verified_email,
             administrator,
             created_at,
@@ -306,7 +306,7 @@ WITH inserted_account AS (
 SELECT account_id,
        username,
        identity_provider,
-       google_subject,
+       identity_subject,
        verified_email,
        administrator,
        created_at,
@@ -324,8 +324,8 @@ SET verified_email = sqlc.arg(verified_email)::text,
     last_login_at = NOW(),
     updated_at = NOW()
 WHERE account_id = sqlc.arg(account_id)::uuid
-  AND identity_provider = 'google'
-  AND google_subject = sqlc.arg(google_subject)::text
+  AND identity_provider = sqlc.arg(identity_provider)::text
+  AND identity_subject = sqlc.arg(identity_subject)::text
   AND EXISTS (
     SELECT 1
     FROM account_access
@@ -335,7 +335,7 @@ WHERE account_id = sqlc.arg(account_id)::uuid
 RETURNING account_id,
           username,
           identity_provider,
-          google_subject,
+          identity_subject,
           verified_email,
           administrator,
           created_at,
@@ -346,6 +346,8 @@ RETURNING account_id,
 WITH directory AS (
   SELECT account.account_id,
          account.username,
+         account.identity_provider,
+         account.identity_subject,
          account.verified_email,
          account.administrator,
          access.login_enabled,
@@ -372,6 +374,10 @@ WHERE (
     OR position(lower(sqlc.arg(search_query)::text) IN lower(username)) > 0
     OR position(lower(sqlc.arg(search_query)::text) IN lower(verified_email)) > 0
     OR position(lower(sqlc.arg(search_query)::text) IN lower(display_name)) > 0
+    OR (
+      identity_provider = 'solana_wallet'
+      AND position(sqlc.arg(search_query)::text IN identity_subject) > 0
+    )
     OR lower(sqlc.arg(search_query)::text) = account_id::text
   )
   AND (
@@ -391,6 +397,8 @@ WHERE (
 WITH directory AS (
   SELECT account.account_id,
          account.username,
+         account.identity_provider,
+         account.identity_subject,
          account.verified_email,
          account.administrator,
          account.created_at,
@@ -432,6 +440,10 @@ WHERE (
     OR position(lower(sqlc.arg(search_query)::text) IN lower(username)) > 0
     OR position(lower(sqlc.arg(search_query)::text) IN lower(verified_email)) > 0
     OR position(lower(sqlc.arg(search_query)::text) IN lower(display_name)) > 0
+    OR (
+      identity_provider = 'solana_wallet'
+      AND position(sqlc.arg(search_query)::text IN identity_subject) > 0
+    )
     OR lower(sqlc.arg(search_query)::text) = account_id::text
   )
   AND (

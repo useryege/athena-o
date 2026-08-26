@@ -22,7 +22,7 @@ type Querier interface {
 	DeleteAccountAPIKey(ctx context.Context, arg DeleteAccountAPIKeyParams) (string, error)
 	GetAccountAPIKeyByJTI(ctx context.Context, jti string) (GetAccountAPIKeyByJTIRow, error)
 	GetAccountAccessHead(ctx context.Context, accountID pgtype.UUID) (GetAccountAccessHeadRow, error)
-	GetAccountByGoogleSubject(ctx context.Context, googleSubject string) (AthenaAccount, error)
+	GetAccountByIdentity(ctx context.Context, arg GetAccountByIdentityParams) (AthenaAccount, error)
 	GetAccountPreferences(ctx context.Context, accountID pgtype.UUID) (GetAccountPreferencesRow, error)
 	GetAccountProfile(ctx context.Context, accountID pgtype.UUID) (GetAccountProfileRow, error)
 	GetAccountRecord(ctx context.Context, accountID pgtype.UUID) (AthenaAccount, error)

@@ -2,8 +2,8 @@ import {CheckCircleFilled, CloseCircleFilled, SafetyCertificateOutlined} from '@
 import {Alert, Button, Card, Input, Spin, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {BrandMark} from '../components';
-import {GoogleRegistration, registrationService, RegistrationRequestError, UsernameAvailability} from '../shared/services/registration-service';
-import requests from '../shared/services/requests';
+import {Registration, registrationService, RegistrationRequestError, UsernameAvailability} from '../shared/services/registration-service';
+import requests, {ACCOUNT_MAINTENANCE_MESSAGE} from '../shared/services/requests';
 
 type AvailabilityState = 'idle' | 'checking' | UsernameAvailability | 'error';
 
@@ -23,15 +23,45 @@ const registrationErrorMessage = (error: unknown, fallback: string) => {
         case 'username_unavailable':
             return 'That username is not available. Choose another one.';
         case 'registration_expired':
-            return 'Your registration session has expired. Continue with Google again.';
+            return 'Your registration session has expired. Return to sign in and try again.';
         case 'registration_unavailable':
             return 'Registration is temporarily unavailable. Please try again.';
         case 'google_not_allowed':
-            return 'This Google identity cannot complete registration.';
+            return 'This identity cannot complete registration.';
+        case 'maintenance':
+            return ACCOUNT_MAINTENANCE_MESSAGE;
         default:
             return fallback;
     }
 };
+
+interface DisconnectablePhantomProvider {
+    isPhantom?: boolean;
+    disconnect?(): Promise<void>;
+}
+
+const disconnectPhantomBestEffort = async () => {
+    const provider = (window as Window & {phantom?: {solana?: DisconnectablePhantomProvider}}).phantom?.solana;
+    if (!provider?.isPhantom || !provider.disconnect) {
+        return;
+    }
+    try {
+        await Promise.race([provider.disconnect(), new Promise<void>(resolve => window.setTimeout(resolve, 750))]);
+    } catch {
+        // The server-side ticket is authoritative. A wallet disconnect is only
+        // best-effort cleanup before the user chooses another Phantom account.
+    }
+};
+
+const registrationIdentity = (registration: Registration) =>
+    registration.provider === 'solana_wallet'
+        ? {label: 'Verified Phantom wallet', value: registration.solanaAddress}
+        : {label: 'Verified Google account', value: registration.verifiedEmail};
+
+const compactSolanaAddress = (address: string) => (address.length > 16 ? `${address.slice(0, 7)}…${address.slice(-7)}` : address);
+
+const restartLabel = (registration?: Registration) =>
+    registration?.provider === 'solana_wallet' ? 'Use another Phantom wallet' : registration ? 'Use another Google account' : 'Return to sign in';
 
 const availabilityPresentation: Record<AvailabilityState, {message: string; tone: 'muted' | 'success' | 'error'}> = {
     idle: {message: '3–42 characters: letters, numbers, periods, or hyphens.', tone: 'muted'},
@@ -55,7 +85,7 @@ const AvailabilityMessage = (props: {state: AvailabilityState}) => {
 };
 
 export const RegisterPage = () => {
-    const [registration, setRegistration] = React.useState<GoogleRegistration>();
+    const [registration, setRegistration] = React.useState<Registration>();
     const [loadError, setLoadError] = React.useState('');
     const [username, setUsername] = React.useState('');
     const [availability, setAvailability] = React.useState<AvailabilityState>('idle');
@@ -72,14 +102,15 @@ export const RegisterPage = () => {
                 if (!active) {
                     return;
                 }
-                if (!value.verifiedEmail || !value.csrfToken) {
+                const identity = registrationIdentity(value);
+                if (!identity.value || !value.csrfToken) {
                     throw new Error('Registration response is incomplete');
                 }
                 setRegistration(value);
             })
             .catch(error => {
                 if (active) {
-                    setLoadError(registrationErrorMessage(error, 'Unable to load your registration. Continue with Google again.'));
+                    setLoadError(registrationErrorMessage(error, 'Unable to load your registration. Return to sign in and try again.'));
                 }
             });
         return () => {
@@ -152,14 +183,14 @@ export const RegisterPage = () => {
         }
     };
 
-    const useAnotherGoogleAccount = async () => {
+    const restartSignIn = async () => {
         if (cancelling) {
             return;
         }
         setCancelling(true);
         setSubmitError('');
         try {
-            let redirectTo = '/auth/google/login?returnTo=%2Faccount%2Faccess';
+            let redirectTo = registration?.provider === 'google' ? '/auth/google/login?returnTo=%2Faccount%2Faccess' : '/login';
             if (registration?.csrfToken) {
                 try {
                     const cancelled = await registrationService.cancel(registration.csrfToken);
@@ -170,9 +201,15 @@ export const RegisterPage = () => {
                     }
                 }
             }
+            if (registration?.provider === 'solana_wallet') {
+                await disconnectPhantomBestEffort();
+            }
             window.location.assign(requests.toAbsURL(redirectTo));
         } catch (error) {
-            setSubmitError(registrationErrorMessage(error, 'Unable to restart Google sign-in. Please try again.'));
+            if (registration?.provider === 'solana_wallet') {
+                await disconnectPhantomBestEffort();
+            }
+            setSubmitError(registrationErrorMessage(error, 'Unable to restart sign-in. Please try again.'));
             setCancelling(false);
         }
     };
@@ -196,15 +233,15 @@ export const RegisterPage = () => {
                 {!registration && !loadError && (
                     <div className='registration-panel__loading' aria-live='polite'>
                         <Spin />
-                        <Typography.Text type='secondary'>Loading your verified account…</Typography.Text>
+                        <Typography.Text type='secondary'>Loading your verified identity…</Typography.Text>
                     </div>
                 )}
 
                 {loadError && (
                     <div className='registration-panel__failure'>
                         <Alert type='error' showIcon={true} title={loadError} />
-                        <Button block={true} htmlType='button' loading={cancelling} disabled={cancelling} onClick={useAnotherGoogleAccount}>
-                            Use another Google account
+                        <Button block={true} htmlType='button' loading={cancelling} disabled={cancelling} onClick={() => void restartSignIn()}>
+                            {restartLabel(registration)}
                         </Button>
                     </div>
                 )}
@@ -213,8 +250,12 @@ export const RegisterPage = () => {
                     <>
                         <section className='registration-identity' aria-label='Verified identity'>
                             <div>
-                                <Typography.Text type='secondary'>Verified Google account</Typography.Text>
-                                <strong>{registration.verifiedEmail}</strong>
+                                <Typography.Text type='secondary'>{registrationIdentity(registration).label}</Typography.Text>
+                                <Typography.Text
+                                    className='registration-identity__value'
+                                    copyable={registration.provider === 'solana_wallet' ? {text: registration.solanaAddress} : false}>
+                                    {registration.provider === 'solana_wallet' ? compactSolanaAddress(registration.solanaAddress) : registrationIdentity(registration).value}
+                                </Typography.Text>
                             </div>
                             {registration.administrator && (
                                 <Tag className='registration-identity__administrator' icon={<SafetyCertificateOutlined />} color='gold'>
@@ -252,8 +293,8 @@ export const RegisterPage = () => {
                                 <Button type='primary' block={true} htmlType='submit' loading={submitting} disabled={busy || availability !== 'available'}>
                                     Create account
                                 </Button>
-                                <Button block={true} htmlType='button' loading={cancelling} disabled={busy} onClick={useAnotherGoogleAccount}>
-                                    Use another Google account
+                                <Button block={true} htmlType='button' loading={cancelling} disabled={busy} onClick={() => void restartSignIn()}>
+                                    {restartLabel(registration)}
                                 </Button>
                             </div>
                         </form>

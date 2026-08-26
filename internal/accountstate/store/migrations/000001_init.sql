@@ -1,10 +1,54 @@
 -- +goose Up
 
+-- +goose StatementBegin
+CREATE FUNCTION athena_is_canonical_solana_public_key(value TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+DECLARE
+  alphabet CONSTANT TEXT := '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  encoded_length INTEGER := char_length(value);
+  leading_zero_bytes INTEGER := 0;
+  accumulator NUMERIC := 0;
+  remaining NUMERIC;
+  decoded_nonzero_bytes INTEGER := 0;
+  position_index INTEGER;
+  digit INTEGER;
+BEGIN
+  IF encoded_length < 32 OR encoded_length > 44 THEN
+    RETURN FALSE;
+  END IF;
+
+  FOR position_index IN 1..encoded_length LOOP
+    digit := strpos(alphabet, substr(value, position_index, 1)) - 1;
+    IF digit < 0 THEN
+      RETURN FALSE;
+    END IF;
+    IF position_index = leading_zero_bytes + 1 AND digit = 0 THEN
+      leading_zero_bytes := leading_zero_bytes + 1;
+    END IF;
+    accumulator := accumulator * 58 + digit;
+  END LOOP;
+
+  remaining := accumulator;
+  WHILE remaining > 0 LOOP
+    decoded_nonzero_bytes := decoded_nonzero_bytes + 1;
+    remaining := trunc(remaining / 256);
+  END LOOP;
+
+  RETURN leading_zero_bytes + decoded_nonzero_bytes = 32;
+END;
+$$;
+-- +goose StatementEnd
+
 CREATE TABLE athena_account (
   account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT NOT NULL,
   identity_provider TEXT NOT NULL,
-  google_subject TEXT,
+  identity_subject TEXT,
   verified_email TEXT NOT NULL DEFAULT '',
   administrator BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -21,14 +65,14 @@ CREATE TABLE athena_account (
     OR (administrator AND username = 'admin')
   ),
   CONSTRAINT athena_account_identity_provider_check CHECK (
-    identity_provider IN ('google', 'development')
+    identity_provider IN ('google', 'solana_wallet', 'development')
   ),
-  CONSTRAINT athena_account_google_subject_check CHECK (
-    google_subject IS NULL
+  CONSTRAINT athena_account_identity_subject_check CHECK (
+    identity_subject IS NULL
     OR (
-      google_subject = btrim(google_subject)
-      AND google_subject <> ''
-      AND google_subject !~ '[[:cntrl:]]'
+      identity_subject = btrim(identity_subject)
+      AND identity_subject <> ''
+      AND identity_subject !~ '[[:cntrl:]]'
     )
   ),
   CONSTRAINT athena_account_verified_email_check CHECK (
@@ -41,16 +85,26 @@ CREATE TABLE athena_account (
   CONSTRAINT athena_account_identity_binding_check CHECK (
     (
       identity_provider = 'google'
-      AND google_subject IS NOT NULL
+      AND identity_subject IS NOT NULL
       AND verified_email <> ''
     )
     OR (
+      identity_provider = 'solana_wallet'
+      AND identity_subject IS NOT NULL
+      AND athena_is_canonical_solana_public_key(identity_subject)
+      AND verified_email = ''
+      AND NOT administrator
+    )
+    OR (
       identity_provider = 'development'
-      AND google_subject IS NULL
+      AND identity_subject IS NULL
       AND verified_email = ''
       AND administrator
       AND username = 'local-admin'
     )
+  ),
+  CONSTRAINT athena_account_administrator_provider_check CHECK (
+    NOT administrator OR identity_provider IN ('google', 'development')
   ),
   CONSTRAINT athena_account_last_login_check CHECK (
     last_login_at IS NULL OR last_login_at >= created_at
@@ -60,9 +114,9 @@ CREATE TABLE athena_account (
 CREATE UNIQUE INDEX athena_account_username_lower_uidx
   ON athena_account (lower(username));
 
-CREATE UNIQUE INDEX athena_account_google_subject_uidx
-  ON athena_account (google_subject)
-  WHERE google_subject IS NOT NULL;
+CREATE UNIQUE INDEX athena_account_identity_uidx
+  ON athena_account (identity_provider, identity_subject)
+  WHERE identity_subject IS NOT NULL;
 
 CREATE UNIQUE INDEX athena_account_single_administrator_uidx
   ON athena_account (administrator)
@@ -200,7 +254,7 @@ CREATE INDEX account_api_key_account_issued_idx
 CREATE INDEX athena_account_recent_login_idx
   ON athena_account (last_login_at DESC NULLS LAST, account_id);
 
--- Normal authentication starts with no account rows. Google registration creates
+-- Normal authentication starts with no account rows. External registration creates
 -- a complete account aggregate, while disabled-auth development explicitly
 -- creates its isolated local administrator through the account-state store.
 
@@ -212,3 +266,4 @@ DROP TABLE account_profile;
 DROP TABLE account_module_access;
 DROP TABLE account_access;
 DROP TABLE athena_account;
+DROP FUNCTION athena_is_canonical_solana_public_key(TEXT);

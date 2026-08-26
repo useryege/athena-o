@@ -214,12 +214,14 @@ export const parseAccountAccess = (value: any): AccountAccess => {
 export enum AccountIdentityProvider {
     Unspecified = 'ACCOUNT_IDENTITY_PROVIDER_UNSPECIFIED',
     Google = 'ACCOUNT_IDENTITY_PROVIDER_GOOGLE',
-    Development = 'ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT'
+    Development = 'ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT',
+    SolanaWallet = 'ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET'
 }
 
 export interface AccountIdentity {
     provider: AccountIdentityProvider;
     verifiedEmail: string;
+    solanaAddress: string;
     createdAt: number;
     lastLoginAt: number;
 }
@@ -234,6 +236,10 @@ export const parseAccountIdentityProvider = (value: unknown): AccountIdentityPro
         case AccountIdentityProvider.Development:
         case 'development':
             return AccountIdentityProvider.Development;
+        case 3:
+        case AccountIdentityProvider.SolanaWallet:
+        case 'solana_wallet':
+            return AccountIdentityProvider.SolanaWallet;
         default:
             return AccountIdentityProvider.Unspecified;
     }
@@ -242,6 +248,7 @@ export const parseAccountIdentityProvider = (value: unknown): AccountIdentityPro
 export const parseAccountIdentity = (value: any): AccountIdentity => ({
     provider: parseAccountIdentityProvider(value?.provider),
     verifiedEmail: String(value?.verifiedEmail ?? value?.verified_email ?? ''),
+    solanaAddress: String(value?.solanaAddress ?? value?.solana_address ?? ''),
     createdAt: Number(value?.createdAt ?? value?.created_at ?? 0),
     lastLoginAt: Number(value?.lastLoginAt ?? value?.last_login_at ?? 0)
 });

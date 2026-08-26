@@ -76,17 +76,24 @@ key from `ATHENA_JWT_SECRET` or its `_FILE` form. The redirect path must be
 `/auth/google/callback`; production uses HTTPS and localhost development may use
 HTTP.
 
-Any fully verified Google user may sign in. The server persists an unknown
-subject only in a 15-minute registration ticket and redirects the browser to
-`/register`; no account or Athena cookie exists until the user submits an
-available permanent username. Successful registration creates a UUID
-`account_id` as the internal identity and gives an ordinary account Pending
-access. A verified email matching `ATHENA_ADMIN_GOOGLE_EMAIL` marks an
-administrator candidate whose new account receives `administrator=true`; the
-role never comes from its username. No per-user subject environment variables
-or password login are used. `--disable-auth` skips these OIDC inputs only for the
-loopback development identity. Reset local state before switching between that
-identity and normal OIDC.
+The same redirect URI's scheme and authority define the trusted Sign-In With
+Solana domain and URI. Desktop Phantom login adds no App ID, client secret,
+callback, Solana RPC, or per-wallet environment variable. The reverse proxy
+must forward `/auth/phantom/*` and `/auth/registration*` without path rewriting
+in addition to `/auth/google/*`.
+
+Any fully verified Google user or valid Phantom Solana signer may start sign-in.
+The server persists an unknown provider identity only in a shared 15-minute
+registration ticket and directs the browser to `/register`; no account or
+Athena cookie exists until the user submits an available permanent username.
+Successful registration creates a UUID `account_id` as the internal identity
+and gives an ordinary account Pending access. A verified Google email matching
+`ATHENA_ADMIN_GOOGLE_EMAIL` marks the sole administrator candidate; Phantom
+identities can never be administrators. Google and Phantom identities remain
+separate accounts with permanent bindings. No per-user identity environment
+variables or password login are used. `--disable-auth` skips external-login
+inputs only for the loopback development identity. Reset local state before
+switching between that identity and normal authentication.
 
 ### SEE ALSO
 

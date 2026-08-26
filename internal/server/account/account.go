@@ -158,7 +158,8 @@ func toAPIAccount(a accountcredentials.Account, access accountaccesscore.Access,
 	}
 }
 
-// ToAPIAccountIdentity projects safe Google identity metadata without its subject.
+// ToAPIAccountIdentity projects safe external identity metadata. Google
+// subjects remain server-only; a Solana public key is intentionally public.
 func ToAPIAccountIdentity(a accountcredentials.Account) *account.AccountIdentity {
 	identity := &account.AccountIdentity{
 		VerifiedEmail: a.VerifiedEmail,
@@ -166,6 +167,9 @@ func ToAPIAccountIdentity(a accountcredentials.Account) *account.AccountIdentity
 	switch a.IdentityProvider {
 	case accountcredentials.IdentityProviderGoogle:
 		identity.Provider = account.AccountIdentityProvider_ACCOUNT_IDENTITY_PROVIDER_GOOGLE
+	case accountcredentials.IdentityProviderSolanaWallet:
+		identity.Provider = account.AccountIdentityProvider_ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET
+		identity.SolanaAddress = a.IdentitySubject
 	case accountcredentials.IdentityProviderDevelopment:
 		identity.Provider = account.AccountIdentityProvider_ACCOUNT_IDENTITY_PROVIDER_DEVELOPMENT
 	}

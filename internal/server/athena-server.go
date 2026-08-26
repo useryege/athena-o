@@ -39,11 +39,13 @@ import (
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
 	accountstatestore "github.com/useryege/athena/internal/accountstate/store"
+	"github.com/useryege/athena/internal/authregistration"
 	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	"github.com/useryege/athena/internal/googleoidc"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	"github.com/useryege/athena/internal/phantomauth"
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	"github.com/useryege/athena/internal/server/account"
 	"github.com/useryege/athena/internal/server/accountavatarhttp"
@@ -151,7 +153,9 @@ type AthenaServer struct {
 	accountCenter        *accountcenter.Manager
 	accountAvatarHTTP    *accountavatarhttp.Handler
 	accessController     *accountaccess.Controller
+	authRegistration     *authregistration.Handler
 	googleOIDC           *googleoidc.Handler
+	phantomAuth          *phantomauth.Handler
 	developmentAccountID string
 	// db db.AthenaDB
 
@@ -250,7 +254,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		for _, configuredAccount := range credentialMgr.List() {
 			if configuredAccount.IdentityProvider == accountcredentials.IdentityProviderDevelopment {
 				_ = accountStateStore.Close()
-				errorsutil.CheckError(fmt.Errorf("development identity exists while authentication is enabled; reset account state before using Google OIDC"))
+				errorsutil.CheckError(fmt.Errorf("development identity exists while authentication is enabled; reset account state before using external authentication"))
 			}
 		}
 	}
@@ -268,18 +272,26 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
 
 	sessionMgr := util_session.NewSessionManager(credentialMgr, jwtCodec, userStateStorage, accessController)
+	var registrationHandler *authregistration.Handler
 	var googleOIDCHandler *googleoidc.Handler
+	var phantomAuthHandler *phantomauth.Handler
 	if !opts.DisableAuth {
 		googleOIDCConfig, err := googleoidc.LoadConfigFromEnv()
+		errorsutil.CheckError(err)
+		externalAuth, err := newExternalAuthBackend(credentialMgr, sessionMgr, settings.UserSessionDuration)
+		errorsutil.CheckError(err)
+		registrationStore, err := authregistration.NewStore(opts.RedisClient)
+		errorsutil.CheckError(err)
+		registrationHandler, err = authregistration.NewHandler(registrationStore, externalAuth, opts.BaseHRef, googleOIDCConfig.SecureCookie())
 		errorsutil.CheckError(err)
 		googleOIDCHandler, err = googleoidc.NewHandler(
 			googleOIDCConfig,
 			opts.RedisClient,
-			credentialMgr,
-			sessionMgr,
-			settings.UserSessionDuration,
-			opts.BaseHRef,
+			externalAuth,
+			registrationHandler,
 		)
+		errorsutil.CheckError(err)
+		phantomAuthHandler, err = phantomauth.NewHandler(opts.RedisClient, externalAuth, registrationHandler, googleOIDCConfig.PublicOrigin())
 		errorsutil.CheckError(err)
 	}
 
@@ -314,7 +326,9 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		accountStateStore:    accountStateStore,
 		accountCenter:        accountCenter,
 		accessController:     accessController,
+		authRegistration:     registrationHandler,
 		googleOIDC:           googleOIDCHandler,
+		phantomAuth:          phantomAuthHandler,
 		developmentAccountID: developmentAccountID,
 		userStateStorage:     userStateStorage,
 		staticAssets:         http.FS(staticFS),
@@ -804,8 +818,14 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	if server.googleOIDC != nil {
 		publicHandlers["/auth/google/login"] = http.HandlerFunc(server.googleOIDC.Login)
 		publicHandlers["/auth/google/callback"] = http.HandlerFunc(server.googleOIDC.Callback)
-		publicHandlers["/auth/google/registration"] = http.HandlerFunc(server.googleOIDC.Registration)
-		publicHandlers["/auth/google/registration/username-availability"] = http.HandlerFunc(server.googleOIDC.UsernameAvailability)
+	}
+	if server.authRegistration != nil {
+		publicHandlers["/auth/registration"] = http.HandlerFunc(server.authRegistration.Registration)
+		publicHandlers["/auth/registration/username-availability"] = http.HandlerFunc(server.authRegistration.UsernameAvailability)
+	}
+	if server.phantomAuth != nil {
+		publicHandlers["/auth/phantom/challenge"] = http.HandlerFunc(server.phantomAuth.Challenge)
+		publicHandlers["/auth/phantom/verify"] = http.HandlerFunc(server.phantomAuth.Verify)
 	}
 	httpS := http.Server{
 		Addr: endpoint,

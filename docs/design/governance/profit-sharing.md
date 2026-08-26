@@ -13,7 +13,7 @@ round snapshots used only for readable labels.
 current login, administrator role, and the independent Profit Sharing
 entitlement. [Account Credentials](../identity-access/account-credentials.md)
 owns UUID identity and immutable username. Profit Sharing does not create
-accounts, resolve Google subjects, or infer role from username.
+accounts, resolve external identity subjects, or infer role from username.
 
 ## Source Locations
 
@@ -58,8 +58,9 @@ the selection value and React/domain key.
    presentation strings and snapshots each current immutable username and
    current display name from account state.
 2. `OpenRound` reloads the draft projection and revalidates every UUID. Each must
-   still be registered, ordinary, distinct, login enabled, and Profit Sharing
-   enabled. It sends the exact validated UUID set to the domain service.
+   still be registered, ordinary, distinct, login enabled, Profit Sharing
+   enabled, and backed by a valid Google or Solana external login identity. It
+   sends the exact validated UUID set to the domain service.
 3. The domain transaction compares that set with the complete durable roster,
    verifies revision and draft fields, locks the round, and opens only on exact
    equality. It creates one proposal per participant and one proposal item for
@@ -129,7 +130,7 @@ username, display name, role, and eligibility come through the API Server.
 - Open accepts exactly five distinct, registered, login-enabled, Profit-Sharing-
   enabled ordinary UUID accounts.
 - Role and self identity are never inferred from username, display name, email,
-  or Google subject.
+  Solana address, or another external identity subject.
 - Username/display-name snapshots are presentation only and cannot change a
   relationship or historical round.
 - The administrator owns lifecycle actions and cannot act as a participant.
@@ -157,7 +158,8 @@ subsequent member request rechecks current account access.
 
 Authorization denials distinguish login, Profit Sharing entitlement, role, and
 round membership. Logs use account UUID, round slug/ID, proposal ID, and ballot
-number; Google subjects, JWTs, and API Key JTIs are excluded. Standard gRPC
+number; external identity subjects, JWTs, and API Key JTIs are excluded.
+Standard gRPC
 health and Service Status report process reachability. Durable timestamps and
 revisions are the workflow diagnostic record.
 

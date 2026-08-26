@@ -63,8 +63,8 @@ go run tools/jwt-secret/main.go -format hex
 ATHENA_JWT_SECRET='<generated-secret>'
 ```
 
-Google OIDC 登录和 API Key 都使用 Athena 自有 JWT v3；JWT subject 中保存规范化的
-UUID `account_id`，不保存 username。切换认证方案或需要强制
+Google OIDC、Phantom 钱包登录和 API Key 都使用 Athena 自有 JWT v3；JWT subject
+中保存规范化的 UUID `account_id`，不保存 username。切换认证方案或需要强制
 所有浏览器会话与 API Key 失效时，生成新值并替换 `ATHENA_JWT_SECRET`；随后所有
 用户需要重新登录，自动化调用方需要重新创建 API Key。
 
@@ -107,7 +107,7 @@ ATHENA_WALLET_ENCRYPTION_KEY='<wallet-encryption-key>' go run tools/wallet-priva
 decode('<generated-ciphertext-hex>', 'hex')
 ```
 
-## Google OIDC 配置
+## 浏览器认证配置
 
 Google 只负责确认外部身份。任意通过完整 OIDC 校验且邮箱已验证的 Google 用户都可
 开始注册；未知 `sub` 的 callback 只创建 15 分钟注册票据并跳转 `/register`，不会
@@ -130,11 +130,21 @@ redirect URI：
 - 生产：`https://<athena-domain>/auth/google/callback`
 
 生产 URI 必须显式使用 HTTPS。Athena 不会从请求的 `Host`、
-`X-Forwarded-Host` 等 header 推断回调地址。已注册账号始终按 Google `sub` 查找；
+`X-Forwarded-Host` 等 header 推断回调地址。该 URI 的 scheme 与 authority 同时是
+Phantom SIWS 消息使用的固定 domain/URI 信任边界。已注册 Google 账号始终按
+`(google, sub)` 查找；
 邮箱只用于安全审计，以及标记尚未注册的管理员候选。管理员邮箱比较仅去除首尾空白
 并忽略大小写，不归并 Gmail 点号或 `+alias`。候选人仍需在 `/register` 选择永久
 username；注册事务创建 `administrator=true` 的唯一管理员记录，权限来自该字段而
 不是 username。持久化 `sub` 此后永久优先，修改环境邮箱不能替换管理员身份。
+
+Phantom 首版只使用桌面浏览器注入的 `window.phantom.solana`，不引入 SDK，也不需要
+App ID、client secret、移动端 callback、Solana RPC 或任何新环境变量。浏览器从
+`/auth/phantom/challenge` 获取服务端生成的五分钟 SIWS 文本，使用 Ed25519
+`signMessage` 签名，再提交 `/auth/phantom/verify`。签名只证明地址控制权，不发起
+交易、不产生网络费用，也不读取余额或私钥。未知地址与未知 Google subject 都进入
+共享 `/auth/registration` 选择永久 username；两种身份始终创建独立 UUID 账号，
+不能合并、换绑或转让。Phantom 注册永远是 Pending 普通账号，不能认领管理员。
 
 本地开发可直接设置 `ATHENA_GOOGLE_OIDC_CLIENT_SECRET`。生产必须保持该变量为空，
 只使用独立文件：
@@ -155,7 +165,7 @@ install -m 0600 /secure/source/google-oidc-client-secret secrets/google-oidc-cli
 `/run/secrets/google-oidc-client-secret`；migration 和其他业务容器不会获得文件
 内容。本地生产预演让 `athena-server` 使用当前宿主机 UID 读取该用户自己的 `0600`
 文件；远程部署脚本把上传副本改为容器 UID/GID `999` 持有并保持 `0600`。设置
-`ATHENA_SERVER_DISABLE_AUTH=true` 时保留开发管理员旁路，不要求 Google 配置；
+`ATHENA_SERVER_DISABLE_AUTH=true` 时保留开发管理员旁路，不要求外部认证配置；
 该旁路只允许非 Compose 的开发进程监听 loopback 地址。生产 Compose 固定启用认证，
 部署脚本会拒绝该旁路。
 
@@ -207,8 +217,9 @@ Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首
 包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
 默认启用 API Server 认证。普通用户完成 username 注册后创建 Pending 账号，管理员
 授予独立 Profit Sharing 权限并把账号加入轮次后，用户才能提交方案或投票。账号间
-引用使用 UUID `account_id`，界面显示不可修改的 `@username`；管理员身份来自持久化
-`administrator` 字段，此后始终按绑定的 Google `sub` 登录。
+引用使用 UUID `account_id`，界面显示不可修改的 `@username`；普通参与者可以绑定
+Google 或 Solana 外部身份，管理员身份仍只来自持久化 `administrator` 字段并按
+Google `sub` 登录。
 
 `make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
 `/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
@@ -273,9 +284,10 @@ make prod-start-local
 `prod-start-local` 会强制设置 `ATHENA_SERVER_DISABLE_AUTH=false`，即使环境文件中配置为
 `true`，本地生产预演仍会启用服务端认证。运行前必须创建
 `./secrets/google-oidc-client-secret` 并配置真实的 client ID、生产预演回调 URI 和
-管理员 Google 邮箱；缺失配置会使 API Server 拒绝启动。未知 Google 身份验证成功后
-会先进入 `/register`；用户提交永久 username 后才创建管理员或 Pending 普通账号，
-不需要预先提取 `sub`。
+管理员 Google 邮箱；缺失配置会使 API Server 拒绝启动。未知 Google 或 Phantom
+身份验证成功后会先进入 `/register`；用户提交永久 username 后才创建管理员或
+Pending 普通账号，不需要预先提取 `sub` 或配置 Solana 地址。Phantom 不需要额外
+生产 secret。
 Compose 会同时使用 `$(PROD_ENV_FILE)` 做变量插值和容器 `env_file` 注入，不会回退
 读取仓库根目录的 `.env`。`prod-reset-secrets` 会把该文件权限收紧为 `0600`。
 
@@ -380,9 +392,9 @@ migration，初始化私有 bucket，最后启动全部服务并输出容器状�
 **每次远程部署都会永久删除已有 PostgreSQL、Redis 和 MinIO 数据，并轮换
 PostgreSQL、Redis、MinIO 和 JWT 凭据，不会自动备份。** 动态账号、管理员绑定、
 Profile、权限、Profit Sharing 引用、头像、会话和 API Key 都不会迁移。所有用户
-必须重新使用 Google 登录并设置永久 username，管理员重新授权；需要自动化访问的账号
-必须在获得 API Key 权限后创建新的 v3 Key。migration 或 bucket 初始化失败时不会
-启动 API Server。
+必须重新使用 Google 或 Phantom 登录并设置永久 username，管理员重新授权；需要
+自动化访问的账号必须在获得 API Key 权限后创建新的 v3 Key。migration 或 bucket
+初始化失败时不会启动 API Server。
 
 如需只手动更新生产凭据文件而不部署：
 

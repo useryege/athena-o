@@ -37,7 +37,7 @@ const useEligibleAccountOptions = () => {
         setKnownOptions(current => {
             const next = new Map(current);
             accounts.data.items.forEach(account => {
-                const values = [account.profile.displayName, account.identity.verifiedEmail, `@${account.username}`].filter(Boolean);
+                const values = [account.profile.displayName, account.identity.verifiedEmail || account.identity.solanaAddress, `@${account.username}`].filter(Boolean);
                 next.set(account.id, {
                     value: account.id,
                     label: Array.from(new Set(values)).join(' · '),
@@ -177,7 +177,7 @@ const RoundDefinitionFields = (props: {
                 <div>
                     <Typography.Title level={3}>Participants</Typography.Title>
                     <Typography.Text type='secondary'>
-                        Search for exactly five non-administrator accounts with Google sign-in and Profit Sharing access. Draft definitions may contain fewer.
+                        Search for exactly five non-administrator accounts with sign-in and Profit Sharing access. Draft definitions may contain fewer.
                     </Typography.Text>
                 </div>
             </div>
