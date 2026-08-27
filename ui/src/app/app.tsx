@@ -453,7 +453,7 @@ const loadInitialSessionState = (session: AppBootstrapSession): SessionState => 
 const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do not have permission to access this page.' />;
 
 const narrowShellQuery = '(max-width: 900px)';
-const desktopExpandedSidebarWidth = 260;
+const desktopExpandedSidebarWidth = 272;
 const mobileExpandedSidebarWidth = 248;
 
 const useNarrowShell = () => {
