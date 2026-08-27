@@ -23,6 +23,17 @@ const stateCookieName = "athena.google.state"
 type googleClaims struct {
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified"`
+	AuthTime      int64  `json:"auth_time"`
+}
+
+type verifiedGoogleIdentity struct {
+	identity authregistration.Identity
+}
+
+type googleVerificationError struct {
+	reason string
+	stage  string
+	err    error
 }
 
 // Handler implements the browser Google Authorization Code + PKCE flow.
@@ -34,6 +45,7 @@ type Handler struct {
 	registrations *authregistration.Handler
 	secureCookie  bool
 	adminEmail    string
+	walletSecrets *walletSecretReauthentication
 }
 
 // NewHandler constructs the flow without contacting Google. Remote JWKS are
@@ -122,6 +134,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Callback consumes the transaction, verifies Google identity, and either
 // begins shared username registration or issues an Athena-only browser session.
 func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
+	if h.walletSecrets != nil && h.walletSecrets.ownsCallback(r) {
+		h.walletSecrets.callback(w, r)
+		return
+	}
 	authregistration.SetResponseHeaders(w)
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")
@@ -158,45 +174,12 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	networkContext, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-	defer cancel()
-	googleToken, err := h.oauth2Config.Exchange(networkContext, r.URL.Query().Get("code"), oauth2.VerifierOption(transaction.Verifier))
-	if err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "code_exchange", err)
+	verified, verificationErr := h.exchangeAndVerify(r.Context(), r.URL.Query().Get("code"), transaction.Verifier, transaction.Nonce, time.Time{})
+	if verificationErr != nil {
+		h.fail(w, r, verificationErr.reason, returnTo, verificationErr.stage, verificationErr.err)
 		return
 	}
-	rawIDToken, ok := googleToken.Extra("id_token").(string)
-	if !ok || rawIDToken == "" {
-		h.fail(w, r, "google_unavailable", returnTo, "id_token_missing", nil)
-		return
-	}
-	idToken, err := h.verifier.Verify(networkContext, rawIDToken)
-	if err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "id_token_verify", err)
-		return
-	}
-	if idToken.Issuer != "https://accounts.google.com" && idToken.Issuer != "accounts.google.com" {
-		h.fail(w, r, "google_not_allowed", returnTo, "issuer_verify", nil)
-		return
-	}
-	if idToken.IssuedAt.IsZero() || idToken.IssuedAt.After(time.Now().Add(time.Minute)) || idToken.Expiry.IsZero() {
-		h.fail(w, r, "google_not_allowed", returnTo, "token_time_verify", nil)
-		return
-	}
-	if idToken.Subject == "" || !authregistration.ConstantTimeEqual(idToken.Nonce, transaction.Nonce) {
-		h.fail(w, r, "google_not_allowed", returnTo, "identity_claims", nil)
-		return
-	}
-	var claims googleClaims
-	if err := idToken.Claims(&claims); err != nil || !claims.EmailVerified || strings.TrimSpace(claims.Email) == "" {
-		h.fail(w, r, "google_not_allowed", returnTo, "email_verify", err)
-		return
-	}
-	identity := authregistration.Identity{
-		Provider:      accountcredentials.IdentityProviderGoogle,
-		Subject:       idToken.Subject,
-		VerifiedEmail: strings.TrimSpace(claims.Email),
-	}
+	identity := verified.identity
 	account, found, err := h.backend.GetByIdentity(r.Context(), identity)
 	if err != nil {
 		h.fail(w, r, "google_unavailable", returnTo, "identity_lookup", err)
@@ -213,6 +196,57 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.completeLogin(w, r, account, identity, returnTo)
+}
+
+// exchangeAndVerify is the shared Google code-exchange and OIDC verification
+// primitive used by both primary login and wallet-secret reauthentication.
+// A non-zero reauthenticatedAfter additionally requires a fresh auth_time.
+func (h *Handler) exchangeAndVerify(ctx context.Context, code, verifier, nonce string, reauthenticatedAfter time.Time) (verifiedGoogleIdentity, *googleVerificationError) {
+	networkContext, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	googleToken, err := h.oauth2Config.Exchange(networkContext, code, oauth2.VerifierOption(verifier))
+	if err != nil {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_unavailable", stage: "code_exchange", err: err}
+	}
+	rawIDToken, ok := googleToken.Extra("id_token").(string)
+	if !ok || rawIDToken == "" {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_unavailable", stage: "id_token_missing"}
+	}
+	idToken, err := h.verifier.Verify(networkContext, rawIDToken)
+	if err != nil {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_unavailable", stage: "id_token_verify", err: err}
+	}
+	if idToken.Issuer != "https://accounts.google.com" && idToken.Issuer != "accounts.google.com" {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_not_allowed", stage: "issuer_verify"}
+	}
+	now := time.Now().UTC()
+	if idToken.IssuedAt.IsZero() || idToken.IssuedAt.After(now.Add(time.Minute)) || idToken.Expiry.IsZero() {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_not_allowed", stage: "token_time_verify"}
+	}
+	if idToken.Subject == "" || !authregistration.ConstantTimeEqual(idToken.Nonce, nonce) {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_not_allowed", stage: "identity_claims"}
+	}
+	var claims googleClaims
+	if err := idToken.Claims(&claims); err != nil || !claims.EmailVerified || strings.TrimSpace(claims.Email) == "" {
+		return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_not_allowed", stage: "email_verify", err: err}
+	}
+	authTime := time.Time{}
+	if !reauthenticatedAfter.IsZero() {
+		if claims.AuthTime <= 0 {
+			return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_not_allowed", stage: "auth_time_missing"}
+		}
+		authTime = time.Unix(claims.AuthTime, 0).UTC()
+		if authTime.After(now.Add(time.Minute)) || authTime.Before(reauthenticatedAfter.Add(-time.Minute)) {
+			return verifiedGoogleIdentity{}, &googleVerificationError{reason: "google_not_allowed", stage: "auth_time_stale"}
+		}
+	}
+	return verifiedGoogleIdentity{
+		identity: authregistration.Identity{
+			Provider:      accountcredentials.IdentityProviderGoogle,
+			Subject:       idToken.Subject,
+			VerifiedEmail: strings.TrimSpace(claims.Email),
+		},
+	}, nil
 }
 
 func (h *Handler) completeLogin(w http.ResponseWriter, r *http.Request, account authregistration.Account, identity authregistration.Identity, returnTo string) {

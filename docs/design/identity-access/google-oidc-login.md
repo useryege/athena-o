@@ -7,6 +7,9 @@ OAuth transactions, Google ID-token verification, administrator candidacy, and
 the handoff of a verified Google identity to either Athena session issuance or
 shared anonymous username registration. Any Google identity with a fully
 verified ID token and `email_verified=true` may start registration.
+The same OIDC client and callback also provide an independent fresh proof for
+wallet private-key reveal; that state machine is bound to an existing Athena
+login and issues a short wallet-secret lease rather than another login session.
 
 [Account Credentials](account-credentials.md) owns UUID accounts, immutable
 usernames, external identity bindings, and JWT v3. The provider-neutral
@@ -23,6 +26,8 @@ logout are outside this capability.
 | Client and administrator-candidate configuration | [internal/googleoidc/config.go](../../../internal/googleoidc/config.go) | `Config`, `LoadConfigFromEnv` |
 | One-time OAuth state | [internal/googleoidc/store.go](../../../internal/googleoidc/store.go) | `TransactionStore`, `Create`, `Consume`, `transactionTTL` |
 | Google HTTP flow | [internal/googleoidc/handler.go](../../../internal/googleoidc/handler.go) | `Handler`, `Login`, `Callback` |
+| Wallet-secret reauthentication | [internal/googleoidc/wallet_secret_reauth.go](../../../internal/googleoidc/wallet_secret_reauth.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go) | `WalletSecretReauthentication`, `walletSecretReauthentication.callback`, `walletSecretTransactionStore` |
+| Wallet-secret provider-state limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
 | Shared registration state and HTTP resource | [internal/authregistration/store.go](../../../internal/authregistration/store.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Store`, `Handler`, `Begin`, `Registration`, `UsernameAvailability`, `ValidateReturnTo` |
 | Durable identity and session boundary | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `GetByIdentity`, `RegisterExternalAccount`, `CreateExternalLogin` |
 | Session cookie and logout | [util/http/http.go](../../../util/http/http.go), [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `SetTokenCookie`, `Handler.ServeHTTP` |
@@ -40,6 +45,7 @@ flowchart LR
     H -->|"exchange and verify"| G
     H -->|"known provider + subject"| S["Athena JWT v3 cookie"]
     H -->|"unknown provider + subject"| T["Shared 15 min registration ticket"]
+    H -->|"existing session + same fresh subject"| W["Five-minute wallet-secret lease"]
     T --> U["/register username setup"]
     U --> D["PostgreSQL account aggregate"]
     D --> S
@@ -56,6 +62,12 @@ handler gives a verified `authregistration.Identity` to the shared registration
 handler. PostgreSQL receives no row and Athena signs no token until the browser
 submits its permanent username. The registration page does not initialize the
 authenticated application shell.
+
+Wallet-secret state is a separate `ws.` namespace handled before normal callback
+processing. It reuses the code-exchange and ID-token verification primitive but
+does not enter identity lookup, registration, login audit, or Athena cookie
+issuance. [Wallet Secret Reauthentication](wallet-secret-reauthentication.md)
+owns the resulting lease and native private-key boundary.
 
 ## Runtime Flow
 
@@ -107,8 +119,22 @@ authenticated application shell.
     submission wins with `409 registration_unavailable`; otherwise deletion
     clears the cookie and returns a fresh
     `/auth/google/login?returnTo=...` URL for account selection.
-12. `/auth/logout` revokes and clears only the Athena login credential. It never
-    attempts to log the browser out of the global Google session.
+12. A logged-in Google account may start
+    `GET /auth/wallet-secrets/google?returnTo=/wallet`. Athena creates an
+    independent five-minute Redis transaction and state cookie bound to account
+    UUID, Session JTI digest, access revision, PKCE verifier, nonce, and safe
+    return path. One Redis Lua operation atomically enforces the wallet-secret
+    global and authenticated-account creation limits and writes the transaction,
+    then Athena redirects with `prompt=select_account` and `max_age=0`.
+13. The shared callback recognizes the `ws.` state, atomically consumes that
+    transaction, repeats the current login and access bindings, and calls
+    `exchangeAndVerify` with the transaction creation time. The ID token must
+    contain a fresh `auth_time`, and its stable `sub` must equal the same
+    persisted Google binding. Success issues only a fixed five-minute
+    wallet-secret lease and returns to the saved path.
+14. `/auth/logout` revokes and clears the Athena login credential and clears the
+    wallet-secret lease cookie. It never attempts to log the browser out of the
+    global Google session.
 
 ## State / Data
 
@@ -117,6 +143,18 @@ five-minute lifetime and is atomically read-and-deleted. Shared registration
 state has a 15-minute lifetime; submission claims serialize one ticket for up to
 one minute and are released only by their owner after retryable failure.
 Successful completion deletes both keys.
+
+Wallet-secret Google state is an additional five-minute, single-use Redis
+transaction. It stores no Google token or raw JTI. Its dedicated state cookie is
+HttpOnly, SameSite=Lax, Secure in production, and scoped to `/auth/google`, so
+the existing callback can validate the browser binding. Its success and failure
+responses use the wallet-secret no-store policy.
+
+Google and Solana wallet-secret provider states share a dedicated fixed-window
+Redis budget of 120 creations globally and 20 per authenticated account per
+minute. These counters do not reuse primary-login counters. The account counter
+key contains a SHA-256 digest rather than the raw account UUID, and the counter
+checks and transaction write are one atomic operation.
 
 The OAuth state cookie is scoped to `/auth/google`, SameSite=Lax, HttpOnly, and
 Secure for HTTPS deployments. The shared registration cookie is scoped to
@@ -154,6 +192,10 @@ Local and production use separate Web application clients with separately
 registered exact callback URIs. The configured redirect origin is also the
 fixed domain/URI authority for Solana wallet messages; request `Host` and
 Forwarded headers never select either trust boundary.
+Wallet-secret Google reauthentication adds no client, callback, or secret
+setting; it reuses this verified configuration and keeps a distinct Redis state
+namespace and browser cookie. Its shared wallet-secret rate counters are also
+separate from primary Google login counters.
 
 ## Invariants
 
@@ -166,6 +208,12 @@ Forwarded headers never select either trust boundary.
   final.
 - OAuth state and successful registration tickets are one-time and browser-
   bound.
+- Wallet-secret Google state is independent from primary login, is bound to the
+  current account/JTI/access revision, and can issue only a wallet-secret lease.
+- Fresh wallet proof requires the same persisted Google `sub` and an `auth_time`
+  fresh relative to the reauthentication transaction.
+- Wallet-secret transaction creation is atomically rate-limited in the shared
+  wallet-secret namespace, with no raw account UUID in its counter key.
 - Email is never a durable identity key, relationship key, or JWT subject.
 - Google and Solana provider identities remain permanently separate accounts.
 - Google tokens, subjects, registration IDs, and Athena credentials stay out of
@@ -195,13 +243,20 @@ race allows one identity to commit; the other retains its ticket and chooses
 another name. A second administrator candidate cannot displace the persisted
 role.
 
+Wallet reauthentication maps missing, expired, replayed, stale-session, or
+wrong-subject state to `WALLET_REAUTH_REQUIRED`; a missing login maps to
+`WALLET_LOGIN_SESSION_REQUIRED`; and Redis, rate-budget exhaustion, exchange, or
+JWKS unavailability maps to `WALLET_REAUTH_UNAVAILABLE`. None replaces the
+Athena login cookie or returns a private key.
+
 ## Observability
 
 Login and registration counters retain success/failure signals. Structured logs
 include provider, stable stage and reason values, and account UUID only after it
 exists. Email and subject are not metric labels. Authorization codes, Google
 tokens, Athena JWTs, client secrets, registration ticket IDs, and CSRF secrets
-are never logged. Health checks do not probe Google.
+are never logged. Wallet-secret state, Session JTIs, and lease values are also
+excluded. Health checks do not probe Google.
 
 ## Change Checklist
 
@@ -210,4 +265,7 @@ are never logged. Health checks do not probe Google.
 - [ ] Registration cookie, CSRF, claim, and one-time consumption semantics remain current.
 - [ ] Administrator candidacy and subject-first identity rules remain current.
 - [ ] Public/browser boundaries still exclude Google tokens and subjects.
+- [ ] Wallet-secret transaction creation retains its independent atomic global
+      and account rate limits.
+- [ ] Wallet-secret state, fresh `auth_time`, same-subject, and lease-only behavior remain current.
 - [ ] The [design index](../README.md) contains the current summary.

@@ -1424,56 +1424,28 @@ message TokenWalletTransactionCount {
   optional int64 transactionCount = 2;
 }
 
-message WalletDetail {
-  optional int64 id = 1;
-
-  optional string chain = 2;
-
-  optional string type = 12;
-
-  optional string address = 3;
-
-  optional string alias = 4;
-
-  optional string source = 5;
-
-  optional string derivation_path = 6;
-
-  optional string created_at = 7;
-
-  optional string updated_at = 8;
-
-  optional string private_key = 9;
-
-  optional string mnemonic = 10;
-
-  optional string owner_account_id = 11;
-
-  optional bool system_owned = 13;
-}
-
 message WalletItem {
   optional int64 id = 1;
 
-  optional string chain = 2;
-
-  optional string type = 10;
+  optional string wallet_type = 2;
 
   optional string address = 3;
 
-  optional string alias = 4;
+  optional string remark = 4;
 
   optional string source = 5;
 
-  optional string derivation_path = 6;
+  optional string avatar_kind = 6;
 
-  optional string created_at = 7;
+  optional string avatar_preset_id = 7;
 
-  optional string updated_at = 8;
+  optional string avatar_url = 8;
 
-  optional string owner_account_id = 9;
+  optional uint64 revision = 9;
 
-  optional bool system_owned = 11;
+  optional string created_at = 10;
+
+  optional string updated_at = 11;
 }
 
 message WalletStatus {

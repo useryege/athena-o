@@ -78,9 +78,12 @@ func NewCommand() *cobra.Command {
 		cacheSrc    func() (*servercache.Cache, error)
 	)
 	command := &cobra.Command{
-		Use:               cliName,
-		Short:             "Run the Athena API server",
-		Long:              "The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems.  This command runs API server in the foreground.  It can be configured by following options.",
+		Use:   cliName,
+		Short: "Run the Athena API server",
+		Long: "The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems. " +
+			"This command runs API server in the foreground. It can be configured by following options.\n\n" +
+			"ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes without whitespace and must match the Wallet service value. " +
+			"It is an internal service credential, not an Athena user API Key, and the server refuses startup when it is absent or invalid.",
 		DisableAutoGenTag: true,
 		RunE: func(c *cobra.Command, _ []string) error {
 			ctx := c.Context()
@@ -122,7 +125,10 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("create notification clientset: %w", err)
 			}
 			defer utilio.Close(notificationclientset)
-			walletclientset, err := walletapiclient.NewWalletClientset(walletServerAddress)
+			walletclientset, err := walletapiclient.NewWalletClientset(
+				walletServerAddress,
+				env.StringFromEnv(walletapiclient.InternalAuthTokenEnv, ""),
+			)
 			if err != nil {
 				return fmt.Errorf("create Wallet clientset: %w", err)
 			}

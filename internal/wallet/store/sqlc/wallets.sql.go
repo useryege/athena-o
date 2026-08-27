@@ -13,90 +13,90 @@ import (
 
 const countWallets = `-- name: CountWallets :one
 SELECT COUNT(*)::bigint
-FROM wallet_private_keys
-WHERE (
-    $1::boolean
-    OR (
-      NOT system_owned
-      AND owner_account_id = $2::uuid
-    )
-  )
-  AND ($3::text IS NULL OR chain = $3)
-  AND ($4::text IS NULL OR type = $4)
+FROM wallets
+WHERE owner_account_id = $1::uuid
+  AND ($2::text IS NULL OR wallet_type = $2)
   AND (
-    $5::text IS NULL
-    OR address ILIKE $5
-    OR alias ILIKE $5
+    $3::text IS NULL
+    OR address ILIKE $3
+    OR remark ILIKE $3
   )
 `
 
 type CountWalletsParams struct {
-	RequesterAdministrator bool
-	RequesterAccountID     pgtype.UUID
-	Chain                  pgtype.Text
-	Type                   pgtype.Text
-	Query                  pgtype.Text
+	OwnerAccountID pgtype.UUID
+	WalletType     pgtype.Text
+	Query          pgtype.Text
 }
 
 func (q *Queries) CountWallets(ctx context.Context, arg CountWalletsParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countWallets,
-		arg.RequesterAdministrator,
-		arg.RequesterAccountID,
-		arg.Chain,
-		arg.Type,
-		arg.Query,
-	)
+	row := q.db.QueryRow(ctx, countWallets, arg.OwnerAccountID, arg.WalletType, arg.Query)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
 const createWallet = `-- name: CreateWallet :one
-INSERT INTO wallet_private_keys (owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path)
-VALUES ($1::uuid, FALSE, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
+INSERT INTO wallets (
+  owner_account_id,
+  wallet_type,
+  address,
+  address_key,
+  remark,
+  source,
+  private_key_ciphertext,
+  avatar_preset_id
+) VALUES (
+  $1::uuid,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8
+)
+RETURNING id, owner_account_id, wallet_type, address, address_key, remark, source, private_key_ciphertext, avatar_preset_id, avatar_object_key, avatar_content_type, avatar_etag, avatar_size_bytes, revision, created_at, updated_at
 `
 
 type CreateWalletParams struct {
 	OwnerAccountID       pgtype.UUID
-	Chain                string
-	Type                 string
+	WalletType           string
 	Address              string
 	AddressKey           string
-	Alias                string
-	PrivateKeyCiphertext []byte
-	MnemonicCiphertext   []byte
+	Remark               string
 	Source               string
-	DerivationPath       string
+	PrivateKeyCiphertext []byte
+	AvatarPresetID       string
 }
 
-func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (WalletPrivateKey, error) {
+func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error) {
 	row := q.db.QueryRow(ctx, createWallet,
 		arg.OwnerAccountID,
-		arg.Chain,
-		arg.Type,
+		arg.WalletType,
 		arg.Address,
 		arg.AddressKey,
-		arg.Alias,
-		arg.PrivateKeyCiphertext,
-		arg.MnemonicCiphertext,
+		arg.Remark,
 		arg.Source,
-		arg.DerivationPath,
+		arg.PrivateKeyCiphertext,
+		arg.AvatarPresetID,
 	)
-	var i WalletPrivateKey
+	var i Wallet
 	err := row.Scan(
 		&i.ID,
 		&i.OwnerAccountID,
-		&i.SystemOwned,
-		&i.Chain,
-		&i.Type,
+		&i.WalletType,
 		&i.Address,
 		&i.AddressKey,
-		&i.Alias,
-		&i.PrivateKeyCiphertext,
-		&i.MnemonicCiphertext,
+		&i.Remark,
 		&i.Source,
-		&i.DerivationPath,
+		&i.PrivateKeyCiphertext,
+		&i.AvatarPresetID,
+		&i.AvatarObjectKey,
+		&i.AvatarContentType,
+		&i.AvatarEtag,
+		&i.AvatarSizeBytes,
+		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -104,99 +104,119 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 }
 
 const getWallet = `-- name: GetWallet :one
-SELECT id, owner_account_id, system_owned, chain, type, address, address_key, alias, private_key_ciphertext, mnemonic_ciphertext, source, derivation_path, created_at, updated_at
-FROM wallet_private_keys
+SELECT id, owner_account_id, wallet_type, address, address_key, remark, source, private_key_ciphertext, avatar_preset_id, avatar_object_key, avatar_content_type, avatar_etag, avatar_size_bytes, revision, created_at, updated_at
+FROM wallets
 WHERE id = $1
-  AND (
-    $2::boolean
-    OR (
-      NOT system_owned
-      AND owner_account_id = $3::uuid
-    )
-  )
+  AND owner_account_id = $2::uuid
 `
 
 type GetWalletParams struct {
-	ID                     int64
-	RequesterAdministrator bool
-	RequesterAccountID     pgtype.UUID
+	ID             int64
+	OwnerAccountID pgtype.UUID
 }
 
-func (q *Queries) GetWallet(ctx context.Context, arg GetWalletParams) (WalletPrivateKey, error) {
-	row := q.db.QueryRow(ctx, getWallet, arg.ID, arg.RequesterAdministrator, arg.RequesterAccountID)
-	var i WalletPrivateKey
+func (q *Queries) GetWallet(ctx context.Context, arg GetWalletParams) (Wallet, error) {
+	row := q.db.QueryRow(ctx, getWallet, arg.ID, arg.OwnerAccountID)
+	var i Wallet
 	err := row.Scan(
 		&i.ID,
 		&i.OwnerAccountID,
-		&i.SystemOwned,
-		&i.Chain,
-		&i.Type,
+		&i.WalletType,
 		&i.Address,
 		&i.AddressKey,
-		&i.Alias,
-		&i.PrivateKeyCiphertext,
-		&i.MnemonicCiphertext,
+		&i.Remark,
 		&i.Source,
-		&i.DerivationPath,
+		&i.PrivateKeyCiphertext,
+		&i.AvatarPresetID,
+		&i.AvatarObjectKey,
+		&i.AvatarContentType,
+		&i.AvatarEtag,
+		&i.AvatarSizeBytes,
+		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const listWalletAvatarObjectKeys = `-- name: ListWalletAvatarObjectKeys :many
+SELECT avatar_object_key
+FROM wallets
+WHERE avatar_object_key <> ''
+ORDER BY avatar_object_key
+`
+
+func (q *Queries) ListWalletAvatarObjectKeys(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listWalletAvatarObjectKeys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var avatar_object_key string
+		if err := rows.Scan(&avatar_object_key); err != nil {
+			return nil, err
+		}
+		items = append(items, avatar_object_key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listWallets = `-- name: ListWallets :many
-SELECT id, owner_account_id, system_owned, chain, type, address, alias, source, derivation_path, created_at, updated_at
-FROM wallet_private_keys
-WHERE (
-    $3::boolean
-    OR (
-      NOT system_owned
-      AND owner_account_id = $4::uuid
-    )
-  )
-  AND ($5::text IS NULL OR chain = $5)
-  AND ($6::text IS NULL OR type = $6)
+SELECT
+  id,
+  wallet_type,
+  address,
+  remark,
+  source,
+  avatar_preset_id,
+  avatar_object_key,
+  revision,
+  created_at,
+  updated_at
+FROM wallets
+WHERE owner_account_id = $3::uuid
+  AND ($4::text IS NULL OR wallet_type = $4)
   AND (
-    $7::text IS NULL
-    OR address ILIKE $7
-    OR alias ILIKE $7
+    $5::text IS NULL
+    OR address ILIKE $5
+    OR remark ILIKE $5
   )
 ORDER BY created_at DESC, id DESC
 LIMIT $1 OFFSET $2
 `
 
 type ListWalletsParams struct {
-	Limit                  int32
-	Offset                 int32
-	RequesterAdministrator bool
-	RequesterAccountID     pgtype.UUID
-	Chain                  pgtype.Text
-	Type                   pgtype.Text
-	Query                  pgtype.Text
+	Limit          int32
+	Offset         int32
+	OwnerAccountID pgtype.UUID
+	WalletType     pgtype.Text
+	Query          pgtype.Text
 }
 
 type ListWalletsRow struct {
-	ID             int64
-	OwnerAccountID pgtype.UUID
-	SystemOwned    bool
-	Chain          string
-	Type           string
-	Address        string
-	Alias          string
-	Source         string
-	DerivationPath string
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
+	ID              int64
+	WalletType      string
+	Address         string
+	Remark          string
+	Source          string
+	AvatarPresetID  string
+	AvatarObjectKey string
+	Revision        int64
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 }
 
 func (q *Queries) ListWallets(ctx context.Context, arg ListWalletsParams) ([]ListWalletsRow, error) {
 	rows, err := q.db.Query(ctx, listWallets,
 		arg.Limit,
 		arg.Offset,
-		arg.RequesterAdministrator,
-		arg.RequesterAccountID,
-		arg.Chain,
-		arg.Type,
+		arg.OwnerAccountID,
+		arg.WalletType,
 		arg.Query,
 	)
 	if err != nil {
@@ -208,14 +228,13 @@ func (q *Queries) ListWallets(ctx context.Context, arg ListWalletsParams) ([]Lis
 		var i ListWalletsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.OwnerAccountID,
-			&i.SystemOwned,
-			&i.Chain,
-			&i.Type,
+			&i.WalletType,
 			&i.Address,
-			&i.Alias,
+			&i.Remark,
 			&i.Source,
-			&i.DerivationPath,
+			&i.AvatarPresetID,
+			&i.AvatarObjectKey,
+			&i.Revision,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -229,59 +248,317 @@ func (q *Queries) ListWallets(ctx context.Context, arg ListWalletsParams) ([]Lis
 	return items, nil
 }
 
-const updateWalletAlias = `-- name: UpdateWalletAlias :one
-UPDATE wallet_private_keys
-SET alias = $1, updated_at = NOW()
-WHERE id = $2
-  AND (
-    $3::boolean
-    OR (
-      NOT system_owned
-      AND owner_account_id = $4::uuid
-    )
-  )
-RETURNING id, owner_account_id, system_owned, chain, type, address, alias, source, derivation_path, created_at, updated_at
+const replaceWalletAvatarMetadata = `-- name: ReplaceWalletAvatarMetadata :one
+WITH current AS (
+  SELECT id, avatar_object_key
+  FROM wallets
+  WHERE wallets.id = $1
+    AND wallets.owner_account_id = $2::uuid
+    AND wallets.revision = $3
+), updated AS (
+  UPDATE wallets
+  SET
+    avatar_preset_id = '',
+    avatar_object_key = $4,
+    avatar_content_type = $5,
+    avatar_etag = $6,
+    avatar_size_bytes = $7,
+    revision = revision + 1,
+    updated_at = NOW()
+  FROM current
+  WHERE wallets.id = current.id
+  RETURNING
+    wallets.id,
+    wallets.wallet_type,
+    wallets.address,
+    wallets.remark,
+    wallets.source,
+    wallets.avatar_preset_id,
+    wallets.avatar_object_key,
+    wallets.avatar_content_type,
+    wallets.avatar_etag,
+    wallets.avatar_size_bytes,
+    wallets.revision,
+    wallets.created_at,
+    wallets.updated_at
+)
+SELECT updated.id, updated.wallet_type, updated.address, updated.remark, updated.source, updated.avatar_preset_id, updated.avatar_object_key, updated.avatar_content_type, updated.avatar_etag, updated.avatar_size_bytes, updated.revision, updated.created_at, updated.updated_at, current.avatar_object_key AS previous_avatar_object_key
+FROM updated
+JOIN current ON current.id = updated.id
 `
 
-type UpdateWalletAliasParams struct {
-	Alias                  string
-	ID                     int64
-	RequesterAdministrator bool
-	RequesterAccountID     pgtype.UUID
+type ReplaceWalletAvatarMetadataParams struct {
+	ID                int64
+	OwnerAccountID    pgtype.UUID
+	ExpectedRevision  int64
+	AvatarObjectKey   string
+	AvatarContentType string
+	AvatarEtag        string
+	AvatarSizeBytes   int64
 }
 
-type UpdateWalletAliasRow struct {
-	ID             int64
-	OwnerAccountID pgtype.UUID
-	SystemOwned    bool
-	Chain          string
-	Type           string
-	Address        string
-	Alias          string
-	Source         string
-	DerivationPath string
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
+type ReplaceWalletAvatarMetadataRow struct {
+	ID                      int64
+	WalletType              string
+	Address                 string
+	Remark                  string
+	Source                  string
+	AvatarPresetID          string
+	AvatarObjectKey         string
+	AvatarContentType       string
+	AvatarEtag              string
+	AvatarSizeBytes         int64
+	Revision                int64
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+	PreviousAvatarObjectKey string
 }
 
-func (q *Queries) UpdateWalletAlias(ctx context.Context, arg UpdateWalletAliasParams) (UpdateWalletAliasRow, error) {
-	row := q.db.QueryRow(ctx, updateWalletAlias,
-		arg.Alias,
+func (q *Queries) ReplaceWalletAvatarMetadata(ctx context.Context, arg ReplaceWalletAvatarMetadataParams) (ReplaceWalletAvatarMetadataRow, error) {
+	row := q.db.QueryRow(ctx, replaceWalletAvatarMetadata,
 		arg.ID,
-		arg.RequesterAdministrator,
-		arg.RequesterAccountID,
+		arg.OwnerAccountID,
+		arg.ExpectedRevision,
+		arg.AvatarObjectKey,
+		arg.AvatarContentType,
+		arg.AvatarEtag,
+		arg.AvatarSizeBytes,
 	)
-	var i UpdateWalletAliasRow
+	var i ReplaceWalletAvatarMetadataRow
 	err := row.Scan(
 		&i.ID,
-		&i.OwnerAccountID,
-		&i.SystemOwned,
-		&i.Chain,
-		&i.Type,
+		&i.WalletType,
 		&i.Address,
-		&i.Alias,
+		&i.Remark,
 		&i.Source,
-		&i.DerivationPath,
+		&i.AvatarPresetID,
+		&i.AvatarObjectKey,
+		&i.AvatarContentType,
+		&i.AvatarEtag,
+		&i.AvatarSizeBytes,
+		&i.Revision,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PreviousAvatarObjectKey,
+	)
+	return i, err
+}
+
+const resetWalletAvatarMetadata = `-- name: ResetWalletAvatarMetadata :one
+WITH current AS (
+  SELECT id, avatar_object_key
+  FROM wallets
+  WHERE wallets.id = $1
+    AND wallets.owner_account_id = $2::uuid
+    AND wallets.revision = $3
+), updated AS (
+  UPDATE wallets
+  SET
+    avatar_preset_id = '',
+    avatar_object_key = '',
+    avatar_content_type = '',
+    avatar_etag = '',
+    avatar_size_bytes = 0,
+    revision = revision + 1,
+    updated_at = NOW()
+  FROM current
+  WHERE wallets.id = current.id
+  RETURNING
+    wallets.id,
+    wallets.wallet_type,
+    wallets.address,
+    wallets.remark,
+    wallets.source,
+    wallets.avatar_preset_id,
+    wallets.avatar_object_key,
+    wallets.revision,
+    wallets.created_at,
+    wallets.updated_at
+)
+SELECT updated.id, updated.wallet_type, updated.address, updated.remark, updated.source, updated.avatar_preset_id, updated.avatar_object_key, updated.revision, updated.created_at, updated.updated_at, current.avatar_object_key AS previous_avatar_object_key
+FROM updated
+JOIN current ON current.id = updated.id
+`
+
+type ResetWalletAvatarMetadataParams struct {
+	ID               int64
+	OwnerAccountID   pgtype.UUID
+	ExpectedRevision int64
+}
+
+type ResetWalletAvatarMetadataRow struct {
+	ID                      int64
+	WalletType              string
+	Address                 string
+	Remark                  string
+	Source                  string
+	AvatarPresetID          string
+	AvatarObjectKey         string
+	Revision                int64
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+	PreviousAvatarObjectKey string
+}
+
+func (q *Queries) ResetWalletAvatarMetadata(ctx context.Context, arg ResetWalletAvatarMetadataParams) (ResetWalletAvatarMetadataRow, error) {
+	row := q.db.QueryRow(ctx, resetWalletAvatarMetadata, arg.ID, arg.OwnerAccountID, arg.ExpectedRevision)
+	var i ResetWalletAvatarMetadataRow
+	err := row.Scan(
+		&i.ID,
+		&i.WalletType,
+		&i.Address,
+		&i.Remark,
+		&i.Source,
+		&i.AvatarPresetID,
+		&i.AvatarObjectKey,
+		&i.Revision,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PreviousAvatarObjectKey,
+	)
+	return i, err
+}
+
+const updateWalletAvatarPreset = `-- name: UpdateWalletAvatarPreset :one
+WITH current AS (
+  SELECT id, avatar_object_key
+  FROM wallets
+  WHERE wallets.id = $1
+    AND wallets.owner_account_id = $2::uuid
+    AND wallets.revision = $3
+), updated AS (
+  UPDATE wallets
+  SET
+    avatar_preset_id = $4,
+    avatar_object_key = '',
+    avatar_content_type = '',
+    avatar_etag = '',
+    avatar_size_bytes = 0,
+    revision = revision + 1,
+    updated_at = NOW()
+  FROM current
+  WHERE wallets.id = current.id
+  RETURNING
+    wallets.id,
+    wallets.wallet_type,
+    wallets.address,
+    wallets.remark,
+    wallets.source,
+    wallets.avatar_preset_id,
+    wallets.avatar_object_key,
+    wallets.revision,
+    wallets.created_at,
+    wallets.updated_at
+)
+SELECT updated.id, updated.wallet_type, updated.address, updated.remark, updated.source, updated.avatar_preset_id, updated.avatar_object_key, updated.revision, updated.created_at, updated.updated_at, current.avatar_object_key AS previous_avatar_object_key
+FROM updated
+JOIN current ON current.id = updated.id
+`
+
+type UpdateWalletAvatarPresetParams struct {
+	ID               int64
+	OwnerAccountID   pgtype.UUID
+	ExpectedRevision int64
+	AvatarPresetID   string
+}
+
+type UpdateWalletAvatarPresetRow struct {
+	ID                      int64
+	WalletType              string
+	Address                 string
+	Remark                  string
+	Source                  string
+	AvatarPresetID          string
+	AvatarObjectKey         string
+	Revision                int64
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+	PreviousAvatarObjectKey string
+}
+
+func (q *Queries) UpdateWalletAvatarPreset(ctx context.Context, arg UpdateWalletAvatarPresetParams) (UpdateWalletAvatarPresetRow, error) {
+	row := q.db.QueryRow(ctx, updateWalletAvatarPreset,
+		arg.ID,
+		arg.OwnerAccountID,
+		arg.ExpectedRevision,
+		arg.AvatarPresetID,
+	)
+	var i UpdateWalletAvatarPresetRow
+	err := row.Scan(
+		&i.ID,
+		&i.WalletType,
+		&i.Address,
+		&i.Remark,
+		&i.Source,
+		&i.AvatarPresetID,
+		&i.AvatarObjectKey,
+		&i.Revision,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PreviousAvatarObjectKey,
+	)
+	return i, err
+}
+
+const updateWalletRemark = `-- name: UpdateWalletRemark :one
+UPDATE wallets
+SET
+  remark = $1,
+  revision = revision + 1,
+  updated_at = NOW()
+WHERE id = $2
+  AND owner_account_id = $3::uuid
+  AND revision = $4
+RETURNING
+  id,
+  wallet_type,
+  address,
+  remark,
+  source,
+  avatar_preset_id,
+  avatar_object_key,
+  revision,
+  created_at,
+  updated_at
+`
+
+type UpdateWalletRemarkParams struct {
+	Remark           string
+	ID               int64
+	OwnerAccountID   pgtype.UUID
+	ExpectedRevision int64
+}
+
+type UpdateWalletRemarkRow struct {
+	ID              int64
+	WalletType      string
+	Address         string
+	Remark          string
+	Source          string
+	AvatarPresetID  string
+	AvatarObjectKey string
+	Revision        int64
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) UpdateWalletRemark(ctx context.Context, arg UpdateWalletRemarkParams) (UpdateWalletRemarkRow, error) {
+	row := q.db.QueryRow(ctx, updateWalletRemark,
+		arg.Remark,
+		arg.ID,
+		arg.OwnerAccountID,
+		arg.ExpectedRevision,
+	)
+	var i UpdateWalletRemarkRow
+	err := row.Scan(
+		&i.ID,
+		&i.WalletType,
+		&i.Address,
+		&i.Remark,
+		&i.Source,
+		&i.AvatarPresetID,
+		&i.AvatarObjectKey,
+		&i.Revision,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

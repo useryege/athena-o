@@ -8,19 +8,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type WalletPrivateKey struct {
+type Wallet struct {
 	ID                   int64
 	OwnerAccountID       pgtype.UUID
-	SystemOwned          bool
-	Chain                string
-	Type                 string
+	WalletType           string
 	Address              string
 	AddressKey           string
-	Alias                string
-	PrivateKeyCiphertext []byte
-	MnemonicCiphertext   []byte
+	Remark               string
 	Source               string
-	DerivationPath       string
+	PrivateKeyCiphertext []byte
+	AvatarPresetID       string
+	AvatarObjectKey      string
+	AvatarContentType    string
+	AvatarEtag           string
+	AvatarSizeBytes      int64
+	Revision             int64
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
 }

@@ -2,140 +2,119 @@ syntax = "proto3";
 
 // Wallet Service
 //
-// Wallet Service API returns wallet-level workload status.
+// Wallet Service API manages account-owned EVM and Solana wallets.
 package wallet;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/wallet";
 
-// GetWalletStatusRequest queries the wallet service runtime status.
 message GetWalletStatusRequest {}
 
-// ListWalletsRequest queries persisted wallet records.
 message ListWalletsRequest {
-  string chain = 1;
+  string wallet_type = 1 [(gogoproto.jsontag) = "walletType,omitempty"];
   string query = 2;
   int32 page = 3;
-  int32 page_size = 4;
-  string type = 5;
+  int32 page_size = 4 [(gogoproto.jsontag) = "pageSize,omitempty"];
 }
 
-// ListWalletsResponse returns persisted wallet records without secret material.
 message ListWalletsResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem items = 1;
   int64 total = 2;
   int32 page = 3;
-  int32 page_size = 4;
+  int32 page_size = 4 [(gogoproto.jsontag) = "pageSize,omitempty"];
 }
 
-// GetWalletRequest queries one persisted wallet record.
 message GetWalletRequest {
   int64 id = 1;
-  bool reveal_secrets = 2;
 }
 
-// GetWalletResponse returns one persisted wallet record.
 message GetWalletResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
-// CreateWalletRequest creates a new wallet for one chain.
 message CreateWalletRequest {
-  string chain = 1;
-  string alias = 2;
-  string type = 3;
+  string wallet_type = 1 [(gogoproto.jsontag) = "walletType,omitempty"];
+  string remark = 2;
+  string avatar_preset_id = 3 [(gogoproto.jsontag) = "avatarPresetId,omitempty"];
 }
 
-// CreateWalletResponse returns the created wallet record.
 message CreateWalletResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string private_key = 2 [(gogoproto.jsontag) = "privateKey,omitempty"];
 }
 
-// ImportPrivateKeyRequest imports a private key for one chain.
-message ImportPrivateKeyRequest {
-  string chain = 1;
-  string private_key = 2;
-  string alias = 3;
-  string type = 4;
+message ImportWalletRequest {
+  string wallet_type = 1 [(gogoproto.jsontag) = "walletType,omitempty"];
+  string private_key = 2 [(gogoproto.jsontag) = "privateKey,omitempty"];
+  string remark = 3;
+  string avatar_preset_id = 4 [(gogoproto.jsontag) = "avatarPresetId,omitempty"];
 }
 
-// ImportPrivateKeyResponse returns the imported wallet record.
-message ImportPrivateKeyResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
+message ImportWalletResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
-// ImportMnemonicRequest imports a mnemonic-derived wallet for one chain.
-message ImportMnemonicRequest {
-  string chain = 1;
-  string mnemonic = 2;
-  string alias = 3;
-  string type = 4;
-}
-
-// ImportMnemonicResponse returns the imported wallet record.
-message ImportMnemonicResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
-}
-
-// UpdateWalletAliasRequest updates wallet alias text without changing secret material.
-message UpdateWalletAliasRequest {
+message UpdateWalletRemarkRequest {
   int64 id = 1;
-  string alias = 2;
+  string remark = 2;
+  uint64 expected_revision = 3 [(gogoproto.jsontag) = "expectedRevision,omitempty"];
 }
 
-// UpdateWalletAliasResponse returns the updated wallet record.
-message UpdateWalletAliasResponse {
+message UpdateWalletRemarkResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+}
+
+message UpdateWalletAvatarPresetRequest {
+  int64 id = 1;
+  string avatar_preset_id = 2 [(gogoproto.jsontag) = "avatarPresetId,omitempty"];
+  uint64 expected_revision = 3 [(gogoproto.jsontag) = "expectedRevision,omitempty"];
+}
+
+message UpdateWalletAvatarPresetResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
 service WalletService {
-  // GetWalletStatus returns the wallet service runtime status.
   rpc GetWalletStatus(GetWalletStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletStatus) {
     option (google.api.http) = {get: "/api/v1/wallet/status"};
   }
 
-  // ListWallets returns persisted wallet records without secret material.
   rpc ListWallets(ListWalletsRequest) returns (ListWalletsResponse) {
     option (google.api.http) = {get: "/api/v1/wallets"};
   }
 
-  // GetWallet returns one wallet record and optionally reveals secret material.
   rpc GetWallet(GetWalletRequest) returns (GetWalletResponse) {
     option (google.api.http) = {get: "/api/v1/wallets/{id}"};
   }
 
-  // CreateWallet creates a new wallet for one chain.
   rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse) {
     option (google.api.http) = {
-      post: "/api/v1/wallets/create"
+      post: "/api/v1/wallets"
       body: "*"
     };
   }
 
-  // ImportPrivateKey imports a private key for one chain.
-  rpc ImportPrivateKey(ImportPrivateKeyRequest) returns (ImportPrivateKeyResponse) {
+  rpc ImportWallet(ImportWalletRequest) returns (ImportWalletResponse) {
     option (google.api.http) = {
-      post: "/api/v1/wallets/import-private-key"
+      post: "/api/v1/wallets:import"
       body: "*"
     };
   }
 
-  // ImportMnemonic imports a mnemonic-derived wallet for one chain.
-  rpc ImportMnemonic(ImportMnemonicRequest) returns (ImportMnemonicResponse) {
+  rpc UpdateWalletRemark(UpdateWalletRemarkRequest) returns (UpdateWalletRemarkResponse) {
     option (google.api.http) = {
-      post: "/api/v1/wallets/import-mnemonic"
+      patch: "/api/v1/wallets/{id}/remark"
       body: "*"
     };
   }
 
-  // UpdateWalletAlias updates wallet alias text without changing secret material.
-  rpc UpdateWalletAlias(UpdateWalletAliasRequest) returns (UpdateWalletAliasResponse) {
+  rpc UpdateWalletAvatarPreset(UpdateWalletAvatarPresetRequest) returns (UpdateWalletAvatarPresetResponse) {
     option (google.api.http) = {
-      post: "/api/v1/wallets/{id}/alias"
+      patch: "/api/v1/wallets/{id}/avatar-preset"
       body: "*"
     };
   }
-
 }

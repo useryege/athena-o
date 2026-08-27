@@ -1,26 +1,31 @@
-# Account Avatar Storage
+# Account and Wallet Avatar Storage
 
 ## Scope
 
-Account Avatar Storage owns image validation, private S3-compatible object
-storage, authenticated same-origin delivery, replacement compensation, and
-orphan collection for account profile avatars. It also owns the pinned MinIO
-server/client images and the local and production volume lifecycle.
+Account and Wallet Avatar Storage owns shared image validation, private
+S3-compatible object storage, authenticated native HTTP delivery, replacement
+compensation, and orphan collection for account-profile and custodial-wallet
+avatars. It also owns the pinned MinIO server/client images and the local and
+production volume lifecycle.
 
 [Account Profile and Preferences](account-profile-and-preferences.md) owns the
-durable profile revision and avatar metadata reference. Authentication and the
-self-or-administrator policy remain server responsibilities. The browser never
-receives S3 credentials, a MinIO endpoint, a bucket name, or an object key.
+account-profile revision and avatar metadata reference. [Wallet Ownership and
+Custody](wallet-ownership.md) owns wallet avatar kind, preset, uploaded-object
+metadata, and Wallet revision. The API Server owns their deliberately different
+authorization rules: an account avatar is readable or writable by its owner or
+an administrator, while a wallet avatar is always restricted to the exact
+wallet owner with no administrator bypass. The browser never receives S3
+credentials, endpoint, bucket name, or object key.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | S3-compatible adapter | [internal/accountavatar/store.go](../../../internal/accountavatar/store.go) | `Config`, `Store`, `Object`, `ObjectInfo`, `Put`, `Get`, `Stat`, `Delete`, `List` |
-| HTTP upload and delivery | [internal/server/accountavatarhttp/handler.go](../../../internal/server/accountavatarhttp/handler.go) | `Handler`, `Upload`, `Download`, `Delete` |
-| Image validation | [internal/server/accountavatarhttp/image.go](../../../internal/server/accountavatarhttp/image.go) | `validateImage`, `inspectWebP` |
-| Orphan recovery | [internal/server/accountavatarhttp/garbage_collector.go](../../../internal/server/accountavatarhttp/garbage_collector.go) | `RunGarbageCollector`, `collectGarbage` |
-| Authentication and process wiring | [internal/server/account_avatar.go](../../../internal/server/account_avatar.go) | `newAccountAvatarHandler`, `authenticateAccountAvatarHTTP`, `registerAccountAvatarHandlers` |
+| Shared image validation | [internal/avatarimage/image.go](../../../internal/avatarimage/image.go) | `Validate`, `Image`, `DefaultMaxBytes`, `MaxDimension`, `MaxPixels` |
+| Account HTTP resource | [internal/server/accountavatarhttp/handler.go](../../../internal/server/accountavatarhttp/handler.go), [internal/server/accountavatarhttp/garbage_collector.go](../../../internal/server/accountavatarhttp/garbage_collector.go) | `Handler.Upload`, `Handler.Download`, `Handler.Delete`, `RunGarbageCollector` |
+| Wallet HTTP resource | [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go), [internal/server/walletavatarhttp/garbage_collector.go](../../../internal/server/walletavatarhttp/garbage_collector.go) | `Handler.Upload`, `Handler.Download`, `Handler.Delete`, `DeleteObjectBestEffort`, `RunGarbageCollector` |
+| Authentication and process wiring | [internal/server/account_avatar.go](../../../internal/server/account_avatar.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go) | `newPrivateAvatarStore`, `authenticateAccountAvatarHTTP`, `authenticateWalletAvatarHTTP`, route registration |
 | Pinned object-store images | [deploy/minio/Dockerfile.server](../../../deploy/minio/Dockerfile.server), [deploy/minio/Dockerfile.mc](../../../deploy/minio/Dockerfile.mc) | MinIO commit `9e49d5e7a648`, mc commit `7394ce0dd2a8` |
 | Private bucket initialization | [deploy/minio/init-avatar-bucket.sh](../../../deploy/minio/init-avatar-bucket.sh) | bucket creation, anonymous-access removal, application IAM policy |
 | Local runtime | [hack/start-minio.sh](../../../hack/start-minio.sh), [hack/local-runtime.sh](../../../hack/local-runtime.sh) | pinned image bootstrap, `athena-local-minio-data`, stop/reset ownership checks |
@@ -30,88 +35,104 @@ receives S3 credentials, a MinIO endpoint, a bucket name, or an object key.
 
 ```mermaid
 flowchart LR
-    B["Authenticated browser"] --> H["Avatar HTTP Handler"]
-    H --> P["Account Center profile CAS"]
-    H --> S["Account Avatar Store"]
-    S --> M["Private MinIO bucket"]
-    I["One-shot mc initializer"] --> M
-    G["Daily orphan collector"] --> P
-    G --> S
+    B["Authenticated browser or API Key"] --> A["Account avatar HTTP handler"]
+    B --> W["Wallet avatar HTTP handler"]
+    A --> P["Account profile CAS"]
+    W --> C["Owner-scoped Wallet metadata CAS"]
+    A --> S["Private S3-compatible bucket"]
+    W --> S
+    G1["Account orphan collector"] --> P
+    G1 --> S
+    G2["Wallet orphan collector"] --> C
+    G2 --> S
 ```
 
-`accountavatar.Store` is a narrow AWS SDK v2 adapter. Construction validates
-all required settings and creates a static-credential, S3-compatible client
-with configurable path-style addressing. It deliberately performs no startup
-network probe. Every object operation targets one fixed private bucket and
-never sets a public ACL.
+`accountavatar.Store` is a narrow AWS SDK v2 adapter targeting one fixed private
+bucket with static bucket-scoped credentials and configurable path-style
+addressing. `newPrivateAvatarStore` validates the common configuration and is
+used to construct the account and wallet handlers. Client construction performs
+no startup network probe, so object-store availability remains isolated from
+non-avatar APIs.
 
-The HTTP handler accepts only a canonical target account UUID, never username
-or an object key. It authenticates through the normal session/bearer boundary
-and allows the matching UUID or an account whose persisted role is
-administrator. It resolves the durable object key from Account Center before
-reading MinIO.
+Both handlers use `avatarimage.Validate`, but their metadata and authorization
+are independent. Account routes accept a canonical target account UUID and use
+Account Center profile CAS. Wallet routes accept only a positive wallet ID,
+derive the authenticated account UUID, require Wallet module access, and invoke
+trusted owner-scoped Wallet metadata methods. Neither route accepts an object
+key or owner UUID from public input.
 
 ## Runtime Flow
 
 1. MinIO starts against its named `/data` volume. The one-shot mc image waits
    for readiness, creates the configured bucket, removes anonymous access,
    creates or updates the application user, and attaches a bucket-scoped
-   list/get/put/delete policy. The API process receives only that application
-   credential. The pinned server replaces an existing policy/user with the
-   submitted definition, and the pinned mc treats an already-attached policy
-   as a successful no-op, making repeated initializer runs idempotent.
-2. API Server startup validates the endpoint, region, bucket, access key,
-   secret key, and endpoint URL. Missing or malformed configuration prevents
-   startup. Client construction does not require MinIO to be reachable.
-3. `PUT /api/v1/account/{id}/avatar` parses `{id}` as a canonical UUID and
-   accepts multipart fields `file` and
-   `expectedRevision`. It limits the complete request, reads at most the
-   configured image limit plus one byte, inspects image configuration before
-   allocation, verifies an extended WebP canvas against its VP8/VP8L frame
-   header, and then fully decodes the pixels to reject truncated or corrupt
-   content. It accepts JPEG, PNG, or structurally valid non-animated WebP up to
-   4096 pixels per dimension and 16,777,216 total pixels while retaining the
-   original bytes for storage.
-4. The handler verifies the current profile revision, writes a candidate under
-   `objects/<sha256(account_id)>/<uuid>`, and commits its key, content type, ETag,
-   and size with profile CAS. After an update error it re-reads the durable
-   profile with an independent bounded context: a candidate that was committed
-   despite an ambiguous database response is preserved and returned, a
-   confirmed unreferenced candidate is deleted best effort, and an
-   unreconcilable candidate is left for grace-period collection. A successful
-   replacement commits first and then best-effort deletes the previous object.
-5. `GET /api/v1/account/{id}/avatar?v=<profile revision>` reads the current
-   profile reference and streams that object with its persisted content type,
-   size, ETag, `nosniff`, and a private cache policy that requires authenticated
-   revalidation on every reuse. A matching `If-None-Match` returns 304 without
-   streaming the body. `Vary: Cookie, Authorization` separates credential
-   contexts within the browser cache.
-6. `DELETE /api/v1/account/{id}/avatar?expectedRevision=<revision>` clears
-   the profile reference with CAS and then deletes the old object best effort.
-   Deleting an already empty avatar returns the unchanged profile.
-7. Garbage collection runs once when its server context starts and then every
-   24 hours. It loads all durable avatar references, lists `objects/`, and
-   deletes unreferenced objects only after a 24-hour grace period.
-8. Ordinary local stop removes the MinIO container but retains its volume.
-   `make run-reset` removes the owned MinIO volume. Production hot deploy
-   requires and preserves the external volume, reruns the idempotent bucket
-   initializer, and recreates application services. Full deploy/destroy removes
-   the volume together with PostgreSQL.
+   list/get/put/delete policy. Repeated initialization is idempotent.
+2. API Server startup validates endpoint, region, bucket, access key, secret
+   key, endpoint URL, path-style setting, and maximum upload bytes, then
+   constructs both avatar handlers. Missing or malformed configuration prevents
+   startup; MinIO reachability is not probed.
+3. Both multipart upload resources limit the complete request and image bytes,
+   inspect image configuration before pixel allocation, and fully decode the
+   image. JPEG, PNG, and structurally valid non-animated WebP are accepted up to
+   2 MiB, 4,096 pixels on either edge, and at most 16,000,000 total pixels. WebP
+   extended-canvas dimensions must match its VP8 or VP8L frame. SVG, GIF,
+   animated WebP, truncated content, and content-type-only claims are rejected.
+4. `PUT /api/v1/account/{id}/avatar` requires multipart `file` and
+   `expectedRevision`. After owner-or-administrator authorization, it verifies
+   the profile revision, writes a candidate under
+   `objects/<sha256(account UUID)>/<random UUID>`, and commits key, content type,
+   ETag, and size through profile CAS.
+5. `PUT /api/v1/wallets/{id}/avatar` requires Wallet `READ_WRITE` and multipart
+   `file` plus `expectedRevision`. It first resolves the wallet through the
+   authenticated owner UUID, writes a candidate under
+   `wallet-avatars/<sha256(owner UUID)>/<random UUID>`, and commits uploaded-
+   object metadata through Wallet revision CAS. The commit clears any preset.
+6. After an ambiguous metadata update, each handler re-reads its durable
+   reference with an independent bounded context. A committed candidate is
+   preserved and returned; a confirmed unreferenced candidate is deleted best
+   effort; an unreconcilable candidate remains for grace-period collection.
+   Successful replacement commits first and then deletes the prior object best
+   effort.
+7. `GET /api/v1/account/{id}/avatar` repeats account owner-or-administrator
+   authorization and resolves the current profile reference.
+   `GET /api/v1/wallets/{id}/avatar` requires Wallet `READ`, exact owner lookup,
+   and an uploaded-object reference. Both stream persisted content type, size,
+   ETag, `nosniff`, and private revalidation cache headers; matching
+   `If-None-Match` returns 304. Missing wallet image bytes are presented by the
+   UI as the deterministic default avatar.
+8. Account-avatar deletion clears the profile reference through profile CAS. Wallet
+   avatar reset requires Wallet `READ_WRITE`, clears uploaded metadata and any
+   preset through Wallet CAS, and returns the deterministic default state.
+   Setting a Wallet preset through the public Wallet API likewise replaces an
+   upload reference and triggers best-effort object cleanup.
+9. Separate collectors run once when the API Server context starts and then
+   every 24 hours. Each loads its own durable references, lists only its object
+   prefix, and deletes unreferenced objects after a 24-hour grace period. A
+   reference-load or listing failure stops that collection pass without deleting
+   anything.
+10. Ordinary local stop removes the MinIO container but retains its volume.
+    `make run-reset` removes the owned MinIO volume. Production hot deploy
+    retains the configured external volume, while a full fresh deployment owns
+    its complete new object state.
 
 ## State / Data
 
-The private bucket contains validated original image bytes. Object names carry
-no display name, username, file name, or extension: the account component is a
-SHA-256 digest of the canonical account UUID and the final component is a random
-UUID. S3 metadata supplies content type, content length, ETag, and last-modified
-time.
+The private bucket contains validated original bytes in two disjoint key spaces:
 
-PostgreSQL is the reference source of truth. An object becomes live only when
-its metadata is committed in `account_profile`; an object-store write alone is
-a candidate. The 24-hour orphan grace period protects candidates while the
-profile transaction or compensation is in flight. MinIO state lives in
-`athena-local-minio-data` locally and the external `PROD_MINIO_VOLUME` in
-production.
+- account avatars: `objects/<sha256(account UUID)>/<random UUID>`;
+- wallet avatars: `wallet-avatars/<sha256(owner UUID)>/<random UUID>`.
+
+Object names contain no username, display name, wallet address, source file
+name, or extension. S3 supplies content type, content length, ETag, and last-
+modified time. The same bucket and application credential serve both prefixes,
+but neither HTTP authorization policy uses object-key structure as proof of
+ownership.
+
+PostgreSQL metadata is the live-reference source of truth. Account references
+are committed in `account_profile`; wallet references are committed in the
+owner-scoped `wallets` row and are mutually exclusive with an avatar preset. An
+object-store write alone is only a candidate. MinIO data lives in
+`athena-local-minio-data` locally and `PROD_MINIO_VOLUME` in production.
 
 ## Configuration
 
@@ -119,11 +140,11 @@ production.
 | --- | --- |
 | `ATHENA_ACCOUNT_AVATAR_S3_ENDPOINT` | Required HTTP(S) S3 endpoint with no credentials, query, fragment, or path; local default is `http://127.0.0.1:9000`, production uses `http://minio:9000`. |
 | `ATHENA_ACCOUNT_AVATAR_S3_REGION` | Signing and MinIO region; defaults to `us-east-1`. |
-| `ATHENA_ACCOUNT_AVATAR_S3_BUCKET` | Private bucket; defaults to `athena-account-avatars`. |
+| `ATHENA_ACCOUNT_AVATAR_S3_BUCKET` | Private bucket shared by account and wallet avatar prefixes; defaults to `athena-account-avatars`. |
 | `ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID` | Required bucket-scoped application access key. |
 | `ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY` | Required bucket-scoped application secret key. |
 | `ATHENA_ACCOUNT_AVATAR_S3_PATH_STYLE` | Selects AWS SDK path-style addressing; defaults to `true`. |
-| `ATHENA_ACCOUNT_AVATAR_MAX_BYTES` | Upload byte limit; defaults to and cannot exceed 2 MiB. Lower values are accepted; a non-positive or oversized value falls back to 2 MiB. |
+| `ATHENA_ACCOUNT_AVATAR_MAX_BYTES` | Upload byte limit shared by both surfaces; defaults to and cannot exceed 2 MiB. Lower positive values are accepted; invalid or oversized values fall back to 2 MiB. |
 | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Initialization-only administrator credential; production password is required and generated by `prod-reset-secrets`. |
 | `ATHENA_MINIO_API_PORT`, `ATHENA_MINIO_CONSOLE_PORT` | Local loopback bindings; default to `9000` and `9001`. Production exposes neither port to the host. |
 | `ATHENA_MINIO_IMAGE`, `ATHENA_MINIO_MC_IMAGE` | Optional local overrides for the repository-built pinned images. |
@@ -136,59 +157,57 @@ The repository images build MinIO Server from commit
 
 ## Invariants
 
-- The browser and profile API never receive the MinIO endpoint, credentials,
-  bucket, or durable object key.
-- The bucket has no anonymous policy; the application user is limited to
-  bucket location, listing, and object get/put/delete for that bucket.
-- An authenticated caller can address only the avatar whose UUID matches the
-  session unless its persisted role is administrator. Username is not a routing
-  concept. Object delivery always starts from the current profile, and cached
-  bytes cannot be reused after a credential change without revalidation.
-- Stored bytes have passed format, animation, size, and dimension validation.
-  SVG, GIF, animated WebP, and content-type-only claims are rejected.
-- A profile CAS is the live-reference commit point. Compensation and garbage
-  collection never delete a currently referenced object.
-- Ordinary stop and hot deploy retain the named MinIO volume. Reset, full
-  deployment, and destroy remove only their exact configured volume.
+- The browser and public metadata APIs never receive the MinIO endpoint,
+  credentials, bucket, or durable object key.
+- The bucket has no anonymous policy; the application user is limited to bucket
+  location, listing, and object get/put/delete.
+- Account-avatar access allows the matching account UUID or persisted
+  administrator. Wallet-avatar access always requires exact owner UUID and never
+  grants an administrator bypass.
+- Wallet avatar reads require Wallet `READ`; uploads, preset replacement, and
+  reset require `READ_WRITE`. API Keys may use these safe metadata operations
+  when their account entitlements allow them.
+- Stored bytes have passed format, animation, byte, edge-dimension, at-most
+  16,000,000-pixel, and full-decode validation.
+- A PostgreSQL CAS is the live-reference commit point. Compensation and
+  collection never intentionally delete a currently referenced object.
+- Ordinary stop and production hot deploy retain their exact named MinIO
+  volume. Explicit reset and full deployment replace the complete object state.
 
 ## Failure Recovery
 
 Invalid or missing S3 configuration fails API startup before the listener
-opens. MinIO unavailability after construction does not affect unrelated API
-capabilities: avatar reads and writes map storage failures to HTTP 503 and the
-UI can fall back to an initial-based avatar.
+opens. MinIO unavailability after construction does not affect Wallet listing,
+remark or preset edits, private-key reveal, Account Center metadata, or other
+API capabilities. Avatar reads and writes return an unavailable or not-found
+response as appropriate; wallet presentation falls back to its deterministic
+default.
 
-A failed candidate write leaves PostgreSQL unchanged. A failed profile update
-is reconciled against PostgreSQL before compensation, so an ambiguous commit
-never causes a live object to be deleted; inability to re-read leaves the
-candidate for the collector. Failed old-object or explicit-delete cleanup is
-logged and later repaired by the grace-period collector. An object
-missing behind a committed reference returns 404 and remains diagnosable from
-the profile metadata and storage logs.
-
-The Compose health check gates the one-shot initializer. Local or production
-initialization failure stops the dependent API startup instead of silently
-using root credentials or a public bucket. MinIO restart reconstructs IAM and
-object state from the retained volume; the initializer is safe to rerun.
+A failed candidate write leaves PostgreSQL unchanged. A failed metadata update
+is reconciled before compensation so an ambiguous commit does not cause a live
+object to be deleted. Failed old-object cleanup is logged and repaired by the
+prefix-specific collector after the grace period. The Compose health check
+still gates initial private-bucket setup, and repeated initialization reconstructs
+IAM from retained MinIO state.
 
 ## Observability
 
 MinIO logs are streamed by Goreman locally and retained by Compose in
 production. Lifecycle logs identify image builds, volume creation/removal,
-readiness failure, and successful private-bucket initialization. Avatar HTTP
-logs include the account UUID for storage or streaming failures but never log
-username, image bytes, or credentials. Garbage collection logs load/list
-failures, per-object delete failures, and deleted/scanned counts when it removes
-objects.
+readiness failure, and private-bucket initialization. Avatar handler logs use
+account UUID and, for wallet operations, wallet ID when diagnosing storage,
+streaming, reconciliation, or cleanup. They exclude usernames, wallet addresses,
+image bytes, object credentials, and private keys. Each collector reports
+reference/list failures, per-object deletion failures, and deletion/scanned
+counts when it removes objects.
 
 ## Change Checklist
 
-- [ ] Store methods and HTTP handlers preserve the private fixed-bucket boundary.
-- [ ] Upload validation, object metadata, profile CAS, and compensation remain ordered as documented.
-- [ ] Authenticated delivery, ETag behavior, and cache headers remain current.
-- [ ] Garbage collection protects referenced and grace-period objects.
-- [ ] MinIO/mc commits, application policy, image names, and health checks remain aligned.
-- [ ] Local stop/reset and production deploy/hot-deploy/destroy preserve their volume boundaries.
-- [ ] Configuration names and defaults match server, Procfile, Compose, initialization, and secret reset wiring.
+- [ ] Shared store configuration and image validation match both handlers.
+- [ ] Account owner-or-administrator and Wallet exact-owner policies remain distinct.
+- [ ] Both CAS, candidate reconciliation, replacement, and reset flows remain ordered as documented.
+- [ ] Private delivery, ETag behavior, and cache headers remain current.
+- [ ] Prefix-specific collectors protect referenced and grace-period objects.
+- [ ] MinIO images, IAM policy, volume lifecycle, and configuration remain aligned.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

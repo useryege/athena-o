@@ -178,10 +178,63 @@ EOF
               error("expected GET operation at \($path)")
             end;
 
+          def rename_definition_property($definition; $from; $to):
+            if (.definitions[$definition].properties[$from]? | type) == "object" then
+              .definitions[$definition].properties[$to] = .definitions[$definition].properties[$from] |
+              del(.definitions[$definition].properties[$from])
+            else
+              error("expected Swagger property \($definition).\($from)")
+            end;
+
+          def rename_query_parameter($path; $method; $from; $to):
+            if ([.paths[$path][$method].parameters[]? | select(.name == $from)] | length) == 1 then
+              (.paths[$path][$method].parameters[] | select(.name == $from).name) = $to
+            else
+              error("expected Swagger query parameter \($method | ascii_upcase) \($path) \($from)")
+            end;
+
+          def require_delete_definition_property($definition; $property):
+            if (.definitions[$definition].properties[$property]? | type) == "object" then
+              del(.definitions[$definition].properties[$property])
+            else
+              error("expected Swagger property \($definition).\($property)")
+            end;
+
+          def wallet_integer_property($definition; $property):
+            if (.definitions[$definition].properties[$property]? | type) == "object" then
+              .definitions[$definition].properties[$property].type = "integer"
+            else
+              error("expected Swagger property \($definition).\($property)")
+            end;
+
           del(.definitions[]?.properties[]? | select(."$ref" != null and .description != null).description) |
           del(.definitions[]?.properties[]? | select(."$ref" != null and .title != null).title) |
           # grpc-gateway may emit int64 fields as strings in swagger; normalize them for JSON clients.
           (.definitions[]?.properties[]? | select(.type == "string" and .format == "int64")) |= (.type = "integer") |
+          # Wallet REST uses the reviewed camelCase contract even though its protobuf field names remain snake_case.
+          rename_definition_property("v1alpha1WalletItem"; "wallet_type"; "walletType") |
+          rename_definition_property("v1alpha1WalletItem"; "avatar_kind"; "avatarKind") |
+          rename_definition_property("v1alpha1WalletItem"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("v1alpha1WalletItem"; "avatar_url"; "avatarUrl") |
+          rename_definition_property("v1alpha1WalletItem"; "created_at"; "createdAt") |
+          rename_definition_property("v1alpha1WalletItem"; "updated_at"; "updatedAt") |
+          wallet_integer_property("v1alpha1WalletItem"; "revision") |
+          rename_definition_property("walletListWalletsResponse"; "page_size"; "pageSize") |
+          rename_definition_property("walletCreateWalletRequest"; "wallet_type"; "walletType") |
+          rename_definition_property("walletCreateWalletRequest"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("walletCreateWalletResponse"; "private_key"; "privateKey") |
+          rename_definition_property("walletImportWalletRequest"; "wallet_type"; "walletType") |
+          rename_definition_property("walletImportWalletRequest"; "private_key"; "privateKey") |
+          rename_definition_property("walletImportWalletRequest"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("walletUpdateWalletRemarkRequest"; "expected_revision"; "expectedRevision") |
+          wallet_integer_property("walletUpdateWalletRemarkRequest"; "expectedRevision") |
+          require_delete_definition_property("walletUpdateWalletRemarkRequest"; "id") |
+          rename_definition_property("walletUpdateWalletAvatarPresetRequest"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("walletUpdateWalletAvatarPresetRequest"; "expected_revision"; "expectedRevision") |
+          wallet_integer_property("walletUpdateWalletAvatarPresetRequest"; "expectedRevision") |
+          require_delete_definition_property("walletUpdateWalletAvatarPresetRequest"; "id") |
+          rename_query_parameter("/api/v1/wallets"; "get"; "wallet_type"; "walletType") |
+          rename_query_parameter("/api/v1/wallets"; "get"; "page_size"; "pageSize") |
           mark_public_get("/api/version") |
           mark_public_get("/api/v1/session/userinfo") |
           mark_public_get("/api/v1/app/bootstrap")

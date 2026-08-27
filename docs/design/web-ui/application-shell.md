@@ -6,8 +6,9 @@ The Application Shell owns anonymous Google and Phantom login entry points,
 shared username setup, authenticated bootstrap, responsive navigation,
 UUID-based identity and cache scoping, authorization refresh, the Pending-access
 experience, Account Center including the Connect AI workflow, Help resources,
-and authorization-sensitive request cleanup. Product pages own domain UI and
-data only after the shell grants a route.
+authorization-sensitive request cleanup, and the Wallet module's responsive
+custody-management surface. Other product pages own domain UI and data only
+after the shell grants a route.
 
 OIDC and SIWS verification, registration tickets, durable UUID identity,
 immutable-username enforcement, API Key issuance, profiles, and Wallet records
@@ -16,6 +17,9 @@ identity subject, wallet signature, Athena bearer token, registration ticket
 ID, or administrator role input. Newly issued API Key bearers exist only in the
 one-time React result state until the user chooses Done, the current account
 changes, or the user leaves the page.
+Wallet private keys follow the same memory-only principle: an imported key is
+discarded with its form, a created key remains only in the mandatory backup
+result, and a revealed key remains only in its current modal.
 
 ## Source Locations
 
@@ -29,6 +33,7 @@ changes, or the user leaves the page.
 | AI connection assembly and verification | [ui/src/app/shared/ai-connection.ts](../../../ui/src/app/shared/ai-connection.ts) | `createAIConnectionID`, `buildAIConnectionDetails`, `verifyAIConnectionCredential` |
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
+| Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -74,6 +79,18 @@ block. The ordinary Create API key form, metadata list, and revocation behavior
 remain alongside it. Help exposes a Connect an AI action only to non-administrator
 accounts with API Key access and always links the public LLM discovery and
 Full-Account AI Access documents.
+
+`/wallet` is an authorization-gated product route. The page shows an owner-
+scoped searchable/filterable card grid and opens one wallet in a right-side
+detail drawer. Wallet `READ` renders safe metadata and address copy; Wallet
+`READ_WRITE` additionally mounts the sensitive write scope for create/import,
+remark and avatar changes, and private-key reveal. The UI never renders another
+owner or an administrator-only Wallet view.
+
+Wide layouts use three cards per row, medium layouts use two, and mobile uses
+one. The detail drawer becomes full-width on mobile. Desktop shows Import and
+Create Wallet separately, while mobile collapses them into one `+` action menu.
+Cards are keyboard-operable and all icon-only controls have accessible labels.
 
 ## Runtime Flow
 
@@ -154,6 +171,33 @@ Full-Account AI Access documents.
     discovery and Full-Account AI Access links open the public documents in a
     new tab; support, Swagger UI, and download resources retain their existing
     behavior.
+18. Wallet cards load only for the current account and support server-side
+    pagination plus remark/address search and All/EVM/Solana filtering. Selecting
+    a card opens safe address, type, source, timestamps, remark, avatar, and the
+    private-key action in the responsive drawer.
+19. Create and Import both require wallet type, a trimmed 1–50-Unicode-character
+    remark, and optional bundled avatar preset. Create receives one generated
+    private key and immediately enters a non-dismissible backup modal; Done is
+    disabled until the user confirms secure backup. Import sends the entered key
+    once and never echoes it in the result. A custom image can be uploaded only
+    after the Wallet row exists.
+20. Remark, preset, upload, and avatar reset submit the selected item's current
+    `expectedRevision`. A conflict reloads the latest item and asks the user to
+    review before retrying. Uploaded-avatar display failures fall back to the
+    deterministic wallet-type/address avatar. JPEG, PNG, and WebP receive local
+    type/2-MiB feedback before the server performs authoritative decoding.
+21. View / Export first calls the same-origin reveal resource. A missing lease
+    branches by persisted login provider: Google stores only wallet ID/action in
+    `sessionStorage` and navigates to the fresh OIDC flow; Solana connects the
+    same persisted Phantom address, signs the server message, verifies it, and
+    retries reveal; isolated disabled-auth development requests its loopback
+    lease. The result modal offers masked display and copy only, never a
+    plaintext download.
+22. Closing a secret or backup result, leaving the route, changing account or
+    access projection, losing Wallet write access, or unmounting the sensitive
+    scope drops all private-key references and aborts scoped work. The Google
+    pending action is read and removed once after navigation; no private key,
+    signature, lease, or authentication material enters browser storage.
 
 ## State / Data
 
@@ -190,6 +234,20 @@ The bearer result and token-list snapshot carry their owning `accountId`; a
 different current account cannot render them. Closing the one-time result
 through Done drops the references from UI state.
 
+Wallet list items contain only safe metadata. The create result's private key,
+the import form's submitted key, the reveal result, and Phantom's signed bytes
+are current-component state only. The non-dismissible create backup modal keeps
+the generated key visible until explicit confirmation, then drops it. The reveal
+modal drops its key on close. Route/account/access changes unmount or
+reset the sensitive surface and invalidate late asynchronous completions through
+`SensitiveWriteScope`.
+
+The only Wallet `sessionStorage` value is
+`athena.wallet-secret.pending-action`, containing a validated action name and
+positive wallet ID for a Google redirect. It is consumed and removed before the
+resumed reveal. Wallet keys, Google state, SIWS challenge/signature, and lease
+cookies never enter Web Storage; the cookies remain HttpOnly.
+
 ## Configuration
 
 The UI uses same-origin `/auth/google/login`, `/auth/google/callback`,
@@ -204,6 +262,12 @@ UI loads both provider marks from the application bundle. Registration uses
 24 px mobile padding, full-width actions, and touch targets of at least 44 px.
 The authenticated shell supports normal and dark themes; anonymous setup does
 not wait for stored preferences.
+
+Wallet management uses same-origin `/api/v1/wallets` metadata resources,
+`GET|PUT|DELETE /api/v1/wallets/{id}/avatar`, native
+`POST /api/v1/wallets/{id}:revealPrivateKey`, and provider-specific
+`/auth/wallet-secrets/*` endpoints. The browser has no Wallet encryption key,
+object-store credential, owner selector, or configurable reauthentication TTL.
 
 Connect AI uses the document's runtime base URI rather than a configured or
 hard-coded public domain. This produces deployment-specific absolute URLs while
@@ -228,8 +292,17 @@ portable to an arbitrary reverse-proxy subpath.
 - Durable and generally projected public UI state excludes Google subject, the
   generic identity-subject field, signature, JWT, JTI, identity-binding value,
   ticket ID, and bearer secret. The one-time API Key and Connect AI result is
-  the deliberate React-memory-only bearer exception. Solana accounts
+  a deliberate React-memory-only bearer exception; one-time created and revealed
+  Wallet keys are separate React-memory-only custody exceptions. Solana accounts
   deliberately expose the same public key as `solanaAddress`.
+- Wallet private keys are never placed in URLs, localStorage, sessionStorage,
+  caches, downloadable files, list/detail models, or retained form results.
+- Wallet Google-return storage contains only wallet ID and action and is consumed
+  once. Account or access changes clear sensitive React state; loss of Wallet
+  write access also removes any pending action.
+- API Keys may use safe Wallet metadata operations allowed by module access but
+  cannot create, import, or reveal private keys. The server remains authoritative
+  even when bootstrap does not project credential capability.
 - Connect AI is available only when API Key access is enabled for an ordinary
   account. The fixed administrator cannot enter this credential path.
 - Connect AI and Create API key issue the same full-current-account bearer;
@@ -240,6 +313,8 @@ portable to an arbitrary reverse-proxy subpath.
   owning account ID; an authorization switch clears the creation and result
   state instead of relabeling or exposing it to the next account.
 - Administrator layout remains master/detail on desktop and two-stage on mobile.
+- Wallet layout remains three/two/one columns across wide/medium/mobile widths,
+  with a full-screen mobile detail drawer and collapsed creation menu.
 
 ## Failure Recovery
 
@@ -258,6 +333,14 @@ Bootstrap or user-info authentication failure returns to Login. Maintenance
 preserves its stable reason. Authorization refresh never optimistically exposes
 a module; revocation aborts active work before route fallback. Google callback
 failure starts new one-time state on retry.
+
+Wallet revision conflict reloads the latest selected item before another edit.
+Object-store failure leaves safe Wallet list/detail and private-key flows usable;
+an uploaded-image read failure falls back to the generated avatar. A missing or
+expired wallet-secret lease starts provider reauthentication, while provider or
+Redis unavailability reports a stable reason and retains no private-key result.
+If a reveal succeeds but the associated safe item cannot be resolved, the key
+is discarded rather than displayed without ownership context.
 
 Connect AI creation failure leaves the creation form available for correction.
 Credential verification failure exposes a retry action and explanatory status
@@ -278,6 +361,11 @@ does not include Google tokens, identity subjects, SIWS text, signatures, ticket
 identifiers, CSRF secrets, or credential material; caches can be diagnosed by
 account UUID and module scope.
 
+Wallet reauthentication progress, revision conflicts, copy failures, and stable
+server reasons appear only in current UI notifications or live regions. Client
+telemetry excludes imported, generated, and revealed keys, SIWS messages and
+signatures, wallet-secret pending actions, and lease material.
+
 Connect AI exposes verification state and copy failures only in the current UI.
 It does not log the bearer or instruction block, and the verification request
 does not create a separate server-side integration or connection status.
@@ -293,4 +381,6 @@ does not create a separate server-side integration or connection status.
       existing account-level API Key contract.
 - [ ] Help and Security apply the same ordinary-account API Key eligibility.
 - [ ] Responsive administrator list/detail behavior remains current.
+- [ ] Wallet grid/drawer, create/import backup, avatar CAS, and provider reauthentication remain current.
+- [ ] Wallet private-key and pending-action cleanup remains route/account/access scoped.
 - [ ] The [design index](../README.md) contains the current summary.

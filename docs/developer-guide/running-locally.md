@@ -80,6 +80,14 @@ The default local stack exposes:
 - Redis: `localhost:6379`
 - PostgreSQL: `localhost:5432`
 
+The Wallet gRPC process binds `127.0.0.1:8088` by default. The Procfile supplies
+the same explicit development-only `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` to Wallet
+and the API Server, and the API Server attaches it to every internal Wallet RPC.
+If you override this value while running either process separately, use the same
+token of at least 32 bytes for both processes. Missing or mismatched credentials
+leave the standard Wallet health probe available but reject every business and
+private-key RPC.
+
 Use the CLI against the local API with:
 
 ```bash
@@ -112,7 +120,9 @@ and related service boundaries. Before first use of this implementation, run
 `make run-reset`, then `make run`. Reset removes accounts, administrator binding, profiles,
 access grants, API Keys, sessions, OAuth transactions, Phantom challenges, shared
 registration tickets, Profit Sharing references, and avatars; there is no compatibility
-import.
+import. The current Wallet schema also replaces the former system-wallet/seed model with
+owner-only EVM and Solana wallets, so an existing local volume must be reset before its
+next startup; the application never performs that destructive reset automatically.
 
 Supported variables:
 
@@ -121,6 +131,8 @@ Supported variables:
 - `ATHENA_POSTGRES_PORT` default: `5432`
 - `ATHENA_POSTGRES_IMAGE_TAG` default: `16`
 - `ATHENA_POSTGRES_INIT_DIR` default: `hack/postgres/init`
+- `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` default in the Procfile:
+  `athena-local-wallet-internal-auth-token-2026`
 
 Etherscan API keys are documented separately in
 [Etherscan Configuration](../etherscan-configuration.md).
@@ -154,6 +166,11 @@ For a Docker Compose run that mirrors production deployment more closely:
 make prod-build-local
 make prod-start-local
 ```
+
+Production-like Compose requires `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` in its env
+file. `make prod-reset-secrets` generates a new 40-character value; both the
+Wallet and API Server containers receive it explicitly, while unrelated
+containers receive an empty override.
 
 Stop it with:
 

@@ -2,11 +2,13 @@ package apiclient
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/util/env"
 	utilgrpc "github.com/useryege/athena/util/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -29,9 +31,17 @@ func (c *clientSet) Wallet() WalletServiceClient {
 	return c.client
 }
 
-// NewWalletClientset creates a new instance of wallet Clientset.
-func NewWalletClientset(address string) (Clientset, error) {
-	connection, err := utilgrpc.NewClientConnection(address)
+// NewWalletClientset creates a Wallet client whose every RPC carries the
+// required internal service bearer credential.
+func NewWalletClientset(address, internalAuthToken string) (Clientset, error) {
+	token, err := NormalizeInternalAuthToken(internalAuthToken)
+	if err != nil {
+		return nil, fmt.Errorf("validate Wallet internal authentication: %w", err)
+	}
+	connection, err := utilgrpc.NewClientConnection(
+		address,
+		grpc.WithPerRPCCredentials(internalBearerCredentials{authorization: "Bearer " + token}),
+	)
 	if err != nil {
 		return nil, err
 	}

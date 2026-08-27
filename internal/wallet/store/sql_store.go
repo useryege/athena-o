@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -32,48 +33,52 @@ type SQLStore struct {
 }
 
 var (
-	ErrWalletAlreadyExists = errors.New("wallet already exists")
-	ErrWalletNotFound      = errors.New("wallet not found")
+	ErrWalletAlreadyExists    = errors.New("wallet already exists")
+	ErrWalletNotFound         = errors.New("wallet not found")
+	ErrWalletRevisionConflict = errors.New("wallet revision conflict")
 )
 
 type CreateWalletRecordRequest struct {
 	OwnerAccountID       string
-	Chain                string
-	Type                 string
+	WalletType           string
 	Address              string
 	AddressKey           string
-	Alias                string
-	PrivateKeyCiphertext []byte
-	MnemonicCiphertext   []byte
+	Remark               string
 	Source               string
-	DerivationPath       string
+	PrivateKeyCiphertext []byte
+	AvatarPresetID       string
 }
 
 type ListWalletsOptions struct {
-	RequesterAccountID     string
-	RequesterAdministrator bool
-	Chain                  string
-	Type                   string
-	Query                  string
-	Page                   int
-	PageSize               int
+	OwnerAccountID string
+	WalletType     string
+	Query          string
+	Page           int
+	PageSize       int
 }
 
 type WalletRecord struct {
 	ID                   int64
 	OwnerAccountID       string
-	SystemOwned          bool
-	Chain                string
-	Type                 string
+	WalletType           string
 	Address              string
 	AddressKey           string
-	Alias                string
-	PrivateKeyCiphertext []byte
-	MnemonicCiphertext   []byte
+	Remark               string
 	Source               string
-	DerivationPath       string
+	PrivateKeyCiphertext []byte
+	AvatarPresetID       string
+	AvatarObjectKey      string
+	AvatarContentType    string
+	AvatarETag           string
+	AvatarSizeBytes      int64
+	Revision             int64
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
+}
+
+type AvatarMutationResult struct {
+	Item                    *v1alpha1.WalletItem
+	PreviousAvatarObjectKey string
 }
 
 func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
@@ -122,15 +127,13 @@ func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordReque
 	}
 	row, err := s.queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
 		OwnerAccountID:       ownerAccountID,
-		Chain:                req.Chain,
-		Type:                 req.Type,
+		WalletType:           req.WalletType,
 		Address:              req.Address,
 		AddressKey:           req.AddressKey,
-		Alias:                req.Alias,
-		PrivateKeyCiphertext: req.PrivateKeyCiphertext,
-		MnemonicCiphertext:   nullableBytes(req.MnemonicCiphertext),
+		Remark:               req.Remark,
 		Source:               req.Source,
-		DerivationPath:       req.DerivationPath,
+		PrivateKeyCiphertext: req.PrivateKeyCiphertext,
+		AvatarPresetID:       req.AvatarPresetID,
 	})
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -145,16 +148,16 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 	if s.queries == nil {
 		return nil, 0, fmt.Errorf("wallet postgres database is not configured")
 	}
-	filters, err := walletFilterParams(opts)
+	ownerAccountID, err := requiredUUID(opts.OwnerAccountID)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("validate wallet owner account ID: %w", err)
 	}
+	walletType := nullableTrimmedText(opts.WalletType)
+	query := nullableKeyword(opts.Query)
 	total, err := s.queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
-		RequesterAccountID:     filters.RequesterAccountID,
-		RequesterAdministrator: filters.RequesterAdministrator,
-		Chain:                  filters.Chain,
-		Type:                   filters.Type,
-		Query:                  filters.Query,
+		OwnerAccountID: ownerAccountID,
+		WalletType:     walletType,
+		Query:          query,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("count wallets: %w", err)
@@ -169,37 +172,45 @@ func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]
 		pageSize = 20
 	}
 	rows, err := s.queries.ListWallets(ctx, walletsqlc.ListWalletsParams{
-		Limit:                  int32(pageSize),
-		Offset:                 int32((page - 1) * pageSize),
-		RequesterAccountID:     filters.RequesterAccountID,
-		RequesterAdministrator: filters.RequesterAdministrator,
-		Chain:                  filters.Chain,
-		Type:                   filters.Type,
-		Query:                  filters.Query,
+		Limit:          int32(pageSize),
+		Offset:         int32((page - 1) * pageSize),
+		OwnerAccountID: ownerAccountID,
+		WalletType:     walletType,
+		Query:          query,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list wallets: %w", err)
 	}
 
-	items := []*v1alpha1.WalletItem{}
+	items := make([]*v1alpha1.WalletItem, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, walletItemFromListRow(row))
+		items = append(items, walletItem(
+			row.ID,
+			row.WalletType,
+			row.Address,
+			row.Remark,
+			row.Source,
+			row.AvatarPresetID,
+			row.AvatarObjectKey,
+			row.Revision,
+			row.CreatedAt.Time,
+			row.UpdatedAt.Time,
+		))
 	}
 	return items, total, nil
 }
 
-func (s *SQLStore) GetWallet(ctx context.Context, id int64, requesterAccountID string, requesterAdministrator bool) (*WalletRecord, error) {
+func (s *SQLStore) GetWallet(ctx context.Context, id int64, ownerAccountID string) (*WalletRecord, error) {
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
-	requesterUUID, err := requiredUUID(requesterAccountID)
+	ownerUUID, err := requiredUUID(ownerAccountID)
 	if err != nil {
-		return nil, fmt.Errorf("validate wallet requester account ID: %w", err)
+		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
 	}
 	row, err := s.queries.GetWallet(ctx, walletsqlc.GetWalletParams{
-		ID:                     id,
-		RequesterAccountID:     requesterUUID,
-		RequesterAdministrator: requesterAdministrator,
+		ID:             id,
+		OwnerAccountID: ownerUUID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -210,126 +221,244 @@ func (s *SQLStore) GetWallet(ctx context.Context, id int64, requesterAccountID s
 	return walletRecordFromSQLC(row), nil
 }
 
-func (s *SQLStore) UpdateWalletAlias(ctx context.Context, id int64, requesterAccountID string, requesterAdministrator bool, alias string) (*v1alpha1.WalletItem, error) {
+func (s *SQLStore) UpdateWalletRemark(ctx context.Context, id int64, ownerAccountID string, expectedRevision uint64, remark string) (*v1alpha1.WalletItem, error) {
 	if s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
-	requesterUUID, err := requiredUUID(requesterAccountID)
+	ownerUUID, err := requiredUUID(ownerAccountID)
 	if err != nil {
-		return nil, fmt.Errorf("validate wallet requester account ID: %w", err)
+		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
 	}
-	row, err := s.queries.UpdateWalletAlias(ctx, walletsqlc.UpdateWalletAliasParams{
-		ID:                     id,
-		RequesterAccountID:     requesterUUID,
-		RequesterAdministrator: requesterAdministrator,
-		Alias:                  alias,
+	expectedRevisionDB, err := revisionToDB(expectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.queries.UpdateWalletRemark(ctx, walletsqlc.UpdateWalletRemarkParams{
+		ID:               id,
+		OwnerAccountID:   ownerUUID,
+		ExpectedRevision: expectedRevisionDB,
+		Remark:           remark,
 	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrWalletNotFound
-		}
-		return nil, fmt.Errorf("update wallet alias: %w", err)
+		return nil, s.classifyMutationError(ctx, id, ownerAccountID, "update wallet remark", err)
 	}
-	return walletItemFromUpdateRow(row), nil
+	return walletItem(
+		row.ID,
+		row.WalletType,
+		row.Address,
+		row.Remark,
+		row.Source,
+		row.AvatarPresetID,
+		row.AvatarObjectKey,
+		row.Revision,
+		row.CreatedAt.Time,
+		row.UpdatedAt.Time,
+	), nil
 }
 
-type walletFilters struct {
-	RequesterAccountID     pgtype.UUID
-	RequesterAdministrator bool
-	Chain                  pgtype.Text
-	Type                   pgtype.Text
-	Query                  pgtype.Text
-}
-
-func walletFilterParams(opts ListWalletsOptions) (walletFilters, error) {
-	requesterAccountID, err := requiredUUID(opts.RequesterAccountID)
+func (s *SQLStore) UpdateWalletAvatarPreset(ctx context.Context, id int64, ownerAccountID string, expectedRevision uint64, avatarPresetID string) (*AvatarMutationResult, error) {
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	ownerUUID, err := requiredUUID(ownerAccountID)
 	if err != nil {
-		return walletFilters{}, fmt.Errorf("validate wallet requester account ID: %w", err)
+		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
 	}
-	return walletFilters{
-		RequesterAccountID:     requesterAccountID,
-		RequesterAdministrator: opts.RequesterAdministrator,
-		Chain:                  nullableTrimmedText(opts.Chain),
-		Type:                   nullableTrimmedText(opts.Type),
-		Query:                  nullableKeyword(opts.Query),
+	expectedRevisionDB, err := revisionToDB(expectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.queries.UpdateWalletAvatarPreset(ctx, walletsqlc.UpdateWalletAvatarPresetParams{
+		ID:               id,
+		OwnerAccountID:   ownerUUID,
+		ExpectedRevision: expectedRevisionDB,
+		AvatarPresetID:   avatarPresetID,
+	})
+	if err != nil {
+		return nil, s.classifyMutationError(ctx, id, ownerAccountID, "update wallet avatar preset", err)
+	}
+	return &AvatarMutationResult{
+		Item: walletItem(
+			row.ID,
+			row.WalletType,
+			row.Address,
+			row.Remark,
+			row.Source,
+			row.AvatarPresetID,
+			row.AvatarObjectKey,
+			row.Revision,
+			row.CreatedAt.Time,
+			row.UpdatedAt.Time,
+		),
+		PreviousAvatarObjectKey: row.PreviousAvatarObjectKey,
 	}, nil
 }
 
-func walletRecordFromSQLC(row walletsqlc.WalletPrivateKey) *WalletRecord {
+func (s *SQLStore) ReplaceWalletAvatarMetadata(ctx context.Context, id int64, ownerAccountID string, expectedRevision uint64, objectKey, contentType, etag string, sizeBytes int64) (*AvatarMutationResult, error) {
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	ownerUUID, err := requiredUUID(ownerAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
+	}
+	expectedRevisionDB, err := revisionToDB(expectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.queries.ReplaceWalletAvatarMetadata(ctx, walletsqlc.ReplaceWalletAvatarMetadataParams{
+		ID:                id,
+		OwnerAccountID:    ownerUUID,
+		ExpectedRevision:  expectedRevisionDB,
+		AvatarObjectKey:   objectKey,
+		AvatarContentType: contentType,
+		AvatarEtag:        etag,
+		AvatarSizeBytes:   sizeBytes,
+	})
+	if err != nil {
+		return nil, s.classifyMutationError(ctx, id, ownerAccountID, "replace wallet avatar metadata", err)
+	}
+	return &AvatarMutationResult{
+		Item: walletItem(
+			row.ID,
+			row.WalletType,
+			row.Address,
+			row.Remark,
+			row.Source,
+			row.AvatarPresetID,
+			row.AvatarObjectKey,
+			row.Revision,
+			row.CreatedAt.Time,
+			row.UpdatedAt.Time,
+		),
+		PreviousAvatarObjectKey: row.PreviousAvatarObjectKey,
+	}, nil
+}
+
+func (s *SQLStore) ResetWalletAvatarMetadata(ctx context.Context, id int64, ownerAccountID string, expectedRevision uint64) (*AvatarMutationResult, error) {
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	ownerUUID, err := requiredUUID(ownerAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
+	}
+	expectedRevisionDB, err := revisionToDB(expectedRevision)
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.queries.ResetWalletAvatarMetadata(ctx, walletsqlc.ResetWalletAvatarMetadataParams{
+		ID:               id,
+		OwnerAccountID:   ownerUUID,
+		ExpectedRevision: expectedRevisionDB,
+	})
+	if err != nil {
+		return nil, s.classifyMutationError(ctx, id, ownerAccountID, "reset wallet avatar metadata", err)
+	}
+	return &AvatarMutationResult{
+		Item: walletItem(
+			row.ID,
+			row.WalletType,
+			row.Address,
+			row.Remark,
+			row.Source,
+			row.AvatarPresetID,
+			row.AvatarObjectKey,
+			row.Revision,
+			row.CreatedAt.Time,
+			row.UpdatedAt.Time,
+		),
+		PreviousAvatarObjectKey: row.PreviousAvatarObjectKey,
+	}, nil
+}
+
+func (s *SQLStore) ListWalletAvatarObjectKeys(ctx context.Context) ([]string, error) {
+	if s.queries == nil {
+		return nil, fmt.Errorf("wallet postgres database is not configured")
+	}
+	keys, err := s.queries.ListWalletAvatarObjectKeys(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list wallet avatar object keys: %w", err)
+	}
+	return keys, nil
+}
+
+func (s *SQLStore) classifyMutationError(ctx context.Context, id int64, ownerAccountID, operation string, mutationErr error) error {
+	if !errors.Is(mutationErr, pgx.ErrNoRows) {
+		return fmt.Errorf("%s: %w", operation, mutationErr)
+	}
+	_, err := s.GetWallet(ctx, id, ownerAccountID)
+	switch {
+	case errors.Is(err, ErrWalletNotFound):
+		return ErrWalletNotFound
+	case err != nil:
+		return fmt.Errorf("%s: classify concurrent update: %w", operation, err)
+	default:
+		return ErrWalletRevisionConflict
+	}
+}
+
+func walletRecordFromSQLC(row walletsqlc.Wallet) *WalletRecord {
 	return &WalletRecord{
 		ID:                   row.ID,
 		OwnerAccountID:       uuidString(row.OwnerAccountID),
-		SystemOwned:          row.SystemOwned,
-		Chain:                row.Chain,
-		Type:                 row.Type,
+		WalletType:           row.WalletType,
 		Address:              row.Address,
 		AddressKey:           row.AddressKey,
-		Alias:                row.Alias,
-		PrivateKeyCiphertext: row.PrivateKeyCiphertext,
-		MnemonicCiphertext:   row.MnemonicCiphertext,
+		Remark:               row.Remark,
 		Source:               row.Source,
-		DerivationPath:       row.DerivationPath,
+		PrivateKeyCiphertext: row.PrivateKeyCiphertext,
+		AvatarPresetID:       row.AvatarPresetID,
+		AvatarObjectKey:      row.AvatarObjectKey,
+		AvatarContentType:    row.AvatarContentType,
+		AvatarETag:           row.AvatarEtag,
+		AvatarSizeBytes:      row.AvatarSizeBytes,
+		Revision:             row.Revision,
 		CreatedAt:            row.CreatedAt.Time,
 		UpdatedAt:            row.UpdatedAt.Time,
 	}
 }
 
-func walletItemFromListRow(row walletsqlc.ListWalletsRow) *v1alpha1.WalletItem {
-	return &v1alpha1.WalletItem{
-		ID:             row.ID,
-		OwnerAccountID: uuidString(row.OwnerAccountID),
-		SystemOwned:    row.SystemOwned,
-		Chain:          row.Chain,
-		Type:           row.Type,
-		Address:        row.Address,
-		Alias:          row.Alias,
-		Source:         row.Source,
-		DerivationPath: row.DerivationPath,
-		CreatedAt:      formatTime(row.CreatedAt.Time),
-		UpdatedAt:      formatTime(row.UpdatedAt.Time),
-	}
-}
-
-func walletItemFromUpdateRow(row walletsqlc.UpdateWalletAliasRow) *v1alpha1.WalletItem {
-	return &v1alpha1.WalletItem{
-		ID:             row.ID,
-		OwnerAccountID: uuidString(row.OwnerAccountID),
-		SystemOwned:    row.SystemOwned,
-		Chain:          row.Chain,
-		Type:           row.Type,
-		Address:        row.Address,
-		Alias:          row.Alias,
-		Source:         row.Source,
-		DerivationPath: row.DerivationPath,
-		CreatedAt:      formatTime(row.CreatedAt.Time),
-		UpdatedAt:      formatTime(row.UpdatedAt.Time),
-	}
-}
-
-func (r *WalletRecord) ToDetail() *v1alpha1.WalletDetail {
+func (r *WalletRecord) ToItem() *v1alpha1.WalletItem {
 	if r == nil {
 		return nil
 	}
-	return &v1alpha1.WalletDetail{
-		ID:             r.ID,
-		OwnerAccountID: r.OwnerAccountID,
-		SystemOwned:    r.SystemOwned,
-		Chain:          r.Chain,
-		Type:           r.Type,
-		Address:        r.Address,
-		Alias:          r.Alias,
-		Source:         r.Source,
-		DerivationPath: r.DerivationPath,
-		CreatedAt:      formatTime(r.CreatedAt),
-		UpdatedAt:      formatTime(r.UpdatedAt),
-	}
+	return walletItem(
+		r.ID,
+		r.WalletType,
+		r.Address,
+		r.Remark,
+		r.Source,
+		r.AvatarPresetID,
+		r.AvatarObjectKey,
+		r.Revision,
+		r.CreatedAt,
+		r.UpdatedAt,
+	)
 }
 
-func nullableBytes(value []byte) []byte {
-	if len(value) == 0 {
-		return nil
+func walletItem(id int64, walletType, address, remark, source, avatarPresetID, avatarObjectKey string, revision int64, createdAt, updatedAt time.Time) *v1alpha1.WalletItem {
+	avatarKind := "default"
+	avatarURL := ""
+	if avatarPresetID != "" {
+		avatarKind = "preset"
+	} else if avatarObjectKey != "" {
+		avatarKind = "upload"
+		avatarURL = fmt.Sprintf("/api/v1/wallets/%d/avatar?v=%d", id, revision)
 	}
-	return value
+	return &v1alpha1.WalletItem{
+		ID:             id,
+		WalletType:     walletType,
+		Address:        address,
+		Remark:         remark,
+		Source:         source,
+		AvatarKind:     avatarKind,
+		AvatarPresetID: avatarPresetID,
+		AvatarURL:      avatarURL,
+		Revision:       uint64(revision),
+		CreatedAt:      formatTime(createdAt),
+		UpdatedAt:      formatTime(updatedAt),
+	}
 }
 
 func requiredUUID(value string) (pgtype.UUID, error) {
@@ -375,6 +504,13 @@ func formatTime(value time.Time) string {
 		return ""
 	}
 	return value.UTC().Format(time.RFC3339)
+}
+
+func revisionToDB(value uint64) (int64, error) {
+	if value == 0 || value > math.MaxInt64 {
+		return 0, fmt.Errorf("expected revision must be between 1 and %d", int64(math.MaxInt64))
+	}
+	return int64(value), nil
 }
 
 func isUniqueViolation(err error) bool {

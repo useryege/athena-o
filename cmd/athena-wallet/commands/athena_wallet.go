@@ -17,6 +17,7 @@ import (
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/wallet"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -36,9 +37,11 @@ func NewCommand() *cobra.Command {
 	)
 
 	command := &cobra.Command{
-		Use:               cliName,
-		Short:             "Run the Athena Wallet service",
-		Long:              "The Wallet service manages wallet-level workloads. This command runs the service in the foreground.",
+		Use:   cliName,
+		Short: "Run the Athena Wallet service",
+		Long: "The Wallet service manages account-owned EVM and Solana wallets. This command runs the service in the foreground.\n\n" +
+			"ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes without whitespace and must match the API Server value. " +
+			"Every non-health RPC requires this internal Bearer, and the service refuses startup when it is absent or invalid.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			vers := common.GetVersion()
@@ -63,7 +66,11 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 
-			server, err := wallet.NewServer(wallet.ServerOpts{Store: store, EncryptionKey: encryptionKey})
+			server, err := wallet.NewServer(wallet.ServerOpts{
+				Store:             store,
+				EncryptionKey:     encryptionKey,
+				InternalAuthToken: env.StringFromEnv(walletapiclient.InternalAuthTokenEnv, ""),
+			})
 			if err != nil {
 				return err
 			}
@@ -109,7 +116,7 @@ func NewCommand() *cobra.Command {
 
 	command.Flags().StringVar(&cmdutil.LogFormat, "logformat", env.StringFromEnv(common.EnvLogFormat, "json"), "Set the logging format. One of: json|text")
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
-	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_WALLET_LISTEN_ADDRESS", common.DefaultAddressWallet), "Listen on given address for incoming connections")
+	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_WALLET_LISTEN_ADDRESS", common.DefaultLocalGRPCHost), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortWallet, "Listen on given port for incoming connections")
 
 	storeSrc = walletstore.NewSQLStoreSource()

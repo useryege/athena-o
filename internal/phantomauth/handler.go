@@ -62,6 +62,7 @@ type Handler struct {
 	publicOrigin  string
 	domain        string
 	secureCookie  bool
+	walletSecrets *walletSecretReauthentication
 }
 
 func NewHandler(redisClient *redis.Client, backend authregistration.Backend, registrations *authregistration.Handler, publicOrigin string) (*Handler, error) {
@@ -246,11 +247,15 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) siwsMessage(address, nonce string, issuedAt, expiresAt time.Time) string {
+	return h.siwsMessageWithStatement(address, siwsStatement, nonce, issuedAt, expiresAt)
+}
+
+func (h *Handler) siwsMessageWithStatement(address, statement, nonce string, issuedAt, expiresAt time.Time) string {
 	return fmt.Sprintf(
 		"%s wants you to sign in with your Solana account:\n%s\n\n%s\n\nURI: %s\nVersion: %s\nChain ID: %s\nNonce: %s\nIssued At: %s\nExpiration Time: %s",
 		h.domain,
 		address,
-		siwsStatement,
+		statement,
 		h.publicOrigin,
 		siwsVersion,
 		siwsChainID,

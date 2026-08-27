@@ -6,7 +6,9 @@ Run the Athena API server
 
 ### Synopsis
 
-The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems.  This command runs API server in the foreground.  It can be configured by following options.
+The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems. This command runs API server in the foreground. It can be configured by following options.
+
+ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes without whitespace and must match the Wallet service value. It is an internal service credential, not an Athena user API Key, and the server refuses startup when it is absent or invalid.
 
 ```
 athena-server [flags]
@@ -65,34 +67,6 @@ athena-server [flags]
       --worm-markets-server-address string             Athena Worm Markets server address (default "127.0.0.1:8084")
       --x-frame-options value                          Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
 ```
-
-### Authentication environment
-
-Normal authentication requires `ATHENA_GOOGLE_OIDC_CLIENT_ID`, a client secret
-from `ATHENA_GOOGLE_OIDC_CLIENT_SECRET` or its `_FILE` form, the exact
-`ATHENA_GOOGLE_OIDC_REDIRECT_URI`, `ATHENA_ADMIN_GOOGLE_EMAIL`, and an Athena JWT
-key from `ATHENA_JWT_SECRET` or its `_FILE` form. The redirect path must be
-`/auth/google/callback`; production uses HTTPS and localhost development may use
-HTTP.
-
-The same redirect URI's scheme and authority define the trusted Sign-In With
-Solana domain and URI. Desktop Phantom login adds no App ID, client secret,
-callback, Solana RPC, or per-wallet environment variable. The reverse proxy
-must forward `/auth/phantom/*` and `/auth/registration*` without path rewriting
-in addition to `/auth/google/*`.
-
-Any fully verified Google user or valid Phantom Solana signer may start sign-in.
-The server persists an unknown provider identity only in a shared 15-minute
-registration ticket and directs the browser to `/register`; no account or
-Athena cookie exists until the user submits an available permanent username.
-Successful registration creates a UUID `account_id` as the internal identity
-and gives an ordinary account Pending access. A verified Google email matching
-`ATHENA_ADMIN_GOOGLE_EMAIL` marks the sole administrator candidate; Phantom
-identities can never be administrators. Google and Phantom identities remain
-separate accounts with permanent bindings. No per-user identity environment
-variables or password login are used. `--disable-auth` skips external-login
-inputs only for the loopback development identity. Reset local state before
-switching between that identity and normal authentication.
 
 ### SEE ALSO
 

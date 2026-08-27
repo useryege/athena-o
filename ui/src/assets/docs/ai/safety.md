@@ -6,11 +6,13 @@ This is direct credential handoff, not bounded authorization delegation.
 
 ## Authority of the Bearer
 
-An API Key represents the owning account's complete current authorization within Athena's HTTP API. It has no independent module scopes, read-only setting, operation allowlist, agent identity, or human approval gate.
+An API Key represents the owning account's complete current authorization for API-Key-eligible operations within Athena's HTTP API. It has no independent module scopes, read-only setting, operation allowlist, agent identity, or human approval gate.
 
-A bearer can perform every read, write, sensitive-data, and account self-service operation that the account can currently perform. This includes API Key management and wallet-secret operations when the account has the required module level and resource ownership.
+A bearer can perform every API-Key-eligible read, write, sensitive-data, and account self-service operation that the account can currently perform. This includes API Key management when the account's current authorization permits it.
 
-Full-account authority means all operations available to the owning account, not all operations in Athena. Server-side module checks, entitlements, memberships, ownership rules, business preconditions, and other authorization boundaries continue to apply when relevant to the requested operation.
+Some operations explicitly require an interactive browser login rather than a bearer credential. Wallet creation and import are unavailable to API Keys. Private-key reveal is also unavailable to API Keys and requires the owning user's browser session, Wallet `READ_WRITE`, and a fresh five-minute reauthentication lease. API Keys retain owner-scoped wallet metadata and avatar access at the applicable Wallet module level.
+
+Full-account authority means all API-Key-eligible operations available to the owning account, not all operations in Athena. Server-side module checks, credential-class requirements, entitlements, memberships, ownership rules, business preconditions, and other authorization boundaries continue to apply when relevant to the requested operation.
 
 The fixed administrator account does not support API Keys, so administrator authority is outside this AI-access model.
 

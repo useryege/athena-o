@@ -7,8 +7,9 @@ the Foreman process graph; reusable PostgreSQL, Redis, and MinIO containers; and
 the local configuration boundary used by the API Server and business services.
 Google OIDC and Phantom Solana authentication remain API Server behavior, while
 the local runtime supplies the fixed public origin, Redis OAuth/challenge/shared-
-registration stores, durable UUID account database, and reset boundary required
-by the isolated disabled-auth identity.
+registration and wallet-secret lease stores, durable account and Wallet
+databases, private account/wallet avatar storage, and reset boundary required by
+the isolated disabled-auth identity.
 
 ## Source Locations
 
@@ -21,15 +22,19 @@ by the isolated disabled-auth identity.
 | MinIO runtime | [hack/start-minio.sh](../../../hack/start-minio.sh) | private avatar bucket and application credential |
 | External-authentication configuration | [.env](../../../.env), [internal/googleoidc/config.go](../../../internal/googleoidc/config.go) | `ATHENA_GOOGLE_OIDC_*`, `ATHENA_ADMIN_GOOGLE_EMAIL`; no Phantom-specific variables |
 | Transient authentication state | [internal/googleoidc/store.go](../../../internal/googleoidc/store.go), [internal/phantomauth/store.go](../../../internal/phantomauth/store.go), [internal/authregistration/store.go](../../../internal/authregistration/store.go) | five-minute OAuth transactions, five-minute SIWS challenges, 15-minute shared registrations |
+| Wallet-secret transient state | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go) | five-minute lease, Google reauthentication transaction, Solana reauthentication challenge |
 | Account-state migration | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql) | durable identity, access, profile, preferences, API Keys |
+| Wallet current-state migration | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql) | UUID-owned EVM/Solana custody and avatar metadata |
 
 ## Architecture
 
 `make run` starts dependency containers and then the Procfile foreground process
 group. PostgreSQL stores UUID accounts, immutable usernames, access,
-profiles/preferences, and API Keys. Redis stores revocations, five-minute OAuth
-transactions, five-minute Phantom SIWS challenges, and 15-minute anonymous
-registration tickets. MinIO stores private avatar objects. The Vite development
+profiles/preferences, and API Keys; the `wallet` database stores UUID-owned EVM
+and Solana custody. Redis stores revocations, five-minute OAuth transactions,
+five-minute primary and wallet-secret SIWS challenges, five-minute wallet-secret
+leases, and 15-minute anonymous registration tickets. MinIO stores private
+account and wallet avatar objects. The Vite development
 server on port 4000 proxies `/auth` and `/api` to the API Server, allowing the
 registered local callback `http://localhost:4000/auth/google/callback`. The
 callback's fixed `http://localhost:4000` origin is also the trusted local SIWS
@@ -51,10 +56,15 @@ are:
 | `sports-history` | 8104 | `sports_history` |
 | `managed-oo` | 8106 | `managed_oo` |
 | `profit-sharing` | 8108 | `profit_sharing` |
+| `wallet` | 8088 | `wallet` |
 
 The API Server owns UUID account state in the `athena` database. Internal
 gRPC clients use reusable nonblocking channels and reconnect without merging
-the independently owned service lifecycles.
+the independently owned service lifecycles. The Wallet channel is additionally
+authenticated: both Procfile processes receive the same explicit development
+`ATHENA_WALLET_INTERNAL_AUTH_TOKEN`, the API Server attaches it as a Bearer to
+every call, and Wallet rejects every non-health RPC that does not match. Wallet
+itself defaults to a loopback listener.
 
 ## Runtime Flow
 
@@ -64,7 +74,9 @@ the independently owned service lifecycles.
    authentication reuses the callback origin and adds no environment variable.
 2. Before first use of the UUID-account schema, run `make run-reset`. It stops
    the current graph and deletes the local PostgreSQL, Redis, and MinIO state plus
-   default runtime scratch state; it does not restart services.
+   default runtime scratch state; it does not restart services. The current
+   Wallet initial migration is also an empty-state schema. A non-matching Wallet
+   database must be reset rather than upgraded in place.
 3. `make run` creates/reuses fixed named dependency volumes, applies current
    migrations, starts the API Server and business services, and serves the UI at
    `http://localhost:4000`. `ATHENA_RUN_EXCLUDE` produces a filtered process
@@ -74,6 +86,9 @@ the independently owned service lifecycles.
    registration ticket and visits `/register` to choose a permanent username.
    PostgreSQL generates the UUID and commits the complete account aggregate only
    after that username is submitted. Google and Solana identities never merge.
+   Wallet create/import subsequently stores rows in the separate `wallet`
+   database under that account UUID; no role or seed row creates a cross-user or
+   system wallet.
 5. If a verified Google email matches `ATHENA_ADMIN_GOOGLE_EMAIL`, its ticket
    marks the administrator candidate. Successful username submission creates
    the sole `administrator=true` account with maximum access. Phantom tickets
@@ -87,6 +102,19 @@ the independently owned service lifecycles.
    escalates verified remaining process groups after bounded grace periods.
    Repository-owned labeled containers and stale listeners are cleaned without
    deleting the volumes.
+8. Google or Solana wallet-secret reauthentication uses Redis state and issues a
+   fixed five-minute lease. Disabled-auth mode registers only the loopback
+   development lease flow. Restart or Redis reset drops all pending proof and
+   lease state without deleting Wallet rows.
+9. The Procfile gives Wallet and the API Server the same fixed development-only
+   internal Bearer. An explicit `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` override
+   replaces that value for both processes. A missing, short, or mismatched token
+   prevents Wallet RPC use rather than trusting the caller-supplied account UUID.
+
+The production equivalent of a current-state schema replacement is a fresh
+deployment with new persistent state. The hot-deploy path preserves existing
+PostgreSQL and MinIO volumes and is therefore not an upgrade mechanism for an
+incompatible initial schema.
 
 ## State / Data
 
@@ -98,8 +126,10 @@ initial state is not silently reused.
 Reset deletes all account UUIDs, usernames, administrator role, access grants,
 profiles/preferences, API Keys, sessions/revocations, OAuth transactions,
 Phantom challenges, shared registration tickets, Profit Sharing UUID
-references, Wallet UUID ownership, and avatar objects in the owned local
-volumes. The next unknown verified login starts fresh username registration.
+references, Wallet UUID ownership and encrypted key rows, wallet-secret Google
+and Solana proof state, wallet-secret leases, and both avatar object prefixes in
+the owned local volumes. The next unknown verified login starts fresh username
+registration.
 
 Reset also removes the default `/tmp/athena-local` tree, known Athena coverage
 directories, and the repository runtime-control state. Custom temporary paths
@@ -117,7 +147,11 @@ outside those exact defaults are not deleted.
 | `ATHENA_JWT_SECRET` | Stable local HS256 key; rotation invalidates all cookies and API Keys. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Optional loopback-only mode. With `true`, OIDC and administrator-email settings are not required; startup creates/reuses one UUID `development` identity named `local-admin`. |
 | `ATHENA_SERVER_POSTGRES_DSN` | Shared account-state PostgreSQL connection used by the API Server. |
-| Redis configuration | Supplies revocation, one-time OAuth transaction, one-time SIWS challenge, and username-registration ticket storage. |
+| Redis configuration | Supplies revocation, one-time login and reauthentication state, fixed wallet-secret leases, and username-registration ticket storage. |
+| `ATHENA_WALLET_ENCRYPTION_KEY` | Required Wallet process passphrase used by the custodial encryption boundary; changing it makes existing Wallet ciphertext unreadable. |
+| `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` | Shared Wallet/API Server service credential, at least 32 bytes. The Procfile supplies the same development default to both processes; an override must remain identical. |
+| `ATHENA_WALLET_POSTGRES_DSN` | Wallet process connection to the local `wallet` database. |
+| `ATHENA_ACCOUNT_AVATAR_S3_*`, `ATHENA_ACCOUNT_AVATAR_MAX_BYTES` | Shared private object-store configuration for account and wallet avatars. |
 
 Phantom login has no App ID, client secret, RPC URL, callback, or per-wallet
 configuration. Local development requires a desktop browser with Phantom's
@@ -135,22 +169,34 @@ production use different Web application clients.
 - Account IDs are PostgreSQL-generated UUIDs. Users choose username during the
   ticket-bound registration page; no username environment variable exists.
 - The redirect URI is fixed and never inferred from proxy headers.
-- PostgreSQL is the durable identity/API Key source; Redis is transient protocol
-  and revocation state; MinIO is private avatar state.
+- PostgreSQL is the durable identity/API Key/Wallet source; Redis is transient protocol
+  and revocation/lease state; MinIO is private account/wallet avatar state.
+- The current Wallet migration is initialized from empty state; local reset or a
+  fresh deployment replaces incompatible durable state instead of upgrading it.
 - `make stop` preserves volumes and `make run-reset` deletes the complete local
   current-state deployment.
 - The disabled-auth identity is development-only and loopback-only. Normal
   external-authentication startup rejects it, so switching modes requires
   `make run-reset`.
+- Wallet defaults to `127.0.0.1`, and all non-health internal Wallet RPCs require
+  the Procfile's shared service Bearer even when browser authentication is
+  disabled.
 
 ## Failure Recovery
 
 A Redis outage blocks new OAuth transactions, Phantom challenges, registration-
-ticket reads, and registration submission, but existing Athena sessions remain
-usable after the revocation snapshot is initialized. Google/JWKS failure blocks
-only new Google callbacks. Phantom verification has no remote IdP or Solana RPC
-dependency. PostgreSQL failure prevents account registration or account reads
-and cannot create a partial aggregate or Athena cookie.
+ticket reads, registration submission, wallet-secret proof, and private-key
+reveal lease validation, but existing Athena sessions remain usable after the
+revocation snapshot is initialized. Non-secret Wallet metadata remains available
+when only Redis is unavailable. Google/JWKS failure blocks new Google callbacks;
+Phantom verification has no remote IdP or Solana RPC dependency. PostgreSQL
+failure prevents the corresponding account or Wallet operation and cannot create
+a partial aggregate or Athena cookie.
+
+If the Wallet and API Server internal tokens differ, Wallet health remains
+probeable but business and secret RPCs return unauthenticated. Correct the shared
+environment value and restart both processes; no database or Redis reset is
+required.
 
 When current-state migration or dependency fingerprints are incompatible, stop
 and use `make run-reset`, then start again. The reset path initializes a complete
@@ -167,6 +213,7 @@ probes.
 
 - [ ] Local lifecycle and named-volume semantics match the scripts.
 - [ ] OIDC, SIWS, shared username registration, administrator candidacy, and reset guidance remain current.
+- [ ] Wallet database, secret lease, private avatar, and fresh-deployment boundaries remain current.
 - [ ] Dependency ownership and failure isolation remain current.
 - [ ] UUID identity and immutable username remain database-driven with no per-user environment configuration.
 - [ ] The [design index](../README.md) contains the current summary.

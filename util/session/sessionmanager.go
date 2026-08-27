@@ -120,29 +120,44 @@ func (mgr *SessionManager) CreateExternalLogin(ctx context.Context, accountID st
 	return token, nil
 }
 
-// Parse validates a local JWT and current credential, access, and revocation state.
-func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error) {
+// AuthenticateToken validates a local JWT and current credential, access, and
+// revocation state, then returns the typed credential metadata required by
+// security-sensitive request boundaries.
+func (mgr *SessionManager) AuthenticateToken(tokenString string) (jwt.Claims, accountcredentials.AuthenticatedCredential, error) {
 	parsed, err := mgr.jwtCodec.Parse(tokenString)
 	if err != nil {
-		return nil, "", err
+		return nil, accountcredentials.AuthenticatedCredential{}, err
 	}
 	access, err := mgr.accessController.Get(parsed.Account)
 	if err != nil {
-		return nil, "", err
+		return nil, accountcredentials.AuthenticatedCredential{}, err
 	}
 	if !access.LoginEnabled {
-		return nil, "", AccountMaintenanceErr
+		return nil, accountcredentials.AuthenticatedCredential{}, AccountMaintenanceErr
 	}
 	if parsed.Capability == accountcredentials.CapabilityAPIKey && !access.APIKeyEnabled {
-		return nil, "", status.Error(codes.PermissionDenied, "API Key access is disabled")
+		return nil, accountcredentials.AuthenticatedCredential{}, status.Error(codes.PermissionDenied, "API Key access is disabled")
 	}
 	if err := mgr.credentials.ValidateCredential(parsed.Account, parsed.Capability, parsed.JTI, parsed.IdentityBinding); err != nil {
-		return nil, "", err
+		return nil, accountcredentials.AuthenticatedCredential{}, err
 	}
 	if parsed.JTI == "" || mgr.storage == nil || mgr.storage.IsTokenRevoked(parsed.JTI) {
-		return nil, "", errors.New("token is revoked, please re-login")
+		return nil, accountcredentials.AuthenticatedCredential{}, errors.New("token is revoked, please re-login")
 	}
-	return parsed.Claims, "", nil
+	return parsed.Claims, accountcredentials.AuthenticatedCredential{
+		AccountID:       parsed.Account,
+		Capability:      parsed.Capability,
+		JTI:             parsed.JTI,
+		IdentityBinding: parsed.IdentityBinding,
+		AccessRevision:  access.Revision,
+	}, nil
+}
+
+// Parse preserves the existing claims-oriented verifier contract for callers
+// that do not need credential capability metadata.
+func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error) {
+	claims, _, err := mgr.AuthenticateToken(tokenString)
+	return claims, "", err
 }
 
 // AuthMiddlewareFunc returns authentication middleware for direct HTTP handlers.

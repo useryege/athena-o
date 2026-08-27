@@ -10,10 +10,14 @@ import (
 
 type Querier interface {
 	CountWallets(ctx context.Context, arg CountWalletsParams) (int64, error)
-	CreateWallet(ctx context.Context, arg CreateWalletParams) (WalletPrivateKey, error)
-	GetWallet(ctx context.Context, arg GetWalletParams) (WalletPrivateKey, error)
+	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
+	GetWallet(ctx context.Context, arg GetWalletParams) (Wallet, error)
+	ListWalletAvatarObjectKeys(ctx context.Context) ([]string, error)
 	ListWallets(ctx context.Context, arg ListWalletsParams) ([]ListWalletsRow, error)
-	UpdateWalletAlias(ctx context.Context, arg UpdateWalletAliasParams) (UpdateWalletAliasRow, error)
+	ReplaceWalletAvatarMetadata(ctx context.Context, arg ReplaceWalletAvatarMetadataParams) (ReplaceWalletAvatarMetadataRow, error)
+	ResetWalletAvatarMetadata(ctx context.Context, arg ResetWalletAvatarMetadataParams) (ResetWalletAvatarMetadataRow, error)
+	UpdateWalletAvatarPreset(ctx context.Context, arg UpdateWalletAvatarPresetParams) (UpdateWalletAvatarPresetRow, error)
+	UpdateWalletRemark(ctx context.Context, arg UpdateWalletRemarkParams) (UpdateWalletRemarkRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

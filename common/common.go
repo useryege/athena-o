@@ -50,7 +50,6 @@ const (
 	DefaultAddressAPIServer        = "0.0.0.0"
 	DefaultAddressWormMarkets      = "0.0.0.0"
 	DefaultAddressNotification     = "0.0.0.0"
-	DefaultAddressWallet           = "0.0.0.0"
 	DefaultAddressMarketRadar      = "0.0.0.0"
 	DefaultAddressSportsLive       = "0.0.0.0"
 	DefaultAddressSportsHistory    = "0.0.0.0"

@@ -7,8 +7,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/walletsecret"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	util_session "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,9 +20,16 @@ type serviceAuthFuncOverride interface {
 }
 
 func withDisabledAuthClaims(ctx context.Context, accountID string) context.Context {
-	return context.WithValue(ctx, "claims", jwt.MapClaims{ //nolint:staticcheck
+	ctx = context.WithValue(ctx, "claims", jwt.MapClaims{ //nolint:staticcheck
 		"sub": accountID,
 		"iss": accountcredentials.ClaimsIssuer,
+	})
+	return util_session.WithAuthenticatedCredential(ctx, accountcredentials.AuthenticatedCredential{
+		AccountID:       accountID,
+		Capability:      accountcredentials.CapabilityDevelopment,
+		JTI:             "development:" + accountID,
+		IdentityBinding: "development:" + accountID,
+		AccessRevision:  1,
 	})
 }
 
@@ -100,13 +107,13 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/notification.NotificationService/GetNotificationDelivery":    moduleRead(accountaccess.ModuleNotifications),
 	"/notification.NotificationService/SendTestNotification":       moduleWrite(accountaccess.ModuleNotifications),
 
-	"/wallet.WalletService/GetWalletStatus":   moduleRead(accountaccess.ModuleWallet),
-	"/wallet.WalletService/ListWallets":       moduleRead(accountaccess.ModuleWallet),
-	"/wallet.WalletService/GetWallet":         moduleRead(accountaccess.ModuleWallet),
-	"/wallet.WalletService/CreateWallet":      moduleWrite(accountaccess.ModuleWallet),
-	"/wallet.WalletService/ImportPrivateKey":  moduleWrite(accountaccess.ModuleWallet),
-	"/wallet.WalletService/ImportMnemonic":    moduleWrite(accountaccess.ModuleWallet),
-	"/wallet.WalletService/UpdateWalletAlias": moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/GetWalletStatus":          moduleRead(accountaccess.ModuleWallet),
+	"/wallet.WalletService/ListWallets":              moduleRead(accountaccess.ModuleWallet),
+	"/wallet.WalletService/GetWallet":                moduleRead(accountaccess.ModuleWallet),
+	"/wallet.WalletService/CreateWallet":             moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/ImportWallet":             moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/UpdateWalletRemark":       moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/UpdateWalletAvatarPreset": moduleWrite(accountaccess.ModuleWallet),
 
 	"/marketradar.MarketRadarService/GetMarketRadarStatus": moduleRead(accountaccess.ModuleMarketRadar),
 	"/marketradar.MarketRadarService/ListHotMarkets":       moduleRead(accountaccess.ModuleMarketRadar),
@@ -165,6 +172,11 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/tokenapi.TokenPolicyService/UpdateWalletBlocklistEntry":           moduleWrite(accountaccess.ModuleToken),
 	"/tokenapi.TokenPolicyService/DeleteWalletBlocklistEntry":           moduleWrite(accountaccess.ModuleToken),
 	"/tokenapi.TokenOperationsService/UpdateChainCheckpoint":            moduleWrite(accountaccess.ModuleToken),
+}
+
+var interactiveLoginGRPCMethods = map[string]bool{
+	"/wallet.WalletService/CreateWallet": true,
+	"/wallet.WalletService/ImportWallet": true,
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -226,10 +238,16 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 		return authCtx, server.authorizeAccountSelfService(accountID, fullMethod, req)
 	}
 	if rule, ok := moduleGRPCRules[fullMethod]; ok {
-		if walletSecretsRequested(fullMethod, req) {
-			rule.level = accountaccess.AccessLevelReadWrite
+		if err := server.authorizeAccount(accountID, accountaccess.RequireModule(rule.module, rule.level)); err != nil {
+			return authCtx, err
 		}
-		return authCtx, server.authorizeAccount(accountID, accountaccess.RequireModule(rule.module, rule.level))
+		if interactiveLoginGRPCMethods[fullMethod] {
+			credential, ok := util_session.AuthenticatedCredentialFromContext(authCtx)
+			if !ok || !credential.IsInteractiveLogin() {
+				return authCtx, walletsecret.ErrLoginSessionRequired
+			}
+		}
+		return authCtx, nil
 	}
 	return authCtx, status.Errorf(codes.PermissionDenied, "permission denied: no account-access rule configured for %s", fullMethod)
 }
@@ -264,14 +282,6 @@ func accountSelfServiceTarget(fullMethod string, req any) string {
 		}
 	}
 	return ""
-}
-
-func walletSecretsRequested(fullMethod string, req any) bool {
-	if fullMethod != "/wallet.WalletService/GetWallet" {
-		return false
-	}
-	request, ok := req.(*walletpkg.GetWalletRequest)
-	return ok && request.GetRevealSecrets()
 }
 
 func (server *AthenaServer) authenticateGRPC(ctx context.Context, fullMethod string, srv any) (context.Context, error) {

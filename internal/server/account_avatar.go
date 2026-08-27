@@ -31,6 +31,20 @@ const (
 )
 
 func newAccountAvatarHandler(ctx context.Context, server *AthenaServer) (*accountavatarhttp.Handler, error) {
+	store, maxBytes, err := newPrivateAvatarStore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return accountavatarhttp.NewHandler(
+		server.accountCenter,
+		store,
+		server.authenticateAccountAvatarHTTP,
+		maxBytes,
+		server.log,
+	)
+}
+
+func newPrivateAvatarStore(ctx context.Context) (*accountavatar.Store, int64, error) {
 	config := accountavatar.Config{
 		Endpoint:     strings.TrimSpace(os.Getenv(accountAvatarEndpointEnv)),
 		Region:       stringEnv(accountAvatarRegionEnv, defaultAccountAvatarRegion),
@@ -41,7 +55,7 @@ func newAccountAvatarHandler(ctx context.Context, server *AthenaServer) (*accoun
 	}
 	store, err := accountavatar.NewStore(ctx, config)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	maxBytes := int64(env.ParseNumFromEnv(
 		accountAvatarMaxBytesEnv,
@@ -49,13 +63,7 @@ func newAccountAvatarHandler(ctx context.Context, server *AthenaServer) (*accoun
 		1,
 		defaultAccountAvatarMaxBytes,
 	))
-	return accountavatarhttp.NewHandler(
-		server.accountCenter,
-		store,
-		server.authenticateAccountAvatarHTTP,
-		maxBytes,
-		server.log,
-	)
+	return store, maxBytes, nil
 }
 
 func stringEnv(name, fallback string) string {

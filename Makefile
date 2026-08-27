@@ -133,10 +133,6 @@ jwt-secret:
 service-password:
 	@go run tools/service-password/main.go
 
-.PHONY: wallet-private-key-ciphertext
-wallet-private-key-ciphertext:
-	@go run tools/wallet-private-key-ciphertext/main.go $(ARGS)
-
 .PHONY: prod-reset-secrets
 prod-reset-secrets:
 	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)

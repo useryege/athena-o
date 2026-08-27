@@ -18,9 +18,29 @@ var apiKeyDisplayIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63
 type Capability string
 
 const (
-	CapabilityLogin  Capability = "login"
-	CapabilityAPIKey Capability = "apiKey"
+	CapabilityLogin       Capability = "login"
+	CapabilityAPIKey      Capability = "apiKey"
+	CapabilityDevelopment Capability = "development"
 )
+
+// AuthenticatedCredential is the server-side projection of the credential
+// that authenticated the current request. It deliberately keeps credential
+// capability and binding metadata out of public claims while making security-
+// sensitive handlers independent from transport headers.
+type AuthenticatedCredential struct {
+	AccountID       string
+	Capability      Capability
+	JTI             string
+	IdentityBinding string
+	AccessRevision  uint64
+}
+
+// IsInteractiveLogin reports whether this credential may cross a boundary
+// that explicitly excludes API Keys. Development credentials exist only while
+// the API Server is bound to loopback with authentication disabled.
+func (c AuthenticatedCredential) IsInteractiveLogin() bool {
+	return c.Capability == CapabilityLogin || c.Capability == CapabilityDevelopment
+}
 
 // Token is bearer-secret-free durable metadata for an issued API Key.
 type Token struct {

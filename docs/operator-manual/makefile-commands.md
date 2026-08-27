@@ -42,7 +42,6 @@
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
 | `make service-password` | 生成可用于 PostgreSQL、Redis 或 MinIO 的随机密码。 | `make service-password` |
-| `make wallet-private-key-ciphertext` | 生成可用于 `wallet_private_keys.private_key_ciphertext` 的密文 SQL 表达式。 | `make wallet-private-key-ciphertext` |
 
 生成 HS256 JWT secret：
 
@@ -86,25 +85,6 @@ go run tools/service-password/main.go -length 48
 ```bash
 POSTGRES_PASSWORD='<generated-password>'
 REDIS_PASSWORD='<generated-password>'
-```
-
-生成钱包私钥密文：
-
-```bash
-# 交互式输入私钥（推荐，私钥不回显），默认读取 ATHENA_WALLET_ENCRYPTION_KEY
-make wallet-private-key-ciphertext
-
-# 只输出 hex，方便手动拼接到 decode('<hex>', 'hex')
-make wallet-private-key-ciphertext ARGS="-format hex"
-
-# 也可直接运行
-ATHENA_WALLET_ENCRYPTION_KEY='<wallet-encryption-key>' go run tools/wallet-private-key-ciphertext/main.go
-```
-
-默认输出为一段可直接写入 SQL 的 BYTEA 表达式：
-
-```sql
-decode('<generated-ciphertext-hex>', 'hex')
 ```
 
 ## 浏览器认证配置
@@ -172,7 +152,8 @@ install -m 0600 /secure/source/google-oidc-client-secret secrets/google-oidc-cli
 虽然其他生产服务仍复用选定的部署 env 文件读取各自业务配置，Compose 会把
 `ATHENA_JWT_SECRET`、全部 Google OIDC/管理员邮箱输入以及 `REDIS_PASSWORD` 在所有
 非 API Server 容器中显式覆盖为空；只有 `athena-server` 能签发 Athena JWT、访问
-持久账号目录或访问认证 Redis。
+持久账号目录或访问认证 Redis。`ATHENA_WALLET_INTERNAL_AUTH_TOKEN` 也会在无关容器
+中覆盖为空，仅 `athena-wallet` 和 `athena-server` 获得同一个 required 值。
 远端上传后的 `.env` 同样改为当前部署用户持有且权限为 `0600`。
 
 ## 代码生成
@@ -225,6 +206,10 @@ Google `sub` 登录。
 `/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
 指定到其他位置的自定义临时目录不会被自动删除。
 
+当前 Wallet 初始 schema 只支持 UUID 用户自有的 EVM/Solana 钱包，并直接替换旧的
+系统钱包和 seed 数据模型。使用本版本前必须先执行一次 `make run-reset`，再执行
+`make run`；普通 `make stop` 不会清除不兼容的旧 Wallet 数据。
+
 ## UI
 
 UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start`。
@@ -240,10 +225,14 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 | `make prod-start-local` | 创建本地 PostgreSQL/Redis/MinIO volume、执行 migration、初始化私有 bucket 并启动生产 compose 服务。 | `make prod-start-local` |
 | `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL/Redis/MinIO volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
-| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis、MinIO root、头像应用凭据和 JWT secret。 | `make prod-reset-secrets` |
+| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis、MinIO root、头像应用凭据、JWT secret 和 Wallet 内部服务 token。 | `make prod-reset-secrets` |
 | `make prod-deploy-remote` | 自动轮换凭据、构建镜像、清空远程数据库并完成全新部署。 | `make prod-deploy-remote` |
 | `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL、Redis 和 MinIO 数据。 | `make prod-hot-deploy-remote` |
 | `make prod-destroy-remote` | 删除远程 Athena 运行资源及 PostgreSQL/Redis/MinIO volume。 | `make prod-destroy-remote` |
+
+当前 Wallet schema 必须部署到全新的远程数据卷。发布本版本时使用
+`make prod-deploy-remote` 完成全新部署，不得使用会保留旧 PostgreSQL/Redis/MinIO
+数据的 `make prod-hot-deploy-remote`。
 
 ### 部署前本地预演
 
@@ -259,6 +248,7 @@ ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=your_avatar_access_key
 ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=your_avatar_secret_key
 ATHENA_JWT_SECRET=your_at_least_32_byte_jwt_secret
 ATHENA_WALLET_ENCRYPTION_KEY=your_wallet_encryption_key
+ATHENA_WALLET_INTERNAL_AUTH_TOKEN=your_at_least_32_byte_wallet_internal_token
 ATHENA_GOOGLE_OIDC_CLIENT_ID=your_production_web_client_id
 ATHENA_GOOGLE_OIDC_CLIENT_SECRET=
 ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE=./secrets/google-oidc-client-secret
@@ -274,6 +264,12 @@ openssl rand -hex 32
 
 该 key 用于加密 wallet 相关敏感数据。已有 wallet 数据后不要随意更换，否则旧数据可能无法解密。
 
+`ATHENA_WALLET_INTERNAL_AUTH_TOKEN` 是 API Server 调用 Wallet gRPC 的独立
+Bearer，不是钱包加密主密钥。Wallet 与 API Server 必须配置同一个至少 32 字节的值；
+其他容器会被 Compose 显式覆盖为空。可执行 `make prod-reset-secrets` 生成并轮换
+40 位字母数字 token。缺失或不匹配时 Wallet health 仍可探测，但所有非 health RPC
+都会被拒绝。
+
 推荐预演流程：
 
 ```bash
@@ -287,9 +283,13 @@ make prod-start-local
 管理员 Google 邮箱；缺失配置会使 API Server 拒绝启动。未知 Google 或 Phantom
 身份验证成功后会先进入 `/register`；用户提交永久 username 后才创建管理员或
 Pending 普通账号，不需要预先提取 `sub` 或配置 Solana 地址。Phantom 不需要额外
-生产 secret。
+生产 secret。反向代理除现有 `/auth/google/*`、`/auth/phantom/*` 和 `/api/*`
+外，还必须原样转发 `/auth/wallet-secrets/google` 与
+`/auth/wallet-secrets/solana/*`；钱包私钥查看依赖 Redis 中固定 5 分钟的重新认证
+lease，Redis 不可用时该能力会关闭。
 Compose 会同时使用 `$(PROD_ENV_FILE)` 做变量插值和容器 `env_file` 注入，不会回退
-读取仓库根目录的 `.env`。`prod-reset-secrets` 会把该文件权限收紧为 `0600`。
+读取仓库根目录的 `.env`。`prod-reset-secrets` 会轮换 Wallet 内部服务 token，并把该
+文件权限收紧为 `0600`。
 
 生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`。`prod-start-local` 会在启动业务服务前自动执行 `athena up --module $(PROD_MIGRATE_MODULE)`，默认迁移全部模块；迁移失败时命令会终止并保留 PostgreSQL 容器，便于排查。
 
@@ -378,19 +378,22 @@ make prod-deploy-remote
 ```
 
 该命令会先更新 `$(PROD_ENV_FILE)` 中的 PostgreSQL、Redis、MinIO root、
-头像 bucket 应用凭据和 JWT secret，再构建 Athena、固定源码 MinIO 和 mc
+头像 bucket 应用凭据、JWT secret 和 Wallet 内部服务 token，再构建 Athena、固定
+源码 MinIO 和 mc
 镜像。构建成功后，依次停止远端旧服务，删除并重建
 `$(PROD_POSTGRES_VOLUME)`、`$(PROD_REDIS_VOLUME)` 与
 `$(PROD_MINIO_VOLUME)`，上传 Compose、环境文件和
 Google OIDC client secret 文件以及 PostgreSQL init 脚本，传输三个镜像，执行
 migration，初始化私有 bucket，最后启动全部服务并输出容器状态。部署脚本会在
 上传前拒绝直接环境变量形式的 client secret、空 client/管理员邮箱、
-非 HTTPS 生产回调 URI、少于 32 字节的 JWT signing secret 或空 Google secret
-文件，也拒绝生产环境使用 `ATHENA_SERVER_DISABLE_AUTH=true`。Docker 构建上下文会
+非 HTTPS 生产回调 URI、少于 32 字节的 JWT signing secret、少于 32 字节的 Wallet
+内部服务 token 或空 Google secret 文件，也拒绝生产环境使用
+`ATHENA_SERVER_DISABLE_AUTH=true`。Docker 构建上下文会
 排除所有 `.env` 文件和 `secrets/` 目录，避免部署凭据进入镜像构建缓存。
 
 **每次远程部署都会永久删除已有 PostgreSQL、Redis 和 MinIO 数据，并轮换
-PostgreSQL、Redis、MinIO 和 JWT 凭据，不会自动备份。** 动态账号、管理员绑定、
+PostgreSQL、Redis、MinIO、JWT 和 Wallet 内部服务凭据，不会自动备份。** 动态账号、
+管理员绑定、
 Profile、权限、Profit Sharing 引用、头像、会话和 API Key 都不会迁移。所有用户
 必须重新使用 Google 或 Phantom 登录并设置永久 username，管理员重新授权；需要
 自动化访问的账号必须在获得 API Key 权限后创建新的 v3 Key。migration 或 bucket
@@ -417,7 +420,8 @@ volume 数据都会保留；Compose 仅在配置变化要求时重建对应 stat
 不会删除 volume。任一指定 volume 不存在时命令直接终止，避免意外创建空状态。
 依赖初始化或 migration 失败时不会进入应用重建阶段。
 
-热部署不会自动轮换 PostgreSQL、Redis、MinIO 或 JWT secret。它会校验并重新
+热部署不会自动轮换 PostgreSQL、Redis、MinIO、JWT secret 或 Wallet 内部服务 token。
+它会校验并重新
 上传当前独立的 Google OIDC client secret，然后短暂重启
 Athena 服务，不保证零停机；适用于代码更新和兼容性数据库 migration，不用于
 修改现有持久化服务凭据。

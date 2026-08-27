@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1066-g28f56176-dirty"
+    "version": "v1.0.0-1067-gfa7b246e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2796,7 +2796,6 @@
         "tags": [
           "WalletService"
         ],
-        "summary": "GetWalletStatus returns the wallet service runtime status.",
         "operationId": "WalletService_GetWalletStatus",
         "responses": {
           "200": {
@@ -2819,12 +2818,11 @@
         "tags": [
           "WalletService"
         ],
-        "summary": "ListWallets returns persisted wallet records without secret material.",
         "operationId": "WalletService_ListWallets",
         "parameters": [
           {
             "type": "string",
-            "name": "chain",
+            "name": "walletType",
             "in": "query"
           },
           {
@@ -2841,12 +2839,7 @@
           {
             "type": "integer",
             "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "type",
+            "name": "pageSize",
             "in": "query"
           }
         ],
@@ -2864,14 +2857,11 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/wallets/create": {
+      },
       "post": {
         "tags": [
           "WalletService"
         ],
-        "summary": "CreateWallet creates a new wallet for one chain.",
         "operationId": "WalletService_CreateWallet",
         "parameters": [
           {
@@ -2899,78 +2889,11 @@
         }
       }
     },
-    "/api/v1/wallets/import-mnemonic": {
-      "post": {
-        "tags": [
-          "WalletService"
-        ],
-        "summary": "ImportMnemonic imports a mnemonic-derived wallet for one chain.",
-        "operationId": "WalletService_ImportMnemonic",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/walletImportMnemonicRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletImportMnemonicResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/wallets/import-private-key": {
-      "post": {
-        "tags": [
-          "WalletService"
-        ],
-        "summary": "ImportPrivateKey imports a private key for one chain.",
-        "operationId": "WalletService_ImportPrivateKey",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/walletImportPrivateKeyRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletImportPrivateKeyResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/wallets/{id}": {
       "get": {
         "tags": [
           "WalletService"
         ],
-        "summary": "GetWallet returns one wallet record and optionally reveals secret material.",
         "operationId": "WalletService_GetWallet",
         "parameters": [
           {
@@ -2979,11 +2902,6 @@
             "name": "id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "boolean",
-            "name": "reveal_secrets",
-            "in": "query"
           }
         ],
         "responses": {
@@ -3002,13 +2920,12 @@
         }
       }
     },
-    "/api/v1/wallets/{id}/alias": {
-      "post": {
+    "/api/v1/wallets/{id}/avatar-preset": {
+      "patch": {
         "tags": [
           "WalletService"
         ],
-        "summary": "UpdateWalletAlias updates wallet alias text without changing secret material.",
-        "operationId": "WalletService_UpdateWalletAlias",
+        "operationId": "WalletService_UpdateWalletAvatarPreset",
         "parameters": [
           {
             "type": "string",
@@ -3022,7 +2939,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/walletUpdateWalletAliasRequest"
+              "$ref": "#/definitions/walletUpdateWalletAvatarPresetRequest"
             }
           }
         ],
@@ -3030,7 +2947,78 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/walletUpdateWalletAliasResponse"
+              "$ref": "#/definitions/walletUpdateWalletAvatarPresetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallets/{id}/remark": {
+      "patch": {
+        "tags": [
+          "WalletService"
+        ],
+        "operationId": "WalletService_UpdateWalletRemark",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/walletUpdateWalletRemarkRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletUpdateWalletRemarkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallets:import": {
+      "post": {
+        "tags": [
+          "WalletService"
+        ],
+        "operationId": "WalletService_ImportWallet",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/walletImportWalletRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletImportWalletResponse"
             }
           },
           "default": {
@@ -7792,86 +7780,42 @@
         }
       }
     },
-    "v1alpha1WalletDetail": {
-      "type": "object",
-      "properties": {
-        "address": {
-          "type": "string"
-        },
-        "alias": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string"
-        },
-        "derivation_path": {
-          "type": "string"
-        },
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "mnemonic": {
-          "type": "string"
-        },
-        "owner_account_id": {
-          "type": "string"
-        },
-        "private_key": {
-          "type": "string"
-        },
-        "source": {
-          "type": "string"
-        },
-        "system_owned": {
-          "type": "boolean"
-        },
-        "type": {
-          "type": "string"
-        },
-        "updated_at": {
-          "type": "string"
-        }
-      }
-    },
     "v1alpha1WalletItem": {
       "type": "object",
       "properties": {
         "address": {
           "type": "string"
         },
-        "alias": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string"
-        },
-        "derivation_path": {
-          "type": "string"
-        },
         "id": {
           "type": "integer",
           "format": "int64"
         },
-        "owner_account_id": {
+        "remark": {
           "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "format": "uint64"
         },
         "source": {
           "type": "string"
         },
-        "system_owned": {
-          "type": "boolean"
-        },
-        "type": {
+        "walletType": {
           "type": "string"
         },
-        "updated_at": {
+        "avatarKind": {
+          "type": "string"
+        },
+        "avatarPresetId": {
+          "type": "string"
+        },
+        "avatarUrl": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
           "type": "string"
         }
       }
@@ -8098,94 +8042,64 @@
       }
     },
     "walletCreateWalletRequest": {
-      "description": "CreateWalletRequest creates a new wallet for one chain.",
       "type": "object",
       "properties": {
-        "alias": {
+        "remark": {
           "type": "string"
         },
-        "chain": {
+        "walletType": {
           "type": "string"
         },
-        "type": {
+        "avatarPresetId": {
           "type": "string"
         }
       }
     },
     "walletCreateWalletResponse": {
-      "description": "CreateWalletResponse returns the created wallet record.",
       "type": "object",
       "properties": {
         "item": {
-          "$ref": "#/definitions/v1alpha1WalletDetail"
+          "$ref": "#/definitions/v1alpha1WalletItem"
+        },
+        "privateKey": {
+          "type": "string"
         }
       }
     },
     "walletGetWalletResponse": {
-      "description": "GetWalletResponse returns one persisted wallet record.",
       "type": "object",
       "properties": {
         "item": {
-          "$ref": "#/definitions/v1alpha1WalletDetail"
+          "$ref": "#/definitions/v1alpha1WalletItem"
         }
       }
     },
-    "walletImportMnemonicRequest": {
-      "description": "ImportMnemonicRequest imports a mnemonic-derived wallet for one chain.",
+    "walletImportWalletRequest": {
       "type": "object",
       "properties": {
-        "alias": {
+        "remark": {
           "type": "string"
         },
-        "chain": {
+        "walletType": {
           "type": "string"
         },
-        "mnemonic": {
+        "privateKey": {
           "type": "string"
         },
-        "type": {
+        "avatarPresetId": {
           "type": "string"
         }
       }
     },
-    "walletImportMnemonicResponse": {
-      "description": "ImportMnemonicResponse returns the imported wallet record.",
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1WalletDetail"
-        }
-      }
-    },
-    "walletImportPrivateKeyRequest": {
-      "description": "ImportPrivateKeyRequest imports a private key for one chain.",
-      "type": "object",
-      "properties": {
-        "alias": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "private_key": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
-    "walletImportPrivateKeyResponse": {
-      "description": "ImportPrivateKeyResponse returns the imported wallet record.",
+    "walletImportWalletResponse": {
       "type": "object",
       "properties": {
         "item": {
-          "$ref": "#/definitions/v1alpha1WalletDetail"
+          "$ref": "#/definitions/v1alpha1WalletItem"
         }
       }
     },
     "walletListWalletsResponse": {
-      "description": "ListWalletsResponse returns persisted wallet records without secret material.",
       "type": "object",
       "properties": {
         "items": {
@@ -8198,31 +8112,49 @@
           "type": "integer",
           "format": "int32"
         },
-        "page_size": {
-          "type": "integer",
-          "format": "int32"
-        },
         "total": {
           "type": "integer",
           "format": "int64"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
-    "walletUpdateWalletAliasRequest": {
-      "description": "UpdateWalletAliasRequest updates wallet alias text without changing secret material.",
+    "walletUpdateWalletAvatarPresetRequest": {
       "type": "object",
       "properties": {
-        "alias": {
+        "avatarPresetId": {
           "type": "string"
         },
-        "id": {
+        "expectedRevision": {
           "type": "integer",
-          "format": "int64"
+          "format": "uint64"
         }
       }
     },
-    "walletUpdateWalletAliasResponse": {
-      "description": "UpdateWalletAliasResponse returns the updated wallet record.",
+    "walletUpdateWalletAvatarPresetResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1WalletItem"
+        }
+      }
+    },
+    "walletUpdateWalletRemarkRequest": {
+      "type": "object",
+      "properties": {
+        "remark": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "format": "uint64"
+        }
+      }
+    },
+    "walletUpdateWalletRemarkResponse": {
       "type": "object",
       "properties": {
         "item": {

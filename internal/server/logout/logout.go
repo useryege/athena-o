@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/walletsecret"
 	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
 	session "github.com/useryege/athena/util/session"
@@ -17,26 +18,33 @@ import (
 )
 
 type Handler struct {
-	settingsMgr *settings.SettingsManager
-	rootPath    string
-	parseToken  func(tokenString string) (jwt.Claims, error)
-	revokeToken func(ctx context.Context, id string, expiringAt time.Duration) error
-	baseHRef    string
+	settingsMgr       *settings.SettingsManager
+	rootPath          string
+	parseToken        func(tokenString string) (jwt.Claims, error)
+	revokeToken       func(ctx context.Context, id string, expiringAt time.Duration) error
+	baseHRef          string
+	clearWalletSecret func(http.ResponseWriter)
 }
 
 // NewHandler creates handler serving to do api/logout endpoint
-func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.SessionManager, rootPath, baseHRef string) *Handler {
+func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.SessionManager, walletSecrets *walletsecret.Manager, rootPath, baseHRef string) *Handler {
+	clearWalletSecret := func(http.ResponseWriter) {}
+	if walletSecrets != nil {
+		clearWalletSecret = walletSecrets.ClearCookie
+	}
 	return &Handler{
-		settingsMgr: settingsMrg,
-		rootPath:    rootPath,
-		baseHRef:    baseHRef,
-		parseToken:  sessionMgr.ParseLoginForRevocation,
-		revokeToken: sessionMgr.RevokeToken,
+		settingsMgr:       settingsMrg,
+		rootPath:          rootPath,
+		baseHRef:          baseHRef,
+		parseToken:        sessionMgr.ParseLoginForRevocation,
+		revokeToken:       sessionMgr.RevokeToken,
+		clearWalletSecret: clearWalletSecret,
 	}
 }
 
 // ServeHTTP clears the Athena auth cookie, revokes the local session token when possible, and redirects to Athena.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.clearWalletSecret(w)
 	cookies := r.Cookies()
 	for _, cookie := range cookies {
 		if !strings.HasPrefix(cookie.Name, common.AuthCookieName) {

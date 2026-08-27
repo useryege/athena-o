@@ -133,8 +133,6 @@ func (*TokenWalletNormalTransaction) ProtoMessage() {}
 
 func (*TokenWalletTransactionCount) ProtoMessage() {}
 
-func (*WalletDetail) ProtoMessage() {}
-
 func (*WalletItem) ProtoMessage() {}
 
 func (*WalletStatus) ProtoMessage() {}

@@ -63,12 +63,15 @@ import (
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
+	"github.com/useryege/athena/internal/server/walletavatarhttp"
+	"github.com/useryege/athena/internal/server/walletsecrethttp"
 	serverworldcupcorners "github.com/useryege/athena/internal/server/worldcupcorners"
 	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
+	"github.com/useryege/athena/internal/walletsecret"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
@@ -141,19 +144,23 @@ var (
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
 	AthenaServerOpts
-	settings             *settings_util.AthenaSettings
-	log                  *log.Entry
-	sessionMgr           *util_session.SessionManager
-	settingsMgr          *settings_util.SettingsManager
-	credentialMgr        *accountcredentials.CredentialManager
-	accountStateStore    *accountstatestore.SQLStore
-	accountCenter        *accountcenter.Manager
-	accountAvatarHTTP    *accountavatarhttp.Handler
-	accessController     *accountaccess.Controller
-	authRegistration     *authregistration.Handler
-	googleOIDC           *googleoidc.Handler
-	phantomAuth          *phantomauth.Handler
-	developmentAccountID string
+	settings                 *settings_util.AthenaSettings
+	log                      *log.Entry
+	sessionMgr               *util_session.SessionManager
+	settingsMgr              *settings_util.SettingsManager
+	credentialMgr            *accountcredentials.CredentialManager
+	accountStateStore        *accountstatestore.SQLStore
+	accountCenter            *accountcenter.Manager
+	accountAvatarHTTP        *accountavatarhttp.Handler
+	walletAvatarHTTP         *walletavatarhttp.Handler
+	accessController         *accountaccess.Controller
+	authRegistration         *authregistration.Handler
+	googleOIDC               *googleoidc.Handler
+	phantomAuth              *phantomauth.Handler
+	walletSecretMgr          *walletsecret.Manager
+	walletSecretHTTP         *walletsecrethttp.Handler
+	walletSecretPublicOrigin string
+	developmentAccountID     string
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -271,9 +278,13 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	var registrationHandler *authregistration.Handler
 	var googleOIDCHandler *googleoidc.Handler
 	var phantomAuthHandler *phantomauth.Handler
+	walletSecretSecureCookie := false
+	walletSecretPublicOrigin := ""
 	if !opts.DisableAuth {
 		googleOIDCConfig, err := googleoidc.LoadConfigFromEnv()
 		errorsutil.CheckError(err)
+		walletSecretSecureCookie = googleOIDCConfig.SecureCookie()
+		walletSecretPublicOrigin = googleOIDCConfig.PublicOrigin()
 		externalAuth, err := newExternalAuthBackend(credentialMgr, sessionMgr, settings.UserSessionDuration)
 		errorsutil.CheckError(err)
 		registrationStore, err := authregistration.NewStore(opts.RedisClient)
@@ -290,6 +301,8 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		phantomAuthHandler, err = phantomauth.NewHandler(opts.RedisClient, externalAuth, registrationHandler, googleOIDCConfig.PublicOrigin())
 		errorsutil.CheckError(err)
 	}
+	walletSecretMgr, err := walletsecret.NewManager(opts.RedisClient, opts.BaseHRef, walletSecretSecureCookie)
+	errorsutil.CheckError(err)
 
 	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
@@ -313,24 +326,38 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 
 	a := &AthenaServer{
-		AthenaServerOpts:     opts,
-		log:                  logger,
-		settings:             settings,
-		sessionMgr:           sessionMgr,
-		settingsMgr:          settingsMgr,
-		credentialMgr:        credentialMgr,
-		accountStateStore:    accountStateStore,
-		accountCenter:        accountCenter,
-		accessController:     accessController,
-		authRegistration:     registrationHandler,
-		googleOIDC:           googleOIDCHandler,
-		phantomAuth:          phantomAuthHandler,
-		developmentAccountID: developmentAccountID,
-		userStateStorage:     userStateStorage,
-		staticAssets:         http.FS(staticFS),
-		Shutdown:             noopShutdown,
-		stopCh:               make(chan os.Signal, 1),
+		AthenaServerOpts:         opts,
+		log:                      logger,
+		settings:                 settings,
+		sessionMgr:               sessionMgr,
+		settingsMgr:              settingsMgr,
+		credentialMgr:            credentialMgr,
+		accountStateStore:        accountStateStore,
+		accountCenter:            accountCenter,
+		accessController:         accessController,
+		authRegistration:         registrationHandler,
+		googleOIDC:               googleOIDCHandler,
+		phantomAuth:              phantomAuthHandler,
+		walletSecretMgr:          walletSecretMgr,
+		walletSecretPublicOrigin: walletSecretPublicOrigin,
+		developmentAccountID:     developmentAccountID,
+		userStateStorage:         userStateStorage,
+		staticAssets:             http.FS(staticFS),
+		Shutdown:                 noopShutdown,
+		stopCh:                   make(chan os.Signal, 1),
 	}
+	if googleOIDCHandler != nil {
+		errorsutil.CheckError(googleOIDCHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
+	}
+	if phantomAuthHandler != nil {
+		errorsutil.CheckError(phantomAuthHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
+	}
+	walletSecretHTTP, err := newWalletSecretHTTPHandler(a)
+	if err != nil {
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
+	}
+	a.walletSecretHTTP = walletSecretHTTP
 	accountAvatarHTTP, err := newAccountAvatarHandler(ctx, a)
 	if err != nil {
 		_ = accountStateStore.Close()
@@ -338,6 +365,13 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 	a.accountAvatarHTTP = accountAvatarHTTP
 	go accountAvatarHTTP.RunGarbageCollector(ctx, 0, 0)
+	walletAvatarHTTP, err := newWalletAvatarHandler(ctx, a)
+	if err != nil {
+		_ = accountStateStore.Close()
+		errorsutil.CheckError(err)
+	}
+	a.walletAvatarHTTP = walletAvatarHTTP
+	go walletAvatarHTTP.RunGarbageCollector(ctx, 0, 0)
 
 	return a
 
@@ -539,7 +573,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// notification service
 	notificationService := servernotification.NewServer(server.NotificationClientset)
 	// wallet service
-	walletService := serverwallet.NewServer(server.WalletClientset, server.accessController)
+	walletService := serverwallet.NewServer(server.WalletClientset, server.walletAvatarHTTP.DeleteObjectBestEffort)
 	marketRadarService := servermarketradar.NewServer(server.MarketRadarClientset)
 	sportsLiveService := serversportslive.NewServer(server.SportsLiveClientset)
 	sportsHistoryService := serversportshistory.NewServer(server.SportsHistoryClientset)
@@ -610,9 +644,14 @@ func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // translateGRPCResponseHeaders applies HTTP-only response headers at the gateway boundary.
 func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
-	if _, ok := resp.(*appbootstrappkg.GetAppBootstrapResponse); ok {
+	switch resp.(type) {
+	case *appbootstrappkg.GetAppBootstrapResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
-		w.Header().Add("Vary", "Cookie, Authorization")
+		w.Header().Set("Vary", "Cookie, Authorization")
+	case *walletpkg.CreateWalletResponse:
+		w.Header().Set("Cache-Control", "no-store, private")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Vary", "Cookie, Authorization")
 	}
 	return nil
 }
@@ -804,11 +843,12 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	endpoint := fmt.Sprintf("localhost:%d", port)
 	mux := http.NewServeMux()
 	publicHandlers := map[string]http.Handler{
-		common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.RootPath, server.BaseHRef),
+		common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.walletSecretMgr, server.RootPath, server.BaseHRef),
 	}
 	if server.googleOIDC != nil {
 		publicHandlers["/auth/google/login"] = http.HandlerFunc(server.googleOIDC.Login)
 		publicHandlers["/auth/google/callback"] = http.HandlerFunc(server.googleOIDC.Callback)
+		publicHandlers["/auth/wallet-secrets/google"] = http.HandlerFunc(server.googleOIDC.WalletSecretReauthentication)
 	}
 	if server.authRegistration != nil {
 		publicHandlers["/auth/registration"] = http.HandlerFunc(server.authRegistration.Registration)
@@ -817,6 +857,11 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	if server.phantomAuth != nil {
 		publicHandlers["/auth/phantom/challenge"] = http.HandlerFunc(server.phantomAuth.Challenge)
 		publicHandlers["/auth/phantom/verify"] = http.HandlerFunc(server.phantomAuth.Verify)
+		publicHandlers["/auth/wallet-secrets/solana/challenge"] = http.HandlerFunc(server.phantomAuth.WalletSecretChallenge)
+		publicHandlers["/auth/wallet-secrets/solana/verify"] = http.HandlerFunc(server.phantomAuth.WalletSecretVerify)
+	}
+	if server.DisableAuth {
+		publicHandlers["/auth/wallet-secrets/development"] = http.HandlerFunc(server.developmentWalletSecretLease)
 	}
 	httpS := http.Server{
 		Addr: endpoint,
@@ -860,6 +905,8 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		log.WithField(common.SecurityField, common.SecurityHigh).Warnf("Content-Type enforcement is disabled, which may make your API vulnerable to CSRF attacks")
 	}
 	registerAccountAvatarHandlers(mux, server.accountAvatarHTTP)
+	registerWalletAvatarHandlers(mux, server.walletAvatarHTTP)
+	registerWalletSecretHandlers(mux, server.walletSecretHTTP)
 	mux.Handle("/api/", handler)
 
 	// // Proxy extension is currently an alpha feature and is disabled
@@ -1106,11 +1153,14 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 		return withDisabledAuthClaims(ctx, server.developmentAccountID), nil
 	}
 
-	claims, _, claimsErr := server.getClaims(ctx)
+	claims, credential, _, claimsErr := server.getClaims(ctx)
 	if claims != nil {
 		// Add claims to the context for account authorization.
 		//nolint:staticcheck
 		ctx = context.WithValue(ctx, "claims", claims) // ctx {data:data, claims:claims}
+	}
+	if credential.AccountID != "" {
+		ctx = util_session.WithAuthenticatedCredential(ctx, credential)
 	}
 	if claimsErr != nil {
 		//nolint:staticcheck
@@ -1121,24 +1171,24 @@ func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, 
 }
 
 // getClaims extracts and validates a JWT token from an incoming request context.
-func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, string, error) {
+func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, accountcredentials.AuthenticatedCredential, string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, "", ErrNoSession
+		return nil, accountcredentials.AuthenticatedCredential{}, "", ErrNoSession
 	}
 	tokenString := getToken(md)
 	if tokenString == "" {
-		return nil, "", ErrNoSession
+		return nil, accountcredentials.AuthenticatedCredential{}, "", ErrNoSession
 	}
-	claims, newToken, err := server.sessionMgr.VerifyToken(ctx, tokenString)
+	claims, credential, err := server.sessionMgr.AuthenticateToken(tokenString)
 	if err != nil {
 		if util_session.IsAccountMaintenanceError(err) {
-			return claims, "", err
+			return claims, credential, "", err
 		}
-		return claims, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
+		return claims, credential, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
 	}
 
-	return claims, newToken, nil
+	return claims, credential, "", nil
 }
 
 // getToken extracts the token from gRPC metadata or cookie headers

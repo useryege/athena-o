@@ -4,9 +4,10 @@
 
 Account Credentials owns Athena's stable UUID account identity, immutable public
 username, permanent single-provider login binding, persistent API Key metadata,
-and Athena JWT v3 format. Google OIDC and Solana-wallet signatures prove browser
-identities at their protocol boundaries; business APIs accept only Athena
-cookies or Athena bearer credentials.
+Athena JWT v3 format, and the typed server-side projection of the credential that
+authenticated each request. Google OIDC and Solana-wallet signatures prove
+browser identities at their protocol boundaries; business APIs accept only
+Athena cookies or Athena bearer credentials.
 
 [Google OIDC Login](google-oidc-login.md) and [Solana Wallet
 Authentication](solana-wallet-authentication.md) own provider verification.
@@ -20,7 +21,7 @@ name.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Identity and API Key types | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go) | `Account`, `Token`, `IdentityProvider`, `NormalizeIdentitySubject`, `NormalizeExternalIdentity`, `HasExternalIdentity` |
+| Identity, capability, and API Key types | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go) | `Account`, `Token`, `Capability`, `AuthenticatedCredential`, `IsInteractiveLogin`, `IdentityProvider` |
 | Username policy | [internal/accountcredentials/username.go](../../../internal/accountcredentials/username.go) | `ValidateUsername`, `ErrUsernameInvalid`, `MinUsernameLength`, `MaxUsernameLength` |
 | Runtime credential registry | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go) | `CredentialManager`, `GetByIdentity`, `UsernameAvailable`, `RegisterExternalAccount`, `IssueLoginSession`, `IssueAPIKey`, `ValidateCredential` |
 | JWT signing configuration | [internal/accountcredentials/config.go](../../../internal/accountcredentials/config.go) | `LoadJWTSigningKey` |
@@ -28,7 +29,7 @@ name.
 | Durable account adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `ListCredentialAccounts`, `GetCredentialAccountByIdentity`, `RegisterExternalAccount`, `RecordLogin`, `EnsureDevelopmentAdministrator` |
 | Schema and generated-query sources | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql), [internal/accountstate/store/queries/account_api_key.sql](../../../internal/accountstate/store/queries/account_api_key.sql) | `athena_account`, `account_api_key`, `GetAccountByIdentity`, `CreateOrdinaryAccount`, `CreateAdministratorAccount` |
 | Shared registration boundary | [internal/authregistration/types.go](../../../internal/authregistration/types.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Identity`, `Backend`, `Handler`, `Begin`, `Registration`, `UsernameAvailability` |
-| Session validation and revocation | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [util/session/state.go](../../../util/session/state.go) | `SessionManager`, `CreateExternalLogin`, `Parse`, `ParseLoginForRevocation`, `UserStateStorage` |
+| Session validation, typed context, and revocation | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/state.go](../../../util/session/state.go) | `SessionManager`, `AuthenticateToken`, `WithAuthenticatedCredential`, `AuthenticatedCredentialFromContext`, `ParseLoginForRevocation`, `UserStateStorage` |
 | Account and Session API projections | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/session/session.proto](../../../internal/server/session/session.proto) | `Account.id`, `Account.username`, `Account.identity`, `GetUserInfoResponse.accountId` |
 | Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer`, `Authenticate`, `developmentAccountID` |
 
@@ -68,7 +69,10 @@ current single-API-Server topology requires no cross-instance cache invalidation
 `JWTCodec` is a stateless HS256 boundary. `SessionManager` combines a verified
 v3 token with the current account record, current access snapshot, durable API
 Key membership or external identity binding, and Redis revocation state on every
-request.
+request. Successful validation produces an `AuthenticatedCredential` carrying
+the server-resolved account UUID, capability, JTI, identity binding, and current
+access revision. Middleware attaches this typed value to the request context;
+security-sensitive handlers do not infer credential kind from browser headers.
 
 ## Runtime Flow
 
@@ -99,16 +103,21 @@ request.
 7. Both credential kinds require current `LoginEnabled`. Login sessions require
    the current external identity-binding digest. API Keys require current
    `APIKeyEnabled` and an unexpired JTI still present in `account_api_key`. Redis
-   revocation is checked last.
-8. Deleting an API Key commits metadata deletion before removing it from the
+   revocation is checked last. Successful validation creates a typed credential
+   with the current access revision and attaches it beside claims.
+8. Boundaries that explicitly require human interaction call
+   `IsInteractiveLogin`; login and isolated loopback development credentials
+   qualify, while API Keys do not. Wallet creation, import, reauthentication,
+   and private-key reveal use this distinction independently of module level.
+9. Deleting an API Key commits metadata deletion before removing it from the
    registry. Disabling API Key access pauses retained keys; re-enabling restores
    undeleted and unexpired keys. Logout clears and revokes only the Athena login
-   session.
-9. With authentication disabled, startup explicitly creates or reuses one UUID
+   session and clears its wallet-secret lease cookie.
+10. With authentication disabled, startup explicitly creates or reuses one UUID
    `development` identity named `local-admin`. Requests receive that UUID in
-   synthetic claims. Normal authentication startup rejects a persisted
-   development identity, so changing modes requires a clean account-state
-   database.
+   synthetic claims plus a typed `development` credential. Normal authentication
+   startup rejects a persisted development identity, so changing modes requires
+   a clean account-state database.
 
 ## State / Data
 
@@ -143,6 +152,13 @@ enter public Account or Session APIs. The safe Account identity projection
 exposes only the verified Google email or, deliberately, the public Solana
 address appropriate to the viewer.
 
+`AuthenticatedCredential` is request-local state, not a public model or durable
+record. Its access revision is reloaded during token authentication, so a lease
+or sensitive operation can bind to the authorization snapshot that actually
+admitted the request. Its capability is derived from the verified JWT subject
+shape, never from whether the request arrived through an Authorization header
+or Cookie header.
+
 ## Configuration
 
 | Setting | Behavior |
@@ -173,6 +189,8 @@ entitlements, and API Key metadata are database state.
   aggregate commits.
 - Every accepted signed credential is Athena v3 and passes current login,
   credential membership or binding, and revocation checks.
+- Sensitive handlers distinguish login, API Key, and isolated development
+  credentials through the typed authenticated context, never client headers.
 - API Key bearer values, Google tokens, wallet signatures, and private keys are
   never persisted by Account Credentials.
 
@@ -190,6 +208,8 @@ provider login follows the known-identity path and can issue a session without
 choosing another username. Rotating the JWT secret invalidates all cookies and
 API Keys. Revocation state fails closed until its initial Redis snapshot loads;
 pending local revocations remain effective while Redis persistence retries.
+Failure to load the current access snapshot prevents typed credential creation;
+sensitive handlers never continue with stale or header-inferred capability.
 
 ## Observability
 
@@ -204,6 +224,7 @@ and metrics. External identity providers are not part of API Server health.
 - [ ] UUID identity, immutable username, single-provider binding, and role boundaries remain current.
 - [ ] Registration and API Key commit/publication ordering remain current.
 - [ ] JWT v3 claims and mutable credential checks remain current.
+- [ ] Typed credential capability and access-revision projection remain current.
 - [ ] Public projections still exclude private identity and bearer material.
 - [ ] Configuration, failure recovery, and source links match the code.
 - [ ] The [design index](../README.md) contains the current summary.

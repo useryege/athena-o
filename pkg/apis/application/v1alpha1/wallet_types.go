@@ -7,30 +7,14 @@ type WalletStatus struct {
 
 type WalletItem struct {
 	ID             int64  `protobuf:"varint,1,opt,name=id" json:"id"`
-	Chain          string `protobuf:"bytes,2,opt,name=chain" json:"chain"`
-	Type           string `protobuf:"bytes,10,opt,name=type" json:"type"`
+	WalletType     string `protobuf:"bytes,2,opt,name=wallet_type,json=walletType" json:"walletType"`
 	Address        string `protobuf:"bytes,3,opt,name=address" json:"address"`
-	Alias          string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
+	Remark         string `protobuf:"bytes,4,opt,name=remark" json:"remark"`
 	Source         string `protobuf:"bytes,5,opt,name=source" json:"source"`
-	DerivationPath string `protobuf:"bytes,6,opt,name=derivation_path,json=derivationPath" json:"derivationPath"`
-	CreatedAt      string `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"createdAt"`
-	UpdatedAt      string `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt" json:"updatedAt"`
-	OwnerAccountID string `protobuf:"bytes,9,opt,name=owner_account_id,json=ownerAccountId" json:"ownerAccountId"`
-	SystemOwned    bool   `protobuf:"varint,11,opt,name=system_owned,json=systemOwned" json:"systemOwned"`
-}
-
-type WalletDetail struct {
-	ID             int64  `protobuf:"varint,1,opt,name=id" json:"id"`
-	Chain          string `protobuf:"bytes,2,opt,name=chain" json:"chain"`
-	Type           string `protobuf:"bytes,12,opt,name=type" json:"type"`
-	Address        string `protobuf:"bytes,3,opt,name=address" json:"address"`
-	Alias          string `protobuf:"bytes,4,opt,name=alias" json:"alias"`
-	Source         string `protobuf:"bytes,5,opt,name=source" json:"source"`
-	DerivationPath string `protobuf:"bytes,6,opt,name=derivation_path,json=derivationPath" json:"derivationPath"`
-	CreatedAt      string `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"createdAt"`
-	UpdatedAt      string `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt" json:"updatedAt"`
-	PrivateKey     string `protobuf:"bytes,9,opt,name=private_key,json=privateKey" json:"privateKey"`
-	Mnemonic       string `protobuf:"bytes,10,opt,name=mnemonic" json:"mnemonic"`
-	OwnerAccountID string `protobuf:"bytes,11,opt,name=owner_account_id,json=ownerAccountId" json:"ownerAccountId"`
-	SystemOwned    bool   `protobuf:"varint,13,opt,name=system_owned,json=systemOwned" json:"systemOwned"`
+	AvatarKind     string `protobuf:"bytes,6,opt,name=avatar_kind,json=avatarKind" json:"avatarKind"`
+	AvatarPresetID string `protobuf:"bytes,7,opt,name=avatar_preset_id,json=avatarPresetId" json:"avatarPresetId"`
+	AvatarURL      string `protobuf:"bytes,8,opt,name=avatar_url,json=avatarUrl" json:"avatarUrl"`
+	Revision       uint64 `protobuf:"varint,9,opt,name=revision" json:"revision"`
+	CreatedAt      string `protobuf:"bytes,10,opt,name=created_at,json=createdAt" json:"createdAt"`
+	UpdatedAt      string `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt" json:"updatedAt"`
 }

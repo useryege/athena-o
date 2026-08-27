@@ -19,6 +19,7 @@ var targetKeys = []string{
 	"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID",
 	"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY",
 	"ATHENA_JWT_SECRET",
+	"ATHENA_WALLET_INTERNAL_AUTH_TOKEN",
 }
 
 func main() {
@@ -75,6 +76,10 @@ func newSecretValues() (map[string]string, error) {
 	if _, err := rand.Read(jwtSecretBytes); err != nil {
 		return nil, err
 	}
+	walletInternalAuthToken, err := randomString(40, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
 
 	return map[string]string{
 		"POSTGRES_PASSWORD":                          postgresPassword,
@@ -83,6 +88,7 @@ func newSecretValues() (map[string]string, error) {
 		"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID":     minioAccessKey,
 		"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY": minioSecretKey,
 		"ATHENA_JWT_SECRET":                          base64.StdEncoding.EncodeToString(jwtSecretBytes),
+		"ATHENA_WALLET_INTERNAL_AUTH_TOKEN":          walletInternalAuthToken,
 	}, nil
 }
 

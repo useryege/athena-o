@@ -1,27 +1,22 @@
 syntax = "proto3";
 
-// Wallet Service API exposes wallet service runtime status.
+// Wallet Service API is the trusted account-owned wallet boundary.
 package athena.internal.wallet;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
 
 option go_package = "github.com/useryege/athena/internal/wallet/apiclient";
 
-// GetWalletStatusRequest queries the wallet service runtime status.
 message GetWalletStatusRequest {}
 
-// ListWalletsRequest queries persisted wallet records.
 message ListWalletsRequest {
-  string chain = 1;
+  string wallet_type = 1;
   string query = 2;
   int32 page = 3;
   int32 page_size = 4;
   string requester_account_id = 5;
-  string type = 6;
-  bool requester_administrator = 7;
 }
 
-// ListWalletsResponse returns persisted wallet records without secret material.
 message ListWalletsResponse {
   repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem items = 1;
   int64 total = 2;
@@ -29,96 +24,133 @@ message ListWalletsResponse {
   int32 page_size = 4;
 }
 
-// GetWalletRequest queries one persisted wallet record.
 message GetWalletRequest {
   int64 id = 1;
-  bool reveal_secrets = 2;
-  string requester_account_id = 3;
-  bool requester_administrator = 4;
+  string requester_account_id = 2;
 }
 
-// GetWalletResponse returns one persisted wallet record.
 message GetWalletResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
-}
-
-// CreateWalletRequest creates a new wallet for one chain.
-message CreateWalletRequest {
-  string chain = 1;
-  string alias = 2;
-  string requester_account_id = 3;
-  string type = 4;
-  bool requester_administrator = 5;
-}
-
-// CreateWalletResponse returns the created wallet record.
-message CreateWalletResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
-}
-
-// ImportPrivateKeyRequest imports a private key for one chain.
-message ImportPrivateKeyRequest {
-  string chain = 1;
-  string private_key = 2;
-  string alias = 3;
-  string requester_account_id = 4;
-  string type = 5;
-  bool requester_administrator = 6;
-}
-
-// ImportPrivateKeyResponse returns the imported wallet record.
-message ImportPrivateKeyResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
-}
-
-// ImportMnemonicRequest imports a mnemonic-derived wallet for one chain.
-message ImportMnemonicRequest {
-  string chain = 1;
-  string mnemonic = 2;
-  string alias = 3;
-  string requester_account_id = 4;
-  string type = 5;
-  bool requester_administrator = 6;
-}
-
-// ImportMnemonicResponse returns the imported wallet record.
-message ImportMnemonicResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletDetail item = 1;
-}
-
-// UpdateWalletAliasRequest updates wallet alias text without changing secret material.
-message UpdateWalletAliasRequest {
-  int64 id = 1;
-  string alias = 2;
-  string requester_account_id = 3;
-  bool requester_administrator = 4;
-}
-
-// UpdateWalletAliasResponse returns the updated wallet record.
-message UpdateWalletAliasResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
+message CreateWalletRequest {
+  string wallet_type = 1;
+  string remark = 2;
+  string avatar_preset_id = 3;
+  string requester_account_id = 4;
+}
+
+message CreateWalletResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string private_key = 2;
+}
+
+message ImportWalletRequest {
+  string wallet_type = 1;
+  string private_key = 2;
+  string remark = 3;
+  string avatar_preset_id = 4;
+  string requester_account_id = 5;
+}
+
+message ImportWalletResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+}
+
+message UpdateWalletRemarkRequest {
+  int64 id = 1;
+  string remark = 2;
+  uint64 expected_revision = 3;
+  string requester_account_id = 4;
+}
+
+message UpdateWalletRemarkResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+}
+
+message UpdateWalletAvatarPresetRequest {
+  int64 id = 1;
+  string avatar_preset_id = 2;
+  uint64 expected_revision = 3;
+  string requester_account_id = 4;
+}
+
+message UpdateWalletAvatarPresetResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string previous_avatar_object_key = 2;
+}
+
+message RevealWalletPrivateKeyRequest {
+  int64 id = 1;
+  string requester_account_id = 2;
+}
+
+message RevealWalletPrivateKeyResponse {
+  string private_key = 1;
+}
+
+message WalletAvatarMetadata {
+  int64 id = 1;
+  uint64 revision = 2;
+  string object_key = 3;
+  string content_type = 4;
+  string etag = 5;
+  int64 size_bytes = 6;
+}
+
+message GetWalletAvatarMetadataRequest {
+  int64 id = 1;
+  string requester_account_id = 2;
+}
+
+message GetWalletAvatarMetadataResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  WalletAvatarMetadata metadata = 2;
+}
+
+message ReplaceWalletAvatarMetadataRequest {
+  int64 id = 1;
+  uint64 expected_revision = 2;
+  string object_key = 3;
+  string content_type = 4;
+  string etag = 5;
+  int64 size_bytes = 6;
+  string requester_account_id = 7;
+}
+
+message ReplaceWalletAvatarMetadataResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string previous_avatar_object_key = 2;
+}
+
+message ResetWalletAvatarMetadataRequest {
+  int64 id = 1;
+  uint64 expected_revision = 2;
+  string requester_account_id = 3;
+}
+
+message ResetWalletAvatarMetadataResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string previous_avatar_object_key = 2;
+}
+
+message ListWalletAvatarObjectKeysRequest {}
+
+message ListWalletAvatarObjectKeysResponse {
+  repeated string object_keys = 1;
+}
+
 service WalletService {
-  // GetWalletStatus returns the wallet service runtime status.
   rpc GetWalletStatus(GetWalletStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletStatus);
-
-  // ListWallets returns persisted wallet records without secret material.
   rpc ListWallets(ListWalletsRequest) returns (ListWalletsResponse);
-
-  // GetWallet returns one wallet record and optionally reveals secret material.
   rpc GetWallet(GetWalletRequest) returns (GetWalletResponse);
-
-  // CreateWallet creates a new wallet for one chain.
   rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
-
-  // ImportPrivateKey imports a private key for one chain.
-  rpc ImportPrivateKey(ImportPrivateKeyRequest) returns (ImportPrivateKeyResponse);
-
-  // ImportMnemonic imports a mnemonic-derived wallet for one chain.
-  rpc ImportMnemonic(ImportMnemonicRequest) returns (ImportMnemonicResponse);
-
-  // UpdateWalletAlias updates wallet alias text without changing secret material.
-  rpc UpdateWalletAlias(UpdateWalletAliasRequest) returns (UpdateWalletAliasResponse);
-
+  rpc ImportWallet(ImportWalletRequest) returns (ImportWalletResponse);
+  rpc UpdateWalletRemark(UpdateWalletRemarkRequest) returns (UpdateWalletRemarkResponse);
+  rpc UpdateWalletAvatarPreset(UpdateWalletAvatarPresetRequest) returns (UpdateWalletAvatarPresetResponse);
+  rpc RevealWalletPrivateKey(RevealWalletPrivateKeyRequest) returns (RevealWalletPrivateKeyResponse);
+  rpc GetWalletAvatarMetadata(GetWalletAvatarMetadataRequest) returns (GetWalletAvatarMetadataResponse);
+  rpc ReplaceWalletAvatarMetadata(ReplaceWalletAvatarMetadataRequest) returns (ReplaceWalletAvatarMetadataResponse);
+  rpc ResetWalletAvatarMetadata(ResetWalletAvatarMetadataRequest) returns (ResetWalletAvatarMetadataResponse);
+  rpc ListWalletAvatarObjectKeys(ListWalletAvatarObjectKeysRequest) returns (ListWalletAvatarObjectKeysResponse);
 }
