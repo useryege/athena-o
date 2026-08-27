@@ -819,7 +819,7 @@ body::-webkit-scrollbar-thumb,
     gap: 10px 14px;
     flex-wrap: wrap;
     width: max-content;
-    max-width: calc(100vw - 304px);
+    max-width: calc(100vw - var(--athena-sidebar-width) - 56px);
     margin-left: auto;
 }
 
@@ -5943,7 +5943,7 @@ button.chain-processing-kpi {
 }
 
 .athena-account-menu {
-    min-width: 232px !important;
+    min-width: calc(var(--athena-sidebar-width) - 16px) !important;
 }
 
 .athena-account-menu .ant-dropdown-menu {
@@ -6577,7 +6577,7 @@ button.chain-processing-kpi {
     }
 
     .athena-account-menu {
-        width: 232px;
+        width: calc(var(--athena-sidebar-width) - 16px);
         max-width: calc(100vw - 16px);
     }
 

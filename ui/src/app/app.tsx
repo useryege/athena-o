@@ -453,6 +453,8 @@ const loadInitialSessionState = (session: AppBootstrapSession): SessionState => 
 const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do not have permission to access this page.' />;
 
 const narrowShellQuery = '(max-width: 900px)';
+const desktopExpandedSidebarWidth = 260;
+const mobileExpandedSidebarWidth = 248;
 
 const useNarrowShell = () => {
     const matches = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(narrowShellQuery).matches;
@@ -567,6 +569,8 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const accessRefreshedAtRef = React.useRef(initialAccess ? Date.now() : 0);
     const pendingAccessRef = React.useRef(Boolean(initialAccess && isPendingAccess(initialAccess)));
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
+    const expandedSidebarWidth = narrowShell ? mobileExpandedSidebarWidth : desktopExpandedSidebarWidth;
+    const shellStyle = {'--athena-sidebar-width': `${expandedSidebarWidth}px`} as React.CSSProperties;
     const isLoginPath = location.pathname.startsWith('/login');
     const access = session.status === 'authenticated' ? session.access : null;
 
@@ -1158,7 +1162,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const content = isLoginPath ? (
         routes
     ) : (
-        <AntLayout className='athena-shell'>
+        <AntLayout className='athena-shell' style={shellStyle}>
             <a className='athena-skip-link' href='#athena-main' aria-hidden={narrowShell && mobileSidebarOpen} tabIndex={narrowShell && mobileSidebarOpen ? -1 : undefined}>
                 Skip to main content
             </a>
@@ -1168,7 +1172,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 collapsed={sidebarCollapsed}
                 collapsedWidth={narrowShell ? 0 : 72}
                 trigger={null}
-                width={248}
+                width={expandedSidebarWidth}
                 ref={sidebarRef}
                 role={narrowShell && mobileSidebarOpen ? 'dialog' : undefined}
                 aria-modal={narrowShell && mobileSidebarOpen ? true : undefined}
