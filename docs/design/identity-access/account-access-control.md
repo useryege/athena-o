@@ -4,7 +4,7 @@
 
 Account Access Control owns Athena's durable role-aware authorization model:
 external sign-in availability, independent API Key and Profit Sharing
-entitlements, a complete ten-module access matrix, optimistic revision updates,
+entitlements, a complete nine-module access matrix, optimistic revision updates,
 Pending/Active/Blocked status, RPC authorization, and browser authorization
 synchronization. Every access aggregate and authorization lookup is keyed by
 stable account UUID.
@@ -34,7 +34,7 @@ after this layer authorizes the request.
 ## Architecture
 
 `Access` contains the persisted `Administrator` projection, `LoginEnabled`,
-`APIKeyEnabled`, `ProfitSharingEnabled`, ten module levels, and a positive
+`APIKeyEnabled`, `ProfitSharingEnabled`, nine module levels, and a positive
 `Revision`. PostgreSQL is authoritative. `Controller` holds detached snapshots
 for the single API Server and publishes only committed, validated aggregates.
 `Register(accountID)` idempotently introduces a newly committed registration.
@@ -51,7 +51,6 @@ Key disabled, Profit Sharing enabled, and maximum access for every module.
 | `sports_history` | `READ_WRITE` |
 | `managed_oo` | `READ_WRITE` |
 | `worm_markets` | `READ` |
-| `fifa_market_dashboard` | `READ_WRITE` |
 | `world_cup_corners` | `READ` |
 | `token` | `READ_WRITE` |
 | `wallet` | `READ_WRITE` |
@@ -62,12 +61,12 @@ flow between modules or into API Key and Profit Sharing entitlements.
 
 ## Runtime Flow
 
-1. Startup loads every persisted access head, its database role, and all ten
+1. Startup loads every persisted access head, its database role, and all nine
    module rows. Zero accounts is valid. Any durable account with a missing,
    duplicate, unknown, incomplete, or invalid aggregate fails startup closed.
 2. Shared username registration commits an ordinary Google or Solana-wallet
    access head with login enabled, API Key and Profit Sharing disabled, revision
-   one, and ten `NONE` rows. Only a Google administrator-candidate registration
+   one, and nine `NONE` rows. Only a Google administrator-candidate registration
    can commit the fixed maximum administrator aggregate. The controller learns
    either by UUID only after database commit.
 3. Every login session and API Key checks `LoginEnabled` on each request. API
@@ -77,7 +76,7 @@ flow between modules or into API Key and Profit Sharing entitlements.
    role-aware snapshot.
 4. An administrator may replace one ordinary account's three flags and full
    module matrix in one expected-revision CAS. The SQL transaction advances the
-   revision and replaces all ten rows together. Administrator aggregates cannot
+   revision and replaces all nine rows together. Administrator aggregates cannot
    be edited through this path.
 5. Status derives as `BLOCKED` when login is disabled, `PENDING` when login is
    enabled with all modules `NONE` and Profit Sharing disabled, and `ACTIVE`
@@ -99,7 +98,7 @@ flow between modules or into API Key and Profit Sharing entitlements.
 ## State / Data
 
 `account_access.account_id UUID` owns the three flags and revision.
-`account_module_access` has primary key `(account_id, module)` and exactly ten
+`account_module_access` has primary key `(account_id, module)` and exactly nine
 rows per account. Both reference the UUID account parent. The role is stored on
 that parent and joined into every access aggregate; username is absent from
 authorization tables.
@@ -124,7 +123,7 @@ identity.
 
 ## Invariants
 
-- Every durable account has one positive-revision access head and exactly ten
+- Every durable account has one positive-revision access head and exactly nine
   module rows, all keyed by the same UUID.
 - Ordinary first-registration state is Pending and cannot read business APIs.
 - Role comes only from the persisted administrator boolean; username has no
@@ -160,7 +159,7 @@ safe provider-specific presentation data, and timestamps, never Google subject.
 
 ## Change Checklist
 
-- [ ] Persisted role, three entitlements, ten-module matrix, and status derivation remain current.
+- [ ] Persisted role, three entitlements, nine-module matrix, and status derivation remain current.
 - [ ] UUID registration, CAS, and controller publication boundaries remain current.
 - [ ] RPC rules and Pending browser behavior remain synchronized.
 - [ ] Administrator directory search, filters, sorting, and pagination remain current.

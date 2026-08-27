@@ -1,7 +1,6 @@
 import {AccountsService} from './accounts-service';
 import {AuthService} from './auth-service';
 import {NotificationService} from './notification-service';
-import {FIFAMarketDashboardService} from './fifa-market-dashboard-service';
 import {ManagedOOService} from './managed-oo-service';
 import {MarketRadarService} from './market-radar-service';
 import {ServiceStatusService} from './service-status-service';
@@ -27,7 +26,6 @@ export interface Services {
     sportsLive: SportsLiveService;
     sportsHistory: SportsHistoryService;
     managedOO: ManagedOOService;
-    fifaMarketDashboard: FIFAMarketDashboardService;
     notification: NotificationService;
     serviceStatus: ServiceStatusService;
     worldCupCorners: WorldCupCornersService;
@@ -46,7 +44,6 @@ export const services: Services = {
     sportsLive: new SportsLiveService(),
     sportsHistory: new SportsHistoryService(),
     managedOO: new ManagedOOService(),
-    fifaMarketDashboard: new FIFAMarketDashboardService(),
     notification: new NotificationService(),
     serviceStatus: new ServiceStatusService(),
     worldCupCorners: new WorldCupCornersService(),

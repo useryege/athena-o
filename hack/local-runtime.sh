@@ -21,7 +21,6 @@ cleanup_started=false
 
 coverage_dirs=(
 	"/tmp/coverage/athena-worm-markets"
-	"/tmp/coverage/athena-fifa-market-dashboard"
 	"/tmp/coverage/athena-market-radar"
 	"/tmp/coverage/athena-sports-live"
 	"/tmp/coverage/athena-sports-history"
@@ -226,7 +225,6 @@ cleanup_athena_ports() {
 		"worm-markets:${ATHENA_WORM_MARKETS_PORT:-8084}"
 		"notification:${ATHENA_NOTIFICATION_PORT:-8086}"
 		"wallet:${ATHENA_WALLET_PORT:-8088}"
-		"fifa-market-dashboard:${ATHENA_FIFA_MARKET_DASHBOARD_PORT:-8090}"
 		"market-radar:${ATHENA_MARKET_RADAR_PORT:-8092}"
 		"sports-live:${ATHENA_SPORTS_LIVE_PORT:-8094}"
 		"token-api:${ATHENA_TOKEN_API_PORT:-8096}"

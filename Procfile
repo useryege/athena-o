@@ -1,5 +1,4 @@
 worm-markets: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-worm-markets} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-worm-markets go run ./cmd/main.go --port ${ATHENA_WORM_MARKETS_PORT:-8084}"
-fifa-market-dashboard: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-fifa-market-dashboard} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-fifa-market-dashboard go run ./cmd/main.go --port ${ATHENA_FIFA_MARKET_DASHBOARD_PORT:-8090}"
 market-radar: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-market-radar} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-market-radar go run ./cmd/main.go --port ${ATHENA_MARKET_RADAR_PORT:-8092}"
 sports-live: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-sports-live} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-sports-live go run ./cmd/main.go --port ${ATHENA_SPORTS_LIVE_PORT:-8094}"
 sports-history: sh -c "GOCOVERDIR=${ATHENA_COVERAGE_DIR:-/tmp/coverage/athena-sports-history} FORCE_LOG_COLORS=1 ATHENA_BINARY_NAME=athena-sports-history go run ./cmd/main.go --port ${ATHENA_SPORTS_HISTORY_PORT:-8104}"

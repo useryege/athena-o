@@ -12,16 +12,15 @@ import (
 type Module string
 
 const (
-	ModuleMarketRadar         Module = "market_radar"
-	ModuleSportsLive          Module = "sports_live"
-	ModuleSportsHistory       Module = "sports_history"
-	ModuleManagedOO           Module = "managed_oo"
-	ModuleWormMarkets         Module = "worm_markets"
-	ModuleFIFAMarketDashboard Module = "fifa_market_dashboard"
-	ModuleWorldCupCorners     Module = "world_cup_corners"
-	ModuleToken               Module = "token"
-	ModuleWallet              Module = "wallet"
-	ModuleNotifications       Module = "notifications"
+	ModuleMarketRadar     Module = "market_radar"
+	ModuleSportsLive      Module = "sports_live"
+	ModuleSportsHistory   Module = "sports_history"
+	ModuleManagedOO       Module = "managed_oo"
+	ModuleWormMarkets     Module = "worm_markets"
+	ModuleWorldCupCorners Module = "world_cup_corners"
+	ModuleToken           Module = "token"
+	ModuleWallet          Module = "wallet"
+	ModuleNotifications   Module = "notifications"
 )
 
 var allModules = [...]Module{
@@ -30,7 +29,6 @@ var allModules = [...]Module{
 	ModuleSportsHistory,
 	ModuleManagedOO,
 	ModuleWormMarkets,
-	ModuleFIFAMarketDashboard,
 	ModuleWorldCupCorners,
 	ModuleToken,
 	ModuleWallet,
@@ -58,8 +56,7 @@ func MaxAccessLevel(module Module) (AccessLevel, bool) {
 	switch module {
 	case ModuleMarketRadar, ModuleSportsLive, ModuleWormMarkets, ModuleWorldCupCorners:
 		return AccessLevelRead, true
-	case ModuleSportsHistory, ModuleManagedOO, ModuleFIFAMarketDashboard,
-		ModuleToken, ModuleWallet, ModuleNotifications:
+	case ModuleSportsHistory, ModuleManagedOO, ModuleToken, ModuleWallet, ModuleNotifications:
 		return AccessLevelReadWrite, true
 	default:
 		return "", false

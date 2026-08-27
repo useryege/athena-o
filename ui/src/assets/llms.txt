@@ -21,7 +21,7 @@ When the user supplies a one-time **Connect AI** instruction block, use its abso
 ## API Reference
 
 - [Swagger 2.0 Specification](/swagger.json): Authoritative HTTP operations and schemas.
-- [Modules and Permissions](/docs/ai/modules.md): The ten product modules and their maximum access levels.
+- [Modules and Permissions](/docs/ai/modules.md): The nine product modules and their maximum access levels.
 - [Errors and Pagination](/docs/ai/errors-and-pagination.md): Gateway error envelopes and the supported list patterns.
 
 ## Optional

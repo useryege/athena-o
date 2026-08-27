@@ -61,6 +61,11 @@ flow on mobile. The Account menu offers Profile, Appearance, Access, Help, and
 Logout; Security appears only when API Key access is enabled, and account
 administration appears only for a server-projected administrator role.
 
+An authenticated path that matches no application route renders the shared Ant
+Design `Result` not-found view inside the responsive shell. Its Return home
+action navigates to `/`; the root route then selects `/account/access` for a
+Pending account and `/account/profile` for every other authenticated account.
+
 Security presents Connect AI before the ordinary API Key management section.
 Connect AI is a convenience workflow over the same account-level key issuance
 API, not a distinct credential type or authorization boundary. Its two stages
@@ -216,6 +221,8 @@ portable to an arbitrary reverse-proxy subpath.
 - Username is selected once, displayed as `@username`, and never used for
   identity comparison, authorization, list keys, or cache scope.
 - Pending users cannot reach business routes or initiate business requests.
+- Authenticated unknown routes render the generic not-found view; Return home
+  delegates to the root route's Pending-or-Profile selection.
 - Route, navigation, request, cache, and write decisions use the same current
   authorization projection keyed by account ID.
 - Durable and generally projected public UI state excludes Google subject, the

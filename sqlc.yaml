@@ -46,15 +46,6 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/fifamarketdashboard/store/migrations"
-    queries: "internal/fifamarketdashboard/store/queries"
-    gen:
-      go:
-        package: "sqlc"
-        out: "internal/fifamarketdashboard/store/sqlc"
-        sql_package: "pgx/v5"
-        emit_interface: true
-  - engine: "postgresql"
     schema: "internal/sportslive/store/migrations"
     queries: "internal/sportslive/store/queries"
     gen:

@@ -20,7 +20,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Identity and Access | UUID account identities, immutable public usernames, permanent single-provider Google or Solana bindings, persistent API Keys, and Athena JWT v3 encoding | [Account Credentials](identity-access/account-credentials.md) |
 | Identity and Access | Browser Google Authorization Code flow, PKCE, one-time OAuth state, shared anonymous username registration, and Athena cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) |
 | Identity and Access | Browser-injected Phantom Solana authentication, one-time SIWS challenges, Ed25519 verification, and wallet-first username registration | [Solana Wallet Authentication](identity-access/solana-wallet-authentication.md) |
-| Identity and Access | Database-role authorization, login, API Key, Profit Sharing, ten-module access, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) |
+| Identity and Access | Database-role authorization, login, API Key, Profit Sharing, nine-module access, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) |
 | Identity and Access | UUID-owned display profiles, immutable username presentation, display-only tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) |
 | Identity and Access | UUID-keyed private account-avatar validation, S3-compatible object storage, authenticated delivery, and orphan recovery | [Account Avatar Storage](identity-access/account-avatar-storage.md) |
 | Identity and Access | UUID wallet ownership, system-owned wallets, server-derived requester identity, and owner-scoped secret access | [Wallet Ownership](identity-access/wallet-ownership.md) |
@@ -31,7 +31,6 @@ The executable code remains the source of truth. These documents provide the mai
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) |
 | Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) |
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) |
-| Market Intelligence | FIFA-module facade for configured Worm/Polymarket composition, balances, and UUID-and-role-scoped requester holdings | [FIFA Market Dashboard](market-intelligence/fifa-market-dashboard.md) |
 | Token Intelligence | Synchronous EVM block discovery, token validation, project initialization, and per-attempt processing diagnostics | [Token Chain Processor](token-intelligence/chain-processor.md) |
 | Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |

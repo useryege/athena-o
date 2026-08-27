@@ -1,9 +1,6 @@
 SELECT 'CREATE DATABASE worm_markets'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'worm_markets')\gexec
 
-SELECT 'CREATE DATABASE fifa_market_dashboard'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'fifa_market_dashboard')\gexec
-
 SELECT 'CREATE DATABASE notification'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notification')\gexec
 

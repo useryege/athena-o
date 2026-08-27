@@ -78,7 +78,7 @@ request.
 2. A cryptographically verified but unknown Google subject or Solana address
    remains outside PostgreSQL until the browser submits an acceptable username
    through the shared registration handler. `RegisterExternalAccount` then
-   creates identity, access, ten module rows, profile, and preferences in one
+   creates identity, access, nine module rows, profile, and preferences in one
    transaction. Ordinary accounts start Pending. Only a server-marked Google
    administrator candidate can create the single fixed administrator aggregate.
 3. Registration first rechecks the same provider and subject. Concurrent

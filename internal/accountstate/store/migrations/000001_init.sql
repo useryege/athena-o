@@ -154,7 +154,6 @@ CREATE TABLE account_module_access (
       'sports_history',
       'managed_oo',
       'worm_markets',
-      'fifa_market_dashboard',
       'world_cup_corners',
       'token',
       'wallet',
@@ -167,7 +166,6 @@ CREATE TABLE account_module_access (
     OR module IN (
       'sports_history',
       'managed_oo',
-      'fifa_market_dashboard',
       'token',
       'wallet',
       'notifications'

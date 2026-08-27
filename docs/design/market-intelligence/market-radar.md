@@ -11,10 +11,9 @@ namespace. All four public methods belong only to the read-only Market Radar
 account-access module.
 
 The capability does not persist data and does not own live sports, completed
-sports history, Managed Optimistic Oracle logs, Worm markets, or FIFA
-cross-market composition. `util/polymarket` remains the external-provider
-adapter. Notification delivery after `SendNotification` is accepted belongs
-to Athena Notification.
+sports history, Managed Optimistic Oracle logs, or Worm markets.
+`util/polymarket` remains the external-provider adapter. Notification delivery
+after `SendNotification` is accepted belongs to Athena Notification.
 
 ## Source Locations
 

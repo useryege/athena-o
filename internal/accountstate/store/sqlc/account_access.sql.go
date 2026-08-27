@@ -155,14 +155,13 @@ SET access_level = CASE module_access.module
   WHEN 'sports_history' THEN $3::text
   WHEN 'managed_oo' THEN $4::text
   WHEN 'worm_markets' THEN $5::text
-  WHEN 'fifa_market_dashboard' THEN $6::text
-  WHEN 'world_cup_corners' THEN $7::text
-  WHEN 'token' THEN $8::text
-  WHEN 'wallet' THEN $9::text
-  WHEN 'notifications' THEN $10::text
+  WHEN 'world_cup_corners' THEN $6::text
+  WHEN 'token' THEN $7::text
+  WHEN 'wallet' THEN $8::text
+  WHEN 'notifications' THEN $9::text
   ELSE module_access.access_level
 END
-WHERE module_access.account_id = $11::uuid
+WHERE module_access.account_id = $10::uuid
   AND EXISTS (
     SELECT 1
     FROM athena_account AS account
@@ -172,17 +171,16 @@ WHERE module_access.account_id = $11::uuid
 `
 
 type ReplaceAccountModuleAccessParams struct {
-	MarketRadarAccessLevel         string
-	SportsLiveAccessLevel          string
-	SportsHistoryAccessLevel       string
-	ManagedOoAccessLevel           string
-	WormMarketsAccessLevel         string
-	FifaMarketDashboardAccessLevel string
-	WorldCupCornersAccessLevel     string
-	TokenAccessLevel               string
-	WalletAccessLevel              string
-	NotificationsAccessLevel       string
-	AccountID                      pgtype.UUID
+	MarketRadarAccessLevel     string
+	SportsLiveAccessLevel      string
+	SportsHistoryAccessLevel   string
+	ManagedOoAccessLevel       string
+	WormMarketsAccessLevel     string
+	WorldCupCornersAccessLevel string
+	TokenAccessLevel           string
+	WalletAccessLevel          string
+	NotificationsAccessLevel   string
+	AccountID                  pgtype.UUID
 }
 
 func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAccountModuleAccessParams) (int64, error) {
@@ -192,7 +190,6 @@ func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAcc
 		arg.SportsHistoryAccessLevel,
 		arg.ManagedOoAccessLevel,
 		arg.WormMarketsAccessLevel,
-		arg.FifaMarketDashboardAccessLevel,
 		arg.WorldCupCornersAccessLevel,
 		arg.TokenAccessLevel,
 		arg.WalletAccessLevel,

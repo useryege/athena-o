@@ -40,7 +40,6 @@ import (
 	"github.com/useryege/athena/internal/accountcredentials"
 	accountstatestore "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/authregistration"
-	fifamarketdashboardapiclient "github.com/useryege/athena/internal/fifamarketdashboard/apiclient"
 	"github.com/useryege/athena/internal/googleoidc"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
@@ -51,7 +50,6 @@ import (
 	"github.com/useryege/athena/internal/server/accountavatarhttp"
 	serverappbootstrap "github.com/useryege/athena/internal/server/appbootstrap"
 	servercache "github.com/useryege/athena/internal/server/cache"
-	serverfifamarketdashboard "github.com/useryege/athena/internal/server/fifamarketdashboard"
 	"github.com/useryege/athena/internal/server/logout"
 	servermanagedoo "github.com/useryege/athena/internal/server/managedoo"
 	servermarketradar "github.com/useryege/athena/internal/server/marketradar"
@@ -103,7 +101,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
-	fifamarketdashboardpkg "github.com/useryege/athena/pkg/apiclient/fifamarketdashboard"
 	managedoopkg "github.com/useryege/athena/pkg/apiclient/managedoo"
 	marketradarpkg "github.com/useryege/athena/pkg/apiclient/marketradar"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
@@ -201,7 +198,6 @@ type AthenaServerOpts struct {
 	SportsHistoryClientset            sportshistoryapiclient.Clientset
 	ManagedOOClientset                managedooapiclient.Clientset
 	WormMarketsClientset              wormmarketsapiclient.Clientset
-	FIFAMarketDashboardClientset      fifamarketdashboardapiclient.Clientset
 	ProfitSharingClientset            profitsharingapiclient.Clientset
 	TokenAPIClientset                 tokenapiapiclient.Clientset
 	EtherscanGatewayIPs               string
@@ -498,7 +494,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	sportshistorypkg.RegisterSportsHistoryServiceServer(grpcS, server.serviceSet.SportsHistoryService)
 	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
 	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
-	fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceServer(grpcS, server.serviceSet.FIFAMarketDashboardService)
 	profitsharingpkg.RegisterProfitSharingServiceServer(grpcS, server.serviceSet.ProfitSharingService)
 	worldcupcornerspkg.RegisterWorldCupCornersServiceServer(grpcS, server.serviceSet.WorldCupCornersService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -515,23 +510,22 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 }
 
 type AthenaServiceSet struct {
-	HealthService              *health.Server
-	SessionService             *session.Server
-	AppBootstrapService        *serverappbootstrap.Server
-	AccountService             *account.Server
-	VersionService             *version.Server
-	NotificationService        *servernotification.Server
-	WalletService              *serverwallet.Server
-	MarketRadarService         *servermarketradar.Server
-	SportsLiveService          *serversportslive.Server
-	SportsHistoryService       *serversportshistory.Server
-	ManagedOOService           *servermanagedoo.Server
-	WormMarketsService         *serverwormmarkets.Server
-	FIFAMarketDashboardService *serverfifamarketdashboard.Server
-	ProfitSharingService       *serverprofitsharing.Server
-	WorldCupCornersService     *serverworldcupcorners.Server
-	TokenServices              *servertokenapi.Server
-	ServiceStatusService       *serverservicestatus.Server
+	HealthService          *health.Server
+	SessionService         *session.Server
+	AppBootstrapService    *serverappbootstrap.Server
+	AccountService         *account.Server
+	VersionService         *version.Server
+	NotificationService    *servernotification.Server
+	WalletService          *serverwallet.Server
+	MarketRadarService     *servermarketradar.Server
+	SportsLiveService      *serversportslive.Server
+	SportsHistoryService   *serversportshistory.Server
+	ManagedOOService       *servermanagedoo.Server
+	WormMarketsService     *serverwormmarkets.Server
+	ProfitSharingService   *serverprofitsharing.Server
+	WorldCupCornersService *serverworldcupcorners.Server
+	TokenServices          *servertokenapi.Server
+	ServiceStatusService   *serverservicestatus.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -551,7 +545,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	sportsHistoryService := serversportshistory.NewServer(server.SportsHistoryClientset)
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
 	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
-	fifaMarketDashboardService := serverfifamarketdashboard.NewServer(server.FIFAMarketDashboardClientset, server.accessController)
 	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController, server.accountCenter)
 	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
@@ -564,7 +557,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.SportsHistoryClientset,
 		server.ManagedOOClientset,
 		server.WormMarketsClientset,
-		server.FIFAMarketDashboardClientset,
 		server.ProfitSharingClientset,
 		server.TokenAPIClientset,
 		server.EtherscanGatewayIPs,
@@ -581,23 +573,22 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		HealthService:              healthService,
-		SessionService:             sessionService,
-		AppBootstrapService:        appBootstrapService,
-		AccountService:             accountService,
-		VersionService:             versionService,
-		NotificationService:        notificationService,
-		WalletService:              walletService,
-		MarketRadarService:         marketRadarService,
-		SportsLiveService:          sportsLiveService,
-		SportsHistoryService:       sportsHistoryService,
-		ManagedOOService:           managedOOService,
-		WormMarketsService:         wormMarketsService,
-		FIFAMarketDashboardService: fifaMarketDashboardService,
-		ProfitSharingService:       profitSharingService,
-		WorldCupCornersService:     worldCupCornersService,
-		TokenServices:              tokenAPIService,
-		ServiceStatusService:       serviceStatusService,
+		HealthService:          healthService,
+		SessionService:         sessionService,
+		AppBootstrapService:    appBootstrapService,
+		AccountService:         accountService,
+		VersionService:         versionService,
+		NotificationService:    notificationService,
+		WalletService:          walletService,
+		MarketRadarService:     marketRadarService,
+		SportsLiveService:      sportsLiveService,
+		SportsHistoryService:   sportsHistoryService,
+		ManagedOOService:       managedOOService,
+		WormMarketsService:     wormMarketsService,
+		ProfitSharingService:   profitSharingService,
+		WorldCupCornersService: worldCupCornersService,
+		TokenServices:          tokenAPIService,
+		ServiceStatusService:   serviceStatusService,
 	}
 }
 
@@ -888,7 +879,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, sportshistorypkg.RegisterSportsHistoryServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, fifamarketdashboardpkg.RegisterFIFAMarketDashboardServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, profitsharingpkg.RegisterProfitSharingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, worldcupcornerspkg.RegisterWorldCupCornersServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)

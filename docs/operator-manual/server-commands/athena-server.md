@@ -32,13 +32,12 @@ athena-server [flags]
       --connection-status-cache-expiration duration    Cache expiration for cluster/repo connection status (default 1h0m0s)
       --content-security-policy value                  Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
       --default-cache-expiration duration              Cache expiration default (default 24h0m0s)
-      --disable-auth                                   Disable client authentication (loopback listen address only)
+      --disable-auth                                   Disable client authentication
       --enable-gzip                                    Enable GZIP compression (default true)
       --etherscan-api-keys string                      Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs
       --etherscan-gateway-auth-token string            Bearer token for Etherscan Gateway gRPC status calls
       --etherscan-gateway-ips string                   Comma, space, or newline-separated Etherscan Gateway IP addresses
       --etherscan-gateway-probe-query-address string   Ethereum address used by Etherscan Gateway probe runs
-      --fifa-market-dashboard-server-address string    Athena FIFA Market Dashboard server address (default "127.0.0.1:8090")
       --gloglevel int                                  Set the glog logging level
   -h, --help                                           help for athena-server
       --logformat string                               Set the logging format. One of: json|text (default "json")

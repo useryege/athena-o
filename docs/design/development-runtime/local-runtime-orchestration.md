@@ -46,7 +46,6 @@ are:
 | Process | Port | Owned PostgreSQL database |
 | --- | ---: | --- |
 | `worm-markets` | 8084 | `worm_markets` |
-| `fifa-market-dashboard` | 8090 | `fifa_market_dashboard` |
 | `market-radar` | 8092 | none |
 | `sports-live` | 8094 | `sports_live` |
 | `sports-history` | 8104 | `sports_history` |

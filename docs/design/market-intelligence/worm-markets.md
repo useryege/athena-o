@@ -9,12 +9,9 @@ event, live-event, and extreme-price notifications, and exposes event reads over
 its internal gRPC API. The Athena API Server publishes the same capability under
 the `/api/v1/worm-markets` HTTP namespace.
 
-The service does not own user wallets, FIFA cross-market composition, or the
-presentation of Worm data in a page. Requester-scoped wallet holdings and the
-combined Worm/Polymarket FIFA view belong to the independent
-[FIFA Market Dashboard](fifa-market-dashboard.md). The generic Worm HTTP client
-in `util/worm` remains an external-provider adapter rather than part of this
-capability's application state.
+The service does not own user wallets or the presentation of Worm data in a
+page. The generic Worm HTTP client in `util/worm` remains an external-provider
+adapter rather than part of this capability's application state.
 
 ## Source Locations
 
@@ -45,7 +42,6 @@ flowchart LR
     S --> N["Athena Notification gRPC"]
     A["Athena API Server"] --> G["Worm Markets internal gRPC"]
     G --> S
-    F["FIFA Market Dashboard"] --> G
 ```
 
 `NewCommand` creates one PostgreSQL store, one Worm provider client, and an
@@ -105,9 +101,8 @@ channel shared by API and health requests; it does not duplicate business state.
    the event RPC.
 10. On `SIGINT` or `SIGTERM`, the command first gracefully stops gRPC, marks
     health `NOT_SERVING`, cancels all three loops, waits for them to exit, and
-    closes its Notification channel and PostgreSQL. The API Server and FIFA
-    Market Dashboard close their independent Worm Markets channels only after
-    their own serving or background-loop lifecycles end.
+    closes its Notification channel and PostgreSQL. The API Server closes its
+    independent Worm Markets channel only after its own serving lifecycle ends.
 
 Each generated SQL call is its own PostgreSQL transaction boundary. A page
 upsert, its price-history write, later stale-row cleanup, live-state changes,

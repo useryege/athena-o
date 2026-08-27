@@ -139,7 +139,6 @@ WITH inserted_account AS (
       ('sports_history', 'read_write'),
       ('managed_oo', 'read_write'),
       ('worm_markets', 'read'),
-      ('fifa_market_dashboard', 'read_write'),
       ('world_cup_corners', 'read'),
       ('token', 'read_write'),
       ('wallet', 'read_write'),
@@ -173,7 +172,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
@@ -260,7 +259,6 @@ WITH inserted_account AS (
       ('sports_history', 'read_write'),
       ('managed_oo', 'read_write'),
       ('worm_markets', 'read'),
-      ('fifa_market_dashboard', 'read_write'),
       ('world_cup_corners', 'read'),
       ('token', 'read_write'),
       ('wallet', 'read_write'),
@@ -294,7 +292,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
@@ -376,7 +374,6 @@ WITH inserted_account AS (
       ('sports_history'),
       ('managed_oo'),
       ('worm_markets'),
-      ('fifa_market_dashboard'),
       ('world_cup_corners'),
       ('token'),
       ('wallet'),
@@ -410,7 +407,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `

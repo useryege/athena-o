@@ -11,7 +11,6 @@ const serviceLabels: Record<string, string> = {
     'sports-history': 'Sports History',
     'managed-oo': 'Managed OO',
     'worm-markets': 'Worm Markets',
-    'fifa-market-dashboard': 'FIFA Market Dashboard',
     'profit-sharing': 'Profit Sharing',
     'token-api': 'Token API'
 };

@@ -72,7 +72,6 @@ import {
     WalletBlocklistPage,
     WalletsPage,
     WorldCupCornersPage,
-    FIFAMarketDashboardPage,
     ProfitSharingRoundsPage,
     ProfitSharingRoundPage,
     ProfitSharingAdminRoundsPage,
@@ -242,13 +241,6 @@ const navSections: NavSection[] = [
             sportsNavItem,
             managedOONavItem,
             {
-                key: '/fifa-market-dashboard',
-                label: 'FIFA Market Dashboard',
-                path: '/fifa-market-dashboard',
-                icon: <TrophyOutlined />,
-                module: AccountDataModule.FIFAMarketDashboard
-            },
-            {
                 key: '/world-cup-corners',
                 label: 'World Cup Corners',
                 path: '/world-cup-corners',
@@ -403,7 +395,6 @@ const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
     [AccountDataModule.SportsLive]: '/sports-live',
     [AccountDataModule.SportsHistory]: '/sports-history',
     [AccountDataModule.ManagedOO]: '/managed-oo/proposals',
-    [AccountDataModule.FIFAMarketDashboard]: '/fifa-market-dashboard',
     [AccountDataModule.WorldCupCorners]: '/world-cup-corners',
     [AccountDataModule.Token]: '/token/projects',
     [AccountDataModule.Wallet]: '/wallet',
@@ -451,6 +442,21 @@ const loadInitialSessionState = (session: AppBootstrapSession): SessionState => 
 };
 
 const ForbiddenPage = () => <Result status='403' title='403' subTitle='You do not have permission to access this page.' />;
+
+const NotFoundPage = () => {
+    const navigate = useNavigate();
+    return (
+        <Result
+            status='404'
+            title='Page not found'
+            extra={
+                <Button type='primary' onClick={() => navigate('/')}>
+                    Return home
+                </Button>
+            }
+        />
+    );
+};
 
 const narrowShellQuery = '(max-width: 900px)';
 const desktopExpandedSidebarWidth = 272;
@@ -506,7 +512,6 @@ const AppRoutes = (props: {
             <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
             <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
             <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
-            <Route path='/fifa-market-dashboard' element={moduleRoute(AccountDataModule.FIFAMarketDashboard, <FIFAMarketDashboardPage />)} />
             <Route path='/notifications' element={moduleRoute(AccountDataModule.Notifications, <NotificationsPage />)} />
             <Route path='/notifications/:id' element={moduleRoute(AccountDataModule.Notifications, <NotificationsDetailPage />)} />
             <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
@@ -540,7 +545,7 @@ const AppRoutes = (props: {
             <Route path='/token/node-statuses' element={moduleRoute(AccountDataModule.Token, <NodeStatusesPage />)} />
             <Route path='/token/chain-processing' element={moduleRoute(AccountDataModule.Token, <ChainProcessingPage />)} />
             <Route path='/token/collection-tasks' element={moduleRoute(AccountDataModule.Token, <CollectionTasksPage />)} />
-            <Route path='*' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
+            <Route path='*' element={<NotFoundPage />} />
         </Routes>
     );
 };

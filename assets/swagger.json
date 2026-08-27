@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1061-gb0f06082-dirty"
+    "version": "v1.0.0-1066-g28f56176-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -457,83 +457,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/servicestatusListEtherscanGatewayStatusesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/fifa-market-dashboard": {
-      "get": {
-        "tags": [
-          "FIFAMarketDashboardService"
-        ],
-        "operationId": "FIFAMarketDashboardService_GetFIFAMarketDashboard",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/fifamarketdashboardGetFIFAMarketDashboardResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/fifa-market-dashboard/event-config": {
-      "put": {
-        "tags": [
-          "FIFAMarketDashboardService"
-        ],
-        "operationId": "FIFAMarketDashboardService_UpdateFIFAEventConfig",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1alpha1FIFAMarketDashboardEventConfig"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/fifamarketdashboardUpdateFIFAEventConfigResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/fifa-market-dashboard/status": {
-      "get": {
-        "tags": [
-          "FIFAMarketDashboardService"
-        ],
-        "summary": "GetFIFAMarketDashboardStatus returns the FIFA Market Dashboard service runtime status.",
-        "operationId": "FIFAMarketDashboardService_GetFIFAMarketDashboardStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/fifamarketdashboardGetFIFAMarketDashboardStatusResponse"
             }
           },
           "default": {
@@ -3336,7 +3259,6 @@
         "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
         "ACCOUNT_DATA_MODULE_MANAGED_OO",
         "ACCOUNT_DATA_MODULE_WORM_MARKETS",
-        "ACCOUNT_DATA_MODULE_FIFA_MARKET_DASHBOARD",
         "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
         "ACCOUNT_DATA_MODULE_TOKEN",
         "ACCOUNT_DATA_MODULE_WALLET",
@@ -3709,34 +3631,6 @@
         },
         "userLoginsDisabled": {
           "type": "boolean"
-        }
-      }
-    },
-    "fifamarketdashboardGetFIFAMarketDashboardResponse": {
-      "type": "object",
-      "properties": {
-        "dashboard": {
-          "$ref": "#/definitions/v1alpha1FIFAMarketDashboard"
-        }
-      }
-    },
-    "fifamarketdashboardGetFIFAMarketDashboardStatusResponse": {
-      "description": "GetFIFAMarketDashboardStatusResponse returns the FIFA Market Dashboard service runtime status.",
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
-    "fifamarketdashboardUpdateFIFAEventConfigResponse": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1alpha1FIFAMarketDashboardEventConfig"
         }
       }
     },
@@ -5372,156 +5266,6 @@
         }
       }
     },
-    "v1alpha1FIFAMarketDashboard": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1alpha1FIFAMarketDashboardEventConfig"
-        },
-        "fetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "polymarketError": {
-          "type": "string"
-        },
-        "polymarketEvent": {
-          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineEventItem"
-        },
-        "polymarketFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "walletBalances": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1FIFAMarketDashboardWalletBalanceItem"
-          }
-        },
-        "walletBalancesError": {
-          "type": "string"
-        },
-        "walletBalancesFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "walletHoldings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1FIFAMarketDashboardWalletHoldingItem"
-          }
-        },
-        "walletHoldingsError": {
-          "type": "string"
-        },
-        "walletHoldingsFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "wormError": {
-          "type": "string"
-        },
-        "wormEvent": {
-          "$ref": "#/definitions/v1alpha1WormMarketsEventItem"
-        },
-        "wormFetchedAt": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "v1alpha1FIFAMarketDashboardEventConfig": {
-      "type": "object",
-      "properties": {
-        "eventRef": {
-          "type": "string"
-        },
-        "wormEventId": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1FIFAMarketDashboardWalletBalanceItem": {
-      "type": "object",
-      "properties": {
-        "amount": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "decimals": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "explorerUrl": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "ok": {
-          "type": "boolean"
-        },
-        "rawAmount": {
-          "type": "string"
-        },
-        "tokenAddress": {
-          "type": "string"
-        },
-        "tokenSymbol": {
-          "type": "string"
-        },
-        "walletAddress": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1FIFAMarketDashboardWalletHoldingItem": {
-      "type": "object",
-      "properties": {
-        "alias": {
-          "type": "string"
-        },
-        "chain": {
-          "type": "string"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "explorerUrl": {
-          "type": "string"
-        },
-        "ok": {
-          "type": "boolean"
-        },
-        "solAmount": {
-          "type": "string"
-        },
-        "solRawAmount": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        },
-        "usdcAmount": {
-          "type": "string"
-        },
-        "usdcRawAmount": {
-          "type": "string"
-        },
-        "walletAddress": {
-          "type": "string"
-        },
-        "walletId": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
     "v1alpha1ManagedOODisputeItem": {
       "type": "object",
       "properties": {
@@ -6103,135 +5847,6 @@
         },
         "status": {
           "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketFIFAMoneylineDirectionItem": {
-      "type": "object",
-      "properties": {
-        "bestAsk": {
-          "type": "number",
-          "format": "double"
-        },
-        "bestBid": {
-          "type": "number",
-          "format": "double"
-        },
-        "midPrice": {
-          "type": "number",
-          "format": "double"
-        },
-        "spread": {
-          "type": "number",
-          "format": "double"
-        },
-        "tokenId": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketFIFAMoneylineEventItem": {
-      "type": "object",
-      "properties": {
-        "active": {
-          "type": "boolean"
-        },
-        "closed": {
-          "type": "boolean"
-        },
-        "ended": {
-          "type": "boolean"
-        },
-        "eventId": {
-          "type": "string"
-        },
-        "eventSlug": {
-          "type": "string"
-        },
-        "gameStatus": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "live": {
-          "type": "boolean"
-        },
-        "options": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineOptionItem"
-          }
-        },
-        "polymarketUrl": {
-          "type": "string"
-        },
-        "score": {
-          "type": "string"
-        },
-        "sport": {
-          "type": "string"
-        },
-        "startTime": {
-          "type": "string"
-        },
-        "teams": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1SportsTeamItem"
-          }
-        },
-        "title": {
-          "type": "string"
-        },
-        "updatedAt": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1PolymarketFIFAMoneylineOptionItem": {
-      "type": "object",
-      "properties": {
-        "acceptingOrders": {
-          "type": "boolean"
-        },
-        "conditionId": {
-          "type": "string"
-        },
-        "enableOrderBook": {
-          "type": "boolean"
-        },
-        "marketId": {
-          "type": "string"
-        },
-        "marketSlug": {
-          "type": "string"
-        },
-        "negRisk": {
-          "type": "boolean"
-        },
-        "no": {
-          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineDirectionItem"
-        },
-        "orderMinSize": {
-          "type": "number",
-          "format": "double"
-        },
-        "outcomeKey": {
-          "type": "string"
-        },
-        "outcomeLabel": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string"
-        },
-        "tickSize": {
-          "type": "number",
-          "format": "double"
-        },
-        "yes": {
-          "$ref": "#/definitions/v1alpha1PolymarketFIFAMoneylineDirectionItem"
         }
       }
     },

@@ -132,10 +132,6 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/wormmarkets.WormMarketsService/GetWormEvent":         moduleRead(accountaccess.ModuleWormMarkets),
 	"/wormmarkets.WormMarketsService/ListWormEvents":       moduleRead(accountaccess.ModuleWormMarkets),
 
-	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboardStatus": moduleRead(accountaccess.ModuleFIFAMarketDashboard),
-	"/fifamarketdashboard.FIFAMarketDashboardService/GetFIFAMarketDashboard":       moduleRead(accountaccess.ModuleFIFAMarketDashboard),
-	"/fifamarketdashboard.FIFAMarketDashboardService/UpdateFIFAEventConfig":        moduleWrite(accountaccess.ModuleFIFAMarketDashboard),
-
 	"/worldcupcorners.WorldCupCornersService/GetWorldCupCornersDataset": moduleRead(accountaccess.ModuleWorldCupCorners),
 
 	"/tokenapi.TokenCatalogService/GetContractCode":                     moduleRead(accountaccess.ModuleToken),

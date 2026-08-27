@@ -9,7 +9,6 @@ import (
 
 	athenaEtherscanGatewayCommands "github.com/useryege/athena/cmd/athena-etherscan-gateway/commands"
 	athenaEtherscanManagerCommands "github.com/useryege/athena/cmd/athena-etherscan-manager/commands"
-	athenaFIFAMarketDashboardCommands "github.com/useryege/athena/cmd/athena-fifa-market-dashboard/commands"
 	athenaManagedOOCommands "github.com/useryege/athena/cmd/athena-managed-oo/commands"
 	athenaMarketRadarCommands "github.com/useryege/athena/cmd/athena-market-radar/commands"
 	athenaMigrateCommands "github.com/useryege/athena/cmd/athena-migrate/commands"
@@ -86,8 +85,6 @@ func main() {
 		command = athenaWalletCommands.NewCommand()
 	case "athena-worm-markets":
 		command = athenaWormMarketsCommands.NewCommand()
-	case "athena-fifa-market-dashboard":
-		command = athenaFIFAMarketDashboardCommands.NewCommand()
 	case "athena-migrate":
 		command = athenaMigrateCommands.NewCommand()
 	default:

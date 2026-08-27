@@ -31,7 +31,7 @@ const (
 	wormMarketRulesInterval   = time.Minute
 	wormLiveStateLoopInterval = time.Minute
 	wormLivePriceWindow       = 30 * time.Minute
-	wormFIFAMarginFunds       = "200"
+	wormMarginEstimateFunds   = "200"
 
 	defaultWormMarketsCategorySlug = "sports"
 	defaultWormMarketsSortOption   = "leverage"
@@ -368,7 +368,7 @@ func (s *Service) enrichWormMarketTradingData(ctx context.Context, item *v1alpha
 	isYes := true
 	estimate, err := s.wormClient.EstimateMarginPosition(ctx, utilworm.EstimateMarginPositionOptions{
 		MarketConditionID: conditionID,
-		Funds:             wormFIFAMarginFunds,
+		Funds:             wormMarginEstimateFunds,
 		IsYes:             &isYes,
 		Leverage:          &leverage,
 	})
@@ -378,7 +378,7 @@ func (s *Service) enrichWormMarketTradingData(ctx context.Context, item *v1alpha
 		}
 		return
 	}
-	item.Estimate = toAPIWormMarginPositionEstimate(estimate, wormFIFAMarginFunds, isYes, leverageText)
+	item.Estimate = toAPIWormMarginPositionEstimate(estimate, wormMarginEstimateFunds, isYes, leverageText)
 }
 
 func applyWormMarketConfig(item *v1alpha1.WormMarketsMarketItem, config *utilworm.MarketConfig) {

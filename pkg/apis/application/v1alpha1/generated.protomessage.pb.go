@@ -5,14 +5,6 @@
 
 package v1alpha1
 
-func (*FIFAMarketDashboard) ProtoMessage() {}
-
-func (*FIFAMarketDashboardEventConfig) ProtoMessage() {}
-
-func (*FIFAMarketDashboardWalletBalanceItem) ProtoMessage() {}
-
-func (*FIFAMarketDashboardWalletHoldingItem) ProtoMessage() {}
-
 func (*ManagedOODisputeItem) ProtoMessage() {}
 
 func (*ManagedOOProposalItem) ProtoMessage() {}
@@ -38,12 +30,6 @@ func (*NotificationDeliveryDetail) ProtoMessage() {}
 func (*NotificationDeliveryItem) ProtoMessage() {}
 
 func (*NotificationStatus) ProtoMessage() {}
-
-func (*PolymarketFIFAMoneylineDirectionItem) ProtoMessage() {}
-
-func (*PolymarketFIFAMoneylineEventItem) ProtoMessage() {}
-
-func (*PolymarketFIFAMoneylineOptionItem) ProtoMessage() {}
 
 func (*SportsHistoryEventCardItem) ProtoMessage() {}
 

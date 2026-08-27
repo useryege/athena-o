@@ -26,8 +26,6 @@ const (
 	DefaultPortNotification = 8086
 	// Athena Wallet
 	DefaultPortWallet = 8088
-	// Athena FIFA Market Dashboard
-	DefaultPortFIFAMarketDashboard = 8090
 	// Athena Market Radar
 	DefaultPortMarketRadar = 8092
 	// Athena Sports Live
@@ -48,20 +46,19 @@ const (
 
 // DefaultAddressAPIServer for Athena components
 const (
-	DefaultLocalGRPCHost              = "127.0.0.1"
-	DefaultAddressAPIServer           = "0.0.0.0"
-	DefaultAddressWormMarkets         = "0.0.0.0"
-	DefaultAddressNotification        = "0.0.0.0"
-	DefaultAddressWallet              = "0.0.0.0"
-	DefaultAddressFIFAMarketDashboard = "0.0.0.0"
-	DefaultAddressMarketRadar         = "0.0.0.0"
-	DefaultAddressSportsLive          = "0.0.0.0"
-	DefaultAddressSportsHistory       = "0.0.0.0"
-	DefaultAddressManagedOO           = "0.0.0.0"
-	DefaultAddressProfitSharing       = "0.0.0.0"
-	DefaultAddressTokenAPI            = "0.0.0.0"
-	DefaultAddressEtherscanManager    = "0.0.0.0"
-	DefaultAddressEtherscanGateway    = "0.0.0.0"
+	DefaultLocalGRPCHost           = "127.0.0.1"
+	DefaultAddressAPIServer        = "0.0.0.0"
+	DefaultAddressWormMarkets      = "0.0.0.0"
+	DefaultAddressNotification     = "0.0.0.0"
+	DefaultAddressWallet           = "0.0.0.0"
+	DefaultAddressMarketRadar      = "0.0.0.0"
+	DefaultAddressSportsLive       = "0.0.0.0"
+	DefaultAddressSportsHistory    = "0.0.0.0"
+	DefaultAddressManagedOO        = "0.0.0.0"
+	DefaultAddressProfitSharing    = "0.0.0.0"
+	DefaultAddressTokenAPI         = "0.0.0.0"
+	DefaultAddressEtherscanManager = "0.0.0.0"
+	DefaultAddressEtherscanGateway = "0.0.0.0"
 )
 
 // Default paths on the pod's file system

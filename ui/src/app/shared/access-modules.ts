@@ -10,7 +10,6 @@ export enum AccountDataModule {
     SportsHistory = 3,
     ManagedOO = 4,
     WormMarkets = 5,
-    FIFAMarketDashboard = 6,
     WorldCupCorners = 7,
     Token = 8,
     Wallet = 9,
@@ -76,14 +75,6 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         group: 'markets',
         maxAccess: AccountDataAccess.Read,
         apiOnly: true
-    },
-    {
-        module: AccountDataModule.FIFAMarketDashboard,
-        id: 'fifa_market_dashboard',
-        label: 'FIFA Market Dashboard',
-        description: 'Combined Worm, Polymarket, treasury balance, and requester wallet holding data.',
-        group: 'markets',
-        maxAccess: AccountDataAccess.ReadWrite
     },
     {
         module: AccountDataModule.WorldCupCorners,

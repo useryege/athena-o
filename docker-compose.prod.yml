@@ -233,32 +233,6 @@ services:
     expose:
       - "8108"
 
-  athena-fifa-market-dashboard:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      athena-worm-markets:
-        condition: service_started
-      athena-wallet:
-        condition: service_started
-    env_file:
-      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
-    environment:
-      <<: *without-auth-secrets
-      ATHENA_BINARY_NAME: athena-fifa-market-dashboard
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_FIFA_MARKET_DASHBOARD_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=fifa_market_dashboard sslmode=disable
-      ATHENA_FIFA_MARKET_DASHBOARD_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084
-      ATHENA_FIFA_MARKET_DASHBOARD_WALLET_SERVER_ADDRESS: athena-wallet:8088
-      ATHENA_FIFA_MARKET_DASHBOARD_POLYGON_RPC_URL: ${ATHENA_FIFA_MARKET_DASHBOARD_POLYGON_RPC_URL:-https://polygon-rpc.com}
-      ATHENA_FIFA_MARKET_DASHBOARD_SOLANA_RPC_URL: ${ATHENA_FIFA_MARKET_DASHBOARD_SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
-    command: ["athena", "--port", "8090"]
-    expose:
-      - "8090"
-
   athena-notification:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -458,7 +432,6 @@ services:
       ATHENA_BINARY_NAME: athena-migrate
       ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
       ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
-      ATHENA_FIFA_MARKET_DASHBOARD_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=fifa_market_dashboard sslmode=disable
       ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
       ATHENA_SPORTS_HISTORY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_history sslmode=disable
       ATHENA_MANAGED_OO_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=managed_oo sslmode=disable
@@ -485,8 +458,6 @@ services:
         condition: service_started
       athena-worm-markets:
         condition: service_started
-      athena-fifa-market-dashboard:
-        condition: service_started
       athena-market-radar:
         condition: service_started
       athena-sports-live:
@@ -510,7 +481,6 @@ services:
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084
-      ATHENA_FIFA_MARKET_DASHBOARD_SERVER_ADDRESS: athena-fifa-market-dashboard:8090
       ATHENA_MARKET_RADAR_SERVER_ADDRESS: athena-market-radar:8092
       ATHENA_SPORTS_LIVE_SERVER_ADDRESS: athena-sports-live:8094
       ATHENA_SPORTS_HISTORY_SERVER_ADDRESS: athena-sports-history:8104

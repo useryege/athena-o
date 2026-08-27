@@ -12,10 +12,9 @@ This document covers the public API Server facade, the trusted internal Wallet
 contract, durable ownership predicates, and UI labels. Key generation,
 chain-specific address derivation, and cryptographic implementation remain in
 the Wallet service. [Account Credentials](account-credentials.md) owns account
-UUID and role, while [FIFA Market Dashboard](../market-intelligence/fifa-market-dashboard.md)
-describes a downstream consumer of scoped Wallet listings. [Solana Wallet
-Authentication](solana-wallet-authentication.md) proves control of an external
-login address and is deliberately separate from this custodial Wallet model.
+UUID and role. [Solana Wallet Authentication](solana-wallet-authentication.md)
+proves control of an external login address and is deliberately separate from
+this custodial Wallet model.
 
 ## Source Locations
 
@@ -38,7 +37,6 @@ login address and is deliberately separate from this custodial Wallet model.
 flowchart LR
     B["Authenticated browser"] --> A["API Server Wallet facade"]
     A -->|"session account UUID + persisted role"| W["Wallet gRPC service"]
-    F["FIFA facade"] -->|"same UUID + role chain"| W
     W --> Q["Ownership-scoped SQL queries"]
     Q --> D["wallet PostgreSQL"]
 ```
@@ -53,9 +51,7 @@ visibility by supplying JSON fields.
 The Wallet database is separate from account-state and cannot use a cross-
 database foreign key. Trust is established at the API Server facade and carried
 over the internal gRPC boundary. SQL repeats the ownership predicate for list,
-get, and alias updates. FIFA uses the same requester pair already derived from
-its authenticated public request and keeps its holdings cache separated by both
-UUID and role.
+get, and alias updates.
 
 A Phantom sign-in never creates, imports, looks up, or claims a Wallet record.
 The Solana public key stored as an external identity subject is not copied into
@@ -120,7 +116,7 @@ detail read. There is no wallet delete or ownership-transfer operation.
 | `ATHENA_WALLET_LISTEN_ADDRESS` / `--address` | Internal gRPC bind address; default shared Wallet address. |
 | `--port` | Internal gRPC port; default 8088. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Applies the embedded current schema for local runtime when enabled. |
-| `ATHENA_WALLET_SERVER_ADDRESS` | API Server or FIFA internal Wallet gRPC target. |
+| `ATHENA_WALLET_SERVER_ADDRESS` | API Server's internal Wallet gRPC target. |
 
 Ownership has no username, email, subject, administrator-name, or per-account
 environment variable.
@@ -160,14 +156,12 @@ their reusable channels.
 Wallet service status and standard gRPC health report process lifecycle, not
 account-state reachability. Operational logs may include wallet row ID, chain,
 and account UUID but must not log private keys, mnemonics, encryption keys,
-external identity subjects, Phantom signatures, or Athena credentials. FIFA
-holding warnings include the UUID and administrator boolean that define the
-cache/visibility scope.
+external identity subjects, Phantom signatures, or Athena credentials.
 
 ## Change Checklist
 
 - [ ] Public requests remain free of requester identity and role fields.
-- [ ] API Server and FIFA derive and forward canonical UUID plus persisted role.
+- [ ] API Server derives and forwards canonical UUID plus persisted role.
 - [ ] List, count, get, alias, create, import, and secret reveal preserve ownership predicates.
 - [ ] System-wallet constraints, seed rows, and administrator-only visibility remain current.
 - [ ] Solana login identity and custodial Wallet ownership remain isolated.
