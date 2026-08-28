@@ -61,6 +61,7 @@ SET access_level = CASE module_access.module
   WHEN 'sports_history' THEN sqlc.arg(sports_history_access_level)::text
   WHEN 'managed_oo' THEN sqlc.arg(managed_oo_access_level)::text
   WHEN 'worm_markets' THEN sqlc.arg(worm_markets_access_level)::text
+  WHEN 'worm_trading' THEN sqlc.arg(worm_trading_access_level)::text
   WHEN 'world_cup_corners' THEN sqlc.arg(world_cup_corners_access_level)::text
   WHEN 'token' THEN sqlc.arg(token_access_level)::text
   WHEN 'wallet' THEN sqlc.arg(wallet_access_level)::text

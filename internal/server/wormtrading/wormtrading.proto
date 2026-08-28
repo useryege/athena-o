@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+// Worm Trading Service
+//
+// Worm Trading exposes the current account's Solana wallet balances. The
+// public contract never accepts an account identifier, wallet address,
+// network, mint, or private key from the caller.
+package wormtrading;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/wormtrading";
+
+message GetWormTradingStatusRequest {}
+
+message GetWormTradingStatusResponse {
+  bool started = 1;
+  string status = 2;
+  string network = 3;
+  string commitment = 4;
+  bool rpc_reachable = 5 [(gogoproto.jsontag) = "rpcReachable"];
+  bool batch_supported = 6 [(gogoproto.jsontag) = "batchSupported"];
+  bool genesis_verified = 7 [(gogoproto.jsontag) = "genesisVerified"];
+  string genesis_hash = 8 [(gogoproto.jsontag) = "genesisHash"];
+  string usdc_mint = 9 [(gogoproto.jsontag) = "usdcMint"];
+  bool usdc_verified = 10 [(gogoproto.jsontag) = "usdcVerified"];
+  uint64 latest_confirmed_slot = 11 [(gogoproto.jsontag) = "latestConfirmedSlot"];
+  int64 last_probe_at = 12 [(gogoproto.jsontag) = "lastProbeAt"];
+  int64 last_success_at = 13 [(gogoproto.jsontag) = "lastSuccessAt"];
+  int64 latency_ms = 14 [(gogoproto.jsontag) = "latencyMs"];
+  int32 consecutive_failures = 15 [(gogoproto.jsontag) = "consecutiveFailures"];
+  string last_error_category = 16 [(gogoproto.jsontag) = "lastErrorCategory"];
+}
+
+message ListWalletBalancesRequest {
+  int32 page = 1;
+  int32 page_size = 2 [(gogoproto.jsontag) = "pageSize,omitempty"];
+}
+
+message TradingWalletSummary {
+  int64 wallet_id = 1 [(gogoproto.jsontag) = "walletId"];
+  string address = 2;
+  string remark = 3;
+  string avatar_kind = 4 [(gogoproto.jsontag) = "avatarKind"];
+  string avatar_preset_id = 5 [(gogoproto.jsontag) = "avatarPresetId"];
+  string avatar_url = 6 [(gogoproto.jsontag) = "avatarUrl"];
+}
+
+message AssetBalance {
+  string atomic_amount = 1 [(gogoproto.jsontag) = "atomicAmount"];
+  string amount = 2;
+  int32 decimals = 3;
+  uint64 observed_slot = 4 [(gogoproto.jsontag) = "observedSlot"];
+  string availability = 5;
+  string error_code = 6 [(gogoproto.jsontag) = "errorCode,omitempty"];
+}
+
+message TokenAssetBalance {
+  string mint = 1;
+  string atomic_amount = 2 [(gogoproto.jsontag) = "atomicAmount"];
+  string amount = 3;
+  int32 decimals = 4;
+  uint64 observed_slot = 5 [(gogoproto.jsontag) = "observedSlot"];
+  string availability = 6;
+  string error_code = 7 [(gogoproto.jsontag) = "errorCode,omitempty"];
+  int32 token_account_count = 8 [(gogoproto.jsontag) = "tokenAccountCount"];
+}
+
+message WalletBalanceItem {
+  TradingWalletSummary wallet = 1;
+  AssetBalance sol = 2;
+  TokenAssetBalance usdc = 3;
+  string status = 4;
+}
+
+message ListWalletBalancesResponse {
+  repeated WalletBalanceItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4 [(gogoproto.jsontag) = "pageSize"];
+  string network = 5;
+  string commitment = 6;
+  int64 fetched_at = 7 [(gogoproto.jsontag) = "fetchedAt"];
+}
+
+service WormTradingService {
+  rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/worm-trading/status"};
+  }
+
+  rpc ListWalletBalances(ListWalletBalancesRequest) returns (ListWalletBalancesResponse) {
+    option (google.api.http) = {get: "/api/v1/worm-trading/wallet-balances"};
+  }
+}

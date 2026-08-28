@@ -67,12 +67,14 @@ import (
 	"github.com/useryege/athena/internal/server/walletsecrethttp"
 	serverworldcupcorners "github.com/useryege/athena/internal/server/worldcupcorners"
 	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
+	serverwormtrading "github.com/useryege/athena/internal/server/wormtrading"
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
+	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
@@ -115,6 +117,7 @@ import (
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	worldcupcornerspkg "github.com/useryege/athena/pkg/apiclient/worldcupcorners"
 	wormmarketspkg "github.com/useryege/athena/pkg/apiclient/wormmarkets"
+	wormtradingpkg "github.com/useryege/athena/pkg/apiclient/wormtrading"
 )
 
 // ErrNoSession indicates no auth token was supplied as part of a request
@@ -205,6 +208,7 @@ type AthenaServerOpts struct {
 	SportsHistoryClientset            sportshistoryapiclient.Clientset
 	ManagedOOClientset                managedooapiclient.Clientset
 	WormMarketsClientset              wormmarketsapiclient.Clientset
+	WormTradingClientset              wormtradingapiclient.Clientset
 	ProfitSharingClientset            profitsharingapiclient.Clientset
 	TokenAPIClientset                 tokenapiapiclient.Clientset
 	EtherscanGatewayIPs               string
@@ -528,6 +532,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	sportshistorypkg.RegisterSportsHistoryServiceServer(grpcS, server.serviceSet.SportsHistoryService)
 	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
 	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
+	wormtradingpkg.RegisterWormTradingServiceServer(grpcS, server.serviceSet.WormTradingService)
 	profitsharingpkg.RegisterProfitSharingServiceServer(grpcS, server.serviceSet.ProfitSharingService)
 	worldcupcornerspkg.RegisterWorldCupCornersServiceServer(grpcS, server.serviceSet.WorldCupCornersService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -556,6 +561,7 @@ type AthenaServiceSet struct {
 	SportsHistoryService   *serversportshistory.Server
 	ManagedOOService       *servermanagedoo.Server
 	WormMarketsService     *serverwormmarkets.Server
+	WormTradingService     *serverwormtrading.Server
 	ProfitSharingService   *serverprofitsharing.Server
 	WorldCupCornersService *serverworldcupcorners.Server
 	TokenServices          *servertokenapi.Server
@@ -579,6 +585,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	sportsHistoryService := serversportshistory.NewServer(server.SportsHistoryClientset)
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
 	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
+	wormTradingService := serverwormtrading.NewServer(server.WalletClientset, server.WormTradingClientset)
 	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController, server.accountCenter)
 	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
@@ -591,6 +598,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.SportsHistoryClientset,
 		server.ManagedOOClientset,
 		server.WormMarketsClientset,
+		server.WormTradingClientset,
 		server.ProfitSharingClientset,
 		server.TokenAPIClientset,
 		server.EtherscanGatewayIPs,
@@ -619,6 +627,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		SportsHistoryService:   sportsHistoryService,
 		ManagedOOService:       managedOOService,
 		WormMarketsService:     wormMarketsService,
+		WormTradingService:     wormTradingService,
 		ProfitSharingService:   profitSharingService,
 		WorldCupCornersService: worldCupCornersService,
 		TokenServices:          tokenAPIService,
@@ -651,6 +660,9 @@ func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w ht
 	case *walletpkg.CreateWalletResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Vary", "Cookie, Authorization")
+	case *wormtradingpkg.ListWalletBalancesResponse:
+		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Vary", "Cookie, Authorization")
 	}
 	return nil
@@ -926,6 +938,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, sportshistorypkg.RegisterSportsHistoryServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, wormtradingpkg.RegisterWormTradingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, profitsharingpkg.RegisterProfitSharingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, worldcupcornerspkg.RegisterWorldCupCornersServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)

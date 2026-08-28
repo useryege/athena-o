@@ -235,6 +235,33 @@ EOF
           require_delete_definition_property("walletUpdateWalletAvatarPresetRequest"; "id") |
           rename_query_parameter("/api/v1/wallets"; "get"; "wallet_type"; "walletType") |
           rename_query_parameter("/api/v1/wallets"; "get"; "page_size"; "pageSize") |
+          # Worm Trading REST uses explicit camelCase JSON tags; keep Swagger aligned with the wire contract.
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "rpc_reachable"; "rpcReachable") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "batch_supported"; "batchSupported") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "genesis_verified"; "genesisVerified") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "genesis_hash"; "genesisHash") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "usdc_mint"; "usdcMint") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "usdc_verified"; "usdcVerified") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "latest_confirmed_slot"; "latestConfirmedSlot") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "last_probe_at"; "lastProbeAt") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "last_success_at"; "lastSuccessAt") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "latency_ms"; "latencyMs") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "consecutive_failures"; "consecutiveFailures") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "last_error_category"; "lastErrorCategory") |
+          rename_definition_property("wormtradingTradingWalletSummary"; "wallet_id"; "walletId") |
+          rename_definition_property("wormtradingTradingWalletSummary"; "avatar_kind"; "avatarKind") |
+          rename_definition_property("wormtradingTradingWalletSummary"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("wormtradingTradingWalletSummary"; "avatar_url"; "avatarUrl") |
+          rename_definition_property("wormtradingAssetBalance"; "atomic_amount"; "atomicAmount") |
+          rename_definition_property("wormtradingAssetBalance"; "observed_slot"; "observedSlot") |
+          rename_definition_property("wormtradingAssetBalance"; "error_code"; "errorCode") |
+          rename_definition_property("wormtradingTokenAssetBalance"; "atomic_amount"; "atomicAmount") |
+          rename_definition_property("wormtradingTokenAssetBalance"; "observed_slot"; "observedSlot") |
+          rename_definition_property("wormtradingTokenAssetBalance"; "error_code"; "errorCode") |
+          rename_definition_property("wormtradingTokenAssetBalance"; "token_account_count"; "tokenAccountCount") |
+          rename_definition_property("wormtradingListWalletBalancesResponse"; "page_size"; "pageSize") |
+          rename_definition_property("wormtradingListWalletBalancesResponse"; "fetched_at"; "fetchedAt") |
+          rename_query_parameter("/api/v1/worm-trading/wallet-balances"; "get"; "page_size"; "pageSize") |
           mark_public_get("/api/version") |
           mark_public_get("/api/v1/session/userinfo") |
           mark_public_get("/api/v1/app/bootstrap")

@@ -26,6 +26,8 @@ const (
 	DefaultPortNotification = 8086
 	// Athena Wallet
 	DefaultPortWallet = 8088
+	// Athena Worm Trading
+	DefaultPortWormTrading = 8090
 	// Athena Market Radar
 	DefaultPortMarketRadar = 8092
 	// Athena Sports Live

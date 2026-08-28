@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1067-gfa7b246e-dirty"
+    "version": "v1.0.0-1070-g6a036a5e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3152,6 +3152,64 @@
         }
       }
     },
+    "/api/v1/worm-trading/status": {
+      "get": {
+        "tags": [
+          "WormTradingService"
+        ],
+        "operationId": "WormTradingService_GetWormTradingStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormtradingGetWormTradingStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/worm-trading/wallet-balances": {
+      "get": {
+        "tags": [
+          "WormTradingService"
+        ],
+        "operationId": "WormTradingService_ListWalletBalances",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormtradingListWalletBalancesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/version": {
       "get": {
         "tags": [
@@ -3250,7 +3308,8 @@
         "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
         "ACCOUNT_DATA_MODULE_TOKEN",
         "ACCOUNT_DATA_MODULE_WALLET",
-        "ACCOUNT_DATA_MODULE_NOTIFICATIONS"
+        "ACCOUNT_DATA_MODULE_NOTIFICATIONS",
+        "ACCOUNT_DATA_MODULE_WORM_TRADING"
       ]
     },
     "accountAccountIdentity": {
@@ -8293,6 +8352,195 @@
         },
         "stale": {
           "type": "boolean"
+        }
+      }
+    },
+    "wormtradingAssetBalance": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "availability": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "atomicAmount": {
+          "type": "string"
+        },
+        "observedSlot": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "errorCode": {
+          "type": "string"
+        }
+      }
+    },
+    "wormtradingGetWormTradingStatusResponse": {
+      "type": "object",
+      "properties": {
+        "commitment": {
+          "type": "string"
+        },
+        "network": {
+          "type": "string"
+        },
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        },
+        "rpcReachable": {
+          "type": "boolean"
+        },
+        "batchSupported": {
+          "type": "boolean"
+        },
+        "genesisVerified": {
+          "type": "boolean"
+        },
+        "genesisHash": {
+          "type": "string"
+        },
+        "usdcMint": {
+          "type": "string"
+        },
+        "usdcVerified": {
+          "type": "boolean"
+        },
+        "latestConfirmedSlot": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "lastProbeAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastSuccessAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "latencyMs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "consecutiveFailures": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastErrorCategory": {
+          "type": "string"
+        }
+      }
+    },
+    "wormtradingListWalletBalancesResponse": {
+      "type": "object",
+      "properties": {
+        "commitment": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/wormtradingWalletBalanceItem"
+          }
+        },
+        "network": {
+          "type": "string"
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "wormtradingTokenAssetBalance": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "availability": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "mint": {
+          "type": "string"
+        },
+        "atomicAmount": {
+          "type": "string"
+        },
+        "observedSlot": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "errorCode": {
+          "type": "string"
+        },
+        "tokenAccountCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "wormtradingTradingWalletSummary": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "remark": {
+          "type": "string"
+        },
+        "walletId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "avatarKind": {
+          "type": "string"
+        },
+        "avatarPresetId": {
+          "type": "string"
+        },
+        "avatarUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "wormtradingWalletBalanceItem": {
+      "type": "object",
+      "properties": {
+        "sol": {
+          "$ref": "#/definitions/wormtradingAssetBalance"
+        },
+        "status": {
+          "type": "string"
+        },
+        "usdc": {
+          "$ref": "#/definitions/wormtradingTokenAssetBalance"
+        },
+        "wallet": {
+          "$ref": "#/definitions/wormtradingTradingWalletSummary"
         }
       }
     }

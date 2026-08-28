@@ -9,7 +9,9 @@ Google OIDC and Phantom Solana authentication remain API Server behavior, while
 the local runtime supplies the fixed public origin, Redis OAuth/challenge/shared-
 registration and wallet-secret lease stores, durable account and Wallet
 databases, private account/wallet avatar storage, and reset boundary required by
-the isolated disabled-auth identity.
+the isolated disabled-auth identity. The runtime also supplies Worm Trading's
+independent internal credential and mainnet Solana RPC endpoint without making
+that read-only service a database owner.
 
 ## Source Locations
 
@@ -25,6 +27,8 @@ the isolated disabled-auth identity.
 | Wallet-secret transient state | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go) | five-minute lease, Google reauthentication transaction, Solana reauthentication challenge |
 | Account-state migration | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql) | durable identity, access, profile, preferences, API Keys |
 | Wallet current-state migration | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql) | UUID-owned EVM/Solana custody and avatar metadata |
+| Worm Trading runtime | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [internal/wormtrading](../../../internal/wormtrading), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | loopback/Compose listener, independent internal Bearer, dedicated mainnet Solana RPC adapter |
+| Worm Trading lifecycle integration | [internal/server/servicestatus/service_status.go](../../../internal/server/servicestatus/service_status.go), [hack/local-runtime.sh](../../../hack/local-runtime.sh) | aggregate service status, port and coverage cleanup |
 
 ## Architecture
 
@@ -51,6 +55,7 @@ are:
 | Process | Port | Owned PostgreSQL database |
 | --- | ---: | --- |
 | `worm-markets` | 8084 | `worm_markets` |
+| `worm-trading` | 8090 | none |
 | `market-radar` | 8092 | none |
 | `sports-live` | 8094 | `sports_live` |
 | `sports-history` | 8104 | `sports_history` |
@@ -66,21 +71,36 @@ authenticated: both Procfile processes receive the same explicit development
 every call, and Wallet rejects every non-health RPC that does not match. Wallet
 itself defaults to a loopback listener.
 
+Worm Trading is a separate read-only process. Under the Procfile it listens on
+`127.0.0.1:8090`; under Compose it binds `0.0.0.0:8090` inside the private
+service network so the API Server can reach it by service name. It has no
+PostgreSQL connection, never reads Wallet storage or private keys, and owns no
+durable state. The API Server and Worm Trading share a Worm-Trading-specific
+Bearer that is distinct from the Wallet credential. Only the Worm Trading
+process receives its dedicated Solana RPC URL and uses it to verify and query
+Solana mainnet; the API Server receives no provider endpoint.
+
 ## Runtime Flow
 
 1. Configure a local Google Web application client, the exact localhost
    callback, a client secret, `ATHENA_ADMIN_GOOGLE_EMAIL`, and an Athena JWT
    signing key in `.env`. No user subject is preconfigured. Phantom desktop
    authentication reuses the callback origin and adds no environment variable.
-2. Before first use of the UUID-account schema, run `make run-reset`. It stops
-   the current graph and deletes the local PostgreSQL, Redis, and MinIO state plus
-   default runtime scratch state; it does not restart services. The current
-   Wallet initial migration is also an empty-state schema. A non-matching Wallet
-   database must be reset rather than upgraded in place.
+2. Before first use of the current UUID-account schema, run `make run-reset`.
+   The initial account access matrix now contains exactly ten module rows,
+   including `worm_trading`; an existing local volume initialized with the
+   previous nine-module constraint and rows is incompatible and requires this
+   explicit fresh reset. The command stops the current graph and deletes the
+   local PostgreSQL, Redis, and MinIO state plus default runtime scratch state;
+   it does not restart services. The current Wallet initial migration is also
+   an empty-state schema. A non-matching Wallet database must be reset rather
+   than upgraded in place.
 3. `make run` creates/reuses fixed named dependency volumes, applies current
    migrations, starts the API Server and business services, and serves the UI at
    `http://localhost:4000`. `ATHENA_RUN_EXCLUDE` produces a filtered process
-   graph when a component is run separately in an IDE.
+   graph when a component is run separately in an IDE. This normal run path
+   never invokes `make run-reset`, deletes a volume, or silently replaces
+   incompatible state; it fails until the operator performs the explicit reset.
 4. A known Google subject or verified Solana address logs into its own persisted
    UUID account. An unknown identity receives only a shared 15-minute
    registration ticket and visits `/register` to choose a permanent username.
@@ -110,6 +130,11 @@ itself defaults to a loopback listener.
    internal Bearer. An explicit `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` override
    replaces that value for both processes. A missing, short, or mismatched token
    prevents Wallet RPC use rather than trusting the caller-supplied account UUID.
+10. The Procfile independently gives Worm Trading and the API Server the same
+    Worm-Trading-specific development Bearer. Worm Trading starts on
+    `127.0.0.1:8090`, validates the configured RPC as Solana mainnet, and keeps
+    its health `NOT_SERVING` until the first provider probe succeeds. It does not
+    open a database connection or obtain the Wallet encryption key.
 
 The production equivalent of a current-state schema replacement is a fresh
 deployment with new persistent state. The hot-deploy path preserves existing
@@ -135,6 +160,10 @@ Reset also removes the default `/tmp/athena-local` tree, known Athena coverage
 directories, and the repository runtime-control state. Custom temporary paths
 outside those exact defaults are not deleted.
 
+Worm Trading has no database or owned volume to reset. Its provider readiness,
+in-memory lifecycle state, listener, and default coverage directory disappear
+with the process/cleanup boundary and are rebuilt on the next start.
+
 ## Configuration
 
 | Setting | Local behavior |
@@ -152,10 +181,22 @@ outside those exact defaults are not deleted.
 | `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` | Shared Wallet/API Server service credential, at least 32 bytes. The Procfile supplies the same development default to both processes; an override must remain identical. |
 | `ATHENA_WALLET_POSTGRES_DSN` | Wallet process connection to the local `wallet` database. |
 | `ATHENA_ACCOUNT_AVATAR_S3_*`, `ATHENA_ACCOUNT_AVATAR_MAX_BYTES` | Shared private object-store configuration for account and wallet avatars. |
+| `ATHENA_WORM_TRADING_LISTEN_ADDRESS` | Worm Trading bind address. The command defaults to `127.0.0.1`; Compose explicitly uses `0.0.0.0` inside its private network. |
+| `ATHENA_WORM_TRADING_PORT`, `--port` | Worm Trading gRPC port, default `8090`. The local cleanup controller tracks the same configured port. |
+| `ATHENA_WORM_TRADING_SERVER_ADDRESS` | API Server target for Worm Trading. Local development uses `127.0.0.1:8090`; Compose uses `athena-worm-trading:8090`. |
+| `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | Independent Worm Trading/API Server service credential, at least 32 bytes. The Procfile supplies one shared development default; production environment generation creates a separate token. |
+| `ATHENA_WORM_TRADING_SOLANA_RPC_URL`, `--solana-rpc-url` | Dedicated Solana mainnet endpoint consumed only by Worm Trading. The Procfile defaults to `https://api.mainnet-beta.solana.com`; Compose requires the deployment value. |
 
-Phantom login has no App ID, client secret, RPC URL, callback, or per-wallet
-configuration. Local development requires a desktop browser with Phantom's
-injected Solana provider. Athena signs no transaction and makes no Solana RPC.
+Production secret reset generates the Wallet and Worm Trading Bearers
+independently. Deployment preflight rejects short or whitespace-bearing
+Bearers, rejects equality between those two credentials, and requires the Worm
+Trading RPC value to be an absolute HTTP(S) URL with a host.
+
+Phantom login itself has no App ID, client secret, RPC URL, callback, or
+per-wallet configuration. Local development requires a desktop browser with
+Phantom's injected Solana provider. Worm Trading's separate provider dependency
+does not participate in authentication: the service performs read-only mainnet
+balance calls and never signs transactions.
 
 The Google consent audience must be External and Published for arbitrary Google
 users. Testing mode restricts sign-in to configured test users. Local and
@@ -173,14 +214,22 @@ production use different Web application clients.
   and revocation/lease state; MinIO is private account/wallet avatar state.
 - The current Wallet migration is initialized from empty state; local reset or a
   fresh deployment replaces incompatible durable state instead of upgrading it.
-- `make stop` preserves volumes and `make run-reset` deletes the complete local
-  current-state deployment.
+- The current account migration initializes exactly ten access-module rows. A
+  nine-module local state requires an explicit fresh reset; `make run` and
+  `make stop` never reset or delete persistent volumes.
+- `make stop` preserves volumes and only the operator-invoked `make run-reset`
+  deletes the complete local current-state deployment.
 - The disabled-auth identity is development-only and loopback-only. Normal
   external-authentication startup rejects it, so switching modes requires
   `make run-reset`.
 - Wallet defaults to `127.0.0.1`, and all non-health internal Wallet RPCs require
   the Procfile's shared service Bearer even when browser authentication is
   disabled.
+- Worm Trading defaults to `127.0.0.1:8090` locally, binds `0.0.0.0:8090` only
+  inside the Compose service network, and requires its own Bearer for every
+  non-health RPC.
+- Worm Trading is fixed to Solana mainnet, owns no database, never loads
+  custodial keys, and is the only process that receives its provider URL.
 
 ## Failure Recovery
 
@@ -198,22 +247,43 @@ probeable but business and secret RPCs return unauthenticated. Correct the share
 environment value and restart both processes; no database or Redis reset is
 required.
 
-When current-state migration or dependency fingerprints are incompatible, stop
-and use `make run-reset`, then start again. The reset path initializes a complete
-new identity and credential state.
+If the Worm Trading and API Server tokens differ, its health remains probeable
+but internal business RPCs reject the API Server and the public facade reports
+the dependency as unavailable. A missing or invalid Solana endpoint prevents
+the command from starting (and a missing Compose value prevents configuration
+rendering). A temporarily unreachable valid endpoint keeps the process alive at
+`NOT_SERVING` and is retried every 30 seconds. An explicit chain, mint, decimal,
+or batch-capability mismatch enters permanent `configuration_error` until the
+configuration is corrected and the process restarted. None of these failures
+affects authentication, Wallet, or other API Server capabilities, and no
+database reset is required.
+
+When current-state migration or dependency fingerprints are incompatible,
+including a local account database initialized with the nine-module access
+matrix, stop and explicitly use `make run-reset`, then start again. The reset
+path initializes a complete new identity and credential state. Normal start and
+stop flows never choose or invoke this destructive path automatically.
 
 ## Observability
 
 `make run` keeps the process group in the foreground and streams service logs.
 Container status and individual service logs diagnose dependency startup.
-Google, Phantom, and Solana RPC are intentionally absent from readiness/health
-probes.
+Google and Phantom external-authentication providers remain absent from
+readiness/health probes. Worm Trading is included in aggregate service status;
+its standard gRPC health switches to `SERVING` only after its dedicated Solana
+mainnet probe succeeds. A later transient provider failure reports `degraded`
+while retaining serving process health; an initial failure or permanent identity
+configuration error remains `NOT_SERVING`. Its lifecycle/upstream status exposes
+provider readiness without exposing the configured URL or credential. Local
+cleanup tracks its configured port (default `8090`) and coverage directory.
 
 ## Change Checklist
 
 - [ ] Local lifecycle and named-volume semantics match the scripts.
 - [ ] OIDC, SIWS, shared username registration, administrator candidacy, and reset guidance remain current.
 - [ ] Wallet database, secret lease, private avatar, and fresh-deployment boundaries remain current.
+- [ ] Worm Trading listener, independent token, service-only mainnet RPC, health status, and port/coverage cleanup remain current.
+- [ ] Account schema module count and explicit fresh-reset guidance remain current; normal run and stop paths never reset state.
 - [ ] Dependency ownership and failure isolation remain current.
 - [ ] UUID identity and immutable username remain database-driven with no per-user environment configuration.
 - [ ] The [design index](../README.md) contains the current summary.

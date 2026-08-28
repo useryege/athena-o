@@ -14,8 +14,10 @@ Custody](wallet-ownership.md) owns wallet avatar kind, preset, uploaded-object
 metadata, and Wallet revision. The API Server owns their deliberately different
 authorization rules: an account avatar is readable or writable by its owner or
 an administrator, while a wallet avatar is always restricted to the exact
-wallet owner with no administrator bypass. The browser never receives S3
-credentials, endpoint, bucket name, or object key.
+wallet owner with no administrator bypass. Wallet-avatar GET accepts either
+Wallet `READ` or Worm Trading `READ`; every wallet-avatar mutation remains
+exclusive to Wallet `READ_WRITE`. The browser never receives S3 credentials,
+endpoint, bucket name, or object key.
 
 ## Source Locations
 
@@ -57,9 +59,10 @@ non-avatar APIs.
 Both handlers use `avatarimage.Validate`, but their metadata and authorization
 are independent. Account routes accept a canonical target account UUID and use
 Account Center profile CAS. Wallet routes accept only a positive wallet ID,
-derive the authenticated account UUID, require Wallet module access, and invoke
-trusted owner-scoped Wallet metadata methods. Neither route accepts an object
-key or owner UUID from public input.
+derive the authenticated account UUID, and invoke trusted owner-scoped Wallet
+metadata methods. Wallet-avatar reads require Wallet `READ` or Worm Trading
+`READ`; writes require Wallet `READ_WRITE`. Neither route accepts an object key
+or owner UUID from public input.
 
 ## Runtime Flow
 
@@ -95,11 +98,13 @@ key or owner UUID from public input.
    effort.
 7. `GET /api/v1/account/{id}/avatar` repeats account owner-or-administrator
    authorization and resolves the current profile reference.
-   `GET /api/v1/wallets/{id}/avatar` requires Wallet `READ`, exact owner lookup,
-   and an uploaded-object reference. Both stream persisted content type, size,
-   ETag, `nosniff`, and private revalidation cache headers; matching
-   `If-None-Match` returns 304. Missing wallet image bytes are presented by the
-   UI as the deterministic default avatar.
+   `GET /api/v1/wallets/{id}/avatar` requires Wallet `READ` or Worm Trading
+   `READ`, exact owner lookup, and an uploaded-object reference. The alternative
+   read grant allows the owner-scoped Worm Trading wallet summary to render its
+   avatar without granting Wallet list, detail, or mutation access. Both stream
+   persisted content type, size, ETag, `nosniff`, and private revalidation cache
+   headers; matching `If-None-Match` returns 304. Missing wallet image bytes are
+   presented by the UI as the deterministic default avatar.
 8. Account-avatar deletion clears the profile reference through profile CAS. Wallet
    avatar reset requires Wallet `READ_WRITE`, clears uploaded metadata and any
    preset through Wallet CAS, and returns the deterministic default state.
@@ -164,9 +169,9 @@ The repository images build MinIO Server from commit
 - Account-avatar access allows the matching account UUID or persisted
   administrator. Wallet-avatar access always requires exact owner UUID and never
   grants an administrator bypass.
-- Wallet avatar reads require Wallet `READ`; uploads, preset replacement, and
-  reset require `READ_WRITE`. API Keys may use these safe metadata operations
-  when their account entitlements allow them.
+- Wallet avatar reads require Wallet `READ` or Worm Trading `READ`; uploads,
+  preset replacement, and reset require Wallet `READ_WRITE`. API Keys may use
+  these safe metadata operations when their account entitlements allow them.
 - Stored bytes have passed format, animation, byte, edge-dimension, at-most
   16,000,000-pixel, and full-decode validation.
 - A PostgreSQL CAS is the live-reference commit point. Compensation and
@@ -205,6 +210,7 @@ counts when it removes objects.
 
 - [ ] Shared store configuration and image validation match both handlers.
 - [ ] Account owner-or-administrator and Wallet exact-owner policies remain distinct.
+- [ ] Wallet-avatar GET preserves the Wallet-READ-or-Worm-Trading-READ rule while every mutation remains Wallet `READ_WRITE`.
 - [ ] Both CAS, candidate reconciliation, replacement, and reset flows remain ordered as documented.
 - [ ] Private delivery, ETag behavior, and cache headers remain current.
 - [ ] Prefix-specific collectors protect referenced and grace-period objects.

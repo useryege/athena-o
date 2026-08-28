@@ -73,6 +73,9 @@ Swagger is not part of the Vite public directory. Protobuf HTTP annotations
 under `internal/server/` define paths and wire schemas. `collect_swagger` mixes
 the generated per-service specifications with Athena's top-level metadata and
 security declaration, normalizes the result, and writes `assets/swagger.json`.
+Its explicit REST-name normalization keeps the Wallet and Worm Trading
+camelCase query and response contracts aligned with their generated Go JSON
+tags even though the underlying protobuf field names are snake_case.
 The root `assets` package embeds that generated file; `util/assets` loads it as
 `SwaggerJSON`; and `ServeSwaggerUI` registers both the JSON response and ReDoc
 handler on the HTTP mux.
@@ -198,6 +201,9 @@ inside Markdown or Swagger for an arbitrary reverse-proxy subpath.
   credentials, internal implementation details, or claims that unavailable
   MCP, OAuth-delegation, scoped-key, or AI-specific-operation capabilities
   exist.
+- The public module catalog contains the current ten-module matrix, including
+  API-Key-eligible Worm Trading `READ` wallet-summary and balance access without
+  implying Wallet management or secret authority.
 - Existing API Keys are described as full-account bearer credentials for
   ordinary users. The account holder may hand one directly to a local,
   self-hosted, or third-party AI, which receives the ordinary account's complete

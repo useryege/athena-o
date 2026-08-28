@@ -26,6 +26,7 @@ import (
 	athenaTokenSwapProcessorCommands "github.com/useryege/athena/cmd/athena-token-swap-processor/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
 	athenaWormMarketsCommands "github.com/useryege/athena/cmd/athena-worm-markets/commands"
+	athenaWormTradingCommands "github.com/useryege/athena/cmd/athena-worm-trading/commands"
 	"github.com/useryege/athena/util/log"
 )
 
@@ -85,6 +86,8 @@ func main() {
 		command = athenaWalletCommands.NewCommand()
 	case "athena-worm-markets":
 		command = athenaWormMarketsCommands.NewCommand()
+	case "athena-worm-trading":
+		command = athenaWormTradingCommands.NewCommand()
 	case "athena-migrate":
 		command = athenaMigrateCommands.NewCommand()
 	default:

@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+// Worm Trading Service API exposes trusted, read-only wallet balance reads.
+package athena.internal.wormtrading;
+
+option go_package = "github.com/useryege/athena/internal/wormtrading/apiclient";
+
+// GetWormTradingStatusRequest queries the service and Solana adapter status.
+message GetWormTradingStatusRequest {}
+
+// GetWormTradingStatusResponse describes lifecycle and upstream readiness.
+message GetWormTradingStatusResponse {
+  bool started = 1;
+  string status = 2;
+  string network = 3;
+  string commitment = 4;
+  bool rpc_configured = 5;
+  bool rpc_reachable = 6;
+  bool batch_supported = 7;
+  bool genesis_verified = 8;
+  string genesis_hash = 9;
+  string usdc_mint = 10;
+  bool usdc_program_verified = 11;
+  int32 usdc_decimals = 12;
+  uint64 latest_confirmed_slot = 13;
+  int64 last_probe_at = 14;
+  int64 last_success_at = 15;
+  int64 latency_ms = 16;
+  int32 consecutive_failures = 17;
+  string last_error_code = 18;
+}
+
+// WalletBalanceReference correlates one trusted Wallet record with its address.
+message WalletBalanceReference {
+  int64 wallet_id = 1;
+  string address = 2;
+}
+
+// AssetBalance is one native SOL balance observation.
+message AssetBalance {
+  string atomic_amount = 1;
+  string amount = 2;
+  int32 decimals = 3;
+  uint64 observed_slot = 4;
+  string availability = 5;
+  string error_code = 6;
+}
+
+// TokenBalance is one fixed-mint token balance observation.
+message TokenBalance {
+  string mint = 1;
+  string atomic_amount = 2;
+  string amount = 3;
+  int32 decimals = 4;
+  uint64 observed_slot = 5;
+  string availability = 6;
+  string error_code = 7;
+  int32 token_account_count = 8;
+}
+
+// WalletBalanceItem contains independent SOL and Circle native USDC results.
+message WalletBalanceItem {
+  int64 wallet_id = 1;
+  string address = 2;
+  AssetBalance sol = 3;
+  TokenBalance usdc = 4;
+  string status = 5;
+}
+
+// BatchGetWalletBalancesRequest accepts at most 100 caller-resolved Wallet refs.
+message BatchGetWalletBalancesRequest {
+  repeated WalletBalanceReference refs = 1;
+}
+
+// BatchGetWalletBalancesResponse returns results in request order.
+message BatchGetWalletBalancesResponse {
+  repeated WalletBalanceItem items = 1;
+  string network = 2;
+  string commitment = 3;
+  int64 fetched_at = 4;
+}
+
+service WormTradingService {
+  rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
+  rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
+}

@@ -14,9 +14,10 @@ additional browser proof required before a stored private key is revealed.
 [Account Credentials](account-credentials.md) owns the login/API Key distinction
 and account UUID. [Account and Wallet Avatar Storage](account-avatar-storage.md) documents
 the shared private S3-compatible storage boundary and image validation used by
-both account and wallet avatars. Balances, transactions, signing, transfers,
-mnemonics, wallet deletion, and blockchain RPC calls are outside this
-capability.
+both account and wallet avatars. Worm Trading owns Solana balance RPC and its
+owner-scoped summary projection; it consumes only safe Wallet metadata selected
+by the API Server. Transactions, signing, transfers, mnemonics, wallet deletion,
+and blockchain RPC calls remain outside this capability.
 
 ## Source Locations
 
@@ -28,6 +29,7 @@ capability.
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
+| Owner-scoped Worm Trading projection | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading) | `ListWalletBalances`, `TradingWalletSummary` |
 | Browser management surface | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
 | Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, `ATHENA_WALLET_INTERNAL_AUTH_TOKEN`, authenticated Wallet gRPC client |
 
@@ -57,6 +59,13 @@ avatar presentation, revision, and timestamps. Private keys appear only in the
 one-time create response or the separately protected native HTTP reveal
 response. Import never echoes submitted material.
 
+Worm Trading `ListWalletBalances` accepts no owner UUID or wallet address. The
+API Server derives the authenticated account UUID, lists that owner's Solana
+wallets through the internal Wallet API, and reduces each item to wallet ID,
+address, remark, and avatar presentation before attaching SOL/USDC balances.
+This path requires Worm Trading `READ` but does not grant the public Wallet list
+or detail APIs.
+
 Wallet HTTP JSON uses the reviewed camelCase field names, including
 `walletType`, `privateKey`, `avatarPresetId`, `expectedRevision`, and
 `pageSize`. Gogo JSON tags make the standard Gateway decoder authoritative for
@@ -76,6 +85,9 @@ this is a server-custodied design.
 1. `ListWallets` and `GetWallet` require Wallet `READ`. The API Server supplies
    the credential's account UUID; the Wallet service returns only matching rows.
    Optional type/query filters and pagination operate inside that owner scope.
+   Worm Trading balance listing separately requires Worm Trading `READ` and uses
+   the same trusted owner-scoped internal list with a fixed Solana filter; it
+   exposes only `TradingWalletSummary` rather than the complete `WalletItem`.
 2. `CreateWallet` requires a login-session credential plus Wallet
    `READ_WRITE`. It validates a trimmed 1–50-rune remark and optional fixed
    avatar preset, generates a random secp256k1 or Ed25519 keypair, encrypts the
@@ -99,11 +111,14 @@ this is a server-custodied design.
    metadata CAS is the live-reference commit point. Replacement commits before
    the previous object is deleted best effort. Reset clears both preset and
    upload metadata and restores the deterministic default.
-7. Uploaded-avatar delivery repeats authentication, Wallet `READ`, and owner
-   lookup before streaming. Presets and deterministic defaults are rendered
-   from bundled UI definitions; only uploaded avatars use the authenticated
-   endpoint. A daily collector deletes unreferenced wallet-avatar objects only
-   after a 24-hour grace period.
+7. Uploaded-avatar delivery repeats authentication and owner lookup before
+   streaming. GET accepts Wallet `READ` or Worm Trading `READ`, allowing either
+   the Wallet page or an owner-scoped Worm Trading summary to render the same
+   uploaded object. Upload, preset replacement, and reset remain exclusive to
+   Wallet `READ_WRITE`. Presets and deterministic defaults are rendered from
+   bundled UI definitions; only uploaded avatars use the authenticated endpoint.
+   A daily collector deletes unreferenced wallet-avatar objects only after a
+   24-hour grace period.
 8. `RevealWalletPrivateKey` exists only on the authenticated internal service.
    The native API Server HTTP handler calls it after login-only authorization and
    a valid wallet-secret lease; the Wallet service additionally requires the
@@ -151,7 +166,9 @@ not enter logs, metrics, durable audit records, safe models, or avatar state.
 - Every non-health Wallet internal RPC requires the configured service Bearer;
   caller-supplied owner IDs alone are never a trust boundary.
 - API Keys may read safe metadata and, with Wallet `READ_WRITE`, update remark
-  and avatar state; they cannot create, import, or reveal private keys.
+  and avatar state; they cannot create, import, or reveal private keys. Worm
+  Trading `READ` permits the same account's Solana summary, balances, and
+  uploaded-avatar GET without granting other Wallet operations.
 - Create/import require login or isolated development-session capability.
 - Public safe models never contain owner UUID, ciphertext, object key, private
   key, mnemonic, or role.
@@ -193,6 +210,7 @@ identity subjects, Session JTIs, and wallet-secret lease values.
 - [ ] Key canonicalization, encryption, duplicate constraints, and remark rules remain current.
 - [ ] Avatar validation, CAS, compensation, private delivery, and collection remain current.
 - [ ] Create/import/reveal credential restrictions match API Server authorization.
+- [ ] Worm Trading summary reads and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
 - [ ] UI secret state remains memory-only and is cleared on close, route, account, or permission change.
 - [ ] Configuration, reset guidance, and source links match the implementation.
 - [ ] The [design index](../README.md) contains the current summary.

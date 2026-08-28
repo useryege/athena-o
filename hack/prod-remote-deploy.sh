@@ -61,6 +61,8 @@ if [ -f '${REMOTE_APP_DIR}/docker-compose.prod.yml' ]; then
   else
     compose_env_file=/dev/null
   fi
+  export ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN=dummy-worm-trading-internal-token-32bytes
+  export ATHENA_WORM_TRADING_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
   ATHENA_COMPOSE_ENV_FILE=\"\${compose_env_file}\" ATHENA_TOKEN_ETH_ENABLED=dummy ATHENA_TOKEN_ETH_NODE_WS_URLS=dummy ATHENA_TOKEN_ETH_ATHENA_CONTRACT=dummy ATHENA_TOKEN_ETH_PROCESSOR_INITIAL_LOOKBACK_DURATION=dummy ATHENA_TOKEN_ETH_PROCESSOR_POLL_INTERVAL=dummy ATHENA_TOKEN_ETH_SWAP_POLL_INTERVAL=dummy ATHENA_TOKEN_BSC_ENABLED=dummy ATHENA_TOKEN_BSC_NODE_WS_URLS=dummy ATHENA_TOKEN_BSC_ATHENA_CONTRACT=dummy ATHENA_TOKEN_BSC_PROCESSOR_INITIAL_LOOKBACK_DURATION=dummy ATHENA_TOKEN_BSC_PROCESSOR_POLL_INTERVAL=dummy ATHENA_TOKEN_BSC_SWAP_POLL_INTERVAL=dummy POSTGRES_PASSWORD=dummy REDIS_PASSWORD=dummy ATHENA_JWT_SECRET=dummy-jwt-secret-for-compose-cleanup ATHENA_ADMIN_GOOGLE_EMAIL=dummy-admin@example.com ATHENA_WALLET_ENCRYPTION_KEY=dummy ATHENA_WALLET_INTERNAL_AUTH_TOKEN=dummy-wallet-internal-auth-token-32bytes MINIO_ROOT_PASSWORD=dummy-root-password ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=dummy-access-key ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=dummy-secret-key ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID=dummy ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID=dummy ATHENA_ETHERSCAN_MANAGER_API_KEYS=dummy ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS=dummy ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN=dummy PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file \"\${compose_env_file}\" down --remove-orphans
 fi
 for volume_name in '${POSTGRES_VOLUME}' '${REDIS_VOLUME}' '${MINIO_VOLUME}'; do
@@ -81,6 +83,19 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
   exit 1
 fi
 
+validate_internal_auth_token() {
+  local name="$1"
+  local value="$2"
+  if (( ${#value} < 32 )); then
+    echo "${name} must contain at least 32 bytes."
+    exit 1
+  fi
+  if [[ "${value}" =~ [[:space:][:cntrl:]] ]]; then
+    echo "${name} must not contain whitespace or control characters."
+    exit 1
+  fi
+}
+
 JWT_SECRET_VALUE="${ATHENA_JWT_SECRET:-}"
 if (( ${#JWT_SECRET_VALUE} < 32 )); then
   echo "ATHENA_JWT_SECRET must contain at least 32 bytes."
@@ -88,8 +103,17 @@ if (( ${#JWT_SECRET_VALUE} < 32 )); then
 fi
 
 WALLET_INTERNAL_AUTH_TOKEN_VALUE="${ATHENA_WALLET_INTERNAL_AUTH_TOKEN:-}"
-if (( ${#WALLET_INTERNAL_AUTH_TOKEN_VALUE} < 32 )); then
-  echo "ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes."
+validate_internal_auth_token "ATHENA_WALLET_INTERNAL_AUTH_TOKEN" "${WALLET_INTERNAL_AUTH_TOKEN_VALUE}"
+
+WORM_TRADING_INTERNAL_AUTH_TOKEN_VALUE="${ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN:-}"
+validate_internal_auth_token "ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN" "${WORM_TRADING_INTERNAL_AUTH_TOKEN_VALUE}"
+if [[ "${WORM_TRADING_INTERNAL_AUTH_TOKEN_VALUE}" == "${WALLET_INTERNAL_AUTH_TOKEN_VALUE}" ]]; then
+  echo "ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN must differ from ATHENA_WALLET_INTERNAL_AUTH_TOKEN."
+  exit 1
+fi
+WORM_TRADING_SOLANA_RPC_URL_VALUE="${ATHENA_WORM_TRADING_SOLANA_RPC_URL:-}"
+if [[ ! "${WORM_TRADING_SOLANA_RPC_URL_VALUE}" =~ ^https?://[^/?#[:space:]]+([/?#][^[:space:]]*)?$ ]]; then
+  echo "ATHENA_WORM_TRADING_SOLANA_RPC_URL must be an absolute HTTP or HTTPS URL with a host and no whitespace."
   exit 1
 fi
 

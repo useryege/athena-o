@@ -475,6 +475,363 @@ body,
     }
 }
 
+/* Worm Trading wallet balances */
+
+.worm-trading-runtime {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    border: 1px solid var(--athena-border);
+    border-radius: 12px;
+    background:
+        radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-blue) 8%, transparent), transparent 18rem),
+        var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-trading-runtime__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.worm-trading-runtime__heading > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--athena-text);
+}
+
+.worm-trading-runtime__heading > span > .anticon {
+    color: var(--athena-primary);
+    font-size: 17px;
+}
+
+.worm-trading-runtime__heading .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-trading-runtime__facts {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+.worm-trading-runtime__facts > div {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    padding: 11px 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 54%, var(--athena-panel-solid));
+}
+
+.worm-trading-runtime__facts dt {
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.worm-trading-runtime__facts dd {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-runtime__error.ant-typography {
+    color: var(--athena-amber);
+    font-size: 12px;
+}
+
+.worm-trading-balances {
+    min-width: 0;
+}
+
+.worm-trading-balances__heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 2px 12px;
+}
+
+.worm-trading-balances__heading > div {
+    min-width: 0;
+}
+
+.worm-trading-balances__heading h2.ant-typography {
+    margin: 0 0 3px;
+    color: var(--athena-text);
+    font-size: 17px;
+    line-height: 1.3;
+}
+
+.worm-trading-balances__heading .ant-typography-secondary,
+.worm-trading-balances__refreshing.ant-typography {
+    color: var(--athena-muted);
+    font-size: 12px;
+}
+
+.worm-trading-balances__refreshing.ant-typography {
+    flex: 0 0 auto;
+}
+
+.worm-trading-wallet {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+}
+
+.worm-trading-wallet__main {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 4px;
+}
+
+.worm-trading-wallet__main > .ant-typography {
+    min-width: 0;
+    color: var(--athena-text);
+    font-size: 14px;
+}
+
+.worm-trading-wallet__address {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    color: var(--athena-muted);
+}
+
+.worm-trading-wallet__address code {
+    min-width: 0;
+    overflow: hidden;
+    color: inherit;
+    font-family: var(--athena-data-font);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-wallet__address .ant-btn {
+    flex: 0 0 auto;
+    color: var(--athena-muted);
+}
+
+.worm-trading-asset {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-trading-asset strong {
+    overflow: hidden;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-asset small {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-size: 11px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-asset--unavailable strong {
+    color: var(--athena-red);
+}
+
+.worm-trading-asset--unavailable small {
+    color: color-mix(in srgb, var(--athena-red) 78%, var(--athena-muted));
+}
+
+.worm-trading-balance-card.ant-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    border-radius: 10px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-trading-balance-card .ant-card-body {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+}
+
+.worm-trading-balance-card__header {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.worm-trading-balance-card__header .ant-tag {
+    flex: 0 0 auto;
+    margin-inline-end: 0;
+}
+
+.worm-trading-wallet--compact {
+    flex: 1;
+}
+
+.worm-trading-balance-card__assets {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.worm-trading-balance-card__assets > div {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+    padding: 11px 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 52%, var(--athena-panel-solid));
+}
+
+.worm-trading-balance-card__assets > div > span,
+.worm-trading-balance-card__mint > span {
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.worm-trading-balance-card__mint {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 11px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.worm-trading-balance-card__mint code {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-pagination.ant-pagination {
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+
+.worm-trading-empty {
+    display: grid;
+    min-height: 310px;
+    place-items: center;
+    padding: 34px 20px;
+    border: 1px dashed var(--athena-border-strong);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--athena-panel) 76%, transparent);
+}
+
+.worm-trading-empty .ant-empty {
+    max-width: 520px;
+}
+
+.worm-trading-empty .ant-empty-description {
+    color: var(--athena-text);
+    font-weight: 650;
+}
+
+.worm-trading-empty .ant-typography {
+    margin: 8px auto 16px;
+    line-height: 1.55;
+}
+
+@media (max-width: 1250px) {
+    .worm-trading-runtime__facts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .worm-trading-runtime {
+        padding: 16px;
+    }
+
+    .worm-trading-runtime__facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .worm-trading-pagination.ant-pagination {
+        justify-content: center;
+    }
+
+    .worm-trading-wallet__address .ant-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 520px) {
+    .worm-trading-runtime__heading,
+    .worm-trading-balances__heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .worm-trading-runtime__facts,
+    .worm-trading-balance-card__assets {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-trading-runtime__facts > div {
+        padding-block: 10px;
+    }
+
+    .worm-trading-balance-card__header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .worm-trading-balance-card__header .ant-tag {
+        width: fit-content;
+    }
+
+    .worm-trading-empty {
+        min-height: 280px;
+        padding-inline: 14px;
+    }
+
+    .worm-trading-empty .ant-btn {
+        min-height: 44px;
+    }
+
+    .worm-trading-pagination.ant-pagination .ant-pagination-total-text {
+        display: none;
+    }
+}
+
 :root {
     color-scheme: light;
     --athena-bg: #f5f6f8;

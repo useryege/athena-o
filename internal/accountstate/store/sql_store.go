@@ -235,7 +235,7 @@ func (s *SQLStore) GetAccountAccess(ctx context.Context, accountID string) (acco
 }
 
 // UpdateAccountAccess replaces one ordinary account's full access aggregate.
-// The head CAS and all nine module updates commit atomically.
+// The head CAS and all ten module updates commit atomically.
 func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, next accountaccess.Access, expectedRevision uint64) (accountaccess.Access, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountaccess.Access{}, err
@@ -294,6 +294,7 @@ func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, ne
 		MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), SportsLiveAccessLevel: string(next.Modules[accountaccess.ModuleSportsLive]),
 		SportsHistoryAccessLevel: string(next.Modules[accountaccess.ModuleSportsHistory]), ManagedOoAccessLevel: string(next.Modules[accountaccess.ModuleManagedOO]),
 		WormMarketsAccessLevel:     string(next.Modules[accountaccess.ModuleWormMarkets]),
+		WormTradingAccessLevel:     string(next.Modules[accountaccess.ModuleWormTrading]),
 		WorldCupCornersAccessLevel: string(next.Modules[accountaccess.ModuleWorldCupCorners]), TokenAccessLevel: string(next.Modules[accountaccess.ModuleToken]),
 		WalletAccessLevel: string(next.Modules[accountaccess.ModuleWallet]), NotificationsAccessLevel: string(next.Modules[accountaccess.ModuleNotifications]),
 		AccountID: accountIDValue,

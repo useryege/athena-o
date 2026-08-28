@@ -25,6 +25,7 @@ import (
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
+	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
 	"github.com/useryege/athena/util/cli"
@@ -65,6 +66,7 @@ func NewCommand() *cobra.Command {
 		sportsHistoryServerAddress string
 		managedOOServerAddress     string
 		wormMarketsServerAddress   string
+		wormTradingServerAddress   string
 		profitSharingServerAddress string
 		tokenAPIServerAddress      string
 		etherscanGatewayIPs        string
@@ -82,8 +84,8 @@ func NewCommand() *cobra.Command {
 		Short: "Run the Athena API server",
 		Long: "The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems. " +
 			"This command runs API server in the foreground. It can be configured by following options.\n\n" +
-			"ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes without whitespace and must match the Wallet service value. " +
-			"It is an internal service credential, not an Athena user API Key, and the server refuses startup when it is absent or invalid.",
+			"ATHENA_WALLET_INTERNAL_AUTH_TOKEN and ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN must each contain at least 32 bytes without whitespace " +
+			"and match their target service. They are independent internal credentials, not Athena user API Keys, and the server refuses startup when either is absent or invalid.",
 		DisableAutoGenTag: true,
 		RunE: func(c *cobra.Command, _ []string) error {
 			ctx := c.Context()
@@ -158,6 +160,14 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("create Worm Markets clientset: %w", err)
 			}
 			defer utilio.Close(wormMarketsClientset)
+			wormTradingClientset, err := wormtradingapiclient.NewWormTradingClientset(
+				wormTradingServerAddress,
+				env.StringFromEnv(wormtradingapiclient.InternalAuthTokenEnv, ""),
+			)
+			if err != nil {
+				return fmt.Errorf("create Worm Trading clientset: %w", err)
+			}
+			defer utilio.Close(wormTradingClientset)
 			profitSharingClientset, err := profitsharingapiclient.NewProfitSharingClientset(profitSharingServerAddress)
 			if err != nil {
 				return fmt.Errorf("create Profit Sharing clientset: %w", err)
@@ -189,6 +199,7 @@ func NewCommand() *cobra.Command {
 				SportsHistoryClientset:            sportsHistoryClientset,
 				ManagedOOClientset:                managedOOClientset,
 				WormMarketsClientset:              wormMarketsClientset,
+				WormTradingClientset:              wormTradingClientset,
 				ProfitSharingClientset:            profitSharingClientset,
 				TokenAPIClientset:                 tokenAPIClientset,
 				EtherscanGatewayIPs:               etherscanGatewayIPs,
@@ -265,6 +276,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&sportsHistoryServerAddress, "sports-history-server-address", env.StringFromEnv("ATHENA_SPORTS_HISTORY_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortSportsHistory)), "Athena Sports History server address")
 	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortManagedOO)), "Athena Managed OO server address")
 	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)), "Athena Worm Markets server address")
+	command.Flags().StringVar(&wormTradingServerAddress, "worm-trading-server-address", env.StringFromEnv("ATHENA_WORM_TRADING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormTrading)), "Athena Worm Trading server address")
 	command.Flags().StringVar(&profitSharingServerAddress, "profit-sharing-server-address", env.StringFromEnv("ATHENA_PROFIT_SHARING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortProfitSharing)), "Athena Profit Sharing server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortTokenAPI)), "Athena token API server address")
 	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")

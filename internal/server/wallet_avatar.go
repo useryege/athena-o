@@ -59,7 +59,15 @@ func (server *AthenaServer) authenticateWalletAvatarHTTP(request *http.Request, 
 		level = accountaccess.AccessLevelReadWrite
 	}
 	if err := server.authorizeAccount(accountID, accountaccess.RequireModule(accountaccess.ModuleWallet, level)); err != nil {
-		return authenticated, "", err
+		if write || status.Code(err) != codes.PermissionDenied {
+			return authenticated, "", err
+		}
+		// Uploaded avatars are part of the minimal wallet summary shown by
+		// Worm Trading. A read grant in either module may fetch the current
+		// account's object; writes remain exclusively Wallet READ_WRITE.
+		if tradingErr := server.authorizeAccount(accountID, accountaccess.RequireModule(accountaccess.ModuleWormTrading, accountaccess.AccessLevelRead)); tradingErr != nil {
+			return authenticated, "", tradingErr
+		}
 	}
 	return authenticated, accountID, nil
 }

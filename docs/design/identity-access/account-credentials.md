@@ -82,7 +82,7 @@ security-sensitive handlers do not infer credential kind from browser headers.
 2. A cryptographically verified but unknown Google subject or Solana address
    remains outside PostgreSQL until the browser submits an acceptable username
    through the shared registration handler. `RegisterExternalAccount` then
-   creates identity, access, nine module rows, profile, and preferences in one
+   creates identity, access, ten module rows, profile, and preferences in one
    transaction. Ordinary accounts start Pending. Only a server-marked Google
    administrator candidate can create the single fixed administrator aggregate.
 3. Registration first rechecks the same provider and subject. Concurrent
@@ -109,6 +109,9 @@ security-sensitive handlers do not infer credential kind from browser headers.
    `IsInteractiveLogin`; login and isolated loopback development credentials
    qualify, while API Keys do not. Wallet creation, import, reauthentication,
    and private-key reveal use this distinction independently of module level.
+   Worm Trading wallet-summary and balance reads, including uploaded-wallet-
+   avatar GET, accept either login sessions or enabled API Keys after current
+   Worm Trading `READ` authorization and exact Wallet ownership checks.
 9. Deleting an API Key commits metadata deletion before removing it from the
    registry. Disabling API Key access pauses retained keys; re-enabling restores
    undeleted and unexpired keys. Logout clears and revokes only the Athena login

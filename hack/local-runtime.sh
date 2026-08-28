@@ -21,6 +21,7 @@ cleanup_started=false
 
 coverage_dirs=(
 	"/tmp/coverage/athena-worm-markets"
+	"/tmp/coverage/athena-worm-trading"
 	"/tmp/coverage/athena-market-radar"
 	"/tmp/coverage/athena-sports-live"
 	"/tmp/coverage/athena-sports-history"
@@ -223,6 +224,7 @@ cleanup_athena_ports() {
 	local ports=(
 		"api-server:${ATHENA_SERVER_PORT:-8080}"
 		"worm-markets:${ATHENA_WORM_MARKETS_PORT:-8084}"
+		"worm-trading:${ATHENA_WORM_TRADING_PORT:-8090}"
 		"notification:${ATHENA_NOTIFICATION_PORT:-8086}"
 		"wallet:${ATHENA_WALLET_PORT:-8088}"
 		"market-radar:${ATHENA_MARKET_RADAR_PORT:-8092}"

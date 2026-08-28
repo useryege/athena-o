@@ -13,7 +13,8 @@ export enum AccountDataModule {
     WorldCupCorners = 7,
     Token = 8,
     Wallet = 9,
-    Notifications = 10
+    Notifications = 10,
+    WormTrading = 11
 }
 
 export type AccountDataModuleGroup = 'markets' | 'token-risk' | 'operations';
@@ -75,6 +76,14 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         group: 'markets',
         maxAccess: AccountDataAccess.Read,
         apiOnly: true
+    },
+    {
+        module: AccountDataModule.WormTrading,
+        id: 'worm_trading',
+        label: 'Worm Trading',
+        description: 'Owner-scoped Solana balances and Worm trading operations.',
+        group: 'markets',
+        maxAccess: AccountDataAccess.ReadWrite
     },
     {
         module: AccountDataModule.WorldCupCorners,

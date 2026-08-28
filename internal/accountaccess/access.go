@@ -17,6 +17,7 @@ const (
 	ModuleSportsHistory   Module = "sports_history"
 	ModuleManagedOO       Module = "managed_oo"
 	ModuleWormMarkets     Module = "worm_markets"
+	ModuleWormTrading     Module = "worm_trading"
 	ModuleWorldCupCorners Module = "world_cup_corners"
 	ModuleToken           Module = "token"
 	ModuleWallet          Module = "wallet"
@@ -29,6 +30,7 @@ var allModules = [...]Module{
 	ModuleSportsHistory,
 	ModuleManagedOO,
 	ModuleWormMarkets,
+	ModuleWormTrading,
 	ModuleWorldCupCorners,
 	ModuleToken,
 	ModuleWallet,
@@ -56,7 +58,7 @@ func MaxAccessLevel(module Module) (AccessLevel, bool) {
 	switch module {
 	case ModuleMarketRadar, ModuleSportsLive, ModuleWormMarkets, ModuleWorldCupCorners:
 		return AccessLevelRead, true
-	case ModuleSportsHistory, ModuleManagedOO, ModuleToken, ModuleWallet, ModuleNotifications:
+	case ModuleSportsHistory, ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet, ModuleNotifications:
 		return AccessLevelReadWrite, true
 	default:
 		return "", false

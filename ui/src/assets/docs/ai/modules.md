@@ -1,6 +1,6 @@
 # Athena Modules and Permissions
 
-Athena evaluates authorization on the server for every protected operation. Product access is represented by nine independent module entries with the ordered levels `NONE < READ < READ_WRITE`.
+Athena evaluates authorization on the server for every protected operation. Product access is represented by ten independent module entries with the ordered levels `NONE < READ < READ_WRITE`.
 
 `READ_WRITE` includes `READ`. A module whose maximum is `READ` rejects `READ_WRITE`; this means the module has no public mutation boundary. Athena's server-side authorization rules determine the required level. Use [the Swagger specification](/swagger.json) for the operation's path, method, and schema.
 
@@ -11,12 +11,13 @@ Athena evaluates authorization on the server for every protected operation. Prod
 | `sports_history` | Completed ATP/WTA event history and synchronization; manual refresh is a write operation | `READ_WRITE` |
 | `managed_oo` | Managed Optimistic Oracle proposal/dispute reads; manual block scans are write operations | `READ_WRITE` |
 | `worm_markets` | Worm event status, event lists, event details, market rules, and history | `READ` |
+| `worm_trading` | Current-account Solana wallet summaries plus live mainnet SOL and Circle native USDC balances; write authority is reserved for trading operations | `READ_WRITE` |
 | `world_cup_corners` | World Cup corners dataset | `READ` |
 | `token` | Token projects, reports, observations, swaps, research and operations data; policy and checkpoint mutations | `READ_WRITE` |
 | `wallet` | Owner-scoped EVM and Solana wallets; metadata and avatar reads; remark and avatar writes; session-only create, import, and private-key reveal operations | `READ_WRITE` |
 | `notifications` | Notification status and delivery records; test-notification sends | `READ_WRITE` |
 
-Grants do not flow between modules. For example, Worm Markets access does not grant Wallet or World Cup Corners access, and Token access does not grant Notifications access.
+Grants do not flow between modules. For example, Worm Trading access does not grant Wallet management or private-key access, Worm Markets access does not grant World Cup Corners access, and Token access does not grant Notifications access.
 
 ## Account-Level Credentials
 
@@ -28,6 +29,8 @@ Complete current authority does not bypass authorization. Disabling login or API
 
 Administrator is a persisted role, not a module. Administrator-only account management, service operations, and Profit Sharing lifecycle methods require that role. The fixed administrator account has maximum module access but API Key access disabled, so administrator authority is unavailable through the API Key and AI-access path.
 
-Profit Sharing is an independent entitlement, not one of the nine modules. Member operations also require membership in the relevant round, while lifecycle operations require the administrator role. Enabling Profit Sharing does not grant any product module, and a product module does not grant Profit Sharing. An ordinary account's entitlement and membership are evaluated normally when its API Key is used; administrator-only lifecycle operations remain unavailable.
+Profit Sharing is an independent entitlement, not one of the ten modules. Member operations also require membership in the relevant round, while lifecycle operations require the administrator role. Enabling Profit Sharing does not grant any product module, and a product module does not grant Profit Sharing. An ordinary account's entitlement and membership are evaluated normally when its API Key is used; administrator-only lifecycle operations remain unavailable.
 
 Resource-level checks can further restrict an authorized module operation. Wallet access is always limited to the current account's own wallets, with no administrator bypass. An API Key with Wallet `READ` may list and inspect metadata and read avatars; Wallet `READ_WRITE` additionally permits remark and avatar mutations. Wallet creation and import require an interactive browser login and Wallet `READ_WRITE`. Private-key reveal requires that same level and ownership, rejects API Keys, and also requires a fresh five-minute wallet reauthentication lease.
+
+Worm Trading `READ` is separately allowed for browser sessions and enabled API Keys. Its balance endpoint accepts no account ID, address, network, or mint: Athena resolves the current account's Solana wallets and returns only safe wallet summaries. It also permits owner-scoped GET delivery of those wallets' uploaded avatars. It does not grant the Wallet list/detail APIs, creation, import, mutation, source/revision metadata, or private-key operations.
