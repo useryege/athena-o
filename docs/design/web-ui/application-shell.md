@@ -128,12 +128,17 @@ The Combinations landing page provides paged Saved combinations, with New,
 Edit/View, and confirmed Delete actions gated by current Worm Trading write
 access. The builder accepts either an HTTPS `worm.wtf/market/...` URL or a direct
 Event Condition ID. Desktop places loaded Event explorers in the main column
-and a sticky Current combination summary beside them. At 900 px and below,
-market choices become cards and a sticky selected-count review action opens the
-same summary in a Drawer. YES/NO uses labeled radio controls, unavailable
-directions remain disabled with readable reasons, and selection reordering uses
-explicit, accessible move-up/down buttons. Save is an atomic full-template
-operation; no Execute or order-start action is present.
+and a sticky Current combination summary beside them. Each normal market is a
+compact title row with YES/NO choices and last-trade prices in cents; normal
+state, backend, maximum leverage, logo, and Condition ID metadata are hidden.
+At 900 px and below, a sticky selected-count review action opens the same
+summary in a Drawer. At 520 px and below, the market title occupies its own row
+and the two choices remain equal-width controls below it. Complete
+USDC-per-share decimals and the non-executable meaning of last trade are
+available in tooltips. YES/NO uses labeled radio controls,
+unavailable directions remain disabled with readable reasons, and selection
+reordering uses explicit, accessible move-up/down buttons. Save is an atomic
+full-template operation; no Execute or order-start action is present.
 
 ## Runtime Flow
 
@@ -324,17 +329,28 @@ operation; no Execute or order-start action is present.
     calls the fresh catalog facade once, rejects a duplicate Event or a child
     market already loaded under another Event, and preserves provider market
     order. Market-wide and direction-specific unavailable codes remain visible;
-    only selectable YES or NO controls change the summary.
+    only selectable YES or NO controls change the summary. Each valid provider
+    last-trade price appears on YES while NO shows its exact decimal complement;
+    missing prices use `—` without disabling an otherwise selectable choice.
 34. The current summary retains selection order across Events. Selecting the
     other direction for an already selected Market Condition ID replaces it at
     the same ordinal. Remove and move-up/down produce contiguous ordinals. The
-    desktop summary stays beside the Event explorer; compact layouts expose a
-    sticky selected-count review action and full-width Drawer. Both forms use
-    labeled controls, keyboard-operable actions, visible focus, text statuses,
-    and touch-sized primary actions.
+    desktop summary stays beside the compact Event market rows; compact layouts
+    expose a sticky selected-count review action and full-width Drawer. Outcome
+    prices use at most one decimal cent without a trailing `.0`; NO is derived
+    from the rounded YES presentation so the visible pair remains `100¢`.
+    Tooltips expose each full decimal as a last trade rather than a current buy
+    quote or guaranteed fill. Both forms use labeled controls that include
+    market, side, price availability, and “last trade”, plus keyboard-operable actions,
+    visible focus, text statuses, and touch-sized primary actions.
 35. The edit route first loads the saved combination, then independently
     refreshes each unique Event catalog. Saved snapshots remain visible when a
     refresh fails, while save still undergoes authoritative server validation.
+    Every Event header shows the Athena catalog fetch time and one manual Refresh
+    action. A successful refresh updates its market and Current combination
+    prices without changing selected sides or order; a failed refresh keeps the
+    previous snapshot and reports Event-scoped feedback. Only one manual Event
+    refresh runs at a time, and catalogs do not poll automatically.
     Dirty create/edit state blocks in-app navigation and browser unload with a
     discard confirmation. Create requires a trimmed valid name and at least one
     selection; update sends the loaded positive revision and the complete
@@ -418,8 +434,11 @@ client caches, URLs, or rendered data.
 
 Combinations client state contains only Event and Market Condition IDs, trusted
 server-returned display snapshots, selectable flags and stable unavailable
-codes, saved template UUID/revision/timestamps, the draft name, selection order,
-and transient loading/error state. The browser sends only the name and ordered
+codes, optional complementary last-trade prices, catalog `fetchedAt`, saved
+template UUID/revision/timestamps, the draft name, selection order, and
+transient loading/error state. Price and catalog fetch time are excluded from
+the dirty fingerprint and saved request. The browser sends only the name and
+ordered
 `{eventConditionId,marketConditionId,side}` items on save; it does not echo
 titles, logos, outcome labels, availability, owner, or ordinals as authoritative
 input. Builder state and dirty baselines remain in React memory and are dropped
@@ -596,8 +615,9 @@ connection work fails.
 
 An invalid Worm URL or Event Condition ID is rejected before a catalog request.
 Event not-found, provider failure, or an invalid catalog leaves existing loaded
-Events and selections intact and presents bounded feedback. A failed edit-time
-Event refresh retains the saved display snapshot for review; save always
+Events and selections intact and presents bounded feedback. A failed manual
+Event refresh retains the previous display and price snapshot; failed edit-time
+hydration retains the saved display summary with a missing price. Save always
 refetches and revalidates the complete selection at the server. Duplicate names
 and stale update/delete revisions leave durable state unchanged. A stale update
 reports conflict and requires an explicit reload; the client never merges or
@@ -634,6 +654,11 @@ telemetry excludes Worm pending actions, proof messages/signatures, provider
 challenges, API keys, secrets, HMAC material, raw responses, and signable request
 messages.
 
+Combinations exposes Event-level refresh progress, bounded refresh failure, and
+Athena catalog fetch time in the current page. `fetchedAt` is retrieval time,
+not last-trade time. Its last-trade price is neither a best ask, midpoint,
+estimate, nor execution guarantee, and is not persisted or emitted as telemetry.
+
 Connect AI exposes verification state and copy failures only in the current UI.
 It does not log the bearer or instruction block, and the verification request
 does not create a separate server-side integration or connection status.
@@ -654,6 +679,7 @@ does not create a separate server-side integration or connection status.
 - [ ] Worm Trading exposes only Assets and Combinations beneath one parent navigation item.
 - [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only and free of Wallet, estimate, signature, draft, and Worm mutation work.
 - [ ] Saved list, URL/ID parsing, cross-Event single-direction selection, accessible ordering, trusted snapshots, and revision-CAS feedback remain current.
+- [ ] Combinations keeps its compact price rows, hidden normal market metadata, exact complementary last-trade display, manual Event refresh, and transient-price dirty-state boundary current.
 - [ ] Worm automatic connection remains interactive-`READ_WRITE`, owner-scoped, paced, provider-step-up-aware, and independent from Wallet private-key reveal.
 - [ ] Worm Trading preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
 - [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, manual Reconnect, and exceptional cleanup remain current.

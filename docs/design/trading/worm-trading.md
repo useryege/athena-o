@@ -125,7 +125,9 @@ Saved combinations use an independent, interactive-only native facade:
 ```text
 interactive login + worm_trading READ
   -> API Server GET event catalog
-  -> Worm Markets GetOrderEventCatalog -> fresh Worm event + child-market GETs
+  -> Worm Markets GetOrderEventCatalog
+       -> fresh Worm event + child-market GETs
+       -> optional exact-complement last-trade prices
 
 interactive login + worm_trading READ_WRITE + exact origin
   -> API Server groups submitted Event and Market Condition IDs
@@ -300,14 +302,27 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     in provider order. Open, margin-enabled Polymarket or Hyperliquid children
     expose selectable YES and NO outcomes only when the direction supports at
     least `1x`; unavailable children and directions remain visible with stable
-    reason codes. The facade does not estimate a position.
+    reason codes. A valid provider last-trade price is projected on YES and its
+    exact decimal complement on NO; the pair is absent when invalid or missing
+    and does not affect selectability. The facade strictly validates the pair
+    and does not make an extra provider call, query the database, or estimate a
+    position.
 19. The builder may retain markets from multiple Events. Selecting the other
     direction for the same Market Condition ID replaces the existing selection;
     it cannot create a duplicate. Up/down controls rewrite contiguous ordinals
-    in React memory. Desktop uses an Event explorer beside a sticky combination
-    summary; compact layouts use market cards and a selected-count action that
-    opens the summary Drawer.
-20. Create and update send only the trimmed name and ordered identifiers/sides.
+    in React memory. Desktop uses compact title-and-YES/NO rows beside a sticky
+    combination summary; normal state, backend, leverage, logo, and market ID
+    metadata are not rendered. Compact layouts place two equal-width choices
+    below the title and use a selected-count action that opens the summary
+    Drawer. Prices are shown in cents with complete USDC-per-share last-trade
+    values and their non-executable meaning available in a tooltip.
+20. Each loaded Event exposes one manual Refresh action and its Athena catalog
+    fetch time. A successful refresh updates the Event and Current combination
+    prices in place while preserving selected sides and order. A failed refresh
+    retains the prior snapshot. Prices and fetch times are transient, excluded
+    from the dirty fingerprint, and neither saved nor shown on the Saved
+    combinations list. There is no automatic catalog polling.
+21. Create and update send only the trimmed name and ordered identifiers/sides.
     The API Server refetches every referenced Event once, rejects missing or
     unselectable selections, and replaces all browser display data with trusted
     catalog snapshots. Create commits the header and all items together. Update
@@ -353,7 +368,8 @@ list use repeatable-read, read-only transactions so each returned header and
 ordered item list comes from one database snapshot. The persisted titles and
 logos are display snapshots from save time, not a claim that the current Worm
 market is still selectable; the edit builder refetches its Events to present
-current availability.
+current availability. Last-trade prices and catalog fetch times are never stored
+in either combination table and never affect template revision.
 
 `CONNECT_OUTCOME_UNKNOWN` is also latched on the connection row. While present,
 the store rejects prepare, reconnect, and disconnect mutations. The runtime has
@@ -379,7 +395,8 @@ that may still carry trading authority.
 
 The database does not contain a Wallet private key, login identity binding,
 Athena session, position, order, or live provider response. Combination display
-fields are the intentional save-time catalog snapshots. Plain HMAC credentials
+fields are the intentional save-time catalog snapshots; last-trade prices remain
+only in the currently loaded browser catalog. Plain HMAC credentials
 exist only for the current encrypt/decrypt/provider call. Process memory also holds
 bounded capability status, provider semaphores, per-wallet operation locks,
 Solana rate limiting, and current singleflight observations.
@@ -488,6 +505,9 @@ service.
   display snapshots. A browser-supplied title, logo, outcome label, availability,
   owner, or ordinal cannot become trusted input; a positive browser revision is
   used only as the explicit CAS precondition.
+- Catalog last-trade prices are either absent as a pair or exact decimal
+  complements in `[0,1]`. They are presentation-only and do not affect
+  selectability, the dirty fingerprint, persisted snapshots, or revision.
 - Combination catalog and persistence paths never call Wallet, estimate,
   credential, signature, draft, submit, or other Worm mutation APIs.
 - No runtime path creates, cancels, signs, or closes a Worm order or position.
@@ -553,8 +573,9 @@ creation stops the queue, is never retried, and remains locked by
 active request, discard late completions, and clear the in-memory batch.
 
 Combination catalog provider failures leave the builder unchanged and return a
-bounded HTTP error; retry starts a new authoritative catalog read. Create and
-update validate all referenced Events before opening the store transaction, so
+bounded HTTP error; initial retry or Event-level manual Refresh starts a new
+authoritative catalog read while preserving the prior Event on failure. Create
+and update validate all referenced Events before opening the store transaction, so
 an invalid or newly unavailable selection commits nothing. Store validation,
 name uniqueness, and revision conflicts roll back the header and complete item
 replacement together. A stale update or delete returns conflict and preserves
@@ -582,9 +603,12 @@ state, stream availability, truncation, and stable errors without receiving
 secret or signable material.
 
 Combination responses expose the template UUID, revision, ordered trusted
-display snapshots, and timestamps, but never the owner account UUID. Catalog
-responses expose `fetchedAt` and stable unavailable codes for per-market
-diagnosis. There is no combination-specific metric or health state; dependency
+display snapshots, and timestamps, but never the owner account UUID or a
+last-trade price. Catalog responses expose optional `lastTradePrice`, Athena
+retrieval time as `fetchedAt`, and stable unavailable codes for per-market
+diagnosis. The fetch time is not the provider's last-trade timestamp, and the
+price is not a best ask, midpoint, estimate, or execution guarantee. There is no
+combination-specific metric or health state; dependency
 failure is visible through bounded native HTTP errors plus Worm Markets and Worm
 Trading service health/logs.
 
@@ -598,5 +622,5 @@ Trading service health/logs.
 - [ ] Challenge, credential, signable message, raw response, and log exclusion boundaries remain current.
 - [ ] Runtime database, health/status, process wiring, production configuration, and reset guidance remain current.
 - [ ] Assets at `/worm-trading` keeps paced full-account automatic connection bootstrap responsive and free of order or position-mutation actions.
-- [ ] Combinations routes remain interactive-only, owner-scoped, catalog-validated, revisioned, and free of Wallet, estimate, signature, draft, or Worm mutation calls.
+- [ ] Combinations routes remain interactive-only, owner-scoped, catalog-validated, exact-complement-priced, revisioned, and free of Wallet, estimate, signature, draft, or Worm mutation calls.
 - [ ] The [design index](../README.md) contains the correct entry.

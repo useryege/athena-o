@@ -3,6 +3,7 @@ package wormmarkets
 import (
 	"context"
 	"math"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 const (
 	orderEventCatalogMarketConcurrency = 8
 	orderMarketStateUnknown            = "unknown"
+	orderCatalogMaxPriceLength         = 128
 
 	orderMarketUnavailableDetail           = "MARKET_DETAIL_UNAVAILABLE"
 	orderMarketUnavailableIDMismatch       = "MARKET_ID_MISMATCH"
@@ -33,6 +35,11 @@ const (
 	orderOutcomeUnavailableLeverageInvalid = "MAX_LEVERAGE_INVALID"
 	orderOutcomeUnavailableLeverageBelow1  = "MAX_LEVERAGE_BELOW_ONE"
 )
+
+type orderEventCatalogPrices struct {
+	yes string
+	no  string
+}
 
 // GetOrderEventCatalog returns the provider's current event and all child
 // markets as a safe order-combination catalog. It intentionally performs only
@@ -149,12 +156,19 @@ func (s *Service) getOrderEventCatalogMarket(
 	item := orderEventCatalogMarketFromSummary(s, eventConditionID, marketConditionID, summary)
 	market, err := s.wormClient.GetMarket(ctx, marketConditionID)
 	if err != nil || market == nil {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableDetail, summary.Outcomes, nil, nil, nil)
+		applyOrderMarketUnavailable(
+			item,
+			orderMarketUnavailableDetail,
+			summary.Outcomes,
+			nil,
+			nil,
+			nil,
+			orderEventCatalogPricesFromLastTrade(summary.LastTradePrice),
+		)
 		return item
 	}
-
 	if market.ConditionID != marketConditionID || validateOrderConditionID(market.ConditionID) != nil {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableIDMismatch, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableIDMismatch, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, orderEventCatalogPrices{})
 		return item
 	}
 	item.MarketConditionId = marketConditionID
@@ -167,35 +181,36 @@ func (s *Service) getOrderEventCatalogMarket(
 	}
 
 	if market.Event == nil || market.Event.ConditionID != eventConditionID || validateOrderConditionID(market.Event.ConditionID) != nil {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableEventMismatch, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableEventMismatch, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, orderEventCatalogPrices{})
 		return item
 	}
+	prices := orderEventCatalogPricesFromLastTrade(market.LastTradePrice)
 	item.EventConditionId = eventConditionID
 	if item.State != defaultWormMarketsState {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableNotOpen, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableNotOpen, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, prices)
 		return item
 	}
 	if !market.MarginEnabled {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableMarginDisabled, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableMarginDisabled, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, prices)
 		return item
 	}
 	if market.Config == nil {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableConfigMissing, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, nil)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableConfigMissing, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, nil, prices)
 		return item
 	}
 	if item.Backend != "polymarket" && item.Backend != "hyperliquid" {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableBackend, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableBackend, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, prices)
 		return item
 	}
 
 	yesLabel, noLabel, ok := validOrderOutcomeLabels(market.Outcomes)
 	if !ok {
-		applyOrderMarketUnavailable(item, orderMarketUnavailableOutcomes, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config)
+		applyOrderMarketUnavailable(item, orderMarketUnavailableOutcomes, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, prices)
 		return item
 	}
 
-	yesOutcome := orderEventCatalogOutcome(true, yesLabel, market.Config.MaxLeverageYes)
-	noOutcome := orderEventCatalogOutcome(false, noLabel, market.Config.MaxLeverageNo)
+	yesOutcome := orderEventCatalogOutcome(true, yesLabel, market.Config.MaxLeverageYes, prices.yes)
+	noOutcome := orderEventCatalogOutcome(false, noLabel, market.Config.MaxLeverageNo, prices.no)
 	item.Outcomes = []*apiclient.OrderEventCatalogOutcome{yesOutcome, noOutcome}
 	if !yesOutcome.Selectable && !noOutcome.Selectable {
 		item.UnavailableCode = orderMarketUnavailableNoOutcomes
@@ -216,7 +231,14 @@ func orderEventCatalogMarketFromSummary(
 		Logo:              service.normalizeAssetURL(stringValue(summary.Logo)),
 		State:             orderCatalogMarketState(summary.State),
 		MarginEnabled:     summary.MarginEnabled,
-		Outcomes:          unavailableOrderOutcomes(summary.Outcomes, nil, nil, nil, orderMarketUnavailableDetail),
+		Outcomes: unavailableOrderOutcomes(
+			summary.Outcomes,
+			nil,
+			nil,
+			nil,
+			orderMarketUnavailableDetail,
+			orderEventCatalogPricesFromLastTrade(summary.LastTradePrice),
+		),
 	}
 }
 
@@ -227,12 +249,13 @@ func applyOrderMarketUnavailable(
 	yesOutcomeLabel *string,
 	noOutcomeLabel *string,
 	config *utilworm.MarketConfig,
+	prices orderEventCatalogPrices,
 ) {
 	if item == nil {
 		return
 	}
 	item.UnavailableCode = code
-	item.Outcomes = unavailableOrderOutcomes(outcomes, yesOutcomeLabel, noOutcomeLabel, config, code)
+	item.Outcomes = unavailableOrderOutcomes(outcomes, yesOutcomeLabel, noOutcomeLabel, config, code, prices)
 }
 
 func unavailableOrderOutcomes(
@@ -241,6 +264,7 @@ func unavailableOrderOutcomes(
 	noOutcomeLabel *string,
 	config *utilworm.MarketConfig,
 	code string,
+	prices orderEventCatalogPrices,
 ) []*apiclient.OrderEventCatalogOutcome {
 	yesLabel, noLabel := displayOrderOutcomeLabels(outcomes, yesOutcomeLabel, noOutcomeLabel)
 	yesMaxLeverage := ""
@@ -255,12 +279,14 @@ func unavailableOrderOutcomes(
 			Label:           yesLabel,
 			MaxLeverage:     yesMaxLeverage,
 			UnavailableCode: code,
+			LastTradePrice:  prices.yes,
 		},
 		{
 			IsYes:           false,
 			Label:           noLabel,
 			MaxLeverage:     noMaxLeverage,
 			UnavailableCode: code,
+			LastTradePrice:  prices.no,
 		},
 	}
 }
@@ -311,12 +337,13 @@ func validOrderOutcomeLabels(outcomes []utilworm.Outcome) (string, string, bool)
 	return yesLabel, noLabel, yesCount == 1 && noCount == 1
 }
 
-func orderEventCatalogOutcome(isYes bool, label string, maxLeverage *string) *apiclient.OrderEventCatalogOutcome {
+func orderEventCatalogOutcome(isYes bool, label string, maxLeverage *string, lastTradePrice string) *apiclient.OrderEventCatalogOutcome {
 	value := strings.TrimSpace(stringValue(maxLeverage))
 	item := &apiclient.OrderEventCatalogOutcome{
-		IsYes:       isYes,
-		Label:       label,
-		MaxLeverage: value,
+		IsYes:          isYes,
+		Label:          label,
+		MaxLeverage:    value,
+		LastTradePrice: lastTradePrice,
 	}
 	if value == "" {
 		item.UnavailableCode = orderOutcomeUnavailableLeverageMissing
@@ -333,6 +360,72 @@ func orderEventCatalogOutcome(isYes bool, label string, maxLeverage *string) *ap
 	}
 	item.Selectable = true
 	return item
+}
+
+func orderEventCatalogPricesFromLastTrade(lastTradePrice *string) orderEventCatalogPrices {
+	value := strings.TrimSpace(stringValue(lastTradePrice))
+	if value == "" || len(value) > orderCatalogMaxPriceLength || !isPlainOrderCatalogDecimal(value) {
+		return orderEventCatalogPrices{}
+	}
+	complement, ok := complementOrderCatalogDecimal(value)
+	if !ok {
+		return orderEventCatalogPrices{}
+	}
+	return orderEventCatalogPrices{
+		yes: value,
+		no:  complement,
+	}
+}
+
+func complementOrderCatalogDecimal(value string) (string, bool) {
+	parts := strings.SplitN(value, ".", 2)
+	whole := parts[0]
+	fraction := ""
+	if len(parts) == 2 {
+		fraction = parts[1]
+	}
+	if whole == "" {
+		whole = "0"
+	}
+
+	unscaled, ok := new(big.Int).SetString(whole+fraction, 10)
+	if !ok {
+		return "", false
+	}
+	scale := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(len(fraction))), nil)
+	if unscaled.Cmp(scale) > 0 {
+		return "", false
+	}
+
+	complement := new(big.Int).Sub(scale, unscaled)
+	if complement.Sign() == 0 {
+		return "0", true
+	}
+	if complement.Cmp(scale) == 0 {
+		return "1", true
+	}
+
+	digits := complement.String()
+	if padding := len(fraction) - len(digits); padding > 0 {
+		digits = strings.Repeat("0", padding) + digits
+	}
+	digits = strings.TrimRight(digits, "0")
+	return "0." + digits, true
+}
+
+func isPlainOrderCatalogDecimal(value string) bool {
+	parts := strings.Split(value, ".")
+	if len(parts) > 2 || parts[0] == "" || (len(parts) == 2 && parts[1] == "") {
+		return false
+	}
+	for _, part := range parts {
+		for _, char := range part {
+			if char < '0' || char > '9' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func validateOrderConditionID(value string) error {

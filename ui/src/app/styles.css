@@ -1301,8 +1301,7 @@ body,
 .worm-combination-event {
     display: grid;
     min-width: 0;
-    gap: 16px;
-    padding: 18px;
+    overflow: hidden;
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
@@ -1312,24 +1311,17 @@ body,
 .worm-combination-event__heading {
     display: grid;
     min-width: 0;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
-    gap: 12px;
-    padding-bottom: 14px;
+    gap: 10px;
+    padding: 15px 16px;
     border-bottom: 1px solid var(--athena-border);
 }
 
-.worm-combination-event__heading > .ant-avatar,
-.worm-combination-market__heading > .ant-avatar {
-    border: 1px solid var(--athena-border);
-    background: var(--athena-bg-soft);
-    color: var(--athena-muted);
-}
-
-.worm-combination-event__heading > div {
+.worm-combination-event__copy {
     display: grid;
     min-width: 0;
-    gap: 4px;
+    gap: 5px;
 }
 
 .worm-combination-event__heading h2.ant-typography {
@@ -1342,94 +1334,71 @@ body,
     white-space: nowrap;
 }
 
-.worm-combination-event__heading code {
+.worm-combination-event__meta {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 10px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
 }
 
-.worm-combination-event__heading > .ant-tag {
-    margin-inline-end: 0;
+.worm-combination-event__meta > span + span {
+    position: relative;
+}
+
+.worm-combination-event__meta > span + span::before {
+    position: absolute;
+    top: 50%;
+    left: -8px;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: currentcolor;
+    content: '';
+}
+
+.worm-combination-event__refresh.ant-btn {
+    min-width: 86px;
+}
+
+.worm-combination-event__refresh-error.ant-alert {
+    margin: 12px 16px 0;
 }
 
 .worm-combination-event__markets {
     display: grid;
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
-    gap: 12px;
+    min-width: 0;
 }
 
-.worm-combination-market.ant-card {
+.worm-combination-market {
+    display: grid;
     min-width: 0;
-    border-color: var(--athena-border);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--athena-panel) 90%, var(--athena-bg-soft));
+    grid-template-columns: minmax(180px, 1fr) minmax(250px, 320px);
+    align-items: center;
+    gap: 14px;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--athena-border);
     transition:
-        border-color 160ms ease,
+        background-color 160ms ease,
         box-shadow 160ms ease;
 }
 
-.worm-combination-market--selected.ant-card {
-    border-color: color-mix(in srgb, var(--athena-primary) 58%, var(--athena-border));
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--athena-primary) 10%, transparent);
+.worm-combination-market:last-child {
+    border-bottom: 0;
 }
 
-.worm-combination-market .ant-card-body {
-    display: grid;
+.worm-combination-market--selected {
+    background: color-mix(in srgb, var(--athena-primary) 5%, var(--athena-panel));
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--athena-primary) 75%, transparent);
+}
+
+.worm-combination-market__title.ant-typography {
     min-width: 0;
-    gap: 13px;
-    padding: 15px;
-}
-
-.worm-combination-market__heading {
-    display: grid;
-    min-width: 0;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 10px;
-}
-
-.worm-combination-market__heading > div:not(.worm-combination-market__tags) {
-    display: grid;
-    min-width: 0;
-    gap: 3px;
-}
-
-.worm-combination-market__heading > div > .ant-typography {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.worm-combination-market__heading code {
-    color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 10px;
-}
-
-.worm-combination-market__tags {
-    display: flex;
-    min-width: 0;
-    grid-column: 1 / -1;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.worm-combination-market__tags .ant-tag {
-    margin-inline-end: 0;
-}
-
-.worm-combination-market__notice.ant-alert {
-    padding: 8px 10px;
-}
-
-.worm-combination-market__notice .ant-alert-title {
-    font-size: 12px;
-}
-
-.worm-combination-market__notice .ant-alert-description {
-    margin-top: 2px;
-    font-size: 10px;
+    color: var(--athena-text);
+    font-size: 13px;
 }
 
 .worm-combination-market__outcomes.ant-radio-group {
@@ -1442,12 +1411,12 @@ body,
 .worm-combination-market__outcomes .ant-radio-button-wrapper {
     width: 100%;
     min-width: 0;
-    height: auto;
-    min-height: 70px;
-    padding: 10px 12px;
+    height: 42px;
+    padding: 0 12px;
     border: 1px solid var(--athena-border);
     border-radius: 8px;
-    line-height: normal;
+    line-height: 40px;
+    text-align: center;
 }
 
 .worm-combination-market__outcomes .ant-radio-button-wrapper::before {
@@ -1459,35 +1428,36 @@ body,
 }
 
 .worm-combination-outcome-choice {
-    display: grid;
+    display: inline-flex;
     min-width: 0;
-    gap: 3px;
+    align-items: baseline;
+    justify-content: center;
+    gap: 7px;
 }
 
 .worm-combination-outcome-choice strong {
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .worm-combination-outcome-choice span {
-    overflow: hidden;
     color: var(--athena-text);
-    font-size: 11px;
-    line-height: 1.3;
-    text-overflow: ellipsis;
+    font-family: var(--athena-data-font);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
     white-space: nowrap;
 }
 
-.worm-combination-outcome-choice small {
-    color: var(--athena-muted);
-    font-size: 9px;
-}
-
-.worm-combination-market__remove.ant-btn-link {
-    width: fit-content;
-    height: auto;
-    padding: 0;
-    font-size: 12px;
+.worm-combination-market__availability {
+    display: flex;
+    min-width: 0;
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    gap: 3px 12px;
+    color: var(--athena-orange);
+    font-size: 10px;
+    line-height: 1.4;
 }
 
 .worm-combination-summary {
@@ -1613,6 +1583,12 @@ body,
     font-size: 10px;
 }
 
+.worm-combination-selection__price.ant-typography {
+    font-family: var(--athena-data-font);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+}
+
 .worm-combination-selection__actions {
     display: grid;
     gap: 4px;
@@ -1637,12 +1613,6 @@ body,
 .worm-combination-review-drawer .worm-combination-summary__items {
     max-height: none;
     overflow: visible;
-}
-
-@media (max-width: 1280px) {
-    .worm-combination-event__markets {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
 
 @media (max-width: 900px) {
@@ -1724,31 +1694,42 @@ body,
         min-height: 44px;
     }
 
-    .worm-combination-event {
+    .worm-combination-event__heading {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
         padding: 14px;
     }
 
-    .worm-combination-event__heading {
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        align-items: start;
+    .worm-combination-event__copy {
+        grid-column: 1 / -1;
     }
 
-    .worm-combination-event__heading > .ant-tag {
-        grid-column: 2;
+    .worm-combination-event__refresh.ant-btn {
+        grid-column: 1;
         width: fit-content;
+        min-height: 40px;
     }
 
-    .worm-combination-event__heading > .ant-btn {
-        grid-column: 3;
-        grid-row: 1;
+    .worm-combination-event__remove.ant-btn {
+        grid-column: 2;
+        grid-row: 2;
     }
 
-    .worm-combination-market__outcomes.ant-radio-group {
+    .worm-combination-market {
         grid-template-columns: minmax(0, 1fr);
+        gap: 9px;
+        padding: 12px 14px;
+    }
+
+    .worm-combination-market__title.ant-typography {
+        display: block;
+        width: 100%;
     }
 
     .worm-combination-market__outcomes .ant-radio-button-wrapper {
-        min-height: 64px;
+        height: 44px;
+        min-height: 44px;
+        line-height: 42px;
     }
 
     .worm-combination-mobile-review .ant-btn {

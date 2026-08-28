@@ -1,5 +1,5 @@
-import {ArrowDownOutlined, ArrowUpOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SaveOutlined} from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Drawer, Empty, Input, Radio, Space, Tag, Tooltip, Typography} from 'antd';
+import {ArrowDownOutlined, ArrowUpOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined} from '@ant-design/icons';
+import {Alert, Button, Card, Drawer, Empty, Input, Radio, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Navigate, useBlocker, useNavigate, useParams} from 'react-router-dom';
@@ -119,6 +119,68 @@ const combinationItemStatus = (item: WormMarketCombinationItem, events: WormTrad
         return {known: true, selectable: false, code: 'OUTCOME_NOT_FOUND'};
     }
     return {known: true, selectable: outcome.selectable, code: outcome.unavailableCode || market.unavailableCode};
+};
+
+const exactDecimalParts = (value: string): {integer: bigint; scale: number} | undefined => {
+    if (!/^\d+(?:\.\d+)?$/.test(value)) {
+        return undefined;
+    }
+    const [whole, fraction = ''] = value.split('.');
+    return {integer: BigInt(`${whole}${fraction}`), scale: fraction.length};
+};
+
+const lastTradeTenthsOfCent = (value: string): bigint | undefined => {
+    const parsed = exactDecimalParts(value);
+    if (!parsed) {
+        return undefined;
+    }
+    const denominator = 10n ** BigInt(parsed.scale);
+    const scaled = parsed.integer * 1000n;
+    const quotient = scaled / denominator;
+    return quotient + ((scaled % denominator) * 2n >= denominator ? 1n : 0n);
+};
+
+const formatTenthsOfCent = (tenths: bigint | undefined): string => {
+    if (tenths === undefined) {
+        return '—';
+    }
+    const wholeCents = tenths / 10n;
+    const fractionalCent = tenths % 10n;
+    return fractionalCent === 0n ? `${wholeCents}¢` : `${wholeCents}.${fractionalCent}¢`;
+};
+
+const marketLastTradeCents = (market: WormTradingEventMarket): Record<WormMarketOutcomeSide, string> => {
+    const yes = market.outcomes.find(outcome => outcome.side === 'YES')?.lastTradePrice || '';
+    const no = market.outcomes.find(outcome => outcome.side === 'NO')?.lastTradePrice || '';
+    const yesTenths = lastTradeTenthsOfCent(yes);
+    if (!yes || !no || yesTenths === undefined || yesTenths < 0n || yesTenths > 1000n) {
+        return {YES: '—', NO: '—'};
+    }
+    return {
+        YES: formatTenthsOfCent(yesTenths),
+        NO: formatTenthsOfCent(1000n - yesTenths)
+    };
+};
+
+const lastTradeTooltip = (value: string) =>
+    value
+        ? `Last trade: ${value} USDC/share. This is historical, not a current buy quote or guaranteed execution price.`
+        : 'Last trade price is unavailable. This does not prevent selecting an otherwise available outcome.';
+
+const lastTradeAccessiblePrice = (value: string, displayPrice: string) => (value ? `${displayPrice} last trade` : 'last trade price unavailable');
+
+const selectionMarket = (item: WormMarketCombinationItem, events: WormTradingEvent[]) =>
+    events.find(event => event.eventConditionId === item.eventConditionId)?.markets.find(market => market.marketConditionId === item.marketConditionId);
+
+const selectionOutcome = (item: WormMarketCombinationItem, events: WormTradingEvent[]) => selectionMarket(item, events)?.outcomes.find(outcome => outcome.side === item.side);
+
+const eventSnapshotPresentation = (fetchedAt: number) => {
+    const full = formatBeijingUnixSeconds(fetchedAt);
+    const parts = full?.split(' ') || [];
+    return {
+        full: full || 'Snapshot time unavailable',
+        time: parts[parts.length - 1] || '—'
+    };
 };
 
 const CombinationListCard = (props: {item: WormMarketCombination; canWrite: boolean; deleting: boolean; onOpen: () => void; onDelete: () => void}) => (
@@ -309,42 +371,28 @@ export const WormTradingCombinationsPage = () => {
     );
 };
 
-const MarketOutcomeChoice = (props: {outcome: WormTradingEventOutcome}) => (
+const MarketOutcomeChoice = (props: {outcome: WormTradingEventOutcome; displayPrice: string}) => (
     <span className='worm-combination-outcome-choice'>
         <strong>{props.outcome.side}</strong>
-        <span>{props.outcome.label}</span>
-        {props.outcome.maxLeverage && <small>Up to {props.outcome.maxLeverage}×</small>}
+        <span>{props.displayPrice}</span>
     </span>
 );
 
 const EventMarketCard = (props: {
-    event: WormTradingEvent;
     market: WormTradingEventMarket;
     selectedSide?: WormMarketOutcomeSide;
     canWrite: boolean;
     onSelect: (outcome: WormTradingEventOutcome) => void;
-    onRemove: () => void;
 }) => {
-    const reason = props.market.unavailableCode;
+    const displayPrices = marketLastTradeCents(props.market);
+    const availabilityMessages = props.market.unavailableCode
+        ? [`Market unavailable: ${unavailableLabel(props.market.unavailableCode)}`]
+        : props.market.outcomes.filter(outcome => !outcome.selectable).map(outcome => `${outcome.side} unavailable: ${unavailableLabel(outcome.unavailableCode)}`);
     return (
-        <Card className={`worm-combination-market${props.selectedSide ? ' worm-combination-market--selected' : ''}`} size='small'>
-            <div className='worm-combination-market__heading'>
-                <Avatar shape='square' size={44} src={props.market.logo || undefined}>
-                    {props.market.title.slice(0, 1).toUpperCase()}
-                </Avatar>
-                <div>
-                    <Typography.Text strong={true}>{props.market.title}</Typography.Text>
-                    <Typography.Text code={true} title={props.market.marketConditionId}>
-                        {short(props.market.marketConditionId, 9, 7)}
-                    </Typography.Text>
-                </div>
-                <div className='worm-combination-market__tags'>
-                    <Tag>{props.market.state}</Tag>
-                    {props.market.backend && <Tag>{props.market.backend}</Tag>}
-                    {!props.market.marginEnabled && <Tag color='warning'>No margin</Tag>}
-                </div>
-            </div>
-            {reason && <Alert className='worm-combination-market__notice' type='warning' showIcon={true} title={unavailableLabel(reason)} description={<code>{reason}</code>} />}
+        <div className={`worm-combination-market${props.selectedSide ? ' worm-combination-market--selected' : ''}`}>
+            <Typography.Text className='worm-combination-market__title' strong={true} ellipsis={true} title={props.market.title}>
+                {props.market.title}
+            </Typography.Text>
             <Radio.Group
                 className='worm-combination-market__outcomes'
                 aria-label={`Outcome for ${props.market.title}`}
@@ -357,19 +405,24 @@ const EventMarketCard = (props: {
                     }
                 }}>
                 {props.market.outcomes.map(outcome => (
-                    <Tooltip key={outcome.side} title={outcome.selectable ? undefined : unavailableLabel(outcome.unavailableCode)}>
-                        <Radio.Button value={outcome.side} disabled={!outcome.selectable}>
-                            <MarketOutcomeChoice outcome={outcome} />
+                    <Tooltip key={outcome.side} title={`${lastTradeTooltip(outcome.lastTradePrice)}${outcome.selectable ? '' : ` ${unavailableLabel(outcome.unavailableCode)}.`}`}>
+                        <Radio.Button
+                            value={outcome.side}
+                            disabled={!outcome.selectable}
+                            aria-label={`${props.market.title}, ${outcome.side}, ${lastTradeAccessiblePrice(outcome.lastTradePrice, displayPrices[outcome.side])}${outcome.selectable ? '' : `, unavailable: ${unavailableLabel(outcome.unavailableCode)}`}`}>
+                            <MarketOutcomeChoice outcome={outcome} displayPrice={displayPrices[outcome.side]} />
                         </Radio.Button>
                     </Tooltip>
                 ))}
             </Radio.Group>
-            {props.canWrite && props.selectedSide && (
-                <Button className='worm-combination-market__remove' type='link' icon={<CloseOutlined />} onClick={props.onRemove}>
-                    Remove selection
-                </Button>
+            {availabilityMessages.length > 0 && (
+                <div className='worm-combination-market__availability'>
+                    {availabilityMessages.map(message => (
+                        <span key={message}>{message}</span>
+                    ))}
+                </div>
             )}
-        </Card>
+        </div>
     );
 };
 
@@ -377,51 +430,80 @@ const EventExplorerCard = (props: {
     event: WormTradingEvent;
     selections: WormMarketCombinationItem[];
     canWrite: boolean;
+    refreshing: boolean;
+    refreshDisabled: boolean;
+    refreshError: string;
     onSelect: (market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => void;
-    onRemoveSelection: (marketConditionID: string) => void;
+    onRefresh: () => void;
     onRemoveEvent: () => void;
-}) => (
-    <section className='worm-combination-event' aria-labelledby={`worm-event-${props.event.eventConditionId}`}>
-        <div className='worm-combination-event__heading'>
-            <Avatar shape='square' size={52} src={props.event.logo || undefined}>
-                {props.event.title.slice(0, 1).toUpperCase()}
-            </Avatar>
-            <div>
-                <Typography.Title id={`worm-event-${props.event.eventConditionId}`} level={2}>
-                    {props.event.title}
-                </Typography.Title>
-                <Typography.Text code={true} title={props.event.eventConditionId}>
-                    {short(props.event.eventConditionId, 12, 10)}
-                </Typography.Text>
+}) => {
+    const snapshot = eventSnapshotPresentation(props.event.fetchedAt);
+    return (
+        <section className='worm-combination-event' aria-labelledby={`worm-event-${props.event.eventConditionId}`}>
+            <div className='worm-combination-event__heading'>
+                <div className='worm-combination-event__copy'>
+                    <Typography.Title id={`worm-event-${props.event.eventConditionId}`} level={2} title={props.event.title}>
+                        {props.event.title}
+                    </Typography.Title>
+                    <div className='worm-combination-event__meta'>
+                        <span>
+                            {props.event.markets.length} {props.event.markets.length === 1 ? 'market' : 'markets'}
+                        </span>
+                        <Tooltip title={`Athena fetched this price snapshot at ${snapshot.full} Beijing time. It is not the last trade's execution time.`}>
+                            <span>Last trade · fetched {snapshot.time}</span>
+                        </Tooltip>
+                    </div>
+                </div>
+                <Button
+                    className='worm-combination-event__refresh'
+                    size='small'
+                    icon={<ReloadOutlined />}
+                    loading={props.refreshing}
+                    disabled={props.refreshDisabled}
+                    aria-label={`Refresh prices for ${props.event.title}`}
+                    onClick={props.onRefresh}>
+                    Refresh
+                </Button>
+                {props.canWrite && (
+                    <Tooltip title='Remove this event from the builder'>
+                        <Button
+                            className='worm-combination-event__remove'
+                            size='small'
+                            aria-label={`Remove ${props.event.title}`}
+                            icon={<CloseOutlined />}
+                            disabled={props.refreshDisabled}
+                            onClick={props.onRemoveEvent}
+                        />
+                    </Tooltip>
+                )}
             </div>
-            <Tag>
-                {props.event.markets.length} {props.event.markets.length === 1 ? 'market' : 'markets'}
-            </Tag>
-            {props.canWrite && (
-                <Tooltip title='Remove this event from the builder'>
-                    <Button aria-label={`Remove ${props.event.title}`} icon={<CloseOutlined />} onClick={props.onRemoveEvent} />
-                </Tooltip>
+            {props.refreshError && (
+                <Alert
+                    className='worm-combination-event__refresh-error'
+                    type='warning'
+                    showIcon={true}
+                    title='Could not refresh this Event'
+                    description={`${props.refreshError} The previous snapshot remains visible.`}
+                />
             )}
-        </div>
-        {props.event.markets.length === 0 ? (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='This Event has no child markets.' />
-        ) : (
-            <div className='worm-combination-event__markets'>
-                {props.event.markets.map(market => (
-                    <EventMarketCard
-                        key={market.marketConditionId}
-                        event={props.event}
-                        market={market}
-                        selectedSide={props.selections.find(item => item.marketConditionId === market.marketConditionId)?.side}
-                        canWrite={props.canWrite}
-                        onSelect={outcome => props.onSelect(market, outcome)}
-                        onRemove={() => props.onRemoveSelection(market.marketConditionId)}
-                    />
-                ))}
-            </div>
-        )}
-    </section>
-);
+            {props.event.markets.length === 0 ? (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='This Event has no child markets.' />
+            ) : (
+                <div className='worm-combination-event__markets'>
+                    {props.event.markets.map(market => (
+                        <EventMarketCard
+                            key={market.marketConditionId}
+                            market={market}
+                            selectedSide={props.selections.find(item => item.marketConditionId === market.marketConditionId)?.side}
+                            canWrite={props.canWrite}
+                            onSelect={outcome => props.onSelect(market, outcome)}
+                        />
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+};
 
 const CombinationSummary = (props: {
     name: string;
@@ -429,6 +511,7 @@ const CombinationSummary = (props: {
     events: WormTradingEvent[];
     canWrite: boolean;
     saving: boolean;
+    refreshing: boolean;
     editing: boolean;
     onNameChange: (value: string) => void;
     onMove: (index: number, direction: -1 | 1) => void;
@@ -440,7 +523,7 @@ const CombinationSummary = (props: {
         const status = combinationItemStatus(item, props.events);
         return status.known && !status.selectable;
     });
-    const saveDisabled = !nameValid || props.items.length === 0 || invalidSelections.length > 0 || props.saving;
+    const saveDisabled = !nameValid || props.items.length === 0 || invalidSelections.length > 0 || props.saving || props.refreshing;
     return (
         <div className='worm-combination-summary'>
             <div className='worm-combination-summary__heading'>
@@ -480,6 +563,10 @@ const CombinationSummary = (props: {
                 ) : (
                     props.items.map((item, index) => {
                         const status = combinationItemStatus(item, props.events);
+                        const market = selectionMarket(item, props.events);
+                        const outcome = selectionOutcome(item, props.events);
+                        const price = outcome?.lastTradePrice || '';
+                        const displayPrice = market ? marketLastTradeCents(market)[item.side] : '—';
                         return (
                             <Card className='worm-combination-selection' size='small' key={item.marketConditionId}>
                                 <div className='worm-combination-selection__ordinal'>{index + 1}</div>
@@ -492,7 +579,9 @@ const CombinationSummary = (props: {
                                     </Typography.Text>
                                     <span>
                                         <Tag color={item.side === 'YES' ? 'green' : 'blue'}>{item.side}</Tag>
-                                        <Typography.Text>{item.outcomeLabel}</Typography.Text>
+                                        <Tooltip title={lastTradeTooltip(price)}>
+                                            <Typography.Text className='worm-combination-selection__price'>· {displayPrice}</Typography.Text>
+                                        </Tooltip>
                                         {status.known && !status.selectable && <Tag color='warning'>{unavailableLabel(status.code)}</Tag>}
                                     </span>
                                 </div>
@@ -561,11 +650,14 @@ export const WormTradingCombinationBuilderPage = () => {
     const [eventInput, setEventInput] = React.useState('');
     const [eventInputError, setEventInputError] = React.useState('');
     const [eventLoadErrors, setEventLoadErrors] = React.useState<string[]>([]);
+    const [eventRefreshErrors, setEventRefreshErrors] = React.useState<Record<string, string>>({});
     const [addingEvent, setAddingEvent] = React.useState(false);
     const [hydratingEvents, setHydratingEvents] = React.useState(false);
+    const [refreshingEventID, setRefreshingEventID] = React.useState('');
     const [saving, setSaving] = React.useState(false);
     const [reviewOpen, setReviewOpen] = React.useState(false);
     const addEventRequestRef = React.useRef<ReturnType<typeof services.wormTrading.getEvent>>();
+    const refreshEventRequestRef = React.useRef<ReturnType<typeof services.wormTrading.getEvent>>();
     const allowNavigationRef = React.useRef(false);
     const currentDraft = selectionFingerprint(name, selections);
     const dirty = canWrite && initialized && currentDraft !== baseline;
@@ -578,9 +670,17 @@ export const WormTradingCombinationBuilderPage = () => {
     React.useEffect(
         () => () => {
             addEventRequestRef.current?.abort?.();
+            refreshEventRequestRef.current?.abort?.();
         },
         []
     );
+
+    React.useEffect(() => {
+        refreshEventRequestRef.current?.abort?.();
+        refreshEventRequestRef.current = undefined;
+        setRefreshingEventID('');
+        setEventRefreshErrors({});
+    }, [authorization.user.accountId]);
 
     React.useEffect(() => {
         if (!dirty) {
@@ -630,6 +730,7 @@ export const WormTradingCombinationBuilderPage = () => {
         setBaseline(selectionFingerprint(source.name, nextSelections));
         setInitialized(true);
         setEventLoadErrors([]);
+        setEventRefreshErrors({});
         setEvents([]);
         const eventIDs = Array.from(new Set(source.items.map(item => item.eventConditionId)));
         const requests = eventIDs.map(eventConditionID => services.wormTrading.getEvent(eventConditionID));
@@ -679,7 +780,7 @@ export const WormTradingCombinationBuilderPage = () => {
     }
 
     const addEvent = async () => {
-        if (!canWrite || addingEvent || hydratingEvents) {
+        if (!canWrite || addingEvent || hydratingEvents || refreshingEventID || refreshEventRequestRef.current) {
             return;
         }
         let eventConditionID: string;
@@ -709,6 +810,11 @@ export const WormTradingCombinationBuilderPage = () => {
             }
             setEvents(current => [...current, event]);
             setEventLoadErrors(current => current.filter(item => item !== eventConditionID));
+            setEventRefreshErrors(current => {
+                const next = {...current};
+                delete next[eventConditionID];
+                return next;
+            });
             setSelections(current => refreshedSelections(current, [event]));
             setEventInput('');
         } catch (error) {
@@ -719,6 +825,45 @@ export const WormTradingCombinationBuilderPage = () => {
             if (addEventRequestRef.current === request) {
                 addEventRequestRef.current = undefined;
                 setAddingEvent(false);
+            }
+        }
+    };
+
+    const refreshEvent = async (event: WormTradingEvent) => {
+        if (refreshingEventID || refreshEventRequestRef.current || addEventRequestRef.current || addingEvent || hydratingEvents || saving) {
+            return;
+        }
+        const eventConditionID = event.eventConditionId;
+        const operationAccountID = accountIDRef.current;
+        const otherMarketIDs = new Set(
+            events.filter(candidate => candidate.eventConditionId !== eventConditionID).flatMap(candidate => candidate.markets.map(market => market.marketConditionId))
+        );
+        setRefreshingEventID(eventConditionID);
+        setEventRefreshErrors(current => {
+            const next = {...current};
+            delete next[eventConditionID];
+            return next;
+        });
+        const request = services.wormTrading.getEvent(eventConditionID);
+        refreshEventRequestRef.current = request;
+        try {
+            const refreshed = await request;
+            if (accountIDRef.current !== operationAccountID || refreshEventRequestRef.current !== request) {
+                return;
+            }
+            if (refreshed.markets.some(market => otherMarketIDs.has(market.marketConditionId))) {
+                throw new Error('Worm returned a child market that is already loaded under another Event.');
+            }
+            setEvents(current => current.map(candidate => (candidate.eventConditionId === eventConditionID ? refreshed : candidate)));
+            setSelections(current => refreshedSelections(current, [refreshed]));
+        } catch (error) {
+            if (accountIDRef.current === operationAccountID && refreshEventRequestRef.current === request) {
+                setEventRefreshErrors(current => ({...current, [eventConditionID]: requestErrorMessage(error, 'Could not load the latest Worm Event snapshot.')}));
+            }
+        } finally {
+            if (refreshEventRequestRef.current === request) {
+                refreshEventRequestRef.current = undefined;
+                setRefreshingEventID('');
             }
         }
     };
@@ -753,6 +898,11 @@ export const WormTradingCombinationBuilderPage = () => {
         const remove = () => {
             setEvents(current => current.filter(item => item.eventConditionId !== event.eventConditionId));
             setSelections(current => orderedSelections(current.filter(item => !selectedMarketIDs.has(item.marketConditionId))));
+            setEventRefreshErrors(current => {
+                const next = {...current};
+                delete next[event.eventConditionId];
+                return next;
+            });
         };
         if (selectedCount === 0) {
             remove();
@@ -782,7 +932,7 @@ export const WormTradingCombinationBuilderPage = () => {
     };
 
     const save = async () => {
-        if (!canWrite || saving || !validCombinationName(name) || selections.length === 0) {
+        if (!canWrite || saving || refreshingEventID || !validCombinationName(name) || selections.length === 0) {
             return;
         }
         const invalidSelection = selections.find(item => {
@@ -836,6 +986,7 @@ export const WormTradingCombinationBuilderPage = () => {
             events={events}
             canWrite={canWrite}
             saving={saving}
+            refreshing={Boolean(refreshingEventID)}
             editing={editing}
             onNameChange={setName}
             onMove={moveSelection}
@@ -869,7 +1020,7 @@ export const WormTradingCombinationBuilderPage = () => {
                                     placeholder='https://www.worm.wtf/market/... or Event Condition ID'
                                     status={eventInputError ? 'error' : undefined}
                                     aria-invalid={eventInputError ? true : undefined}
-                                    disabled={addingEvent || hydratingEvents || saving}
+                                    disabled={addingEvent || hydratingEvents || Boolean(refreshingEventID) || saving}
                                     onChange={event => {
                                         setEventInput(event.target.value);
                                         if (eventInputError) {
@@ -882,7 +1033,7 @@ export const WormTradingCombinationBuilderPage = () => {
                                     type='primary'
                                     icon={<PlusOutlined />}
                                     loading={addingEvent}
-                                    disabled={!eventInput.trim() || hydratingEvents || saving}
+                                    disabled={!eventInput.trim() || hydratingEvents || Boolean(refreshingEventID) || saving}
                                     onClick={() => void addEvent()}>
                                     Add Event
                                 </Button>
@@ -920,8 +1071,11 @@ export const WormTradingCombinationBuilderPage = () => {
                                         event={event}
                                         selections={selections}
                                         canWrite={canWrite}
+                                        refreshing={refreshingEventID === event.eventConditionId}
+                                        refreshDisabled={Boolean(refreshingEventID) || addingEvent || hydratingEvents || saving}
+                                        refreshError={eventRefreshErrors[event.eventConditionId] || ''}
                                         onSelect={(market, outcome) => selectOutcome(event, market, outcome)}
-                                        onRemoveSelection={removeSelection}
+                                        onRefresh={() => void refreshEvent(event)}
                                         onRemoveEvent={() => removeEvent(event)}
                                     />
                                 ))

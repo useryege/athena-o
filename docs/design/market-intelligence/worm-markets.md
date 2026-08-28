@@ -8,8 +8,9 @@ price window, fills missing market rules, derives one-way live state, emits new
 event, live-event, and extreme-price notifications, and exposes event reads over
 its internal gRPC API. It also exposes a fresh, read-only combination catalog
 for one Worm event. That catalog preserves every child market, marks each market
-and YES/NO outcome with stable selectability reasons, and performs no margin
-estimate or mutation. The Athena API Server publishes the browse capability
+and YES/NO outcome with stable selectability reasons, and projects an optional
+pair of complementary last-trade prices. It performs no margin estimate or
+mutation. The Athena API Server publishes the browse capability
 under `/api/v1/worm-markets` and consumes the catalog only through the
 interactive Worm Trading Combinations facade.
 
@@ -25,7 +26,7 @@ adapter rather than part of this capability's application state.
 | Process composition and configuration | [cmd/athena-worm-markets/commands/athena-worm-markets.go](../../../cmd/athena-worm-markets/commands/athena-worm-markets.go) | `NewCommand` |
 | gRPC lifecycle and health | [internal/wormmarkets/server.go](../../../internal/wormmarkets/server.go) | `Server`, `NewServer`, `Start`, `Stop` |
 | Synchronization and browse API | [internal/wormmarkets/service.go](../../../internal/wormmarkets/service.go) | `Service`, `Start`, `syncWormMarketsOnce`, `ListWormEvents`, `GetWormEvent` |
-| Combination event catalog | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go) | `GetOrderEventCatalog`, `getOrderEventCatalogMarkets`, `getOrderEventCatalogMarket`, stable unavailable codes |
+| Combination event catalog | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go) | `GetOrderEventCatalog`, `getOrderEventCatalogMarkets`, `getOrderEventCatalogMarket`, `orderEventCatalogPricesFromLastTrade`, stable unavailable codes |
 | Notification policy and delivery | [internal/wormmarkets/notifications.go](../../../internal/wormmarkets/notifications.go) | `sendWormNotifications`, `newWormEventNotifications`, `newWormLiveNotification`, `newWormPriceAlertNotification` |
 | Internal service contract | [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `WormMarketsService` |
 | Public HTTP/gRPC contract | [internal/server/wormmarkets/wormmarkets.proto](../../../internal/server/wormmarkets/wormmarkets.proto) | `WormMarketsService` HTTP annotations |
@@ -67,10 +68,13 @@ margin-enabled Polymarket or Hyperliquid market exposes canonical YES and NO
 outcomes; each outcome is selectable only when its maximum leverage is a finite
 number at least `1`. Market-detail failures and invalid market, event, backend,
 outcome, or leverage data remain explicit catalog entries with stable
-`unavailable_code` values. `GetWormMarketsStatus` reports only whether the
-service lifecycle has started. The API Server shares one process-owned Worm
-Markets channel across browse, combination, and health requests and does not
-duplicate provider state.
+`unavailable_code` values. When Worm supplies a valid `last_trade_price`, the
+catalog uses it as the YES price and computes NO as the exact decimal complement
+to `1`; both prices are absent when a valid pair cannot be formed. Price presence
+does not participate in selectability. `GetWormMarketsStatus` reports only
+whether the service lifecycle has started. The API Server shares one
+process-owned Worm Markets channel across browse, combination, and health
+requests and does not duplicate provider state.
 
 ## Runtime Flow
 
@@ -118,9 +122,15 @@ duplicate provider state.
     ID mismatch, malformed or duplicate child IDs, and cancellation at the RPC
     boundary. Child detail reads are bounded to eight concurrent calls. A
     detail failure does not remove the summary: the child remains present with
-    `MARKET_DETAIL_UNAVAILABLE`. Other market-wide and per-outcome validation
-    failures use stable unavailable codes. This path calls neither the margin
-    estimate endpoint nor any Worm mutation.
+    `MARKET_DETAIL_UNAVAILABLE`, and a valid last-trade price from that same
+    Event summary may still provide its display-only price pair. A successful
+    detail supplies its own last-trade price. YES retains the provider decimal;
+    NO is calculated with exact decimal arithmetic as `1 - YES`. Missing,
+    malformed, or out-of-range values omit both prices without changing either
+    direction's selectability. Other market-wide and per-outcome validation
+    failures use stable unavailable codes. This path calls neither an additional
+    provider endpoint, the margin estimate endpoint, the database, nor any Worm
+    mutation.
 11. On `SIGINT` or `SIGTERM`, the command first gracefully stops gRPC, marks
     health `NOT_SERVING`, cancels all three loops, waits for them to exit, and
     closes its Notification channel and PostgreSQL. The API Server closes its
@@ -163,7 +173,10 @@ notification delivery record, or event cache is held in memory.
 The combination catalog is a request-scoped projection only. It is not written
 to `worm_markets_market`, cached across requests, or reused as saved-template
 state. Titles, logos, market state, backend, outcome labels, leverage strings,
-selectability, and unavailable codes live only in the current RPC response.
+optional last-trade prices, selectability, and unavailable codes live only in
+the current RPC response. The catalog price is a display observation from the
+provider response, not a best ask, midpoint, estimate, executable quote, or
+execution guarantee.
 
 ## Configuration
 
@@ -209,6 +222,9 @@ constants rather than runtime configuration.
 - A catalog outcome is selectable only when all market-wide checks pass and its
   own maximum leverage is finite and at least `1`; unavailable children remain
   visible with stable machine-readable reasons.
+- Catalog last-trade prices are either absent on both outcomes or valid decimal
+  values in `[0,1]` whose exact sum is `1`. Their presence never makes a
+  direction selectable or unselectable.
 - gRPC `SERVING` and `GetWormMarketsStatus.started=true` mean the loops were
   launched, not that an upstream sync has succeeded or that data is fresh.
 
@@ -246,9 +262,12 @@ waits until all background goroutines return.
 
 Provider failures in `GetOrderEventCatalog` fail the event RPC as `Unavailable`,
 except 404, which is `NotFound`. A child detail failure is isolated to that
-catalog item and makes both directions unselectable. Cancellation stops the
-bounded worker set and returns the context status. Because the catalog is not
-persisted, retry performs a new authoritative event and market read.
+catalog item and makes both directions unselectable; the Event summary can still
+supply its last-trade price for display. An absent or invalid provider price
+removes the complete YES/NO price pair rather than inventing a zero or weakening
+catalog validation. Cancellation stops the bounded worker set and returns the
+context status. Because the catalog is not persisted, retry performs a new
+authoritative event and market read.
 
 ## Observability
 
@@ -269,16 +288,17 @@ There are no Worm Markets-specific metrics, readiness probe, last-success
 timestamp, sync lag field, or durable notification-delivery diagnostics. Data
 freshness must currently be inferred from response `fetched_at` values, stored
 timestamps, and logs rather than health.
-`GetOrderEventCatalog` supplies its own request-time `fetched_at` and stable
-per-market/outcome unavailable codes; it adds no separate metric or readiness
-signal.
+`GetOrderEventCatalog` supplies its own request-time `fetched_at`, optional
+last-trade price pairs, and stable per-market/outcome unavailable codes. The
+timestamp records when Athena obtained the catalog; it is not the time of the
+provider's last trade. The catalog adds no separate metric or readiness signal.
 
 ## Change Checklist
 
 - [ ] Component responsibilities and boundaries still match this document.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
-- [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, and free of estimates and mutations.
+- [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, exact-complement-priced, and free of extra reads, persistence, estimates, and mutations.
 - [ ] Failure recovery, health checks, and observability are current.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

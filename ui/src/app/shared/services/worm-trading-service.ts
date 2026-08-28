@@ -181,6 +181,7 @@ export interface WormTradingEventOutcome {
     side: WormMarketOutcomeSide;
     label: string;
     maxLeverage: string;
+    lastTradePrice: string;
     selectable: boolean;
     unavailableCode: string;
 }
@@ -201,6 +202,7 @@ export interface WormTradingEvent {
     title: string;
     logo: string;
     markets: WormTradingEventMarket[];
+    fetchedAt: number;
 }
 
 export interface WormMarketCombinationItem {
@@ -641,12 +643,41 @@ const normalizeOutcomeSide = (value: unknown): WormMarketOutcomeSide => {
     return invalidWormTradingResponse();
 };
 
+const exactUnitDecimalMaximumLength = 128;
+
+const parseExactUnitDecimal = (value: string): {integer: bigint; scale: number} | undefined => {
+    if (value.length > exactUnitDecimalMaximumLength || !/^\d+(?:\.\d+)?$/.test(value)) {
+        return undefined;
+    }
+    const [whole, fraction = ''] = value.split('.');
+    const scale = fraction.length;
+    const denominator = 10n ** BigInt(scale);
+    const integer = BigInt(`${whole}${fraction}`);
+    if (integer > denominator) {
+        return undefined;
+    }
+    return {integer, scale};
+};
+
+const exactUnitDecimalsAreComplements = (yes: string, no: string): boolean => {
+    const yesPrice = parseExactUnitDecimal(yes);
+    const noPrice = parseExactUnitDecimal(no);
+    if (!yesPrice || !noPrice) {
+        return false;
+    }
+    const scale = Math.max(yesPrice.scale, noPrice.scale);
+    const yesInteger = yesPrice.integer * 10n ** BigInt(scale - yesPrice.scale);
+    const noInteger = noPrice.integer * 10n ** BigInt(scale - noPrice.scale);
+    return yesInteger + noInteger === 10n ** BigInt(scale);
+};
+
 const normalizeEventOutcome = (value: unknown): WormTradingEventOutcome => {
     const item = requireRecord(value);
     const side = normalizeOutcomeSide(item.side);
     const selectable = requireExactBoolean(item, 'selectable');
     const unavailableCode = optionalExactString(item, 'unavailableCode');
     const maxLeverage = optionalExactString(item, 'maxLeverage');
+    const lastTradePrice = optionalExactString(item, 'lastTradePrice');
     if ((selectable && unavailableCode !== '') || (!selectable && unavailableCode === '')) {
         return invalidWormTradingResponse();
     }
@@ -656,10 +687,14 @@ const normalizeEventOutcome = (value: unknown): WormTradingEventOutcome => {
             return invalidWormTradingResponse();
         }
     }
+    if (lastTradePrice !== '' && !parseExactUnitDecimal(lastTradePrice)) {
+        return invalidWormTradingResponse();
+    }
     return {
         side,
         label: requireExactString(item, 'label'),
         maxLeverage,
+        lastTradePrice,
         selectable,
         unavailableCode
     };
@@ -670,6 +705,11 @@ const normalizeEventMarket = (value: unknown): WormTradingEventMarket => {
     const outcomes = requireExactArray(item, 'outcomes').map(normalizeEventOutcome);
     const sides = new Set(outcomes.map(outcome => outcome.side));
     if (outcomes.length !== 2 || sides.size !== 2 || !sides.has('YES') || !sides.has('NO')) {
+        return invalidWormTradingResponse();
+    }
+    const yesPrice = outcomes.find(outcome => outcome.side === 'YES')?.lastTradePrice || '';
+    const noPrice = outcomes.find(outcome => outcome.side === 'NO')?.lastTradePrice || '';
+    if ((yesPrice === '') !== (noPrice === '') || (yesPrice !== '' && !exactUnitDecimalsAreComplements(yesPrice, noPrice))) {
         return invalidWormTradingResponse();
     }
     return {
@@ -698,7 +738,8 @@ const normalizeTradingEvent = (value: unknown, expectedEventConditionID?: string
         eventConditionId,
         title: requireExactString(item, 'title'),
         logo: optionalExactString(item, 'logo'),
-        markets
+        markets,
+        fetchedAt: requireInteger(item, 1, 'fetchedAt')
     };
 };
 

@@ -35,13 +35,16 @@ message GetOrderEventCatalogRequest {
 
 // OrderEventCatalogOutcome is one canonical YES or NO direction. A direction
 // is selectable only when the market-wide checks and its own 1x leverage check
-// pass. unavailable_code is a stable machine-readable reason.
+// pass. unavailable_code is a stable machine-readable reason. When the
+// provider supplies one valid market last-trade price, last_trade_price is the
+// exact YES price or its exact NO complement.
 message OrderEventCatalogOutcome {
   bool is_yes = 1;
   string label = 2;
   string max_leverage = 3;
   bool selectable = 4;
   string unavailable_code = 5;
+  string last_trade_price = 6;
 }
 
 // OrderEventCatalogMarket is one child market of an order event. Detail

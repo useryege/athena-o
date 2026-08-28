@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"math"
+	"math/big"
 	"mime"
 	"net/http"
 	"strconv"
@@ -37,6 +38,7 @@ const (
 	wormCombinationMaximumNameRunes = 80
 	wormCatalogFetchConcurrency     = 4
 	wormCatalogResolveBudget        = 45 * time.Second
+	wormCatalogMaximumPriceLength   = 128
 )
 
 type wormCombinationInput struct {
@@ -74,6 +76,7 @@ type wormEventCatalogOutcome struct {
 	Side            string `json:"side"`
 	Label           string `json:"label"`
 	MaxLeverage     string `json:"maxLeverage"`
+	LastTradePrice  string `json:"lastTradePrice"`
 	Selectable      bool   `json:"selectable"`
 	UnavailableCode string `json:"unavailableCode"`
 }
@@ -572,6 +575,9 @@ func projectWormOrderEventMarket(
 	if _, ok := seenSides["NO"]; !ok {
 		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets omitted the NO market outcome")
 	}
+	if err := validateWormOrderEventPrices(projected.Outcomes); err != nil {
+		return wormEventCatalogMarket{}, err
+	}
 	for _, outcome := range projected.Outcomes {
 		if outcome.Selectable && (projected.UnavailableCode != "" || projected.State != "open" || !projected.MarginEnabled || (projected.Backend != "polymarket" && projected.Backend != "hyperliquid")) {
 			return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned an unsafe selectable market outcome")
@@ -590,9 +596,15 @@ func projectWormOrderEventOutcome(outcome *wormmarketsapiclient.OrderEventCatalo
 	}
 	label := strings.TrimSpace(outcome.GetLabel())
 	maxLeverage := strings.TrimSpace(outcome.GetMaxLeverage())
+	lastTradePrice := strings.TrimSpace(outcome.GetLastTradePrice())
 	unavailableCode := strings.TrimSpace(outcome.GetUnavailableCode())
-	if label == "" || unavailableCode != outcome.GetUnavailableCode() {
+	if label == "" || lastTradePrice != outcome.GetLastTradePrice() || unavailableCode != outcome.GetUnavailableCode() {
 		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an invalid market outcome")
+	}
+	if lastTradePrice != "" {
+		if _, ok := parseWormOrderEventPrice(lastTradePrice); !ok {
+			return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an invalid market last-trade price")
+		}
 	}
 	if outcome.GetSelectable() {
 		leverage, err := strconv.ParseFloat(maxLeverage, 64)
@@ -606,9 +618,53 @@ func projectWormOrderEventOutcome(outcome *wormmarketsapiclient.OrderEventCatalo
 		Side:            side,
 		Label:           label,
 		MaxLeverage:     maxLeverage,
+		LastTradePrice:  lastTradePrice,
 		Selectable:      outcome.GetSelectable(),
 		UnavailableCode: unavailableCode,
 	}, nil
+}
+
+func validateWormOrderEventPrices(outcomes []wormEventCatalogOutcome) error {
+	prices := make(map[string]string, len(outcomes))
+	for _, outcome := range outcomes {
+		prices[outcome.Side] = outcome.LastTradePrice
+	}
+	yesPrice := prices["YES"]
+	noPrice := prices["NO"]
+	if (yesPrice == "") != (noPrice == "") {
+		return status.Error(codes.Internal, "Worm Markets returned an incomplete market last-trade price pair")
+	}
+	if yesPrice == "" {
+		return nil
+	}
+	yes, yesOK := parseWormOrderEventPrice(yesPrice)
+	no, noOK := parseWormOrderEventPrice(noPrice)
+	if !yesOK || !noOK || new(big.Rat).Add(yes, no).Cmp(big.NewRat(1, 1)) != 0 {
+		return status.Error(codes.Internal, "Worm Markets returned a non-complementary market last-trade price pair")
+	}
+	return nil
+}
+
+func parseWormOrderEventPrice(value string) (*big.Rat, bool) {
+	if value == "" || len(value) > wormCatalogMaximumPriceLength || value != strings.TrimSpace(value) {
+		return nil, false
+	}
+	parts := strings.Split(value, ".")
+	if len(parts) > 2 || parts[0] == "" || (len(parts) == 2 && parts[1] == "") {
+		return nil, false
+	}
+	for _, part := range parts {
+		for _, character := range part {
+			if character < '0' || character > '9' {
+				return nil, false
+			}
+		}
+	}
+	price, ok := new(big.Rat).SetString(value)
+	if !ok || price.Sign() < 0 || price.Cmp(big.NewRat(1, 1)) > 0 {
+		return nil, false
+	}
+	return price, true
 }
 
 func projectWormCombination(
