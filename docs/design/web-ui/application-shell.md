@@ -187,12 +187,14 @@ Cards are keyboard-operable and all icon-only controls have accessible labels.
     deterministic wallet-type/address avatar. JPEG, PNG, and WebP receive local
     type/2-MiB feedback before the server performs authoritative decoding.
 21. View / Export first calls the same-origin reveal resource. A missing lease
-    branches by persisted login provider: Google stores only wallet ID/action in
-    `sessionStorage` and navigates to the fresh OIDC flow; Solana connects the
-    same persisted Phantom address, signs the server message, verifies it, and
-    retries reveal; isolated disabled-auth development requests its loopback
-    lease. The result modal offers masked display and copy only, never a
-    plaintext download.
+    returns `401 WALLET_REAUTH_REQUIRED`, which the global request subscriber
+    leaves to the Wallet flow instead of ending the login session or unmounting
+    its `SensitiveWriteScope`. The page then branches by persisted login
+    provider: Google stores only wallet ID/action in `sessionStorage` and
+    navigates to the fresh OIDC flow; Solana connects the same persisted Phantom
+    address, signs the server message, verifies it, and retries reveal; isolated
+    disabled-auth development requests its loopback lease. The result modal
+    offers masked display and copy only, never a plaintext download.
 22. Closing a secret or backup result, leaving the route, changing account or
     access projection, losing Wallet write access, or unmounting the sensitive
     scope drops all private-key references and aborts scoped work. The Google
@@ -337,10 +339,12 @@ failure starts new one-time state on retry.
 Wallet revision conflict reloads the latest selected item before another edit.
 Object-store failure leaves safe Wallet list/detail and private-key flows usable;
 an uploaded-image read failure falls back to the generated avatar. A missing or
-expired wallet-secret lease starts provider reauthentication, while provider or
-Redis unavailability reports a stable reason and retains no private-key result.
-If a reveal succeeds but the associated safe item cannot be resolved, the key
-is discarded rather than displayed without ownership context.
+expired wallet-secret lease starts provider reauthentication without treating
+the step-up response as an expired Athena login. Other authentication failures
+still return to Login. Provider or Redis unavailability reports a stable reason
+and retains no private-key result. If a reveal succeeds but the associated safe
+item cannot be resolved, the key is discarded rather than displayed without
+ownership context.
 
 Connect AI creation failure leaves the creation form available for correction.
 Credential verification failure exposes a retry action and explanatory status

@@ -47,10 +47,11 @@ func registerWalletSecretHandlers(mux *http.ServeMux, handler *walletsecrethttp.
 	if handler == nil {
 		return
 	}
-	// net/http wildcards occupy a complete path segment, so the handler owns
-	// the current POST subtree and validates the exact `{id}:revealPrivateKey`
-	// suffix before authenticating or calling Wallet.
-	mux.Handle("POST /api/v1/wallets/", traceHTTP(http.HandlerFunc(handler.Reveal)))
+	// net/http wildcards occupy a complete path segment, so this registration
+	// owns only one POST resource below /wallets. The handler still validates
+	// the exact `{id}:revealPrivateKey` suffix before authenticating or calling
+	// Wallet, while collection routes continue to the gRPC gateway.
+	mux.Handle("POST /api/v1/wallets/{secretResource}", traceHTTP(http.HandlerFunc(handler.Reveal)))
 }
 
 func (server *AthenaServer) authenticateWalletSecretHTTP(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {

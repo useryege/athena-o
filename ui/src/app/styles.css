@@ -434,7 +434,13 @@ body,
     }
 
     .wallet-pagination.ant-pagination {
+        width: 100%;
+        min-width: 0;
         justify-content: center;
+    }
+
+    .wallet-pagination.ant-pagination .ant-pagination-total-text {
+        display: none;
     }
 }
 

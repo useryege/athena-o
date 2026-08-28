@@ -38,7 +38,8 @@ import {AccountDataAccess, AccountDataModule, accountDataModules} from './shared
 import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from './shared/account-access';
 import {accountStatusForAccess, AccountStatus, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, AuthSettings, UserInfo} from './shared/models';
 import {services, ThemeMode, ViewPreferences} from './shared/services';
-import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError, requestErrorMessage} from './shared/services/requests';
+import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError, requestErrorDetails, requestErrorMessage} from './shared/services/requests';
+import {WALLET_REAUTH_REQUIRED} from './shared/services/wallet-service';
 import {loginPathFor, readLoginReturnTo} from './shared/login-navigation';
 import {BrandMark, clearAsyncDataCache} from './components';
 import {clearProjectsReturnSnapshots} from './pages/project-navigation';
@@ -879,8 +880,12 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 void refreshAfterAccessDenied();
                 return;
             }
+            const details = requestErrorDetails(err);
+            if (details.status === 401 && details.reason === WALLET_REAUTH_REQUIRED) {
+                return;
+            }
             const maintenance = isAccountMaintenanceError(err);
-            if (!maintenance && err.status !== 401) {
+            if (!maintenance && details.status !== 401) {
                 return;
             }
             if (window.location.pathname.startsWith(`${base.replace(/\/$/, '')}/login`)) {
@@ -1212,7 +1217,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                             open={accountMenuOpen}
                             trigger={['click']}
                             placement='topLeft'
-                            overlayClassName='athena-account-menu'
+                            classNames={{root: 'athena-account-menu'}}
                             destroyOnHidden={true}
                             menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
                             getPopupContainer={trigger => (trigger.closest('.athena-sidebar-footer') as HTMLElement) || sidebarRef.current || document.body}

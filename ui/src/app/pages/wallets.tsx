@@ -203,7 +203,7 @@ const WalletCreateImportModal = (props: {
             open={Boolean(props.mode)}
             title={title}
             footer={null}
-            maskClosable={!props.submitting}
+            mask={{closable: !props.submitting}}
             closable={!props.submitting}
             keyboard={!props.submitting}
             onCancel={props.onCancel}>
@@ -272,17 +272,17 @@ const WalletBackupModal = (props: {
         width={680}
         closable={false}
         keyboard={false}
-        maskClosable={false}
+        mask={{closable: false}}
         footer={
             <Button type='primary' disabled={!props.confirmed} onClick={props.onDone}>
                 Done
             </Button>
         }>
-        <Space direction='vertical' size='middle' className='wallet-secret-stack'>
+        <Space orientation='vertical' size='middle' className='wallet-secret-stack'>
             <Alert
                 showIcon={true}
                 type='warning'
-                message='This is the only automatic display after creation'
+                title='This is the only automatic display after creation'
                 description='Store the private key somewhere secure. Anyone with this key can control the wallet. Athena will never ask you to share it.'
             />
             <div className='wallet-secret-field'>
@@ -323,11 +323,11 @@ const WalletSecretModal = (props: {secret?: RevealedWalletSecret; onClose: () =>
         width={680}
         onCancel={props.onClose}
         footer={<Button onClick={props.onClose}>Close</Button>}>
-        <Space direction='vertical' size='middle' className='wallet-secret-stack'>
+        <Space orientation='vertical' size='middle' className='wallet-secret-stack'>
             <Alert
                 showIcon={true}
                 type='warning'
-                message='Keep this private key secret'
+                title='Keep this private key secret'
                 description='Export means revealing or copying the key. Athena does not create a plaintext download file.'
             />
             <div className='wallet-secret-heading'>
@@ -400,7 +400,7 @@ const WalletDetailDrawer = (props: {
     return (
         <Drawer
             rootClassName='wallet-detail-drawer'
-            width={520}
+            size={520}
             open={Boolean(item)}
             title='Wallet Details'
             onClose={props.onClose}
@@ -538,7 +538,7 @@ const WalletDetailDrawer = (props: {
                                 </span>
                             </>
                         ) : (
-                            <Alert type='info' showIcon={true} message='Read-only wallet access does not include private keys.' />
+                            <Alert type='info' showIcon={true} title='Read-only wallet access does not include private keys.' />
                         )}
                     </section>
                 </div>
@@ -1166,6 +1166,7 @@ export const WalletsPage = () => {
             {(data.data?.total || 0) > pageSize && (
                 <Pagination
                     className='wallet-pagination'
+                    responsive={true}
                     current={page}
                     pageSize={pageSize}
                     total={data.data?.total || 0}

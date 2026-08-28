@@ -67,7 +67,12 @@ lifetime, but every reveal still repeats login-session validation, Wallet
    same origin, an Athena login cookie, Wallet `READ_WRITE`, and a valid lease.
    It never accepts an account UUID from the browser. A missing login session or
    API Key returns `WALLET_LOGIN_SESSION_REQUIRED`; a missing, expired, or stale
-   lease returns `WALLET_REAUTH_REQUIRED`.
+   lease returns `WALLET_REAUTH_REQUIRED`. That 401 response is an interactive
+   step-up challenge, not evidence that the Athena login session is invalid.
+   The Wallet browser flow handles it locally, preserves its sensitive-write
+   scope, obtains the provider-specific lease, and retries the reveal; global
+   session-expiry handling must not log out or unmount the Wallet flow for this
+   stable reason.
 2. A Google account starts `GET /auth/wallet-secrets/google?returnTo=/wallet`.
    The server validates the current login, provider, Wallet permission, and safe
    return path, then stores a one-time five-minute transaction containing PKCE,
