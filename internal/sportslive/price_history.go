@@ -21,11 +21,9 @@ const (
 )
 
 type sportsLivePriceHistoryToken struct {
-	tokenID     string
-	marketKey   string
-	eventKey    string
-	conditionID string
-	outcome     string
+	tokenID   string
+	marketKey string
+	outcome   string
 }
 
 type sportsLivePriceHistoryPointKey struct {
@@ -146,14 +144,12 @@ func (s *Service) syncSportsLivePriceHistoryBatch(ctx context.Context, tokenIDs 
 			rawPointCount++
 			key := sportsLivePriceHistoryPointKey{tokenID: token.tokenID, priceTs: point.T}
 			pointsByKey[key] = sportslivestore.SportsLivePricePoint{
-				TokenID:     token.tokenID,
-				MarketKey:   token.marketKey,
-				EventKey:    token.eventKey,
-				ConditionID: token.conditionID,
-				Outcome:     token.outcome,
-				PriceTs:     time.Unix(point.T, 0).UTC(),
-				Price:       point.P,
-				FetchedAt:   fetchedAt,
+				TokenID:   token.tokenID,
+				MarketKey: token.marketKey,
+				Outcome:   token.outcome,
+				PriceTs:   time.Unix(point.T, 0).UTC(),
+				Price:     point.P,
+				FetchedAt: fetchedAt,
 			}
 		}
 	}
@@ -171,8 +167,17 @@ func (s *Service) syncSportsLivePriceHistoryBatch(ctx context.Context, tokenIDs 
 			"duplicate_point_count": duplicateCount,
 		}).Debug("deduped polymarket sports live price history batch")
 	}
-	if err := s.store.BatchUpsertSportsLivePricePoints(ctx, points); err != nil {
+	upsertedCount, err := s.store.BatchUpsertSportsLivePricePoints(ctx, points)
+	if err != nil {
 		log.WithError(err).WithField("point_count", len(points)).Warn("failed to upsert polymarket sports live price history batch")
+		return
+	}
+	if skippedCount := int64(len(points)) - upsertedCount; skippedCount > 0 {
+		log.WithFields(log.Fields{
+			"point_count":          len(points),
+			"upserted_point_count": upsertedCount,
+			"skipped_point_count":  skippedCount,
+		}).Debug("skipped polymarket sports live price points for stale or deleting markets")
 	}
 }
 
@@ -194,11 +199,9 @@ func sportsLivePriceHistoryTokens(markets []sportslivestore.SportsLivePriceHisto
 				outcome = strings.TrimSpace(outcomes[i])
 			}
 			out[tokenID] = sportsLivePriceHistoryToken{
-				tokenID:     tokenID,
-				marketKey:   strings.TrimSpace(market.MarketKey),
-				eventKey:    strings.TrimSpace(market.EventKey),
-				conditionID: strings.TrimSpace(market.ConditionID),
-				outcome:     outcome,
+				tokenID:   tokenID,
+				marketKey: strings.TrimSpace(market.MarketKey),
+				outcome:   outcome,
 			}
 		}
 	}

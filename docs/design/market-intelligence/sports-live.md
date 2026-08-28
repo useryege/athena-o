@@ -54,7 +54,9 @@ flowchart LR
 One process owns two cancellable background loops. The event loop refreshes the
 current event and market snapshot. The price loop derives its token set from
 that snapshot and appends CLOB history. Both use one capability-specific
-PostgreSQL database, but they do not share one cross-loop transaction.
+PostgreSQL database, but they do not share one cross-loop transaction. Price
+point and price-alert state writes instead reacquire their current parent market
+rows with short, statement-scoped key-share locks before inserting child rows.
 
 Read RPCs are served only from `sports_live` PostgreSQL. Gamma and CLOB are not
 called on the request path. Notification is an optional process-owned gRPC
@@ -86,14 +88,22 @@ capability.
    moneyline markets with token IDs, backfills six hours for a new token, or
    resumes two minutes before its latest point. Token requests sharing a start
    time are sorted and sent to CLOB in batches of at most 20 at fidelity 1.
-7. Each price batch deduplicates by token and timestamp and upserts its points.
-   Individual provider or database batch failures are logged without aborting
-   later batches in the pass.
+7. Each price batch deduplicates by token and timestamp, expands the batch in
+   one SQL statement, and attempts to key-share lock its distinct current parent
+   markets without waiting for markets already being deleted. Only points whose
+   parent lock was acquired are upserted, using the current market's canonical
+   event and condition identities. A concurrent deletion either makes the
+   affected points an expected skip or waits for the short insert statement and
+   then removes them through the existing cascade. Individual provider or
+   database batch failures are logged without aborting later batches in the
+   pass.
 8. After processing all price batches, the service evaluates the latest price
    of each token. Alert bands correspond to prices below 0.15, 0.10, 0.05, 0.03,
    and 0.01. Moving to a more extreme band bypasses cooldown; repeating the same
    band requires the configured cooldown. Returning to the middle range removes
-   the token's alert state.
+   the token's alert state. After Notification accepts an alert, its state is
+   conditionally upserted with the same parent-market lock rule; a market already
+   being removed makes the state write an expected skip.
 9. Event reads default to 200 items and accept at most 1,000. They include the
    durable last-success time and are stale when that time is absent or older
    than two event-sync intervals. Price-history reads deduplicate requested
@@ -105,9 +115,11 @@ capability.
     one separate Sports Live channel for all proxy and health requests and
     closes it after its serving lifecycle ends.
 
-The event snapshot and sync timestamp share one explicit transaction. Each CLOB
-price batch, price-alert state update, score-alert state update, and Notification
-enqueue is a separate operation.
+The event snapshot and sync timestamp share one explicit transaction. Every CLOB
+price batch and price-alert state update runs as a separate single-statement
+transaction whose parent-market lock lasts only through the conditional child
+write. Each score-alert state update and Notification enqueue remains a separate
+operation, and no network request is made while holding a database lock.
 
 ## State / Data
 
@@ -120,7 +132,9 @@ enqueue is a separate operation.
 - `sports_live_sync_state` stores the last committed snapshot time for the
   fixed `sports_live_markets` sync name.
 - `sports_live_price_point` is keyed by `(token_id, price_ts)` and references
-  its market. It is the durable source for history reads and price alerts.
+  its market. It is the durable source for history reads and price alerts. Its
+  event and condition identities come from the locked current market row at
+  write time.
 - `sports_live_price_alert_state` is keyed by token and records the active
   alert band, last notification time, last point, and price.
 - `sports_live_score_alert_state` is keyed by event and stores the comparison
@@ -160,6 +174,9 @@ are implementation constants.
   derivative event titles are excluded.
 - Price points must have usable token and market identities and prices between
   zero and one.
+- Price-point and price-alert state inserts persist only when their current
+  parent market can be key-share locked; parents already being deleted are
+  skipped without weakening the foreign keys or retaining orphan rows.
 - Initial score-state seeding prevents existing scores from being emitted as
   score changes on first observation.
 - Price and score alert state is advanced only after Notification accepts the
@@ -181,14 +198,20 @@ durable success time is older than 20 seconds.
 
 CLOB batches are independent. A failed batch leaves its earlier points intact,
 later batches continue, and the overlap window repairs missing recent points on
-a later pass. Alert evaluation uses whatever latest points are durable after
-that pass.
+a later pass. Points for markets already being deleted are omitted from the
+batch while points for its other markets still commit; if the point insert wins
+the parent-row lock first, the later market deletion waits and then cascades the
+new points. Alert evaluation uses whatever latest points are durable after that
+pass.
 
 Notification failures leave price or score state unchanged and are retried when
 the candidate is evaluated again. If Notification accepts a request but the
 following state write fails, a later pass may enqueue a duplicate because the
-cross-service send and PostgreSQL write are not atomic. Disabling Notification
-does not disable event or price synchronization.
+cross-service send and PostgreSQL write are not atomic. If the parent market is
+already being removed after Notification acceptance, the conditional price
+state write is skipped instead of failing its foreign key; a later reappearance
+is evaluated as current state again. Disabling Notification does not disable
+event or price synchronization.
 
 Cancellation propagates to provider, database, and notification calls.
 Graceful shutdown waits for both loops. Durable snapshots, price points, and
@@ -210,9 +233,10 @@ The API Server exposes:
 All methods require `sports-live:get`. Event responses expose the last
 successful snapshot time and stale flag. Logs distinguish initial and periodic
 event or price failures, include token or condition IDs for alert failures, and
-report deduplicated price-point counts at debug level. There are no
-capability-specific metrics, price-sync success timestamp, or
-freshness-dependent readiness probe.
+report deduplicated price-point counts at debug level. Debug logs also report
+price points skipped for stale or deleting markets and alert-state writes
+skipped for a stale or deleting parent market. There are no capability-specific
+metrics, price-sync success timestamp, or freshness-dependent readiness probe.
 
 ## Change Checklist
 

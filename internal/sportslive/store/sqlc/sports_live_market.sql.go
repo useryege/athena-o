@@ -453,7 +453,31 @@ func (q *Queries) BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUps
 	return err
 }
 
-const batchUpsertSportsLivePricePoints = `-- name: BatchUpsertSportsLivePricePoints :exec
+const batchUpsertSportsLivePricePoints = `-- name: BatchUpsertSportsLivePricePoints :execrows
+WITH input AS MATERIALIZED (
+  SELECT
+    unnest($1::text[]) AS token_id,
+    unnest($2::text[]) AS market_key,
+    unnest($3::text[]) AS outcome,
+    unnest($4::timestamptz[]) AS price_ts,
+    unnest($5::double precision[]) AS price,
+    unnest($6::timestamptz[]) AS fetched_at
+),
+requested_market_keys AS MATERIALIZED (
+  SELECT DISTINCT market_key
+  FROM input
+),
+locked_markets AS MATERIALIZED (
+  SELECT
+    market.market_key,
+    market.event_key,
+    market.condition_id
+  FROM sports_live_market AS market
+  JOIN requested_market_keys AS requested
+    ON requested.market_key = market.market_key
+  ORDER BY market.market_key
+  FOR KEY SHARE OF market SKIP LOCKED
+)
 INSERT INTO sports_live_price_point (
   token_id,
   market_key,
@@ -465,14 +489,17 @@ INSERT INTO sports_live_price_point (
   fetched_at
 )
 SELECT
-  unnest($1::text[]),
-  unnest($2::text[]),
-  unnest($3::text[]),
-  unnest($4::text[]),
-  unnest($5::text[]),
-  unnest($6::timestamptz[]),
-  unnest($7::double precision[]),
-  unnest($8::timestamptz[])
+  input.token_id,
+  input.market_key,
+  locked_markets.event_key,
+  locked_markets.condition_id,
+  input.outcome,
+  input.price_ts,
+  input.price,
+  input.fetched_at
+FROM input
+JOIN locked_markets ON locked_markets.market_key = input.market_key
+ORDER BY input.market_key, input.token_id, input.price_ts
 ON CONFLICT (token_id, price_ts) DO UPDATE
 SET market_key = EXCLUDED.market_key,
   event_key = EXCLUDED.event_key,
@@ -486,26 +513,25 @@ SET market_key = EXCLUDED.market_key,
 type BatchUpsertSportsLivePricePointsParams struct {
 	TokenIds        []string
 	MarketKeys      []string
-	EventKeys       []string
-	ConditionIds    []string
 	Outcomes        []string
 	PriceTsValues   []pgtype.Timestamptz
 	PriceValues     []float64
 	FetchedAtValues []pgtype.Timestamptz
 }
 
-func (q *Queries) BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error {
-	_, err := q.db.Exec(ctx, batchUpsertSportsLivePricePoints,
+func (q *Queries) BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, batchUpsertSportsLivePricePoints,
 		arg.TokenIds,
 		arg.MarketKeys,
-		arg.EventKeys,
-		arg.ConditionIds,
 		arg.Outcomes,
 		arg.PriceTsValues,
 		arg.PriceValues,
 		arg.FetchedAtValues,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteSportsLiveEventsNotSeenSince = `-- name: DeleteSportsLiveEventsNotSeenSince :execrows
@@ -1089,7 +1115,16 @@ func (q *Queries) UpdateSportsLiveScoreAlertState(ctx context.Context, arg Updat
 	return err
 }
 
-const upsertSportsLivePriceAlertState = `-- name: UpsertSportsLivePriceAlertState :exec
+const upsertSportsLivePriceAlertState = `-- name: UpsertSportsLivePriceAlertState :execrows
+WITH locked_market AS MATERIALIZED (
+  SELECT
+    market.market_key,
+    market.event_key,
+    market.condition_id
+  FROM sports_live_market AS market
+  WHERE market.market_key = $7
+  FOR KEY SHARE OF market SKIP LOCKED
+)
 INSERT INTO sports_live_price_alert_state (
   token_id,
   market_key,
@@ -1101,17 +1136,17 @@ INSERT INTO sports_live_price_alert_state (
   last_price_ts,
   last_price
 )
-VALUES (
+SELECT
   $1,
+  locked_market.market_key,
+  locked_market.event_key,
+  locked_market.condition_id,
   $2,
   $3,
   $4,
   $5,
-  $6,
-  $7,
-  $8,
-  $9
-)
+  $6
+FROM locked_market
 ON CONFLICT (token_id) DO UPDATE
 SET market_key = EXCLUDED.market_key,
   event_key = EXCLUDED.event_key,
@@ -1126,29 +1161,28 @@ SET market_key = EXCLUDED.market_key,
 
 type UpsertSportsLivePriceAlertStateParams struct {
 	TokenID       string
-	MarketKey     string
-	EventKey      string
-	ConditionID   string
 	Outcome       string
 	AlertBand     string
 	LastAlertedAt pgtype.Timestamptz
 	LastPriceTs   pgtype.Timestamptz
 	LastPrice     float64
+	MarketKey     string
 }
 
-func (q *Queries) UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error {
-	_, err := q.db.Exec(ctx, upsertSportsLivePriceAlertState,
+func (q *Queries) UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) (int64, error) {
+	result, err := q.db.Exec(ctx, upsertSportsLivePriceAlertState,
 		arg.TokenID,
-		arg.MarketKey,
-		arg.EventKey,
-		arg.ConditionID,
 		arg.Outcome,
 		arg.AlertBand,
 		arg.LastAlertedAt,
 		arg.LastPriceTs,
 		arg.LastPrice,
+		arg.MarketKey,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertSportsLiveSyncState = `-- name: UpsertSportsLiveSyncState :exec

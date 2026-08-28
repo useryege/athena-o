@@ -13,7 +13,7 @@ import (
 type Querier interface {
 	BatchUpsertSportsLiveEvents(ctx context.Context, arg BatchUpsertSportsLiveEventsParams) error
 	BatchUpsertSportsLiveMarkets(ctx context.Context, arg BatchUpsertSportsLiveMarketsParams) error
-	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) error
+	BatchUpsertSportsLivePricePoints(ctx context.Context, arg BatchUpsertSportsLivePricePointsParams) (int64, error)
 	DeleteSportsLiveEventsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLiveMarketsNotSeenSince(ctx context.Context, lastSeenAt pgtype.Timestamptz) (int64, error)
 	DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error
@@ -28,7 +28,7 @@ type Querier interface {
 	Ping(ctx context.Context) (int32, error)
 	SeedSportsLiveScoreAlertStates(ctx context.Context) error
 	UpdateSportsLiveScoreAlertState(ctx context.Context, arg UpdateSportsLiveScoreAlertStateParams) error
-	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) error
+	UpsertSportsLivePriceAlertState(ctx context.Context, arg UpsertSportsLivePriceAlertStateParams) (int64, error)
 	UpsertSportsLiveSyncState(ctx context.Context, arg UpsertSportsLiveSyncStateParams) error
 }
 

@@ -422,7 +422,16 @@ JOIN sports_live_event AS event ON event.event_key = latest.event_key
 LEFT JOIN sports_live_price_alert_state AS state ON state.token_id = latest.token_id
 ORDER BY event.volume DESC, market.liquidity_num DESC, latest.market_key, latest.token_id;
 
--- name: UpsertSportsLivePriceAlertState :exec
+-- name: UpsertSportsLivePriceAlertState :execrows
+WITH locked_market AS MATERIALIZED (
+  SELECT
+    market.market_key,
+    market.event_key,
+    market.condition_id
+  FROM sports_live_market AS market
+  WHERE market.market_key = @market_key
+  FOR KEY SHARE OF market SKIP LOCKED
+)
 INSERT INTO sports_live_price_alert_state (
   token_id,
   market_key,
@@ -434,17 +443,17 @@ INSERT INTO sports_live_price_alert_state (
   last_price_ts,
   last_price
 )
-VALUES (
+SELECT
   @token_id,
-  @market_key,
-  @event_key,
-  @condition_id,
+  locked_market.market_key,
+  locked_market.event_key,
+  locked_market.condition_id,
   @outcome,
   @alert_band,
   @last_alerted_at,
   @last_price_ts,
   @last_price
-)
+FROM locked_market
 ON CONFLICT (token_id) DO UPDATE
 SET market_key = EXCLUDED.market_key,
   event_key = EXCLUDED.event_key,
@@ -489,7 +498,31 @@ SET last_score = btrim(@score),
   updated_at = now()
 WHERE event_key = @event_key;
 
--- name: BatchUpsertSportsLivePricePoints :exec
+-- name: BatchUpsertSportsLivePricePoints :execrows
+WITH input AS MATERIALIZED (
+  SELECT
+    unnest(sqlc.arg('token_ids')::text[]) AS token_id,
+    unnest(sqlc.arg('market_keys')::text[]) AS market_key,
+    unnest(sqlc.arg('outcomes')::text[]) AS outcome,
+    unnest(sqlc.arg('price_ts_values')::timestamptz[]) AS price_ts,
+    unnest(sqlc.arg('price_values')::double precision[]) AS price,
+    unnest(sqlc.arg('fetched_at_values')::timestamptz[]) AS fetched_at
+),
+requested_market_keys AS MATERIALIZED (
+  SELECT DISTINCT market_key
+  FROM input
+),
+locked_markets AS MATERIALIZED (
+  SELECT
+    market.market_key,
+    market.event_key,
+    market.condition_id
+  FROM sports_live_market AS market
+  JOIN requested_market_keys AS requested
+    ON requested.market_key = market.market_key
+  ORDER BY market.market_key
+  FOR KEY SHARE OF market SKIP LOCKED
+)
 INSERT INTO sports_live_price_point (
   token_id,
   market_key,
@@ -501,14 +534,17 @@ INSERT INTO sports_live_price_point (
   fetched_at
 )
 SELECT
-  unnest(sqlc.arg('token_ids')::text[]),
-  unnest(sqlc.arg('market_keys')::text[]),
-  unnest(sqlc.arg('event_keys')::text[]),
-  unnest(sqlc.arg('condition_ids')::text[]),
-  unnest(sqlc.arg('outcomes')::text[]),
-  unnest(sqlc.arg('price_ts_values')::timestamptz[]),
-  unnest(sqlc.arg('price_values')::double precision[]),
-  unnest(sqlc.arg('fetched_at_values')::timestamptz[])
+  input.token_id,
+  input.market_key,
+  locked_markets.event_key,
+  locked_markets.condition_id,
+  input.outcome,
+  input.price_ts,
+  input.price,
+  input.fetched_at
+FROM input
+JOIN locked_markets ON locked_markets.market_key = input.market_key
+ORDER BY input.market_key, input.token_id, input.price_ts
 ON CONFLICT (token_id, price_ts) DO UPDATE
 SET market_key = EXCLUDED.market_key,
   event_key = EXCLUDED.event_key,

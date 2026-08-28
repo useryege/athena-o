@@ -183,17 +183,18 @@ func (s *SQLStore) ListSportsLiveLatestPricePointTimes(ctx context.Context, toke
 	return out, nil
 }
 
-func (s *SQLStore) BatchUpsertSportsLivePricePoints(ctx context.Context, points []SportsLivePricePoint) error {
+func (s *SQLStore) BatchUpsertSportsLivePricePoints(ctx context.Context, points []SportsLivePricePoint) (int64, error) {
 	if s == nil || s.queries == nil {
-		return fmt.Errorf("sports live postgres database is not configured")
+		return 0, fmt.Errorf("sports live postgres database is not configured")
 	}
 	if len(points) == 0 {
-		return nil
+		return 0, nil
 	}
-	if err := s.queries.BatchUpsertSportsLivePricePoints(ctx, batchUpsertSportsLivePricePointsParams(points)); err != nil {
-		return fmt.Errorf("batch upsert sports live price points: %w", err)
+	upsertedCount, err := s.queries.BatchUpsertSportsLivePricePoints(ctx, batchUpsertSportsLivePricePointsParams(points))
+	if err != nil {
+		return 0, fmt.Errorf("batch upsert sports live price points: %w", err)
 	}
-	return nil
+	return upsertedCount, nil
 }
 
 func (s *SQLStore) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]SportsLivePriceAlertToken, error) {
@@ -234,24 +235,23 @@ func (s *SQLStore) ListSportsLiveLatestPriceAlertTokens(ctx context.Context) ([]
 	return items, nil
 }
 
-func (s *SQLStore) UpsertSportsLivePriceAlertState(ctx context.Context, state SportsLivePriceAlertState) error {
+func (s *SQLStore) UpsertSportsLivePriceAlertState(ctx context.Context, state SportsLivePriceAlertState) (bool, error) {
 	if s == nil || s.queries == nil {
-		return fmt.Errorf("sports live postgres database is not configured")
+		return false, fmt.Errorf("sports live postgres database is not configured")
 	}
-	if err := s.queries.UpsertSportsLivePriceAlertState(ctx, sportslivesqlc.UpsertSportsLivePriceAlertStateParams{
+	upsertedCount, err := s.queries.UpsertSportsLivePriceAlertState(ctx, sportslivesqlc.UpsertSportsLivePriceAlertStateParams{
 		TokenID:       state.TokenID,
 		MarketKey:     state.MarketKey,
-		EventKey:      state.EventKey,
-		ConditionID:   state.ConditionID,
 		Outcome:       state.Outcome,
 		AlertBand:     state.AlertBand,
 		LastAlertedAt: nullableTime(state.LastAlertedAt),
 		LastPriceTs:   nullableTime(state.LastPriceTs),
 		LastPrice:     state.LastPrice,
-	}); err != nil {
-		return fmt.Errorf("upsert sports live price alert state: %w", err)
+	})
+	if err != nil {
+		return false, fmt.Errorf("upsert sports live price alert state: %w", err)
 	}
-	return nil
+	return upsertedCount > 0, nil
 }
 
 func (s *SQLStore) DeleteSportsLivePriceAlertState(ctx context.Context, tokenID string) error {
@@ -530,8 +530,6 @@ func batchUpsertSportsLivePricePointsParams(items []SportsLivePricePoint) sports
 	params := sportslivesqlc.BatchUpsertSportsLivePricePointsParams{
 		TokenIds:        make([]string, 0, len(items)),
 		MarketKeys:      make([]string, 0, len(items)),
-		EventKeys:       make([]string, 0, len(items)),
-		ConditionIds:    make([]string, 0, len(items)),
 		Outcomes:        make([]string, 0, len(items)),
 		PriceTsValues:   make([]pgtype.Timestamptz, 0, len(items)),
 		PriceValues:     make([]float64, 0, len(items)),
@@ -540,8 +538,6 @@ func batchUpsertSportsLivePricePointsParams(items []SportsLivePricePoint) sports
 	for _, item := range items {
 		params.TokenIds = append(params.TokenIds, item.TokenID)
 		params.MarketKeys = append(params.MarketKeys, item.MarketKey)
-		params.EventKeys = append(params.EventKeys, item.EventKey)
-		params.ConditionIds = append(params.ConditionIds, item.ConditionID)
 		params.Outcomes = append(params.Outcomes, item.Outcome)
 		params.PriceTsValues = append(params.PriceTsValues, nullableTime(item.PriceTs))
 		params.PriceValues = append(params.PriceValues, item.Price)

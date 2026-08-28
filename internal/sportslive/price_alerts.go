@@ -119,23 +119,30 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 			}
 			continue
 		}
-		if err := s.store.UpsertSportsLivePriceAlertState(ctx, sportslivestore.SportsLivePriceAlertState{
+		applied, err := s.store.UpsertSportsLivePriceAlertState(ctx, sportslivestore.SportsLivePriceAlertState{
 			TokenID:       token.TokenID,
 			MarketKey:     token.MarketKey,
-			EventKey:      token.EventKey,
-			ConditionID:   token.ConditionID,
 			Outcome:       token.Outcome,
 			AlertBand:     band,
 			LastAlertedAt: alertedAt,
 			LastPriceTs:   token.PriceTs,
 			LastPrice:     token.Price,
-		}); err != nil {
+		})
+		if err != nil {
 			if ctx.Err() == nil {
 				log.WithError(err).
 					WithField("token_id", token.TokenID).
 					WithField("condition_id", token.ConditionID).
 					Warn("failed to update polymarket sports live price alert state")
 			}
+			continue
+		}
+		if !applied {
+			log.WithFields(log.Fields{
+				"token_id":     token.TokenID,
+				"market_key":   token.MarketKey,
+				"condition_id": token.ConditionID,
+			}).Debug("skipped polymarket sports live price alert state for stale or deleting market")
 		}
 	}
 }
