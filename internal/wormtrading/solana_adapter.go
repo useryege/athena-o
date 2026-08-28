@@ -247,7 +247,7 @@ func (a *SolanaBalanceAdapter) Probe(ctx context.Context) SolanaAdapterStatus {
 		)},
 		{request: rpcjson.NewRequest(
 			"getSlot",
-			rpc.M{"commitment": rpc.CommitmentConfirmed},
+			[]any{rpc.M{"commitment": rpc.CommitmentConfirmed}},
 		)},
 	}
 	execution := a.executeBatch(probeCtx, descriptors)
@@ -421,6 +421,13 @@ func (a *SolanaBalanceAdapter) readUniqueBalances(
 	publicKeys map[string]solana.PublicKey,
 ) map[string]addressBalanceResult {
 	output := make(map[string]addressBalanceResult, len(addresses))
+	for _, address := range addresses {
+		output[address] = addressBalanceResult{
+			SOL:  unavailableObservation(SolanaDecimals, errorInvalidResponse),
+			USDC: unavailableObservation(USDCDecimals, errorInvalidResponse),
+		}
+	}
+
 	var outputMu sync.Mutex
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.SetLimit(solanaBatchConcurrency)
@@ -430,103 +437,102 @@ func (a *SolanaBalanceAdapter) readUniqueBalances(
 		if end > len(addresses) {
 			end = len(addresses)
 		}
-		chunkAddresses := append([]string(nil), addresses[start:end]...)
+		chunk := make([]addressSpec, 0, end-start)
+		for _, address := range addresses[start:end] {
+			chunk = append(chunk, addressSpec{address: address, publicKey: publicKeys[address]})
+		}
 		group.Go(func() error {
-			chunk := make([]addressSpec, 0, len(chunkAddresses))
-			for _, address := range chunkAddresses {
-				chunk = append(chunk, addressSpec{address: address, publicKey: publicKeys[address]})
-			}
-			chunkOutput := a.readBalanceChunk(groupCtx, chunk)
+			observations := a.readSOLBalanceChunk(groupCtx, chunk)
 			outputMu.Lock()
-			for address, balance := range chunkOutput {
-				output[address] = balance
+			for index, spec := range chunk {
+				balance := output[spec.address]
+				balance.SOL = observations[index]
+				output[spec.address] = balance
 			}
 			outputMu.Unlock()
 			return nil
 		})
 	}
+
+	for _, address := range addresses {
+		spec := addressSpec{address: address, publicKey: publicKeys[address]}
+		group.Go(func() error {
+			observation := a.readUSDCBalance(groupCtx, spec.publicKey)
+			outputMu.Lock()
+			balance := output[spec.address]
+			balance.USDC = observation
+			output[spec.address] = balance
+			outputMu.Unlock()
+			return nil
+		})
+	}
+
 	_ = group.Wait()
 	return output
 }
 
-func (a *SolanaBalanceAdapter) readBalanceChunk(ctx context.Context, chunk []addressSpec) map[string]addressBalanceResult {
+func (a *SolanaBalanceAdapter) readSOLBalanceChunk(ctx context.Context, chunk []addressSpec) []BalanceObservation {
+	observations := make([]BalanceObservation, len(chunk))
+	for index := range observations {
+		observations[index] = unavailableObservation(SolanaDecimals, errorInvalidResponse)
+	}
+
 	publicKeys := make([]solana.PublicKey, 0, len(chunk))
 	for _, spec := range chunk {
 		publicKeys = append(publicKeys, spec.publicKey)
 	}
 
-	descriptors := make([]batchDescriptor, 0, len(chunk)+1)
-	descriptors = append(descriptors, batchDescriptor{request: rpcjson.NewRequest(
+	execution := a.executeBatch(ctx, []batchDescriptor{{request: rpcjson.NewRequest(
 		"getMultipleAccounts",
 		publicKeys,
 		rpc.M{"commitment": rpc.CommitmentConfirmed, "encoding": solana.EncodingBase64},
-	)})
-	for _, spec := range chunk {
-		descriptors = append(descriptors, batchDescriptor{request: rpcjson.NewRequest(
-			"getTokenAccountsByOwner",
-			spec.publicKey,
-			rpc.M{"mint": usdcMintPublicKey},
-			rpc.M{"commitment": rpc.CommitmentConfirmed, "encoding": solana.EncodingBase64},
-		)})
-	}
-
-	execution := a.executeBatch(ctx, descriptors)
-	output := make(map[string]addressBalanceResult, len(chunk))
-	for _, spec := range chunk {
-		output[spec.address] = addressBalanceResult{
-			SOL:  unavailableObservation(SolanaDecimals, errorInvalidResponse),
-			USDC: unavailableObservation(USDCDecimals, errorInvalidResponse),
-		}
-	}
-	if len(execution.outcomes) != len(descriptors) {
-		return output
+	)}})
+	if len(execution.outcomes) != 1 {
+		return observations
 	}
 
 	solOutcome := execution.outcomes[0]
 	if solOutcome.failure != nil {
-		for _, spec := range chunk {
-			balance := output[spec.address]
-			balance.SOL = unavailableObservation(SolanaDecimals, solOutcome.failure.code)
-			output[spec.address] = balance
+		for index := range observations {
+			observations[index] = unavailableObservation(SolanaDecimals, solOutcome.failure.code)
 		}
-	} else {
-		var accounts rpc.GetMultipleAccountsResult
-		if err := solOutcome.response.GetObject(&accounts); err != nil || len(accounts.Value) != len(chunk) || accounts.Context.Slot == 0 {
-			for _, spec := range chunk {
-				balance := output[spec.address]
-				balance.SOL = unavailableObservation(SolanaDecimals, errorInvalidResponse)
-				output[spec.address] = balance
-			}
-		} else {
-			for index, spec := range chunk {
-				lamports := uint64(0)
-				if accounts.Value[index] != nil {
-					lamports = accounts.Value[index].Lamports
-				}
-				balance := output[spec.address]
-				balance.SOL = availableObservation(lamports, SolanaDecimals, accounts.Context.Slot)
-				output[spec.address] = balance
-			}
-		}
+		return observations
 	}
 
-	for index, spec := range chunk {
-		outcome := execution.outcomes[index+1]
-		balance := output[spec.address]
-		if outcome.failure != nil {
-			balance.USDC = unavailableObservation(USDCDecimals, outcome.failure.code)
-			output[spec.address] = balance
-			continue
-		}
-		observation, errCode := decodeUSDCBalance(outcome.response, spec.publicKey)
-		if errCode != "" {
-			balance.USDC = unavailableObservation(USDCDecimals, errCode)
-		} else {
-			balance.USDC = observation
-		}
-		output[spec.address] = balance
+	var accounts rpc.GetMultipleAccountsResult
+	if err := solOutcome.response.GetObject(&accounts); err != nil || len(accounts.Value) != len(chunk) || accounts.Context.Slot == 0 {
+		return observations
 	}
-	return output
+	for index := range chunk {
+		lamports := uint64(0)
+		if accounts.Value[index] != nil {
+			lamports = accounts.Value[index].Lamports
+		}
+		observations[index] = availableObservation(lamports, SolanaDecimals, accounts.Context.Slot)
+	}
+	return observations
+}
+
+func (a *SolanaBalanceAdapter) readUSDCBalance(ctx context.Context, owner solana.PublicKey) BalanceObservation {
+	execution := a.executeBatch(ctx, []batchDescriptor{{request: rpcjson.NewRequest(
+		"getTokenAccountsByOwner",
+		owner,
+		rpc.M{"mint": usdcMintPublicKey},
+		rpc.M{"commitment": rpc.CommitmentConfirmed, "encoding": solana.EncodingBase64},
+	)}})
+	if len(execution.outcomes) != 1 {
+		return unavailableObservation(USDCDecimals, errorInvalidResponse)
+	}
+
+	outcome := execution.outcomes[0]
+	if outcome.failure != nil {
+		return unavailableObservation(USDCDecimals, outcome.failure.code)
+	}
+	observation, errCode := decodeUSDCBalance(outcome.response, owner)
+	if errCode != "" {
+		return unavailableObservation(USDCDecimals, errCode)
+	}
+	return observation
 }
 
 type rawTokenAccountsResult struct {

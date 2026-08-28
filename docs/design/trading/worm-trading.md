@@ -80,11 +80,13 @@ confirmed slot, and JSON-RPC batch support before balance reads are enabled.
    independent wallet failures. Valid addresses are sorted into a metadata-free
    singleflight key so only completely identical concurrent address sets share
    one in-flight observation; results are restored to caller order.
-6. Up to two 25-address chunks run concurrently. Each chunk sends one JSON-RPC
-   batch containing one `getMultipleAccounts` request and one
-   `getTokenAccountsByOwner` request per owner. Logical subrequests consume the
-   process limiter. Responses are associated by JSON-RPC ID rather than array
-   position.
+6. Within one balance aggregation, a shared scheduler permits at most two
+   concurrent provider calls. SOL addresses are grouped into chunks of 25, with
+   one single-request JSON-RPC batch calling `getMultipleAccounts` per chunk.
+   Each owner receives a separate single-request batch calling
+   `getTokenAccountsByOwner`, preventing one provider-level rate limit from
+   coupling multiple owners. Every logical subrequest consumes the process
+   limiter, and response IDs remain authoritative.
 7. SOL uses account lamports, treating a valid absent account as available zero.
    USDC aggregates every token account returned for the fixed Circle mint. Each
    account must be owned by the legacy Token Program and decode to the expected
@@ -141,7 +143,7 @@ limits.
 | `ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT` / `--rpc-attempt-timeout` | Per-attempt timeout; default `4s`, positive, and no greater than the total budget. |
 | `ATHENA_WORM_TRADING_BALANCE_BUDGET` / `--balance-budget` | Complete batch budget; default `12s`, positive. |
 | `ATHENA_WORM_TRADING_RPC_RATE_LIMIT` / `--rpc-rate-limit` | Logical subrequests per second; default `40`, finite and positive. |
-| `ATHENA_WORM_TRADING_RPC_RATE_BURST` / `--rpc-rate-burst` | Logical subrequest burst; default `40` and at least 26 so one full chunk fits. |
+| `ATHENA_WORM_TRADING_RPC_RATE_BURST` / `--rpc-rate-burst` | Logical subrequest burst; default `40` and validated at a minimum of 26. |
 
 The fixed network is `solana-mainnet-beta`, commitment is `confirmed`, genesis
 hash is `5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d`, SOL decimals are 9,
