@@ -6,9 +6,10 @@ The Application Shell owns anonymous Google and Phantom login entry points,
 shared username setup, authenticated bootstrap, responsive navigation,
 UUID-based identity and cache scoping, authorization refresh, the Pending-access
 experience, Account Center including the Connect AI workflow, Help resources,
-authorization-sensitive request cleanup, and the Wallet module's responsive
-custody-management surface. Other product pages own domain UI and data only
-after the shell grants a route.
+authorization-sensitive request cleanup, the Wallet module's responsive
+custody-management surface, and the Worm Trading page's owner-scoped balance,
+connection, and current-position activity surfaces. Other product pages own
+domain UI and data only after the shell grants a route.
 
 OIDC and SIWS verification, registration tickets, durable UUID identity,
 immutable-username enforcement, API Key issuance, profiles, and Wallet records
@@ -34,7 +35,7 @@ result, and a revealed key remains only in its current modal.
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
 | Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
-| Worm Trading wallet balances | [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts) | `WormTradingPage`, `RuntimeSummary`, `EmptyWalletBalances`, `WormTradingService`, `AccountDataModule.WormTrading` |
+| Worm Trading balances, connections, and activity | [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts) | `WormTradingPage`, `RuntimeSummary`, `ConnectionManagement`, `ConnectionCell`, `PositionCard`, `RequestCard`, `WormTradingService`, `AccountDataModule.WormTrading` |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -95,12 +96,20 @@ Cards are keyboard-operable and all icon-only controls have accessible labels.
 
 `/worm-trading` is a separate authorization-gated product route. It is visible
 with Worm Trading `READ` and does not require Wallet permission because its
-owner-scoped safe wallet summaries and balances come only from the Worm Trading
-facade. The page never calls the Wallet list or secret APIs. Desktop presents a
-SOL/USDC balance table and layouts at 900 px and below present the same records
-as cards. The first phase is deliberately read-only: it provides status,
-address copy, fixed 20-row pagination, refresh, and permission-aware empty-state
-guidance, with no order, sign, or transaction action.
+owner-scoped safe wallet summaries, balances, connection state, open positions,
+and in-flight requests come only from the Worm Trading facade. The page never
+calls the Wallet list or private-key APIs. Desktop presents a SOL/USDC and Worm
+connection table followed by separate Open positions and In-flight requests
+tables; layouts at 900 px and below present the same records as cards.
+
+Worm Trading `READ_WRITE` adds connect, reconnect, and disconnect controls for
+an interactive browser session. Each action has explicit confirmation and uses
+the native same-origin management resource; credential challenge/signing and
+HMAC material remain server-side. A missing Worm-only lease enters the persisted
+login provider's dedicated five-minute Google, Solana, or disabled-auth proof.
+Disconnect copy states that it revokes only Athena's Worm credential and does
+not cancel a request or close a position. The page has no order, transaction,
+TP/SL, claim, or position-mutation action.
 
 ## Runtime Flow
 
@@ -210,19 +219,53 @@ guidance, with no order, sign, or transaction action.
     scope drops all private-key references and aborts scoped work. The Google
     pending action is read and removed once after navigation; no private key,
     signature, lease, or authentication material enters browser storage.
-23. Entering `/worm-trading` with Worm Trading `READ` starts one status request
-    and one current-page balance request. Both use the current account UUID in
-    their client cache keys and the Worm Trading read scope. The list always
-    requests 20 rows and follows the URL page parameter for server pagination.
-24. Manual refresh reloads status and balances together. Previously loaded
-    rows remain visible while the replacement requests run, a live region marks
-    the refresh, and the page replaces the snapshot only after a successful
-    response. Wide layouts render the balance table; compact layouts render the
-    same items as wallet cards.
-25. A successful zero-item response renders guidance based on the independent
+23. Entering `/worm-trading` with Worm Trading `READ` starts independent status,
+    current-page balance, and current-page activity requests. All use the
+    current account UUID and Worm Trading module in their client cache keys.
+    Balance pagination follows the URL page, and activity requests use the same
+    owner-scoped Solana Wallet page with default and maximum size 20.
+24. The activity response supplies connection state per wallet plus two
+    independently available streams. Open positions and in-flight requests are
+    flattened by creation time for their respective desktop tables or compact
+    cards. The UI renders decimal strings verbatim, preserves absent optional
+    values, shows stream error/truncation state, and treats available empty
+    streams as Empty rather than unavailable.
+25. Manual refresh starts status, balances, and activity together but each
+    section settles independently. Previously loaded data remains visible while
+    its replacement runs, live regions mark refresh progress, and one failed
+    request cannot remove another section's successful snapshot. Wide layouts
+    render tables; compact layouts render equivalent wallet, position, and
+    request cards.
+26. A user with Worm Trading `READ_WRITE` can select Connect for
+    `NOT_CONNECTED`, Reconnect or Disconnect for `RECONNECT_REQUIRED`,
+    Disconnect for `CONNECTED`, and Retry disconnect for `DISCONNECTING` or
+    `REVOCATION_REQUIRED`. `CONNECTING` has no action, and
+    `CONNECT_OUTCOME_UNKNOWN` suppresses every action regardless of connection
+    state. Each available action opens a confirmation before calling the native
+    resource. Read-only users see the same connection state without management
+    buttons.
+27. `401 WORM_TRADING_REAUTH_REQUIRED` remains local to the action. Google
+    stores only `{action, walletId}` in the Worm-specific `sessionStorage` key
+    and navigates to `/auth/worm-trading/google`; the value is consumed once
+    after return. Solana requests the dedicated Worm SIWS challenge, verifies
+    the injected provider still exposes the persisted login address, signs the
+    exact message, obtains the lease, and retries once. Disabled-auth requests
+    its loopback Worm lease. No Worm provider challenge, HMAC credential, or
+    Wallet custody signature enters React or Web Storage.
+28. Every fulfilled or rejected connection mutation reloads runtime status and
+    activity so a fail-closed state persisted during an error can replace the
+    old row. Cached data remains visible while that reload runs; a failed reload
+    preserves it. Disconnect confirmation explicitly says that Athena revokes
+    only its Worm API credential; the UI neither removes a row optimistically
+    nor implies that an order was cancelled or a position closed.
+    `CONNECT_OUTCOME_UNKNOWN` reloads as a durable lock with no action and
+    requires operator reconciliation.
+29. A successful zero-wallet response renders guidance based on the independent
     Wallet grant. Wallet `READ_WRITE` links to Add Solana wallet, Wallet `READ`
     links to the read-only Wallets page, and no Wallet access links to the
-    account access view. None of these states mounts a trading or order button.
+    account access view. A valid wallet inventory with zero Worm positions uses
+    the separate activity Empty state. Neither state mounts a trading or order
+    button.
 
 ## State / Data
 
@@ -274,13 +317,21 @@ resumed reveal. Wallet keys, Google state, SIWS challenge/signature, and lease
 cookies never enter Web Storage; the cookies remain HttpOnly.
 
 Worm Trading client state contains only safe wallet ID, address, remark, avatar
-metadata, SOL and USDC balance projections, availability/error codes, observed
-slots, network metadata, and runtime health. Status and each paged balance
-snapshot are cached under the current account UUID and Worm Trading module.
-Unavailable assets remain explicit and are never converted into an empty wallet
-list or a zero balance. The page consumes bootstrap Wallet access only to choose
-empty-state wording and destination; it does not widen the Worm Trading response
-or read a private key.
+metadata, SOL and USDC observations, connection state, position/request fields,
+per-stream availability and truncation, and redacted runtime capability state.
+Status, each paged balance snapshot, and each paged activity snapshot are cached
+independently under the current account UUID and Worm Trading module.
+Unavailable assets or streams remain explicit and are never converted into an
+empty wallet list, empty activity list, or zero amount. The page consumes
+bootstrap Wallet access only to choose empty-state wording and destination; it
+does not widen the Worm Trading response or read a private key.
+
+The only Worm Trading `sessionStorage` value contains a validated connection
+action and positive wallet ID for one Google redirect. It is removed before the
+action resumes and is cleared on account or access change. Worm challenge
+messages, Wallet signatures, API keys, HMAC secrets and headers, provider raw
+responses, and signable position-request messages never enter browser storage,
+client caches, URLs, or rendered data.
 
 ## Configuration
 
@@ -302,6 +353,16 @@ Wallet management uses same-origin `/api/v1/wallets` metadata resources,
 `POST /api/v1/wallets/{id}:revealPrivateKey`, and provider-specific
 `/auth/wallet-secrets/*` endpoints. The browser has no Wallet encryption key,
 object-store credential, owner selector, or configurable reauthentication TTL.
+
+Worm Trading reads use `/api/v1/worm-trading/status`, `/wallet-balances`, and
+`/wallet-activity`. Connection management uses native
+`POST|DELETE /api/v1/worm-trading/wallet-connections/{walletId}` plus the POST
+`:reconnect` form. Dedicated proof routes are
+`/auth/worm-trading/google`, `/auth/worm-trading/solana/challenge`,
+`/auth/worm-trading/solana/verify`, and the disabled-auth development variant.
+The browser has no owner/address selector for these resources, Worm endpoint,
+credential, HMAC header, or configurable five-minute lease. Disabled-auth Worm
+management accepts the Vite application's exact `http://localhost:4000` Origin.
 
 Connect AI uses the document's runtime base URI rather than a configured or
 hard-coded public domain. This produces deployment-specific absolute URLs while
@@ -334,9 +395,19 @@ portable to an arbitrary reverse-proxy subpath.
 - Wallet Google-return storage contains only wallet ID and action and is consumed
   once. Account or access changes clear sensitive React state; loss of Wallet
   write access also removes any pending action.
+- Worm Google-return storage also contains only a validated action and wallet ID
+  and is consumed once. Loss of Worm Trading write access removes it; the Wallet
+  reveal and Worm management pending keys never authorize each other.
 - API Keys may use safe Wallet metadata operations allowed by module access but
   cannot create, import, or reveal private keys. The server remains authoritative
   even when bootstrap does not project credential capability.
+- Worm Trading `READ` renders balances, connection state, and current activity.
+  Only `READ_WRITE` renders connection management, while the server additionally
+  requires an interactive login, exact origin, owner scope, and the Worm-only
+  lease. No browser state contains the provider challenge, custody signature,
+  API key, secret, HMAC headers, or signable request message.
+- Worm Trading exposes no order, cancel, close, TP/SL, claim, transaction-signing,
+  or automatic polling control.
 - Connect AI is available only when API Key access is enabled for an ordinary
   account. The fixed administrator cannot enter this credential path.
 - Connect AI and Create API key issue the same full-current-account bearer;
@@ -378,14 +449,25 @@ and retains no private-key result. If a reveal succeeds but the associated safe
 item cannot be resolved, the key is discarded rather than displayed without
 ownership context.
 
-An initial Worm Trading balance failure renders an explicit unavailable result,
-not the no-wallet state. A status-only failure leaves the balance request
-independent. A refresh failure retains the last successful runtime and wallet
-snapshot and exposes the request error for retry. Partial or unavailable asset
-results keep their server availability and error category visible instead of
-showing zero. If a requested page becomes invalid after wallet inventory
-changes, the page returns to the last valid page; a successful empty inventory
-continues through the Wallet-permission-aware guidance.
+An initial Worm Trading balance or activity failure renders an explicit
+unavailable result, not the no-wallet or zero-activity state. Status, balances,
+and activity remain independent. A refresh failure retains the last successful
+snapshot for that section and exposes the request error for retry. Partial or
+unavailable assets/streams preserve their server availability, error, and
+truncation instead of showing zero or Empty. If a requested page becomes invalid
+after wallet inventory changes, the page returns to the last valid page; a
+successful empty inventory continues through Wallet-permission-aware guidance.
+
+A missing Worm management lease enters only the provider-specific step-up flow;
+it does not end the Athena login or authorize private-key reveal. Expired,
+cancelled, Redis-unavailable, or identity-mismatched proof retains the current
+connection/activity projection and offers retry. An ambiguous credential-create
+or failed revocation response is never presented optimistically as connected or
+disconnected; fulfilled and rejected mutations automatically refresh runtime
+and activity while retaining cached data until replacement succeeds. An
+outcome-unknown warning cannot be cleared by any browser connection action and
+requires operator reconciliation. Balance and already available activity remain
+visible while a connection action fails.
 
 Connect AI creation failure leaves the creation form available for correction.
 Credential verification failure exposes a retry action and explanatory status
@@ -411,6 +493,12 @@ server reasons appear only in current UI notifications or live regions. Client
 telemetry excludes imported, generated, and revealed keys, SIWS messages and
 signatures, wallet-secret pending actions, and lease material.
 
+Worm runtime, refresh, stream, connection, and reauthentication progress appears
+through bounded status text, badges, notifications, and live regions. Client
+telemetry excludes Worm pending actions, proof messages/signatures, provider
+challenges, API keys, secrets, HMAC material, raw responses, and signable request
+messages.
+
 Connect AI exposes verification state and copy failures only in the current UI.
 It does not log the bearer or instruction block, and the verification request
 does not create a separate server-side integration or connection status.
@@ -428,7 +516,9 @@ does not create a separate server-side integration or connection status.
 - [ ] Responsive administrator list/detail behavior remains current.
 - [ ] Wallet grid/drawer, create/import backup, avatar CAS, and provider reauthentication remain current.
 - [ ] Wallet private-key and pending-action cleanup remains route/account/access scoped.
-- [ ] Worm Trading navigation and `/worm-trading` require only Worm Trading `READ` and never call Wallet data or secret APIs.
-- [ ] Worm Trading preserves stale rows during refresh, keeps unavailable distinct from zero, retains fixed 20-row pagination, and shows no order action.
+- [ ] Worm Trading navigation and read surfaces require only Worm Trading `READ` and never call Wallet data or secret APIs from the browser.
+- [ ] Worm connection controls remain `READ_WRITE`, confirmed, provider-step-up-aware, and independent from Wallet private-key reveal.
+- [ ] Worm Trading preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
+- [ ] Position/request responsive layouts, stream errors, truncation, and connection-state actions remain current.
 - [ ] Empty Worm Trading inventory selects Add, View, or access-review guidance from the independent Wallet grant.
 - [ ] The [design index](../README.md) contains the current summary.

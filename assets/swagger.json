@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1070-g6a036a5e-dirty"
+    "version": "v1.0.0-1072-g52dcef57-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3163,6 +3163,42 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/wormtradingGetWormTradingStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/worm-trading/wallet-activity": {
+      "get": {
+        "tags": [
+          "WormTradingService"
+        ],
+        "operationId": "WormTradingService_ListWalletTradingActivity",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/wormtradingListWalletTradingActivityResponse"
             }
           },
           "default": {
@@ -8435,6 +8471,19 @@
         },
         "lastErrorCategory": {
           "type": "string"
+        },
+        "credentialStoreReady": {
+          "type": "boolean"
+        },
+        "wormApiStatus": {
+          "type": "string"
+        },
+        "wormApiLastSuccessAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "wormApiLastErrorCategory": {
+          "type": "string"
         }
       }
     },
@@ -8468,6 +8517,44 @@
         "fetchedAt": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "wormtradingListWalletTradingActivityResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/wormtradingWalletTradingActivityItem"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "type": "string"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fetchedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "openPositionCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "inFlightRequestCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -8541,6 +8628,190 @@
         },
         "wallet": {
           "$ref": "#/definitions/wormtradingTradingWalletSummary"
+        }
+      }
+    },
+    "wormtradingWalletTradingActivityItem": {
+      "type": "object",
+      "properties": {
+        "connection": {
+          "$ref": "#/definitions/wormtradingWormWalletConnection"
+        },
+        "positions": {
+          "$ref": "#/definitions/wormtradingWormActivityStreamState"
+        },
+        "requests": {
+          "$ref": "#/definitions/wormtradingWormActivityStreamState"
+        },
+        "status": {
+          "type": "string"
+        },
+        "wallet": {
+          "$ref": "#/definitions/wormtradingTradingWalletSummary"
+        },
+        "openPositions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/wormtradingWormOpenPosition"
+          }
+        },
+        "inFlightRequests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/wormtradingWormInFlightRequest"
+          }
+        },
+        "observedAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "wormtradingWormActivityStreamState": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "errorCode": {
+          "type": "string"
+        }
+      }
+    },
+    "wormtradingWormInFlightRequest": {
+      "type": "object",
+      "properties": {
+        "funds": {
+          "type": "string"
+        },
+        "leverage": {
+          "type": "string"
+        },
+        "market": {
+          "$ref": "#/definitions/wormtradingWormMarketReference"
+        },
+        "price": {
+          "type": "string"
+        },
+        "pubkey": {
+          "type": "string"
+        },
+        "shares": {
+          "type": "string"
+        },
+        "side": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "orderState": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "wormtradingWormMarketReference": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "conditionId": {
+          "type": "string"
+        },
+        "lastTradePrice": {
+          "type": "string"
+        },
+        "eventConditionId": {
+          "type": "string"
+        },
+        "eventTitle": {
+          "type": "string"
+        },
+        "eventLogo": {
+          "type": "string"
+        }
+      }
+    },
+    "wormtradingWormOpenPosition": {
+      "type": "object",
+      "properties": {
+        "leverage": {
+          "type": "string"
+        },
+        "market": {
+          "$ref": "#/definitions/wormtradingWormMarketReference"
+        },
+        "pubkey": {
+          "type": "string"
+        },
+        "side": {
+          "type": "string"
+        },
+        "positionRequestPubkey": {
+          "type": "string"
+        },
+        "totalShares": {
+          "type": "string"
+        },
+        "avgEntryPrice": {
+          "type": "string"
+        },
+        "unrealizedPnl": {
+          "type": "string"
+        },
+        "realizedPnl": {
+          "type": "string"
+        },
+        "userLiquidity": {
+          "type": "string"
+        },
+        "totalLiquidity": {
+          "type": "string"
+        },
+        "liquidationPrice": {
+          "type": "string"
+        },
+        "isClosed": {
+          "type": "boolean"
+        },
+        "isLiquidated": {
+          "type": "boolean"
+        },
+        "isClaimed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "wormtradingWormWalletConnection": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string"
+        },
+        "warningCode": {
+          "type": "string"
+        },
+        "connectedAt": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     }

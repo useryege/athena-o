@@ -13,6 +13,7 @@ import (
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	wormmarketsstore "github.com/useryege/athena/internal/wormmarkets/store"
+	wormtradingstore "github.com/useryege/athena/internal/wormtrading/store"
 )
 
 const (
@@ -30,6 +31,7 @@ type Module struct {
 var modules = []Module{
 	{Name: "account-state", DSNEnv: "ATHENA_SERVER_POSTGRES_DSN", Database: "athena", Migrations: accountstatestore.Migrations()},
 	{Name: "worm-markets", DSNEnv: "ATHENA_WORM_MARKETS_POSTGRES_DSN", Database: "worm_markets", Migrations: wormmarketsstore.Migrations()},
+	{Name: "worm-trading", DSNEnv: "ATHENA_WORM_TRADING_POSTGRES_DSN", Database: "worm_trading", Migrations: wormtradingstore.Migrations()},
 	{Name: "notification", DSNEnv: "ATHENA_NOTIFICATION_POSTGRES_DSN", Database: "notification", Migrations: notificationstore.Migrations()},
 	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations()},
 	{Name: "sports-live", DSNEnv: "ATHENA_SPORTS_LIVE_POSTGRES_DSN", Database: "sports_live", Migrations: sportslivestore.Migrations()},

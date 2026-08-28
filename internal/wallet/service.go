@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"math"
 	"strings"
 	"sync"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -34,6 +36,9 @@ const (
 	maxWalletPageSize     = 100
 	maxWalletRemarkRunes  = 50
 	maxWalletAvatarBytes  = 2 * 1024 * 1024
+	maxWormAuthNonceBytes = 128
+	wormAuthMessagePrefix = "Create Worm API credential | Wallet: "
+	wormAuthNoncePrefix   = " | Nonce: "
 )
 
 var walletAvatarPresets = map[string]struct{}{
@@ -274,6 +279,54 @@ func (s *Service) RevealWalletPrivateKey(ctx context.Context, req *apiclient.Rev
 	return &apiclient.RevealWalletPrivateKeyResponse{PrivateKey: string(privateKey)}, nil
 }
 
+func (s *Service) SignWormAuthChallenge(ctx context.Context, req *apiclient.SignWormAuthChallengeRequest) (*apiclient.SignWormAuthChallengeResponse, error) {
+	record, err := s.walletRecord(ctx, req.GetId(), req.GetRequesterAccountId())
+	if err != nil {
+		return nil, err
+	}
+	if record.WalletType != walletTypeSolana {
+		return nil, status.Error(codes.FailedPrecondition, "wallet must be a Solana wallet")
+	}
+	if req.GetExpectedAddress() == "" {
+		return nil, status.Error(codes.InvalidArgument, "expected_address is required")
+	}
+	if req.GetExpectedAddress() != record.Address {
+		return nil, status.Error(codes.InvalidArgument, "expected_address does not match wallet")
+	}
+	if err := validateWormAuthChallenge(record.Address, req.GetNonce(), req.GetMessage()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if len(s.encryptionKey) == 0 {
+		return nil, status.Error(codes.FailedPrecondition, "wallet encryption key is required")
+	}
+
+	privateKeyText, err := utilcrypto.Decrypt(record.PrivateKeyCiphertext, s.encryptionKey)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to decrypt wallet key material: %v", err)
+	}
+	defer clear(privateKeyText)
+	privateKey, err := parseSolanaPrivateKey(string(privateKeyText))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "wallet key material is invalid")
+	}
+	defer clear(privateKey)
+	derivedAddress := solanaWalletAddress(privateKey)
+	if derivedAddress != record.Address {
+		return nil, status.Error(codes.Internal, "wallet key material does not match stored address")
+	}
+
+	messageBytes := []byte(req.GetMessage())
+	signature := ed25519.Sign(privateKey, messageBytes)
+	if !ed25519.Verify(privateKey.Public().(ed25519.PublicKey), messageBytes, signature) {
+		return nil, status.Error(codes.Internal, "failed to verify Worm auth challenge signature")
+	}
+	digest := sha256.Sum256(messageBytes)
+	return &apiclient.SignWormAuthChallengeResponse{
+		Signature:     hex.EncodeToString(signature),
+		MessageSha256: hex.EncodeToString(digest[:]),
+	}, nil
+}
+
 func (s *Service) GetWalletAvatarMetadata(ctx context.Context, req *apiclient.GetWalletAvatarMetadataRequest) (*apiclient.GetWalletAvatarMetadataResponse, error) {
 	record, err := s.walletRecord(ctx, req.GetId(), req.GetRequesterAccountId())
 	if err != nil {
@@ -362,6 +415,28 @@ func (s *Service) ListWalletAvatarObjectKeys(ctx context.Context, _ *apiclient.L
 		return nil, status.Errorf(codes.Internal, "failed to list wallet avatar object keys: %v", err)
 	}
 	return &apiclient.ListWalletAvatarObjectKeysResponse{ObjectKeys: keys}, nil
+}
+
+func validateWormAuthChallenge(address, nonce, message string) error {
+	if nonce == "" {
+		return errors.New("nonce is required")
+	}
+	if !utf8.ValidString(nonce) || len(nonce) > maxWormAuthNonceBytes {
+		return errors.New("nonce is invalid")
+	}
+	for _, value := range nonce {
+		if unicode.IsControl(value) {
+			return errors.New("nonce is invalid")
+		}
+	}
+	if !utf8.ValidString(message) {
+		return errors.New("message must be valid UTF-8")
+	}
+	expectedMessage := wormAuthMessagePrefix + address + wormAuthNoncePrefix + nonce
+	if message != expectedMessage {
+		return errors.New("message does not match Worm auth challenge")
+	}
+	return nil
 }
 
 func (s *Service) walletRecord(ctx context.Context, id int64, requesterAccountID string) (*walletstore.WalletRecord, error) {

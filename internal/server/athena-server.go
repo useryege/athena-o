@@ -161,6 +161,7 @@ type AthenaServer struct {
 	googleOIDC               *googleoidc.Handler
 	phantomAuth              *phantomauth.Handler
 	walletSecretMgr          *walletsecret.Manager
+	wormCredentialMgr        *walletsecret.Manager
 	walletSecretHTTP         *walletsecrethttp.Handler
 	walletSecretPublicOrigin string
 	developmentAccountID     string
@@ -307,6 +308,8 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 	walletSecretMgr, err := walletsecret.NewManager(opts.RedisClient, opts.BaseHRef, walletSecretSecureCookie)
 	errorsutil.CheckError(err)
+	wormCredentialMgr, err := walletsecret.NewWormCredentialManager(opts.RedisClient, opts.BaseHRef, walletSecretSecureCookie)
+	errorsutil.CheckError(err)
 
 	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
@@ -343,6 +346,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		googleOIDC:               googleOIDCHandler,
 		phantomAuth:              phantomAuthHandler,
 		walletSecretMgr:          walletSecretMgr,
+		wormCredentialMgr:        wormCredentialMgr,
 		walletSecretPublicOrigin: walletSecretPublicOrigin,
 		developmentAccountID:     developmentAccountID,
 		userStateStorage:         userStateStorage,
@@ -352,9 +356,11 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 	if googleOIDCHandler != nil {
 		errorsutil.CheckError(googleOIDCHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
+		errorsutil.CheckError(googleOIDCHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr))
 	}
 	if phantomAuthHandler != nil {
 		errorsutil.CheckError(phantomAuthHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
+		errorsutil.CheckError(phantomAuthHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr))
 	}
 	walletSecretHTTP, err := newWalletSecretHTTPHandler(a)
 	if err != nil {
@@ -661,7 +667,7 @@ func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w ht
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Pragma", "no-cache")
 		w.Header().Set("Vary", "Cookie, Authorization")
-	case *wormtradingpkg.ListWalletBalancesResponse:
+	case *wormtradingpkg.ListWalletBalancesResponse, *wormtradingpkg.ListWalletTradingActivityResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Vary", "Cookie, Authorization")
 	}
@@ -855,12 +861,13 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	endpoint := fmt.Sprintf("localhost:%d", port)
 	mux := http.NewServeMux()
 	publicHandlers := map[string]http.Handler{
-		common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.walletSecretMgr, server.RootPath, server.BaseHRef),
+		common.LogoutEndpoint: logout.NewHandler(server.settingsMgr, server.sessionMgr, server.walletSecretMgr, server.wormCredentialMgr, server.RootPath, server.BaseHRef),
 	}
 	if server.googleOIDC != nil {
 		publicHandlers["/auth/google/login"] = http.HandlerFunc(server.googleOIDC.Login)
 		publicHandlers["/auth/google/callback"] = http.HandlerFunc(server.googleOIDC.Callback)
 		publicHandlers["/auth/wallet-secrets/google"] = http.HandlerFunc(server.googleOIDC.WalletSecretReauthentication)
+		publicHandlers["/auth/worm-trading/google"] = http.HandlerFunc(server.googleOIDC.WormCredentialReauthentication)
 	}
 	if server.authRegistration != nil {
 		publicHandlers["/auth/registration"] = http.HandlerFunc(server.authRegistration.Registration)
@@ -871,9 +878,12 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		publicHandlers["/auth/phantom/verify"] = http.HandlerFunc(server.phantomAuth.Verify)
 		publicHandlers["/auth/wallet-secrets/solana/challenge"] = http.HandlerFunc(server.phantomAuth.WalletSecretChallenge)
 		publicHandlers["/auth/wallet-secrets/solana/verify"] = http.HandlerFunc(server.phantomAuth.WalletSecretVerify)
+		publicHandlers["/auth/worm-trading/solana/challenge"] = http.HandlerFunc(server.phantomAuth.WormCredentialChallenge)
+		publicHandlers["/auth/worm-trading/solana/verify"] = http.HandlerFunc(server.phantomAuth.WormCredentialVerify)
 	}
 	if server.DisableAuth {
 		publicHandlers["/auth/wallet-secrets/development"] = http.HandlerFunc(server.developmentWalletSecretLease)
+		publicHandlers["/auth/worm-trading/development"] = http.HandlerFunc(server.developmentWormCredentialLease)
 	}
 	httpS := http.Server{
 		Addr: endpoint,
@@ -919,6 +929,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	registerAccountAvatarHandlers(mux, server.accountAvatarHTTP)
 	registerWalletAvatarHandlers(mux, server.walletAvatarHTTP)
 	registerWalletSecretHandlers(mux, server.walletSecretHTTP)
+	registerWormConnectionHandlers(mux, server)
 	mux.Handle("/api/", handler)
 
 	// // Proxy extension is currently an alpha feature and is disabled

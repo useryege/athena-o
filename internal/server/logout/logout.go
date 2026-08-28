@@ -18,33 +18,40 @@ import (
 )
 
 type Handler struct {
-	settingsMgr       *settings.SettingsManager
-	rootPath          string
-	parseToken        func(tokenString string) (jwt.Claims, error)
-	revokeToken       func(ctx context.Context, id string, expiringAt time.Duration) error
-	baseHRef          string
-	clearWalletSecret func(http.ResponseWriter)
+	settingsMgr           *settings.SettingsManager
+	rootPath              string
+	parseToken            func(tokenString string) (jwt.Claims, error)
+	revokeToken           func(ctx context.Context, id string, expiringAt time.Duration) error
+	baseHRef              string
+	clearSensitiveCookies func(http.ResponseWriter)
 }
 
 // NewHandler creates handler serving to do api/logout endpoint
-func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.SessionManager, walletSecrets *walletsecret.Manager, rootPath, baseHRef string) *Handler {
-	clearWalletSecret := func(http.ResponseWriter) {}
+func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.SessionManager, walletSecrets, wormCredentials *walletsecret.Manager, rootPath, baseHRef string) *Handler {
+	clearSensitiveCookies := func(http.ResponseWriter) {}
 	if walletSecrets != nil {
-		clearWalletSecret = walletSecrets.ClearCookie
+		clearSensitiveCookies = walletSecrets.ClearCookie
+	}
+	if wormCredentials != nil {
+		clearPrevious := clearSensitiveCookies
+		clearSensitiveCookies = func(w http.ResponseWriter) {
+			clearPrevious(w)
+			wormCredentials.ClearCookie(w)
+		}
 	}
 	return &Handler{
-		settingsMgr:       settingsMrg,
-		rootPath:          rootPath,
-		baseHRef:          baseHRef,
-		parseToken:        sessionMgr.ParseLoginForRevocation,
-		revokeToken:       sessionMgr.RevokeToken,
-		clearWalletSecret: clearWalletSecret,
+		settingsMgr:           settingsMrg,
+		rootPath:              rootPath,
+		baseHRef:              baseHRef,
+		parseToken:            sessionMgr.ParseLoginForRevocation,
+		revokeToken:           sessionMgr.RevokeToken,
+		clearSensitiveCookies: clearSensitiveCookies,
 	}
 }
 
 // ServeHTTP clears the Athena auth cookie, revokes the local session token when possible, and redirects to Athena.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.clearWalletSecret(w)
+	h.clearSensitiveCookies(w)
 	cookies := r.Cookies()
 	for _, cookie := range cookies {
 		if !strings.HasPrefix(cookie.Name, common.AuthCookieName) {

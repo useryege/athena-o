@@ -139,8 +139,9 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/wormmarkets.WormMarketsService/GetWormEvent":         moduleRead(accountaccess.ModuleWormMarkets),
 	"/wormmarkets.WormMarketsService/ListWormEvents":       moduleRead(accountaccess.ModuleWormMarkets),
 
-	"/wormtrading.WormTradingService/GetWormTradingStatus": moduleRead(accountaccess.ModuleWormTrading),
-	"/wormtrading.WormTradingService/ListWalletBalances":   moduleRead(accountaccess.ModuleWormTrading),
+	"/wormtrading.WormTradingService/GetWormTradingStatus":      moduleRead(accountaccess.ModuleWormTrading),
+	"/wormtrading.WormTradingService/ListWalletBalances":        moduleRead(accountaccess.ModuleWormTrading),
+	"/wormtrading.WormTradingService/ListWalletTradingActivity": moduleRead(accountaccess.ModuleWormTrading),
 
 	"/worldcupcorners.WorldCupCornersService/GetWorldCupCornersDataset": moduleRead(accountaccess.ModuleWorldCupCorners),
 

@@ -38,14 +38,15 @@ type googleVerificationError struct {
 
 // Handler implements the browser Google Authorization Code + PKCE flow.
 type Handler struct {
-	oauth2Config  oauth2.Config
-	verifier      *oidc.IDTokenVerifier
-	store         *TransactionStore
-	backend       authregistration.Backend
-	registrations *authregistration.Handler
-	secureCookie  bool
-	adminEmail    string
-	walletSecrets *walletSecretReauthentication
+	oauth2Config    oauth2.Config
+	verifier        *oidc.IDTokenVerifier
+	store           *TransactionStore
+	backend         authregistration.Backend
+	registrations   *authregistration.Handler
+	secureCookie    bool
+	adminEmail      string
+	walletSecrets   *walletSecretReauthentication
+	wormCredentials *wormCredentialReauthentication
 }
 
 // NewHandler constructs the flow without contacting Google. Remote JWKS are
@@ -134,6 +135,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Callback consumes the transaction, verifies Google identity, and either
 // begins shared username registration or issues an Athena-only browser session.
 func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
+	if h.wormCredentials != nil && h.wormCredentials.ownsCallback(r) {
+		h.wormCredentials.callback(w, r)
+		return
+	}
 	if h.walletSecrets != nil && h.walletSecrets.ownsCallback(r) {
 		h.walletSecrets.callback(w, r)
 		return

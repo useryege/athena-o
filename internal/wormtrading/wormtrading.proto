@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-// Worm Trading Service API exposes trusted, read-only wallet balance reads.
+// Worm Trading Service API exposes trusted wallet observations and Worm API
+// credential lifecycle operations to the API Server.
 package athena.internal.wormtrading;
 
 option go_package = "github.com/useryege/athena/internal/wormtrading/apiclient";
@@ -28,6 +29,13 @@ message GetWormTradingStatusResponse {
   int64 latency_ms = 16;
   int32 consecutive_failures = 17;
   string last_error_code = 18;
+  bool credential_store_configured = 19;
+  bool credential_store_reachable = 20;
+  string credential_store_status = 21;
+  bool worm_api_reachable = 22;
+  int64 last_worm_success_at = 23;
+  int64 last_worm_failure_at = 24;
+  string last_worm_error_code = 25;
 }
 
 // WalletBalanceReference correlates one trusted Wallet record with its address.
@@ -80,7 +88,150 @@ message BatchGetWalletBalancesResponse {
   int64 fetched_at = 4;
 }
 
+// PrepareWormWalletConnectionRequest starts a one-time Worm credential
+// challenge for one caller-verified Solana wallet.
+message PrepareWormWalletConnectionRequest {
+  int64 wallet_id = 1;
+  string address = 2;
+  bool reconnect = 3;
+}
+
+// PrepareWormWalletConnectionResponse contains only the bounded challenge data
+// needed by the API Server to ask Wallet for a purpose-specific signature.
+message PrepareWormWalletConnectionResponse {
+  string attempt_id = 1;
+  int64 wallet_id = 2;
+  string address = 3;
+  string nonce = 4;
+  string message = 5;
+  bytes message_sha256 = 6;
+  int64 expires_at = 7;
+}
+
+// CompleteWormWalletConnectionRequest completes exactly one persisted
+// challenge. Signature is a raw 64-byte Ed25519 signature.
+message CompleteWormWalletConnectionRequest {
+  string attempt_id = 1;
+  int64 wallet_id = 2;
+  string address = 3;
+  bytes message_sha256 = 4;
+  bytes signature = 5;
+}
+
+// WormWalletConnection is a non-secret connection projection.
+message WormWalletConnection {
+  int64 wallet_id = 1;
+  string address = 2;
+  string state = 3;
+  string warning_code = 4;
+  int64 connected_at = 5;
+}
+
+message CompleteWormWalletConnectionResponse {
+  WormWalletConnection connection = 1;
+}
+
+message DisconnectWormWalletRequest {
+  int64 wallet_id = 1;
+  string address = 2;
+}
+
+message DisconnectWormWalletResponse {
+  WormWalletConnection connection = 1;
+}
+
+// WalletPositionReference correlates one trusted Wallet record with its
+// canonical Solana address.
+message WalletPositionReference {
+  int64 wallet_id = 1;
+  string address = 2;
+}
+
+message WormOptionalString {
+  string value = 1;
+}
+
+message WormEventSummary {
+  string condition_id = 1;
+  string title = 2;
+  WormOptionalString logo = 3;
+}
+
+message WormPositionMarketSummary {
+  string condition_id = 1;
+  string title = 2;
+  WormOptionalString logo = 3;
+  WormOptionalString latest_trade_price = 4;
+  WormEventSummary event = 5;
+}
+
+message WormOpenPosition {
+  string pubkey = 1;
+  WormOptionalString position_request_pubkey = 2;
+  WormPositionMarketSummary market = 3;
+  bool is_yes = 4;
+  string leverage = 5;
+  string total_shares = 6;
+  string average_entry_price = 7;
+  string user_liquidity = 8;
+  string total_liquidity = 9;
+  string liquidation_price = 10;
+  WormOptionalString unrealized_pnl = 11;
+  string realized_pnl = 12;
+  bool is_closed = 13;
+  bool is_liquidated = 14;
+  bool is_claimed = 15;
+  int64 created_at = 16;
+}
+
+message WormInFlightPositionRequest {
+  string pubkey = 1;
+  string type = 2;
+  string state = 3;
+  WormOptionalString order_state = 4;
+  WormPositionMarketSummary market = 5;
+  bool is_yes = 6;
+  string leverage = 7;
+  string funds = 8;
+  WormOptionalString price = 9;
+  WormOptionalString shares = 10;
+  int64 created_at = 11;
+}
+
+message WormPositionStreamStatus {
+  string availability = 1;
+  string error_code = 2;
+  bool truncated = 3;
+}
+
+message WalletPositionSnapshot {
+  int64 wallet_id = 1;
+  string address = 2;
+  WormWalletConnection connection = 3;
+  repeated WormOpenPosition open_positions = 4;
+  WormPositionStreamStatus open_positions_status = 5;
+  repeated WormInFlightPositionRequest in_flight_requests = 6;
+  WormPositionStreamStatus in_flight_requests_status = 7;
+  string status = 8;
+}
+
+message BatchGetWalletPositionSnapshotsRequest {
+  repeated WalletPositionReference refs = 1;
+}
+
+message BatchGetWalletPositionSnapshotsResponse {
+  repeated WalletPositionSnapshot items = 1;
+  int64 fetched_at = 2;
+  int32 open_position_count = 3;
+  int32 in_flight_request_count = 4;
+  string status = 5;
+}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
+  rpc PrepareWormWalletConnection(PrepareWormWalletConnectionRequest) returns (PrepareWormWalletConnectionResponse);
+  rpc CompleteWormWalletConnection(CompleteWormWalletConnectionRequest) returns (CompleteWormWalletConnectionResponse);
+  rpc DisconnectWormWallet(DisconnectWormWalletRequest) returns (DisconnectWormWalletResponse);
+  rpc BatchGetWalletPositionSnapshots(BatchGetWalletPositionSnapshotsRequest) returns (BatchGetWalletPositionSnapshotsResponse);
 }

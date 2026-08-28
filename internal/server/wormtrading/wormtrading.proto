@@ -2,7 +2,8 @@ syntax = "proto3";
 
 // Worm Trading Service
 //
-// Worm Trading exposes the current account's Solana wallet balances. The
+// Worm Trading exposes the current account's Solana wallet balances and Worm
+// position activity. The
 // public contract never accepts an account identifier, wallet address,
 // network, mint, or private key from the caller.
 package wormtrading;
@@ -31,6 +32,10 @@ message GetWormTradingStatusResponse {
   int64 latency_ms = 14 [(gogoproto.jsontag) = "latencyMs"];
   int32 consecutive_failures = 15 [(gogoproto.jsontag) = "consecutiveFailures"];
   string last_error_category = 16 [(gogoproto.jsontag) = "lastErrorCategory"];
+  bool credential_store_ready = 17 [(gogoproto.jsontag) = "credentialStoreReady"];
+  string worm_api_status = 18 [(gogoproto.jsontag) = "wormApiStatus"];
+  int64 worm_api_last_success_at = 19 [(gogoproto.jsontag) = "wormApiLastSuccessAt"];
+  string worm_api_last_error_category = 20 [(gogoproto.jsontag) = "wormApiLastErrorCategory"];
 }
 
 message ListWalletBalancesRequest {
@@ -84,6 +89,88 @@ message ListWalletBalancesResponse {
   int64 fetched_at = 7 [(gogoproto.jsontag) = "fetchedAt"];
 }
 
+message ListWalletTradingActivityRequest {
+  int32 page = 1;
+  int32 page_size = 2 [(gogoproto.jsontag) = "pageSize,omitempty"];
+}
+
+message WormWalletConnection {
+  string state = 1;
+  string warning_code = 2 [(gogoproto.jsontag) = "warningCode,omitempty"];
+  int64 connected_at = 3 [(gogoproto.jsontag) = "connectedAt,omitempty"];
+}
+
+message WormMarketReference {
+  string condition_id = 1 [(gogoproto.jsontag) = "conditionId"];
+  string title = 2;
+  string logo = 3;
+  string last_trade_price = 4 [(gogoproto.jsontag) = "lastTradePrice,omitempty"];
+  string event_condition_id = 5 [(gogoproto.jsontag) = "eventConditionId,omitempty"];
+  string event_title = 6 [(gogoproto.jsontag) = "eventTitle,omitempty"];
+  string event_logo = 7 [(gogoproto.jsontag) = "eventLogo,omitempty"];
+}
+
+message WormOpenPosition {
+  string pubkey = 1;
+  string position_request_pubkey = 2 [(gogoproto.jsontag) = "positionRequestPubkey,omitempty"];
+  WormMarketReference market = 3;
+  string side = 4;
+  string leverage = 5;
+  string total_shares = 6 [(gogoproto.jsontag) = "totalShares"];
+  string avg_entry_price = 7 [(gogoproto.jsontag) = "avgEntryPrice"];
+  string unrealized_pnl = 8 [(gogoproto.jsontag) = "unrealizedPnl,omitempty"];
+  string realized_pnl = 9 [(gogoproto.jsontag) = "realizedPnl"];
+  string user_liquidity = 10 [(gogoproto.jsontag) = "userLiquidity"];
+  string total_liquidity = 11 [(gogoproto.jsontag) = "totalLiquidity"];
+  string liquidation_price = 12 [(gogoproto.jsontag) = "liquidationPrice"];
+  bool is_closed = 13 [(gogoproto.jsontag) = "isClosed"];
+  bool is_liquidated = 14 [(gogoproto.jsontag) = "isLiquidated"];
+  bool is_claimed = 15 [(gogoproto.jsontag) = "isClaimed"];
+  int64 created_at = 16 [(gogoproto.jsontag) = "createdAt,omitempty"];
+}
+
+message WormInFlightRequest {
+  string pubkey = 1;
+  string type = 2;
+  string state = 3;
+  string order_state = 4 [(gogoproto.jsontag) = "orderState,omitempty"];
+  WormMarketReference market = 5;
+  string side = 6;
+  string leverage = 7;
+  string funds = 8;
+  string price = 9 [(gogoproto.jsontag) = "price,omitempty"];
+  string shares = 10 [(gogoproto.jsontag) = "shares,omitempty"];
+  int64 created_at = 11 [(gogoproto.jsontag) = "createdAt,omitempty"];
+}
+
+message WormActivityStreamState {
+  string availability = 1;
+  string error_code = 2 [(gogoproto.jsontag) = "errorCode,omitempty"];
+  bool truncated = 3;
+}
+
+message WalletTradingActivityItem {
+  TradingWalletSummary wallet = 1;
+  WormWalletConnection connection = 2;
+  repeated WormOpenPosition open_positions = 3 [(gogoproto.jsontag) = "openPositions"];
+  repeated WormInFlightRequest in_flight_requests = 4 [(gogoproto.jsontag) = "inFlightRequests"];
+  WormActivityStreamState positions = 5;
+  WormActivityStreamState requests = 6;
+  string status = 7;
+  int64 observed_at = 8 [(gogoproto.jsontag) = "observedAt,omitempty"];
+}
+
+message ListWalletTradingActivityResponse {
+  repeated WalletTradingActivityItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4 [(gogoproto.jsontag) = "pageSize"];
+  int64 fetched_at = 5 [(gogoproto.jsontag) = "fetchedAt"];
+  int32 open_position_count = 6 [(gogoproto.jsontag) = "openPositionCount"];
+  int32 in_flight_request_count = 7 [(gogoproto.jsontag) = "inFlightRequestCount"];
+  string status = 8;
+}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse) {
     option (google.api.http) = {get: "/api/v1/worm-trading/status"};
@@ -91,5 +178,9 @@ service WormTradingService {
 
   rpc ListWalletBalances(ListWalletBalancesRequest) returns (ListWalletBalancesResponse) {
     option (google.api.http) = {get: "/api/v1/worm-trading/wallet-balances"};
+  }
+
+  rpc ListWalletTradingActivity(ListWalletTradingActivityRequest) returns (ListWalletTradingActivityResponse) {
+    option (google.api.http) = {get: "/api/v1/worm-trading/wallet-activity"};
   }
 }

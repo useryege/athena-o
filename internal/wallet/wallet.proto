@@ -89,6 +89,19 @@ message RevealWalletPrivateKeyResponse {
   string private_key = 1;
 }
 
+message SignWormAuthChallengeRequest {
+  int64 id = 1;
+  string requester_account_id = 2;
+  string expected_address = 3;
+  string nonce = 4;
+  string message = 5;
+}
+
+message SignWormAuthChallengeResponse {
+  string signature = 1;
+  string message_sha256 = 2;
+}
+
 message WalletAvatarMetadata {
   int64 id = 1;
   uint64 revision = 2;
@@ -149,6 +162,7 @@ service WalletService {
   rpc UpdateWalletRemark(UpdateWalletRemarkRequest) returns (UpdateWalletRemarkResponse);
   rpc UpdateWalletAvatarPreset(UpdateWalletAvatarPresetRequest) returns (UpdateWalletAvatarPresetResponse);
   rpc RevealWalletPrivateKey(RevealWalletPrivateKeyRequest) returns (RevealWalletPrivateKeyResponse);
+  rpc SignWormAuthChallenge(SignWormAuthChallengeRequest) returns (SignWormAuthChallengeResponse);
   rpc GetWalletAvatarMetadata(GetWalletAvatarMetadataRequest) returns (GetWalletAvatarMetadataResponse);
   rpc ReplaceWalletAvatarMetadata(ReplaceWalletAvatarMetadataRequest) returns (ReplaceWalletAvatarMetadataResponse);
   rpc ResetWalletAvatarMetadata(ResetWalletAvatarMetadataRequest) returns (ResetWalletAvatarMetadataResponse);

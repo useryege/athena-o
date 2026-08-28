@@ -46,6 +46,15 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
+    schema: "internal/wormtrading/store/migrations"
+    queries: "internal/wormtrading/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/wormtrading/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+  - engine: "postgresql"
     schema: "internal/sportslive/store/migrations"
     queries: "internal/sportslive/store/queries"
     gen:

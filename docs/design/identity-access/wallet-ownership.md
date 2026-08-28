@@ -10,26 +10,29 @@ Wallet read or write path; their role only gives them module access and they may
 manage wallets owned by their own account UUID.
 
 [Wallet Secret Reauthentication](wallet-secret-reauthentication.md) owns the
-additional browser proof required before a stored private key is revealed.
+independent browser proofs required before a stored private key is revealed or
+a Worm API credential is managed.
 [Account Credentials](account-credentials.md) owns the login/API Key distinction
 and account UUID. [Account and Wallet Avatar Storage](account-avatar-storage.md) documents
 the shared private S3-compatible storage boundary and image validation used by
-both account and wallet avatars. Worm Trading owns Solana balance RPC and its
-owner-scoped summary projection; it consumes only safe Wallet metadata selected
-by the API Server. Transactions, signing, transfers, mnemonics, wallet deletion,
-and blockchain RPC calls remain outside this capability.
+both account and wallet avatars. Worm Trading owns Solana balance and Worm
+position reads plus its owner-scoped summary projection; it consumes only safe
+Wallet metadata selected by the API Server. Wallet additionally owns one
+purpose-bound Ed25519 signer for the exact official Worm API-credential
+challenge. Arbitrary messages, transactions, transfers, mnemonics, wallet
+deletion, and blockchain RPC calls remain outside this capability.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | Public safe API | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [internal/server/wallet/wallet.go](../../../internal/server/wallet/wallet.go) | `WalletService`, `CreateWallet`, `ImportWallet`, `UpdateWalletRemark`, `UpdateWalletAvatarPreset` |
-| Trusted internal API and custody service | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/keys.go](../../../internal/wallet/keys.go) | service Bearer interceptor, `RevealWalletPrivateKey`, key normalization, owner-scoped avatar metadata methods |
+| Trusted internal API and custody service | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/keys.go](../../../internal/wallet/keys.go) | service Bearer interceptor, `RevealWalletPrivateKey`, `SignWormAuthChallenge`, key normalization, owner-scoped avatar metadata methods |
 | Durable state | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql), [internal/wallet/store/queries/wallets.sql](../../../internal/wallet/store/queries/wallets.sql), [internal/wallet/store/sql_store.go](../../../internal/wallet/store/sql_store.go) | `wallets`, owner predicates, optimistic revision updates |
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
-| Owner-scoped Worm Trading projection | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading) | `ListWalletBalances`, `TradingWalletSummary` |
+| Owner-scoped Worm Trading projection and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `completeWormConnection` |
 | Browser management surface | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
 | Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, `ATHENA_WALLET_INTERNAL_AUTH_TOKEN`, authenticated Wallet gRPC client |
 
@@ -59,12 +62,24 @@ avatar presentation, revision, and timestamps. Private keys appear only in the
 one-time create response or the separately protected native HTTP reveal
 response. Import never echoes submitted material.
 
-Worm Trading `ListWalletBalances` accepts no owner UUID or wallet address. The
-API Server derives the authenticated account UUID, lists that owner's Solana
-wallets through the internal Wallet API, and reduces each item to wallet ID,
-address, remark, and avatar presentation before attaching SOL/USDC balances.
-This path requires Worm Trading `READ` but does not grant the public Wallet list
-or detail APIs.
+Worm Trading balance and activity reads accept no owner UUID or wallet address.
+The API Server derives the authenticated account UUID, lists that owner's
+Solana wallets through the internal Wallet API, and reduces each item to wallet
+ID, address, remark, and avatar presentation before attaching SOL/USDC balances,
+Worm connection state, open positions, and in-flight requests. These paths
+require Worm Trading `READ` but do not grant the public Wallet list or detail
+APIs.
+
+Connection management performs an owner-scoped `GetWallet` before it prepares
+any challenge. The API Server may then call the internal
+`SignWormAuthChallenge` RPC with its service Bearer, server-derived account UUID,
+wallet ID, stored address, nonce, and exact challenge message. Wallet repeats
+owner lookup, requires a Solana wallet, verifies the expected address, accepts
+only `Create Worm API credential | Wallet: {stored_address} | Nonce: {nonce}`,
+decrypts and verifies the stored keypair, and returns only an Ed25519 signature
+and SHA-256 message digest, with no address field. The challenge signer is not
+projected through the public Wallet API or Swagger and cannot sign caller-
+selected content.
 
 Wallet HTTP JSON uses the reviewed camelCase field names, including
 `walletType`, `privateKey`, `avatarPresetId`, `expectedRevision`, and
@@ -123,6 +138,14 @@ this is a server-custodied design.
    The native API Server HTTP handler calls it after login-only authorization and
    a valid wallet-secret lease; the Wallet service additionally requires the
    shared internal Bearer. Public gRPC and Swagger do not expose this RPC.
+9. `SignWormAuthChallenge` also exists only on the authenticated internal
+   service. The native Worm connection handler calls it only after interactive
+   login, Worm Trading `READ_WRITE`, exact-origin, Worm-only lease, and owner-
+   scoped Solana Wallet checks. Wallet independently repeats owner, type,
+   address, exact-message, decrypted-key, and derived-address verification.
+   The private key never leaves Wallet, and the challenge never reaches the
+   browser; only signature and digest return to the API Server for comparison
+   and Worm Trading verification.
 
 ## State / Data
 
@@ -138,13 +161,15 @@ The table contains no chain, business-purpose type, system-wallet flag,
 nullable owner, mnemonic, derivation path, or repository seed. There is no
 ownership transfer or delete operation. The current-state migration is intended
 for an empty development deployment; schema replacement requires a complete
-data reset rather than a historical migration path.
+data reset.
 
 Private-key canonical forms are `0x` plus 64 lowercase hexadecimal digits for
 EVM and Base58 of the complete 64-byte Ed25519 keypair for Solana. Ciphertext is
 produced by the existing scrypt-derived AES-GCM utility using the process master
-key. Plaintext is held only for the current create/import/reveal call and must
-not enter logs, metrics, durable audit records, safe models, or avatar state.
+key. Plaintext is held only for the current create/import/reveal/sign call and
+must not enter logs, metrics, durable audit records, safe models, or avatar
+state. The Worm challenge signer does not persist a challenge, signature, or
+digest in the Wallet database.
 
 ## Configuration
 
@@ -167,8 +192,10 @@ not enter logs, metrics, durable audit records, safe models, or avatar state.
   caller-supplied owner IDs alone are never a trust boundary.
 - API Keys may read safe metadata and, with Wallet `READ_WRITE`, update remark
   and avatar state; they cannot create, import, or reveal private keys. Worm
-  Trading `READ` permits the same account's Solana summary, balances, and
-  uploaded-avatar GET without granting other Wallet operations.
+  Trading `READ` permits the same account's Solana summary, balances, Worm
+  activity, connection state, and uploaded-avatar GET without granting other
+  Wallet operations. API Keys cannot invoke the Worm challenge signer or manage
+  a connection.
 - Create/import require login or isolated development-session capability.
 - Public safe models never contain owner UUID, ciphertext, object key, private
   key, mnemonic, or role.
@@ -176,6 +203,9 @@ not enter logs, metrics, durable audit records, safe models, or avatar state.
 - Every mutation uses optimistic revision control.
 - External Solana login identity and Athena-managed Solana wallets remain
   independent; neither automatically creates or claims the other.
+- `SignWormAuthChallenge` is exact-purpose only: owner, Solana type, stored and
+  expected address, nonce, message, decrypted keypair, and derived address must
+  all agree before signing.
 
 ## Failure Recovery
 
@@ -189,6 +219,10 @@ leaves no wallet row; duplicate constraints preserve the original record.
 Decryption failure returns no partial secret. PostgreSQL transaction failure
 preserves the previous remark/avatar revision.
 
+Worm challenge validation fails before decrypting the key. A decryption,
+keypair, derived-address, signing, or response-validation failure returns no
+signature and cannot fall back to arbitrary signing or private-key reveal.
+
 Avatar object-store failure affects only avatar upload or delivery. Wallet
 listing, metadata editing, and secret access remain available, and the UI falls
 back to the deterministic avatar. Candidate-write ambiguity is reconciled
@@ -201,7 +235,8 @@ loading or object listing fails.
 Wallet service status and gRPC health expose process lifecycle. Logs may include
 wallet ID, wallet type, operation stage, and account UUID. They exclude private
 keys, ciphertext, encryption keys, the Wallet internal Bearer, avatar bytes, object credentials, external
-identity subjects, Session JTIs, and wallet-secret lease values.
+identity subjects, Session JTIs, wallet-secret or Worm lease values, Worm
+challenge messages, nonces, signatures, and message digests.
 
 ## Change Checklist
 
@@ -211,6 +246,7 @@ identity subjects, Session JTIs, and wallet-secret lease values.
 - [ ] Avatar validation, CAS, compensation, private delivery, and collection remain current.
 - [ ] Create/import/reveal credential restrictions match API Server authorization.
 - [ ] Worm Trading summary reads and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
+- [ ] The Worm challenge signer remains internal, owner scoped, Solana-only, exact-message-bound, and unavailable to API Keys.
 - [ ] UI secret state remains memory-only and is cleared on close, route, account, or permission change.
 - [ ] Configuration, reset guidance, and source links match the implementation.
 - [ ] The [design index](../README.md) contains the current summary.

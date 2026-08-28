@@ -5,9 +5,11 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"strings"
+	"time"
 
 	"github.com/useryege/athena/internal/server/version"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
+	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,8 +27,13 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	BalanceAdapter    *SolanaBalanceAdapter
-	InternalAuthToken string
+	BalanceAdapter          *SolanaBalanceAdapter
+	CredentialStore         wormstore.Store
+	CredentialEncryptionKey []byte
+	WormAPIAttemptTimeout   time.Duration
+	WormPositionBudget      time.Duration
+	WormPositionConcurrency int
+	InternalAuthToken       string
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -42,7 +49,18 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		healthService:         healthService,
 		internalAuthTokenHash: sha256.Sum256([]byte(internalAuthToken)),
 	}
-	server.service = NewService(opts.BalanceAdapter, server.setHealthStatus)
+	server.service, err = NewServiceWithOptions(ServiceOptions{
+		BalanceAdapter:          opts.BalanceAdapter,
+		CredentialStore:         opts.CredentialStore,
+		CredentialEncryptionKey: opts.CredentialEncryptionKey,
+		WormAPIAttemptTimeout:   opts.WormAPIAttemptTimeout,
+		WormPositionBudget:      opts.WormPositionBudget,
+		WormPositionConcurrency: opts.WormPositionConcurrency,
+		SetHealthStatus:         server.setHealthStatus,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return server, nil
 }
 

@@ -248,6 +248,10 @@ EOF
           rename_definition_property("wormtradingGetWormTradingStatusResponse"; "latency_ms"; "latencyMs") |
           rename_definition_property("wormtradingGetWormTradingStatusResponse"; "consecutive_failures"; "consecutiveFailures") |
           rename_definition_property("wormtradingGetWormTradingStatusResponse"; "last_error_category"; "lastErrorCategory") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "credential_store_ready"; "credentialStoreReady") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "worm_api_status"; "wormApiStatus") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "worm_api_last_success_at"; "wormApiLastSuccessAt") |
+          rename_definition_property("wormtradingGetWormTradingStatusResponse"; "worm_api_last_error_category"; "wormApiLastErrorCategory") |
           rename_definition_property("wormtradingTradingWalletSummary"; "wallet_id"; "walletId") |
           rename_definition_property("wormtradingTradingWalletSummary"; "avatar_kind"; "avatarKind") |
           rename_definition_property("wormtradingTradingWalletSummary"; "avatar_preset_id"; "avatarPresetId") |
@@ -261,7 +265,37 @@ EOF
           rename_definition_property("wormtradingTokenAssetBalance"; "token_account_count"; "tokenAccountCount") |
           rename_definition_property("wormtradingListWalletBalancesResponse"; "page_size"; "pageSize") |
           rename_definition_property("wormtradingListWalletBalancesResponse"; "fetched_at"; "fetchedAt") |
+          rename_definition_property("wormtradingWormWalletConnection"; "warning_code"; "warningCode") |
+          rename_definition_property("wormtradingWormWalletConnection"; "connected_at"; "connectedAt") |
+          rename_definition_property("wormtradingWormMarketReference"; "condition_id"; "conditionId") |
+          rename_definition_property("wormtradingWormMarketReference"; "last_trade_price"; "lastTradePrice") |
+          rename_definition_property("wormtradingWormMarketReference"; "event_condition_id"; "eventConditionId") |
+          rename_definition_property("wormtradingWormMarketReference"; "event_title"; "eventTitle") |
+          rename_definition_property("wormtradingWormMarketReference"; "event_logo"; "eventLogo") |
+          rename_definition_property("wormtradingWormOpenPosition"; "position_request_pubkey"; "positionRequestPubkey") |
+          rename_definition_property("wormtradingWormOpenPosition"; "total_shares"; "totalShares") |
+          rename_definition_property("wormtradingWormOpenPosition"; "avg_entry_price"; "avgEntryPrice") |
+          rename_definition_property("wormtradingWormOpenPosition"; "unrealized_pnl"; "unrealizedPnl") |
+          rename_definition_property("wormtradingWormOpenPosition"; "realized_pnl"; "realizedPnl") |
+          rename_definition_property("wormtradingWormOpenPosition"; "user_liquidity"; "userLiquidity") |
+          rename_definition_property("wormtradingWormOpenPosition"; "total_liquidity"; "totalLiquidity") |
+          rename_definition_property("wormtradingWormOpenPosition"; "liquidation_price"; "liquidationPrice") |
+          rename_definition_property("wormtradingWormOpenPosition"; "is_closed"; "isClosed") |
+          rename_definition_property("wormtradingWormOpenPosition"; "is_liquidated"; "isLiquidated") |
+          rename_definition_property("wormtradingWormOpenPosition"; "is_claimed"; "isClaimed") |
+          rename_definition_property("wormtradingWormOpenPosition"; "created_at"; "createdAt") |
+          rename_definition_property("wormtradingWormInFlightRequest"; "order_state"; "orderState") |
+          rename_definition_property("wormtradingWormInFlightRequest"; "created_at"; "createdAt") |
+          rename_definition_property("wormtradingWormActivityStreamState"; "error_code"; "errorCode") |
+          rename_definition_property("wormtradingWalletTradingActivityItem"; "open_positions"; "openPositions") |
+          rename_definition_property("wormtradingWalletTradingActivityItem"; "in_flight_requests"; "inFlightRequests") |
+          rename_definition_property("wormtradingWalletTradingActivityItem"; "observed_at"; "observedAt") |
+          rename_definition_property("wormtradingListWalletTradingActivityResponse"; "page_size"; "pageSize") |
+          rename_definition_property("wormtradingListWalletTradingActivityResponse"; "fetched_at"; "fetchedAt") |
+          rename_definition_property("wormtradingListWalletTradingActivityResponse"; "open_position_count"; "openPositionCount") |
+          rename_definition_property("wormtradingListWalletTradingActivityResponse"; "in_flight_request_count"; "inFlightRequestCount") |
           rename_query_parameter("/api/v1/worm-trading/wallet-balances"; "get"; "page_size"; "pageSize") |
+          rename_query_parameter("/api/v1/worm-trading/wallet-activity"; "get"; "page_size"; "pageSize") |
           mark_public_get("/api/version") |
           mark_public_get("/api/v1/session/userinfo") |
           mark_public_get("/api/v1/app/bootstrap")

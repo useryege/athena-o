@@ -7,6 +7,9 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notification')\gexec
 SELECT 'CREATE DATABASE wallet'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'wallet')\gexec
 
+SELECT 'CREATE DATABASE worm_trading'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'worm_trading')\gexec
+
 SELECT 'CREATE DATABASE sports_live'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'sports_live')\gexec
 

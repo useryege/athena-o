@@ -21,6 +21,7 @@ var targetKeys = []string{
 	"ATHENA_JWT_SECRET",
 	"ATHENA_WALLET_INTERNAL_AUTH_TOKEN",
 	"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN",
+	"ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY",
 }
 
 func main() {
@@ -85,16 +86,21 @@ func newSecretValues() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	wormTradingCredentialEncryptionKey, err := randomString(48, servicePasswordAlphabet)
+	if err != nil {
+		return nil, err
+	}
 
 	return map[string]string{
-		"POSTGRES_PASSWORD":                          postgresPassword,
-		"REDIS_PASSWORD":                             redisPassword,
-		"MINIO_ROOT_PASSWORD":                        minioRootPassword,
-		"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID":     minioAccessKey,
-		"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY": minioSecretKey,
-		"ATHENA_JWT_SECRET":                          base64.StdEncoding.EncodeToString(jwtSecretBytes),
-		"ATHENA_WALLET_INTERNAL_AUTH_TOKEN":          walletInternalAuthToken,
-		"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN":    wormTradingInternalAuthToken,
+		"POSTGRES_PASSWORD":                             postgresPassword,
+		"REDIS_PASSWORD":                                redisPassword,
+		"MINIO_ROOT_PASSWORD":                           minioRootPassword,
+		"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID":        minioAccessKey,
+		"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY":    minioSecretKey,
+		"ATHENA_JWT_SECRET":                             base64.StdEncoding.EncodeToString(jwtSecretBytes),
+		"ATHENA_WALLET_INTERNAL_AUTH_TOKEN":             walletInternalAuthToken,
+		"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN":       wormTradingInternalAuthToken,
+		"ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY": wormTradingCredentialEncryptionKey,
 	}, nil
 }
 

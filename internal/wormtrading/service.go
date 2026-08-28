@@ -3,23 +3,36 @@ package wormtrading
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
+	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 )
 
-const maxWalletBalanceReferences = 100
+const (
+	maxWalletBalanceReferences        = 100
+	wormCredentialMaintenanceInterval = 30 * time.Second
+)
 
 type Service struct {
 	apiclient.UnimplementedWormTradingServiceServer
 
-	adapter         *SolanaBalanceAdapter
-	setHealthStatus func(grpc_health_v1.HealthCheckResponse_ServingStatus)
+	adapter               *SolanaBalanceAdapter
+	setHealthStatus       func(grpc_health_v1.HealthCheckResponse_ServingStatus)
+	credentialStore       wormstore.Store
+	credentialCipher      *credentialCipher
+	wormClientFactory     WormAPIClientFactory
+	wormAPIAttemptTimeout time.Duration
+	wormPositionBudget    time.Duration
+	wormPositionSemaphore chan struct{}
+	wormCapabilities      wormCapabilityStatus
+	walletOperationLocks  sync.Map
 
 	startStopMu sync.Mutex
 	started     bool
@@ -27,11 +40,61 @@ type Service struct {
 	runWG       sync.WaitGroup
 }
 
-func NewService(
-	adapter *SolanaBalanceAdapter,
-	setHealthStatus func(grpc_health_v1.HealthCheckResponse_ServingStatus),
-) *Service {
-	return &Service{adapter: adapter, setHealthStatus: setHealthStatus}
+type ServiceOptions struct {
+	BalanceAdapter          *SolanaBalanceAdapter
+	CredentialStore         wormstore.Store
+	CredentialEncryptionKey []byte
+	WormAPIAttemptTimeout   time.Duration
+	WormPositionBudget      time.Duration
+	WormPositionConcurrency int
+	SetHealthStatus         func(grpc_health_v1.HealthCheckResponse_ServingStatus)
+}
+
+func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
+	if opts.WormAPIAttemptTimeout <= 0 {
+		opts.WormAPIAttemptTimeout = DefaultWormAPIAttemptTimeout
+	}
+	if opts.WormPositionBudget <= 0 {
+		opts.WormPositionBudget = DefaultWormPositionBudget
+	}
+	if opts.WormPositionConcurrency <= 0 {
+		opts.WormPositionConcurrency = DefaultWormPositionConcurrency
+	}
+	if opts.WormPositionConcurrency > 32 {
+		return nil, fmt.Errorf("worm position concurrency must not exceed 32")
+	}
+	if opts.WormAPIAttemptTimeout > opts.WormPositionBudget {
+		return nil, fmt.Errorf("worm API attempt timeout must not exceed the position budget")
+	}
+
+	if opts.CredentialStore == nil {
+		return nil, fmt.Errorf("worm credential store is required")
+	}
+	if len(opts.CredentialEncryptionKey) == 0 {
+		return nil, fmt.Errorf("worm credential encryption key is required")
+	}
+
+	service := &Service{
+		adapter:               opts.BalanceAdapter,
+		setHealthStatus:       opts.SetHealthStatus,
+		credentialStore:       opts.CredentialStore,
+		wormAPIAttemptTimeout: opts.WormAPIAttemptTimeout,
+		wormPositionBudget:    opts.WormPositionBudget,
+		wormPositionSemaphore: make(chan struct{}, opts.WormPositionConcurrency),
+	}
+	service.wormCapabilities.configureStore(true)
+
+	cipher, err := newCredentialCipher(opts.CredentialEncryptionKey)
+	if err != nil {
+		return nil, err
+	}
+	factory, err := NewOfficialWormAPIClientFactory(opts.WormAPIAttemptTimeout)
+	if err != nil {
+		return nil, err
+	}
+	service.credentialCipher = cipher
+	service.wormClientFactory = factory
+	return service, nil
 }
 
 func (s *Service) Start() error {
@@ -43,6 +106,16 @@ func (s *Service) Start() error {
 	if s.adapter == nil {
 		return status.Error(codes.FailedPrecondition, "Solana balance adapter is required")
 	}
+	if s.credentialStore != nil {
+		pingCtx, cancel := context.WithTimeout(context.Background(), s.wormAPIAttemptTimeout)
+		err := s.credentialStore.Ping(pingCtx)
+		cancel()
+		if err != nil {
+			s.wormCapabilities.recordStoreFailure()
+			return status.Error(codes.Unavailable, "Worm credential store is unavailable")
+		}
+		s.wormCapabilities.recordStoreSuccess()
+	}
 
 	runCtx, cancel := context.WithCancel(context.Background())
 	s.runCancel = cancel
@@ -51,6 +124,10 @@ func (s *Service) Start() error {
 	s.updateHealth(grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	s.runWG.Add(1)
 	go s.runProbeLoop(runCtx)
+	if s.credentialStore != nil {
+		s.runWG.Add(1)
+		go s.runCredentialMaintenanceLoop(runCtx)
+	}
 	return nil
 }
 
@@ -103,6 +180,55 @@ func (s *Service) runProbeLoop(ctx context.Context) {
 	}
 }
 
+func (s *Service) runCredentialMaintenanceLoop(ctx context.Context) {
+	defer s.runWG.Done()
+	for {
+		err := s.credentialStore.ExpireConnectionAttempts(ctx, timeNowUTC(), 100)
+		s.recordCredentialStoreResult(err)
+		s.revokePendingCredentials(ctx)
+		timer := time.NewTimer(wormCredentialMaintenanceInterval)
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return
+		case <-timer.C:
+		}
+	}
+}
+
+func (s *Service) revokePendingCredentials(ctx context.Context) {
+	maintenanceCtx, cancel := context.WithTimeout(ctx, s.wormPositionBudget)
+	defer cancel()
+	credentials, err := s.credentialStore.ListCredentialsNeedingRevocation(
+		maintenanceCtx,
+		timeNowUTC().Add(-s.wormAPIAttemptTimeout),
+		100,
+	)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return
+	}
+	for _, credential := range credentials {
+		if maintenanceCtx.Err() != nil {
+			return
+		}
+		unlock := s.walletOperationLock(credential.WalletID)
+		stored, beginErr := s.credentialStore.BeginCredentialRevocation(
+			maintenanceCtx,
+			credential.WalletID,
+			credential.ID,
+			timeNowUTC(),
+		)
+		s.recordCredentialStoreResult(beginErr)
+		if beginErr == nil && stored != nil {
+			_ = s.revokeStoredCredential(maintenanceCtx, *stored, false)
+		}
+		unlock()
+	}
+}
+
 func (s *Service) GetWormTradingStatus(
 	context.Context,
 	*apiclient.GetWormTradingStatusRequest,
@@ -119,25 +245,33 @@ func (s *Service) GetWormTradingStatus(
 	if !started {
 		statusText = "stopped"
 	}
+	wormStatus := s.wormCapabilities.snapshot()
 	return &apiclient.GetWormTradingStatusResponse{
-		Started:             started,
-		Status:              statusText,
-		Network:             SolanaNetwork,
-		Commitment:          SolanaCommitment,
-		RpcConfigured:       adapterStatus.RPCConfigured,
-		RpcReachable:        adapterStatus.RPCReachable,
-		BatchSupported:      adapterStatus.BatchSupported,
-		GenesisVerified:     adapterStatus.GenesisVerified,
-		GenesisHash:         adapterStatus.GenesisHash,
-		UsdcMint:            SolanaNativeUSDCMint,
-		UsdcProgramVerified: adapterStatus.USDCProgramVerified,
-		UsdcDecimals:        adapterStatus.USDCDecimals,
-		LatestConfirmedSlot: adapterStatus.LatestConfirmedSlot,
-		LastProbeAt:         adapterStatus.LastProbeAt,
-		LastSuccessAt:       adapterStatus.LastSuccessAt,
-		LatencyMs:           adapterStatus.LatencyMS,
-		ConsecutiveFailures: adapterStatus.ConsecutiveFailures,
-		LastErrorCode:       adapterStatus.LastErrorCode,
+		Started:                   started,
+		Status:                    statusText,
+		Network:                   SolanaNetwork,
+		Commitment:                SolanaCommitment,
+		RpcConfigured:             adapterStatus.RPCConfigured,
+		RpcReachable:              adapterStatus.RPCReachable,
+		BatchSupported:            adapterStatus.BatchSupported,
+		GenesisVerified:           adapterStatus.GenesisVerified,
+		GenesisHash:               adapterStatus.GenesisHash,
+		UsdcMint:                  SolanaNativeUSDCMint,
+		UsdcProgramVerified:       adapterStatus.USDCProgramVerified,
+		UsdcDecimals:              adapterStatus.USDCDecimals,
+		LatestConfirmedSlot:       adapterStatus.LatestConfirmedSlot,
+		LastProbeAt:               adapterStatus.LastProbeAt,
+		LastSuccessAt:             adapterStatus.LastSuccessAt,
+		LatencyMs:                 adapterStatus.LatencyMS,
+		ConsecutiveFailures:       adapterStatus.ConsecutiveFailures,
+		LastErrorCode:             adapterStatus.LastErrorCode,
+		CredentialStoreConfigured: wormStatus.CredentialStoreConfigured,
+		CredentialStoreReachable:  wormStatus.CredentialStoreReachable,
+		CredentialStoreStatus:     wormStatus.CredentialStoreStatus,
+		WormApiReachable:          wormStatus.WormAPIReachable,
+		LastWormSuccessAt:         wormStatus.LastWormSuccessAt,
+		LastWormFailureAt:         wormStatus.LastWormFailureAt,
+		LastWormErrorCode:         wormStatus.LastWormErrorCode,
 	}, nil
 }
 
@@ -230,6 +364,33 @@ func (s *Service) updateHealth(servingStatus grpc_health_v1.HealthCheckResponse_
 	if s.setHealthStatus != nil {
 		s.setHealthStatus(servingStatus)
 	}
+}
+
+func (s *Service) requireCredentialCapability() error {
+	if !s.isStarted() {
+		return status.Error(codes.FailedPrecondition, "Worm Trading service is not started")
+	}
+	if s.credentialStore == nil || s.credentialCipher == nil || s.wormClientFactory == nil {
+		return status.Error(codes.FailedPrecondition, "Worm credential capability is not configured")
+	}
+	return nil
+}
+
+func (s *Service) walletOperationLock(walletID int64) func() {
+	lockValue, _ := s.walletOperationLocks.LoadOrStore(walletID, &sync.Mutex{})
+	lock := lockValue.(*sync.Mutex)
+	lock.Lock()
+	return lock.Unlock
+}
+
+func (s *Service) recordCredentialStoreResult(err error) {
+	if err == nil || errors.Is(err, wormstore.ErrNotFound) || errors.Is(err, wormstore.ErrConflict) ||
+		errors.Is(err, wormstore.ErrExpired) || errors.Is(err, wormstore.ErrInvalidState) ||
+		errors.Is(err, wormstore.ErrAddressMismatch) {
+		s.wormCapabilities.recordStoreSuccess()
+		return
+	}
+	s.wormCapabilities.recordStoreFailure()
 }
 
 func providerCompletelyUnavailable(results []WalletBalanceResult) bool {

@@ -52,9 +52,7 @@ body,
     overflow: hidden;
     border-color: var(--athena-border);
     border-radius: 12px;
-    background:
-        radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 11rem),
-        var(--athena-panel);
+    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 11rem), var(--athena-panel);
     box-shadow: var(--athena-shadow-surface);
     cursor: pointer;
     transition:
@@ -484,9 +482,7 @@ body,
     padding: 18px 20px;
     border: 1px solid var(--athena-border);
     border-radius: 12px;
-    background:
-        radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-blue) 8%, transparent), transparent 18rem),
-        var(--athena-panel);
+    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-blue) 8%, transparent), transparent 18rem), var(--athena-panel);
     box-shadow: var(--athena-shadow-surface);
 }
 
@@ -495,6 +491,18 @@ body,
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+
+.worm-trading-runtime__services {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.worm-trading-runtime__services .worm-trading-runtime__heading {
+    min-width: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--athena-border);
 }
 
 .worm-trading-runtime__heading > span {
@@ -557,6 +565,11 @@ body,
 
 .worm-trading-balances {
     min-width: 0;
+}
+
+.worm-trading-activity {
+    min-width: 0;
+    margin-top: 28px;
 }
 
 .worm-trading-balances__heading {
@@ -739,6 +752,206 @@ body,
     white-space: nowrap;
 }
 
+.worm-trading-connection {
+    display: grid;
+    min-width: 0;
+    justify-items: start;
+    gap: 7px;
+}
+
+.worm-trading-connection__state {
+    display: grid;
+    min-width: 0;
+    justify-items: start;
+    gap: 4px;
+}
+
+.worm-trading-connection__state .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-trading-connection__state small,
+.worm-trading-connection__stage {
+    max-width: 220px;
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-size: 10px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+}
+
+.worm-trading-connection__stage {
+    color: var(--athena-primary);
+}
+
+.worm-trading-balance-card__connection {
+    display: grid;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.worm-trading-balance-card__connection > span {
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.worm-trading-balance-card__connection .worm-trading-connection {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+}
+
+.worm-trading-balance-card__connection .worm-trading-connection__stage {
+    grid-column: 1 / -1;
+}
+
+.worm-trading-market {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.worm-trading-market > .ant-avatar {
+    flex: 0 0 auto;
+    border: 1px solid var(--athena-border);
+    background: var(--athena-bg-soft);
+    color: var(--athena-muted);
+}
+
+.worm-trading-market > div {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-trading-market .ant-typography {
+    min-width: 0;
+    color: var(--athena-text);
+    font-size: 13px;
+}
+
+.worm-trading-market small {
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-data-pair {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-trading-data-pair strong,
+.worm-trading-data-pair code {
+    overflow: hidden;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-data-pair small {
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-size: 10px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-section-alert.ant-alert,
+.worm-trading-stream-notice.ant-alert {
+    margin-bottom: 12px;
+}
+
+.worm-trading-activity-card.ant-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    border-radius: 10px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-trading-activity-card .ant-card-body {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+}
+
+.worm-trading-activity-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.worm-trading-activity-card__tags .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-trading-activity-card__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+
+.worm-trading-activity-card__facts > div {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+    padding: 9px 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 52%, var(--athena-panel-solid));
+}
+
+.worm-trading-activity-card__facts dt {
+    color: var(--athena-muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.worm-trading-activity-card__facts dd {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-trading-activity-card__footer {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--athena-border);
+    color: var(--athena-muted);
+    font-size: 10px;
+}
+
+.worm-trading-activity-card__footer code {
+    min-width: 0;
+    overflow: hidden;
+    color: inherit;
+    font-family: var(--athena-data-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .worm-trading-pagination.ant-pagination {
     justify-content: flex-end;
     margin-top: 18px;
@@ -791,6 +1004,10 @@ body,
         min-width: 44px;
         min-height: 44px;
     }
+
+    .worm-trading-connection .ant-btn {
+        min-height: 40px;
+    }
 }
 
 @media (max-width: 520px) {
@@ -798,6 +1015,11 @@ body,
     .worm-trading-balances__heading {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .worm-trading-runtime__services {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
     }
 
     .worm-trading-runtime__facts,
@@ -816,6 +1038,14 @@ body,
 
     .worm-trading-balance-card__header .ant-tag {
         width: fit-content;
+    }
+
+    .worm-trading-balance-card__connection .worm-trading-connection {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-trading-activity-card__facts {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .worm-trading-empty {
