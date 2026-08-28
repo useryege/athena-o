@@ -41,6 +41,10 @@ var (
 	ErrConnectionAttemptState     = fmt.Errorf("%w: connection attempt", ErrInvalidState)
 	ErrCredentialNotFound         = fmt.Errorf("%w: credential", ErrNotFound)
 	ErrCredentialOutcomeUnknown   = fmt.Errorf("%w: remote credential creation outcome", ErrInvalidState)
+	ErrMarketCombinationNotFound  = fmt.Errorf("%w: market combination", ErrNotFound)
+	ErrMarketCombinationExists    = fmt.Errorf("%w: market combination name already exists", ErrConflict)
+	ErrMarketCombinationRevision  = fmt.Errorf("%w: market combination revision", ErrConflict)
+	ErrInvalidMarketCombination   = fmt.Errorf("%w: invalid market combination", ErrInvalidState)
 )
 
 type SQLStore struct {

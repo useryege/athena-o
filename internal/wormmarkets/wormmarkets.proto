@@ -27,6 +27,53 @@ message GetWormEventResponse {
   int64 fetched_at = 2;
 }
 
+// GetOrderEventCatalogRequest queries one Worm event for order-combination
+// construction. event_condition_id must be one canonical Solana public key.
+message GetOrderEventCatalogRequest {
+  string event_condition_id = 1;
+}
+
+// OrderEventCatalogOutcome is one canonical YES or NO direction. A direction
+// is selectable only when the market-wide checks and its own 1x leverage check
+// pass. unavailable_code is a stable machine-readable reason.
+message OrderEventCatalogOutcome {
+  bool is_yes = 1;
+  string label = 2;
+  string max_leverage = 3;
+  bool selectable = 4;
+  string unavailable_code = 5;
+}
+
+// OrderEventCatalogMarket is one child market of an order event. Detail
+// failures remain in the catalog but are explicitly unavailable.
+message OrderEventCatalogMarket {
+  string market_condition_id = 1;
+  string event_condition_id = 2;
+  string title = 3;
+  string logo = 4;
+  string state = 5;
+  bool margin_enabled = 6;
+  string backend = 7;
+  string unavailable_code = 8;
+  repeated OrderEventCatalogOutcome outcomes = 9;
+}
+
+// OrderEventCatalog is a fresh provider-backed event and its complete ordered
+// child-market catalog.
+message OrderEventCatalog {
+  string event_condition_id = 1;
+  string title = 2;
+  string logo = 3;
+  repeated OrderEventCatalogMarket markets = 4;
+}
+
+// GetOrderEventCatalogResponse returns a fresh catalog without performing
+// margin estimates or any Worm mutation.
+message GetOrderEventCatalogResponse {
+  OrderEventCatalog event = 1;
+  int64 fetched_at = 2;
+}
+
 // ListWormEventsRequest queries Worm events for the configured browse view.
 message ListWormEventsRequest {
   int32 limit = 1;
@@ -49,6 +96,10 @@ service WormMarketsService {
 
   // GetWormEvent returns an event and related market summaries by condition id.
   rpc GetWormEvent(GetWormEventRequest) returns (GetWormEventResponse);
+
+  // GetOrderEventCatalog returns a fresh order-construction catalog by event
+  // condition id without estimating or mutating a trade.
+  rpc GetOrderEventCatalog(GetOrderEventCatalogRequest) returns (GetOrderEventCatalogResponse);
 
   // ListWormEvents returns events for the requested browse filters.
   rpc ListWormEvents(ListWormEventsRequest) returns (ListWormEventsResponse);

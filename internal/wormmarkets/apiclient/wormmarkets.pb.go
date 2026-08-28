@@ -229,6 +229,380 @@ func (m *GetWormEventResponse) GetFetchedAt() int64 {
 	return 0
 }
 
+// GetOrderEventCatalogRequest queries one Worm event for order-combination
+// construction. event_condition_id must be one canonical Solana public key.
+type GetOrderEventCatalogRequest struct {
+	EventConditionId     string   `protobuf:"bytes,1,opt,name=event_condition_id,json=eventConditionId,proto3" json:"event_condition_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetOrderEventCatalogRequest) Reset()         { *m = GetOrderEventCatalogRequest{} }
+func (m *GetOrderEventCatalogRequest) String() string { return proto.CompactTextString(m) }
+func (*GetOrderEventCatalogRequest) ProtoMessage()    {}
+func (*GetOrderEventCatalogRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a2c48dffa2847112, []int{4}
+}
+func (m *GetOrderEventCatalogRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetOrderEventCatalogRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetOrderEventCatalogRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetOrderEventCatalogRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetOrderEventCatalogRequest.Merge(m, src)
+}
+func (m *GetOrderEventCatalogRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetOrderEventCatalogRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetOrderEventCatalogRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetOrderEventCatalogRequest proto.InternalMessageInfo
+
+func (m *GetOrderEventCatalogRequest) GetEventConditionId() string {
+	if m != nil {
+		return m.EventConditionId
+	}
+	return ""
+}
+
+// OrderEventCatalogOutcome is one canonical YES or NO direction. A direction
+// is selectable only when the market-wide checks and its own 1x leverage check
+// pass. unavailable_code is a stable machine-readable reason.
+type OrderEventCatalogOutcome struct {
+	IsYes                bool     `protobuf:"varint,1,opt,name=is_yes,json=isYes,proto3" json:"is_yes,omitempty"`
+	Label                string   `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	MaxLeverage          string   `protobuf:"bytes,3,opt,name=max_leverage,json=maxLeverage,proto3" json:"max_leverage,omitempty"`
+	Selectable           bool     `protobuf:"varint,4,opt,name=selectable,proto3" json:"selectable,omitempty"`
+	UnavailableCode      string   `protobuf:"bytes,5,opt,name=unavailable_code,json=unavailableCode,proto3" json:"unavailable_code,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *OrderEventCatalogOutcome) Reset()         { *m = OrderEventCatalogOutcome{} }
+func (m *OrderEventCatalogOutcome) String() string { return proto.CompactTextString(m) }
+func (*OrderEventCatalogOutcome) ProtoMessage()    {}
+func (*OrderEventCatalogOutcome) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a2c48dffa2847112, []int{5}
+}
+func (m *OrderEventCatalogOutcome) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *OrderEventCatalogOutcome) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_OrderEventCatalogOutcome.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *OrderEventCatalogOutcome) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OrderEventCatalogOutcome.Merge(m, src)
+}
+func (m *OrderEventCatalogOutcome) XXX_Size() int {
+	return m.Size()
+}
+func (m *OrderEventCatalogOutcome) XXX_DiscardUnknown() {
+	xxx_messageInfo_OrderEventCatalogOutcome.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OrderEventCatalogOutcome proto.InternalMessageInfo
+
+func (m *OrderEventCatalogOutcome) GetIsYes() bool {
+	if m != nil {
+		return m.IsYes
+	}
+	return false
+}
+
+func (m *OrderEventCatalogOutcome) GetLabel() string {
+	if m != nil {
+		return m.Label
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogOutcome) GetMaxLeverage() string {
+	if m != nil {
+		return m.MaxLeverage
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogOutcome) GetSelectable() bool {
+	if m != nil {
+		return m.Selectable
+	}
+	return false
+}
+
+func (m *OrderEventCatalogOutcome) GetUnavailableCode() string {
+	if m != nil {
+		return m.UnavailableCode
+	}
+	return ""
+}
+
+// OrderEventCatalogMarket is one child market of an order event. Detail
+// failures remain in the catalog but are explicitly unavailable.
+type OrderEventCatalogMarket struct {
+	MarketConditionId    string                      `protobuf:"bytes,1,opt,name=market_condition_id,json=marketConditionId,proto3" json:"market_condition_id,omitempty"`
+	EventConditionId     string                      `protobuf:"bytes,2,opt,name=event_condition_id,json=eventConditionId,proto3" json:"event_condition_id,omitempty"`
+	Title                string                      `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Logo                 string                      `protobuf:"bytes,4,opt,name=logo,proto3" json:"logo,omitempty"`
+	State                string                      `protobuf:"bytes,5,opt,name=state,proto3" json:"state,omitempty"`
+	MarginEnabled        bool                        `protobuf:"varint,6,opt,name=margin_enabled,json=marginEnabled,proto3" json:"margin_enabled,omitempty"`
+	Backend              string                      `protobuf:"bytes,7,opt,name=backend,proto3" json:"backend,omitempty"`
+	UnavailableCode      string                      `protobuf:"bytes,8,opt,name=unavailable_code,json=unavailableCode,proto3" json:"unavailable_code,omitempty"`
+	Outcomes             []*OrderEventCatalogOutcome `protobuf:"bytes,9,rep,name=outcomes,proto3" json:"outcomes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *OrderEventCatalogMarket) Reset()         { *m = OrderEventCatalogMarket{} }
+func (m *OrderEventCatalogMarket) String() string { return proto.CompactTextString(m) }
+func (*OrderEventCatalogMarket) ProtoMessage()    {}
+func (*OrderEventCatalogMarket) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a2c48dffa2847112, []int{6}
+}
+func (m *OrderEventCatalogMarket) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *OrderEventCatalogMarket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_OrderEventCatalogMarket.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *OrderEventCatalogMarket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OrderEventCatalogMarket.Merge(m, src)
+}
+func (m *OrderEventCatalogMarket) XXX_Size() int {
+	return m.Size()
+}
+func (m *OrderEventCatalogMarket) XXX_DiscardUnknown() {
+	xxx_messageInfo_OrderEventCatalogMarket.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OrderEventCatalogMarket proto.InternalMessageInfo
+
+func (m *OrderEventCatalogMarket) GetMarketConditionId() string {
+	if m != nil {
+		return m.MarketConditionId
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetEventConditionId() string {
+	if m != nil {
+		return m.EventConditionId
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetLogo() string {
+	if m != nil {
+		return m.Logo
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetState() string {
+	if m != nil {
+		return m.State
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetMarginEnabled() bool {
+	if m != nil {
+		return m.MarginEnabled
+	}
+	return false
+}
+
+func (m *OrderEventCatalogMarket) GetBackend() string {
+	if m != nil {
+		return m.Backend
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetUnavailableCode() string {
+	if m != nil {
+		return m.UnavailableCode
+	}
+	return ""
+}
+
+func (m *OrderEventCatalogMarket) GetOutcomes() []*OrderEventCatalogOutcome {
+	if m != nil {
+		return m.Outcomes
+	}
+	return nil
+}
+
+// OrderEventCatalog is a fresh provider-backed event and its complete ordered
+// child-market catalog.
+type OrderEventCatalog struct {
+	EventConditionId     string                     `protobuf:"bytes,1,opt,name=event_condition_id,json=eventConditionId,proto3" json:"event_condition_id,omitempty"`
+	Title                string                     `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Logo                 string                     `protobuf:"bytes,3,opt,name=logo,proto3" json:"logo,omitempty"`
+	Markets              []*OrderEventCatalogMarket `protobuf:"bytes,4,rep,name=markets,proto3" json:"markets,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *OrderEventCatalog) Reset()         { *m = OrderEventCatalog{} }
+func (m *OrderEventCatalog) String() string { return proto.CompactTextString(m) }
+func (*OrderEventCatalog) ProtoMessage()    {}
+func (*OrderEventCatalog) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a2c48dffa2847112, []int{7}
+}
+func (m *OrderEventCatalog) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *OrderEventCatalog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_OrderEventCatalog.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *OrderEventCatalog) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OrderEventCatalog.Merge(m, src)
+}
+func (m *OrderEventCatalog) XXX_Size() int {
+	return m.Size()
+}
+func (m *OrderEventCatalog) XXX_DiscardUnknown() {
+	xxx_messageInfo_OrderEventCatalog.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OrderEventCatalog proto.InternalMessageInfo
+
+func (m *OrderEventCatalog) GetEventConditionId() string {
+	if m != nil {
+		return m.EventConditionId
+	}
+	return ""
+}
+
+func (m *OrderEventCatalog) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *OrderEventCatalog) GetLogo() string {
+	if m != nil {
+		return m.Logo
+	}
+	return ""
+}
+
+func (m *OrderEventCatalog) GetMarkets() []*OrderEventCatalogMarket {
+	if m != nil {
+		return m.Markets
+	}
+	return nil
+}
+
+// GetOrderEventCatalogResponse returns a fresh catalog without performing
+// margin estimates or any Worm mutation.
+type GetOrderEventCatalogResponse struct {
+	Event                *OrderEventCatalog `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
+	FetchedAt            int64              `protobuf:"varint,2,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *GetOrderEventCatalogResponse) Reset()         { *m = GetOrderEventCatalogResponse{} }
+func (m *GetOrderEventCatalogResponse) String() string { return proto.CompactTextString(m) }
+func (*GetOrderEventCatalogResponse) ProtoMessage()    {}
+func (*GetOrderEventCatalogResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a2c48dffa2847112, []int{8}
+}
+func (m *GetOrderEventCatalogResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetOrderEventCatalogResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetOrderEventCatalogResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetOrderEventCatalogResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetOrderEventCatalogResponse.Merge(m, src)
+}
+func (m *GetOrderEventCatalogResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetOrderEventCatalogResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetOrderEventCatalogResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetOrderEventCatalogResponse proto.InternalMessageInfo
+
+func (m *GetOrderEventCatalogResponse) GetEvent() *OrderEventCatalog {
+	if m != nil {
+		return m.Event
+	}
+	return nil
+}
+
+func (m *GetOrderEventCatalogResponse) GetFetchedAt() int64 {
+	if m != nil {
+		return m.FetchedAt
+	}
+	return 0
+}
+
 // ListWormEventsRequest queries Worm events for the configured browse view.
 type ListWormEventsRequest struct {
 	Limit                int32    `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
@@ -244,7 +618,7 @@ func (m *ListWormEventsRequest) Reset()         { *m = ListWormEventsRequest{} }
 func (m *ListWormEventsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListWormEventsRequest) ProtoMessage()    {}
 func (*ListWormEventsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a2c48dffa2847112, []int{4}
+	return fileDescriptor_a2c48dffa2847112, []int{9}
 }
 func (m *ListWormEventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -316,7 +690,7 @@ func (m *ListWormEventsResponse) Reset()         { *m = ListWormEventsResponse{}
 func (m *ListWormEventsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListWormEventsResponse) ProtoMessage()    {}
 func (*ListWormEventsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a2c48dffa2847112, []int{5}
+	return fileDescriptor_a2c48dffa2847112, []int{10}
 }
 func (m *ListWormEventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -378,6 +752,11 @@ func init() {
 	proto.RegisterType((*GetWormMarketsStatusResponse)(nil), "athena.internal.wormmarkets.GetWormMarketsStatusResponse")
 	proto.RegisterType((*GetWormEventRequest)(nil), "athena.internal.wormmarkets.GetWormEventRequest")
 	proto.RegisterType((*GetWormEventResponse)(nil), "athena.internal.wormmarkets.GetWormEventResponse")
+	proto.RegisterType((*GetOrderEventCatalogRequest)(nil), "athena.internal.wormmarkets.GetOrderEventCatalogRequest")
+	proto.RegisterType((*OrderEventCatalogOutcome)(nil), "athena.internal.wormmarkets.OrderEventCatalogOutcome")
+	proto.RegisterType((*OrderEventCatalogMarket)(nil), "athena.internal.wormmarkets.OrderEventCatalogMarket")
+	proto.RegisterType((*OrderEventCatalog)(nil), "athena.internal.wormmarkets.OrderEventCatalog")
+	proto.RegisterType((*GetOrderEventCatalogResponse)(nil), "athena.internal.wormmarkets.GetOrderEventCatalogResponse")
 	proto.RegisterType((*ListWormEventsRequest)(nil), "athena.internal.wormmarkets.ListWormEventsRequest")
 	proto.RegisterType((*ListWormEventsResponse)(nil), "athena.internal.wormmarkets.ListWormEventsResponse")
 }
@@ -387,42 +766,61 @@ func init() {
 }
 
 var fileDescriptor_a2c48dffa2847112 = []byte{
-	// 545 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x94, 0x4d, 0x6f, 0xd3, 0x4c,
-	0x10, 0xc7, 0xe5, 0x27, 0x4f, 0x4b, 0x33, 0x09, 0x1c, 0x96, 0x52, 0x59, 0x29, 0x0d, 0xc1, 0x48,
-	0xa8, 0xa7, 0x35, 0x49, 0x2f, 0xed, 0x11, 0x10, 0x2a, 0x95, 0x78, 0x93, 0x7b, 0x40, 0xe2, 0x12,
-	0x6d, 0xed, 0xa9, 0xb3, 0x8a, 0xed, 0x35, 0xbb, 0xe3, 0x40, 0x3e, 0x43, 0x6f, 0x5c, 0xf9, 0x42,
-	0x1c, 0x39, 0x71, 0x46, 0xf9, 0x24, 0xc8, 0x6f, 0xc4, 0xa9, 0xa2, 0x88, 0x22, 0x71, 0xf3, 0xcc,
-	0xce, 0xdb, 0xff, 0xe7, 0xd9, 0x85, 0xc7, 0x32, 0x21, 0xd4, 0x89, 0x88, 0xdc, 0x4f, 0x4a, 0xc7,
-	0xb1, 0xd0, 0x53, 0x24, 0xd3, 0xfc, 0xe6, 0xa9, 0x56, 0xa4, 0xd8, 0xbe, 0xa0, 0x09, 0x26, 0x82,
-	0xd7, 0xe1, 0xbc, 0x11, 0xd2, 0x7b, 0x19, 0x4a, 0x9a, 0x64, 0x17, 0xdc, 0x57, 0xb1, 0x9b, 0x19,
-	0xd4, 0x73, 0x0c, 0xd1, 0x2d, 0x13, 0xdc, 0x74, 0x1a, 0xba, 0x22, 0x95, 0xc6, 0x15, 0x69, 0x1a,
-	0x49, 0x5f, 0x90, 0x54, 0x89, 0x3b, 0x1b, 0x8a, 0x28, 0x9d, 0x88, 0xa1, 0x1b, 0x62, 0x82, 0x5a,
-	0x10, 0x06, 0x65, 0x1b, 0xe7, 0x00, 0xf6, 0x4f, 0x91, 0xde, 0x2b, 0x1d, 0xbf, 0x2e, 0x6b, 0x9f,
-	0x93, 0xa0, 0xcc, 0x78, 0xf8, 0x31, 0x43, 0x43, 0xce, 0x3b, 0xb8, 0xbf, 0xfe, 0xd8, 0xa4, 0x2a,
-	0x31, 0xc8, 0x6c, 0xb8, 0x65, 0x48, 0x68, 0xc2, 0xc0, 0xb6, 0x06, 0xd6, 0xe1, 0x8e, 0x57, 0x9b,
-	0x6c, 0x0f, 0xb6, 0x4d, 0x11, 0x6b, 0xff, 0x37, 0xb0, 0x0e, 0xdb, 0x5e, 0x65, 0x39, 0xc7, 0x70,
-	0xb7, 0xaa, 0xf8, 0x62, 0x86, 0x09, 0x55, 0x8d, 0xd8, 0x43, 0xe8, 0xfa, 0x2a, 0x09, 0x64, 0x3e,
-	0xed, 0x58, 0x96, 0xd5, 0xda, 0x5e, 0xe7, 0xb7, 0xef, 0x2c, 0x70, 0xbe, 0x5a, 0xb0, 0xbb, 0x9a,
-	0x5a, 0x0d, 0x11, 0xc0, 0x16, 0xe6, 0x8e, 0x22, 0xa9, 0x33, 0x7a, 0xc3, 0x97, 0x74, 0x78, 0x4d,
-	0x87, 0x57, 0x38, 0xd3, 0x69, 0xc8, 0x73, 0x3a, 0xbc, 0x41, 0x87, 0xd7, 0x74, 0x78, 0x43, 0x68,
-	0xd1, 0xe2, 0x8c, 0x30, 0xf6, 0xca, 0xe2, 0xec, 0x00, 0xe0, 0x12, 0xc9, 0x9f, 0x60, 0x30, 0x16,
-	0x54, 0x88, 0x6a, 0x79, 0xed, 0xca, 0xf3, 0x94, 0x9c, 0x2b, 0x0b, 0xee, 0xbd, 0x92, 0x66, 0x39,
-	0x5e, 0xcd, 0x90, 0xed, 0xc2, 0x56, 0x24, 0x63, 0x59, 0x8e, 0xb7, 0xe5, 0x95, 0x46, 0xce, 0xc7,
-	0xcf, 0xb4, 0x51, 0xba, 0xe6, 0x53, 0x5a, 0xec, 0x01, 0x74, 0x8c, 0xd2, 0x34, 0x56, 0x69, 0x3e,
-	0x9a, 0xdd, 0x2a, 0x0e, 0x21, 0x77, 0xbd, 0x2d, 0x3c, 0xec, 0x11, 0xdc, 0xf6, 0x05, 0x61, 0xa8,
-	0xf4, 0x7c, 0x6c, 0xa2, 0x2c, 0xb4, 0xff, 0x2f, 0x42, 0xba, 0xb5, 0xf3, 0x3c, 0xca, 0x42, 0xe7,
-	0x87, 0x05, 0x7b, 0xd7, 0xa7, 0xa9, 0x68, 0x5d, 0xc2, 0x76, 0x21, 0xc8, 0xd8, 0xd6, 0xa0, 0xf5,
-	0x0f, 0x70, 0x55, 0xd5, 0x73, 0x21, 0x09, 0x7e, 0xa6, 0xf1, 0x8a, 0x4a, 0xc8, 0x5d, 0xcf, 0x4b,
-	0xa5, 0xab, 0x40, 0x5b, 0xd7, 0x80, 0xe6, 0xd8, 0x0c, 0x89, 0x08, 0x0b, 0x7d, 0x3b, 0x5e, 0x69,
-	0x8c, 0xbe, 0xb4, 0x80, 0x35, 0xd7, 0x11, 0xf5, 0x4c, 0xfa, 0xc8, 0xae, 0x96, 0xbb, 0xb1, 0xb2,
-	0xa8, 0xec, 0x98, 0x6f, 0xb8, 0x47, 0x7c, 0xc3, 0xea, 0xf7, 0x4e, 0xfe, 0x22, 0xb3, 0x42, 0x6c,
-	0xa0, 0xdb, 0x5c, 0x54, 0xf6, 0xe4, 0x4f, 0x4a, 0x35, 0xaf, 0x43, 0x6f, 0x78, 0x83, 0x8c, 0xaa,
-	0xe9, 0x1c, 0xee, 0xac, 0xfe, 0x71, 0x36, 0xda, 0x58, 0x64, 0xed, 0xb2, 0xf6, 0x8e, 0x6e, 0x94,
-	0x53, 0xb6, 0x7e, 0x76, 0xfa, 0x6d, 0xd1, 0xb7, 0xbe, 0x2f, 0xfa, 0xd6, 0xcf, 0x45, 0xdf, 0xfa,
-	0x70, 0xb2, 0xe1, 0x71, 0x5a, 0xfb, 0xf8, 0x89, 0x54, 0xfa, 0x91, 0xc4, 0x84, 0x2e, 0xb6, 0x8b,
-	0x47, 0xe9, 0xe8, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xd1, 0xa8, 0x61, 0xab, 0x25, 0x05, 0x00,
-	0x00,
+	// 859 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x96, 0xcd, 0x72, 0xdc, 0x44,
+	0x10, 0xc7, 0x4b, 0x5e, 0xef, 0xda, 0xdb, 0x76, 0x42, 0x32, 0xf9, 0x40, 0xe5, 0x10, 0x63, 0x44,
+	0x41, 0x99, 0x2a, 0x4a, 0xc2, 0x0e, 0x54, 0x25, 0x47, 0x30, 0xa9, 0x90, 0x22, 0xc4, 0xa0, 0x1c,
+	0x28, 0xb8, 0xa8, 0x66, 0xa5, 0x8e, 0x3c, 0x65, 0x49, 0x23, 0x66, 0x46, 0x8b, 0x7d, 0xe6, 0x98,
+	0x47, 0xe0, 0xc2, 0x4b, 0x70, 0xe2, 0x05, 0x38, 0x72, 0xe2, 0x4c, 0xf9, 0x21, 0x38, 0x53, 0xf3,
+	0x21, 0x5b, 0x1b, 0x6b, 0x37, 0x59, 0xaa, 0x72, 0x53, 0xb7, 0xa6, 0x7b, 0xe6, 0xff, 0x53, 0x77,
+	0x8f, 0xe0, 0x43, 0x56, 0x29, 0x14, 0x15, 0x2d, 0xa2, 0x9f, 0xb9, 0x28, 0x4b, 0x2a, 0x8e, 0x51,
+	0xc9, 0xee, 0x73, 0x58, 0x0b, 0xae, 0x38, 0xb9, 0x43, 0xd5, 0x11, 0x56, 0x34, 0x6c, 0x97, 0x87,
+	0x9d, 0x25, 0x5b, 0x5f, 0xe5, 0x4c, 0x1d, 0x35, 0x93, 0x30, 0xe5, 0x65, 0xd4, 0x48, 0x14, 0xa7,
+	0x98, 0x63, 0x64, 0x03, 0xa2, 0xfa, 0x38, 0x8f, 0x68, 0xcd, 0x64, 0x44, 0xeb, 0xba, 0x60, 0x29,
+	0x55, 0x8c, 0x57, 0xd1, 0x74, 0x8f, 0x16, 0xf5, 0x11, 0xdd, 0x8b, 0x72, 0xac, 0x50, 0x50, 0x85,
+	0x99, 0xdd, 0x26, 0xb8, 0x0b, 0x77, 0x1e, 0xa1, 0xfa, 0x9e, 0x8b, 0xf2, 0x1b, 0x9b, 0xfb, 0x99,
+	0xa2, 0xaa, 0x91, 0x31, 0xfe, 0xd4, 0xa0, 0x54, 0xc1, 0xb7, 0xf0, 0x4e, 0xff, 0x6b, 0x59, 0xf3,
+	0x4a, 0x22, 0xf1, 0x61, 0x4d, 0x2a, 0x2a, 0x14, 0x66, 0xbe, 0xb7, 0xe3, 0xed, 0xae, 0xc7, 0xad,
+	0x49, 0x6e, 0xc3, 0x48, 0x9a, 0xb5, 0xfe, 0xca, 0x8e, 0xb7, 0x3b, 0x8e, 0x9d, 0x15, 0xdc, 0x87,
+	0x1b, 0x2e, 0xe3, 0xc3, 0x29, 0x56, 0xca, 0x6d, 0x44, 0xde, 0x83, 0xcd, 0x94, 0x57, 0x19, 0xd3,
+	0xa7, 0x4d, 0x98, 0xcd, 0x36, 0x8e, 0x37, 0xce, 0x7d, 0x8f, 0xb3, 0xe0, 0x57, 0x0f, 0x6e, 0xce,
+	0x86, 0xba, 0x43, 0x64, 0x30, 0x44, 0xed, 0x30, 0x41, 0x1b, 0xfb, 0x4f, 0xc3, 0x0b, 0x3a, 0x61,
+	0x4b, 0x27, 0x74, 0x38, 0xeb, 0xe3, 0x3c, 0xd4, 0x74, 0xc2, 0x0e, 0x9d, 0xb0, 0xa5, 0x13, 0x76,
+	0x84, 0x9a, 0x2d, 0x1e, 0x2b, 0x2c, 0x63, 0x9b, 0x9c, 0xdc, 0x05, 0x78, 0x8e, 0x2a, 0x3d, 0xc2,
+	0x2c, 0xa1, 0xca, 0x88, 0x1a, 0xc4, 0x63, 0xe7, 0xf9, 0x5c, 0x05, 0x5f, 0x1b, 0x90, 0x87, 0x22,
+	0x43, 0x61, 0x42, 0x0f, 0xa8, 0xa2, 0x05, 0xcf, 0x5b, 0x7d, 0x1f, 0x03, 0x31, 0x69, 0x92, 0x1e,
+	0x95, 0xd7, 0xcc, 0x9b, 0x83, 0x8e, 0xd4, 0xdf, 0x3d, 0xf0, 0x2f, 0xa5, 0x3a, 0x6c, 0x54, 0xca,
+	0x4b, 0x24, 0xb7, 0x60, 0xc4, 0x64, 0x72, 0x8a, 0xd2, 0x21, 0x1f, 0x32, 0xf9, 0x03, 0x4a, 0x72,
+	0x13, 0x86, 0x05, 0x9d, 0x60, 0xe1, 0x78, 0x5b, 0x43, 0x73, 0x2d, 0xe9, 0x49, 0x52, 0xe0, 0x14,
+	0x05, 0xcd, 0xd1, 0x1f, 0x58, 0xae, 0x25, 0x3d, 0x79, 0xe2, 0x5c, 0x64, 0x1b, 0x40, 0x62, 0x81,
+	0xa9, 0xa2, 0x93, 0x02, 0xfd, 0x55, 0x93, 0xb3, 0xe3, 0x21, 0x1f, 0xc1, 0xb5, 0xa6, 0xa2, 0x53,
+	0xca, 0x0a, 0x6d, 0x26, 0x29, 0xcf, 0xd0, 0x1f, 0x9a, 0x34, 0x6f, 0x75, 0xfc, 0x07, 0x3c, 0xc3,
+	0xe0, 0xdf, 0x15, 0x78, 0xfb, 0xd2, 0xb9, 0x2d, 0x50, 0x12, 0xc2, 0x0d, 0x5b, 0xbe, 0x7d, 0x08,
+	0xae, 0xdb, 0x57, 0x1d, 0x06, 0x73, 0x88, 0xad, 0xf4, 0x13, 0xd3, 0xea, 0x15, 0x53, 0x45, 0x2b,
+	0xd0, 0x1a, 0x84, 0xc0, 0x6a, 0xc1, 0x73, 0x6e, 0x44, 0x8d, 0x63, 0xf3, 0xac, 0x57, 0xea, 0x52,
+	0x6c, 0x35, 0x58, 0x83, 0x7c, 0x00, 0x57, 0x4b, 0x2a, 0x72, 0x56, 0x25, 0x58, 0x69, 0x39, 0x99,
+	0x3f, 0x32, 0x20, 0xae, 0x58, 0xef, 0x43, 0xeb, 0xd4, 0xf5, 0x3e, 0xa1, 0xe9, 0x31, 0x56, 0x99,
+	0xbf, 0x66, 0xc2, 0x5b, 0xb3, 0x97, 0xd2, 0x7a, 0x2f, 0x25, 0xf2, 0x1d, 0xac, 0x73, 0xfb, 0x2d,
+	0xa5, 0x3f, 0xde, 0x19, 0xec, 0x6e, 0xec, 0x7f, 0x16, 0x2e, 0xe8, 0xf6, 0x70, 0x5e, 0x25, 0xc4,
+	0xe7, 0x69, 0x82, 0x3f, 0x3c, 0xb8, 0x7e, 0x69, 0xd9, 0x72, 0x45, 0x77, 0x81, 0x70, 0xa5, 0x0f,
+	0xe1, 0xa0, 0x83, 0xf0, 0x29, 0xac, 0xb9, 0xb3, 0xf9, 0xab, 0xe6, 0xfc, 0x9f, 0x2e, 0x77, 0x7e,
+	0x5b, 0x11, 0x71, 0x9b, 0x24, 0xf8, 0xc5, 0x33, 0x63, 0xa6, 0xa7, 0x79, 0x5c, 0x87, 0x7f, 0x39,
+	0xdb, 0xe1, 0xe1, 0x72, 0xdb, 0xbd, 0x66, 0x07, 0xbf, 0xf0, 0xe0, 0xd6, 0x13, 0x26, 0x2f, 0x06,
+	0x4c, 0x3b, 0x05, 0x4d, 0x6b, 0xb1, 0x92, 0xd9, 0xed, 0x87, 0xb1, 0x35, 0xf4, 0x84, 0x4b, 0x1b,
+	0x21, 0xb9, 0x68, 0x27, 0x9c, 0xb5, 0xc8, 0xbb, 0xb0, 0x21, 0xb9, 0x50, 0x09, 0xaf, 0x35, 0x58,
+	0x07, 0x0e, 0xb4, 0xeb, 0xd0, 0x78, 0xc8, 0xfb, 0x70, 0x25, 0xa5, 0x0a, 0x73, 0x2e, 0x4e, 0x13,
+	0x59, 0x34, 0xb9, 0x2b, 0xcf, 0xcd, 0xd6, 0xf9, 0xac, 0x68, 0xf2, 0xe0, 0x6f, 0x0f, 0x6e, 0xbf,
+	0x7c, 0x1a, 0x47, 0xe3, 0x39, 0x8c, 0x8c, 0x20, 0x3d, 0x00, 0x06, 0x6f, 0x60, 0xe0, 0xb9, 0xec,
+	0x5a, 0x48, 0x85, 0x27, 0x2a, 0x99, 0x51, 0x09, 0xda, 0x75, 0x60, 0x95, 0xce, 0x02, 0x1d, 0xbc,
+	0x04, 0xd4, 0x75, 0xda, 0xf9, 0x4c, 0xb1, 0xc6, 0xfe, 0x6f, 0xab, 0x40, 0xba, 0x17, 0x0a, 0x8a,
+	0x29, 0x4b, 0x91, 0xbc, 0xb8, 0x98, 0xee, 0x33, 0x57, 0x0d, 0xb9, 0xbf, 0xf0, 0x63, 0x2f, 0xb8,
+	0xbc, 0xb6, 0x1e, 0xfc, 0x8f, 0x48, 0x87, 0x58, 0xc2, 0x66, 0xf7, 0xaa, 0x21, 0x9f, 0xbc, 0x4e,
+	0xaa, 0xee, 0x85, 0xb6, 0xb5, 0xb7, 0x44, 0x84, 0xdb, 0xd4, 0x21, 0xb8, 0xdc, 0xc7, 0xaf, 0x44,
+	0x30, 0xef, 0xda, 0x79, 0x35, 0x82, 0xf9, 0x3d, 0x77, 0x0a, 0x57, 0x67, 0xeb, 0x8f, 0xec, 0x2f,
+	0x4c, 0xd6, 0xdb, 0x3a, 0x5b, 0xf7, 0x96, 0x8a, 0xb1, 0x5b, 0x7f, 0xf1, 0xe8, 0xcf, 0xb3, 0x6d,
+	0xef, 0xaf, 0xb3, 0x6d, 0xef, 0x9f, 0xb3, 0x6d, 0xef, 0xc7, 0x07, 0x0b, 0x7e, 0x76, 0x7a, 0x7f,
+	0xa6, 0x68, 0xcd, 0xd2, 0x82, 0x61, 0xa5, 0x26, 0x23, 0xf3, 0x93, 0x73, 0xef, 0xbf, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0x4b, 0x54, 0xf7, 0x89, 0x75, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -441,6 +839,9 @@ type WormMarketsServiceClient interface {
 	GetWormMarketsStatus(ctx context.Context, in *GetWormMarketsStatusRequest, opts ...grpc.CallOption) (*GetWormMarketsStatusResponse, error)
 	// GetWormEvent returns an event and related market summaries by condition id.
 	GetWormEvent(ctx context.Context, in *GetWormEventRequest, opts ...grpc.CallOption) (*GetWormEventResponse, error)
+	// GetOrderEventCatalog returns a fresh order-construction catalog by event
+	// condition id without estimating or mutating a trade.
+	GetOrderEventCatalog(ctx context.Context, in *GetOrderEventCatalogRequest, opts ...grpc.CallOption) (*GetOrderEventCatalogResponse, error)
 	// ListWormEvents returns events for the requested browse filters.
 	ListWormEvents(ctx context.Context, in *ListWormEventsRequest, opts ...grpc.CallOption) (*ListWormEventsResponse, error)
 }
@@ -471,6 +872,15 @@ func (c *wormMarketsServiceClient) GetWormEvent(ctx context.Context, in *GetWorm
 	return out, nil
 }
 
+func (c *wormMarketsServiceClient) GetOrderEventCatalog(ctx context.Context, in *GetOrderEventCatalogRequest, opts ...grpc.CallOption) (*GetOrderEventCatalogResponse, error) {
+	out := new(GetOrderEventCatalogResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.wormmarkets.WormMarketsService/GetOrderEventCatalog", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *wormMarketsServiceClient) ListWormEvents(ctx context.Context, in *ListWormEventsRequest, opts ...grpc.CallOption) (*ListWormEventsResponse, error) {
 	out := new(ListWormEventsResponse)
 	err := c.cc.Invoke(ctx, "/athena.internal.wormmarkets.WormMarketsService/ListWormEvents", in, out, opts...)
@@ -486,6 +896,9 @@ type WormMarketsServiceServer interface {
 	GetWormMarketsStatus(context.Context, *GetWormMarketsStatusRequest) (*GetWormMarketsStatusResponse, error)
 	// GetWormEvent returns an event and related market summaries by condition id.
 	GetWormEvent(context.Context, *GetWormEventRequest) (*GetWormEventResponse, error)
+	// GetOrderEventCatalog returns a fresh order-construction catalog by event
+	// condition id without estimating or mutating a trade.
+	GetOrderEventCatalog(context.Context, *GetOrderEventCatalogRequest) (*GetOrderEventCatalogResponse, error)
 	// ListWormEvents returns events for the requested browse filters.
 	ListWormEvents(context.Context, *ListWormEventsRequest) (*ListWormEventsResponse, error)
 }
@@ -499,6 +912,9 @@ func (*UnimplementedWormMarketsServiceServer) GetWormMarketsStatus(ctx context.C
 }
 func (*UnimplementedWormMarketsServiceServer) GetWormEvent(ctx context.Context, req *GetWormEventRequest) (*GetWormEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWormEvent not implemented")
+}
+func (*UnimplementedWormMarketsServiceServer) GetOrderEventCatalog(ctx context.Context, req *GetOrderEventCatalogRequest) (*GetOrderEventCatalogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderEventCatalog not implemented")
 }
 func (*UnimplementedWormMarketsServiceServer) ListWormEvents(ctx context.Context, req *ListWormEventsRequest) (*ListWormEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListWormEvents not implemented")
@@ -544,6 +960,24 @@ func _WormMarketsService_GetWormEvent_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WormMarketsService_GetOrderEventCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderEventCatalogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WormMarketsServiceServer).GetOrderEventCatalog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.wormmarkets.WormMarketsService/GetOrderEventCatalog",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WormMarketsServiceServer).GetOrderEventCatalog(ctx, req.(*GetOrderEventCatalogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WormMarketsService_ListWormEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListWormEventsRequest)
 	if err := dec(in); err != nil {
@@ -573,6 +1007,10 @@ var _WormMarketsService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWormEvent",
 			Handler:    _WormMarketsService_GetWormEvent_Handler,
+		},
+		{
+			MethodName: "GetOrderEventCatalog",
+			Handler:    _WormMarketsService_GetOrderEventCatalog_Handler,
 		},
 		{
 			MethodName: "ListWormEvents",
@@ -704,6 +1142,314 @@ func (m *GetWormEventResponse) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *GetWormEventResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.FetchedAt != 0 {
+		i = encodeVarintWormmarkets(dAtA, i, uint64(m.FetchedAt))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Event != nil {
+		{
+			size, err := m.Event.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintWormmarkets(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetOrderEventCatalogRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetOrderEventCatalogRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetOrderEventCatalogRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.EventConditionId) > 0 {
+		i -= len(m.EventConditionId)
+		copy(dAtA[i:], m.EventConditionId)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.EventConditionId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *OrderEventCatalogOutcome) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *OrderEventCatalogOutcome) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *OrderEventCatalogOutcome) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.UnavailableCode) > 0 {
+		i -= len(m.UnavailableCode)
+		copy(dAtA[i:], m.UnavailableCode)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.UnavailableCode)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.Selectable {
+		i--
+		if m.Selectable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.MaxLeverage) > 0 {
+		i -= len(m.MaxLeverage)
+		copy(dAtA[i:], m.MaxLeverage)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.MaxLeverage)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Label) > 0 {
+		i -= len(m.Label)
+		copy(dAtA[i:], m.Label)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.Label)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.IsYes {
+		i--
+		if m.IsYes {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *OrderEventCatalogMarket) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *OrderEventCatalogMarket) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *OrderEventCatalogMarket) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Outcomes) > 0 {
+		for iNdEx := len(m.Outcomes) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Outcomes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintWormmarkets(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x4a
+		}
+	}
+	if len(m.UnavailableCode) > 0 {
+		i -= len(m.UnavailableCode)
+		copy(dAtA[i:], m.UnavailableCode)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.UnavailableCode)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.Backend) > 0 {
+		i -= len(m.Backend)
+		copy(dAtA[i:], m.Backend)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.Backend)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.MarginEnabled {
+		i--
+		if m.MarginEnabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if len(m.State) > 0 {
+		i -= len(m.State)
+		copy(dAtA[i:], m.State)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.State)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Logo) > 0 {
+		i -= len(m.Logo)
+		copy(dAtA[i:], m.Logo)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.Logo)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.EventConditionId) > 0 {
+		i -= len(m.EventConditionId)
+		copy(dAtA[i:], m.EventConditionId)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.EventConditionId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.MarketConditionId) > 0 {
+		i -= len(m.MarketConditionId)
+		copy(dAtA[i:], m.MarketConditionId)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.MarketConditionId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *OrderEventCatalog) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *OrderEventCatalog) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *OrderEventCatalog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Markets) > 0 {
+		for iNdEx := len(m.Markets) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Markets[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintWormmarkets(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Logo) > 0 {
+		i -= len(m.Logo)
+		copy(dAtA[i:], m.Logo)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.Logo)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.EventConditionId) > 0 {
+		i -= len(m.EventConditionId)
+		copy(dAtA[i:], m.EventConditionId)
+		i = encodeVarintWormmarkets(dAtA, i, uint64(len(m.EventConditionId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetOrderEventCatalogResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetOrderEventCatalogResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetOrderEventCatalogResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -907,6 +1653,150 @@ func (m *GetWormEventRequest) Size() (n int) {
 }
 
 func (m *GetWormEventResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Event != nil {
+		l = m.Event.Size()
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if m.FetchedAt != 0 {
+		n += 1 + sovWormmarkets(uint64(m.FetchedAt))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetOrderEventCatalogRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.EventConditionId)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *OrderEventCatalogOutcome) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.IsYes {
+		n += 2
+	}
+	l = len(m.Label)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.MaxLeverage)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if m.Selectable {
+		n += 2
+	}
+	l = len(m.UnavailableCode)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *OrderEventCatalogMarket) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.MarketConditionId)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.EventConditionId)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.Logo)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.State)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if m.MarginEnabled {
+		n += 2
+	}
+	l = len(m.Backend)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.UnavailableCode)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if len(m.Outcomes) > 0 {
+		for _, e := range m.Outcomes {
+			l = e.Size()
+			n += 1 + l + sovWormmarkets(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *OrderEventCatalog) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.EventConditionId)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	l = len(m.Logo)
+	if l > 0 {
+		n += 1 + l + sovWormmarkets(uint64(l))
+	}
+	if len(m.Markets) > 0 {
+		for _, e := range m.Markets {
+			l = e.Size()
+			n += 1 + l + sovWormmarkets(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetOrderEventCatalogResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1283,6 +2173,892 @@ func (m *GetWormEventResponse) Unmarshal(dAtA []byte) error {
 			}
 			if m.Event == nil {
 				m.Event = &v1alpha1.WormMarketsEventItem{}
+			}
+			if err := m.Event.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FetchedAt", wireType)
+			}
+			m.FetchedAt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.FetchedAt |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWormmarkets(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetOrderEventCatalogRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWormmarkets
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetOrderEventCatalogRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetOrderEventCatalogRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventConditionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EventConditionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWormmarkets(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *OrderEventCatalogOutcome) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWormmarkets
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OrderEventCatalogOutcome: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OrderEventCatalogOutcome: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsYes", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsYes = bool(v != 0)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Label", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Label = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxLeverage", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MaxLeverage = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Selectable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Selectable = bool(v != 0)
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnavailableCode", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UnavailableCode = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWormmarkets(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *OrderEventCatalogMarket) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWormmarkets
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OrderEventCatalogMarket: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OrderEventCatalogMarket: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MarketConditionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MarketConditionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventConditionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EventConditionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Logo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Logo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.State = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MarginEnabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MarginEnabled = bool(v != 0)
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Backend", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Backend = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnavailableCode", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UnavailableCode = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Outcomes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Outcomes = append(m.Outcomes, &OrderEventCatalogOutcome{})
+			if err := m.Outcomes[len(m.Outcomes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWormmarkets(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *OrderEventCatalog) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWormmarkets
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OrderEventCatalog: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OrderEventCatalog: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EventConditionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EventConditionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Logo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Logo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Markets", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Markets = append(m.Markets, &OrderEventCatalogMarket{})
+			if err := m.Markets[len(m.Markets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWormmarkets(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetOrderEventCatalogResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWormmarkets
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetOrderEventCatalogResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetOrderEventCatalogResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Event", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWormmarkets
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthWormmarkets
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Event == nil {
+				m.Event = &OrderEventCatalog{}
 			}
 			if err := m.Event.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

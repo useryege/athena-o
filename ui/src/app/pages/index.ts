@@ -22,7 +22,7 @@ export * from './service-status';
 export * from './wallet-blocklist';
 export * from './wallets';
 export * from './worm-trading';
-export * from './worm-trading-order';
+export * from './worm-trading-combinations';
 export * from './world-cup-corners';
 export * from './profit-sharing';
 export * from './profit-sharing-admin';

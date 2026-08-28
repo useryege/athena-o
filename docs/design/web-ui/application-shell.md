@@ -7,10 +7,11 @@ shared username setup, authenticated bootstrap, responsive navigation,
 UUID-based identity and cache scoping, authorization refresh, the Pending-access
 experience, Account Center including the Connect AI workflow, Help resources,
 authorization-sensitive request cleanup, the Wallet module's responsive
-custody-management surface, and Worm Trading's nested Assets and Order
+custody-management surface, and Worm Trading's nested Assets and Combinations
 navigation. The Assets child owns the owner-scoped balance, full-account
-automatic Worm connection, and current-position activity surfaces; the Order
-child is a title-only route.
+automatic Worm connection, and current-position activity surfaces. Combinations
+owns saved-template list and builder routes over the interactive native catalog
+and CRUD facade.
 Other product pages own domain UI and data only after the shell grants a route.
 
 OIDC and SIWS verification, registration tickets, durable UUID identity,
@@ -37,7 +38,7 @@ result, and a revealed key remains only in its current modal.
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
 | Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
-| Worm Trading navigation, assets, connections, and activity | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-order.tsx](../../../ui/src/app/pages/worm-trading-order.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingOrderPage`, `RuntimeSummary`, `ConnectionManagement`, `ConnectionSetupPanel`, `ConnectionCell`, `WormTradingService.listWalletConnections`, `AccountDataModule.WormTrading` |
+| Worm Trading navigation, Assets, and Combinations | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `CombinationSummary`, event and combination service methods |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -99,14 +100,16 @@ Cards are keyboard-operable and all icon-only controls have accessible labels.
 The Markets sidebar exposes Worm Trading as a parent navigation item with two
 children. Assets remains at `/worm-trading`; it is the authorization-gated
 observation page for owner-scoped safe wallet summaries, balances, connection
-state, open positions, and in-flight requests. Order is at
-`/worm-trading/order`; it renders only the `Worm Trading Order` page title and
-mounts no data request, form, placeholder surface, connection control, or write
-operation. Both routes require Worm Trading `READ` and neither requires Wallet
-permission. Assets obtains its data only from the Worm Trading facade and never
-calls the Wallet list or private-key APIs. Desktop presents a SOL/USDC and Worm
-connection table followed by separate Open positions and In-flight requests
-tables; layouts at 900 px and below present the same records as cards.
+state, open positions, and in-flight requests. Combinations is at
+`/worm-trading/combinations`, with `/new` and `/:id/edit` builder routes. It
+lists account-owned templates and explores fresh Worm child-market catalogs;
+it never mounts Wallet, connection, estimate, signature, draft, or trade
+mutation work. Both navigation children require Worm Trading `READ` and neither
+requires Wallet permission, but all Combinations data routes are additionally
+interactive-only. Assets obtains its data only from the Worm Trading facade and
+never calls the Wallet list or private-key APIs. Desktop presents a SOL/USDC and
+Worm connection table followed by separate Open positions and In-flight
+requests tables; layouts at 900 px and below present the same records as cards.
 
 Worm Trading `READ_WRITE` in an interactive browser session adds an owner-only
 connection inventory and a page-level automatic bootstrap surface. Assets pages
@@ -120,6 +123,17 @@ Reconnect remains available for `RECONNECT_REQUIRED`; confirmed credential
 cleanup remains available only for `DISCONNECTING` or `REVOCATION_REQUIRED`.
 Credential challenge/signing and HMAC material remain server-side. The page has
 no order, transaction, TP/SL, claim, or position-mutation action.
+
+The Combinations landing page provides paged Saved combinations, with New,
+Edit/View, and confirmed Delete actions gated by current Worm Trading write
+access. The builder accepts either an HTTPS `worm.wtf/market/...` URL or a direct
+Event Condition ID. Desktop places loaded Event explorers in the main column
+and a sticky Current combination summary beside them. At 900 px and below,
+market choices become cards and a sticky selected-count review action opens the
+same summary in a Drawer. YES/NO uses labeled radio controls, unavailable
+directions remain disabled with readable reasons, and selection reordering uses
+explicit, accessible move-up/down buttons. Save is an atomic full-template
+operation; no Execute or order-start action is present.
 
 ## Runtime Flow
 
@@ -298,10 +312,36 @@ no order, transaction, TP/SL, claim, or position-mutation action.
     wallet, Wallet `READ` links to the read-only Wallets page, and no Wallet
     access links to the account access view. A valid inventory with zero Worm
     positions uses the separate activity Empty state.
-32. Selecting Worm Trading / Order or entering `/worm-trading/order` with Worm
-    Trading `READ` renders only the `Worm Trading Order` title. The route starts
-    no Worm status, balance, activity, Wallet, connection-management, or trading
-    request and exposes no order or other write action.
+32. Selecting Worm Trading / Combinations or entering
+    `/worm-trading/combinations` with Worm Trading `READ` starts the interactive-
+    only, account-scoped saved list at URL-controlled page and page size. A
+    `READ_WRITE` login sees New, Edit, and confirmed Delete; a `READ` login sees
+    View. An API Key cannot use the native facade even when the module grant is
+    present.
+33. `/worm-trading/combinations/new` requires current write access. The builder
+    trims and locally validates an Event Condition ID or accepts only HTTPS
+    `worm.wtf` URLs with exactly `/market/{eventConditionId}`. Adding an Event
+    calls the fresh catalog facade once, rejects a duplicate Event or a child
+    market already loaded under another Event, and preserves provider market
+    order. Market-wide and direction-specific unavailable codes remain visible;
+    only selectable YES or NO controls change the summary.
+34. The current summary retains selection order across Events. Selecting the
+    other direction for an already selected Market Condition ID replaces it at
+    the same ordinal. Remove and move-up/down produce contiguous ordinals. The
+    desktop summary stays beside the Event explorer; compact layouts expose a
+    sticky selected-count review action and full-width Drawer. Both forms use
+    labeled controls, keyboard-operable actions, visible focus, text statuses,
+    and touch-sized primary actions.
+35. The edit route first loads the saved combination, then independently
+    refreshes each unique Event catalog. Saved snapshots remain visible when a
+    refresh fails, while save still undergoes authoritative server validation.
+    Dirty create/edit state blocks in-app navigation and browser unload with a
+    discard confirmation. Create requires a trimmed valid name and at least one
+    selection; update sends the loaded positive revision and the complete
+    ordered selection set. A conflict asks the user to reload rather than
+    overwriting the newer revision. Successful create, update, or delete returns
+    to or refreshes Saved combinations. No flow selects a wallet or starts a
+    Worm estimate or mutation.
 
 ## State / Data
 
@@ -376,6 +416,16 @@ messages, Wallet signatures, API keys, HMAC secrets and headers, provider raw
 responses, and signable position-request messages never enter browser storage,
 client caches, URLs, or rendered data.
 
+Combinations client state contains only Event and Market Condition IDs, trusted
+server-returned display snapshots, selectable flags and stable unavailable
+codes, saved template UUID/revision/timestamps, the draft name, selection order,
+and transient loading/error state. The browser sends only the name and ordered
+`{eventConditionId,marketConditionId,side}` items on save; it does not echo
+titles, logos, outcome labels, availability, owner, or ordinals as authoritative
+input. Builder state and dirty baselines remain in React memory and are dropped
+on route/account/access transitions. They are not written to Web Storage or a
+client-side draft store.
+
 ## Configuration
 
 The UI uses same-origin `/auth/google/login`, `/auth/google/callback`,
@@ -409,6 +459,16 @@ native
 The browser has no owner/address selector for these resources, Worm endpoint,
 credential, HMAC header, or configurable five-minute lease. Disabled-auth Worm
 management accepts the Vite application's exact `http://localhost:4000` Origin.
+
+Combinations use native
+`GET /api/v1/worm-trading/events/{eventConditionId}` and
+`GET|POST /api/v1/worm-trading/combinations`, plus
+`GET|PUT|DELETE /api/v1/worm-trading/combinations/{id}` with
+`expectedRevision` on update or delete as appropriate. These routes accept no
+owner or display snapshot from the browser, are not public grpc-gateway or
+Swagger resources, and reject API Keys. Reads require interactive Worm Trading
+`READ`; mutations require interactive `READ_WRITE` and the exact application
+Origin but no Worm or Wallet reauthentication lease.
 
 Connect AI uses the document's runtime base URI rather than a configured or
 hard-coded public domain. This produces deployment-specific absolute URLs while
@@ -448,20 +508,27 @@ portable to an arbitrary reverse-proxy subpath.
 - API Keys may use safe Wallet metadata operations allowed by module access but
   cannot create, import, or reveal private keys. The server remains authoritative
   even when bootstrap does not project credential capability.
-- Worm Trading `READ` exposes both Assets and Order navigation children. Assets
-  renders balances, connection state, and current activity. Order renders only
-  its title and performs no request. Only an interactive `READ_WRITE` session
-  loads the owner-scoped management inventory, which requires neither a lease
-  nor an Origin header, and renders automatic connection controls. Each
-  credential mutation additionally requires exact
+- Worm Trading `READ` exposes Assets and Combinations navigation children.
+  Assets renders balances, connection state, and current activity. Only an
+  interactive `READ_WRITE` session loads the owner-scoped management inventory,
+  which requires neither a lease nor an Origin header, and renders automatic
+  connection controls. Each credential mutation additionally requires exact
   origin, owner scope, and the Worm-only lease. No browser state contains the
   provider challenge, custody signature, API key, secret, HMAC headers, or
   signable request message.
+- Every Combinations data request requires an interactive login. `READ` may
+  load the catalog and owner-scoped saved templates; `READ_WRITE` plus exact
+  origin may create, replace, or delete them. API Keys cannot call these native
+  routes, and no combination action asks for a Wallet or step-up lease.
+- The builder keeps one direction per Market Condition ID, contiguous selection
+  order, a 1–80-character trimmed name, and at least one item. It sends only IDs
+  and side; trusted display snapshots and current selectability come from the
+  server. No Execute action exists.
 - Automatic connection work is serial, paced to at most five wallet starts per
   minute, held only in page memory, and never retried without a fresh inventory
   read and an explicit user action after failure.
-- Worm Trading exposes no order, cancel, close, TP/SL, claim, transaction-signing,
-  or automatic polling control.
+- Worm Trading exposes no order execution, cancel, close, TP/SL, claim,
+  transaction-signing, or automatic polling control.
 - Connect AI is available only when API Key access is enabled for an ordinary
   account. The fixed administrator cannot enter this credential path.
 - Connect AI and Create API key issue the same full-current-account bearer;
@@ -527,6 +594,16 @@ the queue, cannot be cleared by a browser action, and requires operator
 reconciliation. Balance and already available activity remain visible while
 connection work fails.
 
+An invalid Worm URL or Event Condition ID is rejected before a catalog request.
+Event not-found, provider failure, or an invalid catalog leaves existing loaded
+Events and selections intact and presents bounded feedback. A failed edit-time
+Event refresh retains the saved display snapshot for review; save always
+refetches and revalidates the complete selection at the server. Duplicate names
+and stale update/delete revisions leave durable state unchanged. A stale update
+reports conflict and requires an explicit reload; the client never merges or
+blindly replays the old template. Account or access loss aborts scoped requests,
+discards late results, and routes through the normal authorization fallback.
+
 Connect AI creation failure leaves the creation form available for correction.
 Credential verification failure exposes a retry action and explanatory status
 without removing either copy action. Clipboard failure leaves the full
@@ -574,8 +651,9 @@ does not create a separate server-side integration or connection status.
 - [ ] Responsive administrator list/detail behavior remains current.
 - [ ] Wallet grid/drawer, create/import backup, avatar CAS, and provider reauthentication remain current.
 - [ ] Wallet private-key and pending-action cleanup remains route/account/access scoped.
-- [ ] Worm Trading exposes Assets and Order beneath one parent navigation item; both routes require only Worm Trading `READ`.
-- [ ] Assets never calls Wallet data or secret APIs from the browser, while Order remains title-only and starts no service or write request.
+- [ ] Worm Trading exposes only Assets and Combinations beneath one parent navigation item.
+- [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only and free of Wallet, estimate, signature, draft, and Worm mutation work.
+- [ ] Saved list, URL/ID parsing, cross-Event single-direction selection, accessible ordering, trusted snapshots, and revision-CAS feedback remain current.
 - [ ] Worm automatic connection remains interactive-`READ_WRITE`, owner-scoped, paced, provider-step-up-aware, and independent from Wallet private-key reveal.
 - [ ] Worm Trading preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
 - [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, manual Reconnect, and exceptional cleanup remain current.

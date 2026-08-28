@@ -13,26 +13,36 @@ import (
 type Querier interface {
 	CountActiveCredentialsForWallet(ctx context.Context, walletID int64) (int64, error)
 	CountCredentialsForWallet(ctx context.Context, walletID int64) (int64, error)
+	CountMarketCombinations(ctx context.Context, ownerAccountID pgtype.UUID) (int64, error)
 	CreateActiveCredential(ctx context.Context, arg CreateActiveCredentialParams) (WormWalletCredential, error)
 	CreateConnectionAttempt(ctx context.Context, arg CreateConnectionAttemptParams) (WormWalletConnectionAttempt, error)
+	CreateMarketCombination(ctx context.Context, arg CreateMarketCombinationParams) (WormMarketCombination, error)
+	CreateMarketCombinationItem(ctx context.Context, arg CreateMarketCombinationItemParams) error
 	CreateWalletConnectionIfMissing(ctx context.Context, arg CreateWalletConnectionIfMissingParams) error
 	DeleteCredential(ctx context.Context, arg DeleteCredentialParams) (int64, error)
+	DeleteMarketCombination(ctx context.Context, arg DeleteMarketCombinationParams) (pgtype.UUID, error)
+	DeleteMarketCombinationItems(ctx context.Context, combinationID pgtype.UUID) error
 	GetActiveConnectionAttemptForWallet(ctx context.Context, walletID int64) (WormWalletConnectionAttempt, error)
 	GetActiveCredentialForUpdate(ctx context.Context, walletID int64) (WormWalletCredential, error)
 	GetConnectionAttempt(ctx context.Context, id pgtype.UUID) (WormWalletConnectionAttempt, error)
 	GetConnectionAttemptForUpdate(ctx context.Context, id pgtype.UUID) (WormWalletConnectionAttempt, error)
 	GetCredentialCleanupCounts(ctx context.Context, walletID int64) (GetCredentialCleanupCountsRow, error)
 	GetCredentialForUpdate(ctx context.Context, arg GetCredentialForUpdateParams) (WormWalletCredential, error)
+	GetMarketCombination(ctx context.Context, arg GetMarketCombinationParams) (WormMarketCombination, error)
+	GetMarketCombinationForUpdate(ctx context.Context, arg GetMarketCombinationForUpdateParams) (WormMarketCombination, error)
 	GetNextCredentialForRevocation(ctx context.Context, walletID int64) (WormWalletCredential, error)
 	GetWalletConnectionForUpdate(ctx context.Context, walletID int64) (WormWalletConnection, error)
 	ListCredentialsNeedingRevocation(ctx context.Context, arg ListCredentialsNeedingRevocationParams) ([]WormWalletCredential, error)
 	ListExpiredConnectionAttemptWalletIDs(ctx context.Context, arg ListExpiredConnectionAttemptWalletIDsParams) ([]int64, error)
+	ListMarketCombinationItems(ctx context.Context, combinationID pgtype.UUID) ([]WormMarketCombinationItem, error)
+	ListMarketCombinations(ctx context.Context, arg ListMarketCombinationsParams) ([]WormMarketCombination, error)
 	ListWalletConnectionSnapshots(ctx context.Context, arg ListWalletConnectionSnapshotsParams) ([]ListWalletConnectionSnapshotsRow, error)
 	MarkActiveCredentialPendingRevocation(ctx context.Context, arg MarkActiveCredentialPendingRevocationParams) (int64, error)
 	MarkConnectionAttemptCompleting(ctx context.Context, arg MarkConnectionAttemptCompletingParams) (WormWalletConnectionAttempt, error)
 	MarkConnectionAttemptTerminal(ctx context.Context, arg MarkConnectionAttemptTerminalParams) (WormWalletConnectionAttempt, error)
 	Ping(ctx context.Context) (int32, error)
 	UpdateCredentialState(ctx context.Context, arg UpdateCredentialStateParams) (WormWalletCredential, error)
+	UpdateMarketCombination(ctx context.Context, arg UpdateMarketCombinationParams) (WormMarketCombination, error)
 	UpdateWalletConnectionState(ctx context.Context, arg UpdateWalletConnectionStateParams) (WormWalletConnection, error)
 }
 

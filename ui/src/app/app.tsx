@@ -73,7 +73,8 @@ import {
     ServiceStatusPage,
     WalletBlocklistPage,
     WalletsPage,
-    WormTradingOrderPage,
+    WormTradingCombinationBuilderPage,
+    WormTradingCombinationsPage,
     WormTradingPage,
     WorldCupCornersPage,
     ProfitSharingRoundsPage,
@@ -197,7 +198,7 @@ const wormTradingNavItem: NavItem = {
     module: AccountDataModule.WormTrading,
     children: [
         {key: '/worm-trading', label: 'Assets', path: '/worm-trading', icon: <WalletOutlined />},
-        {key: '/worm-trading/order', label: 'Order', path: '/worm-trading/order', icon: <SwapOutlined />}
+        {key: '/worm-trading/combinations', label: 'Combinations', path: '/worm-trading/combinations', icon: <FileTextOutlined />}
     ]
 };
 
@@ -522,7 +523,9 @@ const AppRoutes = (props: {
             <Route path='/' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
             <Route path='/wallet' element={moduleRoute(AccountDataModule.Wallet, <WalletsPage />)} />
             <Route path='/worm-trading' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingPage />)} />
-            <Route path='/worm-trading/order' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingOrderPage />)} />
+            <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage />)} />
+            <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
+            <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
             <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
             <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
             <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage />)} />

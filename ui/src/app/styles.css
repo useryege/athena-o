@@ -1141,6 +1141,639 @@ body,
     }
 }
 
+/* Worm Trading market combinations */
+
+.worm-combination-empty,
+.worm-combination-builder__empty {
+    display: grid;
+    min-height: 300px;
+    place-items: center;
+    padding: 32px 18px;
+    border: 1px dashed var(--athena-border-strong);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--athena-panel) 78%, transparent);
+}
+
+.worm-combination-name-link.ant-btn-link {
+    max-width: 100%;
+    height: auto;
+    padding: 0;
+    overflow: hidden;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-combination-list-card.ant-card {
+    border-color: var(--athena-border);
+    border-radius: 10px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-combination-list-card .ant-card-body {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+}
+
+.worm-combination-list-card__heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.worm-combination-list-card__heading > div {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-combination-list-card__heading h3.ant-typography {
+    margin: 0;
+    overflow: hidden;
+    color: var(--athena-text);
+    font-size: 16px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-combination-list-card__heading .ant-tag {
+    flex: 0 0 auto;
+    margin-inline-end: 0;
+}
+
+.worm-combination-list-card__preview {
+    display: grid;
+    gap: 7px;
+}
+
+.worm-combination-list-card__preview > span {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+}
+
+.worm-combination-list-card__preview .ant-tag {
+    flex: 0 0 auto;
+    min-width: 42px;
+    margin-inline-end: 0;
+    text-align: center;
+}
+
+.worm-combination-list-card__preview .ant-typography {
+    min-width: 0;
+}
+
+.worm-combination-list-card__updated.ant-typography {
+    font-size: 11px;
+}
+
+.worm-combination-list-card__actions {
+    padding-top: 12px;
+    border-top: 1px solid var(--athena-border);
+}
+
+.worm-combination-event-input.ant-card {
+    margin-bottom: 18px;
+    border-color: var(--athena-border);
+    border-radius: 12px;
+    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-primary) 8%, transparent), transparent 24rem), var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-combination-event-input .ant-card-body {
+    display: grid;
+    grid-template-columns: minmax(230px, 0.48fr) minmax(360px, 1fr);
+    align-items: center;
+    gap: 18px 28px;
+    padding: 18px 20px;
+}
+
+.worm-combination-event-input h2.ant-typography {
+    margin: 0 0 3px;
+    color: var(--athena-text);
+    font-size: 17px;
+    line-height: 1.35;
+}
+
+.worm-combination-event-input__control {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.worm-combination-event-input__error.ant-typography {
+    grid-column: 2;
+    margin-top: -10px;
+    font-size: 12px;
+}
+
+.worm-combination-load-alert.ant-alert {
+    margin-bottom: 14px;
+}
+
+.worm-combination-builder {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 390px);
+    align-items: start;
+    gap: 20px;
+}
+
+.worm-combination-builder__events {
+    display: grid;
+    min-width: 0;
+    gap: 18px;
+}
+
+.worm-combination-builder__summary {
+    position: sticky;
+    z-index: 2;
+    top: 74px;
+    min-width: 0;
+}
+
+.worm-combination-event {
+    display: grid;
+    min-width: 0;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid var(--athena-border);
+    border-radius: 12px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-combination-event__heading {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--athena-border);
+}
+
+.worm-combination-event__heading > .ant-avatar,
+.worm-combination-market__heading > .ant-avatar {
+    border: 1px solid var(--athena-border);
+    background: var(--athena-bg-soft);
+    color: var(--athena-muted);
+}
+
+.worm-combination-event__heading > div {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.worm-combination-event__heading h2.ant-typography {
+    margin: 0;
+    overflow: hidden;
+    color: var(--athena-text);
+    font-size: 17px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-combination-event__heading code {
+    color: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-size: 10px;
+}
+
+.worm-combination-event__heading > .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-combination-event__markets {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.worm-combination-market.ant-card {
+    min-width: 0;
+    border-color: var(--athena-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--athena-panel) 90%, var(--athena-bg-soft));
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.worm-combination-market--selected.ant-card {
+    border-color: color-mix(in srgb, var(--athena-primary) 58%, var(--athena-border));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--athena-primary) 10%, transparent);
+}
+
+.worm-combination-market .ant-card-body {
+    display: grid;
+    min-width: 0;
+    gap: 13px;
+    padding: 15px;
+}
+
+.worm-combination-market__heading {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+}
+
+.worm-combination-market__heading > div:not(.worm-combination-market__tags) {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-combination-market__heading > div > .ant-typography {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-combination-market__heading code {
+    color: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-size: 10px;
+}
+
+.worm-combination-market__tags {
+    display: flex;
+    min-width: 0;
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.worm-combination-market__tags .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-combination-market__notice.ant-alert {
+    padding: 8px 10px;
+}
+
+.worm-combination-market__notice .ant-alert-title {
+    font-size: 12px;
+}
+
+.worm-combination-market__notice .ant-alert-description {
+    margin-top: 2px;
+    font-size: 10px;
+}
+
+.worm-combination-market__outcomes.ant-radio-group {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.worm-combination-market__outcomes .ant-radio-button-wrapper {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 70px;
+    padding: 10px 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    line-height: normal;
+}
+
+.worm-combination-market__outcomes .ant-radio-button-wrapper::before {
+    display: none;
+}
+
+.worm-combination-market__outcomes .ant-radio-button-wrapper-checked {
+    border-color: var(--athena-primary);
+}
+
+.worm-combination-outcome-choice {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-combination-outcome-choice strong {
+    color: var(--athena-text);
+    font-size: 13px;
+}
+
+.worm-combination-outcome-choice span {
+    overflow: hidden;
+    color: var(--athena-text);
+    font-size: 11px;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-combination-outcome-choice small {
+    color: var(--athena-muted);
+    font-size: 9px;
+}
+
+.worm-combination-market__remove.ant-btn-link {
+    width: fit-content;
+    height: auto;
+    padding: 0;
+    font-size: 12px;
+}
+
+.worm-combination-summary {
+    display: grid;
+    min-width: 0;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid var(--athena-border);
+    border-radius: 12px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-combination-summary__heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.worm-combination-summary__heading > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.worm-combination-summary__heading h2.ant-typography {
+    margin: 0;
+    color: var(--athena-text);
+    font-size: 17px;
+    line-height: 1.35;
+}
+
+.worm-combination-summary__heading .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-combination-summary__name {
+    display: grid;
+    gap: 6px;
+    color: var(--athena-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.worm-combination-summary__name small {
+    color: var(--athena-red);
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.worm-combination-summary__items {
+    display: grid;
+    max-height: min(54vh, 620px);
+    min-height: 150px;
+    gap: 9px;
+    padding-right: 3px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.worm-combination-summary__items > .ant-empty {
+    align-self: center;
+}
+
+.worm-combination-selection.ant-card {
+    border-color: var(--athena-border);
+    background: color-mix(in srgb, var(--athena-bg-soft) 52%, var(--athena-panel-solid));
+}
+
+.worm-combination-selection .ant-card-body {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 11px;
+}
+
+.worm-combination-selection__ordinal {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--athena-primary) 12%, var(--athena-bg-soft));
+    color: var(--athena-primary);
+    font-family: var(--athena-data-font);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.worm-combination-selection__copy {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-combination-selection__copy > .ant-typography {
+    min-width: 0;
+    font-size: 11px;
+}
+
+.worm-combination-selection__copy > .ant-typography-strong {
+    color: var(--athena-text);
+    font-size: 12px;
+}
+
+.worm-combination-selection__copy > span {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.worm-combination-selection__copy > span .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-combination-selection__copy > span .ant-typography {
+    font-size: 10px;
+}
+
+.worm-combination-selection__actions {
+    display: grid;
+    gap: 4px;
+}
+
+.worm-combination-summary__save.ant-btn {
+    width: 100%;
+    min-height: 42px;
+}
+
+.worm-combination-mobile-review {
+    display: none;
+}
+
+.worm-combination-review-drawer .worm-combination-summary {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.worm-combination-review-drawer .worm-combination-summary__items {
+    max-height: none;
+    overflow: visible;
+}
+
+@media (max-width: 1280px) {
+    .worm-combination-event__markets {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .worm-combination-event-input .ant-card-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .worm-combination-event-input__error.ant-typography {
+        grid-column: 1;
+        margin-top: -6px;
+    }
+
+    .worm-combination-builder {
+        grid-template-columns: minmax(0, 1fr);
+        margin-bottom: 76px;
+    }
+
+    .worm-combination-builder__summary {
+        display: none;
+    }
+
+    .worm-combination-mobile-review {
+        position: fixed;
+        z-index: 38;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        min-height: 68px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--athena-border-strong);
+        background: color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
+        box-shadow: 0 -10px 30px rgb(15 23 42 / 12%);
+        backdrop-filter: blur(14px);
+    }
+
+    .worm-combination-mobile-review > span {
+        display: grid;
+        min-width: 0;
+        gap: 1px;
+    }
+
+    .worm-combination-mobile-review strong {
+        color: var(--athena-text);
+        font-family: var(--athena-data-font);
+        font-size: 17px;
+    }
+
+    .worm-combination-mobile-review small {
+        color: var(--athena-muted);
+        font-size: 10px;
+    }
+
+    .worm-combination-mobile-review .ant-btn {
+        min-height: 44px;
+    }
+
+    .worm-combination-event__heading > .ant-btn,
+    .worm-combination-selection__actions .ant-btn {
+        min-width: 40px;
+        min-height: 40px;
+    }
+}
+
+@media (max-width: 520px) {
+    .worm-combination-event-input__control {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-combination-event-input__control .ant-btn,
+    .worm-combination-list-card__actions,
+    .worm-combination-list-card__actions .ant-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .worm-combination-event {
+        padding: 14px;
+    }
+
+    .worm-combination-event__heading {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: start;
+    }
+
+    .worm-combination-event__heading > .ant-tag {
+        grid-column: 2;
+        width: fit-content;
+    }
+
+    .worm-combination-event__heading > .ant-btn {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .worm-combination-market__outcomes.ant-radio-group {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-combination-market__outcomes .ant-radio-button-wrapper {
+        min-height: 64px;
+    }
+
+    .worm-combination-mobile-review .ant-btn {
+        flex: 1;
+    }
+
+    .worm-combination-review-drawer .ant-drawer-content-wrapper {
+        width: 100% !important;
+    }
+
+    .worm-combination-selection .ant-card-body {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .worm-combination-selection__actions {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .worm-combination-selection__actions .ant-btn {
+        width: 100%;
+    }
+}
+
 :root {
     color-scheme: light;
     --athena-bg: #f5f6f8;

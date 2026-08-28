@@ -382,6 +382,18 @@ func (server *AthenaServer) completeWormConnection(ctx context.Context, accountI
 }
 
 func (server *AthenaServer) authenticateWormConnectionHTTP(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
+	return server.authenticateInteractiveWormTradingHTTP(request, accountaccess.AccessLevelReadWrite)
+}
+
+// authenticateInteractiveWormTradingHTTP is the native HTTP authentication
+// boundary for Worm Trading resources that must never accept an Athena API
+// Key. Callers still choose the least module access level required by the
+// resource; mutation handlers enforce Origin and any purpose-specific proof
+// independently.
+func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
+	request *http.Request,
+	level accountaccess.AccessLevel,
+) (context.Context, accountcredentials.AuthenticatedCredential, error) {
 	if server.DisableAuth {
 		if !requestIsLoopback(request) {
 			return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrWormLoginSessionRequired
@@ -395,7 +407,7 @@ func (server *AthenaServer) authenticateWormConnectionHTTP(request *http.Request
 		if err != nil {
 			return ctx, accountcredentials.AuthenticatedCredential{}, err
 		}
-		if err := server.accessController.Authorize(credential.AccountID, accountaccess.RequireModule(accountaccess.ModuleWormTrading, accountaccess.AccessLevelReadWrite)); err != nil {
+		if err := server.accessController.Authorize(credential.AccountID, accountaccess.RequireModule(accountaccess.ModuleWormTrading, level)); err != nil {
 			return ctx, accountcredentials.AuthenticatedCredential{}, err
 		}
 		credential.AccessRevision = access.Revision
@@ -411,7 +423,7 @@ func (server *AthenaServer) authenticateWormConnectionHTTP(request *http.Request
 	if err != nil || !credential.IsInteractiveLogin() {
 		return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrWormLoginSessionRequired
 	}
-	if err := server.accessController.Authorize(credential.AccountID, accountaccess.RequireModule(accountaccess.ModuleWormTrading, accountaccess.AccessLevelReadWrite)); err != nil {
+	if err := server.accessController.Authorize(credential.AccountID, accountaccess.RequireModule(accountaccess.ModuleWormTrading, level)); err != nil {
 		return request.Context(), accountcredentials.AuthenticatedCredential{}, err
 	}
 	ctx := context.WithValue(request.Context(), "claims", claims) //nolint:staticcheck

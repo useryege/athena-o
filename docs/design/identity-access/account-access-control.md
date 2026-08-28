@@ -28,7 +28,7 @@ after this layer authorizes the request.
 | Account directory | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CountAccountDirectory`, `ListAccountDirectoryPage` |
 | Public Account contract | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountAccess`, `AccountStatus`, `ListAccounts`, `UpdateAccountAccess` |
 | RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC`, `authorizeAccountSelfService` |
-| Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateWalletSecretHTTP`, `authenticateWormConnectionHTTP`, `authenticateWalletAvatarHTTP`, `listWormWalletConnections`, `validWalletSecretOrigin`, `validWormConnectionOrigin` |
+| Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go) | `authenticateWalletSecretHTTP`, `authenticateInteractiveWormTradingHTTP`, `authenticateWalletAvatarHTTP`, `registerWormCombinationHandlers`, `validWormConnectionOrigin` |
 | Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
 | Browser routing and refresh | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `AuthorizationCtx`, `canRead`, `canWrite`, authorization refresh |
 | Administrator workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor` |
@@ -71,6 +71,8 @@ capability, and Wallet-service ownership:
 | Own Solana wallet summaries and SOL/USDC balances | allowed | allowed | Worm Trading `READ` |
 | Own Worm connection state, open positions, and in-flight requests | allowed | allowed | Worm Trading `READ` |
 | Full-account Worm connection management inventory | allowed | denied | Worm Trading `READ_WRITE`; no lease |
+| Worm combination event catalog and saved-combination reads | allowed | denied | Worm Trading `READ`; interactive only |
+| Create, replace, or delete saved Worm combination | allowed | denied | Worm Trading `READ_WRITE`; exact origin; no lease |
 | Uploaded-wallet-avatar GET | allowed | allowed | Wallet `READ` or Worm Trading `READ` |
 | Remark, preset, avatar upload, and avatar reset | allowed | allowed | Wallet `READ_WRITE` |
 | Create or import | allowed | denied | Wallet `READ_WRITE` |
@@ -94,6 +96,17 @@ independent five-minute `worm.api_credential.manage` lease, and owner-scoped
 Solana Wallet lookup. No management route accepts an Athena API Key. Wallet
 signing remains behind the internal Wallet Bearer and exact purpose-bound
 challenge validation.
+
+Worm Market Combinations use another native HTTP boundary. Catalog, list, and
+detail GETs require an interactive typed credential and Worm Trading `READ`;
+API Keys cannot enter the facade even though they can read the Assets projection.
+POST, PUT, and DELETE require Worm Trading `READ_WRITE` and exact same origin,
+but no Wallet permission or Worm credential-management lease because they
+change only account-owned template data. The API Server supplies the current
+account UUID to internal services and never accepts an owner from the browser.
+Before create or full replacement, it refetches the referenced event catalogs
+and constructs trusted display snapshots; authorization is not delegated to
+browser-provided titles or availability fields.
 
 The persisted administrator receives maximum module access but no Wallet owner
 bypass. An administrator session can manage only wallets whose
@@ -125,7 +138,10 @@ does not carry role or a caller-selected owner.
    `READ_WRITE`, and owner scope but no Worm lease or Origin header. Connect,
    reconnect, and disconnect additionally require exact origin and the
    Worm-only five-minute lease; an API Key cannot enter either native management
-   path.
+   path. Worm combination catalog/list/detail GETs require an interactive login
+   and Worm Trading `READ`. Combination create, atomic replacement, and delete
+   require an interactive login, Worm Trading `READ_WRITE`, exact origin, and
+   owner scope, but no Worm lease. API Keys cannot call any combination route.
 4. An administrator may replace one ordinary account's three flags and full
    module matrix in one expected-revision CAS. The SQL transaction advances the
    revision and replaces all ten rows together. Administrator aggregates cannot
@@ -190,6 +206,9 @@ identity.
 - Worm Trading `READ` exposes only the current account's Solana wallet summaries,
   balances, Worm connection/activity projection, and uploaded-avatar GET; it
   does not grant other Wallet reads or any Wallet mutation.
+- Interactive Worm Trading `READ` additionally exposes the provider-backed
+  combination catalog and only the current account's saved combinations. API
+  Keys cannot call these native routes.
 - Login disablement immediately pauses sessions and API Keys without deleting
   them.
 - API Key and Profit Sharing controls are independent from module access.
@@ -198,6 +217,9 @@ identity.
 - API Keys cannot list the management connection inventory, connect, reconnect,
   disconnect a credential, obtain a Worm management lease, or invoke the purpose-
   bound Wallet signer even when Worm Trading `READ_WRITE` is granted.
+- API Keys cannot read or mutate Worm combinations. Every combination mutation
+  requires interactive `READ_WRITE`, exact origin, current-account ownership,
+  and revision CAS, but never a Wallet or Worm step-up lease.
 - Profit Sharing member RPCs require both entitlement and round membership.
 - Every authenticated RPC has an explicit account, administrator, module, or
   Profit Sharing boundary; unknown methods fail closed.
@@ -221,6 +243,12 @@ interactive management inventory also reauthorizes against the current access
 revision on each request, so the browser cannot continue assembling an automatic
 queue after permission changes.
 
+Combination routes reauthorize the interactive credential against the current
+access revision on every request. A permission change therefore denies a later
+catalog fetch, save, or delete even when stale builder state remains in browser
+memory. A revision mismatch leaves the stored combination and its items
+unchanged; the user must reload the current owner-scoped revision before retrying.
+
 ## Observability
 
 Authorization errors expose stable reason metadata including module, required
@@ -231,6 +259,8 @@ safe provider-specific presentation data, and timestamps, never Google subject.
 Wallet-secret and Worm-management denials log only bounded provider/stage/reason
 values and exclude private keys, Worm credentials, challenges, signatures,
 lease values, and Session JTIs.
+Combination denial and conflict responses are bounded; the native response
+never returns an account UUID or accepts one from the client.
 
 ## Change Checklist
 
@@ -239,5 +269,6 @@ lease values, and Session JTIs.
 - [ ] RPC rules and Pending browser behavior remain synchronized.
 - [ ] Wallet/Worm Trading read composition, credential restrictions, and owner-only administrator behavior remain synchronized.
 - [ ] Worm management inventory remains interactive, `READ_WRITE`, owner-scoped, and lease-free; mutations remain same-origin/Worm-lease-only and unavailable to API Keys.
+- [ ] Worm combination reads remain interactive `READ`; mutations remain interactive `READ_WRITE`, same-origin, owner-scoped, revisioned, lease-free, and unavailable to API Keys.
 - [ ] Administrator directory search, filters, sorting, and pagination remain current.
 - [ ] The [design index](../README.md) contains the current summary.

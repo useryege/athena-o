@@ -2,6 +2,7 @@ import {AccountDataModule} from '../access-modules';
 import requests from './requests';
 
 const readScope = {module: AccountDataModule.WormTrading, mode: 'read' as const};
+const writeScope = {module: AccountDataModule.WormTrading, mode: 'write' as const};
 
 export type AbortableWormTradingPromise<T> = Promise<T> & {abort?: () => void};
 export type WormTradingWalletBalanceStatus = 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
@@ -172,6 +173,77 @@ export interface WormTradingReauthenticationChallenge {
 
 export interface WormTradingReauthenticationLease {
     expiresAt: number;
+}
+
+export type WormMarketOutcomeSide = 'YES' | 'NO';
+
+export interface WormTradingEventOutcome {
+    side: WormMarketOutcomeSide;
+    label: string;
+    maxLeverage: string;
+    selectable: boolean;
+    unavailableCode: string;
+}
+
+export interface WormTradingEventMarket {
+    marketConditionId: string;
+    title: string;
+    logo: string;
+    state: string;
+    marginEnabled: boolean;
+    backend: string;
+    unavailableCode: string;
+    outcomes: WormTradingEventOutcome[];
+}
+
+export interface WormTradingEvent {
+    eventConditionId: string;
+    title: string;
+    logo: string;
+    markets: WormTradingEventMarket[];
+}
+
+export interface WormMarketCombinationItem {
+    ordinal: number;
+    eventConditionId: string;
+    eventTitle: string;
+    eventLogo: string;
+    marketConditionId: string;
+    marketTitle: string;
+    marketLogo: string;
+    side: WormMarketOutcomeSide;
+    outcomeLabel: string;
+}
+
+export interface WormMarketCombination {
+    id: string;
+    name: string;
+    revision: number;
+    items: WormMarketCombinationItem[];
+    createdAt: number;
+    updatedAt: number;
+}
+
+export interface ListWormMarketCombinationsResult {
+    items: WormMarketCombination[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export interface SaveWormMarketCombinationItem {
+    eventConditionId: string;
+    marketConditionId: string;
+    side: WormMarketOutcomeSide;
+}
+
+export interface CreateWormMarketCombinationInput {
+    name: string;
+    items: SaveWormMarketCombinationItem[];
+}
+
+export interface UpdateWormMarketCombinationInput extends CreateWormMarketCombinationInput {
+    expectedRevision: number;
 }
 
 const readValue = (item: any, ...names: string[]) => {
@@ -527,6 +599,141 @@ const normalizeManagedConnection = (value: unknown, expectedWalletID: number): W
     return normalizeConnection(item);
 };
 
+const requireExactString = (item: unknown, name: string): string => {
+    const value = requireRecord(item)[name];
+    if (typeof value !== 'string' || value.trim() === '') {
+        return invalidWormTradingResponse();
+    }
+    return value;
+};
+
+const optionalExactString = (item: unknown, name: string): string => {
+    const value = requireRecord(item)[name];
+    if (value === undefined || value === null) {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        return invalidWormTradingResponse();
+    }
+    return value;
+};
+
+const requireExactBoolean = (item: unknown, name: string): boolean => {
+    const value = requireRecord(item)[name];
+    if (typeof value !== 'boolean') {
+        return invalidWormTradingResponse();
+    }
+    return value;
+};
+
+const requireExactArray = (item: unknown, name: string): unknown[] => {
+    const value = requireRecord(item)[name];
+    if (!Array.isArray(value)) {
+        return invalidWormTradingResponse();
+    }
+    return value;
+};
+
+const normalizeOutcomeSide = (value: unknown): WormMarketOutcomeSide => {
+    if (value === 'YES' || value === 'NO') {
+        return value;
+    }
+    return invalidWormTradingResponse();
+};
+
+const normalizeEventOutcome = (value: unknown): WormTradingEventOutcome => {
+    const item = requireRecord(value);
+    const side = normalizeOutcomeSide(item.side);
+    const selectable = requireExactBoolean(item, 'selectable');
+    const unavailableCode = optionalExactString(item, 'unavailableCode');
+    const maxLeverage = optionalExactString(item, 'maxLeverage');
+    if ((selectable && unavailableCode !== '') || (!selectable && unavailableCode === '')) {
+        return invalidWormTradingResponse();
+    }
+    if (selectable) {
+        const parsedLeverage = Number(maxLeverage);
+        if (!Number.isFinite(parsedLeverage) || parsedLeverage < 1) {
+            return invalidWormTradingResponse();
+        }
+    }
+    return {
+        side,
+        label: requireExactString(item, 'label'),
+        maxLeverage,
+        selectable,
+        unavailableCode
+    };
+};
+
+const normalizeEventMarket = (value: unknown): WormTradingEventMarket => {
+    const item = requireRecord(value);
+    const outcomes = requireExactArray(item, 'outcomes').map(normalizeEventOutcome);
+    const sides = new Set(outcomes.map(outcome => outcome.side));
+    if (outcomes.length !== 2 || sides.size !== 2 || !sides.has('YES') || !sides.has('NO')) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        marketConditionId: requireExactString(item, 'marketConditionId'),
+        title: requireExactString(item, 'title'),
+        logo: optionalExactString(item, 'logo'),
+        state: requireExactString(item, 'state'),
+        marginEnabled: requireExactBoolean(item, 'marginEnabled'),
+        backend: optionalExactString(item, 'backend'),
+        unavailableCode: optionalExactString(item, 'unavailableCode'),
+        outcomes
+    };
+};
+
+const normalizeTradingEvent = (value: unknown, expectedEventConditionID?: string): WormTradingEvent => {
+    const item = requireRecord(value);
+    const eventConditionId = requireExactString(item, 'eventConditionId');
+    const markets = requireExactArray(item, 'markets').map(normalizeEventMarket);
+    if (expectedEventConditionID && eventConditionId !== expectedEventConditionID) {
+        return invalidWormTradingResponse();
+    }
+    if (new Set(markets.map(market => market.marketConditionId)).size !== markets.length) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        eventConditionId,
+        title: requireExactString(item, 'title'),
+        logo: optionalExactString(item, 'logo'),
+        markets
+    };
+};
+
+const normalizeCombinationItem = (value: unknown): WormMarketCombinationItem => {
+    const item = requireRecord(value);
+    return {
+        ordinal: requireInteger(item, 1, 'ordinal'),
+        eventConditionId: requireExactString(item, 'eventConditionId'),
+        eventTitle: requireExactString(item, 'eventTitle'),
+        eventLogo: optionalExactString(item, 'eventLogo'),
+        marketConditionId: requireExactString(item, 'marketConditionId'),
+        marketTitle: requireExactString(item, 'marketTitle'),
+        marketLogo: optionalExactString(item, 'marketLogo'),
+        side: normalizeOutcomeSide(item.side),
+        outcomeLabel: requireExactString(item, 'outcomeLabel')
+    };
+};
+
+const normalizeMarketCombination = (value: unknown): WormMarketCombination => {
+    const item = requireRecord(value);
+    const items = requireExactArray(item, 'items').map(normalizeCombinationItem);
+    const marketIDs = new Set(items.map(selection => selection.marketConditionId));
+    if (items.length === 0 || marketIDs.size !== items.length || items.some((selection, index) => selection.ordinal !== index + 1)) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        id: requireExactString(item, 'id'),
+        name: requireExactString(item, 'name'),
+        revision: requireInteger(item, 1, 'revision'),
+        items,
+        createdAt: requireInteger(item, 0, 'createdAt'),
+        updatedAt: requireInteger(item, 0, 'updatedAt')
+    };
+};
+
 export class WormTradingService {
     public getStatus(): AbortableWormTradingPromise<WormTradingStatus> {
         const request = requests.get('/worm-trading/status', readScope);
@@ -662,5 +869,54 @@ export class WormTradingService {
 
     public createDevelopmentCredentialLease(): AbortableWormTradingPromise<WormTradingReauthenticationLease> {
         return rawReauthenticationPost('/auth/worm-trading/development', {}, body => ({expiresAt: requireInteger(body, 1, 'expiresAt', 'expires_at')}));
+    }
+
+    public getEvent(eventConditionId: string): AbortableWormTradingPromise<WormTradingEvent> {
+        const expectedEventConditionID = eventConditionId.trim();
+        const request = requests.get(`/worm-trading/events/${encodeURIComponent(expectedEventConditionID)}`, readScope);
+        return abortableRequest(request, body => normalizeTradingEvent(requireRecord(body).event || body, expectedEventConditionID));
+    }
+
+    public listMarketCombinations(page = 1, pageSize = 20): AbortableWormTradingPromise<ListWormMarketCombinationsResult> {
+        const request = requests.get('/worm-trading/combinations', readScope).query({page, pageSize});
+        return abortableRequest(request, value => {
+            const body = requireRecord(value);
+            const items = requireExactArray(body, 'items').map(normalizeMarketCombination);
+            const total = requireInteger(body, 0, 'total');
+            const responsePage = requireInteger(body, 1, 'page');
+            const responsePageSize = requireInteger(body, 1, 'pageSize');
+            const offset = (responsePage - 1) * responsePageSize;
+            if (
+                responsePage !== page ||
+                responsePageSize !== pageSize ||
+                responsePageSize > 100 ||
+                items.length > responsePageSize ||
+                new Set(items.map(item => item.id)).size !== items.length ||
+                (items.length > 0 && offset + items.length > total)
+            ) {
+                return invalidWormTradingResponse();
+            }
+            return {items, total, page: responsePage, pageSize: responsePageSize};
+        });
+    }
+
+    public getMarketCombination(id: string): AbortableWormTradingPromise<WormMarketCombination> {
+        const request = requests.get(`/worm-trading/combinations/${encodeURIComponent(id)}`, readScope);
+        return abortableRequest(request, body => normalizeMarketCombination(requireRecord(body).combination || body));
+    }
+
+    public createMarketCombination(input: CreateWormMarketCombinationInput): AbortableWormTradingPromise<WormMarketCombination> {
+        const request = requests.post('/worm-trading/combinations', writeScope).send(input);
+        return abortableRequest(request, body => normalizeMarketCombination(requireRecord(body).combination || body));
+    }
+
+    public updateMarketCombination(id: string, input: UpdateWormMarketCombinationInput): AbortableWormTradingPromise<WormMarketCombination> {
+        const request = requests.put(`/worm-trading/combinations/${encodeURIComponent(id)}`, writeScope).send(input);
+        return abortableRequest(request, body => normalizeMarketCombination(requireRecord(body).combination || body));
+    }
+
+    public deleteMarketCombination(id: string, expectedRevision: number): AbortableWormTradingPromise<void> {
+        const request = requests.delete(`/worm-trading/combinations/${encodeURIComponent(id)}`, writeScope).query({expectedRevision});
+        return abortableRequest(request, () => undefined);
     }
 }

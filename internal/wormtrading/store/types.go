@@ -124,9 +124,36 @@ type ActivateCredentialRequest struct {
 	Now                 time.Time
 }
 
-// Store is the durable credential boundary used by Worm Trading. It persists
-// only Wallet correlation keys and Worm credential lifecycle state; account
-// identities and custodial private keys are intentionally absent.
+type MarketCombinationItemInput struct {
+	EventConditionID  string
+	EventTitle        string
+	EventLogo         string
+	MarketConditionID string
+	MarketTitle       string
+	MarketLogo        string
+	IsYes             bool
+	OutcomeLabel      string
+}
+
+type MarketCombinationItem struct {
+	Ordinal int32
+	MarketCombinationItemInput
+}
+
+type MarketCombination struct {
+	ID             string
+	OwnerAccountID string
+	Name           string
+	Revision       int64
+	Items          []MarketCombinationItem
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+// Store is the durable persistence boundary used by Worm Trading. It stores
+// Wallet correlation and credential lifecycle state, plus owner-account UUIDs
+// and trusted display snapshots for saved market combinations. It never stores
+// custodial private keys, login credentials, or Worm transaction signatures.
 type Store interface {
 	Ping(context.Context) error
 	PrepareConnectionAttempt(context.Context, PrepareConnectionAttemptRequest) (*ConnectionAttempt, error)
@@ -144,5 +171,10 @@ type Store interface {
 	MarkCredentialRevoked(context.Context, int64, int64, time.Time) error
 	MarkCredentialRevocationFailed(context.Context, int64, int64, ConnectionState, CredentialState, string, time.Time) error
 	MarkReconnectRequired(context.Context, int64, string, int64, string, time.Time) error
+	CreateMarketCombination(context.Context, string, string, []MarketCombinationItemInput) (*MarketCombination, error)
+	GetMarketCombination(context.Context, string, string) (*MarketCombination, error)
+	ListMarketCombinations(context.Context, string, int32, int32) ([]MarketCombination, int64, error)
+	UpdateMarketCombination(context.Context, string, string, string, int64, []MarketCombinationItemInput) (*MarketCombination, error)
+	DeleteMarketCombination(context.Context, string, string, int64) error
 	Close() error
 }

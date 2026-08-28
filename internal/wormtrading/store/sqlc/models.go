@@ -8,6 +8,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type WormMarketCombination struct {
+	ID             pgtype.UUID
+	OwnerAccountID pgtype.UUID
+	Name           string
+	NameKey        pgtype.Text
+	Revision       int64
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type WormMarketCombinationItem struct {
+	CombinationID     pgtype.UUID
+	Ordinal           int32
+	EventConditionID  string
+	EventTitle        string
+	EventLogo         string
+	MarketConditionID string
+	MarketTitle       string
+	MarketLogo        string
+	IsYes             bool
+	OutcomeLabel      string
+}
+
 type WormWalletConnection struct {
 	WalletID    int64
 	Address     string

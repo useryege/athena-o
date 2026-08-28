@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-// Worm Trading Service API exposes trusted wallet observations and Worm API
-// credential lifecycle operations to the API Server.
+// Worm Trading Service API exposes trusted wallet observations, saved market
+// combinations, and Worm API credential lifecycle operations to the API Server.
 package athena.internal.wormtrading;
 
 option go_package = "github.com/useryege/athena/internal/wormtrading/apiclient";
@@ -247,6 +247,93 @@ message BatchGetWalletPositionSnapshotsResponse {
   string status = 5;
 }
 
+// MarketCombinationItemInput is an API-Server-validated market selection and
+// its trusted display snapshot. Array order is the persisted execution order.
+message MarketCombinationItemInput {
+  string event_condition_id = 1;
+  string event_title = 2;
+  string event_logo = 3;
+  string market_condition_id = 4;
+  string market_title = 5;
+  string market_logo = 6;
+  bool is_yes = 7;
+  string outcome_label = 8;
+}
+
+message MarketCombinationItem {
+  int32 ordinal = 1;
+  string event_condition_id = 2;
+  string event_title = 3;
+  string event_logo = 4;
+  string market_condition_id = 5;
+  string market_title = 6;
+  string market_logo = 7;
+  bool is_yes = 8;
+  string outcome_label = 9;
+}
+
+message MarketCombination {
+  string id = 1;
+  string name = 2;
+  int64 revision = 3;
+  repeated MarketCombinationItem items = 4;
+  int64 created_at = 5;
+  int64 updated_at = 6;
+  string owner_account_id = 7;
+}
+
+message CreateMarketCombinationRequest {
+  string owner_account_id = 1;
+  string name = 2;
+  repeated MarketCombinationItemInput items = 3;
+}
+
+message CreateMarketCombinationResponse {
+  MarketCombination combination = 1;
+}
+
+message GetMarketCombinationRequest {
+  string owner_account_id = 1;
+  string id = 2;
+}
+
+message GetMarketCombinationResponse {
+  MarketCombination combination = 1;
+}
+
+message ListMarketCombinationsRequest {
+  string owner_account_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListMarketCombinationsResponse {
+  repeated MarketCombination items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpdateMarketCombinationRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string name = 3;
+  int64 expected_revision = 4;
+  repeated MarketCombinationItemInput items = 5;
+}
+
+message UpdateMarketCombinationResponse {
+  MarketCombination combination = 1;
+}
+
+message DeleteMarketCombinationRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  int64 expected_revision = 3;
+}
+
+message DeleteMarketCombinationResponse {}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
@@ -255,4 +342,9 @@ service WormTradingService {
   rpc CompleteWormWalletConnection(CompleteWormWalletConnectionRequest) returns (CompleteWormWalletConnectionResponse);
   rpc DisconnectWormWallet(DisconnectWormWalletRequest) returns (DisconnectWormWalletResponse);
   rpc BatchGetWalletPositionSnapshots(BatchGetWalletPositionSnapshotsRequest) returns (BatchGetWalletPositionSnapshotsResponse);
+  rpc CreateMarketCombination(CreateMarketCombinationRequest) returns (CreateMarketCombinationResponse);
+  rpc GetMarketCombination(GetMarketCombinationRequest) returns (GetMarketCombinationResponse);
+  rpc ListMarketCombinations(ListMarketCombinationsRequest) returns (ListMarketCombinationsResponse);
+  rpc UpdateMarketCombination(UpdateMarketCombinationRequest) returns (UpdateMarketCombinationResponse);
+  rpc DeleteMarketCombination(DeleteMarketCombinationRequest) returns (DeleteMarketCombinationResponse);
 }

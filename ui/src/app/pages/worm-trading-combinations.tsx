@@ -1,0 +1,954 @@
+import {ArrowDownOutlined, ArrowUpOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SaveOutlined} from '@ant-design/icons';
+import {Alert, Avatar, Button, Card, Drawer, Empty, Input, Radio, Space, Tag, Tooltip, Typography} from 'antd';
+import type {ColumnsType} from 'antd/es/table';
+import * as React from 'react';
+import {Navigate, useBlocker, useNavigate, useParams} from 'react-router-dom';
+import {AppPage, ResourceTable, useAsyncData} from '../components';
+import {AccountDataModule} from '../shared/access-modules';
+import {Context, useAuthorization} from '../shared/context';
+import {formatBeijingUnixSeconds} from '../shared/format';
+import {services} from '../shared/services';
+import {
+    WormMarketCombination,
+    WormMarketCombinationItem,
+    WormMarketOutcomeSide,
+    WormTradingEvent,
+    WormTradingEventMarket,
+    WormTradingEventOutcome
+} from '../shared/services/worm-trading-service';
+import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
+import {short, usePagedParams} from './shared';
+
+const combinationPageSizes = [20, 50, 100];
+const eventConditionIDPattern = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const hasControlCharacters = (value: string) =>
+    Array.from(value).some(character => {
+        const codePoint = character.codePointAt(0) || 0;
+        return codePoint <= 31 || (codePoint >= 127 && codePoint <= 159);
+    });
+
+const parseEventConditionID = (value: string): string => {
+    const input = value.trim();
+    if (!input) {
+        throw new Error('Enter a Worm market URL or Event Condition ID.');
+    }
+    let conditionID = input;
+    if (/^https?:\/\//i.test(input)) {
+        let parsed: URL;
+        try {
+            parsed = new URL(input);
+        } catch {
+            throw new Error('Enter a valid Worm market URL.');
+        }
+        const hostname = parsed.hostname.toLowerCase();
+        if (parsed.protocol !== 'https:' || (hostname !== 'www.worm.wtf' && hostname !== 'worm.wtf') || parsed.username || parsed.password) {
+            throw new Error('Use an HTTPS market URL from worm.wtf.');
+        }
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        if (parts.length !== 2 || parts[0].toLowerCase() !== 'market') {
+            throw new Error('The Worm URL must use /market/{eventConditionId}.');
+        }
+        try {
+            conditionID = decodeURIComponent(parts[1]);
+        } catch {
+            throw new Error('The Worm URL contains an invalid Event Condition ID.');
+        }
+    }
+    if (!eventConditionIDPattern.test(conditionID)) {
+        throw new Error('Enter a valid Base58 Event Condition ID.');
+    }
+    return conditionID;
+};
+
+const unavailableLabel = (code: string) =>
+    code
+        .trim()
+        .toLowerCase()
+        .split('_')
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ') || 'Unavailable';
+
+const orderedSelections = (items: WormMarketCombinationItem[]): WormMarketCombinationItem[] => items.map((item, index) => ({...item, ordinal: index + 1}));
+
+const selectionFingerprint = (name: string, items: WormMarketCombinationItem[]) =>
+    JSON.stringify({
+        name,
+        items: items.map(item => ({eventConditionId: item.eventConditionId, marketConditionId: item.marketConditionId, side: item.side}))
+    });
+
+const validCombinationName = (name: string) => {
+    const normalized = name.trim();
+    const length = Array.from(normalized).length;
+    return length >= 1 && length <= 80 && !hasControlCharacters(normalized);
+};
+
+const selectionFromOutcome = (event: WormTradingEvent, market: WormTradingEventMarket, outcome: WormTradingEventOutcome, ordinal: number): WormMarketCombinationItem => ({
+    ordinal,
+    eventConditionId: event.eventConditionId,
+    eventTitle: event.title,
+    eventLogo: event.logo,
+    marketConditionId: market.marketConditionId,
+    marketTitle: market.title,
+    marketLogo: market.logo,
+    side: outcome.side,
+    outcomeLabel: outcome.label
+});
+
+const refreshedSelections = (items: WormMarketCombinationItem[], events: WormTradingEvent[]) =>
+    orderedSelections(
+        items.map(item => {
+            const event = events.find(candidate => candidate.eventConditionId === item.eventConditionId);
+            const market = event?.markets.find(candidate => candidate.marketConditionId === item.marketConditionId);
+            const outcome = market?.outcomes.find(candidate => candidate.side === item.side);
+            return event && market && outcome ? selectionFromOutcome(event, market, outcome, item.ordinal) : item;
+        })
+    );
+
+const combinationItemStatus = (item: WormMarketCombinationItem, events: WormTradingEvent[]) => {
+    const event = events.find(candidate => candidate.eventConditionId === item.eventConditionId);
+    if (!event) {
+        return {known: false, selectable: false, code: ''};
+    }
+    const market = event.markets.find(candidate => candidate.marketConditionId === item.marketConditionId);
+    if (!market) {
+        return {known: true, selectable: false, code: 'MARKET_NOT_FOUND'};
+    }
+    const outcome = market.outcomes.find(candidate => candidate.side === item.side);
+    if (!outcome) {
+        return {known: true, selectable: false, code: 'OUTCOME_NOT_FOUND'};
+    }
+    return {known: true, selectable: outcome.selectable, code: outcome.unavailableCode || market.unavailableCode};
+};
+
+const CombinationListCard = (props: {item: WormMarketCombination; canWrite: boolean; deleting: boolean; onOpen: () => void; onDelete: () => void}) => (
+    <Card className='worm-combination-list-card' size='small'>
+        <div className='worm-combination-list-card__heading'>
+            <div>
+                <Typography.Title level={3}>{props.item.name}</Typography.Title>
+                <Typography.Text type='secondary'>Revision {props.item.revision}</Typography.Text>
+            </div>
+            <Tag>
+                {props.item.items.length} {props.item.items.length === 1 ? 'market' : 'markets'}
+            </Tag>
+        </div>
+        <div className='worm-combination-list-card__preview'>
+            {props.item.items.slice(0, 3).map(item => (
+                <span key={item.marketConditionId}>
+                    <Tag color={item.side === 'YES' ? 'green' : 'blue'}>{item.side}</Tag>
+                    <Typography.Text ellipsis={true}>{item.marketTitle}</Typography.Text>
+                </span>
+            ))}
+            {props.item.items.length > 3 && <Typography.Text type='secondary'>+{props.item.items.length - 3} more</Typography.Text>}
+        </div>
+        <Typography.Text className='worm-combination-list-card__updated' type='secondary'>
+            Updated {formatBeijingUnixSeconds(props.item.updatedAt) || '-'}
+        </Typography.Text>
+        <Space className='worm-combination-list-card__actions' wrap={true}>
+            <Button icon={props.canWrite ? <EditOutlined /> : <EyeOutlined />} onClick={props.onOpen}>
+                {props.canWrite ? 'Edit' : 'View'}
+            </Button>
+            {props.canWrite && (
+                <Button danger={true} icon={<DeleteOutlined />} loading={props.deleting} onClick={props.onDelete}>
+                    Delete
+                </Button>
+            )}
+        </Space>
+    </Card>
+);
+
+export const WormTradingCombinationsPage = () => {
+    const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.WormTrading);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
+    const accountIDRef = React.useRef(authorization.user.accountId);
+    accountIDRef.current = authorization.user.accountId;
+    const navigate = useNavigate();
+    const {page, pageSize, setPage} = usePagedParams(20, combinationPageSizes);
+    const [deletingIDs, setDeletingIDs] = React.useState<Set<string>>(() => new Set());
+    const data = useAsyncData(() => services.wormTrading.listMarketCombinations(page, pageSize), [authorization.user.accountId, page, pageSize]);
+
+    React.useEffect(() => {
+        if (!canWrite) {
+            setDeletingIDs(new Set());
+        }
+    }, [canWrite]);
+
+    const deleteCombination = (item: WormMarketCombination) => {
+        if (!canWrite) {
+            return;
+        }
+        ctx.modal.confirm({
+            title: `Delete ${item.name}?`,
+            content: `This permanently removes the saved combination and its ${item.items.length} selected ${item.items.length === 1 ? 'market' : 'markets'}.`,
+            okText: 'Delete combination',
+            onOk: async () => {
+                const operationAccountID = accountIDRef.current;
+                setDeletingIDs(current => new Set(current).add(item.id));
+                try {
+                    await services.wormTrading.deleteMarketCombination(item.id, item.revision);
+                    if (!canWriteRef.current || accountIDRef.current !== operationAccountID) {
+                        return;
+                    }
+                    ctx.notifications.success('Combination deleted', item.name);
+                    if ((data.data?.items.length || 0) === 1 && page > 1) {
+                        setPage(page - 1, pageSize);
+                    } else {
+                        data.reload();
+                    }
+                } catch (error) {
+                    if (canWriteRef.current && accountIDRef.current === operationAccountID) {
+                        const details = requestErrorDetails(error);
+                        if (details.status === 409) {
+                            ctx.notifications.error('Combination changed', 'Reload the latest revision before deleting this combination.');
+                        } else {
+                            ctx.notifications.error('Could not delete combination', requestErrorMessage(error, 'The saved combination was not deleted.'));
+                        }
+                    }
+                } finally {
+                    setDeletingIDs(current => {
+                        const next = new Set(current);
+                        next.delete(item.id);
+                        return next;
+                    });
+                }
+            }
+        });
+    };
+
+    const items = data.data?.items || [];
+    const columns: ColumnsType<WormMarketCombination> = [
+        {
+            title: 'Name',
+            render: item => (
+                <Button type='link' className='worm-combination-name-link' onClick={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/edit`)}>
+                    {item.name}
+                </Button>
+            )
+        },
+        {title: 'Markets', width: 110, render: item => item.items.length},
+        {title: 'Revision', width: 100, dataIndex: 'revision'},
+        {title: 'Updated', width: 190, render: item => formatBeijingUnixSeconds(item.updatedAt) || '-'},
+        {
+            title: 'Actions',
+            width: canWrite ? 210 : 100,
+            render: item => (
+                <Space>
+                    <Button
+                        size='small'
+                        icon={canWrite ? <EditOutlined /> : <EyeOutlined />}
+                        onClick={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/edit`)}>
+                        {canWrite ? 'Edit' : 'View'}
+                    </Button>
+                    {canWrite && (
+                        <Button size='small' danger={true} icon={<DeleteOutlined />} loading={deletingIDs.has(item.id)} onClick={() => deleteCombination(item)}>
+                            Delete
+                        </Button>
+                    )}
+                </Space>
+            )
+        }
+    ];
+
+    const empty = !data.loading && !data.error && (data.data?.total || 0) === 0;
+    return (
+        <AppPage
+            title='Worm Trading Combinations'
+            subtitle={
+                canWrite
+                    ? 'Build reusable combinations by selecting one YES or NO outcome from each Worm child market.'
+                    : 'Review the saved market combinations available to this account.'
+            }
+            loading={data.loading}
+            error={data.error}
+            onRefresh={data.reload}
+            extra={
+                canWrite ? (
+                    <Button type='primary' icon={<PlusOutlined />} onClick={() => navigate('/worm-trading/combinations/new')}>
+                        New combination
+                    </Button>
+                ) : null
+            }>
+            {empty ? (
+                <div className='worm-combination-empty'>
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No saved combinations'>
+                        {canWrite && (
+                            <Button type='primary' icon={<PlusOutlined />} onClick={() => navigate('/worm-trading/combinations/new')}>
+                                Create your first combination
+                            </Button>
+                        )}
+                    </Empty>
+                </div>
+            ) : (
+                <ResourceTable<WormMarketCombination>
+                    rowKey='id'
+                    label='Saved Worm market combinations'
+                    items={items}
+                    columns={columns}
+                    loading={data.loading}
+                    total={data.data?.total}
+                    page={page}
+                    pageSize={pageSize}
+                    pageSizeOptions={combinationPageSizes}
+                    onPageChange={setPage}
+                    compactEmptyDescription='No saved combinations on this page'
+                    compactRender={item => (
+                        <CombinationListCard
+                            item={item}
+                            canWrite={canWrite}
+                            deleting={deletingIDs.has(item.id)}
+                            onOpen={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/edit`)}
+                            onDelete={() => deleteCombination(item)}
+                        />
+                    )}
+                />
+            )}
+        </AppPage>
+    );
+};
+
+const MarketOutcomeChoice = (props: {outcome: WormTradingEventOutcome}) => (
+    <span className='worm-combination-outcome-choice'>
+        <strong>{props.outcome.side}</strong>
+        <span>{props.outcome.label}</span>
+        {props.outcome.maxLeverage && <small>Up to {props.outcome.maxLeverage}×</small>}
+    </span>
+);
+
+const EventMarketCard = (props: {
+    event: WormTradingEvent;
+    market: WormTradingEventMarket;
+    selectedSide?: WormMarketOutcomeSide;
+    canWrite: boolean;
+    onSelect: (outcome: WormTradingEventOutcome) => void;
+    onRemove: () => void;
+}) => {
+    const reason = props.market.unavailableCode;
+    return (
+        <Card className={`worm-combination-market${props.selectedSide ? ' worm-combination-market--selected' : ''}`} size='small'>
+            <div className='worm-combination-market__heading'>
+                <Avatar shape='square' size={44} src={props.market.logo || undefined}>
+                    {props.market.title.slice(0, 1).toUpperCase()}
+                </Avatar>
+                <div>
+                    <Typography.Text strong={true}>{props.market.title}</Typography.Text>
+                    <Typography.Text code={true} title={props.market.marketConditionId}>
+                        {short(props.market.marketConditionId, 9, 7)}
+                    </Typography.Text>
+                </div>
+                <div className='worm-combination-market__tags'>
+                    <Tag>{props.market.state}</Tag>
+                    {props.market.backend && <Tag>{props.market.backend}</Tag>}
+                    {!props.market.marginEnabled && <Tag color='warning'>No margin</Tag>}
+                </div>
+            </div>
+            {reason && <Alert className='worm-combination-market__notice' type='warning' showIcon={true} title={unavailableLabel(reason)} description={<code>{reason}</code>} />}
+            <Radio.Group
+                className='worm-combination-market__outcomes'
+                aria-label={`Outcome for ${props.market.title}`}
+                value={props.selectedSide}
+                disabled={!props.canWrite}
+                onChange={event => {
+                    const outcome = props.market.outcomes.find(candidate => candidate.side === event.target.value);
+                    if (outcome?.selectable) {
+                        props.onSelect(outcome);
+                    }
+                }}>
+                {props.market.outcomes.map(outcome => (
+                    <Tooltip key={outcome.side} title={outcome.selectable ? undefined : unavailableLabel(outcome.unavailableCode)}>
+                        <Radio.Button value={outcome.side} disabled={!outcome.selectable}>
+                            <MarketOutcomeChoice outcome={outcome} />
+                        </Radio.Button>
+                    </Tooltip>
+                ))}
+            </Radio.Group>
+            {props.canWrite && props.selectedSide && (
+                <Button className='worm-combination-market__remove' type='link' icon={<CloseOutlined />} onClick={props.onRemove}>
+                    Remove selection
+                </Button>
+            )}
+        </Card>
+    );
+};
+
+const EventExplorerCard = (props: {
+    event: WormTradingEvent;
+    selections: WormMarketCombinationItem[];
+    canWrite: boolean;
+    onSelect: (market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => void;
+    onRemoveSelection: (marketConditionID: string) => void;
+    onRemoveEvent: () => void;
+}) => (
+    <section className='worm-combination-event' aria-labelledby={`worm-event-${props.event.eventConditionId}`}>
+        <div className='worm-combination-event__heading'>
+            <Avatar shape='square' size={52} src={props.event.logo || undefined}>
+                {props.event.title.slice(0, 1).toUpperCase()}
+            </Avatar>
+            <div>
+                <Typography.Title id={`worm-event-${props.event.eventConditionId}`} level={2}>
+                    {props.event.title}
+                </Typography.Title>
+                <Typography.Text code={true} title={props.event.eventConditionId}>
+                    {short(props.event.eventConditionId, 12, 10)}
+                </Typography.Text>
+            </div>
+            <Tag>
+                {props.event.markets.length} {props.event.markets.length === 1 ? 'market' : 'markets'}
+            </Tag>
+            {props.canWrite && (
+                <Tooltip title='Remove this event from the builder'>
+                    <Button aria-label={`Remove ${props.event.title}`} icon={<CloseOutlined />} onClick={props.onRemoveEvent} />
+                </Tooltip>
+            )}
+        </div>
+        {props.event.markets.length === 0 ? (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='This Event has no child markets.' />
+        ) : (
+            <div className='worm-combination-event__markets'>
+                {props.event.markets.map(market => (
+                    <EventMarketCard
+                        key={market.marketConditionId}
+                        event={props.event}
+                        market={market}
+                        selectedSide={props.selections.find(item => item.marketConditionId === market.marketConditionId)?.side}
+                        canWrite={props.canWrite}
+                        onSelect={outcome => props.onSelect(market, outcome)}
+                        onRemove={() => props.onRemoveSelection(market.marketConditionId)}
+                    />
+                ))}
+            </div>
+        )}
+    </section>
+);
+
+const CombinationSummary = (props: {
+    name: string;
+    items: WormMarketCombinationItem[];
+    events: WormTradingEvent[];
+    canWrite: boolean;
+    saving: boolean;
+    editing: boolean;
+    onNameChange: (value: string) => void;
+    onMove: (index: number, direction: -1 | 1) => void;
+    onRemove: (marketConditionID: string) => void;
+    onSave: () => void;
+}) => {
+    const nameValid = validCombinationName(props.name);
+    const invalidSelections = props.items.filter(item => {
+        const status = combinationItemStatus(item, props.events);
+        return status.known && !status.selectable;
+    });
+    const saveDisabled = !nameValid || props.items.length === 0 || invalidSelections.length > 0 || props.saving;
+    return (
+        <div className='worm-combination-summary'>
+            <div className='worm-combination-summary__heading'>
+                <div>
+                    <Typography.Title level={2}>Current combination</Typography.Title>
+                    <Typography.Text type='secondary'>{props.items.length} selected</Typography.Text>
+                </div>
+                <Tag color={props.items.length > 0 ? 'processing' : 'default'}>{props.items.length}</Tag>
+            </div>
+            <label className='worm-combination-summary__name'>
+                <span>Combination name</span>
+                {props.canWrite ? (
+                    <Input
+                        value={props.name}
+                        status={props.name && !nameValid ? 'error' : undefined}
+                        placeholder='e.g. Weekend macro signals'
+                        disabled={props.saving}
+                        aria-invalid={props.name && !nameValid ? true : undefined}
+                        onChange={event => props.onNameChange(event.target.value)}
+                    />
+                ) : (
+                    <Typography.Text strong={true}>{props.name}</Typography.Text>
+                )}
+                {props.canWrite && props.name && !nameValid && <small>Use 1–80 characters without control characters.</small>}
+            </label>
+            {invalidSelections.length > 0 && (
+                <Alert
+                    type='warning'
+                    showIcon={true}
+                    title={`${invalidSelections.length} selected ${invalidSelections.length === 1 ? 'market is' : 'markets are'} no longer available`}
+                    description='Remove or replace unavailable selections before saving.'
+                />
+            )}
+            <div className='worm-combination-summary__items'>
+                {props.items.length === 0 ? (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='Choose YES or NO from a child market.' />
+                ) : (
+                    props.items.map((item, index) => {
+                        const status = combinationItemStatus(item, props.events);
+                        return (
+                            <Card className='worm-combination-selection' size='small' key={item.marketConditionId}>
+                                <div className='worm-combination-selection__ordinal'>{index + 1}</div>
+                                <div className='worm-combination-selection__copy'>
+                                    <Typography.Text type='secondary' ellipsis={true} title={item.eventTitle}>
+                                        {item.eventTitle}
+                                    </Typography.Text>
+                                    <Typography.Text strong={true} ellipsis={true} title={item.marketTitle}>
+                                        {item.marketTitle}
+                                    </Typography.Text>
+                                    <span>
+                                        <Tag color={item.side === 'YES' ? 'green' : 'blue'}>{item.side}</Tag>
+                                        <Typography.Text>{item.outcomeLabel}</Typography.Text>
+                                        {status.known && !status.selectable && <Tag color='warning'>{unavailableLabel(status.code)}</Tag>}
+                                    </span>
+                                </div>
+                                {props.canWrite && (
+                                    <div className='worm-combination-selection__actions'>
+                                        <Tooltip title='Move up'>
+                                            <Button
+                                                aria-label={`Move ${item.marketTitle} up`}
+                                                size='small'
+                                                icon={<ArrowUpOutlined />}
+                                                disabled={index === 0 || props.saving}
+                                                onClick={() => props.onMove(index, -1)}
+                                            />
+                                        </Tooltip>
+                                        <Tooltip title='Move down'>
+                                            <Button
+                                                aria-label={`Move ${item.marketTitle} down`}
+                                                size='small'
+                                                icon={<ArrowDownOutlined />}
+                                                disabled={index === props.items.length - 1 || props.saving}
+                                                onClick={() => props.onMove(index, 1)}
+                                            />
+                                        </Tooltip>
+                                        <Tooltip title='Remove'>
+                                            <Button
+                                                aria-label={`Remove ${item.marketTitle}`}
+                                                size='small'
+                                                danger={true}
+                                                icon={<DeleteOutlined />}
+                                                disabled={props.saving}
+                                                onClick={() => props.onRemove(item.marketConditionId)}
+                                            />
+                                        </Tooltip>
+                                    </div>
+                                )}
+                            </Card>
+                        );
+                    })
+                )}
+            </div>
+            {props.canWrite && (
+                <Button className='worm-combination-summary__save' type='primary' icon={<SaveOutlined />} loading={props.saving} disabled={saveDisabled} onClick={props.onSave}>
+                    {props.editing ? 'Save changes' : 'Create combination'}
+                </Button>
+            )}
+        </div>
+    );
+};
+
+export const WormTradingCombinationBuilderPage = () => {
+    const {id = ''} = useParams<{id: string}>();
+    const editing = Boolean(id);
+    const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.WormTrading);
+    const canWriteRef = React.useRef(canWrite);
+    canWriteRef.current = canWrite;
+    const accountIDRef = React.useRef(authorization.user.accountId);
+    accountIDRef.current = authorization.user.accountId;
+    const navigate = useNavigate();
+    const [name, setName] = React.useState('');
+    const [selections, setSelections] = React.useState<WormMarketCombinationItem[]>([]);
+    const [events, setEvents] = React.useState<WormTradingEvent[]>([]);
+    const [baseline, setBaseline] = React.useState(() => selectionFingerprint('', []));
+    const [initialized, setInitialized] = React.useState(!editing);
+    const [eventInput, setEventInput] = React.useState('');
+    const [eventInputError, setEventInputError] = React.useState('');
+    const [eventLoadErrors, setEventLoadErrors] = React.useState<string[]>([]);
+    const [addingEvent, setAddingEvent] = React.useState(false);
+    const [hydratingEvents, setHydratingEvents] = React.useState(false);
+    const [saving, setSaving] = React.useState(false);
+    const [reviewOpen, setReviewOpen] = React.useState(false);
+    const addEventRequestRef = React.useRef<ReturnType<typeof services.wormTrading.getEvent>>();
+    const allowNavigationRef = React.useRef(false);
+    const currentDraft = selectionFingerprint(name, selections);
+    const dirty = canWrite && initialized && currentDraft !== baseline;
+    const combination = useAsyncData<WormMarketCombination | undefined>(
+        () => (editing ? services.wormTrading.getMarketCombination(id) : Promise.resolve(undefined)),
+        [authorization.user.accountId, editing, id]
+    );
+    const blocker = useBlocker(() => dirty && !allowNavigationRef.current);
+
+    React.useEffect(
+        () => () => {
+            addEventRequestRef.current?.abort?.();
+        },
+        []
+    );
+
+    React.useEffect(() => {
+        if (!dirty) {
+            return;
+        }
+        const beforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', beforeUnload);
+        return () => window.removeEventListener('beforeunload', beforeUnload);
+    }, [dirty]);
+
+    React.useEffect(() => {
+        if (blocker.state !== 'blocked') {
+            return;
+        }
+        let resolved = false;
+        const handle = ctx.modal.confirm({
+            title: 'Discard unsaved combination changes?',
+            content: 'Your name, market choices, and ordering changes have not been saved.',
+            okText: 'Discard and leave',
+            onOk: () => {
+                resolved = true;
+                blocker.proceed();
+            },
+            onCancel: () => {
+                resolved = true;
+                blocker.reset();
+            }
+        });
+        return () => {
+            if (!resolved) {
+                handle.destroy();
+            }
+        };
+    }, [blocker.state, ctx.modal]);
+
+    React.useEffect(() => {
+        const source = combination.data;
+        if (!editing || !source) {
+            return;
+        }
+        const nextSelections = orderedSelections(source.items);
+        setName(source.name);
+        setSelections(nextSelections);
+        setBaseline(selectionFingerprint(source.name, nextSelections));
+        setInitialized(true);
+        setEventLoadErrors([]);
+        setEvents([]);
+        const eventIDs = Array.from(new Set(source.items.map(item => item.eventConditionId)));
+        const requests = eventIDs.map(eventConditionID => services.wormTrading.getEvent(eventConditionID));
+        let active = true;
+        setHydratingEvents(requests.length > 0);
+        Promise.all(
+            requests.map((request, index) =>
+                request.then(
+                    event => ({event, eventConditionID: eventIDs[index]}),
+                    error => ({error, eventConditionID: eventIDs[index]})
+                )
+            )
+        ).then(results => {
+            if (!active) {
+                return;
+            }
+            const loaded = results.flatMap(result => ('event' in result ? [result.event] : []));
+            const failed = results.flatMap(result => ('error' in result ? [result.eventConditionID] : []));
+            setEvents(loaded);
+            setEventLoadErrors(failed);
+            setSelections(current => refreshedSelections(current, loaded));
+            setHydratingEvents(false);
+        });
+        return () => {
+            active = false;
+            requests.forEach(request => request.abort?.());
+        };
+    }, [authorization.user.accountId, combination.data, editing]);
+
+    React.useEffect(() => {
+        if (canWrite) {
+            return;
+        }
+        setReviewOpen(false);
+        setSaving(false);
+        const source = combination.data;
+        if (source) {
+            const nextSelections = orderedSelections(source.items);
+            setName(source.name);
+            setSelections(nextSelections);
+            setBaseline(selectionFingerprint(source.name, nextSelections));
+        }
+    }, [canWrite, combination.data]);
+
+    if (!editing && !canWrite) {
+        return <Navigate replace={true} to='/worm-trading/combinations' />;
+    }
+
+    const addEvent = async () => {
+        if (!canWrite || addingEvent || hydratingEvents) {
+            return;
+        }
+        let eventConditionID: string;
+        try {
+            eventConditionID = parseEventConditionID(eventInput);
+        } catch (error) {
+            setEventInputError(requestErrorMessage(error, 'Enter a valid Worm event.'));
+            return;
+        }
+        if (events.some(event => event.eventConditionId === eventConditionID)) {
+            setEventInputError('This Event is already in the builder.');
+            return;
+        }
+        setAddingEvent(true);
+        setEventInputError('');
+        const operationAccountID = accountIDRef.current;
+        const request = services.wormTrading.getEvent(eventConditionID);
+        addEventRequestRef.current = request;
+        try {
+            const event = await request;
+            if (!canWriteRef.current || accountIDRef.current !== operationAccountID) {
+                return;
+            }
+            const existingMarketIDs = new Set(events.flatMap(item => item.markets.map(market => market.marketConditionId)));
+            if (event.markets.some(market => existingMarketIDs.has(market.marketConditionId))) {
+                throw new Error('Worm returned a child market that is already loaded under another Event.');
+            }
+            setEvents(current => [...current, event]);
+            setEventLoadErrors(current => current.filter(item => item !== eventConditionID));
+            setSelections(current => refreshedSelections(current, [event]));
+            setEventInput('');
+        } catch (error) {
+            if (canWriteRef.current && accountIDRef.current === operationAccountID) {
+                setEventInputError(requestErrorMessage(error, 'Could not load this Worm Event.'));
+            }
+        } finally {
+            if (addEventRequestRef.current === request) {
+                addEventRequestRef.current = undefined;
+                setAddingEvent(false);
+            }
+        }
+    };
+
+    const selectOutcome = (event: WormTradingEvent, market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => {
+        if (!canWrite || !outcome.selectable) {
+            return;
+        }
+        setSelections(current => {
+            const existingIndex = current.findIndex(item => item.marketConditionId === market.marketConditionId);
+            if (existingIndex < 0) {
+                return orderedSelections([...current, selectionFromOutcome(event, market, outcome, current.length + 1)]);
+            }
+            const next = [...current];
+            next[existingIndex] = selectionFromOutcome(event, market, outcome, existingIndex + 1);
+            return orderedSelections(next);
+        });
+    };
+
+    const removeSelection = (marketConditionID: string) => {
+        if (canWrite) {
+            setSelections(current => orderedSelections(current.filter(item => item.marketConditionId !== marketConditionID)));
+        }
+    };
+
+    const removeEvent = (event: WormTradingEvent) => {
+        if (!canWrite) {
+            return;
+        }
+        const selectedMarketIDs = new Set(event.markets.map(market => market.marketConditionId));
+        const selectedCount = selections.filter(item => selectedMarketIDs.has(item.marketConditionId)).length;
+        const remove = () => {
+            setEvents(current => current.filter(item => item.eventConditionId !== event.eventConditionId));
+            setSelections(current => orderedSelections(current.filter(item => !selectedMarketIDs.has(item.marketConditionId))));
+        };
+        if (selectedCount === 0) {
+            remove();
+            return;
+        }
+        ctx.modal.confirm({
+            title: `Remove ${event.title}?`,
+            content: `This also removes ${selectedCount} selected ${selectedCount === 1 ? 'market' : 'markets'} from the current combination.`,
+            okText: 'Remove event',
+            onOk: remove
+        });
+    };
+
+    const moveSelection = (index: number, direction: -1 | 1) => {
+        if (!canWrite) {
+            return;
+        }
+        setSelections(current => {
+            const target = index + direction;
+            if (index < 0 || index >= current.length || target < 0 || target >= current.length) {
+                return current;
+            }
+            const next = [...current];
+            [next[index], next[target]] = [next[target], next[index]];
+            return orderedSelections(next);
+        });
+    };
+
+    const save = async () => {
+        if (!canWrite || saving || !validCombinationName(name) || selections.length === 0) {
+            return;
+        }
+        const invalidSelection = selections.find(item => {
+            const status = combinationItemStatus(item, events);
+            return status.known && !status.selectable;
+        });
+        if (invalidSelection) {
+            ctx.notifications.warning('Review unavailable markets', 'Remove or replace unavailable selections before saving.');
+            return;
+        }
+        const input = {
+            name: name.trim(),
+            items: selections.map(item => ({eventConditionId: item.eventConditionId, marketConditionId: item.marketConditionId, side: item.side}))
+        };
+        setSaving(true);
+        const operationAccountID = accountIDRef.current;
+        try {
+            const saved = editing
+                ? await services.wormTrading.updateMarketCombination(id, {...input, expectedRevision: combination.data?.revision || 0})
+                : await services.wormTrading.createMarketCombination(input);
+            if (!canWriteRef.current || accountIDRef.current !== operationAccountID) {
+                return;
+            }
+            setBaseline(selectionFingerprint(saved.name, saved.items));
+            allowNavigationRef.current = true;
+            ctx.notifications.success(editing ? 'Combination updated' : 'Combination created', saved.name);
+            navigate('/worm-trading/combinations', {replace: true});
+        } catch (error) {
+            if (!canWriteRef.current || accountIDRef.current !== operationAccountID) {
+                return;
+            }
+            const details = requestErrorDetails(error);
+            if (details.status === 409) {
+                if (details.message === 'market combination name already exists') {
+                    ctx.notifications.error('Combination name already exists', 'Choose a different name for this account.');
+                } else {
+                    ctx.notifications.error('Combination changed', 'Reload the latest revision before applying your changes again.');
+                }
+            } else {
+                ctx.notifications.error(editing ? 'Could not update combination' : 'Could not create combination', requestErrorMessage(error));
+            }
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const summary = (
+        <CombinationSummary
+            name={name}
+            items={selections}
+            events={events}
+            canWrite={canWrite}
+            saving={saving}
+            editing={editing}
+            onNameChange={setName}
+            onMove={moveSelection}
+            onRemove={removeSelection}
+            onSave={save}
+        />
+    );
+
+    const loading = editing && (combination.loading || !initialized);
+    return (
+        <AppPage
+            title={editing ? (canWrite ? 'Edit Worm Trading Combination' : 'Worm Trading Combination') : 'New Worm Trading Combination'}
+            subtitle={
+                canWrite
+                    ? 'Add one or more Worm Events, choose exactly one direction per child market, and arrange the saved order.'
+                    : 'This is a read-only view of the saved market choices and their order.'
+            }
+            loading={loading}
+            error={combination.error}>
+            {!loading && !combination.error && (
+                <>
+                    {canWrite && (
+                        <Card className='worm-combination-event-input' size='small'>
+                            <div>
+                                <Typography.Title level={2}>Add a Worm Event</Typography.Title>
+                                <Typography.Text type='secondary'>Paste a worm.wtf market URL or its Event Condition ID.</Typography.Text>
+                            </div>
+                            <div className='worm-combination-event-input__control'>
+                                <Input
+                                    value={eventInput}
+                                    placeholder='https://www.worm.wtf/market/... or Event Condition ID'
+                                    status={eventInputError ? 'error' : undefined}
+                                    aria-invalid={eventInputError ? true : undefined}
+                                    disabled={addingEvent || hydratingEvents || saving}
+                                    onChange={event => {
+                                        setEventInput(event.target.value);
+                                        if (eventInputError) {
+                                            setEventInputError('');
+                                        }
+                                    }}
+                                    onPressEnter={() => void addEvent()}
+                                />
+                                <Button
+                                    type='primary'
+                                    icon={<PlusOutlined />}
+                                    loading={addingEvent}
+                                    disabled={!eventInput.trim() || hydratingEvents || saving}
+                                    onClick={() => void addEvent()}>
+                                    Add Event
+                                </Button>
+                            </div>
+                            {eventInputError && (
+                                <Typography.Text className='worm-combination-event-input__error' type='danger' role='alert'>
+                                    {eventInputError}
+                                </Typography.Text>
+                            )}
+                        </Card>
+                    )}
+                    {eventLoadErrors.length > 0 && (
+                        <Alert
+                            className='worm-combination-load-alert'
+                            type='warning'
+                            showIcon={true}
+                            title='Some saved Events could not be refreshed'
+                            description={`${eventLoadErrors.map(item => short(item, 8, 6)).join(', ')}. Existing saved selections remain visible in the review panel.`}
+                        />
+                    )}
+                    {hydratingEvents && <Alert className='worm-combination-load-alert' type='info' showIcon={true} title='Refreshing current child markets…' />}
+                    <div className='worm-combination-builder'>
+                        <main className='worm-combination-builder__events'>
+                            {events.length === 0 && !hydratingEvents ? (
+                                <div className='worm-combination-builder__empty'>
+                                    <Empty
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description={canWrite ? 'Add a Worm Event to explore its child markets.' : 'Current Event details are unavailable.'}
+                                    />
+                                </div>
+                            ) : (
+                                events.map(event => (
+                                    <EventExplorerCard
+                                        key={event.eventConditionId}
+                                        event={event}
+                                        selections={selections}
+                                        canWrite={canWrite}
+                                        onSelect={(market, outcome) => selectOutcome(event, market, outcome)}
+                                        onRemoveSelection={removeSelection}
+                                        onRemoveEvent={() => removeEvent(event)}
+                                    />
+                                ))
+                            )}
+                        </main>
+                        <aside className='worm-combination-builder__summary'>{summary}</aside>
+                    </div>
+                    <div className='worm-combination-mobile-review'>
+                        <span>
+                            <strong>{selections.length}</strong>
+                            <small>{selections.length === 1 ? 'market selected' : 'markets selected'}</small>
+                        </span>
+                        <Button type='primary' onClick={() => setReviewOpen(true)}>
+                            Review combination
+                        </Button>
+                    </div>
+                    <Drawer
+                        rootClassName='worm-combination-review-drawer'
+                        title='Review combination'
+                        placement='right'
+                        width={480}
+                        open={reviewOpen}
+                        onClose={() => setReviewOpen(false)}>
+                        {summary}
+                    </Drawer>
+                </>
+            )}
+        </AppPage>
+    );
+};

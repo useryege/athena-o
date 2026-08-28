@@ -930,6 +930,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	registerWalletAvatarHandlers(mux, server.walletAvatarHTTP)
 	registerWalletSecretHandlers(mux, server.walletSecretHTTP)
 	registerWormConnectionHandlers(mux, server)
+	registerWormCombinationHandlers(mux, server)
 	mux.Handle("/api/", handler)
 
 	// // Proxy extension is currently an alpha feature and is disabled

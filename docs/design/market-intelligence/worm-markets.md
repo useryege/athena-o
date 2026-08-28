@@ -6,8 +6,12 @@ Worm Markets owns the continuously synchronized read model for open Worm sports
 leverage markets. It polls the Worm API, stores market snapshots and a rolling
 price window, fills missing market rules, derives one-way live state, emits new
 event, live-event, and extreme-price notifications, and exposes event reads over
-its internal gRPC API. The Athena API Server publishes the same capability under
-the `/api/v1/worm-markets` HTTP namespace.
+its internal gRPC API. It also exposes a fresh, read-only combination catalog
+for one Worm event. That catalog preserves every child market, marks each market
+and YES/NO outcome with stable selectability reasons, and performs no margin
+estimate or mutation. The Athena API Server publishes the browse capability
+under `/api/v1/worm-markets` and consumes the catalog only through the
+interactive Worm Trading Combinations facade.
 
 The service does not own user wallets or the presentation of Worm data in a
 page. The generic Worm HTTP client in `util/worm` remains an external-provider
@@ -20,7 +24,8 @@ adapter rather than part of this capability's application state.
 | Binary dispatch | [cmd/main.go](../../../cmd/main.go) | `main`, `ATHENA_BINARY_NAME` dispatch |
 | Process composition and configuration | [cmd/athena-worm-markets/commands/athena-worm-markets.go](../../../cmd/athena-worm-markets/commands/athena-worm-markets.go) | `NewCommand` |
 | gRPC lifecycle and health | [internal/wormmarkets/server.go](../../../internal/wormmarkets/server.go) | `Server`, `NewServer`, `Start`, `Stop` |
-| Synchronization and read API | [internal/wormmarkets/service.go](../../../internal/wormmarkets/service.go) | `Service`, `Start`, `syncWormMarketsOnce`, `ListWormEvents`, `GetWormEvent` |
+| Synchronization and browse API | [internal/wormmarkets/service.go](../../../internal/wormmarkets/service.go) | `Service`, `Start`, `syncWormMarketsOnce`, `ListWormEvents`, `GetWormEvent` |
+| Combination event catalog | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go) | `GetOrderEventCatalog`, `getOrderEventCatalogMarkets`, `getOrderEventCatalogMarket`, stable unavailable codes |
 | Notification policy and delivery | [internal/wormmarkets/notifications.go](../../../internal/wormmarkets/notifications.go) | `sendWormNotifications`, `newWormEventNotifications`, `newWormLiveNotification`, `newWormPriceAlertNotification` |
 | Internal service contract | [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `WormMarketsService` |
 | Public HTTP/gRPC contract | [internal/server/wormmarkets/wormmarkets.proto](../../../internal/server/wormmarkets/wormmarkets.proto) | `WormMarketsService` HTTP annotations |
@@ -51,12 +56,21 @@ rule enrichment, and live-state derivation. All three use the same store and
 provider client. `syncMu` prevents overlapping complete market synchronizations;
 the rule and live-state loops may execute concurrently with that sync.
 
-The internal API has three unary methods. `ListWormEvents` reads the PostgreSQL
+The internal API has four unary methods. `ListWormEvents` reads the PostgreSQL
 snapshot. `GetWormEvent` intentionally reads the selected event directly from
 Worm, then enriches its markets concurrently with detail and margin-estimate
-requests. `GetWormMarketsStatus` reports only whether the service lifecycle has
-started. The API Server is a thin proxy with one process-owned Worm Markets
-channel shared by API and health requests; it does not duplicate business state.
+requests. `GetOrderEventCatalog` is a separate provider-backed projection for
+combination construction: it performs one event read and at most one detail
+read per unique child market, retains provider order, and never estimates a
+position. At most eight detail requests run concurrently. A valid open,
+margin-enabled Polymarket or Hyperliquid market exposes canonical YES and NO
+outcomes; each outcome is selectable only when its maximum leverage is a finite
+number at least `1`. Market-detail failures and invalid market, event, backend,
+outcome, or leverage data remain explicit catalog entries with stable
+`unavailable_code` values. `GetWormMarketsStatus` reports only whether the
+service lifecycle has started. The API Server shares one process-owned Worm
+Markets channel across browse, combination, and health requests and does not
+duplicate provider state.
 
 ## Runtime Flow
 
@@ -99,7 +113,15 @@ channel shared by API and health requests; it does not duplicate business state.
    position using 200 funds and maximum YES leverage. An individual enrichment
    failure is returned in that market's `trading_data_error` instead of failing
    the event RPC.
-10. On `SIGINT` or `SIGTERM`, the command first gracefully stops gRPC, marks
+10. `GetOrderEventCatalog` requires a canonical Solana public key as its Event
+    Condition ID and maps provider 404 to gRPC `NotFound`. It rejects an event
+    ID mismatch, malformed or duplicate child IDs, and cancellation at the RPC
+    boundary. Child detail reads are bounded to eight concurrent calls. A
+    detail failure does not remove the summary: the child remains present with
+    `MARKET_DETAIL_UNAVAILABLE`. Other market-wide and per-outcome validation
+    failures use stable unavailable codes. This path calls neither the margin
+    estimate endpoint nor any Worm mutation.
+11. On `SIGINT` or `SIGTERM`, the command first gracefully stops gRPC, marks
     health `NOT_SERVING`, cancels all three loops, waits for them to exit, and
     closes its Notification channel and PostgreSQL. The API Server closes its
     independent Worm Markets channel only after its own serving lifecycle ends.
@@ -138,6 +160,11 @@ The only process-local state is lifecycle cancellation/waiting, the `started`
 flag, and the synchronization mutex. No sync cursor, freshness status,
 notification delivery record, or event cache is held in memory.
 
+The combination catalog is a request-scoped projection only. It is not written
+to `worm_markets_market`, cached across requests, or reused as saved-template
+state. Titles, logos, market state, backend, outcome labels, leverage strings,
+selectability, and unavailable codes live only in the current RPC response.
+
 ## Configuration
 
 | Setting | Behavior |
@@ -153,7 +180,8 @@ notification delivery record, or event cache is held in memory.
 
 The one-minute loop intervals, 100-market upstream page size, 30-minute live
 window, `0.05` live range threshold, price-alert bands, notification topics,
-10-second notification timeout, and 200-fund margin estimate are implementation
+10-second notification timeout, browse-detail 200-fund margin estimate, and
+eight-request combination-catalog detail concurrency are implementation
 constants rather than runtime configuration.
 
 ## Invariants
@@ -175,6 +203,12 @@ constants rather than runtime configuration.
 - `ListWormEvents` is served from owned PostgreSQL state, while `GetWormEvent`
   is a fresh provider read. Callers must not assume both responses share one
   snapshot.
+- `GetOrderEventCatalog` is also a fresh provider read. It preserves the event's
+  child-market order, returns exactly one YES and one NO projection per child,
+  and never estimates, signs, creates, or submits a trade.
+- A catalog outcome is selectable only when all market-wide checks pass and its
+  own maximum leverage is finite and at least `1`; unavailable children remain
+  visible with stable machine-readable reasons.
 - gRPC `SERVING` and `GetWormMarketsStatus.started=true` mean the loops were
   launched, not that an upstream sync has succeeded or that data is fresh.
 
@@ -210,6 +244,12 @@ which is `NotFound`. Per-market trading enrichment is best effort. Cancellation
 propagates to provider, database, and notification operations; graceful shutdown
 waits until all background goroutines return.
 
+Provider failures in `GetOrderEventCatalog` fail the event RPC as `Unavailable`,
+except 404, which is `NotFound`. A child detail failure is isolated to that
+catalog item and makes both directions unselectable. Cancellation stops the
+bounded worker set and returns the context status. Because the catalog is not
+persisted, retry performs a new authoritative event and market read.
+
 ## Observability
 
 The process logs version/startup metadata and its listen port. Debug logs report
@@ -229,12 +269,16 @@ There are no Worm Markets-specific metrics, readiness probe, last-success
 timestamp, sync lag field, or durable notification-delivery diagnostics. Data
 freshness must currently be inferred from response `fetched_at` values, stored
 timestamps, and logs rather than health.
+`GetOrderEventCatalog` supplies its own request-time `fetched_at` and stable
+per-market/outcome unavailable codes; it adds no separate metric or readiness
+signal.
 
 ## Change Checklist
 
 - [ ] Component responsibilities and boundaries still match this document.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
+- [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, and free of estimates and mutations.
 - [ ] Failure recovery, health checks, and observability are current.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.
