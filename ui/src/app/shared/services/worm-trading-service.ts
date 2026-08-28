@@ -200,8 +200,11 @@ const requireRecord = (value: unknown): Record<string, any> => {
     return value;
 };
 
-const requireArray = (item: unknown, ...names: string[]): any[] => {
+const readRepeatedArray = (item: unknown, ...names: string[]): unknown[] => {
     const value = readValue(requireRecord(item), ...names);
+    if (value === undefined || value === null) {
+        return [];
+    }
     if (!Array.isArray(value)) {
         return invalidWormTradingResponse();
     }
@@ -421,8 +424,8 @@ const normalizeWalletActivity = (value: unknown): WormTradingWalletActivityItem 
     return {
         wallet: normalizeWalletSummary(item.wallet),
         connection: normalizeConnection(item.connection),
-        openPositions: requireArray(item, 'openPositions', 'open_positions').map(normalizeOpenPosition),
-        inFlightRequests: requireArray(item, 'inFlightRequests', 'in_flight_requests').map(normalizeInFlightRequest),
+        openPositions: readRepeatedArray(item, 'openPositions', 'open_positions').map(normalizeOpenPosition),
+        inFlightRequests: readRepeatedArray(item, 'inFlightRequests', 'in_flight_requests').map(normalizeInFlightRequest),
         positions: normalizeStreamState(readValue(item, 'positions', 'openPositionsStatus', 'open_positions_status')),
         requests: normalizeStreamState(readValue(item, 'requests', 'inFlightRequestsStatus', 'in_flight_requests_status')),
         status: normalizeBalanceStatus(readValue(item, 'status')),
@@ -535,8 +538,8 @@ export class WormTradingService {
         return abortableRequest(request, value => {
             const body = requireRecord(value);
             return {
-                items: requireArray(body, 'items').map(normalizeWalletBalance),
-                total: requireInteger(body, 0, 'total'),
+                items: readRepeatedArray(body, 'items').map(normalizeWalletBalance),
+                total: optionalInteger(body, 0, 0, 'total'),
                 page: requireInteger(body, 1, 'page'),
                 pageSize: requireInteger(body, 1, 'pageSize', 'page_size'),
                 network: requireString(body, 'network'),
@@ -551,8 +554,8 @@ export class WormTradingService {
         return abortableRequest(request, value => {
             const body = requireRecord(value);
             return {
-                items: requireArray(body, 'items').map(normalizeWalletActivity),
-                total: requireInteger(body, 0, 'total'),
+                items: readRepeatedArray(body, 'items').map(normalizeWalletActivity),
+                total: optionalInteger(body, 0, 0, 'total'),
                 page: requireInteger(body, 1, 'page'),
                 pageSize: requireInteger(body, 1, 'pageSize', 'page_size'),
                 fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at'),
