@@ -81,6 +81,19 @@ export interface WormWalletConnection {
     connectedAt: number;
 }
 
+export interface WormTradingWalletConnectionItem {
+    wallet: WormTradingWalletSummary;
+    connection: WormWalletConnection;
+}
+
+export interface ListWormTradingWalletConnectionsResult {
+    items: WormTradingWalletConnectionItem[];
+    total: number;
+    page: number;
+    pageSize: number;
+    fetchedAt: number;
+}
+
 export interface WormMarketReference {
     conditionId: string;
     title: string;
@@ -339,6 +352,14 @@ const normalizeConnection = (value: unknown): WormWalletConnection => {
     };
 };
 
+const normalizeWalletConnection = (value: unknown): WormTradingWalletConnectionItem => {
+    const item = requireRecord(value);
+    return {
+        wallet: normalizeWalletSummary(readValue(item, 'wallet')),
+        connection: normalizeConnection(readValue(item, 'connection'))
+    };
+};
+
 const normalizeMarket = (value: unknown): WormMarketReference => {
     const item = requireRecord(value);
     const event = isRecord(item.event) ? item.event : {};
@@ -453,7 +474,7 @@ const parseJSONResponse = async (response: Response): Promise<unknown> => {
 };
 
 const rawSameOriginRequest = <T>(
-    method: 'POST' | 'DELETE',
+    method: 'GET' | 'POST' | 'DELETE',
     path: string,
     body: Record<string, unknown> | undefined,
     fallbackError: string,
@@ -562,6 +583,37 @@ export class WormTradingService {
                 openPositionCount: requireInteger(body, 0, 'openPositionCount', 'open_position_count'),
                 inFlightRequestCount: requireInteger(body, 0, 'inFlightRequestCount', 'in_flight_request_count'),
                 status: normalizeBalanceStatus(readValue(body, 'status'))
+            };
+        });
+    }
+
+    public listWalletConnections(page = 1, pageSize = 100): AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult> {
+        const query = new URLSearchParams({page: String(page), pageSize: String(pageSize)});
+        return rawSameOriginRequest('GET', `/api/v1/worm-trading/wallet-connections?${query.toString()}`, undefined, 'Worm wallet connection inventory failed', value => {
+            const body = requireRecord(value);
+            const items = readRepeatedArray(body, 'items').map(normalizeWalletConnection);
+            const responsePage = requireInteger(body, 1, 'page');
+            const responsePageSize = requireInteger(body, 1, 'pageSize', 'page_size');
+            const total = requireInteger(body, 0, 'total');
+            const walletIDs = new Set(items.map(item => item.wallet.walletId));
+            const walletAddresses = new Set(items.map(item => item.wallet.address));
+            const firstItemOffset = (responsePage - 1) * responsePageSize;
+            if (
+                responsePage !== page ||
+                responsePageSize !== pageSize ||
+                items.length > responsePageSize ||
+                walletIDs.size !== items.length ||
+                walletAddresses.size !== items.length ||
+                (items.length > 0 && firstItemOffset + items.length > total)
+            ) {
+                return invalidWormTradingResponse();
+            }
+            return {
+                items,
+                total,
+                page: responsePage,
+                pageSize: responsePageSize,
+                fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at')
             };
         });
     }

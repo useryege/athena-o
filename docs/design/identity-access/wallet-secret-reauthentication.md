@@ -4,8 +4,8 @@
 
 This capability owns two independent additional identity proofs and fixed
 five-minute authorization leases: one for revealing a custodied wallet private
-key and one for managing Athena-created Worm API credentials. Both distinguish
-an interactive login session from an API Key through server-side typed
+key and one for managing one or more Athena-created Worm API credentials. Both
+distinguish an interactive login session from an API Key through server-side typed
 credential metadata and bind reauthentication to the current account, login
 JTI, and access revision. The leases use separate cookies, Redis key namespaces,
 scopes, routes, and stable errors; neither lease authorizes the other operation.
@@ -27,11 +27,11 @@ either sensitive operation through public gRPC or Swagger.
 | Typed request credential | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `AuthenticatedCredential`, `Capability`, `IsInteractiveLogin`, `WithAuthenticatedCredential`, `AuthenticateToken` |
 | Independent lease state and stable errors | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/walletsecret/errors.go](../../../internal/walletsecret/errors.go) | `NewManager`, `NewWormCredentialManager`, `Manager.Issue`, `Manager.Validate`, `Manager.ClearCookie`, `LeaseTTL`, stable Wallet and Worm reasons |
 | Provider-state creation limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
-| Same-origin sensitive boundaries | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/walletsecrethttp/handler.go](../../../internal/server/walletsecrethttp/handler.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateWalletSecretHTTP`, `authenticateWormConnectionHTTP`, `validWalletSecretOrigin`, `Handler.Reveal`, `manageWormConnection` |
+| Sensitive boundaries and Worm inventory | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/walletsecrethttp/handler.go](../../../internal/server/walletsecrethttp/handler.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateWalletSecretHTTP`, `authenticateWormConnectionHTTP`, `validWalletSecretOrigin`, `validWormConnectionOrigin`, `Handler.Reveal`, `listWormWalletConnections`, `manageWormConnection` |
 | Google reauthentication | [internal/googleoidc/wallet_secret_reauth.go](../../../internal/googleoidc/wallet_secret_reauth.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/googleoidc/worm_credential_store.go](../../../internal/googleoidc/worm_credential_store.go) | `WalletSecretReauthentication`, `WormCredentialReauthentication`, `exchangeAndVerify`, separate transaction stores |
 | Solana reauthentication | [internal/phantomauth/wallet_secret_reauth.go](../../../internal/phantomauth/wallet_secret_reauth.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go), [internal/phantomauth/worm_credential_store.go](../../../internal/phantomauth/worm_credential_store.go) | Wallet and Worm `Challenge`/`Verify` handlers, separate challenge stores and SIWS statements |
 | Logout invalidation | [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `Handler.ServeHTTP`, `clearSensitiveCookies` |
-| Browser flow and cleanup | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm connection flow, action-plus-wallet-ID redirect recovery |
+| Browser flow and cleanup | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, intent-only redirect recovery |
 | Process and route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/authz.go](../../../internal/server/authz.go) | `NewServer`, `newHTTPServer`, `interactiveLoginGRPCMethods` |
 
 ## Architecture
@@ -42,11 +42,13 @@ flowchart LR
     P --> R1["wallet.private_key.reveal lease"]
     P --> R2["worm.api_credential.manage lease"]
     B --> H1["Same-origin reveal handler"]
-    B --> H2["Same-origin Worm connection handler"]
+    B --> I["Native lease-free owner Worm inventory"]
+    B --> H2["Same-origin Worm mutation handler"]
     H1 --> R1
     H2 --> R2
     H1 -->|"Wallet READ_WRITE + service Bearer"| W1["RevealWalletPrivateKey"]
-    H2 -->|"Worm Trading READ_WRITE + service Bearers"| W2["Owner lookup + purpose-bound signer"]
+    I -->|"Interactive + Worm Trading READ_WRITE"| W2["Owner-scoped Solana refs + connection projection"]
+    H2 -->|"Worm Trading READ_WRITE + lease + service Bearers"| W3["Owner lookup + purpose-bound signer"]
 ```
 
 `SessionManager.AuthenticateToken` returns both ordinary JWT claims and an
@@ -64,6 +66,17 @@ fixed lifetime, and a valid Worm lease may manage multiple owned Solana wallet
 connections, but every operation repeats typed-login validation, the appropriate
 module requirement, lease validation, and owner-scoped Wallet retrieval. Cookie
 path and scope mismatch prevent either manager from accepting the other lease.
+
+The native Worm connection collection GET is a management discovery boundary,
+not a lease consumer. It requires an interactive credential and Worm Trading
+`READ_WRITE`, derives the current account and Solana filter server-side, and
+requires neither a Worm lease nor the mutation Origin header. It returns only
+safe connection state and cannot obtain a provider challenge,
+invoke Wallet signing, decrypt a Worm credential, or mutate connection state.
+The subsequent POST, reconnect POST, and DELETE remain the only lease-authorized
+Worm credential operations. Assets exposes DELETE only as exceptional cleanup
+for an already incomplete revocation; the native boundary retains its complete
+credential-revocation behavior.
 
 ## Runtime Flow
 
@@ -123,22 +136,29 @@ path and scope mismatch prevent either manager from accepting the other lease.
    revision, or losing Wallet write access clears React-held private-key state.
    Google navigation stores only `{action, walletId}` in `sessionStorage` and
    consumes it once after return.
-10. Worm connection management starts at native
+10. Full-account Worm connection discovery starts at native
+    `GET /api/v1/worm-trading/wallet-connections`. It accepts only pagination,
+    requires an interactive Athena login and Worm Trading `READ_WRITE`, and
+    derives the owner, Solana type, wallet IDs, and addresses server-side. It
+    requires no Worm lease or Origin header because it only projects safe
+    connection state and cannot reach credential creation or Wallet signing.
+    API Keys cannot invoke this management-only inventory.
+11. Worm credential mutations use native
     `POST|DELETE /api/v1/worm-trading/wallet-connections/{walletId}` resources.
     Connect and reconnect use POST, with reconnect expressed by the fixed
-    `:reconnect` suffix. Every action requires exact origin, an interactive
+    `:reconnect` suffix. Every mutation requires exact origin, an interactive
     Athena login, Worm Trading `READ_WRITE`, the independent Worm lease, and an
     owner-scoped Solana Wallet row. `WORM_TRADING_LOGIN_SESSION_REQUIRED` and
     `WORM_TRADING_REAUTH_REQUIRED` remain local step-up reasons rather than
     global session-expiry signals.
-11. A Google Worm proof begins at
+12. A Google Worm proof begins at
     `GET /auth/worm-trading/google?returnTo=/worm-trading`. It uses a separate
     `wc.` state value, cookie, and five-minute Redis transaction while sharing
     the normal callback and verified OIDC primitive. `prompt=select_account`,
     `max_age=0`, fresh `auth_time`, stable persisted `sub`, account, Session JTI
     digest, and access revision must all match. Success issues only the Worm
     lease and returns to the saved page.
-12. A Solana Worm proof uses
+13. A Solana Worm proof uses
     `/auth/worm-trading/solana/challenge` and `/verify`. The server accepts no
     address, derives the persisted login address, and issues a separate
     single-use SIWS challenge whose statement authorizes Worm API credential
@@ -146,12 +166,12 @@ path and scope mismatch prevent either manager from accepting the other lease.
     consumes its dedicated cookie and Redis state, repeats account/session/
     revision/identity checks, and verifies the exact raw-base64url Ed25519
     signature before issuing the Worm lease.
-13. Disabled-auth mode registers the independent loopback-only
+14. Disabled-auth mode registers the independent loopback-only
     `POST /auth/worm-trading/development` route. It requires the isolated
     development credential, Worm Trading `READ_WRITE`, a loopback client, and
     the exact `Origin: http://localhost:4000`; external-auth mode does not
     register it.
-14. After Worm lease validation, the API Server performs Wallet ownership
+15. After Worm lease validation, the API Server performs Wallet ownership
     lookup, internally obtains and checks Worm Trading's exact credential
     challenge, invokes Wallet's purpose-bound signer, validates the returned
     signature encoding, compares the message digest, and completes the
@@ -159,9 +179,17 @@ path and scope mismatch prevent either manager from accepting the other lease.
     server-supplied expected address against its owner-scoped row. The provider
     challenge, Wallet signature, Worm API key, and Worm secret never reach the
     browser.
-    Google navigation stores only `{action, walletId}` for one resumed action.
-    Logout clears both lease cookies before revoking the login token; any access
-    revision change invalidates both Redis records on their next validation.
+16. Assets uses one Worm proof for its serial full-account connection batch. A
+    valid lease admits successive owned-wallet mutations until its fixed expiry;
+    an expired lease pauses before the next mutation and requires another
+    explicit page-level proof. Google navigation stores only
+    `{kind: "auto-connect"}`, `{kind: "reconnect", walletId}`, or
+    `{kind: "cleanup", walletId}` and rebuilds an automatic queue from
+    authoritative inventory after return. It never stores a queue or retries a
+    mutation automatically. Logout clears both lease cookies before revoking
+    the login token; an access revision change
+    invalidates both Redis records on their next validation and aborts browser
+    continuation.
 
 ## State / Data
 
@@ -200,17 +228,23 @@ sensitive-operation responses set
 `Cache-Control: no-store, private`, `Pragma: no-cache`,
 `Vary: Cookie, Authorization`, and `Referrer-Policy: no-referrer`.
 
+The browser holds an automatic connection queue only in the mounted Assets
+page. The Worm-specific `sessionStorage` record is an intent-only discriminated
+value for full-account automatic connection, one manual reconnect, or one
+exceptional cleanup; it never contains the inventory, credentials, lease,
+proof, or connection result and is consumed once after Google returns.
+
 ## Configuration
 
 | Setting | Behavior |
 | --- | --- |
-| Redis client configuration | Required for both scopes' Google transactions, Solana challenges, and leases. Failure closes private-key reveal and Worm connection management without disabling read-only Wallet or Worm activity. |
+| Redis client configuration | Required for both scopes' Google transactions, Solana challenges, and leases. Failure closes private-key reveal and Worm credential mutations without disabling Wallet metadata, Worm management inventory, or read-only Worm activity. |
 | `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Supplies the exact shared Google callback, trusted public origin, and Secure-cookie decision. |
 | `ATHENA_GOOGLE_OIDC_CLIENT_ID` and client secret settings | Reused for the fresh Google Authorization Code + PKCE exchange. |
-| `ATHENA_SERVER_DISABLE_AUTH` | Replaces external reauthentication routes with separate loopback-only development lease endpoints. Worm management additionally fixes its accepted Origin to `http://localhost:4000`. |
+| `ATHENA_SERVER_DISABLE_AUTH` | Replaces external reauthentication routes with separate loopback-only development lease endpoints. Worm credential mutations additionally fix their accepted Origin to `http://localhost:4000`. |
 | API Server base href | Restricts each lease cookie to its effective native API path. |
 | `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` | Required at both the API Server and Wallet process; authenticates private-key reveal and purpose-bound Worm signing RPCs and must contain at least 32 bytes. |
-| `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | Authenticates the API Server's prepare, complete, disconnect, and activity calls to Worm Trading; it is separate from the lease and Wallet Bearer. |
+| `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | Authenticates the API Server's connection inventory, prepare, complete, disconnect, and activity calls to Worm Trading; it is separate from the lease and Wallet Bearer. |
 
 The lease duration, scope, cookie names, provider transaction lifetimes, and
 provider-state rate limits and window are fixed implementation constants rather
@@ -226,6 +260,9 @@ than environment settings.
   Solana wallet, exact origin, a valid current login session, and the matching
   non-expired Worm-only lease. Disabled-auth Worm management accepts only
   `http://localhost:4000` as that Origin.
+- Worm connection inventory requires an interactive credential, Worm Trading
+  `READ_WRITE`, and current-account Solana ownership, but no lease or Origin
+  header; it cannot mutate a connection or invoke the purpose-bound signer.
 - Administrator role never bypasses wallet ownership or lease validation.
 - The reveal adapter can reach Wallet custody only through the authenticated
   internal client; a network caller cannot substitute an account UUID without
@@ -244,8 +281,8 @@ than environment settings.
   HMAC credentials do not enter public gRPC, Swagger, Redis state, browser
   storage, logs, metrics, or cacheable responses.
 - Redis unavailability fails closed for lease issue and validation while leaving
-  non-secret Wallet operations and already connected read-only Worm activity
-  independent.
+  non-secret Wallet operations, the connection inventory, and already connected
+  read-only Worm activity independent.
 
 ## Failure Recovery
 
@@ -270,7 +307,10 @@ records expire naturally. A Wallet-service or decryption failure returns no
 partial private key or Worm signature and does not extend a lease. Failure after
 the Worm lease has admitted an operation follows Worm Trading's durable
 connection and revocation state machine rather than issuing another lease or
-automatically retrying credential creation. A failed connect or reconnect
+automatically retrying credential creation. Full-account bootstrap pauses when
+the lease expires and requires one explicit new proof before rebuilding its
+remaining work from authoritative inventory; it never stores or blindly
+replays the prior queue. A failed connect or reconnect
 attempt restores its prior connection state but recomputes the warning across
 all retained credentials: `REVOCATION_REQUIRED` takes priority, otherwise any
 non-active old credential yields `CREDENTIAL_REVOCATION_PENDING`, so repeated
@@ -279,10 +319,11 @@ remote trading authority. Worm Trading's 30-second maintenance
 loop expires abandoned connection attempts, processes reconnect-retired
 `PENDING_REVOCATION` rows, and recovers a `REVOKING` row only when its connection
 is `CONNECTED` and it has remained stale for one Worm attempt timeout. An
-explicit disconnect that remains `DISCONNECTING` or `REVOCATION_REQUIRED`,
-including its `REVOKING` credential, is retried only when the user invokes
-disconnect again. `CONNECT_OUTCOME_UNKNOWN` blocks connect, reconnect, and
-disconnect until an operator manually reconciles the uncertain remote result.
+explicit cleanup that remains `DISCONNECTING` or `REVOCATION_REQUIRED`,
+including its `REVOKING` credential, is retried only when the user confirms
+`Retry credential cleanup`. `CONNECT_OUTCOME_UNKNOWN` blocks connect,
+reconnect, and disconnect until an operator manually reconciles the uncertain
+remote result.
 
 ## Observability
 
@@ -307,7 +348,9 @@ are not folded into Wallet or Worm Trading service health.
 - [ ] Shared provider-state limits stay atomic, sensitive-proof-only, and keyed by
       an account digest rather than a raw UUID.
 - [ ] Same-origin native HTTP reveal stays outside public gRPC and Swagger.
-- [ ] Native Worm management stays interactive, `READ_WRITE`, owner scoped, Worm-lease-only, and outside public gRPC/Swagger.
+- [ ] Native Worm inventory stays interactive, `READ_WRITE`, owner scoped,
+      lease-free, and outside public gRPC/Swagger; every mutation remains
+      Worm-lease-only.
 - [ ] Secret responses and browser state preserve no-store and cleanup semantics.
 - [ ] Logout, revocation, access changes, and Redis failure still fail closed.
 - [ ] The [design index](../README.md) contains the current summary.

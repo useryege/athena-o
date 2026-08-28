@@ -32,7 +32,7 @@ deletion, and blockchain RPC calls remain outside this capability.
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
-| Owner-scoped Worm Trading projection and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `completeWormConnection` |
+| Owner-scoped Worm Trading projection and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `completeWormConnection` |
 | Browser management surface | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
 | Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, `ATHENA_WALLET_INTERNAL_AUTH_TOKEN`, authenticated Wallet gRPC client |
 
@@ -70,8 +70,16 @@ Worm connection state, open positions, and in-flight requests. These paths
 require Worm Trading `READ` but do not grant the public Wallet list or detail
 APIs.
 
-Connection management performs an owner-scoped `GetWallet` before it prepares
-any challenge. The API Server may then call the internal
+The native Worm connection inventory applies the same server-derived owner and
+fixed Solana filter across pages of at most 100 wallets. It is restricted to an
+interactive Worm Trading `READ_WRITE` credential, accepts only pagination from
+the browser, and sends ordered wallet ID/address references to Worm Trading for
+store-backed connection projection. It requires no Worm lease or Origin header
+because it does not prepare a challenge, sign, decrypt a key, or mutate either
+service. API Keys cannot use this management inventory.
+
+Each connection mutation performs an owner-scoped `GetWallet` before it prepares
+any challenge or revocation. The API Server may then call the internal
 `SignWormAuthChallenge` RPC with its service Bearer, server-derived account UUID,
 wallet ID, stored address, nonce, and exact challenge message. Wallet repeats
 owner lookup, requires a Solana wallet, verifies the expected address, accepts
@@ -100,9 +108,12 @@ this is a server-custodied design.
 1. `ListWallets` and `GetWallet` require Wallet `READ`. The API Server supplies
    the credential's account UUID; the Wallet service returns only matching rows.
    Optional type/query filters and pagination operate inside that owner scope.
-   Worm Trading balance listing separately requires Worm Trading `READ` and uses
-   the same trusted owner-scoped internal list with a fixed Solana filter; it
-   exposes only `TradingWalletSummary` rather than the complete `WalletItem`.
+   Worm Trading balance and activity listing separately require Worm Trading
+   `READ` and use the same trusted owner-scoped internal list with a fixed Solana
+   filter; they expose only `TradingWalletSummary` rather than the complete
+   `WalletItem`. The interactive Worm Trading `READ_WRITE` connection inventory
+   pages the same safe Solana projection without granting the public Wallet list
+   API or requiring a Worm management lease.
 2. `CreateWallet` requires a login-session credential plus Wallet
    `READ_WRITE`. It validates a trimmed 1–50-rune remark and optional fixed
    avatar preset, generates a random secp256k1 or Ed25519 keypair, encrypts the
@@ -194,8 +205,8 @@ digest in the Wallet database.
   and avatar state; they cannot create, import, or reveal private keys. Worm
   Trading `READ` permits the same account's Solana summary, balances, Worm
   activity, connection state, and uploaded-avatar GET without granting other
-  Wallet operations. API Keys cannot invoke the Worm challenge signer or manage
-  a connection.
+  Wallet operations. API Keys cannot list the Worm management inventory, invoke
+  the Worm challenge signer, or manage a connection.
 - Create/import require login or isolated development-session capability.
 - Public safe models never contain owner UUID, ciphertext, object key, private
   key, mnemonic, or role.
@@ -245,7 +256,7 @@ challenge messages, nonces, signatures, and message digests.
 - [ ] Key canonicalization, encryption, duplicate constraints, and remark rules remain current.
 - [ ] Avatar validation, CAS, compensation, private delivery, and collection remain current.
 - [ ] Create/import/reveal credential restrictions match API Server authorization.
-- [ ] Worm Trading summary reads and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
+- [ ] Worm Trading summary reads, interactive management inventory, and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
 - [ ] The Worm challenge signer remains internal, owner scoped, Solana-only, exact-message-bound, and unavailable to API Keys.
 - [ ] UI secret state remains memory-only and is cleared on close, route, account, or permission change.
 - [ ] Configuration, reset guidance, and source links match the implementation.

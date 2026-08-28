@@ -127,6 +127,26 @@ message WormWalletConnection {
   int64 connected_at = 5;
 }
 
+// WalletConnectionReference correlates one caller-verified Wallet record with
+// its canonical Solana address.
+message WalletConnectionReference {
+  int64 wallet_id = 1;
+  string address = 2;
+}
+
+// BatchGetWalletConnectionsRequest accepts at most 100 caller-resolved Wallet
+// refs.
+message BatchGetWalletConnectionsRequest {
+  repeated WalletConnectionReference refs = 1;
+}
+
+// BatchGetWalletConnectionsResponse returns non-secret connection projections
+// in request order without decrypting or exposing Worm credentials.
+message BatchGetWalletConnectionsResponse {
+  repeated WormWalletConnection items = 1;
+  int64 fetched_at = 2;
+}
+
 message CompleteWormWalletConnectionResponse {
   WormWalletConnection connection = 1;
 }
@@ -230,6 +250,7 @@ message BatchGetWalletPositionSnapshotsResponse {
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
+  rpc BatchGetWalletConnections(BatchGetWalletConnectionsRequest) returns (BatchGetWalletConnectionsResponse);
   rpc PrepareWormWalletConnection(PrepareWormWalletConnectionRequest) returns (PrepareWormWalletConnectionResponse);
   rpc CompleteWormWalletConnection(CompleteWormWalletConnectionRequest) returns (CompleteWormWalletConnectionResponse);
   rpc DisconnectWormWallet(DisconnectWormWalletRequest) returns (DisconnectWormWalletResponse);

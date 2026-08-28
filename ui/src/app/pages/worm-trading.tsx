@@ -1,5 +1,5 @@
 import {ApiOutlined, CopyOutlined, DisconnectOutlined, LinkOutlined, SyncOutlined, WalletOutlined} from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Empty, Pagination, Result, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Avatar, Button, Card, Empty, Pagination, Progress, Result, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
@@ -19,6 +19,7 @@ import {
     WormTradingTokenAssetBalance,
     WormTradingWalletActivityItem,
     WormTradingWalletBalanceItem,
+    WormTradingWalletConnectionItem,
     WormTradingWalletSummary,
     WormWalletConnection,
     WormWalletConnectionState
@@ -29,6 +30,8 @@ import {usePagedParams} from './shared';
 
 const wormTradingPageSize = 20;
 const wormTradingPageSizes = [wormTradingPageSize];
+const wormConnectionInventoryPageSize = 100;
+const wormConnectionStartIntervalMS = 12_000;
 const pendingConnectionActionKey = 'athena.worm-trading.pending-connection-action';
 const connectOutcomeUnknownWarning = 'CONNECT_OUTCOME_UNKNOWN';
 
@@ -228,25 +231,22 @@ const RuntimeSummary = (props: {status?: WormTradingStatus; loading: boolean; er
     );
 };
 
-type ConnectionAction = 'connect' | 'reconnect' | 'disconnect';
+type ManagedConnectionAction = 'reconnect' | 'cleanup';
+type PendingConnectionIntent = {kind: 'auto-connect'} | {kind: ManagedConnectionAction; walletId: number};
 
-interface PendingConnectionAction {
-    action: ConnectionAction;
-    walletId: number;
-}
-
-const readPendingConnectionAction = (): PendingConnectionAction | undefined => {
+const readPendingConnectionIntent = (): PendingConnectionIntent | undefined => {
     const raw = window.sessionStorage.getItem(pendingConnectionActionKey);
     if (!raw) {
         return undefined;
     }
     window.sessionStorage.removeItem(pendingConnectionActionKey);
     try {
-        const value = JSON.parse(raw) as Partial<PendingConnectionAction>;
+        const value = JSON.parse(raw) as Partial<PendingConnectionIntent>;
+        if (value.kind === 'auto-connect') {
+            return {kind: 'auto-connect'};
+        }
         const walletId = Number(value.walletId);
-        return (value.action === 'connect' || value.action === 'reconnect' || value.action === 'disconnect') && Number.isInteger(walletId) && walletId > 0
-            ? {action: value.action, walletId}
-            : undefined;
+        return (value.kind === 'reconnect' || value.kind === 'cleanup') && Number.isSafeInteger(walletId) && walletId > 0 ? {kind: value.kind, walletId} : undefined;
     } catch {
         return undefined;
     }
@@ -295,6 +295,90 @@ const wormConnectionErrorMessage = (error: unknown, fallback: string) => {
     return requestErrorMessage(error, fallback);
 };
 
+type ConnectionSetupPhase = 'hidden' | 'discovering' | 'authorization-required' | 'connecting' | 'partial' | 'paused' | 'blocked';
+
+interface ConnectionSetupState {
+    phase: ConnectionSetupPhase;
+    total: number;
+    processed: number;
+    succeeded: number;
+    failed: number;
+    remaining: number;
+    message: string;
+    currentWallet?: WormTradingWalletSummary;
+    retryable?: boolean;
+}
+
+const hiddenConnectionSetupState: ConnectionSetupState = {
+    phase: 'hidden',
+    total: 0,
+    processed: 0,
+    succeeded: 0,
+    failed: 0,
+    remaining: 0,
+    message: ''
+};
+
+const ConnectionSetupPanel = (props: {manager: ConnectionManager}) => {
+    const setup = props.manager.setup;
+    if (setup.phase === 'hidden') {
+        return null;
+    }
+    const title =
+        setup.phase === 'discovering'
+            ? 'Checking Worm wallet access'
+            : setup.phase === 'authorization-required'
+              ? 'Authorize Worm wallet connections'
+              : setup.phase === 'connecting'
+                ? 'Connecting wallets to Worm'
+                : setup.phase === 'partial'
+                  ? 'Some Worm wallets are not connected'
+                  : setup.phase === 'blocked'
+                    ? 'Worm connection requires review'
+                    : 'Automatic Worm connection is paused';
+    const type = setup.phase === 'blocked' ? 'error' : setup.phase === 'partial' || setup.phase === 'paused' || setup.phase === 'authorization-required' ? 'warning' : 'info';
+    const progressStatus: 'active' | 'exception' = setup.phase === 'blocked' ? 'exception' : 'active';
+    const percent = setup.total > 0 ? Math.min(100, Math.round((setup.processed / setup.total) * 100)) : 0;
+    const action =
+        setup.phase === 'authorization-required' ? (
+            <Button type='primary' icon={<LinkOutlined />} disabled={props.manager.operationBusy} onClick={props.manager.authorize}>
+                {setup.processed > 0 ? 'Authorize and continue' : 'Authorize and connect'}
+            </Button>
+        ) : (setup.phase === 'partial' || setup.phase === 'paused') && setup.retryable ? (
+            <Button type='primary' icon={<SyncOutlined />} disabled={props.manager.operationBusy} onClick={props.manager.retry}>
+                Retry failed connections
+            </Button>
+        ) : undefined;
+    return (
+        <Alert
+            className={`worm-trading-connection-setup worm-trading-connection-setup--${setup.phase}`}
+            type={type}
+            showIcon={true}
+            title={title}
+            description={
+                <div className='worm-trading-connection-setup__body'>
+                    <Typography.Paragraph>{setup.message}</Typography.Paragraph>
+                    {setup.total > 0 && (
+                        <div className='worm-trading-connection-setup__progress'>
+                            <Progress percent={percent} status={progressStatus} showInfo={false} />
+                            <span>
+                                {setup.processed}/{setup.total} processed · {setup.succeeded} connected · {setup.failed} failed · {setup.remaining} remaining
+                            </span>
+                        </div>
+                    )}
+                    {setup.currentWallet && (
+                        <Typography.Text type='secondary'>Current wallet: {setup.currentWallet.remark || shortAddress(setup.currentWallet.address)}</Typography.Text>
+                    )}
+                    <span className='worm-trading-connection-setup__live' role='status' aria-live='polite' aria-atomic='true'>
+                        {setup.message}
+                    </span>
+                </div>
+            }
+            action={action}
+        />
+    );
+};
+
 const ConnectionManagement = (props: {onReload: () => void; children: (manage: ConnectionManager) => React.ReactNode}) => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
@@ -302,7 +386,135 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
     const lease = useSensitiveWriteLease();
     const [busyWalletId, setBusyWalletId] = React.useState<number>();
     const [stage, setStage] = React.useState('');
+    const [operationBusy, setOperationBusy] = React.useState(false);
+    const [setup, setSetup] = React.useState<ConnectionSetupState>({...hiddenConnectionSetupState, phase: 'discovering', message: 'Checking every Solana wallet in this account.'});
+    const [connectionItems, setConnectionItems] = React.useState<WormTradingWalletConnectionItem[]>([]);
+    const [walletProgress, setWalletProgress] = React.useState<Map<number, string>>(() => new Map());
     const resumedRef = React.useRef(false);
+    const operationEpochRef = React.useRef(0);
+    const runningRef = React.useRef(false);
+    const cancelDelayRef = React.useRef<(() => void) | undefined>();
+    const lastAutoStartAtRef = React.useRef(0);
+    const targetWalletIDsRef = React.useRef(new Set<number>());
+    const attemptedWalletIDsRef = React.useRef(new Set<number>());
+    const succeededWalletIDsRef = React.useRef(new Set<number>());
+    const failedWalletIDsRef = React.useRef(new Set<number>());
+    const blockedWalletIDsRef = React.useRef(new Set<number>());
+    const onReloadRef = React.useRef(props.onReload);
+    onReloadRef.current = props.onReload;
+
+    const isCurrent = React.useCallback((epoch: number) => operationEpochRef.current === epoch, []);
+
+    const progressState = React.useCallback(
+        (phase: ConnectionSetupPhase, message: string, options?: {currentWallet?: WormTradingWalletSummary; retryable?: boolean}): ConnectionSetupState => {
+            const total = targetWalletIDsRef.current.size;
+            const processed = attemptedWalletIDsRef.current.size;
+            return {
+                phase,
+                total,
+                processed,
+                succeeded: succeededWalletIDsRef.current.size,
+                failed: failedWalletIDsRef.current.size,
+                remaining: Math.max(0, total - processed),
+                message,
+                currentWallet: options?.currentWallet,
+                retryable: options?.retryable
+            };
+        },
+        []
+    );
+
+    const setOperationStage = React.useCallback((message: string) => {
+        setStage(message);
+        setSetup(current => ({...current, message}));
+    }, []);
+
+    const beginOperation = React.useCallback(() => {
+        if (runningRef.current) {
+            return undefined;
+        }
+        runningRef.current = true;
+        setOperationBusy(true);
+        return ++operationEpochRef.current;
+    }, []);
+
+    const finishOperation = React.useCallback(
+        (epoch: number) => {
+            if (!isCurrent(epoch)) {
+                return;
+            }
+            runningRef.current = false;
+            setOperationBusy(false);
+            setBusyWalletId(undefined);
+            setStage('');
+        },
+        [isCurrent]
+    );
+
+    React.useEffect(
+        () => () => {
+            operationEpochRef.current++;
+            runningRef.current = false;
+            cancelDelayRef.current?.();
+        },
+        []
+    );
+
+    const publishInventory = React.useCallback((items: WormTradingWalletConnectionItem[]) => {
+        setConnectionItems(items);
+        setWalletProgress(current => {
+            const next = new Map(current);
+            for (const item of items) {
+                if (item.connection.warningCode === connectOutcomeUnknownWarning) {
+                    next.set(item.wallet.walletId, 'Connection outcome is unknown; automatic retry is blocked.');
+                } else if (item.connection.state !== 'NOT_CONNECTED') {
+                    next.delete(item.wallet.walletId);
+                }
+            }
+            return next;
+        });
+    }, []);
+
+    const fetchConnectionInventory = React.useCallback(
+        async (epoch: number): Promise<WormTradingWalletConnectionItem[] | undefined> => {
+            const items: WormTradingWalletConnectionItem[] = [];
+            const seenWalletIDs = new Set<number>();
+            let page = 1;
+            let expectedTotal: number | undefined;
+            while (true) {
+                const result = await lease.runTask(() => services.wormTrading.listWalletConnections(page, wormConnectionInventoryPageSize));
+                if (!isCurrent(epoch) || result.status === 'discarded') {
+                    return undefined;
+                }
+                if (result.status === 'rejected') {
+                    throw result.error;
+                }
+                if (expectedTotal === undefined) {
+                    expectedTotal = result.value.total;
+                } else if (result.value.total !== expectedTotal) {
+                    throw new Error('The Solana wallet inventory changed while Worm connections were being checked. Refresh before continuing.');
+                }
+                for (const item of result.value.items) {
+                    if (seenWalletIDs.has(item.wallet.walletId)) {
+                        throw new Error('Worm Trading returned the same wallet more than once. Existing connection data was not replaced.');
+                    }
+                    seenWalletIDs.add(item.wallet.walletId);
+                    items.push(item);
+                }
+                if (items.length >= expectedTotal) {
+                    if (items.length !== expectedTotal) {
+                        throw new Error('Worm Trading returned an inconsistent wallet total. Existing connection data was not replaced.');
+                    }
+                    return items;
+                }
+                if (result.value.items.length === 0) {
+                    throw new Error('Worm Trading returned an incomplete wallet inventory. Existing connection data was not replaced.');
+                }
+                page++;
+            }
+        },
+        [isCurrent, lease]
+    );
 
     const establishSolanaLease = React.useCallback(async () => {
         const provider = phantomProvider();
@@ -331,7 +543,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         };
 
         try {
-            setStage('Connecting to Phantom…');
+            setOperationStage('Connecting to Phantom…');
             const connection = provider.publicKey ? {publicKey: provider.publicKey} : await provider.connect();
             connectedAddress = connection.publicKey?.toString() || '';
             if (!connectedAddress || connectedAddress !== expectedAddress) {
@@ -339,7 +551,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             }
             provider.on?.('accountChanged', onAccountChanged);
 
-            setStage('Preparing a Worm credential approval message…');
+            setOperationStage('Preparing a Worm credential approval message…');
             const challenge = await lease.runTask(() => services.wormTrading.createSolanaCredentialChallenge());
             if (challenge.status === 'discarded') {
                 return false;
@@ -351,13 +563,13 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 throw new Error('Athena returned an empty reauthentication message.');
             }
 
-            setStage('Approve the message in Phantom. No transaction or network fee is involved…');
+            setOperationStage('Approve the message in Phantom. No transaction or network fee is involved…');
             const signed = await provider.signMessage(new TextEncoder().encode(challenge.value.message), 'utf8');
             if (accountChanged || provider.publicKey?.toString() !== expectedAddress) {
                 throw new Error('The connected Phantom account changed before verification completed.');
             }
 
-            setStage('Verifying the signature…');
+            setOperationStage('Verifying the signature…');
             const verified = await lease.runTask(() => services.wormTrading.verifySolanaCredentialSignature(rawBase64URL(signed.signature)));
             if (verified.status === 'discarded') {
                 return false;
@@ -372,10 +584,10 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         } finally {
             removeListener();
         }
-    }, [authorization.user.identity.solanaAddress, ctx.notifications, lease]);
+    }, [authorization.user.identity.solanaAddress, ctx.notifications, lease, setOperationStage]);
 
     const establishDevelopmentLease = React.useCallback(async () => {
-        setStage('Confirming the local development session…');
+        setOperationStage('Confirming the local development session…');
         const result = await lease.runTask(() => services.wormTrading.createDevelopmentCredentialLease());
         if (result.status === 'fulfilled') {
             return true;
@@ -384,93 +596,432 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             ctx.notifications.error('Could not confirm development session', wormConnectionErrorMessage(result.error, 'Local Worm credential access was denied.'));
         }
         return false;
-    }, [ctx.notifications, lease]);
+    }, [ctx.notifications, lease, setOperationStage]);
 
-    const beginGoogleReauthentication = React.useCallback((action: PendingConnectionAction) => {
-        window.sessionStorage.setItem(pendingConnectionActionKey, JSON.stringify(action));
-        setStage('Opening Google for a fresh identity check…');
-        window.location.assign(services.wormTrading.googleCredentialReauthenticationURL('/worm-trading'));
-    }, []);
+    const beginGoogleReauthentication = React.useCallback(
+        (intent: PendingConnectionIntent) => {
+            window.sessionStorage.setItem(pendingConnectionActionKey, JSON.stringify(intent));
+            setOperationStage('Opening Google for a fresh identity check…');
+            window.location.assign(services.wormTrading.googleCredentialReauthenticationURL('/worm-trading'));
+        },
+        [setOperationStage]
+    );
 
-    const run = React.useCallback(
-        async (action: ConnectionAction, walletId: number, resumed = false) => {
-            if (busyWalletId !== undefined) {
+    const waitForAutoConnectionSlot = React.useCallback(
+        async (epoch: number) => {
+            const remaining = Math.max(0, lastAutoStartAtRef.current + wormConnectionStartIntervalMS - Date.now());
+            if (remaining === 0) {
+                return true;
+            }
+            setOperationStage('Waiting to respect the Worm connection rate limit…');
+            await new Promise<void>(resolve => {
+                const timer = window.setTimeout(resolve, remaining);
+                cancelDelayRef.current = () => {
+                    window.clearTimeout(timer);
+                    resolve();
+                };
+            });
+            cancelDelayRef.current = undefined;
+            return isCurrent(epoch);
+        },
+        [isCurrent, setOperationStage]
+    );
+
+    const refreshAuthoritativeState = React.useCallback(
+        async (epoch: number) => {
+            onReloadRef.current();
+            const items = await fetchConnectionInventory(epoch);
+            if (items && isCurrent(epoch)) {
+                publishInventory(items);
+            }
+            return items;
+        },
+        [fetchConnectionInventory, isCurrent, publishInventory]
+    );
+
+    const runAutoConnectionQueue = React.useCallback(
+        async (epoch: number, inventory: WormTradingWalletConnectionItem[]) => {
+            const candidates = inventory.filter(
+                item =>
+                    item.connection.state === 'NOT_CONNECTED' &&
+                    item.connection.warningCode !== connectOutcomeUnknownWarning &&
+                    !attemptedWalletIDsRef.current.has(item.wallet.walletId) &&
+                    !blockedWalletIDsRef.current.has(item.wallet.walletId)
+            );
+            if (candidates.length === 0) {
+                const unknown = inventory.find(item => item.connection.warningCode === connectOutcomeUnknownWarning);
+                if (unknown) {
+                    setSetup(
+                        progressState(
+                            'blocked',
+                            `${unknown.wallet.remark || shortAddress(unknown.wallet.address)} has an unknown connection outcome. Automatic retry is blocked until the state is reviewed.`
+                        )
+                    );
+                } else if (failedWalletIDsRef.current.size > 0) {
+                    setSetup(
+                        progressState('partial', 'No failed connection was retried automatically. Refresh the authoritative state, then retry when ready.', {retryable: true})
+                    );
+                } else {
+                    setSetup(hiddenConnectionSetupState);
+                }
+                return;
+            }
+
+            setWalletProgress(current => {
+                const next = new Map(current);
+                candidates.forEach(item => next.set(item.wallet.walletId, 'Queued for automatic connection.'));
+                return next;
+            });
+
+            let terminalPhase: ConnectionSetupPhase | undefined;
+            let terminalMessage = '';
+            let retryable = false;
+            for (const item of candidates) {
+                if (!isCurrent(epoch)) {
+                    return;
+                }
+                const walletID = item.wallet.walletId;
+                setBusyWalletId(walletID);
+                setSetup(progressState('connecting', 'Waiting for the next safe Worm connection slot.', {currentWallet: item.wallet}));
+                if (!(await waitForAutoConnectionSlot(epoch))) {
+                    return;
+                }
+                setOperationStage('Creating a Worm credential…');
+                setSetup(progressState('connecting', 'Creating Worm credentials one wallet at a time.', {currentWallet: item.wallet}));
+                setWalletProgress(current => new Map(current).set(walletID, 'Connecting automatically…'));
+                lastAutoStartAtRef.current = Date.now();
+                const result = await lease.runTask(() => services.wormTrading.connectWallet(walletID));
+                if (!isCurrent(epoch) || result.status === 'discarded') {
+                    return;
+                }
+                if (result.status === 'fulfilled') {
+                    attemptedWalletIDsRef.current.add(walletID);
+                    if (result.value.warningCode === connectOutcomeUnknownWarning) {
+                        failedWalletIDsRef.current.add(walletID);
+                        blockedWalletIDsRef.current.add(walletID);
+                        setWalletProgress(current => new Map(current).set(walletID, 'Connection outcome is unknown; automatic retry is blocked.'));
+                        terminalPhase = 'blocked';
+                        terminalMessage = 'Worm did not confirm whether it created the credential. Automatic processing stopped and this wallet will not be retried.';
+                        break;
+                    }
+                    succeededWalletIDsRef.current.add(walletID);
+                    setWalletProgress(current => new Map(current).set(walletID, 'Connected; refreshing authoritative status…'));
+                    setSetup(progressState('connecting', 'The wallet connected successfully. Preparing the next wallet.', {currentWallet: item.wallet}));
+                    continue;
+                }
+
+                const details = requestErrorDetails(result.error);
+                if (details.reason === WORM_TRADING_REAUTH_REQUIRED) {
+                    const callbackReason = new URLSearchParams(location.search).get('wormTradingReason') || new URLSearchParams(location.search).get('wormCredentialReason') || '';
+                    setWalletProgress(current => {
+                        const next = new Map(current);
+                        candidates.forEach(candidate => {
+                            if (!attemptedWalletIDsRef.current.has(candidate.wallet.walletId)) {
+                                next.set(candidate.wallet.walletId, 'Waiting for Worm credential authorization.');
+                            }
+                        });
+                        return next;
+                    });
+                    terminalPhase = 'authorization-required';
+                    terminalMessage = callbackReason
+                        ? `Google authorization did not complete (${callbackReason}). Authorize once to continue the remaining wallets.`
+                        : succeededWalletIDsRef.current.size > 0
+                          ? 'The Worm authorization lease expired. Authorize once to continue the remaining wallets.'
+                          : 'Confirm your identity once to connect every eligible Solana wallet. No transaction or network fee is involved.';
+                    break;
+                }
+
+                attemptedWalletIDsRef.current.add(walletID);
+                failedWalletIDsRef.current.add(walletID);
+                if (details.reason === connectOutcomeUnknownWarning) {
+                    blockedWalletIDsRef.current.add(walletID);
+                    setWalletProgress(current => new Map(current).set(walletID, 'Connection outcome is unknown; automatic retry is blocked.'));
+                    terminalPhase = 'blocked';
+                    terminalMessage = wormConnectionErrorMessage(result.error, 'The connection outcome is unknown.');
+                    break;
+                }
+
+                setWalletProgress(current => new Map(current).set(walletID, 'Automatic connection failed; retry from the connection setup panel.'));
+                const walletLocalFailure = details.status === 400 || details.status === 404 || details.status === 409;
+                if (!walletLocalFailure) {
+                    terminalPhase = 'paused';
+                    terminalMessage = wormConnectionErrorMessage(result.error, 'Automatic Worm connection stopped before the remaining wallets were attempted.');
+                    retryable = details.status !== 401 && details.status !== 403;
+                    break;
+                }
+                setSetup(progressState('connecting', 'One wallet failed validation. Continuing with the remaining wallets.', {currentWallet: item.wallet}));
+            }
+
+            setBusyWalletId(undefined);
+            setOperationStage('Refreshing authoritative Worm connection state…');
+            let refreshedInventory: WormTradingWalletConnectionItem[] | undefined;
+            try {
+                refreshedInventory = await refreshAuthoritativeState(epoch);
+            } catch (error) {
+                if (isCurrent(epoch)) {
+                    setSetup(
+                        progressState('paused', wormConnectionErrorMessage(error, 'Connections were processed, but the authoritative state could not be refreshed.'), {
+                            retryable: true
+                        })
+                    );
+                }
+                return;
+            }
+            if (!isCurrent(epoch)) {
+                return;
+            }
+            const unknown = refreshedInventory?.find(item => item.connection.warningCode === connectOutcomeUnknownWarning);
+            if (unknown) {
+                blockedWalletIDsRef.current.add(unknown.wallet.walletId);
+                setWalletProgress(current => new Map(current).set(unknown.wallet.walletId, 'Connection outcome is unknown; automatic retry is blocked.'));
+                setSetup(
+                    progressState(
+                        'blocked',
+                        `${unknown.wallet.remark || shortAddress(unknown.wallet.address)} has an unknown connection outcome. Automatic retry is blocked until the state is reviewed.`,
+                        {retryable: false}
+                    )
+                );
+                return;
+            }
+            if (terminalPhase) {
+                setSetup(progressState(terminalPhase, terminalMessage, {retryable}));
+                return;
+            }
+            if (failedWalletIDsRef.current.size > 0) {
+                const partialState = progressState('partial', 'Eligible wallets were processed. Failed wallets were not retried automatically.', {retryable: true});
+                setSetup(partialState);
+                targetWalletIDsRef.current = new Set(failedWalletIDsRef.current);
+                attemptedWalletIDsRef.current = new Set(failedWalletIDsRef.current);
+                succeededWalletIDsRef.current.clear();
+                return;
+            }
+            const connectedCount = succeededWalletIDsRef.current.size;
+            if (connectedCount > 0) {
+                ctx.notifications.success(
+                    connectedCount === 1 ? 'Worm wallet connected' : `${connectedCount} Worm wallets connected`,
+                    'The authoritative connection and activity state has been refreshed.'
+                );
+            }
+            targetWalletIDsRef.current.clear();
+            attemptedWalletIDsRef.current.clear();
+            succeededWalletIDsRef.current.clear();
+            failedWalletIDsRef.current.clear();
+            blockedWalletIDsRef.current.clear();
+            setWalletProgress(new Map());
+            setSetup(hiddenConnectionSetupState);
+        },
+        [ctx.notifications, isCurrent, lease, location.search, progressState, refreshAuthoritativeState, setOperationStage, waitForAutoConnectionSlot]
+    );
+
+    const discoverAndRun = React.useCallback(
+        async (epoch: number, resetBatch: boolean, runConnections: boolean) => {
+            setSetup(current => ({...current, phase: 'discovering', message: 'Checking every Solana wallet in this account.', currentWallet: undefined}));
+            const inventory = await fetchConnectionInventory(epoch);
+            if (!inventory || !isCurrent(epoch)) {
+                return;
+            }
+            publishInventory(inventory);
+            if (resetBatch) {
+                targetWalletIDsRef.current.clear();
+                attemptedWalletIDsRef.current.clear();
+                succeededWalletIDsRef.current.clear();
+                failedWalletIDsRef.current.clear();
+                blockedWalletIDsRef.current.clear();
+                setWalletProgress(new Map());
+            }
+            for (const item of inventory) {
+                if (item.connection.warningCode === connectOutcomeUnknownWarning) {
+                    blockedWalletIDsRef.current.add(item.wallet.walletId);
+                } else if (item.connection.state === 'NOT_CONNECTED' && !attemptedWalletIDsRef.current.has(item.wallet.walletId)) {
+                    targetWalletIDsRef.current.add(item.wallet.walletId);
+                }
+            }
+            const unknown = inventory.find(item => item.connection.warningCode === connectOutcomeUnknownWarning);
+            if (unknown) {
+                setSetup(
+                    progressState('blocked', `${unknown.wallet.remark || shortAddress(unknown.wallet.address)} has an unknown connection outcome. Automatic retry remains blocked.`)
+                );
+                return;
+            }
+            if (runConnections) {
+                await runAutoConnectionQueue(epoch, inventory);
+                return;
+            }
+            if (failedWalletIDsRef.current.size > 0) {
+                setSetup(progressState('partial', 'Connection state refreshed. Failed wallets were not retried automatically.', {retryable: true}));
+            } else {
+                setSetup(hiddenConnectionSetupState);
+            }
+        },
+        [fetchConnectionInventory, isCurrent, progressState, publishInventory, runAutoConnectionQueue]
+    );
+
+    const startDiscovery = React.useCallback(
+        async (resetBatch: boolean, runConnections: boolean) => {
+            const epoch = beginOperation();
+            if (epoch === undefined) {
+                return;
+            }
+            try {
+                await discoverAndRun(epoch, resetBatch, runConnections);
+            } catch (error) {
+                if (isCurrent(epoch)) {
+                    setSetup(progressState('paused', wormConnectionErrorMessage(error, 'Could not check the Worm connection inventory.'), {retryable: true}));
+                }
+            } finally {
+                finishOperation(epoch);
+            }
+        },
+        [beginOperation, discoverAndRun, finishOperation, isCurrent, progressState]
+    );
+
+    const authorize = React.useCallback(async () => {
+        const epoch = beginOperation();
+        if (epoch === undefined) {
+            return;
+        }
+        setSetup(progressState('connecting', 'Confirming your identity once for the remaining wallets.'));
+        try {
+            let established = false;
+            switch (authorization.user.identity.provider) {
+                case AccountIdentityProvider.Google:
+                    beginGoogleReauthentication({kind: 'auto-connect'});
+                    return;
+                case AccountIdentityProvider.SolanaWallet:
+                    established = await establishSolanaLease();
+                    break;
+                case AccountIdentityProvider.Development:
+                    established = await establishDevelopmentLease();
+                    break;
+                default:
+                    ctx.notifications.error('Reauthentication is unavailable', 'This login identity cannot approve Worm credential management.');
+            }
+            if (!established) {
+                if (isCurrent(epoch)) {
+                    setSetup(progressState('authorization-required', 'Identity confirmation did not complete. No wallet connection was retried.'));
+                }
+                return;
+            }
+            await discoverAndRun(epoch, false, true);
+        } catch (error) {
+            if (isCurrent(epoch)) {
+                setSetup(progressState('paused', wormConnectionErrorMessage(error, 'Could not continue Worm wallet connections.'), {retryable: true}));
+            }
+        } finally {
+            finishOperation(epoch);
+        }
+    }, [
+        authorization.user.identity.provider,
+        beginGoogleReauthentication,
+        beginOperation,
+        ctx.notifications,
+        discoverAndRun,
+        establishDevelopmentLease,
+        establishSolanaLease,
+        finishOperation,
+        isCurrent,
+        progressState
+    ]);
+
+    const runManagedAction = React.useCallback(
+        async (action: ManagedConnectionAction, walletId: number, resumed = false) => {
+            const epoch = beginOperation();
+            if (epoch === undefined) {
                 return;
             }
             setBusyWalletId(walletId);
-            setStage(
-                action === 'disconnect' ? 'Requesting credential revocation…' : action === 'reconnect' ? 'Preparing a replacement credential…' : 'Preparing a Worm credential…'
-            );
-            const request = () =>
-                lease.runTask(() =>
-                    action === 'connect'
-                        ? services.wormTrading.connectWallet(walletId)
-                        : action === 'reconnect'
-                          ? services.wormTrading.reconnectWallet(walletId)
-                          : services.wormTrading.disconnectWallet(walletId)
-                );
-            let result = await request();
-            if (result.status === 'rejected' && requestErrorDetails(result.error).reason === WORM_TRADING_REAUTH_REQUIRED && !resumed) {
-                switch (authorization.user.identity.provider) {
-                    case AccountIdentityProvider.Google:
-                        beginGoogleReauthentication({action, walletId});
-                        return;
-                    case AccountIdentityProvider.SolanaWallet:
-                        if (await establishSolanaLease()) {
-                            setStage(action === 'disconnect' ? 'Revoking the Worm credential…' : 'Creating the Worm credential…');
-                            result = await request();
-                        } else {
-                            setBusyWalletId(undefined);
-                            setStage('');
+            setSetup(progressState('connecting', action === 'cleanup' ? 'Retrying Worm credential cleanup.' : 'Preparing a replacement Worm credential.'));
+            setOperationStage(action === 'cleanup' ? 'Requesting credential cleanup…' : 'Preparing a replacement credential…');
+            const request = () => lease.runTask(() => (action === 'reconnect' ? services.wormTrading.reconnectWallet(walletId) : services.wormTrading.disconnectWallet(walletId)));
+            try {
+                let result = await request();
+                if (result.status === 'rejected' && requestErrorDetails(result.error).reason === WORM_TRADING_REAUTH_REQUIRED && !resumed) {
+                    switch (authorization.user.identity.provider) {
+                        case AccountIdentityProvider.Google:
+                            beginGoogleReauthentication({kind: action, walletId});
                             return;
-                        }
-                        break;
-                    case AccountIdentityProvider.Development:
-                        if (await establishDevelopmentLease()) {
-                            setStage(action === 'disconnect' ? 'Revoking the Worm credential…' : 'Creating the Worm credential…');
-                            result = await request();
-                        } else {
-                            setBusyWalletId(undefined);
-                            setStage('');
-                            return;
-                        }
-                        break;
-                    default:
-                        ctx.notifications.error('Reauthentication is unavailable', 'This login identity cannot approve Worm credential management.');
-                        setBusyWalletId(undefined);
-                        setStage('');
-                        return;
+                        case AccountIdentityProvider.SolanaWallet:
+                            if (await establishSolanaLease()) {
+                                setOperationStage(action === 'cleanup' ? 'Cleaning up the Worm credential…' : 'Creating the replacement Worm credential…');
+                                result = await request();
+                            }
+                            break;
+                        case AccountIdentityProvider.Development:
+                            if (await establishDevelopmentLease()) {
+                                setOperationStage(action === 'cleanup' ? 'Cleaning up the Worm credential…' : 'Creating the replacement Worm credential…');
+                                result = await request();
+                            }
+                            break;
+                        default:
+                            ctx.notifications.error('Reauthentication is unavailable', 'This login identity cannot approve Worm credential management.');
+                    }
                 }
-            }
-
-            if (result.status === 'fulfilled') {
-                ctx.notifications.success(action === 'disconnect' ? 'Worm wallet disconnected' : action === 'reconnect' ? 'Worm wallet reconnected' : 'Worm wallet connected');
-                props.onReload();
-            } else if (result.status === 'rejected') {
+                if (!isCurrent(epoch) || result.status === 'discarded') {
+                    return;
+                }
+                if (result.status === 'fulfilled') {
+                    ctx.notifications.success(action === 'cleanup' ? 'Worm credential cleanup completed' : 'Worm wallet reconnected');
+                    if (action === 'cleanup') {
+                        attemptedWalletIDsRef.current.delete(walletId);
+                        failedWalletIDsRef.current.delete(walletId);
+                        blockedWalletIDsRef.current.delete(walletId);
+                        succeededWalletIDsRef.current.delete(walletId);
+                        targetWalletIDsRef.current.delete(walletId);
+                        setWalletProgress(current => {
+                            const next = new Map(current);
+                            next.delete(walletId);
+                            return next;
+                        });
+                    }
+                    onReloadRef.current();
+                    await discoverAndRun(epoch, false, true);
+                    return;
+                }
                 const callbackReason = new URLSearchParams(location.search).get('wormTradingReason') || new URLSearchParams(location.search).get('wormCredentialReason') || '';
-                const fallback = resumed && callbackReason ? `Google reauthentication did not complete (${callbackReason}).` : `Could not ${action} this Worm wallet.`;
+                const fallback =
+                    resumed && callbackReason
+                        ? `Google reauthentication did not complete (${callbackReason}).`
+                        : `Could not ${action === 'cleanup' ? 'clean up' : 'reconnect'} this Worm wallet.`;
                 ctx.notifications.error(
-                    action === 'disconnect' ? 'Could not disconnect Worm wallet' : action === 'reconnect' ? 'Could not reconnect Worm wallet' : 'Could not connect Worm wallet',
+                    action === 'cleanup' ? 'Could not clean up Worm credential' : 'Could not reconnect Worm wallet',
                     wormConnectionErrorMessage(result.error, fallback)
                 );
-                // A rejected upstream operation can still persist a fail-closed
-                // connection state such as CONNECT_OUTCOME_UNKNOWN or
-                // REVOCATION_REQUIRED. Reload before allowing another action.
-                props.onReload();
+                onReloadRef.current();
+                const inventory = await fetchConnectionInventory(epoch);
+                if (inventory && isCurrent(epoch)) {
+                    publishInventory(inventory);
+                    const unknown = inventory.find(item => item.wallet.walletId === walletId && item.connection.warningCode === connectOutcomeUnknownWarning);
+                    setSetup(
+                        unknown
+                            ? progressState('blocked', 'The Worm connection outcome is unknown. Automatic retry is blocked until the state is reviewed.')
+                            : hiddenConnectionSetupState
+                    );
+                }
+            } catch (error) {
+                if (isCurrent(epoch)) {
+                    ctx.notifications.error('Could not refresh Worm connection state', wormConnectionErrorMessage(error, 'The previous connection state remains visible.'));
+                    setSetup(hiddenConnectionSetupState);
+                }
+            } finally {
+                finishOperation(epoch);
             }
-            setBusyWalletId(undefined);
-            setStage('');
         },
         [
             authorization.user.identity.provider,
             beginGoogleReauthentication,
-            busyWalletId,
+            beginOperation,
             ctx.notifications,
+            discoverAndRun,
             establishDevelopmentLease,
             establishSolanaLease,
+            fetchConnectionInventory,
+            finishOperation,
+            isCurrent,
             lease,
             location.search,
-            props
+            progressState,
+            publishInventory,
+            setOperationStage
         ]
     );
 
@@ -479,48 +1030,57 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             return;
         }
         resumedRef.current = true;
-        const pending = readPendingConnectionAction();
-        if (pending) {
-            void run(pending.action, pending.walletId, true);
+        const pending = readPendingConnectionIntent();
+        if (pending && pending.kind !== 'auto-connect') {
+            void runManagedAction(pending.kind, pending.walletId, true);
+            return;
         }
-    }, [run]);
+        void startDiscovery(true, true);
+    }, [runManagedAction, startDiscovery]);
 
     const confirm = React.useCallback(
-        (action: ConnectionAction, walletId: number, walletLabel: string) => {
-            const disconnecting = action === 'disconnect';
-            const reconnecting = action === 'reconnect';
+        (action: ManagedConnectionAction, walletId: number, walletLabel: string) => {
+            const cleanup = action === 'cleanup';
             ctx.modal.confirm({
-                title: disconnecting ? `Disconnect ${walletLabel} from Worm?` : reconnecting ? `Reconnect ${walletLabel} to Worm?` : `Connect ${walletLabel} to Worm?`,
-                content: disconnecting ? (
+                title: cleanup ? `Retry credential cleanup for ${walletLabel}?` : `Reconnect ${walletLabel} to Worm?`,
+                content: cleanup ? (
                     <Typography.Paragraph>
-                        Athena will revoke only the Worm API credential it created for this wallet. This does not cancel orders, close positions, or move funds.
+                        Athena will retry revoking only the Worm API credential it created for this wallet. This does not cancel orders, close positions, or move funds.
                     </Typography.Paragraph>
-                ) : reconnecting ? (
+                ) : (
                     <Typography.Paragraph>
                         Athena will create and securely store a replacement Worm API credential. The previous Athena credential remains recorded until Worm confirms its revocation.
                         This does not cancel orders, close positions, or move funds.
                     </Typography.Paragraph>
-                ) : (
-                    <Typography.Paragraph>
-                        Athena will ask the custodial wallet to sign a fixed Worm credential challenge, then securely store the official Worm API credential. No transaction or
-                        network fee is involved.
-                    </Typography.Paragraph>
                 ),
-                okText: disconnecting ? 'Disconnect' : reconnecting ? 'Reconnect' : 'Connect',
-                onOk: () => run(action, walletId)
+                okText: cleanup ? 'Retry cleanup' : 'Reconnect',
+                onOk: () => runManagedAction(action, walletId)
             });
         },
-        [ctx.modal, run]
+        [ctx.modal, runManagedAction]
     );
 
-    const manager = React.useMemo<ConnectionManager>(() => ({busyWalletId, stage, confirm}), [busyWalletId, confirm, stage]);
+    const refreshInventory = React.useCallback(() => void startDiscovery(false, true), [startDiscovery]);
+    const retry = React.useCallback(() => void startDiscovery(true, true), [startDiscovery]);
+    const connections = React.useMemo(() => new Map(connectionItems.map(item => [item.wallet.walletId, item.connection])), [connectionItems]);
+    const manager = React.useMemo<ConnectionManager>(
+        () => ({busyWalletId, stage, operationBusy, setup, connections, walletProgress, authorize: () => void authorize(), retry, refreshInventory, confirm}),
+        [authorize, busyWalletId, confirm, connections, operationBusy, refreshInventory, retry, setup, stage, walletProgress]
+    );
     return <>{props.children(manager)}</>;
 };
 
 interface ConnectionManager {
     busyWalletId?: number;
     stage: string;
-    confirm(action: ConnectionAction, walletId: number, walletLabel: string): void;
+    operationBusy: boolean;
+    setup: ConnectionSetupState;
+    connections: Map<number, WormWalletConnection>;
+    walletProgress: Map<number, string>;
+    authorize(): void;
+    retry(): void;
+    refreshInventory(): void;
+    confirm(action: ManagedConnectionAction, walletId: number, walletLabel: string): void;
 }
 
 const ConnectionCell = (props: {
@@ -543,18 +1103,11 @@ const ConnectionCell = (props: {
     const actions =
         props.connection.warningCode === connectOutcomeUnknownWarning
             ? []
-            : state === 'NOT_CONNECTED'
-              ? [{kind: 'connect' as const, label: 'Connect', icon: <LinkOutlined />}]
-              : state === 'RECONNECT_REQUIRED'
-                ? [
-                      {kind: 'reconnect' as const, label: 'Reconnect', icon: <SyncOutlined />},
-                      {kind: 'disconnect' as const, label: 'Disconnect', icon: <DisconnectOutlined />}
-                  ]
-                : state === 'CONNECTED'
-                  ? [{kind: 'disconnect' as const, label: 'Disconnect', icon: <DisconnectOutlined />}]
-                  : state === 'DISCONNECTING' || state === 'REVOCATION_REQUIRED'
-                    ? [{kind: 'disconnect' as const, label: 'Retry disconnect', icon: <DisconnectOutlined />}]
-                    : [];
+            : state === 'RECONNECT_REQUIRED'
+              ? [{kind: 'reconnect' as const, label: 'Reconnect', icon: <SyncOutlined />}]
+              : state === 'DISCONNECTING' || state === 'REVOCATION_REQUIRED'
+                ? [{kind: 'cleanup' as const, label: 'Retry credential cleanup', icon: <DisconnectOutlined />}]
+                : [];
     return (
         <div className='worm-trading-connection'>
             <div className='worm-trading-connection__state'>
@@ -562,6 +1115,7 @@ const ConnectionCell = (props: {
                 {props.activityStatus && (connectionWasQueried(state) ? <ActivityStatusTag status={props.activityStatus} /> : <Tag>Activity not queried</Tag>)}
                 {props.connection.warningCode && <small>{titleCase(props.connection.warningCode)}</small>}
                 {props.connection.connectedAt > 0 && state === 'CONNECTED' && <small>Since {formatBeijingUnixSeconds(props.connection.connectedAt)}</small>}
+                {props.manager?.walletProgress.get(props.wallet.walletId) && <small>{props.manager.walletProgress.get(props.wallet.walletId)}</small>}
             </div>
             {props.manager && actions.length > 0 && (
                 <Space size={4} wrap={true}>
@@ -569,21 +1123,17 @@ const ConnectionCell = (props: {
                         <Button
                             key={action.kind}
                             size='small'
-                            danger={action.kind === 'disconnect'}
+                            danger={action.kind === 'cleanup'}
                             icon={action.icon}
                             loading={busy}
-                            disabled={props.manager?.busyWalletId !== undefined && !busy}
+                            disabled={props.manager.operationBusy}
                             onClick={() => props.manager?.confirm(action.kind, props.wallet.walletId, label)}>
                             {action.label}
                         </Button>
                     ))}
                 </Space>
             )}
-            {busy && props.manager?.stage && (
-                <small className='worm-trading-connection__stage' role='status' aria-live='polite'>
-                    {props.manager.stage}
-                </small>
-            )}
+            {busy && props.manager?.stage && <small className='worm-trading-connection__stage'>{props.manager.stage}</small>}
         </div>
     );
 };
@@ -866,6 +1416,7 @@ export const WormTradingPage = () => {
     const total = Math.max(balances.data?.total || 0, activity.data?.total || 0);
 
     const renderContent = (manager?: ConnectionManager) => {
+        const connectionFor = (walletId: number) => manager?.connections.get(walletId) || activityByWallet.get(walletId)?.connection;
         const balanceColumns: ColumnsType<WormTradingWalletBalanceItem> = [
             {
                 title: 'Wallet',
@@ -883,7 +1434,7 @@ export const WormTradingPage = () => {
                 render: (_, item) => (
                     <ConnectionCell
                         wallet={item.wallet}
-                        connection={activityByWallet.get(item.wallet.walletId)?.connection}
+                        connection={connectionFor(item.wallet.walletId)}
                         activityStatus={activityByWallet.get(item.wallet.walletId)?.status}
                         manager={manager}
                         loading={activity.loading && !activity.data}
@@ -1008,6 +1559,8 @@ export const WormTradingPage = () => {
 
         return (
             <>
+                {manager && <ConnectionSetupPanel manager={manager} />}
+
                 <RuntimeSummary
                     status={runtime.data}
                     loading={runtime.loading}
@@ -1022,7 +1575,7 @@ export const WormTradingPage = () => {
                         title='Wallet balances are unavailable'
                         subTitle={requestErrorMessage(balances.error, 'The balance request failed. No wallet was treated as empty or zero.')}
                         extra={
-                            <Button type='primary' onClick={refresh}>
+                            <Button type='primary' disabled={manager?.operationBusy} onClick={refresh}>
                                 Try again
                             </Button>
                         }
@@ -1066,7 +1619,7 @@ export const WormTradingPage = () => {
                             compactRender={item => (
                                 <WalletBalanceCard
                                     item={item}
-                                    connection={activityByWallet.get(item.wallet.walletId)?.connection}
+                                    connection={connectionFor(item.wallet.walletId)}
                                     activityStatus={activityByWallet.get(item.wallet.walletId)?.status}
                                     manager={manager}
                                     activityLoading={activity.loading && !activity.data}
@@ -1089,7 +1642,11 @@ export const WormTradingPage = () => {
                                 ? 'Existing connection, position, and request data remains visible.'
                                 : requestErrorMessage(activity.error, 'Balances remain available; no activity stream was treated as empty.')
                         }
-                        action={<Button onClick={activity.reload}>Try activity again</Button>}
+                        action={
+                            <Button disabled={manager?.operationBusy} onClick={activity.reload}>
+                                Try activity again
+                            </Button>
+                        }
                     />
                 )}
 
@@ -1185,19 +1742,27 @@ export const WormTradingPage = () => {
         );
     };
 
-    return (
+    const renderPage = (manager?: ConnectionManager) => (
         <AppPage
             title='Worm Trading Assets'
             subtitle='Review confirmed wallet balances and official Worm position activity. Balances are not Worm collateral or available-to-order limits.'
-            loading={loading}
-            onRefresh={refresh}>
-            {canManageConnections ? (
-                <SensitiveWriteScope module={AccountDataModule.WormTrading}>
-                    <ConnectionManagement onReload={reloadConnections}>{manager => renderContent(manager)}</ConnectionManagement>
-                </SensitiveWriteScope>
-            ) : (
-                renderContent()
-            )}
+            loading={loading || manager?.operationBusy}
+            onRefresh={() => {
+                if (manager?.operationBusy) {
+                    return;
+                }
+                refresh();
+                manager?.refreshInventory();
+            }}>
+            {renderContent(manager)}
         </AppPage>
+    );
+
+    return canManageConnections ? (
+        <SensitiveWriteScope module={AccountDataModule.WormTrading}>
+            <ConnectionManagement onReload={reloadConnections}>{manager => renderPage(manager)}</ConnectionManagement>
+        </SensitiveWriteScope>
+    ) : (
+        renderPage()
     );
 };

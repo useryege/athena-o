@@ -112,10 +112,12 @@ security-sensitive handlers do not infer credential kind from browser headers.
    Worm Trading wallet-summary, balance, connection-state, open-position, and
    in-flight-request reads, including uploaded-wallet-avatar GET, accept either
    login sessions or enabled API Keys after current Worm Trading `READ`
-   authorization and exact Wallet ownership checks. Native Worm connect,
-   reconnect, and disconnect require an interactive credential in addition to
-   Worm Trading `READ_WRITE`, same origin, owner scope, and a separate
-   five-minute Worm management lease; API Keys cannot enter that flow.
+   authorization and exact Wallet ownership checks. The native full-account
+   Worm connection inventory requires an interactive credential, Worm Trading
+   `READ_WRITE`, and owner scope but no Worm lease or Origin header. Native Worm
+   connect, reconnect, and disconnect require the same interactive
+   credential plus exact origin and a separate five-minute Worm management
+   lease; API Keys cannot enter either management flow.
 9. Deleting an API Key commits metadata deletion before removing it from the
    registry. Disabling API Key access pauses retained keys; re-enabling restores
    undeleted and unexpired keys. Logout clears and revokes only the Athena login
@@ -198,9 +200,9 @@ entitlements, and API Key metadata are database state.
   credential membership or binding, and revocation checks.
 - Sensitive handlers distinguish login, API Key, and isolated development
   credentials through the typed authenticated context, never client headers.
-- API Keys may read owner-scoped Worm activity but cannot obtain a sensitive
-  lease, manage a Worm connection, invoke Wallet's challenge signer, or receive
-  a Worm HMAC credential.
+- API Keys may read owner-scoped Worm activity but cannot list the Worm
+  management inventory, obtain a sensitive lease, manage a Worm connection,
+  invoke Wallet's challenge signer, or receive a Worm HMAC credential.
 - API Key bearer values, Google tokens, wallet signatures, and private keys are
   never persisted by Account Credentials. Worm challenges, signatures, API
   keys, and secrets are also absent from this state.
@@ -237,7 +239,7 @@ providers are not part of API Server health.
 - [ ] Registration and API Key commit/publication ordering remain current.
 - [ ] JWT v3 claims and mutable credential checks remain current.
 - [ ] Typed credential capability and access-revision projection remain current.
-- [ ] API-Key Worm reads and interactive-only Worm credential management remain distinct.
+- [ ] API-Key Worm reads, interactive lease-free management inventory, and lease-bound credential mutations remain distinct.
 - [ ] Public projections still exclude private identity and bearer material.
 - [ ] Configuration, failure recovery, and source links match the code.
 - [ ] The [design index](../README.md) contains the current summary.
