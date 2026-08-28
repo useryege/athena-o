@@ -73,6 +73,7 @@ import {
     ServiceStatusPage,
     WalletBlocklistPage,
     WalletsPage,
+    WormTradingOrderPage,
     WormTradingPage,
     WorldCupCornersPage,
     ProfitSharingRoundsPage,
@@ -189,6 +190,17 @@ const managedOONavItem: NavItem = {
     ]
 };
 
+const wormTradingNavItem: NavItem = {
+    key: 'worm-trading',
+    label: 'Worm Trading',
+    icon: <SwapOutlined />,
+    module: AccountDataModule.WormTrading,
+    children: [
+        {key: '/worm-trading', label: 'Assets', path: '/worm-trading', icon: <WalletOutlined />},
+        {key: '/worm-trading/order', label: 'Order', path: '/worm-trading/order', icon: <SwapOutlined />}
+    ]
+};
+
 const tokenNavItem: NavItem = {
     key: 'token',
     label: 'Token',
@@ -243,13 +255,7 @@ const navSections: NavSection[] = [
             marketRadarNavItem,
             sportsNavItem,
             managedOONavItem,
-            {
-                key: '/worm-trading',
-                label: 'Worm Trading',
-                path: '/worm-trading',
-                icon: <SwapOutlined />,
-                module: AccountDataModule.WormTrading
-            },
+            wormTradingNavItem,
             {
                 key: '/world-cup-corners',
                 label: 'World Cup Corners',
@@ -516,6 +522,7 @@ const AppRoutes = (props: {
             <Route path='/' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
             <Route path='/wallet' element={moduleRoute(AccountDataModule.Wallet, <WalletsPage />)} />
             <Route path='/worm-trading' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingPage />)} />
+            <Route path='/worm-trading/order' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingOrderPage />)} />
             <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
             <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
             <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage />)} />

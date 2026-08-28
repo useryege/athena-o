@@ -1187,7 +1187,7 @@ export const WormTradingPage = () => {
 
     return (
         <AppPage
-            title='Worm Trading'
+            title='Worm Trading Assets'
             subtitle='Review confirmed wallet balances and official Worm position activity. Balances are not Worm collateral or available-to-order limits.'
             loading={loading}
             onRefresh={refresh}>

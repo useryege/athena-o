@@ -22,6 +22,12 @@ standalone Worm Web JWT live test under `util/worm` is not part of this runtime.
 This capability does not create orders, cancel requests, close positions, set
 TP/SL, claim settlements, sign transactions, or submit transactions.
 
+The browser exposes Worm Trading as one parent navigation item with two
+`READ`-gated children. `/worm-trading` is the Assets observation page for
+balances, connections, open positions, and in-flight requests.
+`/worm-trading/order` renders only the `Worm Trading Order` title; it performs
+no Worm, Wallet, or trading request and provides no write or order capability.
+
 ## Source Locations
 
 | Concern | Source | Key symbols |
@@ -38,7 +44,7 @@ TP/SL, claim settlements, sign transactions, or submit transactions.
 | Native connection management | [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `manageWormConnection`, `completeWormConnection`, `authenticateWormConnectionHTTP`, route registration |
 | Purpose-bound Wallet signer | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/service.go](../../../internal/wallet/service.go) | `SignWormAuthChallenge`, `validateWormAuthChallenge` |
 | Independent reauthentication lease | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go) | `NewWormCredentialManager`, `EnableWormCredentialReauthentication`, Worm-only Google and Solana proof flows |
-| Browser page | [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `WormTradingPage`, `ConnectionManagement`, `ConnectionCell`, `PositionCard`, `RequestCard`, `WormTradingService` |
+| Browser navigation and pages | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-order.tsx](../../../ui/src/app/pages/worm-trading-order.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingOrderPage`, `ConnectionManagement`, `ConnectionCell`, `PositionCard`, `RequestCard`, `WormTradingService` |
 | Process graph and production secrets | [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql), [tools/prod-env-reset/main.go](../../../tools/prod-env-reset/main.go) | port `8090`, `worm_trading` database, independent encryption key and internal token |
 
 ## Architecture
@@ -194,12 +200,15 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     their aggregate priority over the `RECONNECT_REQUIRED` fallback. Public
     balance and activity responses use `Cache-Control: no-store, private` and
     `Vary: Cookie, Authorization`.
-14. The browser loads status, balance, and activity snapshots independently.
-    Manual refresh starts all three while retaining prior successful data and
-    displaying per-section progress or errors. Desktop uses tables and compact
-    layouts use cards. Connection, reconnect, and disconnect actions include
-    confirmation and provider-appropriate step-up recovery. There is no polling
-    or order control.
+14. The Worm Trading parent navigation exposes Assets at `/worm-trading` and
+    Order at `/worm-trading/order`; both require Worm Trading `READ`. Assets
+    loads status, balance, and activity snapshots independently. Manual refresh
+    starts all three while retaining prior successful data and displaying
+    per-section progress or errors. Desktop uses tables and compact layouts use
+    cards. Connection, reconnect, and disconnect actions include confirmation
+    and provider-appropriate step-up recovery. Order renders only its page title
+    and starts no service request or write operation. Neither route contains an
+    order control.
 
 ## State / Data
 
@@ -324,6 +333,8 @@ service.
   another, and an available empty list is distinct from an unavailable list.
 - Worm position capability failure does not disable Solana balance reads or
   change gRPC health by itself.
+- The Order child route is title-only and issues no provider, Worm Trading,
+  Wallet, connection-management, or trading request.
 - No runtime path creates, cancels, signs, or closes a Worm order or position.
 
 ## Failure Recovery
@@ -402,5 +413,6 @@ secret or signable material.
 - [ ] Activity filters, first-page limit, concurrency, budget, deduplication, optional decimal-string values, and partial-failure semantics remain current.
 - [ ] Challenge, credential, signable message, raw response, and log exclusion boundaries remain current.
 - [ ] Runtime database, health/status, process wiring, production configuration, and reset guidance remain current.
-- [ ] The `/worm-trading` page remains responsive, manual-refresh-only, and free of order or position-mutation actions.
+- [ ] Assets at `/worm-trading` remains responsive, manual-refresh-only, and free of order or position-mutation actions.
+- [ ] Order at `/worm-trading/order` remains title-only, `READ`-gated, and free of service requests and write capability.
 - [ ] The [design index](../README.md) contains the correct entry.

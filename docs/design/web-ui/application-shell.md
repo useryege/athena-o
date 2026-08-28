@@ -7,9 +7,10 @@ shared username setup, authenticated bootstrap, responsive navigation,
 UUID-based identity and cache scoping, authorization refresh, the Pending-access
 experience, Account Center including the Connect AI workflow, Help resources,
 authorization-sensitive request cleanup, the Wallet module's responsive
-custody-management surface, and the Worm Trading page's owner-scoped balance,
-connection, and current-position activity surfaces. Other product pages own
-domain UI and data only after the shell grants a route.
+custody-management surface, and Worm Trading's nested Assets and Order
+navigation. The Assets child owns the owner-scoped balance, connection, and
+current-position activity surfaces; the Order child is a title-only route.
+Other product pages own domain UI and data only after the shell grants a route.
 
 OIDC and SIWS verification, registration tickets, durable UUID identity,
 immutable-username enforcement, API Key issuance, profiles, and Wallet records
@@ -35,7 +36,7 @@ result, and a revealed key remains only in its current modal.
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
 | Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
-| Worm Trading balances, connections, and activity | [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts) | `WormTradingPage`, `RuntimeSummary`, `ConnectionManagement`, `ConnectionCell`, `PositionCard`, `RequestCard`, `WormTradingService`, `AccountDataModule.WormTrading` |
+| Worm Trading navigation, assets, connections, and activity | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-order.tsx](../../../ui/src/app/pages/worm-trading-order.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingOrderPage`, `RuntimeSummary`, `ConnectionManagement`, `ConnectionCell`, `PositionCard`, `RequestCard`, `WormTradingService`, `AccountDataModule.WormTrading` |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -94,10 +95,14 @@ one. The detail drawer becomes full-width on mobile. Desktop shows Import and
 Create Wallet separately, while mobile collapses them into one `+` action menu.
 Cards are keyboard-operable and all icon-only controls have accessible labels.
 
-`/worm-trading` is a separate authorization-gated product route. It is visible
-with Worm Trading `READ` and does not require Wallet permission because its
-owner-scoped safe wallet summaries, balances, connection state, open positions,
-and in-flight requests come only from the Worm Trading facade. The page never
+The Markets sidebar exposes Worm Trading as a parent navigation item with two
+children. Assets remains at `/worm-trading`; it is the authorization-gated
+observation page for owner-scoped safe wallet summaries, balances, connection
+state, open positions, and in-flight requests. Order is at
+`/worm-trading/order`; it renders only the `Worm Trading Order` page title and
+mounts no data request, form, placeholder surface, connection control, or write
+operation. Both routes require Worm Trading `READ` and neither requires Wallet
+permission. Assets obtains its data only from the Worm Trading facade and never
 calls the Wallet list or private-key APIs. Desktop presents a SOL/USDC and Worm
 connection table followed by separate Open positions and In-flight requests
 tables; layouts at 900 px and below present the same records as cards.
@@ -219,11 +224,12 @@ TP/SL, claim, or position-mutation action.
     scope drops all private-key references and aborts scoped work. The Google
     pending action is read and removed once after navigation; no private key,
     signature, lease, or authentication material enters browser storage.
-23. Entering `/worm-trading` with Worm Trading `READ` starts independent status,
-    current-page balance, and current-page activity requests. All use the
-    current account UUID and Worm Trading module in their client cache keys.
-    Balance pagination follows the URL page, and activity requests use the same
-    owner-scoped Solana Wallet page with default and maximum size 20.
+23. Selecting Worm Trading / Assets or entering `/worm-trading` with Worm
+    Trading `READ` starts independent status, current-page balance, and
+    current-page activity requests. All use the current account UUID and Worm
+    Trading module in their client cache keys. Balance pagination follows the
+    URL page, and activity requests use the same owner-scoped Solana Wallet page
+    with default and maximum size 20.
 24. The activity response supplies connection state per wallet plus two
     independently available streams. Open positions and in-flight requests are
     flattened by creation time for their respective desktop tables or compact
@@ -266,6 +272,10 @@ TP/SL, claim, or position-mutation action.
     account access view. A valid wallet inventory with zero Worm positions uses
     the separate activity Empty state. Neither state mounts a trading or order
     button.
+30. Selecting Worm Trading / Order or entering `/worm-trading/order` with Worm
+    Trading `READ` renders only the `Worm Trading Order` title. The route starts
+    no Worm status, balance, activity, Wallet, connection-management, or trading
+    request and exposes no order or other write action.
 
 ## State / Data
 
@@ -401,11 +411,13 @@ portable to an arbitrary reverse-proxy subpath.
 - API Keys may use safe Wallet metadata operations allowed by module access but
   cannot create, import, or reveal private keys. The server remains authoritative
   even when bootstrap does not project credential capability.
-- Worm Trading `READ` renders balances, connection state, and current activity.
-  Only `READ_WRITE` renders connection management, while the server additionally
-  requires an interactive login, exact origin, owner scope, and the Worm-only
-  lease. No browser state contains the provider challenge, custody signature,
-  API key, secret, HMAC headers, or signable request message.
+- Worm Trading `READ` exposes both Assets and Order navigation children. Assets
+  renders balances, connection state, and current activity. Order renders only
+  its title and performs no request. Only `READ_WRITE` renders Assets connection
+  management, while the server additionally requires an interactive login,
+  exact origin, owner scope, and the Worm-only lease. No browser state contains
+  the provider challenge, custody signature, API key, secret, HMAC headers, or
+  signable request message.
 - Worm Trading exposes no order, cancel, close, TP/SL, claim, transaction-signing,
   or automatic polling control.
 - Connect AI is available only when API Key access is enabled for an ordinary
@@ -516,7 +528,8 @@ does not create a separate server-side integration or connection status.
 - [ ] Responsive administrator list/detail behavior remains current.
 - [ ] Wallet grid/drawer, create/import backup, avatar CAS, and provider reauthentication remain current.
 - [ ] Wallet private-key and pending-action cleanup remains route/account/access scoped.
-- [ ] Worm Trading navigation and read surfaces require only Worm Trading `READ` and never call Wallet data or secret APIs from the browser.
+- [ ] Worm Trading exposes Assets and Order beneath one parent navigation item; both routes require only Worm Trading `READ`.
+- [ ] Assets never calls Wallet data or secret APIs from the browser, while Order remains title-only and starts no service or write request.
 - [ ] Worm connection controls remain `READ_WRITE`, confirmed, provider-step-up-aware, and independent from Wallet private-key reveal.
 - [ ] Worm Trading preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
 - [ ] Position/request responsive layouts, stream errors, truncation, and connection-state actions remain current.
