@@ -7,9 +7,11 @@ OAuth transactions, Google ID-token verification, administrator candidacy, and
 the handoff of a verified Google identity to either Athena session issuance or
 shared anonymous username registration. Any Google identity with a fully
 verified ID token and `email_verified=true` may start registration.
-The same OIDC client and callback also provide an independent fresh proof for
-wallet private-key reveal; that state machine is bound to an existing Athena
-login and issues a short wallet-secret lease rather than another login session.
+The same OIDC client and callback also provide independent fresh proofs for
+wallet private-key reveal, Worm API-credential management, and one immutable
+Worm live-execution Run. The first two state machines issue separate short
+leases. Execution proof instead persists an exact Run/plan/Session/access
+authorization and never issues another login session or reusable lease.
 
 [Account Credentials](account-credentials.md) owns UUID accounts, immutable
 usernames, external identity bindings, and JWT v3. The provider-neutral
@@ -27,6 +29,7 @@ logout are outside this capability.
 | One-time OAuth state | [internal/googleoidc/store.go](../../../internal/googleoidc/store.go) | `TransactionStore`, `Create`, `Consume`, `transactionTTL` |
 | Google HTTP flow | [internal/googleoidc/handler.go](../../../internal/googleoidc/handler.go) | `Handler`, `Login`, `Callback` |
 | Wallet-secret reauthentication | [internal/googleoidc/wallet_secret_reauth.go](../../../internal/googleoidc/wallet_secret_reauth.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go) | `WalletSecretReauthentication`, `walletSecretReauthentication.callback`, `walletSecretTransactionStore` |
+| Worm execution authorization | [internal/googleoidc/worm_execution_authorization.go](../../../internal/googleoidc/worm_execution_authorization.go), [internal/googleoidc/worm_execution_store.go](../../../internal/googleoidc/worm_execution_store.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `WormExecutionAuthorization`, `wex.` state, exact Run command/session binding, durable authorizer callback |
 | Wallet-secret provider-state limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
 | Shared registration state and HTTP resource | [internal/authregistration/store.go](../../../internal/authregistration/store.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Store`, `Handler`, `Begin`, `Registration`, `UsernameAvailability`, `ValidateReturnTo` |
 | Durable identity and session boundary | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `GetByIdentity`, `RegisterExternalAccount`, `CreateExternalLogin` |
@@ -46,6 +49,7 @@ flowchart LR
     H -->|"known provider + subject"| S["Athena JWT v3 cookie"]
     H -->|"unknown provider + subject"| T["Shared 15 min registration ticket"]
     H -->|"existing session + same fresh subject"| W["Five-minute wallet-secret lease"]
+    H -->|"existing session + same fresh subject"| E["One durable Worm Run authorization"]
     T --> U["/register username setup"]
     U --> D["PostgreSQL account aggregate"]
     D --> S
@@ -68,6 +72,14 @@ processing. It reuses the code-exchange and ID-token verification primitive but
 does not enter identity lookup, registration, login audit, or Athena cookie
 issuance. [Wallet Secret Reauthentication](wallet-secret-reauthentication.md)
 owns the resulting lease and native private-key boundary.
+
+Worm execution uses a third callback-owned `wex.` namespace. It reuses PKCE,
+nonce, `exchangeAndVerify`, `prompt=select_account`, `max_age=0`, and stable-
+subject/fresh-`auth_time` checks, but stores Run ID, command ID, expected
+revision, account, Session-JTI digest, access revision, and safe Run-detail
+return path in a separate single-use Redis transaction. Completion invokes the
+Run authorizer and redirects; it does not create a Worm credential lease,
+change the Athena cookie, or start the Run.
 
 ## Runtime Flow
 
@@ -132,7 +144,20 @@ owns the resulting lease and native private-key boundary.
     contain a fresh `auth_time`, and its stable `sub` must equal the same
     persisted Google binding. Success issues only a fixed five-minute
     wallet-secret lease and returns to the saved path.
-14. `/auth/logout` revokes and clears the Athena login credential and clears the
+14. A Google-backed interactive Worm Trading `READ_WRITE` account may start
+    `GET /auth/worm-trading/executions/google` with canonical `runId` and
+    `commandId`, positive `expectedRevision`, and a Run-detail return path. The
+    server verifies the current Run is authorizable, writes a separate
+    five-minute `wex.` PKCE/nonce transaction bound to the account, SHA-256
+    Session-JTI digest, and access revision, and applies its own fixed-minute
+    120-global/20-account creation budget.
+15. The callback consumes `wex.` state before exchange, repeats current login,
+    provider, account, Session, and access checks, and requires the same
+    persisted Google `sub` plus fresh `auth_time`. The verified callback records
+    proof kind `GOOGLE` against the exact Run and frozen plan digest through a
+    revisioned command. It stores no Google token in the Run, issues no lease,
+    and redirects without starting execution.
+16. `/auth/logout` revokes and clears the Athena login credential and clears the
     wallet-secret lease cookie. It never attempts to log the browser out of the
     global Google session.
 
@@ -149,6 +174,14 @@ transaction. It stores no Google token or raw JTI. Its dedicated state cookie is
 HttpOnly, SameSite=Lax, Secure in production, and scoped to `/auth/google`, so
 the existing callback can validate the browser binding. Its success and failure
 responses use the wallet-secret no-store policy.
+
+Worm execution Google state is another five-minute, single-use Redis
+transaction and dedicated HttpOnly, SameSite=Lax `/auth/google` state cookie.
+It stores protocol material plus Run/command/revision, account, Session-JTI
+digest, access revision, and return path, never a Google token. The transaction
+is not the durable authorization: completion stores only proof kind and the
+verified bindings in Worm Trading PostgreSQL. The browser retains only
+`{runId}` in execution-specific `sessionStorage` across the redirect.
 
 Google and Solana wallet-secret provider states share a dedicated fixed-window
 Redis budget of 120 creations globally and 20 per authenticated account per
@@ -196,6 +229,9 @@ Wallet-secret Google reauthentication adds no client, callback, or secret
 setting; it reuses this verified configuration and keeps a distinct Redis state
 namespace and browser cookie. Its shared wallet-secret rate counters are also
 separate from primary Google login counters.
+Worm execution Google proof likewise adds no client or callback setting. Its
+transaction and 120-global/20-account fixed-minute counters use a third Redis
+namespace and are not shared with primary login or either sensitive lease.
 
 ## Invariants
 
@@ -214,6 +250,11 @@ separate from primary Google login counters.
   fresh relative to the reauthentication transaction.
 - Wallet-secret transaction creation is atomically rate-limited in the shared
   wallet-secret namespace, with no raw account UUID in its counter key.
+- Worm execution Google state is single-use, exact-Run/command/revision/account/
+  Session/access bound, separately rate-limited, and can create only a durable
+  authorization for the Run's already-frozen plan digest.
+- Google execution proof never issues a login or Worm-management lease, changes
+  frozen execution intent, acquires a coordinator, or starts a Step.
 - Email is never a durable identity key, relationship key, or JWT subject.
 - Google and Solana provider identities remain permanently separate accounts.
 - Google tokens, subjects, registration IDs, and Athena credentials stay out of
@@ -249,6 +290,13 @@ wrong-subject state to `WALLET_REAUTH_REQUIRED`; a missing login maps to
 JWKS unavailability maps to `WALLET_REAUTH_UNAVAILABLE`. None replaces the
 Athena login cookie or returns a private key.
 
+Worm execution proof maps missing or stale login to
+`WORM_EXECUTION_LOGIN_SESSION_REQUIRED`, rejected/expired/replayed/stale Run
+state to `WORM_EXECUTION_AUTHORIZATION_REQUIRED`, and Redis, rate-budget,
+exchange, or JWKS failure to `WORM_EXECUTION_AUTHORIZATION_UNAVAILABLE`. It
+creates no partial authorization, starts no Worm mutation, and never falls back
+to the general credential-management lease.
+
 ## Observability
 
 Login and registration counters retain success/failure signals. Structured logs
@@ -257,6 +305,9 @@ exists. Email and subject are not metric labels. Authorization codes, Google
 tokens, Athena JWTs, client secrets, registration ticket IDs, and CSRF secrets
 are never logged. Wallet-secret state, Session JTIs, and lease values are also
 excluded. Health checks do not probe Google.
+Execution-proof logs contain only provider and bounded stage/reason. They
+exclude Run proof state, raw Session JTI, OIDC code/token, plan contents,
+coordinator token, Worm JWT, transaction, and signature.
 
 ## Change Checklist
 
@@ -268,4 +319,5 @@ excluded. Health checks do not probe Google.
 - [ ] Wallet-secret transaction creation retains its independent atomic global
       and account rate limits.
 - [ ] Wallet-secret state, fresh `auth_time`, same-subject, and lease-only behavior remain current.
+- [ ] Worm execution `wex.` state, independent rate limits, exact Run/session/access binding, fresh same-subject proof, and no-lease/no-start behavior remain current.
 - [ ] The [design index](../README.md) contains the current summary.

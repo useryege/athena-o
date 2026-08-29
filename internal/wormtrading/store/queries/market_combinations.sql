@@ -48,6 +48,11 @@ SET name = sqlc.arg(name)::text,
 WHERE id = sqlc.arg(id)::uuid
   AND owner_account_id = sqlc.arg(owner_account_id)::uuid
   AND revision = sqlc.arg(expected_revision)::bigint
+  AND NOT EXISTS (
+    SELECT 1
+    FROM worm_execution_combination_locks
+    WHERE worm_execution_combination_locks.combination_id = worm_market_combinations.id
+  )
 RETURNING *;
 
 -- name: DeleteMarketCombination :one
@@ -55,6 +60,11 @@ DELETE FROM worm_market_combinations
 WHERE id = sqlc.arg(id)::uuid
   AND owner_account_id = sqlc.arg(owner_account_id)::uuid
   AND revision = sqlc.arg(expected_revision)::bigint
+  AND NOT EXISTS (
+    SELECT 1
+    FROM worm_execution_combination_locks
+    WHERE worm_execution_combination_locks.combination_id = worm_market_combinations.id
+  )
 RETURNING id;
 
 -- name: DeleteMarketCombinationItems :exec

@@ -11,6 +11,10 @@ For a logged-in Solana account, the same SIWS construction also provides an
 independent fresh proof before custodial private-key reveal. That address-free
 flow uses the account's persisted identity subject and issues only a five-minute
 wallet-secret lease.
+The same persisted-address boundary also authorizes one immutable Worm live-
+execution Run. That SIWS statement binds Run ID and plan SHA-256, discloses the
+Worm transaction trust model, and records durable Run authorization rather than
+issuing a general trading lease or starting execution.
 
 This capability never handles a private key, mnemonic, transaction, balance,
 or RPC request. The custodial [Wallet Ownership](wallet-ownership.md) subsystem
@@ -23,6 +27,7 @@ from the two providers create separate Athena accounts.
 | --- | --- | --- |
 | HTTP flow and SIWS verification | [internal/phantomauth/handler.go](../../../internal/phantomauth/handler.go) | `Handler`, `NewHandler`, `Challenge`, `Verify`, `siwsMessageWithStatement`, `validOrigin` |
 | Wallet-secret SIWS proof | [internal/phantomauth/wallet_secret_reauth.go](../../../internal/phantomauth/wallet_secret_reauth.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go) | `WalletSecretChallenge`, `WalletSecretVerify`, `walletSecretChallengeStore` |
+| Worm execution SIWS proof | [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go), [internal/phantomauth/worm_execution_store.go](../../../internal/phantomauth/worm_execution_store.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `WormExecutionChallenge`, `WormExecutionVerify`, authoritative descriptor load, Run/plan disclosure and durable authorizer |
 | Wallet-secret provider-state limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
 | One-time challenge and rate state | [internal/phantomauth/store.go](../../../internal/phantomauth/store.go) | `challengeStore`, `Create`, `Consume`, `challengeTTL`, `challengeGlobalRateLimit`, `challengeClientRateLimit` |
 | Shared username registration | [internal/authregistration/handler.go](../../../internal/authregistration/handler.go), [internal/authregistration/store.go](../../../internal/authregistration/store.go), [internal/authregistration/types.go](../../../internal/authregistration/types.go) | `Handler.Begin`, `Registration`, `UsernameAvailability`, `Store`, `Identity` |
@@ -41,6 +46,7 @@ flowchart LR
     H --> C["Credential and session managers"]
     C --> D["Account-state PostgreSQL"]
     H --> W["Five-minute wallet-secret lease"]
+    H --> E["One durable Worm Run authorization"]
 ```
 
 The browser connection reveals a public key but does not authenticate it.
@@ -61,6 +67,14 @@ durable account binding, never a challenge request, and leaves the primary
 Athena session unchanged. [Wallet Secret
 Reauthentication](wallet-secret-reauthentication.md) owns the lease and reveal
 boundary.
+
+The execution branch is separately routed under
+`/auth/worm-trading/executions/{runId}/solana`. It accepts no address or plan
+contents from the browser. Before creating a challenge, the API Server loads the
+owner-scoped Run at the expected revision and obtains its immutable plan digest.
+The persisted login address signs a statement naming both. Completion records
+proof kind `PHANTOM` against that Run; it neither creates a Worm credential-
+management lease nor asks Phantom to sign a transaction.
 
 ## Runtime Flow
 
@@ -109,6 +123,19 @@ boundary.
    login/session/access/address bindings, reconstructs the exact message, and
    verifies the canonical raw-base64url Ed25519 signature. Success issues only a
    fixed five-minute wallet-secret lease, not a new Athena session.
+10. A logged-in Phantom account with Worm Trading `READ_WRITE` starts
+    `POST /auth/worm-trading/executions/{runId}/solana/challenge` with a command
+    UUID, expected Run revision, and safe return path. Athena derives the
+    persisted login address, SHA-256 Session-JTI digest, access revision, and
+    authoritative plan digest. It atomically rate-limits and stores a separate
+    five-minute challenge.
+11. The exact SIWS statement identifies the Run and plan SHA-256 and says that
+    Athena will sign the original transactions returned by Worm. It also states
+    that the 10-USDC per-order limit is Athena's requested funds maximum, not a
+    cryptographic on-chain spending limit. Phantom signs only this identity
+    message. `/solana/verify` consumes the challenge, repeats account, Session,
+    access, address, Run and plan bindings, verifies the raw-base64url 64-byte
+    Ed25519 signature, and persists Run authorization without starting it.
 
 ## State / Data
 
@@ -146,6 +173,15 @@ minute. These counters do not reuse primary-login counters. The account counter
 key contains a SHA-256 digest rather than the raw account UUID, and the counter
 checks and challenge write are one atomic operation.
 
+Worm execution SIWS state uses its own hashed Redis key and
+`athena.worm-execution.solana.challenge` HttpOnly, SameSite=Strict cookie scoped
+to `/auth/worm-trading/executions`. Its five-minute record includes persisted
+address, exact disclosure message, nonce, Run/command/expected revision,
+account, Session-JTI digest, access revision, immutable plan digest, safe return
+path, and issue/expiry times. Its own 120-global/20-account fixed-minute counters
+are atomic and keyed by an account digest. The record is single use and is not
+the durable Run authorization; no signature is stored.
+
 ## Configuration
 
 Phantom desktop-extension login adds no App ID, client secret, callback, RPC,
@@ -155,6 +191,9 @@ provide the trusted SIWS URI and domain. Local injection works at the existing
 `http://localhost:4000` origin, while production uses HTTPS and Secure cookies.
 Wallet-secret SIWS adds no Phantom, Solana RPC, or environment configuration; it
 reuses the same fixed public origin and Redis dependency.
+Worm execution SIWS likewise reuses that origin and Redis. Its route, cookie,
+state namespace, disclosure statement, and counters are independent from login
+and both lease-producing proof flows.
 
 ## Invariants
 
@@ -178,6 +217,15 @@ reuses the same fixed public origin and Redis dependency.
 - Solana login never changes Wallet records or grants any business entitlement.
 - Wallet-secret SIWS issues only a scoped lease and never creates or refreshes
   the Athena login session.
+- Worm execution challenge creation accepts no address, plan, market, Wallet,
+  side, or funds from the browser. It loads the exact owner Run and binds the
+  persisted address, Run/command/revision, plan digest, Session JTI, and access
+  revision before message construction.
+- Worm execution SIWS authorizes only that frozen Run. It never signs a Solana
+  transaction, issues a login or Worm-management lease, starts a coordinator,
+  or initiates an order.
+- The Run/plan SIWS message always contains the Worm transaction trust and
+  requested-funds-versus-on-chain-spend disclosure.
 
 ## Failure Recovery
 
@@ -201,6 +249,13 @@ stale-session, wrong-address, or invalid-signature state returns
 `WALLET_LOGIN_SESSION_REQUIRED`. Failure never falls back to a client-supplied
 address, administrator role, or primary login challenge.
 
+Worm execution challenge/state Redis failure, rate exhaustion, or dependency
+failure returns `WORM_EXECUTION_AUTHORIZATION_UNAVAILABLE`; a missing Session
+returns `WORM_EXECUTION_LOGIN_SESSION_REQUIRED`; expired, replayed, stale,
+wrong-address, invalid-signature, Run-revision, or plan-binding failure returns
+`WORM_EXECUTION_AUTHORIZATION_REQUIRED`. No failure records partial Run
+authorization, reuses a lease, or begins a Worm mutation.
+
 ## Observability
 
 Existing login counters record success or failure. Structured logs include the
@@ -209,6 +264,9 @@ They exclude signatures, SIWS messages, challenge identifiers, identity
 subjects, Athena JWTs, Session JTIs, wallet-secret lease values, and high-
 cardinality metric labels. Phantom and Solana RPC are absent from health checks
 because the server calls neither service.
+Execution-proof logs add only bounded provider/stage/reason. They exclude the
+SIWS message and signature, challenge identifier, raw Session JTI, plan
+contents, coordinator token, Worm JWT, and transaction material.
 
 ## Change Checklist
 
@@ -220,4 +278,5 @@ because the server calls neither service.
 - [ ] Wallet-secret challenge creation retains its independent atomic global and
       account rate limits.
 - [ ] Wallet-secret proof remains address-free, current-session-bound, and lease-only.
+- [ ] Worm execution SIWS remains address-free, exact-Run/plan/session/access bound, separately rate-limited, disclosure-complete, and no-lease/no-start.
 - [ ] The [design index](../README.md) contains the current entry.

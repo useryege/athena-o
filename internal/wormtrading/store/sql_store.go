@@ -52,6 +52,14 @@ var (
 	ErrExecutionPlanWalletConnectionChanged = fmt.Errorf("%w: execution plan wallet connection changed", ErrConflict)
 	ErrExecutionPlanCredentialChanged       = fmt.Errorf("%w: execution plan wallet credential changed", ErrConflict)
 	ErrInvalidExecutionPlan                 = fmt.Errorf("%w: invalid execution plan", ErrInvalidState)
+	ErrExecutionRunNotFound                 = fmt.Errorf("%w: execution run", ErrNotFound)
+	ErrExecutionRunConflict                 = fmt.Errorf("%w: execution run", ErrConflict)
+	ErrExecutionRunRevision                 = fmt.Errorf("%w: execution run revision", ErrConflict)
+	ErrExecutionRunCommandConflict          = fmt.Errorf("%w: execution command", ErrConflict)
+	ErrExecutionRunCoordinator              = fmt.Errorf("%w: execution coordinator", ErrConflict)
+	ErrExecutionRunAuthorization            = fmt.Errorf("%w: execution authorization", ErrConflict)
+	ErrExecutionRunIsolation                = fmt.Errorf("%w: wallet-market execution isolation", ErrConflict)
+	ErrInvalidExecutionRun                  = fmt.Errorf("%w: invalid execution run", ErrInvalidState)
 )
 
 type SQLStore struct {

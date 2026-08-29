@@ -362,6 +362,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		errorsutil.CheckError(phantomAuthHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
 		errorsutil.CheckError(phantomAuthHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr))
 	}
+	errorsutil.CheckError(a.enableWormExecutionAuthorization())
 	walletSecretHTTP, err := newWalletSecretHTTPHandler(a)
 	if err != nil {
 		_ = accountStateStore.Close()
@@ -868,6 +869,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		publicHandlers["/auth/google/callback"] = http.HandlerFunc(server.googleOIDC.Callback)
 		publicHandlers["/auth/wallet-secrets/google"] = http.HandlerFunc(server.googleOIDC.WalletSecretReauthentication)
 		publicHandlers["/auth/worm-trading/google"] = http.HandlerFunc(server.googleOIDC.WormCredentialReauthentication)
+		publicHandlers["/auth/worm-trading/executions/google"] = http.HandlerFunc(server.googleOIDC.WormExecutionAuthorization)
 	}
 	if server.authRegistration != nil {
 		publicHandlers["/auth/registration"] = http.HandlerFunc(server.authRegistration.Registration)
@@ -932,6 +934,14 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	registerWormConnectionHandlers(mux, server)
 	registerWormCombinationHandlers(mux, server)
 	registerWormExecutionPlanHandlers(mux, server)
+	registerWormExecutionHandlers(mux, server)
+	if server.phantomAuth != nil {
+		mux.Handle("POST /auth/worm-trading/executions/{runId}/solana/challenge", traceHTTP(http.HandlerFunc(server.phantomAuth.WormExecutionChallenge)))
+		mux.Handle("POST /auth/worm-trading/executions/{runId}/solana/verify", traceHTTP(http.HandlerFunc(server.phantomAuth.WormExecutionVerify)))
+	}
+	if server.DisableAuth {
+		mux.Handle("POST /auth/worm-trading/executions/{runId}/development", traceHTTP(http.HandlerFunc(server.developmentWormExecutionAuthorization)))
+	}
 	mux.Handle("/api/", handler)
 
 	// // Proxy extension is currently an alpha feature and is disabled

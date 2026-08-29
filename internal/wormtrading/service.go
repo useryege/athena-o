@@ -8,9 +8,11 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
+	utilworm "github.com/useryege/athena/util/worm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
@@ -34,7 +36,12 @@ type Service struct {
 	wormPositionSemaphore chan struct{}
 	wormCapabilities      wormCapabilityStatus
 	wormMarketsClientset  wormmarketsapiclient.Clientset
+	wormWebClient         utilworm.WebClient
+	walletSignerClientset walletapiclient.WormExecutionSignerClientset
 	walletOperationLocks  sync.Map
+	wormWebJWTMu          sync.Mutex
+	wormWebJWT            map[string]string
+	executionWorkerWake   chan struct{}
 
 	startStopMu sync.Mutex
 	started     bool
@@ -50,6 +57,8 @@ type ServiceOptions struct {
 	WormPositionBudget      time.Duration
 	WormPositionConcurrency int
 	WormMarketsClientset    wormmarketsapiclient.Clientset
+	WormWebClient           utilworm.WebClient
+	WalletSignerClientset   walletapiclient.WormExecutionSignerClientset
 	SetHealthStatus         func(grpc_health_v1.HealthCheckResponse_ServingStatus)
 }
 
@@ -76,6 +85,12 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	if opts.WormMarketsClientset == nil || opts.WormMarketsClientset.WormMarkets() == nil {
 		return nil, fmt.Errorf("worm markets client is required")
 	}
+	if opts.WormWebClient == nil {
+		return nil, fmt.Errorf("worm Web client is required")
+	}
+	if opts.WalletSignerClientset == nil || opts.WalletSignerClientset.Signer() == nil {
+		return nil, fmt.Errorf("Wallet Worm execution signer client is required")
+	}
 	if len(opts.CredentialEncryptionKey) == 0 {
 		return nil, fmt.Errorf("worm credential encryption key is required")
 	}
@@ -88,6 +103,10 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 		wormPositionBudget:    opts.WormPositionBudget,
 		wormPositionSemaphore: make(chan struct{}, opts.WormPositionConcurrency),
 		wormMarketsClientset:  opts.WormMarketsClientset,
+		wormWebClient:         opts.WormWebClient,
+		walletSignerClientset: opts.WalletSignerClientset,
+		wormWebJWT:            make(map[string]string),
+		executionWorkerWake:   make(chan struct{}, 1),
 	}
 	service.wormCapabilities.configureStore(true)
 
@@ -123,7 +142,6 @@ func (s *Service) Start() error {
 		}
 		s.wormCapabilities.recordStoreSuccess()
 	}
-
 	runCtx, cancel := context.WithCancel(context.Background())
 	s.runCancel = cancel
 	s.started = true
@@ -136,6 +154,8 @@ func (s *Service) Start() error {
 		go s.runCredentialMaintenanceLoop(runCtx)
 		s.runWG.Add(1)
 		go s.runExecutionPlanWorker(runCtx)
+		s.runWG.Add(1)
+		go s.runExecutionWorker(runCtx)
 	}
 	return nil
 }
@@ -156,6 +176,9 @@ func (s *Service) Stop() error {
 		cancel()
 	}
 	s.runWG.Wait()
+	s.wormWebJWTMu.Lock()
+	clear(s.wormWebJWT)
+	s.wormWebJWTMu.Unlock()
 	return nil
 }
 

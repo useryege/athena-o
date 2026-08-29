@@ -1,4 +1,14 @@
-import {ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined, CloseOutlined, FileSearchOutlined, ReloadOutlined, SearchOutlined} from '@ant-design/icons';
+import {
+    ArrowDownOutlined,
+    ArrowLeftOutlined,
+    ArrowRightOutlined,
+    ArrowUpOutlined,
+    CloseOutlined,
+    FileSearchOutlined,
+    ReloadOutlined,
+    SafetyCertificateOutlined,
+    SearchOutlined
+} from '@ant-design/icons';
 import {Alert, Avatar, Button, Card, Checkbox, Drawer, Empty, Input, Progress, Space, Steps, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
@@ -621,7 +631,7 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
                 type='info'
                 showIcon={true}
                 title='SOL is informational in Preview'
-                description='Worm does not expose exact transaction fees or account rent through Estimate. Any execution must validate the authoritative SOL spending boundary before creating a draft.'
+                description='Worm does not expose exact transaction fees or account rent through Estimate. Live execution refreshes the SOL balance and requires a positive balance, but Athena does not inspect Worm’s returned transaction or cryptographically bind its actual chain spend.'
             />
         </>
     );
@@ -758,11 +768,14 @@ const ReviewStep = (props: {
     loading: boolean;
     error?: Error;
     creating: boolean;
+    preparing: boolean;
     canChangeWallets: boolean;
     canRefresh: boolean;
+    canPrepare: boolean;
     onRetryStatus: () => void;
     onBack: () => void;
     onRefresh: () => void;
+    onPrepare: () => void;
 }) => {
     if (!props.plan && props.loading) {
         return (
@@ -808,18 +821,34 @@ const ReviewStep = (props: {
                 className='worm-preview-read-only'
                 type='warning'
                 showIcon={true}
-                title='No order can be started from this page'
-                description='Execution Preview performs only Worm GET, List, and Estimate operations. It never creates a draft, asks for a Wallet signature, submits an order, or changes a position.'
+                title='This preview remains read-only'
+                description='Preparing a live execution only freezes this reviewed plan. It does not sign in to Worm, ask a Wallet to sign, create a position request, or submit an order.'
             />
             <div className='worm-preview-step-actions worm-preview-step-actions--split'>
                 <Button icon={<ArrowLeftOutlined />} onClick={props.onBack}>
                     {props.canChangeWallets ? 'Wallets' : 'Saved combinations'}
                 </Button>
-                {props.canChangeWallets && (
-                    <Button icon={<ReloadOutlined />} loading={props.creating} disabled={!props.canRefresh || props.plan.state === 'BUILDING'} onClick={props.onRefresh}>
-                        Refresh preview
-                    </Button>
-                )}
+                <Space wrap={true}>
+                    {props.canChangeWallets && (
+                        <Button
+                            icon={<ReloadOutlined />}
+                            loading={props.creating}
+                            disabled={!props.canRefresh || props.plan.state === 'BUILDING' || props.preparing}
+                            onClick={props.onRefresh}>
+                            Refresh preview
+                        </Button>
+                    )}
+                    {props.canChangeWallets && (
+                        <Button
+                            type='primary'
+                            icon={<SafetyCertificateOutlined />}
+                            loading={props.preparing}
+                            disabled={!props.canPrepare || props.creating}
+                            onClick={props.onPrepare}>
+                            Prepare live execution
+                        </Button>
+                    )}
+                </Space>
             </div>
         </div>
     );
@@ -836,12 +865,14 @@ export const WormTradingExecutionPreviewPage = () => {
     const [workflowStep, setWorkflowStep] = React.useState(planID ? 2 : 0);
     const [selectedIDs, setSelectedIDs] = React.useState<number[]>([]);
     const [creating, setCreating] = React.useState(false);
+    const [preparing, setPreparing] = React.useState(false);
     const [plan, setPlan] = React.useState<WormExecutionPlan>();
     const [planLoading, setPlanLoading] = React.useState(Boolean(planID));
     const [planError, setPlanError] = React.useState<Error>();
     const [planReload, setPlanReload] = React.useState(0);
     const initializedPlanIDRef = React.useRef('');
     const createRequestRef = React.useRef<ReturnType<typeof services.wormTrading.createExecutionPlan>>();
+    const prepareRequestRef = React.useRef<ReturnType<typeof services.wormTrading.createExecutionRun>>();
     const accountIDRef = React.useRef(authorization.user.accountId);
     const canWriteRef = React.useRef(canWrite);
     accountIDRef.current = authorization.user.accountId;
@@ -852,14 +883,18 @@ export const WormTradingExecutionPreviewPage = () => {
     React.useEffect(
         () => () => {
             createRequestRef.current?.abort?.();
+            prepareRequestRef.current?.abort?.();
         },
         []
     );
 
     React.useEffect(() => {
         createRequestRef.current?.abort?.();
+        prepareRequestRef.current?.abort?.();
         createRequestRef.current = undefined;
+        prepareRequestRef.current = undefined;
         setCreating(false);
+        setPreparing(false);
         setWorkflowStep(planID ? 2 : 0);
         setSelectedIDs([]);
         setPlan(undefined);
@@ -950,8 +985,11 @@ export const WormTradingExecutionPreviewPage = () => {
     React.useEffect(() => {
         if (!canWrite) {
             createRequestRef.current?.abort?.();
+            prepareRequestRef.current?.abort?.();
             createRequestRef.current = undefined;
+            prepareRequestRef.current = undefined;
             setCreating(false);
+            setPreparing(false);
         }
     }, [canWrite]);
 
@@ -1018,6 +1056,44 @@ export const WormTradingExecutionPreviewPage = () => {
         void createPlan(walletIDs.length > 0 ? walletIDs : selectedIDs);
     };
 
+    const prepareLiveExecution = async () => {
+        const current = plan;
+        if (!current || preparing || current.state !== 'READY' || current.usabilityCode || current.readyStepCount <= 0 || current.expiresAt * 1_000 <= Date.now()) {
+            return;
+        }
+        setPreparing(true);
+        const operationAccountID = accountIDRef.current;
+        const request = services.wormTrading.createExecutionRun(current.id, {
+            commandId: window.crypto.randomUUID(),
+            expectedRevision: current.combinationRevision
+        });
+        prepareRequestRef.current = request;
+        try {
+            const created = await request;
+            if (!canWriteRef.current || accountIDRef.current !== operationAccountID || prepareRequestRef.current !== request) {
+                return;
+            }
+            navigate(`/worm-trading/executions/${encodeURIComponent(created.id)}`);
+        } catch (error) {
+            if (canWriteRef.current && accountIDRef.current === operationAccountID && prepareRequestRef.current === request) {
+                const details = requestErrorDetails(error);
+                if (details.status === 409) {
+                    ctx.notifications.error('Could not freeze execution', 'The preview or combination revision changed. Refresh the preview before trying again.');
+                    setPlanReload(value => value + 1);
+                } else {
+                    ctx.notifications.error('Could not prepare live execution', requestErrorMessage(error, 'No execution run was created.'));
+                }
+            }
+        } finally {
+            if (prepareRequestRef.current === request) {
+                prepareRequestRef.current = undefined;
+                if (canWriteRef.current && accountIDRef.current === operationAccountID) {
+                    setPreparing(false);
+                }
+            }
+        }
+    };
+
     const combinationError = workflowStep < 2 ? combination.error : undefined;
     return (
         <AppPage
@@ -1066,11 +1142,14 @@ export const WormTradingExecutionPreviewPage = () => {
                     loading={planLoading}
                     error={planError}
                     creating={creating}
+                    preparing={preparing}
                     canChangeWallets={canWrite}
                     canRefresh={canWrite && Boolean(combination.data && (plan?.wallets.length || selectedIDs.length))}
+                    canPrepare={canWrite && plan?.state === 'READY' && !plan.usabilityCode && plan.readyStepCount > 0 && plan.expiresAt * 1_000 > Date.now()}
                     onRetryStatus={() => setPlanReload(value => value + 1)}
                     onBack={() => (canWrite ? setWorkflowStep(1) : navigate('/worm-trading/combinations'))}
                     onRefresh={refreshPlan}
+                    onPrepare={() => void prepareLiveExecution()}
                 />
             )}
         </AppPage>

@@ -8,21 +8,32 @@ import (
 )
 
 const (
-	InternalAuthTokenEnv      = "ATHENA_WALLET_INTERNAL_AUTH_TOKEN"
-	minimumInternalTokenBytes = 32
+	InternalAuthTokenEnv            = "ATHENA_WALLET_INTERNAL_AUTH_TOKEN"
+	WormExecutionSignerAuthTokenEnv = "ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN"
+	minimumInternalTokenBytes       = 32
 )
 
 // NormalizeInternalAuthToken validates the shared service credential used by
 // the API Server to call the trusted Wallet gRPC boundary.
 func NormalizeInternalAuthToken(value string) (string, error) {
+	return normalizeInternalAuthToken(value, "wallet internal auth token")
+}
+
+// NormalizeWormExecutionSignerAuthToken validates the capability credential
+// supplied only to Worm Trading for the dedicated execution signer service.
+func NormalizeWormExecutionSignerAuthToken(value string) (string, error) {
+	return normalizeInternalAuthToken(value, "wallet Worm execution signer auth token")
+}
+
+func normalizeInternalAuthToken(value, label string) (string, error) {
 	token := strings.TrimSpace(value)
 	if len(token) < minimumInternalTokenBytes {
-		return "", fmt.Errorf("wallet internal auth token must contain at least %d bytes", minimumInternalTokenBytes)
+		return "", fmt.Errorf("%s must contain at least %d bytes", label, minimumInternalTokenBytes)
 	}
 	if strings.IndexFunc(token, func(r rune) bool {
 		return unicode.IsSpace(r) || unicode.IsControl(r)
 	}) >= 0 {
-		return "", fmt.Errorf("wallet internal auth token must not contain whitespace or control characters")
+		return "", fmt.Errorf("%s must not contain whitespace or control characters", label)
 	}
 	return token, nil
 }

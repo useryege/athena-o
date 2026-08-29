@@ -254,6 +254,11 @@ WHERE id IN (
   FROM worm_execution_plans
   WHERE state IN ('READY', 'FAILED')
     AND retention_until <= $1::timestamptz
+    AND NOT EXISTS (
+      SELECT 1
+      FROM worm_execution_runs
+      WHERE worm_execution_runs.plan_id = worm_execution_plans.id
+    )
   ORDER BY retention_until, id
   LIMIT $2::integer
   FOR UPDATE SKIP LOCKED

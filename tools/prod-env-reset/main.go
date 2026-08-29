@@ -20,6 +20,7 @@ var targetKeys = []string{
 	"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY",
 	"ATHENA_JWT_SECRET",
 	"ATHENA_WALLET_INTERNAL_AUTH_TOKEN",
+	"ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN",
 	"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN",
 	"ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY",
 }
@@ -82,7 +83,20 @@ func newSecretValues() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	wormTradingInternalAuthToken, err := randomString(40, servicePasswordAlphabet)
+	walletWormExecutionSignerToken, err := randomStringDifferentFrom(
+		40,
+		servicePasswordAlphabet,
+		walletInternalAuthToken,
+	)
+	if err != nil {
+		return nil, err
+	}
+	wormTradingInternalAuthToken, err := randomStringDifferentFrom(
+		40,
+		servicePasswordAlphabet,
+		walletInternalAuthToken,
+		walletWormExecutionSignerToken,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -99,9 +113,29 @@ func newSecretValues() (map[string]string, error) {
 		"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY":    minioSecretKey,
 		"ATHENA_JWT_SECRET":                             base64.StdEncoding.EncodeToString(jwtSecretBytes),
 		"ATHENA_WALLET_INTERNAL_AUTH_TOKEN":             walletInternalAuthToken,
+		"ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN":     walletWormExecutionSignerToken,
 		"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN":       wormTradingInternalAuthToken,
 		"ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY": wormTradingCredentialEncryptionKey,
 	}, nil
+}
+
+func randomStringDifferentFrom(length int, alphabet string, forbidden ...string) (string, error) {
+	for {
+		value, err := randomString(length, alphabet)
+		if err != nil {
+			return "", err
+		}
+		distinct := true
+		for _, existing := range forbidden {
+			if value == existing {
+				distinct = false
+				break
+			}
+		}
+		if distinct {
+			return value, nil
+		}
+	}
 }
 
 func randomString(length int, alphabet string) (string, error) {

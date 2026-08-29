@@ -481,6 +481,299 @@ message ListExecutionPlanStepsResponse {
   int32 page_size = 4;
 }
 
+// ExecutionAuthorization is a non-secret authorization receipt bound to the
+// immutable plan digest and caller access revision. Authorization has no time
+// TTL; it remains valid until the run ends, it is revoked, or it is replaced
+// by a new proof.
+message ExecutionAuthorization {
+  string id = 1;
+  string state = 2;
+  string scope = 3;
+  string proof_kind = 4;
+  bytes session_jti_digest = 5;
+  int64 access_revision = 6;
+  int64 plan_version = 7;
+  bytes plan_digest_sha256 = 8;
+  int64 authorized_at = 9;
+  int64 ended_at = 10;
+  string end_reason_code = 11;
+}
+
+// ExecutionCoordinator is the durable lease projection for the browser-led
+// coordinator. The opaque coordinator token is returned only by Start/Resume
+// and is never part of this persisted projection.
+message ExecutionCoordinator {
+  string id = 1;
+  int64 generation = 2;
+  string state = 3;
+  int64 access_revision = 4;
+  int64 acquired_at = 5;
+  int64 heartbeat_at = 6;
+  int64 lease_expires_at = 7;
+  int64 released_at = 8;
+}
+
+message ExecutionMutationAttempt {
+  string id = 1;
+  string command_id = 2;
+  string kind = 3;
+  string state = 4;
+  int64 position_request_id = 5;
+  int32 http_status = 6;
+  int32 provider_code = 7;
+  string provider_slug = 8;
+  string error_code = 9;
+  int64 prepared_at = 10;
+  int64 dispatched_at = 11;
+  int64 completed_at = 12;
+}
+
+message ExecutionStepIsolation {
+  string id = 1;
+  int64 wallet_id = 2;
+  string market_condition_id = 3;
+  string reason_code = 4;
+  int64 created_at = 5;
+  int64 resolved_at = 6;
+  string resolution_code = 7;
+}
+
+// ExecutionRunStep is one immutable plan step plus its durable live state.
+// No JWT, wallet signature, or serialized transaction is stored in this
+// projection. COMPLETED always means the provider was observed as completed.
+message ExecutionRunStep {
+  int64 ordinal = 1;
+  int64 plan_step_ordinal = 2;
+  int32 wallet_ordinal = 3;
+  int32 item_ordinal = 4;
+  string source_disposition = 5;
+  string source_reason_code = 6;
+  string projected_usdc_before = 7;
+  string projected_usdc_after = 8;
+  string state = 9;
+  string reason_code = 10;
+  int64 position_request_id = 11;
+  string finalize_mode = 12;
+  bytes transaction_message_sha256 = 13;
+  string transaction_version = 14;
+  int32 required_signature_count = 15;
+  int32 wallet_signer_index = 16;
+  string provider_state = 17;
+  string provider_order_state = 18;
+  string funding_txid = 19;
+  string refund_txid = 20;
+  int64 started_at = 21;
+  int64 opened_at = 22;
+  int64 finalized_at = 23;
+  int64 last_observed_at = 24;
+  int64 completed_at = 25;
+  int64 created_at = 26;
+  int64 updated_at = 27;
+  repeated ExecutionMutationAttempt attempts = 28;
+  ExecutionStepIsolation isolation = 29;
+  int64 next_poll_at = 30;
+  int32 poll_count = 31;
+  string id = 32;
+}
+
+// ExecutionRun is the permanent, owner-scoped live execution record. Steps
+// remain wallet-major and the source plan can be consumed by only one run.
+message ExecutionRun {
+  string id = 1;
+  string owner_account_id = 2;
+  string plan_id = 3;
+  int64 plan_version = 4;
+  bytes plan_digest_sha256 = 5;
+  string combination_id = 6;
+  string combination_name = 7;
+  int64 combination_revision = 8;
+  string state = 9;
+  int64 revision = 10;
+  int64 current_step_ordinal = 11;
+  int64 wallet_count = 12;
+  int64 item_count = 13;
+  int64 total_step_count = 14;
+  int64 actionable_step_count = 15;
+  int64 terminal_step_count = 16;
+  int64 completed_step_count = 17;
+  int64 satisfied_step_count = 18;
+  int64 skipped_step_count = 19;
+  int64 failed_step_count = 20;
+  int64 not_executed_step_count = 21;
+  string pause_code = 22;
+  string failure_code = 23;
+  string block_code = 24;
+  int64 requested_at = 25;
+  int64 authorized_at = 26;
+  int64 started_at = 27;
+  int64 paused_at = 28;
+  int64 completed_at = 29;
+  int64 created_at = 30;
+  int64 updated_at = 31;
+  repeated ExecutionPlanWallet wallets = 32;
+  repeated ExecutionPlanItem items = 33;
+  ExecutionAuthorization authorization = 34;
+  ExecutionCoordinator coordinator = 35;
+  repeated string allowed_actions = 36;
+  int64 next_step_ordinal = 37;
+  ExecutionRunStep current_step = 38;
+}
+
+message CreateExecutionRunRequest {
+  string owner_account_id = 1;
+  string plan_id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+}
+
+message CreateExecutionRunResponse {
+  ExecutionRun run = 1;
+}
+
+message ListExecutionRunsRequest {
+  string owner_account_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListExecutionRunsResponse {
+  repeated ExecutionRun items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetExecutionRunRequest {
+  string owner_account_id = 1;
+  string id = 2;
+}
+
+message GetExecutionRunResponse {
+  ExecutionRun run = 1;
+}
+
+message ListExecutionRunStepsRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListExecutionRunStepsResponse {
+  repeated ExecutionRunStep items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message AuthorizeExecutionRunRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  string proof_kind = 5;
+  bytes session_jti_digest = 6;
+  int64 access_revision = 7;
+}
+
+message AuthorizeExecutionRunResponse {
+  ExecutionRun run = 1;
+}
+
+message StartExecutionRunRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  bytes session_jti_digest = 5;
+  int64 access_revision = 6;
+}
+
+message StartExecutionRunResponse {
+  ExecutionRun run = 1;
+  bytes coordinator_token = 2;
+}
+
+message PauseExecutionRunRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+}
+
+message PauseExecutionRunResponse {
+  ExecutionRun run = 1;
+}
+
+message ResumeExecutionRunRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  bytes session_jti_digest = 5;
+  int64 access_revision = 6;
+}
+
+message ResumeExecutionRunResponse {
+  ExecutionRun run = 1;
+  bytes coordinator_token = 2;
+}
+
+message TerminateExecutionRunRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+}
+
+message TerminateExecutionRunResponse {
+  ExecutionRun run = 1;
+}
+
+message HeartbeatExecutionCoordinatorRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  bytes coordinator_token = 5;
+  bytes session_jti_digest = 6;
+  int64 access_revision = 7;
+}
+
+message HeartbeatExecutionCoordinatorResponse {
+  ExecutionRun run = 1;
+}
+
+message ExecuteNextExecutionStepRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  bytes coordinator_token = 5;
+  int64 expected_step_ordinal = 6;
+  bytes session_jti_digest = 7;
+  int64 access_revision = 8;
+}
+
+message ExecuteNextExecutionStepResponse {
+  ExecutionRun run = 1;
+  ExecutionRunStep step = 2;
+}
+
+message ReconcileExecutionStepRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  int64 expected_step_ordinal = 5;
+  string step_id = 6;
+}
+
+message ReconcileExecutionStepResponse {
+  ExecutionRun run = 1;
+  ExecutionRunStep step = 2;
+}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
@@ -497,4 +790,16 @@ service WormTradingService {
   rpc CreateExecutionPlan(CreateExecutionPlanRequest) returns (CreateExecutionPlanResponse);
   rpc GetExecutionPlan(GetExecutionPlanRequest) returns (GetExecutionPlanResponse);
   rpc ListExecutionPlanSteps(ListExecutionPlanStepsRequest) returns (ListExecutionPlanStepsResponse);
+  rpc CreateExecutionRun(CreateExecutionRunRequest) returns (CreateExecutionRunResponse);
+  rpc ListExecutionRuns(ListExecutionRunsRequest) returns (ListExecutionRunsResponse);
+  rpc GetExecutionRun(GetExecutionRunRequest) returns (GetExecutionRunResponse);
+  rpc ListExecutionRunSteps(ListExecutionRunStepsRequest) returns (ListExecutionRunStepsResponse);
+  rpc AuthorizeExecutionRun(AuthorizeExecutionRunRequest) returns (AuthorizeExecutionRunResponse);
+  rpc StartExecutionRun(StartExecutionRunRequest) returns (StartExecutionRunResponse);
+  rpc PauseExecutionRun(PauseExecutionRunRequest) returns (PauseExecutionRunResponse);
+  rpc ResumeExecutionRun(ResumeExecutionRunRequest) returns (ResumeExecutionRunResponse);
+  rpc TerminateExecutionRun(TerminateExecutionRunRequest) returns (TerminateExecutionRunResponse);
+  rpc HeartbeatExecutionCoordinator(HeartbeatExecutionCoordinatorRequest) returns (HeartbeatExecutionCoordinatorResponse);
+  rpc ExecuteNextExecutionStep(ExecuteNextExecutionStepRequest) returns (ExecuteNextExecutionStepResponse);
+  rpc ReconcileExecutionStep(ReconcileExecutionStepRequest) returns (ReconcileExecutionStepResponse);
 }

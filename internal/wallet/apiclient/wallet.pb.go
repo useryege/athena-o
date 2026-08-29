@@ -1052,6 +1052,469 @@ func (m *SignWormAuthChallengeResponse) GetMessageSha256() string {
 	return ""
 }
 
+type SignWormWebSignInMessageRequest struct {
+	Id                    int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	RequesterAccountId    string   `protobuf:"bytes,2,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	ExpectedAddress       string   `protobuf:"bytes,3,opt,name=expected_address,json=expectedAddress,proto3" json:"expected_address,omitempty"`
+	Nonce                 string   `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Message               string   `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	ExpectedMessageSha256 []byte   `protobuf:"bytes,6,opt,name=expected_message_sha256,json=expectedMessageSha256,proto3" json:"expected_message_sha256,omitempty"`
+	ExecutionRunId        string   `protobuf:"bytes,7,opt,name=execution_run_id,json=executionRunId,proto3" json:"execution_run_id,omitempty"`
+	ExecutionStepId       string   `protobuf:"bytes,8,opt,name=execution_step_id,json=executionStepId,proto3" json:"execution_step_id,omitempty"`
+	IntentSha256          []byte   `protobuf:"bytes,9,opt,name=intent_sha256,json=intentSha256,proto3" json:"intent_sha256,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
+	XXX_unrecognized      []byte   `json:"-"`
+	XXX_sizecache         int32    `json:"-"`
+}
+
+func (m *SignWormWebSignInMessageRequest) Reset()         { *m = SignWormWebSignInMessageRequest{} }
+func (m *SignWormWebSignInMessageRequest) String() string { return proto.CompactTextString(m) }
+func (*SignWormWebSignInMessageRequest) ProtoMessage()    {}
+func (*SignWormWebSignInMessageRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8911caa6983012d2, []int{17}
+}
+func (m *SignWormWebSignInMessageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignWormWebSignInMessageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignWormWebSignInMessageRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignWormWebSignInMessageRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignWormWebSignInMessageRequest.Merge(m, src)
+}
+func (m *SignWormWebSignInMessageRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignWormWebSignInMessageRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignWormWebSignInMessageRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignWormWebSignInMessageRequest proto.InternalMessageInfo
+
+func (m *SignWormWebSignInMessageRequest) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *SignWormWebSignInMessageRequest) GetRequesterAccountId() string {
+	if m != nil {
+		return m.RequesterAccountId
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageRequest) GetExpectedAddress() string {
+	if m != nil {
+		return m.ExpectedAddress
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageRequest) GetNonce() string {
+	if m != nil {
+		return m.Nonce
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageRequest) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageRequest) GetExpectedMessageSha256() []byte {
+	if m != nil {
+		return m.ExpectedMessageSha256
+	}
+	return nil
+}
+
+func (m *SignWormWebSignInMessageRequest) GetExecutionRunId() string {
+	if m != nil {
+		return m.ExecutionRunId
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageRequest) GetExecutionStepId() string {
+	if m != nil {
+		return m.ExecutionStepId
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageRequest) GetIntentSha256() []byte {
+	if m != nil {
+		return m.IntentSha256
+	}
+	return nil
+}
+
+type SignWormWebSignInMessageResponse struct {
+	Signature            string   `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`
+	MessageSha256        []byte   `protobuf:"bytes,2,opt,name=message_sha256,json=messageSha256,proto3" json:"message_sha256,omitempty"`
+	ExecutionRunId       string   `protobuf:"bytes,3,opt,name=execution_run_id,json=executionRunId,proto3" json:"execution_run_id,omitempty"`
+	ExecutionStepId      string   `protobuf:"bytes,4,opt,name=execution_step_id,json=executionStepId,proto3" json:"execution_step_id,omitempty"`
+	IntentSha256         []byte   `protobuf:"bytes,5,opt,name=intent_sha256,json=intentSha256,proto3" json:"intent_sha256,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SignWormWebSignInMessageResponse) Reset()         { *m = SignWormWebSignInMessageResponse{} }
+func (m *SignWormWebSignInMessageResponse) String() string { return proto.CompactTextString(m) }
+func (*SignWormWebSignInMessageResponse) ProtoMessage()    {}
+func (*SignWormWebSignInMessageResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8911caa6983012d2, []int{18}
+}
+func (m *SignWormWebSignInMessageResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignWormWebSignInMessageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignWormWebSignInMessageResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignWormWebSignInMessageResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignWormWebSignInMessageResponse.Merge(m, src)
+}
+func (m *SignWormWebSignInMessageResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignWormWebSignInMessageResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignWormWebSignInMessageResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignWormWebSignInMessageResponse proto.InternalMessageInfo
+
+func (m *SignWormWebSignInMessageResponse) GetSignature() string {
+	if m != nil {
+		return m.Signature
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageResponse) GetMessageSha256() []byte {
+	if m != nil {
+		return m.MessageSha256
+	}
+	return nil
+}
+
+func (m *SignWormWebSignInMessageResponse) GetExecutionRunId() string {
+	if m != nil {
+		return m.ExecutionRunId
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageResponse) GetExecutionStepId() string {
+	if m != nil {
+		return m.ExecutionStepId
+	}
+	return ""
+}
+
+func (m *SignWormWebSignInMessageResponse) GetIntentSha256() []byte {
+	if m != nil {
+		return m.IntentSha256
+	}
+	return nil
+}
+
+type SignWormPositionRequestTransactionRequest struct {
+	Id                        int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	RequesterAccountId        string   `protobuf:"bytes,2,opt,name=requester_account_id,json=requesterAccountId,proto3" json:"requester_account_id,omitempty"`
+	ExpectedAddress           string   `protobuf:"bytes,3,opt,name=expected_address,json=expectedAddress,proto3" json:"expected_address,omitempty"`
+	PositionRequestId         int64    `protobuf:"varint,4,opt,name=position_request_id,json=positionRequestId,proto3" json:"position_request_id,omitempty"`
+	TransactionHex            string   `protobuf:"bytes,5,opt,name=transaction_hex,json=transactionHex,proto3" json:"transaction_hex,omitempty"`
+	ExpectedTransactionSha256 []byte   `protobuf:"bytes,6,opt,name=expected_transaction_sha256,json=expectedTransactionSha256,proto3" json:"expected_transaction_sha256,omitempty"`
+	ExecutionRunId            string   `protobuf:"bytes,7,opt,name=execution_run_id,json=executionRunId,proto3" json:"execution_run_id,omitempty"`
+	ExecutionStepId           string   `protobuf:"bytes,8,opt,name=execution_step_id,json=executionStepId,proto3" json:"execution_step_id,omitempty"`
+	IntentSha256              []byte   `protobuf:"bytes,9,opt,name=intent_sha256,json=intentSha256,proto3" json:"intent_sha256,omitempty"`
+	XXX_NoUnkeyedLiteral      struct{} `json:"-"`
+	XXX_unrecognized          []byte   `json:"-"`
+	XXX_sizecache             int32    `json:"-"`
+}
+
+func (m *SignWormPositionRequestTransactionRequest) Reset() {
+	*m = SignWormPositionRequestTransactionRequest{}
+}
+func (m *SignWormPositionRequestTransactionRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*SignWormPositionRequestTransactionRequest) ProtoMessage() {}
+func (*SignWormPositionRequestTransactionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8911caa6983012d2, []int{19}
+}
+func (m *SignWormPositionRequestTransactionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignWormPositionRequestTransactionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignWormPositionRequestTransactionRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignWormPositionRequestTransactionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignWormPositionRequestTransactionRequest.Merge(m, src)
+}
+func (m *SignWormPositionRequestTransactionRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignWormPositionRequestTransactionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignWormPositionRequestTransactionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignWormPositionRequestTransactionRequest proto.InternalMessageInfo
+
+func (m *SignWormPositionRequestTransactionRequest) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetRequesterAccountId() string {
+	if m != nil {
+		return m.RequesterAccountId
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetExpectedAddress() string {
+	if m != nil {
+		return m.ExpectedAddress
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetPositionRequestId() int64 {
+	if m != nil {
+		return m.PositionRequestId
+	}
+	return 0
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetTransactionHex() string {
+	if m != nil {
+		return m.TransactionHex
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetExpectedTransactionSha256() []byte {
+	if m != nil {
+		return m.ExpectedTransactionSha256
+	}
+	return nil
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetExecutionRunId() string {
+	if m != nil {
+		return m.ExecutionRunId
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetExecutionStepId() string {
+	if m != nil {
+		return m.ExecutionStepId
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionRequest) GetIntentSha256() []byte {
+	if m != nil {
+		return m.IntentSha256
+	}
+	return nil
+}
+
+type SignWormPositionRequestTransactionResponse struct {
+	// Types that are valid to be assigned to FinalizePayload:
+	//	*SignWormPositionRequestTransactionResponse_Signature
+	//	*SignWormPositionRequestTransactionResponse_SignedTransaction
+	FinalizePayload      isSignWormPositionRequestTransactionResponse_FinalizePayload `protobuf_oneof:"finalize_payload"`
+	TransactionSha256    []byte                                                       `protobuf:"bytes,3,opt,name=transaction_sha256,json=transactionSha256,proto3" json:"transaction_sha256,omitempty"`
+	TransactionVersion   string                                                       `protobuf:"bytes,4,opt,name=transaction_version,json=transactionVersion,proto3" json:"transaction_version,omitempty"`
+	RequiredSignatures   int32                                                        `protobuf:"varint,5,opt,name=required_signatures,json=requiredSignatures,proto3" json:"required_signatures,omitempty"`
+	SignerIndex          int32                                                        `protobuf:"varint,6,opt,name=signer_index,json=signerIndex,proto3" json:"signer_index,omitempty"`
+	ExecutionRunId       string                                                       `protobuf:"bytes,7,opt,name=execution_run_id,json=executionRunId,proto3" json:"execution_run_id,omitempty"`
+	ExecutionStepId      string                                                       `protobuf:"bytes,8,opt,name=execution_step_id,json=executionStepId,proto3" json:"execution_step_id,omitempty"`
+	IntentSha256         []byte                                                       `protobuf:"bytes,9,opt,name=intent_sha256,json=intentSha256,proto3" json:"intent_sha256,omitempty"`
+	PositionRequestId    int64                                                        `protobuf:"varint,10,opt,name=position_request_id,json=positionRequestId,proto3" json:"position_request_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                                     `json:"-"`
+	XXX_unrecognized     []byte                                                       `json:"-"`
+	XXX_sizecache        int32                                                        `json:"-"`
+}
+
+func (m *SignWormPositionRequestTransactionResponse) Reset() {
+	*m = SignWormPositionRequestTransactionResponse{}
+}
+func (m *SignWormPositionRequestTransactionResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*SignWormPositionRequestTransactionResponse) ProtoMessage() {}
+func (*SignWormPositionRequestTransactionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8911caa6983012d2, []int{20}
+}
+func (m *SignWormPositionRequestTransactionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SignWormPositionRequestTransactionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SignWormPositionRequestTransactionResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SignWormPositionRequestTransactionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SignWormPositionRequestTransactionResponse.Merge(m, src)
+}
+func (m *SignWormPositionRequestTransactionResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *SignWormPositionRequestTransactionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SignWormPositionRequestTransactionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SignWormPositionRequestTransactionResponse proto.InternalMessageInfo
+
+type isSignWormPositionRequestTransactionResponse_FinalizePayload interface {
+	isSignWormPositionRequestTransactionResponse_FinalizePayload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type SignWormPositionRequestTransactionResponse_Signature struct {
+	Signature string `protobuf:"bytes,1,opt,name=signature,proto3,oneof" json:"signature,omitempty"`
+}
+type SignWormPositionRequestTransactionResponse_SignedTransaction struct {
+	SignedTransaction string `protobuf:"bytes,2,opt,name=signed_transaction,json=signedTransaction,proto3,oneof" json:"signed_transaction,omitempty"`
+}
+
+func (*SignWormPositionRequestTransactionResponse_Signature) isSignWormPositionRequestTransactionResponse_FinalizePayload() {
+}
+func (*SignWormPositionRequestTransactionResponse_SignedTransaction) isSignWormPositionRequestTransactionResponse_FinalizePayload() {
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetFinalizePayload() isSignWormPositionRequestTransactionResponse_FinalizePayload {
+	if m != nil {
+		return m.FinalizePayload
+	}
+	return nil
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetSignature() string {
+	if x, ok := m.GetFinalizePayload().(*SignWormPositionRequestTransactionResponse_Signature); ok {
+		return x.Signature
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetSignedTransaction() string {
+	if x, ok := m.GetFinalizePayload().(*SignWormPositionRequestTransactionResponse_SignedTransaction); ok {
+		return x.SignedTransaction
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetTransactionSha256() []byte {
+	if m != nil {
+		return m.TransactionSha256
+	}
+	return nil
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetTransactionVersion() string {
+	if m != nil {
+		return m.TransactionVersion
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetRequiredSignatures() int32 {
+	if m != nil {
+		return m.RequiredSignatures
+	}
+	return 0
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetSignerIndex() int32 {
+	if m != nil {
+		return m.SignerIndex
+	}
+	return 0
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetExecutionRunId() string {
+	if m != nil {
+		return m.ExecutionRunId
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetExecutionStepId() string {
+	if m != nil {
+		return m.ExecutionStepId
+	}
+	return ""
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetIntentSha256() []byte {
+	if m != nil {
+		return m.IntentSha256
+	}
+	return nil
+}
+
+func (m *SignWormPositionRequestTransactionResponse) GetPositionRequestId() int64 {
+	if m != nil {
+		return m.PositionRequestId
+	}
+	return 0
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*SignWormPositionRequestTransactionResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*SignWormPositionRequestTransactionResponse_Signature)(nil),
+		(*SignWormPositionRequestTransactionResponse_SignedTransaction)(nil),
+	}
+}
+
 type WalletAvatarMetadata struct {
 	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Revision             uint64   `protobuf:"varint,2,opt,name=revision,proto3" json:"revision,omitempty"`
@@ -1068,7 +1531,7 @@ func (m *WalletAvatarMetadata) Reset()         { *m = WalletAvatarMetadata{} }
 func (m *WalletAvatarMetadata) String() string { return proto.CompactTextString(m) }
 func (*WalletAvatarMetadata) ProtoMessage()    {}
 func (*WalletAvatarMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{17}
+	return fileDescriptor_8911caa6983012d2, []int{21}
 }
 func (m *WalletAvatarMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1151,7 +1614,7 @@ func (m *GetWalletAvatarMetadataRequest) Reset()         { *m = GetWalletAvatarM
 func (m *GetWalletAvatarMetadataRequest) String() string { return proto.CompactTextString(m) }
 func (*GetWalletAvatarMetadataRequest) ProtoMessage()    {}
 func (*GetWalletAvatarMetadataRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{18}
+	return fileDescriptor_8911caa6983012d2, []int{22}
 }
 func (m *GetWalletAvatarMetadataRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1206,7 +1669,7 @@ func (m *GetWalletAvatarMetadataResponse) Reset()         { *m = GetWalletAvatar
 func (m *GetWalletAvatarMetadataResponse) String() string { return proto.CompactTextString(m) }
 func (*GetWalletAvatarMetadataResponse) ProtoMessage()    {}
 func (*GetWalletAvatarMetadataResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{19}
+	return fileDescriptor_8911caa6983012d2, []int{23}
 }
 func (m *GetWalletAvatarMetadataResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1266,7 +1729,7 @@ func (m *ReplaceWalletAvatarMetadataRequest) Reset()         { *m = ReplaceWalle
 func (m *ReplaceWalletAvatarMetadataRequest) String() string { return proto.CompactTextString(m) }
 func (*ReplaceWalletAvatarMetadataRequest) ProtoMessage()    {}
 func (*ReplaceWalletAvatarMetadataRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{20}
+	return fileDescriptor_8911caa6983012d2, []int{24}
 }
 func (m *ReplaceWalletAvatarMetadataRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1356,7 +1819,7 @@ func (m *ReplaceWalletAvatarMetadataResponse) Reset()         { *m = ReplaceWall
 func (m *ReplaceWalletAvatarMetadataResponse) String() string { return proto.CompactTextString(m) }
 func (*ReplaceWalletAvatarMetadataResponse) ProtoMessage()    {}
 func (*ReplaceWalletAvatarMetadataResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{21}
+	return fileDescriptor_8911caa6983012d2, []int{25}
 }
 func (m *ReplaceWalletAvatarMetadataResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1412,7 +1875,7 @@ func (m *ResetWalletAvatarMetadataRequest) Reset()         { *m = ResetWalletAva
 func (m *ResetWalletAvatarMetadataRequest) String() string { return proto.CompactTextString(m) }
 func (*ResetWalletAvatarMetadataRequest) ProtoMessage()    {}
 func (*ResetWalletAvatarMetadataRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{22}
+	return fileDescriptor_8911caa6983012d2, []int{26}
 }
 func (m *ResetWalletAvatarMetadataRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1474,7 +1937,7 @@ func (m *ResetWalletAvatarMetadataResponse) Reset()         { *m = ResetWalletAv
 func (m *ResetWalletAvatarMetadataResponse) String() string { return proto.CompactTextString(m) }
 func (*ResetWalletAvatarMetadataResponse) ProtoMessage()    {}
 func (*ResetWalletAvatarMetadataResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{23}
+	return fileDescriptor_8911caa6983012d2, []int{27}
 }
 func (m *ResetWalletAvatarMetadataResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1527,7 +1990,7 @@ func (m *ListWalletAvatarObjectKeysRequest) Reset()         { *m = ListWalletAva
 func (m *ListWalletAvatarObjectKeysRequest) String() string { return proto.CompactTextString(m) }
 func (*ListWalletAvatarObjectKeysRequest) ProtoMessage()    {}
 func (*ListWalletAvatarObjectKeysRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{24}
+	return fileDescriptor_8911caa6983012d2, []int{28}
 }
 func (m *ListWalletAvatarObjectKeysRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1567,7 +2030,7 @@ func (m *ListWalletAvatarObjectKeysResponse) Reset()         { *m = ListWalletAv
 func (m *ListWalletAvatarObjectKeysResponse) String() string { return proto.CompactTextString(m) }
 func (*ListWalletAvatarObjectKeysResponse) ProtoMessage()    {}
 func (*ListWalletAvatarObjectKeysResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_8911caa6983012d2, []int{25}
+	return fileDescriptor_8911caa6983012d2, []int{29}
 }
 func (m *ListWalletAvatarObjectKeysResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1621,6 +2084,10 @@ func init() {
 	proto.RegisterType((*RevealWalletPrivateKeyResponse)(nil), "athena.internal.wallet.RevealWalletPrivateKeyResponse")
 	proto.RegisterType((*SignWormAuthChallengeRequest)(nil), "athena.internal.wallet.SignWormAuthChallengeRequest")
 	proto.RegisterType((*SignWormAuthChallengeResponse)(nil), "athena.internal.wallet.SignWormAuthChallengeResponse")
+	proto.RegisterType((*SignWormWebSignInMessageRequest)(nil), "athena.internal.wallet.SignWormWebSignInMessageRequest")
+	proto.RegisterType((*SignWormWebSignInMessageResponse)(nil), "athena.internal.wallet.SignWormWebSignInMessageResponse")
+	proto.RegisterType((*SignWormPositionRequestTransactionRequest)(nil), "athena.internal.wallet.SignWormPositionRequestTransactionRequest")
+	proto.RegisterType((*SignWormPositionRequestTransactionResponse)(nil), "athena.internal.wallet.SignWormPositionRequestTransactionResponse")
 	proto.RegisterType((*WalletAvatarMetadata)(nil), "athena.internal.wallet.WalletAvatarMetadata")
 	proto.RegisterType((*GetWalletAvatarMetadataRequest)(nil), "athena.internal.wallet.GetWalletAvatarMetadataRequest")
 	proto.RegisterType((*GetWalletAvatarMetadataResponse)(nil), "athena.internal.wallet.GetWalletAvatarMetadataResponse")
@@ -1635,85 +2102,110 @@ func init() {
 func init() { proto.RegisterFile("internal/wallet/wallet.proto", fileDescriptor_8911caa6983012d2) }
 
 var fileDescriptor_8911caa6983012d2 = []byte{
-	// 1245 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x58, 0xdd, 0x6f, 0xdc, 0x44,
-	0x10, 0xd7, 0xde, 0x5d, 0xd2, 0xdc, 0xa4, 0x49, 0xd3, 0x4d, 0x48, 0xaf, 0x6e, 0x3e, 0x5d, 0x21,
-	0xa5, 0xb4, 0xf2, 0x91, 0xd0, 0xa4, 0x5f, 0x4f, 0x49, 0xf9, 0x68, 0x04, 0x88, 0xca, 0x29, 0x2a,
-	0xea, 0x8b, 0xd9, 0xd8, 0xc3, 0x9d, 0xc9, 0x9d, 0xed, 0xda, 0x7b, 0x07, 0x57, 0x5e, 0x91, 0xf8,
-	0x90, 0x90, 0xa8, 0x90, 0xf8, 0x03, 0x78, 0x42, 0x3c, 0xf0, 0x0a, 0x14, 0x5e, 0x91, 0x90, 0x78,
-	0xe1, 0x4f, 0x40, 0xf9, 0x4b, 0x90, 0xed, 0xb5, 0xcf, 0x49, 0xbc, 0x77, 0xb9, 0x90, 0x53, 0xfb,
-	0x74, 0xe7, 0xd9, 0xdd, 0x99, 0xdf, 0xfc, 0x3c, 0x33, 0x3b, 0x63, 0x98, 0xb3, 0x1d, 0x8e, 0xbe,
-	0xc3, 0x1a, 0xd5, 0x4f, 0x58, 0xa3, 0x81, 0x5c, 0xfc, 0x68, 0x9e, 0xef, 0x72, 0x97, 0xce, 0x32,
-	0x5e, 0x47, 0x87, 0x69, 0xc9, 0x26, 0x2d, 0x5e, 0x55, 0xee, 0xd5, 0x6c, 0x5e, 0x6f, 0xed, 0x6a,
-	0xa6, 0xdb, 0xac, 0xb6, 0x02, 0xf4, 0x3b, 0x58, 0xc3, 0x6a, 0xbc, 0xb7, 0xea, 0xed, 0xd5, 0xaa,
-	0xcc, 0xb3, 0x83, 0x2a, 0xf3, 0xbc, 0x86, 0x6d, 0x32, 0x6e, 0xbb, 0x4e, 0xb5, 0xbd, 0xca, 0x1a,
-	0x5e, 0x9d, 0xad, 0x56, 0x6b, 0xe8, 0xa0, 0xcf, 0x38, 0x5a, 0xb1, 0x05, 0xb5, 0x02, 0xb3, 0x6f,
-	0x21, 0x7f, 0x18, 0xa9, 0xdd, 0xe1, 0x8c, 0xb7, 0x02, 0x1d, 0x1f, 0xb7, 0x30, 0xe0, 0xea, 0xcf,
-	0x04, 0xe8, 0x3b, 0x76, 0x20, 0xd6, 0x12, 0x31, 0x5d, 0x84, 0xf1, 0x18, 0x84, 0xc1, 0x3b, 0x1e,
-	0x56, 0xc8, 0x12, 0x59, 0x29, 0xeb, 0x10, 0x8b, 0x1e, 0x74, 0x3c, 0xa4, 0x33, 0x30, 0xf2, 0xb8,
-	0x85, 0x7e, 0xa7, 0x52, 0x88, 0x96, 0xe2, 0x07, 0x4a, 0xa1, 0xe4, 0xb1, 0x1a, 0x56, 0x8a, 0x4b,
-	0x64, 0x65, 0x44, 0x8f, 0xfe, 0xd3, 0x4b, 0x50, 0x0e, 0x7f, 0x8d, 0xc0, 0x7e, 0x82, 0x95, 0x52,
-	0xb4, 0x30, 0x16, 0x0a, 0x76, 0xec, 0x27, 0x48, 0x5f, 0x85, 0x19, 0x3f, 0x36, 0x89, 0xbe, 0xc1,
-	0x4c, 0xd3, 0x6d, 0x39, 0xdc, 0xb0, 0xad, 0xca, 0x48, 0xa4, 0x95, 0xa6, 0x6b, 0x9b, 0xf1, 0xd2,
-	0xb6, 0xa5, 0xfe, 0x4a, 0x60, 0xfa, 0x00, 0xe0, 0xc0, 0x73, 0x9d, 0x00, 0xe9, 0x23, 0x18, 0xb1,
-	0x39, 0x36, 0x83, 0x0a, 0x59, 0x2a, 0xae, 0x8c, 0xaf, 0xbd, 0xae, 0x75, 0xc9, 0xd3, 0x12, 0xf2,
-	0x34, 0x41, 0xb4, 0xb7, 0x57, 0xd3, 0x42, 0xf2, 0xb4, 0x0c, 0x79, 0x5a, 0x42, 0x9e, 0x16, 0x6b,
-	0xde, 0xe6, 0xd8, 0xd4, 0x63, 0x95, 0xa1, 0xb3, 0xdc, 0xe5, 0xac, 0x11, 0x39, 0x5b, 0xd4, 0xe3,
-	0x87, 0x81, 0x9d, 0x55, 0x1f, 0xc0, 0x54, 0xfa, 0x16, 0x12, 0xa2, 0x27, 0xa1, 0x60, 0x5b, 0x11,
-	0xbf, 0x45, 0xbd, 0x60, 0x5b, 0x52, 0x42, 0x0a, 0x52, 0x42, 0x9a, 0x70, 0x3e, 0xa3, 0x55, 0xb0,
-	0xf1, 0x01, 0x94, 0x42, 0xe8, 0x91, 0xe2, 0xd3, 0x22, 0x23, 0xd2, 0xa8, 0xfe, 0x44, 0x60, 0xfa,
-	0xae, 0x8f, 0x8c, 0xe3, 0x41, 0x47, 0xfa, 0x46, 0xcc, 0x2c, 0x8c, 0xfa, 0xd8, 0x64, 0xfe, 0x9e,
-	0xf0, 0x45, 0x3c, 0xd1, 0x15, 0x98, 0x62, 0x6d, 0xc6, 0x99, 0x6f, 0x78, 0x3e, 0x06, 0x18, 0x79,
-	0x5b, 0x8c, 0x76, 0x4c, 0xc6, 0xf2, 0xfb, 0x91, 0x78, 0x5b, 0xce, 0x4d, 0x49, 0xca, 0xcd, 0x53,
-	0x02, 0x33, 0x07, 0xc1, 0x0e, 0x9b, 0x9f, 0x90, 0x07, 0xcf, 0xb7, 0xdb, 0x8c, 0xa3, 0xb1, 0x87,
-	0x49, 0x7a, 0x80, 0x10, 0xbd, 0x8d, 0x1d, 0xf5, 0x6f, 0x02, 0xd3, 0xdb, 0x4d, 0xcf, 0xf5, 0xf9,
-	0x80, 0x04, 0xf6, 0xd3, 0x9c, 0x61, 0xb8, 0xd8, 0x97, 0xe1, 0xd2, 0x40, 0x0c, 0xcb, 0xd3, 0xd1,
-	0x83, 0x99, 0x83, 0xce, 0x0c, 0x3d, 0x00, 0x7f, 0x20, 0x70, 0xf1, 0x7d, 0xcf, 0xca, 0xbc, 0xd3,
-	0xd0, 0x49, 0x59, 0x3e, 0xc9, 0xa2, 0xee, 0x2a, 0x9c, 0xc7, 0x4f, 0x3d, 0x34, 0x39, 0x5a, 0x86,
-	0x8f, 0x6d, 0x3b, 0xb0, 0x5d, 0x27, 0xa2, 0xad, 0xa4, 0x4f, 0x25, 0x0b, 0xba, 0x90, 0x9f, 0x20,
-	0xf0, 0xda, 0xa0, 0xe4, 0x61, 0x1c, 0x3a, 0x39, 0xcf, 0x08, 0x2c, 0x66, 0x0d, 0x6f, 0x66, 0xde,
-	0xaf, 0x8c, 0xa2, 0xbc, 0xf0, 0x28, 0xe4, 0x86, 0xc7, 0x90, 0x49, 0xfb, 0x8d, 0xc0, 0x92, 0x1c,
-	0xfc, 0xd0, 0x33, 0xf7, 0x0e, 0x28, 0x5e, 0xe8, 0x95, 0xdb, 0x0a, 0x0c, 0x41, 0x88, 0xbb, 0xfb,
-	0x31, 0x9a, 0x3c, 0x93, 0x6e, 0x17, 0x92, 0x1d, 0x31, 0xb6, 0xf7, 0xa2, 0xf5, 0x30, 0xab, 0x19,
-	0xcc, 0xeb, 0xd8, 0x46, 0xd6, 0x88, 0xd5, 0xde, 0x4f, 0xb3, 0xf2, 0xf4, 0x0a, 0xfd, 0x26, 0x2c,
-	0xc8, 0x4c, 0x08, 0x6e, 0x0e, 0x55, 0x08, 0x72, 0xa4, 0xf6, 0xfc, 0x4e, 0x60, 0x6e, 0xc7, 0xae,
-	0x39, 0x0f, 0x5d, 0xbf, 0xb9, 0xd9, 0xe2, 0xf5, 0xbb, 0xf5, 0x50, 0x95, 0x53, 0xc3, 0x53, 0x43,
-	0x49, 0xaf, 0x40, 0x1a, 0x0a, 0x06, 0xb3, 0x2c, 0x1f, 0x83, 0x40, 0x94, 0xa3, 0x73, 0x89, 0x7c,
-	0x33, 0x16, 0x87, 0xd7, 0xaa, 0xe3, 0x3a, 0x26, 0x8a, 0x90, 0x88, 0x1f, 0x68, 0x05, 0xce, 0x34,
-	0x31, 0x08, 0xc2, 0x9b, 0x35, 0x2e, 0x3b, 0xc9, 0xa3, 0x6a, 0xc1, 0xbc, 0x04, 0xbc, 0xf0, 0x7f,
-	0x0e, 0xca, 0x81, 0x5d, 0x73, 0x18, 0x6f, 0xf9, 0x49, 0x01, 0xed, 0x0a, 0xe8, 0xcb, 0x30, 0x29,
-	0x34, 0x19, 0x41, 0x9d, 0xad, 0xad, 0x6f, 0x08, 0x2f, 0x26, 0x84, 0x74, 0x27, 0x12, 0xaa, 0xbf,
-	0x10, 0x98, 0xc9, 0xc6, 0xdf, 0xbb, 0xc8, 0x99, 0xc5, 0x38, 0x3b, 0xc2, 0x8d, 0x02, 0x63, 0x69,
-	0x12, 0x14, 0xa2, 0x24, 0x48, 0x9f, 0xe9, 0x3c, 0x40, 0x26, 0x76, 0x62, 0xff, 0xcb, 0x6e, 0x12,
-	0x2d, 0x74, 0x19, 0xce, 0x9a, 0xae, 0xc3, 0xd1, 0x11, 0xc5, 0x3e, 0x26, 0x60, 0x5c, 0xc8, 0xa2,
-	0x6a, 0x4f, 0xa1, 0x84, 0x9c, 0xd5, 0x04, 0x07, 0xd1, 0xff, 0x50, 0x6b, 0xd8, 0x58, 0x18, 0xbb,
-	0x1d, 0x8e, 0x41, 0x65, 0x34, 0x42, 0x52, 0x0e, 0x25, 0x5b, 0xa1, 0x40, 0xdd, 0x85, 0x85, 0xb4,
-	0x13, 0x38, 0x88, 0xfd, 0xf4, 0x82, 0xf0, 0x4f, 0x02, 0x8b, 0x52, 0x23, 0x43, 0x4f, 0xd1, 0x7b,
-	0x30, 0xd6, 0x14, 0xd6, 0x22, 0x8c, 0xe3, 0x6b, 0xd7, 0xb4, 0xfc, 0xe6, 0x59, 0xcb, 0x45, 0x98,
-	0x9e, 0x56, 0xbf, 0x2c, 0x80, 0xaa, 0xa3, 0xd7, 0x60, 0x26, 0x0e, 0x42, 0x58, 0x6e, 0x05, 0x2c,
-	0x48, 0x2a, 0xe0, 0xf3, 0x08, 0x02, 0xe9, 0x2b, 0x3d, 0x23, 0x7d, 0xa5, 0x7f, 0x10, 0xb8, 0xdc,
-	0x93, 0x8a, 0x17, 0xbb, 0xf2, 0x3e, 0x25, 0xb0, 0xa4, 0x87, 0x57, 0xc4, 0xd0, 0xde, 0xa3, 0x8c,
-	0xd2, 0xa2, 0x94, 0xd2, 0x67, 0x04, 0x96, 0x7b, 0x60, 0x7a, 0xb1, 0x09, 0xbd, 0x0c, 0xcb, 0xdd,
-	0x01, 0xeb, 0xd0, 0x62, 0x3a, 0x37, 0xbe, 0x01, 0x6a, 0xaf, 0x4d, 0xdd, 0x0b, 0xa9, 0x6b, 0x37,
-	0x1e, 0xcd, 0xca, 0x3a, 0xa4, 0x29, 0x10, 0xac, 0xfd, 0x38, 0x01, 0x13, 0x62, 0x2c, 0x45, 0xbf,
-	0x6d, 0x9b, 0x48, 0xbf, 0x22, 0x70, 0xee, 0xd0, 0xac, 0x4a, 0x35, 0x59, 0x92, 0xe7, 0x0f, 0xb5,
-	0xca, 0x9b, 0xff, 0x97, 0x4a, 0x61, 0xf7, 0x23, 0x18, 0xcf, 0x8c, 0x9a, 0xf4, 0x15, 0x19, 0x8c,
-	0xa3, 0x03, 0xb4, 0x72, 0xf5, 0x58, 0x7b, 0x05, 0x4d, 0x1f, 0x42, 0x39, 0xf5, 0x84, 0xae, 0xf4,
-	0x75, 0x36, 0xb1, 0x71, 0xe5, 0x18, 0x3b, 0x85, 0x05, 0x1b, 0xce, 0x66, 0xe7, 0x20, 0x2a, 0x85,
-	0x97, 0x33, 0xda, 0x29, 0xd7, 0x8e, 0xb7, 0xb9, 0x6b, 0x2a, 0x3b, 0x11, 0xc8, 0x4d, 0xe5, 0x0c,
-	0x41, 0x72, 0x53, 0xb9, 0x43, 0xc6, 0x67, 0x40, 0x8f, 0x76, 0xd9, 0x74, 0x55, 0xa6, 0x43, 0x3a,
-	0x35, 0x28, 0x6b, 0x83, 0x1c, 0x11, 0xc6, 0xbf, 0x21, 0x50, 0x91, 0x75, 0xab, 0xf4, 0xc6, 0x71,
-	0x14, 0xe6, 0x34, 0xe7, 0xca, 0xcd, 0xc1, 0x0f, 0x0a, 0x3c, 0x5f, 0x10, 0x98, 0xcd, 0xef, 0x0f,
-	0xe9, 0xba, 0x4c, 0x69, 0xcf, 0x96, 0x55, 0xd9, 0x18, 0xf4, 0x98, 0x40, 0xf2, 0x39, 0x81, 0x97,
-	0x72, 0x1b, 0x35, 0x7a, 0x5d, 0xa6, 0xb1, 0x57, 0x53, 0xaa, 0xac, 0x0f, 0x78, 0x4a, 0xc0, 0xf8,
-	0x9a, 0xc0, 0x05, 0x49, 0xab, 0x42, 0x37, 0xfa, 0xa6, 0x4e, 0xee, 0x3d, 0xa2, 0xdc, 0x18, 0xf8,
-	0x9c, 0x00, 0xf3, 0x3d, 0x81, 0x4b, 0x3d, 0x2e, 0x59, 0x7a, 0x5b, 0xce, 0x75, 0xbf, 0x26, 0x45,
-	0xb9, 0x73, 0xa2, 0xb3, 0x02, 0xd8, 0xb7, 0x04, 0x2e, 0x4a, 0xaf, 0x2a, 0x7a, 0x53, 0xae, 0xba,
-	0xf7, 0x8d, 0xab, 0xdc, 0x3a, 0xc1, 0x49, 0x01, 0xe9, 0x3b, 0x02, 0x8a, 0xfc, 0x72, 0xa1, 0xb7,
-	0xfa, 0x97, 0x56, 0xc9, 0xad, 0xa5, 0xdc, 0x3e, 0xc9, 0xd1, 0x18, 0xd5, 0xd6, 0xd6, 0x5f, 0xfb,
-	0x0b, 0xe4, 0x9f, 0xfd, 0x05, 0xf2, 0xef, 0xfe, 0x02, 0x79, 0x74, 0xbd, 0xc7, 0xb7, 0xd9, 0xc3,
-	0x1f, 0x7b, 0x99, 0x67, 0x9b, 0x0d, 0x1b, 0x1d, 0xbe, 0x3b, 0x1a, 0x7d, 0x8e, 0x7d, 0xed, 0xbf,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x62, 0xae, 0x84, 0xaf, 0x10, 0x16, 0x00, 0x00,
+	// 1637 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x59, 0xdd, 0x6f, 0x1b, 0xc7,
+	0x11, 0xf7, 0x92, 0x94, 0x2d, 0x8d, 0x3e, 0x2c, 0xad, 0x64, 0x99, 0x3e, 0xdb, 0x92, 0x4c, 0xa3,
+	0xa8, 0xfc, 0x51, 0xb2, 0x56, 0x6d, 0xf9, 0x0b, 0x28, 0x20, 0xb9, 0x6e, 0x45, 0xb4, 0x46, 0x8d,
+	0x93, 0x5b, 0x17, 0x7e, 0xb9, 0xae, 0x78, 0x63, 0xea, 0x2a, 0xf2, 0xee, 0x7c, 0xb7, 0x64, 0x25,
+	0xf5, 0xb5, 0x40, 0x3f, 0x80, 0x02, 0x35, 0x0a, 0xf4, 0x0f, 0xc8, 0x53, 0x90, 0x04, 0x79, 0x4d,
+	0xe2, 0xe4, 0x35, 0x40, 0x80, 0xbc, 0xe4, 0x39, 0x4f, 0x81, 0xfe, 0x82, 0xe4, 0x3f, 0x08, 0xf6,
+	0x76, 0xef, 0x74, 0x94, 0x6e, 0x49, 0x51, 0x96, 0x62, 0xe7, 0x49, 0xba, 0x99, 0xdd, 0x99, 0xdf,
+	0xfc, 0x76, 0x76, 0x77, 0x76, 0x08, 0x17, 0x1c, 0x97, 0x63, 0xe0, 0xb2, 0x46, 0xe5, 0xaf, 0xac,
+	0xd1, 0x40, 0xae, 0xfe, 0x94, 0xfd, 0xc0, 0xe3, 0x1e, 0x9d, 0x66, 0x7c, 0x1d, 0x5d, 0x56, 0x8e,
+	0x07, 0x95, 0xa5, 0xd6, 0x58, 0xa9, 0x3b, 0x7c, 0xbd, 0xb5, 0x56, 0xae, 0x79, 0xcd, 0x4a, 0x2b,
+	0xc4, 0x60, 0x0b, 0xeb, 0x58, 0x91, 0x63, 0x2b, 0xfe, 0x46, 0xbd, 0xc2, 0x7c, 0x27, 0xac, 0x30,
+	0xdf, 0x6f, 0x38, 0x35, 0xc6, 0x1d, 0xcf, 0xad, 0xb4, 0x6f, 0xb0, 0x86, 0xbf, 0xce, 0x6e, 0x54,
+	0xea, 0xe8, 0x62, 0xc0, 0x38, 0xda, 0xd2, 0x43, 0xa9, 0x08, 0xd3, 0xbf, 0x41, 0xfe, 0x34, 0x32,
+	0xbb, 0xca, 0x19, 0x6f, 0x85, 0x26, 0xbe, 0x68, 0x61, 0xc8, 0x4b, 0x1f, 0x12, 0xa0, 0xbf, 0x73,
+	0x42, 0xa5, 0x8b, 0xc5, 0x74, 0x16, 0x86, 0x25, 0x08, 0x8b, 0x6f, 0xf9, 0x58, 0x24, 0x73, 0x64,
+	0x7e, 0xc8, 0x04, 0x29, 0x7a, 0xb2, 0xe5, 0x23, 0x9d, 0x82, 0x81, 0x17, 0x2d, 0x0c, 0xb6, 0x8a,
+	0xb9, 0x48, 0x25, 0x3f, 0x28, 0x85, 0x82, 0xcf, 0xea, 0x58, 0xcc, 0xcf, 0x91, 0xf9, 0x01, 0x33,
+	0xfa, 0x9f, 0x9e, 0x87, 0x21, 0xf1, 0xd7, 0x0a, 0x9d, 0x6d, 0x2c, 0x16, 0x22, 0xc5, 0xa0, 0x10,
+	0xac, 0x3a, 0xdb, 0x48, 0x7f, 0x0e, 0x53, 0x81, 0x74, 0x89, 0x81, 0xc5, 0x6a, 0x35, 0xaf, 0xe5,
+	0x72, 0xcb, 0xb1, 0x8b, 0x03, 0x91, 0x55, 0x9a, 0xe8, 0x96, 0xa4, 0xaa, 0x6a, 0x97, 0x3e, 0x26,
+	0x30, 0xd9, 0x01, 0x38, 0xf4, 0x3d, 0x37, 0x44, 0xfa, 0x0c, 0x06, 0x1c, 0x8e, 0xcd, 0xb0, 0x48,
+	0xe6, 0xf2, 0xf3, 0xc3, 0x0b, 0xbf, 0x2a, 0xef, 0x92, 0x57, 0x8e, 0xc9, 0x2b, 0x2b, 0xa2, 0xfd,
+	0x8d, 0x7a, 0x59, 0x90, 0x57, 0x4e, 0x91, 0x57, 0x8e, 0xc9, 0x2b, 0x4b, 0xcb, 0x55, 0x8e, 0x4d,
+	0x53, 0x9a, 0x14, 0xc1, 0x72, 0x8f, 0xb3, 0x46, 0x14, 0x6c, 0xde, 0x94, 0x1f, 0x7d, 0x07, 0x5b,
+	0x7a, 0x02, 0xe3, 0xc9, 0x2a, 0xc4, 0x44, 0x8f, 0x41, 0xce, 0xb1, 0x23, 0x7e, 0xf3, 0x66, 0xce,
+	0xb1, 0xb5, 0x84, 0xe4, 0xb4, 0x84, 0x34, 0x61, 0x22, 0x65, 0x55, 0xb1, 0xf1, 0x27, 0x28, 0x08,
+	0xe8, 0x91, 0xe1, 0xa3, 0x22, 0x23, 0xb2, 0x58, 0x7a, 0x8f, 0xc0, 0xe4, 0x83, 0x00, 0x19, 0xc7,
+	0xce, 0x40, 0x7a, 0x66, 0xcc, 0x34, 0x9c, 0x0c, 0xb0, 0xc9, 0x82, 0x0d, 0x15, 0x8b, 0xfa, 0xa2,
+	0xf3, 0x30, 0xce, 0xda, 0x8c, 0xb3, 0xc0, 0xf2, 0x03, 0x0c, 0x31, 0x8a, 0x36, 0x1f, 0x8d, 0x18,
+	0x93, 0xf2, 0xc7, 0x91, 0xb8, 0xaa, 0xe7, 0xa6, 0xa0, 0xe5, 0xe6, 0x25, 0x81, 0xa9, 0x4e, 0xb0,
+	0xc7, 0xcd, 0x8f, 0xe0, 0xc1, 0x0f, 0x9c, 0x36, 0xe3, 0x68, 0x6d, 0x60, 0xbc, 0x3d, 0x40, 0x89,
+	0x7e, 0x8b, 0x5b, 0xa5, 0x2f, 0x09, 0x4c, 0x56, 0x9b, 0xbe, 0x17, 0xf0, 0x3e, 0x09, 0xec, 0x65,
+	0x39, 0xc5, 0x70, 0xbe, 0x27, 0xc3, 0x85, 0xbe, 0x18, 0xd6, 0x6f, 0x47, 0x1f, 0xa6, 0x3a, 0x83,
+	0x39, 0xf6, 0x04, 0x7c, 0x87, 0xc0, 0xb9, 0x3f, 0xf8, 0x76, 0x6a, 0x4d, 0x45, 0x90, 0xba, 0xfd,
+	0xa4, 0xcb, 0xba, 0x6b, 0x30, 0x81, 0x9b, 0x3e, 0xd6, 0x38, 0xda, 0x56, 0x80, 0x6d, 0x27, 0x74,
+	0x3c, 0x37, 0xa2, 0xad, 0x60, 0x8e, 0xc7, 0x0a, 0x53, 0xc9, 0x0f, 0x91, 0x78, 0x6d, 0x30, 0xb2,
+	0x30, 0x1e, 0x3b, 0x39, 0xaf, 0x08, 0xcc, 0xa6, 0x1d, 0x2f, 0xa5, 0xd6, 0x57, 0x47, 0x51, 0x56,
+	0x7a, 0xe4, 0x32, 0xd3, 0xe3, 0x98, 0x49, 0xfb, 0x84, 0xc0, 0x9c, 0x1e, 0xfc, 0xb1, 0xef, 0xdc,
+	0xfb, 0x60, 0xf8, 0x22, 0x2a, 0xaf, 0x15, 0x5a, 0x8a, 0x10, 0x6f, 0xed, 0x2f, 0x58, 0xe3, 0xa9,
+	0xed, 0x76, 0x36, 0x1e, 0x21, 0xb1, 0xfd, 0x3e, 0xd2, 0x8b, 0x5d, 0xcd, 0xe0, 0xa2, 0x89, 0x6d,
+	0x64, 0x0d, 0x69, 0xf6, 0x71, 0xb2, 0x2b, 0x8f, 0xee, 0xa0, 0x5f, 0x82, 0x19, 0x9d, 0x0b, 0xc5,
+	0xcd, 0x9e, 0x13, 0x82, 0xec, 0x3b, 0x7b, 0x3e, 0x25, 0x70, 0x61, 0xd5, 0xa9, 0xbb, 0x4f, 0xbd,
+	0xa0, 0xb9, 0xd4, 0xe2, 0xeb, 0x0f, 0xd6, 0x85, 0x29, 0xb7, 0x8e, 0x47, 0x86, 0x92, 0x5e, 0x81,
+	0x24, 0x15, 0x2c, 0x66, 0xdb, 0x01, 0x86, 0xa1, 0x3a, 0x8e, 0x4e, 0xc7, 0xf2, 0x25, 0x29, 0x16,
+	0xd7, 0xaa, 0xeb, 0xb9, 0x35, 0x54, 0x29, 0x21, 0x3f, 0x68, 0x11, 0x4e, 0x35, 0x31, 0x0c, 0xc5,
+	0xcd, 0x2a, 0x8f, 0x9d, 0xf8, 0xb3, 0x64, 0xc3, 0x45, 0x0d, 0x78, 0x15, 0xff, 0x05, 0x18, 0x0a,
+	0x9d, 0xba, 0xcb, 0x78, 0x2b, 0x88, 0x0f, 0xd0, 0x5d, 0x01, 0xfd, 0x09, 0x8c, 0x29, 0x4b, 0x56,
+	0xb8, 0xce, 0x16, 0x6e, 0x2d, 0xaa, 0x28, 0x46, 0x95, 0x74, 0x35, 0x12, 0x96, 0xbe, 0xcb, 0xc1,
+	0x6c, 0xec, 0xe6, 0x29, 0xae, 0x89, 0x7f, 0xab, 0xee, 0x23, 0x39, 0xe4, 0xc7, 0x40, 0x13, 0x5d,
+	0x84, 0xb3, 0x89, 0xe9, 0x3d, 0x01, 0x9f, 0x9c, 0x23, 0xf3, 0x23, 0xe6, 0x99, 0x58, 0xfd, 0x28,
+	0x1d, 0xb8, 0x38, 0x07, 0x70, 0x13, 0x6b, 0x2d, 0xb1, 0x4d, 0xac, 0xa0, 0xe5, 0x8a, 0x00, 0x4e,
+	0xc9, 0x73, 0x20, 0x91, 0x9b, 0x2d, 0xb7, 0x6a, 0xd3, 0xab, 0xe2, 0x1c, 0x88, 0x47, 0x86, 0x1c,
+	0x7d, 0x31, 0x74, 0x30, 0x46, 0xaf, 0x14, 0xab, 0x1c, 0xfd, 0xaa, 0x4d, 0x2f, 0xc3, 0xa8, 0xa8,
+	0x6b, 0x5d, 0x1e, 0x63, 0x18, 0x8a, 0x30, 0x8c, 0x48, 0xa1, 0xe2, 0x7c, 0x87, 0xc0, 0x9c, 0x9e,
+	0xf3, 0xd7, 0x58, 0xdd, 0x91, 0x3d, 0xab, 0x9b, 0x19, 0x64, 0xfe, 0xe0, 0x41, 0x16, 0x0e, 0x18,
+	0xe4, 0x40, 0x46, 0x90, 0x1f, 0xe4, 0xe1, 0x4a, 0x1c, 0xe4, 0x63, 0x2f, 0x74, 0x22, 0x57, 0x32,
+	0x33, 0x9e, 0x04, 0xcc, 0x0d, 0x59, 0x2d, 0x25, 0xf9, 0x61, 0x53, 0xac, 0x0c, 0x93, 0xbe, 0x42,
+	0x64, 0x29, 0x4b, 0x71, 0xb4, 0x79, 0x73, 0xc2, 0xef, 0x04, 0x5b, 0xb5, 0xe9, 0x4f, 0xe1, 0x34,
+	0xdf, 0x85, 0x6c, 0xad, 0xe3, 0xa6, 0x4a, 0xc2, 0xb1, 0x94, 0x78, 0x05, 0x37, 0xe9, 0x2f, 0xe1,
+	0x7c, 0x82, 0x21, 0x3d, 0xa3, 0x23, 0x1f, 0xcf, 0xc5, 0x43, 0x52, 0x34, 0xbc, 0xf9, 0x9c, 0xfc,
+	0x36, 0x0f, 0x57, 0x0f, 0xb2, 0x5c, 0x2a, 0x3b, 0x67, 0xf6, 0x65, 0xe7, 0xca, 0x89, 0x74, 0x7e,
+	0x56, 0x80, 0x8a, 0x8f, 0x4e, 0x1e, 0xe4, 0xea, 0xad, 0x9c, 0x30, 0x27, 0xa4, 0x2e, 0x65, 0x98,
+	0xfe, 0x0c, 0x68, 0x06, 0x63, 0xf9, 0x08, 0xe9, 0x04, 0xdf, 0xc7, 0x54, 0x05, 0x26, 0xd3, 0xc3,
+	0xdb, 0x18, 0x44, 0xb7, 0xb3, 0xba, 0x6d, 0x53, 0xaa, 0x3f, 0x4a, 0x8d, 0x98, 0x20, 0x96, 0xda,
+	0x09, 0xd0, 0xb6, 0x12, 0x98, 0x61, 0xb4, 0x8e, 0x03, 0x32, 0x9f, 0x84, 0x6a, 0x35, 0xd1, 0xd0,
+	0x4b, 0x30, 0x12, 0xa1, 0x0c, 0x2c, 0xc7, 0xb5, 0x71, 0x33, 0x5a, 0xbc, 0x01, 0x73, 0x58, 0xca,
+	0xaa, 0x42, 0xf4, 0x06, 0x97, 0x4b, 0x97, 0xc2, 0xa0, 0x49, 0xe1, 0x65, 0x0a, 0xe3, 0xcf, 0x1d,
+	0x97, 0x35, 0x9c, 0x6d, 0xb4, 0x7c, 0xb6, 0xd5, 0xf0, 0x98, 0x5d, 0xfa, 0x88, 0xc0, 0x54, 0xba,
+	0xf4, 0x78, 0x84, 0x9c, 0xd9, 0x8c, 0xb3, 0x7d, 0x9b, 0xd1, 0x80, 0xc1, 0xa4, 0xfe, 0xc9, 0x45,
+	0xf5, 0x4f, 0xf2, 0x4d, 0x2f, 0x02, 0xa4, 0xca, 0x06, 0xb9, 0xe1, 0x86, 0xbc, 0xb8, 0x50, 0x10,
+	0x2c, 0xd6, 0x3c, 0x19, 0x4d, 0x54, 0xe7, 0xcb, 0x05, 0x1a, 0x56, 0xb2, 0xa8, 0xd0, 0xa7, 0x50,
+	0x40, 0xce, 0xea, 0x6a, 0x4b, 0x45, 0xff, 0x0b, 0xab, 0xe2, 0x4d, 0x69, 0xad, 0x6d, 0x71, 0x0c,
+	0x23, 0xea, 0xf3, 0x22, 0xbb, 0xb6, 0x71, 0x59, 0x08, 0x4a, 0x6b, 0x30, 0x93, 0x3c, 0x02, 0x3b,
+	0xb1, 0x1f, 0x5d, 0xfd, 0xf1, 0x39, 0x81, 0x59, 0xad, 0x93, 0x63, 0xaf, 0xce, 0x56, 0x60, 0xb0,
+	0xa9, 0xbc, 0x45, 0x18, 0x87, 0x17, 0xae, 0x97, 0xb3, 0xfb, 0x26, 0xe5, 0x4c, 0x84, 0xc9, 0xec,
+	0xd2, 0x3f, 0x73, 0x50, 0x32, 0xd1, 0x6f, 0xb0, 0x1a, 0xf6, 0x43, 0x58, 0x66, 0xf1, 0x9b, 0xd3,
+	0x14, 0xbf, 0x6f, 0x22, 0x09, 0xb4, 0x4b, 0x7a, 0x4a, 0xbb, 0xa4, 0x9f, 0x11, 0xb8, 0xdc, 0x95,
+	0x8a, 0xb7, 0xbb, 0xe8, 0x7e, 0x49, 0x60, 0xce, 0x14, 0xaf, 0x83, 0x63, 0x5b, 0x47, 0x1d, 0xa5,
+	0x79, 0x2d, 0xa5, 0xaf, 0x08, 0x5c, 0xea, 0x82, 0xe9, 0xed, 0x26, 0xf4, 0x32, 0x5c, 0xda, 0xed,
+	0xad, 0xed, 0x51, 0x26, 0x2d, 0xc3, 0x87, 0x50, 0xea, 0x36, 0x68, 0xf7, 0x2d, 0xb2, 0xeb, 0x57,
+	0x76, 0xe5, 0x86, 0x4c, 0x48, 0xb6, 0x40, 0xb8, 0xf0, 0xee, 0x28, 0x8c, 0xaa, 0x8e, 0x24, 0x06,
+	0x6d, 0xa7, 0x86, 0xf4, 0x5f, 0x04, 0x4e, 0xef, 0x69, 0x53, 0xd2, 0xb2, 0x6e, 0x93, 0x67, 0xf7,
+	0x33, 0x8d, 0x5f, 0xbf, 0x2e, 0x95, 0xca, 0xef, 0x73, 0x18, 0x4e, 0x75, 0x19, 0xe9, 0x55, 0x1d,
+	0x8c, 0xfd, 0xbd, 0x53, 0xe3, 0xda, 0x81, 0xc6, 0x2a, 0x9a, 0xfe, 0x0c, 0x43, 0x49, 0x24, 0x74,
+	0xbe, 0x67, 0xb0, 0xb1, 0x8f, 0x2b, 0x07, 0x18, 0xa9, 0x3c, 0x38, 0x30, 0x92, 0x6e, 0x81, 0x51,
+	0x2d, 0xbc, 0x8c, 0xae, 0x9e, 0x71, 0xfd, 0x60, 0x83, 0x77, 0x5d, 0xa5, 0x9b, 0x41, 0x7a, 0x57,
+	0x19, 0xfd, 0x2f, 0xbd, 0xab, 0xcc, 0xfe, 0xd2, 0xdf, 0x80, 0xee, 0x6f, 0xb0, 0xd0, 0x1b, 0x3a,
+	0x1b, 0xda, 0x86, 0x91, 0xb1, 0xd0, 0xcf, 0x14, 0xe5, 0xfc, 0x3f, 0x04, 0x8a, 0xba, 0x46, 0x05,
+	0xbd, 0x7d, 0x10, 0x83, 0x19, 0x7d, 0x19, 0xe3, 0x4e, 0xff, 0x13, 0x15, 0x9e, 0x7f, 0x10, 0x98,
+	0xce, 0x6e, 0x0d, 0xd0, 0x5b, 0x3a, 0xa3, 0x5d, 0xbb, 0x15, 0xc6, 0x62, 0xbf, 0xd3, 0x14, 0x92,
+	0xbf, 0x13, 0x38, 0x93, 0xf9, 0x46, 0xa7, 0x37, 0x75, 0x16, 0xbb, 0xf5, 0x23, 0x8c, 0x5b, 0x7d,
+	0xce, 0x52, 0x30, 0xfe, 0x4d, 0xe0, 0xac, 0xa6, 0x54, 0xa1, 0x8b, 0x3d, 0xb7, 0x4e, 0xe6, 0x3d,
+	0x62, 0xdc, 0xee, 0x7b, 0x9e, 0x02, 0xf3, 0x7f, 0x02, 0xe7, 0xbb, 0x5c, 0xb2, 0xf4, 0x9e, 0x9e,
+	0xeb, 0x5e, 0x45, 0x8a, 0x71, 0xff, 0x50, 0x73, 0x15, 0xb0, 0xff, 0x12, 0x38, 0xa7, 0xbd, 0xaa,
+	0xe8, 0x1d, 0xbd, 0xe9, 0xee, 0x37, 0xae, 0x71, 0xf7, 0x10, 0x33, 0x15, 0xa4, 0xff, 0x11, 0x30,
+	0xf4, 0x97, 0x0b, 0xbd, 0xdb, 0xfb, 0x68, 0xd5, 0xdc, 0x5a, 0xc6, 0xbd, 0xc3, 0x4c, 0x95, 0xa8,
+	0x16, 0xbe, 0xce, 0x81, 0x21, 0x92, 0xed, 0x61, 0xf2, 0x30, 0x89, 0xde, 0x3c, 0xf1, 0xbd, 0x25,
+	0x8e, 0x03, 0x5d, 0xf7, 0x42, 0x7f, 0x1c, 0xf4, 0xe8, 0x31, 0xe9, 0x8f, 0x83, 0x9e, 0x8d, 0x92,
+	0xf7, 0x09, 0x94, 0x7a, 0xbf, 0x5c, 0xe9, 0x52, 0x2f, 0x07, 0x3d, 0x9b, 0x14, 0xc6, 0xf2, 0xeb,
+	0x98, 0x90, 0x68, 0x97, 0x97, 0xbf, 0xd8, 0x99, 0x21, 0x5f, 0xed, 0xcc, 0x90, 0x6f, 0x76, 0x66,
+	0xc8, 0xb3, 0x9b, 0x5d, 0x7e, 0xf3, 0xdc, 0xfb, 0x23, 0x2a, 0xf3, 0x9d, 0x5a, 0xc3, 0x41, 0x97,
+	0xaf, 0x9d, 0x8c, 0x7e, 0xe6, 0xfc, 0xc5, 0xf7, 0x01, 0x00, 0x00, 0xff, 0xff, 0x97, 0x33, 0xac,
+	0xa4, 0x68, 0x1d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2222,6 +2714,114 @@ var _WalletService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListWalletAvatarObjectKeys",
 			Handler:    _WalletService_ListWalletAvatarObjectKeys_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/wallet/wallet.proto",
+}
+
+// WormExecutionSignerServiceClient is the client API for WormExecutionSignerService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type WormExecutionSignerServiceClient interface {
+	SignWormWebSignInMessage(ctx context.Context, in *SignWormWebSignInMessageRequest, opts ...grpc.CallOption) (*SignWormWebSignInMessageResponse, error)
+	SignWormPositionRequestTransaction(ctx context.Context, in *SignWormPositionRequestTransactionRequest, opts ...grpc.CallOption) (*SignWormPositionRequestTransactionResponse, error)
+}
+
+type wormExecutionSignerServiceClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewWormExecutionSignerServiceClient(cc *grpc.ClientConn) WormExecutionSignerServiceClient {
+	return &wormExecutionSignerServiceClient{cc}
+}
+
+func (c *wormExecutionSignerServiceClient) SignWormWebSignInMessage(ctx context.Context, in *SignWormWebSignInMessageRequest, opts ...grpc.CallOption) (*SignWormWebSignInMessageResponse, error) {
+	out := new(SignWormWebSignInMessageResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.wallet.WormExecutionSignerService/SignWormWebSignInMessage", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wormExecutionSignerServiceClient) SignWormPositionRequestTransaction(ctx context.Context, in *SignWormPositionRequestTransactionRequest, opts ...grpc.CallOption) (*SignWormPositionRequestTransactionResponse, error) {
+	out := new(SignWormPositionRequestTransactionResponse)
+	err := c.cc.Invoke(ctx, "/athena.internal.wallet.WormExecutionSignerService/SignWormPositionRequestTransaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// WormExecutionSignerServiceServer is the server API for WormExecutionSignerService service.
+type WormExecutionSignerServiceServer interface {
+	SignWormWebSignInMessage(context.Context, *SignWormWebSignInMessageRequest) (*SignWormWebSignInMessageResponse, error)
+	SignWormPositionRequestTransaction(context.Context, *SignWormPositionRequestTransactionRequest) (*SignWormPositionRequestTransactionResponse, error)
+}
+
+// UnimplementedWormExecutionSignerServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedWormExecutionSignerServiceServer struct {
+}
+
+func (*UnimplementedWormExecutionSignerServiceServer) SignWormWebSignInMessage(ctx context.Context, req *SignWormWebSignInMessageRequest) (*SignWormWebSignInMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignWormWebSignInMessage not implemented")
+}
+func (*UnimplementedWormExecutionSignerServiceServer) SignWormPositionRequestTransaction(ctx context.Context, req *SignWormPositionRequestTransactionRequest) (*SignWormPositionRequestTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignWormPositionRequestTransaction not implemented")
+}
+
+func RegisterWormExecutionSignerServiceServer(s *grpc.Server, srv WormExecutionSignerServiceServer) {
+	s.RegisterService(&_WormExecutionSignerService_serviceDesc, srv)
+}
+
+func _WormExecutionSignerService_SignWormWebSignInMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignWormWebSignInMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WormExecutionSignerServiceServer).SignWormWebSignInMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.wallet.WormExecutionSignerService/SignWormWebSignInMessage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WormExecutionSignerServiceServer).SignWormWebSignInMessage(ctx, req.(*SignWormWebSignInMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WormExecutionSignerService_SignWormPositionRequestTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignWormPositionRequestTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WormExecutionSignerServiceServer).SignWormPositionRequestTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/athena.internal.wallet.WormExecutionSignerService/SignWormPositionRequestTransaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WormExecutionSignerServiceServer).SignWormPositionRequestTransaction(ctx, req.(*SignWormPositionRequestTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _WormExecutionSignerService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "athena.internal.wallet.WormExecutionSignerService",
+	HandlerType: (*WormExecutionSignerServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SignWormWebSignInMessage",
+			Handler:    _WormExecutionSignerService_SignWormWebSignInMessage_Handler,
+		},
+		{
+			MethodName: "SignWormPositionRequestTransaction",
+			Handler:    _WormExecutionSignerService_SignWormPositionRequestTransaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -3010,6 +3610,356 @@ func (m *SignWormAuthChallengeResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
+func (m *SignWormWebSignInMessageRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignWormWebSignInMessageRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignWormWebSignInMessageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.IntentSha256) > 0 {
+		i -= len(m.IntentSha256)
+		copy(dAtA[i:], m.IntentSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.IntentSha256)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ExecutionStepId) > 0 {
+		i -= len(m.ExecutionStepId)
+		copy(dAtA[i:], m.ExecutionStepId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionStepId)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.ExecutionRunId) > 0 {
+		i -= len(m.ExecutionRunId)
+		copy(dAtA[i:], m.ExecutionRunId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionRunId)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.ExpectedMessageSha256) > 0 {
+		i -= len(m.ExpectedMessageSha256)
+		copy(dAtA[i:], m.ExpectedMessageSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExpectedMessageSha256)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.Message) > 0 {
+		i -= len(m.Message)
+		copy(dAtA[i:], m.Message)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.Message)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Nonce) > 0 {
+		i -= len(m.Nonce)
+		copy(dAtA[i:], m.Nonce)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.Nonce)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ExpectedAddress) > 0 {
+		i -= len(m.ExpectedAddress)
+		copy(dAtA[i:], m.ExpectedAddress)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExpectedAddress)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Id != 0 {
+		i = encodeVarintWallet(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignWormWebSignInMessageResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignWormWebSignInMessageResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignWormWebSignInMessageResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.IntentSha256) > 0 {
+		i -= len(m.IntentSha256)
+		copy(dAtA[i:], m.IntentSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.IntentSha256)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ExecutionStepId) > 0 {
+		i -= len(m.ExecutionStepId)
+		copy(dAtA[i:], m.ExecutionStepId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionStepId)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ExecutionRunId) > 0 {
+		i -= len(m.ExecutionRunId)
+		copy(dAtA[i:], m.ExecutionRunId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionRunId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.MessageSha256) > 0 {
+		i -= len(m.MessageSha256)
+		copy(dAtA[i:], m.MessageSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.MessageSha256)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Signature) > 0 {
+		i -= len(m.Signature)
+		copy(dAtA[i:], m.Signature)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.Signature)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignWormPositionRequestTransactionRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignWormPositionRequestTransactionRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignWormPositionRequestTransactionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.IntentSha256) > 0 {
+		i -= len(m.IntentSha256)
+		copy(dAtA[i:], m.IntentSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.IntentSha256)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ExecutionStepId) > 0 {
+		i -= len(m.ExecutionStepId)
+		copy(dAtA[i:], m.ExecutionStepId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionStepId)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.ExecutionRunId) > 0 {
+		i -= len(m.ExecutionRunId)
+		copy(dAtA[i:], m.ExecutionRunId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionRunId)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.ExpectedTransactionSha256) > 0 {
+		i -= len(m.ExpectedTransactionSha256)
+		copy(dAtA[i:], m.ExpectedTransactionSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExpectedTransactionSha256)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.TransactionHex) > 0 {
+		i -= len(m.TransactionHex)
+		copy(dAtA[i:], m.TransactionHex)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.TransactionHex)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.PositionRequestId != 0 {
+		i = encodeVarintWallet(dAtA, i, uint64(m.PositionRequestId))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.ExpectedAddress) > 0 {
+		i -= len(m.ExpectedAddress)
+		copy(dAtA[i:], m.ExpectedAddress)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExpectedAddress)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.RequesterAccountId) > 0 {
+		i -= len(m.RequesterAccountId)
+		copy(dAtA[i:], m.RequesterAccountId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.RequesterAccountId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Id != 0 {
+		i = encodeVarintWallet(dAtA, i, uint64(m.Id))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignWormPositionRequestTransactionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SignWormPositionRequestTransactionResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignWormPositionRequestTransactionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.PositionRequestId != 0 {
+		i = encodeVarintWallet(dAtA, i, uint64(m.PositionRequestId))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.IntentSha256) > 0 {
+		i -= len(m.IntentSha256)
+		copy(dAtA[i:], m.IntentSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.IntentSha256)))
+		i--
+		dAtA[i] = 0x4a
+	}
+	if len(m.ExecutionStepId) > 0 {
+		i -= len(m.ExecutionStepId)
+		copy(dAtA[i:], m.ExecutionStepId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionStepId)))
+		i--
+		dAtA[i] = 0x42
+	}
+	if len(m.ExecutionRunId) > 0 {
+		i -= len(m.ExecutionRunId)
+		copy(dAtA[i:], m.ExecutionRunId)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.ExecutionRunId)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.SignerIndex != 0 {
+		i = encodeVarintWallet(dAtA, i, uint64(m.SignerIndex))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.RequiredSignatures != 0 {
+		i = encodeVarintWallet(dAtA, i, uint64(m.RequiredSignatures))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.TransactionVersion) > 0 {
+		i -= len(m.TransactionVersion)
+		copy(dAtA[i:], m.TransactionVersion)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.TransactionVersion)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.TransactionSha256) > 0 {
+		i -= len(m.TransactionSha256)
+		copy(dAtA[i:], m.TransactionSha256)
+		i = encodeVarintWallet(dAtA, i, uint64(len(m.TransactionSha256)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.FinalizePayload != nil {
+		{
+			size := m.FinalizePayload.Size()
+			i -= size
+			if _, err := m.FinalizePayload.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SignWormPositionRequestTransactionResponse_Signature) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignWormPositionRequestTransactionResponse_Signature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Signature)
+	copy(dAtA[i:], m.Signature)
+	i = encodeVarintWallet(dAtA, i, uint64(len(m.Signature)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+func (m *SignWormPositionRequestTransactionResponse_SignedTransaction) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SignWormPositionRequestTransactionResponse_SignedTransaction) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.SignedTransaction)
+	copy(dAtA[i:], m.SignedTransaction)
+	i = encodeVarintWallet(dAtA, i, uint64(len(m.SignedTransaction)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
 func (m *WalletAvatarMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3817,6 +4767,195 @@ func (m *SignWormAuthChallengeResponse) Size() (n int) {
 	return n
 }
 
+func (m *SignWormWebSignInMessageRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovWallet(uint64(m.Id))
+	}
+	l = len(m.RequesterAccountId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExpectedAddress)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.Nonce)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.Message)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExpectedMessageSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionRunId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionStepId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.IntentSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SignWormWebSignInMessageResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Signature)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.MessageSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionRunId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionStepId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.IntentSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SignWormPositionRequestTransactionRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Id != 0 {
+		n += 1 + sovWallet(uint64(m.Id))
+	}
+	l = len(m.RequesterAccountId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExpectedAddress)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.PositionRequestId != 0 {
+		n += 1 + sovWallet(uint64(m.PositionRequestId))
+	}
+	l = len(m.TransactionHex)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExpectedTransactionSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionRunId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionStepId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.IntentSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SignWormPositionRequestTransactionResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.FinalizePayload != nil {
+		n += m.FinalizePayload.Size()
+	}
+	l = len(m.TransactionSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.TransactionVersion)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.RequiredSignatures != 0 {
+		n += 1 + sovWallet(uint64(m.RequiredSignatures))
+	}
+	if m.SignerIndex != 0 {
+		n += 1 + sovWallet(uint64(m.SignerIndex))
+	}
+	l = len(m.ExecutionRunId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.ExecutionStepId)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	l = len(m.IntentSha256)
+	if l > 0 {
+		n += 1 + l + sovWallet(uint64(l))
+	}
+	if m.PositionRequestId != 0 {
+		n += 1 + sovWallet(uint64(m.PositionRequestId))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SignWormPositionRequestTransactionResponse_Signature) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Signature)
+	n += 1 + l + sovWallet(uint64(l))
+	return n
+}
+func (m *SignWormPositionRequestTransactionResponse_SignedTransaction) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SignedTransaction)
+	n += 1 + l + sovWallet(uint64(l))
+	return n
+}
 func (m *WalletAvatarMetadata) Size() (n int) {
 	if m == nil {
 		return 0
@@ -6175,6 +7314,1204 @@ func (m *SignWormAuthChallengeResponse) Unmarshal(dAtA []byte) error {
 			}
 			m.MessageSha256 = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWallet(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignWormWebSignInMessageRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWallet
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignWormWebSignInMessageRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignWormWebSignInMessageRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpectedAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nonce", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nonce = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Message = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedMessageSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpectedMessageSha256 = append(m.ExpectedMessageSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.ExpectedMessageSha256 == nil {
+				m.ExpectedMessageSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionRunId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionRunId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionStepId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionStepId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntentSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IntentSha256 = append(m.IntentSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.IntentSha256 == nil {
+				m.IntentSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWallet(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignWormWebSignInMessageResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWallet
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignWormWebSignInMessageResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignWormWebSignInMessageResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signature = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MessageSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MessageSha256 = append(m.MessageSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.MessageSha256 == nil {
+				m.MessageSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionRunId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionRunId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionStepId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionStepId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntentSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IntentSha256 = append(m.IntentSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.IntentSha256 == nil {
+				m.IntentSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWallet(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignWormPositionRequestTransactionRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWallet
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignWormPositionRequestTransactionRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignWormPositionRequestTransactionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			m.Id = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Id |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequesterAccountId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RequesterAccountId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpectedAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PositionRequestId", wireType)
+			}
+			m.PositionRequestId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PositionRequestId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransactionHex", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TransactionHex = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedTransactionSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpectedTransactionSha256 = append(m.ExpectedTransactionSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.ExpectedTransactionSha256 == nil {
+				m.ExpectedTransactionSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionRunId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionRunId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionStepId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionStepId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntentSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IntentSha256 = append(m.IntentSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.IntentSha256 == nil {
+				m.IntentSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipWallet(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SignWormPositionRequestTransactionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowWallet
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SignWormPositionRequestTransactionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SignWormPositionRequestTransactionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FinalizePayload = &SignWormPositionRequestTransactionResponse_Signature{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignedTransaction", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FinalizePayload = &SignWormPositionRequestTransactionResponse_SignedTransaction{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransactionSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TransactionSha256 = append(m.TransactionSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.TransactionSha256 == nil {
+				m.TransactionSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransactionVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TransactionVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequiredSignatures", wireType)
+			}
+			m.RequiredSignatures = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RequiredSignatures |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SignerIndex", wireType)
+			}
+			m.SignerIndex = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SignerIndex |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionRunId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionRunId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecutionStepId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExecutionStepId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntentSha256", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthWallet
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthWallet
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IntentSha256 = append(m.IntentSha256[:0], dAtA[iNdEx:postIndex]...)
+			if m.IntentSha256 == nil {
+				m.IntentSha256 = []byte{}
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PositionRequestId", wireType)
+			}
+			m.PositionRequestId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowWallet
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PositionRequestId |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipWallet(dAtA[iNdEx:])

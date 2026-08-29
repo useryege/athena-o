@@ -2,13 +2,16 @@
 
 ## Scope
 
-This capability owns two independent additional identity proofs and fixed
-five-minute authorization leases: one for revealing a custodied wallet private
-key and one for managing one or more Athena-created Worm API credentials. Both
-distinguish an interactive login session from an API Key through server-side typed
-credential metadata and bind reauthentication to the current account, login
-JTI, and access revision. The leases use separate cookies, Redis key namespaces,
-scopes, routes, and stable errors; neither lease authorizes the other operation.
+This capability owns three independent additional identity-proof boundaries.
+Wallet private-key reveal and Athena-created Worm API-credential management use
+separate fixed five-minute authorization leases. A live Worm order Execution
+instead records one durable authorization for one immutable Run and plan digest;
+its short-lived Google or Solana provider state is not a lease and the durable
+authorization has no time TTL. All three distinguish an interactive login
+session from an API Key through server-side typed credential metadata and bind
+proof to the current account, login JTI, and access revision. Their cookies,
+Redis namespaces, routes, stable errors, and persisted scopes are independent,
+so none authorizes either of the other operations.
 
 [Wallet Ownership and Custody](wallet-ownership.md) owns key encryption,
 owner-scoped retrieval, and canonical private-key formats. [Google OIDC
@@ -18,7 +21,9 @@ protocols reused for fresh proof. [Worm Trading](../trading/worm-trading.md) own
 credential persistence, official HMAC calls, and connection state. This
 capability does not create a new Athena login session, extend the current
 session, authorize an API Key, reveal a private key to Worm Trading, or expose
-either sensitive operation through public gRPC or Swagger.
+any sensitive operation through public gRPC or Swagger. [Worm Order
+Execution](../trading/worm-order-execution.md) owns the authorized Run state,
+coordinator, Web JWT mutation flow, and terminal reconciliation.
 
 ## Source Locations
 
@@ -30,6 +35,9 @@ either sensitive operation through public gRPC or Swagger.
 | Sensitive boundaries and Worm inventory | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/walletsecrethttp/handler.go](../../../internal/server/walletsecrethttp/handler.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateWalletSecretHTTP`, `authenticateWormConnectionHTTP`, `validWalletSecretOrigin`, `validWormConnectionOrigin`, `Handler.Reveal`, `listWormWalletConnections`, `manageWormConnection` |
 | Google reauthentication | [internal/googleoidc/wallet_secret_reauth.go](../../../internal/googleoidc/wallet_secret_reauth.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/googleoidc/worm_credential_store.go](../../../internal/googleoidc/worm_credential_store.go) | `WalletSecretReauthentication`, `WormCredentialReauthentication`, `exchangeAndVerify`, separate transaction stores |
 | Solana reauthentication | [internal/phantomauth/wallet_secret_reauth.go](../../../internal/phantomauth/wallet_secret_reauth.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go), [internal/phantomauth/worm_credential_store.go](../../../internal/phantomauth/worm_credential_store.go) | Wallet and Worm `Challenge`/`Verify` handlers, separate challenge stores and SIWS statements |
+| Run-bound Google proof | [internal/googleoidc/worm_execution_authorization.go](../../../internal/googleoidc/worm_execution_authorization.go), [internal/googleoidc/worm_execution_store.go](../../../internal/googleoidc/worm_execution_store.go) | `WormExecutionAuthorization`, `wex.` state, fresh OIDC transaction, durable-authorizer callback |
+| Run-bound Solana proof | [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go), [internal/phantomauth/worm_execution_store.go](../../../internal/phantomauth/worm_execution_store.go) | `WormExecutionChallenge`, `WormExecutionVerify`, plan-digest SIWS statement, single-use challenge |
+| Run-bound development proof and projection | [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `developmentWormExecutionAuthorization`, `authorizeWormExecutionProof`, stable execution-auth errors and route wiring |
 | Logout invalidation | [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `Handler.ServeHTTP`, `clearSensitiveCookies` |
 | Browser flow and cleanup | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, intent-only redirect recovery |
 | Process and route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/authz.go](../../../internal/server/authz.go) | `NewServer`, `newHTTPServer`, `interactiveLoginGRPCMethods` |
@@ -41,14 +49,18 @@ flowchart LR
     B["Logged-in browser"] --> P["Fresh Google, Solana, or development proof"]
     P --> R1["wallet.private_key.reveal lease"]
     P --> R2["worm.api_credential.manage lease"]
+    P --> R3["one durable Run + plan-digest authorization"]
     B --> H1["Same-origin reveal handler"]
     B --> I["Native lease-free owner Worm inventory"]
     B --> H2["Same-origin Worm mutation handler"]
     H1 --> R1
     H2 --> R2
+    B --> H3["Run-bound authorization endpoint"]
+    H3 --> R3
     H1 -->|"Wallet READ_WRITE + service Bearer"| W1["RevealWalletPrivateKey"]
     I -->|"Interactive + Worm Trading READ_WRITE"| W2["Owner-scoped Solana refs + connection projection"]
     H2 -->|"Worm Trading READ_WRITE + lease + service Bearers"| W3["Owner lookup + purpose-bound signer"]
+    R3 -->|"Run command + Session/access binding"| E["Worm Trading execution state"]
 ```
 
 `SessionManager.AuthenticateToken` returns both ordinary JWT claims and an
@@ -77,6 +89,17 @@ The subsequent POST, reconnect POST, and DELETE remain the only lease-authorized
 Worm credential operations. Assets exposes DELETE only as exceptional cleanup
 for an already incomplete revocation; the native boundary retains its complete
 credential-revocation behavior.
+
+Live execution authorization is intentionally not another reusable Worm lease.
+The browser proves the account's persisted Google or Phantom identity, or the
+loopback development capability, for an exact Run revision. Worm Trading stores
+the resulting proof kind, Session JTI digest, access revision, and authorization
+time against the Run whose versioned `plan_digest` is already frozen. The
+authorization remains associated with that Run until its terminal state, but a
+changed Session, account, or access revision prevents control and requires a
+new proof before continuation. It never authorizes a different Run, changes the
+frozen wallets, markets, directions, or funds, or grants Worm credential
+management.
 
 ## Runtime Flow
 
@@ -190,6 +213,53 @@ credential-revocation behavior.
     the login token; an access revision change
     invalidates both Redis records on their next validation and aborts browser
     continuation.
+17. A live Run in `AWAITING_AUTHORIZATION` exposes `AUTHORIZE` only to an
+    interactive Worm Trading `READ_WRITE` credential. The proof request binds
+    canonical Run and command UUIDs, positive expected Run revision, account,
+    SHA-256 Session JTI digest, current positive access revision, and the Run's
+    already-frozen plan digest. API Keys cannot begin, finish, or consume this
+    proof.
+18. Google authorization begins at
+    `GET /auth/worm-trading/executions/google` with `runId`, `commandId`,
+    `expectedRevision`, and a Run-detail `returnTo`. The server stores a
+    single-use five-minute PKCE/nonce transaction under a `wex.` state, applies
+    a provider-specific 120-global/20-account fixed-minute creation limit, and
+    requests `prompt=select_account` with `max_age=0`.
+19. The shared Google callback recognizes the `wex.` namespace, consumes the
+    state before exchange, repeats the login, account, Session, access-revision,
+    provider, stable `sub`, and fresh `auth_time` checks, and sends only the
+    verified non-secret binding to the Run authorizer. Success persists the Run
+    authorization and redirects back; it neither issues a lease nor changes the
+    Athena login cookie.
+20. Phantom authorization uses
+    `POST /auth/worm-trading/executions/{runId}/solana/challenge` and `/verify`.
+    The challenge handler performs a fresh owner-scoped Run lookup, rejects a
+    stale expected revision, obtains the immutable plan digest, and constructs a
+    single-use five-minute SIWS message for the persisted login address. Its
+    statement names the Run and plan digest and discloses that Athena signs the
+    original Worm transaction while the 10-USDC request limit is not a
+    cryptographic on-chain spend limit. Verify consumes the challenge, repeats
+    all bindings, and validates the canonical raw-base64url Ed25519 signature
+    before persisting authorization.
+21. Disabled-auth mode registers only the loopback, exact-origin
+    `POST /auth/worm-trading/executions/{runId}/development` proof. It accepts a
+    command UUID and expected revision, uses the isolated development
+    credential, and records proof kind `DEVELOPMENT`; external-auth mode does
+    not register this endpoint.
+22. A successful proof calls `AuthorizeExecutionRun` with a CAS command. The
+    durable authorization stores no provider token, OIDC code, SIWS message, or
+    signature. It is scoped to that Run rather than a wall-clock TTL. Start,
+    Continue, Heartbeat, and Execute Next validate both the current interactive
+    credential and authorization binding; a stale Session or access revision
+    pauses progression until another explicit proof succeeds. Safety
+    Pause/Terminate and read-only Reconcile still require interactive
+    `READ_WRITE`, exact origin, owner, and Run revision but do not treat a stale
+    execution proof as authority to progress.
+23. Google navigation stores only `{runId}` under the execution-specific
+    `sessionStorage` key so the Run detail can refresh once after return. The
+    Phantom signature exists only for the verification request, and the browser
+    never receives the custodial Wallet sign-in message, Worm JWT, raw
+    transaction, transaction signature, or signed transaction.
 
 ## State / Data
 
@@ -234,11 +304,26 @@ value for full-account automatic connection, one manual reconnect, or one
 exceptional cleanup; it never contains the inventory, credentials, lease,
 proof, or connection result and is consumed once after Google returns.
 
+Execution Google transactions and Phantom challenges use their own five-minute,
+single-use Redis records, state/challenge cookies, and 120-global/20-account
+fixed-minute counters. They contain Run, command, expected revision, account,
+Session-JTI digest, access revision, safe return path, and provider protocol
+material; the Phantom record also contains the immutable plan digest and the
+wallet-visible SIWS message. Redis state is deleted on consume and is not the
+authorization. The durable Run authorization is stored in Worm Trading
+PostgreSQL with proof kind and the Session/access binding and has no renewable
+lease cookie or TTL.
+
+The execution-specific browser `sessionStorage` value contains only the Run ID
+needed to refresh after Google returns. It does not contain the plan, coordinator
+token, proof transaction, SIWS signature, Worm JWT, transaction, Wallet
+signature, or mutation result.
+
 ## Configuration
 
 | Setting | Behavior |
 | --- | --- |
-| Redis client configuration | Required for both scopes' Google transactions, Solana challenges, and leases. Failure closes private-key reveal and Worm credential mutations without disabling Wallet metadata, Worm management inventory, or read-only Worm activity. |
+| Redis client configuration | Required for both leases and for the three scopes' Google transactions or Solana challenges. Failure closes private-key reveal, Worm credential mutations, and new execution provider proofs without deleting an already durable Run authorization or disabling safe reads. |
 | `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Supplies the exact shared Google callback, trusted public origin, and Secure-cookie decision. |
 | `ATHENA_GOOGLE_OIDC_CLIENT_ID` and client secret settings | Reused for the fresh Google Authorization Code + PKCE exchange. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Replaces external reauthentication routes with separate loopback-only development lease endpoints. Worm credential mutations additionally fix their accepted Origin to `http://localhost:4000`. |
@@ -248,7 +333,9 @@ proof, or connection result and is consumed once after Google returns.
 
 The lease duration, scope, cookie names, provider transaction lifetimes, and
 provider-state rate limits and window are fixed implementation constants rather
-than environment settings.
+than environment settings. A Run authorization deliberately has no independent
+TTL; its scope and usable lifetime derive from the immutable Run and current
+Session/access binding.
 
 ## Invariants
 
@@ -280,6 +367,17 @@ than environment settings.
 - Private keys, official Worm credential challenges and signatures, and Worm
   HMAC credentials do not enter public gRPC, Swagger, Redis state, browser
   storage, logs, metrics, or cacheable responses.
+- Live execution authorization is exact-Run and plan-digest scoped, persists no
+  provider secret, and is never accepted as either five-minute lease. Every
+  progression command requires the same account, interactive Session-JTI
+  digest, current access revision, permission, and optimistic Run revision;
+  safety-stop and read-only reconciliation commands cannot advance execution.
+- Google and Phantom execution proof state is single use and five minutes; the
+  durable Run authorization is not a sliding lease and cannot authorize a
+  different Run or change frozen execution intent.
+- The Phantom execution statement and UI disclose the Worm transaction trust
+  boundary and the difference between the requested 10-USDC funds cap and an
+  independently verified on-chain spending limit.
 - Redis unavailability fails closed for lease issue and validation while leaving
   non-secret Wallet operations, the connection inventory, and already connected
   read-only Worm activity independent.
@@ -293,6 +391,16 @@ cannot be replayed. Redis errors and provider-state rate exhaustion return the
 scope-specific `WALLET_REAUTH_UNAVAILABLE` or
 `WORM_TRADING_REAUTH_UNAVAILABLE`; they never fall back to an in-memory,
 cross-scope, API-Key, or role-based authorization path.
+
+Execution Google or Phantom state that is missing, expired, consumed, stale,
+rate-limited, provider-mismatched, or no longer bound to the Run revision also
+requires a new explicit proof. Its stable errors are
+`WORM_EXECUTION_LOGIN_SESSION_REQUIRED`,
+`WORM_EXECUTION_AUTHORIZATION_REQUIRED`, and
+`WORM_EXECUTION_AUTHORIZATION_UNAVAILABLE`. A provider-proof failure never
+creates a partial Run authorization, falls back to the general Worm lease, or
+starts execution. Redis loss prevents a new provider proof but does not erase a
+durable Run authorization already stored in PostgreSQL.
 
 Missing or invalid internal service authentication fails before private-key
 lookup, purpose-bound signing, or Worm connection work and does not fall back to
@@ -325,6 +433,13 @@ including its `REVOKING` credential, is retried only when the user confirms
 reconnect, and disconnect until an operator manually reconciles the uncertain
 remote result.
 
+For a live Run, Session revocation, account replacement, permission-revision
+change, or loss of `READ_WRITE` stops new coordinator commands and requires a
+fresh proof after access is restored. This does not re-open completed Steps,
+repeat Open or Finalize, or discard a mutation whose outcome is still being
+reconciled. Termination ends remaining work but cannot clear a wallet-market
+isolation created by an unknown mutation result.
+
 ## Observability
 
 Wallet-secret Google and Solana completion logs identify provider, bounded
@@ -339,11 +454,17 @@ keys, ciphertext, opaque state and lease values, raw JTIs, identity subjects,
 SIWS messages, Worm challenge messages, signatures, Google codes and tokens,
 Worm credentials, or internal Bearers. Redis and identity-provider availability
 are not folded into Wallet or Worm Trading service health.
+Execution-proof logs add only provider and bounded stage/reason. Public Run
+projections expose proof kind, authorization state, and safe timestamps but not
+the Session JTI digest, access binding, Google transaction, SIWS message or
+signature, coordinator token, Worm JWT, raw transaction, or custodial
+signature.
 
 ## Change Checklist
 
 - [ ] Typed credential capability remains the login/API Key decision boundary.
 - [ ] Both leases' account, JTI, revision, distinct scope/cookie/path, and fixed-expiry bindings remain current.
+- [ ] Run authorization remains separate from both leases and stays bound to one immutable Run, plan digest, account, Session JTI digest, and access revision.
 - [ ] Google `sub`/`auth_time` and Solana persisted-address proof remain current.
 - [ ] Shared provider-state limits stay atomic, sensitive-proof-only, and keyed by
       an account digest rather than a raw UUID.
@@ -352,5 +473,7 @@ are not folded into Wallet or Worm Trading service health.
       lease-free, and outside public gRPC/Swagger; every mutation remains
       Worm-lease-only.
 - [ ] Secret responses and browser state preserve no-store and cleanup semantics.
+- [ ] Execution Google and Solana proof state remains single-use, five-minute, provider-specific, rate-limited, and free of durable provider secrets.
+- [ ] Execution proof disclosure, stable errors, and no-TTL durable authorization match the Run state machine.
 - [ ] Logout, revocation, access changes, and Redis failure still fail closed.
 - [ ] The [design index](../README.md) contains the current summary.

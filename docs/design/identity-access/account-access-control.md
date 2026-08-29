@@ -28,7 +28,7 @@ after this layer authorizes the request.
 | Account directory | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CountAccountDirectory`, `ListAccountDirectoryPage` |
 | Public Account contract | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountAccess`, `AccountStatus`, `ListAccounts`, `UpdateAccountAccess` |
 | RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC`, `authorizeAccountSelfService` |
-| Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go) | `authenticateWalletSecretHTTP`, `authenticateInteractiveWormTradingHTTP`, `authenticateWalletAvatarHTTP`, `registerWormCombinationHandlers`, `registerWormExecutionPlanHandlers`, `validWormConnectionOrigin` |
+| Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `authenticateWalletSecretHTTP`, `authenticateInteractiveWormTradingHTTP`, `authenticateWalletAvatarHTTP`, Worm combination/preview/Run route registration, exact-origin and Run-proof boundaries |
 | Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
 | Browser routing and refresh | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `AuthorizationCtx`, `canRead`, `canWrite`, authorization refresh |
 | Administrator workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor` |
@@ -75,6 +75,12 @@ capability, and Wallet-service ownership:
 | Create, replace, or delete saved Worm combination | allowed | denied | Worm Trading `READ_WRITE`; exact origin; no lease |
 | Read an owned Worm execution preview and its steps | allowed | denied | Worm Trading `READ`; interactive only |
 | Create a Worm execution preview | allowed | denied | Worm Trading `READ_WRITE`; exact origin; no lease |
+| Read owned Worm execution Runs and Steps | allowed | denied | Worm Trading `READ`; interactive only |
+| Create a live Run from a usable preview | allowed | denied | Worm Trading `READ_WRITE`; exact origin; source owner/revision/expiry/usability checks |
+| Authorize a live Run | allowed after a fresh provider proof | denied | Worm Trading `READ_WRITE`; exact Run/plan/Session/access binding; no reusable lease |
+| Start, continue, heartbeat, or execute a live Run | allowed after Run-bound authorization | denied | Worm Trading `READ_WRITE`; current Session/access binding; exact origin for native commands |
+| Pause or terminate a live Run | allowed | denied | Worm Trading `READ_WRITE`; exact origin; owner/revision checks; cannot advance execution |
+| Read-only reconcile an uncertain Step | allowed | denied | Worm Trading `READ_WRITE`; exact origin; owner/revision checks; no mutation replay |
 | Uploaded-wallet-avatar GET | allowed | allowed | Wallet `READ` or Worm Trading `READ` |
 | Remark, preset, avatar upload, and avatar reset | allowed | allowed | Wallet `READ_WRITE` |
 | Create or import | allowed | denied | Wallet `READ_WRITE` |
@@ -120,6 +126,18 @@ read preview resources. The browser gates Combination/Wallet selection and
 Refresh at `READ_WRITE`; an owner-scoped `?planId=` Review remains available at
 `READ` without requesting the management connection inventory.
 
+Worm Order Execution remains on the interactive-only native boundary. Run and
+Step list/detail reads require Worm Trading `READ` and owner scope. Creating a
+Run, proving identity, acquiring or heartbeating its coordinator, starting,
+pausing, continuing, terminating, selecting the next Step, and reconciling a
+Step require Worm Trading `READ_WRITE`; native JSON commands additionally
+require exact same origin and optimistic Run revision. Google, Phantom, or
+loopback development proof binds authorization to the exact Run, frozen plan
+digest, account, login Session-JTI digest, and current access revision. It is
+not the reusable Worm credential-management lease. API Keys cannot enter any
+Run route, and the browser cannot submit Wallet addresses, markets, directions,
+funds, Worm credentials, transactions, or signatures.
+
 The persisted administrator receives maximum module access but no Wallet owner
 bypass. An administrator session can manage only wallets whose
 `owner_account_id` is that administrator's own UUID. The public Wallet contract
@@ -157,7 +175,13 @@ does not carry role or a caller-selected owner.
    an interactive Worm Trading `READ` credential; creation requires interactive
    `READ_WRITE`, exact origin, owner-scoped Wallet resolution, and the exact
    source combination revision, but no Worm or Wallet-secret lease. API Keys
-   cannot call any combination or execution-preview route.
+   cannot call any combination or execution-preview route. Execution Run and
+   Step reads also require interactive Worm Trading `READ`. Run creation,
+   Run-bound Google/Phantom/development authorization, coordinator and control
+   commands, Execute Next, and read-only Reconcile require interactive
+   `READ_WRITE`; native JSON mutations additionally require exact origin,
+   command UUID, expected Run revision, and current owner/session/access
+   binding. API Keys cannot call any live-execution route.
 4. An administrator may replace one ordinary account's three flags and full
    module matrix in one expected-revision CAS. The SQL transaction advances the
    revision and replaces all ten rows together. Administrator aggregates cannot
@@ -201,6 +225,12 @@ required, and reauthentication-unavailable reasons. Worm connection HTTP uses
 parallel Worm-specific stable reasons and never treats its step-up denial as a
 global login failure. A Wallet optimistic CAS conflict is returned separately
 from a permission denial.
+Run proof distinguishes
+`WORM_EXECUTION_LOGIN_SESSION_REQUIRED`,
+`WORM_EXECUTION_AUTHORIZATION_REQUIRED`, and
+`WORM_EXECUTION_AUTHORIZATION_UNAVAILABLE`. The durable Run authorization also
+stores the Session-JTI digest and access revision so a later progression command
+cannot rely on a stale access snapshot.
 
 ## Configuration
 
@@ -240,6 +270,16 @@ identity.
   interactive owner-scoped `READ`; preview creation is interactive
   `READ_WRITE`, exact-origin, exact-revision, and owner-Wallet resolved, with no
   credential-management or Wallet-secret lease.
+- API Keys cannot read, create, authorize, control, or reconcile Worm execution
+  Runs. Run reads are interactive owner-scoped `READ`; every Run mutation is
+  interactive `READ_WRITE`, revisioned and exact-origin. Start, Continue,
+  Heartbeat, and Execute Next additionally require a durable authorization bound
+  to the current Session and access revision; Pause, Terminate, and read-only
+  Reconcile cannot progress the Run.
+- Run authorization never expands the frozen plan and does not substitute for
+  module authorization, Wallet ownership, the coordinator, or current account
+  access. Administrator role still provides no cross-account Run or Wallet
+  access.
 - Profit Sharing member RPCs require both entitlement and round membership.
 - Every authenticated RPC has an explicit account, administrator, module, or
   Profit Sharing boundary; unknown methods fail closed.
@@ -275,6 +315,13 @@ without changing the durable preview. POST rejects a source revision conflict;
 GET keeps the owned snapshot readable but marks a later source change as
 explicitly non-consumable rather than granting authority from stale data.
 
+Live-execution routes repeat interactive credential, owner, module, Session,
+access-revision, and Run-revision validation on every command. Access loss or a
+new revision prevents new Steps and coordinator renewal without deleting the
+Run or replaying a mutation. A fresh provider proof can rebind an eligible Run
+after access is restored. Revocation never converts an unknown provider outcome
+into success, clears isolation, or unlocks another account's resources.
+
 ## Observability
 
 Authorization errors expose stable reason metadata including module, required
@@ -290,6 +337,11 @@ never returns an account UUID or accepts one from the client.
 Execution-preview responses likewise omit the owner UUID and expose only safe
 Wallet presentation, balances, connection state, market snapshots, estimates,
 step classifications, lifecycle timestamps, and stable failure/usability codes.
+Execution projections add frozen safe snapshots, state/counts, allowed actions,
+current Step, numeric provider request ID/state, authorization kind, coordinator
+status, and bounded failures. They omit owner UUID, Session-JTI digest, access
+binding, coordinator token except in its dedicated control response, Worm JWT,
+raw or signed transaction, Wallet signature, and provider credentials.
 
 ## Change Checklist
 
@@ -300,5 +352,7 @@ step classifications, lifecycle timestamps, and stable failure/usability codes.
 - [ ] Worm management inventory remains interactive, `READ_WRITE`, owner-scoped, and lease-free; mutations remain same-origin/Worm-lease-only and unavailable to API Keys.
 - [ ] Worm combination reads remain interactive `READ`; mutations remain interactive `READ_WRITE`, same-origin, owner-scoped, revisioned, lease-free, and unavailable to API Keys.
 - [ ] Execution-preview reads remain interactive owner-scoped `READ`; creation remains interactive `READ_WRITE`, same-origin, exact-revision, Wallet-resolved, lease-free, and unavailable to API Keys.
+- [ ] Execution Run reads remain interactive owner-scoped `READ`; all Run mutations remain interactive `READ_WRITE`, same-origin, revisioned, session/access-bound, and unavailable to API Keys.
+- [ ] Run authorization remains exact-Run/plan-digest scoped and cannot replace current permission checks, Wallet ownership, or coordinator exclusivity.
 - [ ] Administrator directory search, filters, sorting, and pagination remain current.
 - [ ] The [design index](../README.md) contains the current summary.

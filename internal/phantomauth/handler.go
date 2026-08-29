@@ -64,6 +64,7 @@ type Handler struct {
 	secureCookie    bool
 	walletSecrets   *walletSecretReauthentication
 	wormCredentials *wormCredentialReauthentication
+	wormExecutions  *wormExecutionAuthorization
 }
 
 func NewHandler(redisClient *redis.Client, backend authregistration.Backend, registrations *authregistration.Handler, publicOrigin string) (*Handler, error) {

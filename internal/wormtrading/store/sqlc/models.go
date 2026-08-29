@@ -8,6 +8,86 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type WormExecutionAuthorization struct {
+	ID               pgtype.UUID
+	RunID            pgtype.UUID
+	OwnerAccountID   pgtype.UUID
+	Scope            string
+	ProofKind        string
+	SessionJtiDigest []byte
+	AccessRevision   int64
+	PlanVersion      int64
+	PlanDigestSha256 []byte
+	State            string
+	AuthorizedAt     pgtype.Timestamptz
+	EndedAt          pgtype.Timestamptz
+	EndReasonCode    string
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+}
+
+type WormExecutionCombinationLock struct {
+	CombinationID       pgtype.UUID
+	RunID               pgtype.UUID
+	CombinationRevision int64
+	AcquiredAt          pgtype.Timestamptz
+}
+
+type WormExecutionCommand struct {
+	ID                    pgtype.UUID
+	RunID                 pgtype.UUID
+	CoordinatorID         pgtype.UUID
+	CoordinatorGeneration pgtype.Int8
+	Kind                  string
+	State                 string
+	RequestSha256         []byte
+	RunRevisionBefore     int64
+	RunRevisionAfter      pgtype.Int8
+	StepOrdinal           pgtype.Int8
+	ResultCode            string
+	CreatedAt             pgtype.Timestamptz
+	CompletedAt           pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+}
+
+type WormExecutionCoordinator struct {
+	ID               pgtype.UUID
+	RunID            pgtype.UUID
+	Generation       int64
+	TokenSha256      []byte
+	SessionJtiDigest []byte
+	AccessRevision   int64
+	State            string
+	AcquiredAt       pgtype.Timestamptz
+	HeartbeatAt      pgtype.Timestamptz
+	LeaseExpiresAt   pgtype.Timestamptz
+	ReleasedAt       pgtype.Timestamptz
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+}
+
+type WormExecutionMutationAttempt struct {
+	ID                    pgtype.UUID
+	RunID                 pgtype.UUID
+	StepOrdinal           int64
+	CoordinatorID         pgtype.UUID
+	CoordinatorGeneration int64
+	CommandID             pgtype.UUID
+	Kind                  string
+	State                 string
+	RequestSha256         []byte
+	PositionRequestID     pgtype.Int8
+	HttpStatus            pgtype.Int4
+	ProviderCode          pgtype.Int4
+	ProviderSlug          string
+	ErrorCode             string
+	PreparedAt            pgtype.Timestamptz
+	DispatchedAt          pgtype.Timestamptz
+	CompletedAt           pgtype.Timestamptz
+	CreatedAt             pgtype.Timestamptz
+	UpdatedAt             pgtype.Timestamptz
+}
+
 type WormExecutionPlan struct {
 	ID                   pgtype.UUID
 	OwnerAccountID       pgtype.UUID
@@ -104,6 +184,161 @@ type WormExecutionPlanWallet struct {
 	UsdcTokenAccountCount int32
 	Status                string
 	ReasonCode            string
+}
+
+type WormExecutionRun struct {
+	ID                   pgtype.UUID
+	OwnerAccountID       pgtype.UUID
+	PlanID               pgtype.UUID
+	PlanVersion          int64
+	PlanDigestSha256     []byte
+	IdempotencyKeySha256 []byte
+	RequestSha256        []byte
+	CombinationID        pgtype.UUID
+	CombinationName      string
+	CombinationRevision  int64
+	State                string
+	Revision             int64
+	CurrentStepOrdinal   pgtype.Int8
+	NextStepOrdinal      pgtype.Int8
+	WalletCount          int64
+	ItemCount            int64
+	TotalStepCount       int64
+	ActionableStepCount  int64
+	TerminalStepCount    int64
+	CompletedStepCount   int64
+	SatisfiedStepCount   int64
+	SkippedStepCount     int64
+	FailedStepCount      int64
+	NotExecutedStepCount int64
+	PauseCode            string
+	FailureCode          string
+	BlockCode            string
+	RequestedAt          pgtype.Timestamptz
+	AuthorizedAt         pgtype.Timestamptz
+	StartedAt            pgtype.Timestamptz
+	PausedAt             pgtype.Timestamptz
+	CompletedAt          pgtype.Timestamptz
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
+type WormExecutionRunItem struct {
+	RunID                    pgtype.UUID
+	Ordinal                  int32
+	EventConditionID         string
+	EventTitle               string
+	EventLogo                string
+	MarketConditionID        string
+	MarketTitle              string
+	MarketLogo               string
+	IsYes                    bool
+	OutcomeLabel             string
+	Backend                  string
+	Funds                    string
+	Leverage                 string
+	PreviewState             string
+	PreviewReasonCode        string
+	EstimateAveragePrice     string
+	EstimateTotalShares      string
+	EstimateTotalCost        string
+	EstimateBestAsk          string
+	EstimateWorstFillPrice   string
+	EstimateIsFullyFilled    bool
+	EstimateFeeAmount        string
+	EstimateUserFundsNeeded  string
+	EstimateLiquidationPrice string
+}
+
+type WormExecutionRunStep struct {
+	ID                       pgtype.UUID
+	RunID                    pgtype.UUID
+	Ordinal                  int64
+	PlanStepOrdinal          int64
+	WalletOrdinal            int32
+	ItemOrdinal              int32
+	SourceDisposition        string
+	SourceReasonCode         string
+	ProjectedUsdcBefore      string
+	ProjectedUsdcAfter       string
+	State                    string
+	ReasonCode               string
+	PositionRequestID        pgtype.Int8
+	FinalizeMode             string
+	TransactionMessageSha256 []byte
+	TransactionVersion       string
+	RequiredSignatureCount   int32
+	WalletSignerIndex        int32
+	ProviderState            string
+	ProviderOrderState       string
+	FundingTxid              string
+	RefundTxid               string
+	ActiveCommandID          pgtype.UUID
+	ClaimID                  pgtype.UUID
+	ClaimOwner               string
+	ClaimExpiresAt           pgtype.Timestamptz
+	NextPollAt               pgtype.Timestamptz
+	ReconcileRequestedAt     pgtype.Timestamptz
+	PollCount                int32
+	StartedAt                pgtype.Timestamptz
+	OpenedAt                 pgtype.Timestamptz
+	FinalizedAt              pgtype.Timestamptz
+	LastObservedAt           pgtype.Timestamptz
+	CompletedAt              pgtype.Timestamptz
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+}
+
+type WormExecutionRunWallet struct {
+	RunID                 pgtype.UUID
+	Ordinal               int32
+	WalletID              int64
+	Address               string
+	Remark                string
+	AvatarKind            string
+	AvatarPresetID        string
+	AvatarUrl             string
+	ConnectionState       string
+	ConnectionWarningCode string
+	ConnectedAt           pgtype.Timestamptz
+	CredentialVersion     int64
+	SolAtomicAmount       string
+	SolAmount             string
+	SolDecimals           int32
+	SolObservedSlot       int64
+	SolAvailability       string
+	SolErrorCode          string
+	UsdcMint              string
+	UsdcAtomicAmount      string
+	UsdcAmount            string
+	UsdcDecimals          int32
+	UsdcObservedSlot      int64
+	UsdcAvailability      string
+	UsdcErrorCode         string
+	UsdcTokenAccountCount int32
+	Status                string
+	ReasonCode            string
+}
+
+type WormExecutionStepIsolation struct {
+	ID                pgtype.UUID
+	OwnerAccountID    pgtype.UUID
+	WalletID          int64
+	MarketConditionID string
+	RunID             pgtype.UUID
+	StepOrdinal       int64
+	AttemptID         pgtype.UUID
+	ReasonCode        string
+	CreatedAt         pgtype.Timestamptz
+	ResolvedAt        pgtype.Timestamptz
+	ResolutionCode    string
+}
+
+type WormExecutionWalletLock struct {
+	WalletID   int64
+	RunID      pgtype.UUID
+	Address    string
+	AcquiredAt pgtype.Timestamptz
 }
 
 type WormMarketCombination struct {

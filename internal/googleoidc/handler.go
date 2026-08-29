@@ -47,6 +47,7 @@ type Handler struct {
 	adminEmail      string
 	walletSecrets   *walletSecretReauthentication
 	wormCredentials *wormCredentialReauthentication
+	wormExecutions  *wormExecutionAuthorization
 }
 
 // NewHandler constructs the flow without contacting Google. Remote JWKS are
@@ -135,6 +136,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Callback consumes the transaction, verifies Google identity, and either
 // begins shared username registration or issues an Athena-only browser session.
 func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
+	if h.wormExecutions != nil && h.wormExecutions.ownsCallback(r) {
+		h.wormExecutions.callback(w, r)
+		return
+	}
 	if h.wormCredentials != nil && h.wormCredentials.ownsCallback(r) {
 		h.wormCredentials.callback(w, r)
 		return

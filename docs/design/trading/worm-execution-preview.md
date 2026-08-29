@@ -20,10 +20,13 @@ custody and returns only safe metadata to the API Server.
 This capability performs Worm catalog GET, authenticated position/request List,
 public Estimate, and confirmed Solana balance reads only. It creates no Worm
 draft, signature, transaction, position request, order, cancellation, credential
-mutation, or execution run. SOL is informational because Estimate does not
-provide an exact transaction-fee or account-rent boundary. The sidebar continues
-to expose only Assets and Combinations; Execution Preview is a contextual route
-below one saved combination.
+mutation, or provider write. SOL is informational because Estimate does not
+provide an exact transaction-fee or account-rent boundary. Execution Preview is
+a contextual route below one saved combination; the sidebar separately exposes
+Assets, Combinations, and Executions. A usable READY Review may create and
+freeze a [Worm Order Execution](worm-order-execution.md) Run, but that handoff
+performs no Worm login, Wallet signing, Open, or Finalize and all later control
+belongs to the Executions route.
 
 ## Source Locations
 
@@ -41,6 +44,7 @@ below one saved combination.
 | Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
 | Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, Worm Markets clientset, graceful cancellation |
 | Browser workflow, normalization, and responsive presentation | [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | `WormTradingExecutionPreviewPage`, `planPresentationStatus`, `planLiveStatus`, `PlanSummary`, strict plan normalizers, contextual route/breadcrumb, `worm-preview-*` rules |
+| Live-Run handoff boundary | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx) | `CreateExecutionRun`, `Prepare live execution`, usable READY guard, immutable snapshot handoff |
 
 ## Architecture
 
@@ -63,6 +67,10 @@ single Worm Trading preview worker
 
 interactive READ browser
   -> owner-scoped plan polling and paged steps
+
+interactive READ_WRITE browser + usable READY plan
+  -> create permanent immutable Run only
+  -> navigate to Executions for separate authorization and control
 ```
 
 The browser can submit only `combinationId`, its positive expected revision, and
@@ -91,7 +99,7 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
 1. A write-capable Saved combinations row opens
    `/worm-trading/combinations/{id}/execute`. The route remains selected beneath
    Combinations and adds Execution Preview to the breadcrumb and browser title;
-   no Executions navigation child is created.
+   Executions remains a separate history/control navigation child.
 2. Combination loads the owner-scoped saved template and displays its exact
    revision and market order. Wallets pages the complete owner Solana connection
    inventory in groups of 100. It starts with no selection, shows non-CONNECTED
@@ -184,10 +192,18 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     frozen actionable-only aggregates. Step detail is paged at 20, 50, or 100
     rows with an explicit retry. Refresh preview creates a distinct plan; it does
     not overwrite the old snapshot.
-17. Every hour the worker deletes at most 100 terminal plans whose retention
+17. A write-capable Review exposes `Prepare live execution` only while READY is
+    unexpired, has no usability code, and contains at least one actionable
+    Step. It posts only the plan UUID, a fresh command UUID, and the frozen
+    source revision. Run creation copies the immutable preview and returns a Run
+    route; it performs no Worm provider call or Wallet signing. The Review
+    explicitly remains read-only until the user separately authorizes and
+    starts that Run.
+18. Every hour the worker deletes at most 100 terminal plans whose retention
     deadline has passed. On shutdown the service cancels the worker and lease
     heartbeat and waits for them. An interrupted BUILDING plan remains durable
-    and becomes reclaimable after its lease expires.
+    and becomes reclaimable after its lease expires. A plan referenced by a
+    permanent Run is excluded from retention deletion.
 
 ## State / Data
 
@@ -225,16 +241,19 @@ READY lifetime begins at completion and lasts 15 minutes. A BUILDING row first
 receives a creation-time seven-day retention deadline; READY or FAILED
 finalization resets that deadline to seven days after terminal completion. Only
 READY and FAILED rows are eligible for retention cleanup; cascading foreign
-keys remove every child. Execution plans do not lock their source combination.
+keys remove every child, except that a plan referenced by a permanent live Run
+is retained. Execution plans do not lock their source combination.
 READY owner reads derive `COMBINATION_DELETED`,
 `COMBINATION_CHANGED`, `COMBINATION_UNAVAILABLE`, or `NO_ACTIONABLE_STEPS` when
 applicable, so a stale snapshot remains inspectable without appearing usable.
 
-No table contains a Wallet private key, Worm plaintext credential, complete
+No execution-preview table contains a Wallet private key, Worm plaintext credential, complete
 provider response, exposure pubkey, signable message, draft, signature,
 transaction, order, or active execution lock. Browser state contains only safe
 inventory, selected IDs/order, workflow state, and server-returned projections;
-it does not persist a queue or authorization in Web Storage.
+it does not persist a queue or authorization in Web Storage. Preparing live
+execution creates state in the separate permanent Run tables and then navigates
+to that Run; it does not mutate these immutable preview rows.
 
 ## Configuration
 
@@ -287,8 +306,9 @@ the operational bounds.
   signer, submit, cancel, order, position, credential, or execution mutation is
   reachable through the preview builder interfaces.
 - A preview neither locks nor mutates its source combination and does not count
-  as an active execution. The sidebar has no Executions child and the page has no
-  Start control.
+  as an active execution. Preparing a live Run is a separate atomic handoff that
+  acquires the execution locks. The Preview page has no Start control;
+  Executions is a separate navigation child.
 
 ## Failure Recovery
 
@@ -321,6 +341,13 @@ owner and is never mislabeled FAILED. FAILED plans retain only bounded
 diagnostic state. READY plans become non-consumable after 15 minutes or when
 source usability changes, but remain readable until retention cleanup.
 
+Prepare-live rejects an expired or otherwise unusable READY plan, zero
+actionable Steps, a changed source revision or Wallet connection, an already
+consumed plan, a conflicting active Run, or an unresolved Wallet-market
+isolation before any provider mutation. Failure leaves the immutable preview
+visible and creates no partial Run. Once a Run references the plan, preview
+retention cleanup skips it.
+
 The browser retains the last confirmed plan when polling, step paging, or a
 Refresh POST fails. BUILDING may resume from its URL plan ID. FAILED never
 renders partial work as usable. Account, route, or access changes abort mounted
@@ -351,15 +378,18 @@ announces BUILDING progress, READY actionable/skipped counts, or the
 EXPIRED/FAILED terminal outcome without using color as the only state signal.
 Stable provider and classification codes are humanized while preserving
 technical acronyms such as USDC, SOL, API, RPC, and ID.
+The usable write-capable Review also exposes the distinct `Prepare live
+execution` handoff and states that it only freezes a Run; all authorization and
+provider-write observability belongs to the separate execution detail.
 
 ## Change Checklist
 
 - [ ] Interactive READ/READ_WRITE, exact-origin, API-Key denial, current-owner, and Wallet-resolution boundaries remain current.
-- [ ] BUILDING claim, stage heartbeat, READY/FAILED atomicity, 15-minute TTL, seven-day retention, and cleanup remain current.
+- [ ] BUILDING claim, stage heartbeat, READY/FAILED atomicity, 15-minute TTL, seven-day retention, Run-reference exclusion, and cleanup remain current.
 - [ ] Catalog, connection, credential, balance, Estimate, complete exposure, and final revalidation flows remain current.
 - [ ] Fixed backend funds, `1x`, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and reason aggregates remain current.
 - [ ] SOL remains informational and USDC remains an authoritative READY prerequisite.
-- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, immutable Refresh, responsive review, and no-Start behavior remain current.
-- [ ] Worm mutation, Wallet reveal/signing, sensitive data, execution run, and Executions navigation remain outside the capability.
+- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, immutable Refresh, responsive review, prepare-Run handoff, and no-Start behavior remain current.
+- [ ] Preview construction remains free of Worm mutation and Wallet signing; the distinct Run handoff freezes only a usable preview and delegates authorization/control to Executions.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

@@ -6,6 +6,203 @@ body,
     margin: 0;
 }
 
+/* Worm live executions */
+
+.worm-execution-name-link.ant-btn-link {
+    max-width: 100%;
+    height: auto;
+    padding-inline: 0;
+    overflow: hidden;
+    font-weight: 650;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-execution-progress-cell {
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.worm-execution-list-card .ant-card-body,
+.worm-execution-step-card .ant-card-body {
+    display: grid;
+    gap: 10px;
+}
+
+.worm-execution-list-card__heading,
+.worm-execution-step-card__heading,
+.worm-execution-summary-card__heading,
+.worm-execution-current-card__headline {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.worm-execution-list-card__heading > div,
+.worm-execution-current-card__headline > div,
+.worm-execution-summary-card__heading > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.worm-execution-detail {
+    display: grid;
+    gap: 16px;
+}
+
+.worm-execution-live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.worm-execution-summary-card.ant-card,
+.worm-execution-control-card.ant-card,
+.worm-execution-current-card.ant-card,
+.worm-execution-steps-card.ant-card {
+    border-color: var(--athena-border);
+    border-radius: 12px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-execution-summary-card__heading .ant-typography,
+.worm-execution-current-card .ant-typography {
+    margin-block: 0;
+}
+
+.worm-execution-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.worm-execution-stat-grid > div {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 78%, transparent);
+}
+
+.worm-execution-stat-grid span {
+    color: var(--athena-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.035em;
+}
+
+.worm-execution-stat-grid strong {
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 18px;
+}
+
+.worm-execution-control-card .ant-card-body,
+.worm-execution-current-card .ant-card-body {
+    display: grid;
+    gap: 16px;
+}
+
+.worm-execution-authorization-copy {
+    display: grid;
+    gap: 10px;
+    color: var(--athena-text);
+}
+
+.worm-execution-authorization-copy p {
+    margin: 0;
+}
+
+.worm-execution-unknown-alert.ant-alert {
+    border: 1px solid color-mix(in srgb, var(--athena-red) 45%, var(--athena-border));
+}
+
+.worm-execution-action-spacer {
+    height: 78px;
+}
+
+.worm-execution-sticky-actions {
+    position: sticky;
+    z-index: 20;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 62px;
+    margin: 0 -16px calc(-16px - env(safe-area-inset-bottom));
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--athena-border-strong);
+    background: color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
+    box-shadow: 0 -10px 28px rgb(15 23 42 / 10%);
+    backdrop-filter: blur(14px);
+}
+
+.worm-execution-sticky-actions__state {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    color: var(--athena-muted);
+    font-size: 12px;
+}
+
+.worm-execution-sticky-actions__state span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .worm-execution-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .worm-execution-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .worm-execution-action-spacer {
+        height: 126px;
+    }
+
+    .worm-execution-sticky-actions {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+        margin-inline: -12px;
+        padding-inline: 12px;
+    }
+
+    .worm-execution-sticky-actions > .ant-space {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .worm-execution-sticky-actions > .ant-space > .ant-space-item,
+    .worm-execution-sticky-actions .ant-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
 /* Wallet workspace */
 
 .wallet-filters {

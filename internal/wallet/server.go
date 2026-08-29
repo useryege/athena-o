@@ -20,15 +20,17 @@ import (
 
 type Server struct {
 	ServerOpts
-	service               *Service
-	healthService         *health.Server
-	internalAuthTokenHash [sha256.Size]byte
+	service                          *Service
+	healthService                    *health.Server
+	internalAuthTokenHash            [sha256.Size]byte
+	wormExecutionSignerAuthTokenHash [sha256.Size]byte
 }
 
 type ServerOpts struct {
-	Store             *walletstore.SQLStore
-	EncryptionKey     []byte
-	InternalAuthToken string
+	Store                        *walletstore.SQLStore
+	EncryptionKey                []byte
+	InternalAuthToken            string
+	WormExecutionSignerAuthToken string
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -36,14 +38,23 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	wormExecutionSignerAuthToken, err := apiclient.NormalizeWormExecutionSignerAuthToken(opts.WormExecutionSignerAuthToken)
+	if err != nil {
+		return nil, err
+	}
+	if subtle.ConstantTimeCompare([]byte(internalAuthToken), []byte(wormExecutionSignerAuthToken)) == 1 {
+		return nil, status.Error(codes.FailedPrecondition, "wallet internal and Worm execution signer auth tokens must be different")
+	}
 	opts.InternalAuthToken = ""
+	opts.WormExecutionSignerAuthToken = ""
 	healthService := health.NewServer()
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 	return &Server{
-		ServerOpts:            opts,
-		service:               NewService(opts.Store, opts.EncryptionKey),
-		healthService:         healthService,
-		internalAuthTokenHash: sha256.Sum256([]byte(internalAuthToken)),
+		ServerOpts:                       opts,
+		service:                          NewService(opts.Store, opts.EncryptionKey),
+		healthService:                    healthService,
+		internalAuthTokenHash:            sha256.Sum256([]byte(internalAuthToken)),
+		wormExecutionSignerAuthTokenHash: sha256.Sum256([]byte(wormExecutionSignerAuthToken)),
 	}, nil
 }
 
@@ -58,13 +69,14 @@ func (s *Server) CreateGRPC() *grpc.Server {
 	})
 	versionpkg.RegisterVersionServiceServer(server, versionService)
 	apiclient.RegisterWalletServiceServer(server, s.service)
+	apiclient.RegisterWormExecutionSignerServiceServer(server, s.service)
 	grpc_health_v1.RegisterHealthServer(server, s.healthService)
 	return server
 }
 
 func (s *Server) authenticateUnaryRPC(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	if !isWalletHealthMethod(info.FullMethod) {
-		if err := s.authenticateInternalRPC(ctx); err != nil {
+		if err := s.authenticateInternalRPC(ctx, info.FullMethod); err != nil {
 			return nil, err
 		}
 	}
@@ -73,14 +85,18 @@ func (s *Server) authenticateUnaryRPC(ctx context.Context, req any, info *grpc.U
 
 func (s *Server) authenticateStreamRPC(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	if !isWalletHealthMethod(info.FullMethod) {
-		if err := s.authenticateInternalRPC(stream.Context()); err != nil {
+		if err := s.authenticateInternalRPC(stream.Context(), info.FullMethod); err != nil {
 			return err
 		}
 	}
 	return handler(srv, stream)
 }
 
-func (s *Server) authenticateInternalRPC(ctx context.Context) error {
+func (s *Server) authenticateInternalRPC(ctx context.Context, fullMethod string) error {
+	if strings.HasPrefix(fullMethod, "/athena.internal.wallet.WormExecutionSignerService/") &&
+		!isWormExecutionSignerMethod(fullMethod) {
+		return status.Error(codes.PermissionDenied, "wallet signer RPC is not allowed for this capability")
+	}
 	providedToken := ""
 	validHeader := 0
 	if incoming, ok := metadata.FromIncomingContext(ctx); ok {
@@ -93,11 +109,25 @@ func (s *Server) authenticateInternalRPC(ctx context.Context) error {
 		}
 	}
 	providedHash := sha256.Sum256([]byte(providedToken))
-	matched := subtle.ConstantTimeCompare(providedHash[:], s.internalAuthTokenHash[:])
+	expectedHash := s.internalAuthTokenHash
+	if isWormExecutionSignerMethod(fullMethod) {
+		expectedHash = s.wormExecutionSignerAuthTokenHash
+	}
+	matched := subtle.ConstantTimeCompare(providedHash[:], expectedHash[:])
 	if validHeader&matched != 1 {
 		return status.Error(codes.Unauthenticated, "wallet internal authentication failed")
 	}
 	return nil
+}
+
+func isWormExecutionSignerMethod(fullMethod string) bool {
+	switch fullMethod {
+	case "/athena.internal.wallet.WormExecutionSignerService/SignWormWebSignInMessage",
+		"/athena.internal.wallet.WormExecutionSignerService/SignWormPositionRequestTransaction":
+		return true
+	default:
+		return false
+	}
 }
 
 func isWalletHealthMethod(fullMethod string) bool {

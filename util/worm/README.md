@@ -22,6 +22,21 @@
 
 The Go wrapper entrypoint is `NewClient(Config{})`. The default upstream API base URL is `DefaultBaseURL`.
 
+- `WebClient` (`https://api.worm.wtf/api`)
+  - Wallet-address sign-in challenge and JWT exchange
+  - Margin-position open
+  - Signature or signed-transaction finalize
+  - Numeric position-request status lookup
+
+`NewWebClient(WebClientConfig{})` is the production Worm Web execution client.
+Its API base, `https://www.worm.wtf` Origin/Referer, and Solana network type are
+fixed. Access tokens are passed per request and remain an in-memory caller
+responsibility. The client limits every response to 64 KiB, rejects cross-host
+redirects and mutation redirects, performs no automatic retries, and returns
+typed API, transport, response, and HTML-403 edge-block errors. In particular,
+callers must never retry an `OpenPosition` or `FinalizePosition` call whose
+outcome is ambiguous.
+
 ## Known Schema Drift
 
 The live market detail and search APIs return `rules` as `array<string>`. The
@@ -31,23 +46,26 @@ models the observed live response rather than that stale documentation shape.
 ### Margin position signing
 
 The public HMAC API documents a create, sign, and submit flow under
-`/margin/positions/requests/`. The live Worm web application currently uses a
-separate JWT-authenticated `/api/margin/positions/open/` flow, but its signing
-behavior reveals that the returned `message` is a hex-encoded Solana
-transaction. Wallets deserialize that transaction and sign its canonical
-message bytes; signing the UTF-8 hex text itself produces a different and
-invalid signature.
+`/margin/positions/requests/`. Athena's production live-execution write path
+instead uses the observed JWT-authenticated `/api/margin/positions/open/` Web
+flow. Its returned `message` is a hex-encoded Solana transaction. Wallets
+deserialize that transaction and sign its canonical message bytes; signing the
+UTF-8 hex text itself produces a different and invalid signature.
 
-`SignPositionRequestMessage` follows the observed transaction format while the
-client continues to use the public HMAC endpoints. For write-flow drift, prefer
-repeatable live responses first, the current Worm web implementation second,
-and the published markdown contract third.
+The older `SignPositionRequestMessage` helper remains specific to the public
+HMAC protocol. Production Web execution delegates both the exact Worm sign-in
+message and returned transaction to Wallet's capability-scoped custodial
+signer. For write-flow drift, prefer repeatable live responses first, the
+current Worm web implementation second, and the published markdown contract
+third.
 
 ## Live Worm Web Position Open
 
-`TestLiveWormWebPositionOpen` signs in with the configured Solana private key,
-opens a margin position through the Worm Web JWT flow, signs the returned
-transaction, finalizes it, and polls the position request state.
+`TestLiveWormWebPositionOpen` is the explicitly gated live protocol probe from
+which the production `WebClient` flow is derived. It signs in with the
+configured Solana private key, opens a margin position through the Worm Web JWT
+flow, signs the returned transaction, finalizes it, and polls the position
+request state.
 
 The signing helper verifies only the configured wallet's required signer slot;
 other required signers may be completed by Worm. For a legacy transaction with

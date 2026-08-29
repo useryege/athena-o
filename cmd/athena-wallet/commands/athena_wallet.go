@@ -41,7 +41,8 @@ func NewCommand() *cobra.Command {
 		Short: "Run the Athena Wallet service",
 		Long: "The Wallet service manages account-owned EVM and Solana wallets. This command runs the service in the foreground.\n\n" +
 			"ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes without whitespace and must match the API Server value. " +
-			"Every non-health RPC requires this internal Bearer, and the service refuses startup when it is absent or invalid.",
+			"ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN must be a different credential with the same format and is accepted only by the Worm execution signer RPCs. " +
+			"Every non-health RPC requires its exact capability Bearer, and the service refuses startup when either credential is absent, invalid, or equal.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			vers := common.GetVersion()
@@ -67,9 +68,10 @@ func NewCommand() *cobra.Command {
 			}
 
 			server, err := wallet.NewServer(wallet.ServerOpts{
-				Store:             store,
-				EncryptionKey:     encryptionKey,
-				InternalAuthToken: env.StringFromEnv(walletapiclient.InternalAuthTokenEnv, ""),
+				Store:                        store,
+				EncryptionKey:                encryptionKey,
+				InternalAuthToken:            env.StringFromEnv(walletapiclient.InternalAuthTokenEnv, ""),
+				WormExecutionSignerAuthToken: env.StringFromEnv(walletapiclient.WormExecutionSignerAuthTokenEnv, ""),
 			})
 			if err != nil {
 				return err

@@ -20,9 +20,16 @@ position reads plus its owner-scoped summary projection; it consumes only safe
 Wallet metadata selected by the API Server. Worm execution-preview creation
 also resolves every selected Wallet through this owner-scoped safe boundary and
 freezes only its ID, address, remark, and avatar presentation; preview building
-does not ask Wallet to reveal or sign anything. Wallet additionally owns one
-purpose-bound Ed25519 signer for the exact official Worm API-credential
-challenge. Arbitrary messages, transactions, transfers, mnemonics, wallet
+does not ask Wallet to reveal or sign anything. Wallet additionally owns two
+separate purpose-bound signing surfaces: the general internal service signs the
+exact official Worm API-credential challenge, while
+`WormExecutionSignerService` signs the exact Worm Web sign-in message and
+Solana transaction supplied by a durable live Run. The latter has its own
+Bearer and cannot reveal a private key or call Wallet CRUD. It validates the
+owner, Wallet, stored and derived address, Run/Step/intent binding, transaction
+digest, supported Solana serialization, required signer slot, and resulting
+signature. By design it does not inspect Worm's programs, accounts,
+instructions, or actual spend. Caller-selected transfers, mnemonics, wallet
 deletion, and blockchain RPC calls remain outside this capability.
 
 ## Source Locations
@@ -30,14 +37,14 @@ deletion, and blockchain RPC calls remain outside this capability.
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | Public safe API | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [internal/server/wallet/wallet.go](../../../internal/server/wallet/wallet.go) | `WalletService`, `CreateWallet`, `ImportWallet`, `UpdateWalletRemark`, `UpdateWalletAvatarPreset` |
-| Trusted internal API and custody service | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/keys.go](../../../internal/wallet/keys.go) | service Bearer interceptor, `RevealWalletPrivateKey`, `SignWormAuthChallenge`, key normalization, owner-scoped avatar metadata methods |
+| Trusted internal API and custody service | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/keys.go](../../../internal/wallet/keys.go), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go) | service Bearer dispatch, `RevealWalletPrivateKey`, `SignWormAuthChallenge`, `WormExecutionSignerService`, execution sign-in/transaction signing, key normalization, owner-scoped avatar metadata methods |
 | Durable state | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql), [internal/wallet/store/queries/wallets.sql](../../../internal/wallet/store/queries/wallets.sql), [internal/wallet/store/sql_store.go](../../../internal/wallet/store/sql_store.go) | `wallets`, owner predicates, optimistic revision updates |
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
 | Owner-scoped Worm Trading projection, preview resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `completeWormConnection` |
 | Browser management surface | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
-| Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, `ATHENA_WALLET_INTERNAL_AUTH_TOKEN`, authenticated Wallet gRPC client |
+| Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, general internal token, independent Worm execution-signer token and clientset |
 
 ## Architecture
 
@@ -102,6 +109,18 @@ decrypts and verifies the stored keypair, and returns only an Ed25519 signature
 and SHA-256 message digest, with no address field. The challenge signer is not
 projected through the public Wallet API or Swagger and cannot sign caller-
 selected content.
+
+Live execution reaches a distinct `WormExecutionSignerService` client surface
+from Worm Trading, never from the browser or API Server. Its independent Bearer
+is checked before dispatch and is accepted only for
+`SignWormWebSignInMessage` and `SignWormPositionRequestTransaction`. Both RPCs
+repeat the owner-scoped Wallet lookup and exact address/key derivation. The
+sign-in RPC additionally validates Worm's fixed message shape and digest. The
+transaction RPC binds Run UUID, durable Step UUID, intent digest, numeric
+request ID, and transaction digest, then parses legacy or v0 serialization and
+signs only when the Wallet is a required signer. It chooses the single finalize
+representation from signature completeness. The deliberate Worm trust model
+does not add program, account, instruction, or spending-policy inspection.
 
 Wallet HTTP JSON uses the reviewed camelCase field names, including
 `walletType`, `privateKey`, `avatarPresetId`, `expectedRevision`, and
@@ -178,6 +197,14 @@ this is a server-custodied design.
     worker reads balances and existing Worm exposure through Worm Trading's
     own adapters and credentials. Wallet receives no estimate, market, plan,
     draft, transaction, or signing request.
+11. A separately authorized live Run may call the capability-scoped execution
+    signer. Worm Trading supplies the server-frozen owner, Wallet ID/address,
+    Run and Step UUIDs, intent digest, and either Worm's exact sign-in message or
+    returned position-request transaction. Wallet decrypts the key only for the
+    current call, validates every binding, signs and self-verifies, and returns
+    only the bounded signature/finalize payload plus digests and signer
+    metadata. Neither signer RPC creates a Solana RPC request or submits a
+    transaction.
 
 ## State / Data
 
@@ -202,13 +229,18 @@ key, or a new ownership authority. Because Wallet ownership is immutable and
 the API Server resolved the current owner before plan creation, that snapshot
 cannot be used to discover or claim a different account's Wallet.
 
+Live-execution Wallet snapshots also live in Worm Trading and remain copies of
+the safe preview identity; they do not establish ownership. Run/Step/intent and
+transaction digests are request-time signer bindings, not Wallet database
+columns.
+
 Private-key canonical forms are `0x` plus 64 lowercase hexadecimal digits for
 EVM and Base58 of the complete 64-byte Ed25519 keypair for Solana. Ciphertext is
 produced by the existing scrypt-derived AES-GCM utility using the process master
 key. Plaintext is held only for the current create/import/reveal/sign call and
 must not enter logs, metrics, durable audit records, safe models, or avatar
-state. The Worm challenge signer does not persist a challenge, signature, or
-digest in the Wallet database.
+state. Neither Worm signer persists a challenge, transaction, signature,
+signed transaction, Run binding, or digest in the Wallet database.
 
 ## Configuration
 
@@ -217,6 +249,7 @@ digest in the Wallet database.
 | `ATHENA_WALLET_POSTGRES_DSN` | Wallet-owned PostgreSQL database. |
 | `ATHENA_WALLET_ENCRYPTION_KEY` | Required server-side passphrase for private-key encryption/decryption. |
 | `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` | Required shared service Bearer, at least 32 bytes. It must be identical in the Wallet and API Server processes and is never accepted from browser clients. |
+| `ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` | Independent capability Bearer, at least 32 bytes, supplied only to Wallet and Worm Trading. Wallet refuses to start when it equals the general internal token; the API Server and unrelated services explicitly receive an empty value. |
 | `ATHENA_WALLET_LISTEN_ADDRESS` / `--address` | Internal Wallet gRPC bind address; defaults to `127.0.0.1`. Production Compose explicitly uses `0.0.0.0` inside its private network. |
 | `ATHENA_WALLET_SERVER_ADDRESS` | API Server internal Wallet target. |
 | `ATHENA_ACCOUNT_AVATAR_S3_*` | Shared private S3-compatible bucket and application credential used for account and wallet avatar objects. |
@@ -245,6 +278,18 @@ digest in the Wallet database.
 - `SignWormAuthChallenge` is exact-purpose only: owner, Solana type, stored and
   expected address, nonce, message, decrypted keypair, and derived address must
   all agree before signing.
+- The execution-signer Bearer is different from the general Wallet Bearer and
+  authorizes only the two registered `WormExecutionSignerService` methods.
+  Possession of it does not authorize private-key reveal, Wallet CRUD, avatar
+  access, or the credential-management challenge signer.
+- Live-execution signing is owner-, Wallet-, Run-, Step-, intent-, request-, and
+  transaction-digest-bound. Wallet must parse the transaction, find the stored
+  Solana key in a required signer slot, and self-verify its signature before it
+  returns a finalize representation.
+- The execution signer intentionally trusts the transaction returned by Worm.
+  It does not validate program IDs, instruction bodies, account metas, or
+  actual spend. The Run's at-most-10-USDC `funds` value constrains Athena's Open
+  request, not the on-chain transaction cryptographically.
 - Execution-preview Wallet selection is interactive, owner-scoped, Solana-only,
   ordered, and safe-metadata-only. Preview building cannot call Wallet secret
   reveal or either signing path.
@@ -264,6 +309,14 @@ preserves the previous remark/avatar revision.
 Worm challenge validation fails before decrypting the key. A decryption,
 keypair, derived-address, signing, or response-validation failure returns no
 signature and cannot fall back to arbitrary signing or private-key reveal.
+
+Execution-sign-in and transaction validation likewise fail before returning
+signing material. A missing or foreign Wallet, binding mismatch, malformed or
+unsupported Solana transaction, absent required signer slot, digest mismatch,
+key mismatch, or failed signature self-verification returns no partial
+signature or signed transaction. The caller cannot fall back to the general
+Wallet Bearer, switch finalize representations, or ask Wallet to submit or
+retry a Worm mutation.
 
 An unavailable, missing, foreign-owned, non-Solana, mismatched, duplicated, or
 malformed Wallet causes execution-plan creation to fail before the durable plan
@@ -287,6 +340,10 @@ challenge messages, nonces, signatures, and message digests.
 Execution-preview responses may expose the same safe ID, address, remark, and
 avatar presentation already used by Worm Trading, but never Wallet revision,
 owner UUID, source, ciphertext, private key, signature, or transaction material.
+Live-execution logs and projections may additionally identify a Run, Step,
+request ID, signer slot, transaction version, and non-secret digest. They never
+contain the Worm JWT, sign-in message, raw or signed transaction, private key,
+signature bytes, finalize payload, or execution-signer Bearer.
 
 ## Change Checklist
 
@@ -298,6 +355,8 @@ owner UUID, source, ciphertext, private key, signature, or transaction material.
 - [ ] Worm Trading summary reads, interactive management inventory, and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
 - [ ] The Worm challenge signer remains internal, owner scoped, Solana-only, exact-message-bound, and unavailable to API Keys.
 - [ ] Execution-preview Wallet resolution remains owner-scoped, Solana-only, ordered, safe-metadata-only, and free of reveal or signing calls.
+- [ ] The independent execution-signer token reaches only Wallet and Worm Trading, differs from the general Wallet token, and exposes only its two purpose-bound RPCs.
+- [ ] Live signing keeps Run/Step/intent/request/transaction bindings, required-signer validation, signature self-verification, and the documented Worm transaction trust boundary aligned with the implementation.
 - [ ] UI secret state remains memory-only and is cleared on close, route, account, or permission change.
 - [ ] Configuration, reset guidance, and source links match the implementation.
 - [ ] The [design index](../README.md) contains the current summary.

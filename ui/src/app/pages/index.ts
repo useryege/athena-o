@@ -24,6 +24,7 @@ export * from './wallets';
 export * from './worm-trading';
 export * from './worm-trading-combinations';
 export * from './worm-trading-execution-preview';
+export * from './worm-trading-executions';
 export * from './world-cup-corners';
 export * from './profit-sharing';
 export * from './profit-sharing-admin';

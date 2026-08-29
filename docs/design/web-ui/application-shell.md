@@ -7,13 +7,15 @@ shared username setup, authenticated bootstrap, responsive navigation,
 UUID-based identity and cache scoping, authorization refresh, the Pending-access
 experience, Account Center including the Connect AI workflow, Help resources,
 authorization-sensitive request cleanup, the Wallet module's responsive
-custody-management surface, and Worm Trading's nested Assets and Combinations
-navigation. The Assets child owns the owner-scoped balance, full-account
+custody-management surface, and Worm Trading's nested Assets, Combinations, and
+Executions navigation. The Assets child owns the owner-scoped balance, full-account
 automatic Worm connection, and current-position activity surfaces. Combinations
 owns saved-template list and builder routes over the interactive native catalog
 and CRUD facade. Its contextual Execution Preview route owns a three-step,
-read-only Wallet selection and authoritative preflight review without adding an
-Executions navigation child or any order-start control.
+read-only Wallet selection and authoritative preflight review. A usable preview
+can freeze a live Run, after which the Executions child owns permanent history,
+Run authorization, explicit serial driving, pause/continue/terminate controls,
+and read-only reconciliation of uncertain outcomes.
 Other product pages own domain UI and data only after the shell grants a route.
 
 OIDC and SIWS verification, registration tickets, durable UUID identity,
@@ -40,7 +42,7 @@ result, and a revealed key remains only in its current modal.
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
 | Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
-| Worm Trading navigation, Assets, Combinations, and Execution Preview | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `WormTradingExecutionPreviewPage`, strict execution-plan normalizers and service methods |
+| Worm Trading navigation, Assets, Combinations, Preview, and Executions | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-trading-executions.tsx](../../../ui/src/app/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets/Combination/Preview pages, `WormTradingExecutionsPage`, `WormTradingExecutionDetailPage`, strict Run/Step normalizers and command methods |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -99,7 +101,7 @@ one. The detail drawer becomes full-width on mobile. Desktop shows Import and
 Create Wallet separately, while mobile collapses them into one `+` action menu.
 Cards are keyboard-operable and all icon-only controls have accessible labels.
 
-The Markets sidebar exposes Worm Trading as a parent navigation item with two
+The Markets sidebar exposes Worm Trading as a parent navigation item with three
 children. Assets remains at `/worm-trading`; it is the authorization-gated
 observation page for owner-scoped safe wallet summaries, balances, connection
 state, open positions, and in-flight requests. Combinations is at
@@ -110,7 +112,9 @@ mutation work. Both navigation children require Worm Trading `READ` and neither
 requires Wallet permission, but all Combinations data routes are additionally
 interactive-only. `/worm-trading/combinations/:id/execute` is a contextual
 Execution Preview route selected beneath Combinations, with an extra breadcrumb
-and browser-title segment; it is not another sidebar child. Starting the
+and browser-title segment. Executions is at `/worm-trading/executions`, with a
+`/:id` detail route; it lists permanent live Runs and exposes only current
+server-allowed controls. Starting the
 Combination and Wallet selection workflow requires `READ_WRITE`; an owner-scoped
 URL with `planId` remains directly reviewable with `READ`. Assets obtains its
 data only from the Worm Trading facade and never calls the Wallet list or
@@ -142,12 +146,13 @@ At 900 px and below, a sticky selected-count review action opens the same
 summary in a Drawer. At 520 px and below, the market title occupies its own row
 and the two choices remain equal-width controls below it. Complete
 USDC-per-share decimals and the non-executable meaning of last trade are
-available in tooltips. YES/NO uses labeled radio controls,
+available in tooltips. YES/NO uses labeled green/red toggle buttons with
+`aria-pressed`; clicking the selected side clears it and clicking the opposite
+side replaces it at the same ordinal.
 unavailable directions remain disabled with readable reasons, and selection
 reordering uses explicit, accessible move-up/down buttons. Save is an atomic
 full-template operation. A write-capable saved row exposes Preview execution,
-which opens a separate read-only preflight workflow; no order-start action is
-present anywhere.
+which opens a separate read-only preflight workflow.
 
 Execution Preview is Combination → Wallets → Review. It starts with no Wallet
 selection, pages the complete management inventory, displays unconnected
@@ -159,9 +164,30 @@ then displays frozen Wallet and market summaries, balances, aggregate funds and
 fees, stable result counts, and paged steps. Transient status failures retry with
 capped backoff, READY refreshes once at expiry, and unfinished aggregate amounts
 remain unavailable rather than appearing as zero. Step errors have an explicit
-Retry. It labels SOL as informational and repeats that the page performs no
-Start, authorization, draft, signature, transaction, or order action. The
-sidebar still exposes only Assets and Combinations.
+Retry. It labels SOL as informational and makes clear that preview construction
+performs no Worm mutation or Wallet transaction signature. A usable READY plan
+offers `Prepare live execution`, which creates and freezes a Run without
+authorizing, signing, or placing an order, then navigates to its Execution
+detail.
+
+Executions presents a high-density paged history and one owner-scoped Run detail.
+The detail shows the frozen summary, current Step, permanent paged Step history,
+authorization and coordinator state, provider request ID/state, and a single
+dynamic primary action chosen from Authorize, Start, Pause, or Continue.
+Terminate is a confirmed secondary danger action. An `OUTCOME_UNKNOWN` panel
+offers only authoritative read-only reconciliation. Desktop uses a table and
+fixed action region; compact layouts use Step cards and a safe-area sticky
+action bar with reserved scroll space. Status text, labels, and one polite live
+region supplement color throughout.
+
+The detail driver is imperative. A user click on Start or Continue obtains a
+short coordinator token and begins one loop that heartbeats, requests exactly
+one server-allowed next Step, and waits for its authoritative terminal or
+blocked state before another request. Effects poll display state but never
+initiate execution. Refresh, navigation, unmount, account/access change, Pause,
+or coordinator loss stops the browser from starting another Step; a Step already
+claimed continues server-side. Returning to the page requires explicit
+Continue.
 
 ## Runtime Flow
 
@@ -395,9 +421,46 @@ sidebar still exposes only Assets and Combinations.
     USDC needed, Wallet balances, stable skip categories, and paged wallet-major
     steps. Refresh preview creates a new immutable plan and retains the old
     display if creation fails. A creation conflict or Refresh after a
-    source-revision change returns the user to Combination review. No state
-    exposes Start, execution authorization, credential material, draft,
-    signature, transaction, submission, or order mutation.
+    source-revision change returns the user to Combination review. Preview
+    itself exposes no authorization, credential material, draft, signature,
+    transaction, submission, or order mutation. For a usable non-expired READY
+    plan with actionable Steps, `Prepare live execution` sends a command UUID,
+    plan ID, and expected source-combination revision. Success creates one immutable Run and
+    navigates to `/worm-trading/executions/{runId}`; it does not authorize,
+    sign, or call Worm.
+37. `/worm-trading/executions` pages permanent owner-scoped Runs. Its desktop
+    table and compact cards show combination, state, progress, timestamps, and
+    View. `/worm-trading/executions/{runId}` loads the owner Run and paged Steps,
+    derives no state transition locally, and renders only `allowedActions`
+    supplied by the service.
+38. Authorize opens a confirmation that discloses the Worm transaction trust
+    boundary. Google stores only `{runId}` in the execution-specific
+    `sessionStorage` key and performs a fresh full-page OIDC proof. Phantom
+    connects the persisted login address, signs the exact Run/plan-digest SIWS
+    challenge, and immediately verifies it. Disabled-auth uses the loopback
+    development endpoint. Success leaves the Run authorized but does not start
+    it; Start remains a separate explicit action.
+39. Start or Continue creates a fresh command UUID and expected revision, then
+    receives a 30-second coordinator token. The imperative driver keeps that
+    token only in current function memory, heartbeats about every 10 seconds,
+    and calls Execute Next only when the latest Run projection includes
+    `EXECUTE_NEXT` and its expected next ordinal. It polls the Run every 1.5
+    seconds until that Step is authoritative and only then may request one more.
+40. Pause stops the local driver before issuing the pause command. The server
+    prevents another Step while an already claimed Step reaches a determined or
+    unknown outcome. Refresh, route change, unmount, account/access revision
+    change, driver error, or coordinator expiry also stops local advancement;
+    none automatically calls Continue on return.
+41. Terminate requires confirmation, stops the driver, and marks only unstarted
+    work Not executed. It does not cancel a request already sent to Worm.
+    Terminal Runs remain in history. When the Run exposes `RECONCILE`, the error
+    panel offers only `Check authoritative status`; the browser never retries
+    Open, Finalize, or cancel.
+42. Run detail always shows the trust warning, authorization/coordinator state,
+    current Wallet, market, side, funds, numeric Worm request ID, and provider
+    state without showing a JWT, raw transaction, signature, or signed
+    transaction. The mobile sticky action bar reserves bottom/safe-area space,
+    and one polite live region announces driver or terminal progress.
 
 ## State / Data
 
@@ -495,6 +558,18 @@ sessionStorage. Account, access, route, or plan-ID changes abort outstanding
 requests and prevent a late response from being relabeled as the current plan.
 A read-only direct review does not request the management connection inventory.
 
+Execution UI state contains only safe Run and Step projections, current list and
+Step page, bounded request errors, current command name, and whether this tab's
+imperative driver is active. The coordinator token exists only in the active
+driver closure and is never placed in a URL, React cache, localStorage, or
+sessionStorage. The sole execution `sessionStorage` record is
+`athena.worm-execution.authorization` with `{runId}` for one Google return; it
+is consumed and removed after the matching detail loads. The browser never
+receives the durable authorization's Session-JTI digest, Worm Web JWT, Worm
+sign-in message, raw transaction, custodial signature, or signed transaction.
+Run snapshots and mutation attempts are server-owned durable state, and the
+browser cannot edit their Wallet, market, side, leverage, or funds.
+
 ## Configuration
 
 The UI uses same-origin `/auth/google/login`, `/auth/google/callback`,
@@ -549,7 +624,23 @@ and receives HTTP 202. Detail and step reads require interactive Worm Trading
 `READ`; a direct Review URL therefore remains usable without write access, while
 Build and Refresh stay hidden. Step pages default to 50 and allow 20, 50, or 100
 in the browser. None of these endpoints accepts an owner, credential, market
-override, funds override, or execution command.
+override, or funds override. A usable plan may additionally create a Run via
+`POST /api/v1/worm-trading/executions` with `planId`, `commandId`, and expected
+source-combination revision; this freezes state but performs no provider mutation.
+
+Execution history and detail use
+`GET /api/v1/worm-trading/executions`,
+`GET /api/v1/worm-trading/executions/{runId}`, and its `/steps` child. Native
+Run commands are `:start`, `:pause`, `:continue`, `:terminate`, `:heartbeat`,
+and `:execute-next`; read-only Step reconciliation uses
+`/steps/{stepId}:reconcile`. Commands carry `commandId` and
+`expectedRevision`; coordinator commands additionally carry the opaque token,
+and Execute Next carries the expected frozen ordinal. Google proof begins at
+`/auth/worm-trading/executions/google`; Phantom uses the Run-scoped
+`/solana/challenge` and `/solana/verify` children, with a loopback-only
+development alternative. The browser cannot submit an owner, Wallet address,
+market, side, leverage, funds, Worm JWT, transaction, or signature to these
+resources.
 
 Connect AI uses the document's runtime base URI rather than a configured or
 hard-coded public domain. This produces deployment-specific absolute URLs while
@@ -589,7 +680,7 @@ portable to an arbitrary reverse-proxy subpath.
 - API Keys may use safe Wallet metadata operations allowed by module access but
   cannot create, import, or reveal private keys. The server remains authoritative
   even when bootstrap does not project credential capability.
-- Worm Trading `READ` exposes Assets and Combinations navigation children.
+- Worm Trading `READ` exposes Assets, Combinations, and Executions navigation children.
   Assets renders balances, connection state, and current activity. Only an
   interactive `READ_WRITE` session loads the owner-scoped management inventory,
   which requires neither a lease nor an Origin header, and renders automatic
@@ -610,15 +701,28 @@ portable to an arbitrary reverse-proxy subpath.
   begins with no selection, accepts only `CONNECTED` Wallets, preserves explicit
   Wallet order, and creates a new immutable read-only plan for each Build or
   Refresh. Interactive `READ` may inspect a direct owner plan URL but cannot
-  select Wallets or refresh. Polling and paged detail never expose a Start
-  action, step-up flow, credential, draft, signature, transaction, or mutation.
-  There is no Executions sidebar child.
+  select Wallets or refresh. Preview building and polling perform no provider
+  mutation or signing; only a usable plan can be frozen into a separate Run,
+  and that preparation still does not authorize or start it.
+- Executions is an interactive owner-scoped history and control surface. It
+  renders only server-supplied `allowedActions`, keeps one imperative
+  coordinator driver per explicit Start/Continue, and never uses a React effect
+  to initiate a Step. It starts at most one Step before waiting for authority.
+- The execution Google-return record contains only Run ID and is consumed once.
+  Coordinator tokens remain in the active driver closure. Worm JWT, sign-in
+  messages, raw or signed transactions, and custodial signatures never enter
+  browser state, URLs, storage, caches, telemetry, or rendered projections.
+- The execution authorization dialog and Run detail disclose that Athena signs
+  the exact Worm-returned transaction and does not inspect its programs,
+  accounts, instructions, or cryptographically prove actual spend. The frozen
+  at-most-10-USDC funds value applies to Athena's request to Worm.
 - Automatic connection work is serial, paced to at most five wallet starts per
   minute, held only in page memory, and never retried without a fresh inventory
   read and an explicit user action after failure.
-- Worm Trading exposes no order execution, cancel, close, TP/SL, claim, or
-  transaction-signing control. Automatic preview reads cover BUILDING status
-  and one READY expiry-boundary refresh only.
+- Worm Trading exposes live Open execution only through frozen Runs. It exposes
+  no browser-supplied transaction, cancel, close, TP/SL, or claim control;
+  automatic preview reads cover BUILDING status and one READY expiry-boundary
+  refresh only.
 - Connect AI is available only when API Key access is enabled for an ordinary
   account. The fixed administrator cannot enter this credential path.
 - Connect AI and Create API key issue the same full-current-account bearer;
@@ -705,6 +809,24 @@ usability warning. Refresh always creates a new plan and leaves the prior
 snapshot intact when that POST fails. Account/access loss cancels polling and
 returns through normal route authorization without mutating the durable plan.
 
+Run preparation rejects expired, unusable, non-READY, revision-mismatched, or
+already-consumed plans without creating a partial Run. Authorization
+cancellation, stale identity/session/access binding, or provider-state failure
+leaves the Run awaiting proof and never starts it. A driver conflict, stale Run
+revision, coordinator expiry, heartbeat failure, transport error, or permission
+change stops local advancement and reloads authority without retrying a command
+or mutation. Pause and page exit prevent only the next Step; an already claimed
+Step remains server-owned.
+
+Provider `processing`, `created`, or `opened` remains visibly in progress and
+cannot advance the driver. A deterministic skip/failure appears on its frozen
+Step. An uncertain Open without a request ID switches to the blocking
+reconciliation surface. Once a request ID is known, an ambiguous Finalize is
+never replayed and continues through authoritative GET status instead. Explicit
+Reconcile performs only authoritative GET/List reads. Terminate can mark
+untouched work Not executed but does not cancel a submitted request or hide an
+unresolved wallet-market isolation.
+
 Connect AI creation failure leaves the creation form available for correction.
 Credential verification failure exposes a retry action and explanatory status
 without removing either copy action. Clipboard failure leaves the full
@@ -747,6 +869,14 @@ polite progress region announces BUILDING work. Client telemetry excludes
 provider payloads, credentials, exposure pubkeys, signatures, drafts,
 transactions, and any signable material.
 
+Executions exposes safe Run/Step IDs and ordinals, lifecycle state and counts,
+allowed actions, coordinator status, authorization proof kind, frozen Wallet
+and market presentation, funds, numeric Worm request ID, provider state, and
+bounded failure codes. Client telemetry may identify those safe values and
+driver stage. It excludes the coordinator token, Session-JTI/access binding,
+Google/Phantom proof material, Worm Web JWT, sign-in message, raw or signed
+transaction, Wallet signature, provider credential, and full provider payload.
+
 Connect AI exposes verification state and copy failures only in the current UI.
 It does not log the bearer or instruction block, and the verification request
 does not create a separate server-side integration or connection status.
@@ -764,13 +894,15 @@ does not create a separate server-side integration or connection status.
 - [ ] Responsive administrator list/detail behavior remains current.
 - [ ] Wallet grid/drawer, create/import backup, avatar CAS, and provider reauthentication remain current.
 - [ ] Wallet private-key and pending-action cleanup remains route/account/access scoped.
-- [ ] Worm Trading exposes only Assets and Combinations beneath one parent navigation item.
-- [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only, while its contextual preview may perform server-side reads and Estimate but no signature, draft, or Worm mutation.
+- [ ] Worm Trading exposes Assets, Combinations, and Executions beneath one parent navigation item.
+- [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only, while its contextual preview performs server-side reads and Estimate but no signature or Worm mutation.
 - [ ] Saved list, URL/ID parsing, cross-Event single-direction selection, accessible ordering, trusted snapshots, and revision-CAS feedback remain current.
 - [ ] Combinations keeps its compact price rows, hidden normal market metadata, exact complementary last-trade display, manual Event refresh, and transient-price dirty-state boundary current.
-- [ ] Execution Preview keeps three-step write ordering, direct READ review, connected-only Wallet selection, resilient BUILDING/expiry polling, immutable refresh, paged wallet-major review, informational SOL, and no-Start behavior current.
+- [ ] Execution Preview keeps three-step write ordering, direct READ review, connected-only Wallet selection, resilient BUILDING/expiry polling, immutable refresh, paged wallet-major review, informational SOL, and mutation-free Run preparation current.
+- [ ] Executions keeps permanent history, server-authoritative actions, explicit one-Step-at-a-time driving, coordinator heartbeat behavior, refresh/leave stop semantics, and mobile safe-area actions current.
+- [ ] Run authorization keeps the Worm transaction trust disclosure, provider-specific proof, exact Run/plan/session/access binding, and secret-free browser projection current.
 - [ ] Worm automatic connection remains interactive-`READ_WRITE`, owner-scoped, paced, provider-step-up-aware, and independent from Wallet private-key reveal.
-- [ ] Worm Trading preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
+- [ ] Assets preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
 - [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, manual Reconnect, and exceptional cleanup remain current.
 - [ ] Empty Worm Trading inventory selects Add, View, or access-review guidance from the independent Wallet grant.
 - [ ] The [design index](../README.md) contains the current summary.

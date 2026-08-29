@@ -17,6 +17,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
@@ -24,6 +25,7 @@ import (
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	utilio "github.com/useryege/athena/util/io"
+	utilworm "github.com/useryege/athena/util/worm"
 )
 
 const (
@@ -38,6 +40,7 @@ const (
 	wormPositionBudgetEnv       = "ATHENA_WORM_TRADING_POSITION_BUDGET"
 	wormPositionConcurrencyEnv  = "ATHENA_WORM_TRADING_POSITION_CONCURRENCY"
 	wormMarketsServerAddressEnv = "ATHENA_WORM_MARKETS_SERVER_ADDRESS"
+	walletServerAddressEnv      = "ATHENA_WALLET_SERVER_ADDRESS"
 )
 
 func NewCommand() *cobra.Command {
@@ -53,14 +56,15 @@ func NewCommand() *cobra.Command {
 		wormPositionBudgetRaw      string
 		wormPositionConcurrencyRaw string
 		wormMarketsServerAddress   string
+		walletServerAddress        string
 		storeSource                func(context.Context) (*wormtradingstore.SQLStore, error)
 	)
 
 	command := &cobra.Command{
 		Use:   cliName,
 		Short: "Run the Athena Worm Trading service",
-		Long: "Worm Trading exposes trusted mainnet Solana balances and official Worm HMAC position activity. " +
-			"It stores only encrypted Worm API credentials and wallet correlation keys, never Wallet private keys. Every non-health RPC requires an independent internal Bearer of at least 32 bytes.",
+		Long: "Worm Trading exposes trusted mainnet Solana balances, official Worm HMAC activity and preview reads, and the Worm Web JWT live execution engine. " +
+			"Wallet private keys remain behind the capability-scoped Wallet execution signer. Every non-health RPC requires an independent internal Bearer of at least 32 bytes.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cli.SetLogFormat(cmdutil.LogFormat)
@@ -108,6 +112,14 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("configure Worm Markets client: %w", err)
 			}
 			defer utilio.Close(wormMarketsClientset)
+			walletSignerClientset, err := walletapiclient.NewWormExecutionSignerClientset(
+				walletServerAddress,
+				env.StringFromEnv(walletapiclient.WormExecutionSignerAuthTokenEnv, ""),
+			)
+			if err != nil {
+				return fmt.Errorf("configure Wallet Worm execution signer client: %w", err)
+			}
+			defer utilio.Close(walletSignerClientset)
 			credentialEncryptionKey, err := wormtrading.CredentialEncryptionKeyFromPassphrase(env.StringFromEnv(credentialKeyEnv, ""))
 			if err != nil {
 				return err
@@ -130,6 +142,8 @@ func NewCommand() *cobra.Command {
 				WormPositionBudget:      wormPositionBudget,
 				WormPositionConcurrency: wormPositionConcurrency,
 				WormMarketsClientset:    wormMarketsClientset,
+				WormWebClient:           utilworm.NewWebClient(utilworm.WebClientConfig{Timeout: wormAttemptTimeout}),
+				WalletSignerClientset:   walletSignerClientset,
 				InternalAuthToken:       env.StringFromEnv(wormtradingapiclient.InternalAuthTokenEnv, ""),
 			})
 			if err != nil {
@@ -236,6 +250,12 @@ func NewCommand() *cobra.Command {
 		"worm-markets-server-address",
 		env.StringFromEnv(wormMarketsServerAddressEnv, fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)),
 		"Athena Worm Markets server address used by execution preview",
+	)
+	command.Flags().StringVar(
+		&walletServerAddress,
+		"wallet-server-address",
+		env.StringFromEnv(walletServerAddressEnv, fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWallet)),
+		"Athena Wallet server address used only by the Worm execution signer capability",
 	)
 	command.Flags().StringVar(
 		&wormAttemptTimeoutRaw,

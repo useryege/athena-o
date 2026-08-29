@@ -19,7 +19,10 @@ estimates funds, creates a draft, signs a transaction, submits or cancels an
 order, or performs any other Worm mutation. The separate
 [Worm Execution Preview](worm-execution-preview.md) capability can freeze one
 saved combination revision and build a read-only Wallet/market preflight; that
-consumer does not change combination CRUD or catalog selectability.
+consumer does not change combination CRUD or catalog selectability. A
+subsequent [Worm Order Execution](worm-order-execution.md) Run consumes one
+usable preview and holds a lock that prevents this source template from being
+updated or deleted until the Run reaches a safe terminal boundary.
 
 ## Source Locations
 
@@ -31,7 +34,7 @@ consumer does not change combination CRUD or catalog selectability.
 | Provider-backed event catalog | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go), [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `GetOrderEventCatalog`, `getOrderEventCatalogMarkets`, `getOrderEventCatalogMarket`, `orderEventCatalogPricesFromLastTrade`, `OrderEventCatalogOutcome` |
 | Combination application service | [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `CreateMarketCombination`, `GetMarketCombination`, `ListMarketCombinations`, `UpdateMarketCombination`, `DeleteMarketCombination` |
 | Store model and transactions | [internal/wormtrading/store/market_combinations.go](../../../internal/wormtrading/store/market_combinations.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `MarketCombination`, `MarketCombinationItem`, `SQLStore` CRUD methods, normalization and constraint mapping |
-| Schema and SQL queries | [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql) | `worm_market_combinations`, `worm_market_combination_items`, row locks and revision-qualified writes |
+| Schema and SQL queries | [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql) | `worm_market_combinations`, `worm_market_combination_items`, revision-qualified writes, active execution lock guard |
 | Browser routes and interactions | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx) | `wormTradingNavItem`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `EventExplorerCard`, `CombinationSummary`, `formatLastTradeCents`, `parseEventConditionID` |
 | Browser contract normalization | [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `WormTradingService.getEvent`, combination CRUD methods, `normalizeTradingEvent`, `normalizeMarketCombination` |
 | Responsive presentation | [ui/src/app/styles.css](../../../ui/src/app/styles.css) | `worm-combination-*` rules |
@@ -75,11 +78,14 @@ POST, PUT, and DELETE require Worm Trading `READ_WRITE` and the same exact
 application Origin used by Worm connection management. These template writes
 require neither Wallet access nor a Worm credential-management lease.
 
-The browser exposes Assets and Combinations beneath the Worm Trading parent.
+The browser exposes Assets, Combinations, and Executions beneath the Worm
+Trading parent.
 Saved combinations is the landing surface. New and edit/view use separate
 routes. A write-capable user may enter the read-only preview workflow at
 `/worm-trading/combinations/{id}/execute`, but that route is contextual rather
-than a third sidebar child and cannot start an order.
+than an additional sidebar child. It can prepare an immutable live Run from a
+usable preview, but Run authorization and control remain on the separate
+Executions detail route.
 
 ## Runtime Flow
 
@@ -178,7 +184,10 @@ than a third sidebar child and cannot start an order.
     Preview capability reads this owner-scoped combination and freezes its
     exact revision and item order. Preview creation does not mark the template
     busy or prevent a later update or delete; an existing preview instead
-    becomes non-consumable when its source revision no longer matches.
+    becomes non-consumable when its source revision no longer matches. Preparing
+    a live execution from a usable preview atomically locks that exact
+    Combination revision. Update and delete then return a conflict until the
+    non-terminal Run releases its lock.
 
 ## State / Data
 
@@ -229,6 +238,12 @@ update and delete therefore remain available while a preview exists; preview
 usability is checked against the current source revision at read and completion
 time.
 
+Live execution adds one lock row for the source Combination while its Run is
+non-terminal. The lock carries the Run UUID and exact Combination revision; it
+does not change the Combination row or item ordinals. Safe terminal Run closure
+removes the lock. Permanent Run history retains its own copied display and
+execution snapshot after the source becomes editable again.
+
 Market-wide catalog reasons are `MARKET_DETAIL_UNAVAILABLE`,
 `MARKET_ID_MISMATCH`, `MARKET_EVENT_MISMATCH`, `MARKET_NOT_OPEN`,
 `MARGIN_DISABLED`, `CONFIG_MISSING`, `BACKEND_UNSUPPORTED`,
@@ -275,8 +290,9 @@ This capability introduces no independent environment setting.
 - Catalog and CRUD paths never call estimate, Wallet, credential lease, signer,
   draft, submit, cancel, or any Worm mutation.
 - Preview execution is a contextual consumer of the committed combination,
-  not part of template CRUD. It cannot lock, mutate, or advance a combination
-  revision, and the Combinations sidebar remains the only navigation entry.
+  not part of template CRUD. Preview itself cannot lock, mutate, or advance a
+  combination revision. Preparing the separate live Run acquires a durable
+  source lock; update and delete cannot bypass that active lock.
 - Last-trade price availability does not affect market or outcome selectability,
   combination contents, revision, or dirty state.
 
@@ -294,6 +310,11 @@ invalid store input, or SQL failure rolls back create or full replacement. A
 revision mismatch preserves the complete current row and item set and returns a
 conflict for explicit reload. Missing owner-scoped IDs are indistinguishable
 from absent resources.
+
+An update or delete attempted while a live Run holds the Combination lock
+returns a conflict and preserves the complete template. Terminating or
+otherwise safely completing the Run releases the lock; template CRUD never
+merges or blindly replays the blocked write.
 
 If the complete multi-Event refetch exceeds 45 seconds, the shared context
 cancels outstanding catalog calls and the native facade returns HTTP 503. The
@@ -334,6 +355,6 @@ key, signature, draft, transaction, or raw provider payload.
 - [ ] Owner/name uniqueness, item uniqueness/order, revision CAS, and transaction boundaries remain current.
 - [ ] Compact market rows, hidden normal metadata, cents/tooltips, Event refresh, desktop summary, mobile Drawer, keyboard, focus, and touch behavior remain current.
 - [ ] Wallet, credential, estimate, signature, draft, transaction, and Worm mutation paths remain outside this capability.
-- [ ] Preview execution remains a contextual, read-only consumer of an exact saved revision rather than a third navigation child or a template lock.
+- [ ] Preview remains a contextual read-only consumer, while a prepared live Run freezes the exact revision and blocks template update/delete until safe terminal closure.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

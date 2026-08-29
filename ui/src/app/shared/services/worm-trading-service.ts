@@ -343,6 +343,144 @@ export interface ListWormExecutionPlanStepsResult {
     pageSize: number;
 }
 
+export type WormExecutionRunState =
+    | 'AWAITING_AUTHORIZATION'
+    | 'AUTHORIZED'
+    | 'RUNNING'
+    | 'PAUSE_REQUESTED'
+    | 'PAUSED'
+    | 'TERMINATE_REQUESTED'
+    | 'RECONCILIATION_REQUIRED'
+    | 'COMPLETED'
+    | 'TERMINATED'
+    | 'FAILED';
+
+export type WormExecutionStepState =
+    | 'PENDING'
+    | 'PREFLIGHTING'
+    | 'OPENING'
+    | 'OPENED'
+    | 'SIGNING'
+    | 'FINALIZING'
+    | 'AWAITING_COMPLETION'
+    | 'COMPLETED'
+    | 'SATISFIED'
+    | 'SKIPPED'
+    | 'FAILED'
+    | 'NOT_EXECUTED'
+    | 'OUTCOME_UNKNOWN';
+
+export type WormExecutionAllowedAction = 'AUTHORIZE' | 'START' | 'PAUSE' | 'CONTINUE' | 'TERMINATE' | 'HEARTBEAT' | 'EXECUTE_NEXT' | 'RECONCILE';
+
+export interface WormExecutionRunCounts {
+    total: number;
+    actionable: number;
+    terminal: number;
+    completed: number;
+    satisfied: number;
+    skipped: number;
+    failed: number;
+    notExecuted: number;
+}
+
+export interface WormExecutionRunAuthorization {
+    state: string;
+    proofKind: string;
+    authorizedAt: number;
+    requiresReauthorization: boolean;
+}
+
+export interface WormExecutionRunCoordinator {
+    state: string;
+    generation: number;
+    leaseExpiresAt: number;
+}
+
+export interface WormExecutionRunStep {
+    id: string;
+    ordinal: number;
+    wallet: WormTradingWalletSummary;
+    market: {
+        eventConditionId: string;
+        eventTitle: string;
+        eventLogo: string;
+        marketConditionId: string;
+        marketTitle: string;
+        marketLogo: string;
+        outcomeLabel: string;
+        backend: string;
+    };
+    side: WormMarketOutcomeSide;
+    funds: string;
+    leverage: string;
+    state: WormExecutionStepState;
+    reasonCode: string;
+    positionRequestId: string;
+    providerState: string;
+    providerOrderState: string;
+    startedAt: number;
+    updatedAt: number;
+    completedAt: number;
+}
+
+export interface WormExecutionRun {
+    id: string;
+    planId: string;
+    combinationId: string;
+    combinationName: string;
+    combinationRevision: number;
+    state: WormExecutionRunState;
+    revision: number;
+    counts: WormExecutionRunCounts;
+    nextStepOrdinal: number;
+    currentStep?: WormExecutionRunStep;
+    pauseCode: string;
+    failureCode: string;
+    blockCode: string;
+    requestedAt: number;
+    authorizedAt: number;
+    startedAt: number;
+    pausedAt: number;
+    completedAt: number;
+    updatedAt: number;
+    allowedActions: WormExecutionAllowedAction[];
+    authorization: WormExecutionRunAuthorization;
+    coordinator: WormExecutionRunCoordinator;
+}
+
+export interface ListWormExecutionRunsResult {
+    items: WormExecutionRun[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export interface ListWormExecutionRunStepsResult {
+    items: WormExecutionRunStep[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export interface WormExecutionCommandInput {
+    commandId: string;
+    expectedRevision: number;
+}
+
+export interface WormExecutionCoordinatorCommandInput extends WormExecutionCommandInput {
+    coordinatorToken: string;
+}
+
+export interface WormExecutionCommandResult {
+    run: WormExecutionRun;
+    coordinatorToken: string;
+}
+
+export interface WormExecutionAuthorizationChallenge {
+    message: string;
+    expiresAt: number;
+}
+
 const readValue = (item: any, ...names: string[]) => {
     for (const name of names) {
         if (item?.[name] !== undefined && item?.[name] !== null) {
@@ -1109,6 +1247,197 @@ const normalizeExecutionPlanStep = (value: unknown): WormExecutionPlanStep => {
     };
 };
 
+const normalizeExecutionRunState = (value: unknown): WormExecutionRunState => {
+    switch (value) {
+        case 'AWAITING_AUTHORIZATION':
+        case 'AUTHORIZED':
+        case 'RUNNING':
+        case 'PAUSE_REQUESTED':
+        case 'PAUSED':
+        case 'TERMINATE_REQUESTED':
+        case 'RECONCILIATION_REQUIRED':
+        case 'COMPLETED':
+        case 'TERMINATED':
+        case 'FAILED':
+            return value;
+        default:
+            return invalidWormTradingResponse();
+    }
+};
+
+const normalizeExecutionStepState = (value: unknown): WormExecutionStepState => {
+    switch (value) {
+        case 'PENDING':
+        case 'PREFLIGHTING':
+        case 'OPENING':
+        case 'OPENED':
+        case 'SIGNING':
+        case 'FINALIZING':
+        case 'AWAITING_COMPLETION':
+        case 'COMPLETED':
+        case 'SATISFIED':
+        case 'SKIPPED':
+        case 'FAILED':
+        case 'NOT_EXECUTED':
+        case 'OUTCOME_UNKNOWN':
+            return value;
+        default:
+            return invalidWormTradingResponse();
+    }
+};
+
+const normalizeExecutionAllowedAction = (value: unknown): WormExecutionAllowedAction => {
+    switch (value) {
+        case 'AUTHORIZE':
+        case 'START':
+        case 'PAUSE':
+        case 'CONTINUE':
+        case 'TERMINATE':
+        case 'HEARTBEAT':
+        case 'EXECUTE_NEXT':
+        case 'RECONCILE':
+            return value;
+        default:
+            return invalidWormTradingResponse();
+    }
+};
+
+const optionalUnsignedIntegerText = (item: unknown, name: string): string => {
+    const value = requireRecord(item)[name];
+    if (value === undefined || value === null || value === '' || value === 0 || value === '0') {
+        return '';
+    }
+    const normalized = typeof value === 'number' && Number.isSafeInteger(value) ? String(value) : typeof value === 'string' ? value : '';
+    if (!/^[1-9]\d*$/.test(normalized)) {
+        return invalidWormTradingResponse();
+    }
+    return normalized;
+};
+
+const normalizeExecutionRunStep = (value: unknown): WormExecutionRunStep => {
+    const item = requireRecord(value);
+    const wallet = normalizeWalletSummary(item.wallet);
+    const marketValue = requireRecord(item.market);
+    const market = {
+        eventConditionId: requireExactString(marketValue, 'eventConditionId'),
+        eventTitle: requireExactString(marketValue, 'eventTitle'),
+        eventLogo: optionalExactString(marketValue, 'eventLogo'),
+        marketConditionId: requireExactString(marketValue, 'marketConditionId'),
+        marketTitle: requireExactString(marketValue, 'marketTitle'),
+        marketLogo: optionalExactString(marketValue, 'marketLogo'),
+        outcomeLabel: requireExactString(marketValue, 'outcomeLabel'),
+        backend: requireExactString(marketValue, 'backend')
+    };
+    const state = normalizeExecutionStepState(item.state);
+    const reasonCode = optionalExactString(item, 'reasonCode');
+    const providerState = optionalExactString(item, 'providerState');
+    if (state === 'OUTCOME_UNKNOWN' && reasonCode === '') {
+        return invalidWormTradingResponse();
+    }
+    if (state === 'COMPLETED' && providerState.toLowerCase() !== 'completed') {
+        return invalidWormTradingResponse();
+    }
+    return {
+        id: requireExactString(item, 'id'),
+        ordinal: requireInteger(item, 1, 'ordinal'),
+        wallet,
+        market,
+        side: normalizeOutcomeSide(item.side),
+        funds: optionalExactDecimal(item, 'funds'),
+        leverage: optionalExactDecimal(item, 'leverage'),
+        state,
+        reasonCode,
+        positionRequestId: optionalUnsignedIntegerText(item, 'positionRequestId'),
+        providerState,
+        providerOrderState: optionalExactString(item, 'providerOrderState'),
+        startedAt: optionalInteger(item, 0, 0, 'startedAt'),
+        updatedAt: optionalInteger(item, 0, 0, 'updatedAt'),
+        completedAt: optionalInteger(item, 0, 0, 'completedAt')
+    };
+};
+
+const normalizeExecutionRun = (value: unknown, expectedRunID?: string): WormExecutionRun => {
+    const item = requireRecord(value);
+    const combination = requireRecord(item.combination);
+    const countsValue = requireRecord(item.counts);
+    const authorizationValue = requireRecord(item.authorization);
+    const coordinatorValue = requireRecord(item.coordinator);
+    const id = requireExactString(item, 'id');
+    const state = normalizeExecutionRunState(item.state);
+    const counts: WormExecutionRunCounts = {
+        total: requireInteger(countsValue, 1, 'total'),
+        actionable: requireInteger(countsValue, 1, 'actionable'),
+        terminal: optionalInteger(countsValue, 0, 0, 'terminal'),
+        completed: optionalInteger(countsValue, 0, 0, 'completed'),
+        satisfied: optionalInteger(countsValue, 0, 0, 'satisfied'),
+        skipped: optionalInteger(countsValue, 0, 0, 'skipped'),
+        failed: optionalInteger(countsValue, 0, 0, 'failed'),
+        notExecuted: optionalInteger(countsValue, 0, 0, 'notExecuted')
+    };
+    if (
+        (expectedRunID && id !== expectedRunID) ||
+        counts.actionable > counts.total ||
+        counts.terminal > counts.total ||
+        counts.completed + counts.satisfied + counts.skipped + counts.failed + counts.notExecuted !== counts.terminal
+    ) {
+        return invalidWormTradingResponse();
+    }
+    const allowedActions = requireExactArray(item, 'allowedActions').map(normalizeExecutionAllowedAction);
+    if (new Set(allowedActions).size !== allowedActions.length) {
+        return invalidWormTradingResponse();
+    }
+    const nextStepOrdinal = optionalInteger(item, 0, 0, 'nextStepOrdinal');
+    if (nextStepOrdinal > counts.total || (allowedActions.includes('EXECUTE_NEXT') && nextStepOrdinal === 0)) {
+        return invalidWormTradingResponse();
+    }
+    const currentStepValue = item.currentStep;
+    const currentStep = currentStepValue === undefined || currentStepValue === null ? undefined : normalizeExecutionRunStep(currentStepValue);
+    if (currentStep && currentStep.ordinal > counts.total) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        id,
+        planId: requireExactString(item, 'planId'),
+        combinationId: requireExactString(combination, 'id'),
+        combinationName: requireExactString(combination, 'name'),
+        combinationRevision: requireInteger(combination, 1, 'revision'),
+        state,
+        revision: requireInteger(item, 1, 'revision'),
+        counts,
+        nextStepOrdinal,
+        currentStep,
+        pauseCode: optionalExactString(item, 'pauseCode'),
+        failureCode: optionalExactString(item, 'failureCode'),
+        blockCode: optionalExactString(item, 'blockCode'),
+        requestedAt: requireInteger(item, 1, 'requestedAt'),
+        authorizedAt: optionalInteger(item, 0, 0, 'authorizedAt'),
+        startedAt: optionalInteger(item, 0, 0, 'startedAt'),
+        pausedAt: optionalInteger(item, 0, 0, 'pausedAt'),
+        completedAt: optionalInteger(item, 0, 0, 'completedAt'),
+        updatedAt: requireInteger(item, 1, 'updatedAt'),
+        allowedActions,
+        authorization: {
+            state: optionalExactString(authorizationValue, 'state'),
+            proofKind: optionalExactString(authorizationValue, 'proofKind'),
+            authorizedAt: optionalInteger(authorizationValue, 0, 0, 'authorizedAt'),
+            requiresReauthorization: optionalExactBoolean(authorizationValue, 'requiresReauthorization')
+        },
+        coordinator: {
+            state: optionalExactString(coordinatorValue, 'state'),
+            generation: optionalInteger(coordinatorValue, 0, 0, 'generation'),
+            leaseExpiresAt: optionalInteger(coordinatorValue, 0, 0, 'leaseExpiresAt')
+        }
+    };
+};
+
+const normalizeExecutionCommandResult = (value: unknown, expectedRunID: string): WormExecutionCommandResult => {
+    const item = requireRecord(value);
+    return {
+        run: normalizeExecutionRun(item.run || item, expectedRunID),
+        coordinatorToken: optionalExactString(item, 'coordinatorToken')
+    };
+};
+
 export class WormTradingService {
     public getStatus(): AbortableWormTradingPromise<WormTradingStatus> {
         const request = requests.get('/worm-trading/status', readScope);
@@ -1328,5 +1657,151 @@ export class WormTradingService {
             }
             return {items, total, page: responsePage, pageSize: responsePageSize};
         });
+    }
+
+    public createExecutionRun(planId: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionRun> {
+        return rawSameOriginRequest(
+            'POST',
+            '/api/v1/worm-trading/executions',
+            {planId, commandId: command.commandId, expectedRevision: command.expectedRevision},
+            'Worm execution could not be prepared',
+            body => normalizeExecutionRun(body.run || body)
+        );
+    }
+
+    public listExecutionRuns(page = 1, pageSize = 20): AbortableWormTradingPromise<ListWormExecutionRunsResult> {
+        const query = new URLSearchParams({page: String(page), pageSize: String(pageSize)});
+        return rawSameOriginRequest('GET', `/api/v1/worm-trading/executions?${query.toString()}`, undefined, 'Worm executions could not be loaded', value => {
+            const body = requireRecord(value);
+            const items = readRepeatedArray(body, 'items').map(run => normalizeExecutionRun(run));
+            const total = optionalInteger(body, 0, 0, 'total');
+            const responsePage = requireInteger(body, 1, 'page');
+            const responsePageSize = requireInteger(body, 1, 'pageSize');
+            const offset = (responsePage - 1) * responsePageSize;
+            const expectedItemCount = Math.min(responsePageSize, Math.max(0, total - offset));
+            if (
+                responsePage !== page ||
+                responsePageSize !== pageSize ||
+                responsePageSize > 100 ||
+                items.length !== expectedItemCount ||
+                new Set(items.map(run => run.id)).size !== items.length
+            ) {
+                return invalidWormTradingResponse();
+            }
+            return {items, total, page: responsePage, pageSize: responsePageSize};
+        });
+    }
+
+    public getExecutionRun(id: string): AbortableWormTradingPromise<WormExecutionRun> {
+        const expectedRunID = id.trim();
+        return rawSameOriginRequest('GET', `/api/v1/worm-trading/executions/${encodeURIComponent(expectedRunID)}`, undefined, 'Worm execution could not be loaded', body =>
+            normalizeExecutionRun(body.run || body, expectedRunID)
+        );
+    }
+
+    public listExecutionRunSteps(id: string, page = 1, pageSize = 50): AbortableWormTradingPromise<ListWormExecutionRunStepsResult> {
+        const query = new URLSearchParams({page: String(page), pageSize: String(pageSize)});
+        return rawSameOriginRequest(
+            'GET',
+            `/api/v1/worm-trading/executions/${encodeURIComponent(id)}/steps?${query.toString()}`,
+            undefined,
+            'Worm execution steps could not be loaded',
+            value => {
+                const body = requireRecord(value);
+                const items = readRepeatedArray(body, 'items').map(normalizeExecutionRunStep);
+                const total = optionalInteger(body, 0, 0, 'total');
+                const responsePage = requireInteger(body, 1, 'page');
+                const responsePageSize = requireInteger(body, 1, 'pageSize');
+                const offset = (responsePage - 1) * responsePageSize;
+                const expectedItemCount = Math.min(responsePageSize, Math.max(0, total - offset));
+                if (
+                    responsePage !== page ||
+                    responsePageSize !== pageSize ||
+                    responsePageSize > 100 ||
+                    items.length !== expectedItemCount ||
+                    items.some((step, index) => step.ordinal !== offset + index + 1)
+                ) {
+                    return invalidWormTradingResponse();
+                }
+                return {items, total, page: responsePage, pageSize: responsePageSize};
+            }
+        );
+    }
+
+    public startExecutionRun(id: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return this.executionRunCommand(id, 'start', command, 'Worm execution could not be started');
+    }
+
+    public pauseExecutionRun(id: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return this.executionRunCommand(id, 'pause', command, 'Worm execution could not be paused');
+    }
+
+    public continueExecutionRun(id: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return this.executionRunCommand(id, 'continue', command, 'Worm execution could not be continued');
+    }
+
+    public terminateExecutionRun(id: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return this.executionRunCommand(id, 'terminate', command, 'Worm execution could not be terminated');
+    }
+
+    public heartbeatExecutionRun(id: string, command: WormExecutionCoordinatorCommandInput): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return this.executionRunCommand(id, 'heartbeat', command, 'Worm execution coordinator heartbeat failed');
+    }
+
+    public executeNextExecutionStep(
+        id: string,
+        command: WormExecutionCoordinatorCommandInput & {expectedStepOrdinal: number}
+    ): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return this.executionRunCommand(id, 'execute-next', command, 'The next Worm execution step could not be started');
+    }
+
+    public reconcileExecutionStep(runId: string, stepId: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return rawSameOriginRequest(
+            'POST',
+            `/api/v1/worm-trading/executions/${encodeURIComponent(runId)}/steps/${encodeURIComponent(stepId)}:reconcile`,
+            {...command},
+            'Worm execution reconciliation could not be started',
+            body => normalizeExecutionCommandResult(body, runId)
+        );
+    }
+
+    public googleExecutionAuthorizationURL(runId: string, command: WormExecutionCommandInput, returnTo: string): string {
+        const query = new URLSearchParams({
+            runId,
+            commandId: command.commandId,
+            expectedRevision: String(command.expectedRevision),
+            returnTo
+        });
+        return `${requests.toAbsURL('/auth/worm-trading/executions/google')}?${query.toString()}`;
+    }
+
+    public createSolanaExecutionAuthorizationChallenge(runId: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionAuthorizationChallenge> {
+        return rawReauthenticationPost(`/auth/worm-trading/executions/${encodeURIComponent(runId)}/solana/challenge`, {...command}, body => ({
+            message: requireExactString(body, 'message'),
+            expiresAt: requireInteger(body, 1, 'expiresAt')
+        }));
+    }
+
+    public verifySolanaExecutionAuthorization(runId: string, signature: string): AbortableWormTradingPromise<WormExecutionRun> {
+        return rawReauthenticationPost(`/auth/worm-trading/executions/${encodeURIComponent(runId)}/solana/verify`, {signature}, body =>
+            normalizeExecutionRun(body.run || body, runId)
+        );
+    }
+
+    public authorizeDevelopmentExecutionRun(runId: string, command: WormExecutionCommandInput): AbortableWormTradingPromise<WormExecutionRun> {
+        return rawReauthenticationPost(`/auth/worm-trading/executions/${encodeURIComponent(runId)}/development`, {...command}, body =>
+            normalizeExecutionRun(body.run || body, runId)
+        );
+    }
+
+    private executionRunCommand(
+        id: string,
+        action: 'start' | 'pause' | 'continue' | 'terminate' | 'heartbeat' | 'execute-next',
+        body: WormExecutionCommandInput | WormExecutionCoordinatorCommandInput | (WormExecutionCoordinatorCommandInput & {expectedStepOrdinal: number}),
+        fallbackError: string
+    ): AbortableWormTradingPromise<WormExecutionCommandResult> {
+        return rawSameOriginRequest('POST', `/api/v1/worm-trading/executions/${encodeURIComponent(id)}:${action}`, {...body}, fallbackError, response =>
+            normalizeExecutionCommandResult(response, id)
+        );
     }
 }

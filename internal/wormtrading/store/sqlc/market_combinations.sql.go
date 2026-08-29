@@ -128,6 +128,11 @@ DELETE FROM worm_market_combinations
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
   AND revision = $3::bigint
+  AND NOT EXISTS (
+    SELECT 1
+    FROM worm_execution_combination_locks
+    WHERE worm_execution_combination_locks.combination_id = worm_market_combinations.id
+  )
 RETURNING id
 `
 
@@ -298,6 +303,11 @@ SET name = $1::text,
 WHERE id = $3::uuid
   AND owner_account_id = $4::uuid
   AND revision = $5::bigint
+  AND NOT EXISTS (
+    SELECT 1
+    FROM worm_execution_combination_locks
+    WHERE worm_execution_combination_locks.combination_id = worm_market_combinations.id
+  )
 RETURNING id, owner_account_id, name, name_key, revision, created_at, updated_at
 `
 

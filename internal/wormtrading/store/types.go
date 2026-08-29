@@ -349,6 +349,508 @@ type MarkExecutionPlanReadyRequest struct {
 	Now                  time.Time
 }
 
+type ExecutionRunState string
+
+const (
+	ExecutionRunStateAwaitingAuthorization  ExecutionRunState = "AWAITING_AUTHORIZATION"
+	ExecutionRunStateAuthorized             ExecutionRunState = "AUTHORIZED"
+	ExecutionRunStateRunning                ExecutionRunState = "RUNNING"
+	ExecutionRunStatePauseRequested         ExecutionRunState = "PAUSE_REQUESTED"
+	ExecutionRunStatePaused                 ExecutionRunState = "PAUSED"
+	ExecutionRunStateTerminateRequested     ExecutionRunState = "TERMINATE_REQUESTED"
+	ExecutionRunStateReconciliationRequired ExecutionRunState = "RECONCILIATION_REQUIRED"
+	ExecutionRunStateCompleted              ExecutionRunState = "COMPLETED"
+	ExecutionRunStateTerminated             ExecutionRunState = "TERMINATED"
+	ExecutionRunStateFailed                 ExecutionRunState = "FAILED"
+)
+
+type ExecutionStepState string
+
+const (
+	ExecutionStepStatePending            ExecutionStepState = "PENDING"
+	ExecutionStepStatePreflighting       ExecutionStepState = "PREFLIGHTING"
+	ExecutionStepStateOpening            ExecutionStepState = "OPENING"
+	ExecutionStepStateOpened             ExecutionStepState = "OPENED"
+	ExecutionStepStateSigning            ExecutionStepState = "SIGNING"
+	ExecutionStepStateFinalizing         ExecutionStepState = "FINALIZING"
+	ExecutionStepStateAwaitingCompletion ExecutionStepState = "AWAITING_COMPLETION"
+	ExecutionStepStateCompleted          ExecutionStepState = "COMPLETED"
+	ExecutionStepStateSatisfied          ExecutionStepState = "SATISFIED"
+	ExecutionStepStateSkipped            ExecutionStepState = "SKIPPED"
+	ExecutionStepStateFailed             ExecutionStepState = "FAILED"
+	ExecutionStepStateNotExecuted        ExecutionStepState = "NOT_EXECUTED"
+	ExecutionStepStateOutcomeUnknown     ExecutionStepState = "OUTCOME_UNKNOWN"
+)
+
+type ExecutionMutationKind string
+
+const (
+	ExecutionMutationKindOpen     ExecutionMutationKind = "OPEN"
+	ExecutionMutationKindFinalize ExecutionMutationKind = "FINALIZE"
+)
+
+type ExecutionMutationState string
+
+const (
+	ExecutionMutationStatePrepared        ExecutionMutationState = "PREPARED"
+	ExecutionMutationStateDispatched      ExecutionMutationState = "DISPATCHED"
+	ExecutionMutationStateSucceeded       ExecutionMutationState = "SUCCEEDED"
+	ExecutionMutationStateDefiniteFailure ExecutionMutationState = "DEFINITE_FAILURE"
+	ExecutionMutationStateOutcomeUnknown  ExecutionMutationState = "OUTCOME_UNKNOWN"
+)
+
+type ExecutionAuthorizationState string
+
+const (
+	ExecutionAuthorizationStateAuthorized ExecutionAuthorizationState = "AUTHORIZED"
+	ExecutionAuthorizationStateConsumed   ExecutionAuthorizationState = "CONSUMED"
+	ExecutionAuthorizationStateRevoked    ExecutionAuthorizationState = "REVOKED"
+	ExecutionAuthorizationStateSuperseded ExecutionAuthorizationState = "SUPERSEDED"
+)
+
+type ExecutionCoordinatorState string
+
+const (
+	ExecutionCoordinatorStateActive   ExecutionCoordinatorState = "ACTIVE"
+	ExecutionCoordinatorStateReleased ExecutionCoordinatorState = "RELEASED"
+	ExecutionCoordinatorStateExpired  ExecutionCoordinatorState = "EXPIRED"
+)
+
+type ExecutionCommandKind string
+
+const (
+	ExecutionCommandKindAuthorize   ExecutionCommandKind = "AUTHORIZE"
+	ExecutionCommandKindStart       ExecutionCommandKind = "START"
+	ExecutionCommandKindPause       ExecutionCommandKind = "PAUSE"
+	ExecutionCommandKindResume      ExecutionCommandKind = "RESUME"
+	ExecutionCommandKindTerminate   ExecutionCommandKind = "TERMINATE"
+	ExecutionCommandKindHeartbeat   ExecutionCommandKind = "HEARTBEAT"
+	ExecutionCommandKindExecuteNext ExecutionCommandKind = "EXECUTE_NEXT"
+	ExecutionCommandKindReconcile   ExecutionCommandKind = "RECONCILE"
+)
+
+type ExecutionCommandState string
+
+const (
+	ExecutionCommandStateAccepted   ExecutionCommandState = "ACCEPTED"
+	ExecutionCommandStateInProgress ExecutionCommandState = "IN_PROGRESS"
+	ExecutionCommandStateApplied    ExecutionCommandState = "APPLIED"
+	ExecutionCommandStateFailed     ExecutionCommandState = "FAILED"
+	ExecutionCommandStateAbandoned  ExecutionCommandState = "ABANDONED"
+)
+
+// ExecutionRunAction values are the sole public allowed_actions vocabulary.
+// Continue deliberately maps to the internal RESUME command/RPC terminology.
+type ExecutionRunAction string
+
+const (
+	ExecutionRunActionAuthorize   ExecutionRunAction = "AUTHORIZE"
+	ExecutionRunActionStart       ExecutionRunAction = "START"
+	ExecutionRunActionPause       ExecutionRunAction = "PAUSE"
+	ExecutionRunActionContinue    ExecutionRunAction = "CONTINUE"
+	ExecutionRunActionTerminate   ExecutionRunAction = "TERMINATE"
+	ExecutionRunActionHeartbeat   ExecutionRunAction = "HEARTBEAT"
+	ExecutionRunActionExecuteNext ExecutionRunAction = "EXECUTE_NEXT"
+	ExecutionRunActionReconcile   ExecutionRunAction = "RECONCILE"
+)
+
+type ExecutionAuthorization struct {
+	ID               string
+	State            ExecutionAuthorizationState
+	Scope            string
+	ProofKind        string
+	SessionJTIDigest []byte
+	AccessRevision   int64
+	PlanVersion      int64
+	PlanDigestSHA256 []byte
+	AuthorizedAt     time.Time
+	EndedAt          time.Time
+	EndReasonCode    string
+}
+
+type ExecutionCoordinator struct {
+	ID             string
+	Generation     int64
+	State          ExecutionCoordinatorState
+	AccessRevision int64
+	AcquiredAt     time.Time
+	HeartbeatAt    time.Time
+	LeaseExpiresAt time.Time
+	ReleasedAt     time.Time
+}
+
+type ExecutionMutationAttempt struct {
+	ID                string
+	CommandID         string
+	Kind              ExecutionMutationKind
+	State             ExecutionMutationState
+	RequestSHA256     []byte
+	PositionRequestID int64
+	HTTPStatus        int32
+	ProviderCode      int32
+	ProviderSlug      string
+	ErrorCode         string
+	PreparedAt        time.Time
+	DispatchedAt      time.Time
+	CompletedAt       time.Time
+}
+
+type ExecutionStepIsolation struct {
+	ID                string
+	WalletID          int64
+	MarketConditionID string
+	ReasonCode        string
+	CreatedAt         time.Time
+	ResolvedAt        time.Time
+	ResolutionCode    string
+}
+
+type ExecutionRunStep struct {
+	ID                       string
+	Ordinal                  int64
+	PlanStepOrdinal          int64
+	WalletOrdinal            int32
+	ItemOrdinal              int32
+	SourceDisposition        ExecutionPlanStepDisposition
+	SourceReasonCode         string
+	ProjectedUSDCBefore      string
+	ProjectedUSDCAfter       string
+	State                    ExecutionStepState
+	ReasonCode               string
+	PositionRequestID        int64
+	FinalizeMode             string
+	TransactionMessageSHA256 []byte
+	TransactionVersion       string
+	RequiredSignatureCount   int32
+	WalletSignerIndex        int32
+	ProviderState            string
+	ProviderOrderState       string
+	FundingTxID              string
+	RefundTxID               string
+	StartedAt                time.Time
+	OpenedAt                 time.Time
+	FinalizedAt              time.Time
+	LastObservedAt           time.Time
+	CompletedAt              time.Time
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
+	NextPollAt               time.Time
+	PollCount                int32
+	ClaimCommandID           string
+	ClaimID                  string
+	ClaimOwner               string
+	ClaimExpiresAt           time.Time
+	ReconcileRequestedAt     time.Time
+	Attempts                 []ExecutionMutationAttempt
+	Isolation                *ExecutionStepIsolation
+}
+
+type ExecutionRun struct {
+	ID                   string
+	OwnerAccountID       string
+	PlanID               string
+	PlanVersion          int64
+	PlanDigestSHA256     []byte
+	CombinationID        string
+	CombinationName      string
+	CombinationRevision  int64
+	State                ExecutionRunState
+	Revision             int64
+	CurrentStepOrdinal   int64
+	NextStepOrdinal      int64
+	WalletCount          int64
+	ItemCount            int64
+	TotalStepCount       int64
+	ActionableStepCount  int64
+	TerminalStepCount    int64
+	CompletedStepCount   int64
+	SatisfiedStepCount   int64
+	SkippedStepCount     int64
+	FailedStepCount      int64
+	NotExecutedStepCount int64
+	PauseCode            string
+	FailureCode          string
+	BlockCode            string
+	RequestedAt          time.Time
+	AuthorizedAt         time.Time
+	StartedAt            time.Time
+	PausedAt             time.Time
+	CompletedAt          time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	Wallets              []ExecutionPlanWallet
+	Items                []ExecutionPlanItem
+	Authorization        *ExecutionAuthorization
+	Coordinator          *ExecutionCoordinator
+	CurrentStep          *ExecutionRunStep
+	AllowedActions       []ExecutionRunAction
+}
+
+type CreateExecutionRunRequest struct {
+	OwnerAccountID   string
+	PlanID           string
+	CommandID        string
+	ExpectedRevision int64
+	Now              time.Time
+}
+
+type ExecutionRunCommandRequest struct {
+	OwnerAccountID   string
+	RunID            string
+	CommandID        string
+	ExpectedRevision int64
+	Now              time.Time
+}
+
+type AuthorizeExecutionRunRequest struct {
+	ExecutionRunCommandRequest
+	ProofKind        string
+	SessionJTIDigest []byte
+	AccessRevision   int64
+}
+
+type StartExecutionRunRequest struct {
+	ExecutionRunCommandRequest
+	SessionJTIDigest []byte
+	AccessRevision   int64
+}
+
+type ResumeExecutionRunRequest = StartExecutionRunRequest
+
+type HeartbeatExecutionCoordinatorRequest struct {
+	ExecutionRunCommandRequest
+	CoordinatorToken []byte
+	SessionJTIDigest []byte
+	AccessRevision   int64
+}
+
+type BeginExecutionStepRequest struct {
+	ExecutionRunCommandRequest
+	ExpectedStepOrdinal int64
+	CoordinatorToken    []byte
+	SessionJTIDigest    []byte
+	AccessRevision      int64
+}
+
+type ReconcileExecutionStepRequest struct {
+	ExecutionRunCommandRequest
+	ExpectedStepOrdinal int64
+	StepID              string
+}
+
+type ExecutionCoordinatorLease struct {
+	Run   ExecutionRun
+	Token []byte
+}
+
+type ExecutionStepScope string
+
+const (
+	ExecutionStepScopeCurrent         ExecutionStepScope = "CURRENT"
+	ExecutionStepScopeRemainingWallet ExecutionStepScope = "REMAINING_WALLET"
+	ExecutionStepScopeRemainingMarket ExecutionStepScope = "REMAINING_MARKET"
+)
+
+type ExecutionStepClaimRequest struct {
+	OwnerAccountID      string
+	RunID               string
+	CommandID           string
+	ExpectedRunRevision int64
+	ExpectedStepOrdinal int64
+	CoordinatorToken    []byte
+	SessionJTIDigest    []byte
+	AccessRevision      int64
+	LeaseExpiresAt      time.Time
+	Now                 time.Time
+}
+
+type RecoverExecutionStepRequest struct {
+	RunID          string
+	StepOrdinal    int64
+	ClaimID        string
+	WorkerID       string
+	LeaseExpiresAt time.Time
+	Now            time.Time
+}
+
+type CompleteExecutionPreflightRequest struct {
+	RunID       string
+	StepOrdinal int64
+	CommandID   string
+	ClaimID     string
+	NextState   ExecutionStepState
+	ReasonCode  string
+	SkipScope   ExecutionStepScope
+	Now         time.Time
+}
+
+type PrepareExecutionMutationRequest struct {
+	AttemptID         string
+	RunID             string
+	StepOrdinal       int64
+	CommandID         string
+	ClaimID           string
+	Kind              ExecutionMutationKind
+	RequestSHA256     []byte
+	PositionRequestID int64
+	Now               time.Time
+}
+
+type ResolveExecutionMutationRequest struct {
+	AttemptID         string
+	State             ExecutionMutationState
+	PositionRequestID int64
+	HTTPStatus        int32
+	ProviderCode      int32
+	ProviderSlug      string
+	ErrorCode         string
+	Now               time.Time
+}
+
+type DispatchExecutionMutationRequest struct {
+	AttemptID   string
+	RunID       string
+	StepOrdinal int64
+	ClaimID     string
+	Now         time.Time
+}
+
+type RenewExecutionStepClaimRequest struct {
+	RunID          string
+	StepOrdinal    int64
+	ClaimID        string
+	WorkerID       string
+	LeaseExpiresAt time.Time
+	Now            time.Time
+}
+
+type RecordExecutionStepOpenedRequest struct {
+	AttemptID                string
+	RunID                    string
+	StepOrdinal              int64
+	ClaimID                  string
+	PositionRequestID        int64
+	TransactionMessageSHA256 []byte
+	ProviderState            string
+	ProviderOrderState       string
+	HTTPStatus               int32
+	ProviderCode             int32
+	ProviderSlug             string
+	Now                      time.Time
+}
+
+type AdvanceExecutionStepRequest struct {
+	RunID       string
+	StepOrdinal int64
+	ClaimID     string
+	Now         time.Time
+}
+
+type RecordExecutionStepSignedRequest struct {
+	AdvanceExecutionStepRequest
+	FinalizeMode           string
+	TransactionVersion     string
+	RequiredSignatureCount int32
+	WalletSignerIndex      int32
+}
+
+type RecordExecutionProviderObservationRequest struct {
+	RunID                   string
+	StepOrdinal             int64
+	CommandID               string
+	ClaimID                 string
+	ExpectedState           ExecutionStepState
+	NextState               ExecutionStepState
+	ReasonCode              string
+	PositionRequestID       int64
+	ProviderState           string
+	ProviderOrderState      string
+	FundingTxID             string
+	RefundTxID              string
+	NextPollAt              time.Time
+	SkipScope               ExecutionStepScope
+	IsolationID             string
+	AttemptID               string
+	ResolveIsolationID      string
+	IsolationResolutionCode string
+	Now                     time.Time
+}
+
+type PauseExecutionRunForFailureRequest struct {
+	RunID     string
+	PauseCode string
+	Now       time.Time
+}
+
+type CreateExecutionStepIsolationRequest struct {
+	IsolationID string
+	RunID       string
+	StepOrdinal int64
+	AttemptID   string
+	ReasonCode  string
+	Now         time.Time
+}
+
+type ResolveExecutionStepIsolationRequest struct {
+	IsolationID    string
+	RunID          string
+	StepOrdinal    int64
+	ResolutionCode string
+	Now            time.Time
+}
+
+type RecoverableExecutionStep struct {
+	OwnerAccountID        string
+	RunID                 string
+	RunState              ExecutionRunState
+	RunRevision           int64
+	CommandID             string
+	CoordinatorID         string
+	CoordinatorGeneration int64
+	Step                  ExecutionRunStep
+}
+
+func (l ExecutionCoordinatorLease) Clone() ExecutionCoordinatorLease {
+	l.Run = l.Run.Clone()
+	l.Token = append([]byte(nil), l.Token...)
+	return l
+}
+
+func (r ExecutionRun) Clone() ExecutionRun {
+	r.PlanDigestSHA256 = append([]byte(nil), r.PlanDigestSHA256...)
+	r.Wallets = append([]ExecutionPlanWallet(nil), r.Wallets...)
+	r.Items = append([]ExecutionPlanItem(nil), r.Items...)
+	r.AllowedActions = append([]ExecutionRunAction(nil), r.AllowedActions...)
+	if r.Authorization != nil {
+		authorization := *r.Authorization
+		authorization.SessionJTIDigest = append([]byte(nil), authorization.SessionJTIDigest...)
+		authorization.PlanDigestSHA256 = append([]byte(nil), authorization.PlanDigestSHA256...)
+		r.Authorization = &authorization
+	}
+	if r.Coordinator != nil {
+		coordinator := *r.Coordinator
+		r.Coordinator = &coordinator
+	}
+	if r.CurrentStep != nil {
+		step := r.CurrentStep.Clone()
+		r.CurrentStep = &step
+	}
+	return r
+}
+
+func (s ExecutionRunStep) Clone() ExecutionRunStep {
+	s.TransactionMessageSHA256 = append([]byte(nil), s.TransactionMessageSHA256...)
+	s.Attempts = append([]ExecutionMutationAttempt(nil), s.Attempts...)
+	for index := range s.Attempts {
+		s.Attempts[index].RequestSHA256 = append([]byte(nil), s.Attempts[index].RequestSHA256...)
+	}
+	if s.Isolation != nil {
+		isolation := *s.Isolation
+		s.Isolation = &isolation
+	}
+	return s
+}
+
 // Store is the durable persistence boundary used by Worm Trading. It stores
 // Wallet correlation and credential lifecycle state, plus owner-account UUIDs
 // and trusted display snapshots for saved market combinations. It never stores
@@ -383,5 +885,32 @@ type Store interface {
 	MarkExecutionPlanReady(context.Context, MarkExecutionPlanReadyRequest) (*ExecutionPlan, error)
 	MarkExecutionPlanFailed(context.Context, string, string, string, time.Time) (*ExecutionPlan, error)
 	DeleteExpiredExecutionPlans(context.Context, time.Time, int32) (int64, error)
+	CreateExecutionRun(context.Context, CreateExecutionRunRequest) (*ExecutionRun, error)
+	ListExecutionRuns(context.Context, string, int32, int32) ([]ExecutionRun, int64, error)
+	GetExecutionRun(context.Context, string, string) (*ExecutionRun, error)
+	ListExecutionRunSteps(context.Context, string, string, int32, int32) ([]ExecutionRunStep, int64, error)
+	AuthorizeExecutionRun(context.Context, AuthorizeExecutionRunRequest) (*ExecutionRun, error)
+	StartExecutionRun(context.Context, StartExecutionRunRequest) (*ExecutionCoordinatorLease, error)
+	PauseExecutionRun(context.Context, ExecutionRunCommandRequest) (*ExecutionRun, error)
+	ResumeExecutionRun(context.Context, ResumeExecutionRunRequest) (*ExecutionCoordinatorLease, error)
+	TerminateExecutionRun(context.Context, ExecutionRunCommandRequest) (*ExecutionRun, error)
+	HeartbeatExecutionCoordinator(context.Context, HeartbeatExecutionCoordinatorRequest) (*ExecutionRun, error)
+	BeginExecutionStep(context.Context, BeginExecutionStepRequest) (*ExecutionRunStep, error)
+	BeginExecutionStepReconciliation(context.Context, ReconcileExecutionStepRequest) (*ExecutionRunStep, error)
+	ClaimExecutionStep(context.Context, ExecutionStepClaimRequest) (*ExecutionRunStep, error)
+	RecoverExecutionStep(context.Context, RecoverExecutionStepRequest) (*ExecutionRunStep, error)
+	CompleteExecutionPreflight(context.Context, CompleteExecutionPreflightRequest) (*ExecutionRunStep, error)
+	PrepareExecutionMutation(context.Context, PrepareExecutionMutationRequest) (*ExecutionMutationAttempt, error)
+	RenewExecutionStepClaim(context.Context, RenewExecutionStepClaimRequest) (*ExecutionRunStep, error)
+	DispatchExecutionMutation(context.Context, DispatchExecutionMutationRequest) (*ExecutionMutationAttempt, error)
+	ResolveExecutionMutation(context.Context, ResolveExecutionMutationRequest) (*ExecutionMutationAttempt, error)
+	RecordExecutionStepOpened(context.Context, RecordExecutionStepOpenedRequest) (*ExecutionRunStep, error)
+	MarkExecutionStepSigning(context.Context, AdvanceExecutionStepRequest) (*ExecutionRunStep, error)
+	RecordExecutionStepSigned(context.Context, RecordExecutionStepSignedRequest) (*ExecutionRunStep, error)
+	RecordExecutionProviderObservation(context.Context, RecordExecutionProviderObservationRequest) (*ExecutionRunStep, error)
+	PauseExecutionRunForFailure(context.Context, PauseExecutionRunForFailureRequest) (*ExecutionRun, error)
+	CreateExecutionStepIsolation(context.Context, CreateExecutionStepIsolationRequest) (*ExecutionStepIsolation, error)
+	ResolveExecutionStepIsolation(context.Context, ResolveExecutionStepIsolationRequest) (*ExecutionStepIsolation, error)
+	ListRecoverableExecutionSteps(context.Context, time.Time, int32) ([]RecoverableExecutionStep, error)
 	Close() error
 }

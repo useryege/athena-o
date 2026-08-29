@@ -102,6 +102,53 @@ message SignWormAuthChallengeResponse {
   string message_sha256 = 2;
 }
 
+message SignWormWebSignInMessageRequest {
+  int64 id = 1;
+  string requester_account_id = 2;
+  string expected_address = 3;
+  string nonce = 4;
+  string message = 5;
+  bytes expected_message_sha256 = 6;
+  string execution_run_id = 7;
+  string execution_step_id = 8;
+  bytes intent_sha256 = 9;
+}
+
+message SignWormWebSignInMessageResponse {
+  string signature = 1;
+  bytes message_sha256 = 2;
+  string execution_run_id = 3;
+  string execution_step_id = 4;
+  bytes intent_sha256 = 5;
+}
+
+message SignWormPositionRequestTransactionRequest {
+  int64 id = 1;
+  string requester_account_id = 2;
+  string expected_address = 3;
+  int64 position_request_id = 4;
+  string transaction_hex = 5;
+  bytes expected_transaction_sha256 = 6;
+  string execution_run_id = 7;
+  string execution_step_id = 8;
+  bytes intent_sha256 = 9;
+}
+
+message SignWormPositionRequestTransactionResponse {
+  oneof finalize_payload {
+    string signature = 1;
+    string signed_transaction = 2;
+  }
+  bytes transaction_sha256 = 3;
+  string transaction_version = 4;
+  int32 required_signatures = 5;
+  int32 signer_index = 6;
+  string execution_run_id = 7;
+  string execution_step_id = 8;
+  bytes intent_sha256 = 9;
+  int64 position_request_id = 10;
+}
+
 message WalletAvatarMetadata {
   int64 id = 1;
   uint64 revision = 2;
@@ -167,4 +214,12 @@ service WalletService {
   rpc ReplaceWalletAvatarMetadata(ReplaceWalletAvatarMetadataRequest) returns (ReplaceWalletAvatarMetadataResponse);
   rpc ResetWalletAvatarMetadata(ResetWalletAvatarMetadataRequest) returns (ResetWalletAvatarMetadataResponse);
   rpc ListWalletAvatarObjectKeys(ListWalletAvatarObjectKeysRequest) returns (ListWalletAvatarObjectKeysResponse);
+}
+
+// WormExecutionSignerService is a capability-scoped custodial signer. It is
+// authenticated independently from WalletService and cannot reveal keys or
+// perform Wallet metadata operations.
+service WormExecutionSignerService {
+  rpc SignWormWebSignInMessage(SignWormWebSignInMessageRequest) returns (SignWormWebSignInMessageResponse);
+  rpc SignWormPositionRequestTransaction(SignWormPositionRequestTransactionRequest) returns (SignWormPositionRequestTransactionResponse);
 }
