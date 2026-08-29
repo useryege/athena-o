@@ -75,6 +75,7 @@ import {
     WalletsPage,
     WormTradingCombinationBuilderPage,
     WormTradingCombinationsPage,
+    WormTradingExecutionPreviewPage,
     WormTradingPage,
     WorldCupCornersPage,
     ProfitSharingRoundsPage,
@@ -356,7 +357,11 @@ const breadcrumbItems = (pathname: string) => {
     const section = navSections.find(candidate => navTrail(candidate.children, targetKey).length > 0);
     const trail = section ? navTrail(section.children, targetKey) : [];
     if (section) {
-        return [section.label, ...trail.map(item => item.label)].map(title => ({title}));
+        const labels = [section.label, ...trail.map(item => item.label)];
+        if (/^\/worm-trading\/combinations\/[^/]+\/execute\/?$/.test(pathname)) {
+            labels.push('Execution Preview');
+        }
+        return labels.map(title => ({title}));
     }
     const accountRoute = [...accountRouteMetadata]
         .sort((left, right) => right.path.length - left.path.length)
@@ -365,6 +370,9 @@ const breadcrumbItems = (pathname: string) => {
 };
 
 const routeTitle = (pathname: string) => {
+    if (/^\/worm-trading\/combinations\/[^/]+\/execute\/?$/.test(pathname)) {
+        return 'Execution Preview';
+    }
     const selected = selectedKey(pathname);
     const business = flattenNav(navItems).find(item => item.key === selected);
     if (business) {
@@ -526,6 +534,7 @@ const AppRoutes = (props: {
             <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage />)} />
             <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
             <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
+            <Route path='/worm-trading/combinations/:id/execute' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionPreviewPage />)} />
             <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
             <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
             <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage />)} />

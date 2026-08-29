@@ -8,6 +8,104 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type WormExecutionPlan struct {
+	ID                   pgtype.UUID
+	OwnerAccountID       pgtype.UUID
+	CombinationID        pgtype.UUID
+	CombinationName      string
+	CombinationRevision  int64
+	State                string
+	BuildStage           string
+	FailureCode          string
+	WorkerID             string
+	LockedAt             pgtype.Timestamptz
+	LeaseExpiresAt       pgtype.Timestamptz
+	WalletCount          int64
+	ItemCount            int64
+	TotalStepCount       int64
+	CompletedStepCount   int64
+	ReadyStepCount       int64
+	SkippedStepCount     int64
+	TotalCollateral      string
+	TotalOpeningFee      string
+	TotalUserFundsNeeded string
+	RequestedAt          pgtype.Timestamptz
+	CompletedAt          pgtype.Timestamptz
+	ExpiresAt            pgtype.Timestamptz
+	RetentionUntil       pgtype.Timestamptz
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
+type WormExecutionPlanItem struct {
+	PlanID                   pgtype.UUID
+	Ordinal                  int32
+	EventConditionID         string
+	EventTitle               string
+	EventLogo                string
+	MarketConditionID        string
+	MarketTitle              string
+	MarketLogo               string
+	IsYes                    bool
+	OutcomeLabel             string
+	Backend                  string
+	Funds                    string
+	Leverage                 string
+	State                    string
+	ReasonCode               string
+	EstimateAveragePrice     string
+	EstimateTotalShares      string
+	EstimateTotalCost        string
+	EstimateBestAsk          string
+	EstimateWorstFillPrice   string
+	EstimateIsFullyFilled    bool
+	EstimateFeeAmount        string
+	EstimateUserFundsNeeded  string
+	EstimateLiquidationPrice string
+}
+
+type WormExecutionPlanStep struct {
+	PlanID              pgtype.UUID
+	Ordinal             int64
+	WalletOrdinal       int32
+	ItemOrdinal         int32
+	Disposition         string
+	ReasonCode          string
+	ProjectedUsdcBefore string
+	ProjectedUsdcAfter  string
+}
+
+type WormExecutionPlanWallet struct {
+	PlanID                pgtype.UUID
+	Ordinal               int32
+	WalletID              int64
+	Address               string
+	Remark                string
+	AvatarKind            string
+	AvatarPresetID        string
+	AvatarUrl             string
+	ConnectionState       string
+	ConnectionWarningCode string
+	ConnectedAt           pgtype.Timestamptz
+	CredentialVersion     int64
+	SolAtomicAmount       string
+	SolAmount             string
+	SolDecimals           int32
+	SolObservedSlot       int64
+	SolAvailability       string
+	SolErrorCode          string
+	UsdcMint              string
+	UsdcAtomicAmount      string
+	UsdcAmount            string
+	UsdcDecimals          int32
+	UsdcObservedSlot      int64
+	UsdcAvailability      string
+	UsdcErrorCode         string
+	UsdcTokenAccountCount int32
+	Status                string
+	ReasonCode            string
+}
+
 type WormMarketCombination struct {
 	ID             pgtype.UUID
 	OwnerAccountID pgtype.UUID

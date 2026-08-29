@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"google.golang.org/grpc/codes"
@@ -32,6 +33,7 @@ type Service struct {
 	wormPositionBudget    time.Duration
 	wormPositionSemaphore chan struct{}
 	wormCapabilities      wormCapabilityStatus
+	wormMarketsClientset  wormmarketsapiclient.Clientset
 	walletOperationLocks  sync.Map
 
 	startStopMu sync.Mutex
@@ -47,6 +49,7 @@ type ServiceOptions struct {
 	WormAPIAttemptTimeout   time.Duration
 	WormPositionBudget      time.Duration
 	WormPositionConcurrency int
+	WormMarketsClientset    wormmarketsapiclient.Clientset
 	SetHealthStatus         func(grpc_health_v1.HealthCheckResponse_ServingStatus)
 }
 
@@ -70,6 +73,9 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	if opts.CredentialStore == nil {
 		return nil, fmt.Errorf("worm credential store is required")
 	}
+	if opts.WormMarketsClientset == nil || opts.WormMarketsClientset.WormMarkets() == nil {
+		return nil, fmt.Errorf("worm markets client is required")
+	}
 	if len(opts.CredentialEncryptionKey) == 0 {
 		return nil, fmt.Errorf("worm credential encryption key is required")
 	}
@@ -81,6 +87,7 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 		wormAPIAttemptTimeout: opts.WormAPIAttemptTimeout,
 		wormPositionBudget:    opts.WormPositionBudget,
 		wormPositionSemaphore: make(chan struct{}, opts.WormPositionConcurrency),
+		wormMarketsClientset:  opts.WormMarketsClientset,
 	}
 	service.wormCapabilities.configureStore(true)
 
@@ -127,6 +134,8 @@ func (s *Service) Start() error {
 	if s.credentialStore != nil {
 		s.runWG.Add(1)
 		go s.runCredentialMaintenanceLoop(runCtx)
+		s.runWG.Add(1)
+		go s.runExecutionPlanWorker(runCtx)
 	}
 	return nil
 }

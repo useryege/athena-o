@@ -334,6 +334,153 @@ message DeleteMarketCombinationRequest {
 
 message DeleteMarketCombinationResponse {}
 
+// ExecutionPlanWalletInput is the API-Server-verified wallet identity and
+// presentation snapshot captured when an execution preview is requested.
+message ExecutionPlanWalletInput {
+  int64 wallet_id = 1;
+  string address = 2;
+  string remark = 3;
+  string avatar_kind = 4;
+  string avatar_preset_id = 5;
+  string avatar_url = 6;
+}
+
+// ExecutionPlanWallet is one wallet frozen into an execution preview.
+message ExecutionPlanWallet {
+  int32 ordinal = 1;
+  int64 wallet_id = 2;
+  string address = 3;
+  string remark = 4;
+  string avatar_kind = 5;
+  string avatar_preset_id = 6;
+  string avatar_url = 7;
+  WormWalletConnection connection = 8;
+  AssetBalance sol = 9;
+  TokenBalance usdc = 10;
+  string status = 11;
+  string reason_code = 12;
+}
+
+// ExecutionPlanEstimate is the immutable public Worm estimate used by all
+// wallet steps for the corresponding market and side. Decimal values are
+// canonical strings so precision is never lost in the internal contract.
+message ExecutionPlanEstimate {
+  string average_price = 1;
+  string total_shares = 2;
+  string total_cost = 3;
+  string best_ask = 4;
+  string worst_fill_price = 5;
+  bool is_fully_filled = 6;
+  string fee_amount = 7;
+  string user_funds_needed = 8;
+  WormOptionalString liquidation_price = 9;
+}
+
+// ExecutionPlanItem is one frozen combination selection and its current
+// market/estimate preflight result.
+message ExecutionPlanItem {
+  int32 ordinal = 1;
+  string event_condition_id = 2;
+  string event_title = 3;
+  string event_logo = 4;
+  string market_condition_id = 5;
+  string market_title = 6;
+  string market_logo = 7;
+  bool is_yes = 8;
+  string outcome_label = 9;
+  string backend = 10;
+  string funds = 11;
+  string leverage = 12;
+  string state = 13;
+  string reason_code = 14;
+  ExecutionPlanEstimate estimate = 15;
+}
+
+// ExecutionPlanStep is one preview-only wallet-major execution step.
+message ExecutionPlanStep {
+  int64 ordinal = 1;
+  int32 wallet_ordinal = 2;
+  int32 item_ordinal = 3;
+  string disposition = 4;
+  string reason_code = 5;
+  string projected_usdc_before = 6;
+  string projected_usdc_after = 7;
+}
+
+// ExecutionPlanReasonCount is a server-side aggregate of preview step
+// classifications. READY is the stable key for executable steps.
+message ExecutionPlanReasonCount {
+  string reason_code = 1;
+  int64 count = 2;
+}
+
+// ExecutionPlan is the immutable preflight record. BUILDING plans expose
+// progress; READY plans expire fifteen minutes after completion; FAILED plans
+// preserve their non-secret diagnostic code for the retention interval.
+message ExecutionPlan {
+  string id = 1;
+  string owner_account_id = 2;
+  string combination_id = 3;
+  string combination_name = 4;
+  int64 combination_revision = 5;
+  string state = 6;
+  string build_stage = 7;
+  string failure_code = 8;
+  int64 wallet_count = 9;
+  int64 item_count = 10;
+  int64 total_step_count = 11;
+  int64 completed_step_count = 12;
+  int64 ready_step_count = 13;
+  int64 skipped_step_count = 14;
+  string total_collateral = 15;
+  string total_opening_fee = 16;
+  string total_user_funds_needed = 17;
+  int64 requested_at = 18;
+  int64 completed_at = 19;
+  int64 expires_at = 20;
+  int64 retention_until = 21;
+  int64 created_at = 22;
+  int64 updated_at = 23;
+  repeated ExecutionPlanWallet wallets = 24;
+  repeated ExecutionPlanItem items = 25;
+  string usability_code = 26;
+  repeated ExecutionPlanReasonCount reason_counts = 27;
+}
+
+message CreateExecutionPlanRequest {
+  string owner_account_id = 1;
+  string combination_id = 2;
+  int64 expected_combination_revision = 3;
+  repeated ExecutionPlanWalletInput wallets = 4;
+}
+
+message CreateExecutionPlanResponse {
+  ExecutionPlan plan = 1;
+}
+
+message GetExecutionPlanRequest {
+  string owner_account_id = 1;
+  string id = 2;
+}
+
+message GetExecutionPlanResponse {
+  ExecutionPlan plan = 1;
+}
+
+message ListExecutionPlanStepsRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListExecutionPlanStepsResponse {
+  repeated ExecutionPlanStep items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
@@ -347,4 +494,7 @@ service WormTradingService {
   rpc ListMarketCombinations(ListMarketCombinationsRequest) returns (ListMarketCombinationsResponse);
   rpc UpdateMarketCombination(UpdateMarketCombinationRequest) returns (UpdateMarketCombinationResponse);
   rpc DeleteMarketCombination(DeleteMarketCombinationRequest) returns (DeleteMarketCombinationResponse);
+  rpc CreateExecutionPlan(CreateExecutionPlanRequest) returns (CreateExecutionPlanResponse);
+  rpc GetExecutionPlan(GetExecutionPlanRequest) returns (GetExecutionPlanResponse);
+  rpc ListExecutionPlanSteps(ListExecutionPlanStepsRequest) returns (ListExecutionPlanStepsResponse);
 }

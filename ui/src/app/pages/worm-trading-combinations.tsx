@@ -1,4 +1,15 @@
-import {ArrowDownOutlined, ArrowUpOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SaveOutlined} from '@ant-design/icons';
+import {
+    ArrowDownOutlined,
+    ArrowUpOutlined,
+    CloseOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    EyeOutlined,
+    FileSearchOutlined,
+    PlusOutlined,
+    ReloadOutlined,
+    SaveOutlined
+} from '@ant-design/icons';
 import {Alert, Button, Card, Drawer, Empty, Input, Radio, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
@@ -183,7 +194,7 @@ const eventSnapshotPresentation = (fetchedAt: number) => {
     };
 };
 
-const CombinationListCard = (props: {item: WormMarketCombination; canWrite: boolean; deleting: boolean; onOpen: () => void; onDelete: () => void}) => (
+const CombinationListCard = (props: {item: WormMarketCombination; canWrite: boolean; deleting: boolean; onOpen: () => void; onPreview: () => void; onDelete: () => void}) => (
     <Card className='worm-combination-list-card' size='small'>
         <div className='worm-combination-list-card__heading'>
             <div>
@@ -210,6 +221,11 @@ const CombinationListCard = (props: {item: WormMarketCombination; canWrite: bool
             <Button icon={props.canWrite ? <EditOutlined /> : <EyeOutlined />} onClick={props.onOpen}>
                 {props.canWrite ? 'Edit' : 'View'}
             </Button>
+            {props.canWrite && (
+                <Button icon={<FileSearchOutlined />} onClick={props.onPreview}>
+                    Preview execution
+                </Button>
+            )}
             {props.canWrite && (
                 <Button danger={true} icon={<DeleteOutlined />} loading={props.deleting} onClick={props.onDelete}>
                     Delete
@@ -295,7 +311,7 @@ export const WormTradingCombinationsPage = () => {
         {title: 'Updated', width: 190, render: item => formatBeijingUnixSeconds(item.updatedAt) || '-'},
         {
             title: 'Actions',
-            width: canWrite ? 210 : 100,
+            width: canWrite ? 370 : 100,
             render: item => (
                 <Space>
                     <Button
@@ -304,6 +320,11 @@ export const WormTradingCombinationsPage = () => {
                         onClick={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/edit`)}>
                         {canWrite ? 'Edit' : 'View'}
                     </Button>
+                    {canWrite && (
+                        <Button size='small' icon={<FileSearchOutlined />} onClick={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/execute`)}>
+                            Preview execution
+                        </Button>
+                    )}
                     {canWrite && (
                         <Button size='small' danger={true} icon={<DeleteOutlined />} loading={deletingIDs.has(item.id)} onClick={() => deleteCombination(item)}>
                             Delete
@@ -362,6 +383,7 @@ export const WormTradingCombinationsPage = () => {
                             canWrite={canWrite}
                             deleting={deletingIDs.has(item.id)}
                             onOpen={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/edit`)}
+                            onPreview={() => navigate(`/worm-trading/combinations/${encodeURIComponent(item.id)}/execute`)}
                             onDelete={() => deleteCombination(item)}
                         />
                     )}

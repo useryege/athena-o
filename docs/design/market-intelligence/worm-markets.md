@@ -11,8 +11,10 @@ for one Worm event. That catalog preserves every child market, marks each market
 and YES/NO outcome with stable selectability reasons, and projects an optional
 pair of complementary last-trade prices. It performs no margin estimate or
 mutation. The Athena API Server publishes the browse capability
-under `/api/v1/worm-markets` and consumes the catalog only through the
-interactive Worm Trading Combinations facade.
+under `/api/v1/worm-markets`. The interactive Worm Trading Combinations facade
+uses the catalog for builder display and trusted saves, while the Worm Trading
+execution-preview worker refetches it to freeze current market availability,
+backend, and `1x` eligibility before estimating a plan.
 
 The service does not own user wallets or the presentation of Worm data in a
 page. The generic Worm HTTP client in `util/worm` remains an external-provider
@@ -47,6 +49,7 @@ flowchart LR
     S --> P["worm_markets PostgreSQL"]
     S --> N["Athena Notification gRPC"]
     A["Athena API Server"] --> G["Worm Markets internal gRPC"]
+    T["Worm Trading preview worker"] --> G
     G --> S
 ```
 
@@ -71,10 +74,15 @@ outcome, or leverage data remain explicit catalog entries with stable
 `unavailable_code` values. When Worm supplies a valid `last_trade_price`, the
 catalog uses it as the YES price and computes NO as the exact decimal complement
 to `1`; both prices are absent when a valid pair cannot be formed. Price presence
-does not participate in selectability. `GetWormMarketsStatus` reports only
+does not participate in selectability. The same catalog RPC serves both
+interactive combination work and asynchronous execution-preview validation;
+neither caller may treat the saved template snapshot as current market state.
+`GetWormMarketsStatus` reports only
 whether the service lifecycle has started. The API Server shares one
 process-owned Worm Markets channel across browse, combination, and health
-requests and does not duplicate provider state.
+requests and does not duplicate provider state. Worm Trading owns a separate
+process-lifetime clientset for its asynchronous preview worker; both clients
+reach the same stateless catalog RPC.
 
 ## Runtime Flow
 
@@ -130,11 +138,15 @@ requests and does not duplicate provider state.
     direction's selectability. Other market-wide and per-outcome validation
     failures use stable unavailable codes. This path calls neither an additional
     provider endpoint, the margin estimate endpoint, the database, nor any Worm
-    mutation.
+    mutation. The Worm Trading preview worker calls this same RPC once per
+    unique Event and performs its public Estimate calls through its own pinned
+    Worm adapter after catalog validation.
 11. On `SIGINT` or `SIGTERM`, the command first gracefully stops gRPC, marks
     health `NOT_SERVING`, cancels all three loops, waits for them to exit, and
     closes its Notification channel and PostgreSQL. The API Server closes its
     independent Worm Markets channel only after its own serving lifecycle ends.
+    Worm Trading likewise closes its preview-worker clientset as part of that
+    process's command teardown.
 
 Each generated SQL call is its own PostgreSQL transaction boundary. A page
 upsert, its price-history write, later stale-row cleanup, live-state changes,
@@ -172,7 +184,9 @@ notification delivery record, or event cache is held in memory.
 
 The combination catalog is a request-scoped projection only. It is not written
 to `worm_markets_market`, cached across requests, or reused as saved-template
-state. Titles, logos, market state, backend, outcome labels, leverage strings,
+state. The execution-preview worker may copy its validated current fields into
+the preview database, but Worm Markets retains no preview identity or lifecycle.
+Titles, logos, market state, backend, outcome labels, leverage strings,
 optional last-trade prices, selectability, and unavailable codes live only in
 the current RPC response. The catalog price is a display observation from the
 provider response, not a best ask, midpoint, estimate, executable quote, or
@@ -218,7 +232,9 @@ constants rather than runtime configuration.
   snapshot.
 - `GetOrderEventCatalog` is also a fresh provider read. It preserves the event's
   child-market order, returns exactly one YES and one NO projection per child,
-  and never estimates, signs, creates, or submits a trade.
+  and never estimates, signs, creates, or submits a trade. Both combination
+  writes and execution-preview builds must refetch it rather than trusting a
+  saved or browser-supplied availability snapshot.
 - A catalog outcome is selectable only when all market-wide checks pass and its
   own maximum leverage is finite and at least `1`; unavailable children remain
   visible with stable machine-readable reasons.
@@ -298,7 +314,7 @@ provider's last trade. The catalog adds no separate metric or readiness signal.
 - [ ] Component responsibilities and boundaries still match this document.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
-- [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, exact-complement-priced, and free of extra reads, persistence, estimates, and mutations.
+- [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, exact-complement-priced, and free of extra reads, owned persistence, estimates, and mutations for both combination and preview consumers.
 - [ ] Failure recovery, health checks, and observability are current.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

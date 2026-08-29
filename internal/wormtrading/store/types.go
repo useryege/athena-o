@@ -150,6 +150,205 @@ type MarketCombination struct {
 	UpdatedAt      time.Time
 }
 
+// ExecutionPlanState is the lifecycle of a durable read-only execution
+// preview. A READY plan is never mutated again and can be consumed only before
+// its expiry by the later execution capability.
+type ExecutionPlanState string
+
+const (
+	ExecutionPlanStateBuilding ExecutionPlanState = "BUILDING"
+	ExecutionPlanStateReady    ExecutionPlanState = "READY"
+	ExecutionPlanStateFailed   ExecutionPlanState = "FAILED"
+)
+
+const (
+	ExecutionPlanUsabilityCombinationDeleted = "COMBINATION_DELETED"
+	ExecutionPlanUsabilityCombinationChanged = "COMBINATION_CHANGED"
+	ExecutionPlanUsabilityExpired            = "EXPIRED"
+	ExecutionPlanUsabilityNoActionableSteps  = "NO_ACTIONABLE_STEPS"
+)
+
+type ExecutionPlanStepDisposition string
+
+const (
+	ExecutionPlanStepDispositionReady   ExecutionPlanStepDisposition = "READY"
+	ExecutionPlanStepDispositionSkipped ExecutionPlanStepDisposition = "SKIPPED"
+)
+
+// ExecutionPlanWalletInput is a caller-verified, non-secret wallet identity
+// snapshot. Wallet order is the requested execution order.
+type ExecutionPlanWalletInput struct {
+	WalletID       int64
+	Address        string
+	Remark         string
+	AvatarKind     string
+	AvatarPresetID string
+	AvatarURL      string
+}
+
+type ExecutionPlanWallet struct {
+	Ordinal int32
+	ExecutionPlanWalletInput
+	ConnectionState       ConnectionState
+	ConnectionWarningCode string
+	ConnectedAt           time.Time
+	CredentialVersion     int64
+	SOLAtomicAmount       string
+	SOLAmount             string
+	SOLDecimals           int32
+	SOLObservedSlot       uint64
+	SOLAvailability       string
+	SOLErrorCode          string
+	USDCMint              string
+	USDCAtomicAmount      string
+	USDCAmount            string
+	USDCDecimals          int32
+	USDCObservedSlot      uint64
+	USDCAvailability      string
+	USDCErrorCode         string
+	USDCTokenAccountCount int32
+	Status                string
+	ReasonCode            string
+}
+
+type ExecutionPlanEstimate struct {
+	AveragePrice     string
+	TotalShares      string
+	TotalCost        string
+	BestAsk          string
+	WorstFillPrice   string
+	IsFullyFilled    bool
+	FeeAmount        string
+	UserFundsNeeded  string
+	LiquidationPrice string
+}
+
+// ExecutionPlanItem freezes a trusted combination item together with the
+// current market and public estimate result observed by the build worker.
+type ExecutionPlanItem struct {
+	Ordinal int32
+	MarketCombinationItemInput
+	Backend    string
+	Funds      string
+	Leverage   string
+	State      string
+	ReasonCode string
+	Estimate   ExecutionPlanEstimate
+}
+
+type ExecutionPlanStep struct {
+	Ordinal             int64
+	WalletOrdinal       int32
+	ItemOrdinal         int32
+	Disposition         ExecutionPlanStepDisposition
+	ReasonCode          string
+	ProjectedUSDCBefore string
+	ProjectedUSDCAfter  string
+}
+
+// ExecutionPlanReasonCount is an authoritative aggregate of terminal preview
+// step classifications. READY is the stable key for executable steps.
+type ExecutionPlanReasonCount struct {
+	ReasonCode string
+	Count      int64
+}
+
+type ExecutionPlan struct {
+	ID                   string
+	OwnerAccountID       string
+	CombinationID        string
+	CombinationName      string
+	CombinationRevision  int64
+	State                ExecutionPlanState
+	BuildStage           string
+	FailureCode          string
+	UsabilityCode        string
+	WorkerID             string
+	LockedAt             time.Time
+	LeaseExpiresAt       time.Time
+	WalletCount          int64
+	ItemCount            int64
+	TotalStepCount       int64
+	CompletedStepCount   int64
+	ReadyStepCount       int64
+	SkippedStepCount     int64
+	TotalCollateral      string
+	TotalOpeningFee      string
+	TotalUserFundsNeeded string
+	RequestedAt          time.Time
+	CompletedAt          time.Time
+	ExpiresAt            time.Time
+	RetentionUntil       time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	Wallets              []ExecutionPlanWallet
+	Items                []ExecutionPlanItem
+	ReasonCounts         []ExecutionPlanReasonCount
+}
+
+type CreateExecutionPlanRequest struct {
+	OwnerAccountID              string
+	CombinationID               string
+	ExpectedCombinationRevision int64
+	Wallets                     []ExecutionPlanWalletInput
+	Now                         time.Time
+}
+
+type ExecutionPlanBuildProgress struct {
+	PlanID             string
+	WorkerID           string
+	BuildStage         string
+	CompletedStepCount int64
+	LeaseExpiresAt     time.Time
+	Now                time.Time
+}
+
+type ExecutionPlanWalletObservation struct {
+	Ordinal               int32
+	ConnectionState       ConnectionState
+	ConnectionWarningCode string
+	ConnectedAt           time.Time
+	CredentialVersion     int64
+	SOLAtomicAmount       string
+	SOLAmount             string
+	SOLDecimals           int32
+	SOLObservedSlot       uint64
+	SOLAvailability       string
+	SOLErrorCode          string
+	USDCMint              string
+	USDCAtomicAmount      string
+	USDCAmount            string
+	USDCDecimals          int32
+	USDCObservedSlot      uint64
+	USDCAvailability      string
+	USDCErrorCode         string
+	USDCTokenAccountCount int32
+	Status                string
+	ReasonCode            string
+}
+
+type ExecutionPlanItemObservation struct {
+	Ordinal    int32
+	Backend    string
+	Funds      string
+	Leverage   string
+	State      string
+	ReasonCode string
+	Estimate   ExecutionPlanEstimate
+}
+
+type MarkExecutionPlanReadyRequest struct {
+	PlanID               string
+	WorkerID             string
+	Wallets              []ExecutionPlanWalletObservation
+	Items                []ExecutionPlanItemObservation
+	Steps                []ExecutionPlanStep
+	TotalCollateral      string
+	TotalOpeningFee      string
+	TotalUserFundsNeeded string
+	Now                  time.Time
+}
+
 // Store is the durable persistence boundary used by Worm Trading. It stores
 // Wallet correlation and credential lifecycle state, plus owner-account UUIDs
 // and trusted display snapshots for saved market combinations. It never stores
@@ -176,5 +375,13 @@ type Store interface {
 	ListMarketCombinations(context.Context, string, int32, int32) ([]MarketCombination, int64, error)
 	UpdateMarketCombination(context.Context, string, string, string, int64, []MarketCombinationItemInput) (*MarketCombination, error)
 	DeleteMarketCombination(context.Context, string, string, int64) error
+	CreateExecutionPlan(context.Context, CreateExecutionPlanRequest) (*ExecutionPlan, error)
+	GetExecutionPlan(context.Context, string, string, time.Time) (*ExecutionPlan, error)
+	ListExecutionPlanSteps(context.Context, string, string, int32, int32) ([]ExecutionPlanStep, int64, error)
+	ClaimExecutionPlan(context.Context, string, time.Duration, time.Time) (*ExecutionPlan, error)
+	UpdateExecutionPlanBuildProgress(context.Context, ExecutionPlanBuildProgress) (*ExecutionPlan, error)
+	MarkExecutionPlanReady(context.Context, MarkExecutionPlanReadyRequest) (*ExecutionPlan, error)
+	MarkExecutionPlanFailed(context.Context, string, string, string, time.Time) (*ExecutionPlan, error)
+	DeleteExpiredExecutionPlans(context.Context, time.Time, int32) (int64, error)
 	Close() error
 }

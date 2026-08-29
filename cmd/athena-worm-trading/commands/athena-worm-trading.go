@@ -17,6 +17,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormtradingstore "github.com/useryege/athena/internal/wormtrading/store"
@@ -26,16 +27,17 @@ import (
 )
 
 const (
-	cliName                    = "athena-worm-trading"
-	solanaRPCEndpointEnv       = "ATHENA_WORM_TRADING_SOLANA_RPC_URL"
-	rpcAttemptTimeoutEnv       = "ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT"
-	balanceBudgetEnv           = "ATHENA_WORM_TRADING_BALANCE_BUDGET"
-	rpcRateLimitEnv            = "ATHENA_WORM_TRADING_RPC_RATE_LIMIT"
-	rpcRateBurstEnv            = "ATHENA_WORM_TRADING_RPC_RATE_BURST"
-	credentialKeyEnv           = "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY"
-	wormAttemptTimeoutEnv      = "ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT"
-	wormPositionBudgetEnv      = "ATHENA_WORM_TRADING_POSITION_BUDGET"
-	wormPositionConcurrencyEnv = "ATHENA_WORM_TRADING_POSITION_CONCURRENCY"
+	cliName                     = "athena-worm-trading"
+	solanaRPCEndpointEnv        = "ATHENA_WORM_TRADING_SOLANA_RPC_URL"
+	rpcAttemptTimeoutEnv        = "ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT"
+	balanceBudgetEnv            = "ATHENA_WORM_TRADING_BALANCE_BUDGET"
+	rpcRateLimitEnv             = "ATHENA_WORM_TRADING_RPC_RATE_LIMIT"
+	rpcRateBurstEnv             = "ATHENA_WORM_TRADING_RPC_RATE_BURST"
+	credentialKeyEnv            = "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY"
+	wormAttemptTimeoutEnv       = "ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT"
+	wormPositionBudgetEnv       = "ATHENA_WORM_TRADING_POSITION_BUDGET"
+	wormPositionConcurrencyEnv  = "ATHENA_WORM_TRADING_POSITION_CONCURRENCY"
+	wormMarketsServerAddressEnv = "ATHENA_WORM_MARKETS_SERVER_ADDRESS"
 )
 
 func NewCommand() *cobra.Command {
@@ -50,6 +52,7 @@ func NewCommand() *cobra.Command {
 		wormAttemptTimeoutRaw      string
 		wormPositionBudgetRaw      string
 		wormPositionConcurrencyRaw string
+		wormMarketsServerAddress   string
 		storeSource                func(context.Context) (*wormtradingstore.SQLStore, error)
 	)
 
@@ -100,6 +103,11 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 			defer utilio.Close(credentialStore)
+			wormMarketsClientset, err := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
+			if err != nil {
+				return fmt.Errorf("configure Worm Markets client: %w", err)
+			}
+			defer utilio.Close(wormMarketsClientset)
 			credentialEncryptionKey, err := wormtrading.CredentialEncryptionKeyFromPassphrase(env.StringFromEnv(credentialKeyEnv, ""))
 			if err != nil {
 				return err
@@ -121,6 +129,7 @@ func NewCommand() *cobra.Command {
 				WormAPIAttemptTimeout:   wormAttemptTimeout,
 				WormPositionBudget:      wormPositionBudget,
 				WormPositionConcurrency: wormPositionConcurrency,
+				WormMarketsClientset:    wormMarketsClientset,
 				InternalAuthToken:       env.StringFromEnv(wormtradingapiclient.InternalAuthTokenEnv, ""),
 			})
 			if err != nil {
@@ -221,6 +230,12 @@ func NewCommand() *cobra.Command {
 		"rpc-rate-burst",
 		env.StringFromEnv(rpcRateBurstEnv, strconv.Itoa(wormtrading.DefaultSolanaRPCRateBurst)),
 		"Logical Solana JSON-RPC subrequest burst",
+	)
+	command.Flags().StringVar(
+		&wormMarketsServerAddress,
+		"worm-markets-server-address",
+		env.StringFromEnv(wormMarketsServerAddressEnv, fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)),
+		"Athena Worm Markets server address used by execution preview",
 	)
 	command.Flags().StringVar(
 		&wormAttemptTimeoutRaw,

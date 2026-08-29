@@ -11,7 +11,9 @@ custody-management surface, and Worm Trading's nested Assets and Combinations
 navigation. The Assets child owns the owner-scoped balance, full-account
 automatic Worm connection, and current-position activity surfaces. Combinations
 owns saved-template list and builder routes over the interactive native catalog
-and CRUD facade.
+and CRUD facade. Its contextual Execution Preview route owns a three-step,
+read-only Wallet selection and authoritative preflight review without adding an
+Executions navigation child or any order-start control.
 Other product pages own domain UI and data only after the shell grants a route.
 
 OIDC and SIWS verification, registration tickets, durable UUID identity,
@@ -38,7 +40,7 @@ result, and a revealed key remains only in its current modal.
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
 | Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
-| Worm Trading navigation, Assets, and Combinations | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `CombinationSummary`, event and combination service methods |
+| Worm Trading navigation, Assets, Combinations, and Execution Preview | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `WormTradingExecutionPreviewPage`, strict execution-plan normalizers and service methods |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -106,8 +108,13 @@ lists account-owned templates and explores fresh Worm child-market catalogs;
 it never mounts Wallet, connection, estimate, signature, draft, or trade
 mutation work. Both navigation children require Worm Trading `READ` and neither
 requires Wallet permission, but all Combinations data routes are additionally
-interactive-only. Assets obtains its data only from the Worm Trading facade and
-never calls the Wallet list or private-key APIs. Desktop presents a SOL/USDC and
+interactive-only. `/worm-trading/combinations/:id/execute` is a contextual
+Execution Preview route selected beneath Combinations, with an extra breadcrumb
+and browser-title segment; it is not another sidebar child. Starting the
+Combination and Wallet selection workflow requires `READ_WRITE`; an owner-scoped
+URL with `planId` remains directly reviewable with `READ`. Assets obtains its
+data only from the Worm Trading facade and never calls the Wallet list or
+private-key APIs. Desktop presents a SOL/USDC and
 Worm connection table followed by separate Open positions and In-flight
 requests tables; layouts at 900 px and below present the same records as cards.
 
@@ -138,7 +145,23 @@ USDC-per-share decimals and the non-executable meaning of last trade are
 available in tooltips. YES/NO uses labeled radio controls,
 unavailable directions remain disabled with readable reasons, and selection
 reordering uses explicit, accessible move-up/down buttons. Save is an atomic
-full-template operation; no Execute or order-start action is present.
+full-template operation. A write-capable saved row exposes Preview execution,
+which opens a separate read-only preflight workflow; no order-start action is
+present anywhere.
+
+Execution Preview is Combination → Wallets → Review. It starts with no Wallet
+selection, pages the complete management inventory, displays unconnected
+Wallets as disabled, and preserves click order as the requested Wallet-major
+order. Explicit move-up, move-down, and remove controls update that order.
+Desktop keeps selection and ordered summary in two columns; compact layouts use
+a sticky count/action bar and Drawer. Review polls an accepted BUILDING plan,
+then displays frozen Wallet and market summaries, balances, aggregate funds and
+fees, stable result counts, and paged steps. Transient status failures retry with
+capped backoff, READY refreshes once at expiry, and unfinished aggregate amounts
+remain unavailable rather than appearing as zero. Step errors have an explicit
+Retry. It labels SOL as informational and repeats that the page performs no
+Start, authorization, draft, signature, transaction, or order action. The
+sidebar still exposes only Assets and Combinations.
 
 ## Runtime Flow
 
@@ -356,8 +379,25 @@ full-template operation; no Execute or order-start action is present.
     selection; update sends the loaded positive revision and the complete
     ordered selection set. A conflict asks the user to reload rather than
     overwriting the newer revision. Successful create, update, or delete returns
-    to or refreshes Saved combinations. No flow selects a wallet or starts a
-    Worm estimate or mutation.
+    to or refreshes Saved combinations. Builder create/edit itself selects no
+    Wallet and starts no Worm estimate or mutation.
+36. A write-capable Saved combinations row opens
+    `/worm-trading/combinations/{id}/execute`. Combination confirms the exact
+    saved revision and market order. Wallets pages all account Solana connection
+    inventory in groups of 100, begins with no selection, permits only
+    `CONNECTED` rows, and preserves selection order; desktop shows the ordered
+    list beside the picker, while compact layouts use a sticky action and
+    Drawer. Build preview POSTs only the combination ID, expected revision, and
+    ordered Wallet IDs. The accepted plan ID is stored only in the URL
+    `planId` query so refresh can restore this owner-scoped result. Review polls
+    BUILDING every 1.5 seconds and stops at READY, FAILED, or facade-projected
+    EXPIRED. READY shows aggregate maximum collateral, opening fee, cumulative
+    USDC needed, Wallet balances, stable skip categories, and paged wallet-major
+    steps. Refresh preview creates a new immutable plan and retains the old
+    display if creation fails. A creation conflict or Refresh after a
+    source-revision change returns the user to Combination review. No state
+    exposes Start, execution authorization, credential material, draft,
+    signature, transaction, submission, or order mutation.
 
 ## State / Data
 
@@ -445,6 +485,16 @@ input. Builder state and dirty baselines remain in React memory and are dropped
 on route/account/access transitions. They are not written to Web Storage or a
 client-side draft store.
 
+Execution Preview write state contains the loaded combination, complete safe
+connection inventory, ordered selected Wallet IDs, workflow step, current plan
+ID, last confirmed plan projection, status/step pagination, and transient
+request errors. Only the opaque plan UUID appears in the URL query; the Wallet
+order, provider observations, estimate data, and steps are server-owned durable
+state rather than a browser draft. No preview data enters localStorage or
+sessionStorage. Account, access, route, or plan-ID changes abort outstanding
+requests and prevent a late response from being relabeled as the current plan.
+A read-only direct review does not request the management connection inventory.
+
 ## Configuration
 
 The UI uses same-origin `/auth/google/login`, `/auth/google/callback`,
@@ -488,6 +538,18 @@ owner or display snapshot from the browser, are not public grpc-gateway or
 Swagger resources, and reject API Keys. Reads require interactive Worm Trading
 `READ`; mutations require interactive `READ_WRITE` and the exact application
 Origin but no Worm or Wallet reauthentication lease.
+
+Execution Preview uses native
+`POST /api/v1/worm-trading/execution-plans`,
+`GET /api/v1/worm-trading/execution-plans/{planId}`, and
+`GET /api/v1/worm-trading/execution-plans/{planId}/steps?page=&pageSize=`.
+Creation sends only `combinationId`, `expectedCombinationRevision`, and ordered
+`walletIds`, requires interactive Worm Trading `READ_WRITE` plus exact Origin,
+and receives HTTP 202. Detail and step reads require interactive Worm Trading
+`READ`; a direct Review URL therefore remains usable without write access, while
+Build and Refresh stay hidden. Step pages default to 50 and allow 20, 50, or 100
+in the browser. None of these endpoints accepts an owner, credential, market
+override, funds override, or execution command.
 
 Connect AI uses the document's runtime base URI rather than a configured or
 hard-coded public domain. This produces deployment-specific absolute URLs while
@@ -542,12 +604,21 @@ portable to an arbitrary reverse-proxy subpath.
 - The builder keeps one direction per Market Condition ID, contiguous selection
   order, a 1–80-character trimmed name, and at least one item. It sends only IDs
   and side; trusted display snapshots and current selectability come from the
-  server. No Execute action exists.
+  server. Preview execution is available only from a committed saved row and
+  never changes builder state.
+- Execution Preview is contextual under Combinations. Interactive `READ_WRITE`
+  begins with no selection, accepts only `CONNECTED` Wallets, preserves explicit
+  Wallet order, and creates a new immutable read-only plan for each Build or
+  Refresh. Interactive `READ` may inspect a direct owner plan URL but cannot
+  select Wallets or refresh. Polling and paged detail never expose a Start
+  action, step-up flow, credential, draft, signature, transaction, or mutation.
+  There is no Executions sidebar child.
 - Automatic connection work is serial, paced to at most five wallet starts per
   minute, held only in page memory, and never retried without a fresh inventory
   read and an explicit user action after failure.
-- Worm Trading exposes no order execution, cancel, close, TP/SL, claim,
-  transaction-signing, or automatic polling control.
+- Worm Trading exposes no order execution, cancel, close, TP/SL, claim, or
+  transaction-signing control. Automatic preview reads cover BUILDING status
+  and one READY expiry-boundary refresh only.
 - Connect AI is available only when API Key access is enabled for an ordinary
   account. The fixed administrator cannot enter this credential path.
 - Connect AI and Create API key issue the same full-current-account bearer;
@@ -624,6 +695,16 @@ reports conflict and requires an explicit reload; the client never merges or
 blindly replays the old template. Account or access loss aborts scoped requests,
 discards late results, and routes through the normal authorization fallback.
 
+Execution-preview creation rejects a stale source revision or invalid Wallet
+selection before the workflow enters Review. BUILDING polling may be resumed
+from the URL plan ID after refresh. A transient polling or step-page failure
+keeps the last confirmed projection visible and offers retry; durable FAILED
+never exposes partial steps as usable. READY becomes EXPIRED after its server
+deadline, and a deleted or changed source combination is shown through a stable
+usability warning. Refresh always creates a new plan and leaves the prior
+snapshot intact when that POST fails. Account/access loss cancels polling and
+returns through normal route authorization without mutating the durable plan.
+
 Connect AI creation failure leaves the creation form available for correction.
 Credential verification failure exposes a retry action and explanatory status
 without removing either copy action. Clipboard failure leaves the full
@@ -659,6 +740,13 @@ Athena catalog fetch time in the current page. `fetchedAt` is retrieval time,
 not last-trade time. Its last-trade price is neither a best ask, midpoint,
 estimate, nor execution guarantee, and is not persisted or emitted as telemetry.
 
+Execution Preview exposes the durable plan UUID, BUILDING stage and classified
+count, terminal state, stable failure/usability codes, expiry, Wallet and market
+ordinals, exact decimal estimates, balances, and paged step reasons. A single
+polite progress region announces BUILDING work. Client telemetry excludes
+provider payloads, credentials, exposure pubkeys, signatures, drafts,
+transactions, and any signable material.
+
 Connect AI exposes verification state and copy failures only in the current UI.
 It does not log the bearer or instruction block, and the verification request
 does not create a separate server-side integration or connection status.
@@ -677,9 +765,10 @@ does not create a separate server-side integration or connection status.
 - [ ] Wallet grid/drawer, create/import backup, avatar CAS, and provider reauthentication remain current.
 - [ ] Wallet private-key and pending-action cleanup remains route/account/access scoped.
 - [ ] Worm Trading exposes only Assets and Combinations beneath one parent navigation item.
-- [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only and free of Wallet, estimate, signature, draft, and Worm mutation work.
+- [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only, while its contextual preview may perform server-side reads and Estimate but no signature, draft, or Worm mutation.
 - [ ] Saved list, URL/ID parsing, cross-Event single-direction selection, accessible ordering, trusted snapshots, and revision-CAS feedback remain current.
 - [ ] Combinations keeps its compact price rows, hidden normal market metadata, exact complementary last-trade display, manual Event refresh, and transient-price dirty-state boundary current.
+- [ ] Execution Preview keeps three-step write ordering, direct READ review, connected-only Wallet selection, resilient BUILDING/expiry polling, immutable refresh, paged wallet-major review, informational SOL, and no-Start behavior current.
 - [ ] Worm automatic connection remains interactive-`READ_WRITE`, owner-scoped, paced, provider-step-up-aware, and independent from Wallet private-key reveal.
 - [ ] Worm Trading preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
 - [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, manual Reconnect, and exceptional cleanup remain current.

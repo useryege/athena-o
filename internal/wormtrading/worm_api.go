@@ -3,6 +3,7 @@ package wormtrading
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -15,9 +16,13 @@ import (
 const (
 	OfficialWormAPIBaseURL = worm.DefaultBaseURL
 
-	DefaultWormAPIAttemptTimeout   = 5 * time.Second
-	DefaultWormPositionBudget      = 20 * time.Second
-	DefaultWormPositionConcurrency = 4
+	DefaultWormAPIAttemptTimeout    = 5 * time.Second
+	DefaultWormPositionBudget       = 20 * time.Second
+	DefaultWormPositionConcurrency  = 4
+	defaultWormUnauthenticatedRPM   = 100
+	defaultWormUnauthenticatedBurst = 2
+	defaultWormAuthenticatedRPM     = 240
+	defaultWormAuthenticatedBurst   = 4
 )
 
 const (
@@ -34,12 +39,13 @@ const (
 )
 
 // WormAPIClient is the deliberately small portion of util/worm needed by the
-// credential and position-read boundary. util/worm remains the source of the
-// HMAC wire protocol and response DTOs.
+// credential, position-read, and read-only execution-preview boundaries.
+// util/worm remains the source of the HMAC wire protocol and response DTOs.
 type WormAPIClient interface {
 	CreateAuthChallenge(context.Context, worm.CreateAuthChallengeRequest) (*worm.AuthChallenge, error)
 	CreateAPIKey(context.Context, worm.CreateAPIKeyRequest) (*worm.APIKeySecret, error)
 	RevokeAPIKey(context.Context, string) (*worm.APIKey, error)
+	EstimateMarginPosition(context.Context, worm.EstimateMarginPositionOptions) (*worm.MarginPositionEstimate, error)
 	ListPositionRequests(context.Context, worm.ListPositionRequestsOptions) (*worm.ListPositionRequestsResponse, error)
 	ListMarginPositions(context.Context, worm.ListMarginPositionsOptions) (*worm.ListMarginPositionsResponse, error)
 }
@@ -54,13 +60,37 @@ type WormAPIClientFactory interface {
 
 type officialWormAPIClientFactory struct {
 	attemptTimeout time.Duration
+	// The limiters are factory-scoped so creating a client per wallet cannot
+	// multiply the process-wide request allowance.
+	unauthenticatedRateLimiter ratelimit.Limiter
+	authenticatedRateLimiter   ratelimit.Limiter
 }
 
 func NewOfficialWormAPIClientFactory(attemptTimeout time.Duration) (WormAPIClientFactory, error) {
 	if attemptTimeout <= 0 {
 		return nil, errors.New("worm API attempt timeout must be positive")
 	}
-	return &officialWormAPIClientFactory{attemptTimeout: attemptTimeout}, nil
+	unauthenticatedRateLimiter, err := ratelimit.New(ratelimit.Config{
+		Requests: defaultWormUnauthenticatedRPM,
+		Per:      time.Minute,
+		Burst:    defaultWormUnauthenticatedBurst,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create unauthenticated Worm rate limiter: %w", err)
+	}
+	authenticatedRateLimiter, err := ratelimit.New(ratelimit.Config{
+		Requests: defaultWormAuthenticatedRPM,
+		Per:      time.Minute,
+		Burst:    defaultWormAuthenticatedBurst,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create authenticated Worm rate limiter: %w", err)
+	}
+	return &officialWormAPIClientFactory{
+		attemptTimeout:             attemptTimeout,
+		unauthenticatedRateLimiter: unauthenticatedRateLimiter,
+		authenticatedRateLimiter:   authenticatedRateLimiter,
+	}, nil
 }
 
 func (f *officialWormAPIClientFactory) NewUnauthenticatedClient() (WormAPIClient, error) {
@@ -75,12 +105,16 @@ func (f *officialWormAPIClientFactory) NewAuthenticatedClient(apiKey, apiSecret 
 }
 
 func (f *officialWormAPIClientFactory) newClient(apiKey, apiSecret string) (WormAPIClient, error) {
+	rateLimiter := f.unauthenticatedRateLimiter
+	if apiKey != "" || apiSecret != "" {
+		rateLimiter = f.authenticatedRateLimiter
+	}
 	return worm.NewClient(worm.Config{
 		BaseURL:     OfficialWormAPIBaseURL,
 		APIKey:      apiKey,
 		APISecret:   apiSecret,
 		Timeout:     f.attemptTimeout,
-		RateLimiter: ratelimit.Noop(),
+		RateLimiter: rateLimiter,
 	})
 }
 

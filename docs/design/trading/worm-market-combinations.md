@@ -16,7 +16,10 @@ prices, and unsaved-draft state.
 
 This capability never lists or selects Wallets, obtains a Worm credential lease,
 estimates funds, creates a draft, signs a transaction, submits or cancels an
-order, or performs any other Worm mutation.
+order, or performs any other Worm mutation. The separate
+[Worm Execution Preview](worm-execution-preview.md) capability can freeze one
+saved combination revision and build a read-only Wallet/market preflight; that
+consumer does not change combination CRUD or catalog selectability.
 
 ## Source Locations
 
@@ -74,7 +77,9 @@ require neither Wallet access nor a Worm credential-management lease.
 
 The browser exposes Assets and Combinations beneath the Worm Trading parent.
 Saved combinations is the landing surface. New and edit/view use separate
-routes; there is no order-execution route or navigation entry.
+routes. A write-capable user may enter the read-only preview workflow at
+`/worm-trading/combinations/{id}/execute`, but that route is contextual rather
+than a third sidebar child and cannot start an order.
 
 ## Runtime Flow
 
@@ -159,6 +164,12 @@ routes; there is no order-execution route or navigation entry.
     owner-scoped header before deleting it; cascading foreign-key behavior
     removes its items in the same transaction. The list uses a confirmation
     dialog and reloads or moves to the preceding page after success.
+15. A write-capable list row also exposes Preview execution. That action opens
+    `/worm-trading/combinations/{id}/execute`, where the separate Execution
+    Preview capability reads this owner-scoped combination and freezes its
+    exact revision and item order. Preview creation does not mark the template
+    busy or prevent a later update or delete; an existing preview instead
+    becomes non-consumable when its source revision no longer matches.
 
 ## State / Data
 
@@ -199,6 +210,13 @@ last-trade value and NO is the exact decimal complement. These observations are
 not best asks, midpoints, margin estimates, executable quotes, or guarantees
 that a future trade can fill at that value. Catalog `fetchedAt` is the Athena
 retrieval time, not a last-trade timestamp.
+
+Execution previews copy the combination UUID, name, revision, ordered items,
+and trusted display snapshots into their own durable rows. They do not add a
+foreign-key lock from the template and do not change its revision. Combination
+update and delete therefore remain available while a preview exists; preview
+usability is checked against the current source revision at read and completion
+time.
 
 Market-wide catalog reasons are `MARKET_DETAIL_UNAVAILABLE`,
 `MARKET_ID_MISMATCH`, `MARKET_EVENT_MISMATCH`, `MARKET_NOT_OPEN`,
@@ -245,6 +263,9 @@ This capability introduces no independent environment setting.
   all-or-nothing and never merges stale browser state.
 - Catalog and CRUD paths never call estimate, Wallet, credential lease, signer,
   draft, submit, cancel, or any Worm mutation.
+- Preview execution is a contextual consumer of the committed combination,
+  not part of template CRUD. It cannot lock, mutate, or advance a combination
+  revision, and the Combinations sidebar remains the only navigation entry.
 - Last-trade price availability does not affect market or outcome selectability,
   combination contents, revision, or dirty state.
 
@@ -302,5 +323,6 @@ key, signature, draft, transaction, or raw provider payload.
 - [ ] Owner/name uniqueness, item uniqueness/order, revision CAS, and transaction boundaries remain current.
 - [ ] Compact market rows, hidden normal metadata, cents/tooltips, Event refresh, desktop summary, mobile Drawer, keyboard, focus, and touch behavior remain current.
 - [ ] Wallet, credential, estimate, signature, draft, transaction, and Worm mutation paths remain outside this capability.
+- [ ] Preview execution remains a contextual, read-only consumer of an exact saved revision rather than a third navigation child or a template lock.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

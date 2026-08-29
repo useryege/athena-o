@@ -11,7 +11,10 @@ position requests, and exposes independent Solana, credential-store, and Worm
 upstream capability status. The same process persists account-owned, ordered
 Worm market combinations through internal CRUD RPCs; the API Server remains
 responsible for interactive authorization and authoritative market-catalog
-validation before those snapshots reach this store.
+validation before those snapshots reach this store. Worm Trading also owns
+durable, asynchronous read-only execution previews that freeze one combination
+revision, ordered owner Wallets, current market/estimate observations, complete
+Worm exposure, confirmed balances, and Wallet-major step classifications.
 
 Wallet owns account-scoped custody records and all private-key operations. The
 API Server owns authentication, `worm_trading` authorization, current-account
@@ -19,8 +22,9 @@ resolution, Wallet ownership lookup, native connection-management orchestration,
 and the final public projection. Wallet signs only the fixed Worm credential
 challenge; it never returns private key material to Worm Trading or exposes an
 arbitrary-message signer. Credential and activity records persist no account
-UUID, while saved combinations are explicitly keyed by the current account UUID.
-Worm Trading persists no Wallet private key, position snapshot, or order state.
+UUID, while saved combinations and execution previews are explicitly keyed by
+the current account UUID. Worm Trading persists no Wallet private key, live
+position snapshot, order, draft, transaction, or execution-run state.
 
 The production integration is fixed to Worm's official HMAC protocol. The
 standalone Worm Web JWT live test under `util/worm` is not part of this runtime.
@@ -33,7 +37,11 @@ balances, full-account automatic connection bootstrap, open positions, and
 in-flight requests. `/worm-trading/combinations` lists the current account's
 saved templates; `/new` and `/{id}/edit` build or inspect one template from
 fresh Event Condition ID catalogs. The Combinations surface never requests a
-wallet, estimate, credential lease, signature, draft, or Worm mutation.
+wallet, estimate, credential lease, signature, draft, or Worm mutation while
+editing a template. A write-capable saved row may open the contextual
+`/{id}/execute` Execution Preview workflow. That route selects connected
+Wallets and performs only GET, List, balance, catalog, and Estimate work. It is
+not an Executions navigation child and cannot start an order.
 
 ## Source Locations
 
@@ -41,18 +49,20 @@ wallet, estimate, credential lease, signature, draft, or Worm mutation.
 | --- | --- | --- |
 | Process entry and configuration | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [cmd/main.go](../../../cmd/main.go) | `NewCommand`, `athena-worm-trading` dispatch |
 | Internal authenticated server | [internal/wormtrading/server.go](../../../internal/wormtrading/server.go), [internal/wormtrading/apiclient](../../../internal/wormtrading/apiclient) | `Server`, `ServerOpts`, internal Bearer interceptors, gRPC health |
-| Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation and connection RPCs, `CreateMarketCombination`, `GetMarketCombination`, `ListMarketCombinations`, `UpdateMarketCombination`, `DeleteMarketCombination` |
+| Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation and connection RPCs, combination CRUD RPCs, `CreateExecutionPlan`, `GetExecutionPlan`, `ListExecutionPlanSteps` |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
-| Credential and combination store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/market_combinations.go](../../../internal/wormtrading/store/market_combinations.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `Store`, credential lifecycle state, `CreateMarketCombination`, `UpdateMarketCombination`, `DeleteMarketCombination` |
+| Credential, combination, and preview store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/market_combinations.go](../../../internal/wormtrading/store/market_combinations.go), [internal/wormtrading/store/execution_plans.go](../../../internal/wormtrading/store/execution_plans.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `Store`, credential lifecycle, combination CRUD, execution-plan create/claim/complete/read/cleanup operations |
 | Credential encryption and official client | [internal/wormtrading/credential_crypto.go](../../../internal/wormtrading/credential_crypto.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `CredentialEncryptionKeyFromPassphrase`, `credentialCipher`, `NewOfficialWormAPIClientFactory`, HMAC headers |
 | Connection and revocation lifecycle | [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/store/connections.go](../../../internal/wormtrading/store/connections.go), [internal/wormtrading/store/credentials.go](../../../internal/wormtrading/store/credentials.go), [internal/wormtrading/store/maintenance.go](../../../internal/wormtrading/store/maintenance.go) | `PrepareWormWalletConnection`, `CompleteWormWalletConnection`, `DisconnectWormWallet`, `revokeStoredCredential`, `revokePendingCredentials`, `MarkReconnectRequired`, `MarkCredentialRevocationFailed`, `ExpireConnectionAttempts` |
 | Position aggregation | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go) | `BatchGetWalletPositionSnapshots`, `fetchOpenPositions`, `fetchInFlightRequests`, `suppressPositionBackedRequests` |
 | Public account facade and contracts | [internal/server/wormtrading/wormtrading.go](../../../internal/server/wormtrading/wormtrading.go), [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto) | `ListWalletBalances`, `ListWalletTradingActivity`, strict wallet/result correlation |
 | Native connection inventory and management | [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `listWormWalletConnections`, `manageWormConnection`, `completeWormConnection`, `authenticateWormConnectionHTTP`, route registration |
 | Native combination facade | [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `registerWormCombinationHandlers`, `getWormOrderEventCatalog`, combination CRUD handlers, `resolveWormCombinationItems` |
+| Native execution-preview facade | [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `registerWormExecutionPlanHandlers`, `createWormExecutionPlan`, `getWormExecutionPlan`, `listWormExecutionPlanSteps`, `resolveWormExecutionPlanWallets` |
+| Read-only preview classification | [internal/wormtrading/execution_preview_builder.go](../../../internal/wormtrading/execution_preview_builder.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go) | `ExecutionPreviewBuilder`, `Build`, full exposure pagination, exact-decimal cumulative USDC simulation, shared provider rate limiters |
 | Purpose-bound Wallet signer | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/service.go](../../../internal/wallet/service.go) | `SignWormAuthChallenge`, `validateWormAuthChallenge` |
 | Independent reauthentication lease | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go) | `NewWormCredentialManager`, `EnableWormCredentialReauthentication`, Worm-only Google and Solana proof flows |
-| Browser navigation and pages | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, `WormTradingPage`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `WormTradingService.getEvent`, combination CRUD methods |
+| Browser navigation and pages | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets and Combinations pages, `WormTradingExecutionPreviewPage`, strict execution-plan service normalizers |
 | Process graph and production secrets | [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql), [tools/prod-env-reset/main.go](../../../tools/prod-env-reset/main.go) | port `8090`, `worm_trading` database, independent encryption key and internal token |
 
 ## Architecture
@@ -145,6 +155,34 @@ Template persistence never calls Wallet, decrypts a Worm credential, estimates
 a position, or mutates Worm. The detailed boundary is maintained in
 [Worm Market Combinations](worm-market-combinations.md).
 
+Execution Preview is a separate native facade and asynchronous store workflow:
+
+```text
+interactive login + worm_trading READ_WRITE + exact origin
+  -> API Server resolves ordered owner-scoped Solana Wallet IDs
+  -> Worm Trading atomically freezes combination revision, Wallet order,
+     market order, and trusted display snapshots as BUILDING
+  -> background worker
+       -> Worm Markets GetOrderEventCatalog for current market authority
+       -> credential store + decrypt active per-Wallet HMAC credentials
+       -> Solana confirmed SOL/USDC balance batch
+       -> Worm GET/List all open positions and in-flight requests
+       -> Worm public Estimate at fixed 1x funds
+       -> exact-decimal Wallet-major USDC simulation
+  -> one transaction commits the complete READY snapshot or records FAILED
+
+interactive login + worm_trading READ
+  -> owner-scoped plan detail and paged step reads
+```
+
+Preview creation accepts no owner, address, market, side, funds, leverage, or
+provider payload from the browser. It requires neither Wallet module access nor
+a Wallet/Worm step-up lease. The worker uses the already connected credential
+only for authenticated GET/List reads; public Estimate uses a separate
+unauthenticated client. No boundary exposes create-draft, sign, submit, cancel,
+or other mutation methods. The complete design is maintained in
+[Worm Execution Preview](worm-execution-preview.md).
+
 `NewOfficialWormAPIClientFactory` exposes no configurable base URL and always
 constructs `util/worm` clients for `https://api.worm.wtf`. Authenticated calls
 use `WORM-API-KEY`, `WORM-TIMESTAMP`, and `WORM-SIGNATURE`. The API key and
@@ -159,11 +197,14 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    `0.0.0.0:8090` inside the private network.
 2. Startup migrates the independent `worm_trading` database and requires a
    successful credential-store ping. Missing or invalid encryption material or
-   an unreachable store fails closed. Standard gRPC health starts
-   `NOT_SERVING`; the Solana identity probe changes it to `SERVING`
+   an unreachable store fails closed. The command also constructs one
+   required process-owned Worm Markets clientset for preview catalogs; service
+   construction fails when that dependency is absent. Standard gRPC
+   health starts `NOT_SERVING`; the Solana identity probe changes it to `SERVING`
    only after mainnet, Circle USDC, confirmed-slot, and JSON-RPC batch checks
-   succeed. Worm HMAC availability is observed lazily and does not control
-   Solana balance health.
+   succeed. Credential maintenance and the single preview worker start beside
+   the probe. Worm HMAC and preview dependency availability are observed lazily
+   and do not control Solana balance health.
 3. A background maintenance loop runs every 30 seconds. It expires abandoned
    connection attempts and revokes reconnect-retired `PENDING_REVOCATION`
    credentials. It also recovers a stale `REVOKING` row only when its connection
@@ -330,6 +371,43 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     revision, and replaces the complete item list in one transaction. Delete
     performs the same owner and revision CAS. No route calls Wallet, estimate,
     credential, signature, draft, or Worm mutation APIs.
+22. A write-capable Saved combinations row opens the contextual
+    `/worm-trading/combinations/{id}/execute` route. The three browser steps
+    confirm the committed combination, select and explicitly order only
+    CONNECTED Wallets from the complete inventory, and review one read-only
+    plan. POST sends the exact source revision and ordered Wallet IDs. The API
+    Server resolves each ID through the current owner's Solana Wallet boundary,
+    and Worm Trading atomically creates the complete BUILDING header, Wallet,
+    and item input snapshot. HTTP returns 202 and a resource Location.
+    A read-capable user may inspect a direct owner plan URL but cannot select
+    Wallets, Build, or Refresh.
+23. The single execution-plan worker polls each second, claims the oldest
+    available BUILDING row with a two-minute SQL lease, and renews every 20
+    seconds. It refetches each unique Event catalog, requires each Wallet's
+    current CONNECTED active credential, batches confirmed balances, performs
+    public estimates, and walks every open-position and non-terminal-request
+    cursor page with required matching `meta.limit`. A Wallet List 401/403 CAS-
+    marks only its active credential `RECONNECT_REQUIRED`; a public Estimate
+    authentication response does not alter any Wallet. Progress stages are `READING_MARKETS`,
+    `READING_CONNECTIONS`, `READING_BALANCES`, `BUILDING_PREVIEW`, and
+    `FINALIZING`.
+24. Preview classification uses fixed Polymarket 5 USDC or Hyperliquid 1 USDC
+    funds at `1x`. It prioritizes opposite exposure, same-side position, and
+    same-side request before market, estimate, liquidity, and cumulative USDC
+    checks. Every successful Estimate must satisfy exact
+    `user_funds_needed = funds + fee_amount` and omit a 1x liquidation price.
+    Steps are Wallet-major, exact decimal, and complete. SOL remains an
+    informational observation; unavailable or invalid USDC fails the plan.
+25. Finalization rechecks the source revision, then locks every connection and
+    active credential in global Wallet-ID order before ordinal validation. It
+    bulk-imports the validated step set with PostgreSQL `COPY` and commits all
+    observations, reason counts, totals, and the 15-minute READY expiry in one
+    transaction. Any incomplete authority becomes terminal FAILED rather than
+    partial READY. READY-gated step pages use ordinal keyset reads. The UI polls
+    BUILDING at 1.5 seconds with capped failure backoff and refreshes authority at
+    the READY expiry boundary. Refresh creates a new plan. Hourly cleanup deletes at most
+    100 terminal records past their seven-day retention deadline; shutdown
+    cancels the worker and leaves an interrupted leased plan reclaimable.
 
 ## State / Data
 
@@ -363,6 +441,28 @@ Saved combinations use two account-owned tables in the same database:
   Condition ID only once within a combination. Cascading delete removes every
   item with its header.
 
+Execution previews add four owner-scoped, cascading tables:
+
+- `worm_execution_plans` freezes source combination identity/revision, BUILDING,
+  READY, or FAILED state, worker lease, progress/counts, exact-decimal totals,
+  request/completion/expiry timestamps, and seven-day retention.
+- `worm_execution_plan_wallets` freezes ordered safe Wallet identity and later
+  records the authoritative connection, active credential version, SOL/USDC
+  observations, and stable status/reason.
+- `worm_execution_plan_items` freezes ordered trusted combination display
+  fields and later records current backend, fixed funds, `1x`, availability,
+  reason, and public estimate fields.
+- `worm_execution_plan_steps` stores one wallet-major READY or SKIPPED row for
+  each Wallet/item pair with stable reason and projected USDC before/after.
+
+Plan creation, worker claim, terminal completion, and cleanup are independent
+transactions. READY completion rechecks the exact source revision plus each
+Wallet address, CONNECTED state, and active credential version while locking
+the relevant rows, then commits all Wallet/item observations, every step,
+reason aggregates, totals, and expiry atomically. A preview does not lock the
+source template after creation. READY usability is derived at read time from
+expiry, actionable-step count, and current source presence/revision.
+
 Create, full replacement, and delete are explicit SQL transactions. Get and
 list use repeatable-read, read-only transactions so each returned header and
 ordered item list comes from one database snapshot. The persisted titles and
@@ -394,12 +494,15 @@ cleanup warning. This prevents repeated reconnects from hiding an older Worm key
 that may still carry trading authority.
 
 The database does not contain a Wallet private key, login identity binding,
-Athena session, position, order, or live provider response. Combination display
+Athena session, live position, order, draft, transaction, or raw provider
+response. Combination display
 fields are the intentional save-time catalog snapshots; last-trade prices remain
 only in the currently loaded browser catalog. Plain HMAC credentials
 exist only for the current encrypt/decrypt/provider call. Process memory also holds
 bounded capability status, provider semaphores, per-wallet operation locks,
-Solana rate limiting, and current singleflight observations.
+Solana rate limiting, current singleflight observations, and at most one
+execution-preview build with its worker ID, lease guard, short-lived decrypted
+credentials, provider read clients, catalogs, balances, exposure, and estimates.
 
 Public balance amounts remain decimal strings with independent availability.
 Activity amounts, prices, leverage, shares, funds, liquidity, and PnL also
@@ -441,7 +544,7 @@ position/request counts, and aggregate status.
 | `ATHENA_WORM_TRADING_LISTEN_ADDRESS` | Listener address; default `127.0.0.1`, Compose `0.0.0.0`. |
 | `ATHENA_WORM_TRADING_PORT` / `--port` | gRPC port; default `8090`. |
 | `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | API Server/service credential; required, whitespace-free, at least 32 bytes, and independent from Wallet credentials. |
-| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Worm-Trading-owned PostgreSQL database containing connection/credential lifecycle state and account-owned saved market combinations. |
+| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Worm-Trading-owned PostgreSQL database containing connection/credential lifecycle state, saved market combinations, and execution previews. |
 | `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY` | Required passphrase of at least 32 bytes used only to derive the Worm credential encryption key. Changing it makes stored credentials unreadable. |
 | `ATHENA_WORM_TRADING_SOLANA_RPC_URL` / `--solana-rpc-url` | Solana balance endpoint. Local command default is the official mainnet endpoint; Compose requires a deployment value. |
 | `ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT` / `--rpc-attempt-timeout` | Solana per-attempt timeout; default `4s`. |
@@ -451,11 +554,16 @@ position/request counts, and aggregate status.
 | `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT` / `--worm-api-attempt-timeout` | Per official credential or position call; default `5s` and no greater than the position budget. |
 | `ATHENA_WORM_TRADING_POSITION_BUDGET` / `--worm-position-budget` | Complete current-wallet-page activity budget; default `20s`. |
 | `ATHENA_WORM_TRADING_POSITION_CONCURRENCY` / `--worm-position-concurrency` | Shared HMAC position/request provider concurrency; default `4`, maximum `32`. |
+| `ATHENA_WORM_MARKETS_SERVER_ADDRESS` / `--worm-markets-server-address` | Internal Worm Markets gRPC target used by execution-preview market validation; local default `127.0.0.1:8084`. |
 
 The Worm API base URL, HMAC headers, challenge message, activity page limit,
 request-state filter, and credential cleanup interval are fixed implementation
-constants. No environment variable can redirect Wallet signing to another Worm
-service.
+constants. Execution Preview fixes Polymarket funds at `5` USDC, Hyperliquid
+funds at `1` USDC, leverage at `1x`, provider page size at 100, READY lifetime
+at 15 minutes, and durable retention at seven days. Unauthenticated Estimate
+requests share a process-wide 100/minute limiter with burst two; authenticated
+GET/List requests share 240/minute with burst four. No environment variable can
+redirect Wallet signing to another Worm service.
 
 ## Invariants
 
@@ -510,6 +618,27 @@ service.
   selectability, the dirty fingerprint, persisted snapshots, or revision.
 - Combination catalog and persistence paths never call Wallet, estimate,
   credential, signature, draft, submit, or other Worm mutation APIs.
+- Execution-plan native routes are interactive-only and owner-scoped. GET
+  detail/steps requires `READ`; POST requires `READ_WRITE`, exact origin, exact
+  source revision, and API-Server-resolved ordered Solana Wallets. API Keys and
+  caller-selected owners, addresses, markets, sides, funds, or leverage are
+  rejected.
+- Preview item order is the frozen combination order and Wallet order is the
+  submitted order. Their Cartesian product is persisted strictly Wallet-major,
+  with no business step-count limit beyond request, integer, provider, and
+  storage bounds.
+- Only a current `CONNECTED` Wallet with the same active credential version may
+  enter a READY plan. Every market is refetched authoritatively and uses fixed
+  backend funds no greater than 10 USDC at exactly `1x`.
+- At `1x`, Estimate user funds exactly equal collateral plus opening fee and
+  liquidation price is absent; contradictory provider values fail the plan.
+- A terminal preview is complete or FAILED; partial provider or balance data
+  cannot become a consumable READY plan. USDC is simulated cumulatively with
+  exact decimals inside each Wallet, while SOL remains informational because
+  Estimate does not define exact transaction fee or rent.
+- Preview construction uses only catalog, balance, Worm GET/List, and public
+  Estimate operations. It creates no draft, signature, transaction, request,
+  order, position, or credential mutation.
 - No runtime path creates, cancels, signs, or closes a Worm order or position.
 
 ## Failure Recovery
@@ -583,6 +712,20 @@ the current combination. An edit-time catalog refresh failure retains the saved
 display snapshots for inspection; any subsequent save still undergoes complete
 server-side catalog refetch and validation.
 
+Execution-plan creation rejects stale combination revisions, foreign or invalid
+Wallets, and malformed order before committing BUILDING. A worker crash leaves
+the durable plan claimable after its lease expires; another worker may repeat
+only read-only preflight work. A completed provider rejection may classify one
+step, but incomplete catalog, connection, credential, balance, exposure page,
+Estimate, or internal response data fails the entire plan rather than exposing
+a partial READY result. Final source revision, Wallet connection, and active-
+credential drift prevent READY with distinct stable failure codes; a true lease
+loss leaves BUILDING for safe read-only reclaim. A terminal FAILED plan is immutable and retained for diagnosis;
+Refresh creates a new plan. READY is consumable for 15 minutes, then reads
+project it as EXPIRED. Deleted/changed sources and no-actionable-step plans
+remain readable with stable non-consumable codes. A bounded cleanup removes
+plans and cascading children after seven days.
+
 Solana probe and balance recovery retain their independent behavior: transient
 initial failure keeps health `NOT_SERVING` and retries, verified identity enables
 reads, later transient failure is degraded, and a network/mint/decimal/batch
@@ -612,6 +755,15 @@ combination-specific metric or health state; dependency
 failure is visible through bounded native HTTP errors plus Worm Markets and Worm
 Trading service health/logs.
 
+Execution Preview responses expose owner-safe frozen Wallet and market
+presentation, state/build stage, stable failure/usability codes, ordered reason
+counts, exact-decimal totals and estimates, balance observations, lifecycle
+timestamps, and paged step classifications. They never expose the owner UUID,
+worker lease, credential version, credential material, provider exposure
+pubkeys, raw payload, draft, signature, or transaction. Worker claim/build/
+terminal failures are logged with bounded plan stage and code. Preview backlog
+and provider freshness do not add a separate health or readiness signal.
+
 ## Change Checklist
 
 - [ ] Wallet ownership, purpose-bound signing, and public correlation checks remain at their current trust boundaries.
@@ -623,4 +775,5 @@ Trading service health/logs.
 - [ ] Runtime database, health/status, process wiring, production configuration, and reset guidance remain current.
 - [ ] Assets at `/worm-trading` keeps paced full-account automatic connection bootstrap responsive and free of order or position-mutation actions.
 - [ ] Combinations routes remain interactive-only, owner-scoped, catalog-validated, exact-complement-priced, revisioned, and free of Wallet, estimate, signature, draft, or Worm mutation calls.
+- [ ] Execution Preview remains interactive-only, owner-scoped, asynchronously complete-or-failed, exact-revisioned, Wallet-major, 15-minute-expiring, seven-day-retained, and free of provider mutations or signing.
 - [ ] The [design index](../README.md) contains the correct entry.

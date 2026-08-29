@@ -34,6 +34,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) |
 | Trading | Owner-scoped Solana balances and connection inventory, paced official-HMAC wallet bootstrap, encrypted Worm credentials, open positions and in-flight requests, and partial-failure semantics | [Worm Trading](trading/worm-trading.md) |
 | Trading | Provider-backed Worm event catalogs and owner-scoped, revisioned market-combination CRUD with trusted display snapshots | [Worm Market Combinations](trading/worm-market-combinations.md) |
+| Trading | Durable asynchronous read-only execution previews with frozen Wallet and market order, authoritative Worm exposure and estimates, cumulative USDC simulation, and expiring owner-scoped review | [Worm Execution Preview](trading/worm-execution-preview.md) |
 | Token Intelligence | Synchronous EVM block discovery, token validation, project initialization, and per-attempt processing diagnostics | [Token Chain Processor](token-intelligence/chain-processor.md) |
 | Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |

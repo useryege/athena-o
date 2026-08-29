@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/useryege/athena/internal/server/version"
+	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
@@ -33,6 +34,7 @@ type ServerOpts struct {
 	WormAPIAttemptTimeout   time.Duration
 	WormPositionBudget      time.Duration
 	WormPositionConcurrency int
+	WormMarketsClientset    wormmarketsapiclient.Clientset
 	InternalAuthToken       string
 }
 
@@ -56,6 +58,7 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		WormAPIAttemptTimeout:   opts.WormAPIAttemptTimeout,
 		WormPositionBudget:      opts.WormPositionBudget,
 		WormPositionConcurrency: opts.WormPositionConcurrency,
+		WormMarketsClientset:    opts.WormMarketsClientset,
 		SetHealthStatus:         server.setHealthStatus,
 	})
 	if err != nil {
