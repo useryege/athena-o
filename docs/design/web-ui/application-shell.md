@@ -171,6 +171,13 @@ authorizing, signing, or placing an order, then navigates to its Execution
 detail.
 
 Executions presents a high-density paged history and one owner-scoped Run detail.
+When the authoritative Run history is empty, the page performs a one-row saved-
+Combination read and explains that a Combination remains a template until an
+actionable Preview is explicitly prepared. Write-capable users with a saved
+template are directed to choose it, users without one are directed to the
+builder, and read-only users receive view-only or access guidance. Failure of
+this auxiliary read stays inside the empty state with Retry and a generic
+Combinations fallback; it does not replace the successful Run-history result.
 The detail shows the frozen summary, current Step, permanent paged Step history,
 authorization and coordinator state, provider request ID/state, and a single
 dynamic primary action chosen from Authorize, Start, Pause, or Continue.

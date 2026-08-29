@@ -106,6 +106,15 @@ application Origin. The browser supplies a UUID `commandId` and positive
 `expectedRevision` for optimistic command application. It supplies an exact
 expected Step ordinal and coordinator token only for execute-next.
 
+The execution-history page loads only owner-scoped Runs until the authoritative
+Run total is zero. Its empty state then performs one owner-scoped, one-row
+Combination list read so the guidance can distinguish an existing reusable
+template from an account that still needs one. A write-capable account with a
+saved Combination is directed to choose it and build a Preview; an account with
+no Combination is directed to the builder. Read-only accounts receive view-only
+or access guidance. A failed auxiliary Combination read remains local to the
+empty state and does not replace the successfully loaded empty Run history.
+
 ## Runtime Flow
 
 1. A write-capable Preview Review exposes `Prepare live execution` only for a

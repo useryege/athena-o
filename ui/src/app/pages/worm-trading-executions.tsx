@@ -114,8 +114,74 @@ const RunListCard = ({run, onOpen}: {run: WormExecutionRun; onOpen: () => void})
     </Card>
 );
 
+const ExecutionEmptyState = (props: {accountID: string; accessRevision: number; canWrite: boolean}) => {
+    const navigate = useNavigate();
+    const combinations = useAsyncData(() => services.wormTrading.listMarketCombinations(1, 1), [props.accountID, props.accessRevision]);
+    const hasCombinations = (combinations.data?.total || 0) > 0;
+
+    let guidance: React.ReactNode;
+    let actions: React.ReactNode;
+    if (combinations.loading) {
+        guidance = <Typography.Text type='secondary'>Checking saved combinations…</Typography.Text>;
+    } else if (combinations.error) {
+        guidance = (
+            <Space orientation='vertical' size='small' align='center'>
+                <Typography.Text type='warning'>
+                    <ExclamationCircleOutlined /> Could not check saved combinations.
+                </Typography.Text>
+                <Typography.Text type='secondary'>Execution runs appear only after a usable preview is prepared for live execution.</Typography.Text>
+            </Space>
+        );
+        actions = (
+            <Space wrap={true}>
+                <Button icon={<ReloadOutlined />} onClick={combinations.reload}>
+                    Retry
+                </Button>
+                <Button onClick={() => navigate('/worm-trading/combinations')}>Open combinations</Button>
+            </Space>
+        );
+    } else if (hasCombinations && props.canWrite) {
+        guidance = <Typography.Paragraph type='secondary'>Saved combinations are templates. Choose one, build a preview, then prepare it for live execution.</Typography.Paragraph>;
+        actions = (
+            <Button type='primary' onClick={() => navigate('/worm-trading/combinations')}>
+                Choose a saved combination
+            </Button>
+        );
+    } else if (props.canWrite) {
+        guidance = <Typography.Paragraph type='secondary'>Create a combination, build an actionable preview, then prepare it for live execution.</Typography.Paragraph>;
+        actions = (
+            <Button type='primary' onClick={() => navigate('/worm-trading/combinations/new')}>
+                Create combination
+            </Button>
+        );
+    } else if (hasCombinations) {
+        guidance = (
+            <Typography.Paragraph type='secondary'>You can review saved combinations, but preparing a live execution requires Worm Trading write access.</Typography.Paragraph>
+        );
+        actions = <Button onClick={() => navigate('/worm-trading/combinations')}>View saved combinations</Button>;
+    } else {
+        guidance = (
+            <Typography.Paragraph type='secondary'>
+                No execution runs are available. Creating combinations and preparing live executions requires Worm Trading write access.
+            </Typography.Paragraph>
+        );
+    }
+
+    return (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No execution runs yet'>
+            <Space orientation='vertical' size='middle' align='center'>
+                <div aria-live='polite' aria-atomic='true' aria-busy={combinations.loading}>
+                    {guidance}
+                </div>
+                {actions}
+            </Space>
+        </Empty>
+    );
+};
+
 export const WormTradingExecutionsPage = () => {
     const authorization = useAuthorization();
+    const canWrite = authorization.canWrite(AccountDataModule.WormTrading);
     const navigate = useNavigate();
     useExecutionAuthorizationReturn();
     const {page, pageSize, setPage} = usePagedParams(20, runPageSizes);
@@ -155,14 +221,17 @@ export const WormTradingExecutionsPage = () => {
     return (
         <AppPage
             title='Worm Trading Executions'
-            subtitle='Review prepared and historical wallet-major Worm execution runs. Runs are permanent and cannot be deleted.'
+            subtitle='Review live execution runs prepared from actionable previews. Runs are permanent and cannot be deleted.'
             loading={data.loading}
             error={data.error}
             onRefresh={data.reload}>
             {empty ? (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No execution runs'>
-                    <Button onClick={() => navigate('/worm-trading/combinations')}>Open combinations</Button>
-                </Empty>
+                <ExecutionEmptyState
+                    key={`${authorization.user.accountId}:${authorization.revision}`}
+                    accountID={authorization.user.accountId}
+                    accessRevision={authorization.revision}
+                    canWrite={canWrite}
+                />
             ) : (
                 <ResourceTable<WormExecutionRun>
                     rowKey='id'
