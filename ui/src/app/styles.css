@@ -1401,30 +1401,72 @@ body,
     font-size: 13px;
 }
 
-.worm-combination-market__outcomes.ant-radio-group {
+.worm-combination-market__outcomes {
     display: grid;
     min-width: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
 }
 
-.worm-combination-market__outcomes .ant-radio-button-wrapper {
+.worm-combination-outcome-tooltip {
+    display: block;
+    min-width: 0;
+}
+
+.worm-combination-outcome-button.ant-btn {
+    --worm-combination-outcome-color: var(--athena-green);
+
     width: 100%;
     min-width: 0;
     height: 42px;
     padding: 0 12px;
-    border: 1px solid var(--athena-border);
+    border: 1px solid var(--worm-combination-outcome-color);
     border-radius: 8px;
+    background: color-mix(in srgb, var(--worm-combination-outcome-color) 5%, var(--athena-panel));
+    color: var(--athena-text);
     line-height: 40px;
     text-align: center;
+    box-shadow: none;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        box-shadow 150ms ease;
 }
 
-.worm-combination-market__outcomes .ant-radio-button-wrapper::before {
-    display: none;
+.worm-combination-outcome-button--no.ant-btn {
+    --worm-combination-outcome-color: var(--athena-red);
 }
 
-.worm-combination-market__outcomes .ant-radio-button-wrapper-checked {
-    border-color: var(--athena-primary);
+.worm-combination-outcome-button.ant-btn:not(:disabled):hover {
+    border-color: var(--worm-combination-outcome-color);
+    background: color-mix(in srgb, var(--worm-combination-outcome-color) 9%, var(--athena-panel));
+    color: var(--athena-text);
+}
+
+.worm-combination-outcome-button.ant-btn[aria-pressed='true'] {
+    border-color: var(--worm-combination-outcome-color);
+    background: color-mix(in srgb, var(--worm-combination-outcome-color) 16%, var(--athena-panel));
+    color: var(--athena-text);
+    box-shadow:
+        inset 0 0 0 1px var(--worm-combination-outcome-color),
+        0 0 0 2px color-mix(in srgb, var(--worm-combination-outcome-color) 18%, transparent);
+}
+
+.worm-combination-outcome-button.ant-btn:focus-visible {
+    outline: 2px solid var(--athena-focus);
+    outline-offset: 2px;
+}
+
+.worm-combination-outcome-button.ant-btn:disabled {
+    border-color: color-mix(in srgb, var(--worm-combination-outcome-color) 42%, var(--athena-border));
+    background: color-mix(in srgb, var(--worm-combination-outcome-color) 3%, var(--athena-panel));
+    color: var(--athena-muted);
+    opacity: 0.68;
+}
+
+.worm-combination-outcome-button.ant-btn[aria-pressed='true']:disabled {
+    border-color: color-mix(in srgb, var(--worm-combination-outcome-color) 70%, var(--athena-border));
+    background: color-mix(in srgb, var(--worm-combination-outcome-color) 12%, var(--athena-panel));
 }
 
 .worm-combination-outcome-choice {
@@ -1440,7 +1482,15 @@ body,
     font-size: 12px;
 }
 
-.worm-combination-outcome-choice span {
+.worm-combination-outcome-choice__check {
+    display: inline-grid;
+    width: 12px;
+    color: var(--worm-combination-outcome-color);
+    font-size: 11px;
+    place-items: center;
+}
+
+.worm-combination-outcome-choice__price {
     color: var(--athena-text);
     font-family: var(--athena-data-font);
     font-size: 13px;
@@ -1726,7 +1776,7 @@ body,
         width: 100%;
     }
 
-    .worm-combination-market__outcomes .ant-radio-button-wrapper {
+    .worm-combination-outcome-button.ant-btn {
         height: 44px;
         min-height: 44px;
         line-height: 42px;

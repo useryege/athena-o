@@ -109,9 +109,13 @@ than a third sidebar child and cannot start an order.
    empty price. The HTTP facade rejects a partial, out-of-range, malformed, or
    non-complementary pair before returning the catalog to the browser.
 6. The browser may add multiple unique Events. A Market Condition ID may occur
-   once in the current template. Choosing its opposite side replaces the prior
-   side at the same ordinal. Remove and move-up/down rebuild contiguous one-based
-   ordinals.
+   once in the current template. The two outcome controls are independent
+   pressed buttons because the valid state includes neither side being selected.
+   Pressing the selected side again removes that market, while choosing its
+   opposite side replaces the prior side at the same ordinal. YES uses the
+   green semantic treatment and NO uses red; a check mark, stronger tint, and
+   thicker outline distinguish selection without relying only on color. Remove,
+   toggle-off, and move-up/down rebuild contiguous one-based ordinals.
 7. Desktop renders each Event as compact market rows in the main column and a
    sticky Current combination summary in the second column. A normal row shows
    only the market title and YES/NO choices with the last-trade price in cents;

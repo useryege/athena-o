@@ -1,6 +1,7 @@
 import {
     ArrowDownOutlined,
     ArrowUpOutlined,
+    CheckOutlined,
     CloseOutlined,
     DeleteOutlined,
     EditOutlined,
@@ -10,7 +11,7 @@ import {
     ReloadOutlined,
     SaveOutlined
 } from '@ant-design/icons';
-import {Alert, Button, Card, Drawer, Empty, Input, Radio, Space, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Button, Card, Drawer, Empty, Input, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Navigate, useBlocker, useNavigate, useParams} from 'react-router-dom';
@@ -393,10 +394,13 @@ export const WormTradingCombinationsPage = () => {
     );
 };
 
-const MarketOutcomeChoice = (props: {outcome: WormTradingEventOutcome; displayPrice: string}) => (
+const MarketOutcomeChoice = (props: {outcome: WormTradingEventOutcome; displayPrice: string; selected: boolean}) => (
     <span className='worm-combination-outcome-choice'>
+        <span className='worm-combination-outcome-choice__check' aria-hidden='true'>
+            {props.selected ? <CheckOutlined /> : null}
+        </span>
         <strong>{props.outcome.side}</strong>
-        <span>{props.displayPrice}</span>
+        <span className='worm-combination-outcome-choice__price'>{props.displayPrice}</span>
     </span>
 );
 
@@ -404,7 +408,7 @@ const EventMarketCard = (props: {
     market: WormTradingEventMarket;
     selectedSide?: WormMarketOutcomeSide;
     canWrite: boolean;
-    onSelect: (outcome: WormTradingEventOutcome) => void;
+    onToggle: (outcome: WormTradingEventOutcome) => void;
 }) => {
     const displayPrices = marketLastTradeCents(props.market);
     const availabilityMessages = props.market.unavailableCode
@@ -415,28 +419,27 @@ const EventMarketCard = (props: {
             <Typography.Text className='worm-combination-market__title' strong={true} ellipsis={true} title={props.market.title}>
                 {props.market.title}
             </Typography.Text>
-            <Radio.Group
-                className='worm-combination-market__outcomes'
-                aria-label={`Outcome for ${props.market.title}`}
-                value={props.selectedSide}
-                disabled={!props.canWrite}
-                onChange={event => {
-                    const outcome = props.market.outcomes.find(candidate => candidate.side === event.target.value);
-                    if (outcome?.selectable) {
-                        props.onSelect(outcome);
-                    }
-                }}>
-                {props.market.outcomes.map(outcome => (
-                    <Tooltip key={outcome.side} title={`${lastTradeTooltip(outcome.lastTradePrice)}${outcome.selectable ? '' : ` ${unavailableLabel(outcome.unavailableCode)}.`}`}>
-                        <Radio.Button
-                            value={outcome.side}
-                            disabled={!outcome.selectable}
-                            aria-label={`${props.market.title}, ${outcome.side}, ${lastTradeAccessiblePrice(outcome.lastTradePrice, displayPrices[outcome.side])}${outcome.selectable ? '' : `, unavailable: ${unavailableLabel(outcome.unavailableCode)}`}`}>
-                            <MarketOutcomeChoice outcome={outcome} displayPrice={displayPrices[outcome.side]} />
-                        </Radio.Button>
-                    </Tooltip>
-                ))}
-            </Radio.Group>
+            <div className='worm-combination-market__outcomes' role='group' aria-label={`Outcome for ${props.market.title}`}>
+                {props.market.outcomes.map(outcome => {
+                    const selected = props.selectedSide === outcome.side;
+                    return (
+                        <Tooltip
+                            key={outcome.side}
+                            title={`${lastTradeTooltip(outcome.lastTradePrice)}${outcome.selectable ? '' : ` ${unavailableLabel(outcome.unavailableCode)}.`}`}>
+                            <span className='worm-combination-outcome-tooltip'>
+                                <Button
+                                    className={`worm-combination-outcome-button worm-combination-outcome-button--${outcome.side.toLowerCase()}`}
+                                    disabled={!props.canWrite || !outcome.selectable}
+                                    aria-label={`${props.market.title}, ${outcome.side}, ${lastTradeAccessiblePrice(outcome.lastTradePrice, displayPrices[outcome.side])}${outcome.selectable ? '' : `, unavailable: ${unavailableLabel(outcome.unavailableCode)}`}`}
+                                    aria-pressed={selected}
+                                    onClick={() => props.onToggle(outcome)}>
+                                    <MarketOutcomeChoice outcome={outcome} displayPrice={displayPrices[outcome.side]} selected={selected} />
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    );
+                })}
+            </div>
             {availabilityMessages.length > 0 && (
                 <div className='worm-combination-market__availability'>
                     {availabilityMessages.map(message => (
@@ -455,7 +458,7 @@ const EventExplorerCard = (props: {
     refreshing: boolean;
     refreshDisabled: boolean;
     refreshError: string;
-    onSelect: (market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => void;
+    onToggle: (market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => void;
     onRefresh: () => void;
     onRemoveEvent: () => void;
 }) => {
@@ -518,7 +521,7 @@ const EventExplorerCard = (props: {
                             market={market}
                             selectedSide={props.selections.find(item => item.marketConditionId === market.marketConditionId)?.side}
                             canWrite={props.canWrite}
-                            onSelect={outcome => props.onSelect(market, outcome)}
+                            onToggle={outcome => props.onToggle(market, outcome)}
                         />
                     ))}
                 </div>
@@ -890,7 +893,7 @@ export const WormTradingCombinationBuilderPage = () => {
         }
     };
 
-    const selectOutcome = (event: WormTradingEvent, market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => {
+    const toggleOutcome = (event: WormTradingEvent, market: WormTradingEventMarket, outcome: WormTradingEventOutcome) => {
         if (!canWrite || !outcome.selectable) {
             return;
         }
@@ -898,6 +901,9 @@ export const WormTradingCombinationBuilderPage = () => {
             const existingIndex = current.findIndex(item => item.marketConditionId === market.marketConditionId);
             if (existingIndex < 0) {
                 return orderedSelections([...current, selectionFromOutcome(event, market, outcome, current.length + 1)]);
+            }
+            if (current[existingIndex].side === outcome.side) {
+                return orderedSelections(current.filter((_, index) => index !== existingIndex));
             }
             const next = [...current];
             next[existingIndex] = selectionFromOutcome(event, market, outcome, existingIndex + 1);
@@ -1096,7 +1102,7 @@ export const WormTradingCombinationBuilderPage = () => {
                                         refreshing={refreshingEventID === event.eventConditionId}
                                         refreshDisabled={Boolean(refreshingEventID) || addingEvent || hydratingEvents || saving}
                                         refreshError={eventRefreshErrors[event.eventConditionId] || ''}
-                                        onSelect={(market, outcome) => selectOutcome(event, market, outcome)}
+                                        onToggle={(market, outcome) => toggleOutcome(event, market, outcome)}
                                         onRefresh={() => void refreshEvent(event)}
                                         onRemoveEvent={() => removeEvent(event)}
                                     />
