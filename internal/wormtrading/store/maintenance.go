@@ -8,22 +8,44 @@ import (
 	wormtradingsqlc "github.com/useryege/athena/internal/wormtrading/store/sqlc"
 )
 
-const connectionOutcomeUnknownWarning = "CONNECT_OUTCOME_UNKNOWN"
+const (
+	connectionOutcomeUnknownWarning   = "CONNECT_OUTCOME_UNKNOWN"
+	connectionServiceRestartedWarning = "SERVICE_RESTARTED"
+)
+
+// RecoverConnectionAttempts resolves every credential attempt inherited from a
+// previous service process. PREPARED means Worm credential creation was never
+// dispatched and can fail deterministically. COMPLETING may have reached Worm,
+// so it remains outcome-unknown. The caller repeats this bounded operation until
+// it returns fewer rows than requested.
+func (s *SQLStore) RecoverConnectionAttempts(ctx context.Context, at time.Time, limit int32) (int64, error) {
+	if err := s.requireDatabase(); err != nil {
+		return 0, err
+	}
+	limit = connectionAttemptMaintenanceLimit(limit)
+	walletIDs, err := s.queries.ListActiveConnectionAttemptWalletIDs(ctx, limit)
+	if err != nil {
+		return 0, fmt.Errorf("list active Worm connection attempts: %w", err)
+	}
+	for _, walletID := range walletIDs {
+		_, recoverErr := s.recoverConnectionAttemptForWallet(ctx, walletID, canonicalNow(at), false)
+		if recoverErr != nil {
+			return 0, recoverErr
+		}
+	}
+	return int64(len(walletIDs)), nil
+}
 
 // ExpireConnectionAttempts reconciles abandoned challenge operations. A
 // PREPARED attempt cannot have created a remote credential and safely restores
 // its previous connection state. A COMPLETING attempt may have reached Worm,
-// so it is locked as outcome-unknown and requires an explicit reconnect.
+// so it is locked as outcome-unknown and requires explicit credential
+// regeneration. Failed or expired regeneration attempts preserve that lock.
 func (s *SQLStore) ExpireConnectionAttempts(ctx context.Context, at time.Time, limit int32) error {
 	if err := s.requireDatabase(); err != nil {
 		return err
 	}
-	if limit <= 0 {
-		limit = 100
-	}
-	if limit > 1000 {
-		limit = 1000
-	}
+	limit = connectionAttemptMaintenanceLimit(limit)
 	now := canonicalNow(at)
 	walletIDs, err := s.queries.ListExpiredConnectionAttemptWalletIDs(ctx, wormtradingsqlc.ListExpiredConnectionAttemptWalletIDsParams{
 		Now:         timestampParam(now),
@@ -33,34 +55,48 @@ func (s *SQLStore) ExpireConnectionAttempts(ctx context.Context, at time.Time, l
 		return fmt.Errorf("list expired Worm connection attempts: %w", err)
 	}
 	for _, walletID := range walletIDs {
-		if err := s.expireConnectionAttemptForWallet(ctx, walletID, now); err != nil {
+		if _, err := s.recoverConnectionAttemptForWallet(ctx, walletID, now, true); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *SQLStore) expireConnectionAttemptForWallet(ctx context.Context, walletID int64, now time.Time) error {
+func connectionAttemptMaintenanceLimit(limit int32) int32 {
+	if limit <= 0 {
+		return 100
+	}
+	if limit > 1000 {
+		return 1000
+	}
+	return limit
+}
+
+func (s *SQLStore) recoverConnectionAttemptForWallet(ctx context.Context, walletID int64, now time.Time, expiredOnly bool) (bool, error) {
 	tx, queries, err := s.beginWalletTransaction(ctx, walletID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer rollbackWalletTransaction(tx)
 	attempt, err := queries.GetActiveConnectionAttemptForWallet(ctx, walletID)
 	if err != nil {
 		if isNoRows(err) {
-			return commitWalletTransaction(ctx, tx)
+			return false, commitWalletTransaction(ctx, tx)
 		}
-		return fmt.Errorf("lock expired Worm connection attempt: %w", err)
+		return false, fmt.Errorf("lock active Worm connection attempt: %w", err)
 	}
-	if timestampValue(attempt.ExpiresAt).After(now) {
-		return commitWalletTransaction(ctx, tx)
+	if expiredOnly && timestampValue(attempt.ExpiresAt).After(now) {
+		return false, commitWalletTransaction(ctx, tx)
 	}
 
 	switch ConnectionAttemptState(attempt.State) {
 	case ConnectionAttemptStatePrepared:
-		if err := failConnectionAttemptInTransaction(ctx, queries, attempt, expiredChallengeWarning, now); err != nil {
-			return err
+		failureCode := connectionServiceRestartedWarning
+		if expiredOnly {
+			failureCode = expiredChallengeWarning
+		}
+		if err := failConnectionAttemptInTransaction(ctx, queries, attempt, failureCode, now); err != nil {
+			return false, err
 		}
 	case ConnectionAttemptStateCompleting:
 		if _, err := queries.MarkConnectionAttemptTerminal(ctx, wormtradingsqlc.MarkConnectionAttemptTerminalParams{
@@ -69,7 +105,7 @@ func (s *SQLStore) expireConnectionAttemptForWallet(ctx context.Context, walletI
 			Now:         timestampParam(now),
 			ID:          attempt.ID,
 		}); err != nil {
-			return fmt.Errorf("mark expired Worm connection outcome unknown: %w", err)
+			return false, fmt.Errorf("mark interrupted Worm connection outcome unknown: %w", err)
 		}
 		if _, err := queries.UpdateWalletConnectionState(ctx, wormtradingsqlc.UpdateWalletConnectionStateParams{
 			State:       string(ConnectionStateReconnectRequired),
@@ -79,13 +115,13 @@ func (s *SQLStore) expireConnectionAttemptForWallet(ctx context.Context, walletI
 			WalletID:    attempt.WalletID,
 			Address:     attempt.Address,
 		}); err != nil {
-			return fmt.Errorf("mark expired Worm connection reconnect required: %w", err)
+			return false, fmt.Errorf("mark interrupted Worm connection reconnect required: %w", err)
 		}
 	default:
-		return fmt.Errorf("%w: active connection attempt %q", ErrInvalidState, attempt.State)
+		return false, fmt.Errorf("%w: active connection attempt %q", ErrInvalidState, attempt.State)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit expired Worm connection attempt: %w", err)
+		return false, fmt.Errorf("commit Worm connection attempt recovery: %w", err)
 	}
-	return nil
+	return true, nil
 }

@@ -5,6 +5,8 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"io"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,9 +29,11 @@ const (
 	wormConnectionCollectionPath = "/api/v1/worm-trading/wallet-connections"
 	wormConnectionPathPrefix     = wormConnectionCollectionPath + "/"
 	wormReconnectSuffix          = ":reconnect"
+	wormRegenerateSuffix         = ":regenerate"
 	developmentWormPublicOrigin  = "http://localhost:4000"
 	wormConnectionPageSize       = int32(100)
 	wormConnectionWarningMaxLen  = 100
+	wormConnectionMaximumBody    = 1024
 )
 
 type wormConnectionAction string
@@ -37,8 +41,13 @@ type wormConnectionAction string
 const (
 	wormConnectionConnect    wormConnectionAction = "connect"
 	wormConnectionReconnect  wormConnectionAction = "reconnect"
+	wormConnectionRegenerate wormConnectionAction = "regenerate"
 	wormConnectionDisconnect wormConnectionAction = "disconnect"
 )
+
+type wormConnectionRegenerateRequest struct {
+	AcknowledgeUnknownCredentialMayRemain bool `json:"acknowledgeUnknownCredentialMayRemain"`
+}
 
 type wormConnectionResponse struct {
 	WalletID    int64  `json:"walletId"`
@@ -287,6 +296,17 @@ func (server *AthenaServer) manageWormConnection(w http.ResponseWriter, request 
 		walletsecret.WriteError(w, err)
 		return
 	}
+	if action == wormConnectionRegenerate {
+		input, decodeErr := decodeWormConnectionRegenerateRequest(w, request)
+		if decodeErr != nil {
+			walletsecret.WriteError(w, decodeErr)
+			return
+		}
+		if !input.AcknowledgeUnknownCredentialMayRemain {
+			walletsecret.WriteError(w, status.Error(codes.InvalidArgument, "acknowledgeUnknownCredentialMayRemain must be true"))
+			return
+		}
+	}
 
 	walletResponse, err := server.WalletClientset.Wallet().GetWallet(ctx, &walletapiclient.GetWalletRequest{
 		Id:                 walletID,
@@ -314,7 +334,7 @@ func (server *AthenaServer) manageWormConnection(w http.ResponseWriter, request 
 		}
 		connection = response.GetConnection()
 	} else {
-		connection, err = server.completeWormConnection(ctx, credential.AccountID, walletID, wallet.Address, action == wormConnectionReconnect)
+		connection, err = server.completeWormConnection(ctx, credential.AccountID, walletID, wallet.Address, action)
 		if err != nil {
 			walletsecret.WriteError(w, err)
 			return
@@ -335,11 +355,18 @@ func (server *AthenaServer) manageWormConnection(w http.ResponseWriter, request 
 	})
 }
 
-func (server *AthenaServer) completeWormConnection(ctx context.Context, accountID string, walletID int64, address string, reconnect bool) (*wormtradingapiclient.WormWalletConnection, error) {
+func (server *AthenaServer) completeWormConnection(
+	ctx context.Context,
+	accountID string,
+	walletID int64,
+	address string,
+	action wormConnectionAction,
+) (*wormtradingapiclient.WormWalletConnection, error) {
 	prepared, err := server.WormTradingClientset.WormTrading().PrepareWormWalletConnection(ctx, &wormtradingapiclient.PrepareWormWalletConnectionRequest{
-		WalletId:  walletID,
-		Address:   address,
-		Reconnect: reconnect,
+		WalletId:                    walletID,
+		Address:                     address,
+		Reconnect:                   action == wormConnectionReconnect,
+		RegenerateUnknownCredential: action == wormConnectionRegenerate,
 	})
 	if err != nil {
 		return nil, sanitizeWormConnectionDependencyError(err, "Worm Trading")
@@ -379,6 +406,24 @@ func (server *AthenaServer) completeWormConnection(ctx context.Context, accountI
 		return nil, sanitizeWormConnectionDependencyError(err, "Worm Trading")
 	}
 	return completed.GetConnection(), nil
+}
+
+func decodeWormConnectionRegenerateRequest(w http.ResponseWriter, request *http.Request) (wormConnectionRegenerateRequest, error) {
+	contentType, _, err := mime.ParseMediaType(request.Header.Get("Content-Type"))
+	if err != nil || contentType != "application/json" {
+		return wormConnectionRegenerateRequest{}, status.Error(codes.InvalidArgument, "Content-Type must be application/json")
+	}
+	request.Body = http.MaxBytesReader(w, request.Body, wormConnectionMaximumBody)
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	var input wormConnectionRegenerateRequest
+	if err := decoder.Decode(&input); err != nil {
+		return wormConnectionRegenerateRequest{}, status.Error(codes.InvalidArgument, "request body must be one valid JSON object")
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		return wormConnectionRegenerateRequest{}, status.Error(codes.InvalidArgument, "request body must contain exactly one JSON object")
+	}
+	return input, nil
 }
 
 func (server *AthenaServer) authenticateWormConnectionHTTP(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
@@ -478,12 +523,15 @@ func wormConnectionTarget(request *http.Request) (int64, wormConnectionAction, e
 	action := wormConnectionConnect
 	switch request.Method {
 	case http.MethodPost:
-		if strings.HasSuffix(resource, wormReconnectSuffix) {
+		if strings.HasSuffix(resource, wormRegenerateSuffix) {
+			action = wormConnectionRegenerate
+			resource = strings.TrimSuffix(resource, wormRegenerateSuffix)
+		} else if strings.HasSuffix(resource, wormReconnectSuffix) {
 			action = wormConnectionReconnect
 			resource = strings.TrimSuffix(resource, wormReconnectSuffix)
 		}
 	case http.MethodDelete:
-		if strings.HasSuffix(resource, wormReconnectSuffix) {
+		if strings.HasSuffix(resource, wormReconnectSuffix) || strings.HasSuffix(resource, wormRegenerateSuffix) {
 			return 0, "", status.Error(codes.NotFound, "Worm wallet connection resource not found")
 		}
 		action = wormConnectionDisconnect

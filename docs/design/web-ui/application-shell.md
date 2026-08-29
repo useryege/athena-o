@@ -130,10 +130,13 @@ wallets. A valid
 lease proceeds without another prompt; otherwise the page asks once for the
 persisted login provider's dedicated five-minute Google, Solana, or disabled-
 auth proof. Ordinary row-level Connect and Disconnect are absent. Manual
-Reconnect remains available for `RECONNECT_REQUIRED`; confirmed credential
-cleanup remains available only for `DISCONNECTING` or `REVOCATION_REQUIRED`.
-Credential challenge/signing and HMAC material remain server-side. The page has
-no order, transaction, TP/SL, claim, or position-mutation action.
+Reconnect remains available for `RECONNECT_REQUIRED`. When its warning is
+`CONNECT_OUTCOME_UNKNOWN`, that row's only action is Reconnect and it opens a
+dedicated regeneration confirmation; confirmed credential cleanup remains
+available only for `DISCONNECTING` or `REVOCATION_REQUIRED`. Read-only users see
+no management action. Credential challenge/signing and HMAC material remain
+server-side. The page has no order, transaction, TP/SL, claim, or position-
+mutation action.
 
 The Combinations landing page provides paged Saved combinations, with New,
 Edit/View, and confirmed Delete actions gated by current Worm Trading write
@@ -336,11 +339,14 @@ Continue.
     mutation and exposes one page-level `Authorize and connect` or `Authorize
     and continue` action; Google redirect or Phantom signing never starts
     automatically.
-27. Google authorization stores only `{kind: "auto-connect"}` in the Worm-
-    specific `sessionStorage` key and navigates to
+27. Google authorization stores only an intent in the Worm-specific
+    `sessionStorage` key: `{kind: "auto-connect"}` for the queue or a wallet-
+    scoped `reconnect`, `regenerate`, or `cleanup` intent for a confirmed manual
+    action. It navigates to
     `/auth/worm-trading/google?returnTo=/worm-trading`. It consumes the intent,
     reloads the authoritative inventory, and rebuilds the queue after return;
-    wallet IDs are not persisted. Solana verifies that the injected provider
+    wallet IDs are persisted only for the three manual intents. Solana verifies
+    that the injected provider
     still exposes the persisted login address and signs one dedicated Worm SIWS
     proof. Disabled-auth requests one loopback Worm lease. The one lease may
     admit multiple owned-wallet mutations during its fixed lifetime.
@@ -350,14 +356,22 @@ Continue.
     remainder. Lease expiry exposes one new authorization action. An explicit
     retry always reloads inventory and queues only wallets still projected as
     `NOT_CONNECTED`; no connection mutation retries automatically.
-    `CONNECT_OUTCOME_UNKNOWN` stops the queue, suppresses every mutation for that
-    wallet, and requires operator reconciliation.
+    `CONNECT_OUTCOME_UNKNOWN` stops the queue and suppresses automatic mutation
+    for that wallet. It is never inserted into an automatic retry batch.
 29. Normal Connect and Disconnect controls are absent. Manual Reconnect remains
-    available with confirmation for `RECONNECT_REQUIRED`, unless the warning is
-    `CONNECT_OUTCOME_UNKNOWN`. Confirmed `Retry credential cleanup` is available
-    only for `DISCONNECTING` or `REVOCATION_REQUIRED` and uses DELETE to continue
-    tracked revocation; it never represents a normal disconnect. Reconnect,
-    cleanup, and Refresh are disabled while the automatic queue is active.
+    available with confirmation for ordinary `RECONNECT_REQUIRED`. For
+    `CONNECT_OUTCOME_UNKNOWN`, the same row label opens a stricter confirmation:
+    Athena will create and use a new API credential; an earlier unknown remote
+    key may remain active; Athena will neither list nor revoke it; and the action
+    signs no transaction and transfers no funds. Cancel sends no request. The
+    `Regenerate and reconnect` confirmation alone POSTs `:regenerate` with the
+    required acknowledgement. Success reloads connection inventory, balances,
+    and activity; failure leaves the unknown row actionable but requires a new
+    confirmation. Confirmed `Retry credential cleanup` is available only for
+    `DISCONNECTING` or `REVOCATION_REQUIRED` and uses DELETE to continue tracked
+    revocation; it never represents a normal disconnect. Reconnect,
+    regeneration, cleanup, and Refresh are disabled while the automatic queue
+    is active.
 30. The responsive page-level connection panel sits below the page heading and
     immediately above Runtime Summary. It reports discovery, authorization,
     current wallet,
@@ -533,10 +547,12 @@ does not widen the Worm Trading response or read a private key.
 
 The only Worm Trading `sessionStorage` value is a discriminated pending intent:
 `{kind: "auto-connect"}` for full-inventory bootstrap or
-`{kind: "reconnect", walletId}` / `{kind: "cleanup", walletId}` for one
-confirmed manual mutation. It never contains the automatic queue, is consumed
-before inventory or action recovery, and grants no authority by itself; current
-account, access revision, ownership, and lease checks still govern recovery.
+`{kind: "reconnect", walletId}`, `{kind: "regenerate", walletId}`, or
+`{kind: "cleanup", walletId}` for one confirmed manual mutation. It contains
+only the action and Wallet ID, never the automatic queue or credential data, is
+consumed before inventory or action recovery, and grants no authority by itself;
+current account, access revision, ownership, and lease checks still govern
+recovery.
 Worm challenge
 messages, Wallet signatures, API keys, HMAC secrets and headers, provider raw
 responses, and signable position-request messages never enter browser storage,
@@ -604,7 +620,9 @@ native `GET /api/v1/worm-trading/wallet-connections` collection with a maximum
 page size of 100 and no Worm lease or Origin header. Credential mutation uses
 native
 `POST|DELETE /api/v1/worm-trading/wallet-connections/{walletId}` plus the POST
-`:reconnect` form. Dedicated proof routes are
+`:reconnect` and `:regenerate` forms. Regenerate sends
+`{"acknowledgeUnknownCredentialMayRemain":true}` only after the dedicated risk
+confirmation. Dedicated proof routes are
 `/auth/worm-trading/google`, `/auth/worm-trading/solana/challenge`,
 `/auth/worm-trading/solana/verify`, and the disabled-auth development variant.
 The browser has no owner/address selector for these resources, Worm endpoint,
@@ -681,9 +699,10 @@ portable to an arbitrary reverse-proxy subpath.
   once. Account or access changes clear sensitive React state; loss of Wallet
   write access also removes any pending action.
 - Worm Google-return storage contains only a validated automatic-bootstrap,
-  manual-reconnect, or exceptional-cleanup kind and wallet ID when applicable,
-  and is consumed once. Loss of Worm Trading write access removes it; the Wallet
-  reveal and Worm management pending keys never authorize each other.
+  manual-reconnect, confirmed-regenerate, or exceptional-cleanup kind and wallet
+  ID when applicable, and is consumed once. Loss of Worm Trading write access
+  removes it; the Wallet reveal and Worm management pending keys never authorize
+  each other.
 - API Keys may use safe Wallet metadata operations allowed by module access but
   cannot create, import, or reveal private keys. The server remains authoritative
   even when bootstrap does not project credential capability.
@@ -695,6 +714,10 @@ portable to an arbitrary reverse-proxy subpath.
   origin, owner scope, and the Worm-only lease. No browser state contains the
   provider challenge, custody signature, API key, secret, HMAC headers, or
   signable request message.
+- `CONNECT_OUTCOME_UNKNOWN` is excluded from the automatic queue and from
+  ordinary reconnect, disconnect, and cleanup. Only an interactive
+  `READ_WRITE` user's confirmed regenerate action submits its required risk
+  acknowledgement; cancelling the dialog has no side effect.
 - Every Combinations data request requires an interactive login. `READ` may
   load the catalog and owner-scoped saved templates; `READ_WRITE` plus exact
   origin may create, replace, or delete them. API Keys cannot call these native
@@ -791,9 +814,16 @@ changing account/access aborts scoped work and ignores late results. Explicit
 Retry refetches inventory and selects only authoritative `NOT_CONNECTED` rows.
 An ambiguous credential-create or failed revocation response is never presented
 optimistically as connected or disconnected. `CONNECT_OUTCOME_UNKNOWN` stops
-the queue, cannot be cleared by a browser action, and requires operator
-reconciliation. Balance and already available activity remain visible while
-connection work fails.
+the queue and remains unavailable to automatic and ordinary connection actions.
+Its dedicated confirmed Reconnect may create a replacement credential while the
+earlier unknown remote key remains active and unmanaged; every unsuccessful
+regenerate returns to the same actionable unknown state, and service startup
+recovers an inherited attempt before the UI can observe it. Browser navigation or
+refresh may discard the local pending view, but credential creation already
+dispatched by the service continues through its bounded service-owned
+completion.
+Balance and already available activity remain visible while connection work
+fails.
 
 An invalid Worm URL or Event Condition ID is rejected before a catalog request.
 Event not-found, provider failure, or an invalid catalog leaves existing loaded
@@ -910,6 +940,6 @@ does not create a separate server-side integration or connection status.
 - [ ] Run authorization keeps the Worm transaction trust disclosure, provider-specific proof, exact Run/plan/session/access binding, and secret-free browser projection current.
 - [ ] Worm automatic connection remains interactive-`READ_WRITE`, owner-scoped, paced, provider-step-up-aware, and independent from Wallet private-key reveal.
 - [ ] Assets preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
-- [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, manual Reconnect, and exceptional cleanup remain current.
+- [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, ordinary Reconnect, confirmed unknown-credential regeneration, and exceptional cleanup remain current.
 - [ ] Empty Worm Trading inventory selects Add, View, or access-review guidance from the independent Wallet grant.
 - [ ] The [design index](../README.md) contains the current summary.

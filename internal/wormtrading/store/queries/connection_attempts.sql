@@ -58,6 +58,13 @@ WHERE state IN ('PREPARED', 'COMPLETING')
 ORDER BY expires_at, wallet_id, id
 LIMIT sqlc.arg('result_limit');
 
+-- name: ListActiveConnectionAttemptWalletIDs :many
+SELECT wallet_id
+FROM worm_wallet_connection_attempts
+WHERE state IN ('PREPARED', 'COMPLETING')
+ORDER BY created_at, wallet_id, id
+LIMIT sqlc.arg('result_limit');
+
 -- name: MarkConnectionAttemptCompleting :one
 UPDATE worm_wallet_connection_attempts
 SET

@@ -85,10 +85,12 @@ not a lease consumer. It requires an interactive credential and Worm Trading
 requires neither a Worm lease nor the mutation Origin header. It returns only
 safe connection state and cannot obtain a provider challenge,
 invoke Wallet signing, decrypt a Worm credential, or mutate connection state.
-The subsequent POST, reconnect POST, and DELETE remain the only lease-authorized
-Worm credential operations. Assets exposes DELETE only as exceptional cleanup
-for an already incomplete revocation; the native boundary retains its complete
-credential-revocation behavior.
+The subsequent connect, reconnect, acknowledged regenerate, and DELETE forms
+remain the only lease-authorized Worm credential operations. Assets exposes
+DELETE only as exceptional cleanup for an already incomplete revocation. The
+regenerate form is narrower still: it is admitted only for
+`RECONNECT_REQUIRED` plus `CONNECT_OUTCOME_UNKNOWN`, creates a new credential,
+and deliberately does not list or revoke the unknown remote key.
 
 Live execution authorization is intentionally not another reusable Worm lease.
 The browser proves the account's persisted Google or Phantom identity, or the
@@ -168,10 +170,16 @@ management.
     API Keys cannot invoke this management-only inventory.
 11. Worm credential mutations use native
     `POST|DELETE /api/v1/worm-trading/wallet-connections/{walletId}` resources.
-    Connect and reconnect use POST, with reconnect expressed by the fixed
-    `:reconnect` suffix. Every mutation requires exact origin, an interactive
-    Athena login, Worm Trading `READ_WRITE`, the independent Worm lease, and an
-    owner-scoped Solana Wallet row. `WORM_TRADING_LOGIN_SESSION_REQUIRED` and
+    Connect, reconnect, and regenerate use POST, with the latter two expressed
+    by the fixed `:reconnect` and `:regenerate` suffixes. Every mutation requires
+    exact origin, an interactive Athena login, Worm Trading `READ_WRITE`, the
+    independent Worm lease, and an owner-scoped Solana Wallet row. Regenerate
+    additionally requires
+    `{"acknowledgeUnknownCredentialMayRemain":true}` and is rejected unless the
+    durable connection is `RECONNECT_REQUIRED` with
+    `CONNECT_OUTCOME_UNKNOWN`. The acknowledgement accepts that Athena cannot
+    list or revoke an earlier key whose creation result is unknown.
+    `WORM_TRADING_LOGIN_SESSION_REQUIRED` and
     `WORM_TRADING_REAUTH_REQUIRED` remain local step-up reasons rather than
     global session-expiry signals.
 12. A Google Worm proof begins at
@@ -201,13 +209,16 @@ management.
     credential operation. Wallet returns no address field; it validates the
     server-supplied expected address against its owner-scoped row. The provider
     challenge, Wallet signature, Worm API key, and Worm secret never reach the
-    browser.
+    browser. After Worm Trading dispatches credential creation, it completes the
+    provider call and local persistence under its own bounded context; loss of
+    the browser request does not cancel that already-issued provider mutation.
 16. Assets uses one Worm proof for its serial full-account connection batch. A
     valid lease admits successive owned-wallet mutations until its fixed expiry;
     an expired lease pauses before the next mutation and requires another
     explicit page-level proof. Google navigation stores only
-    `{kind: "auto-connect"}`, `{kind: "reconnect", walletId}`, or
-    `{kind: "cleanup", walletId}` and rebuilds an automatic queue from
+    `{kind: "auto-connect"}`, `{kind: "reconnect", walletId}`,
+    `{kind: "regenerate", walletId}`, or `{kind: "cleanup", walletId}` and
+    rebuilds an automatic queue from
     authoritative inventory after return. It never stores a queue or retries a
     mutation automatically. Logout clears both lease cookies before revoking
     the login token; an access revision change
@@ -300,9 +311,12 @@ sensitive-operation responses set
 
 The browser holds an automatic connection queue only in the mounted Assets
 page. The Worm-specific `sessionStorage` record is an intent-only discriminated
-value for full-account automatic connection, one manual reconnect, or one
-exceptional cleanup; it never contains the inventory, credentials, lease,
-proof, or connection result and is consumed once after Google returns.
+value for full-account automatic connection, one manual reconnect, one
+confirmed outcome-unknown regenerate, or one exceptional cleanup; it never
+contains the risk acknowledgement, inventory, credentials, lease, proof, or
+connection result and is consumed once after Google returns. Regenerate asks
+for a fresh confirmation after every failure before the browser sends its
+required acknowledgement.
 
 Execution Google transactions and Phantom challenges use their own five-minute,
 single-use Redis records, state/challenge cookies, and 120-global/20-account
@@ -347,6 +361,10 @@ Session/access binding.
   Solana wallet, exact origin, a valid current login session, and the matching
   non-expired Worm-only lease. Disabled-auth Worm management accepts only
   `http://localhost:4000` as that Origin.
+- Automatic bootstrap and ordinary connect, reconnect, disconnect, and cleanup
+  cannot clear `CONNECT_OUTCOME_UNKNOWN`. Only the dedicated regenerate form may
+  proceed, and only after an interactive user explicitly acknowledges that the
+  unknown remote credential may remain active and will not be listed or revoked.
 - Worm connection inventory requires an interactive credential, Worm Trading
   `READ_WRITE`, and current-account Solana ownership, but no lease or Origin
   header; it cannot mutate a connection or invoke the purpose-bound signer.
@@ -429,9 +447,17 @@ loop expires abandoned connection attempts, processes reconnect-retired
 is `CONNECTED` and it has remained stale for one Worm attempt timeout. An
 explicit cleanup that remains `DISCONNECTING` or `REVOCATION_REQUIRED`,
 including its `REVOKING` credential, is retried only when the user confirms
-`Retry credential cleanup`. `CONNECT_OUTCOME_UNKNOWN` blocks connect,
-reconnect, and disconnect until an operator manually reconciles the uncertain
-remote result.
+`Retry credential cleanup`. `CONNECT_OUTCOME_UNKNOWN` blocks automatic
+bootstrap and ordinary connect, reconnect, and disconnect. A confirmed
+regenerate uses the same lease and owner/signing boundary to create and store a
+new key while accepting that the unknown remote key may remain active. A
+cancelled or failed proof leaves the lock untouched. Every prepared regenerate
+failure, including challenge expiry, signing failure, service restart, and
+another indeterminate result, restores the same outcome-unknown state and
+requires a fresh user confirmation; success alone marks the connection
+`CONNECTED`. Process startup drains inherited `PREPARED` and `COMPLETING`
+attempts before serving, so restart recovery does not wait for provider
+challenge expiry.
 
 For a live Run, Session revocation, account replacement, permission-revision
 change, or loss of `READ_WRITE` stops new coordinator commands and requires a

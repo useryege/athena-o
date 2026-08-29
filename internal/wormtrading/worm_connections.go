@@ -38,6 +38,9 @@ func (s *Service) PrepareWormWalletConnection(
 	if err != nil {
 		return nil, err
 	}
+	if req.GetReconnect() && req.GetRegenerateUnknownCredential() {
+		return nil, status.Error(codes.InvalidArgument, "reconnect and regenerate_unknown_credential are mutually exclusive")
+	}
 	unlock := s.walletOperationLock(walletID)
 	defer unlock()
 
@@ -59,7 +62,9 @@ func (s *Service) PrepareWormWalletConnection(
 		return nil, status.Error(codes.Unavailable, "Worm returned an invalid authentication challenge")
 	}
 	kind := wormstore.ConnectionAttemptKindConnect
-	if req.GetReconnect() {
+	if req.GetRegenerateUnknownCredential() {
+		kind = wormstore.ConnectionAttemptKindRegenerate
+	} else if req.GetReconnect() {
 		kind = wormstore.ConnectionAttemptKindReconnect
 	}
 	now := timeNowUTC()
@@ -122,7 +127,9 @@ func (s *Service) CompleteWormWalletConnection(
 	defer unlock()
 
 	now := timeNowUTC()
-	attempt, err := s.credentialStore.BeginConnectionAttemptCompletion(ctx, attemptID, now)
+	completionCtx, completionCancel := s.persistenceContext()
+	attempt, err := s.credentialStore.BeginConnectionAttemptCompletion(completionCtx, attemptID, now)
+	completionCancel()
 	s.recordCredentialStoreResult(err)
 	if err != nil {
 		return nil, connectionStoreRPCError("begin Worm connection completion", err)
@@ -151,7 +158,11 @@ func (s *Service) CompleteWormWalletConnection(
 		s.failConnectionAttempt(attemptID, "CLIENT_UNAVAILABLE")
 		return nil, status.Error(codes.Internal, "create Worm API client")
 	}
-	attemptCtx, cancel := context.WithTimeout(ctx, s.wormAPIAttemptTimeout)
+	// Once Worm credential creation is dispatched, caller cancellation can no
+	// longer make the non-idempotent provider result safe to abandon. Bound the
+	// mutation independently so a browser refresh or route change cannot turn a
+	// completed provider write into an avoidable unknown outcome.
+	attemptCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.wormAPIAttemptTimeout)
 	credential, requestErr := client.CreateAPIKey(attemptCtx, worm.CreateAPIKeyRequest{
 		WalletAddress: address,
 		Message:       attempt.ChallengeMessage,
@@ -182,12 +193,14 @@ func (s *Service) CompleteWormWalletConnection(
 		}
 		return nil, status.Error(codes.Internal, "persist Worm credential")
 	}
-	snapshot, err := s.credentialStore.ActivateCredential(ctx, wormstore.ActivateCredentialRequest{
+	persistCtx, persistCancel := s.persistenceContext()
+	snapshot, err := s.credentialStore.ActivateCredential(persistCtx, wormstore.ActivateCredentialRequest{
 		AttemptID:           attemptID,
 		APIKeyCiphertext:    apiKeyCiphertext,
 		APISecretCiphertext: apiSecretCiphertext,
 		Now:                 timeNowUTC(),
 	})
+	persistCancel()
 	s.recordCredentialStoreResult(err)
 	if err != nil {
 		if errors.Is(err, wormstore.ErrTransactionOutcomeUnknown) {

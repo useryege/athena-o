@@ -1545,6 +1545,16 @@ export class WormTradingService {
         );
     }
 
+    public regenerateWallet(walletId: number): AbortableWormTradingPromise<WormWalletConnection> {
+        return rawSameOriginRequest(
+            'POST',
+            `/api/v1/worm-trading/wallet-connections/${encodeURIComponent(String(walletId))}:regenerate`,
+            {acknowledgeUnknownCredentialMayRemain: true},
+            'Worm wallet credential regeneration failed',
+            body => normalizeManagedConnection(body.connection || body, walletId)
+        );
+    }
+
     public disconnectWallet(walletId: number): AbortableWormTradingPromise<WormWalletConnection> {
         return rawSameOriginRequest(
             'DELETE',

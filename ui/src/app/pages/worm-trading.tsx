@@ -231,7 +231,7 @@ const RuntimeSummary = (props: {status?: WormTradingStatus; loading: boolean; er
     );
 };
 
-type ManagedConnectionAction = 'reconnect' | 'cleanup';
+type ManagedConnectionAction = 'reconnect' | 'regenerate' | 'cleanup';
 type PendingConnectionIntent = {kind: 'auto-connect'} | {kind: ManagedConnectionAction; walletId: number};
 
 const readPendingConnectionIntent = (): PendingConnectionIntent | undefined => {
@@ -246,7 +246,9 @@ const readPendingConnectionIntent = (): PendingConnectionIntent | undefined => {
             return {kind: 'auto-connect'};
         }
         const walletId = Number(value.walletId);
-        return (value.kind === 'reconnect' || value.kind === 'cleanup') && Number.isSafeInteger(walletId) && walletId > 0 ? {kind: value.kind, walletId} : undefined;
+        return (value.kind === 'reconnect' || value.kind === 'regenerate' || value.kind === 'cleanup') && Number.isSafeInteger(walletId) && walletId > 0
+            ? {kind: value.kind, walletId}
+            : undefined;
     } catch {
         return undefined;
     }
@@ -929,10 +931,28 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             if (epoch === undefined) {
                 return;
             }
+            const cleanup = action === 'cleanup';
+            const regenerate = action === 'regenerate';
             setBusyWalletId(walletId);
-            setSetup(progressState('connecting', action === 'cleanup' ? 'Retrying Worm credential cleanup.' : 'Preparing a replacement Worm credential.'));
-            setOperationStage(action === 'cleanup' ? 'Requesting credential cleanup…' : 'Preparing a replacement credential…');
-            const request = () => lease.runTask(() => (action === 'reconnect' ? services.wormTrading.reconnectWallet(walletId) : services.wormTrading.disconnectWallet(walletId)));
+            setSetup(
+                progressState(
+                    'connecting',
+                    cleanup
+                        ? 'Retrying Worm credential cleanup.'
+                        : regenerate
+                          ? 'Preparing a new Worm credential after an unknown outcome.'
+                          : 'Preparing a replacement Worm credential.'
+                )
+            );
+            setOperationStage(cleanup ? 'Requesting credential cleanup…' : regenerate ? 'Preparing a new credential…' : 'Preparing a replacement credential…');
+            const request = () =>
+                lease.runTask(() =>
+                    action === 'reconnect'
+                        ? services.wormTrading.reconnectWallet(walletId)
+                        : action === 'regenerate'
+                          ? services.wormTrading.regenerateWallet(walletId)
+                          : services.wormTrading.disconnectWallet(walletId)
+                );
             try {
                 let result = await request();
                 if (result.status === 'rejected' && requestErrorDetails(result.error).reason === WORM_TRADING_REAUTH_REQUIRED && !resumed) {
@@ -942,13 +962,17 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                             return;
                         case AccountIdentityProvider.SolanaWallet:
                             if (await establishSolanaLease()) {
-                                setOperationStage(action === 'cleanup' ? 'Cleaning up the Worm credential…' : 'Creating the replacement Worm credential…');
+                                setOperationStage(
+                                    cleanup ? 'Cleaning up the Worm credential…' : regenerate ? 'Creating the new Worm credential…' : 'Creating the replacement Worm credential…'
+                                );
                                 result = await request();
                             }
                             break;
                         case AccountIdentityProvider.Development:
                             if (await establishDevelopmentLease()) {
-                                setOperationStage(action === 'cleanup' ? 'Cleaning up the Worm credential…' : 'Creating the replacement Worm credential…');
+                                setOperationStage(
+                                    cleanup ? 'Cleaning up the Worm credential…' : regenerate ? 'Creating the new Worm credential…' : 'Creating the replacement Worm credential…'
+                                );
                                 result = await request();
                             }
                             break;
@@ -960,8 +984,21 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                     return;
                 }
                 if (result.status === 'fulfilled') {
-                    ctx.notifications.success(action === 'cleanup' ? 'Worm credential cleanup completed' : 'Worm wallet reconnected');
-                    if (action === 'cleanup') {
+                    if (!cleanup && result.value.warningCode === connectOutcomeUnknownWarning) {
+                        ctx.notifications.error(
+                            'Could not reconnect Worm wallet',
+                            'Worm did not confirm whether it created the new credential. The unknown connection state remains and Athena will not retry automatically.'
+                        );
+                        onReloadRef.current();
+                        const inventory = await fetchConnectionInventory(epoch);
+                        if (inventory && isCurrent(epoch)) {
+                            publishInventory(inventory);
+                            setSetup(progressState('blocked', 'The Worm connection outcome is still unknown. Automatic retry remains blocked.'));
+                        }
+                        return;
+                    }
+                    ctx.notifications.success(cleanup ? 'Worm credential cleanup completed' : 'Worm wallet reconnected');
+                    if (cleanup || regenerate) {
                         attemptedWalletIDsRef.current.delete(walletId);
                         failedWalletIDsRef.current.delete(walletId);
                         blockedWalletIDsRef.current.delete(walletId);
@@ -981,11 +1018,8 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 const fallback =
                     resumed && callbackReason
                         ? `Google reauthentication did not complete (${callbackReason}).`
-                        : `Could not ${action === 'cleanup' ? 'clean up' : 'reconnect'} this Worm wallet.`;
-                ctx.notifications.error(
-                    action === 'cleanup' ? 'Could not clean up Worm credential' : 'Could not reconnect Worm wallet',
-                    wormConnectionErrorMessage(result.error, fallback)
-                );
+                        : `Could not ${cleanup ? 'clean up' : 'reconnect'} this Worm wallet.`;
+                ctx.notifications.error(cleanup ? 'Could not clean up Worm credential' : 'Could not reconnect Worm wallet', wormConnectionErrorMessage(result.error, fallback));
                 onReloadRef.current();
                 const inventory = await fetchConnectionInventory(epoch);
                 if (inventory && isCurrent(epoch)) {
@@ -1041,19 +1075,31 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
     const confirm = React.useCallback(
         (action: ManagedConnectionAction, walletId: number, walletLabel: string) => {
             const cleanup = action === 'cleanup';
+            const regenerate = action === 'regenerate';
             ctx.modal.confirm({
                 title: cleanup ? `Retry credential cleanup for ${walletLabel}?` : `Reconnect ${walletLabel} to Worm?`,
                 content: cleanup ? (
                     <Typography.Paragraph>
                         Athena will retry revoking only the Worm API credential it created for this wallet. This does not cancel orders, close positions, or move funds.
                     </Typography.Paragraph>
+                ) : regenerate ? (
+                    <>
+                        <Typography.Paragraph>
+                            Athena will create, securely store, and use a new Worm API credential for this wallet. A credential from the earlier attempt may already exist and may
+                            remain valid.
+                        </Typography.Paragraph>
+                        <Typography.Paragraph>
+                            Athena will not list or revoke that unknown credential. This operation does not sign a transaction, place or cancel orders, close positions, or move
+                            funds.
+                        </Typography.Paragraph>
+                    </>
                 ) : (
                     <Typography.Paragraph>
                         Athena will create and securely store a replacement Worm API credential. The previous Athena credential remains recorded until Worm confirms its revocation.
                         This does not cancel orders, close positions, or move funds.
                     </Typography.Paragraph>
                 ),
-                okText: cleanup ? 'Retry cleanup' : 'Reconnect',
+                okText: cleanup ? 'Retry cleanup' : regenerate ? 'Regenerate and reconnect' : 'Reconnect',
                 onOk: () => runManagedAction(action, walletId)
             });
         },
@@ -1101,13 +1147,15 @@ const ConnectionCell = (props: {
     const state = props.connection.state;
     const label = props.wallet.remark || 'Solana wallet';
     const actions =
-        props.connection.warningCode === connectOutcomeUnknownWarning
-            ? []
-            : state === 'RECONNECT_REQUIRED'
-              ? [{kind: 'reconnect' as const, label: 'Reconnect', icon: <SyncOutlined />}]
-              : state === 'DISCONNECTING' || state === 'REVOCATION_REQUIRED'
-                ? [{kind: 'cleanup' as const, label: 'Retry credential cleanup', icon: <DisconnectOutlined />}]
-                : [];
+        state === 'RECONNECT_REQUIRED' && props.connection.warningCode === connectOutcomeUnknownWarning
+            ? [{kind: 'regenerate' as const, label: 'Reconnect', icon: <SyncOutlined />}]
+            : props.connection.warningCode === connectOutcomeUnknownWarning
+              ? []
+              : state === 'RECONNECT_REQUIRED'
+                ? [{kind: 'reconnect' as const, label: 'Reconnect', icon: <SyncOutlined />}]
+                : state === 'DISCONNECTING' || state === 'REVOCATION_REQUIRED'
+                  ? [{kind: 'cleanup' as const, label: 'Retry credential cleanup', icon: <DisconnectOutlined />}]
+                  : [];
     return (
         <div className='worm-trading-connection'>
             <div className='worm-trading-connection__state'>
@@ -1400,8 +1448,9 @@ export const WormTradingPage = () => {
     }, [activity, balances, runtime]);
     const reloadConnections = React.useCallback(() => {
         runtime.reload();
+        balances.reload();
         activity.reload();
-    }, [activity, runtime]);
+    }, [activity, balances, runtime]);
     const loading = runtime.loading || runtime.refreshing || balances.loading || balances.refreshing || activity.loading || activity.refreshing;
     const balanceItems = balances.data?.items || [];
     const activityItems = activity.data?.items || [];

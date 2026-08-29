@@ -63,7 +63,7 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | Internal authenticated server | [internal/wormtrading/server.go](../../../internal/wormtrading/server.go), [internal/wormtrading/apiclient](../../../internal/wormtrading/apiclient) | `Server`, `ServerOpts`, internal Bearer interceptors, gRPC health |
 | Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands, one-Step worker and recovery |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
-| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, credentials, combinations, preview lifecycle, immutable Run snapshots, Step/attempt/command/coordinator/authorization/isolation state |
+| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, credentials, combinations, preview lifecycle, immutable Run snapshots, Step/attempt/command/coordinator/authorization/isolation state |
 | Credential encryption and official client | [internal/wormtrading/credential_crypto.go](../../../internal/wormtrading/credential_crypto.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `CredentialEncryptionKeyFromPassphrase`, `credentialCipher`, `NewOfficialWormAPIClientFactory`, HMAC headers |
 | Connection and revocation lifecycle | [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/store/connections.go](../../../internal/wormtrading/store/connections.go), [internal/wormtrading/store/credentials.go](../../../internal/wormtrading/store/credentials.go), [internal/wormtrading/store/maintenance.go](../../../internal/wormtrading/store/maintenance.go) | `PrepareWormWalletConnection`, `CompleteWormWalletConnection`, `DisconnectWormWallet`, `revokeStoredCredential`, `revokePendingCredentials`, `MarkReconnectRequired`, `MarkCredentialRevocationFailed`, `ExpireConnectionAttempts` |
 | Position aggregation | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go) | `BatchGetWalletPositionSnapshots`, `fetchOpenPositions`, `fetchInFlightRequests`, `suppressPositionBackedRequests` |
@@ -116,9 +116,16 @@ interactive login + worm_trading READ_WRITE + exact origin + Worm-only lease
   -> encrypt key and secret + commit connection state
 ```
 
+An outcome-unknown connection stays outside ordinary management. Automatic
+bootstrap and the normal connect, reconnect, and disconnect forms cannot clear
+its lock. An interactive write-capable owner may instead acknowledge that an
+untracked remote key might still be active and call the dedicated regenerate
+form. Regeneration creates and activates a new credential without listing or
+revoking the unknown remote key.
+
 The management handlers are outside public gRPC, grpc-gateway generation, and
 Swagger. API Keys can read connection and activity projections but cannot
-connect, reconnect, disconnect, obtain a lease, or invoke Wallet signing. The
+connect, reconnect, regenerate, disconnect, obtain a lease, or invoke Wallet signing. The
 Worm-only five-minute lease is independent from the Wallet private-key-reveal
 lease, even though both reuse typed login credentials, Redis, Google OIDC, and
 Solana SIWS primitives. External-auth mode uses the configured public origin;
@@ -246,10 +253,15 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    The process binds `127.0.0.1:8090` by default; Compose binds
    `0.0.0.0:8090` inside the private network.
 2. Startup migrates the independent `worm_trading` database and requires a
-   successful credential-store ping. Missing or invalid encryption material or
-   an unreachable store fails closed. The command also constructs one
-   required process-owned Worm Markets clientset for preview catalogs; service
-   construction fails when that dependency is absent. Standard gRPC
+   successful credential-store ping. Before the process accepts work, bounded
+   startup recovery drains every inherited active connection attempt:
+   `PREPARED` attempts fail because credential creation was not dispatched,
+   while `COMPLETING` attempts become outcome-unknown. A regenerate therefore
+   returns immediately to its manual unknown state after restart instead of
+   waiting for challenge expiry. Missing or invalid encryption material, an
+   unreachable store, or incomplete recovery fails closed. The command also
+   constructs one required process-owned Worm Markets clientset for preview
+   catalogs; service construction fails when that dependency is absent. Standard gRPC
    health starts `NOT_SERVING`; the Solana identity probe changes it to `SERVING`
    only after mainnet, Circle USDC, confirmed-slot, and JSON-RPC batch checks
    succeed. Credential maintenance, the single preview worker, and live-Run
@@ -284,30 +296,41 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    explicit `items`, `total`, `page`, `pageSize`, and `fetchedAt` JSON fields
    under `Cache-Control: no-store, private`. An empty owner page returns an
    explicit empty array without an internal service call.
-6. `POST /api/v1/worm-trading/wallet-connections/{walletId}` and the
-   `:reconnect` form require an exact same-origin interactive request,
+6. `POST /api/v1/worm-trading/wallet-connections/{walletId}`, its `:reconnect`
+   form, and its `:regenerate` form require an exact same-origin interactive
+   request,
    `worm_trading:READ_WRITE`, an unexpired `worm.api_credential.manage` lease,
    and an owner-scoped Solana Wallet row. The browser sends only the wallet ID;
-   address and account UUID come from server-side state.
+   address and account UUID come from server-side state. Regenerate additionally
+   requires JSON `{"acknowledgeUnknownCredentialMayRemain":true}` and is valid
+   only for `RECONNECT_REQUIRED` with `CONNECT_OUTCOME_UNKNOWN`; it does not
+   query, list, or revoke the unknown remote credential. The API Server maps
+   this form to `PrepareWormWalletConnectionRequest.regenerate_unknown_credential`.
 7. `PrepareWormWalletConnection` requests `/auth/keys/challenge/` from the
    official Worm service, accepts only a bounded nonce and the exact message
    `Create Worm API credential | Wallet: {address} | Nonce: {nonce}`, and stores
-   the challenge, SHA-256 digest, expiry, previous connection state, and attempt
-   kind before returning it internally to the API Server.
+   the challenge, SHA-256 digest, expiry, previous connection state, and
+   `CONNECT`, `RECONNECT`, or `REGENERATE` attempt kind before returning it
+   internally to the API Server. A regenerate attempt changes the connection to
+   `CONNECTING` while retaining the outcome-unknown warning.
 8. `SignWormAuthChallenge` repeats Wallet owner lookup, requires `SOLANA`, checks
    the expected address, validates the exact message, decrypts the key, verifies
    its derived address, and returns only the hexadecimal Ed25519 signature and
    message digest. The API Server validates signature encoding and compares the
    digest before forwarding raw bytes to completion; Wallet returns no address
    field. Neither challenge nor signature reaches the browser.
-9. Completion atomically changes the attempt from `PREPARED` to `COMPLETING`,
-   rechecks wallet, address, digest, exact message, and Ed25519 signature, then
-   calls `/auth/keys/create/`. This POST is never retried. A transport timeout,
-   cancellation, unavailable/invalid response, empty returned credential, or
-   indeterminate local activation commit is recorded as
-   `CONNECT_OUTCOME_UNKNOWN`. This warning is durable and blocks connect,
-   reconnect, and disconnect so none can overwrite or disguise the unresolved
-   remote result; recovery requires manual operator reconciliation.
+9. Completion atomically changes the attempt from `PREPARED` to `COMPLETING`
+   and rechecks wallet, address, digest, exact message, and Ed25519 signature.
+   Once `/auth/keys/create/` is dispatched, the provider call and local
+   activation use a process-owned bounded context instead of the inbound HTTP
+   request context, so browser navigation, refresh, or transport cancellation
+   cannot interrupt the mutation and persistence window. This POST is never
+   retried. For connect and ordinary reconnect, a transport timeout,
+   unavailable or invalid response, empty returned credential, or indeterminate
+   local activation commit is recorded as `CONNECT_OUTCOME_UNKNOWN`. The warning
+   durably blocks automatic bootstrap and ordinary connect, reconnect, and
+   disconnect. Only the acknowledged regenerate form may proceed from that
+   locked state.
 10. A returned API key and secret are independently encrypted before the active
    credential is committed. The same transaction retires a previous active
    credential, completes the attempt, and marks the connection `CONNECTED`.
@@ -319,7 +342,14 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    credential still held in memory. Reconnect completion returns without
    synchronously revoking the retired key; the new credential remains usable
    while a later maintenance pass keeps the old ciphertext durable until remote
-   revocation is confirmed.
+   revocation is confirmed. Successful regeneration likewise activates the new
+   encrypted credential and marks the connection `CONNECTED`, but deliberately
+   performs no discovery or revocation of the earlier unknown remote key. Every
+   regenerate failure, including challenge expiry, signing or validation
+   failure, explicit provider failure, process recovery, and another ambiguous
+   provider or commit result, restores `RECONNECT_REQUIRED` with
+   `CONNECT_OUTCOME_UNKNOWN`; the original `OUTCOME_UNKNOWN` attempt remains as
+   an audit record.
 11. `DELETE /api/v1/worm-trading/wallet-connections/{walletId}` marks the
     connection `DISCONNECTING` and revokes every stored credential. A successful
     response or remote 404 deletes that credential; only after none remain does
@@ -380,11 +410,18 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     context-appropriate action. Normal row-level Connect and Disconnect actions
     do not exist. A `RECONNECT_REQUIRED` row retains confirmed manual Reconnect;
     `DISCONNECTING` and `REVOCATION_REQUIRED` retain confirmed credential
-    cleanup through DELETE. `CONNECT_OUTCOME_UNKNOWN` suppresses every mutation
-    and requires operator reconciliation. While the automatic queue runs,
-    Refresh, Reconnect, and cleanup are disabled. A completed or paused batch
-    reloads the inventory and current activity once instead of performing a
-    position read after every wallet. Assets contains no order control.
+    cleanup through DELETE. `CONNECT_OUTCOME_UNKNOWN` stops automatic work and
+    suppresses ordinary connect, reconnect, disconnect, and cleanup, but exposes
+    one manual Reconnect action to write-capable interactive users. Its
+    confirmation explains that a new key will be created and used, the unknown
+    remote key may remain active, Athena will neither list nor revoke that key,
+    and no transaction or funds transfer is authorized; only the confirmed
+    action calls `:regenerate`. While the automatic queue runs, Refresh,
+    Reconnect, regeneration, and cleanup are disabled. A completed or paused
+    batch reloads the inventory and current activity once instead of performing
+    a position read after every wallet. Successful regeneration reloads the
+    connection inventory, balances, and activity. Assets contains no order
+    control.
 17. The saved-combination list uses one-based pagination with a maximum page
     size of 100. New builders accept a direct Event Condition ID or an HTTPS
     `worm.wtf/market/{eventConditionId}` URL. The browser rejects a different
@@ -531,10 +568,13 @@ plus its canonical Solana address:
   and secret ciphertext. At most one row is `ACTIVE`; older rows remain
   `PENDING_REVOCATION`, `REVOKING`, or `REVOCATION_REQUIRED` until confirmed
   revoked and deleted.
-- `worm_wallet_connection_attempts` stores one-time `CONNECT` or `RECONNECT`
-  challenge state. `PREPARED` and `COMPLETING` are the only active states;
+- `worm_wallet_connection_attempts` stores one-time `CONNECT`, `RECONNECT`, or
+  `REGENERATE` challenge state. `PREPARED` and `COMPLETING` are the only active
+  states;
   terminal states are `COMPLETED`, `FAILED`, `CANCELLED`, and
-  `OUTCOME_UNKNOWN`. Only one active attempt may exist per wallet.
+  `OUTCOME_UNKNOWN`. Only one active attempt may exist per wallet. Regeneration
+  never replaces the earlier `OUTCOME_UNKNOWN` audit row, and every non-success
+  outcome restores the connection's outcome-unknown lock.
 
 Saved combinations use two account-owned tables in the same database:
 
@@ -614,9 +654,12 @@ current availability. Last-trade prices and catalog fetch times are never stored
 in either combination table and never affect template revision.
 
 `CONNECT_OUTCOME_UNKNOWN` is also latched on the connection row. While present,
-the store rejects prepare, reconnect, and disconnect mutations. The runtime has
-no automatic or public clearing path because it cannot prove whether Worm
-created the credential; an operator must reconcile the remote and local state.
+the store rejects automatic prepare and ordinary connect, reconnect, and
+disconnect mutations. It accepts only an explicitly flagged `REGENERATE`
+prepare from `RECONNECT_REQUIRED`, after the native API has recorded the user's
+risk acknowledgement. Success clears the warning by activating a newly created
+credential; every failure restores it. The unknown remote key remains outside
+Athena's credential store and is neither listed nor revoked.
 
 The native connection inventory is a transient owner-scoped projection, not a
 new durable model. Every item contains safe Wallet presentation plus connection
@@ -743,7 +786,9 @@ setting because they are memory-only by design.
   reported. Plain credentials, challenge, signature, and signable position
   message never enter browser state, public APIs, logs, or metrics.
 - An ambiguous credential creation or activation commit is never repeated
-  automatically and locks every connection mutation until manual reconciliation.
+  automatically and locks ordinary connection mutations. Only an interactive,
+  acknowledged regenerate may create a replacement credential; it neither
+  discovers nor revokes the unknown remote key.
 - Failed revocation never deletes ciphertext or reports `NOT_CONNECTED`; an old
   credential remains tracked until remote absence is confirmed.
 - Connection cleanup warnings are derived from the complete retained credential
@@ -839,15 +884,19 @@ reauthentication and reconnect flow. Decryption failure is
 `CREDENTIAL_UNAVAILABLE` and fails closed without exposing or deleting
 ciphertext.
 
-Connection attempt validation failures restore the prior durable state and
-recompute its warning from the complete credential set. Any retained
+Startup recovery and connection-attempt validation failures restore the prior durable state and
+recompute its warning from the complete credential set. A `REGENERATE` failure
+always restores `RECONNECT_REQUIRED` with `CONNECT_OUTCOME_UNKNOWN`, preserving
+the original uncertain attempt. For ordinary attempts, any retained
 `REVOCATION_REQUIRED` credential wins, otherwise any non-active credential
 produces `CREDENTIAL_REVOCATION_PENDING`; only when no cleanup row remains does
 the attempt failure code become the fallback warning. An
 ambiguous create or activation-commit result moves the attempt to
 `OUTCOME_UNKNOWN` and the connection to `RECONNECT_REQUIRED` with the locked
-`CONNECT_OUTCOME_UNKNOWN` warning. No connection mutation may clear or overwrite
-that state; manual operator reconciliation is required. A credential returned
+`CONNECT_OUTCOME_UNKNOWN` warning. Automatic bootstrap and ordinary connect,
+reconnect, and disconnect cannot clear or overwrite that state; only the
+acknowledged regenerate path may replace local credential authority while
+accepting that the unknown remote key may remain valid. A credential returned
 before a definite local persistence failure is revoked best effort. Reconnect
 moves the old active credential to pending revocation in the same transaction
 that activates the new one, so cleanup failure cannot discard the working
@@ -862,10 +911,11 @@ older than one Worm attempt timeout. It never selects explicit-disconnect
 concurrent operation has moved the connection away from `CONNECTED`, the store
 persists only the credential's failure state and does not replace the stricter
 connection state or warning. Restart reloads all connection and revocation state
-from PostgreSQL and resumes that bounded maintenance, while an outcome-unknown
-lock remains manual. A Redis outage blocks new management leases but does not
-erase stored credentials or prevent authorized read-only activity if the
-login/API Key request remains valid.
+from PostgreSQL and resumes that bounded maintenance. An interrupted regenerate
+restores the outcome-unknown lock and becomes manually available again after a
+fresh risk confirmation and lease. A Redis outage blocks new management leases
+but does not erase stored credentials or prevent authorized read-only activity
+if the login/API Key request remains valid.
 
 Automatic bootstrap treats a missing or expired Worm lease as a local pause and
 offers one new provider proof; it does not treat that stable reason as an
@@ -875,9 +925,13 @@ access-revision change, rate limiting, transport failure, or server/dependency
 failure stops the remaining queue to avoid a request storm. An explicit Retry
 first reloads the authoritative inventory and selects only wallets that are
 still `NOT_CONNECTED`; there is no automatic retry. An ambiguous credential
-creation stops the queue, is never retried, and remains locked by
-`CONNECT_OUTCOME_UNKNOWN`. Route, account, or permission transitions abort the
-active request, discard late completions, and clear the in-memory batch.
+creation stops the queue and is never retried by it.
+`CONNECT_OUTCOME_UNKNOWN` remains locked against automatic work and ordinary
+connection controls until a write-capable interactive user explicitly confirms
+regeneration. Route, account, or permission transitions abort discovery and
+pre-dispatch work, discard late browser completions, and clear the in-memory
+batch; a provider create already dispatched continues under the service's
+bounded detached context through its durable result.
 
 Combination catalog provider failures leave the builder unchanged and return a
 bounded HTTP error; initial retry or Event-level manual Refresh starts a new

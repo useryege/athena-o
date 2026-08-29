@@ -33,8 +33,9 @@ const (
 type ConnectionAttemptKind string
 
 const (
-	ConnectionAttemptKindConnect   ConnectionAttemptKind = "CONNECT"
-	ConnectionAttemptKindReconnect ConnectionAttemptKind = "RECONNECT"
+	ConnectionAttemptKindConnect    ConnectionAttemptKind = "CONNECT"
+	ConnectionAttemptKindReconnect  ConnectionAttemptKind = "RECONNECT"
+	ConnectionAttemptKindRegenerate ConnectionAttemptKind = "REGENERATE"
 )
 
 type ConnectionAttemptState string
@@ -862,6 +863,7 @@ type Store interface {
 	BeginConnectionAttemptCompletion(context.Context, string, time.Time) (*ConnectionAttempt, error)
 	FailConnectionAttempt(context.Context, string, string, time.Time) error
 	MarkConnectionAttemptOutcomeUnknown(context.Context, string, string, time.Time) error
+	RecoverConnectionAttempts(context.Context, time.Time, int32) (int64, error)
 	ExpireConnectionAttempts(context.Context, time.Time, int32) error
 	ActivateCredential(context.Context, ActivateCredentialRequest) (*WalletConnectionSnapshot, error)
 	ListWalletConnectionSnapshots(context.Context, []WalletReference) ([]WalletConnectionSnapshot, error)

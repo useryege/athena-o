@@ -94,6 +94,11 @@ message PrepareWormWalletConnectionRequest {
   int64 wallet_id = 1;
   string address = 2;
   bool reconnect = 3;
+  // regenerate_unknown_credential is an explicit caller acknowledgement that
+  // a prior credential-create outcome is unresolved and a replacement should
+  // be created without attempting to discover or revoke the possible remote
+  // credential.
+  bool regenerate_unknown_credential = 4;
 }
 
 // PrepareWormWalletConnectionResponse contains only the bounded challenge data

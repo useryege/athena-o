@@ -102,11 +102,11 @@ func (s *SQLStore) PrepareConnectionAttempt(ctx context.Context, req PrepareConn
 		}
 		return nil, ErrCredentialOutcomeUnknown
 	}
-	if connection.WarningCode == unknownCreateOutcomeWarning {
+	if connection.WarningCode == unknownCreateOutcomeWarning && req.Kind != ConnectionAttemptKindRegenerate {
 		return nil, ErrCredentialOutcomeUnknown
 	}
 
-	if err := validateConnectionAttemptKind(req.Kind, ConnectionState(connection.State)); err != nil {
+	if err := validateConnectionAttemptKind(req.Kind, ConnectionState(connection.State), connection.WarningCode); err != nil {
 		return nil, err
 	}
 	created, err := queries.CreateConnectionAttempt(ctx, wormtradingsqlc.CreateConnectionAttemptParams{
@@ -125,9 +125,13 @@ func (s *SQLStore) PrepareConnectionAttempt(ctx context.Context, req PrepareConn
 	if err != nil {
 		return nil, fmt.Errorf("create Worm connection attempt %s: %w", attemptID, err)
 	}
+	connectingWarningCode := ""
+	if req.Kind == ConnectionAttemptKindRegenerate {
+		connectingWarningCode = unknownCreateOutcomeWarning
+	}
 	if _, err := queries.UpdateWalletConnectionState(ctx, wormtradingsqlc.UpdateWalletConnectionStateParams{
 		State:       string(ConnectionStateConnecting),
-		WarningCode: "",
+		WarningCode: connectingWarningCode,
 		ConnectedAt: timestampParam(time.Time{}),
 		Now:         timestampParam(now),
 		WalletID:    req.WalletID,
@@ -250,9 +254,13 @@ func (s *SQLStore) finishConnectionAttempt(ctx context.Context, attemptID string
 		}); err != nil {
 			return fmt.Errorf("mark Worm connection attempt outcome unknown: %w", err)
 		}
+		connectionWarningCode := failureCode
+		if ConnectionAttemptKind(locked.Kind) == ConnectionAttemptKindRegenerate {
+			connectionWarningCode = unknownCreateOutcomeWarning
+		}
 		if _, err := queries.UpdateWalletConnectionState(ctx, wormtradingsqlc.UpdateWalletConnectionStateParams{
 			State:       string(ConnectionStateReconnectRequired),
-			WarningCode: failureCode,
+			WarningCode: connectionWarningCode,
 			ConnectedAt: locked.PreviousConnectedAt,
 			Now:         timestampParam(now),
 			WalletID:    locked.WalletID,
@@ -275,9 +283,13 @@ func failConnectionAttemptInTransaction(ctx context.Context, queries *wormtradin
 	}); err != nil {
 		return fmt.Errorf("fail Worm connection attempt: %w", err)
 	}
-	warningCode, err := credentialCleanupWarning(ctx, queries, attempt.WalletID, failureCode)
-	if err != nil {
-		return err
+	warningCode := unknownCreateOutcomeWarning
+	if ConnectionAttemptKind(attempt.Kind) != ConnectionAttemptKindRegenerate {
+		var err error
+		warningCode, err = credentialCleanupWarning(ctx, queries, attempt.WalletID, failureCode)
+		if err != nil {
+			return err
+		}
 	}
 	if _, err := queries.UpdateWalletConnectionState(ctx, wormtradingsqlc.UpdateWalletConnectionStateParams{
 		State:       attempt.PreviousConnectionState,
@@ -296,7 +308,9 @@ func validatePrepareConnectionAttemptRequest(req PrepareConnectionAttemptRequest
 	if err := validateWalletReference(req.WalletID, req.Address); err != nil {
 		return err
 	}
-	if req.Kind != ConnectionAttemptKindConnect && req.Kind != ConnectionAttemptKindReconnect {
+	if req.Kind != ConnectionAttemptKindConnect &&
+		req.Kind != ConnectionAttemptKindReconnect &&
+		req.Kind != ConnectionAttemptKindRegenerate {
 		return fmt.Errorf("connection attempt kind is invalid")
 	}
 	if req.Nonce == "" || req.Nonce != strings.TrimSpace(req.Nonce) || len(req.Nonce) > maxNonceLength {
@@ -311,7 +325,7 @@ func validatePrepareConnectionAttemptRequest(req PrepareConnectionAttemptRequest
 	return nil
 }
 
-func validateConnectionAttemptKind(kind ConnectionAttemptKind, current ConnectionState) error {
+func validateConnectionAttemptKind(kind ConnectionAttemptKind, current ConnectionState, warningCode string) error {
 	switch kind {
 	case ConnectionAttemptKindConnect:
 		if current != ConnectionStateNotConnected {
@@ -323,6 +337,10 @@ func validateConnectionAttemptKind(kind ConnectionAttemptKind, current Connectio
 		}
 		if current == ConnectionStateConnecting || current == ConnectionStateDisconnecting {
 			return ErrConnectionOperationActive
+		}
+	case ConnectionAttemptKindRegenerate:
+		if current != ConnectionStateReconnectRequired || warningCode != unknownCreateOutcomeWarning {
+			return ErrConnectionAttemptState
 		}
 	default:
 		return fmt.Errorf("connection attempt kind is invalid")

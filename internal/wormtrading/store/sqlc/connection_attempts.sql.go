@@ -185,6 +185,34 @@ func (q *Queries) GetConnectionAttemptForUpdate(ctx context.Context, id pgtype.U
 	return i, err
 }
 
+const listActiveConnectionAttemptWalletIDs = `-- name: ListActiveConnectionAttemptWalletIDs :many
+SELECT wallet_id
+FROM worm_wallet_connection_attempts
+WHERE state IN ('PREPARED', 'COMPLETING')
+ORDER BY created_at, wallet_id, id
+LIMIT $1
+`
+
+func (q *Queries) ListActiveConnectionAttemptWalletIDs(ctx context.Context, resultLimit int32) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listActiveConnectionAttemptWalletIDs, resultLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var wallet_id int64
+		if err := rows.Scan(&wallet_id); err != nil {
+			return nil, err
+		}
+		items = append(items, wallet_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExpiredConnectionAttemptWalletIDs = `-- name: ListExpiredConnectionAttemptWalletIDs :many
 SELECT wallet_id
 FROM worm_wallet_connection_attempts

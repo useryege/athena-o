@@ -21,6 +21,7 @@ import (
 const (
 	maxWalletBalanceReferences        = 100
 	wormCredentialMaintenanceInterval = 30 * time.Second
+	wormConnectionRecoveryBatchSize   = int32(100)
 )
 
 type Service struct {
@@ -141,6 +142,19 @@ func (s *Service) Start() error {
 			return status.Error(codes.Unavailable, "Worm credential store is unavailable")
 		}
 		s.wormCapabilities.recordStoreSuccess()
+		recoveryCtx, recoveryCancel := context.WithTimeout(context.Background(), s.wormPositionBudget)
+		for {
+			recovered, recoverErr := s.credentialStore.RecoverConnectionAttempts(recoveryCtx, timeNowUTC(), wormConnectionRecoveryBatchSize)
+			s.recordCredentialStoreResult(recoverErr)
+			if recoverErr != nil {
+				recoveryCancel()
+				return status.Error(codes.Unavailable, "Worm credential store recovery failed")
+			}
+			if recovered < int64(wormConnectionRecoveryBatchSize) {
+				break
+			}
+		}
+		recoveryCancel()
 	}
 	runCtx, cancel := context.WithCancel(context.Background())
 	s.runCancel = cancel

@@ -85,6 +85,7 @@ type Querier interface {
 	GetWalletConnectionForUpdate(ctx context.Context, walletID int64) (WormWalletConnection, error)
 	HeartbeatExecutionCoordinator(ctx context.Context, arg HeartbeatExecutionCoordinatorParams) (WormExecutionCoordinator, error)
 	InvalidateExecutionAuthorization(ctx context.Context, arg InvalidateExecutionAuthorizationParams) (int64, error)
+	ListActiveConnectionAttemptWalletIDs(ctx context.Context, resultLimit int32) ([]int64, error)
 	ListCredentialsNeedingRevocation(ctx context.Context, arg ListCredentialsNeedingRevocationParams) ([]WormWalletCredential, error)
 	ListExecutionPlanItems(ctx context.Context, planID pgtype.UUID) ([]WormExecutionPlanItem, error)
 	ListExecutionPlanReasonCounts(ctx context.Context, planID pgtype.UUID) ([]ListExecutionPlanReasonCountsRow, error)
