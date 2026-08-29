@@ -1560,6 +1560,40 @@ body,
     font-weight: 500;
 }
 
+.worm-combination-name-modal__form,
+.worm-combination-name-modal__field {
+    display: grid;
+}
+
+.worm-combination-name-modal__form {
+    gap: 22px;
+}
+
+.worm-combination-name-modal__field {
+    gap: 7px;
+    color: var(--athena-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.worm-combination-name-modal__field small {
+    min-height: 17px;
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.worm-combination-name-modal__field .worm-combination-name-modal__error {
+    color: var(--athena-red);
+}
+
+.worm-combination-name-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .worm-combination-summary__items {
     display: grid;
     max-height: min(54vh, 620px);
@@ -1733,6 +1767,11 @@ body,
 }
 
 @media (max-width: 520px) {
+    .worm-combination-name-modal__actions .ant-btn {
+        min-height: 44px;
+        flex: 1;
+    }
+
     .worm-combination-event-input__control {
         grid-template-columns: minmax(0, 1fr);
     }

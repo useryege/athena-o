@@ -11,7 +11,7 @@ import {
     ReloadOutlined,
     SaveOutlined
 } from '@ant-design/icons';
-import {Alert, Button, Card, Drawer, Empty, Input, Space, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Button, Card, Drawer, Empty, Input, Modal, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Navigate, useBlocker, useNavigate, useParams} from 'react-router-dom';
@@ -89,11 +89,19 @@ const selectionFingerprint = (name: string, items: WormMarketCombinationItem[]) 
         items: items.map(item => ({eventConditionId: item.eventConditionId, marketConditionId: item.marketConditionId, side: item.side}))
     });
 
-const validCombinationName = (name: string) => {
+const combinationNameValidationMessage = (name: string) => {
     const normalized = name.trim();
     const length = Array.from(normalized).length;
-    return length >= 1 && length <= 80 && !hasControlCharacters(normalized);
+    if (length === 0) {
+        return 'Enter a combination name.';
+    }
+    if (length > 80 || hasControlCharacters(normalized)) {
+        return 'Use 1–80 characters without control characters.';
+    }
+    return '';
 };
+
+const validCombinationName = (name: string) => !combinationNameValidationMessage(name);
 
 const selectionFromOutcome = (event: WormTradingEvent, market: WormTradingEventMarket, outcome: WormTradingEventOutcome, ordinal: number): WormMarketCombinationItem => ({
     ordinal,
@@ -548,7 +556,7 @@ const CombinationSummary = (props: {
         const status = combinationItemStatus(item, props.events);
         return status.known && !status.selectable;
     });
-    const saveDisabled = !nameValid || props.items.length === 0 || invalidSelections.length > 0 || props.saving || props.refreshing;
+    const saveDisabled = (props.editing && !nameValid) || props.items.length === 0 || invalidSelections.length > 0 || props.saving || props.refreshing;
     return (
         <div className='worm-combination-summary'>
             <div className='worm-combination-summary__heading'>
@@ -558,22 +566,24 @@ const CombinationSummary = (props: {
                 </div>
                 <Tag color={props.items.length > 0 ? 'processing' : 'default'}>{props.items.length}</Tag>
             </div>
-            <label className='worm-combination-summary__name'>
-                <span>Combination name</span>
-                {props.canWrite ? (
-                    <Input
-                        value={props.name}
-                        status={props.name && !nameValid ? 'error' : undefined}
-                        placeholder='e.g. Weekend macro signals'
-                        disabled={props.saving}
-                        aria-invalid={props.name && !nameValid ? true : undefined}
-                        onChange={event => props.onNameChange(event.target.value)}
-                    />
-                ) : (
-                    <Typography.Text strong={true}>{props.name}</Typography.Text>
-                )}
-                {props.canWrite && props.name && !nameValid && <small>Use 1–80 characters without control characters.</small>}
-            </label>
+            {props.editing && (
+                <label className='worm-combination-summary__name'>
+                    <span>Combination name</span>
+                    {props.canWrite ? (
+                        <Input
+                            value={props.name}
+                            status={props.name && !nameValid ? 'error' : undefined}
+                            placeholder='e.g. Weekend macro signals'
+                            disabled={props.saving}
+                            aria-invalid={props.name && !nameValid ? true : undefined}
+                            onChange={event => props.onNameChange(event.target.value)}
+                        />
+                    ) : (
+                        <Typography.Text strong={true}>{props.name}</Typography.Text>
+                    )}
+                    {props.canWrite && props.name && !nameValid && <small>Use 1–80 characters without control characters.</small>}
+                </label>
+            )}
             {invalidSelections.length > 0 && (
                 <Alert
                     type='warning'
@@ -656,6 +666,62 @@ const CombinationSummary = (props: {
     );
 };
 
+const CreateCombinationNameModal = (props: {
+    open: boolean;
+    value: string;
+    error: string;
+    submitting: boolean;
+    onChange: (value: string) => void;
+    onCancel: () => void;
+    onSubmit: () => void;
+}) => (
+    <Modal
+        className='worm-combination-name-modal'
+        width={480}
+        open={props.open}
+        title='Create combination'
+        footer={null}
+        destroyOnHidden={true}
+        closable={!props.submitting}
+        keyboard={!props.submitting}
+        mask={{closable: !props.submitting}}
+        onCancel={props.onCancel}>
+        <form
+            className='worm-combination-name-modal__form'
+            onSubmit={event => {
+                event.preventDefault();
+                props.onSubmit();
+            }}>
+            <label className='worm-combination-name-modal__field' htmlFor='worm-combination-create-name'>
+                <span>Combination name</span>
+                <Input
+                    id='worm-combination-create-name'
+                    value={props.value}
+                    autoFocus={true}
+                    autoComplete='off'
+                    placeholder='e.g. Weekend macro signals'
+                    status={props.error ? 'error' : undefined}
+                    disabled={props.submitting}
+                    aria-invalid={props.error ? true : undefined}
+                    aria-describedby='worm-combination-create-name-help'
+                    onChange={event => props.onChange(event.target.value)}
+                />
+                <small id='worm-combination-create-name-help' className={props.error ? 'worm-combination-name-modal__error' : undefined} role={props.error ? 'alert' : undefined}>
+                    {props.error || 'Use 1–80 characters without control characters.'}
+                </small>
+            </label>
+            <div className='worm-combination-name-modal__actions'>
+                <Button htmlType='button' disabled={props.submitting} onClick={props.onCancel}>
+                    Cancel
+                </Button>
+                <Button type='primary' htmlType='submit' loading={props.submitting} disabled={!validCombinationName(props.value)}>
+                    Create combination
+                </Button>
+            </div>
+        </form>
+    </Modal>
+);
+
 export const WormTradingCombinationBuilderPage = () => {
     const {id = ''} = useParams<{id: string}>();
     const editing = Boolean(id);
@@ -681,6 +747,9 @@ export const WormTradingCombinationBuilderPage = () => {
     const [refreshingEventID, setRefreshingEventID] = React.useState('');
     const [saving, setSaving] = React.useState(false);
     const [reviewOpen, setReviewOpen] = React.useState(false);
+    const [createNameOpen, setCreateNameOpen] = React.useState(false);
+    const [createName, setCreateName] = React.useState('');
+    const [createNameError, setCreateNameError] = React.useState('');
     const addEventRequestRef = React.useRef<ReturnType<typeof services.wormTrading.getEvent>>();
     const refreshEventRequestRef = React.useRef<ReturnType<typeof services.wormTrading.getEvent>>();
     const allowNavigationRef = React.useRef(false);
@@ -708,6 +777,12 @@ export const WormTradingCombinationBuilderPage = () => {
     }, [authorization.user.accountId]);
 
     React.useEffect(() => {
+        setCreateNameOpen(false);
+        setCreateName('');
+        setCreateNameError('');
+    }, [authorization.user.accountId, editing]);
+
+    React.useEffect(() => {
         if (!dirty) {
             return;
         }
@@ -726,7 +801,7 @@ export const WormTradingCombinationBuilderPage = () => {
         let resolved = false;
         const handle = ctx.modal.confirm({
             title: 'Discard unsaved combination changes?',
-            content: 'Your name, market choices, and ordering changes have not been saved.',
+            content: editing ? 'Your name, market choices, and ordering changes have not been saved.' : 'Your market choices and ordering changes have not been saved.',
             okText: 'Discard and leave',
             onOk: () => {
                 resolved = true;
@@ -791,6 +866,9 @@ export const WormTradingCombinationBuilderPage = () => {
         }
         setReviewOpen(false);
         setSaving(false);
+        setCreateNameOpen(false);
+        setCreateName('');
+        setCreateNameError('');
         const source = combination.data;
         if (source) {
             const nextSelections = orderedSelections(source.items);
@@ -959,8 +1037,8 @@ export const WormTradingCombinationBuilderPage = () => {
         });
     };
 
-    const save = async () => {
-        if (!canWrite || saving || refreshingEventID || !validCombinationName(name) || selections.length === 0) {
+    const save = async (submittedName: string) => {
+        if (!canWrite || saving || refreshingEventID || !validCombinationName(submittedName) || selections.length === 0) {
             return;
         }
         const invalidSelection = selections.find(item => {
@@ -972,7 +1050,7 @@ export const WormTradingCombinationBuilderPage = () => {
             return;
         }
         const input = {
-            name: name.trim(),
+            name: submittedName.trim(),
             items: selections.map(item => ({eventConditionId: item.eventConditionId, marketConditionId: item.marketConditionId, side: item.side}))
         };
         setSaving(true);
@@ -995,7 +1073,11 @@ export const WormTradingCombinationBuilderPage = () => {
             const details = requestErrorDetails(error);
             if (details.status === 409) {
                 if (details.message === 'market combination name already exists') {
-                    ctx.notifications.error('Combination name already exists', 'Choose a different name for this account.');
+                    if (editing) {
+                        ctx.notifications.error('Combination name already exists', 'Choose a different name for this account.');
+                    } else {
+                        setCreateNameError('A combination with this name already exists in this account.');
+                    }
                 } else {
                     ctx.notifications.error('Combination changed', 'Reload the latest revision before applying your changes again.');
                 }
@@ -1005,6 +1087,46 @@ export const WormTradingCombinationBuilderPage = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const openCreateNameModal = () => {
+        if (!canWrite || editing || saving || refreshingEventID || selections.length === 0) {
+            return;
+        }
+        const invalidSelection = selections.find(item => {
+            const status = combinationItemStatus(item, events);
+            return status.known && !status.selectable;
+        });
+        if (invalidSelection) {
+            ctx.notifications.warning('Review unavailable markets', 'Remove or replace unavailable selections before saving.');
+            return;
+        }
+        setCreateName('');
+        setCreateNameError('');
+        setCreateNameOpen(true);
+    };
+
+    const closeCreateNameModal = () => {
+        if (saving) {
+            return;
+        }
+        setCreateNameOpen(false);
+        setCreateName('');
+        setCreateNameError('');
+    };
+
+    const changeCreateName = (value: string) => {
+        setCreateName(value);
+        setCreateNameError(value ? combinationNameValidationMessage(value) : '');
+    };
+
+    const submitCreateName = () => {
+        const validationError = combinationNameValidationMessage(createName);
+        if (validationError) {
+            setCreateNameError(validationError);
+            return;
+        }
+        void save(createName);
     };
 
     const summary = (
@@ -1019,7 +1141,7 @@ export const WormTradingCombinationBuilderPage = () => {
             onNameChange={setName}
             onMove={moveSelection}
             onRemove={removeSelection}
-            onSave={save}
+            onSave={editing ? () => void save(name) : openCreateNameModal}
         />
     );
 
@@ -1129,6 +1251,15 @@ export const WormTradingCombinationBuilderPage = () => {
                         onClose={() => setReviewOpen(false)}>
                         {summary}
                     </Drawer>
+                    <CreateCombinationNameModal
+                        open={!editing && createNameOpen}
+                        value={createName}
+                        error={createNameError}
+                        submitting={saving}
+                        onChange={changeCreateName}
+                        onCancel={closeCreateNameModal}
+                        onSubmit={submitCreateName}
+                    />
                 </>
             )}
         </AppPage>

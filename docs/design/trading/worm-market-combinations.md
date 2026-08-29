@@ -131,10 +131,14 @@ than a third sidebar child and cannot start an order.
    side, price availability, and “last trade” in their accessible name. Text
    reasons, visible focus, keyboard actions, and touch-sized controls preserve
    non-color and non-pointer operation.
-8. Create sends a trimmed name and at least one ordered selection to
-   `POST /api/v1/worm-trading/combinations`. The API Server rejects unknown JSON
-   fields, trailing JSON, bodies over 1 MiB, invalid names or sides, duplicate
-   Market IDs, and noncanonical IDs.
+8. New builders do not expose a persistent name field in Current combination.
+   Once at least one valid market is selected, Create combination opens a
+   responsive modal that owns a transient name draft. Cancel discards only that
+   name; successful submission sends the trimmed name and ordered selection to
+   `POST /api/v1/worm-trading/combinations`. A duplicate name keeps the modal
+   open with field-level feedback. The API Server rejects unknown JSON fields,
+   trailing JSON, bodies over 1 MiB, invalid names or sides, duplicate Market
+   IDs, and noncanonical IDs.
 9. Before persistence, `resolveWormCombinationItems` creates one 45-second
    context for the complete multi-Event resolution and refetches each unique
    Event once, with at most four Event catalogs in flight. It verifies that each
@@ -154,12 +158,13 @@ than a third sidebar child and cannot start an order.
     price from the currently loaded catalog and uses `—` when no valid price is
     available.
 12. Edit loads `GET /api/v1/worm-trading/combinations/{id}` and then refreshes
-    each unique saved Event independently. Saved display snapshots remain
-    available if a refresh fails; any later PUT still repeats full authoritative
-    validation at the server. Catalog price and `fetchedAt` changes are transient
-    presentation state and are excluded from the dirty fingerprint. Dirty
-    browser state installs both in-application navigation and browser-unload
-    protection.
+    each unique saved Event independently. Edit retains the inline name input so
+    Save changes can rename and replace items together. Saved display snapshots
+    remain available if a refresh fails; any later PUT still repeats full
+    authoritative validation at the server. Catalog price and `fetchedAt`
+    changes are transient presentation state and are excluded from the dirty
+    fingerprint. Dirty browser state installs both in-application navigation
+    and browser-unload protection.
 13. PUT sends the full name and item replacement plus `expectedRevision`. The
     store locks the owner-scoped header, compares the revision, increments it,
     deletes prior items, inserts the complete replacement, and commits together.
@@ -201,12 +206,14 @@ repeatable-read, read-only transactions so a returned header and its ordered
 items share one database snapshot. The service maps constraint, not-found, and
 revision failures to bounded internal gRPC statuses.
 
-Browser state holds loaded catalogs, current selections, the name, the saved
-revision, a dirty baseline, optional last-trade prices, `fetchedAt`, and
-transient refresh errors in React memory. Prices and fetch times do not enter the
-dirty baseline, combination request, persisted snapshot, list page, localStorage,
-or sessionStorage. The server response omits the owner account UUID and always
-materializes arrays and pagination fields.
+Browser state holds loaded catalogs, current selections, the saved revision, a
+dirty baseline, optional last-trade prices, `fetchedAt`, and transient refresh
+errors in React memory. Edit also holds the persisted name in its dirty draft;
+new creation holds a separate modal-only name that is discarded on cancel and
+submitted without entering the page dirty fingerprint. Prices and fetch times do
+not enter the dirty baseline, combination request, persisted snapshot, list
+page, localStorage, or sessionStorage. The server response omits the owner
+account UUID and always materializes arrays and pagination fields.
 
 Catalog last-trade prices are decimal strings in `[0,1]`. A market has either a
 complete YES/NO pair whose exact sum is `1` or no prices. YES is the provider's
