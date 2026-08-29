@@ -40,7 +40,7 @@ below one saved combination.
 | Durable model and transactions | [internal/wormtrading/store/execution_plans.go](../../../internal/wormtrading/store/execution_plans.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `CreateExecutionPlan`, `ClaimExecutionPlan`, `UpdateExecutionPlanBuildProgress`, `MarkExecutionPlanReady`, `MarkExecutionPlanFailed`, `DeleteExpiredExecutionPlans` |
 | Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
 | Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, Worm Markets clientset, graceful cancellation |
-| Browser workflow, normalization, and responsive presentation | [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | `WormTradingExecutionPreviewPage`, Combination/Wallets/Review steps, strict plan normalizers, contextual route/breadcrumb, `worm-preview-*` rules |
+| Browser workflow, normalization, and responsive presentation | [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | `WormTradingExecutionPreviewPage`, `planPresentationStatus`, `planLiveStatus`, `PlanSummary`, strict plan normalizers, contextual route/breadcrumb, `worm-preview-*` rules |
 
 ## Architecture
 
@@ -156,8 +156,12 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
 14. Exact decimal arithmetic subtracts each READY step's
     `user_funds_needed` from the current Wallet projection. Steps are emitted
     strictly Wallet-major. READY totals sum frozen collateral, opening fee, and
-    user funds needed across actionable steps; ordered reason counts include a
-    `READY` key and every stable skip category.
+    user funds needed across actionable steps; SKIPPED steps contribute to none
+    of those aggregates. The browser labels them `Actionable collateral`,
+    `Actionable opening fees`, and `Actionable USDC needed`, labels the READY
+    count `Actionable`, and states that collateral, opening fee, and USDC totals
+    include actionable steps only. Ordered reason counts include a `READY` key
+    and every stable skip category.
 15. `MarkExecutionPlanReady` locks the plan and source combination, rechecks the
     exact combination revision, then locks connection and ACTIVE credential rows
     in global Wallet-ID order before validating them in user ordinal order. This
@@ -169,11 +173,17 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
 16. The browser stores only `planId` in the route query and polls every 1.5
     seconds while BUILDING. Transient failures retry with capped exponential
     backoff; terminal client errors pause until explicit Retry. READY schedules
-    one authority refresh at its expiry boundary, so an open page cannot remain
-    green after 15 minutes. BUILDING/FAILED totals render as unavailable rather
-    than synthetic zero. Step detail is paged at 20, 50, or 100 rows with an
-    explicit retry. Refresh preview creates a distinct plan; it does not
-    overwrite the old snapshot.
+    one authority refresh at its expiry boundary. Presentation status remains
+    derived from the projected state plus `usabilityCode` without replacing the
+    durable lifecycle: BUILDING is blue `Building`, usable READY is green
+    `Preview ready`, READY with a derived usability code is gold `Preview built`,
+    projected EXPIRED is gold `Expired`, and FAILED is red `Failed`. The live
+    region announces actionable and skipped counts for READY, so neither color
+    nor the durable READY name implies consumability. BUILDING/FAILED totals
+    render as unavailable rather than synthetic zero; READY/EXPIRED retain the
+    frozen actionable-only aggregates. Step detail is paged at 20, 50, or 100
+    rows with an explicit retry. Refresh preview creates a distinct plan; it does
+    not overwrite the old snapshot.
 17. Every hour the worker deletes at most 100 terminal plans whose retention
     deadline has passed. On shutdown the service cancels the worker and lease
     heartbeat and waits for them. An interrupted BUILDING plan remains durable
@@ -336,8 +346,11 @@ Responses and logs exclude owner UUID, worker ID/lease, credential ID/version,
 API key, secret, ciphertext, HMAC headers, Wallet private key, exposure pubkeys,
 raw provider bodies, signable messages, drafts, signatures, transactions, and
 orders. The UI uses text, progress, terminal alerts, aggregate reason counts,
-and paged details; one polite live region announces BUILDING progress without
-using color as the only state signal.
+actionable-only aggregate labels, and paged details. One polite live region
+announces BUILDING progress, READY actionable/skipped counts, or the
+EXPIRED/FAILED terminal outcome without using color as the only state signal.
+Stable provider and classification codes are humanized while preserving
+technical acronyms such as USDC, SOL, API, RPC, and ID.
 
 ## Change Checklist
 
@@ -346,7 +359,7 @@ using color as the only state signal.
 - [ ] Catalog, connection, credential, balance, Estimate, complete exposure, and final revalidation flows remain current.
 - [ ] Fixed backend funds, `1x`, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and reason aggregates remain current.
 - [ ] SOL remains informational and USDC remains an authoritative READY prerequisite.
-- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, resilient BUILDING/expiry polling, immutable Refresh, responsive review, and no-Start behavior remain current.
+- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, immutable Refresh, responsive review, and no-Start behavior remain current.
 - [ ] Worm mutation, Wallet reveal/signing, sensitive data, execution run, and Executions navigation remain outside the capability.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

@@ -2446,7 +2446,7 @@ body,
         padding: 14px;
     }
 
-    .worm-preview-workflow .ant-steps-item-description {
+    .worm-preview-workflow .ant-steps-item-content {
         display: none;
     }
 

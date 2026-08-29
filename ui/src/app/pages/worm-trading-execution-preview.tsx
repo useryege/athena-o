@@ -25,6 +25,17 @@ import {short} from './shared';
 const connectionPageSize = 100;
 const stepPageSizes = [20, 50, 100];
 const planPollIntervalMS = 1_500;
+const codeAcronyms: Record<string, string> = {
+    api: 'API',
+    hmac: 'HMAC',
+    http: 'HTTP',
+    https: 'HTTPS',
+    id: 'ID',
+    rpc: 'RPC',
+    sol: 'SOL',
+    usdc: 'USDC',
+    url: 'URL'
+};
 
 const titleCase = (value: string) =>
     value
@@ -32,7 +43,7 @@ const titleCase = (value: string) =>
         .toLowerCase()
         .split(/[_-]+/)
         .filter(Boolean)
-        .map(part => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+        .map(part => codeAcronyms[part] || `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
         .join(' ');
 
 const displayCode = (value: string, fallback = 'Unavailable') => titleCase(value) || fallback;
@@ -483,17 +494,32 @@ const PlanStateAlert = (props: {plan: WormExecutionPlan}) => {
 };
 
 const planProgress = (plan: WormExecutionPlan) => (plan.totalStepCount > 0 ? Math.min(100, Math.round((plan.completedStepCount / plan.totalStepCount) * 100)) : 0);
+const planPresentationStatus = (plan: WormExecutionPlan) => {
+    if (plan.state === 'BUILDING') {
+        return {label: 'Building', color: 'blue'};
+    }
+    if (plan.state === 'FAILED') {
+        return {label: 'Failed', color: 'red'};
+    }
+    if (plan.state === 'EXPIRED') {
+        return {label: 'Expired', color: 'gold'};
+    }
+    return plan.usabilityCode ? {label: 'Preview built', color: 'gold'} : {label: 'Preview ready', color: 'green'};
+};
 const planLiveStatus = (plan: WormExecutionPlan) =>
     plan.state === 'BUILDING'
         ? `Building execution preview. ${plan.completedStepCount} of ${plan.totalStepCount} steps classified.`
         : plan.state === 'READY'
-          ? `Execution preview ready. ${plan.readyStepCount} steps ready and ${plan.skippedStepCount} skipped.`
+          ? plan.usabilityCode
+              ? `Execution preview built and not consumable. ${plan.readyStepCount} actionable steps and ${plan.skippedStepCount} skipped.`
+              : `Execution preview ready. ${plan.readyStepCount} actionable steps and ${plan.skippedStepCount} skipped.`
           : plan.state === 'EXPIRED'
             ? 'Execution preview expired.'
             : `Execution preview failed. ${displayCode(plan.failureCode)}.`;
 
 const PlanSummary = (props: {plan: WormExecutionPlan}) => {
     const totalsAvailable = props.plan.state === 'READY' || props.plan.state === 'EXPIRED';
+    const presentationStatus = planPresentationStatus(props.plan);
     return (
         <>
             <div className='worm-preview-plan-header'>
@@ -503,9 +529,7 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
                         Revision {props.plan.combinationRevision} · Plan {short(props.plan.id, 10, 8)}
                     </Typography.Text>
                 </div>
-                <Tag color={props.plan.state === 'READY' ? 'green' : props.plan.state === 'BUILDING' ? 'blue' : props.plan.state === 'FAILED' ? 'red' : 'gold'}>
-                    {props.plan.state}
-                </Tag>
+                <Tag color={presentationStatus.color}>{presentationStatus.label}</Tag>
             </div>
             <div className='worm-preview-live-status' role='status' aria-live='polite'>
                 {planLiveStatus(props.plan)}
@@ -519,7 +543,10 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
                     </Typography.Text>
                 </div>
             )}
-            <dl className='worm-preview-metrics'>
+            <Typography.Text id='worm-preview-actionable-totals-note' type='secondary'>
+                Collateral, opening fee, and USDC totals include actionable steps only.
+            </Typography.Text>
+            <dl className='worm-preview-metrics' aria-describedby='worm-preview-actionable-totals-note'>
                 <div>
                     <dt>Wallets</dt>
                     <dd>{props.plan.walletCount}</dd>
@@ -533,7 +560,7 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
                     <dd>{props.plan.totalStepCount}</dd>
                 </div>
                 <div>
-                    <dt>Ready</dt>
+                    <dt>Actionable</dt>
                     <dd>{props.plan.readyStepCount}</dd>
                 </div>
                 <div>
@@ -541,15 +568,15 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
                     <dd>{props.plan.skippedStepCount}</dd>
                 </div>
                 <div>
-                    <dt>Maximum collateral</dt>
+                    <dt>Actionable collateral</dt>
                     <dd>{totalsAvailable ? displayUSDC(props.plan.maximumCollateral) : '—'}</dd>
                 </div>
                 <div>
-                    <dt>Opening fee estimate</dt>
+                    <dt>Actionable opening fees</dt>
                     <dd>{totalsAvailable ? displayUSDC(props.plan.openingFeeEstimate) : '—'}</dd>
                 </div>
                 <div>
-                    <dt>Total USDC needed</dt>
+                    <dt>Actionable USDC needed</dt>
                     <dd>{totalsAvailable ? displayUSDC(props.plan.totalUSDCNeeded) : '—'}</dd>
                 </div>
             </dl>
@@ -1013,9 +1040,9 @@ export const WormTradingExecutionPreviewPage = () => {
                 current={workflowStep}
                 responsive={true}
                 items={[
-                    {title: 'Combination', description: 'Confirm market order'},
-                    {title: 'Wallets', description: 'Select and order'},
-                    {title: 'Review', description: 'Read-only preflight'}
+                    {title: 'Combination', content: 'Confirm market order'},
+                    {title: 'Wallets', content: 'Select and order'},
+                    {title: 'Review', content: 'Read-only preflight'}
                 ]}
             />
             {workflowStep === 0 && combination.data && <CombinationStep combination={combination.data} onContinue={() => setWorkflowStep(1)} />}
