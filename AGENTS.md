@@ -9,6 +9,7 @@
   - [No Historical Compatibility](#no-historical-compatibility)
   - [No Tests](#no-tests)
   - [Chinese Plans](#chinese-plans)
+  - [Plan Implementation Completion Email](#plan-implementation-completion-email)
   - [Living Design Documentation](#living-design-documentation)
   - [UI Layout Review](#ui-layout-review)
   - [本地图片路径规则](#本地图片路径规则)
@@ -48,6 +49,22 @@ Do not plan, propose, add, or run tests (unit tests, integration tests, end-to-e
 ### Chinese Plans
 
 When outlining or listing a plan (implementation steps, task breakdown, approach summary, etc.), write the plan in Chinese (简体中文).
+
+### Plan Implementation Completion Email
+
+After a user-confirmed plan has been fully implemented, including all required code, configuration, documentation, and explicitly authorized verification, send exactly one completion email from the repository root before returning the final response:
+
+```bash
+make notify-task-complete \
+  TASK_NOTIFICATION_SUBJECT='任务完成：<简短任务名称>' \
+  TASK_NOTIFICATION_BODY='已完成：<核心成果>；验证：<验证结果>。'
+```
+
+- Do not send this notification when only the plan has been written, or when implementation is incomplete, blocked, failed, or cancelled.
+- Write a short subject and body in Simplified Chinese. Do not include passwords, tokens, API keys, or any other secrets.
+- Use the default `.env` notification configuration; this rule does not switch to `.env.prod`.
+- Wait for the Make command to finish before returning the final response.
+- If the notification still fails after the command's built-in retries, keep the implementation task complete but report the notification failure and a credential-safe error summary in the final response. Do not claim that the email was sent.
 
 ### Living Design Documentation
 
