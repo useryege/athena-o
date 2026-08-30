@@ -89,32 +89,36 @@ type WormExecutionMutationAttempt struct {
 }
 
 type WormExecutionPlan struct {
-	ID                   pgtype.UUID
-	OwnerAccountID       pgtype.UUID
-	CombinationID        pgtype.UUID
-	CombinationName      string
-	CombinationRevision  int64
-	State                string
-	BuildStage           string
-	FailureCode          string
-	WorkerID             string
-	LockedAt             pgtype.Timestamptz
-	LeaseExpiresAt       pgtype.Timestamptz
-	WalletCount          int64
-	ItemCount            int64
-	TotalStepCount       int64
-	CompletedStepCount   int64
-	ReadyStepCount       int64
-	SkippedStepCount     int64
-	TotalCollateral      string
-	TotalOpeningFee      string
-	TotalUserFundsNeeded string
-	RequestedAt          pgtype.Timestamptz
-	CompletedAt          pgtype.Timestamptz
-	ExpiresAt            pgtype.Timestamptz
-	RetentionUntil       pgtype.Timestamptz
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
+	ID                       pgtype.UUID
+	OwnerAccountID           pgtype.UUID
+	CombinationID            pgtype.UUID
+	CombinationName          string
+	CombinationRevision      int64
+	State                    string
+	BuildStage               string
+	FailureCode              string
+	WorkerID                 string
+	LockedAt                 pgtype.Timestamptz
+	LeaseExpiresAt           pgtype.Timestamptz
+	WalletCount              int64
+	ItemCount                int64
+	TotalStepCount           int64
+	CompletedStepCount       int64
+	ReadyStepCount           int64
+	SkippedStepCount         int64
+	TotalCollateral          string
+	TotalOpeningFee          string
+	TotalUserFundsNeeded     string
+	RequestedAt              pgtype.Timestamptz
+	CompletedAt              pgtype.Timestamptz
+	ExpiresAt                pgtype.Timestamptz
+	RetentionUntil           pgtype.Timestamptz
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+	SkipAlreadyHeld          bool
+	SkipInFlightRequest      bool
+	SkipOppositeSideExposure bool
+	RequireFullLiquidity     bool
 }
 
 type WormExecutionPlanItem struct {
@@ -153,6 +157,7 @@ type WormExecutionPlanStep struct {
 	ReasonCode          string
 	ProjectedUsdcBefore string
 	ProjectedUsdcAfter  string
+	AdvisoryCodes       []string
 }
 
 type WormExecutionPlanWallet struct {
@@ -187,40 +192,44 @@ type WormExecutionPlanWallet struct {
 }
 
 type WormExecutionRun struct {
-	ID                   pgtype.UUID
-	OwnerAccountID       pgtype.UUID
-	PlanID               pgtype.UUID
-	PlanVersion          int64
-	PlanDigestSha256     []byte
-	IdempotencyKeySha256 []byte
-	RequestSha256        []byte
-	CombinationID        pgtype.UUID
-	CombinationName      string
-	CombinationRevision  int64
-	State                string
-	Revision             int64
-	CurrentStepOrdinal   pgtype.Int8
-	NextStepOrdinal      pgtype.Int8
-	WalletCount          int64
-	ItemCount            int64
-	TotalStepCount       int64
-	ActionableStepCount  int64
-	TerminalStepCount    int64
-	CompletedStepCount   int64
-	SatisfiedStepCount   int64
-	SkippedStepCount     int64
-	FailedStepCount      int64
-	NotExecutedStepCount int64
-	PauseCode            string
-	FailureCode          string
-	BlockCode            string
-	RequestedAt          pgtype.Timestamptz
-	AuthorizedAt         pgtype.Timestamptz
-	StartedAt            pgtype.Timestamptz
-	PausedAt             pgtype.Timestamptz
-	CompletedAt          pgtype.Timestamptz
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
+	ID                       pgtype.UUID
+	OwnerAccountID           pgtype.UUID
+	PlanID                   pgtype.UUID
+	PlanVersion              int64
+	PlanDigestSha256         []byte
+	IdempotencyKeySha256     []byte
+	RequestSha256            []byte
+	CombinationID            pgtype.UUID
+	CombinationName          string
+	CombinationRevision      int64
+	State                    string
+	Revision                 int64
+	CurrentStepOrdinal       pgtype.Int8
+	NextStepOrdinal          pgtype.Int8
+	WalletCount              int64
+	ItemCount                int64
+	TotalStepCount           int64
+	ActionableStepCount      int64
+	TerminalStepCount        int64
+	CompletedStepCount       int64
+	SatisfiedStepCount       int64
+	SkippedStepCount         int64
+	FailedStepCount          int64
+	NotExecutedStepCount     int64
+	PauseCode                string
+	FailureCode              string
+	BlockCode                string
+	RequestedAt              pgtype.Timestamptz
+	AuthorizedAt             pgtype.Timestamptz
+	StartedAt                pgtype.Timestamptz
+	PausedAt                 pgtype.Timestamptz
+	CompletedAt              pgtype.Timestamptz
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+	SkipAlreadyHeld          bool
+	SkipInFlightRequest      bool
+	SkipOppositeSideExposure bool
+	RequireFullLiquidity     bool
 }
 
 type WormExecutionRunItem struct {
@@ -287,6 +296,7 @@ type WormExecutionRunStep struct {
 	CompletedAt              pgtype.Timestamptz
 	CreatedAt                pgtype.Timestamptz
 	UpdatedAt                pgtype.Timestamptz
+	AdvisoryCodes            []string
 }
 
 type WormExecutionRunWallet struct {

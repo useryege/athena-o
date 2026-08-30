@@ -29,7 +29,7 @@ SET worker_id = $1::text,
     updated_at = $2::timestamptz
 FROM candidate
 WHERE plans.id = candidate.id
-RETURNING plans.id, plans.owner_account_id, plans.combination_id, plans.combination_name, plans.combination_revision, plans.state, plans.build_stage, plans.failure_code, plans.worker_id, plans.locked_at, plans.lease_expires_at, plans.wallet_count, plans.item_count, plans.total_step_count, plans.completed_step_count, plans.ready_step_count, plans.skipped_step_count, plans.total_collateral, plans.total_opening_fee, plans.total_user_funds_needed, plans.requested_at, plans.completed_at, plans.expires_at, plans.retention_until, plans.created_at, plans.updated_at
+RETURNING plans.id, plans.owner_account_id, plans.combination_id, plans.combination_name, plans.combination_revision, plans.state, plans.build_stage, plans.failure_code, plans.worker_id, plans.locked_at, plans.lease_expires_at, plans.wallet_count, plans.item_count, plans.total_step_count, plans.completed_step_count, plans.ready_step_count, plans.skipped_step_count, plans.total_collateral, plans.total_opening_fee, plans.total_user_funds_needed, plans.requested_at, plans.completed_at, plans.expires_at, plans.retention_until, plans.created_at, plans.updated_at, plans.skip_already_held, plans.skip_in_flight_request, plans.skip_opposite_side_exposure, plans.require_full_liquidity
 `
 
 type ClaimNextExecutionPlanParams struct {
@@ -68,6 +68,10 @@ func (q *Queries) ClaimNextExecutionPlan(ctx context.Context, arg ClaimNextExecu
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
@@ -91,29 +95,38 @@ const createExecutionPlan = `-- name: CreateExecutionPlan :one
 INSERT INTO worm_execution_plans (
   id, owner_account_id, combination_id, combination_name, combination_revision,
   state, build_stage, wallet_count, item_count, total_step_count,
+  skip_already_held, skip_in_flight_request, skip_opposite_side_exposure,
+  require_full_liquidity,
   requested_at, retention_until, created_at, updated_at
 ) VALUES (
   $1::uuid, $2::uuid, $3::uuid,
   $4::text, $5::bigint,
   'BUILDING', 'QUEUED', $6::bigint, $7::bigint,
-  $8::bigint, $9::timestamptz,
-  $10::timestamptz, $9::timestamptz,
-  $9::timestamptz
+  $8::bigint, $9::boolean,
+  $10::boolean,
+  $11::boolean,
+  $12::boolean, $13::timestamptz,
+  $14::timestamptz, $13::timestamptz,
+  $13::timestamptz
 )
-RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 `
 
 type CreateExecutionPlanParams struct {
-	ID                  pgtype.UUID
-	OwnerAccountID      pgtype.UUID
-	CombinationID       pgtype.UUID
-	CombinationName     string
-	CombinationRevision int64
-	WalletCount         int64
-	ItemCount           int64
-	TotalStepCount      int64
-	Now                 pgtype.Timestamptz
-	RetentionUntil      pgtype.Timestamptz
+	ID                       pgtype.UUID
+	OwnerAccountID           pgtype.UUID
+	CombinationID            pgtype.UUID
+	CombinationName          string
+	CombinationRevision      int64
+	WalletCount              int64
+	ItemCount                int64
+	TotalStepCount           int64
+	SkipAlreadyHeld          bool
+	SkipInFlightRequest      bool
+	SkipOppositeSideExposure bool
+	RequireFullLiquidity     bool
+	Now                      pgtype.Timestamptz
+	RetentionUntil           pgtype.Timestamptz
 }
 
 func (q *Queries) CreateExecutionPlan(ctx context.Context, arg CreateExecutionPlanParams) (WormExecutionPlan, error) {
@@ -126,6 +139,10 @@ func (q *Queries) CreateExecutionPlan(ctx context.Context, arg CreateExecutionPl
 		arg.WalletCount,
 		arg.ItemCount,
 		arg.TotalStepCount,
+		arg.SkipAlreadyHeld,
+		arg.SkipInFlightRequest,
+		arg.SkipOppositeSideExposure,
+		arg.RequireFullLiquidity,
 		arg.Now,
 		arg.RetentionUntil,
 	)
@@ -157,6 +174,10 @@ func (q *Queries) CreateExecutionPlan(ctx context.Context, arg CreateExecutionPl
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
@@ -292,7 +313,7 @@ func (q *Queries) DeleteExpiredExecutionPlans(ctx context.Context, arg DeleteExp
 }
 
 const getExecutionPlan = `-- name: GetExecutionPlan :one
-SELECT id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+SELECT id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 FROM worm_execution_plans
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
@@ -333,12 +354,16 @@ func (q *Queries) GetExecutionPlan(ctx context.Context, arg GetExecutionPlanPara
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionPlanForOwnerUpdate = `-- name: GetExecutionPlanForOwnerUpdate :one
-SELECT id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+SELECT id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 FROM worm_execution_plans
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
@@ -380,12 +405,16 @@ func (q *Queries) GetExecutionPlanForOwnerUpdate(ctx context.Context, arg GetExe
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionPlanForUpdate = `-- name: GetExecutionPlanForUpdate :one
-SELECT id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+SELECT id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 FROM worm_execution_plans
 WHERE id = $1::uuid
 FOR UPDATE
@@ -421,8 +450,46 @@ func (q *Queries) GetExecutionPlanForUpdate(ctx context.Context, id pgtype.UUID)
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
+}
+
+const listExecutionPlanAdvisoryCounts = `-- name: ListExecutionPlanAdvisoryCounts :many
+SELECT advisory_code::text AS reason_code, COUNT(*)::bigint AS count
+FROM worm_execution_plan_steps AS steps
+CROSS JOIN LATERAL unnest(steps.advisory_codes) AS advisories(advisory_code)
+WHERE steps.plan_id = $1::uuid
+GROUP BY advisory_code
+ORDER BY advisory_code
+`
+
+type ListExecutionPlanAdvisoryCountsRow struct {
+	ReasonCode string
+	Count      int64
+}
+
+func (q *Queries) ListExecutionPlanAdvisoryCounts(ctx context.Context, planID pgtype.UUID) ([]ListExecutionPlanAdvisoryCountsRow, error) {
+	rows, err := q.db.Query(ctx, listExecutionPlanAdvisoryCounts, planID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListExecutionPlanAdvisoryCountsRow
+	for rows.Next() {
+		var i ListExecutionPlanAdvisoryCountsRow
+		if err := rows.Scan(&i.ReasonCode, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listExecutionPlanItems = `-- name: ListExecutionPlanItems :many
@@ -512,7 +579,7 @@ func (q *Queries) ListExecutionPlanReasonCounts(ctx context.Context, planID pgty
 }
 
 const listExecutionPlanSteps = `-- name: ListExecutionPlanSteps :many
-SELECT steps.plan_id, steps.ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.disposition, steps.reason_code, steps.projected_usdc_before, steps.projected_usdc_after
+SELECT steps.plan_id, steps.ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.disposition, steps.reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.advisory_codes
 FROM worm_execution_plan_steps AS steps
 JOIN worm_execution_plans AS plans ON plans.id = steps.plan_id
 WHERE steps.plan_id = $1::uuid
@@ -546,6 +613,7 @@ func (q *Queries) ListExecutionPlanSteps(ctx context.Context, arg ListExecutionP
 			&i.ReasonCode,
 			&i.ProjectedUsdcBefore,
 			&i.ProjectedUsdcAfter,
+			&i.AdvisoryCodes,
 		); err != nil {
 			return nil, err
 		}
@@ -628,7 +696,7 @@ WHERE id = $5::uuid
   AND state = 'BUILDING'
   AND worker_id = $6::text
   AND lease_expires_at > $4::timestamptz
-RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 `
 
 type MarkExecutionPlanFailedParams struct {
@@ -677,6 +745,10 @@ func (q *Queries) MarkExecutionPlanFailed(ctx context.Context, arg MarkExecution
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
@@ -703,7 +775,7 @@ WHERE id = $11::uuid
   AND state = 'BUILDING'
   AND worker_id = $12::text
   AND lease_expires_at > $10::timestamptz
-RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 `
 
 type MarkExecutionPlanReadyParams struct {
@@ -764,6 +836,10 @@ func (q *Queries) MarkExecutionPlanReady(ctx context.Context, arg MarkExecutionP
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
@@ -779,7 +855,7 @@ WHERE id = $6::uuid
   AND state = 'BUILDING'
   AND worker_id = $3::text
   AND lease_expires_at > $5::timestamptz
-RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at
+RETURNING id, owner_account_id, combination_id, combination_name, combination_revision, state, build_stage, failure_code, worker_id, locked_at, lease_expires_at, wallet_count, item_count, total_step_count, completed_step_count, ready_step_count, skipped_step_count, total_collateral, total_opening_fee, total_user_funds_needed, requested_at, completed_at, expires_at, retention_until, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
 `
 
 type UpdateExecutionPlanBuildProgressParams struct {
@@ -828,6 +904,10 @@ func (q *Queries) UpdateExecutionPlanBuildProgress(ctx context.Context, arg Upda
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SkipAlreadyHeld,
+		&i.SkipInFlightRequest,
+		&i.SkipOppositeSideExposure,
+		&i.RequireFullLiquidity,
 	)
 	return i, err
 }

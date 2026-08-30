@@ -36,9 +36,25 @@ const (
 )
 
 type wormExecutionPlanInput struct {
-	CombinationID               string  `json:"combinationId"`
-	ExpectedCombinationRevision int64   `json:"expectedCombinationRevision"`
-	WalletIDs                   []int64 `json:"walletIds"`
+	CombinationID               string                       `json:"combinationId"`
+	ExpectedCombinationRevision int64                        `json:"expectedCombinationRevision"`
+	WalletIDs                   []int64                      `json:"walletIds"`
+	PreflightChecksRaw          json.RawMessage              `json:"preflightChecks"`
+	PreflightChecks             wormExecutionPreflightChecks `json:"-"`
+}
+
+type wormExecutionPreflightChecks struct {
+	SkipAlreadyHeld          bool `json:"skipAlreadyHeld"`
+	SkipInFlightRequest      bool `json:"skipInFlightRequest"`
+	SkipOppositeSideExposure bool `json:"skipOppositeSideExposure"`
+	RequireFullLiquidity     bool `json:"requireFullLiquidity"`
+}
+
+type wormExecutionPreflightChecksInput struct {
+	SkipAlreadyHeld          *bool `json:"skipAlreadyHeld"`
+	SkipInFlightRequest      *bool `json:"skipInFlightRequest"`
+	SkipOppositeSideExposure *bool `json:"skipOppositeSideExposure"`
+	RequireFullLiquidity     *bool `json:"requireFullLiquidity"`
 }
 
 type wormExecutionPlanResponse struct {
@@ -55,6 +71,8 @@ type wormExecutionPlanResponse struct {
 	ReadyStepCount     int64                        `json:"readyStepCount"`
 	SkippedStepCount   int64                        `json:"skippedStepCount"`
 	ReasonCounts       map[string]int64             `json:"reasonCounts"`
+	AdvisoryCounts     map[string]int64             `json:"advisoryCounts"`
+	PreflightChecks    wormExecutionPreflightChecks `json:"preflightChecks"`
 	MaximumCollateral  string                       `json:"maximumCollateral"`
 	OpeningFeeEstimate string                       `json:"openingFeeEstimate"`
 	TotalUSDCNeeded    string                       `json:"totalUSDCNeeded"`
@@ -126,13 +144,14 @@ type wormExecutionPlanEstimate struct {
 }
 
 type wormExecutionPlanStep struct {
-	Ordinal             int64  `json:"ordinal"`
-	WalletOrdinal       int32  `json:"walletOrdinal"`
-	ItemOrdinal         int32  `json:"itemOrdinal"`
-	Disposition         string `json:"disposition"`
-	ReasonCode          string `json:"reasonCode"`
-	ProjectedUSDCBefore string `json:"projectedUSDCBefore"`
-	ProjectedUSDCAfter  string `json:"projectedUSDCAfter"`
+	Ordinal             int64    `json:"ordinal"`
+	WalletOrdinal       int32    `json:"walletOrdinal"`
+	ItemOrdinal         int32    `json:"itemOrdinal"`
+	Disposition         string   `json:"disposition"`
+	ReasonCode          string   `json:"reasonCode"`
+	ProjectedUSDCBefore string   `json:"projectedUSDCBefore"`
+	ProjectedUSDCAfter  string   `json:"projectedUSDCAfter"`
+	AdvisoryCodes       []string `json:"advisoryCodes"`
 }
 
 type wormExecutionPlanStepPage struct {
@@ -186,6 +205,12 @@ func (server *AthenaServer) createWormExecutionPlan(w http.ResponseWriter, reque
 		CombinationId:               input.CombinationID,
 		ExpectedCombinationRevision: input.ExpectedCombinationRevision,
 		Wallets:                     wallets,
+		PreflightChecks: &wormtradingapiclient.ExecutionPreflightChecks{
+			SkipAlreadyHeld:          input.PreflightChecks.SkipAlreadyHeld,
+			SkipInFlightRequest:      input.PreflightChecks.SkipInFlightRequest,
+			SkipOppositeSideExposure: input.PreflightChecks.SkipOppositeSideExposure,
+			RequireFullLiquidity:     input.PreflightChecks.RequireFullLiquidity,
+		},
 	})
 	if err != nil {
 		walletsecret.WriteError(w, sanitizeWormExecutionPlanStoreError(err))
@@ -289,6 +314,11 @@ func decodeWormExecutionPlanInput(w http.ResponseWriter, request *http.Request) 
 	if err := decoder.Decode(&struct{}{}); err != io.EOF {
 		return wormExecutionPlanInput{}, status.Error(codes.InvalidArgument, "request body must contain exactly one JSON object")
 	}
+	input.PreflightChecks, err = decodeWormExecutionPreflightChecks(input.PreflightChecksRaw)
+	if err != nil {
+		return wormExecutionPlanInput{}, err
+	}
+	input.PreflightChecksRaw = nil
 	combinationID, err := canonicalWormCombinationID(input.CombinationID)
 	if err != nil {
 		return wormExecutionPlanInput{}, err
@@ -311,6 +341,34 @@ func decodeWormExecutionPlanInput(w http.ResponseWriter, request *http.Request) 
 	}
 	input.CombinationID = combinationID
 	return input, nil
+}
+
+func decodeWormExecutionPreflightChecks(raw json.RawMessage) (wormExecutionPreflightChecks, error) {
+	defaults := wormExecutionPreflightChecks{
+		SkipAlreadyHeld:          true,
+		SkipInFlightRequest:      true,
+		SkipOppositeSideExposure: true,
+		RequireFullLiquidity:     true,
+	}
+	if len(raw) == 0 {
+		return defaults, nil
+	}
+	decoder := json.NewDecoder(strings.NewReader(string(raw)))
+	decoder.DisallowUnknownFields()
+	var input wormExecutionPreflightChecksInput
+	if err := decoder.Decode(&input); err != nil {
+		return wormExecutionPreflightChecks{}, status.Error(codes.InvalidArgument, "preflightChecks must be one complete JSON object")
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF || input.SkipAlreadyHeld == nil || input.SkipInFlightRequest == nil ||
+		input.SkipOppositeSideExposure == nil || input.RequireFullLiquidity == nil {
+		return wormExecutionPreflightChecks{}, status.Error(codes.InvalidArgument, "preflightChecks must contain all four boolean fields")
+	}
+	return wormExecutionPreflightChecks{
+		SkipAlreadyHeld:          *input.SkipAlreadyHeld,
+		SkipInFlightRequest:      *input.SkipInFlightRequest,
+		SkipOppositeSideExposure: *input.SkipOppositeSideExposure,
+		RequireFullLiquidity:     *input.RequireFullLiquidity,
+	}, nil
 }
 
 func (server *AthenaServer) resolveWormExecutionPlanWallets(
@@ -447,6 +505,10 @@ func projectWormExecutionPlan(
 	if int64(len(plan.GetWallets())) != plan.GetWalletCount() || int64(len(plan.GetItems())) != plan.GetItemCount() {
 		return wormExecutionPlanResponse{}, status.Error(codes.Internal, "Worm Trading returned incomplete execution plan snapshots")
 	}
+	preflightChecks, err := projectWormExecutionPreflightChecks(plan.GetPreflightChecks())
+	if err != nil {
+		return wormExecutionPlanResponse{}, err
+	}
 
 	response := wormExecutionPlanResponse{
 		ID:                 planID,
@@ -462,6 +524,8 @@ func projectWormExecutionPlan(
 		ReadyStepCount:     plan.GetReadyStepCount(),
 		SkippedStepCount:   plan.GetSkippedStepCount(),
 		ReasonCounts:       make(map[string]int64, len(plan.GetReasonCounts())),
+		AdvisoryCounts:     make(map[string]int64, len(plan.GetAdvisoryCounts())),
+		PreflightChecks:    preflightChecks,
 		MaximumCollateral:  plan.GetTotalCollateral(),
 		OpeningFeeEstimate: plan.GetTotalOpeningFee(),
 		TotalUSDCNeeded:    plan.GetTotalUserFundsNeeded(),
@@ -500,6 +564,23 @@ func projectWormExecutionPlan(
 		}
 	} else if len(plan.GetReasonCounts()) != 0 {
 		return wormExecutionPlanResponse{}, status.Error(codes.Internal, "Worm Trading returned premature execution plan reason counts")
+	}
+	var advisoryCountTotal int64
+	previousAdvisoryCode := ""
+	for _, count := range plan.GetAdvisoryCounts() {
+		if count == nil || !validWormExecutionAdvisoryCode(count.GetReasonCode()) || count.GetCount() <= 0 ||
+			(previousAdvisoryCode != "" && count.GetReasonCode() <= previousAdvisoryCode) ||
+			count.GetCount() > plan.GetTotalStepCount() || advisoryCountTotal > math.MaxInt64-count.GetCount() {
+			return wormExecutionPlanResponse{}, status.Error(codes.Internal, "Worm Trading returned an invalid execution plan advisory count")
+		}
+		previousAdvisoryCode = count.GetReasonCode()
+		advisoryCountTotal += count.GetCount()
+		response.AdvisoryCounts[count.GetReasonCode()] = count.GetCount()
+	}
+	if state == "BUILDING" || state == "FAILED" {
+		if len(plan.GetAdvisoryCounts()) != 0 {
+			return wormExecutionPlanResponse{}, status.Error(codes.Internal, "Worm Trading returned premature execution plan advisory counts")
+		}
 	}
 	seenWalletIDs := make(map[int64]struct{}, len(plan.GetWallets()))
 	seenAddresses := make(map[string]struct{}, len(plan.GetWallets()))
@@ -687,6 +768,10 @@ func projectWormExecutionPlanStepPage(result *wormtradingapiclient.ListExecution
 			return wormExecutionPlanStepPage{}, status.Error(codes.Internal, "Worm Trading returned an invalid execution plan step")
 		}
 		reasonCode := strings.TrimSpace(step.GetReasonCode())
+		advisoryCodes, err := projectWormExecutionAdvisoryCodes(step.GetAdvisoryCodes())
+		if err != nil {
+			return wormExecutionPlanStepPage{}, err
+		}
 		if reasonCode != step.GetReasonCode() || (step.GetDisposition() == "READY" && reasonCode != "") || (step.GetDisposition() == "SKIPPED" && reasonCode == "") ||
 			!validWormExecutionDecimal(step.GetProjectedUsdcBefore(), true) || !validWormExecutionDecimal(step.GetProjectedUsdcAfter(), true) {
 			return wormExecutionPlanStepPage{}, status.Error(codes.Internal, "Worm Trading returned an invalid execution plan step result")
@@ -695,6 +780,7 @@ func projectWormExecutionPlanStepPage(result *wormtradingapiclient.ListExecution
 			Ordinal: step.GetOrdinal(), WalletOrdinal: step.GetWalletOrdinal(), ItemOrdinal: step.GetItemOrdinal(),
 			Disposition: step.GetDisposition(), ReasonCode: reasonCode,
 			ProjectedUSDCBefore: step.GetProjectedUsdcBefore(), ProjectedUSDCAfter: step.GetProjectedUsdcAfter(),
+			AdvisoryCodes: advisoryCodes,
 		})
 	}
 	return response, nil
@@ -762,6 +848,56 @@ func validWormExecutionReasonCode(value string) bool {
 		return false
 	}
 	return true
+}
+
+func projectWormExecutionPreflightChecks(checks *wormtradingapiclient.ExecutionPreflightChecks) (wormExecutionPreflightChecks, error) {
+	if checks == nil {
+		return wormExecutionPreflightChecks{}, status.Error(codes.Internal, "Worm Trading omitted execution preflight checks")
+	}
+	return wormExecutionPreflightChecks{
+		SkipAlreadyHeld:          checks.GetSkipAlreadyHeld(),
+		SkipInFlightRequest:      checks.GetSkipInFlightRequest(),
+		SkipOppositeSideExposure: checks.GetSkipOppositeSideExposure(),
+		RequireFullLiquidity:     checks.GetRequireFullLiquidity(),
+	}, nil
+}
+
+func validWormExecutionAdvisoryCode(value string) bool {
+	switch value {
+	case "OPPOSITE_SIDE_CONFLICT", "ALREADY_HELD", "REQUEST_IN_FLIGHT", "LIQUIDITY_INSUFFICIENT":
+		return true
+	default:
+		return false
+	}
+}
+
+func projectWormExecutionAdvisoryCodes(advisoryCodes []string) ([]string, error) {
+	result := make([]string, 0, len(advisoryCodes))
+	previousOrder := -1
+	for _, code := range advisoryCodes {
+		order := wormExecutionAdvisoryCodeOrder(code)
+		if order < 0 || order <= previousOrder {
+			return nil, status.Error(codes.Internal, "Worm Trading returned invalid execution advisory codes")
+		}
+		previousOrder = order
+		result = append(result, code)
+	}
+	return result, nil
+}
+
+func wormExecutionAdvisoryCodeOrder(value string) int {
+	switch value {
+	case "OPPOSITE_SIDE_CONFLICT":
+		return 0
+	case "ALREADY_HELD":
+		return 1
+	case "REQUEST_IN_FLIGHT":
+		return 2
+	case "LIQUIDITY_INSUFFICIENT":
+		return 3
+	default:
+		return -1
+	}
 }
 
 func validWormExecutionObservedSlot(value string) bool {

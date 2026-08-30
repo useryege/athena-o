@@ -34,6 +34,9 @@
 | `MINIO_MC_IMAGE` | `athena-minio-mc:7394ce0dd2a8` | 从固定 mc commit 构建的一次性初始化镜像名。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
+| `ATHENA_TASK_NOTIFICATION_EMAIL_SMTP_USERNAME` | 无 | 任务完成通知使用的腾讯企业邮箱账号，同时作为邮件发件人。 |
+| `ATHENA_TASK_NOTIFICATION_EMAIL_SMTP_PASSWORD` | 无 | 腾讯企业邮箱的客户端专用密码，仅用于任务完成通知的 SMTP 认证。 |
+| `TASK_NOTIFICATION_ENV_FILE` | `.env` | 任务完成通知补充读取的环境文件；需要生产配置时必须显式设为 `.env.prod`。进程环境中的同名变量优先。 |
 
 ## 环境与工具
 
@@ -42,6 +45,7 @@
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
 | `make service-password` | 生成可用于 PostgreSQL、Redis 或 MinIO 的随机密码。 | `make service-password` |
+| `make notify-task-complete` | 向固定邮箱发送一封任务完成纯文本通知。 | `make notify-task-complete TASK_NOTIFICATION_SUBJECT='任务完成' TASK_NOTIFICATION_BODY='处理已结束。'` |
 
 生成 HS256 JWT secret：
 
@@ -86,6 +90,45 @@ go run tools/service-password/main.go -length 48
 POSTGRES_PASSWORD='<generated-password>'
 REDIS_PASSWORD='<generated-password>'
 ```
+
+### 任务完成邮件通知
+
+任务完成后可显式调用独立通知目标：
+
+```bash
+make notify-task-complete \
+  TASK_NOTIFICATION_SUBJECT='任务完成：同步市场数据' \
+  TASK_NOTIFICATION_BODY='市场数据同步任务已执行完成。'
+```
+
+该目标不会自动挂接到其他 Make 命令。调用方需要为每次通知提供非空的
+`TASK_NOTIFICATION_SUBJECT` 和 `TASK_NOTIFICATION_BODY`。发送边界固定为：
+
+- SMTP：腾讯企业邮箱 `smtp.exmail.qq.com:465`，隐式 TLS 1.2 或更高版本；
+- 发件认证：`ATHENA_TASK_NOTIFICATION_EMAIL_SMTP_USERNAME` 和
+  `ATHENA_TASK_NOTIFICATION_EMAIL_SMTP_PASSWORD`；
+- 收件人：`2687665142@qq.com`；
+- 内容：UTF-8 纯文本，不支持 HTML、附件、抄送或密送。
+
+默认从项目根目录 `.env` 补充读取 SMTP 配置，当前进程环境中的值优先；如果进程
+环境已包含全部必需配置，默认 `.env` 不存在也可发送。需要显式使用生产环境文件时：
+
+```bash
+make notify-task-complete \
+  TASK_NOTIFICATION_ENV_FILE=.env.prod \
+  TASK_NOTIFICATION_SUBJECT='生产任务完成' \
+  TASK_NOTIFICATION_BODY='生产任务已执行完成。'
+```
+
+配置缺失、显式选择的环境文件无法加载、标题或正文无效时，命令在连接 SMTP 前
+直接失败，不重试。
+SMTP 连接、TLS、认证或发送失败时，每次使用新连接，总计最多尝试 3 次；第二次前
+等待 1 秒，第三次前等待 2 秒。三次均失败后 Make 以非零状态退出，错误输出不会
+包含客户端专用密码。
+
+同一次调用的重试复用相同 `Message-ID`。如果网络在服务端接收邮件后、客户端确认
+接收前中断，重试可能产生重复邮件；`Message-ID` 可以帮助识别重复，但不保证
+只投递一次。服务端已经确认接收邮件后，即使关闭 SMTP 会话失败也不会重发。
 
 ## 浏览器认证配置
 

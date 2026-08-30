@@ -435,6 +435,7 @@ func executionRunToProto(run *wormstore.ExecutionRun) *apiclient.ExecutionRun {
 		PausedAt: executionPlanUnix(run.PausedAt), CompletedAt: executionPlanUnix(run.CompletedAt),
 		CreatedAt: executionPlanUnix(run.CreatedAt), UpdatedAt: executionPlanUnix(run.UpdatedAt),
 		Wallets: wallets, Items: items, AllowedActions: actions, NextStepOrdinal: run.NextStepOrdinal,
+		PreflightChecks: executionPreflightChecksToProto(run.PreflightChecks),
 	}
 	if run.Authorization != nil {
 		result.Authorization = executionAuthorizationToProto(run.Authorization)
@@ -494,6 +495,7 @@ func executionRunStepToProto(step *wormstore.ExecutionRunStep) *apiclient.Execut
 		CompletedAt: executionPlanUnix(step.CompletedAt), CreatedAt: executionPlanUnix(step.CreatedAt),
 		UpdatedAt: executionPlanUnix(step.UpdatedAt), NextPollAt: executionPlanUnix(step.NextPollAt),
 		PollCount: step.PollCount, Attempts: attempts,
+		AdvisoryCodes: append([]string(nil), step.AdvisoryCodes...),
 	}
 	if step.Isolation != nil {
 		result.Isolation = executionStepIsolationToProto(step.Isolation)

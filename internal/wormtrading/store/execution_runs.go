@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	executionPlanDigestVersion     = int64(1)
+	executionPlanDigestVersion     = int64(2)
 	executionCoordinatorTokenBytes = 32
 	executionCoordinatorLease      = 30 * time.Second
 	maxExecutionRunPageSize        = 100
@@ -139,24 +139,28 @@ func (s *SQLStore) CreateExecutionRun(
 	runUUID := uuid.New()
 	runID := pgtype.UUID{Bytes: [16]byte(runUUID), Valid: true}
 	row, err := queries.CreateExecutionRun(ctx, wormtradingsqlc.CreateExecutionRunParams{
-		ID:                   runID,
-		OwnerAccountID:       ownerUUID,
-		PlanID:               planID,
-		PlanVersion:          executionPlanDigestVersion,
-		PlanDigestSha256:     planDigest,
-		IdempotencyKeySha256: idempotencyDigest[:],
-		RequestSha256:        requestDigest,
-		CombinationID:        planRow.CombinationID,
-		CombinationName:      planRow.CombinationName,
-		CombinationRevision:  planRow.CombinationRevision,
-		NextStepOrdinal:      nextStepOrdinal,
-		WalletCount:          planRow.WalletCount,
-		ItemCount:            planRow.ItemCount,
-		TotalStepCount:       planRow.TotalStepCount,
-		ActionableStepCount:  planRow.ReadyStepCount,
-		SatisfiedStepCount:   satisfiedStepCount,
-		SkippedStepCount:     skippedStepCount,
-		Now:                  timestampParam(now),
+		ID:                       runID,
+		OwnerAccountID:           ownerUUID,
+		PlanID:                   planID,
+		PlanVersion:              executionPlanDigestVersion,
+		PlanDigestSha256:         planDigest,
+		IdempotencyKeySha256:     idempotencyDigest[:],
+		RequestSha256:            requestDigest,
+		CombinationID:            planRow.CombinationID,
+		CombinationName:          planRow.CombinationName,
+		CombinationRevision:      planRow.CombinationRevision,
+		SkipAlreadyHeld:          plan.PreflightChecks.SkipAlreadyHeld,
+		SkipInFlightRequest:      plan.PreflightChecks.SkipInFlightRequest,
+		SkipOppositeSideExposure: plan.PreflightChecks.SkipOppositeSideExposure,
+		RequireFullLiquidity:     plan.PreflightChecks.RequireFullLiquidity,
+		NextStepOrdinal:          nextStepOrdinal,
+		WalletCount:              planRow.WalletCount,
+		ItemCount:                planRow.ItemCount,
+		TotalStepCount:           planRow.TotalStepCount,
+		ActionableStepCount:      planRow.ReadyStepCount,
+		SatisfiedStepCount:       satisfiedStepCount,
+		SkippedStepCount:         skippedStepCount,
+		Now:                      timestampParam(now),
 	})
 	if err != nil {
 		if executionConstraint(err, "worm_execution_runs_one_nonterminal_per_owner_idx") ||
@@ -1307,8 +1311,12 @@ func (s *SQLStore) CompleteExecutionPreflight(
 	if err != nil {
 		return nil, fmt.Errorf("lock execution preflight step: %w", err)
 	}
+	advisoryCodes, err := normalizeExecutionPlanAdvisoryCodes(prior.AdvisoryCodes, req.AdvisoryCodes)
+	if err != nil {
+		return nil, invalidExecutionRun(err)
+	}
 	row, err := queries.CompleteExecutionStepPreflight(ctx, wormtradingsqlc.CompleteExecutionStepPreflightParams{
-		NextState: string(req.NextState), ReasonCode: reasonCode, Now: timestampParam(now),
+		NextState: string(req.NextState), ReasonCode: reasonCode, AdvisoryCodes: advisoryCodes, Now: timestampParam(now),
 		RunID: runID, StepOrdinal: req.StepOrdinal, ClaimID: claimID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -2408,6 +2416,12 @@ func mapExecutionRun(row wormtradingsqlc.WormExecutionRun) ExecutionRun {
 		CompletedAt:          timestampValue(row.CompletedAt),
 		CreatedAt:            timestampValue(row.CreatedAt),
 		UpdatedAt:            timestampValue(row.UpdatedAt),
+		PreflightChecks: ExecutionPreflightChecks{
+			SkipAlreadyHeld:          row.SkipAlreadyHeld,
+			SkipInFlightRequest:      row.SkipInFlightRequest,
+			SkipOppositeSideExposure: row.SkipOppositeSideExposure,
+			RequireFullLiquidity:     row.RequireFullLiquidity,
+		},
 	}
 }
 
@@ -2456,8 +2470,9 @@ func mapExecutionRunStep(row wormtradingsqlc.WormExecutionRunStep) ExecutionRunS
 		SourceDisposition: ExecutionPlanStepDisposition(row.SourceDisposition),
 		SourceReasonCode:  row.SourceReasonCode, ProjectedUSDCBefore: row.ProjectedUsdcBefore,
 		ProjectedUSDCAfter: row.ProjectedUsdcAfter, State: ExecutionStepState(row.State),
-		ReasonCode: row.ReasonCode, PositionRequestID: nullableInt64(row.PositionRequestID),
-		FinalizeMode: row.FinalizeMode, TransactionMessageSHA256: append([]byte(nil), row.TransactionMessageSha256...),
+		ReasonCode: row.ReasonCode, AdvisoryCodes: append([]string(nil), row.AdvisoryCodes...),
+		PositionRequestID: nullableInt64(row.PositionRequestID),
+		FinalizeMode:      row.FinalizeMode, TransactionMessageSHA256: append([]byte(nil), row.TransactionMessageSha256...),
 		TransactionVersion: row.TransactionVersion, RequiredSignatureCount: row.RequiredSignatureCount,
 		WalletSignerIndex: row.WalletSignerIndex, ProviderState: row.ProviderState,
 		ProviderOrderState: row.ProviderOrderState, FundingTxID: row.FundingTxid, RefundTxID: row.RefundTxid,

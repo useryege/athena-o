@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gagliardetto/solana-go"
+	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"github.com/useryege/athena/util/worm"
 )
 
@@ -70,8 +71,9 @@ type ExecutionPreviewItemInput struct {
 }
 
 type ExecutionPreviewInput struct {
-	Wallets []ExecutionPreviewWalletInput
-	Items   []ExecutionPreviewItemInput
+	Wallets         []ExecutionPreviewWalletInput
+	Items           []ExecutionPreviewItemInput
+	PreflightChecks wormstore.ExecutionPreflightChecks
 }
 
 type ExecutionPreviewMarketEstimate struct {
@@ -107,6 +109,7 @@ type ExecutionPreviewStep struct {
 	FeeAmount         string
 	USDCBalanceBefore string
 	USDCBalanceAfter  string
+	AdvisoryCodes     []string
 }
 
 type ExecutionPreviewResult struct {
@@ -212,7 +215,7 @@ func (b *ExecutionPreviewBuilder) Build(ctx context.Context, input ExecutionPrev
 		}
 	}
 
-	steps, err := buildExecutionPreviewSteps(wallets, items, estimates, exposures)
+	steps, err := buildExecutionPreviewSteps(wallets, items, estimates, exposures, input.PreflightChecks)
 	if err != nil {
 		return nil, err
 	}
@@ -548,6 +551,7 @@ func buildExecutionPreviewSteps(
 	items []normalizedExecutionPreviewItem,
 	estimates []ExecutionPreviewMarketEstimate,
 	exposures []executionPreviewWalletExposure,
+	checks wormstore.ExecutionPreflightChecks,
 ) ([]ExecutionPreviewStep, error) {
 	if len(estimates) != len(items) || len(exposures) != len(wallets) {
 		return nil, errors.New("execution preview builder received mismatched observations")
@@ -577,36 +581,52 @@ func buildExecutionPreviewSteps(
 				USDCBalanceBefore: remaining.String(),
 				USDCBalanceAfter:  remaining.String(),
 			}
+			marketExposure := exposures[walletIndex][item.MarketConditionID]
+			step.AdvisoryCodes = executionPreviewIgnoredAdvisoryCodes(
+				marketExposure,
+				item,
+				estimate,
+				checks,
+			)
 			if blockedForUSDC {
 				step.Outcome = ExecutionPreviewOutcomeSkippedAfterInsufficientUSDC
 				step.ReasonCode = ExecutionPreviewOutcomeInsufficientUSDC
 				steps = append(steps, step)
 				continue
 			}
-			marketExposure := exposures[walletIndex][item.MarketConditionID]
 			if kind, pubkey, exists := oppositeExecutionPreviewExposure(marketExposure, item.IsYes); exists {
-				step.Outcome = ExecutionPreviewOutcomeOppositeSideConflict
-				step.ReasonCode = ExecutionPreviewOutcomeOppositeSideConflict
 				step.ExistingKind = kind
 				step.ExistingPubkey = pubkey
-				steps = append(steps, step)
-				continue
+				if checks.SkipOppositeSideExposure {
+					step.Outcome = ExecutionPreviewOutcomeOppositeSideConflict
+					step.ReasonCode = ExecutionPreviewOutcomeOppositeSideConflict
+					steps = append(steps, step)
+					continue
+				}
 			}
 			if pubkey, exists := firstExecutionPreviewPubkey(marketExposure, true, item.IsYes); exists {
-				step.Outcome = ExecutionPreviewOutcomeAlreadyHeld
-				step.ReasonCode = ExecutionPreviewOutcomeAlreadyHeld
-				step.ExistingKind = executionPreviewExistingPosition
-				step.ExistingPubkey = pubkey
-				steps = append(steps, step)
-				continue
+				if step.ExistingKind == "" {
+					step.ExistingKind = executionPreviewExistingPosition
+					step.ExistingPubkey = pubkey
+				}
+				if checks.SkipAlreadyHeld {
+					step.Outcome = ExecutionPreviewOutcomeAlreadyHeld
+					step.ReasonCode = ExecutionPreviewOutcomeAlreadyHeld
+					steps = append(steps, step)
+					continue
+				}
 			}
 			if pubkey, exists := firstExecutionPreviewPubkey(marketExposure, false, item.IsYes); exists {
-				step.Outcome = ExecutionPreviewOutcomeRequestInFlight
-				step.ReasonCode = ExecutionPreviewOutcomeRequestInFlight
-				step.ExistingKind = executionPreviewExistingRequest
-				step.ExistingPubkey = pubkey
-				steps = append(steps, step)
-				continue
+				if step.ExistingKind == "" {
+					step.ExistingKind = executionPreviewExistingRequest
+					step.ExistingPubkey = pubkey
+				}
+				if checks.SkipInFlightRequest {
+					step.Outcome = ExecutionPreviewOutcomeRequestInFlight
+					step.ReasonCode = ExecutionPreviewOutcomeRequestInFlight
+					steps = append(steps, step)
+					continue
+				}
 			}
 			if !item.Selectable {
 				step.Outcome = ExecutionPreviewOutcomeMarketUnavailable
@@ -621,10 +641,12 @@ func buildExecutionPreviewSteps(
 				continue
 			}
 			if !estimate.IsFullyFilled {
-				step.Outcome = ExecutionPreviewOutcomeLiquidityInsufficient
-				step.ReasonCode = ExecutionPreviewOutcomeLiquidityInsufficient
-				steps = append(steps, step)
-				continue
+				if checks.RequireFullLiquidity {
+					step.Outcome = ExecutionPreviewOutcomeLiquidityInsufficient
+					step.ReasonCode = ExecutionPreviewOutcomeLiquidityInsufficient
+					steps = append(steps, step)
+					continue
+				}
 			}
 			needed, err := parseExecutionPreviewDecimal(estimate.UserFundsNeeded)
 			if err != nil {
@@ -644,6 +666,43 @@ func buildExecutionPreviewSteps(
 		}
 	}
 	return steps, nil
+}
+
+func executionPreviewIgnoredAdvisoryCodes(
+	marketExposure *executionPreviewExposure,
+	item normalizedExecutionPreviewItem,
+	estimate ExecutionPreviewMarketEstimate,
+	checks wormstore.ExecutionPreflightChecks,
+) []string {
+	var codes []string
+	if !checks.SkipOppositeSideExposure {
+		if _, _, exists := oppositeExecutionPreviewExposure(marketExposure, item.IsYes); exists {
+			codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeOppositeSideConflict)
+		}
+	}
+	if !checks.SkipAlreadyHeld {
+		if _, exists := firstExecutionPreviewPubkey(marketExposure, true, item.IsYes); exists {
+			codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeAlreadyHeld)
+		}
+	}
+	if !checks.SkipInFlightRequest {
+		if _, exists := firstExecutionPreviewPubkey(marketExposure, false, item.IsYes); exists {
+			codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeRequestInFlight)
+		}
+	}
+	if !checks.RequireFullLiquidity && item.Selectable && estimate.RejectionCode == "" && !estimate.IsFullyFilled {
+		codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeLiquidityInsufficient)
+	}
+	return codes
+}
+
+func appendExecutionPreviewAdvisory(codes []string, code string) []string {
+	for _, existing := range codes {
+		if existing == code {
+			return codes
+		}
+	}
+	return append(codes, code)
 }
 
 func ensureExecutionPreviewExposure(exposure executionPreviewWalletExposure, marketConditionID string) *executionPreviewExposure {

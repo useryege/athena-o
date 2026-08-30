@@ -11,8 +11,9 @@ custody-management surface, and Worm Trading's nested Assets, Combinations, and
 Executions navigation. The Assets child owns the owner-scoped balance, full-account
 automatic Worm connection, and current-position activity surfaces. Combinations
 owns saved-template list and builder routes over the interactive native catalog
-and CRUD facade. Its contextual Execution Preview route owns a three-step,
-read-only Wallet selection and authoritative preflight review. A usable preview
+and CRUD facade. Its contextual Execution Preview route owns a four-step,
+read-only Wallet selection, configurable skip-policy editor, and authoritative
+preflight review. A usable preview
 can freeze a live Run, after which the Executions child owns permanent history,
 Run authorization, explicit serial driving, pause/continue/terminate controls,
 and read-only reconciliation of uncertain outcomes.
@@ -42,7 +43,7 @@ result, and a revealed key remains only in its current modal.
 | Help resources | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Administrator account workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor`, Technical account ID |
 | Wallet management and reauthentication | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | `WalletsPage`, `WalletWriteSurface`, `WalletDetailDrawer`, `WalletBackupModal`, `WalletSecretModal`, `WalletService` |
-| Worm Trading navigation, Assets, Combinations, Preview, and Executions | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-trading-executions.tsx](../../../ui/src/app/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets/Combination/Preview pages, `WormTradingExecutionsPage`, `WormTradingExecutionDetailPage`, strict Run/Step normalizers and command methods |
+| Worm Trading navigation, Assets, Combinations, Preview, and Executions | [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-execution-preflight.ts](../../../ui/src/app/pages/worm-execution-preflight.ts), [ui/src/app/pages/worm-trading-executions.tsx](../../../ui/src/app/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets/Combination/Preview pages, shared preflight definitions, `WormTradingExecutionsPage`, `WormTradingExecutionDetailPage`, strict Plan/Run policy/advisory normalizers and command methods |
 | API models and services | [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts) | `AccountIdentityProvider`, `AccountIdentity`, `UserInfo.accountId`, `Account.id`, `AccountsService` |
 | Sensitive scope and cleanup | [ui/src/app/shared/sensitive-write-scope.tsx](../../../ui/src/app/shared/sensitive-write-scope.tsx), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts) | `SensitiveWriteScope`, `abortAuthorizationRequests`, `clearAsyncDataCache` |
 | Bundled provider assets and responsive styling | [ui/src/assets/images/google-g.svg](../../../ui/src/assets/images/google-g.svg), [ui/src/assets/images/phantom-mark.svg](../../../ui/src/assets/images/phantom-mark.svg), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | login, registration, account, Pending, shell, and administrator rules |
@@ -157,17 +158,26 @@ reordering uses explicit, accessible move-up/down buttons. Save is an atomic
 full-template operation. A write-capable saved row exposes Preview execution,
 which opens a separate read-only preflight workflow.
 
-Execution Preview is Combination → Wallets → Review. It starts with no Wallet
+Execution Preview is Combination → Wallets → Checks → Review. It starts with no Wallet
 selection, pages the complete management inventory, displays unconnected
 Wallets as disabled, and preserves click order as the requested Wallet-major
 order. Explicit move-up, move-down, and remove controls update that order.
 Desktop keeps selection and ordered summary in two columns; compact layouts use
-a sticky count/action bar and Drawer. Review polls an accepted BUILDING plan,
+a sticky count/action bar and Drawer. Checks starts with all four optional skip
+rules enabled, explains each disabled consequence, offers `Enable all`, and uses
+a stacked mobile layout with a safe-area sticky Build action. The policy controls
+same-side position, same-side request, opposite-side exposure, and full
+liquidity only; mandatory authority, connection, market, Estimate, balance,
+amount, and mutation-safety checks have no switch. Review polls an accepted BUILDING plan,
 then displays frozen Wallet and market summaries, balances, aggregate funds and
-fees, stable result counts, and paged steps. Transient status failures retry with
+fees, the frozen policy, blocking and advisory counts, and paged steps. A disabled
+rule leaves a matching Step actionable when no mandatory blocker follows and
+renders an explicit `Ignored` warning. Transient status failures retry with
 capped backoff, READY refreshes once at expiry, and unfinished aggregate amounts
 remain unavailable rather than appearing as zero. Step errors have an explicit
-Retry. It labels SOL as informational and makes clear that preview construction
+Retry. `Change checks` returns to the editor without losing Wallet order.
+`Re-run checks` always confirms an editable copy of the current frozen policy
+and creates a new Plan, retaining the old Review if creation fails. It labels SOL as informational and makes clear that preview construction
 performs no Worm mutation or Wallet transaction signature. A usable READY plan
 offers `Prepare live execution`, which creates and freezes a Run without
 authorizing, signing, or placing an order, then navigates to its Execution
@@ -181,14 +191,16 @@ template are directed to choose it, users without one are directed to the
 builder, and read-only users receive view-only or access guidance. Failure of
 this auxiliary read stays inside the empty state with Retry and a generic
 Combinations fallback; it does not replace the successful Run-history result.
-The detail shows the frozen summary, current Step, permanent paged Step history,
-authorization and coordinator state, provider request ID/state, and a single
+The detail shows the frozen summary and policy, current Step advisories,
+permanent paged Step history, authorization and coordinator state, provider
+request ID/state, and a single
 dynamic primary action chosen from Authorize, Start, Pause, or Continue.
 Terminate is a confirmed secondary danger action. An `OUTCOME_UNKNOWN` panel
 offers only authoritative read-only reconciliation. Desktop uses a table and
 fixed action region; compact layouts use Step cards and a safe-area sticky
-action bar with reserved scroll space. Status text, labels, and one polite live
-region supplement color throughout.
+action bar with reserved scroll space. The authorization confirmation lists
+every disabled skip rule and its consequence. Status text, warning icons,
+labels, and one polite live region supplement color throughout.
 
 The detail driver is imperative. A user click on Start or Continue obtains a
 short coordinator token and begins one loop that heartbeats, requests exactly
@@ -434,15 +446,21 @@ Continue.
     inventory in groups of 100, begins with no selection, permits only
     `CONNECTED` rows, and preserves selection order; desktop shows the ordered
     list beside the picker, while compact layouts use a sticky action and
-    Drawer. Build preview POSTs only the combination ID, expected revision, and
-    ordered Wallet IDs. The accepted plan ID is stored only in the URL
+    Drawer. Checks then presents the four enabled-by-default optional skip rules
+    with `Enable all` and explicit disabled consequences. Build preview POSTs
+    only the combination ID, expected revision, ordered Wallet IDs, and complete
+    policy. The accepted plan ID is stored only in the URL
     `planId` query so refresh can restore this owner-scoped result. Review polls
     BUILDING every 1.5 seconds and stops at READY, FAILED, or facade-projected
     EXPIRED. READY shows aggregate maximum collateral, opening fee, cumulative
-    USDC needed, Wallet balances, stable skip categories, and paged wallet-major
-    steps. Refresh preview creates a new immutable plan and retains the old
-    display if creation fails. A creation conflict or Refresh after a
-    source-revision change returns the user to Combination review. Preview
+    USDC needed, Wallet balances, frozen checks, stable blocker/advisory counts,
+    and paged wallet-major steps. Step advisories are textual and icon-backed;
+    one page-level polite live region announces their aggregate. Change checks
+    returns to the editor with Wallet order preserved. Re-run checks always
+    opens a confirmation editor and creates a new immutable plan, replacing the
+    URL only on success and retaining the old display and modal choices if
+    creation fails. A creation conflict or Re-run after a source-revision change
+    returns the user to Combination review. Preview
     itself exposes no authorization, credential material, draft, signature,
     transaction, submission, or order mutation. For a usable non-expired READY
     plan with actionable Steps, `Prepare live execution` sends a command UUID,
@@ -455,7 +473,8 @@ Continue.
     derives no state transition locally, and renders only `allowedActions`
     supplied by the service.
 38. Authorize opens a confirmation that discloses the Worm transaction trust
-    boundary. Google stores only `{runId}` in the execution-specific
+    boundary and enumerates every disabled frozen skip rule with its consequence.
+    Google stores only `{runId}` in the execution-specific
     `sessionStorage` key and performs a fresh full-page OIDC proof. Phantom
     connects the persisted login address, signs the exact Run/plan-digest SIWS
     challenge, and immediately verifies it. Disabled-auth uses the loopback
@@ -478,8 +497,8 @@ Continue.
     panel offers only `Check authoritative status`; the browser never retries
     Open, Finalize, or cancel.
 42. Run detail always shows the trust warning, authorization/coordinator state,
-    current Wallet, market, side, funds, numeric Worm request ID, and provider
-    state without showing a JWT, raw transaction, signature, or signed
+    frozen check policy, current Wallet, market, side, funds, advisories, numeric
+    Worm request ID, and provider state without showing a JWT, raw transaction, signature, or signed
     transaction. The mobile sticky action bar reserves bottom/safe-area space,
     and one polite live region announces driver or terminal progress.
 
@@ -572,9 +591,9 @@ on route/account/access transitions. They are not written to Web Storage or a
 client-side draft store.
 
 Execution Preview write state contains the loaded combination, complete safe
-connection inventory, ordered selected Wallet IDs, workflow step, current plan
-ID, last confirmed plan projection, status/step pagination, and transient
-request errors. Only the opaque plan UUID appears in the URL query; the Wallet
+connection inventory, ordered selected Wallet IDs, local four-boolean Checks
+editor, Re-run modal policy, workflow step, current plan ID, last confirmed plan
+projection, status/step pagination, and transient request errors. Only the opaque plan UUID appears in the URL query; the Wallet
 order, provider observations, estimate data, and steps are server-owned durable
 state rather than a browser draft. No preview data enters localStorage or
 sessionStorage. Account, access, route, or plan-ID changes abort outstanding
@@ -590,7 +609,8 @@ sessionStorage. The sole execution `sessionStorage` record is
 is consumed and removed after the matching detail loads. The browser never
 receives the durable authorization's Session-JTI digest, Worm Web JWT, Worm
 sign-in message, raw transaction, custodial signature, or signed transaction.
-Run snapshots and mutation attempts are server-owned durable state, and the
+Run snapshots include the immutable policy and advisory strings but not provider
+payloads. Mutation attempts are server-owned durable state, and the
 browser cannot edit their Wallet, market, side, leverage, or funds.
 
 ## Configuration
@@ -644,10 +664,12 @@ Execution Preview uses native
 `GET /api/v1/worm-trading/execution-plans/{planId}`, and
 `GET /api/v1/worm-trading/execution-plans/{planId}/steps?page=&pageSize=`.
 Creation sends only `combinationId`, `expectedCombinationRevision`, and ordered
-`walletIds`, requires interactive Worm Trading `READ_WRITE` plus exact Origin,
-and receives HTTP 202. Detail and step reads require interactive Worm Trading
+`walletIds` plus the complete `preflightChecks` booleans, requires interactive
+Worm Trading `READ_WRITE` plus exact Origin, and receives HTTP 202. The server
+defaults a wholly absent policy to all enabled but rejects a present incomplete
+object. Detail and step reads require interactive Worm Trading
 `READ`; a direct Review URL therefore remains usable without write access, while
-Build and Refresh stay hidden. Step pages default to 50 and allow 20, 50, or 100
+Build, Change checks, and Re-run checks stay hidden. Step pages default to 50 and allow 20, 50, or 100
 in the browser. None of these endpoints accepts an owner, credential, market
 override, or funds override. A usable plan may additionally create a Run via
 `POST /api/v1/worm-trading/executions` with `planId`, `commandId`, and expected
@@ -729,9 +751,11 @@ portable to an arbitrary reverse-proxy subpath.
   never changes builder state.
 - Execution Preview is contextual under Combinations. Interactive `READ_WRITE`
   begins with no selection, accepts only `CONNECTED` Wallets, preserves explicit
-  Wallet order, and creates a new immutable read-only plan for each Build or
-  Refresh. Interactive `READ` may inspect a direct owner plan URL but cannot
-  select Wallets or refresh. Preview building and polling perform no provider
+  Wallet order, defaults all optional skip rules on, and creates a new immutable
+  read-only plan for each Build or confirmed Re-run. Disabled optional matches
+  remain explicit advisories; mandatory checks have no UI switch. Interactive
+  `READ` may inspect a direct owner plan URL but cannot select Wallets, change
+  checks, or rerun. Preview building and polling perform no provider
   mutation or signing; only a usable plan can be frozen into a separate Run,
   and that preparation still does not authorize or start it.
 - Executions is an interactive owner-scoped history and control surface. It
@@ -745,7 +769,8 @@ portable to an arbitrary reverse-proxy subpath.
 - The execution authorization dialog and Run detail disclose that Athena signs
   the exact Worm-returned transaction and does not inspect its programs,
   accounts, instructions, or cryptographically prove actual spend. The frozen
-  at-most-10-USDC funds value applies to Athena's request to Worm.
+  at-most-10-USDC funds value applies to Athena's request to Worm. They also
+  disclose every disabled frozen skip rule; Run controls cannot alter it.
 - Automatic connection work is serial, paced to at most five wallet starts per
   minute, held only in page memory, and never retried without a fresh inventory
   read and an explicit user action after failure.
@@ -842,8 +867,10 @@ from the URL plan ID after refresh. A transient polling or step-page failure
 keeps the last confirmed projection visible and offers retry; durable FAILED
 never exposes partial steps as usable. READY becomes EXPIRED after its server
 deadline, and a deleted or changed source combination is shown through a stable
-usability warning. Refresh always creates a new plan and leaves the prior
-snapshot intact when that POST fails. Account/access loss cancels polling and
+usability warning. Re-run checks creates a new immutable plan only after its
+confirmation editor; failure retains both the old Plan
+and the edited policy, while a source-revision conflict returns to Combination
+review. Account/access loss closes the modal, cancels polling and
 returns through normal route authorization without mutating the durable plan.
 
 Run preparation rejects expired, unusable, non-READY, revision-mismatched, or
@@ -901,15 +928,16 @@ estimate, nor execution guarantee, and is not persisted or emitted as telemetry.
 
 Execution Preview exposes the durable plan UUID, BUILDING stage and classified
 count, terminal state, stable failure/usability codes, expiry, Wallet and market
-ordinals, exact decimal estimates, balances, and paged step reasons. A single
-polite progress region announces BUILDING work. Client telemetry excludes
+ordinals, frozen checks, blocker/advisory counts, exact decimal estimates,
+balances, and paged step reasons/advisories. A single polite progress region
+announces BUILDING work and terminal advisory totals. Client telemetry excludes
 provider payloads, credentials, exposure pubkeys, signatures, drafts,
 transactions, and any signable material.
 
 Executions exposes safe Run/Step IDs and ordinals, lifecycle state and counts,
 allowed actions, coordinator status, authorization proof kind, frozen Wallet
-and market presentation, funds, numeric Worm request ID, provider state, and
-bounded failure codes. Client telemetry may identify those safe values and
+and market presentation, frozen checks, Step advisories, funds, numeric Worm
+request ID, provider state, and bounded failure codes. Client telemetry may identify those safe values and
 driver stage. It excludes the coordinator token, Session-JTI/access binding,
 Google/Phantom proof material, Worm Web JWT, sign-in message, raw or signed
 transaction, Wallet signature, provider credential, and full provider payload.
@@ -935,9 +963,9 @@ does not create a separate server-side integration or connection status.
 - [ ] Assets never calls Wallet data or secret APIs from the browser; Combinations remains interactive-only, while its contextual preview performs server-side reads and Estimate but no signature or Worm mutation.
 - [ ] Saved list, URL/ID parsing, cross-Event single-direction selection, accessible ordering, trusted snapshots, and revision-CAS feedback remain current.
 - [ ] Combinations keeps its compact price rows, hidden normal market metadata, exact complementary last-trade display, manual Event refresh, and transient-price dirty-state boundary current.
-- [ ] Execution Preview keeps three-step write ordering, direct READ review, connected-only Wallet selection, resilient BUILDING/expiry polling, immutable refresh, paged wallet-major review, informational SOL, and mutation-free Run preparation current.
-- [ ] Executions keeps permanent history, server-authoritative actions, explicit one-Step-at-a-time driving, coordinator heartbeat behavior, refresh/leave stop semantics, and mobile safe-area actions current.
-- [ ] Run authorization keeps the Worm transaction trust disclosure, provider-specific proof, exact Run/plan/session/access binding, and secret-free browser projection current.
+- [ ] Execution Preview keeps four-step write ordering, enabled-by-default optional checks, mandatory-check boundary, direct READ review, connected-only Wallet selection, resilient BUILDING/expiry polling, confirmed immutable Re-run, advisory-aware paged Wallet-major review, informational SOL, and mutation-free Run preparation current.
+- [ ] Executions keeps frozen-policy/advisory disclosure, permanent history, server-authoritative actions, explicit one-Step-at-a-time driving, coordinator heartbeat behavior, refresh/leave stop semantics, and mobile safe-area actions current.
+- [ ] Run authorization keeps disabled-rule and Worm transaction trust disclosure, provider-specific proof, exact Run/plan/session/access binding, and secret-free browser projection current.
 - [ ] Worm automatic connection remains interactive-`READ_WRITE`, owner-scoped, paced, provider-step-up-aware, and independent from Wallet private-key reveal.
 - [ ] Assets preserves each stale snapshot during refresh, keeps unavailable distinct from zero/empty, retains fixed 20-row activity pagination, and shows no order action.
 - [ ] Position/request responsive layouts, stream errors, truncation, automatic progress, ordinary Reconnect, confirmed unknown-credential regeneration, and exceptional cleanup remain current.

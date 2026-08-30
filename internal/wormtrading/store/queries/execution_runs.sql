@@ -29,7 +29,9 @@ WHERE owner_account_id = sqlc.arg(owner_account_id)::uuid
 INSERT INTO worm_execution_runs (
   id, owner_account_id, plan_id, plan_version, plan_digest_sha256,
   idempotency_key_sha256, request_sha256, combination_id, combination_name,
-  combination_revision, state, next_step_ordinal, wallet_count, item_count,
+  combination_revision, skip_already_held, skip_in_flight_request,
+  skip_opposite_side_exposure, require_full_liquidity,
+  state, next_step_ordinal, wallet_count, item_count,
   total_step_count, actionable_step_count, terminal_step_count,
   satisfied_step_count, skipped_step_count, requested_at, created_at, updated_at
 ) VALUES (
@@ -37,7 +39,10 @@ INSERT INTO worm_execution_runs (
   sqlc.arg(plan_version)::bigint, sqlc.arg(plan_digest_sha256)::bytea,
   sqlc.arg(idempotency_key_sha256)::bytea, sqlc.arg(request_sha256)::bytea,
   sqlc.arg(combination_id)::uuid, sqlc.arg(combination_name)::text,
-  sqlc.arg(combination_revision)::bigint, 'AWAITING_AUTHORIZATION',
+  sqlc.arg(combination_revision)::bigint, sqlc.arg(skip_already_held)::boolean,
+  sqlc.arg(skip_in_flight_request)::boolean,
+  sqlc.arg(skip_opposite_side_exposure)::boolean,
+  sqlc.arg(require_full_liquidity)::boolean, 'AWAITING_AUTHORIZATION',
   sqlc.arg(next_step_ordinal)::bigint, sqlc.arg(wallet_count)::bigint,
   sqlc.arg(item_count)::bigint, sqlc.arg(total_step_count)::bigint,
   sqlc.arg(actionable_step_count)::bigint,
@@ -91,10 +96,12 @@ WHERE plan_id = sqlc.arg(plan_id)::uuid;
 INSERT INTO worm_execution_run_steps (
   run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal,
   source_disposition, source_reason_code, projected_usdc_before,
-  projected_usdc_after, state, reason_code, completed_at, created_at, updated_at
+  projected_usdc_after, advisory_codes, state, reason_code, completed_at,
+  created_at, updated_at
 )
 SELECT sqlc.arg(run_id)::uuid, ordinal, ordinal, wallet_ordinal, item_ordinal,
        disposition, reason_code, projected_usdc_before, projected_usdc_after,
+       advisory_codes,
        CASE
          WHEN disposition = 'READY' THEN 'PENDING'
          WHEN reason_code IN ('ALREADY_HELD', 'REQUEST_IN_FLIGHT') THEN 'SATISFIED'
@@ -838,6 +845,7 @@ RETURNING *;
 UPDATE worm_execution_run_steps
 SET state = sqlc.arg(next_state)::text,
     reason_code = sqlc.arg(reason_code)::text,
+    advisory_codes = sqlc.arg(advisory_codes)::text[],
     active_command_id = CASE
       WHEN sqlc.arg(next_state)::text = 'OPENING' THEN active_command_id
       ELSE NULL

@@ -7,8 +7,8 @@ one saved Worm market combination and an explicitly ordered set of custodial
 Solana Wallets. It freezes the source combination revision, Wallet order, market
 order, current connection and balance observations, authoritative market
 eligibility, public Worm estimates, complete current Worm exposure, cumulative
-USDC simulation, and one Wallet-major classification for every Wallet/market
-pair.
+USDC simulation, four user-selected optional skip rules, ignored-condition
+advisories, and one Wallet-major classification for every Wallet/market pair.
 
 The API Server owns interactive authentication, current-account derivation,
 exact-origin creation, and owner-scoped Wallet resolution. Worm Trading owns the
@@ -41,9 +41,9 @@ belongs to the Executions route.
 | Authoritative Event catalogs | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go), [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `GetOrderEventCatalog`, `OrderEventCatalogMarket`, `OrderEventCatalogOutcome` |
 | Confirmed balance adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter.BatchGetBalances`, native SOL and Circle USDC observations |
 | Durable model and transactions | [internal/wormtrading/store/execution_plans.go](../../../internal/wormtrading/store/execution_plans.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `CreateExecutionPlan`, `ClaimExecutionPlan`, `UpdateExecutionPlanBuildProgress`, `MarkExecutionPlanReady`, `MarkExecutionPlanFailed`, `DeleteExpiredExecutionPlans` |
-| Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
+| Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql](../../../internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, frozen check policy, Step advisories, leased claim, owner reads, terminal writes, reason/advisory aggregation, retention cleanup |
 | Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, Worm Markets clientset, graceful cancellation |
-| Browser workflow, normalization, and responsive presentation | [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | `WormTradingExecutionPreviewPage`, `planPresentationStatus`, `planLiveStatus`, `PlanSummary`, strict plan normalizers, contextual route/breadcrumb, `worm-preview-*` rules |
+| Browser workflow, normalization, and responsive presentation | [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx), [ui/src/app/pages/worm-execution-preflight.ts](../../../ui/src/app/pages/worm-execution-preflight.ts), [ui/src/app/pages/worm-trading-combinations.tsx](../../../ui/src/app/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx), [ui/src/app/styles.css](../../../ui/src/app/styles.css) | `WormTradingExecutionPreviewPage`, `PreflightChecksEditor`, `ChecksStep`, `PlanChecksSummary`, strict plan/check/advisory normalizers, contextual route/breadcrumb, `worm-preview-*` rules |
 | Live-Run handoff boundary | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [ui/src/app/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/pages/worm-trading-execution-preview.tsx) | `CreateExecutionRun`, `Prepare live execution`, usable READY guard, immutable snapshot handoff |
 
 ## Architecture
@@ -52,7 +52,8 @@ belongs to the Executions route.
 interactive READ_WRITE browser
   -> POST /api/v1/worm-trading/execution-plans
        -> API Server derives account and resolves ordered Solana Wallet IDs
-       -> Worm Trading transaction freezes source revision, Wallets, and items
+       -> strict optional skip policy defaults to all enabled when omitted
+       -> Worm Trading transaction freezes source revision, Wallets, items, and policy
        -> HTTP 202 BUILDING + Location
 
 single Worm Trading preview worker
@@ -73,8 +74,10 @@ interactive READ_WRITE browser + usable READY plan
   -> navigate to Executions for separate authorization and control
 ```
 
-The browser can submit only `combinationId`, its positive expected revision, and
-ordered positive `walletIds`. It cannot submit an owner, Wallet address,
+The browser can submit only `combinationId`, its positive expected revision,
+ordered positive `walletIds`, and the four booleans in `preflightChecks`. A
+missing policy safely defaults all four rules to enabled; a present policy must
+contain every boolean and no unknown field. It cannot submit an owner, Wallet address,
 credential, current market fields, side, funds, leverage, balance, estimate, or
 step result. The API Server resolves up to eight Wallet lookups concurrently,
 requires every result to be the current account's canonical Solana Wallet, and
@@ -87,7 +90,7 @@ them. Owner plan and step GETs require Worm Trading `READ`. POST requires
 Wallet-secret lease, or Worm credential-management lease. The builder redirects
 a non-write user to Saved combinations before creation. A read-capable user can
 open an owner-scoped `?planId=` URL directly and inspect Review, but cannot enter
-Wallet selection, refresh the immutable snapshot, or issue POST.
+Wallet/Checks creation flow, rerun the immutable snapshot, or issue POST.
 
 Authenticated Worm clients implement only position/request List for the builder.
 The public estimate client is created separately without HMAC credentials. All
@@ -104,15 +107,20 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
    revision and market order. Wallets pages the complete owner Solana connection
    inventory in groups of 100. It starts with no selection, shows non-CONNECTED
    rows as disabled, and preserves click order. Move earlier, move later, remove,
-   Select all connected, and Clear are explicit local ordering controls.
+   Select all connected, and Clear are explicit local ordering controls. Checks
+   then presents four enabled-by-default skip rules: existing same-side position,
+   same-side in-flight request, opposite-side exposure, and full estimated
+   liquidity. `Enable all` restores the safe defaults, and each disabled card
+   explains the resulting ignored risk before Build becomes available.
 3. POST validates one JSON object of at most 1 MiB, rejects unknown fields,
-   duplicate/nonpositive Wallet IDs, an invalid UUID, or a nonpositive revision,
-   and resolves every Wallet through owner-scoped `GetWallet` while retaining
-   input order.
+   duplicate/nonpositive Wallet IDs, an invalid UUID, a nonpositive revision,
+   or a present but incomplete/non-boolean check policy, and resolves every
+   Wallet through owner-scoped `GetWallet` while retaining input order.
 4. `CreateExecutionPlan` locks the owner-scoped source combination, compares the
    expected revision, loads its contiguous items, calculates the Wallet/item
-   Cartesian size with overflow protection, and commits the plan header plus
-   ordered safe Wallet and trusted combination-item snapshots in one transaction.
+   Cartesian size with overflow protection, and commits the plan header,
+   complete check policy, ordered safe Wallet, and trusted combination-item
+   snapshots in one transaction.
    The response is HTTP 202 with state BUILDING and a resource `Location`.
 5. One process worker polls every second. `ClaimExecutionPlan` selects the oldest
    unclaimed or lease-expired BUILDING row with `FOR UPDATE SKIP LOCKED`, records
@@ -158,9 +166,17 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     A mismatch is an invalid provider response and cannot produce READY.
     Classification order is opposite-side position/request conflict, same-side
     open position, same-side in-flight request, unavailable market, rejected
-    estimate, incomplete fill, insufficient USDC, then READY. After the first
-    insufficient-USDC step, the remaining markets for that Wallet are skipped.
-    The next Wallet starts independently from its own observed USDC.
+    estimate, incomplete fill, insufficient USDC, then READY. The first three
+    exposure conditions and incomplete fill block only when their frozen rule is
+    enabled. When disabled, the matching stable code is appended once as an
+    advisory and classification continues through all later optional and
+    mandatory checks. Market validity, Estimate validity, and USDC remain
+    mandatory, so a later blocker keeps any advisories already observed. After
+    the first insufficient-USDC step, the remaining markets for that Wallet are
+    skipped for the same mandatory reason, but already-fetched exposure and
+    Estimate data still contribute every disabled-rule advisory that actually
+    matches those Steps. The next Wallet starts independently from its own
+    observed USDC.
 14. Exact decimal arithmetic subtracts each READY step's
     `user_funds_needed` from the current Wallet projection. Steps are emitted
     strictly Wallet-major. READY totals sum frozen collateral, opening fee, and
@@ -168,8 +184,11 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     of those aggregates. The browser labels them `Actionable collateral`,
     `Actionable opening fees`, and `Actionable USDC needed`, labels the READY
     count `Actionable`, and states that collateral, opening fee, and USDC totals
-    include actionable steps only. Ordered reason counts include a `READY` key
-    and every stable skip category.
+    include actionable steps only. In particular, a partial-fill Estimate is
+    included when `requireFullLiquidity` is disabled. Ordered reason counts
+    include a `READY` key and every stable blocking category; advisory counts
+    independently aggregate each ignored condition and never contribute to skip
+    counts.
 15. `MarkExecutionPlanReady` locks the plan and source combination, rechecks the
     exact combination revision, then locks connection and ACTIVE credential rows
     in global Wallet-ID order before validating them in user ordinal order. This
@@ -190,8 +209,20 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     nor the durable READY name implies consumability. BUILDING/FAILED totals
     render as unavailable rather than synthetic zero; READY/EXPIRED retain the
     frozen actionable-only aggregates. Step detail is paged at 20, 50, or 100
-    rows with an explicit retry. Refresh preview creates a distinct plan; it does
-    not overwrite the old snapshot.
+    rows with an explicit retry. The Review begins with a visible frozen-check
+    summary, disabled-rule disclosure, and advisory counts. `Change checks`
+    returns to the Checks step while preserving Wallet order only when the
+    source Combination revision still matches; otherwise it returns to the
+    Combination step for renewed review. `Re-run checks`
+    always opens a confirmation editor seeded from the current plan and creates
+    a distinct immutable plan with the same source revision and Wallet order; it
+    replaces `planId` only after success and never overwrites the old snapshot.
+    A failed rerun leaves both the old Review and the edited modal policy intact.
+    The first accepted Plan projection establishes a browser-side immutable
+    intent baseline for Combination ID/revision, Wallet ID order, and all four
+    checks; later polls or mutation responses that drift from it are rejected
+    without replacing visible data. Account or access-revision changes abort
+    pending creation and preparation responses.
 17. A write-capable Review exposes `Prepare live execution` only while READY is
     unexpired, has no usability code, and contains at least one actionable
     Step. It posts only the plan UUID, a fresh command UUID, and the frozen
@@ -210,7 +241,8 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
 `worm_execution_plans` stores the UUID plan, owner account UUID, frozen source
 combination UUID/name/revision, state, build stage, bounded failure code, worker
 lease, Wallet/item/step counts, exact-decimal aggregate fields, request and
-completion timestamps, optional READY expiry, and retention deadline. Durable
+completion timestamps, optional READY expiry, retention deadline, and the four
+frozen preflight booleans. Durable
 states are BUILDING, READY, and FAILED. Expiry does not rewrite the row; owner
 reads derive usability `EXPIRED`, and the HTTP facade projects state EXPIRED
 once current time reaches the READY deadline.
@@ -232,10 +264,12 @@ leverage authority.
 a READY plan. `(plan_id,ordinal)` is primary, `(plan_id,wallet_ordinal,
 item_ordinal)` is unique, and composite foreign keys enforce frozen Wallet/item
 membership. Each row is READY with no reason or SKIPPED with a reason, plus
-projected USDC before and after. Count and page queries join the parent and
+projected USDC before and after and zero or more canonical ignored-condition
+advisory codes. Count and page queries join the parent and
 return rows only after READY; page numbers translate to `ordinal > offset`
-keyset reads. Terminal reason counts are derived from the durable steps in
-stable code order rather than requiring the browser to scan all pages.
+keyset reads. Terminal reason and advisory counts are derived independently from
+the durable steps in stable code order rather than requiring the browser to scan
+all pages.
 
 READY lifetime begins at completion and lasts 15 minutes. A BUILDING row first
 receives a creation-time seven-day retention deadline; READY or FAILED
@@ -250,7 +284,8 @@ applicable, so a stale snapshot remains inspectable without appearing usable.
 No execution-preview table contains a Wallet private key, Worm plaintext credential, complete
 provider response, exposure pubkey, signable message, draft, signature,
 transaction, order, or active execution lock. Browser state contains only safe
-inventory, selected IDs/order, workflow state, and server-returned projections;
+inventory, selected IDs/order, the current local check editor, workflow state,
+and server-returned projections;
 it does not persist a queue or authorization in Web Storage. Preparing live
 execution creates state in the separate permanent Run tables and then navigates
 to that Run; it does not mutate these immutable preview rows.
@@ -293,11 +328,17 @@ the operational bounds.
 - At `1x`, `user_funds_needed` exactly equals funds plus opening fee and
   liquidation price is absent; any contradictory Estimate fails the plan.
 - Existing exposure precedence is opposite-side conflict, same-side position,
-  then same-side request. Already satisfied or conflicted steps never consume
+  then same-side request. Each condition blocks under its enabled frozen rule or
+  becomes an advisory under its disabled rule. Only actionable steps consume
   projected USDC.
-- `isFullyFilled=false` is a skip, never an optimistic purchase. Cumulative USDC
-  uses exact decimals and `user_funds_needed`; one insufficient step skips that
-  Wallet's remaining markets without changing another Wallet.
+- `isFullyFilled=false` is a skip when full liquidity is required and an
+  advisory when that rule is disabled. Estimate still runs in both cases, and an
+  advisory-only actionable Step uses its exact `user_funds_needed` in cumulative
+  USDC. One insufficient step always skips that Wallet's remaining markets
+  without changing another Wallet.
+- USDC, market availability, Estimate integrity, Wallet connection/ownership,
+  fixed funds and leverage, permissions, Plan lifetime, and execution mutation
+  safety are mandatory and have no policy switch.
 - USDC must be authoritative and available. SOL is preserved as an observation
   but cannot claim exact execution affordability.
 - Incomplete authoritative data produces FAILED, never partial READY. A crashed
@@ -315,7 +356,7 @@ the operational bounds.
 Invalid JSON, origin, access, UUID, revision, Wallet ownership/type, duplicates,
 or a source revision conflict fail before or during the atomic creation
 transaction. No partial plan header or child set commits. A created BUILDING plan
-is immutable input; browser Refresh creates a new resource.
+is immutable input; `Re-run checks` creates a new resource.
 
 The worker uses bounded stable failure codes:
 `STORE_UNAVAILABLE`, `WORM_MARKETS_UNAVAILABLE`,
@@ -323,9 +364,10 @@ The worker uses bounded stable failure codes:
 `WALLET_CREDENTIAL_UNAVAILABLE`, `SOLANA_BALANCE_UNAVAILABLE`,
 `USDC_BALANCE_UNAVAILABLE`, `WORM_READ_UNAVAILABLE`,
 `WORM_INVALID_RESPONSE`, `PLAN_SOURCE_CHANGED`, and `PREVIEW_INVALID`.
-An ordinary unavailable market, deterministic Estimate rejection, incomplete
-fill, existing exposure, or insufficient USDC is a step classification rather
-than a failed plan.
+An ordinary unavailable market, deterministic Estimate rejection, enabled
+optional skip, or insufficient USDC is a step classification rather than a
+failed plan; a disabled optional match is an advisory and continues
+classification.
 
 Lease renewal failure cancels the build. If the worker cannot commit FAILED
 because it no longer owns the lease, the row remains BUILDING and another claim
@@ -349,7 +391,7 @@ visible and creates no partial Run. Once a Run references the plan, preview
 retention cleanup skips it.
 
 The browser retains the last confirmed plan when polling, step paging, or a
-Refresh POST fails. BUILDING may resume from its URL plan ID. FAILED never
+Re-run POST fails. BUILDING may resume from its URL plan ID. FAILED never
 renders partial work as usable. Account, route, or access changes abort mounted
 requests and discard late results without changing durable state.
 
@@ -359,8 +401,9 @@ Native responses set `Cache-Control: no-store, private` and vary by Cookie and
 Authorization. Creation returns HTTP 202 and `Location`. Plan detail exposes
 state, build stage, completed/total count, stable failure and usability codes,
 expiry/retention timestamps, safe frozen Wallet/item snapshots, exact-decimal
-totals and estimates, and ordered reason counts. Step pages expose stable
-Wallet/item ordinals, READY/SKIPPED, reason, and projected USDC.
+totals and estimates, the complete frozen policy, ordered reason counts, and
+advisory counts. Step pages expose stable Wallet/item ordinals, READY/SKIPPED,
+reason, advisory codes, and projected USDC.
 
 Worker warnings contain bounded plan ID and failure code. Claim, store, Worm
 Markets, Solana, and Worm capability failures remain diagnosable through their
@@ -372,9 +415,9 @@ backlog or a particular provider snapshot.
 Responses and logs exclude owner UUID, worker ID/lease, credential ID/version,
 API key, secret, ciphertext, HMAC headers, Wallet private key, exposure pubkeys,
 raw provider bodies, signable messages, drafts, signatures, transactions, and
-orders. The UI uses text, progress, terminal alerts, aggregate reason counts,
+orders. The UI uses text, progress, terminal alerts, aggregate reason/advisory counts,
 actionable-only aggregate labels, and paged details. One polite live region
-announces BUILDING progress, READY actionable/skipped counts, or the
+announces BUILDING progress, READY actionable/skipped/advisory counts, or the
 EXPIRED/FAILED terminal outcome without using color as the only state signal.
 Stable provider and classification codes are humanized while preserving
 technical acronyms such as USDC, SOL, API, RPC, and ID.
@@ -387,9 +430,9 @@ provider-write observability belongs to the separate execution detail.
 - [ ] Interactive READ/READ_WRITE, exact-origin, API-Key denial, current-owner, and Wallet-resolution boundaries remain current.
 - [ ] BUILDING claim, stage heartbeat, READY/FAILED atomicity, 15-minute TTL, seven-day retention, Run-reference exclusion, and cleanup remain current.
 - [ ] Catalog, connection, credential, balance, Estimate, complete exposure, and final revalidation flows remain current.
-- [ ] Fixed backend funds, `1x`, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and reason aggregates remain current.
+- [ ] Frozen enabled-by-default optional skip rules, canonical advisories, mandatory checks, fixed backend funds, `1x`, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and independent reason/advisory aggregates remain current.
 - [ ] SOL remains informational and USDC remains an authoritative READY prerequisite.
-- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, immutable Refresh, responsive review, prepare-Run handoff, and no-Start behavior remain current.
+- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, Checks editor, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, confirmed immutable Re-run, responsive review, prepare-Run handoff, and no-Start behavior remain current.
 - [ ] Preview construction remains free of Worm mutation and Wallet signing; the distinct Run handoff freezes only a usable preview and delegates authorization/control to Executions.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

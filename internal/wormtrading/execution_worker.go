@@ -517,7 +517,8 @@ func (s *Service) executeFreshPreflight(
 		return s.pauseClaimedExecution(guard, task, executionPlanFailurePreviewInvalid, err)
 	}
 	result, err := builder.Build(ctx, ExecutionPreviewInput{
-		Wallets: []ExecutionPreviewWalletInput{wallets[0].input},
+		Wallets:         []ExecutionPreviewWalletInput{wallets[0].input},
+		PreflightChecks: task.run.PreflightChecks,
 		Items: []ExecutionPreviewItemInput{{
 			EventConditionID: task.item.EventConditionID, MarketConditionID: task.item.MarketConditionID,
 			IsYes: task.item.IsYes, Backend: task.item.Backend, Funds: task.item.Funds,
@@ -547,23 +548,23 @@ func (s *Service) executeFreshPreflight(
 	switch previewStep.Outcome {
 	case ExecutionPreviewOutcomeAlreadyHeld, ExecutionPreviewOutcomeRequestInFlight:
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSatisfied,
-			previewStep.Outcome, wormstore.ExecutionStepScopeCurrent)
+			previewStep.Outcome, wormstore.ExecutionStepScopeCurrent, previewStep.AdvisoryCodes...)
 	case ExecutionPreviewOutcomeOppositeSideConflict:
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			ExecutionPreviewOutcomeOppositeSideConflict, wormstore.ExecutionStepScopeCurrent)
+			ExecutionPreviewOutcomeOppositeSideConflict, wormstore.ExecutionStepScopeCurrent, previewStep.AdvisoryCodes...)
 	case ExecutionPreviewOutcomeLiquidityInsufficient:
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			ExecutionPreviewOutcomeLiquidityInsufficient, wormstore.ExecutionStepScopeCurrent)
+			ExecutionPreviewOutcomeLiquidityInsufficient, wormstore.ExecutionStepScopeCurrent, previewStep.AdvisoryCodes...)
 	case ExecutionPreviewOutcomeMarketUnavailable, ExecutionPreviewOutcomeEstimateRejected:
 		reason := previewStep.ReasonCode
 		if reason == "" {
 			reason = previewStep.Outcome
 		}
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			reason, wormstore.ExecutionStepScopeRemainingMarket)
+			reason, wormstore.ExecutionStepScopeRemainingMarket, previewStep.AdvisoryCodes...)
 	case ExecutionPreviewOutcomeInsufficientUSDC, ExecutionPreviewOutcomeSkippedAfterInsufficientUSDC:
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			ExecutionPreviewOutcomeInsufficientUSDC, wormstore.ExecutionStepScopeRemainingWallet)
+			ExecutionPreviewOutcomeInsufficientUSDC, wormstore.ExecutionStepScopeRemainingWallet, previewStep.AdvisoryCodes...)
 	case ExecutionPreviewOutcomeReady:
 	default:
 		return s.pauseClaimedExecution(guard, task, executionPlanFailureWormResponseInvalid,
@@ -578,11 +579,18 @@ func (s *Service) executeFreshPreflight(
 		code := executionWorkerFailureCode(err)
 		if executionWorkerFailureIsDeterministic(err) {
 			return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-				code, wormstore.ExecutionStepScopeRemainingWallet)
+				code, wormstore.ExecutionStepScopeRemainingWallet, previewStep.AdvisoryCodes...)
 		}
 		return s.pauseClaimedExecution(guard, task, code, err)
 	}
-	return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateOpening, "", "")
+	return s.completeExecutionPreflight(
+		guard,
+		task,
+		wormstore.ExecutionStepStateOpening,
+		"",
+		"",
+		previewStep.AdvisoryCodes...,
+	)
 }
 
 func (s *Service) completeExecutionPreflight(
@@ -591,6 +599,7 @@ func (s *Service) completeExecutionPreflight(
 	nextState wormstore.ExecutionStepState,
 	reason string,
 	scope wormstore.ExecutionStepScope,
+	advisoryCodes ...string,
 ) (*wormstore.ExecutionRunStep, error) {
 	if nextState != wormstore.ExecutionStepStateOpening {
 		if err := guard.stopRenewal(); err != nil {
@@ -600,7 +609,7 @@ func (s *Service) completeExecutionPreflight(
 	step, err := s.credentialStore.CompleteExecutionPreflight(guard.context(), wormstore.CompleteExecutionPreflightRequest{
 		RunID: task.run.ID, StepOrdinal: task.step.Ordinal, CommandID: task.recovery.CommandID,
 		ClaimID: task.claimID, NextState: nextState, ReasonCode: reason, SkipScope: scope,
-		Now: timeNowUTC(),
+		AdvisoryCodes: append([]string(nil), advisoryCodes...), Now: timeNowUTC(),
 	})
 	s.recordCredentialStoreResult(err)
 	if err != nil {

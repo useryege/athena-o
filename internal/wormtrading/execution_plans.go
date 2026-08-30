@@ -42,6 +42,7 @@ func (s *Service) CreateExecutionPlan(
 		CombinationID:               combinationID,
 		ExpectedCombinationRevision: req.GetExpectedCombinationRevision(),
 		Wallets:                     wallets,
+		PreflightChecks:             executionPreflightChecksFromProto(req.GetPreflightChecks()),
 		Now:                         timeNowUTC(),
 	})
 	s.recordCredentialStoreResult(err)
@@ -182,6 +183,13 @@ func executionPlanToProto(plan *wormstore.ExecutionPlan) *apiclient.ExecutionPla
 			Count:      count.Count,
 		})
 	}
+	advisoryCounts := make([]*apiclient.ExecutionPlanReasonCount, 0, len(plan.AdvisoryCounts))
+	for _, count := range plan.AdvisoryCounts {
+		advisoryCounts = append(advisoryCounts, &apiclient.ExecutionPlanReasonCount{
+			ReasonCode: count.ReasonCode,
+			Count:      count.Count,
+		})
+	}
 	return &apiclient.ExecutionPlan{
 		Id:                   plan.ID,
 		OwnerAccountId:       plan.OwnerAccountID,
@@ -210,6 +218,8 @@ func executionPlanToProto(plan *wormstore.ExecutionPlan) *apiclient.ExecutionPla
 		Items:                items,
 		UsabilityCode:        plan.UsabilityCode,
 		ReasonCounts:         reasonCounts,
+		PreflightChecks:      executionPreflightChecksToProto(plan.PreflightChecks),
+		AdvisoryCounts:       advisoryCounts,
 	}
 }
 
@@ -314,6 +324,28 @@ func executionPlanStepToProto(step wormstore.ExecutionPlanStep) *apiclient.Execu
 		ReasonCode:          step.ReasonCode,
 		ProjectedUsdcBefore: step.ProjectedUSDCBefore,
 		ProjectedUsdcAfter:  step.ProjectedUSDCAfter,
+		AdvisoryCodes:       append([]string(nil), step.AdvisoryCodes...),
+	}
+}
+
+func executionPreflightChecksFromProto(value *apiclient.ExecutionPreflightChecks) wormstore.ExecutionPreflightChecks {
+	if value == nil {
+		return wormstore.DefaultExecutionPreflightChecks()
+	}
+	return wormstore.ExecutionPreflightChecks{
+		SkipAlreadyHeld:          value.GetSkipAlreadyHeld(),
+		SkipInFlightRequest:      value.GetSkipInFlightRequest(),
+		SkipOppositeSideExposure: value.GetSkipOppositeSideExposure(),
+		RequireFullLiquidity:     value.GetRequireFullLiquidity(),
+	}
+}
+
+func executionPreflightChecksToProto(value wormstore.ExecutionPreflightChecks) *apiclient.ExecutionPreflightChecks {
+	return &apiclient.ExecutionPreflightChecks{
+		SkipAlreadyHeld:          value.SkipAlreadyHeld,
+		SkipInFlightRequest:      value.SkipInFlightRequest,
+		SkipOppositeSideExposure: value.SkipOppositeSideExposure,
+		RequireFullLiquidity:     value.RequireFullLiquidity,
 	}
 }
 

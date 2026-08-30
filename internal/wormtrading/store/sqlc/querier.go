@@ -87,6 +87,7 @@ type Querier interface {
 	InvalidateExecutionAuthorization(ctx context.Context, arg InvalidateExecutionAuthorizationParams) (int64, error)
 	ListActiveConnectionAttemptWalletIDs(ctx context.Context, resultLimit int32) ([]int64, error)
 	ListCredentialsNeedingRevocation(ctx context.Context, arg ListCredentialsNeedingRevocationParams) ([]WormWalletCredential, error)
+	ListExecutionPlanAdvisoryCounts(ctx context.Context, planID pgtype.UUID) ([]ListExecutionPlanAdvisoryCountsRow, error)
 	ListExecutionPlanItems(ctx context.Context, planID pgtype.UUID) ([]WormExecutionPlanItem, error)
 	ListExecutionPlanReasonCounts(ctx context.Context, planID pgtype.UUID) ([]ListExecutionPlanReasonCountsRow, error)
 	ListExecutionPlanSteps(ctx context.Context, arg ListExecutionPlanStepsParams) ([]WormExecutionPlanStep, error)

@@ -5,7 +5,8 @@
 Worm Order Execution owns permanent, owner-scoped live-execution Runs created
 from a still-usable [Worm Execution Preview](worm-execution-preview.md). A Run
 freezes the preview's exact Wallet order, market order, directions, backend,
-funds, `1x` leverage, and classifications under a versioned SHA-256 plan digest.
+funds, `1x` leverage, optional skip policy, classifications, and advisories under
+a versioned SHA-256 plan digest.
 It executes only the preview steps that were actionable when the Run was
 created, one Wallet-by-market Step at a time in Wallet-major order.
 
@@ -48,7 +49,7 @@ live orders begin only through an explicitly authorized Run.
 | One-Step execution worker | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go) | `runExecutionWorker`, `processRecoverableExecutionSteps`, `processRecoverableExecutionStep`, `executeClaimedExecutionStep`, `executeFreshPreflight`, `executionWebJWT`, `executeWormOpen`, `executeWormSigning`, `executeWormFinalize` |
 | No-replay recovery, polling, and reconciliation | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go) | `recoverSuccessfulOpen`, `recoverFinalizingExecution`, `reconcileAmbiguousFinalize`, `recordExecutionAwaiting`, `executionPollDelay`, `pollWormPositionRequest`, `reconcileWormExecutionStep`, `recordExecutionReconciliation` |
 | Durable state and transitions | [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | Run/Step lifecycle operations, commands, coordinator leases, mutation attempts, isolation, recovery claims |
-| Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, source snapshot, one-active-Run constraint, Combination and Wallet locks, recovery selection, consumed-plan retention |
+| Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql](../../../internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, frozen check/advisory snapshot, one-active-Run constraint, Combination and Wallet locks, recovery selection, consumed-plan retention |
 | Fixed Worm Web protocol | [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/README.md](../../../util/worm/README.md) | `WebClient`, challenge/sign-in/open/finalize/get, typed transport/API/edge errors, fixed official origin and API |
 | Capability-scoped Wallet signer | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `WormExecutionSignerService`, `SignWormWebSignInMessage`, `SignWormPositionRequestTransaction`, independent Bearer dispatch |
 | Process construction and secrets | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | fixed Web client, signer-only Wallet clientset, dedicated signer token, service lifecycle |
@@ -61,7 +62,7 @@ interactive Worm Trading READ_WRITE browser
   -> usable READY preview: Prepare live execution
   -> API Server derives account/session/access binding
   -> Worm Trading transaction
-       -> freeze Plan v1 digest + Wallets + items + every Step
+       -> freeze Plan v2 digest + checks + Wallets + items + every Step
        -> lock source Combination and selected Wallets
        -> AWAITING_AUTHORIZATION
 
@@ -125,10 +126,11 @@ empty state and does not replace the successfully loaded empty Run history.
 2. `CreateExecutionRun` locks the owner plan, requires the exact READY source,
    current expiry and revision, verifies its complete Wallet-major Step set,
    and rejects a plan already consumed by another Run. It computes the
-   version-one plan digest from the immutable plan and steps, snapshots Wallets
-   and items, and creates one Run Step per preview Step. Preview actionable
-   steps become `PENDING`; `ALREADY_HELD` and `REQUEST_IN_FLIGHT` become
-   `SATISFIED`; other preview skips become `SKIPPED`.
+   version-two plan digest from the immutable plan, frozen check policy, and
+   steps, snapshots Wallets, items, policy, and Step advisories, and creates one
+   Run Step per preview Step. Preview actionable steps become `PENDING`;
+   `ALREADY_HELD` and `REQUEST_IN_FLIGHT` blockers become `SATISFIED`; other
+   preview skips become `SKIPPED`.
 3. The same transaction acquires the source Combination lock and each selected
    Wallet lock after confirming its saved connection snapshot is still valid.
    It rejects an unresolved Wallet-market isolation. A unique partial index
@@ -141,7 +143,9 @@ empty state and does not replace the successfully loaded empty Run history.
    for the persisted login address; its statement includes the Run UUID, plan
    SHA-256 digest, and the Worm-transaction trust disclosure. Disabled-auth
    development uses only its loopback exact-origin POST. None of these flows
-   issues the five-minute Worm credential-management lease.
+   issues the five-minute Worm credential-management lease. Before any proof,
+   the authorization dialog lists every optional skip rule that was disabled in
+   the frozen Run and explains the corresponding ignored risk.
 5. Successful proof persists one `WORM_POSITION_EXECUTE` authorization bound to
    the owner account, current Session JTI digest, access revision, plan version,
    and plan digest, then moves the Run to `AUTHORIZED`. The authorization has no
@@ -169,9 +173,14 @@ empty state and does not replace the successfully loaded empty Run history.
    browser connection; the backend never selects a second Step automatically.
 9. Fresh preflight rereads the selected Wallet's connection, current Solana
    balances, complete relevant Worm exposure, and current estimate while using
-   the frozen side, backend, funds, and `1x`. Same-side exposure satisfies the
-   Step; opposite-side exposure skips it. A deterministic market or liquidity
-   rejection skips the Step or remaining copies of that market. Definite
+   the frozen side, backend, funds, `1x`, and optional skip policy. An enabled
+   same-side rule satisfies the Step and an enabled opposite-side or full-
+   liquidity rule skips it. A disabled matching rule instead appends its stable
+   advisory and continues through later checks. New advisories are canonically
+   unioned with the Preview snapshot. Market/Estimate validity, Wallet
+   connection and ownership, USDC/SOL, and fixed amount rules remain mandatory;
+   their deterministic result still applies while retaining earlier advisories.
+   Market failures skip the Step or remaining copies of that market. Definite
    Wallet failure or insufficient USDC/SOL skips that Wallet's remaining Steps.
    Rate limit, transport, server, or unclassified provider failure pauses the
    complete Run.
@@ -238,7 +247,8 @@ empty state and does not replace the successfully loaded empty Run history.
 `worm_execution_runs` is the permanent owner-scoped header. It stores the
 source plan UUID/version/digest, combination snapshot, state and revision,
 current/next Step ordinal, immutable cardinalities, terminal counts, bounded
-pause/failure/block codes, and lifecycle timestamps. The plan UUID is unique,
+pause/failure/block codes, lifecycle timestamps, and the four frozen preflight
+booleans. The plan UUID is unique,
 and a partial unique owner index admits one non-terminal Run. Terminal Runs are
 never deleted.
 
@@ -248,7 +258,8 @@ ordinals are contiguous; Step order is the immutable Wallet-major Cartesian
 product. Each Step has its own stable UUID as well as its ordinal, source
 preview disposition, current state, provider request ID and bounded state,
 transaction-message digest, finalize mode, signer metadata, durable polling
-schedule, timestamps, attempts, and optional isolation. A Step is `COMPLETED`
+schedule, timestamps, canonical Preview/fresh-preflight advisory codes, attempts,
+and optional isolation. A Step is `COMPLETED`
 only when its stored provider state is case-insensitive `completed`.
 
 `worm_execution_authorizations` stores one active Run proof with scope, proof
@@ -314,7 +325,8 @@ Worm Web execution is fixed to `https://api.worm.wtf/api`, Origin and Referer
 environment variable. The Web client bounds responses to 64 KiB and does not
 retry. Coordinator lease length is 30 seconds; the UI heartbeat cadence is 10
 seconds and its Run polling cadence is 1.5 seconds. Execution list/Step pages
-accept at most 100 rows. Plan v1 fixes Polymarket at 5 USDC, Hyperliquid at 1
+accept at most 100 rows. Plan v2 binds the optional check policy and advisories,
+fixes Polymarket at 5 USDC, Hyperliquid at 1
 USDC, all Steps at `1x`, and every request at no more than 10 USDC funds.
 
 Production configuration generates the general Wallet token, execution-signer
@@ -339,6 +351,13 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
 - Only preview-actionable Steps may reach Worm mutation. Preview-satisfied and
   skipped Steps are frozen terminal results rather than reclassified into
   executable work.
+- The Run freezes all four Preview skip rules and their existing advisories.
+  Fresh preflight uses that same policy, canonically unions newly observed
+  advisories, and cannot accept a browser policy change after Run creation.
+- Disabled exposure or full-liquidity rules may leave a Step actionable with an
+  explicit ignored warning. USDC/SOL, market and Estimate validity, Wallet
+  authority/connection, fixed funds/`1x`, authorization, isolation, and mutation
+  replay protections are always mandatory.
 - Each mutation command is revisioned and request-digested. Each Step has at
   most one durable Open attempt and one durable Finalize attempt. A dispatched
   mutation is never blindly repeated.
@@ -413,16 +432,22 @@ Authorization, and expose only owner-safe Run projections. History and detail
 include Run/Step UUIDs, frozen safe Wallet and market presentation, state,
 revision, counts, allowed actions, current and next ordinals, proof kind,
 coordinator state/expiry, bounded reason codes, numeric Worm request ID,
-provider/order state, and lifecycle timestamps. They omit owner UUID, plan
+provider/order state, frozen preflight checks, Step advisory codes, and lifecycle
+timestamps. They omit owner UUID, plan
 digest, Session JTI digest, access token, coordinator-token digest, transaction
 digest, signer metadata, attempt request digests, and all secret payloads.
 
-The UI uses a high-density history list, Run progress, current-Step card, paged
+The UI uses a high-density history list, Run progress, frozen-check disclosure,
+ignored-warning text, current-Step card, paged
 desktop table or mobile cards, one dynamic primary operation, confirmed
 Terminate, a safe-area sticky mobile action bar, explicit trust disclosure, and
-one polite live region. State text and icons accompany colors. An unknown
+one polite live region. The authorization confirmation repeats every disabled
+rule and its consequence. State text and icons accompany colors. An unknown
 outcome renders a dedicated blocking panel whose only recovery operation is
 `Check authoritative status`.
+The first accepted Run projection also establishes an immutable browser
+baseline for Run, Plan, Combination revision, and frozen checks; later command
+or polling responses cannot silently change the authorization disclosure.
 
 Service logs may identify bounded Run UUID, Step ordinal, Wallet ID, phase,
 attempt kind, HTTP status, provider code/slug, and stable reason. They exclude
@@ -434,11 +459,11 @@ through bounded logs and the durable Run projection.
 
 ## Change Checklist
 
-- [ ] Plan consumption, versioned digest, snapshots, one-Run constraints, and Combination/Wallet locks remain current.
+- [ ] Plan consumption, version-two digest, frozen check/advisory snapshots, one-Run constraints, and Combination/Wallet locks remain current.
 - [ ] Interactive READ/READ_WRITE, exact-origin, owner, Session, access-revision, and API-Key boundaries remain current.
 - [ ] Google, Phantom, and development proof bindings and trust disclosure remain current.
 - [ ] Coordinator token/heartbeat and explicit browser-led Wallet-major scheduling remain current.
-- [ ] Fresh preflight scopes, fixed funds/`1x`, Web JWT login, Open, Wallet signing, Finalize, and GET completion flow remain current.
+- [ ] Frozen optional skip semantics, mandatory fresh-preflight checks, advisory union, scopes, fixed funds/`1x`, Web JWT login, Open, Wallet signing, Finalize, and GET completion flow remain current.
 - [ ] Only provider `completed` advances; Open/Finalize dispatch and ambiguity are never replayed.
 - [ ] Pause, Continue, Terminate, restart recovery, durable backoff, isolation, and GET-only reconciliation remain current.
 - [ ] Dedicated signer token, owner/address/signer checks, deliberate transaction trust model, and secret exclusions remain current.

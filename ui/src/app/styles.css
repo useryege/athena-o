@@ -127,6 +127,42 @@ body,
     margin: 0;
 }
 
+.worm-execution-authorization-copy ul {
+    margin: 8px 0 0;
+    padding-inline-start: 20px;
+}
+
+.worm-execution-preflight-checks {
+    display: grid;
+    gap: 10px;
+}
+
+.worm-execution-preflight-checks > div:first-child {
+    display: grid;
+    gap: 2px;
+}
+
+.worm-execution-preflight-checks__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.worm-execution-preflight-checks__tags .ant-tag {
+    margin-inline-end: 0;
+    white-space: normal;
+}
+
+.worm-execution-step-advisories {
+    display: grid;
+    gap: 2px;
+}
+
+.worm-execution-step-advisories .ant-typography {
+    font-size: 11px;
+    line-height: 1.35;
+}
+
 .worm-execution-unknown-alert.ant-alert {
     border: 1px solid color-mix(in srgb, var(--athena-red) 45%, var(--athena-border));
 }
@@ -2054,6 +2090,7 @@ body,
 
 .worm-preview-combination,
 .worm-preview-wallet-picker,
+.worm-preview-checks,
 .worm-preview-review {
     display: grid;
     min-width: 0;
@@ -2061,12 +2098,149 @@ body,
 }
 
 .worm-preview-combination,
-.worm-preview-wallet-picker {
+.worm-preview-wallet-picker,
+.worm-preview-checks {
     padding: 20px;
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
     box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-preview-checks-editor {
+    display: grid;
+    min-width: 0;
+    gap: 12px;
+}
+
+.worm-preview-checks-editor__heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.worm-preview-checks-editor__heading > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.worm-preview-check-grid {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.worm-preview-check-card {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    min-height: 92px;
+    padding: 13px;
+    border: 1px solid var(--athena-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 42%, var(--athena-panel));
+    cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.worm-preview-check-card:hover {
+    border-color: color-mix(in srgb, var(--athena-primary) 50%, var(--athena-border));
+}
+
+.worm-preview-check-card:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--athena-primary) 78%, transparent);
+    outline-offset: 2px;
+}
+
+.worm-preview-check-card > span:nth-child(2) {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+}
+
+.worm-preview-check-card > .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-preview-check-card--enabled {
+    border-color: color-mix(in srgb, var(--athena-green) 42%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-green) 5%, var(--athena-panel));
+}
+
+.worm-preview-check-card--disabled {
+    border-color: color-mix(in srgb, var(--athena-orange) 55%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-orange) 7%, var(--athena-panel));
+}
+
+.worm-preview-checks-summary.ant-card {
+    border-color: var(--athena-border);
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-preview-checks-summary .ant-card-head-wrapper {
+    gap: 12px;
+}
+
+.worm-preview-checks-summary__body {
+    display: grid;
+    gap: 10px;
+}
+
+.worm-preview-checks-summary__rules,
+.worm-preview-advisory-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.worm-preview-checks-summary__rules .ant-tag {
+    margin-inline-end: 0;
+    white-space: normal;
+}
+
+.worm-preview-advisory-counts > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 9px;
+    border: 1px solid color-mix(in srgb, var(--athena-orange) 55%, var(--athena-border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--athena-orange) 7%, var(--athena-panel));
+    color: var(--athena-text);
+    font-size: 10px;
+}
+
+.worm-preview-advisory-counts strong {
+    font-family: var(--athena-data-font);
+    font-size: 11px;
+}
+
+.worm-preview-step-advisories {
+    display: grid;
+    gap: 2px;
+}
+
+.worm-preview-step-advisories .ant-typography {
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.worm-preview-rerun-modal .worm-preview-check-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.worm-preview-rerun-modal .worm-preview-check-card {
+    min-height: 0;
 }
 
 .worm-preview-section-heading,
@@ -2582,6 +2756,22 @@ body,
         display: none;
     }
 
+    .worm-preview-check-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-preview-check-actions {
+        position: sticky;
+        z-index: 20;
+        bottom: 0;
+        margin: 0 -20px -20px;
+        padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--athena-border-strong);
+        background: color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
+        box-shadow: 0 -10px 30px rgb(15 23 42 / 10%);
+        backdrop-filter: blur(14px);
+    }
+
     .worm-preview-mobile-order {
         position: fixed;
         z-index: 38;
@@ -2648,8 +2838,51 @@ body,
     }
 
     .worm-preview-combination,
-    .worm-preview-wallet-picker {
+    .worm-preview-wallet-picker,
+    .worm-preview-checks {
         padding: 15px;
+    }
+
+    .worm-preview-check-actions {
+        margin: 0 -15px -15px;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+
+    .worm-preview-check-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .worm-preview-check-card > .ant-tag {
+        grid-column: 2;
+        width: fit-content;
+    }
+
+    .worm-preview-checks-editor__heading {
+        display: grid;
+    }
+
+    .worm-preview-checks-editor__heading .ant-btn {
+        min-height: 40px;
+    }
+
+    .worm-preview-checks-summary .ant-card-head-wrapper {
+        display: grid;
+    }
+
+    .worm-preview-checks-summary .ant-card-extra,
+    .worm-preview-review-check-actions,
+    .worm-preview-review-check-actions .ant-btn {
+        width: 100%;
+    }
+
+    .worm-preview-review-check-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .worm-preview-review-check-actions .ant-btn {
+        min-height: 44px;
     }
 
     .worm-preview-section-heading {

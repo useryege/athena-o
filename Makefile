@@ -133,6 +133,10 @@ jwt-secret:
 service-password:
 	@go run tools/service-password/main.go
 
+.PHONY: notify-task-complete
+notify-task-complete:
+	@go run tools/task-completion-email/main.go
+
 .PHONY: prod-reset-secrets
 prod-reset-secrets:
 	@go run tools/prod-env-reset/main.go -env-file $(PROD_ENV_FILE)
