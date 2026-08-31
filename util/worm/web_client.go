@@ -33,16 +33,30 @@ var (
 	webStableSlugPattern      = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}$`)
 )
 
-// WebClient implements the fixed official Worm Web JWT flow. Access tokens are
-// supplied per call so one client can safely serve multiple managed wallets.
-// It deliberately contains no retry behavior; callers must never replay Open
-// or Finalize after a request may have reached Worm.
-type WebClient interface {
-	GetSignInChallenge(ctx context.Context, walletAddress string) (*WebSignInChallenge, error)
-	SignIn(ctx context.Context, request WebSignInRequest) (*WebSignInResponse, error)
+// WebMarketPositionSubmitClient is the narrow Worm Web protocol required by
+// SubmitWebMarketPosition.
+type WebMarketPositionSubmitClient interface {
+	WebSignInClient
 	OpenMarketPosition(ctx context.Context, accessToken string, request WebMarketPositionOpenRequest) (*WebPositionRequest, error)
 	FinalizePosition(ctx context.Context, accessToken string, request WebPositionFinalizeRequest) (*WebPositionRequest, error)
 	GetPositionRequest(ctx context.Context, accessToken string, requestID int64) (*WebPositionRequest, error)
+}
+
+// WebMarginPositionCashOutClient is the narrow Worm Web protocol required by
+// CashOutWebMarginPosition.
+type WebMarginPositionCashOutClient interface {
+	WebSignInClient
+	ListMarginPositions(ctx context.Context, accessToken string, options WebMarginPositionListOptions) ([]WebMarginPosition, error)
+	CloseMarginPosition(ctx context.Context, accessToken string, request WebMarginPositionCloseRequest) error
+}
+
+// WebClient implements the fixed official Worm Web JWT flows. Access tokens
+// are supplied per call so one client can safely serve multiple managed
+// wallets. It deliberately contains no retry behavior; callers must never
+// replay Open, Finalize, or Close after a request may have reached Worm.
+type WebClient interface {
+	WebMarketPositionSubmitClient
+	WebMarginPositionCashOutClient
 }
 
 type WebClientConfig struct {
@@ -109,6 +123,91 @@ type WebSignInResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
+type WebMarginPositionID int64
+
+func (id *WebMarginPositionID) UnmarshalJSON(data []byte) error {
+	parsedID, err := decodeWebPositiveID(
+		data,
+		"Worm Web margin position id",
+		"margin position id must be positive",
+	)
+	if err != nil {
+		return err
+	}
+	*id = WebMarginPositionID(parsedID)
+	return nil
+}
+
+type WebMarginPositionState string
+
+const (
+	WebMarginPositionStateOpen       WebMarginPositionState = "open"
+	WebMarginPositionStateClosed     WebMarginPositionState = "closed"
+	WebMarginPositionStateLiquidated WebMarginPositionState = "liquidated"
+	WebMarginPositionStateClosing    WebMarginPositionState = "closing"
+)
+
+func (state *WebMarginPositionState) UnmarshalJSON(data []byte) error {
+	encodedState := strings.TrimSpace(string(data))
+	if encodedState == "null" {
+		*state = ""
+		return nil
+	}
+	if strings.HasPrefix(encodedState, `"`) {
+		var stringState string
+		if err := json.Unmarshal(data, &stringState); err != nil {
+			return fmt.Errorf("decode Worm Web margin position state: %w", err)
+		}
+		encodedState = stringState
+	} else {
+		if _, err := strconv.ParseInt(encodedState, 10, 64); err != nil {
+			return fmt.Errorf("decode Worm Web margin position state %q: %w", encodedState, err)
+		}
+	}
+
+	normalizedState := strings.ToLower(strings.TrimSpace(encodedState))
+	switch normalizedState {
+	case "1", string(WebMarginPositionStateOpen):
+		normalizedState = string(WebMarginPositionStateOpen)
+	case "2", string(WebMarginPositionStateClosed):
+		normalizedState = string(WebMarginPositionStateClosed)
+	case "3", string(WebMarginPositionStateLiquidated):
+		normalizedState = string(WebMarginPositionStateLiquidated)
+	case "4", string(WebMarginPositionStateClosing):
+		normalizedState = string(WebMarginPositionStateClosing)
+	}
+	*state = WebMarginPositionState(normalizedState)
+	return nil
+}
+
+type WebMarginPositionMarket struct {
+	ConditionID string `json:"condition_id"`
+}
+
+// WebMarginPosition models only the identity and lifecycle fields required to
+// safely select and observe a Web cash-out target. Pointer booleans preserve
+// missing-field drift so a malformed open position cannot be closed.
+type WebMarginPosition struct {
+	PositionID   WebMarginPositionID      `json:"position_id"`
+	Market       *WebMarginPositionMarket `json:"market"`
+	IsYes        *bool                    `json:"is_yes"`
+	IsClosed     *bool                    `json:"is_closed"`
+	IsLiquidated *bool                    `json:"is_liquidated"`
+	State        WebMarginPositionState   `json:"state"`
+}
+
+type WebMarginPositionListOptions struct {
+	MarketConditionID string
+}
+
+// WebMarginPositionCloseRequest is the complete Worm Web cash-out payload.
+// The endpoint closes the entire position and exposes no price or shares.
+type WebMarginPositionCloseRequest struct {
+	MarketConditionID string `json:"market_condition_id"`
+	IsYes             bool   `json:"is_yes"`
+	PositionID        int64  `json:"position_id"`
+}
+
 // WebMarketPositionOpenRequest is the only Worm Execution order shape. The
 // Web endpoint has no order-type, limit-price, or share fields, so callers
 // cannot turn this request into a limit order.
@@ -152,23 +251,31 @@ type webPositionFinalizeSignedTransactionRequest struct {
 type WebRequestID int64
 
 func (id *WebRequestID) UnmarshalJSON(data []byte) error {
+	parsedID, err := decodeWebPositiveID(data, "Worm Web request id", "request id must be positive")
+	if err != nil {
+		return err
+	}
+	*id = WebRequestID(parsedID)
+	return nil
+}
+
+func decodeWebPositiveID(data []byte, fieldName, positiveError string) (int64, error) {
 	encodedID := strings.TrimSpace(string(data))
 	if strings.HasPrefix(encodedID, `"`) {
 		var stringID string
 		if err := json.Unmarshal(data, &stringID); err != nil {
-			return fmt.Errorf("decode quoted Worm Web request id: %w", err)
+			return 0, fmt.Errorf("decode quoted %s: %w", fieldName, err)
 		}
 		encodedID = strings.TrimSpace(stringID)
 	}
 	parsedID, err := strconv.ParseInt(encodedID, 10, 64)
 	if err != nil || parsedID <= 0 {
 		if err == nil {
-			err = errors.New("request id must be positive")
+			err = errors.New(positiveError)
 		}
-		return fmt.Errorf("decode Worm Web request id %q: %w", encodedID, err)
+		return 0, fmt.Errorf("decode %s %q: %w", fieldName, encodedID, err)
 	}
-	*id = WebRequestID(parsedID)
-	return nil
+	return parsedID, nil
 }
 
 type WebPositionRequest struct {
@@ -372,6 +479,45 @@ func (c *webClient) GetPositionRequest(ctx context.Context, accessToken string, 
 	return &response, nil
 }
 
+func (c *webClient) ListMarginPositions(
+	ctx context.Context,
+	accessToken string,
+	options WebMarginPositionListOptions,
+) ([]WebMarginPosition, error) {
+	marketConditionID := strings.TrimSpace(options.MarketConditionID)
+	if marketConditionID == "" {
+		return nil, errors.New("Worm Web market condition id is required")
+	}
+	query := make(url.Values)
+	query.Set("market_condition_id", marketConditionID)
+	var response []WebMarginPosition
+	if err := c.do(ctx, http.MethodGet, "/margin/positions/", query, nil, accessToken, &response); err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (c *webClient) CloseMarginPosition(
+	ctx context.Context,
+	accessToken string,
+	request WebMarginPositionCloseRequest,
+) error {
+	if strings.TrimSpace(request.MarketConditionID) == "" {
+		return errors.New("Worm Web market condition id is required")
+	}
+	if request.PositionID <= 0 {
+		return errors.New("Worm Web margin position id must be positive")
+	}
+	return c.doAcknowledgement(
+		ctx,
+		http.MethodPost,
+		"/margin/positions/close/",
+		nil,
+		request,
+		accessToken,
+	)
+}
+
 func (c *webClient) do(
 	ctx context.Context,
 	method string,
@@ -380,6 +526,31 @@ func (c *webClient) do(
 	body any,
 	accessToken string,
 	out any,
+) error {
+	return c.doWithDecoder(ctx, method, path, query, body, accessToken, func(statusCode int, rawBody []byte) error {
+		return decodeWebResponse(statusCode, rawBody, out)
+	})
+}
+
+func (c *webClient) doAcknowledgement(
+	ctx context.Context,
+	method string,
+	path string,
+	query url.Values,
+	body any,
+	accessToken string,
+) error {
+	return c.doWithDecoder(ctx, method, path, query, body, accessToken, decodeWebAcknowledgement)
+}
+
+func (c *webClient) doWithDecoder(
+	ctx context.Context,
+	method string,
+	path string,
+	query url.Values,
+	body any,
+	accessToken string,
+	decode func(statusCode int, rawBody []byte) error,
 ) error {
 	endpoint, err := url.Parse(WebAPIBaseURL + path)
 	if err != nil {
@@ -429,13 +600,28 @@ func (c *webClient) do(
 	if int64(len(rawBody)) > webMaximumResponseBodySize {
 		return &WebResponseError{err: errors.New("response body exceeded 64 KiB limit")}
 	}
-	return decodeWebResponse(response.StatusCode, rawBody, out)
+	return decode(response.StatusCode, rawBody)
 }
 
 func decodeWebResponse(statusCode int, rawBody []byte, out any) error {
 	trimmedBody := bytes.TrimSpace(rawBody)
 	if len(trimmedBody) == 0 {
 		return &WebResponseError{err: errors.New("empty response body")}
+	}
+	if bytes.Equal(trimmedBody, []byte("null")) {
+		return &WebResponseError{err: errors.New("successful response returned no data")}
+	}
+	if trimmedBody[0] == '[' {
+		if statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices {
+			return newWebAPIError(statusCode, nil, "invalid error response")
+		}
+		if out == nil {
+			return nil
+		}
+		if err := json.Unmarshal(trimmedBody, out); err != nil {
+			return &WebResponseError{err: fmt.Errorf("decode direct response: %w", err)}
+		}
+		return nil
 	}
 
 	var envelope webEnvelope
@@ -444,6 +630,9 @@ func decodeWebResponse(statusCode int, rawBody []byte, out any) error {
 			return newWebAPIError(statusCode, nil, "invalid error response")
 		}
 		return &WebResponseError{err: fmt.Errorf("decode response JSON: %w", err)}
+	}
+	if envelope.Error != nil {
+		return newWebAPIError(statusCode, &envelope, envelope.Message)
 	}
 	if envelope.Success != nil {
 		if !*envelope.Success || statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices {
@@ -473,6 +662,37 @@ func decodeWebResponse(statusCode int, rawBody []byte, out any) error {
 	}
 	if err := json.Unmarshal(trimmedBody, out); err != nil {
 		return &WebResponseError{err: fmt.Errorf("decode direct response: %w", err)}
+	}
+	return nil
+}
+
+func decodeWebAcknowledgement(statusCode int, rawBody []byte) error {
+	trimmedBody := bytes.TrimSpace(rawBody)
+	if len(trimmedBody) == 0 {
+		if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
+			return nil
+		}
+		return newWebAPIError(statusCode, nil, "empty error response")
+	}
+
+	var envelope webEnvelope
+	if err := json.Unmarshal(trimmedBody, &envelope); err != nil {
+		if statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices {
+			return newWebAPIError(statusCode, nil, "invalid error response")
+		}
+		return &WebResponseError{err: fmt.Errorf("decode response JSON: %w", err)}
+	}
+	if envelope.Error != nil {
+		return newWebAPIError(statusCode, &envelope, envelope.Message)
+	}
+	if envelope.Success != nil {
+		if !*envelope.Success || statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices {
+			return newWebAPIError(statusCode, &envelope, envelope.Message)
+		}
+		return nil
+	}
+	if statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices {
+		return newWebAPIError(statusCode, &envelope, envelope.Message)
 	}
 	return nil
 }

@@ -19,25 +19,11 @@ const (
 )
 
 type WebMarketPositionSigner interface {
-	SignWebSignInMessage(
-		ctx context.Context,
-		request WebSignInMessageSigningRequest,
-	) (WebSignInMessageSigningResponse, error)
+	WebSignInSigner
 	SignWebPositionTransaction(
 		ctx context.Context,
 		request WebPositionTransactionSigningRequest,
 	) (WebPositionTransactionSigningResponse, error)
-}
-
-type WebSignInMessageSigningRequest struct {
-	WalletAddress string
-	Nonce         string
-	Message       string
-	MessageSHA256 [sha256.Size]byte
-}
-
-type WebSignInMessageSigningResponse struct {
-	Signature string
 }
 
 type WebPositionTransactionSigningRequest struct {
@@ -143,7 +129,7 @@ func (e *WebMarketPositionSubmitError) Unwrap() error {
 
 func SubmitWebMarketPosition(
 	ctx context.Context,
-	client WebClient,
+	client WebMarketPositionSubmitClient,
 	signer WebMarketPositionSigner,
 	request WebMarketPositionSubmitRequest,
 	options WebMarketPositionSubmitOptions,
@@ -189,61 +175,9 @@ func SubmitWebMarketPosition(
 		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageOpening, "", 0, err)
 	}
 
-	challenge, err := client.GetSignInChallenge(ctx, request.WalletAddress)
+	accessToken, err := authenticateWebWallet(ctx, client, signer, request.WalletAddress)
 	if err != nil {
 		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageAuthenticating, "", 0, err)
-	}
-	if challenge == nil {
-		return nil, newWebMarketPositionSubmitError(
-			WebMarketPositionSubmitStageAuthenticating,
-			"",
-			0,
-			errors.New("Worm Web sign-in challenge returned no nonce"),
-		)
-	}
-	if err := validateWebSignInNonce(challenge.Nonce); err != nil {
-		return nil, newWebMarketPositionSubmitError(
-			WebMarketPositionSubmitStageAuthenticating,
-			"",
-			0,
-			err,
-		)
-	}
-	message := BuildWebSignInMessage(request.WalletAddress, challenge.Nonce, time.Now())
-	messageDigest := sha256.Sum256([]byte(message))
-	signedMessage, err := signer.SignWebSignInMessage(ctx, WebSignInMessageSigningRequest{
-		WalletAddress: request.WalletAddress,
-		Nonce:         challenge.Nonce,
-		Message:       message,
-		MessageSHA256: messageDigest,
-	})
-	if err != nil {
-		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageAuthenticating, "", 0, err)
-	}
-	canonicalSignInSignature, err := validateWebSignInSignature(
-		request.WalletAddress,
-		message,
-		signedMessage.Signature,
-	)
-	if err != nil {
-		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageAuthenticating, "", 0, err)
-	}
-	signIn, err := client.SignIn(ctx, WebSignInRequest{
-		Message:   message,
-		Signature: canonicalSignInSignature,
-		Address:   request.WalletAddress,
-		Nonce:     challenge.Nonce,
-	})
-	if err != nil {
-		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageAuthenticating, "", 0, err)
-	}
-	if signIn == nil || strings.TrimSpace(signIn.AccessToken) == "" {
-		return nil, newWebMarketPositionSubmitError(
-			WebMarketPositionSubmitStageAuthenticating,
-			"",
-			0,
-			errors.New("Worm Web sign-in returned no access token"),
-		)
 	}
 
 	result := &WebMarketPositionSubmitResult{
@@ -251,7 +185,7 @@ func SubmitWebMarketPosition(
 		OpenOutcome:     WebMutationOutcomeUnknown,
 		FinalizeOutcome: WebMutationOutcomeNotDispatched,
 	}
-	opened, err := client.OpenMarketPosition(ctx, signIn.AccessToken, openRequest)
+	opened, err := client.OpenMarketPosition(ctx, accessToken, openRequest)
 	if err != nil {
 		if webMutationExplicitlyRejected(err) {
 			result.Status = WebMarketPositionSubmitStatusOpenRejected
@@ -313,7 +247,7 @@ func SubmitWebMarketPosition(
 
 	result.Stage = WebMarketPositionSubmitStageFinalizing
 	result.FinalizeOutcome = WebMutationOutcomeUnknown
-	finalized, finalizeErr := client.FinalizePosition(ctx, signIn.AccessToken, WebPositionFinalizeRequest{
+	finalized, finalizeErr := client.FinalizePosition(ctx, accessToken, WebPositionFinalizeRequest{
 		PositionRequestID: result.PositionRequestID,
 		Payload:           finalizePayload,
 	})
@@ -346,7 +280,7 @@ func SubmitWebMarketPosition(
 	return observeWebMarketPositionSubmission(
 		ctx,
 		client,
-		signIn.AccessToken,
+		accessToken,
 		result,
 		resolvedOptions,
 		fallbackStatus,
@@ -374,7 +308,7 @@ func resolveWebMarketPositionSubmitOptions(
 
 func observeWebMarketPositionSubmission(
 	ctx context.Context,
-	client WebClient,
+	client WebMarketPositionSubmitClient,
 	accessToken string,
 	result *WebMarketPositionSubmitResult,
 	options WebMarketPositionSubmitOptions,

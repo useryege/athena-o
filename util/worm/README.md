@@ -27,6 +27,8 @@ The Go wrapper entrypoint is `NewClient(Config{})`. The default upstream API bas
   - Margin-position open
   - Signature or signed-transaction finalize
   - Numeric position-request status lookup
+  - Wallet-scoped margin-position lookup
+  - Full-position Web cash out
 
 `NewWebClient(WebClientConfig{})` is the production Worm Web execution client.
 Its API base, `https://www.worm.wtf` Origin/Referer, and Solana network type are
@@ -34,8 +36,8 @@ fixed. Access tokens are passed per request and remain an in-memory caller
 responsibility. The client limits every response to 64 KiB, rejects cross-host
 redirects and mutation redirects, performs no automatic retries, and returns
 typed API, transport, response, and HTML-403 edge-block errors. In particular,
-callers must never retry an `OpenMarketPosition` or `FinalizePosition` call whose
-outcome is ambiguous.
+callers must never retry an `OpenMarketPosition`, `FinalizePosition`, or
+`CloseMarginPosition` call whose outcome is ambiguous.
 
 ### Single-entry Web market submission
 
@@ -82,6 +84,45 @@ not proof that an Open Position exists and must not be used as the final
 position-completion authority. HMAC exposure guards, authoritative Open
 Position matching, durable mutation checkpoints, and business recovery remain
 the responsibility of higher-level execution code.
+
+### Single-entry Web margin-position cash out
+
+`CashOutWebMarginPosition` is the high-level entrypoint for closing an entire
+Worm Web margin position. It performs challenge retrieval, sign-in, exact
+position lookup, at most one close mutation, and bounded position observation.
+Its entrypoint accepts the wallet address, market condition ID, YES/NO side,
+and numeric `position_id`. The exact Close JSON contains only
+`market_condition_id`, `is_yes`, and `position_id`; it exposes no price, shares,
+partial-close, or limit-order input.
+
+Callers inject a `WebSignInSigner`. Cash out itself requires no Solana
+transaction signature and has no Finalize step; the signer is used only to
+authenticate the wallet and obtain its scoped in-memory JWT.
+
+The numeric Worm Web `position_id` is not the HMAC margin-position `pubkey`.
+Callers must supply the exact positive ID. Before dispatch, the entrypoint uses
+the wallet-scoped JWT position list to verify that the ID belongs to the exact
+market and side. A closed position succeeds without another mutation, a
+closing position is observed without replaying Close, and a liquidated,
+unknown, missing, duplicated, or mismatched position fails closed.
+
+Close is a non-idempotent protocol mutation and is dispatched at most once per
+entrypoint invocation. Callers must serialize concurrent calls for the same
+position and must not invoke it again after a pending or unknown result until
+authoritative position state has been reconciled. An acknowledged HTTP response
+means only that Worm accepted the close request; it is not completion evidence.
+The entrypoint immediately performs a safe GET and then polls only that read
+operation. Zero-value options use a one-second poll interval and a 90-second
+observation timeout.
+
+`POSITION_CLOSED` is returned only after the position reports `is_closed` or a
+closed lifecycle state. `POSITION_CLOSE_PENDING` means Worm acknowledged Close
+or a closing state was observed, but the bounded observation ended before the
+position became closed. Both return without an error, so callers must inspect
+the status. Explicit rejection followed by an open-position observation
+returns `CLOSE_REJECTED`; an ambiguous mutation without closing or closed
+evidence returns `CLOSE_OUTCOME_UNKNOWN`. The result never contains the JWT,
+sign-in signature, or raw Close response.
 
 ## Known Schema Drift
 
