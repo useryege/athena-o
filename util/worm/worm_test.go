@@ -1110,7 +1110,7 @@ func formatLiveMarginPosition(position MarginPosition) string {
 		position.Leverage,
 		position.TotalShares,
 		position.AvgEntryPrice,
-		position.LiquidationPrice,
+		optionalString(position.LiquidationPrice),
 		optionalString(position.UnrealizedPnL),
 		position.RealizedPnL,
 		position.UserLiquidity,

@@ -274,9 +274,6 @@ func validateLiveWormWebMarket(ctx context.Context, config *liveWormWebPositionO
 	if estimate == nil {
 		return errors.New("estimate market order returned no result")
 	}
-	if !estimate.IsFullyFilled {
-		return errors.New("estimate market order is not fully fillable")
-	}
 	return nil
 }
 
