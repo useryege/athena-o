@@ -66,7 +66,7 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | Internal authenticated server | [internal/wormtrading/server.go](../../../internal/wormtrading/server.go), [internal/wormtrading/apiclient](../../../internal/wormtrading/apiclient) | `Server`, `ServerOpts`, internal Bearer interceptors, gRPC health |
 | Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands, one-Step worker and recovery |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
-| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql](../../../internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, credentials, combinations, preview lifecycle, frozen check/advisory data, immutable Run snapshots, Open Position completion evidence, and Step/attempt/command/coordinator/authorization/isolation state |
+| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql](../../../internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, frozen check/advisory data, immutable Run snapshots, Open Position completion evidence, and Step/attempt/command/coordinator/authorization/isolation state |
 | Credential encryption and official client | [internal/wormtrading/credential_crypto.go](../../../internal/wormtrading/credential_crypto.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `CredentialEncryptionKeyFromPassphrase`, `credentialCipher`, `NewOfficialWormAPIClientFactory`, HMAC headers |
 | Connection and revocation lifecycle | [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/store/connections.go](../../../internal/wormtrading/store/connections.go), [internal/wormtrading/store/credentials.go](../../../internal/wormtrading/store/credentials.go), [internal/wormtrading/store/maintenance.go](../../../internal/wormtrading/store/maintenance.go) | `PrepareWormWalletConnection`, `CompleteWormWalletConnection`, `DisconnectWormWallet`, `revokeStoredCredential`, `revokePendingCredentials`, `MarkReconnectRequired`, `MarkCredentialRevocationFailed`, `ExpireConnectionAttempts` |
 | Position aggregation | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go) | `BatchGetWalletPositionSnapshots`, `fetchOpenPositions`, `fetchInFlightRequests`, `suppressPositionBackedRequests` |
@@ -223,9 +223,13 @@ interactive READ_WRITE browser + exact origin
   -> Worm Trading worker performs fresh preflight and mandatory exposure guards
   -> Worm Web challenge -> Wallet sign-in RPC -> Web JWT
   -> Worm market-position Open(frozen market, side, funds, 1x)
-  -> Wallet signs exact Worm-returned Solana transaction
-  -> Worm Finalize once
-  -> Web request GET plus HMAC Open Position observation
+  -> atomically persist successful Open attempt + OPENED recovery evidence
+  -> immediate HMAC Open Position matcher
+       -> matched: COMPLETED
+       -> ambiguous: OUTCOME_UNKNOWN
+       -> absent + Web completed: AWAITING_COMPLETION
+       -> absent + Web non-terminal: Wallet signs transaction -> Finalize once
+  -> Web request GET plus the same HMAC matcher while awaiting
   -> only unique matching Open Position evidence completes the Step
   -> browser must explicitly ask before another Step
 ```
@@ -560,16 +564,30 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     `OpenMarketPosition` fixes `network_type=2`, market, side, `funds`, and `1x`;
     it accepts no order-type selector, limit price, or shares and is therefore
     market-only. The frozen backend was already revalidated during preflight.
-31. A successful Open returns a numeric position-request ID and transaction.
-    Worm Trading binds its digest to the Run, Step, intent, request ID, Wallet,
-    and address and calls the dedicated Wallet transaction signer. It stores no
-    raw transaction or signature. One finalize mode is selected and Finalize is
-    durably marked dispatched before its sole POST; the representation cannot
-    switch after dispatch.
-32. The worker reads both Web request status and HMAC Open Positions after
-    Finalize. Only one Open Position in the target market, matching the Step's
-    exact side, numeric `1x`, and with `created_at` no earlier than the durable
-    Open dispatch second, marks the Step `COMPLETED`. It records source
+31. A positive Open response can be persisted as successful only when it has a
+    numeric position-request ID, normalized bounded provider state, and a valid
+    transaction. `RecordExecutionStepOpened` is the sole successful Open store
+    entry point. In one database transaction it resolves the dispatched attempt
+    as `SUCCEEDED` with the request ID and bounded HTTP/provider metadata, stores
+    the same request ID, transaction digest, provider request/order state on the
+    Step, and advances that Step from `OPENING` to `OPENED`. The generic attempt
+    result path rejects successful Open resolution, so none of those durable
+    facts can commit independently. From the returned `OPENED` Step, the worker
+    obtains the embedded `SUCCEEDED` Open attempt, verifies the same request ID,
+    and immediately runs the shared HMAC Open Position matcher. A match
+    completes the Step and ambiguity becomes `OUTCOME_UNKNOWN`. If the matcher
+    reports no position and Web is `completed`, the Step moves directly to
+    `AWAITING_COMPLETION` without signing or Finalize. Only no position plus a
+    non-terminal Web state continues: Worm Trading binds the digest to the Run,
+    Step, intent, request ID, Wallet, and address and calls the dedicated Wallet
+    transaction signer. It stores no raw transaction or signature. One finalize
+    mode is selected and Finalize is durably marked dispatched before its sole
+    POST; the representation cannot switch after dispatch.
+32. The worker runs the same HMAC Open Position matcher immediately after the
+    atomic Open commit and again at later Web GET, signing, Finalize, and polling
+    checkpoints. Only one Open Position in the target market, matching the
+    Step's exact side, numeric `1x`, and with `created_at` no earlier than the
+    durable Open dispatch second, marks the Step `COMPLETED`. It records source
     `OPEN_POSITION`, position pubkey, optional position-request pubkey, and
     position-created time. Multiple target-market positions, wrong-side/non-1x
     evidence, or missing/older creation time becomes `OUTCOME_UNKNOWN` with
@@ -676,7 +694,9 @@ Live execution adds permanent account-owned tables:
 - `worm_execution_mutation_attempts` records one durable Open and one Finalize
   dispatch state per Step. It may contain numeric request ID and bounded HTTP or
   error metadata, but never JWT, raw transaction, signature, signed transaction,
-  or provider body.
+  or provider body. A successful Open attempt is committed only through
+  `RecordExecutionStepOpened`, atomically with the Step's request ID,
+  transaction digest, provider state, and `OPENED` lifecycle state.
 - `worm_execution_combination_locks` and `_wallet_locks` protect one active
   account Run and its frozen resources. `worm_execution_step_isolations`
   permanently records an uncertain Wallet+Market mutation until authoritative
@@ -914,8 +934,11 @@ setting because they are memory-only by design.
   is not a cryptographic guarantee about the Worm-returned transaction, and the
   authorization UI and Phantom statement disclose this boundary.
 - Open and Finalize each have one durable dispatched attempt and are never
-  replayed after dispatch. Only unique matching HMAC Open Position evidence is
-  successful; every Web state, including `completed`, is diagnostic only.
+  replayed after dispatch. A positive Open becomes durably successful only
+  through the atomic `RecordExecutionStepOpened` transition; there is no
+  successful-attempt-only intermediate state. Only unique matching HMAC Open
+  Position evidence completes a Step; every Web state, including `completed`,
+  is diagnostic only.
 - Unknown mutation outcome creates durable wallet-market isolation and blocks
   progression. Explicit Reconcile performs only authoritative GET/List reads;
   Terminate cannot clear isolation or cancel a submitted Worm request.
@@ -1027,14 +1050,20 @@ Full liquidity policy and both mandatory exposure guards before Open, then
 unions new liquidity advisories with the Preview snapshot. A second exposure
 read after Web login closes the final pre-Open guard window. A
 temporary provider/network/429/5xx failure pauses the Run; it does not consume
-the next Step. Open ambiguity without a numeric request ID completes only if
-the immediate HMAC matcher finds unique position evidence; otherwise it becomes
-isolated `OUTCOME_UNKNOWN`. Once a request ID is known, Finalize ambiguity or a process interruption uses only authoritative
-read-only Web/HMAC reconciliation and never a second Finalize. Non-terminal Web
-state uses durable backoff without a fixed failure timeout. Only uniquely
-matched Open Position evidence completes a Step. In the absence of position
-evidence, definite Web failed/cancelled can fail it; Web `completed` alone does
-not resolve it. Read-only Reconcile never sends a mutation.
+the next Step. A positive Open response is not durable success until
+`RecordExecutionStepOpened` commits the attempt result, request ID, transaction
+digest, provider state, and `OPENED` Step together. Interruption or rollback
+before that transaction commits leaves the attempt dispatched, not
+successfully detached from its Step recovery evidence. Open ambiguity without
+a numeric request ID completes only if the immediate HMAC matcher finds unique
+position evidence; otherwise it becomes isolated `OUTCOME_UNKNOWN`. Once a
+request ID is known, Finalize ambiguity or a process interruption uses only
+authoritative read-only Web/HMAC reconciliation and never a second Finalize.
+Non-terminal Web state uses durable backoff without a fixed failure timeout.
+Only uniquely matched Open Position evidence completes a Step. In the absence
+of position evidence, definite Web failed/cancelled can fail it; Web
+`completed` alone does not resolve it. Read-only Reconcile never sends a
+mutation.
 
 Restart discards in-memory Web JWTs and performs a fresh sign-in only when a
 safe phase requires it. Durable dispatch markers prevent replay of Open and
@@ -1115,5 +1144,5 @@ submitted as part of implementation validation.
 - [ ] Execution Runs remain permanent, plan/policy/owner/session/access bound, advisory-aware, one-per-active-account, coordinator-exclusive, Wallet-major, and explicit-next-step only.
 - [ ] Production execution keeps official challenge/sign-in/market-only 1x Open/sign/finalize/GET ordering, mandatory pre-Open exposure guards, HMAC Open Position-only completion, and the disclosed Worm transaction trust model.
 - [ ] Wallet execution signing retains owner/address/parser/signer-slot/digest/self-verification checks without claiming a program/instruction/spend policy.
-- [ ] Open/Finalize dispatch markers, unknown-outcome isolation, restart recovery, and read-only reconciliation never replay a mutation.
+- [ ] Positive Open persistence remains atomic through `RecordExecutionStepOpened`; its returned `OPENED` Step immediately enters the shared position matcher before any signing or Finalize, and Open/Finalize dispatch markers, unknown-outcome isolation, restart recovery, and read-only reconciliation never replay a mutation.
 - [ ] The [design index](../README.md) contains the correct entry.

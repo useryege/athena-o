@@ -1089,41 +1089,6 @@ func (s *Service) executeWormOpen(
 		return s.markExecutionOutcomeUnknownWithProvider(guard, task, *resolved,
 			executionWorkerReasonOpenOutcomeUnknown, metadata, providerState, orderState, fundingTxID, refundTxID)
 	}
-	if executionProviderCompleted(providerState) {
-		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
-			wormstore.ExecutionMutationStateSucceeded, int64(opened.ID),
-			executionWebError{httpStatus: http.StatusOK}, "")
-		if resolveErr != nil {
-			return nil, resolveErr
-		}
-		if step, handled, observeErr := s.observeExecutionOpenPosition(
-			guard, task, resolved, providerState, orderState, fundingTxID, refundTxID,
-		); handled {
-			return step, observeErr
-		}
-		transactionDigest, digestErr := executionTransactionDigest(opened.Message)
-		if digestErr != nil {
-			// With neither position evidence nor a durable transaction digest,
-			// Web completion cannot establish a safe read-only waiting phase.
-			return s.markExecutionOutcomeUnknownWithProvider(
-				guard, task, *resolved, executionWorkerReasonOpenOutcomeUnknown,
-				executionWebError{code: executionWorkerReasonOpenOutcomeUnknown},
-				providerState, orderState, fundingTxID, refundTxID,
-			)
-		}
-		step, persistErr := s.credentialStore.RecordExecutionStepOpened(
-			guard.context(),
-			wormstore.RecordExecutionStepOpenedRequest{
-				AttemptID: resolved.ID, RunID: task.run.ID, StepOrdinal: task.step.Ordinal,
-				ClaimID: task.claimID, PositionRequestID: int64(opened.ID),
-				TransactionMessageSHA256: transactionDigest,
-				ProviderState:            providerState, ProviderOrderState: orderState,
-				HTTPStatus: http.StatusOK, Now: timeNowUTC(),
-			},
-		)
-		s.recordCredentialStoreResult(persistErr)
-		return step, persistErr
-	}
 	if executionProviderTerminalFailure(providerState) {
 		metadata := executionWebError{code: executionWorkerReasonProviderFailed, httpStatus: http.StatusOK}
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
@@ -1155,20 +1120,10 @@ func (s *Service) executeWormOpen(
 		return s.markExecutionOutcomeUnknownWithProvider(guard, task, *resolved,
 			executionWorkerReasonOpenOutcomeUnknown, metadata, providerState, orderState, fundingTxID, refundTxID)
 	}
-	resolved, resolveErr := s.resolveExecutionMutation(
-		guard.context(), *attempt, wormstore.ExecutionMutationStateSucceeded, int64(opened.ID),
-		executionWebError{httpStatus: http.StatusOK}, "",
-	)
-	if resolveErr != nil {
-		return nil, resolveErr
-	}
-	if step, handled, observeErr := s.observeExecutionOpenPosition(
-		guard, task, resolved, providerState, orderState, fundingTxID, refundTxID,
-	); handled {
-		return step, observeErr
-	}
+	// RecordExecutionStepOpened resolves the dispatched Open attempt and stores
+	// its request ID and transaction digest in one database transaction.
 	step, err := s.credentialStore.RecordExecutionStepOpened(guard.context(), wormstore.RecordExecutionStepOpenedRequest{
-		AttemptID: resolved.ID, RunID: task.run.ID, StepOrdinal: task.step.Ordinal, ClaimID: task.claimID,
+		AttemptID: attempt.ID, RunID: task.run.ID, StepOrdinal: task.step.Ordinal, ClaimID: task.claimID,
 		PositionRequestID: int64(opened.ID), TransactionMessageSHA256: transactionDigest,
 		ProviderState: providerState, ProviderOrderState: orderState, HTTPStatus: http.StatusOK,
 		Now: timeNowUTC(),
@@ -1176,6 +1131,25 @@ func (s *Service) executeWormOpen(
 	s.recordCredentialStoreResult(err)
 	if err != nil {
 		return nil, err
+	}
+	if step == nil {
+		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid}
+	}
+	task.step = step.Clone()
+	openedAttempt := executionMutationAttempt(task.step, wormstore.ExecutionMutationKindOpen)
+	if openedAttempt == nil || openedAttempt.State != wormstore.ExecutionMutationStateSucceeded ||
+		openedAttempt.PositionRequestID != int64(opened.ID) {
+		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid}
+	}
+	if observed, handled, observeErr := s.observeExecutionOpenPosition(
+		guard, task, openedAttempt, providerState, orderState, fundingTxID, refundTxID,
+	); handled {
+		return observed, observeErr
+	}
+	if executionProviderCompleted(providerState) {
+		return s.recordExecutionAwaiting(
+			guard, task, task.step.State, providerState, orderState, fundingTxID, refundTxID,
+		)
 	}
 	return step, nil
 }
