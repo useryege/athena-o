@@ -293,18 +293,8 @@ func (c *webClient) SignIn(ctx context.Context, request WebSignInRequest) (*WebS
 }
 
 func (c *webClient) OpenMarketPosition(ctx context.Context, accessToken string, request WebMarketPositionOpenRequest) (*WebPositionRequest, error) {
-	if strings.TrimSpace(request.MarketConditionID) == "" || strings.TrimSpace(request.Funds) == "" {
-		return nil, errors.New("Worm Web market condition id and funds are required")
-	}
-	if request.Funds != strings.TrimSpace(request.Funds) || !webPositiveDecimalPattern.MatchString(request.Funds) {
-		return nil, errors.New("Worm Web funds must be a canonical positive decimal")
-	}
-	funds, ok := new(big.Rat).SetString(request.Funds)
-	if !ok || funds.Sign() <= 0 || funds.Cmp(big.NewRat(10, 1)) > 0 {
-		return nil, errors.New("Worm Web funds must be positive and at most 10 USDC")
-	}
-	if request.Leverage != 1 || math.IsNaN(request.Leverage) || math.IsInf(request.Leverage, 0) {
-		return nil, errors.New("Worm Web leverage must be exactly one-times")
+	if err := validateWebMarketPositionOpenRequest(request); err != nil {
+		return nil, err
 	}
 	var response WebPositionRequest
 	if err := c.do(ctx, http.MethodPost, "/margin/positions/open/", nil, request, accessToken, &response); err != nil {
@@ -314,6 +304,23 @@ func (c *webClient) OpenMarketPosition(ctx context.Context, accessToken string, 
 		return nil, &WebResponseError{err: errors.New("position open returned no request id")}
 	}
 	return &response, nil
+}
+
+func validateWebMarketPositionOpenRequest(request WebMarketPositionOpenRequest) error {
+	if strings.TrimSpace(request.MarketConditionID) == "" || strings.TrimSpace(request.Funds) == "" {
+		return errors.New("Worm Web market condition id and funds are required")
+	}
+	if request.Funds != strings.TrimSpace(request.Funds) || !webPositiveDecimalPattern.MatchString(request.Funds) {
+		return errors.New("Worm Web funds must be a canonical positive decimal")
+	}
+	funds, ok := new(big.Rat).SetString(request.Funds)
+	if !ok || funds.Sign() <= 0 || funds.Cmp(big.NewRat(10, 1)) > 0 {
+		return errors.New("Worm Web funds must be positive and at most 10 USDC")
+	}
+	if request.Leverage != 1 || math.IsNaN(request.Leverage) || math.IsInf(request.Leverage, 0) {
+		return errors.New("Worm Web leverage must be exactly one-times")
+	}
+	return nil
 }
 
 func (c *webClient) FinalizePosition(ctx context.Context, accessToken string, request WebPositionFinalizeRequest) (*WebPositionRequest, error) {

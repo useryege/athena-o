@@ -34,8 +34,54 @@ fixed. Access tokens are passed per request and remain an in-memory caller
 responsibility. The client limits every response to 64 KiB, rejects cross-host
 redirects and mutation redirects, performs no automatic retries, and returns
 typed API, transport, response, and HTML-403 edge-block errors. In particular,
-callers must never retry an `OpenPosition` or `FinalizePosition` call whose
+callers must never retry an `OpenMarketPosition` or `FinalizePosition` call whose
 outcome is ambiguous.
+
+### Single-entry Web market submission
+
+`SubmitWebMarketPosition` is the high-level Web market-position protocol
+entrypoint. It performs challenge retrieval, sign-in, and one market-position
+open. Unless that Open response is already complete, it signs the returned
+transaction, finalizes once, and performs bounded request-status observation.
+Its request intentionally exposes only the wallet address, market condition
+ID, funds, and YES/NO side. It always submits a market position at `1x`; callers
+cannot select an order type, price, shares, or leverage. Funds must be a
+canonical positive decimal value no greater than 10 USDC.
+
+Callers inject a `WebMarketPositionSigner`. The signer receives the exact
+sign-in message or returned Worm transaction together with the wallet and
+request metadata, while this module validates the returned Ed25519 signature,
+transaction identity, wallet signer slot, transaction version, and finalize
+mode. Private keys, JWTs, signatures, raw transactions, signed transactions,
+and finalize payloads are never included in the submission result.
+
+Open and finalize are non-idempotent protocol mutations. Each is dispatched at
+most once: transport errors, timeouts, server errors, and ambiguous responses
+are reported as unknown outcomes and are never automatically retried or sent
+again with a different finalize mode. Only the safe numeric request-status GET
+may be polled. Zero-value options use a one-second poll interval and a 30-second
+total observation timeout; the caller's context may end observation earlier.
+
+The result reports separate open/finalize mutation states and one of these
+submission states:
+
+- `WEB_REQUEST_ACCEPTED`: Worm reports `completed`, or reports `processing`
+  with an order state of `created` or `opened`.
+- `WEB_REQUEST_PENDING`: finalize was acknowledged, but bounded observation did
+  not produce accepted or terminal-failure evidence before it ended.
+- `PROVIDER_FAILED`: Worm explicitly reported a failed or cancelled request.
+- `OPEN_REJECTED`, `OPEN_OUTCOME_UNKNOWN`, or `OPENED_NOT_FINALIZED`: the open
+  stage did not safely reach finalize.
+- `FINALIZE_REJECTED` or `FINALIZE_OUTCOME_UNKNOWN`: finalize failed explicitly
+  or its outcome could not be established.
+
+`WEB_REQUEST_ACCEPTED` and `WEB_REQUEST_PENDING` return without an error, so
+callers must inspect the result status. Most importantly,
+`WEB_REQUEST_ACCEPTED` means only that the Worm Web request was accepted; it is
+not proof that an Open Position exists and must not be used as the final
+position-completion authority. HMAC exposure guards, authoritative Open
+Position matching, durable mutation checkpoints, and business recovery remain
+the responsibility of higher-level execution code.
 
 ## Known Schema Drift
 
@@ -61,33 +107,34 @@ third.
 
 ## Live Worm Web Position Open
 
-`TestLiveWormWebPositionOpen` is the explicitly gated live protocol probe from
-which the production `WebClient` flow is derived. It signs in with the
-configured Solana private key, opens a margin position through the Worm Web JWT
-flow, signs the returned transaction, finalizes it, and polls the position
-request state.
+`TestLiveWormWebPositionOpen` is an explicitly gated live protocol probe. It
+performs public market and estimate preflight reads, then calls
+`SubmitWebMarketPosition` once with a test-only local private-key signer. The
+submission is always a market position at `1x`. The test accepts only
+`WEB_REQUEST_ACCEPTED`; this confirms Web request acceptance, not the existence
+of an Open Position.
 
-The signing helper verifies only the configured wallet's required signer slot;
-other required signers may be completed by Worm. For a legacy transaction with
-another empty required signer slot, the test finalizes the same position
-request ID with the wallet `signature`. A fully signed legacy transaction uses
-`signed_transaction`, as does a v0 transaction, which may remain partially
-signed in its other required signer slots. The finalize payload is selected
-before the POST request; after that request is sent, the test never switches to
-the alternate payload or repeats finalize with it.
+The signing helper adds only the configured wallet's signature and validates
+every existing non-empty required signature; other empty required signer slots
+may be completed by Worm. For a legacy transaction with another empty required
+signer slot, the test finalizes the same position request ID with the wallet
+`signature`. A fully signed legacy transaction uses `signed_transaction`, as
+does a v0 transaction, which may remain partially signed in its other required
+signer slots. The finalize payload is selected before the POST request; after
+that request is sent, the test never switches to the alternate payload or
+repeats finalize with it.
 
 Enable the live write test with this explicit gate:
 
 - `ATHENA_WORM_LIVE_WEB_POSITION_OPEN=1`
 
-The following six environment variables are required:
+The following five business environment variables are required:
 
 - `ATHENA_WORM_PRIVATE_KEY`: Solana private key used for sign-in and transaction signing.
 - `ATHENA_WORM_WEB_EXPECTED_WALLET_ADDRESS`: expected wallet address; it must match the address derived from the private key.
 - `ATHENA_WORM_WEB_MARKET_CONDITION_ID`: Worm market condition ID.
 - `ATHENA_WORM_WEB_IS_YES`: position side, either `true` or `false`.
 - `ATHENA_WORM_WEB_FUNDS`: position funds as a positive decimal value.
-- `ATHENA_WORM_WEB_LEVERAGE`: leverage as a positive decimal value.
 
 Run from the repository root:
 
