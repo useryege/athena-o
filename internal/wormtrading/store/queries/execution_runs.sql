@@ -29,8 +29,7 @@ WHERE owner_account_id = sqlc.arg(owner_account_id)::uuid
 INSERT INTO worm_execution_runs (
   id, owner_account_id, plan_id, plan_version, plan_digest_sha256,
   idempotency_key_sha256, request_sha256, combination_id, combination_name,
-  combination_revision, skip_already_held, skip_in_flight_request,
-  skip_opposite_side_exposure, require_full_liquidity,
+  combination_revision, require_full_liquidity,
   state, next_step_ordinal, wallet_count, item_count,
   total_step_count, actionable_step_count, terminal_step_count,
   satisfied_step_count, skipped_step_count, requested_at, created_at, updated_at
@@ -39,9 +38,7 @@ INSERT INTO worm_execution_runs (
   sqlc.arg(plan_version)::bigint, sqlc.arg(plan_digest_sha256)::bytea,
   sqlc.arg(idempotency_key_sha256)::bytea, sqlc.arg(request_sha256)::bytea,
   sqlc.arg(combination_id)::uuid, sqlc.arg(combination_name)::text,
-  sqlc.arg(combination_revision)::bigint, sqlc.arg(skip_already_held)::boolean,
-  sqlc.arg(skip_in_flight_request)::boolean,
-  sqlc.arg(skip_opposite_side_exposure)::boolean,
+  sqlc.arg(combination_revision)::bigint,
   sqlc.arg(require_full_liquidity)::boolean, 'AWAITING_AUTHORIZATION',
   sqlc.arg(next_step_ordinal)::bigint, sqlc.arg(wallet_count)::bigint,
   sqlc.arg(item_count)::bigint, sqlc.arg(total_step_count)::bigint,
@@ -102,11 +99,7 @@ INSERT INTO worm_execution_run_steps (
 SELECT sqlc.arg(run_id)::uuid, ordinal, ordinal, wallet_ordinal, item_ordinal,
        disposition, reason_code, projected_usdc_before, projected_usdc_after,
        advisory_codes,
-       CASE
-         WHEN disposition = 'READY' THEN 'PENDING'
-         WHEN reason_code IN ('ALREADY_HELD', 'REQUEST_IN_FLIGHT') THEN 'SATISFIED'
-         ELSE 'SKIPPED'
-       END,
+       CASE WHEN disposition = 'READY' THEN 'PENDING' ELSE 'SKIPPED' END,
        reason_code,
        CASE WHEN disposition = 'SKIPPED' THEN sqlc.arg(now)::timestamptz END,
        sqlc.arg(now)::timestamptz, sqlc.arg(now)::timestamptz
@@ -950,10 +943,42 @@ SET state = sqlc.arg(next_state)::text,
         THEN sqlc.arg(position_request_id)::bigint
       ELSE position_request_id
     END,
-    provider_state = sqlc.arg(provider_state)::text,
-    provider_order_state = sqlc.arg(provider_order_state)::text,
-    funding_txid = sqlc.arg(funding_txid)::text,
-    refund_txid = sqlc.arg(refund_txid)::text,
+    provider_state = CASE
+      WHEN sqlc.arg(provider_state)::text <> '' THEN sqlc.arg(provider_state)::text
+      ELSE provider_state
+    END,
+    provider_order_state = CASE
+      WHEN sqlc.arg(provider_order_state)::text <> '' THEN sqlc.arg(provider_order_state)::text
+      ELSE provider_order_state
+    END,
+    funding_txid = CASE
+      WHEN sqlc.arg(funding_txid)::text <> '' THEN sqlc.arg(funding_txid)::text
+      ELSE funding_txid
+    END,
+    refund_txid = CASE
+      WHEN sqlc.arg(refund_txid)::text <> '' THEN sqlc.arg(refund_txid)::text
+      ELSE refund_txid
+    END,
+    completion_source = CASE
+      WHEN sqlc.arg(next_state)::text = 'COMPLETED'
+        THEN sqlc.arg(completion_source)::text
+      ELSE ''
+    END,
+    completion_position_pubkey = CASE
+      WHEN sqlc.arg(next_state)::text = 'COMPLETED'
+        THEN sqlc.arg(completion_position_pubkey)::text
+      ELSE ''
+    END,
+    completion_position_request_pubkey = CASE
+      WHEN sqlc.arg(next_state)::text = 'COMPLETED'
+        THEN sqlc.arg(completion_position_request_pubkey)::text
+      ELSE ''
+    END,
+    completion_position_created_at = CASE
+      WHEN sqlc.arg(next_state)::text = 'COMPLETED'
+        THEN sqlc.arg(completion_position_created_at)::timestamptz
+      ELSE NULL
+    END,
     finalized_at = CASE
       WHEN state = 'FINALIZING' THEN COALESCE(finalized_at, sqlc.arg(now)::timestamptz)
       ELSE finalized_at
@@ -974,7 +999,7 @@ SET state = sqlc.arg(next_state)::text,
     claim_expires_at = NULL,
     reconcile_requested_at = NULL,
     completed_at = CASE
-      WHEN sqlc.arg(next_state)::text IN ('COMPLETED', 'SATISFIED', 'FAILED')
+      WHEN sqlc.arg(next_state)::text IN ('COMPLETED', 'SATISFIED', 'SKIPPED', 'FAILED')
         THEN sqlc.arg(now)::timestamptz
       ELSE NULL
     END,
@@ -1001,11 +1026,11 @@ WHERE run_id = sqlc.arg(run_id)::uuid
           AND (
             (
               sqlc.arg(next_state)::text = 'OUTCOME_UNKNOWN'
-              AND request_attempts.state = 'OUTCOME_UNKNOWN'
+              AND request_attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
             )
             OR (
-              sqlc.arg(next_state)::text = 'COMPLETED'
-              AND request_attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE')
+              sqlc.arg(next_state)::text IN ('AWAITING_COMPLETION', 'COMPLETED')
+              AND request_attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
             )
             OR (
               sqlc.arg(next_state)::text = 'FAILED'
@@ -1018,11 +1043,85 @@ WHERE run_id = sqlc.arg(run_id)::uuid
   )
   AND (
     sqlc.arg(next_state)::text <> 'COMPLETED'
-    OR lower(sqlc.arg(provider_state)::text) = 'completed'
+    OR (
+      sqlc.arg(completion_source)::text = 'OPEN_POSITION'
+      AND sqlc.arg(completion_position_pubkey)::text <> ''
+      AND sqlc.arg(completion_position_created_at)::timestamptz IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS open_attempt
+        WHERE open_attempt.run_id = worm_execution_run_steps.run_id
+          AND open_attempt.step_ordinal = worm_execution_run_steps.ordinal
+          AND open_attempt.kind = 'OPEN'
+          AND open_attempt.dispatched_at IS NOT NULL
+          AND open_attempt.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+          AND sqlc.arg(completion_position_created_at)::timestamptz
+            >= date_trunc('second', open_attempt.dispatched_at)
+      )
+    )
+  )
+  AND (
+    sqlc.arg(next_state)::text = 'COMPLETED'
+    OR (
+      sqlc.arg(completion_source)::text = ''
+      AND sqlc.arg(completion_position_pubkey)::text = ''
+      AND sqlc.arg(completion_position_request_pubkey)::text = ''
+      AND sqlc.arg(completion_position_created_at)::timestamptz IS NULL
+    )
+  )
+  AND (
+    sqlc.arg(next_state)::text <> 'SKIPPED'
+    OR (
+      sqlc.arg(expected_state)::text = 'OPENING'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS dispatched_open
+        WHERE dispatched_open.run_id = worm_execution_run_steps.run_id
+          AND dispatched_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND dispatched_open.kind = 'OPEN'
+          AND dispatched_open.dispatched_at IS NOT NULL
+      )
+    )
   )
   AND (
     sqlc.arg(expected_state)::text IN (
       'OPENED', 'SIGNING', 'AWAITING_COMPLETION', 'OUTCOME_UNKNOWN'
+    )
+    OR (
+      sqlc.arg(next_state)::text = 'COMPLETED'
+      AND EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS completed_open
+        WHERE completed_open.run_id = worm_execution_run_steps.run_id
+          AND completed_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND completed_open.kind = 'OPEN'
+          AND completed_open.dispatched_at IS NOT NULL
+          AND completed_open.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+      )
+    )
+    OR (
+      sqlc.arg(expected_state)::text = 'FINALIZING'
+      AND sqlc.arg(next_state)::text = 'AWAITING_COMPLETION'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS dispatched_finalize
+        WHERE dispatched_finalize.run_id = worm_execution_run_steps.run_id
+          AND dispatched_finalize.step_ordinal = worm_execution_run_steps.ordinal
+          AND dispatched_finalize.kind = 'FINALIZE'
+          AND dispatched_finalize.dispatched_at IS NOT NULL
+      )
+    )
+    OR (
+      sqlc.arg(expected_state)::text = 'OPENING'
+      AND sqlc.arg(next_state)::text = 'SKIPPED'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS skipped_open
+        WHERE skipped_open.run_id = worm_execution_run_steps.run_id
+          AND skipped_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND skipped_open.kind = 'OPEN'
+          AND skipped_open.dispatched_at IS NOT NULL
+      )
     )
     OR (
       sqlc.arg(expected_state)::text = 'FINALIZING'
@@ -1038,6 +1137,18 @@ WHERE run_id = sqlc.arg(run_id)::uuid
           AND undispatched_finalize.step_ordinal = worm_execution_run_steps.ordinal
           AND undispatched_finalize.kind = 'FINALIZE'
           AND undispatched_finalize.state <> 'PREPARED'
+      )
+    )
+    OR (
+      sqlc.arg(next_state)::text = 'OUTCOME_UNKNOWN'
+      AND EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS ambiguous_open
+        WHERE ambiguous_open.run_id = worm_execution_run_steps.run_id
+          AND ambiguous_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND ambiguous_open.kind = 'OPEN'
+          AND ambiguous_open.dispatched_at IS NOT NULL
+          AND ambiguous_open.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
       )
     )
     OR EXISTS (
@@ -1057,7 +1168,10 @@ WHERE run_id = sqlc.arg(run_id)::uuid
             AND attempts.state = 'SUCCEEDED'
             AND lower(sqlc.arg(provider_state)::text) IN ('failed', 'cancelled', 'canceled')
           )
-          OR (sqlc.arg(next_state)::text = 'OUTCOME_UNKNOWN' AND attempts.state = 'OUTCOME_UNKNOWN')
+          OR (
+            sqlc.arg(next_state)::text = 'OUTCOME_UNKNOWN'
+            AND attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+          )
           OR (
             sqlc.arg(next_state)::text IN ('AWAITING_COMPLETION', 'COMPLETED')
             AND attempts.state IN ('SUCCEEDED', 'OUTCOME_UNKNOWN')
@@ -1249,7 +1363,7 @@ JOIN worm_execution_mutation_attempts AS attempts
   ON attempts.id = sqlc.arg(attempt_id)::uuid
  AND attempts.run_id = steps.run_id
  AND attempts.step_ordinal = steps.ordinal
- AND attempts.state IN ('SUCCEEDED', 'OUTCOME_UNKNOWN')
+ AND attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
 JOIN worm_execution_run_wallets AS wallets
   ON wallets.run_id = steps.run_id AND wallets.ordinal = steps.wallet_ordinal
 JOIN worm_execution_run_items AS items

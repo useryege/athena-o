@@ -32,7 +32,11 @@ import {
 } from '../shared/services/worm-trading-service';
 import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
 import {short, usePagedParams} from './shared';
-import {disabledWormExecutionPreflightChecks, wormExecutionPreflightCheckDefinitions} from './worm-execution-preflight';
+import {
+    disabledWormExecutionPreflightChecks,
+    wormExecutionMandatoryGuardDefinitions,
+    wormExecutionPreflightCheckDefinitions
+} from './worm-execution-preflight';
 
 const runPageSizes = [20, 50, 100];
 const stepPageSizes = [20, 50, 100];
@@ -95,14 +99,13 @@ const stepStatusColor = (state: WormExecutionStepState) => {
 };
 
 const RunStatusTag = ({state}: {state: WormExecutionRunState}) => <Tag color={runStatusColor(state)}>{displayCode(state)}</Tag>;
-const StepStatusTag = ({state}: {state: WormExecutionStepState}) => <Tag color={stepStatusColor(state)}>{displayCode(state)}</Tag>;
+const stepStatusLabel = (step: WormExecutionRunStep) =>
+    step.state === 'COMPLETED' && step.completionSource === 'OPEN_POSITION' ? 'Completed · Open position observed' : displayCode(step.state);
+const StepStatusTag = ({step}: {step: WormExecutionRunStep}) => <Tag color={stepStatusColor(step.state)}>{stepStatusLabel(step)}</Tag>;
 const runProgress = (run: WormExecutionRun) => (run.counts.total > 0 ? Math.round((run.counts.terminal / run.counts.total) * 100) : 0);
 const sideLabel = (step: WormExecutionRunStep) => step.side;
 
 const executionPreflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) =>
-    left.skipAlreadyHeld === right.skipAlreadyHeld &&
-    left.skipInFlightRequest === right.skipInFlightRequest &&
-    left.skipOppositeSideExposure === right.skipOppositeSideExposure &&
     left.requireFullLiquidity === right.requireFullLiquidity;
 
 interface ExecutionRunIntent {
@@ -357,7 +360,7 @@ const CurrentStepPanel = ({step}: {step?: WormExecutionRunStep}) => {
                     <Typography.Text strong={true}>Step {step.ordinal}</Typography.Text>
                     <Typography.Text type='secondary'>{step.wallet.remark || short(step.wallet.address, 8, 6)}</Typography.Text>
                 </div>
-                <StepStatusTag state={step.state} />
+                <StepStatusTag step={step} />
             </div>
             <Typography.Title level={4}>{step.market.marketTitle}</Typography.Title>
             <Space wrap={true}>
@@ -380,7 +383,7 @@ const StepCard = ({step}: {step: WormExecutionRunStep}) => (
     <Card size='small' className='worm-execution-step-card'>
         <div className='worm-execution-step-card__heading'>
             <Typography.Text strong={true}>Step {step.ordinal}</Typography.Text>
-            <StepStatusTag state={step.state} />
+            <StepStatusTag step={step} />
         </div>
         <Typography.Text>{step.market.marketTitle}</Typography.Text>
         <Typography.Text type='secondary'>{step.wallet.remark || short(step.wallet.address, 8, 6)}</Typography.Text>
@@ -407,7 +410,7 @@ const ExecutionSteps = ({run}: {run: WormExecutionRun}) => {
         {title: 'Market', render: step => step.market.marketTitle},
         {title: 'Side', width: 90, render: step => <Tag color={sideLabel(step) === 'YES' ? 'green' : 'red'}>{sideLabel(step)}</Tag>},
         {title: 'Funds', width: 120, render: step => `${step.funds} USDC`},
-        {title: 'State', width: 190, render: step => <StepStatusTag state={step.state} />},
+        {title: 'State', width: 190, render: step => <StepStatusTag step={step} />},
         {title: 'Reason', width: 220, render: step => displayCode(step.reasonCode)},
         {title: 'Ignored warnings', width: 240, render: step => <RunStepAdvisories codes={step.advisoryCodes} />},
         {title: 'Worm request ID', width: 170, render: step => step.positionRequestId || '—'}
@@ -490,10 +493,15 @@ const RunPreflightChecks = ({run}: {run: WormExecutionRun}) => {
     return (
         <div className='worm-execution-preflight-checks'>
             <div>
-                <Typography.Text strong={true}>Frozen preflight rules</Typography.Text>
-                <Typography.Text type='secondary'>These rules were copied from the reviewed Preview and cannot be changed for this Run.</Typography.Text>
+                <Typography.Text strong={true}>Frozen guards and fill rule</Typography.Text>
+                <Typography.Text type='secondary'>The target-market position guard and wallet-wide request guard always apply; the reviewed full-liquidity choice is frozen for this Run.</Typography.Text>
             </div>
             <div className='worm-execution-preflight-checks__tags'>
+                {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                    <Tag key={definition.key} color='blue'>
+                        Always on · {definition.title}
+                    </Tag>
+                ))}
                 {wormExecutionPreflightCheckDefinitions.map(definition => (
                     <Tag key={definition.key} color={run.preflightChecks[definition.key] ? 'green' : 'gold'}>
                         {run.preflightChecks[definition.key] ? 'Checked' : 'Ignored'} · {definition.title}
@@ -504,8 +512,8 @@ const RunPreflightChecks = ({run}: {run: WormExecutionRun}) => {
                 <Alert
                     type='warning'
                     showIcon={true}
-                    title='This Run includes disabled skip rules'
-                    description={`${disabledChecks.map(definition => definition.title).join(', ')} will be recorded as ignored warnings instead of blocking an otherwise actionable step.`}
+                    title='Full liquidity is not required for this Run'
+                    description='A partial-fill estimate is recorded as an ignored liquidity warning instead of blocking an otherwise actionable 1× order. Mandatory exposure guards remain active.'
                 />
             )}
         </div>
@@ -880,11 +888,16 @@ export const WormTradingExecutionDetailPage = () => {
                         The frozen request limits the funds value sent to Worm to at most 10 USDC per step. Athena does not inspect Worm&apos;s programs, accounts, instructions, or
                         cryptographically prove the transaction&apos;s actual chain spend.
                     </p>
+                    <p>Every Open is a market order at fixed 1× leverage.</p>
+                    <p>
+                        Immediately before Open, Athena always checks for any-direction Open Position in the target market and any remaining uncovered wallet-wide in-flight market
+                        or limit request across all markets and directions. Either match skips this order and every remaining order for that Wallet.
+                    </p>
                     {disabledChecks.length > 0 && (
                         <Alert
                             type='warning'
                             showIcon={true}
-                            title='Disabled skip rules in this frozen Run'
+                            title='Full liquidity is not required in this frozen Run'
                             description={
                                 <ul>
                                     {disabledChecks.map(definition => (

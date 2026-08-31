@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	executionPlanDigestVersion     = int64(2)
+	executionPlanDigestVersion     = int64(3)
 	executionCoordinatorTokenBytes = 32
 	executionCoordinatorLease      = 30 * time.Second
 	maxExecutionRunPageSize        = 100
@@ -111,7 +111,6 @@ func (s *SQLStore) CreateExecutionRun(
 	}
 	steps := make([]ExecutionPlanStep, 0, len(stepRows))
 	var nextStepOrdinal int64
-	var satisfiedStepCount int64
 	var skippedStepCount int64
 	for _, stepRow := range stepRows {
 		step := mapExecutionPlanStep(stepRow)
@@ -120,12 +119,7 @@ func (s *SQLStore) CreateExecutionRun(
 			nextStepOrdinal = step.Ordinal
 		}
 		if step.Disposition == ExecutionPlanStepDispositionSkipped {
-			switch step.ReasonCode {
-			case "ALREADY_HELD", "REQUEST_IN_FLIGHT":
-				satisfiedStepCount++
-			default:
-				skippedStepCount++
-			}
+			skippedStepCount++
 		}
 	}
 	if nextStepOrdinal == 0 || int64(len(steps)) != plan.TotalStepCount {
@@ -139,28 +133,25 @@ func (s *SQLStore) CreateExecutionRun(
 	runUUID := uuid.New()
 	runID := pgtype.UUID{Bytes: [16]byte(runUUID), Valid: true}
 	row, err := queries.CreateExecutionRun(ctx, wormtradingsqlc.CreateExecutionRunParams{
-		ID:                       runID,
-		OwnerAccountID:           ownerUUID,
-		PlanID:                   planID,
-		PlanVersion:              executionPlanDigestVersion,
-		PlanDigestSha256:         planDigest,
-		IdempotencyKeySha256:     idempotencyDigest[:],
-		RequestSha256:            requestDigest,
-		CombinationID:            planRow.CombinationID,
-		CombinationName:          planRow.CombinationName,
-		CombinationRevision:      planRow.CombinationRevision,
-		SkipAlreadyHeld:          plan.PreflightChecks.SkipAlreadyHeld,
-		SkipInFlightRequest:      plan.PreflightChecks.SkipInFlightRequest,
-		SkipOppositeSideExposure: plan.PreflightChecks.SkipOppositeSideExposure,
-		RequireFullLiquidity:     plan.PreflightChecks.RequireFullLiquidity,
-		NextStepOrdinal:          nextStepOrdinal,
-		WalletCount:              planRow.WalletCount,
-		ItemCount:                planRow.ItemCount,
-		TotalStepCount:           planRow.TotalStepCount,
-		ActionableStepCount:      planRow.ReadyStepCount,
-		SatisfiedStepCount:       satisfiedStepCount,
-		SkippedStepCount:         skippedStepCount,
-		Now:                      timestampParam(now),
+		ID:                   runID,
+		OwnerAccountID:       ownerUUID,
+		PlanID:               planID,
+		PlanVersion:          executionPlanDigestVersion,
+		PlanDigestSha256:     planDigest,
+		IdempotencyKeySha256: idempotencyDigest[:],
+		RequestSha256:        requestDigest,
+		CombinationID:        planRow.CombinationID,
+		CombinationName:      planRow.CombinationName,
+		CombinationRevision:  planRow.CombinationRevision,
+		RequireFullLiquidity: plan.PreflightChecks.RequireFullLiquidity,
+		NextStepOrdinal:      nextStepOrdinal,
+		WalletCount:          planRow.WalletCount,
+		ItemCount:            planRow.ItemCount,
+		TotalStepCount:       planRow.TotalStepCount,
+		ActionableStepCount:  planRow.ReadyStepCount,
+		SatisfiedStepCount:   0,
+		SkippedStepCount:     skippedStepCount,
+		Now:                  timestampParam(now),
 	})
 	if err != nil {
 		if executionConstraint(err, "worm_execution_runs_one_nonterminal_per_owner_idx") ||
@@ -1703,20 +1694,22 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 	}
 	switch req.NextState {
 	case ExecutionStepStateAwaitingCompletion, ExecutionStepStateCompleted,
-		ExecutionStepStateSatisfied, ExecutionStepStateFailed,
+		ExecutionStepStateSatisfied, ExecutionStepStateSkipped, ExecutionStepStateFailed,
 		ExecutionStepStateOutcomeUnknown:
 	default:
 		return nil, invalidExecutionRun(fmt.Errorf("provider observation next state is invalid"))
 	}
 	if req.ExpectedState == ExecutionStepStateOpening &&
-		req.NextState != ExecutionStepStateCompleted && req.NextState != ExecutionStepStateFailed &&
-		req.NextState != ExecutionStepStateOutcomeUnknown {
-		return nil, invalidExecutionRun(fmt.Errorf("opening observation must be authoritative terminal or outcome unknown"))
+		req.NextState != ExecutionStepStateAwaitingCompletion &&
+		req.NextState != ExecutionStepStateCompleted && req.NextState != ExecutionStepStateSkipped &&
+		req.NextState != ExecutionStepStateFailed && req.NextState != ExecutionStepStateOutcomeUnknown {
+		return nil, invalidExecutionRun(fmt.Errorf("opening observation transition is invalid"))
 	}
 	if (req.ExpectedState == ExecutionStepStateOpened || req.ExpectedState == ExecutionStepStateSigning) &&
+		req.NextState != ExecutionStepStateAwaitingCompletion &&
 		req.NextState != ExecutionStepStateCompleted && req.NextState != ExecutionStepStateFailed &&
 		req.NextState != ExecutionStepStateOutcomeUnknown {
-		return nil, invalidExecutionRun(fmt.Errorf("opened or signing observation must be definitive or outcome unknown"))
+		return nil, invalidExecutionRun(fmt.Errorf("opened or signing observation transition is invalid"))
 	}
 	if req.ExpectedState == ExecutionStepStateOutcomeUnknown &&
 		req.NextState == ExecutionStepStateAwaitingCompletion {
@@ -1727,7 +1720,7 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 		return nil, invalidExecutionRun(fmt.Errorf("only reconciliation can satisfy an execution step"))
 	}
 	providerState, err := normalizeExecutionCode(req.ProviderState,
-		req.NextState == ExecutionStepStateAwaitingCompletion || req.NextState == ExecutionStepStateCompleted)
+		req.NextState == ExecutionStepStateAwaitingCompletion)
 	if err != nil {
 		return nil, err
 	}
@@ -1736,19 +1729,42 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 		return nil, err
 	}
 	reasonCode, err := normalizeExecutionCode(req.ReasonCode,
-		req.NextState == ExecutionStepStateFailed || req.NextState == ExecutionStepStateOutcomeUnknown)
+		req.NextState == ExecutionStepStateSkipped || req.NextState == ExecutionStepStateFailed ||
+			req.NextState == ExecutionStepStateOutcomeUnknown)
 	if err != nil {
 		return nil, err
 	}
-	if req.NextState == ExecutionStepStateCompleted && !strings.EqualFold(providerState, "completed") {
-		return nil, invalidExecutionRun(fmt.Errorf("only provider completed can complete an execution step"))
+	completionPositionPubkey, err := normalizeExecutionCompletionPubkey(
+		req.CompletionPositionPubkey,
+		req.NextState == ExecutionStepStateCompleted,
+	)
+	if err != nil {
+		return nil, err
+	}
+	completionPositionRequestPubkey, err := normalizeExecutionCompletionPubkey(
+		req.CompletionPositionRequestPubkey,
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
+	completionPositionCreatedAt := req.CompletionPositionCreatedAt.UTC()
+	if req.NextState == ExecutionStepStateCompleted {
+		if req.CompletionSource != ExecutionCompletionSourceOpenPosition ||
+			completionPositionCreatedAt.IsZero() || completionPositionCreatedAt.Unix() <= 0 {
+			return nil, invalidExecutionRun(fmt.Errorf("open-position completion evidence is invalid"))
+		}
+	} else if req.CompletionSource != "" || completionPositionPubkey != "" ||
+		completionPositionRequestPubkey != "" || !req.CompletionPositionCreatedAt.IsZero() {
+		return nil, invalidExecutionRun(fmt.Errorf("only a completed step can record completion evidence"))
 	}
 	if req.PositionRequestID < 0 {
 		return nil, invalidExecutionRun(fmt.Errorf("provider observation position request ID is invalid"))
 	}
 	if req.PositionRequestID > 0 &&
 		(req.ExpectedState != ExecutionStepStateOpening ||
-			(req.NextState != ExecutionStepStateCompleted && req.NextState != ExecutionStepStateFailed &&
+			(req.NextState != ExecutionStepStateAwaitingCompletion &&
+				req.NextState != ExecutionStepStateCompleted && req.NextState != ExecutionStepStateFailed &&
 				req.NextState != ExecutionStepStateOutcomeUnknown)) {
 		return nil, invalidExecutionRun(fmt.Errorf("only an authoritative or unknown Open outcome can attach a provider request ID"))
 	}
@@ -1770,8 +1786,14 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 		req.SkipScope != ExecutionStepScopeRemainingMarket {
 		return nil, invalidExecutionRun(fmt.Errorf("provider observation skip scope is invalid"))
 	}
-	if req.NextState != ExecutionStepStateFailed && req.SkipScope != "" {
-		return nil, invalidExecutionRun(fmt.Errorf("only a definite failure can skip a scope"))
+	if req.NextState == ExecutionStepStateSkipped {
+		if req.ExpectedState != ExecutionStepStateOpening ||
+			req.SkipScope != ExecutionStepScopeRemainingWallet || req.PositionRequestID != 0 ||
+			(reasonCode != "MARKET_POSITION_EXISTS" && reasonCode != "WALLET_REQUEST_IN_FLIGHT") {
+			return nil, invalidExecutionRun(fmt.Errorf("an Open guard can only skip the remaining wallet"))
+		}
+	} else if req.NextState != ExecutionStepStateFailed && req.SkipScope != "" {
+		return nil, invalidExecutionRun(fmt.Errorf("only a definite failure or Open guard can skip a scope"))
 	}
 	fundingTxID := strings.TrimSpace(req.FundingTxID)
 	refundTxID := strings.TrimSpace(req.RefundTxID)
@@ -1839,15 +1861,13 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 		runBefore.State != string(ExecutionRunStateTerminated) {
 		return nil, ErrExecutionRunConflict
 	}
-	if req.ExpectedState == ExecutionStepStateOutcomeUnknown &&
-		req.NextState == ExecutionStepStateCompleted &&
-		(nullableInt64(prior.PositionRequestID) <= 0 || len(prior.TransactionMessageSha256) != sha256.Size) {
-		return nil, invalidExecutionRun(fmt.Errorf("an execution outcome without durable open metadata can only reconcile as satisfied or failed"))
-	}
 	row, err := queries.RecordExecutionRunProviderObservation(ctx, wormtradingsqlc.RecordExecutionRunProviderObservationParams{
 		NextState: string(req.NextState), ReasonCode: reasonCode, ProviderState: providerState,
 		PositionRequestID: req.PositionRequestID, ProviderOrderState: providerOrderState, FundingTxid: fundingTxID,
-		RefundTxid: refundTxID, Now: timestampParam(now),
+		RefundTxid: refundTxID, CompletionSource: string(req.CompletionSource),
+		CompletionPositionPubkey:        completionPositionPubkey,
+		CompletionPositionRequestPubkey: completionPositionRequestPubkey,
+		CompletionPositionCreatedAt:     timestampParam(completionPositionCreatedAt), Now: timestampParam(now),
 		NextPollAt: timestampParam(req.NextPollAt), RunID: runID, StepOrdinal: req.StepOrdinal,
 		ExpectedState: string(req.ExpectedState), ClaimID: claimID,
 	})
@@ -1855,6 +1875,10 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 		return nil, ErrExecutionRunConflict
 	}
 	if err != nil {
+		if executionConstraint(err, "worm_execution_run_steps_completion_position_pubkey_unique") ||
+			executionConstraint(err, "worm_execution_run_steps_completion_request_pubkey_unique") {
+			return nil, ErrExecutionRunConflict
+		}
 		return nil, fmt.Errorf("record execution provider observation: %w", err)
 	}
 	if req.NextState == ExecutionStepStateAwaitingCompletion {
@@ -1916,7 +1940,7 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 			}
 			return nil, fmt.Errorf("resolve reconciled execution isolation: %w", err)
 		}
-		if err := skipExecutionFailureScope(ctx, queries, runID, req.StepOrdinal,
+		if err := skipExecutionTerminalScope(ctx, queries, runID, req.StepOrdinal,
 			req.NextState, req.SkipScope, reasonCode, now); err != nil {
 			return nil, err
 		}
@@ -1946,7 +1970,7 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 			return nil, err
 		}
 	} else {
-		if err := skipExecutionFailureScope(ctx, queries, runID, req.StepOrdinal,
+		if err := skipExecutionTerminalScope(ctx, queries, runID, req.StepOrdinal,
 			req.NextState, req.SkipScope, reasonCode, now); err != nil {
 			return nil, err
 		}
@@ -1969,7 +1993,7 @@ func (s *SQLStore) RecordExecutionProviderObservation(
 	return &step, nil
 }
 
-func skipExecutionFailureScope(
+func skipExecutionTerminalScope(
 	ctx context.Context,
 	queries *wormtradingsqlc.Queries,
 	runID pgtype.UUID,
@@ -1979,15 +2003,17 @@ func skipExecutionFailureScope(
 	reasonCode string,
 	now time.Time,
 ) error {
-	if nextState != ExecutionStepStateFailed ||
-		(scope != ExecutionStepScopeRemainingWallet && scope != ExecutionStepScopeRemainingMarket) {
+	failureScope := nextState == ExecutionStepStateFailed &&
+		(scope == ExecutionStepScopeRemainingWallet || scope == ExecutionStepScopeRemainingMarket)
+	guardScope := nextState == ExecutionStepStateSkipped && scope == ExecutionStepScopeRemainingWallet
+	if !failureScope && !guardScope {
 		return nil
 	}
 	if _, err := queries.SkipScopedPendingExecutionSteps(ctx, wormtradingsqlc.SkipScopedPendingExecutionStepsParams{
 		ReasonCode: reasonCode, Now: timestampParam(now), RunID: runID,
 		SourceStepOrdinal: stepOrdinal, Scope: string(scope),
 	}); err != nil {
-		return fmt.Errorf("skip provider-failed execution scope: %w", err)
+		return fmt.Errorf("skip execution scope: %w", err)
 	}
 	return nil
 }
@@ -2286,6 +2312,20 @@ func normalizeExecutionCode(value string, required bool) (string, error) {
 	return value, nil
 }
 
+func normalizeExecutionCompletionPubkey(value string, required bool) (string, error) {
+	trimmed := strings.TrimSpace(value)
+	if value != trimmed || (required && trimmed == "") ||
+		(trimmed != "" && (len(trimmed) < 32 || len(trimmed) > 64)) {
+		return "", invalidExecutionRun(fmt.Errorf("execution completion pubkey is invalid"))
+	}
+	for _, character := range trimmed {
+		if character < 0x21 || character == 0x7f {
+			return "", invalidExecutionRun(fmt.Errorf("execution completion pubkey is invalid"))
+		}
+	}
+	return trimmed, nil
+}
+
 func newExecutionCoordinatorToken() ([]byte, []byte, error) {
 	token := make([]byte, executionCoordinatorTokenBytes)
 	if _, err := rand.Read(token); err != nil {
@@ -2416,12 +2456,7 @@ func mapExecutionRun(row wormtradingsqlc.WormExecutionRun) ExecutionRun {
 		CompletedAt:          timestampValue(row.CompletedAt),
 		CreatedAt:            timestampValue(row.CreatedAt),
 		UpdatedAt:            timestampValue(row.UpdatedAt),
-		PreflightChecks: ExecutionPreflightChecks{
-			SkipAlreadyHeld:          row.SkipAlreadyHeld,
-			SkipInFlightRequest:      row.SkipInFlightRequest,
-			SkipOppositeSideExposure: row.SkipOppositeSideExposure,
-			RequireFullLiquidity:     row.RequireFullLiquidity,
-		},
+		PreflightChecks:      ExecutionPreflightChecks{RequireFullLiquidity: row.RequireFullLiquidity},
 	}
 }
 
@@ -2476,7 +2511,11 @@ func mapExecutionRunStep(row wormtradingsqlc.WormExecutionRunStep) ExecutionRunS
 		TransactionVersion: row.TransactionVersion, RequiredSignatureCount: row.RequiredSignatureCount,
 		WalletSignerIndex: row.WalletSignerIndex, ProviderState: row.ProviderState,
 		ProviderOrderState: row.ProviderOrderState, FundingTxID: row.FundingTxid, RefundTxID: row.RefundTxid,
-		StartedAt: timestampValue(row.StartedAt), OpenedAt: timestampValue(row.OpenedAt),
+		CompletionSource:                ExecutionCompletionSource(row.CompletionSource),
+		CompletionPositionPubkey:        row.CompletionPositionPubkey,
+		CompletionPositionRequestPubkey: row.CompletionPositionRequestPubkey,
+		CompletionPositionCreatedAt:     timestampValue(row.CompletionPositionCreatedAt),
+		StartedAt:                       timestampValue(row.StartedAt), OpenedAt: timestampValue(row.OpenedAt),
 		FinalizedAt: timestampValue(row.FinalizedAt), LastObservedAt: timestampValue(row.LastObservedAt),
 		CompletedAt: timestampValue(row.CompletedAt), CreatedAt: timestampValue(row.CreatedAt),
 		UpdatedAt: timestampValue(row.UpdatedAt), NextPollAt: timestampValue(row.NextPollAt),

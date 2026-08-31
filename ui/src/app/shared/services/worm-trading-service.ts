@@ -252,9 +252,6 @@ export type WormExecutionPlanState = 'BUILDING' | 'READY' | 'FAILED' | 'EXPIRED'
 export type WormExecutionPlanStepDisposition = 'READY' | 'SKIPPED';
 
 export interface WormExecutionPreflightChecks {
-    skipAlreadyHeld: boolean;
-    skipInFlightRequest: boolean;
-    skipOppositeSideExposure: boolean;
     requireFullLiquidity: boolean;
 }
 
@@ -430,6 +427,10 @@ export interface WormExecutionRunStep {
     positionRequestId: string;
     providerState: string;
     providerOrderState: string;
+    completionSource: string;
+    completionPositionPubkey: string;
+    completionPositionRequestPubkey: string;
+    completionPositionCreatedAt: number;
     startedAt: number;
     updatedAt: number;
     completedAt: number;
@@ -888,25 +889,16 @@ const optionalExactBoolean = (item: unknown, name: string, fallback = false): bo
 const normalizeExecutionPreflightChecks = (value: unknown): WormExecutionPreflightChecks => {
     const item = requireRecord(value);
     return {
-        skipAlreadyHeld: requireExactBoolean(item, 'skipAlreadyHeld'),
-        skipInFlightRequest: requireExactBoolean(item, 'skipInFlightRequest'),
-        skipOppositeSideExposure: requireExactBoolean(item, 'skipOppositeSideExposure'),
         requireFullLiquidity: requireExactBoolean(item, 'requireFullLiquidity')
     };
 };
 
 const executionPreflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) =>
-    left.skipAlreadyHeld === right.skipAlreadyHeld &&
-    left.skipInFlightRequest === right.skipInFlightRequest &&
-    left.skipOppositeSideExposure === right.skipOppositeSideExposure &&
     left.requireFullLiquidity === right.requireFullLiquidity;
 
-const executionAdvisoryCodeOrder = ['OPPOSITE_SIDE_CONFLICT', 'ALREADY_HELD', 'REQUEST_IN_FLIGHT', 'LIQUIDITY_INSUFFICIENT'] as const;
+const executionAdvisoryCodeOrder = ['LIQUIDITY_INSUFFICIENT'] as const;
 type WormExecutionAdvisoryCode = (typeof executionAdvisoryCodeOrder)[number];
 const executionAdvisoryCheck: Record<WormExecutionAdvisoryCode, keyof WormExecutionPreflightChecks> = {
-    OPPOSITE_SIDE_CONFLICT: 'skipOppositeSideExposure',
-    ALREADY_HELD: 'skipAlreadyHeld',
-    REQUEST_IN_FLIGHT: 'skipInFlightRequest',
     LIQUIDITY_INSUFFICIENT: 'requireFullLiquidity'
 };
 const executionAdvisoryOrder = new Map<string, number>(executionAdvisoryCodeOrder.map((code, index) => [code, index]));
@@ -1437,10 +1429,19 @@ const normalizeExecutionRunStep = (value: unknown, checks: WormExecutionPrefligh
     const state = normalizeExecutionStepState(item.state);
     const reasonCode = optionalExactString(item, 'reasonCode');
     const providerState = optionalExactString(item, 'providerState');
+    const completionSource = optionalExactString(item, 'completionSource');
+    const completionPositionPubkey = optionalExactString(item, 'completionPositionPubkey');
+    const completionPositionRequestPubkey = optionalExactString(item, 'completionPositionRequestPubkey');
+    const completionPositionCreatedAt = optionalInteger(item, 0, 0, 'completionPositionCreatedAt');
     if (state === 'OUTCOME_UNKNOWN' && reasonCode === '') {
         return invalidWormTradingResponse();
     }
-    if (state === 'COMPLETED' && providerState.toLowerCase() !== 'completed') {
+    if (
+        (state === 'COMPLETED' &&
+            (completionSource !== 'OPEN_POSITION' || completionPositionPubkey.trim() === '' || completionPositionCreatedAt <= 0)) ||
+        (state !== 'COMPLETED' &&
+            (completionSource !== '' || completionPositionPubkey !== '' || completionPositionRequestPubkey !== '' || completionPositionCreatedAt !== 0))
+    ) {
         return invalidWormTradingResponse();
     }
     return {
@@ -1457,6 +1458,10 @@ const normalizeExecutionRunStep = (value: unknown, checks: WormExecutionPrefligh
         positionRequestId: optionalUnsignedIntegerText(item, 'positionRequestId'),
         providerState,
         providerOrderState: optionalExactString(item, 'providerOrderState'),
+        completionSource,
+        completionPositionPubkey,
+        completionPositionRequestPubkey,
+        completionPositionCreatedAt,
         startedAt: optionalInteger(item, 0, 0, 'startedAt'),
         updatedAt: optionalInteger(item, 0, 0, 'updatedAt'),
         completedAt: optionalInteger(item, 0, 0, 'completedAt')

@@ -176,22 +176,15 @@ const (
 	ExecutionPlanStepDispositionSkipped ExecutionPlanStepDisposition = "SKIPPED"
 )
 
-// ExecutionPreflightChecks is the immutable policy that decides whether the
-// four user-configurable observations block a step or remain advisory. Other
-// preview and live-execution safety checks are always mandatory.
+// ExecutionPreflightChecks freezes the only user-configurable preview rule.
+// Position and in-flight request guards are always mandatory.
 type ExecutionPreflightChecks struct {
-	SkipAlreadyHeld          bool
-	SkipInFlightRequest      bool
-	SkipOppositeSideExposure bool
-	RequireFullLiquidity     bool
+	RequireFullLiquidity bool
 }
 
 func DefaultExecutionPreflightChecks() ExecutionPreflightChecks {
 	return ExecutionPreflightChecks{
-		SkipAlreadyHeld:          true,
-		SkipInFlightRequest:      true,
-		SkipOppositeSideExposure: true,
-		RequireFullLiquidity:     true,
+		RequireFullLiquidity: true,
 	}
 }
 
@@ -406,6 +399,12 @@ const (
 	ExecutionStepStateOutcomeUnknown     ExecutionStepState = "OUTCOME_UNKNOWN"
 )
 
+type ExecutionCompletionSource string
+
+const (
+	ExecutionCompletionSourceOpenPosition ExecutionCompletionSource = "OPEN_POSITION"
+)
+
 type ExecutionMutationKind string
 
 const (
@@ -530,44 +529,48 @@ type ExecutionStepIsolation struct {
 }
 
 type ExecutionRunStep struct {
-	ID                       string
-	Ordinal                  int64
-	PlanStepOrdinal          int64
-	WalletOrdinal            int32
-	ItemOrdinal              int32
-	SourceDisposition        ExecutionPlanStepDisposition
-	SourceReasonCode         string
-	ProjectedUSDCBefore      string
-	ProjectedUSDCAfter       string
-	State                    ExecutionStepState
-	ReasonCode               string
-	AdvisoryCodes            []string
-	PositionRequestID        int64
-	FinalizeMode             string
-	TransactionMessageSHA256 []byte
-	TransactionVersion       string
-	RequiredSignatureCount   int32
-	WalletSignerIndex        int32
-	ProviderState            string
-	ProviderOrderState       string
-	FundingTxID              string
-	RefundTxID               string
-	StartedAt                time.Time
-	OpenedAt                 time.Time
-	FinalizedAt              time.Time
-	LastObservedAt           time.Time
-	CompletedAt              time.Time
-	CreatedAt                time.Time
-	UpdatedAt                time.Time
-	NextPollAt               time.Time
-	PollCount                int32
-	ClaimCommandID           string
-	ClaimID                  string
-	ClaimOwner               string
-	ClaimExpiresAt           time.Time
-	ReconcileRequestedAt     time.Time
-	Attempts                 []ExecutionMutationAttempt
-	Isolation                *ExecutionStepIsolation
+	ID                              string
+	Ordinal                         int64
+	PlanStepOrdinal                 int64
+	WalletOrdinal                   int32
+	ItemOrdinal                     int32
+	SourceDisposition               ExecutionPlanStepDisposition
+	SourceReasonCode                string
+	ProjectedUSDCBefore             string
+	ProjectedUSDCAfter              string
+	State                           ExecutionStepState
+	ReasonCode                      string
+	AdvisoryCodes                   []string
+	PositionRequestID               int64
+	FinalizeMode                    string
+	TransactionMessageSHA256        []byte
+	TransactionVersion              string
+	RequiredSignatureCount          int32
+	WalletSignerIndex               int32
+	ProviderState                   string
+	ProviderOrderState              string
+	FundingTxID                     string
+	RefundTxID                      string
+	CompletionSource                ExecutionCompletionSource
+	CompletionPositionPubkey        string
+	CompletionPositionRequestPubkey string
+	CompletionPositionCreatedAt     time.Time
+	StartedAt                       time.Time
+	OpenedAt                        time.Time
+	FinalizedAt                     time.Time
+	LastObservedAt                  time.Time
+	CompletedAt                     time.Time
+	CreatedAt                       time.Time
+	UpdatedAt                       time.Time
+	NextPollAt                      time.Time
+	PollCount                       int32
+	ClaimCommandID                  string
+	ClaimID                         string
+	ClaimOwner                      string
+	ClaimExpiresAt                  time.Time
+	ReconcileRequestedAt            time.Time
+	Attempts                        []ExecutionMutationAttempt
+	Isolation                       *ExecutionStepIsolation
 }
 
 type ExecutionRun struct {
@@ -782,25 +785,29 @@ type RecordExecutionStepSignedRequest struct {
 }
 
 type RecordExecutionProviderObservationRequest struct {
-	RunID                   string
-	StepOrdinal             int64
-	CommandID               string
-	ClaimID                 string
-	ExpectedState           ExecutionStepState
-	NextState               ExecutionStepState
-	ReasonCode              string
-	PositionRequestID       int64
-	ProviderState           string
-	ProviderOrderState      string
-	FundingTxID             string
-	RefundTxID              string
-	NextPollAt              time.Time
-	SkipScope               ExecutionStepScope
-	IsolationID             string
-	AttemptID               string
-	ResolveIsolationID      string
-	IsolationResolutionCode string
-	Now                     time.Time
+	RunID                           string
+	StepOrdinal                     int64
+	CommandID                       string
+	ClaimID                         string
+	ExpectedState                   ExecutionStepState
+	NextState                       ExecutionStepState
+	ReasonCode                      string
+	PositionRequestID               int64
+	ProviderState                   string
+	ProviderOrderState              string
+	FundingTxID                     string
+	RefundTxID                      string
+	CompletionSource                ExecutionCompletionSource
+	CompletionPositionPubkey        string
+	CompletionPositionRequestPubkey string
+	CompletionPositionCreatedAt     time.Time
+	NextPollAt                      time.Time
+	SkipScope                       ExecutionStepScope
+	IsolationID                     string
+	AttemptID                       string
+	ResolveIsolationID              string
+	IsolationResolutionCode         string
+	Now                             time.Time
 }
 
 type PauseExecutionRunForFailureRequest struct {

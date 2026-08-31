@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
@@ -15,9 +16,8 @@ import (
 )
 
 const (
-	ExecutionPreviewOutcomeOppositeSideConflict         = "OPPOSITE_SIDE_CONFLICT"
-	ExecutionPreviewOutcomeAlreadyHeld                  = "ALREADY_HELD"
-	ExecutionPreviewOutcomeRequestInFlight              = "REQUEST_IN_FLIGHT"
+	ExecutionPreviewOutcomeMarketPositionExists         = "MARKET_POSITION_EXISTS"
+	ExecutionPreviewOutcomeWalletRequestInFlight        = "WALLET_REQUEST_IN_FLIGHT"
 	ExecutionPreviewOutcomeMarketUnavailable            = "MARKET_UNAVAILABLE"
 	ExecutionPreviewOutcomeEstimateRejected             = "ESTIMATE_REJECTED"
 	ExecutionPreviewOutcomeLiquidityInsufficient        = "LIQUIDITY_INSUFFICIENT"
@@ -184,11 +184,34 @@ type normalizedExecutionPreviewItem struct {
 }
 
 type executionPreviewExposure struct {
-	positions map[bool][]string
-	requests  map[bool][]string
+	positions map[bool][]executionPreviewPosition
+	requests  map[bool][]executionPreviewRequest
 }
 
-type executionPreviewWalletExposure map[string]*executionPreviewExposure
+type executionPreviewPosition struct {
+	pubkey                string
+	positionRequestPubkey string
+	isYes                 bool
+	leverage              string
+	createdAt             time.Time
+	hasCreatedAt          bool
+}
+
+type executionPreviewRequest struct {
+	pubkey            string
+	marketConditionID string
+	isYes             bool
+}
+
+// executionPreviewWalletExposure is a complete, wallet-wide HMAC snapshot.
+// Markets retain position and request detail for deterministic preview and
+// execution matching, while requests provides the mandatory wallet-global
+// in-flight guard. Requests already represented by an open position's
+// position_request_pubkey are removed before the snapshot is returned.
+type executionPreviewWalletExposure struct {
+	markets  map[string]*executionPreviewExposure
+	requests []executionPreviewRequest
+}
 
 func (b *ExecutionPreviewBuilder) Build(ctx context.Context, input ExecutionPreviewInput) (*ExecutionPreviewResult, error) {
 	wallets, items, err := normalizeExecutionPreviewInput(input)
@@ -433,33 +456,43 @@ func fetchExecutionPreviewWalletExposure(
 	ctx context.Context,
 	client ExecutionPreviewReadClient,
 ) (executionPreviewWalletExposure, error) {
-	exposure := make(executionPreviewWalletExposure)
-	if err := fetchAllExecutionPreviewPositions(ctx, client, exposure); err != nil {
-		return nil, err
+	exposure := executionPreviewWalletExposure{markets: make(map[string]*executionPreviewExposure)}
+	positionRequestPubkeys, err := fetchAllExecutionPreviewPositions(ctx, client, &exposure)
+	if err != nil {
+		return executionPreviewWalletExposure{}, err
 	}
-	if err := fetchAllExecutionPreviewRequests(ctx, client, exposure); err != nil {
-		return nil, err
+	if err := fetchAllExecutionPreviewRequests(ctx, client, &exposure); err != nil {
+		return executionPreviewWalletExposure{}, err
 	}
-	for _, market := range exposure {
+	suppressExecutionPreviewPositionBackedRequests(&exposure, positionRequestPubkeys)
+	for _, market := range exposure.markets {
 		for side := range market.positions {
-			sortExecutionPreviewPubkeys(market.positions[side])
+			sort.Slice(market.positions[side], func(i, j int) bool {
+				return market.positions[side][i].pubkey < market.positions[side][j].pubkey
+			})
 		}
 		for side := range market.requests {
-			sortExecutionPreviewPubkeys(market.requests[side])
+			sort.Slice(market.requests[side], func(i, j int) bool {
+				return market.requests[side][i].pubkey < market.requests[side][j].pubkey
+			})
 		}
 	}
+	sort.Slice(exposure.requests, func(i, j int) bool {
+		return exposure.requests[i].pubkey < exposure.requests[j].pubkey
+	})
 	return exposure, nil
 }
 
 func fetchAllExecutionPreviewPositions(
 	ctx context.Context,
 	client ExecutionPreviewReadClient,
-	exposure executionPreviewWalletExposure,
-) error {
+	exposure *executionPreviewWalletExposure,
+) (map[string]struct{}, error) {
 	isClosed := false
 	cursor := ""
 	seenCursors := make(map[string]struct{})
 	seenPubkeys := make(map[string]struct{})
+	positionRequestPubkeys := make(map[string]struct{})
 	for {
 		response, err := client.ListMarginPositions(ctx, worm.ListMarginPositionsOptions{
 			PageOptions: worm.PageOptions{Limit: executionPreviewPageSize, Cursor: cursor},
@@ -467,34 +500,50 @@ func fetchAllExecutionPreviewPositions(
 			Sort:        "-created",
 		})
 		if err != nil {
-			return fmt.Errorf("list open positions: %w", err)
+			return nil, fmt.Errorf("list open positions: %w", err)
 		}
 		if response == nil || len(response.Positions) > executionPreviewPageSize {
-			return errors.New("list open positions returned an invalid page")
+			return nil, errors.New("list open positions returned an invalid page")
 		}
 		for _, position := range response.Positions {
 			if position.IsClosed {
-				return errors.New("list open positions returned a closed position")
+				return nil, errors.New("list open positions returned a closed position")
 			}
-			if _, err := wormOpenPositionFromProvider(position); err != nil || !validExecutionPreviewConditionID(position.Market.ConditionID) {
-				return errors.New("list open positions returned an invalid position")
+			if _, err := wormOpenPositionFromProvider(position); err != nil ||
+				!validExecutionPreviewConditionID(position.Pubkey) ||
+				!validExecutionPreviewConditionID(position.Market.ConditionID) {
+				return nil, errors.New("list open positions returned an invalid position")
 			}
-			if position.PositionRequestPubkey != nil && !isCanonicalNonEmptyString(*position.PositionRequestPubkey) {
-				return errors.New("list open positions returned an invalid position request pubkey")
+			if position.PositionRequestPubkey != nil &&
+				!validExecutionPreviewConditionID(*position.PositionRequestPubkey) {
+				return nil, errors.New("list open positions returned an invalid position request pubkey")
 			}
 			if _, exists := seenPubkeys[position.Pubkey]; exists {
-				return errors.New("list open positions returned a duplicate pubkey")
+				return nil, errors.New("list open positions returned a duplicate pubkey")
 			}
 			seenPubkeys[position.Pubkey] = struct{}{}
+			entry := executionPreviewPosition{
+				pubkey:   position.Pubkey,
+				isYes:    position.IsYes,
+				leverage: position.Leverage,
+			}
+			if position.PositionRequestPubkey != nil {
+				entry.positionRequestPubkey = *position.PositionRequestPubkey
+				positionRequestPubkeys[entry.positionRequestPubkey] = struct{}{}
+			}
+			if position.Created != nil && *position.Created > 0 {
+				entry.createdAt = time.Unix(*position.Created, 0).UTC()
+				entry.hasCreatedAt = true
+			}
 			market := ensureExecutionPreviewExposure(exposure, position.Market.ConditionID)
-			market.positions[position.IsYes] = append(market.positions[position.IsYes], position.Pubkey)
+			market.positions[position.IsYes] = append(market.positions[position.IsYes], entry)
 		}
 		nextCursor, done, err := nextExecutionPreviewCursor(cursor, response.Meta, seenCursors)
 		if err != nil {
-			return fmt.Errorf("list open positions: %w", err)
+			return nil, fmt.Errorf("list open positions: %w", err)
 		}
 		if done {
-			return nil
+			return positionRequestPubkeys, nil
 		}
 		cursor = nextCursor
 	}
@@ -503,7 +552,7 @@ func fetchAllExecutionPreviewPositions(
 func fetchAllExecutionPreviewRequests(
 	ctx context.Context,
 	client ExecutionPreviewReadClient,
-	exposure executionPreviewWalletExposure,
+	exposure *executionPreviewWalletExposure,
 ) error {
 	cursor := ""
 	seenCursors := make(map[string]struct{})
@@ -524,7 +573,8 @@ func fetchAllExecutionPreviewRequests(
 			if !isInFlightPositionRequestState(request.State) {
 				return errors.New("list in-flight position requests returned a terminal request")
 			}
-			if _, err := wormInFlightRequestFromProvider(request); err != nil || request.Market == nil ||
+			if _, err := wormInFlightRequestFromProvider(request); err != nil ||
+				!validExecutionPreviewConditionID(request.Pubkey) || request.Market == nil ||
 				!validExecutionPreviewConditionID(request.Market.ConditionID) {
 				return errors.New("list in-flight position requests returned an invalid request")
 			}
@@ -532,8 +582,14 @@ func fetchAllExecutionPreviewRequests(
 				return errors.New("list in-flight position requests returned a duplicate pubkey")
 			}
 			seenPubkeys[request.Pubkey] = struct{}{}
+			entry := executionPreviewRequest{
+				pubkey:            request.Pubkey,
+				marketConditionID: request.Market.ConditionID,
+				isYes:             request.IsYes,
+			}
 			market := ensureExecutionPreviewExposure(exposure, request.Market.ConditionID)
-			market.requests[request.IsYes] = append(market.requests[request.IsYes], request.Pubkey)
+			market.requests[request.IsYes] = append(market.requests[request.IsYes], entry)
+			exposure.requests = append(exposure.requests, entry)
 		}
 		nextCursor, done, err := nextExecutionPreviewCursor(cursor, response.Meta, seenCursors)
 		if err != nil {
@@ -543,6 +599,30 @@ func fetchAllExecutionPreviewRequests(
 			return nil
 		}
 		cursor = nextCursor
+	}
+}
+
+func suppressExecutionPreviewPositionBackedRequests(
+	exposure *executionPreviewWalletExposure,
+	positionRequestPubkeys map[string]struct{},
+) {
+	if exposure == nil || len(positionRequestPubkeys) == 0 || len(exposure.requests) == 0 {
+		return
+	}
+	filtered := make([]executionPreviewRequest, 0, len(exposure.requests))
+	for _, request := range exposure.requests {
+		if _, backed := positionRequestPubkeys[request.pubkey]; backed {
+			continue
+		}
+		filtered = append(filtered, request)
+	}
+	exposure.requests = filtered
+	for _, market := range exposure.markets {
+		market.requests = map[bool][]executionPreviewRequest{false: {}, true: {}}
+	}
+	for _, request := range exposure.requests {
+		market := ensureExecutionPreviewExposure(exposure, request.marketConditionID)
+		market.requests[request.isYes] = append(market.requests[request.isYes], request)
 	}
 }
 
@@ -565,6 +645,7 @@ func buildExecutionPreviewSteps(
 	for walletIndex, wallet := range wallets {
 		remaining := wallet.usdc
 		blockedForUSDC := false
+		blockedForWalletReason := ""
 		for itemIndex, item := range items {
 			ordinal++
 			estimate := estimates[itemIndex]
@@ -581,52 +662,41 @@ func buildExecutionPreviewSteps(
 				USDCBalanceBefore: remaining.String(),
 				USDCBalanceAfter:  remaining.String(),
 			}
-			marketExposure := exposures[walletIndex][item.MarketConditionID]
+			marketExposure := exposures[walletIndex].market(item.MarketConditionID)
 			step.AdvisoryCodes = executionPreviewIgnoredAdvisoryCodes(
-				marketExposure,
 				item,
 				estimate,
 				checks,
 			)
+			if blockedForWalletReason != "" {
+				step.Outcome = blockedForWalletReason
+				step.ReasonCode = blockedForWalletReason
+				steps = append(steps, step)
+				continue
+			}
+			if position, exists := firstExecutionPreviewMarketPosition(marketExposure); exists {
+				step.ExistingKind = executionPreviewExistingPosition
+				step.ExistingPubkey = position.pubkey
+				step.Outcome = ExecutionPreviewOutcomeMarketPositionExists
+				step.ReasonCode = ExecutionPreviewOutcomeMarketPositionExists
+				blockedForWalletReason = ExecutionPreviewOutcomeMarketPositionExists
+				steps = append(steps, step)
+				continue
+			}
+			if request, exists := exposures[walletIndex].firstRequest(); exists {
+				step.ExistingKind = executionPreviewExistingRequest
+				step.ExistingPubkey = request.pubkey
+				step.Outcome = ExecutionPreviewOutcomeWalletRequestInFlight
+				step.ReasonCode = ExecutionPreviewOutcomeWalletRequestInFlight
+				blockedForWalletReason = ExecutionPreviewOutcomeWalletRequestInFlight
+				steps = append(steps, step)
+				continue
+			}
 			if blockedForUSDC {
 				step.Outcome = ExecutionPreviewOutcomeSkippedAfterInsufficientUSDC
 				step.ReasonCode = ExecutionPreviewOutcomeInsufficientUSDC
 				steps = append(steps, step)
 				continue
-			}
-			if kind, pubkey, exists := oppositeExecutionPreviewExposure(marketExposure, item.IsYes); exists {
-				step.ExistingKind = kind
-				step.ExistingPubkey = pubkey
-				if checks.SkipOppositeSideExposure {
-					step.Outcome = ExecutionPreviewOutcomeOppositeSideConflict
-					step.ReasonCode = ExecutionPreviewOutcomeOppositeSideConflict
-					steps = append(steps, step)
-					continue
-				}
-			}
-			if pubkey, exists := firstExecutionPreviewPubkey(marketExposure, true, item.IsYes); exists {
-				if step.ExistingKind == "" {
-					step.ExistingKind = executionPreviewExistingPosition
-					step.ExistingPubkey = pubkey
-				}
-				if checks.SkipAlreadyHeld {
-					step.Outcome = ExecutionPreviewOutcomeAlreadyHeld
-					step.ReasonCode = ExecutionPreviewOutcomeAlreadyHeld
-					steps = append(steps, step)
-					continue
-				}
-			}
-			if pubkey, exists := firstExecutionPreviewPubkey(marketExposure, false, item.IsYes); exists {
-				if step.ExistingKind == "" {
-					step.ExistingKind = executionPreviewExistingRequest
-					step.ExistingPubkey = pubkey
-				}
-				if checks.SkipInFlightRequest {
-					step.Outcome = ExecutionPreviewOutcomeRequestInFlight
-					step.ReasonCode = ExecutionPreviewOutcomeRequestInFlight
-					steps = append(steps, step)
-					continue
-				}
 			}
 			if !item.Selectable {
 				step.Outcome = ExecutionPreviewOutcomeMarketUnavailable
@@ -669,27 +739,11 @@ func buildExecutionPreviewSteps(
 }
 
 func executionPreviewIgnoredAdvisoryCodes(
-	marketExposure *executionPreviewExposure,
 	item normalizedExecutionPreviewItem,
 	estimate ExecutionPreviewMarketEstimate,
 	checks wormstore.ExecutionPreflightChecks,
 ) []string {
 	var codes []string
-	if !checks.SkipOppositeSideExposure {
-		if _, _, exists := oppositeExecutionPreviewExposure(marketExposure, item.IsYes); exists {
-			codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeOppositeSideConflict)
-		}
-	}
-	if !checks.SkipAlreadyHeld {
-		if _, exists := firstExecutionPreviewPubkey(marketExposure, true, item.IsYes); exists {
-			codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeAlreadyHeld)
-		}
-	}
-	if !checks.SkipInFlightRequest {
-		if _, exists := firstExecutionPreviewPubkey(marketExposure, false, item.IsYes); exists {
-			codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeRequestInFlight)
-		}
-	}
 	if !checks.RequireFullLiquidity && item.Selectable && estimate.RejectionCode == "" && !estimate.IsFullyFilled {
 		codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeLiquidityInsufficient)
 	}
@@ -705,44 +759,48 @@ func appendExecutionPreviewAdvisory(codes []string, code string) []string {
 	return append(codes, code)
 }
 
-func ensureExecutionPreviewExposure(exposure executionPreviewWalletExposure, marketConditionID string) *executionPreviewExposure {
-	market := exposure[marketConditionID]
+func ensureExecutionPreviewExposure(exposure *executionPreviewWalletExposure, marketConditionID string) *executionPreviewExposure {
+	market := exposure.markets[marketConditionID]
 	if market == nil {
 		market = &executionPreviewExposure{
-			positions: map[bool][]string{false: {}, true: {}},
-			requests:  map[bool][]string{false: {}, true: {}},
+			positions: map[bool][]executionPreviewPosition{false: {}, true: {}},
+			requests:  map[bool][]executionPreviewRequest{false: {}, true: {}},
 		}
-		exposure[marketConditionID] = market
+		exposure.markets[marketConditionID] = market
 	}
 	return market
 }
 
-func oppositeExecutionPreviewExposure(market *executionPreviewExposure, targetIsYes bool) (string, string, bool) {
-	if pubkey, exists := firstExecutionPreviewPubkey(market, true, !targetIsYes); exists {
-		return executionPreviewExistingPosition, pubkey, true
+func (exposure executionPreviewWalletExposure) market(marketConditionID string) *executionPreviewExposure {
+	if exposure.markets == nil {
+		return nil
 	}
-	if pubkey, exists := firstExecutionPreviewPubkey(market, false, !targetIsYes); exists {
-		return executionPreviewExistingRequest, pubkey, true
-	}
-	return "", "", false
+	return exposure.markets[marketConditionID]
 }
 
-func firstExecutionPreviewPubkey(market *executionPreviewExposure, position bool, isYes bool) (string, bool) {
+func (exposure executionPreviewWalletExposure) firstRequest() (executionPreviewRequest, bool) {
+	if len(exposure.requests) == 0 {
+		return executionPreviewRequest{}, false
+	}
+	return exposure.requests[0], true
+}
+
+func firstExecutionPreviewMarketPosition(market *executionPreviewExposure) (executionPreviewPosition, bool) {
 	if market == nil {
-		return "", false
+		return executionPreviewPosition{}, false
 	}
-	values := market.requests[isYes]
-	if position {
-		values = market.positions[isYes]
+	no := market.positions[false]
+	yes := market.positions[true]
+	if len(no) == 0 && len(yes) == 0 {
+		return executionPreviewPosition{}, false
 	}
-	if len(values) == 0 {
-		return "", false
+	if len(no) == 0 {
+		return yes[0], true
 	}
-	return values[0], true
-}
-
-func sortExecutionPreviewPubkeys(values []string) {
-	sort.Strings(values)
+	if len(yes) == 0 || no[0].pubkey < yes[0].pubkey {
+		return no[0], true
+	}
+	return yes[0], true
 }
 
 func nextExecutionPreviewCursor(

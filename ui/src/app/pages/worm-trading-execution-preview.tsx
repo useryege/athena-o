@@ -32,7 +32,12 @@ import {
     WormTradingWalletSummary
 } from '../shared/services/worm-trading-service';
 import {requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
-import {createDefaultWormExecutionPreflightChecks, disabledWormExecutionPreflightChecks, wormExecutionPreflightCheckDefinitions} from './worm-execution-preflight';
+import {
+    createDefaultWormExecutionPreflightChecks,
+    disabledWormExecutionPreflightChecks,
+    wormExecutionMandatoryGuardDefinitions,
+    wormExecutionPreflightCheckDefinitions
+} from './worm-execution-preflight';
 import {short} from './shared';
 
 const connectionPageSize = 100;
@@ -75,9 +80,8 @@ const marketEstimateSummary = (item?: WormExecutionPlanItem) => {
     return parts.filter(Boolean).join(' · ');
 };
 const reasonPriority = [
-    'OPPOSITE_SIDE_CONFLICT',
-    'ALREADY_HELD',
-    'REQUEST_IN_FLIGHT',
+    'MARKET_POSITION_EXISTS',
+    'WALLET_REQUEST_IN_FLIGHT',
     'MARKET_UNAVAILABLE',
     'ESTIMATE_REJECTED',
     'LIQUIDITY_INSUFFICIENT',
@@ -86,9 +90,6 @@ const reasonPriority = [
 ];
 
 const preflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) =>
-    left.skipAlreadyHeld === right.skipAlreadyHeld &&
-    left.skipInFlightRequest === right.skipInFlightRequest &&
-    left.skipOppositeSideExposure === right.skipOppositeSideExposure &&
     left.requireFullLiquidity === right.requireFullLiquidity;
 
 interface ExecutionPlanIntent {
@@ -483,55 +484,81 @@ const WalletsStep = (props: {
 
 const PreflightChecksEditor = (props: {checks: WormExecutionPreflightChecks; onChange: (checks: WormExecutionPreflightChecks) => void; disabled?: boolean; idPrefix: string}) => {
     const disabledChecks = disabledWormExecutionPreflightChecks(props.checks);
-    const allEnabled = disabledChecks.length === 0;
     return (
         <div className='worm-preview-checks-editor'>
             <div className='worm-preview-checks-editor__heading'>
                 <div>
-                    <Typography.Text strong={true}>Optional skip rules</Typography.Text>
-                    <Typography.Text type='secondary'>Enabled rules stop matching steps. Disabled rules remain visible as ignored warnings.</Typography.Text>
+                    <Typography.Text strong={true}>Execution guards</Typography.Text>
+                    <Typography.Text type='secondary'>Exposure guards are mandatory. Full liquidity is the only configurable preview rule.</Typography.Text>
                 </div>
-                <Button size='small' disabled={props.disabled || allEnabled} onClick={() => props.onChange(createDefaultWormExecutionPreflightChecks())}>
-                    Enable all
-                </Button>
             </div>
-            <div className='worm-preview-check-grid'>
-                {wormExecutionPreflightCheckDefinitions.map(definition => {
-                    const descriptionID = `${props.idPrefix}-${definition.key}-description`;
-                    return (
-                        <label
-                            className={`worm-preview-check-card${props.checks[definition.key] ? ' worm-preview-check-card--enabled' : ' worm-preview-check-card--disabled'}`}
-                            key={definition.key}>
-                            <Checkbox
-                                checked={props.checks[definition.key]}
-                                disabled={props.disabled}
-                                aria-describedby={descriptionID}
-                                onChange={event => props.onChange({...props.checks, [definition.key]: event.target.checked})}
-                            />
-                            <span>
-                                <Typography.Text strong={true}>{definition.title}</Typography.Text>
-                                <Typography.Text id={descriptionID} type='secondary'>
-                                    {props.checks[definition.key] ? definition.description : definition.ignoredDescription}
-                                </Typography.Text>
-                            </span>
-                            <Tag color={props.checks[definition.key] ? 'green' : 'gold'}>{props.checks[definition.key] ? 'Checked' : 'Ignored'}</Tag>
-                        </label>
-                    );
-                })}
+            <div className='worm-preview-guard-layout'>
+                <section className='worm-preview-guard-group' aria-labelledby={`${props.idPrefix}-mandatory-heading`}>
+                    <div className='worm-preview-guard-group__heading'>
+                        <Typography.Text id={`${props.idPrefix}-mandatory-heading`} strong={true}>
+                            Mandatory guards
+                        </Typography.Text>
+                        <Tag color='blue'>Always on</Tag>
+                    </div>
+                    <div className='worm-preview-guard-list'>
+                        {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                            <div className='worm-preview-check-card worm-preview-check-card--mandatory' key={definition.key}>
+                                <SafetyCertificateOutlined aria-hidden='true' />
+                                <span>
+                                    <Typography.Text strong={true}>{definition.title}</Typography.Text>
+                                    <Typography.Text type='secondary'>{definition.description}</Typography.Text>
+                                </span>
+                                <Tag color='blue'>Guarded</Tag>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+                <section className='worm-preview-guard-group' aria-labelledby={`${props.idPrefix}-optional-heading`}>
+                    <div className='worm-preview-guard-group__heading'>
+                        <Typography.Text id={`${props.idPrefix}-optional-heading`} strong={true}>
+                            Optional fill rule
+                        </Typography.Text>
+                        <Tag>1× estimate</Tag>
+                    </div>
+                    <div className='worm-preview-guard-list'>
+                        {wormExecutionPreflightCheckDefinitions.map(definition => {
+                            const descriptionID = `${props.idPrefix}-${definition.key}-description`;
+                            return (
+                                <label
+                                    className={`worm-preview-check-card${props.checks[definition.key] ? ' worm-preview-check-card--enabled' : ' worm-preview-check-card--disabled'}`}
+                                    key={definition.key}>
+                                    <Checkbox
+                                        checked={props.checks[definition.key]}
+                                        disabled={props.disabled}
+                                        aria-describedby={descriptionID}
+                                        onChange={event => props.onChange({...props.checks, [definition.key]: event.target.checked})}
+                                    />
+                                    <span>
+                                        <Typography.Text strong={true}>{definition.title}</Typography.Text>
+                                        <Typography.Text id={descriptionID} type='secondary'>
+                                            {props.checks[definition.key] ? definition.description : definition.ignoredDescription}
+                                        </Typography.Text>
+                                    </span>
+                                    <Tag color={props.checks[definition.key] ? 'green' : 'gold'}>{props.checks[definition.key] ? 'Checked' : 'Ignored'}</Tag>
+                                </label>
+                            );
+                        })}
+                    </div>
+                </section>
             </div>
             {disabledChecks.length > 0 && (
                 <Alert
                     type='warning'
                     showIcon={true}
-                    title={`${disabledChecks.length} ${disabledChecks.length === 1 ? 'rule is' : 'rules are'} disabled`}
-                    description='Matching conditions will be recorded as ignored warnings and will not prevent a step from becoming actionable.'
+                    title='Full liquidity is not required'
+                    description='A partial-fill estimate becomes an ignored liquidity warning. Both mandatory exposure guards still skip deterministically.'
                 />
             )}
             <Alert
                 type='info'
                 showIcon={true}
-                title='Mandatory safety checks always apply'
-                description='Wallet ownership and connection, market validity, Estimate integrity, balances, fixed funds limits, permissions, and execution mutation protections cannot be disabled.'
+                title='Market intent and 1× are fixed'
+                description='The selected target market, side, backend funds, and 1× leverage come from the saved combination and server policy. Wallet authority, market validity, Estimate integrity, balances, permissions, and mutation protections also remain mandatory.'
             />
         </div>
     );
@@ -551,7 +578,7 @@ const ChecksStep = (props: {
                 <Typography.Title id='worm-preview-checks-heading' level={2}>
                     Preview checks
                 </Typography.Title>
-                <Typography.Text type='secondary'>Choose which observed conditions should skip a step before building this immutable preview.</Typography.Text>
+                <Typography.Text type='secondary'>Review the always-on exposure guards and choose whether the fixed 1× order requires a full estimated fill.</Typography.Text>
             </div>
             <Tag color='processing'>{props.selectedWalletCount} Wallets</Tag>
         </div>
@@ -660,7 +687,7 @@ const PlanChecksSummary = (props: {plan: WormExecutionPlan; canChange: boolean; 
         <Card
             size='small'
             className='worm-preview-checks-summary'
-            title='Checks applied'
+            title='Guards and fill rule'
             extra={
                 props.canChange ? (
                     <Space wrap={true} className='worm-preview-review-check-actions'>
@@ -675,6 +702,11 @@ const PlanChecksSummary = (props: {plan: WormExecutionPlan; canChange: boolean; 
             }>
             <div className='worm-preview-checks-summary__body'>
                 <div className='worm-preview-checks-summary__rules' aria-label='Frozen preview checks'>
+                    {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                        <Tag key={definition.key} color='blue'>
+                            Always on · {definition.title}
+                        </Tag>
+                    ))}
                     {wormExecutionPreflightCheckDefinitions.map(definition => (
                         <Tag key={definition.key} color={props.plan.preflightChecks[definition.key] ? 'green' : 'gold'}>
                             {props.plan.preflightChecks[definition.key] ? 'Checked' : 'Ignored'} · {definition.title}
@@ -683,8 +715,8 @@ const PlanChecksSummary = (props: {plan: WormExecutionPlan; canChange: boolean; 
                 </div>
                 <Typography.Text type='secondary'>
                     {disabledChecks.length === 0
-                        ? 'All optional skip rules were applied.'
-                        : `${disabledChecks.length} optional ${disabledChecks.length === 1 ? 'rule was' : 'rules were'} disabled; matching conditions were allowed to continue as advisories.`}
+                        ? 'Full estimated liquidity was required for each otherwise actionable 1× order.'
+                        : 'Partial-fill estimates were allowed to continue as liquidity advisories; mandatory exposure guards still applied.'}
                 </Typography.Text>
                 {advisoryEntries.length > 0 && (
                     <div className='worm-preview-advisory-counts' aria-label='Ignored warning counts'>
@@ -1386,7 +1418,7 @@ export const WormTradingExecutionPreviewPage = () => {
                 items={[
                     {title: 'Combination', content: 'Confirm market order'},
                     {title: 'Wallets', content: 'Select and order'},
-                    {title: 'Checks', content: 'Choose skip rules'},
+                    {title: 'Checks', content: 'Confirm guards'},
                     {title: 'Review', content: 'Read-only preflight'}
                 ]}
             />
@@ -1446,6 +1478,7 @@ export const WormTradingExecutionPreviewPage = () => {
             <Modal
                 className='worm-preview-rerun-modal'
                 title='Re-run preview checks'
+                width={820}
                 open={rerunOpen}
                 okText='Re-run checks'
                 cancelText='Cancel'

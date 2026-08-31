@@ -2,17 +2,14 @@
 INSERT INTO worm_execution_plans (
   id, owner_account_id, combination_id, combination_name, combination_revision,
   state, build_stage, wallet_count, item_count, total_step_count,
-  skip_already_held, skip_in_flight_request, skip_opposite_side_exposure,
   require_full_liquidity,
   requested_at, retention_until, created_at, updated_at
 ) VALUES (
   sqlc.arg(id)::uuid, sqlc.arg(owner_account_id)::uuid, sqlc.arg(combination_id)::uuid,
   sqlc.arg(combination_name)::text, sqlc.arg(combination_revision)::bigint,
   'BUILDING', 'QUEUED', sqlc.arg(wallet_count)::bigint, sqlc.arg(item_count)::bigint,
-  sqlc.arg(total_step_count)::bigint, sqlc.arg(skip_already_held)::boolean,
-  sqlc.arg(skip_in_flight_request)::boolean,
-  sqlc.arg(skip_opposite_side_exposure)::boolean,
-  sqlc.arg(require_full_liquidity)::boolean, sqlc.arg(now)::timestamptz,
+  sqlc.arg(total_step_count)::bigint, sqlc.arg(require_full_liquidity)::boolean,
+  sqlc.arg(now)::timestamptz,
   sqlc.arg(retention_until)::timestamptz, sqlc.arg(now)::timestamptz,
   sqlc.arg(now)::timestamptz
 )

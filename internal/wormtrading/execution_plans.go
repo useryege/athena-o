@@ -333,19 +333,13 @@ func executionPreflightChecksFromProto(value *apiclient.ExecutionPreflightChecks
 		return wormstore.DefaultExecutionPreflightChecks()
 	}
 	return wormstore.ExecutionPreflightChecks{
-		SkipAlreadyHeld:          value.GetSkipAlreadyHeld(),
-		SkipInFlightRequest:      value.GetSkipInFlightRequest(),
-		SkipOppositeSideExposure: value.GetSkipOppositeSideExposure(),
-		RequireFullLiquidity:     value.GetRequireFullLiquidity(),
+		RequireFullLiquidity: value.GetRequireFullLiquidity(),
 	}
 }
 
 func executionPreflightChecksToProto(value wormstore.ExecutionPreflightChecks) *apiclient.ExecutionPreflightChecks {
 	return &apiclient.ExecutionPreflightChecks{
-		SkipAlreadyHeld:          value.SkipAlreadyHeld,
-		SkipInFlightRequest:      value.SkipInFlightRequest,
-		SkipOppositeSideExposure: value.SkipOppositeSideExposure,
-		RequireFullLiquidity:     value.RequireFullLiquidity,
+		RequireFullLiquidity: value.RequireFullLiquidity,
 	}
 }
 

@@ -44,17 +44,11 @@ type wormExecutionPlanInput struct {
 }
 
 type wormExecutionPreflightChecks struct {
-	SkipAlreadyHeld          bool `json:"skipAlreadyHeld"`
-	SkipInFlightRequest      bool `json:"skipInFlightRequest"`
-	SkipOppositeSideExposure bool `json:"skipOppositeSideExposure"`
-	RequireFullLiquidity     bool `json:"requireFullLiquidity"`
+	RequireFullLiquidity bool `json:"requireFullLiquidity"`
 }
 
 type wormExecutionPreflightChecksInput struct {
-	SkipAlreadyHeld          *bool `json:"skipAlreadyHeld"`
-	SkipInFlightRequest      *bool `json:"skipInFlightRequest"`
-	SkipOppositeSideExposure *bool `json:"skipOppositeSideExposure"`
-	RequireFullLiquidity     *bool `json:"requireFullLiquidity"`
+	RequireFullLiquidity *bool `json:"requireFullLiquidity"`
 }
 
 type wormExecutionPlanResponse struct {
@@ -206,10 +200,7 @@ func (server *AthenaServer) createWormExecutionPlan(w http.ResponseWriter, reque
 		ExpectedCombinationRevision: input.ExpectedCombinationRevision,
 		Wallets:                     wallets,
 		PreflightChecks: &wormtradingapiclient.ExecutionPreflightChecks{
-			SkipAlreadyHeld:          input.PreflightChecks.SkipAlreadyHeld,
-			SkipInFlightRequest:      input.PreflightChecks.SkipInFlightRequest,
-			SkipOppositeSideExposure: input.PreflightChecks.SkipOppositeSideExposure,
-			RequireFullLiquidity:     input.PreflightChecks.RequireFullLiquidity,
+			RequireFullLiquidity: input.PreflightChecks.RequireFullLiquidity,
 		},
 	})
 	if err != nil {
@@ -345,10 +336,7 @@ func decodeWormExecutionPlanInput(w http.ResponseWriter, request *http.Request) 
 
 func decodeWormExecutionPreflightChecks(raw json.RawMessage) (wormExecutionPreflightChecks, error) {
 	defaults := wormExecutionPreflightChecks{
-		SkipAlreadyHeld:          true,
-		SkipInFlightRequest:      true,
-		SkipOppositeSideExposure: true,
-		RequireFullLiquidity:     true,
+		RequireFullLiquidity: true,
 	}
 	if len(raw) == 0 {
 		return defaults, nil
@@ -359,15 +347,11 @@ func decodeWormExecutionPreflightChecks(raw json.RawMessage) (wormExecutionPrefl
 	if err := decoder.Decode(&input); err != nil {
 		return wormExecutionPreflightChecks{}, status.Error(codes.InvalidArgument, "preflightChecks must be one complete JSON object")
 	}
-	if err := decoder.Decode(&struct{}{}); err != io.EOF || input.SkipAlreadyHeld == nil || input.SkipInFlightRequest == nil ||
-		input.SkipOppositeSideExposure == nil || input.RequireFullLiquidity == nil {
-		return wormExecutionPreflightChecks{}, status.Error(codes.InvalidArgument, "preflightChecks must contain all four boolean fields")
+	if err := decoder.Decode(&struct{}{}); err != io.EOF || input.RequireFullLiquidity == nil {
+		return wormExecutionPreflightChecks{}, status.Error(codes.InvalidArgument, "preflightChecks must contain requireFullLiquidity")
 	}
 	return wormExecutionPreflightChecks{
-		SkipAlreadyHeld:          *input.SkipAlreadyHeld,
-		SkipInFlightRequest:      *input.SkipInFlightRequest,
-		SkipOppositeSideExposure: *input.SkipOppositeSideExposure,
-		RequireFullLiquidity:     *input.RequireFullLiquidity,
+		RequireFullLiquidity: *input.RequireFullLiquidity,
 	}, nil
 }
 
@@ -855,16 +839,13 @@ func projectWormExecutionPreflightChecks(checks *wormtradingapiclient.ExecutionP
 		return wormExecutionPreflightChecks{}, status.Error(codes.Internal, "Worm Trading omitted execution preflight checks")
 	}
 	return wormExecutionPreflightChecks{
-		SkipAlreadyHeld:          checks.GetSkipAlreadyHeld(),
-		SkipInFlightRequest:      checks.GetSkipInFlightRequest(),
-		SkipOppositeSideExposure: checks.GetSkipOppositeSideExposure(),
-		RequireFullLiquidity:     checks.GetRequireFullLiquidity(),
+		RequireFullLiquidity: checks.GetRequireFullLiquidity(),
 	}, nil
 }
 
 func validWormExecutionAdvisoryCode(value string) bool {
 	switch value {
-	case "OPPOSITE_SIDE_CONFLICT", "ALREADY_HELD", "REQUEST_IN_FLIGHT", "LIQUIDITY_INSUFFICIENT":
+	case "LIQUIDITY_INSUFFICIENT":
 		return true
 	default:
 		return false
@@ -887,14 +868,8 @@ func projectWormExecutionAdvisoryCodes(advisoryCodes []string) ([]string, error)
 
 func wormExecutionAdvisoryCodeOrder(value string) int {
 	switch value {
-	case "OPPOSITE_SIDE_CONFLICT":
-		return 0
-	case "ALREADY_HELD":
-		return 1
-	case "REQUEST_IN_FLIGHT":
-		return 2
 	case "LIQUIDITY_INSUFFICIENT":
-		return 3
+		return 0
 	default:
 		return -1
 	}

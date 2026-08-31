@@ -132,22 +132,26 @@ type wormExecutionCoordinator struct {
 }
 
 type wormExecutionRunStepResponse struct {
-	ID                 string                        `json:"id"`
-	Ordinal            int64                         `json:"ordinal"`
-	Wallet             wormConnectionInventoryWallet `json:"wallet"`
-	Market             wormExecutionRunStepMarket    `json:"market"`
-	Side               string                        `json:"side"`
-	Funds              string                        `json:"funds"`
-	Leverage           string                        `json:"leverage"`
-	State              string                        `json:"state"`
-	ReasonCode         string                        `json:"reasonCode"`
-	AdvisoryCodes      []string                      `json:"advisoryCodes"`
-	PositionRequestID  string                        `json:"positionRequestId"`
-	ProviderState      string                        `json:"providerState"`
-	ProviderOrderState string                        `json:"providerOrderState"`
-	StartedAt          int64                         `json:"startedAt"`
-	UpdatedAt          int64                         `json:"updatedAt"`
-	CompletedAt        int64                         `json:"completedAt"`
+	ID                              string                        `json:"id"`
+	Ordinal                         int64                         `json:"ordinal"`
+	Wallet                          wormConnectionInventoryWallet `json:"wallet"`
+	Market                          wormExecutionRunStepMarket    `json:"market"`
+	Side                            string                        `json:"side"`
+	Funds                           string                        `json:"funds"`
+	Leverage                        string                        `json:"leverage"`
+	State                           string                        `json:"state"`
+	ReasonCode                      string                        `json:"reasonCode"`
+	AdvisoryCodes                   []string                      `json:"advisoryCodes"`
+	PositionRequestID               string                        `json:"positionRequestId"`
+	ProviderState                   string                        `json:"providerState"`
+	ProviderOrderState              string                        `json:"providerOrderState"`
+	CompletionSource                string                        `json:"completionSource"`
+	CompletionPositionPubkey        string                        `json:"completionPositionPubkey"`
+	CompletionPositionRequestPubkey string                        `json:"completionPositionRequestPubkey"`
+	CompletionPositionCreatedAt     int64                         `json:"completionPositionCreatedAt"`
+	StartedAt                       int64                         `json:"startedAt"`
+	UpdatedAt                       int64                         `json:"updatedAt"`
+	CompletedAt                     int64                         `json:"completedAt"`
 }
 
 type wormExecutionRunStepMarket struct {
@@ -1323,25 +1327,39 @@ func projectWormExecutionRunStep(
 	providerOrderState := strings.TrimSpace(step.GetProviderOrderState())
 	fundingTxID := strings.TrimSpace(step.GetFundingTxid())
 	refundTxID := strings.TrimSpace(step.GetRefundTxid())
+	completionSource := strings.TrimSpace(step.GetCompletionSource())
+	completionPositionPubkey := strings.TrimSpace(step.GetCompletionPositionPubkey())
+	completionPositionRequestPubkey := strings.TrimSpace(step.GetCompletionPositionRequestPubkey())
 	if finalizeMode != step.GetFinalizeMode() || (finalizeMode != "" && finalizeMode != "signature" && finalizeMode != "signed_transaction") ||
 		transactionVersion != step.GetTransactionVersion() || len(transactionVersion) > 20 ||
 		providerState != step.GetProviderState() || len(providerState) > 100 ||
 		providerOrderState != step.GetProviderOrderState() || len(providerOrderState) > 100 ||
 		fundingTxID != step.GetFundingTxid() || len(fundingTxID) > wormExecutionMaximumProviderTextSize ||
 		refundTxID != step.GetRefundTxid() || len(refundTxID) > wormExecutionMaximumProviderTextSize ||
+		completionSource != step.GetCompletionSource() || len(completionSource) > 100 ||
+		completionPositionPubkey != step.GetCompletionPositionPubkey() || len(completionPositionPubkey) > wormExecutionMaximumProviderTextSize ||
+		completionPositionRequestPubkey != step.GetCompletionPositionRequestPubkey() || len(completionPositionRequestPubkey) > wormExecutionMaximumProviderTextSize ||
 		(len(step.GetTransactionMessageSha256()) != 0 && len(step.GetTransactionMessageSha256()) != wormExecutionTransactionDigestBytes) ||
-		step.GetRequiredSignatureCount() < 0 || step.GetWalletSignerIndex() < -1 || step.GetNextPollAt() < 0 || step.GetPollCount() < 0 {
+		step.GetRequiredSignatureCount() < 0 || step.GetWalletSignerIndex() < -1 || step.GetNextPollAt() < 0 || step.GetPollCount() < 0 ||
+		step.GetCompletionPositionCreatedAt() < 0 {
 		return wormExecutionRunStepResponse{}, status.Error(codes.Internal, "Worm Trading returned invalid execution step provider metadata")
 	}
-	positionRequired := state == "OPENED" || state == "SIGNING" || state == "FINALIZING" || state == "AWAITING_COMPLETION" || state == "COMPLETED"
+	if state == "COMPLETED" {
+		if completionSource != "OPEN_POSITION" || completionPositionPubkey == "" || step.GetCompletionPositionCreatedAt() <= 0 {
+			return wormExecutionRunStepResponse{}, status.Error(codes.Internal, "Worm Trading omitted execution completion evidence")
+		}
+	} else if completionSource != "" || completionPositionPubkey != "" || completionPositionRequestPubkey != "" ||
+		step.GetCompletionPositionCreatedAt() != 0 {
+		return wormExecutionRunStepResponse{}, status.Error(codes.Internal, "Worm Trading returned completion evidence for a non-completed step")
+	}
+	positionRequired := state == "OPENED" || state == "SIGNING" || state == "FINALIZING" || state == "AWAITING_COMPLETION"
 	if step.GetPositionRequestId() < 0 || (positionRequired && step.GetPositionRequestId() <= 0) {
 		return wormExecutionRunStepResponse{}, status.Error(codes.Internal, "Worm Trading returned an invalid execution position request")
 	}
 	terminal := state == "COMPLETED" || state == "SATISFIED" || state == "SKIPPED" || state == "FAILED" || state == "NOT_EXECUTED"
 	if step.GetCreatedAt() <= 0 || step.GetUpdatedAt() < step.GetCreatedAt() || step.GetStartedAt() < 0 || step.GetOpenedAt() < 0 ||
 		step.GetFinalizedAt() < 0 || step.GetLastObservedAt() < 0 || step.GetCompletedAt() < 0 ||
-		(terminal && step.GetCompletedAt() <= 0) || (!terminal && step.GetCompletedAt() != 0) ||
-		(state == "COMPLETED" && !strings.EqualFold(providerState, "completed")) {
+		(terminal && step.GetCompletedAt() <= 0) || (!terminal && step.GetCompletedAt() != 0) {
 		return wormExecutionRunStepResponse{}, status.Error(codes.Internal, "Worm Trading returned invalid execution step timestamps")
 	}
 	wallet := run.projectedWallets[step.GetWalletOrdinal()-1].Wallet
@@ -1360,18 +1378,22 @@ func projectWormExecutionRunStep(
 			OutcomeLabel:      item.OutcomeLabel,
 			Backend:           item.Backend,
 		},
-		Side:               item.Side,
-		Funds:              item.Funds,
-		Leverage:           item.Leverage,
-		State:              state,
-		ReasonCode:         reasonCode,
-		AdvisoryCodes:      advisoryCodes,
-		PositionRequestID:  wormExecutionPositionRequestID(step.GetPositionRequestId()),
-		ProviderState:      providerState,
-		ProviderOrderState: providerOrderState,
-		StartedAt:          step.GetStartedAt(),
-		UpdatedAt:          step.GetUpdatedAt(),
-		CompletedAt:        step.GetCompletedAt(),
+		Side:                            item.Side,
+		Funds:                           item.Funds,
+		Leverage:                        item.Leverage,
+		State:                           state,
+		ReasonCode:                      reasonCode,
+		AdvisoryCodes:                   advisoryCodes,
+		PositionRequestID:               wormExecutionPositionRequestID(step.GetPositionRequestId()),
+		ProviderState:                   providerState,
+		ProviderOrderState:              providerOrderState,
+		CompletionSource:                completionSource,
+		CompletionPositionPubkey:        completionPositionPubkey,
+		CompletionPositionRequestPubkey: completionPositionRequestPubkey,
+		CompletionPositionCreatedAt:     step.GetCompletionPositionCreatedAt(),
+		StartedAt:                       step.GetStartedAt(),
+		UpdatedAt:                       step.GetUpdatedAt(),
+		CompletedAt:                     step.GetCompletedAt(),
 	}, nil
 }
 

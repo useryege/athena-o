@@ -22,7 +22,7 @@ WHERE id = $2::uuid
   AND state IN (
     'AWAITING_AUTHORIZATION', 'AUTHORIZED', 'PAUSED', 'RECONCILIATION_REQUIRED'
   )
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type AuthorizeExecutionRunParams struct {
@@ -75,9 +75,6 @@ func (q *Queries) AuthorizeExecutionRun(ctx context.Context, arg AuthorizeExecut
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -179,7 +176,7 @@ SET state = 'PAUSED', revision = revision + 1,
     paused_at = $1::timestamptz, updated_at = $1::timestamptz
 WHERE id = $2::uuid
   AND state = 'PAUSE_REQUESTED'
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type CheckpointExecutionRunPausedParams struct {
@@ -225,9 +222,6 @@ func (q *Queries) CheckpointExecutionRunPaused(ctx context.Context, arg Checkpoi
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -263,7 +257,7 @@ WHERE steps.run_id = $5::uuid
   AND runs.current_step_ordinal = steps.ordinal
   AND (steps.state <> 'OUTCOME_UNKNOWN' OR steps.reconcile_requested_at IS NOT NULL)
   AND (steps.state <> 'AWAITING_COMPLETION' OR steps.next_poll_at <= $4::timestamptz)
-RETURNING steps.id, steps.run_id, steps.ordinal, steps.plan_step_ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.source_disposition, steps.source_reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.state, steps.reason_code, steps.position_request_id, steps.finalize_mode, steps.transaction_message_sha256, steps.transaction_version, steps.required_signature_count, steps.wallet_signer_index, steps.provider_state, steps.provider_order_state, steps.funding_txid, steps.refund_txid, steps.active_command_id, steps.claim_id, steps.claim_owner, steps.claim_expires_at, steps.next_poll_at, steps.reconcile_requested_at, steps.poll_count, steps.started_at, steps.opened_at, steps.finalized_at, steps.last_observed_at, steps.completed_at, steps.created_at, steps.updated_at, steps.advisory_codes
+RETURNING steps.id, steps.run_id, steps.ordinal, steps.plan_step_ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.source_disposition, steps.source_reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.state, steps.reason_code, steps.position_request_id, steps.finalize_mode, steps.transaction_message_sha256, steps.transaction_version, steps.required_signature_count, steps.wallet_signer_index, steps.provider_state, steps.provider_order_state, steps.funding_txid, steps.refund_txid, steps.active_command_id, steps.claim_id, steps.claim_owner, steps.claim_expires_at, steps.next_poll_at, steps.reconcile_requested_at, steps.poll_count, steps.started_at, steps.opened_at, steps.finalized_at, steps.last_observed_at, steps.completed_at, steps.created_at, steps.updated_at, steps.advisory_codes, steps.completion_source, steps.completion_position_pubkey, steps.completion_position_request_pubkey, steps.completion_position_created_at
 `
 
 type ClaimExecutionRunStepForRecoveryParams struct {
@@ -323,6 +317,10 @@ func (q *Queries) ClaimExecutionRunStepForRecovery(ctx context.Context, arg Clai
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -375,7 +373,7 @@ WHERE steps.run_id = $4::uuid
       AND wallets.ordinal = steps.wallet_ordinal
       AND items.ordinal = steps.item_ordinal
   )
-RETURNING steps.id, steps.run_id, steps.ordinal, steps.plan_step_ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.source_disposition, steps.source_reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.state, steps.reason_code, steps.position_request_id, steps.finalize_mode, steps.transaction_message_sha256, steps.transaction_version, steps.required_signature_count, steps.wallet_signer_index, steps.provider_state, steps.provider_order_state, steps.funding_txid, steps.refund_txid, steps.active_command_id, steps.claim_id, steps.claim_owner, steps.claim_expires_at, steps.next_poll_at, steps.reconcile_requested_at, steps.poll_count, steps.started_at, steps.opened_at, steps.finalized_at, steps.last_observed_at, steps.completed_at, steps.created_at, steps.updated_at, steps.advisory_codes
+RETURNING steps.id, steps.run_id, steps.ordinal, steps.plan_step_ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.source_disposition, steps.source_reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.state, steps.reason_code, steps.position_request_id, steps.finalize_mode, steps.transaction_message_sha256, steps.transaction_version, steps.required_signature_count, steps.wallet_signer_index, steps.provider_state, steps.provider_order_state, steps.funding_txid, steps.refund_txid, steps.active_command_id, steps.claim_id, steps.claim_owner, steps.claim_expires_at, steps.next_poll_at, steps.reconcile_requested_at, steps.poll_count, steps.started_at, steps.opened_at, steps.finalized_at, steps.last_observed_at, steps.completed_at, steps.created_at, steps.updated_at, steps.advisory_codes, steps.completion_source, steps.completion_position_pubkey, steps.completion_position_request_pubkey, steps.completion_position_created_at
 `
 
 type ClaimFreshExecutionRunStepParams struct {
@@ -441,6 +439,10 @@ func (q *Queries) ClaimFreshExecutionRunStep(ctx context.Context, arg ClaimFresh
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -575,7 +577,7 @@ SET state = 'COMPLETED', revision = revision + 1,
 WHERE id = $2::uuid
   AND state = 'RUNNING'
   AND terminal_step_count = total_step_count
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type CompleteExecutionRunParams struct {
@@ -621,9 +623,6 @@ func (q *Queries) CompleteExecutionRun(ctx context.Context, arg CompleteExecutio
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -643,7 +642,7 @@ SET state = 'TERMINATED', revision = revision + 1,
     updated_at = $1::timestamptz
 WHERE id = $2::uuid
   AND state = 'TERMINATE_REQUESTED'
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type CompleteExecutionRunTerminationParams struct {
@@ -689,9 +688,6 @@ func (q *Queries) CompleteExecutionRunTermination(ctx context.Context, arg Compl
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -728,7 +724,7 @@ WHERE run_id = $5::uuid
   AND ordinal = $6::bigint
   AND state = 'PREFLIGHTING'
   AND claim_id = $7::uuid
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type CompleteExecutionStepPreflightParams struct {
@@ -790,6 +786,10 @@ func (q *Queries) CompleteExecutionStepPreflight(ctx context.Context, arg Comple
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -809,7 +809,7 @@ WHERE id = $2::uuid
     WHERE run_id = worm_execution_runs.id
       AND resolved_at IS NULL
   )
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type CompleteReconciledExecutionRunParams struct {
@@ -855,9 +855,6 @@ func (q *Queries) CompleteReconciledExecutionRun(ctx context.Context, arg Comple
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -1236,8 +1233,7 @@ const createExecutionRun = `-- name: CreateExecutionRun :one
 INSERT INTO worm_execution_runs (
   id, owner_account_id, plan_id, plan_version, plan_digest_sha256,
   idempotency_key_sha256, request_sha256, combination_id, combination_name,
-  combination_revision, skip_already_held, skip_in_flight_request,
-  skip_opposite_side_exposure, require_full_liquidity,
+  combination_revision, require_full_liquidity,
   state, next_step_ordinal, wallet_count, item_count,
   total_step_count, actionable_step_count, terminal_step_count,
   satisfied_step_count, skipped_step_count, requested_at, created_at, updated_at
@@ -1246,44 +1242,39 @@ INSERT INTO worm_execution_runs (
   $4::bigint, $5::bytea,
   $6::bytea, $7::bytea,
   $8::uuid, $9::text,
-  $10::bigint, $11::boolean,
-  $12::boolean,
-  $13::boolean,
-  $14::boolean, 'AWAITING_AUTHORIZATION',
-  $15::bigint, $16::bigint,
-  $17::bigint, $18::bigint,
-  $19::bigint,
-  $20::bigint + $21::bigint,
-  $20::bigint,
-  $21::bigint, $22::timestamptz,
-  $22::timestamptz, $22::timestamptz
+  $10::bigint,
+  $11::boolean, 'AWAITING_AUTHORIZATION',
+  $12::bigint, $13::bigint,
+  $14::bigint, $15::bigint,
+  $16::bigint,
+  $17::bigint + $18::bigint,
+  $17::bigint,
+  $18::bigint, $19::timestamptz,
+  $19::timestamptz, $19::timestamptz
 )
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type CreateExecutionRunParams struct {
-	ID                       pgtype.UUID
-	OwnerAccountID           pgtype.UUID
-	PlanID                   pgtype.UUID
-	PlanVersion              int64
-	PlanDigestSha256         []byte
-	IdempotencyKeySha256     []byte
-	RequestSha256            []byte
-	CombinationID            pgtype.UUID
-	CombinationName          string
-	CombinationRevision      int64
-	SkipAlreadyHeld          bool
-	SkipInFlightRequest      bool
-	SkipOppositeSideExposure bool
-	RequireFullLiquidity     bool
-	NextStepOrdinal          int64
-	WalletCount              int64
-	ItemCount                int64
-	TotalStepCount           int64
-	ActionableStepCount      int64
-	SatisfiedStepCount       int64
-	SkippedStepCount         int64
-	Now                      pgtype.Timestamptz
+	ID                   pgtype.UUID
+	OwnerAccountID       pgtype.UUID
+	PlanID               pgtype.UUID
+	PlanVersion          int64
+	PlanDigestSha256     []byte
+	IdempotencyKeySha256 []byte
+	RequestSha256        []byte
+	CombinationID        pgtype.UUID
+	CombinationName      string
+	CombinationRevision  int64
+	RequireFullLiquidity bool
+	NextStepOrdinal      int64
+	WalletCount          int64
+	ItemCount            int64
+	TotalStepCount       int64
+	ActionableStepCount  int64
+	SatisfiedStepCount   int64
+	SkippedStepCount     int64
+	Now                  pgtype.Timestamptz
 }
 
 func (q *Queries) CreateExecutionRun(ctx context.Context, arg CreateExecutionRunParams) (WormExecutionRun, error) {
@@ -1298,9 +1289,6 @@ func (q *Queries) CreateExecutionRun(ctx context.Context, arg CreateExecutionRun
 		arg.CombinationID,
 		arg.CombinationName,
 		arg.CombinationRevision,
-		arg.SkipAlreadyHeld,
-		arg.SkipInFlightRequest,
-		arg.SkipOppositeSideExposure,
 		arg.RequireFullLiquidity,
 		arg.NextStepOrdinal,
 		arg.WalletCount,
@@ -1347,9 +1335,6 @@ func (q *Queries) CreateExecutionRun(ctx context.Context, arg CreateExecutionRun
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -1370,7 +1355,7 @@ JOIN worm_execution_mutation_attempts AS attempts
   ON attempts.id = $2::uuid
  AND attempts.run_id = steps.run_id
  AND attempts.step_ordinal = steps.ordinal
- AND attempts.state IN ('SUCCEEDED', 'OUTCOME_UNKNOWN')
+ AND attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
 JOIN worm_execution_run_wallets AS wallets
   ON wallets.run_id = steps.run_id AND wallets.ordinal = steps.wallet_ordinal
 JOIN worm_execution_run_items AS items
@@ -1749,7 +1734,7 @@ func (q *Queries) GetExecutionMutationAttemptByID(ctx context.Context, id pgtype
 }
 
 const getExecutionRun = `-- name: GetExecutionRun :one
-SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 FROM worm_execution_runs
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
@@ -1798,16 +1783,13 @@ func (q *Queries) GetExecutionRun(ctx context.Context, arg GetExecutionRunParams
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionRunByCreationKey = `-- name: GetExecutionRunByCreationKey :one
-SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 FROM worm_execution_runs
 WHERE owner_account_id = $1::uuid
   AND idempotency_key_sha256 = $2::bytea
@@ -1856,16 +1838,13 @@ func (q *Queries) GetExecutionRunByCreationKey(ctx context.Context, arg GetExecu
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionRunByIDForUpdate = `-- name: GetExecutionRunByIDForUpdate :one
-SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 FROM worm_execution_runs
 WHERE id = $1::uuid
 FOR UPDATE
@@ -1909,16 +1888,13 @@ func (q *Queries) GetExecutionRunByIDForUpdate(ctx context.Context, id pgtype.UU
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionRunForOwnerUpdate = `-- name: GetExecutionRunForOwnerUpdate :one
-SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 FROM worm_execution_runs
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
@@ -1968,16 +1944,13 @@ func (q *Queries) GetExecutionRunForOwnerUpdate(ctx context.Context, arg GetExec
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionRunSourcePlanForUpdate = `-- name: GetExecutionRunSourcePlanForUpdate :one
-SELECT plans.id, plans.owner_account_id, plans.combination_id, plans.combination_name, plans.combination_revision, plans.state, plans.build_stage, plans.failure_code, plans.worker_id, plans.locked_at, plans.lease_expires_at, plans.wallet_count, plans.item_count, plans.total_step_count, plans.completed_step_count, plans.ready_step_count, plans.skipped_step_count, plans.total_collateral, plans.total_opening_fee, plans.total_user_funds_needed, plans.requested_at, plans.completed_at, plans.expires_at, plans.retention_until, plans.created_at, plans.updated_at, plans.skip_already_held, plans.skip_in_flight_request, plans.skip_opposite_side_exposure, plans.require_full_liquidity
+SELECT plans.id, plans.owner_account_id, plans.combination_id, plans.combination_name, plans.combination_revision, plans.state, plans.build_stage, plans.failure_code, plans.worker_id, plans.locked_at, plans.lease_expires_at, plans.wallet_count, plans.item_count, plans.total_step_count, plans.completed_step_count, plans.ready_step_count, plans.skipped_step_count, plans.total_collateral, plans.total_opening_fee, plans.total_user_funds_needed, plans.requested_at, plans.completed_at, plans.expires_at, plans.retention_until, plans.created_at, plans.updated_at, plans.require_full_liquidity
 FROM worm_execution_plans AS plans
 JOIN worm_market_combinations AS combinations
   ON combinations.id = plans.combination_id
@@ -2034,16 +2007,13 @@ func (q *Queries) GetExecutionRunSourcePlanForUpdate(ctx context.Context, arg Ge
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
 }
 
 const getExecutionRunStep = `-- name: GetExecutionRunStep :one
-SELECT id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+SELECT id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 FROM worm_execution_run_steps
 WHERE run_id = $1::uuid
   AND ordinal = $2::bigint
@@ -2095,12 +2065,16 @@ func (q *Queries) GetExecutionRunStep(ctx context.Context, arg GetExecutionRunSt
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
 
 const getExecutionRunStepByID = `-- name: GetExecutionRunStepByID :one
-SELECT id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+SELECT id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 FROM worm_execution_run_steps
 WHERE run_id = $1::uuid
   AND id = $2::uuid
@@ -2152,12 +2126,16 @@ func (q *Queries) GetExecutionRunStepByID(ctx context.Context, arg GetExecutionR
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
 
 const getExecutionRunStepForUpdate = `-- name: GetExecutionRunStepForUpdate :one
-SELECT id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+SELECT id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 FROM worm_execution_run_steps
 WHERE run_id = $1::uuid
   AND ordinal = $2::bigint
@@ -2210,6 +2188,10 @@ func (q *Queries) GetExecutionRunStepForUpdate(ctx context.Context, arg GetExecu
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -2376,7 +2358,7 @@ func (q *Queries) ListExecutionRunSourcePlanSteps(ctx context.Context, planID pg
 }
 
 const listExecutionRunSteps = `-- name: ListExecutionRunSteps :many
-SELECT steps.id, steps.run_id, steps.ordinal, steps.plan_step_ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.source_disposition, steps.source_reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.state, steps.reason_code, steps.position_request_id, steps.finalize_mode, steps.transaction_message_sha256, steps.transaction_version, steps.required_signature_count, steps.wallet_signer_index, steps.provider_state, steps.provider_order_state, steps.funding_txid, steps.refund_txid, steps.active_command_id, steps.claim_id, steps.claim_owner, steps.claim_expires_at, steps.next_poll_at, steps.reconcile_requested_at, steps.poll_count, steps.started_at, steps.opened_at, steps.finalized_at, steps.last_observed_at, steps.completed_at, steps.created_at, steps.updated_at, steps.advisory_codes
+SELECT steps.id, steps.run_id, steps.ordinal, steps.plan_step_ordinal, steps.wallet_ordinal, steps.item_ordinal, steps.source_disposition, steps.source_reason_code, steps.projected_usdc_before, steps.projected_usdc_after, steps.state, steps.reason_code, steps.position_request_id, steps.finalize_mode, steps.transaction_message_sha256, steps.transaction_version, steps.required_signature_count, steps.wallet_signer_index, steps.provider_state, steps.provider_order_state, steps.funding_txid, steps.refund_txid, steps.active_command_id, steps.claim_id, steps.claim_owner, steps.claim_expires_at, steps.next_poll_at, steps.reconcile_requested_at, steps.poll_count, steps.started_at, steps.opened_at, steps.finalized_at, steps.last_observed_at, steps.completed_at, steps.created_at, steps.updated_at, steps.advisory_codes, steps.completion_source, steps.completion_position_pubkey, steps.completion_position_request_pubkey, steps.completion_position_created_at
 FROM worm_execution_run_steps AS steps
 JOIN worm_execution_runs AS runs ON runs.id = steps.run_id
 WHERE steps.run_id = $1::uuid
@@ -2445,6 +2427,10 @@ func (q *Queries) ListExecutionRunSteps(ctx context.Context, arg ListExecutionRu
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.AdvisoryCodes,
+			&i.CompletionSource,
+			&i.CompletionPositionPubkey,
+			&i.CompletionPositionRequestPubkey,
+			&i.CompletionPositionCreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -2513,7 +2499,7 @@ func (q *Queries) ListExecutionRunWallets(ctx context.Context, runID pgtype.UUID
 }
 
 const listExecutionRuns = `-- name: ListExecutionRuns :many
-SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+SELECT id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 FROM worm_execution_runs
 WHERE owner_account_id = $1::uuid
 ORDER BY requested_at DESC, id DESC
@@ -2571,9 +2557,6 @@ func (q *Queries) ListExecutionRuns(ctx context.Context, arg ListExecutionRunsPa
 			&i.CompletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.SkipAlreadyHeld,
-			&i.SkipInFlightRequest,
-			&i.SkipOppositeSideExposure,
 			&i.RequireFullLiquidity,
 		); err != nil {
 			return nil, err
@@ -2725,7 +2708,7 @@ SET state = 'FAILED', revision = revision + 1,
     updated_at = $2::timestamptz
 WHERE id = $3::uuid
   AND state NOT IN ('COMPLETED', 'TERMINATED', 'FAILED')
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type MarkExecutionRunFailedParams struct {
@@ -2772,9 +2755,6 @@ func (q *Queries) MarkExecutionRunFailed(ctx context.Context, arg MarkExecutionR
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -2795,7 +2775,7 @@ SET state = CASE
     updated_at = $2::timestamptz
 WHERE id = $3::uuid
   AND state IN ('RUNNING', 'PAUSE_REQUESTED', 'TERMINATE_REQUESTED')
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type MarkExecutionRunReconciliationRequiredParams struct {
@@ -2842,9 +2822,6 @@ func (q *Queries) MarkExecutionRunReconciliationRequired(ctx context.Context, ar
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -2857,7 +2834,7 @@ WHERE run_id = $2::uuid
   AND ordinal = $3::bigint
   AND state = 'OPENED'
   AND claim_id = $4::uuid
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type MarkExecutionRunStepSigningParams struct {
@@ -2913,6 +2890,10 @@ func (q *Queries) MarkExecutionRunStepSigning(ctx context.Context, arg MarkExecu
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -2964,7 +2945,7 @@ SET state = CASE
     updated_at = $2::timestamptz
 WHERE id = $3::uuid
   AND state = 'RUNNING'
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type PauseExecutionRunForFailureParams struct {
@@ -3011,9 +2992,6 @@ func (q *Queries) PauseExecutionRunForFailure(ctx context.Context, arg PauseExec
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -3050,7 +3028,7 @@ SET state = CASE
     updated_at = $1::timestamptz
 WHERE id = $2::uuid
   AND state IN ('RUNNING', 'PAUSE_REQUESTED')
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type PauseExecutionRunForReauthorizationParams struct {
@@ -3096,9 +3074,6 @@ func (q *Queries) PauseExecutionRunForReauthorization(ctx context.Context, arg P
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -3113,18 +3088,50 @@ SET state = $1::text,
         THEN $3::bigint
       ELSE position_request_id
     END,
-    provider_state = $4::text,
-    provider_order_state = $5::text,
-    funding_txid = $6::text,
-    refund_txid = $7::text,
+    provider_state = CASE
+      WHEN $4::text <> '' THEN $4::text
+      ELSE provider_state
+    END,
+    provider_order_state = CASE
+      WHEN $5::text <> '' THEN $5::text
+      ELSE provider_order_state
+    END,
+    funding_txid = CASE
+      WHEN $6::text <> '' THEN $6::text
+      ELSE funding_txid
+    END,
+    refund_txid = CASE
+      WHEN $7::text <> '' THEN $7::text
+      ELSE refund_txid
+    END,
+    completion_source = CASE
+      WHEN $1::text = 'COMPLETED'
+        THEN $8::text
+      ELSE ''
+    END,
+    completion_position_pubkey = CASE
+      WHEN $1::text = 'COMPLETED'
+        THEN $9::text
+      ELSE ''
+    END,
+    completion_position_request_pubkey = CASE
+      WHEN $1::text = 'COMPLETED'
+        THEN $10::text
+      ELSE ''
+    END,
+    completion_position_created_at = CASE
+      WHEN $1::text = 'COMPLETED'
+        THEN $11::timestamptz
+      ELSE NULL
+    END,
     finalized_at = CASE
-      WHEN state = 'FINALIZING' THEN COALESCE(finalized_at, $8::timestamptz)
+      WHEN state = 'FINALIZING' THEN COALESCE(finalized_at, $12::timestamptz)
       ELSE finalized_at
     END,
-    last_observed_at = $8::timestamptz,
+    last_observed_at = $12::timestamptz,
     next_poll_at = CASE
       WHEN $1::text = 'AWAITING_COMPLETION'
-        THEN $9::timestamptz
+        THEN $13::timestamptz
       ELSE NULL
     END,
     poll_count = poll_count + 1,
@@ -3137,19 +3144,19 @@ SET state = $1::text,
     claim_expires_at = NULL,
     reconcile_requested_at = NULL,
     completed_at = CASE
-      WHEN $1::text IN ('COMPLETED', 'SATISFIED', 'FAILED')
-        THEN $8::timestamptz
+      WHEN $1::text IN ('COMPLETED', 'SATISFIED', 'SKIPPED', 'FAILED')
+        THEN $12::timestamptz
       ELSE NULL
     END,
-    updated_at = $8::timestamptz
-WHERE run_id = $10::uuid
-  AND ordinal = $11::bigint
-  AND state = $12::text
-  AND claim_id = $13::uuid
+    updated_at = $12::timestamptz
+WHERE run_id = $14::uuid
+  AND ordinal = $15::bigint
+  AND state = $16::text
+  AND claim_id = $17::uuid
   AND (
     $3::bigint = 0
     OR (
-      $12::text = 'OPENING'
+      $16::text = 'OPENING'
       AND (
         position_request_id IS NULL
         OR position_request_id = $3::bigint
@@ -3164,11 +3171,11 @@ WHERE run_id = $10::uuid
           AND (
             (
               $1::text = 'OUTCOME_UNKNOWN'
-              AND request_attempts.state = 'OUTCOME_UNKNOWN'
+              AND request_attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
             )
             OR (
-              $1::text = 'COMPLETED'
-              AND request_attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE')
+              $1::text IN ('AWAITING_COMPLETION', 'COMPLETED')
+              AND request_attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
             )
             OR (
               $1::text = 'FAILED'
@@ -3181,14 +3188,88 @@ WHERE run_id = $10::uuid
   )
   AND (
     $1::text <> 'COMPLETED'
-    OR lower($4::text) = 'completed'
+    OR (
+      $8::text = 'OPEN_POSITION'
+      AND $9::text <> ''
+      AND $11::timestamptz IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS open_attempt
+        WHERE open_attempt.run_id = worm_execution_run_steps.run_id
+          AND open_attempt.step_ordinal = worm_execution_run_steps.ordinal
+          AND open_attempt.kind = 'OPEN'
+          AND open_attempt.dispatched_at IS NOT NULL
+          AND open_attempt.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+          AND $11::timestamptz
+            >= date_trunc('second', open_attempt.dispatched_at)
+      )
+    )
   )
   AND (
-    $12::text IN (
+    $1::text = 'COMPLETED'
+    OR (
+      $8::text = ''
+      AND $9::text = ''
+      AND $10::text = ''
+      AND $11::timestamptz IS NULL
+    )
+  )
+  AND (
+    $1::text <> 'SKIPPED'
+    OR (
+      $16::text = 'OPENING'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS dispatched_open
+        WHERE dispatched_open.run_id = worm_execution_run_steps.run_id
+          AND dispatched_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND dispatched_open.kind = 'OPEN'
+          AND dispatched_open.dispatched_at IS NOT NULL
+      )
+    )
+  )
+  AND (
+    $16::text IN (
       'OPENED', 'SIGNING', 'AWAITING_COMPLETION', 'OUTCOME_UNKNOWN'
     )
     OR (
-      $12::text = 'FINALIZING'
+      $1::text = 'COMPLETED'
+      AND EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS completed_open
+        WHERE completed_open.run_id = worm_execution_run_steps.run_id
+          AND completed_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND completed_open.kind = 'OPEN'
+          AND completed_open.dispatched_at IS NOT NULL
+          AND completed_open.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+      )
+    )
+    OR (
+      $16::text = 'FINALIZING'
+      AND $1::text = 'AWAITING_COMPLETION'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS dispatched_finalize
+        WHERE dispatched_finalize.run_id = worm_execution_run_steps.run_id
+          AND dispatched_finalize.step_ordinal = worm_execution_run_steps.ordinal
+          AND dispatched_finalize.kind = 'FINALIZE'
+          AND dispatched_finalize.dispatched_at IS NOT NULL
+      )
+    )
+    OR (
+      $16::text = 'OPENING'
+      AND $1::text = 'SKIPPED'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS skipped_open
+        WHERE skipped_open.run_id = worm_execution_run_steps.run_id
+          AND skipped_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND skipped_open.kind = 'OPEN'
+          AND skipped_open.dispatched_at IS NOT NULL
+      )
+    )
+    OR (
+      $16::text = 'FINALIZING'
       AND $1::text IN ('COMPLETED', 'FAILED')
       AND (
         $1::text = 'COMPLETED'
@@ -3203,53 +3284,72 @@ WHERE run_id = $10::uuid
           AND undispatched_finalize.state <> 'PREPARED'
       )
     )
+    OR (
+      $1::text = 'OUTCOME_UNKNOWN'
+      AND EXISTS (
+        SELECT 1
+        FROM worm_execution_mutation_attempts AS ambiguous_open
+        WHERE ambiguous_open.run_id = worm_execution_run_steps.run_id
+          AND ambiguous_open.step_ordinal = worm_execution_run_steps.ordinal
+          AND ambiguous_open.kind = 'OPEN'
+          AND ambiguous_open.dispatched_at IS NOT NULL
+          AND ambiguous_open.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+      )
+    )
     OR EXISTS (
       SELECT 1
       FROM worm_execution_mutation_attempts AS attempts
       WHERE attempts.run_id = worm_execution_run_steps.run_id
         AND attempts.step_ordinal = worm_execution_run_steps.ordinal
         AND attempts.kind = CASE
-          WHEN $12::text = 'OPENING' THEN 'OPEN'
+          WHEN $16::text = 'OPENING' THEN 'OPEN'
           ELSE 'FINALIZE'
         END
         AND (
           ($1::text = 'FAILED' AND attempts.state = 'DEFINITE_FAILURE')
           OR (
-            $12::text = 'OPENING'
+            $16::text = 'OPENING'
             AND $1::text = 'FAILED'
             AND attempts.state = 'SUCCEEDED'
             AND lower($4::text) IN ('failed', 'cancelled', 'canceled')
           )
-          OR ($1::text = 'OUTCOME_UNKNOWN' AND attempts.state = 'OUTCOME_UNKNOWN')
+          OR (
+            $1::text = 'OUTCOME_UNKNOWN'
+            AND attempts.state IN ('SUCCEEDED', 'DEFINITE_FAILURE', 'OUTCOME_UNKNOWN')
+          )
           OR (
             $1::text IN ('AWAITING_COMPLETION', 'COMPLETED')
             AND attempts.state IN ('SUCCEEDED', 'OUTCOME_UNKNOWN')
           )
           OR (
-            $12::text = 'OPENING'
+            $16::text = 'OPENING'
             AND $1::text = 'COMPLETED'
             AND attempts.state = 'DEFINITE_FAILURE'
           )
         )
     )
   )
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type RecordExecutionRunProviderObservationParams struct {
-	NextState          string
-	ReasonCode         string
-	PositionRequestID  int64
-	ProviderState      string
-	ProviderOrderState string
-	FundingTxid        string
-	RefundTxid         string
-	Now                pgtype.Timestamptz
-	NextPollAt         pgtype.Timestamptz
-	RunID              pgtype.UUID
-	StepOrdinal        int64
-	ExpectedState      string
-	ClaimID            pgtype.UUID
+	NextState                       string
+	ReasonCode                      string
+	PositionRequestID               int64
+	ProviderState                   string
+	ProviderOrderState              string
+	FundingTxid                     string
+	RefundTxid                      string
+	CompletionSource                string
+	CompletionPositionPubkey        string
+	CompletionPositionRequestPubkey string
+	CompletionPositionCreatedAt     pgtype.Timestamptz
+	Now                             pgtype.Timestamptz
+	NextPollAt                      pgtype.Timestamptz
+	RunID                           pgtype.UUID
+	StepOrdinal                     int64
+	ExpectedState                   string
+	ClaimID                         pgtype.UUID
 }
 
 func (q *Queries) RecordExecutionRunProviderObservation(ctx context.Context, arg RecordExecutionRunProviderObservationParams) (WormExecutionRunStep, error) {
@@ -3261,6 +3361,10 @@ func (q *Queries) RecordExecutionRunProviderObservation(ctx context.Context, arg
 		arg.ProviderOrderState,
 		arg.FundingTxid,
 		arg.RefundTxid,
+		arg.CompletionSource,
+		arg.CompletionPositionPubkey,
+		arg.CompletionPositionRequestPubkey,
+		arg.CompletionPositionCreatedAt,
 		arg.Now,
 		arg.NextPollAt,
 		arg.RunID,
@@ -3307,6 +3411,10 @@ func (q *Queries) RecordExecutionRunProviderObservation(ctx context.Context, arg
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -3331,7 +3439,7 @@ WHERE run_id = $6::uuid
       AND state = 'SUCCEEDED'
       AND position_request_id = $1::bigint
   )
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type RecordExecutionRunStepOpenedParams struct {
@@ -3395,6 +3503,10 @@ func (q *Queries) RecordExecutionRunStepOpened(ctx context.Context, arg RecordEx
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -3410,7 +3522,7 @@ WHERE run_id = $6::uuid
   AND ordinal = $7::bigint
   AND state = 'SIGNING'
   AND claim_id = $8::uuid
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type RecordExecutionRunStepSignedParams struct {
@@ -3474,6 +3586,10 @@ func (q *Queries) RecordExecutionRunStepSigned(ctx context.Context, arg RecordEx
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -3502,7 +3618,7 @@ SET terminal_step_count = counts.terminal_count,
     updated_at = $1::timestamptz
 FROM counts
 WHERE runs.id = $2::uuid
-RETURNING runs.id, runs.owner_account_id, runs.plan_id, runs.plan_version, runs.plan_digest_sha256, runs.idempotency_key_sha256, runs.request_sha256, runs.combination_id, runs.combination_name, runs.combination_revision, runs.state, runs.revision, runs.current_step_ordinal, runs.next_step_ordinal, runs.wallet_count, runs.item_count, runs.total_step_count, runs.actionable_step_count, runs.terminal_step_count, runs.completed_step_count, runs.satisfied_step_count, runs.skipped_step_count, runs.failed_step_count, runs.not_executed_step_count, runs.pause_code, runs.failure_code, runs.block_code, runs.requested_at, runs.authorized_at, runs.started_at, runs.paused_at, runs.completed_at, runs.created_at, runs.updated_at, runs.skip_already_held, runs.skip_in_flight_request, runs.skip_opposite_side_exposure, runs.require_full_liquidity
+RETURNING runs.id, runs.owner_account_id, runs.plan_id, runs.plan_version, runs.plan_digest_sha256, runs.idempotency_key_sha256, runs.request_sha256, runs.combination_id, runs.combination_name, runs.combination_revision, runs.state, runs.revision, runs.current_step_ordinal, runs.next_step_ordinal, runs.wallet_count, runs.item_count, runs.total_step_count, runs.actionable_step_count, runs.terminal_step_count, runs.completed_step_count, runs.satisfied_step_count, runs.skipped_step_count, runs.failed_step_count, runs.not_executed_step_count, runs.pause_code, runs.failure_code, runs.block_code, runs.requested_at, runs.authorized_at, runs.started_at, runs.paused_at, runs.completed_at, runs.created_at, runs.updated_at, runs.require_full_liquidity
 `
 
 type RefreshExecutionRunProgressParams struct {
@@ -3548,9 +3664,6 @@ func (q *Queries) RefreshExecutionRunProgress(ctx context.Context, arg RefreshEx
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -3604,7 +3717,7 @@ WHERE run_id = $3::uuid
     'PREFLIGHTING', 'OPENING', 'OPENED', 'SIGNING', 'FINALIZING',
     'AWAITING_COMPLETION', 'OUTCOME_UNKNOWN'
   )
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type RenewExecutionRunStepClaimParams struct {
@@ -3664,6 +3777,10 @@ func (q *Queries) RenewExecutionRunStepClaim(ctx context.Context, arg RenewExecu
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -3701,7 +3818,7 @@ WHERE id = $3::uuid
   AND owner_account_id = $4::uuid
   AND revision = $5::bigint
   AND state = 'RUNNING'
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type RequestExecutionRunPauseParams struct {
@@ -3756,9 +3873,6 @@ func (q *Queries) RequestExecutionRunPause(ctx context.Context, arg RequestExecu
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -3783,7 +3897,7 @@ WHERE run_id = $3::uuid
       AND step_ordinal = worm_execution_run_steps.ordinal
       AND resolved_at IS NULL
   )
-RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes
+RETURNING id, run_id, ordinal, plan_step_ordinal, wallet_ordinal, item_ordinal, source_disposition, source_reason_code, projected_usdc_before, projected_usdc_after, state, reason_code, position_request_id, finalize_mode, transaction_message_sha256, transaction_version, required_signature_count, wallet_signer_index, provider_state, provider_order_state, funding_txid, refund_txid, active_command_id, claim_id, claim_owner, claim_expires_at, next_poll_at, reconcile_requested_at, poll_count, started_at, opened_at, finalized_at, last_observed_at, completed_at, created_at, updated_at, advisory_codes, completion_source, completion_position_pubkey, completion_position_request_pubkey, completion_position_created_at
 `
 
 type RequestExecutionRunStepReconciliationParams struct {
@@ -3841,6 +3955,10 @@ func (q *Queries) RequestExecutionRunStepReconciliation(ctx context.Context, arg
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AdvisoryCodes,
+		&i.CompletionSource,
+		&i.CompletionPositionPubkey,
+		&i.CompletionPositionRequestPubkey,
+		&i.CompletionPositionCreatedAt,
 	)
 	return i, err
 }
@@ -3886,7 +4004,7 @@ WHERE id = $2::uuid
     'AWAITING_AUTHORIZATION', 'AUTHORIZED', 'RUNNING', 'PAUSE_REQUESTED',
     'PAUSED', 'RECONCILIATION_REQUIRED'
   )
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type RequestExecutionRunTerminationParams struct {
@@ -3939,9 +4057,6 @@ func (q *Queries) RequestExecutionRunTermination(ctx context.Context, arg Reques
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -3961,7 +4076,7 @@ WHERE id = $2::uuid
     WHERE run_id = worm_execution_runs.id
       AND resolved_at IS NULL
   )
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type ResolveExecutionRunReconciliationParams struct {
@@ -4007,9 +4122,6 @@ func (q *Queries) ResolveExecutionRunReconciliation(ctx context.Context, arg Res
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -4077,7 +4189,7 @@ WHERE runs.id = $2::uuid
       AND authorizations.plan_version = runs.plan_version
       AND authorizations.plan_digest_sha256 = runs.plan_digest_sha256
   )
-RETURNING runs.id, runs.owner_account_id, runs.plan_id, runs.plan_version, runs.plan_digest_sha256, runs.idempotency_key_sha256, runs.request_sha256, runs.combination_id, runs.combination_name, runs.combination_revision, runs.state, runs.revision, runs.current_step_ordinal, runs.next_step_ordinal, runs.wallet_count, runs.item_count, runs.total_step_count, runs.actionable_step_count, runs.terminal_step_count, runs.completed_step_count, runs.satisfied_step_count, runs.skipped_step_count, runs.failed_step_count, runs.not_executed_step_count, runs.pause_code, runs.failure_code, runs.block_code, runs.requested_at, runs.authorized_at, runs.started_at, runs.paused_at, runs.completed_at, runs.created_at, runs.updated_at, runs.skip_already_held, runs.skip_in_flight_request, runs.skip_opposite_side_exposure, runs.require_full_liquidity
+RETURNING runs.id, runs.owner_account_id, runs.plan_id, runs.plan_version, runs.plan_digest_sha256, runs.idempotency_key_sha256, runs.request_sha256, runs.combination_id, runs.combination_name, runs.combination_revision, runs.state, runs.revision, runs.current_step_ordinal, runs.next_step_ordinal, runs.wallet_count, runs.item_count, runs.total_step_count, runs.actionable_step_count, runs.terminal_step_count, runs.completed_step_count, runs.satisfied_step_count, runs.skipped_step_count, runs.failed_step_count, runs.not_executed_step_count, runs.pause_code, runs.failure_code, runs.block_code, runs.requested_at, runs.authorized_at, runs.started_at, runs.paused_at, runs.completed_at, runs.created_at, runs.updated_at, runs.require_full_liquidity
 `
 
 type ResumeExecutionRunParams struct {
@@ -4134,9 +4246,6 @@ func (q *Queries) ResumeExecutionRun(ctx context.Context, arg ResumeExecutionRun
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -4148,7 +4257,7 @@ SET current_step_ordinal = $1::bigint,
     next_step_ordinal = NULL,
     updated_at = $2::timestamptz
 WHERE id = $3::uuid
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type SetExecutionRunCurrentStepParams struct {
@@ -4195,9 +4304,6 @@ func (q *Queries) SetExecutionRunCurrentStep(ctx context.Context, arg SetExecuti
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -4292,11 +4398,7 @@ INSERT INTO worm_execution_run_steps (
 SELECT $1::uuid, ordinal, ordinal, wallet_ordinal, item_ordinal,
        disposition, reason_code, projected_usdc_before, projected_usdc_after,
        advisory_codes,
-       CASE
-         WHEN disposition = 'READY' THEN 'PENDING'
-         WHEN reason_code IN ('ALREADY_HELD', 'REQUEST_IN_FLIGHT') THEN 'SATISFIED'
-         ELSE 'SKIPPED'
-       END,
+       CASE WHEN disposition = 'READY' THEN 'PENDING' ELSE 'SKIPPED' END,
        reason_code,
        CASE WHEN disposition = 'SKIPPED' THEN $2::timestamptz END,
        $2::timestamptz, $2::timestamptz
@@ -4370,7 +4472,7 @@ WHERE runs.id = $2::uuid
       AND authorizations.plan_version = runs.plan_version
       AND authorizations.plan_digest_sha256 = runs.plan_digest_sha256
   )
-RETURNING runs.id, runs.owner_account_id, runs.plan_id, runs.plan_version, runs.plan_digest_sha256, runs.idempotency_key_sha256, runs.request_sha256, runs.combination_id, runs.combination_name, runs.combination_revision, runs.state, runs.revision, runs.current_step_ordinal, runs.next_step_ordinal, runs.wallet_count, runs.item_count, runs.total_step_count, runs.actionable_step_count, runs.terminal_step_count, runs.completed_step_count, runs.satisfied_step_count, runs.skipped_step_count, runs.failed_step_count, runs.not_executed_step_count, runs.pause_code, runs.failure_code, runs.block_code, runs.requested_at, runs.authorized_at, runs.started_at, runs.paused_at, runs.completed_at, runs.created_at, runs.updated_at, runs.skip_already_held, runs.skip_in_flight_request, runs.skip_opposite_side_exposure, runs.require_full_liquidity
+RETURNING runs.id, runs.owner_account_id, runs.plan_id, runs.plan_version, runs.plan_digest_sha256, runs.idempotency_key_sha256, runs.request_sha256, runs.combination_id, runs.combination_name, runs.combination_revision, runs.state, runs.revision, runs.current_step_ordinal, runs.next_step_ordinal, runs.wallet_count, runs.item_count, runs.total_step_count, runs.actionable_step_count, runs.terminal_step_count, runs.completed_step_count, runs.satisfied_step_count, runs.skipped_step_count, runs.failed_step_count, runs.not_executed_step_count, runs.pause_code, runs.failure_code, runs.block_code, runs.requested_at, runs.authorized_at, runs.started_at, runs.paused_at, runs.completed_at, runs.created_at, runs.updated_at, runs.require_full_liquidity
 `
 
 type StartExecutionRunParams struct {
@@ -4427,9 +4529,6 @@ func (q *Queries) StartExecutionRun(ctx context.Context, arg StartExecutionRunPa
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err
@@ -4460,7 +4559,7 @@ const touchExecutionRunRevision = `-- name: TouchExecutionRunRevision :one
 UPDATE worm_execution_runs
 SET revision = revision + 1, updated_at = $1::timestamptz
 WHERE id = $2::uuid
-RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, skip_already_held, skip_in_flight_request, skip_opposite_side_exposure, require_full_liquidity
+RETURNING id, owner_account_id, plan_id, plan_version, plan_digest_sha256, idempotency_key_sha256, request_sha256, combination_id, combination_name, combination_revision, state, revision, current_step_ordinal, next_step_ordinal, wallet_count, item_count, total_step_count, actionable_step_count, terminal_step_count, completed_step_count, satisfied_step_count, skipped_step_count, failed_step_count, not_executed_step_count, pause_code, failure_code, block_code, requested_at, authorized_at, started_at, paused_at, completed_at, created_at, updated_at, require_full_liquidity
 `
 
 type TouchExecutionRunRevisionParams struct {
@@ -4506,9 +4605,6 @@ func (q *Queries) TouchExecutionRunRevision(ctx context.Context, arg TouchExecut
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.SkipAlreadyHeld,
-		&i.SkipInFlightRequest,
-		&i.SkipOppositeSideExposure,
 		&i.RequireFullLiquidity,
 	)
 	return i, err

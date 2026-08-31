@@ -9,37 +9,36 @@ export interface WormExecutionPreflightCheckDefinition {
     ignoredDescription: string;
 }
 
+export interface WormExecutionMandatoryGuardDefinition {
+    key: string;
+    title: string;
+    description: string;
+}
+
+export const wormExecutionMandatoryGuardDefinitions: WormExecutionMandatoryGuardDefinition[] = [
+    {
+        key: 'target-market-open-position',
+        title: 'Target-market open position',
+        description: 'Any YES or NO open position in the target market skips this order and every remaining order for the Wallet.'
+    },
+    {
+        key: 'wallet-wide-in-flight-request',
+        title: 'Wallet-wide in-flight request',
+        description:
+            'Any uncovered in-flight market or limit request, across every market and direction, skips this order and every remaining order for the Wallet. Requests linked from an observed open position are already covered.'
+    }
+];
+
 export const wormExecutionPreflightCheckDefinitions: WormExecutionPreflightCheckDefinition[] = [
     {
-        key: 'skipAlreadyHeld',
-        title: 'Existing same-side position',
-        description: 'Skip a market when the Wallet already holds the selected side.',
-        ignoredDescription: 'Another purchase may be attempted even when the selected side is already held.'
-    },
-    {
-        key: 'skipInFlightRequest',
-        title: 'Same-side request in flight',
-        description: 'Skip a market when a request for the selected side is still in flight.',
-        ignoredDescription: 'Another request may be opened while a same-side request is still in flight.'
-    },
-    {
-        key: 'skipOppositeSideExposure',
-        title: 'Opposite-side exposure',
-        description: 'Skip a market when the Wallet has an opposite-side position or request.',
-        ignoredDescription: 'The selected side may be purchased despite an opposite-side position or request.'
-    },
-    {
         key: 'requireFullLiquidity',
-        title: 'Full estimated liquidity',
-        description: 'Skip a market when Worm estimates that the requested funds cannot be fully filled.',
-        ignoredDescription: 'The order may be attempted even when Worm reports that it cannot be fully filled.'
+        title: 'Full liquidity',
+        description: 'Skip the order when Worm estimates that its fixed funds cannot be fully filled at 1×.',
+        ignoredDescription: 'Allow the 1× order attempt when Worm estimates only a partial fill.'
     }
 ];
 
 export const createDefaultWormExecutionPreflightChecks = (): WormExecutionPreflightChecks => ({
-    skipAlreadyHeld: true,
-    skipInFlightRequest: true,
-    skipOppositeSideExposure: true,
     requireFullLiquidity: true
 });
 

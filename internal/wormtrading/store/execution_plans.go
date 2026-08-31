@@ -26,16 +26,10 @@ const (
 	maxExecutionPlanCleanupLimit   = 100
 	maxExecutionPlanWorkerIDLength = 200
 	maxExecutionPlanCodeLength     = 100
-	executionPlanAdvisoryOpposite  = "OPPOSITE_SIDE_CONFLICT"
-	executionPlanAdvisoryHeld      = "ALREADY_HELD"
-	executionPlanAdvisoryRequest   = "REQUEST_IN_FLIGHT"
 	executionPlanAdvisoryLiquidity = "LIQUIDITY_INSUFFICIENT"
 )
 
 var executionPlanAdvisoryOrder = []string{
-	executionPlanAdvisoryOpposite,
-	executionPlanAdvisoryHeld,
-	executionPlanAdvisoryRequest,
 	executionPlanAdvisoryLiquidity,
 }
 
@@ -96,20 +90,17 @@ func (s *SQLStore) CreateExecutionPlan(
 	planID := uuid.New()
 	planUUID := pgtype.UUID{Bytes: [16]byte(planID), Valid: true}
 	row, err := queries.CreateExecutionPlan(ctx, wormtradingsqlc.CreateExecutionPlanParams{
-		ID:                       planUUID,
-		OwnerAccountID:           ownerUUID,
-		CombinationID:            combinationID,
-		CombinationName:          combination.Name,
-		CombinationRevision:      combination.Revision,
-		WalletCount:              int64(len(wallets)),
-		ItemCount:                int64(len(combination.Items)),
-		TotalStepCount:           totalSteps,
-		SkipAlreadyHeld:          req.PreflightChecks.SkipAlreadyHeld,
-		SkipInFlightRequest:      req.PreflightChecks.SkipInFlightRequest,
-		SkipOppositeSideExposure: req.PreflightChecks.SkipOppositeSideExposure,
-		RequireFullLiquidity:     req.PreflightChecks.RequireFullLiquidity,
-		Now:                      timestampParam(now),
-		RetentionUntil:           timestampParam(now.Add(executionPlanRetention)),
+		ID:                   planUUID,
+		OwnerAccountID:       ownerUUID,
+		CombinationID:        combinationID,
+		CombinationName:      combination.Name,
+		CombinationRevision:  combination.Revision,
+		WalletCount:          int64(len(wallets)),
+		ItemCount:            int64(len(combination.Items)),
+		TotalStepCount:       totalSteps,
+		RequireFullLiquidity: req.PreflightChecks.RequireFullLiquidity,
+		Now:                  timestampParam(now),
+		RetentionUntil:       timestampParam(now.Add(executionPlanRetention)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create execution plan: %w", err)
@@ -640,12 +631,7 @@ func mapExecutionPlan(row wormtradingsqlc.WormExecutionPlan) ExecutionPlan {
 		RetentionUntil:       timestampValue(row.RetentionUntil),
 		CreatedAt:            timestampValue(row.CreatedAt),
 		UpdatedAt:            timestampValue(row.UpdatedAt),
-		PreflightChecks: ExecutionPreflightChecks{
-			SkipAlreadyHeld:          row.SkipAlreadyHeld,
-			SkipInFlightRequest:      row.SkipInFlightRequest,
-			SkipOppositeSideExposure: row.SkipOppositeSideExposure,
-			RequireFullLiquidity:     row.RequireFullLiquidity,
-		},
+		PreflightChecks:      ExecutionPreflightChecks{RequireFullLiquidity: row.RequireFullLiquidity},
 	}
 }
 
@@ -1219,8 +1205,7 @@ func normalizeExecutionPlanAdvisoryCodes(values ...[]string) ([]string, error) {
 				return nil, fmt.Errorf("advisory code is invalid")
 			}
 			switch code {
-			case executionPlanAdvisoryOpposite, executionPlanAdvisoryHeld,
-				executionPlanAdvisoryRequest, executionPlanAdvisoryLiquidity:
+			case executionPlanAdvisoryLiquidity:
 				seen[code] = struct{}{}
 			default:
 				return nil, fmt.Errorf("advisory code %q is not supported", code)

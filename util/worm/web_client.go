@@ -40,7 +40,7 @@ var (
 type WebClient interface {
 	GetSignInChallenge(ctx context.Context, walletAddress string) (*WebSignInChallenge, error)
 	SignIn(ctx context.Context, request WebSignInRequest) (*WebSignInResponse, error)
-	OpenPosition(ctx context.Context, accessToken string, request WebPositionOpenRequest) (*WebPositionRequest, error)
+	OpenMarketPosition(ctx context.Context, accessToken string, request WebMarketPositionOpenRequest) (*WebPositionRequest, error)
 	FinalizePosition(ctx context.Context, accessToken string, request WebPositionFinalizeRequest) (*WebPositionRequest, error)
 	GetPositionRequest(ctx context.Context, accessToken string, requestID int64) (*WebPositionRequest, error)
 }
@@ -109,7 +109,10 @@ type WebSignInResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-type WebPositionOpenRequest struct {
+// WebMarketPositionOpenRequest is the only Worm Execution order shape. The
+// Web endpoint has no order-type, limit-price, or share fields, so callers
+// cannot turn this request into a limit order.
+type WebMarketPositionOpenRequest struct {
 	MarketConditionID string  `json:"market_condition_id"`
 	Funds             string  `json:"funds"`
 	IsYes             bool    `json:"is_yes"`
@@ -289,7 +292,7 @@ func (c *webClient) SignIn(ctx context.Context, request WebSignInRequest) (*WebS
 	return &response, nil
 }
 
-func (c *webClient) OpenPosition(ctx context.Context, accessToken string, request WebPositionOpenRequest) (*WebPositionRequest, error) {
+func (c *webClient) OpenMarketPosition(ctx context.Context, accessToken string, request WebMarketPositionOpenRequest) (*WebPositionRequest, error) {
 	if strings.TrimSpace(request.MarketConditionID) == "" || strings.TrimSpace(request.Funds) == "" {
 		return nil, errors.New("Worm Web market condition id and funds are required")
 	}

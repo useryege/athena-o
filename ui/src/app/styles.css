@@ -2127,10 +2127,40 @@ body,
     gap: 2px;
 }
 
-.worm-preview-check-grid {
+.worm-preview-guard-layout {
     display: grid;
     min-width: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 12px;
+}
+
+.worm-preview-guard-group {
+    display: grid;
+    min-width: 0;
+    align-content: start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 30%, var(--athena-panel));
+}
+
+.worm-preview-guard-group__heading {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.worm-preview-guard-group__heading .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-preview-guard-list {
+    display: grid;
+    min-width: 0;
     gap: 10px;
 }
 
@@ -2179,6 +2209,22 @@ body,
 .worm-preview-check-card--disabled {
     border-color: color-mix(in srgb, var(--athena-orange) 55%, var(--athena-border));
     background: color-mix(in srgb, var(--athena-orange) 7%, var(--athena-panel));
+}
+
+.worm-preview-check-card--mandatory {
+    border-color: color-mix(in srgb, var(--athena-primary) 38%, var(--athena-border));
+    background: color-mix(in srgb, var(--athena-primary) 5%, var(--athena-panel));
+    cursor: default;
+}
+
+.worm-preview-check-card--mandatory:hover {
+    border-color: color-mix(in srgb, var(--athena-primary) 38%, var(--athena-border));
+}
+
+.worm-preview-check-card--mandatory > svg {
+    margin-top: 3px;
+    color: var(--athena-primary);
+    font-size: 15px;
 }
 
 .worm-preview-checks-summary.ant-card {
@@ -2233,10 +2279,6 @@ body,
 .worm-preview-step-advisories .ant-typography {
     font-size: 11px;
     line-height: 1.35;
-}
-
-.worm-preview-rerun-modal .worm-preview-check-grid {
-    grid-template-columns: minmax(0, 1fr);
 }
 
 .worm-preview-rerun-modal .worm-preview-check-card {
@@ -2756,7 +2798,7 @@ body,
         display: none;
     }
 
-    .worm-preview-check-grid {
+    .worm-preview-guard-layout {
         grid-template-columns: minmax(0, 1fr);
     }
 

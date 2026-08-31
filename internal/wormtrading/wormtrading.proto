@@ -420,14 +420,10 @@ message ExecutionPlanReasonCount {
   int64 count = 2;
 }
 
-// ExecutionPreflightChecks freezes the optional preview skip policy. A false
-// field records that the corresponding observed condition is advisory rather
-// than blocking; all safety and provider-validity checks remain mandatory.
+// ExecutionPreflightChecks freezes the only optional preview rule. Existing
+// positions and in-flight requests are always mandatory wallet guards.
 message ExecutionPreflightChecks {
-  bool skip_already_held = 1;
-  bool skip_in_flight_request = 2;
-  bool skip_opposite_side_exposure = 3;
-  bool require_full_liquidity = 4;
+  bool require_full_liquidity = 1;
 }
 
 // ExecutionPlan is the immutable preflight record. BUILDING plans expose
@@ -559,7 +555,7 @@ message ExecutionStepIsolation {
 
 // ExecutionRunStep is one immutable plan step plus its durable live state.
 // No JWT, wallet signature, or serialized transaction is stored in this
-// projection. COMPLETED always means the provider was observed as completed.
+// projection. COMPLETED always means a matching open position was observed.
 message ExecutionRunStep {
   int64 ordinal = 1;
   int64 plan_step_ordinal = 2;
@@ -594,6 +590,10 @@ message ExecutionRunStep {
   int32 poll_count = 31;
   string id = 32;
   repeated string advisory_codes = 33;
+  string completion_source = 34;
+  string completion_position_pubkey = 35;
+  string completion_position_request_pubkey = 36;
+  int64 completion_position_created_at = 37;
 }
 
 // ExecutionRun is the permanent, owner-scoped live execution record. Steps
