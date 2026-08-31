@@ -332,7 +332,7 @@ UPDATE worm_execution_run_steps AS steps
 SET state = 'PREFLIGHTING', active_command_id = $1::uuid,
     claim_id = $1::uuid, claim_owner = 'COORDINATOR',
     claim_expires_at = $2::timestamptz,
-    started_at = COALESCE(started_at, $3::timestamptz),
+    started_at = COALESCE(steps.started_at, $3::timestamptz),
     updated_at = $3::timestamptz
 FROM worm_execution_runs AS runs,
      worm_execution_coordinators AS coordinators,

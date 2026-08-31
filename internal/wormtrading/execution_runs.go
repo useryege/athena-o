@@ -5,8 +5,12 @@ import (
 	"crypto/sha256"
 	"errors"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"google.golang.org/grpc/codes"
@@ -14,8 +18,12 @@ import (
 )
 
 const (
-	maxExecutionRunPageSize       = 100
-	executionCoordinatorTokenSize = 32
+	maxExecutionRunPageSize                = 100
+	executionCoordinatorTokenSize          = 32
+	maxExecutionStorePrimaryMessageBytes   = 256
+	executionRunStoreOperationFailedCode   = "EXECUTION_RUN_STORE_OPERATION_FAILED"
+	executionRunStoreOutcomeUnknownCode    = "EXECUTION_RUN_STORE_OUTCOME_UNKNOWN"
+	executionRunStorePostgresOperationCode = "EXECUTION_RUN_STORE_POSTGRES_ERROR"
 )
 
 func (s *Service) CreateExecutionRun(ctx context.Context, req *apiclient.CreateExecutionRunRequest) (*apiclient.CreateExecutionRunResponse, error) {
@@ -250,12 +258,21 @@ func (s *Service) ExecuteNextExecutionStep(ctx context.Context, req *apiclient.E
 	})
 	s.recordCredentialStoreResult(err)
 	if err != nil {
+		logUnexpectedExecutionRunStoreError(
+			err,
+			"execute_next_execution_step",
+			"begin_execution_step",
+			runID,
+			req.GetExpectedStepOrdinal(),
+			false,
+		)
 		return nil, executionRunRPCError(err)
 	}
 	s.wakeExecutionWorker()
 	run, err := s.credentialStore.GetExecutionRun(ctx, ownerAccountID, runID)
 	s.recordCredentialStoreResult(err)
 	if err != nil {
+		logUnexpectedExecutionRunStoreError(err, "execute_next_execution_step", "load_claimed_execution_run", runID, req.GetExpectedStepOrdinal(), true)
 		return nil, executionRunRPCError(err)
 	}
 	return &apiclient.ExecuteNextExecutionStepResponse{Run: executionRunToProto(run), Step: executionRunStepToProto(step)}, nil
@@ -552,4 +569,78 @@ func executionRunRPCError(err error) error {
 	default:
 		return status.Error(codes.Internal, "execution run store operation failed")
 	}
+}
+
+func logUnexpectedExecutionRunStoreError(err error, operation, phase, runID string, stepOrdinal int64, logAllNonContextErrors bool) {
+	if !shouldLogExecutionRunStoreError(err, logAllNonContextErrors) {
+		return
+	}
+
+	fields := log.Fields{
+		"operation":    operation,
+		"phase":        phase,
+		"run_id":       runID,
+		"step_ordinal": stepOrdinal,
+		"error_code":   executionRunStoreLogCode(err),
+	}
+	var postgresError *pgconn.PgError
+	if errors.As(err, &postgresError) {
+		fields["sqlstate"] = postgresError.Code
+		if primaryMessage := safeExecutionStorePrimaryMessage(postgresError); primaryMessage != "" {
+			fields["primary_message"] = primaryMessage
+		}
+	}
+	log.WithFields(fields).Error("Worm execution run store operation failed")
+}
+
+func shouldLogExecutionRunStoreError(err error, logAllNonContextErrors bool) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	if logAllNonContextErrors {
+		return true
+	}
+	if errors.Is(err, wormstore.ErrTransactionOutcomeUnknown) {
+		return true
+	}
+	return status.Code(executionRunRPCError(err)) == codes.Internal
+}
+
+func executionRunStoreLogCode(err error) string {
+	if errors.Is(err, wormstore.ErrTransactionOutcomeUnknown) {
+		return executionRunStoreOutcomeUnknownCode
+	}
+	var postgresError *pgconn.PgError
+	if errors.As(err, &postgresError) {
+		return executionRunStorePostgresOperationCode
+	}
+	return executionRunStoreOperationFailedCode
+}
+
+func safeExecutionStorePrimaryMessage(postgresError *pgconn.PgError) string {
+	if postgresError == nil || len(postgresError.Code) < 2 || postgresError.Code[:2] != "42" {
+		return ""
+	}
+	return boundedExecutionStorePrimaryMessage(postgresError.Message)
+}
+
+func boundedExecutionStorePrimaryMessage(value string) string {
+	value = strings.Map(func(character rune) rune {
+		if unicode.IsControl(character) {
+			return ' '
+		}
+		return character
+	}, value)
+	value = strings.Join(strings.Fields(value), " ")
+	if len(value) <= maxExecutionStorePrimaryMessageBytes {
+		return value
+	}
+	value = value[:maxExecutionStorePrimaryMessageBytes]
+	for value != "" && !utf8.ValidString(value) {
+		value = value[:len(value)-1]
+	}
+	return strings.TrimSpace(value)
 }

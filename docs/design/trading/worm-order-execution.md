@@ -166,11 +166,19 @@ empty state and does not replace the successfully loaded empty Run history.
    authoritative terminal result. Only the server's `allowedActions` permits
    another Step. Effects restore read-only display after refresh or navigation
    but never restart the driver. Manual Refresh stops the local driver first.
+   A driver request failure stops that tab, performs one read-only authoritative
+   Run reload, and never retries the failed command. The page keeps a warning
+   visible until the user explicitly refreshes or takes another control action;
+   an inactive coordinator on a still-`RUNNING` Run produces the same recovery
+   guidance.
 8. `execute-next` atomically validates command revision, active coordinator
    token, Session/access binding, exact next ordinal, and absence of another
    active Step. It records the durable command, marks one `PENDING` Step
    `PREFLIGHTING`, and returns HTTP 202. Work continues independently of that
    browser connection; the backend never selects a second Step automatically.
+   An unexpected synchronous claim or post-claim Run-load failure is recorded
+   only in bounded internal structured logs before the public error is reduced
+   to the generic execution failure envelope.
 9. Fresh preflight rereads the selected Wallet's connection, current Solana
    balances, complete relevant Worm exposure, and current estimate while using
    the frozen side, backend, funds, `1x`, and optional skip policy. An enabled
@@ -395,10 +403,13 @@ failure leaves the durable Run unchanged. Development proof is never registered
 in external-auth mode.
 
 Coordinator expiry cannot start another Step and does not revoke the durable
-Run authorization. Start or Continue is explicit and returns a new token; the
-old raw token cannot be recovered from PostgreSQL. A browser reload or route
-change therefore returns to observation and requires explicit Continue before
-another Step is selected.
+Run authorization. A still-`RUNNING` Run with an inactive coordinator must be
+explicitly paused as an authoritative checkpoint. With no active Step it moves
+directly to `PAUSED`; with an active Step it remains `PAUSE_REQUESTED` until
+that Step reaches a definite result or unknown. Only a later explicit Continue
+from `PAUSED` creates a new token. The old raw token cannot be recovered from
+PostgreSQL, and neither the browser nor backend automatically retries the
+interrupted `execute-next` command.
 
 A definite preflight result is scoped deterministically to the current Step,
 remaining Wallet Steps, remaining copies of the market, or the complete Run.
@@ -444,18 +455,26 @@ Terminate, a safe-area sticky mobile action bar, explicit trust disclosure, and
 one polite live region. The authorization confirmation repeats every disabled
 rule and its consequence. State text and icons accompany colors. An unknown
 outcome renders a dedicated blocking panel whose only recovery operation is
-`Check authoritative status`.
+`Check authoritative status`. A stopped local driver or inactive coordinator
+renders a persistent warning that distinguishes an active backend-owned Step
+from a Run with no active Step. The recovery action is `Pause and review`,
+followed by an explicit Continue only after the Run is `PAUSED`.
 The first accepted Run projection also establishes an immutable browser
 baseline for Run, Plan, Combination revision, and frozen checks; later command
 or polling responses cannot silently change the authorization disclosure.
 
-Service logs may identify bounded Run UUID, Step ordinal, Wallet ID, phase,
-attempt kind, HTTP status, provider code/slug, and stable reason. They exclude
-account UUID, addresses, HMAC material, JWTs, Google codes/tokens, SIWS text,
-signatures, raw or signed transactions, private keys, coordinator tokens, and
-raw provider bodies. Execution backlog, provider state, and proof dependencies
-do not change Worm Trading's Solana-driven gRPC health; failures remain visible
-through bounded logs and the durable Run projection.
+Service logs may identify bounded Run UUID, Step ordinal, Wallet ID, operation,
+phase, attempt kind, HTTP status, provider code/slug, stable reason, and
+PostgreSQL SQLSTATE. A synchronous execution-store failure logs a bounded,
+control-character-normalized PostgreSQL primary message only for SQLSTATE class
+42 programming errors; PostgreSQL detail, location, internal query, and SQL
+parameters remain excluded. Public HTTP and gRPC errors remain generic. Logs
+also exclude account UUID, addresses, HMAC material, JWTs, Google codes/tokens,
+SIWS text, signatures, raw or signed transactions, private keys, coordinator
+tokens, and raw provider bodies.
+Execution backlog, provider state, and proof dependencies do not change Worm
+Trading's Solana-driven gRPC health; failures remain visible through bounded
+logs and the durable Run projection.
 
 ## Change Checklist
 

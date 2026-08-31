@@ -365,6 +365,14 @@ JWTs, rereads durable stage, and resumes only phases proven safe by dispatch
 markers. Only Worm `state=completed` advances to another Step; read-only
 Reconcile and Terminate never cancel or replay a provider mutation.
 
+An unexpected synchronous `execute-next` store failure aborts its claim
+transaction before the worker can use an uncommitted Step. The browser stops
+its local driver, reloads the authoritative Run once, and does not retry the
+command. If the Run remains `RUNNING` after its coordinator becomes inactive,
+the operator uses `Pause and review`; a later explicit Continue from `PAUSED`
+creates a new coordinator. An already active Step remains backend-owned while a
+Pause request waits for its authoritative result.
+
 When current-state migration or dependency fingerprints are incompatible, stop
 and explicitly use `make run-reset`, then start again. The reset path initializes
 a complete new identity and credential state. Normal start and stop flows never
@@ -385,8 +393,12 @@ without exposing configured URLs or credentials. Local
 cleanup tracks its configured port (default `8090`) and coverage directory.
 Live execution does not add a readiness probe or expose the signer token, Web
 JWT, raw/signed transaction, or signature. Foreground logs may identify bounded
-Run/Step/request stages and provider state. No real Worm Open or Finalize was
-performed as part of implementation validation.
+Run/Step/request stages, execution-store operations and phases, stable error
+codes, and PostgreSQL SQLSTATE. SQLSTATE class 42 programming failures may
+include a bounded primary message; PostgreSQL detail, internal query,
+parameters, account identity, coordinator token, and request digests remain
+excluded. Browser-facing errors remain generic. No real Worm Open or Finalize
+was performed as part of implementation validation.
 
 ## Change Checklist
 

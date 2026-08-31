@@ -39,6 +39,7 @@ const stepPageSizes = [20, 50, 100];
 const detailPollIntervalMS = 1_500;
 const heartbeatIntervalMS = 10_000;
 const terminalRunStates = new Set<WormExecutionRunState>(['COMPLETED', 'TERMINATED', 'FAILED']);
+const activeStepStates = new Set<WormExecutionStepState>(['PREFLIGHTING', 'OPENING', 'OPENED', 'SIGNING', 'FINALIZING', 'AWAITING_COMPLETION']);
 const acronyms: Record<string, string> = {api: 'API', hmac: 'HMAC', http: 'HTTP', id: 'ID', jwt: 'JWT', rpc: 'RPC', sol: 'SOL', usdc: 'USDC'};
 
 const displayCode = (value: string, fallback = '—') =>
@@ -111,6 +112,11 @@ interface ExecutionRunIntent {
     combinationId: string;
     combinationRevision: number;
     preflightChecks: WormExecutionPreflightChecks;
+}
+
+interface ExecutionDriverInterruption {
+    reason: string;
+    authoritativeStateReloaded: boolean;
 }
 
 const executionRunIntent = (run: WormExecutionRun, accountId: string): ExecutionRunIntent => ({
@@ -529,6 +535,33 @@ const stateAlert = (run: WormExecutionRun) => {
     return undefined;
 };
 
+const driverRecoveryAlert = (run: WormExecutionRun, interruption?: ExecutionDriverInterruption) => {
+    const coordinatorInactive = run.state === 'RUNNING' && run.coordinator.state !== 'ACTIVE';
+    if (terminalRunStates.has(run.state) || (!interruption && !coordinatorInactive)) {
+        return undefined;
+    }
+    const authoritativeState = interruption?.authoritativeStateReloaded
+        ? 'Athena reloaded the authoritative Run state without retrying any execution command.'
+        : 'Athena has not retried any execution command.';
+    let stepState = 'No Step is currently active. This tab will not start a new Step.';
+    const currentStepActive = Boolean(run.currentStep && activeStepStates.has(run.currentStep.state));
+    if (run.currentStep) {
+        stepState = currentStepActive
+            ? `Step ${run.currentStep.ordinal} is already active. The backend will continue its safe processing until it reaches a definite result or Outcome Unknown; no following Step will start from this tab.`
+            : `Step ${run.currentStep.ordinal} is in the authoritative ${displayCode(run.currentStep.state)} state. No following Step will start from this tab.`;
+    }
+    let recovery = '';
+    if (run.allowedActions.includes('PAUSE')) {
+        recovery = currentStepActive
+            ? ' Select Pause and review, wait until the Run reaches Paused, then explicitly Continue when you are ready.'
+            : ' Select Pause and review, then explicitly Continue when you are ready.';
+    }
+    return {
+        title: interruption ? 'Execution driver stopped' : 'Execution coordinator is inactive',
+        description: `${interruption?.reason ? `${interruption.reason} ` : ''}${authoritativeState} ${stepState}${recovery}`
+    };
+};
+
 export const WormTradingExecutionDetailPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
@@ -541,6 +574,7 @@ export const WormTradingExecutionDetailPage = () => {
     const [error, setError] = React.useState<Error>();
     const [operation, setOperation] = React.useState('');
     const [driverActive, setDriverActive] = React.useState(false);
+    const [driverInterruption, setDriverInterruption] = React.useState<ExecutionDriverInterruption>();
     const driverActiveRef = React.useRef(false);
     const driverPromiseRef = React.useRef<Promise<void> | undefined>(undefined);
     const driverRequestRef = React.useRef<AbortableWormTradingPromise<unknown> | undefined>(undefined);
@@ -586,6 +620,7 @@ export const WormTradingExecutionDetailPage = () => {
         epochRef.current += 1;
         driverActiveRef.current = false;
         setDriverActive(false);
+        setDriverInterruption(undefined);
         if (runIntentRef.current?.accountId !== authorization.user.accountId || runIntentRef.current?.id !== id) {
             runIntentRef.current = undefined;
         }
@@ -703,16 +738,25 @@ export const WormTradingExecutionDetailPage = () => {
             } catch (reason) {
                 if (epochRef.current === epoch) {
                     const details = requestErrorDetails(reason);
-                    ctx.notifications.error(
-                        'Execution driver stopped',
+                    const interruptionReason =
                         details.status === 409
                             ? 'The execution revision changed. Review the authoritative state before continuing.'
-                            : requestErrorMessage(reason, 'No additional step was started.')
-                    );
+                            : requestErrorMessage(reason, 'The execution driver could not continue.');
+                    let authoritativeStateReloaded = false;
                     try {
                         await loadRun();
+                        authoritativeStateReloaded = true;
                     } catch {
                         // The primary error is already visible and no mutation is retried.
+                    }
+                    if (epochRef.current === epoch && accountRef.current === authorization.user.accountId) {
+                        setDriverInterruption({reason: interruptionReason, authoritativeStateReloaded});
+                        ctx.notifications.error(
+                            'Execution driver stopped',
+                            authoritativeStateReloaded
+                                ? `${interruptionReason} Athena reloaded the authoritative Run state without retrying any execution command.`
+                                : `${interruptionReason} Athena did not retry any execution command; refresh the authoritative Run state before continuing.`
+                        );
                     }
                 }
             } finally {
@@ -752,6 +796,7 @@ export const WormTradingExecutionDetailPage = () => {
                     result = await services.wormTrading.terminateExecutionRun(current.id, command);
             }
             publishRun(result.run);
+            setDriverInterruption(undefined);
             if (action === 'start' || action === 'continue') {
                 const pending = drive(result);
                 driverPromiseRef.current = pending;
@@ -780,6 +825,7 @@ export const WormTradingExecutionDetailPage = () => {
         stopDriver();
         await waitForDriverToSettle();
         await loadRun();
+        setDriverInterruption(undefined);
     };
 
     const authorize = async () => {
@@ -807,6 +853,7 @@ export const WormTradingExecutionDetailPage = () => {
                 next = await services.wormTrading.authorizeDevelopmentExecutionRun(current.id, command);
             }
             publishRun(next);
+            setDriverInterruption(undefined);
             ctx.notifications.success('Execution authorized', 'Review the frozen run, then start it explicitly.');
         } catch (reason) {
             ctx.notifications.error('Could not authorize execution', requestErrorMessage(reason, 'No execution authorization was recorded.'));
@@ -867,6 +914,7 @@ export const WormTradingExecutionDetailPage = () => {
                 expectedRevision: current.revision
             });
             publishRun(result.run);
+            setDriverInterruption(undefined);
         } catch (reason) {
             ctx.notifications.error('Could not check authoritative status', requestErrorMessage(reason, 'No Worm mutation was replayed.'));
         } finally {
@@ -874,7 +922,7 @@ export const WormTradingExecutionDetailPage = () => {
         }
     };
 
-    const primaryAction = (current: WormExecutionRun) => {
+    const primaryAction = (current: WormExecutionRun, recoveryRequired: boolean) => {
         const has = (action: WormExecutionAllowedAction) => current.allowedActions.includes(action);
         if (has('AUTHORIZE'))
             return (
@@ -891,7 +939,7 @@ export const WormTradingExecutionDetailPage = () => {
         if (has('PAUSE'))
             return (
                 <Button type='primary' icon={<PauseCircleOutlined />} loading={operation === 'pause'} onClick={() => void runCommand('pause')}>
-                    Pause
+                    {recoveryRequired ? 'Pause and review' : 'Pause'}
                 </Button>
             );
         if (has('CONTINUE'))
@@ -904,6 +952,8 @@ export const WormTradingExecutionDetailPage = () => {
     };
 
     const alert = run ? stateAlert(run) : undefined;
+    const recoveryAlert = run ? driverRecoveryAlert(run, driverInterruption) : undefined;
+    const recoveryRequired = Boolean(recoveryAlert);
     return (
         <AppPage
             title='Worm Trading Execution'
@@ -927,6 +977,7 @@ export const WormTradingExecutionDetailPage = () => {
                         {run.currentStep?.advisoryCodes.length ? `Current step ignored warnings: ${run.currentStep.advisoryCodes.map(code => displayCode(code)).join(', ')}.` : ''}
                     </div>
                     {alert && <Alert type={alert.type} showIcon={true} title={alert.title} description={alert.description} />}
+                    {recoveryAlert && <Alert type='warning' showIcon={true} title={recoveryAlert.title} description={recoveryAlert.description} />}
                     <RunSummary run={run} />
                     <Card className='worm-execution-control-card' title='Authorization and control'>
                         <Alert
@@ -989,7 +1040,7 @@ export const WormTradingExecutionDetailPage = () => {
                                         </Button>
                                     </Tooltip>
                                 )}
-                                {primaryAction(run)}
+                                {primaryAction(run, recoveryRequired)}
                             </Space>
                         </div>
                     )}
