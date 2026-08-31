@@ -200,7 +200,7 @@ message WormOpenPosition {
   string average_entry_price = 7;
   string user_liquidity = 8;
   string total_liquidity = 9;
-  string liquidation_price = 10;
+  WormOptionalString liquidation_price = 10;
   WormOptionalString unrealized_pnl = 11;
   string realized_pnl = 12;
   bool is_closed = 13;

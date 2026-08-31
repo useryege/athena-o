@@ -383,8 +383,11 @@ func wormOpenPositionFromProvider(position worm.MarginPosition) (*apiclient.Worm
 	if !isCanonicalNonEmptyString(position.Pubkey) || !isCanonicalNonEmptyString(position.Market.ConditionID) ||
 		!isCanonicalNonEmptyString(position.Market.Title) ||
 		!validNonNegativeDecimalStrings(position.Leverage, position.TotalShares, position.AvgEntryPrice,
-			position.UserLiquidity, position.TotalLiquidity, position.LiquidationPrice) ||
+			position.UserLiquidity, position.TotalLiquidity) ||
 		!isDecimalString(position.RealizedPnL) {
+		return nil, errors.New("invalid Worm open position response")
+	}
+	if position.LiquidationPrice != nil && !isNonNegativeDecimalString(*position.LiquidationPrice) {
 		return nil, errors.New("invalid Worm open position response")
 	}
 	if position.UnrealizedPnL != nil && !isDecimalString(*position.UnrealizedPnL) {
@@ -403,7 +406,7 @@ func wormOpenPositionFromProvider(position worm.MarginPosition) (*apiclient.Worm
 		AverageEntryPrice:     position.AvgEntryPrice,
 		UserLiquidity:         position.UserLiquidity,
 		TotalLiquidity:        position.TotalLiquidity,
-		LiquidationPrice:      position.LiquidationPrice,
+		LiquidationPrice:      wormOptionalString(position.LiquidationPrice),
 		UnrealizedPnl:         wormOptionalString(position.UnrealizedPnL),
 		RealizedPnl:           position.RealizedPnL,
 		IsClosed:              position.IsClosed,

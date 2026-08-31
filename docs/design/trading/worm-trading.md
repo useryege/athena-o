@@ -374,7 +374,12 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     requests use `/margin/positions/requests/` with the fixed non-terminal state
     filter, `sort=-created`, and `limit=100`.
 14. Provider responses are validated and converted without numeric coercion.
-    Only the first page of each stream is read; a next cursor sets
+    An open position may omit `liquidation_price` or return it as `null`; that
+    absence remains optional and does not invalidate or drop the position. When
+    present, `liquidation_price` must be a canonical nonnegative decimal string,
+    and a malformed present value fails the position stream as
+    `INVALID_RESPONSE`. In-flight-request validation is unchanged. Only the
+    first page of each stream is read; a next cursor sets
     `truncated=true`. A position suppresses an in-flight request with the same
     `position_request_pubkey`. The signable `message` and every unselected Worm
     response field are discarded inside Worm Trading and cannot enter the
@@ -395,7 +400,9 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     `/worm-trading/executions`. All require Worm Trading
     `READ`; the Combinations native APIs additionally require an interactive
     login. Assets loads status, balance, and activity snapshots independently.
-    An interactive
+    An open position without a liquidation price remains visible: Assets shows
+    `No liquidation (1×)` when leverage is numerically one and `-` when leverage
+    is greater than one; a present price is shown unchanged. An interactive
     `READ_WRITE` session additionally pages the complete connection inventory
     into React memory on entry. Manual Refresh rediscovers that inventory
     without itself replaying credential failures. Automatic bootstrap selects
@@ -730,8 +737,9 @@ Each public wallet activity item contains the safe Wallet summary and the
 connection state, bounded warning, and connection time. An open-position row
 contains its pubkey, optional position-request pubkey, market condition ID,
 title, logo, event, and optional latest-price summary, YES/NO side, leverage,
-shares, entry and liquidation prices, user/total liquidity, optional unrealized
-PnL, realized PnL, created time, and closed/liquidated/claimed flags. An
+shares, entry price, optional liquidation price, user/total liquidity, optional
+unrealized PnL, realized PnL, created time, and closed/liquidated/claimed flags.
+An absent liquidation price is not numeric zero and does not remove the row. An
 in-flight row contains its request pubkey, market-or-limit type, request and
 optional order state, the same market summary, side, leverage, funds, optional
 price/shares, and created time.

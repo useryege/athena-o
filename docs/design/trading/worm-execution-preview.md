@@ -156,9 +156,12 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     positions and every non-terminal position request at a page size of 100.
     Every page must return the requested `meta.limit` of 100; missing metadata,
     cursor non-progress, invalid items, state-filter violations, Market-ID
-    mismatches, or duplicate pubkeys fail the plan. Exposure pubkeys are used
-    only to select a stable outcome and are not persisted in public preview
-    steps. An authenticated 401/403 CAS-marks only that Wallet's active
+    mismatches, or duplicate pubkeys fail the plan. An open position may omit
+    `liquidation_price` or return it as `null` and remains valid exposure; when
+    present, the value must be a canonical nonnegative decimal string or the
+    plan fails as an invalid provider response. Exposure pubkeys are used only
+    to select a stable outcome and are not persisted in public preview steps. An
+    authenticated 401/403 CAS-marks only that Wallet's active
     credential `RECONNECT_REQUIRED`; an unauthenticated Estimate 401/403 remains
     a provider-read failure and is never attributed to a Wallet.
 13. Every successful `1x` Estimate must satisfy the exact-decimal identity
@@ -327,6 +330,8 @@ the operational bounds.
   `1x`, and no configured step exceeds the 10 USDC funds ceiling.
 - At `1x`, `user_funds_needed` exactly equals funds plus opening fee and
   liquidation price is absent; any contradictory Estimate fails the plan.
+- A missing open-position liquidation price remains valid exposure and does not
+  suppress that position; a malformed present value fails the complete plan.
 - Existing exposure precedence is opposite-side conflict, same-side position,
   then same-side request. Each condition blocks under its enabled frozen rule or
   becomes an advisory under its disabled rule. Only actionable steps consume

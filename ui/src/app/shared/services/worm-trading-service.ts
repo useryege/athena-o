@@ -719,7 +719,7 @@ const normalizeOpenPosition = (value: unknown): WormOpenPosition => {
         averageEntryPrice: requireString(item, 'averageEntryPrice', 'average_entry_price', 'avgEntryPrice', 'avg_entry_price'),
         userLiquidity: requireString(item, 'userLiquidity', 'user_liquidity'),
         totalLiquidity: requireString(item, 'totalLiquidity', 'total_liquidity'),
-        liquidationPrice: requireString(item, 'liquidationPrice', 'liquidation_price'),
+        liquidationPrice: readString(item, 'liquidationPrice', 'liquidation_price'),
         unrealizedPnL: readString(item, 'unrealizedPnl', 'unrealized_pnl'),
         realizedPnL: requireString(item, 'realizedPnl', 'realized_pnl'),
         isClosed: readBoolean(item, 'isClosed', 'is_closed'),

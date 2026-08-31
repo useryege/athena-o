@@ -88,6 +88,8 @@ const titleCase = (value?: string) =>
         .join(' ');
 
 const optionalValue = (value: string, suffix = '') => (value ? `${value}${suffix}` : '-');
+const liquidationPriceValue = (position: WormOpenPosition) =>
+    position.liquidationPrice || (Number(position.leverage) === 1 ? 'No liquidation (1×)' : '-');
 const assetAvailable = (asset?: WormTradingAssetBalance) => asset?.availability === 'AVAILABLE' || asset?.availability === 'BALANCE_AVAILABILITY_AVAILABLE';
 const streamAvailable = (stream: WormActivityStreamState) => stream.availability === 'AVAILABLE';
 const connectionWasQueried = (state: WormWalletConnectionState) => state === 'CONNECTED' || state === 'RECONNECT_REQUIRED';
@@ -1303,7 +1305,7 @@ const PositionCard = (props: {row: PositionRow; onCopy: () => void}) => {
                 </div>
                 <div>
                     <dt>Liquidation</dt>
-                    <dd>{optionalValue(position.liquidationPrice)}</dd>
+                    <dd>{liquidationPriceValue(position)}</dd>
                 </div>
                 <div>
                     <dt>Unrealized P&amp;L</dt>
@@ -1535,7 +1537,7 @@ export const WormTradingPage = () => {
                     <div className='worm-trading-data-pair'>
                         <strong>UPnL {optionalValue(row.position.unrealizedPnL)}</strong>
                         <small>
-                            Liq {optionalValue(row.position.liquidationPrice)} · Realized {optionalValue(row.position.realizedPnL)}
+                            Liq {liquidationPriceValue(row.position)} · Realized {optionalValue(row.position.realizedPnL)}
                         </small>
                     </div>
                 )

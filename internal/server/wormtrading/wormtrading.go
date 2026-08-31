@@ -369,7 +369,7 @@ func publicOpenPosition(position *wormtradingapiclient.WormOpenPosition) (*wormt
 		RealizedPnl:           position.GetRealizedPnl(),
 		UserLiquidity:         position.GetUserLiquidity(),
 		TotalLiquidity:        position.GetTotalLiquidity(),
-		LiquidationPrice:      position.GetLiquidationPrice(),
+		LiquidationPrice:      optionalString(position.GetLiquidationPrice()),
 		IsClosed:              position.GetIsClosed(),
 		IsLiquidated:          position.GetIsLiquidated(),
 		IsClaimed:             position.GetIsClaimed(),

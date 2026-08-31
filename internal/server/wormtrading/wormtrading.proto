@@ -122,7 +122,7 @@ message WormOpenPosition {
   string realized_pnl = 9 [(gogoproto.jsontag) = "realizedPnl"];
   string user_liquidity = 10 [(gogoproto.jsontag) = "userLiquidity"];
   string total_liquidity = 11 [(gogoproto.jsontag) = "totalLiquidity"];
-  string liquidation_price = 12 [(gogoproto.jsontag) = "liquidationPrice"];
+  string liquidation_price = 12 [(gogoproto.jsontag) = "liquidationPrice,omitempty"];
   bool is_closed = 13 [(gogoproto.jsontag) = "isClosed"];
   bool is_liquidated = 14 [(gogoproto.jsontag) = "isLiquidated"];
   bool is_claimed = 15 [(gogoproto.jsontag) = "isClaimed"];

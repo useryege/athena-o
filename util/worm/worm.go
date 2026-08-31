@@ -820,7 +820,7 @@ type MarginPosition struct {
 	RealizedPnL           string        `json:"realized_pnl"`
 	UserLiquidity         string        `json:"user_liquidity"`
 	TotalLiquidity        string        `json:"total_liquidity"`
-	LiquidationPrice      string        `json:"liquidation_price"`
+	LiquidationPrice      *string       `json:"liquidation_price"`
 	IsClosed              bool          `json:"is_closed"`
 	IsLiquidated          bool          `json:"is_liquidated"`
 	IsClaimed             bool          `json:"is_claimed"`
