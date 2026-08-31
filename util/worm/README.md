@@ -189,6 +189,46 @@ go test -count=1 -v ./util/worm -run '^TestLiveWormWebPositionOpen$'
 > them. Test output must not include the private key, JWT, signatures, or the
 > serialized signed transaction.
 
+## Live Worm Web Position Cash Out
+
+`TestLiveWormWebPositionCashOut` is an independently gated destructive live
+probe for closing one explicitly selected existing Worm Web margin position.
+It does not open a position and does not duplicate the HTTP protocol in test
+code. It invokes `CashOutWebMarginPosition` exactly once and accepts only
+`POSITION_CLOSED`, including the idempotent cases where the target was already
+closed or was already closing and becomes closed during observation.
+
+Enable the live cash-out test with its separate gate:
+
+- `ATHENA_WORM_LIVE_WEB_POSITION_CASH_OUT=1`
+
+The test reuses the private key, expected wallet, market condition ID, and
+YES/NO variables documented for the Open probe. It additionally requires:
+
+- `ATHENA_WORM_WEB_POSITION_ID`: the positive numeric Worm Web `position_id`
+  for the exact target. This is not the HMAC margin-position `pubkey`; signs,
+  zero, leading zeroes, overflow, and pubkey text are rejected before any
+  network request.
+
+Run from the repository root:
+
+```bash
+ATHENA_WORM_LIVE_WEB_POSITION_CASH_OUT=1 \
+ATHENA_WORM_PRIVATE_KEY='...' \
+ATHENA_WORM_WEB_EXPECTED_WALLET_ADDRESS='...' \
+ATHENA_WORM_WEB_MARKET_CONDITION_ID='...' \
+ATHENA_WORM_WEB_IS_YES='true' \
+ATHENA_WORM_WEB_POSITION_ID='123' \
+go test -count=1 -v ./util/worm \
+  -run '^TestLiveWormWebPositionCashOut$'
+```
+
+The test wraps the production client with an exact-target, at-most-once Close
+guard. `POSITION_CLOSE_PENDING` does not mean the position is closed and is a
+test failure. After a pending or unknown outcome, perform a read-only position
+reconciliation before doing anything else; do not blindly rerun this command,
+because the first Close may already have reached Worm.
+
 Worm may block data-center IP ranges at Cloudflare before the API receives the
 request. An HTML `403` response from Cloudflare must be resolved by running the
 test from an allowed network (the Go HTTP client honors the standard proxy

@@ -36,11 +36,15 @@ const (
 var wormWebPositiveDecimalPattern = regexp.MustCompile(`^[0-9]+(?:\.[0-9]+)?$`)
 
 type liveWormWebPositionOpenConfig struct {
+	liveWormWebPositionTargetConfig
+	funds string
+}
+
+type liveWormWebPositionTargetConfig struct {
 	privateKey      ed25519.PrivateKey
 	walletAddress   string
 	marketCondition string
 	isYes           bool
-	funds           string
 }
 
 type liveWormWebMarketPositionSigner struct {
@@ -134,6 +138,26 @@ func TestLiveWormWebPositionOpen(t *testing.T) {
 }
 
 func loadLiveWormWebPositionOpenConfig() (*liveWormWebPositionOpenConfig, error) {
+	target, err := loadLiveWormWebPositionTargetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	funds, err := requiredLiveWormWebEnv(wormWebFundsEnv)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateLiveWormWebPositiveDecimal(wormWebFundsEnv, funds); err != nil {
+		return nil, err
+	}
+
+	return &liveWormWebPositionOpenConfig{
+		liveWormWebPositionTargetConfig: *target,
+		funds:                           funds,
+	}, nil
+}
+
+func loadLiveWormWebPositionTargetConfig() (*liveWormWebPositionTargetConfig, error) {
 	privateKeyText, err := requiredLiveWormWebEnv(wormWebPrivateKeyEnv)
 	if err != nil {
 		return nil, err
@@ -183,20 +207,11 @@ func loadLiveWormWebPositionOpenConfig() (*liveWormWebPositionOpenConfig, error)
 		return nil, fmt.Errorf("%s must be true or false", wormWebIsYesEnv)
 	}
 
-	funds, err := requiredLiveWormWebEnv(wormWebFundsEnv)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateLiveWormWebPositiveDecimal(wormWebFundsEnv, funds); err != nil {
-		return nil, err
-	}
-
-	return &liveWormWebPositionOpenConfig{
+	return &liveWormWebPositionTargetConfig{
 		privateKey:      privateKey,
 		walletAddress:   walletAddress,
 		marketCondition: marketCondition,
 		isYes:           isYes,
-		funds:           funds,
 	}, nil
 }
 
