@@ -1,0 +1,6 @@
+@import './shared.css';
+@import './member-features.css';
+
+.athena-member-shell .athena-brand__copy small {
+    letter-spacing: 0.02em;
+}

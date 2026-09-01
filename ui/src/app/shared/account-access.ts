@@ -3,19 +3,19 @@ import {AccountDataAccess, AccountDataModule, accountDataModuleDefinition, accou
 
 export type ModuleAccessLevels = Record<AccountDataModule, AccountDataAccess>;
 
-export const moduleAccessLevels = (access?: AccountAccess, administrator = false): ModuleAccessLevels => {
+export const moduleAccessLevels = (access?: AccountAccess): ModuleAccessLevels => {
     const levels = {} as ModuleAccessLevels;
     const source = new Map((access?.moduleAccess || []).map(item => [item.module, item.dataAccess]));
     accountDataModules.forEach(definition => {
-        const effective = administrator ? definition.maxAccess : source.get(definition.module) || AccountDataAccess.None;
+        const effective = source.get(definition.module) || AccountDataAccess.None;
         levels[definition.module] = Math.min(effective, definition.maxAccess) as AccountDataAccess;
     });
     return levels;
 };
 
-export const moduleAccessLevel = (access: AccountAccess | undefined, module: AccountDataModule, administrator = false): AccountDataAccess => {
+export const moduleAccessLevel = (access: AccountAccess | undefined, module: AccountDataModule): AccountDataAccess => {
     const maximum = accountDataModuleDefinition(module)?.maxAccess || AccountDataAccess.None;
-    const effective = administrator ? maximum : access?.moduleAccess.find(item => item.module === module)?.dataAccess || AccountDataAccess.None;
+    const effective = access?.moduleAccess.find(item => item.module === module)?.dataAccess || AccountDataAccess.None;
     return Math.min(effective, maximum) as AccountDataAccess;
 };
 
@@ -45,10 +45,7 @@ export const accountAccessEqual = (left?: AccountAccess, right?: AccountAccess):
     left?.profitSharingEnabled === right?.profitSharingEnabled &&
     accountDataModules.every(definition => moduleAccessLevel(left, definition.module) === moduleAccessLevel(right, definition.module));
 
-export const moduleAccessSummary = (access: AccountAccess | undefined, administrator = false): string => {
-    if (administrator) {
-        return 'Full access';
-    }
+export const moduleAccessSummary = (access: AccountAccess | undefined): string => {
     let readWrite = 0;
     let read = 0;
     let none = 0;

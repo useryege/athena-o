@@ -269,7 +269,11 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		"provider":   ticket.Identity.Provider,
 		"account_id": registered.ID,
 	}).Info("External identity registration succeeded")
-	h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: DefaultReturnTo})
+	redirectTo := DefaultReturnTo
+	if ticket.Identity.AdministratorCandidate {
+		redirectTo = administratorReturnTo(ticket.ReturnTo)
+	}
+	h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: redirectTo})
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
@@ -366,7 +370,7 @@ func (h *Handler) setCookie(w http.ResponseWriter, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    value,
-		Path:     CookiePath,
+		Path:     DeploymentPath(h.baseHRef, CookiePath),
 		MaxAge:   int(registrationTTL.Seconds()),
 		Expires:  time.Now().Add(registrationTTL),
 		HttpOnly: true,
@@ -379,7 +383,7 @@ func (h *Handler) clearCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
-		Path:     CookiePath,
+		Path:     DeploymentPath(h.baseHRef, CookiePath),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,
@@ -415,10 +419,40 @@ func ValidateReturnTo(raw string) string {
 	if strings.Contains(parsed.Fragment, "\\") {
 		return DefaultReturnTo
 	}
-	if parsed.Path == "/login" || strings.HasPrefix(parsed.Path, "/login/") || parsed.Path == "/register" || strings.HasPrefix(parsed.Path, "/register/") {
+	if parsed.Path == "/login" || strings.HasPrefix(parsed.Path, "/login/") || parsed.Path == "/admin/login" || strings.HasPrefix(parsed.Path, "/admin/login/") || parsed.Path == "/register" || strings.HasPrefix(parsed.Path, "/register/") {
 		return DefaultReturnTo
 	}
 	return parsed.String()
+}
+
+func administratorReturnTo(raw string) string {
+	validated := ValidateReturnTo(raw)
+	parsed, err := url.Parse(validated)
+	if err != nil || (parsed.Path != "/admin" && !strings.HasPrefix(parsed.Path, "/admin/")) {
+		return AdministratorDefaultReturnTo
+	}
+	return validated
+}
+
+// DeploymentPath resolves one validated, deployment-root-relative Athena path
+// beneath the configured external base href. Query strings and fragments on
+// logicalPath are retained verbatim; callers remain responsible for validating
+// values originating from a browser before passing them here.
+func DeploymentPath(baseHRef, logicalPath string) string {
+	logicalURL, logicalErr := url.Parse(logicalPath)
+	if logicalErr != nil || logicalURL.IsAbs() || logicalURL.Host != "" || logicalURL.Path == "" ||
+		!strings.HasPrefix(logicalURL.Path, "/") || strings.HasPrefix(logicalURL.Path, "//") || strings.Contains(logicalURL.Path, "\\") {
+		logicalPath = "/"
+	}
+	baseURL, baseErr := url.Parse(strings.TrimSpace(baseHRef))
+	if baseErr != nil || baseURL.IsAbs() || baseURL.Host != "" || baseURL.ForceQuery || baseURL.RawQuery != "" || baseURL.Fragment != "" || strings.Contains(baseURL.Path, "\\") {
+		return logicalPath
+	}
+	base := strings.Trim(baseURL.Path, "/")
+	if base == "" {
+		return logicalPath
+	}
+	return "/" + base + logicalPath
 }
 
 func RandomOpaqueValue() (string, error) {

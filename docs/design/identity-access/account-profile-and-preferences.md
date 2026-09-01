@@ -23,9 +23,10 @@ only verified-email audit data.
 | Application boundary | [internal/accountcenter/manager.go](../../../internal/accountcenter/manager.go) | `Manager`, `GetProfile`, `UpdateDisplayName`, `UpdateTier`, `ReplaceAvatar`, `DeleteAvatar`, `UpdatePreferences` |
 | PostgreSQL adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `AccountExists`, `GetProfile`, `UpdateProfile`, `GetPreferences`, `UpdatePreferences` |
 | Schema and queries | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_center.sql](../../../internal/accountstate/store/queries/account_center.sql) | `account_profile`, `account_preferences` |
-| Registration aggregate | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CreateOrdinaryAccount`, `CreateAdministratorAccount`, `CreateDevelopmentAdministrator` |
+| Registration aggregate | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CreateOrdinaryAccount`, `CreateAdministratorAccount`, development member/administrator creation |
 | API projection and mutations | [internal/server/account/account.go](../../../internal/server/account/account.go), [internal/server/account/account.proto](../../../internal/server/account/account.proto) | `ToAPIAccountProfile`, `ToAPIAccountPreferences`, `UpdateAccountProfile`, `UpdateAccountTier`, `UpdateAccountPreferences` |
-| Browser surfaces | [ui/src/app/pages/account-center.tsx](../../../ui/src/app/pages/account-center.tsx), [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AccountCenterPage`, `AdminAccountsPage` |
+| Browser surfaces and realm facades | [ui/src/app/shared/pages/account-center.tsx](../../../ui/src/app/shared/pages/account-center.tsx), [ui/src/app/admin/pages/admin-accounts.tsx](../../../ui/src/app/admin/pages/admin-accounts.tsx), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts), [ui/src/app/admin/accounts-service.ts](../../../ui/src/app/admin/accounts-service.ts) | `AccountCenterPage`, `AdminAccountsPage`, neutral `SelfAccountService`, management-only `AdminAccountsService` |
+| Neutral browser presentation | [ui/src/app/shared/account-presentation.tsx](../../../ui/src/app/shared/account-presentation.tsx), [ui/src/app/shared/theme.ts](../../../ui/src/app/shared/theme.ts), [ui/src/app/shared/validation.ts](../../../ui/src/app/shared/validation.ts) | account avatar/tier labels, theme conversion, profile validation shared without cross-realm page imports |
 
 ## Architecture
 
@@ -41,9 +42,11 @@ case-preserving public identity. Display name is 1–80 UTF-8 characters without
 control characters and may be changed. Profile/avatar routes use UUID even
 though labels use display name and `@username`.
 
-Ordinary users may change their own display name, avatar, and preferences.
-Administrators may view safe identity/profile data and change an ordinary
-account's display-only tier and profile; they do not receive another user's
+Both frontend applications expose the same current-account profile, appearance,
+access, Help, and logout capabilities under their own route roots. Only the
+member application exposes Security and API Key management. Administrators may
+also view safe identity/profile data and change an ordinary account's display-
+only tier and profile through Account Admin; they do not receive another user's
 private preferences or API Key metadata. Tier never grants authorization.
 
 ## Runtime Flow
@@ -53,7 +56,8 @@ private preferences or API Key metadata. Tier never grants authorization.
    Profile display name is initialized to the exact chosen username, tier to
    Standard, theme to System, and both revisions to one. The disabled-auth
    development aggregate uses the same complete state shape with
-   username/display name `local-admin`.
+   username/display name `local-user` for role `member` or `local-admin` for
+   role `administrator`.
 2. Reads require the UUID parent and require an already-persisted positive-
    revision row. Missing or malformed profile/preferences state is treated as
    an invalid aggregate, not synthesized from email or username.
@@ -67,10 +71,11 @@ private preferences or API Key metadata. Tier never grants authorization.
    profile/preferences, current access, role, and safe provider-specific
    identity presentation. Google subject, API Key JTI, wallet signatures,
    bearer material, and avatar object key remain private.
-6. Account Center shows `@username` in a disabled input and permits editing only
-   display name and other mutable profile fields. The administrator detail adds
-   a copyable Technical account ID; ordinary UI does not present UUID as the
-   user's public name.
+6. Member Account Center uses `/account/*`; Administrator Account Center uses
+   `/admin/account/*`. Both show `@username` in a disabled input and permit
+   editing only display name and other mutable profile fields. The administrator
+   directory detail adds a copyable Technical account ID; neither self-service
+   surface presents UUID as the user's public name.
 
 ## State / Data
 
@@ -106,6 +111,8 @@ as System and tier starts as Standard. Object-store configuration belongs to
 - Tier is presentation metadata and cannot grant a module or role.
 - Safe public/session projections exclude subject, private preferences of other
   users, API Key metadata, and object-store secrets.
+- Self-service profile and theme behavior is shared across frontend realms,
+  while API Key management remains member-only.
 
 ## Failure Recovery
 

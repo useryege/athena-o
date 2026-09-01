@@ -801,16 +801,19 @@ const rawSameOriginRequest = <T>(
     fallbackError: string,
     map: (value: Record<string, unknown>) => T
 ): AbortableWormTradingPromise<T> => {
-    const controller = new AbortController();
-    const promise = fetch(requests.toAbsURL(path), {
-        method,
-        credentials: 'same-origin',
-        mode: 'same-origin',
-        redirect: 'error',
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal
-    }).then(async response => {
+    const request = requests.scopedFetch(
+        requests.toAbsURL(path),
+        {
+            method,
+            credentials: 'same-origin',
+            mode: 'same-origin',
+            redirect: 'error',
+            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+            body: body ? JSON.stringify(body) : undefined
+        },
+        method === 'GET' ? readScope : writeScope
+    );
+    const promise = request.then(async response => {
         const parsedBody = await parseJSONResponse(response);
         const responseBody = isRecord(parsedBody) ? parsedBody : {};
         if (!response.ok) {
@@ -832,7 +835,7 @@ const rawSameOriginRequest = <T>(
         }
         return map(parsedBody);
     }) as AbortableWormTradingPromise<T>;
-    promise.abort = () => controller.abort();
+    promise.abort = request.abort;
     return promise;
 };
 
@@ -893,8 +896,7 @@ const normalizeExecutionPreflightChecks = (value: unknown): WormExecutionPreflig
     };
 };
 
-const executionPreflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) =>
-    left.requireFullLiquidity === right.requireFullLiquidity;
+const executionPreflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) => left.requireFullLiquidity === right.requireFullLiquidity;
 
 const executionAdvisoryCodeOrder = ['LIQUIDITY_INSUFFICIENT'] as const;
 type WormExecutionAdvisoryCode = (typeof executionAdvisoryCodeOrder)[number];
@@ -1437,10 +1439,8 @@ const normalizeExecutionRunStep = (value: unknown, checks: WormExecutionPrefligh
         return invalidWormTradingResponse();
     }
     if (
-        (state === 'COMPLETED' &&
-            (completionSource !== 'OPEN_POSITION' || completionPositionPubkey.trim() === '' || completionPositionCreatedAt <= 0)) ||
-        (state !== 'COMPLETED' &&
-            (completionSource !== '' || completionPositionPubkey !== '' || completionPositionRequestPubkey !== '' || completionPositionCreatedAt !== 0))
+        (state === 'COMPLETED' && (completionSource !== 'OPEN_POSITION' || completionPositionPubkey.trim() === '' || completionPositionCreatedAt <= 0)) ||
+        (state !== 'COMPLETED' && (completionSource !== '' || completionPositionPubkey !== '' || completionPositionRequestPubkey !== '' || completionPositionCreatedAt !== 0))
     ) {
         return invalidWormTradingResponse();
     }

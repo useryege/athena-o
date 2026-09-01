@@ -3,7 +3,7 @@ import requests from './requests';
 
 export class UserService {
     public logout(): Promise<boolean> {
-        return fetch(requests.toAbsURL('/auth/logout'), {credentials: 'same-origin', redirect: 'manual'}).then(res => {
+        return requests.scopedFetch(requests.toAbsURL('/auth/logout'), {credentials: 'same-origin', redirect: 'manual'}, {session: true}).then(res => {
             if (res.status >= 400) {
                 throw new Error(res.statusText || `Logout failed (${res.status})`);
             }
@@ -12,6 +12,6 @@ export class UserService {
     }
 
     public get(): Promise<UserInfo> {
-        return requests.get('/session/userinfo').then(res => parseUserInfo(res.body));
+        return requests.get('/session/userinfo', {session: true}).then(res => parseUserInfo(res.body));
     }
 }

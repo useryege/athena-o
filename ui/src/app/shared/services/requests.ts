@@ -37,9 +37,13 @@ const onError = new Subject<agent.ResponseError>();
 let requestErrorGeneration = 0;
 
 export type AuthorizationRequestMode = 'read' | 'write';
-export type AuthorizationRequestFeature = 'api-key' | 'profit-sharing';
+export type AuthorizationRequestFeature = 'api-key' | 'profit-sharing' | 'self-account' | 'admin-accounts' | 'admin-service-status' | 'admin-etherscan';
+export type AuthorizationRequestRealm = 'member' | 'admin';
 
 export type AuthorizationRequestScope =
+    | {
+          session: true;
+      }
     | {
           module: AccountDataModule;
           mode: AuthorizationRequestMode;
@@ -49,7 +53,21 @@ export type AuthorizationRequestScope =
           mode: AuthorizationRequestMode;
       };
 
-const scopedRequests = new Map<agent.Request, AuthorizationRequestScope>();
+interface ScopedAuthorizationRequest {
+    realm: AuthorizationRequestRealm | 'session';
+    viewerAccountId: string;
+    sessionGeneration: number;
+    scope: AuthorizationRequestScope;
+}
+
+interface AbortableRequest {
+    abort(): void;
+}
+
+let authorizationRealm: AuthorizationRequestRealm | undefined;
+let authorizationViewerAccountId = '';
+let authorizationSessionGeneration = 0;
+const scopedRequests = new Map<AbortableRequest, ScopedAuthorizationRequest>();
 
 const isRecord = (value: unknown): value is Record<string, any> => Boolean(value) && typeof value === 'object';
 
@@ -187,11 +205,25 @@ function apiRoot(): string {
     return toAbsURL('/api/v1');
 }
 
+const trackScopedRequest = (request: AbortableRequest, scope?: AuthorizationRequestScope) => {
+    if (!scope) {
+        return;
+    }
+    const sessionScope = 'session' in scope;
+    if (!sessionScope && (!authorizationRealm || !authorizationViewerAccountId)) {
+        throw new Error('Authenticated request scope is unavailable before the application realm guard completes');
+    }
+    scopedRequests.set(request, {
+        realm: sessionScope ? 'session' : authorizationRealm!,
+        viewerAccountId: authorizationViewerAccountId,
+        sessionGeneration: authorizationSessionGeneration,
+        scope
+    });
+};
+
 function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
     const generation = requestErrorGeneration;
-    if (scope) {
-        scopedRequests.set(req, scope);
-    }
+    trackScopedRequest(req, scope);
     const removeScope = () => scopedRequests.delete(req);
     req.on('error', err => {
         removeScope();
@@ -205,8 +237,9 @@ function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
 }
 
 const abortAuthorizationRequests = (module?: AccountDataModule, mode?: AuthorizationRequestMode) => {
-    Array.from(scopedRequests.entries()).forEach(([request, scope]) => {
-        if ((module === undefined || ('module' in scope && scope.module === module)) && (mode === undefined || scope.mode === mode)) {
+    Array.from(scopedRequests.entries()).forEach(([request, tracked]) => {
+        const scope = tracked.scope;
+        if ((module === undefined || ('module' in scope && scope.module === module)) && (mode === undefined || ('mode' in scope && scope.mode === mode))) {
             scopedRequests.delete(request);
             request.abort();
         }
@@ -214,7 +247,8 @@ const abortAuthorizationRequests = (module?: AccountDataModule, mode?: Authoriza
 };
 
 const abortAuthorizationFeatureRequests = (feature: AuthorizationRequestFeature, mode?: AuthorizationRequestMode) => {
-    Array.from(scopedRequests.entries()).forEach(([request, scope]) => {
+    Array.from(scopedRequests.entries()).forEach(([request, tracked]) => {
+        const scope = tracked.scope;
         if ('feature' in scope && scope.feature === feature && (mode === undefined || scope.mode === mode)) {
             scopedRequests.delete(request);
             request.abort();
@@ -232,6 +266,28 @@ export default {
     invalidatePendingRequestErrors() {
         requestErrorGeneration++;
     },
+    configureAuthorizationRealm(realm: AuthorizationRequestRealm) {
+        if (authorizationRealm && authorizationRealm !== realm) {
+            throw new Error(`Authorization requests are already configured for the ${authorizationRealm} realm`);
+        }
+        authorizationRealm = realm;
+    },
+    beginAuthorizationSession(viewerAccountId: string) {
+        if (!authorizationRealm) {
+            throw new Error('Authorization request realm must be configured before beginning a session');
+        }
+        if (authorizationViewerAccountId !== viewerAccountId) {
+            abortAuthorizationRequests();
+            authorizationSessionGeneration++;
+            authorizationViewerAccountId = viewerAccountId;
+        }
+        return authorizationSessionGeneration;
+    },
+    endAuthorizationSession() {
+        abortAuthorizationRequests();
+        authorizationSessionGeneration++;
+        authorizationViewerAccountId = '';
+    },
     abortAuthorizationRequests,
     abortAuthorizationFeatureRequests,
     get(url: string, scope?: AuthorizationRequestScope) {
@@ -246,8 +302,8 @@ export default {
         return initHandlers(agent.put(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
-    rawPut(url: string) {
-        return initHandlers(agent.put(toAbsURL(url)));
+    rawPut(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.put(toAbsURL(url)), scope);
     },
 
     patch(url: string, scope?: AuthorizationRequestScope) {
@@ -258,8 +314,28 @@ export default {
         return initHandlers(agent.del(`${apiRoot()}${url}`), scope).set('Content-Type', 'application/json');
     },
 
-    rawDelete(url: string) {
-        return initHandlers(agent.del(toAbsURL(url)));
+    rawDelete(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.del(toAbsURL(url)), scope);
+    },
+
+    scopedFetch(url: string, init: RequestInit, scope: AuthorizationRequestScope): Promise<Response> & {abort?: () => void} {
+        const controller = new AbortController();
+        const tracked = {abort: () => controller.abort()};
+        const upstreamSignal = init.signal;
+        if (upstreamSignal?.aborted) {
+            controller.abort();
+        } else {
+            upstreamSignal?.addEventListener('abort', tracked.abort, {once: true});
+        }
+        trackScopedRequest(tracked, scope);
+        const cleanup = () => {
+            upstreamSignal?.removeEventListener('abort', tracked.abort);
+            scopedRequests.delete(tracked);
+        };
+        const promise = fetch(url, {...init, signal: controller.signal}) as Promise<Response> & {abort?: () => void};
+        promise.abort = tracked.abort;
+        void promise.then(cleanup, cleanup);
+        return promise;
     },
 
     loadEventSource(url: string): Observable<string> {

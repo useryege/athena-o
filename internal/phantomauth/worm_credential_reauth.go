@@ -225,7 +225,7 @@ func (h *wormCredentialReauthentication) setChallengeCookie(w http.ResponseWrite
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormCredentialChallengeCookieName,
 		Value:    value,
-		Path:     wormCredentialChallengeCookiePath,
+		Path:     h.phantom.deploymentPath(wormCredentialChallengeCookiePath),
 		MaxAge:   int(challengeTTL / time.Second),
 		Expires:  expiresAt,
 		HttpOnly: true,
@@ -238,7 +238,7 @@ func (h *wormCredentialReauthentication) clearChallengeCookie(w http.ResponseWri
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormCredentialChallengeCookieName,
 		Value:    "",
-		Path:     wormCredentialChallengeCookiePath,
+		Path:     h.phantom.deploymentPath(wormCredentialChallengeCookiePath),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,

@@ -62,12 +62,13 @@ type Handler struct {
 	publicOrigin    string
 	domain          string
 	secureCookie    bool
+	baseHRef        string
 	walletSecrets   *walletSecretReauthentication
 	wormCredentials *wormCredentialReauthentication
 	wormExecutions  *wormExecutionAuthorization
 }
 
-func NewHandler(redisClient *redis.Client, backend authregistration.Backend, registrations *authregistration.Handler, publicOrigin string) (*Handler, error) {
+func NewHandler(redisClient *redis.Client, backend authregistration.Backend, registrations *authregistration.Handler, publicOrigin, baseHRef string) (*Handler, error) {
 	store, err := newChallengeStore(redisClient)
 	if err != nil {
 		return nil, err
@@ -86,6 +87,7 @@ func NewHandler(redisClient *redis.Client, backend authregistration.Backend, reg
 		publicOrigin:  origin.Scheme + "://" + origin.Host,
 		domain:        origin.Host,
 		secureCookie:  origin.Scheme == "https",
+		baseHRef:      baseHRef,
 	}, nil
 }
 
@@ -276,7 +278,7 @@ func (h *Handler) setChallengeCookie(w http.ResponseWriter, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     challengeCookieName,
 		Value:    value,
-		Path:     challengeCookiePath,
+		Path:     h.deploymentPath(challengeCookiePath),
 		MaxAge:   int(challengeTTL.Seconds()),
 		Expires:  time.Now().Add(challengeTTL),
 		HttpOnly: true,
@@ -289,7 +291,7 @@ func (h *Handler) clearChallengeCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     challengeCookieName,
 		Value:    "",
-		Path:     challengeCookiePath,
+		Path:     h.deploymentPath(challengeCookiePath),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,
@@ -306,6 +308,10 @@ func (h *Handler) fail(w http.ResponseWriter, statusCode int, reason, stage stri
 	log.WithFields(fields).Warn("Solana wallet authentication failed")
 	h.backend.RecordLoginResult(authregistration.LoginFailure)
 	h.writeJSON(w, statusCode, errorResponse{Reason: reason})
+}
+
+func (h *Handler) deploymentPath(logicalPath string) string {
+	return authregistration.DeploymentPath(h.baseHRef, logicalPath)
 }
 
 func (h *Handler) writeJSON(w http.ResponseWriter, statusCode int, value any) {

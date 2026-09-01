@@ -8,9 +8,7 @@ export interface AIConnectionDetails {
     instructions: string;
 }
 
-export type AIConnectionVerification =
-    | {status: 'ready'; message: string}
-    | {status: 'failed'; message: string};
+export type AIConnectionVerification = {status: 'ready'; message: string} | {status: 'failed'; message: string};
 
 export const createAIConnectionID = (): string => {
     const now = new Date();

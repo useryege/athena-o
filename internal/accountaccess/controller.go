@@ -153,7 +153,8 @@ func (c *Controller) Update(ctx context.Context, accountID string, next Access, 
 	return persisted.Clone(), nil
 }
 
-// Authorize checks the current snapshot for an administrator or module rule.
+// Authorize checks the current snapshot for one explicit role, entitlement, or
+// module rule. Administrator status does not imply member business access.
 func (c *Controller) Authorize(accountID string, requirement Requirement) error {
 	if err := requirement.validate(); err != nil {
 		return err
@@ -162,10 +163,10 @@ func (c *Controller) Authorize(accountID string, requirement Requirement) error 
 	if err != nil {
 		return err
 	}
-	if access.Administrator {
-		return nil
-	}
 	if requirement.Administrator {
+		if access.Administrator {
+			return nil
+		}
 		return ErrAdministratorAccessDenied
 	}
 	if requirement.ProfitSharing {

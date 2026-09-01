@@ -11,6 +11,8 @@ import (
 const (
 	// DefaultReturnTo is the safe fallback after authentication and registration.
 	DefaultReturnTo = "/account/access"
+	// AdministratorDefaultReturnTo is the safe landing for administrator candidates.
+	AdministratorDefaultReturnTo = "/admin/accounts"
 
 	LoginSuccess = "success"
 	LoginFailure = "failure"

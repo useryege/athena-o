@@ -5,10 +5,11 @@
 Account Access Control owns Athena's durable role-aware authorization model:
 external sign-in availability, independent API Key and Profit Sharing
 entitlements, a complete ten-module access matrix, optimistic revision updates,
-Pending/Active/Blocked status, RPC authorization, and browser authorization
-synchronization. Every access aggregate and authorization lookup is keyed by
-stable account UUID. It also owns credential-capability restrictions layered on
-Wallet operations; the Wallet service separately enforces exact row ownership.
+Pending/Active/Blocked status, RPC authorization, and the hard boundary between
+the member and administrator applications. Every access aggregate and
+authorization lookup is keyed by stable account UUID. It also owns credential-
+capability restrictions layered on Wallet operations; the Wallet service
+separately enforces exact row ownership.
 
 [Account Credentials](account-credentials.md) owns UUID identity, immutable
 username, JWT validation, and the persisted administrator fact. [Google OIDC
@@ -30,8 +31,8 @@ after this layer authorizes the request.
 | RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC`, `authorizeAccountSelfService` |
 | Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `authenticateWalletSecretHTTP`, `authenticateInteractiveWormTradingHTTP`, `authenticateWalletAvatarHTTP`, Worm combination/preview/Run route registration, exact-origin and Run-proof boundaries |
 | Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
-| Browser routing and refresh | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `AuthorizationCtx`, `canRead`, `canWrite`, authorization refresh |
-| Administrator workspace | [ui/src/app/pages/admin-accounts.tsx](../../../ui/src/app/pages/admin-accounts.tsx) | `AdminAccountsPage`, `AccountAccessEditor` |
+| Browser routing and refresh | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx) | member module refresh, administrator role guard, `AuthorizationCtx`, `canRead`, `canWrite` |
+| Administrator workspace | [ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx), [ui/src/app/admin/pages/admin-accounts.tsx](../../../ui/src/app/admin/pages/admin-accounts.tsx) | administrator route graph, `AdminAccountsPage`, `AccountAccessEditor` |
 
 ## Architecture
 
@@ -43,8 +44,13 @@ for the single API Server and publishes only committed, validated aggregates.
 
 The administrator role originates in `athena_account.administrator` and is
 joined into access reads. It is never inferred from username, email, JWT text,
-or request input. `Access.Validate` fixes an administrator at login enabled, API
-Key disabled, Profit Sharing enabled, and maximum access for every module.
+or request input. `Access.Validate` fixes an administrator at login enabled,
+API Key disabled, Profit Sharing disabled, and `NONE` for every member product
+module. Administrator capability is available only through explicit
+`RequirementAdministrator` rules; it does not imply member capability.
+
+The following maxima apply to ordinary member grants and to the `local-user`
+development account; they are not administrator defaults.
 
 | Module | Maximum |
 | --- | --- |
@@ -138,10 +144,11 @@ not the reusable Worm credential-management lease. API Keys cannot enter any
 Run route, and the browser cannot submit Wallet addresses, markets, directions,
 funds, Worm credentials, transactions, or signatures.
 
-The persisted administrator receives maximum module access but no Wallet owner
-bypass. An administrator session can manage only wallets whose
-`owner_account_id` is that administrator's own UUID. The public Wallet contract
-does not carry role or a caller-selected owner.
+The persisted administrator receives no member module access and cannot enter
+Wallet, Worm Trading, Token, Notifications, market, or Profit Sharing member
+operations. Administrator-only account, governance, service-status, and
+Etherscan operations use explicit administrator rules. The public Wallet
+contract does not carry role or a caller-selected owner.
 
 ## Runtime Flow
 
@@ -151,14 +158,16 @@ does not carry role or a caller-selected owner.
 2. Shared username registration commits an ordinary Google or Solana-wallet
    access head with login enabled, API Key and Profit Sharing disabled, revision
    one, and ten `NONE` rows. Only a Google administrator-candidate registration
-   can commit the fixed maximum administrator aggregate. The controller learns
+   can commit the fixed isolated administrator aggregate. The controller learns
    either by UUID only after database commit.
 3. Every login session and API Key checks `LoginEnabled` on each request. API
    Keys additionally check `APIKeyEnabled`; ordinary Profit Sharing RPCs check
    `ProfitSharingEnabled`; product RPCs check their explicit module and level.
-   A persisted administrator satisfies role and module requirements through the
-   role-aware snapshot. Wallet create/import additionally require an interactive
-   typed credential; private-key reveal requires a login cookie, Wallet
+   A persisted administrator satisfies only explicit administrator
+   requirements. Profit Sharing member and module requirements continue through
+   their own flags and matrix entries and therefore reject the fixed
+   administrator aggregate. Wallet create/import additionally require an
+   interactive typed credential; private-key reveal requires a login cookie, Wallet
    `READ_WRITE`, same origin, a five-minute reauthentication lease, and owner-
    scoped retrieval. Worm Trading wallet summaries, balances, connection state,
    open positions, in-flight requests, and their uploaded-avatar GETs require
@@ -186,22 +195,28 @@ does not carry role or a caller-selected owner.
    module matrix in one expected-revision CAS. The SQL transaction advances the
    revision and replaces all ten rows together. Administrator aggregates cannot
    be edited through this path.
-5. Status derives as `BLOCKED` when login is disabled, `PENDING` when login is
-   enabled with all modules `NONE` and Profit Sharing disabled, and `ACTIVE`
-   otherwise. API Key access alone does not make an account Active.
+5. Status derives as `BLOCKED` when login is disabled, `PENDING` for a
+   non-administrator whose login is enabled while all modules are `NONE` and
+   Profit Sharing is disabled, and `ACTIVE` otherwise. The fixed administrator
+   is Active despite having no member business grant. API Key access alone does
+   not make an ordinary account Active.
 6. The administrator directory searches username, verified Google email,
    Solana address, profile display name, and an exact UUID. It supports
    All/Pending/Active/Blocked, one-based pagination defaulting to 50 and capped
    at 100, total count, and a Profit-Sharing-eligible filter. Pending sorts
    first, then most recent login, username, and UUID.
-7. The browser refreshes authorization at most every 15 seconds while visible,
-   on focus or visibility return, on manual Pending-page refresh, and after a
-   stable access denial. Module loss cancels affected work, clears UUID-scoped
-   caches, and redirects an inaccessible route to `/account/access`.
-8. Pending users can use Profile, Appearance, Access, Help, and Logout without
+7. The member browser refreshes authorization at most every 15 seconds while
+   visible, on focus or visibility return, on manual Pending-page refresh, and
+   after a stable access denial. Module loss cancels affected work, clears the
+   member/account/session cache namespace, and redirects an inaccessible route
+   to `/account/access`. An administrator bootstrap leaves the member
+   application before member services are created.
+8. Pending members can use Profile, Appearance, Access, Help, and Logout without
    starting business requests. Security appears only when API Key access is
    enabled. The first UI-backed module grant routes to the first canonical
    readable module; Profit Sharing-only access routes to `/profit-sharing`.
+   The administrator application creates only administrator and self-account
+   services and rejects an ordinary account before any management request.
 
 ## State / Data
 
@@ -235,10 +250,16 @@ cannot rely on a stale access snapshot.
 ## Configuration
 
 Access has no per-account environment variables. Identities, roles, and access
-aggregates come from PostgreSQL. `ATHENA_SERVER_DISABLE_AUTH=true` creates the
-isolated loopback `local-admin` development aggregate and synthesizes its UUID
-in request claims. Normal external-authentication mode rejects that development
-identity.
+aggregates come from PostgreSQL. `ATHENA_SERVER_DISABLE_AUTH=true` creates or
+reuses exactly one selected loopback development aggregate and synthesizes its
+UUID in request claims. `ATHENA_SERVER_DISABLE_AUTH_ROLE=member` selects
+`local-user` with maximum member module access plus API Key and Profit Sharing
+enabled; `administrator` selects `local-admin` with the fixed isolated
+administrator aggregate. The matching `--disable-auth-role` flag has the same
+two values and the default is `member`. Normal external-authentication mode
+rejects either development identity. The API Server rejects disabled
+authentication on non-loopback listeners, and the production deployment
+scripts and Compose configuration reject or fix the setting to false.
 
 ## Invariants
 
@@ -247,8 +268,10 @@ identity.
 - Ordinary first-registration state is Pending and cannot read business APIs.
 - Role comes only from the persisted administrator boolean; username has no
   authorization meaning.
-- The administrator aggregate remains maximum and uneditable.
-- Administrator module access never bypasses exact Wallet ownership.
+- The administrator aggregate remains login-only, contains no member grant,
+  and is uneditable.
+- Administrator capability never satisfies a module or Profit Sharing member
+  requirement; every management operation has an explicit administrator rule.
 - Worm Trading `READ` exposes only the current account's Solana wallet summaries,
   balances, Worm connection/activity projection, and uploaded-avatar GET; it
   does not grant other Wallet reads or any Wallet mutation.
@@ -278,8 +301,7 @@ identity.
   Reconcile cannot progress the Run.
 - Run authorization never expands the frozen plan and does not substitute for
   module authorization, Wallet ownership, the coordinator, or current account
-  access. Administrator role still provides no cross-account Run or Wallet
-  access.
+  access. Administrator role cannot enter Run or Wallet operations.
 - Profit Sharing member RPCs require both entitlement and round membership.
 - Every authenticated RPC has an explicit account, administrator, module, or
   Profit Sharing boundary; unknown methods fail closed.
@@ -345,10 +367,10 @@ raw or signed transaction, Wallet signature, and provider credentials.
 
 ## Change Checklist
 
-- [ ] Persisted role, three entitlements, ten-module matrix, and status derivation remain current.
+- [ ] Persisted role, three entitlements, ten-module matrix, and administrator-aware status derivation remain current.
 - [ ] UUID registration, CAS, and controller publication boundaries remain current.
 - [ ] RPC rules and Pending browser behavior remain synchronized.
-- [ ] Wallet/Worm Trading read composition, credential restrictions, and owner-only administrator behavior remain synchronized.
+- [ ] Wallet/Worm Trading read composition and credential restrictions remain synchronized with the member-only boundary.
 - [ ] Worm management inventory remains interactive, `READ_WRITE`, owner-scoped, and lease-free; mutations remain same-origin/Worm-lease-only and unavailable to API Keys.
 - [ ] Worm combination reads remain interactive `READ`; mutations remain interactive `READ_WRITE`, same-origin, owner-scoped, revisioned, lease-free, and unavailable to API Keys.
 - [ ] Execution-preview reads remain interactive owner-scoped `READ`; creation remains interactive `READ_WRITE`, same-origin, exact-revision, Wallet-resolved, lease-free, and unavailable to API Keys.

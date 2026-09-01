@@ -18,7 +18,10 @@ import (
 	"github.com/useryege/athena/internal/authregistration"
 )
 
-const stateCookieName = "athena.google.state"
+const (
+	stateCookieName = "athena.google.state"
+	entryCookieName = "athena.google.entry"
+)
 
 type googleClaims struct {
 	Email         string `json:"email"`
@@ -44,6 +47,7 @@ type Handler struct {
 	backend         authregistration.Backend
 	registrations   *authregistration.Handler
 	secureCookie    bool
+	baseHRef        string
 	adminEmail      string
 	walletSecrets   *walletSecretReauthentication
 	wormCredentials *wormCredentialReauthentication
@@ -57,6 +61,7 @@ func NewHandler(
 	redisClient *redis.Client,
 	backend authregistration.Backend,
 	registrations *authregistration.Handler,
+	baseHRef string,
 ) (*Handler, error) {
 	store, err := NewTransactionStore(redisClient)
 	if err != nil {
@@ -90,6 +95,7 @@ func NewHandler(
 		backend:       backend,
 		registrations: registrations,
 		secureCookie:  config.secureCookie,
+		baseHRef:      baseHRef,
 		adminEmail:    config.AdminEmail,
 	}, nil
 }
@@ -123,7 +129,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, "google_unavailable", returnTo, "transaction_create", err)
 		return
 	}
-	h.setStateCookie(w, state)
+	h.setStateCookies(w, state, returnTo)
 	authorizationURL := h.oauth2Config.AuthCodeURL(
 		state,
 		oauth2.S256ChallengeOption(verifier),
@@ -156,9 +162,14 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 	state := r.URL.Query().Get("state")
 	cookie, cookieErr := r.Cookie(stateCookieName)
+	entryCookie, _ := r.Cookie(entryCookieName)
+	fallbackReturnTo := ""
+	if entryCookie != nil && entryCookie.Value == "admin" {
+		fallbackReturnTo = "/admin"
+	}
 	h.clearStateCookie(w)
 	if !authregistration.ValidOpaqueValue(state) {
-		h.fail(w, r, "google_state_invalid", "", "state_missing", nil)
+		h.fail(w, r, "google_state_invalid", fallbackReturnTo, "state_missing", nil)
 		return
 	}
 	transaction, err := h.store.Consume(r.Context(), state)
@@ -167,7 +178,7 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, errTransactionUnavailable) {
 			reason = "google_unavailable"
 		}
-		h.fail(w, r, reason, "", "transaction_consume", err)
+		h.fail(w, r, reason, fallbackReturnTo, "transaction_consume", err)
 		return
 	}
 	returnTo := authregistration.ValidateReturnTo(transaction.ReturnTo)
@@ -202,7 +213,7 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.WithField("stage", "registration_required").Info("Verified Google identity requires Athena username registration")
-		http.Redirect(w, r, "/register", http.StatusSeeOther)
+		http.Redirect(w, r, h.deploymentPath("/register"), http.StatusSeeOther)
 		return
 	}
 	h.completeLogin(w, r, account, identity, returnTo)
@@ -280,7 +291,7 @@ func (h *Handler) completeLogin(w http.ResponseWriter, r *http.Request, account 
 	}
 	h.backend.RecordLoginResult(authregistration.LoginSuccess)
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle, "account_id": account.ID}).Info("Google OIDC login succeeded")
-	http.Redirect(w, r, authregistration.ValidateReturnTo(returnTo), http.StatusSeeOther)
+	http.Redirect(w, r, h.deploymentPath(authregistration.ValidateReturnTo(returnTo)), http.StatusSeeOther)
 }
 
 func transactionFresh(createdAt time.Time) bool {
@@ -288,11 +299,26 @@ func transactionFresh(createdAt time.Time) bool {
 	return !createdAt.After(now.Add(time.Minute)) && now.Sub(createdAt) <= transactionTTL
 }
 
-func (h *Handler) setStateCookie(w http.ResponseWriter, value string) {
+func (h *Handler) setStateCookies(w http.ResponseWriter, value, returnTo string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     stateCookieName,
 		Value:    value,
-		Path:     "/auth/google",
+		Path:     h.deploymentPath("/auth/google"),
+		MaxAge:   int(transactionTTL.Seconds()),
+		Expires:  time.Now().Add(transactionTTL),
+		HttpOnly: true,
+		Secure:   h.secureCookie,
+		SameSite: http.SameSiteLaxMode,
+	})
+	entry := "member"
+	validatedReturnTo := authregistration.ValidateReturnTo(returnTo)
+	if validatedReturnTo == "/admin" || strings.HasPrefix(validatedReturnTo, "/admin/") {
+		entry = "admin"
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     entryCookieName,
+		Value:    entry,
+		Path:     h.deploymentPath("/auth/google"),
 		MaxAge:   int(transactionTTL.Seconds()),
 		Expires:  time.Now().Add(transactionTTL),
 		HttpOnly: true,
@@ -305,7 +331,17 @@ func (h *Handler) clearStateCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     stateCookieName,
 		Value:    "",
-		Path:     "/auth/google",
+		Path:     h.deploymentPath("/auth/google"),
+		MaxAge:   -1,
+		Expires:  time.Unix(1, 0),
+		HttpOnly: true,
+		Secure:   h.secureCookie,
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     entryCookieName,
+		Value:    "",
+		Path:     h.deploymentPath("/auth/google"),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,
@@ -325,5 +361,14 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, reason, returnTo,
 	if returnTo != "" {
 		query.Set("returnTo", authregistration.ValidateReturnTo(returnTo))
 	}
-	http.Redirect(w, r, "/login?"+query.Encode(), http.StatusSeeOther)
+	loginPath := "/login"
+	validatedReturnTo := authregistration.ValidateReturnTo(returnTo)
+	if validatedReturnTo == "/admin" || strings.HasPrefix(validatedReturnTo, "/admin/") {
+		loginPath = "/admin/login"
+	}
+	http.Redirect(w, r, h.deploymentPath(loginPath)+"?"+query.Encode(), http.StatusSeeOther)
+}
+
+func (h *Handler) deploymentPath(logicalPath string) string {
+	return authregistration.DeploymentPath(h.baseHRef, logicalPath)
 }

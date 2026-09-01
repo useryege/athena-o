@@ -60,6 +60,30 @@ const (
 	IdentityProviderDevelopment  IdentityProvider = "development"
 )
 
+// DevelopmentRole selects the exact isolated identity injected while browser
+// authentication is disabled on a loopback API Server.
+type DevelopmentRole string
+
+const (
+	DevelopmentRoleMember        DevelopmentRole = "member"
+	DevelopmentRoleAdministrator DevelopmentRole = "administrator"
+
+	DevelopmentMemberUsername        = "local-user"
+	DevelopmentAdministratorUsername = "local-admin"
+)
+
+// ParseDevelopmentRole validates the disabled-auth role without accepting
+// aliases that could silently select a more privileged identity.
+func ParseDevelopmentRole(value string) (DevelopmentRole, error) {
+	role := DevelopmentRole(strings.TrimSpace(value))
+	switch role {
+	case DevelopmentRoleMember, DevelopmentRoleAdministrator:
+		return role, nil
+	default:
+		return "", fmt.Errorf("unsupported disabled-auth role %q; expected member or administrator", value)
+	}
+}
+
 // Account is the internal, bearer-secret-free projection of one durable
 // Athena account. IdentitySubject is authentication state and must not be
 // exposed through public account or session APIs.
@@ -142,6 +166,22 @@ func (a Account) HasExternalIdentity() bool {
 	}
 	_, _, err := NormalizeExternalIdentity(a.IdentityProvider, a.IdentitySubject, a.VerifiedEmail, a.Administrator)
 	return err == nil
+}
+
+// DevelopmentRole validates and returns the exact role represented by an
+// isolated development account.
+func (a Account) DevelopmentRole() (DevelopmentRole, error) {
+	if a.IdentityProvider != IdentityProviderDevelopment || a.IdentitySubject != "" || a.VerifiedEmail != "" {
+		return "", fmt.Errorf("account is not an isolated development identity")
+	}
+	switch {
+	case !a.Administrator && a.Username == DevelopmentMemberUsername:
+		return DevelopmentRoleMember, nil
+	case a.Administrator && a.Username == DevelopmentAdministratorUsername:
+		return DevelopmentRoleAdministrator, nil
+	default:
+		return "", fmt.Errorf("development identity has an unsupported username and role shape")
+	}
 }
 
 // IsValidAPIKeyDisplayID reports whether id is a valid user-visible API Key

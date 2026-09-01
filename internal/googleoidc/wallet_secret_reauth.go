@@ -193,14 +193,14 @@ func (h *walletSecretReauthentication) callback(w http.ResponseWriter, r *http.R
 		return
 	}
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle, "account_id": credential.AccountID}).Info("Wallet-secret Google reauthentication succeeded")
-	http.Redirect(w, r, returnTo, http.StatusSeeOther)
+	http.Redirect(w, r, h.google.deploymentPath(returnTo), http.StatusSeeOther)
 }
 
 func (h *walletSecretReauthentication) setStateCookie(w http.ResponseWriter, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     walletSecretStateCookieName,
 		Value:    value,
-		Path:     "/auth/google",
+		Path:     h.google.deploymentPath("/auth/google"),
 		MaxAge:   int(walletSecretTransactionTTL / time.Second),
 		Expires:  time.Now().Add(walletSecretTransactionTTL),
 		HttpOnly: true,
@@ -213,7 +213,7 @@ func (h *walletSecretReauthentication) clearStateCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     walletSecretStateCookieName,
 		Value:    "",
-		Path:     "/auth/google",
+		Path:     h.google.deploymentPath("/auth/google"),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,
@@ -224,7 +224,7 @@ func (h *walletSecretReauthentication) clearStateCookie(w http.ResponseWriter) {
 
 func (h *walletSecretReauthentication) redirectFailure(w http.ResponseWriter, r *http.Request, returnTo, reason, stage string) {
 	log.WithFields(log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle}).Warn("Wallet-secret Google reauthentication failed")
-	http.Redirect(w, r, walletSecretFailureURL(returnTo, reason), http.StatusSeeOther)
+	http.Redirect(w, r, h.google.deploymentPath(walletSecretFailureURL(returnTo, reason)), http.StatusSeeOther)
 }
 
 func validateWalletSecretReturnTo(raw string) string {

@@ -165,14 +165,17 @@ const parseJSONResponse = async (response: Response): Promise<Record<string, unk
 };
 
 const rawAuthPost = <T>(path: string, body: Record<string, unknown>, map: (value: Record<string, unknown>) => T): AbortablePromise<T> => {
-    const controller = new AbortController();
-    const promise = fetch(requests.toAbsURL(path), {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-        body: JSON.stringify(body),
-        signal: controller.signal
-    }).then(async response => {
+    const request = requests.scopedFetch(
+        requests.toAbsURL(path),
+        {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        },
+        writeScope
+    );
+    const promise = request.then(async response => {
         const responseBody = await parseJSONResponse(response);
         if (!response.ok) {
             const nestedError = isRecord(responseBody.error) ? responseBody.error : undefined;
@@ -190,7 +193,7 @@ const rawAuthPost = <T>(path: string, body: Record<string, unknown>, map: (value
         }
         return map(responseBody);
     }) as AbortablePromise<T>;
-    promise.abort = () => controller.abort();
+    promise.abort = request.abort;
     return promise;
 };
 
@@ -257,14 +260,14 @@ export class WalletService {
 
     public uploadAvatar(id: number, file: File, expectedRevision: number): AbortablePromise<WalletItem> {
         const req = requests
-            .rawPut(`/api/v1/wallets/${encodeURIComponent(String(id))}/avatar`)
+            .rawPut(`/api/v1/wallets/${encodeURIComponent(String(id))}/avatar`, writeScope)
             .field('expectedRevision', String(expectedRevision))
             .attach('file', file as any);
         return abortableRequest(req, response => normalizeWallet((response.body || {}).item || response.body || {}));
     }
 
     public deleteAvatar(id: number, expectedRevision: number): AbortablePromise<WalletItem> {
-        const req = requests.rawDelete(`/api/v1/wallets/${encodeURIComponent(String(id))}/avatar`).query({expectedRevision});
+        const req = requests.rawDelete(`/api/v1/wallets/${encodeURIComponent(String(id))}/avatar`, writeScope).query({expectedRevision});
         return abortableRequest(req, response => normalizeWallet((response.body || {}).item || response.body || {}));
     }
 

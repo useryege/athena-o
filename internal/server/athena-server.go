@@ -8,11 +8,9 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"regexp"
 	go_runtime "runtime"
@@ -141,8 +139,22 @@ var backoff = wait.Backoff{
 
 var (
 	// clientConstraint = ">= " + common.MinClientVersion
-	baseHRefRegex = regexp.MustCompile(`<base href="(.*?)">`)
+	baseHRefRegex           = regexp.MustCompile(`<base href="[^"]*">`)
+	deploymentBaseHRefRegex = regexp.MustCompile(`<meta name="athena-deployment-base-href" content="[^"]*">`)
 )
+
+type uiApplication string
+
+const (
+	memberApplication uiApplication = "member"
+	adminApplication  uiApplication = "admin"
+)
+
+type indexDataCache struct {
+	init gosync.Once
+	data []byte
+	err  error
+}
 
 // AthenaServer is the API server for Athena
 type AthenaServer struct {
@@ -170,9 +182,8 @@ type AthenaServer struct {
 	// stopCh is the channel which when closed, will shutdown the Athena server
 	stopCh           chan os.Signal
 	userStateStorage util_session.UserStateStorage
-	indexDataInit    gosync.Once
-	indexData        []byte
-	indexDataErr     error
+	memberIndexData  indexDataCache
+	adminIndexData   indexDataCache
 	staticAssets     http.FileSystem
 	// apiFactory         api.Factory
 	// secretInformer    cache.SharedIndexInformer
@@ -186,6 +197,7 @@ type AthenaServer struct {
 
 type AthenaServerOpts struct {
 	DisableAuth     bool
+	DisableAuthRole accountcredentials.DevelopmentRole
 	ContentTypes    []string
 	EnableGZip      bool
 	StaticAssetsDir string
@@ -228,6 +240,14 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	if opts.DisableAuth && !isLoopbackListenHost(opts.ListenHost) {
 		errorsutil.CheckError(fmt.Errorf("disabled authentication is allowed only on a loopback listen address"))
 	}
+	if opts.DisableAuthRole == "" {
+		opts.DisableAuthRole = accountcredentials.DevelopmentRoleMember
+	}
+	if opts.DisableAuth {
+		developmentRole, err := accountcredentials.ParseDevelopmentRole(string(opts.DisableAuthRole))
+		errorsutil.CheckError(err)
+		opts.DisableAuthRole = developmentRole
+	}
 	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
 	errorsutil.CheckError(err)
 	settings, err := settingsMgr.GetSettings()
@@ -236,7 +256,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	errorsutil.CheckError(err)
 	developmentAccountID := ""
 	if opts.DisableAuth {
-		developmentAccount, ensureErr := accountStateStore.EnsureDevelopmentAdministrator(ctx)
+		developmentAccount, ensureErr := accountStateStore.EnsureDevelopmentAccount(ctx, opts.DisableAuthRole)
 		if ensureErr != nil {
 			_ = accountStateStore.Close()
 			errorsutil.CheckError(ensureErr)
@@ -286,7 +306,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	walletSecretSecureCookie := false
 	walletSecretPublicOrigin := ""
 	if !opts.DisableAuth {
-		googleOIDCConfig, err := googleoidc.LoadConfigFromEnv()
+		googleOIDCConfig, err := googleoidc.LoadConfigFromEnv(opts.BaseHRef)
 		errorsutil.CheckError(err)
 		walletSecretSecureCookie = googleOIDCConfig.SecureCookie()
 		walletSecretPublicOrigin = googleOIDCConfig.PublicOrigin()
@@ -301,9 +321,10 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 			opts.RedisClient,
 			externalAuth,
 			registrationHandler,
+			opts.BaseHRef,
 		)
 		errorsutil.CheckError(err)
-		phantomAuthHandler, err = phantomauth.NewHandler(opts.RedisClient, externalAuth, registrationHandler, googleOIDCConfig.PublicOrigin())
+		phantomAuthHandler, err = phantomauth.NewHandler(opts.RedisClient, externalAuth, registrationHandler, googleOIDCConfig.PublicOrigin(), opts.BaseHRef)
 		errorsutil.CheckError(err)
 	}
 	walletSecretMgr, err := walletsecret.NewManager(opts.RedisClient, opts.BaseHRef, walletSecretSecureCookie)
@@ -776,32 +797,68 @@ func (server *AthenaServer) uiAssetExists(filename string) bool {
 	return !stat.IsDir()
 }
 
-func replaceBaseHRef(data string, replaceWith string) string {
-	return baseHRefRegex.ReplaceAllString(data, replaceWith)
+func normalizeBaseHRef(value string) string {
+	trimmed := strings.Trim(strings.TrimSpace(value), "/")
+	if trimmed == "" {
+		return "/"
+	}
+	return "/" + trimmed + "/"
 }
 
-func (server *AthenaServer) getIndexData() ([]byte, error) {
-	server.indexDataInit.Do(func() {
-		data, err := ui.Embedded.ReadFile("dist/app/index.html")
+func applicationBaseHRef(deploymentBaseHRef string, application uiApplication) string {
+	if application == adminApplication {
+		return normalizeBaseHRef(deploymentBaseHRef) + "admin/"
+	}
+	return normalizeBaseHRef(deploymentBaseHRef)
+}
+
+func replaceRuntimeBaseHRefs(data string, applicationBase string, deploymentBase string) string {
+	data = baseHRefRegex.ReplaceAllLiteralString(data, fmt.Sprintf(`<base href="%s">`, applicationBase))
+	return deploymentBaseHRefRegex.ReplaceAllLiteralString(data, fmt.Sprintf(`<meta name="athena-deployment-base-href" content="%s">`, deploymentBase))
+}
+
+func applicationForPath(requestPath string) uiApplication {
+	if requestPath == "/admin" || strings.HasPrefix(requestPath, "/admin/") {
+		return adminApplication
+	}
+	return memberApplication
+}
+
+func (server *AthenaServer) getIndexData(application uiApplication) ([]byte, error) {
+	cache := &server.memberIndexData
+	indexPath := "dist/app/index.html"
+	if application == adminApplication {
+		cache = &server.adminIndexData
+		indexPath = "dist/app/admin/index.html"
+	}
+
+	cache.init.Do(func() {
+		data, err := ui.Embedded.ReadFile(indexPath)
 		if err != nil {
-			server.indexDataErr = err
+			cache.err = err
 			return
 		}
-		if server.BaseHRef == "/" || server.BaseHRef == "" {
-			server.indexData = data
-		} else {
-			server.indexData = []byte(replaceBaseHRef(string(data), fmt.Sprintf(`<base href="/%s/">`, strings.Trim(server.BaseHRef, "/"))))
-		}
+		deploymentBase := normalizeBaseHRef(server.BaseHRef)
+		applicationBase := applicationBaseHRef(deploymentBase, application)
+		cache.data = []byte(replaceRuntimeBaseHRefs(string(data), applicationBase, deploymentBase))
 	})
 
-	return server.indexData, server.indexDataErr
+	return cache.data, cache.err
 }
 
-var mainJsBundleRegex = regexp.MustCompile(`^main\.[0-9a-f]{20}\.js$`)
+func isUIStaticPath(requestPath string) bool {
+	return requestPath == "/fonts.css" ||
+		requestPath == "/llms.txt" ||
+		strings.HasPrefix(requestPath, "/assets/") ||
+		strings.HasPrefix(requestPath, "/images/") ||
+		strings.HasPrefix(requestPath, "/docs/ai/")
+}
 
-func isMainJsBundle(url *url.URL) bool {
-	filename := path.Base(url.Path)
-	return mainJsBundleRegex.MatchString(filename)
+func isReservedHTTPNamespace(requestPath string) bool {
+	return requestPath == "/api" || strings.HasPrefix(requestPath, "/api/") ||
+		requestPath == "/auth" || strings.HasPrefix(requestPath, "/auth/") ||
+		requestPath == "/swagger-ui" || strings.HasPrefix(requestPath, "/swagger-ui/") ||
+		requestPath == "/swagger.json"
 }
 
 // newStaticAssetsHandler returns an HTTP handler to serve UI static assets
@@ -809,13 +866,17 @@ func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *
 	return func(w http.ResponseWriter, r *http.Request) {
 		acceptHTML := false
 		for _, acceptType := range strings.Split(r.Header.Get("Accept"), ",") {
-			if acceptType == "text/html" || acceptType == "html" {
+			mediaType := strings.TrimSpace(strings.SplitN(acceptType, ";", 2)[0])
+			if mediaType == "text/html" || mediaType == "html" {
 				acceptHTML = true
 				break
 			}
 		}
 
-		fileRequest := r.URL.Path != "/index.html" && server.uiAssetExists(r.URL.Path)
+		application := applicationForPath(r.URL.Path)
+		indexRequest := r.URL.Path == "/index.html" || r.URL.Path == "/admin/index.html"
+		fileRequest := !indexRequest && server.uiAssetExists(r.URL.Path)
+		fallbackExcludedRequest := isUIStaticPath(r.URL.Path) || isReservedHTTPNamespace(r.URL.Path)
 
 		// Set X-Frame-Options according to configuration
 		if server.XFrameOptions != "" {
@@ -828,11 +889,11 @@ func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *
 		w.Header().Set("X-XSS-Protection", "1")
 
 		// serve index.html for non file requests to support HTML5 History API
-		if acceptHTML && !fileRequest && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		if acceptHTML && !fileRequest && !fallbackExcludedRequest && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 			for k, v := range noCacheHeaders {
 				w.Header().Set(k, v)
 			}
-			data, err := server.getIndexData()
+			data, err := server.getIndexData(application)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -844,7 +905,7 @@ func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *
 			}
 			http.ServeContent(w, r, "index.html", modTime, utilio.NewByteReadSeeker(data))
 		} else {
-			if isMainJsBundle(r.URL) {
+			if strings.HasPrefix(r.URL.Path, "/assets/") {
 				cacheControl := "public, max-age=31536000, immutable"
 				if !fileRequest {
 					cacheControl = "no-cache"
@@ -1184,9 +1245,24 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
-	// if authentication is disabled, present the request as a local admin session
+	// If authentication is disabled, present the request as the selected local
+	// development identity. Authorization still evaluates its persisted access.
 	if server.DisableAuth {
-		return withDisabledAuthClaims(ctx, server.developmentAccountID), nil
+		ctx = withDisabledAuthClaims(ctx, server.developmentAccountID)
+		access, err := server.accessController.Get(server.developmentAccountID)
+		if err != nil {
+			return ctx, err
+		}
+		if !access.LoginEnabled {
+			ctx = context.WithValue(ctx, util_session.AuthErrorCtxKey, util_session.AccountMaintenanceErr) //nolint:staticcheck
+			return ctx, util_session.AccountMaintenanceErr
+		}
+		credential, ok := util_session.AuthenticatedCredentialFromContext(ctx)
+		if !ok {
+			return ctx, status.Error(codes.Internal, "development credential is not configured")
+		}
+		credential.AccessRevision = access.Revision
+		return util_session.WithAuthenticatedCredential(ctx, credential), nil
 	}
 
 	claims, credential, _, claimsErr := server.getClaims(ctx)

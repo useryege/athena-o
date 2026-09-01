@@ -136,8 +136,12 @@ function normalizeProbeRun(item: any): EtherscanGatewayProbeRun {
 }
 
 export class ServiceStatusService {
+    private readonly serviceStatusReadScope = {feature: 'admin-service-status' as const, mode: 'read' as const};
+    private readonly etherscanReadScope = {feature: 'admin-etherscan' as const, mode: 'read' as const};
+    private readonly etherscanWriteScope = {feature: 'admin-etherscan' as const, mode: 'write' as const};
+
     public list(): Promise<ListServiceStatusesResult> & {abort?: () => void} {
-        const req = requests.get('/service-statuses');
+        const req = requests.get('/service-statuses', this.serviceStatusReadScope);
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -154,7 +158,7 @@ export class ServiceStatusService {
     }
 
     public listEtherscanGatewayStatuses(): Promise<ListEtherscanGatewayStatusesResult> & {abort?: () => void} {
-        const req = requests.get('/etherscan-gateway-statuses');
+        const req = requests.get('/etherscan-gateway-statuses', this.etherscanReadScope);
         const promise = req.then(res => {
             const body = res.body || {};
             return {
@@ -167,7 +171,7 @@ export class ServiceStatusService {
     }
 
     public runEtherscanGatewayProbe(input: RunEtherscanGatewayProbeInput): Promise<EtherscanGatewayProbeRun> & {abort?: () => void} {
-        const req = requests.post('/etherscan-gateway-probe-runs').send({
+        const req = requests.post('/etherscan-gateway-probe-runs', this.etherscanWriteScope).send({
             interval_ms: input.intervalMS,
             requests_per_key: input.requestsPerKey
         });
@@ -177,14 +181,14 @@ export class ServiceStatusService {
     }
 
     public getEtherscanGatewayProbeRun(runID: string): Promise<EtherscanGatewayProbeRun> & {abort?: () => void} {
-        const req = requests.get(`/etherscan-gateway-probe-runs/${encodeURIComponent(runID)}`);
+        const req = requests.get(`/etherscan-gateway-probe-runs/${encodeURIComponent(runID)}`, this.etherscanReadScope);
         const promise = req.then(res => normalizeProbeRun(res.body || {})) as Promise<EtherscanGatewayProbeRun> & {abort?: () => void};
         promise.abort = () => req.abort();
         return promise;
     }
 
     public getLatestEtherscanGatewayProbeRun(): Promise<EtherscanGatewayProbeRun> & {abort?: () => void} {
-        const req = requests.get('/etherscan-gateway-probe-runs/latest');
+        const req = requests.get('/etherscan-gateway-probe-runs/latest', this.etherscanReadScope);
         const promise = req.then(res => normalizeProbeRun(res.body || {})) as Promise<EtherscanGatewayProbeRun> & {abort?: () => void};
         promise.abort = () => req.abort();
         return promise;

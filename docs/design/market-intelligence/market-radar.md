@@ -32,7 +32,7 @@ after `SendNotification` is accepted belongs to Athena Notification.
 | Internal gRPC connection ownership | [internal/marketradar/apiclient/apiclient.go](../../../internal/marketradar/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewMarketRadarClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `MarketRadarHotMarketItem`, `MarketRadarRealtimeMarketItem`, `MarketRadarMoverMarketItem` |
 | Provider adapter | [util/polymarket](../../../util/polymarket) | `GammaClient`, `ListMarketsKeyset` |
-| Web routes and client pagination | [ui/src/app/pages/market-radar.tsx](../../../ui/src/app/pages/market-radar.tsx), [ui/src/app/components/resource-table.tsx](../../../ui/src/app/components/resource-table.tsx) | `MarketRadarPage`, `ResourceTable` |
+| Web routes and client pagination | [ui/src/app/member/pages/market-radar.tsx](../../../ui/src/app/member/pages/market-radar.tsx), [ui/src/app/components/resource-table.tsx](../../../ui/src/app/components/resource-table.tsx) | `MarketRadarPage`, `ResourceTable` |
 
 ## Architecture
 

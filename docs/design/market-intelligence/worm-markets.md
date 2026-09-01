@@ -203,7 +203,7 @@ execution guarantee.
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED` / `--notification-enabled` | Creates the Notification clientset when true; default `true`. Disabling it does not disable synchronization or reads. |
 | `ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
-| `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
+| `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / `--logformat`, `--loglevel` | Shared process log format and level; defaults `json` and `info`. |
 
 The one-minute loop intervals, 100-market upstream page size, 30-minute live
 window, `0.05` live range threshold, price-alert bands, notification topics,

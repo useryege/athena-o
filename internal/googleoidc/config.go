@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/useryege/athena/internal/authregistration"
 )
 
 const (
@@ -58,7 +60,7 @@ func (config Config) SecureCookie() bool {
 
 // LoadConfigFromEnv reads and validates Google OIDC settings without making a
 // network request. Client secret supports the standard _FILE form.
-func LoadConfigFromEnv() (Config, error) {
+func LoadConfigFromEnv(baseHRef string) (Config, error) {
 	secret, err := envOrFile(envClientSecret)
 	if err != nil {
 		return Config{}, err
@@ -82,8 +84,10 @@ func LoadConfigFromEnv() (Config, error) {
 	if err != nil || !redirect.IsAbs() || redirect.Host == "" || redirect.User != nil || redirect.Opaque != "" {
 		return Config{}, fmt.Errorf("%s must be an absolute URI", envRedirectURI)
 	}
-	if redirect.Path != callbackPath || redirect.EscapedPath() != callbackPath || redirect.ForceQuery || redirect.RawQuery != "" || redirect.Fragment != "" {
-		return Config{}, fmt.Errorf("%s path must be exactly %s without query or fragment", envRedirectURI, callbackPath)
+	expectedCallbackPath := authregistration.DeploymentPath(baseHRef, callbackPath)
+	expectedEscapedPath := (&url.URL{Path: expectedCallbackPath}).EscapedPath()
+	if redirect.Path != expectedCallbackPath || redirect.EscapedPath() != expectedEscapedPath || redirect.ForceQuery || redirect.RawQuery != "" || redirect.Fragment != "" {
+		return Config{}, fmt.Errorf("%s path must be exactly %s without query or fragment", envRedirectURI, expectedCallbackPath)
 	}
 	switch redirect.Scheme {
 	case "https":

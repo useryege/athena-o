@@ -39,7 +39,7 @@ coordinator, Web JWT mutation flow, and terminal reconciliation.
 | Run-bound Solana proof | [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go), [internal/phantomauth/worm_execution_store.go](../../../internal/phantomauth/worm_execution_store.go) | `WormExecutionChallenge`, `WormExecutionVerify`, plan-digest SIWS statement, single-use challenge |
 | Run-bound development proof and projection | [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `developmentWormExecutionAuthorization`, `authorizeWormExecutionProof`, stable execution-auth errors and route wiring |
 | Logout invalidation | [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `Handler.ServeHTTP`, `clearSensitiveCookies` |
-| Browser flow and cleanup | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/pages/worm-trading.tsx](../../../ui/src/app/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, intent-only redirect recovery |
+| Browser flow and cleanup | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, intent-only redirect recovery |
 | Process and route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/authz.go](../../../internal/server/authz.go) | `NewServer`, `newHTTPServer`, `interactiveLoginGRPCMethods` |
 
 ## Architecture
@@ -285,10 +285,11 @@ The `athena.wallet-secret.lease` cookie is HttpOnly, SameSite=Strict, Secure
 when the configured public origin is HTTPS, and scoped to the configured base
 href's `/api/v1/wallets` path. The independent
 `athena.worm-trading.lease` cookie has the same protections and is scoped to
-`/api/v1/worm-trading`. Each capability has a separate SameSite=Lax Google state
-cookie under `/auth/google` and a separate SameSite=Strict Solana challenge
-cookie under its own auth route. Provider transactions and challenges are
-five-minute, single-use Redis records with distinct key prefixes.
+the base href's `/api/v1/worm-trading` path. Each capability has a separate
+SameSite=Lax Google state cookie under the deployment-relative `/auth/google`
+path and a separate SameSite=Strict Solana challenge cookie under its own
+deployment-relative auth route. Provider transactions and challenges are five-
+minute, single-use Redis records with distinct key prefixes.
 
 Wallet and Worm Google transactions and Solana challenges share one sensitive-
 proof Redis rate counter: at most 120 provider-state creations globally and 20 for one

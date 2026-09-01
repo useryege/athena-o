@@ -435,7 +435,7 @@ func (h *wormExecutionAuthorization) setChallengeCookie(w http.ResponseWriter, v
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormExecutionChallengeCookieName,
 		Value:    value,
-		Path:     wormExecutionChallengeCookiePath,
+		Path:     h.phantom.deploymentPath(wormExecutionChallengeCookiePath),
 		MaxAge:   int(wormExecutionChallengeTTL / time.Second),
 		Expires:  expiresAt,
 		HttpOnly: true,
@@ -448,7 +448,7 @@ func (h *wormExecutionAuthorization) clearChallengeCookie(w http.ResponseWriter)
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormExecutionChallengeCookieName,
 		Value:    "",
-		Path:     wormExecutionChallengeCookiePath,
+		Path:     h.phantom.deploymentPath(wormExecutionChallengeCookiePath),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,

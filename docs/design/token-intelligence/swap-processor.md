@@ -186,7 +186,7 @@ stored blocks and events.
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded Token migration during connection setup; default `true`. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Swap Processor telemetry listener; default `127.0.0.1:8111`. |
 | `ATHENA_TOKEN_HEALTH_STALE_AFTER` / `--health-stale-after` | Maximum age of the last successful loop before readiness fails; default 2 minutes. |
-| `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared worker logging format and level. |
+| `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / `--logformat`, `--loglevel` | Shared worker logging format and level. |
 
 Every maintained chain setting is required even when that chain is disabled.
 The maintained configuration enables Ethereum and disables BSC.

@@ -3,7 +3,7 @@ import requests from './requests';
 
 export class AuthService {
     public bootstrap(): Promise<AppBootstrap> {
-        return requests.get('/app/bootstrap').then(res => {
+        return requests.get('/app/bootstrap', {session: true}).then(res => {
             const settings = res.body?.settings;
             const session = res.body?.session;
             if (!settings || !session) {

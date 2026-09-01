@@ -25,8 +25,9 @@ accounts, resolve external identity subjects, or infer role from username.
 | Public and internal contracts | [internal/server/profitsharing/profitsharing.proto](../../../internal/server/profitsharing/profitsharing.proto), [internal/profitsharing/profit_sharing.proto](../../../internal/profitsharing/profit_sharing.proto) | `Participant.account_id`, `Proposal.author_account_id`, internal requester fields |
 | Persistence | [internal/profitsharing/store/migrations/000001_init.sql](../../../internal/profitsharing/store/migrations/000001_init.sql), [internal/profitsharing/store/queries/profit_sharing.sql](../../../internal/profitsharing/store/queries/profit_sharing.sql) | participant, proposal, proposal item, ballot, and vote UUID columns |
 | UUID conversion boundary | [internal/profitsharing/store/account_id.go](../../../internal/profitsharing/store/account_id.go) | `canonicalAccountID`, `accountUUID`, `accountIDFromUUID` |
-| Administrator UI | [ui/src/app/pages/profit-sharing-admin.tsx](../../../ui/src/app/pages/profit-sharing-admin.tsx), [ui/src/app/pages/profit-sharing-shared.tsx](../../../ui/src/app/pages/profit-sharing-shared.tsx) | account search, roster editor, readable participant labels |
-| Member UI | [ui/src/app/pages/profit-sharing.tsx](../../../ui/src/app/pages/profit-sharing.tsx), [ui/src/app/shared/services/profit-sharing-service.ts](../../../ui/src/app/shared/services/profit-sharing-service.ts) | member rounds, UUID self checks, proposal and vote operations |
+| Administrator UI | [ui/src/app/admin/pages/profit-sharing-admin.tsx](../../../ui/src/app/admin/pages/profit-sharing-admin.tsx), [ui/src/app/shared/pages/profit-sharing-shared.tsx](../../../ui/src/app/shared/pages/profit-sharing-shared.tsx) | account search, roster editor, readable participant labels |
+| Realm-specific browser services | [ui/src/app/shared/services/profit-sharing-service.ts](../../../ui/src/app/shared/services/profit-sharing-service.ts), [ui/src/app/member/profit-sharing-service.ts](../../../ui/src/app/member/profit-sharing-service.ts), [ui/src/app/admin/profit-sharing-service.ts](../../../ui/src/app/admin/profit-sharing-service.ts), [ui/src/app/member/services.ts](../../../ui/src/app/member/services.ts), [ui/src/app/admin/services.ts](../../../ui/src/app/admin/services.ts) | neutral `ProfitSharingReader` and parsers; disjoint `MemberProfitSharingService` and `AdminProfitSharingService` command surfaces |
+| Member UI | [ui/src/app/member/pages/profit-sharing.tsx](../../../ui/src/app/member/pages/profit-sharing.tsx) | member rounds, UUID self checks, proposal and vote operations |
 
 ## Architecture
 
@@ -40,9 +41,12 @@ input with current canonical values from `CredentialManager` and
 The internal service receives explicit `requester_account_id` and
 `requester_is_admin` only from that trusted facade. It validates canonical UUID,
 role, membership, phase, proposal ownership, ballot state, and self-vote rules.
-Member RPCs pass both the API Server Profit Sharing entitlement rule and the
-domain round-membership rule. Administrator lifecycle operations depend on the
-persisted role, never a special username.
+`ListRounds` and `GetRound` are the shared read contract: an administrator uses
+its explicit role to obtain the management projection, while an ordinary
+account must pass the Profit Sharing entitlement and domain membership rules.
+Proposal and vote commands always use the member boundary and reject an
+administrator. Round lifecycle commands always require the persisted
+administrator role, never a special username.
 
 The administrator participant selector queries the Account API with
 `profitSharingEligibleOnly=true`. The server returns registered non-
@@ -50,13 +54,19 @@ administrator accounts with login and Profit Sharing enabled. Browser labels
 prefer profile display name and always include `@username`; UUID is retained as
 the selection value and React/domain key.
 
+The browser exposes the two command sets from separate application roots. The
+member application owns `/profit-sharing/*`; the administrator application owns
+`/admin/profit-sharing/*`. They may share neutral round DTO normalization and
+presentation components, but neither application imports the other realm's
+commands or route tree.
+
 ## Runtime Flow
 
-1. An administrator creates or edits a draft roster with distinct account
-   UUIDs, display order, and baseline responsibilities. A draft may remain
-   incomplete while it is being prepared. The API Server ignores the submitted
-   presentation strings and snapshots each current immutable username and
-   current display name from account state.
+1. An administrator reads the management projection and creates or edits a
+   draft roster with distinct account UUIDs, display order, and baseline
+   responsibilities. A draft may remain incomplete while it is being prepared.
+   The API Server ignores the submitted presentation strings and snapshots each
+   current immutable username and current display name from account state.
 2. `OpenRound` reloads the draft projection and revalidates every UUID. Each must
    still be registered, ordinary, distinct, login enabled, Profit Sharing
    enabled, and backed by a valid Google or Solana external login identity. It
@@ -65,10 +75,10 @@ the selection value and React/domain key.
    verifies revision and draft fields, locks the round, and opens only on exact
    equality. It creates one proposal per participant and one proposal item for
    each `(proposal, participant_account_id)` pair before entering `COLLECTING`.
-4. During collection, a participant reads and revises only the proposal whose
-   `author_account_id` matches the request UUID. Submission requires every
-   responsibility and allocation, totaling exactly 10,000 basis points. A
-   proposal may be reopened before publication.
+4. During collection, an entitled ordinary participant reads and revises only
+   the proposal whose `author_account_id` matches the request UUID. Submission
+   requires every responsibility and allocation, totaling exactly 10,000 basis
+   points. A proposal may be reopened before publication.
 5. After all five submissions, publication assigns stable anonymous labels,
    creates ballot one with every proposal, and enters `VOTING`. Members can see
    allocations but not authors or live tallies.
@@ -84,7 +94,9 @@ the selection value and React/domain key.
    candidate or cross-ballot history.
 9. Disabling login immediately blocks sessions and therefore member operations.
    Disabling only Profit Sharing blocks member RPCs without rewriting roster or
-   historical snapshots. Re-enabling access resumes eligible membership.
+   historical snapshots. Re-enabling access resumes eligible membership. The
+   administrator's fixed Profit Sharing entitlement remains disabled; its read
+   and lifecycle access comes solely from explicit administrator authorization.
 10. The standalone service starts on port 8108, marks gRPC health serving after
     its database is ready, and shuts down by setting health not serving,
     gracefully stopping gRPC, and closing PostgreSQL.
@@ -134,6 +146,9 @@ username, display name, role, and eligibility come through the API Server.
 - Username/display-name snapshots are presentation only and cannot change a
   relationship or historical round.
 - The administrator owns lifecycle actions and cannot act as a participant.
+- Administrator role does not satisfy the Profit Sharing member entitlement;
+  member proposal and vote commands reject an administrator even when the
+  administrator can read the same round through the management projection.
 - Revocation does not delete or rewrite durable round history.
 - Proposal items and votes are keyed and de-duplicated by UUID; self-vote is
   enforced both in service logic and PostgreSQL.
@@ -170,4 +185,5 @@ revisions are the workflow diagnostic record.
 - [ ] Independent entitlement and open-round revalidation remain current.
 - [ ] Durable workflow phases, revisions, locks, and runoff rules remain current.
 - [ ] UI labels avoid presenting UUID as the user's public identity.
+- [ ] Member and administrator UIs remain in separate route and command graphs.
 - [ ] The [design index](../README.md) contains the current summary.

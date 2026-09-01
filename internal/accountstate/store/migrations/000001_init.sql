@@ -99,8 +99,10 @@ CREATE TABLE athena_account (
       identity_provider = 'development'
       AND identity_subject IS NULL
       AND verified_email = ''
-      AND administrator
-      AND username = 'local-admin'
+      AND (
+        (administrator AND username = 'local-admin')
+        OR (NOT administrator AND username = 'local-user')
+      )
     )
   ),
   CONSTRAINT athena_account_administrator_provider_check CHECK (
@@ -256,7 +258,8 @@ CREATE INDEX athena_account_recent_login_idx
 
 -- Normal authentication starts with no account rows. External registration creates
 -- a complete account aggregate, while disabled-auth development explicitly
--- creates its isolated local administrator through the account-state store.
+-- creates one selected isolated local development identity through the
+-- account-state store. The member and administrator identities may coexist.
 
 -- +goose Down
 

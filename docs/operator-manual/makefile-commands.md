@@ -188,9 +188,10 @@ install -m 0600 /secure/source/google-oidc-client-secret secrets/google-oidc-cli
 `/run/secrets/google-oidc-client-secret`；migration 和其他业务容器不会获得文件
 内容。本地生产预演让 `athena-server` 使用当前宿主机 UID 读取该用户自己的 `0600`
 文件；远程部署脚本把上传副本改为容器 UID/GID `999` 持有并保持 `0600`。设置
-`ATHENA_SERVER_DISABLE_AUTH=true` 时保留开发管理员旁路，不要求外部认证配置；
-该旁路只允许非 Compose 的开发进程监听 loopback 地址。生产 Compose 固定启用认证，
-部署脚本会拒绝该旁路。
+`ATHENA_SERVER_DISABLE_AUTH=true` 时使用隔离的开发身份，不要求外部认证配置；
+`ATHENA_SERVER_DISABLE_AUTH_ROLE=member|administrator` 选择普通成员或管理员，默认
+`member`，两种身份仍执行各自的持久权限。该模式只允许非 Compose 的开发进程监听
+loopback 地址。生产 Compose 固定启用认证，部署脚本会拒绝该模式。
 
 虽然其他生产服务仍复用选定的部署 env 文件读取各自业务配置，Compose 会把
 `ATHENA_JWT_SECRET`、全部 Google OIDC/管理员邮箱输入以及 `REDIS_PASSWORD` 在所有

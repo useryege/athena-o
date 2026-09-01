@@ -5,13 +5,14 @@
     <meta charset="UTF-8">
     <title>Athena</title>
     <base href="/">
+    <meta name="athena-deployment-base-href" content="/">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="./images/favicon.ico" type="image/x-icon">
     <script>
         (() => {
             let mode = 'system';
             try {
-                const saved = JSON.parse(localStorage.getItem('view_preferences') || '{}');
+                const saved = JSON.parse(localStorage.getItem('athena.member.preferences') || '{}');
                 if (Number(saved.version) >= 6 && (saved.theme === 'light' || saved.theme === 'dark' || saved.theme === 'system')) mode = saved.theme;
             } catch (_) {}
             const resolved = mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : mode === 'dark' ? 'dark' : 'light';
@@ -28,6 +29,6 @@
         </p>
     </noscript>
     <div id="app"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/entry/member.tsx"></script>
 </body>
 </html>

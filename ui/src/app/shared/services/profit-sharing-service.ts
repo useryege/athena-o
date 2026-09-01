@@ -93,10 +93,9 @@ export interface ProfitSharingProposalDraft {
     }>;
 }
 
-type AbortablePromise<T> = Promise<T> & {abort?: () => void};
+export type AbortablePromise<T> = Promise<T> & {abort?: () => void};
 
 const profitSharingReadScope = {feature: 'profit-sharing' as const, mode: 'read' as const};
-const profitSharingWriteScope = {feature: 'profit-sharing' as const, mode: 'write' as const};
 
 const parsePhase = (value: unknown): ProfitSharingRoundPhase => {
     if (value === 1 || value === '1') {
@@ -249,9 +248,9 @@ export const parseProfitSharingRound = (item: any): ProfitSharingRound => {
     };
 };
 
-const roundBody = (body: any) => parseProfitSharingRound(readValue(body, 'round') || body || {});
+export const roundBody = (body: any) => parseProfitSharingRound(readValue(body, 'round') || body || {});
 
-export class ProfitSharingService {
+export class ProfitSharingReader {
     public listRounds(): AbortablePromise<ProfitSharingRound[]> {
         const req = requests.get('/profit-sharing/rounds', profitSharingReadScope);
         const promise = req.then(res => {
@@ -265,100 +264,6 @@ export class ProfitSharingService {
     public getRound(slug: string): AbortablePromise<ProfitSharingRound> {
         const req = requests.get(`/profit-sharing/rounds/${encodeURIComponent(slug)}`, profitSharingReadScope);
         const promise = req.then(res => roundBody(res.body)) as AbortablePromise<ProfitSharingRound>;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public createRound(definition: ProfitSharingRoundDefinition): AbortablePromise<ProfitSharingRound> {
-        const req = requests.post('/profit-sharing/rounds', profitSharingWriteScope).send({
-            slug: definition.slug,
-            title: definition.title,
-            participants: definition.participants.map(participant => ({
-                account_id: participant.accountId,
-                username: participant.username,
-                display_name: participant.displayName,
-                sort_order: participant.sortOrder,
-                baseline_responsibility: participant.baselineResponsibility
-            }))
-        });
-        const promise = req.then(res => roundBody(res.body)) as AbortablePromise<ProfitSharingRound>;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public updateRound(slug: string, definition: ProfitSharingRoundDefinition): AbortablePromise<ProfitSharingRound> {
-        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}`, profitSharingWriteScope).send({
-            slug: definition.slug,
-            title: definition.title,
-            expected_revision: definition.expectedRevision,
-            participants: definition.participants.map(participant => ({
-                account_id: participant.accountId,
-                username: participant.username,
-                display_name: participant.displayName,
-                sort_order: participant.sortOrder,
-                baseline_responsibility: participant.baselineResponsibility
-            }))
-        });
-        const promise = req.then(res => roundBody(res.body)) as AbortablePromise<ProfitSharingRound>;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public openRound(slug: string, expectedRevision: number): AbortablePromise<void> {
-        return this.roundAction(`/profit-sharing/rounds/${encodeURIComponent(slug)}:open`, expectedRevision);
-    }
-
-    public publishRound(slug: string, expectedRevision: number): AbortablePromise<void> {
-        return this.roundAction(`/profit-sharing/rounds/${encodeURIComponent(slug)}:publish`, expectedRevision);
-    }
-
-    public closeBallot(slug: string, expectedRevision: number): AbortablePromise<void> {
-        return this.roundAction(`/profit-sharing/rounds/${encodeURIComponent(slug)}/ballots/current:close`, expectedRevision);
-    }
-
-    public updateProposal(slug: string, proposal: ProfitSharingProposalDraft): AbortablePromise<ProfitSharingProposal | undefined> {
-        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}/proposal`, profitSharingWriteScope).send({
-            expected_revision: proposal.expectedRevision,
-            items: proposal.items.map(item => ({
-                participant_account_id: item.accountId,
-                responsibility: item.responsibility,
-                share_basis_points: item.shareBasisPoints ?? 0,
-                share_basis_points_set: item.shareBasisPoints !== undefined
-            }))
-        });
-        const promise = req.then(res => {
-            const value = readValue(res.body, 'proposal');
-            return value ? parseProfitSharingProposal(value) : undefined;
-        }) as AbortablePromise<ProfitSharingProposal | undefined>;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public submitProposal(slug: string, expectedRevision: number): AbortablePromise<void> {
-        return this.proposalAction(`/profit-sharing/rounds/${encodeURIComponent(slug)}/proposal:submit`, expectedRevision);
-    }
-
-    public reopenProposal(slug: string, expectedRevision: number): AbortablePromise<void> {
-        return this.proposalAction(`/profit-sharing/rounds/${encodeURIComponent(slug)}/proposal:reopen`, expectedRevision);
-    }
-
-    public submitVote(slug: string, proposalId: string): AbortablePromise<void> {
-        const req = requests.put(`/profit-sharing/rounds/${encodeURIComponent(slug)}/ballots/current/vote`, profitSharingWriteScope).send({proposal_id: proposalId});
-        const promise = req.then(() => undefined) as AbortablePromise<void>;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    private roundAction(path: string, expectedRevision: number): AbortablePromise<void> {
-        const req = requests.post(path, profitSharingWriteScope).send({expected_revision: expectedRevision});
-        const promise = req.then(() => undefined) as AbortablePromise<void>;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    private proposalAction(path: string, expectedRevision: number): AbortablePromise<void> {
-        const req = requests.post(path, profitSharingWriteScope).send({expected_revision: expectedRevision});
-        const promise = req.then(() => undefined) as AbortablePromise<void>;
         promise.abort = () => req.abort();
         return promise;
     }

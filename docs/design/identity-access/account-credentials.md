@@ -21,17 +21,18 @@ name.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Identity, capability, and API Key types | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go) | `Account`, `Token`, `Capability`, `AuthenticatedCredential`, `IsInteractiveLogin`, `IdentityProvider` |
+| Identity, capability, development role, and API Key types | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go) | `Account`, `Token`, `Capability`, `AuthenticatedCredential`, `DevelopmentRole`, `ParseDevelopmentRole`, `Account.DevelopmentRole`, `IsInteractiveLogin` |
 | Username policy | [internal/accountcredentials/username.go](../../../internal/accountcredentials/username.go) | `ValidateUsername`, `ErrUsernameInvalid`, `MinUsernameLength`, `MaxUsernameLength` |
 | Runtime credential registry | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go) | `CredentialManager`, `GetByIdentity`, `UsernameAvailable`, `RegisterExternalAccount`, `IssueLoginSession`, `IssueAPIKey`, `ValidateCredential` |
 | JWT signing configuration | [internal/accountcredentials/config.go](../../../internal/accountcredentials/config.go) | `LoadJWTSigningKey` |
 | JWT v3 codec | [internal/accountcredentials/jwt_codec.go](../../../internal/accountcredentials/jwt_codec.go) | `JWTCodec`, `TokenVersion`, `Issue`, `Parse` |
-| Durable account adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `ListCredentialAccounts`, `GetCredentialAccountByIdentity`, `RegisterExternalAccount`, `RecordLogin`, `EnsureDevelopmentAdministrator` |
-| Schema and generated-query sources | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql), [internal/accountstate/store/queries/account_api_key.sql](../../../internal/accountstate/store/queries/account_api_key.sql) | `athena_account`, `account_api_key`, `GetAccountByIdentity`, `CreateOrdinaryAccount`, `CreateAdministratorAccount` |
+| Durable account adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `ListCredentialAccounts`, `GetCredentialAccountByIdentity`, `RegisterExternalAccount`, `RecordLogin`, `EnsureDevelopmentAccount` |
+| Schema and generated-query sources | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql), [internal/accountstate/store/queries/account_api_key.sql](../../../internal/accountstate/store/queries/account_api_key.sql) | `athena_account`, `account_api_key`, external-account creation, `GetDevelopmentMember`, `CreateDevelopmentMember`, administrator development queries |
 | Shared registration boundary | [internal/authregistration/types.go](../../../internal/authregistration/types.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Identity`, `Backend`, `Handler`, `Begin`, `Registration`, `UsernameAvailability` |
 | Session validation, typed context, and revocation | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/state.go](../../../util/session/state.go) | `SessionManager`, `AuthenticateToken`, `WithAuthenticatedCredential`, `AuthenticatedCredentialFromContext`, `ParseLoginForRevocation`, `UserStateStorage` |
 | Account and Session API projections | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/session/session.proto](../../../internal/server/session/session.proto) | `Account.id`, `Account.username`, `Account.identity`, `GetUserInfoResponse.accountId` |
-| Process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `NewServer`, `Authenticate`, `developmentAccountID` |
+| Member-only API Key browser boundary | [ui/src/app/member/security-service.ts](../../../ui/src/app/member/security-service.ts), [ui/src/app/member/pages/account-security.tsx](../../../ui/src/app/member/pages/account-security.tsx), [ui/src/app/member/services.ts](../../../ui/src/app/member/services.ts) | `MemberSecurityService`, `AccountSecurityPage`, member-only service construction |
+| Process wiring and production guard | [cmd/athena-server/commands/athena-server.go](../../../cmd/athena-server/commands/athena-server.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go), [hack/prod-remote-deploy.sh](../../../hack/prod-remote-deploy.sh), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `--disable-auth-role`, `AthenaServerOpts.DisableAuthRole`, `developmentAccountID`, production disabled-auth rejection |
 
 ## Architecture
 
@@ -73,6 +74,12 @@ request. Successful validation produces an `AuthenticatedCredential` carrying
 the server-resolved account UUID, capability, JTI, identity binding, and current
 access revision. Middleware attaches this typed value to the request context;
 security-sensitive handlers do not infer credential kind from browser headers.
+
+The browser exposes API Key metadata and issue/revoke commands only through the
+member application's `MemberSecurityService` and lazy `AccountSecurityPage`.
+The administrator registry does not construct that service, and the fixed
+administrator aggregate keeps `APIKeyEnabled=false`. Self-profile commands and
+administrator account-directory commands use separate facades.
 
 ## Runtime Flow
 
@@ -120,13 +127,17 @@ security-sensitive handlers do not infer credential kind from browser headers.
    lease; API Keys cannot enter either management flow.
 9. Deleting an API Key commits metadata deletion before removing it from the
    registry. Disabling API Key access pauses retained keys; re-enabling restores
-   undeleted and unexpired keys. Logout clears and revokes only the Athena login
-   session and clears both its wallet-secret and Worm-credential lease cookies.
-10. With authentication disabled, startup explicitly creates or reuses one UUID
-   `development` identity named `local-admin`. Requests receive that UUID in
-   synthetic claims plus a typed `development` credential. Normal authentication
-   startup rejects a persisted development identity, so changing modes requires
-   a clean account-state database.
+   undeleted and unexpired keys. Only the member registry constructs these
+   commands; an administrator cannot request them. Logout clears and revokes
+   only the Athena login session and clears both its wallet-secret and
+   Worm-credential lease cookies.
+10. With authentication disabled, startup explicitly creates or reuses the
+    selected UUID `development` identity. Role `member` uses `local-user` with
+    maximum member access; role `administrator` uses `local-admin` with only
+    explicit administrator capability. Requests receive the selected UUID in
+    synthetic claims plus a typed `development` credential. Normal
+    authentication startup rejects any persisted development identity, so
+    changing to external authentication requires a clean account-state database.
 
 ## State / Data
 
@@ -141,8 +152,13 @@ The schema enforces case-insensitive username uniqueness, uniqueness of the
 provider-and-subject pair, and at most one administrator. Google identities
 require a non-empty subject and verified email. Solana identities require an
 empty verified email, a canonical address that decodes to exactly 32 bytes, and
-`administrator=false`. The isolated development identity has no external
-subject or email.
+`administrator=false`. The two isolated development shapes have no external
+subject or email. The ordinary shape is exactly `local-user` with
+`administrator=false`; the administrator shape is exactly `local-admin` with
+`administrator=true`. Both rows may coexist in the development database; the
+configured role selects which UUID is injected. The single-administrator unique
+constraint still prevents `local-admin` from coexisting with a Google
+administrator.
 
 `ValidateUsername` requires 3–42 ASCII letters, digits, periods, or hyphens;
 requires at least one alphanumeric character; and does not trim, case-fold, or
@@ -174,7 +190,8 @@ or Cookie header.
 | --- | --- |
 | `ATHENA_JWT_SECRET` / `ATHENA_JWT_SECRET_FILE` | Supplies the HS256 key. It must contain at least 32 bytes. If omitted outside production, startup generates a process-lifetime key, so restart invalidates credentials. |
 | `ATHENA_SESSION_DURATION` | Controls login-session lifetime; the default is 24 hours. |
-| `ATHENA_SERVER_DISABLE_AUTH` | Enables the loopback-only development identity and skips external-login configuration. It does not enable a password path. |
+| `ATHENA_SERVER_DISABLE_AUTH` | Enables the loopback-only development identity and skips external-login configuration. The production deployment rejects true and Compose fixes false; this setting does not enable a password path. |
+| `ATHENA_SERVER_DISABLE_AUTH_ROLE` / `--disable-auth-role` | Selects `member` or `administrator` while authentication is disabled. The default is `member`; any other value fails startup. |
 
 Google client, public-origin, and administrator-candidate configuration are
 documented in [Google OIDC Login](google-oidc-login.md). Phantom desktop login
@@ -200,6 +217,11 @@ entitlements, and API Key metadata are database state.
   credential membership or binding, and revocation checks.
 - Sensitive handlers distinguish login, API Key, and isolated development
   credentials through the typed authenticated context, never client headers.
+- API Key UI and commands exist only in the member dependency graph; the
+  administrator aggregate and service registry expose neither.
+- A development credential identifies exactly `local-user` or `local-admin`;
+  its role and access still pass through the same authorization controller as
+  an externally authenticated account.
 - API Keys may read owner-scoped Worm activity but cannot list the Worm
   management inventory, obtain a sensitive lease, manage a Worm connection,
   invoke Wallet's challenge signer, or receive a Worm HMAC credential.
@@ -241,5 +263,6 @@ providers are not part of API Server health.
 - [ ] Typed credential capability and access-revision projection remain current.
 - [ ] API-Key Worm reads, interactive lease-free management inventory, and lease-bound credential mutations remain distinct.
 - [ ] Public projections still exclude private identity and bearer material.
+- [ ] The two exact disabled-auth identities and role selector remain current.
 - [ ] Configuration, failure recovery, and source links match the code.
 - [ ] The [design index](../README.md) contains the current summary.

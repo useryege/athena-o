@@ -2,6 +2,11 @@
 
 ## Scope
 
+Solana Wallet Authentication is a member-application identity provider. It is
+offered at `/login` and participates in the shared `/register` username flow;
+the administrator application exposes Google only and never loads, connects,
+or signs through Phantom.
+
 Solana Wallet Authentication lets an anonymous browser prove control of one
 Solana public key through the injected Phantom extension and then enter Athena's
 UUID account lifecycle. It owns the server-generated Sign-In With Solana
@@ -25,7 +30,7 @@ from the two providers create separate Athena accounts.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| HTTP flow and SIWS verification | [internal/phantomauth/handler.go](../../../internal/phantomauth/handler.go) | `Handler`, `NewHandler`, `Challenge`, `Verify`, `siwsMessageWithStatement`, `validOrigin` |
+| HTTP flow, deployment paths, and SIWS verification | [internal/phantomauth/handler.go](../../../internal/phantomauth/handler.go) | `Handler`, `NewHandler`, `Challenge`, `Verify`, `deploymentPath`, `siwsMessageWithStatement`, `validOrigin` |
 | Wallet-secret SIWS proof | [internal/phantomauth/wallet_secret_reauth.go](../../../internal/phantomauth/wallet_secret_reauth.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go) | `WalletSecretChallenge`, `WalletSecretVerify`, `walletSecretChallengeStore` |
 | Worm execution SIWS proof | [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go), [internal/phantomauth/worm_execution_store.go](../../../internal/phantomauth/worm_execution_store.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `WormExecutionChallenge`, `WormExecutionVerify`, authoritative descriptor load, Run/plan disclosure and durable authorizer |
 | Wallet-secret provider-state limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
@@ -33,7 +38,7 @@ from the two providers create separate Athena accounts.
 | Shared username registration | [internal/authregistration/handler.go](../../../internal/authregistration/handler.go), [internal/authregistration/store.go](../../../internal/authregistration/store.go), [internal/authregistration/types.go](../../../internal/authregistration/types.go) | `Handler.Begin`, `Registration`, `UsernameAvailability`, `Store`, `Identity` |
 | Durable identity and session | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [internal/server/external_auth_backend.go](../../../internal/server/external_auth_backend.go) | `GetByIdentity`, `RegisterExternalAccount`, `IssueLoginSession`, `CreateExternalLogin`, `externalAuthBackend` |
 | Public route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `newHTTPServer`, `/auth/phantom/*`, `/auth/registration*` |
-| Browser integration | [ui/src/app/pages/login.tsx](../../../ui/src/app/pages/login.tsx), [ui/src/app/pages/register.tsx](../../../ui/src/app/pages/register.tsx) | `LoginPage`, `PhantomProvider`, `RegisterPage` |
+| Member-browser integration | [ui/src/app/member/pages/login.tsx](../../../ui/src/app/member/pages/login.tsx), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/register.tsx](../../../ui/src/app/member/pages/register.tsx) | member `LoginPage`, `PhantomProvider`, shared `RegisterPage` |
 
 ## Architecture
 
@@ -55,6 +60,14 @@ after verifying its Ed25519 signature. The server records the provider as
 `solana_wallet`: a signature proves control of a Solana key, not the brand of
 software that produced it. The current UI deliberately exposes only Phantom's
 injected desktop provider.
+
+Every `/auth/*`, `/register`, and return path in this document is a logical path
+relative to Athena's deployment root. The handler applies the configured base
+href to server-issued HTTP redirects and to login, Wallet-secret,
+Worm-credential, and Worm-execution transient Cookie paths. JSON `redirectTo`
+values remain logical paths; the browser applies the deployment base exactly
+once. An administrator application path never introduces an `/admin/auth`
+prefix.
 
 Every verified address is an independent external identity. It cannot be
 merged with a Google account, bound as a second credential, or used to recover
@@ -78,7 +91,7 @@ management lease nor asks Phantom to sign a transaction.
 
 ## Runtime Flow
 
-1. The login page detects `window.phantom.solana.isPhantom`, calls `connect()`,
+1. The member `/login` page detects `window.phantom.solana.isPhantom`, calls `connect()`,
    and obtains a candidate base58 public key. A missing extension or rejected
    request remains a browser-local login error.
 2. `POST /auth/phantom/challenge` accepts JSON `{address, returnTo}` and validates
@@ -104,7 +117,7 @@ management lease nor asks Phantom to sign a transaction.
    times and compares it with the stored text. It then requires canonical raw-
    base64url for exactly 64 signature bytes, decodes exactly 32 public-key bytes,
    and verifies the saved UTF-8 message with Ed25519.
-6. A known identity passes current login-access checks and receives an Athena
+6. A known ordinary identity passes current login-access checks and receives an Athena
    JWT cookie plus the saved return path. An unknown address receives only a
    shared 15-minute registration ticket and is sent to `/register`.
 7. Username submission creates the complete Pending account aggregate. Only
@@ -142,9 +155,9 @@ management lease nor asks Phantom to sign a transaction.
 The five-minute challenge is transient Redis state. It contains the canonical
 address, exact message, validated return path, nonce, issue time, and expiry.
 The opaque identifier is hashed into the Redis key and sent only as the
-`athena.phantom.challenge` HttpOnly cookie scoped to `/auth/phantom`. It is
-single-use even when verification fails; the response contains only message and
-expiry.
+`athena.phantom.challenge` HttpOnly cookie scoped to the deployment-relative
+`/auth/phantom` path. It is single-use even when verification fails; the
+response contains only message and expiry.
 
 Challenge rate counters share Redis but are separate from challenge state. The
 client key is a SHA-256 digest of the canonical client network address; neither
@@ -158,14 +171,16 @@ administrator candidate. The registration handler derives `solanaAddress` from
 the server-held subject for the anonymous setup response. PostgreSQL stores the
 canonical address as the `solana_wallet` identity subject; Account and Session
 APIs expose it through the provider-specific `solanaAddress` projection only to
-the account owner or administrators.
+the account owner or administrators. Successful Solana registration always
+creates an ordinary member account and returns to `/account/access`.
 
 Wallet-secret SIWS state uses a separate hashed Redis key and
 `athena.wallet-secret.solana.challenge` HttpOnly, SameSite=Strict cookie scoped
-to `/auth/wallet-secrets/solana`. The server record contains the persisted
-address, exact message, nonce, account UUID, Session JTI digest, access revision,
-and exact five-minute issue/expiry interval. It accepts no address in the public
-request and is single-use even when later signature verification fails.
+to the deployment-relative `/auth/wallet-secrets/solana` path. The server record
+contains the persisted address, exact message, nonce, account UUID, Session JTI
+digest, access revision, and exact five-minute issue/expiry interval. It accepts
+no address in the public request and is single-use even when later signature
+verification fails.
 
 Solana and Google wallet-secret provider states share a dedicated fixed-window
 Redis budget of 120 creations globally and 20 per authenticated account per
@@ -175,12 +190,13 @@ checks and challenge write are one atomic operation.
 
 Worm execution SIWS state uses its own hashed Redis key and
 `athena.worm-execution.solana.challenge` HttpOnly, SameSite=Strict cookie scoped
-to `/auth/worm-trading/executions`. Its five-minute record includes persisted
-address, exact disclosure message, nonce, Run/command/expected revision,
-account, Session-JTI digest, access revision, immutable plan digest, safe return
-path, and issue/expiry times. Its own 120-global/20-account fixed-minute counters
-are atomic and keyed by an account digest. The record is single use and is not
-the durable Run authorization; no signature is stored.
+to the deployment-relative `/auth/worm-trading/executions` path. Its five-minute
+record includes persisted address, exact disclosure message,
+nonce, Run/command/expected revision, account, Session-JTI digest, access
+revision, immutable plan digest, safe return path, and issue/expiry times. Its
+own 120-global/20-account fixed-minute counters are atomic and keyed by an
+account digest. The record is single use and is not the durable Run
+authorization; no signature is stored.
 
 ## Configuration
 
@@ -210,6 +226,7 @@ and both lease-producing proof flows.
   wallet-secret namespace, with no raw account UUID in its counter key.
 - Google and Solana identities never resolve to or create the same account.
 - A Solana identity can never create or become the administrator.
+- The administrator login and bundle never expose or initialize Phantom.
 - The address is permanent and cannot be replaced, recovered, or transferred.
 - Wallet signatures and opaque challenge identifiers never enter an Athena JWT
   or public response. The SIWS message and expiry are the only public challenge

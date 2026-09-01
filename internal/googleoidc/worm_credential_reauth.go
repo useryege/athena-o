@@ -194,14 +194,14 @@ func (h *wormCredentialReauthentication) callback(w http.ResponseWriter, r *http
 		return
 	}
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle}).Info("Worm credential Google reauthentication succeeded")
-	http.Redirect(w, r, returnTo, http.StatusSeeOther)
+	http.Redirect(w, r, h.google.deploymentPath(returnTo), http.StatusSeeOther)
 }
 
 func (h *wormCredentialReauthentication) setStateCookie(w http.ResponseWriter, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormCredentialStateCookieName,
 		Value:    value,
-		Path:     "/auth/google",
+		Path:     h.google.deploymentPath("/auth/google"),
 		MaxAge:   int(wormCredentialTransactionTTL / time.Second),
 		Expires:  time.Now().Add(wormCredentialTransactionTTL),
 		HttpOnly: true,
@@ -214,7 +214,7 @@ func (h *wormCredentialReauthentication) clearStateCookie(w http.ResponseWriter)
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormCredentialStateCookieName,
 		Value:    "",
-		Path:     "/auth/google",
+		Path:     h.google.deploymentPath("/auth/google"),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,
@@ -225,7 +225,7 @@ func (h *wormCredentialReauthentication) clearStateCookie(w http.ResponseWriter)
 
 func (h *wormCredentialReauthentication) redirectFailure(w http.ResponseWriter, r *http.Request, returnTo, reason, stage string) {
 	log.WithFields(log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle}).Warn("Worm credential Google reauthentication failed")
-	http.Redirect(w, r, wormCredentialFailureURL(returnTo, reason), http.StatusSeeOther)
+	http.Redirect(w, r, h.google.deploymentPath(wormCredentialFailureURL(returnTo, reason)), http.StatusSeeOther)
 }
 
 func validateWormCredentialReturnTo(raw string) string {

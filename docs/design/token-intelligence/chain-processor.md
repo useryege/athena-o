@@ -35,7 +35,7 @@ progress and running or stopped status.
 | Chain, checkpoint, and attempt persistence | [internal/token/adapters/postgres/chain_store.go](../../../internal/token/adapters/postgres/chain_store.go), [internal/token/adapters/postgres/chain_block_processing_attempt_store.go](../../../internal/token/adapters/postgres/chain_block_processing_attempt_store.go) | `SyncChains`, `StartChainBlockProcessingAttempt`, `CompleteChainBlockProcessingAttempt`, `GetChainBlockProcessingSummary` |
 | Atomic block persistence | [internal/token/adapters/postgres/chain_processing_store.go](../../../internal/token/adapters/postgres/chain_processing_store.go) | `ChainRepository.CommitProcessedBlock` |
 | Public operations API | [internal/tokenapi/chain_service.go](../../../internal/tokenapi/chain_service.go) | `GetChainCheckpoint`, `GetChainProcessingSummary`, `ListChainProcessingAttempts` |
-| Administrator processing UI | [ui/src/app/pages/chain-processing.tsx](../../../ui/src/app/pages/chain-processing.tsx) | `ChainProcessingPage` |
+| Member Token processing UI | [ui/src/app/member/pages/chain-processing.tsx](../../../ui/src/app/member/pages/chain-processing.tsx), [ui/src/app/member/routes.tsx](../../../ui/src/app/member/routes.tsx) | lazy `ChainProcessingPage` in the Token-authorized member route graph |
 | Periodic execution | [internal/token/workerhost/periodic.go](../../../internal/token/workerhost/periodic.go) | `PeriodicWorker`, `runJob` |
 | Process lifecycle | [internal/token/workerhost/host.go](../../../internal/token/workerhost/host.go) | `Host.Run`, `stopResources` |
 | Health and metrics | [internal/token/telemetry/server.go](../../../internal/token/telemetry/server.go), [internal/token/telemetry/tracker.go](../../../internal/token/telemetry/tracker.go) | `Server`, `Tracker` |
@@ -223,7 +223,7 @@ attempt probes again.
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded Token migration during connection setup; default `true`. |
 | `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Processor telemetry listener; default `127.0.0.1:8110`. |
 | `ATHENA_TOKEN_HEALTH_STALE_AFTER` / `--health-stale-after` | Maximum age of the last successful loop before readiness fails; default 2 minutes. |
-| `ATHENA_LOG_FORMAT`, `ATHENA_LOG_LEVEL` / command flags | Shared worker logging format and level. |
+| `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / `--logformat`, `--loglevel` | Shared worker logging format and level. |
 
 Every maintained chain setting is required even when that chain is disabled.
 The maintained configuration enables Ethereum and disables BSC. Both chains use
@@ -313,10 +313,11 @@ a completion event for cancellation. EVM client-selection logs identify the
 chain, credential-free endpoint, probe duration, and dedicated proxy state.
 
 The public Token Operations API additionally exposes
-`GetChainProcessingSummary` and `ListChainProcessingAttempts`. The administrator
-UI route `/token/chain-processing` combines checkpoint controls, chain and
-chain-time filters, successful-duration KPIs, average stage bars, and expandable
-attempt history. No per-candidate timing record is stored or exposed.
+`GetChainProcessingSummary` and `ListChainProcessingAttempts`. The Token-
+authorized member route `/token/chain-processing` combines checkpoint controls,
+chain and chain-time filters, successful-duration KPIs, average stage bars, and
+expandable attempt history. The administrator has Token `NONE` and no Token
+route. No per-candidate timing record is stored or exposed.
 
 ## Change Checklist
 

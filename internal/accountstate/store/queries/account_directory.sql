@@ -53,6 +53,21 @@ WHERE identity_provider = 'development'
   AND username = 'local-admin'
   AND administrator;
 
+-- name: GetDevelopmentMember :one
+SELECT account_id,
+       username,
+       identity_provider,
+       identity_subject,
+       verified_email,
+       administrator,
+       created_at,
+       updated_at,
+       last_login_at
+FROM athena_account
+WHERE identity_provider = 'development'
+  AND username = 'local-user'
+  AND NOT administrator;
+
 -- name: UsernameExists :one
 SELECT EXISTS (
   SELECT 1
@@ -187,7 +202,86 @@ WITH inserted_account AS (
     profit_sharing_enabled,
     revision
   )
-  SELECT account_id, TRUE, FALSE, TRUE, 1
+  SELECT account_id, TRUE, FALSE, FALSE, 1
+  FROM inserted_account
+  RETURNING account_id
+), inserted_modules AS (
+  INSERT INTO account_module_access (account_id, module, access_level)
+  SELECT inserted_access.account_id, module.name, 'none'
+  FROM inserted_access
+  CROSS JOIN (
+    VALUES
+      ('market_radar'),
+      ('sports_live'),
+      ('sports_history'),
+      ('managed_oo'),
+      ('worm_markets'),
+      ('worm_trading'),
+      ('world_cup_corners'),
+      ('token'),
+      ('wallet'),
+      ('notifications')
+  ) AS module(name)
+  RETURNING account_id
+), inserted_profile AS (
+  INSERT INTO account_profile (
+    account_id,
+    display_name,
+    account_tier,
+    revision
+  )
+  SELECT account_id, username, 'standard', 1
+  FROM inserted_account
+  RETURNING account_id
+), inserted_preferences AS (
+  INSERT INTO account_preferences (account_id, theme, revision)
+  SELECT account_id, 'system', 1
+  FROM inserted_account
+  RETURNING account_id
+)
+SELECT account_id,
+       username,
+       identity_provider,
+       identity_subject,
+       verified_email,
+       administrator,
+       created_at,
+       updated_at,
+       last_login_at
+FROM inserted_account
+WHERE EXISTS (SELECT 1 FROM inserted_access)
+  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND EXISTS (SELECT 1 FROM inserted_profile)
+  AND EXISTS (SELECT 1 FROM inserted_preferences);
+
+-- name: CreateDevelopmentMember :one
+WITH inserted_account AS (
+  INSERT INTO athena_account (
+    username,
+    identity_provider,
+    identity_subject,
+    verified_email,
+    administrator
+  )
+  VALUES ('local-user', 'development', NULL, '', FALSE)
+  RETURNING account_id,
+            username,
+            identity_provider,
+            identity_subject,
+            verified_email,
+            administrator,
+            created_at,
+            updated_at,
+            last_login_at
+), inserted_access AS (
+  INSERT INTO account_access (
+    account_id,
+    login_enabled,
+    api_key_enabled,
+    profit_sharing_enabled,
+    revision
+  )
+  SELECT account_id, TRUE, TRUE, TRUE, 1
   FROM inserted_account
   RETURNING account_id
 ), inserted_modules AS (
@@ -266,26 +360,26 @@ WITH inserted_account AS (
     profit_sharing_enabled,
     revision
   )
-  SELECT account_id, TRUE, FALSE, TRUE, 1
+  SELECT account_id, TRUE, FALSE, FALSE, 1
   FROM inserted_account
   RETURNING account_id
 ), inserted_modules AS (
   INSERT INTO account_module_access (account_id, module, access_level)
-  SELECT inserted_access.account_id, module.name, module.access_level
+  SELECT inserted_access.account_id, module.name, 'none'
   FROM inserted_access
   CROSS JOIN (
     VALUES
-      ('market_radar', 'read'),
-      ('sports_live', 'read'),
-      ('sports_history', 'read_write'),
-      ('managed_oo', 'read_write'),
-      ('worm_markets', 'read'),
-      ('worm_trading', 'read_write'),
-      ('world_cup_corners', 'read'),
-      ('token', 'read_write'),
-      ('wallet', 'read_write'),
-      ('notifications', 'read_write')
-  ) AS module(name, access_level)
+      ('market_radar'),
+      ('sports_live'),
+      ('sports_history'),
+      ('managed_oo'),
+      ('worm_markets'),
+      ('worm_trading'),
+      ('world_cup_corners'),
+      ('token'),
+      ('wallet'),
+      ('notifications')
+  ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (
   INSERT INTO account_profile (
@@ -355,6 +449,7 @@ WITH directory AS (
          COALESCE(profile.display_name, account.username) AS display_name,
          CASE
            WHEN NOT access.login_enabled THEN 'blocked'
+           WHEN account.administrator THEN 'active'
            WHEN access.profit_sharing_enabled OR EXISTS (
              SELECT 1
              FROM account_module_access AS module_access
@@ -410,6 +505,7 @@ WITH directory AS (
          COALESCE(profile.display_name, account.username) AS display_name,
          CASE
            WHEN NOT access.login_enabled THEN 'blocked'
+           WHEN account.administrator THEN 'active'
            WHEN access.profit_sharing_enabled OR EXISTS (
              SELECT 1
              FROM account_module_access AS module_access

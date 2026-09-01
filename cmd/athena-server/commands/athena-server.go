@@ -14,6 +14,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountcredentials"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
@@ -49,6 +50,7 @@ func NewCommand() *cobra.Command {
 		rootPath                   string
 		glogLevel                  int
 		disableAuth                bool
+		disableAuthRole            string
 		contentTypes               string
 		enableGZip                 bool
 		listenHost                 string
@@ -89,6 +91,14 @@ func NewCommand() *cobra.Command {
 		DisableAutoGenTag: true,
 		RunE: func(c *cobra.Command, _ []string) error {
 			ctx := c.Context()
+			developmentRole := accountcredentials.DevelopmentRoleMember
+			if disableAuth {
+				var err error
+				developmentRole, err = accountcredentials.ParseDevelopmentRole(disableAuthRole)
+				if err != nil {
+					return err
+				}
+			}
 
 			// Log the startup information
 			vers := common.GetVersion()
@@ -187,6 +197,7 @@ func NewCommand() *cobra.Command {
 				BaseHRef:                          baseHRef,
 				RootPath:                          rootPath,
 				DisableAuth:                       disableAuth,
+				DisableAuthRole:                   developmentRole,
 				EnableGZip:                        enableGZip,
 				XFrameOptions:                     frameOptions,
 				ContentSecurityPolicy:             contentSecurityPolicy,
@@ -258,6 +269,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().IntVar(&glogLevel, "gloglevel", 0, "Set the glog logging level")
 	command.Flags().BoolVar(&disableAuth, "disable-auth", env.ParseBoolFromEnv("ATHENA_SERVER_DISABLE_AUTH", false), "Disable client authentication")
+	command.Flags().StringVar(&disableAuthRole, "disable-auth-role", env.StringFromEnv("ATHENA_SERVER_DISABLE_AUTH_ROLE", string(accountcredentials.DevelopmentRoleMember)), "Development identity role used when authentication is disabled (member or administrator)")
 	command.Flags().StringVar(&contentTypes, "api-content-types", env.StringFromEnv("ATHENA_API_CONTENT_TYPES", "application/json", env.StringFromEnvOpts{AllowEmpty: true}), "Semicolon separated list of allowed content types for non GET api requests. Any content type is allowed if empty.")
 	command.Flags().BoolVar(&enableGZip, "enable-gzip", env.ParseBoolFromEnv("ATHENA_SERVER_ENABLE_GZIP", true), "Enable GZIP compression")
 	command.AddCommand(cli.NewVersionCmd(cliName))

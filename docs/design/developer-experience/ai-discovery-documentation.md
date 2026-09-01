@@ -28,8 +28,8 @@ connection path.
 | --- | --- | --- |
 | Curated public discovery entry | [ui/src/assets/llms.txt](../../../ui/src/assets/llms.txt) | `Start Here`, `API Reference`, `Optional` link groups |
 | Public AI guidance | [ui/src/assets/docs/ai/](../../../ui/src/assets/docs/ai/) | overview, authentication, modules, errors and pagination, and safety documents |
-| Browser connection assembly | [ui/src/app/shared/ai-connection.ts](../../../ui/src/app/shared/ai-connection.ts), [ui/src/app/pages/account-center.tsx](../../../ui/src/app/pages/account-center.tsx) | `AIConnectionDetails`, `buildAIConnectionDetails`, `verifyAIConnectionCredential`, `SecurityPage` |
-| User-facing discovery entry | [ui/src/app/pages/help.tsx](../../../ui/src/app/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
+| Member-only browser connection assembly | [ui/src/app/shared/ai-connection.ts](../../../ui/src/app/shared/ai-connection.ts), [ui/src/app/member/pages/account-security.tsx](../../../ui/src/app/member/pages/account-security.tsx) | `AIConnectionDetails`, `buildAIConnectionDetails`, `verifyAIConnectionCredential`, `AccountSecurityPage` |
+| User-facing discovery entry | [ui/src/app/shared/pages/help.tsx](../../../ui/src/app/shared/pages/help.tsx) | `HelpPage`, `mayConnectAI` |
 | Vite public-file pipeline | [ui/vite.config.ts](../../../ui/vite.config.ts), [ui/package.json](../../../ui/package.json) | `publicDir`, `build.outDir`, `build` |
 | Embedded static-file serving | [ui/embed.go](../../../ui/embed.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `ui.Embedded`, `NewServer`, `uiAssetExists`, `newStaticAssetsHandler`, `withRootPath` |
 | Swagger source and generation | [internal/server/](../../../internal/server/), [hack/generate-proto.sh](../../../hack/generate-proto.sh) | protobuf HTTP annotations, `collect_swagger`, `clean_swagger` |
@@ -156,7 +156,7 @@ catalog. The focused Markdown pages provide stable conceptual guidance, while
 parameters, responses, and schemas. Executable proto and server code remain the
 ultimate source of truth when public prose or a generated artifact is stale.
 
-The new bearer, Authorization header, assembled instructions, and connection
+The issued bearer, Authorization header, assembled instructions, and connection
 verification state exist only in the current Account Center React state. They
 are not written to a URL, localStorage, sessionStorage, logs, or a server-side
 AI integration record. The persistent API Key list contains metadata only, so
@@ -172,7 +172,7 @@ the UI renders them only while that ID matches the current authorization.
 | Vite `build.outDir: '../../dist/app'` | Produces the tree embedded by `ui/embed.go`. |
 | `ATHENA_SERVER_STATIC_ASSETS` / `--staticassets` | Adds a filesystem after the embedded UI assets; the default is `/shared/app`, and embedded files take precedence. |
 | `ATHENA_SERVER_ROOTPATH` / `--rootpath` | Mounts the HTTP handler below a non-empty proxy prefix; the default is empty. |
-| `ATHENA_SERVER_BASEHREF` / `--basehref` | Rewrites the SPA's `index.html` base element only; it does not rewrite links inside `llms.txt` or Markdown files. |
+| `ATHENA_SERVER_BASEHREF` / `--basehref` | Defines the deployment base injected into both member and administrator HTML documents and used by authentication callbacks, redirects, and Cookie paths. It does not rewrite links inside `llms.txt` or Markdown files. |
 
 Public AI documents deliberately use origin-root-relative links. The supported
 discovery layout therefore assumes Athena is deployed at the domain root. With

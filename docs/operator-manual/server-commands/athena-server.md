@@ -35,6 +35,7 @@ athena-server [flags]
       --content-security-policy value                  Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
       --default-cache-expiration duration              Cache expiration default (default 24h0m0s)
       --disable-auth                                   Disable client authentication
+      --disable-auth-role string                       Development identity role used when authentication is disabled (member or administrator) (default "member")
       --enable-gzip                                    Enable GZIP compression (default true)
       --etherscan-api-keys string                      Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs
       --etherscan-gateway-auth-token string            Bearer token for Etherscan Gateway gRPC status calls

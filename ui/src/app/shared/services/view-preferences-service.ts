@@ -14,8 +14,6 @@ export interface ViewPreferences {
     theme: ThemeMode;
 }
 
-const VIEW_PREFERENCES_KEY = 'view_preferences';
-
 const minVer = 6;
 
 const DEFAULT_PREFERENCES: ViewPreferences = {
@@ -31,6 +29,8 @@ export class ViewPreferencesService {
     private preferencesSubj: BehaviorSubject<ViewPreferences>;
     private systemThemeQuery?: MediaQueryList;
 
+    constructor(private readonly storageKey = 'athena.member.preferences') {}
+
     public init() {
         if (!this.preferencesSubj) {
             const preferences = this.loadPreferences();
@@ -39,7 +39,7 @@ export class ViewPreferencesService {
             this.systemThemeQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
             this.systemThemeQuery?.addEventListener('change', this.onSystemThemeChange);
             window.addEventListener('storage', event => {
-                if (event.key !== null && event.key !== VIEW_PREFERENCES_KEY) {
+                if (event.key !== null && event.key !== this.storageKey) {
                     return;
                 }
                 const nextPreferences = this.loadPreferences();
@@ -55,7 +55,7 @@ export class ViewPreferencesService {
 
     public updatePreferences(change: Partial<ViewPreferences>) {
         const nextPref = Object.assign({}, this.preferencesSubj.getValue(), change, {version: minVer});
-        window.localStorage.setItem(VIEW_PREFERENCES_KEY, JSON.stringify(nextPref));
+        window.localStorage.setItem(this.storageKey, JSON.stringify(nextPref));
         this.applyTheme(nextPref.theme);
         this.preferencesSubj.next(nextPref);
     }
@@ -90,7 +90,7 @@ export class ViewPreferencesService {
 
     private loadPreferences(): ViewPreferences {
         let preferences: ViewPreferences;
-        const preferencesStr = window.localStorage.getItem(VIEW_PREFERENCES_KEY);
+        const preferencesStr = window.localStorage.getItem(this.storageKey);
         if (preferencesStr) {
             try {
                 const parsed = JSON.parse(preferencesStr);

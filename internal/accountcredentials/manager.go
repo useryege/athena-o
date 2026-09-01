@@ -324,7 +324,7 @@ func (m *CredentialManager) publishLocked(account Account) error {
 			return fmt.Errorf("credential account %q has an invalid username: %w", account.ID, err)
 		}
 	case IdentityProviderDevelopment:
-		if !account.Administrator || account.Username != "local-admin" || account.IdentitySubject != "" || account.VerifiedEmail != "" {
+		if _, err := account.DevelopmentRole(); err != nil {
 			return fmt.Errorf("credential account %q has an invalid development identity", account.ID)
 		}
 	default:

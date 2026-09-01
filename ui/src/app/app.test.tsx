@@ -1,9 +1,9 @@
 import * as React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import {Button} from 'antd';
-import {App, loadAppBootstrapWithRetry} from './app';
+import {MemberApp as App, loadAppBootstrapWithRetry} from './member/app';
 import {AccountDataAccess, AppBootstrap, AppBootstrapSessionStatus, AuthSettings} from './shared/models';
-import {services} from './shared/services';
+import {memberServices as services} from './member/services';
 
 const authSettings: AuthSettings = {
     url: '',

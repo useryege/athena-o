@@ -21,9 +21,9 @@ aggregates, and the full browser session lifecycle are documented in
 | Effective module authority | [internal/accountaccess/access.go](../../../internal/accountaccess/access.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `ModuleToken`, `AccessLevelRead`, `AccessLevelReadWrite`, `RequireModule`, `Controller.Authorize` |
 | Explicit Token RPC rules | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `moduleRead`, `moduleWrite`, `authorizeGRPC` |
 | Token public facade | [internal/server/tokenapi/tokenapi.go](../../../internal/server/tokenapi/tokenapi.go) | Token catalog, research, policy, and operations methods |
-| Browser module registry and context | [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `accountDataModules`, `AccountDataModule.Token`, `AuthorizationCtx.canRead`, `AuthorizationCtx.canWrite` |
-| Token request scopes and caches | [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts), [ui/src/app/pages/project-navigation.tsx](../../../ui/src/app/pages/project-navigation.tsx) | Token read/write request scopes, `clearAsyncDataCache`, `clearProjectsReturnSnapshots` |
-| Token pages and write interactions | [ui/src/app/pages](../../../ui/src/app/pages) | Token routes, blocklist editors, checkpoint editor, delete confirmations |
+| Browser module registry and context | [ui/src/app/shared/access-modules.ts](../../../ui/src/app/shared/access-modules.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx) | `accountDataModules`, `AccountDataModule.Token`, `AuthorizationCtx.canRead`, `AuthorizationCtx.canWrite` |
+| Token request scopes and caches | [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts), [ui/src/app/member/pages/project-navigation.tsx](../../../ui/src/app/member/pages/project-navigation.tsx) | Token read/write request scopes, `clearAsyncDataCache`, `clearProjectsReturnSnapshots` |
+| Token pages and write interactions | [ui/src/app/member/pages](../../../ui/src/app/member/pages), [ui/src/app/member/routes.tsx](../../../ui/src/app/member/routes.tsx) | Token routes, blocklist editors, checkpoint editor, delete confirmations |
 
 ## Architecture
 
@@ -47,8 +47,10 @@ The active account's Token matrix entry is the sole product-level input:
   diagnostics, node state, runtime configuration, policies, and chain state.
 - Token `READ_WRITE` includes all reads and can create, update, or delete
   contract-code and wallet blocklist entries and update chain checkpoints.
-- The built-in administrator has Token `READ_WRITE` as part of its fixed maximum
-  matrix. Its administrator boundary is not required for ordinary Token data.
+- The administrator has Token `NONE` as part of its fixed isolated aggregate.
+  Administrator capability never satisfies a Token rule, and the administrator
+  application contains no Token navigation, routes, service construction, or
+  cache namespace.
 
 A Token grant does not grant Wallet, Notifications, or any market module. The
 UI access level controls presentation, while the API Server remains the security
@@ -67,8 +69,9 @@ boundary for direct HTTP and gRPC callers.
    is not called.
 4. `GetAppBootstrap` supplies the complete initial account aggregate, including
    Token. After login and during the session, `GetUserInfo` supplies the same
-   aggregate. The shell derives `canRead(AccountDataModule.Token)` and
-   `canWrite(AccountDataModule.Token)` from that entry.
+   aggregate. The member shell derives `canRead(AccountDataModule.Token)` and
+   `canWrite(AccountDataModule.Token)` from that entry. An administrator leaves
+   the member application before a Token service or request is created.
 5. Token navigation and every `/token/*` route require Token `READ`. All Token
    query pages mount at `READ` or `READ_WRITE`; mutation controls and sensitive
    write interactions render and operate only at `READ_WRITE`.
@@ -110,8 +113,10 @@ ends, but not for an unrelated module change.
 
 There is no Token-specific environment grant. Ordinary accounts start with
 Token `NONE`, and an administrator replaces the complete account access
-aggregate through the Account API. `ATHENA_SERVER_DISABLE_AUTH` uses the
-built-in administrator projection and therefore Token `READ_WRITE`.
+aggregate through the Account API. With authentication disabled, role `member`
+uses the `local-user` maximum member projection and therefore Token
+`READ_WRITE`; role `administrator` uses `local-admin` and therefore Token
+`NONE`.
 
 ## Invariants
 
@@ -122,6 +127,7 @@ built-in administrator projection and therefore Token `READ_WRITE`.
   module registry and Authorization Context, not usernames or client allowlists.
 - Hiding a route or action is not authorization; the API Server evaluates the
   Token rule for every public request.
+- Administrator role never substitutes for Token `READ` or `READ_WRITE`.
 - All project and project-scoped reads use the same Token `READ` boundary as
   reports, selections, and collection histories.
 - Token read loss clears Token business state; write loss clears only pending
@@ -161,6 +167,7 @@ health endpoint.
 - [ ] Token navigation, routes, request scopes, caches, and write controls use the shared Token module entry.
 - [ ] Project, Report, Selection, collection, policy, and checkpoint methods remain in the intended level.
 - [ ] Token read loss and write loss perform the correct scoped cleanup without affecting another module.
+- [ ] Token code remains in the member dependency graph and absent from the administrator dependency graph.
 - [ ] Bootstrap maintenance, later maintenance 503, module 403, and ordinary authentication errors remain distinguishable.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

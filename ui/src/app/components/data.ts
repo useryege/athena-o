@@ -52,6 +52,7 @@ const cacheEntries = new Map<string, CacheEntry>();
 let cacheGeneration = 0;
 let cacheAccessSequence = 0;
 let cachePruneScheduled = false;
+let cacheSessionNamespace = 'session:anonymous';
 
 const normalizeError = (error: unknown): Error => {
     if (error instanceof Error) {
@@ -121,13 +122,14 @@ const scheduleCachePrune = () => {
 };
 
 const getCacheEntry = (key: string, module: AccountDataModule): CacheEntry => {
-    let entry = cacheEntries.get(key);
+    const namespacedKey = `${cacheSessionNamespace}:${key}`;
+    let entry = cacheEntries.get(namespacedKey);
     if (entry && entry.module !== module) {
         throw new Error(`Async data cache key ${key} is already assigned to a different authorization module`);
     }
     if (!entry) {
         entry = {
-            key,
+            key: namespacedKey,
             module,
             generation: cacheGeneration,
             snapshot: {
@@ -142,7 +144,7 @@ const getCacheEntry = (key: string, module: AccountDataModule): CacheEntry => {
             lastUsed: ++cacheAccessSequence,
             hasSubscribed: false
         };
-        cacheEntries.set(key, entry);
+        cacheEntries.set(namespacedKey, entry);
     }
     return entry;
 };
@@ -265,6 +267,15 @@ export const clearAsyncDataCache = (module?: AccountDataModule) => {
             updatedAt: 0
         });
     });
+};
+
+export const setAsyncDataCacheSession = (realm: 'member' | 'admin', viewerAccountId: string, sessionGeneration: number) => {
+    const nextNamespace = `${realm}:${viewerAccountId}:${sessionGeneration}`;
+    if (cacheSessionNamespace === nextNamespace) {
+        return;
+    }
+    clearAsyncDataCache();
+    cacheSessionNamespace = nextNamespace;
 };
 
 export const useAsyncData = <T>(load: () => Promise<T> & {abort?: () => void}, deps: React.DependencyList): AsyncState<T> => {

@@ -110,7 +110,7 @@ func (a Access) HasBusinessAccess() bool {
 
 // IsPending reports the stable logged-in, not-yet-authorized account state.
 func (a Access) IsPending() bool {
-	return a.LoginEnabled && !a.HasBusinessAccess()
+	return !a.Administrator && a.LoginEnabled && !a.HasBusinessAccess()
 }
 
 // Clone returns an aggregate that shares no mutable module map with the source.
@@ -151,12 +151,12 @@ func (a Access) Validate() error {
 		}
 	}
 	if a.Administrator {
-		if !a.LoginEnabled || a.APIKeyEnabled || !a.ProfitSharingEnabled {
+		if !a.LoginEnabled || a.APIKeyEnabled || a.ProfitSharingEnabled {
 			return status.Error(codes.InvalidArgument, "administrator access flags are fixed")
 		}
-		for module, maximum := range MaximumModuleAccess() {
-			if a.Modules[module] != maximum {
-				return status.Errorf(codes.InvalidArgument, "administrator module %q must use maximum access", module)
+		for module, level := range a.Modules {
+			if level != AccessLevelNone {
+				return status.Errorf(codes.InvalidArgument, "administrator module %q must use no access", module)
 			}
 		}
 	}

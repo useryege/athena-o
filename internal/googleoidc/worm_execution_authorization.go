@@ -299,14 +299,14 @@ func (h *wormExecutionAuthorization) callback(w http.ResponseWriter, r *http.Req
 		return
 	}
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle}).Info("Worm execution Google authorization succeeded")
-	http.Redirect(w, r, returnTo, http.StatusSeeOther)
+	http.Redirect(w, r, h.google.deploymentPath(returnTo), http.StatusSeeOther)
 }
 
 func (h *wormExecutionAuthorization) setStateCookie(w http.ResponseWriter, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormExecutionStateCookieName,
 		Value:    value,
-		Path:     "/auth/google",
+		Path:     h.google.deploymentPath("/auth/google"),
 		MaxAge:   int(wormExecutionTransactionTTL / time.Second),
 		Expires:  time.Now().Add(wormExecutionTransactionTTL),
 		HttpOnly: true,
@@ -319,7 +319,7 @@ func (h *wormExecutionAuthorization) clearStateCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     wormExecutionStateCookieName,
 		Value:    "",
-		Path:     "/auth/google",
+		Path:     h.google.deploymentPath("/auth/google"),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,
@@ -330,7 +330,7 @@ func (h *wormExecutionAuthorization) clearStateCookie(w http.ResponseWriter) {
 
 func (h *wormExecutionAuthorization) redirectFailure(w http.ResponseWriter, r *http.Request, returnTo, reason, stage string) {
 	log.WithFields(log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle}).Warn("Worm execution Google authorization failed")
-	http.Redirect(w, r, wormExecutionFailureURL(returnTo, reason), http.StatusSeeOther)
+	http.Redirect(w, r, h.google.deploymentPath(wormExecutionFailureURL(returnTo, reason)), http.StatusSeeOther)
 }
 
 func canonicalWormExecutionID(raw, label string) (string, error) {

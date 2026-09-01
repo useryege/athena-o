@@ -553,53 +553,87 @@ func (s *SQLStore) resolveRegistrationConflict(ctx context.Context, provider acc
 	}
 }
 
-// EnsureDevelopmentAdministrator returns the existing isolated disabled-auth
-// identity or creates its complete administrator aggregate. A normal Google
-// administrator intentionally conflicts, requiring a full state reset before
-// changing authentication modes.
-func (s *SQLStore) EnsureDevelopmentAdministrator(ctx context.Context) (accountcredentials.Account, error) {
+// EnsureDevelopmentAccount returns the selected isolated disabled-auth
+// identity or creates its complete fixed aggregate. Member and administrator
+// development identities may coexist, while the single-administrator database
+// constraint still prevents a development administrator beside a Google one.
+func (s *SQLStore) EnsureDevelopmentAccount(ctx context.Context, role accountcredentials.DevelopmentRole) (accountcredentials.Account, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountcredentials.Account{}, err
 	}
-	if account, found, err := developmentAdministrator(ctx, s.queries); err != nil || found {
+	if _, err := accountcredentials.ParseDevelopmentRole(string(role)); err != nil {
+		return accountcredentials.Account{}, err
+	}
+	if account, found, err := developmentAccount(ctx, s.queries, role); err != nil || found {
 		return account, err
 	}
-	row, err := s.queries.CreateDevelopmentAdministrator(ctx)
+
+	var account accountcredentials.Account
+	var err error
+	switch role {
+	case accountcredentials.DevelopmentRoleMember:
+		row, queryErr := s.queries.CreateDevelopmentMember(ctx)
+		err = queryErr
+		if queryErr == nil {
+			account, err = credentialAccountFromFields(
+				row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
+				row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
+			)
+		}
+	case accountcredentials.DevelopmentRoleAdministrator:
+		row, queryErr := s.queries.CreateDevelopmentAdministrator(ctx)
+		err = queryErr
+		if queryErr == nil {
+			account, err = credentialAccountFromFields(
+				row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
+				row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
+			)
+		}
+	}
 	if err != nil {
-		if account, found, lookupErr := developmentAdministrator(ctx, s.queries); lookupErr != nil {
+		if account, found, lookupErr := developmentAccount(ctx, s.queries, role); lookupErr != nil {
 			return accountcredentials.Account{}, lookupErr
 		} else if found {
 			return account, nil
 		}
-		if constraint, unique := uniqueViolationConstraint(err); unique && constraint == "athena_account_single_administrator_uidx" {
-			return accountcredentials.Account{}, accountcredentials.ErrAdministratorIdentityConflict
+		if role == accountcredentials.DevelopmentRoleAdministrator {
+			if constraint, unique := uniqueViolationConstraint(err); unique && constraint == "athena_account_single_administrator_uidx" {
+				return accountcredentials.Account{}, accountcredentials.ErrAdministratorIdentityConflict
+			}
 		}
-		return accountcredentials.Account{}, fmt.Errorf("create development administrator: %w", err)
+		return accountcredentials.Account{}, fmt.Errorf("create development %s account: %w", role, err)
 	}
-	account, err := credentialAccountFromFields(
-		row.AccountID, row.Username, row.IdentityProvider, row.IdentitySubject,
-		row.VerifiedEmail, row.Administrator, row.CreatedAt, row.LastLoginAt,
-	)
-	if err != nil {
-		return accountcredentials.Account{}, fmt.Errorf("project development administrator: %w", err)
-	}
-	if account.IdentityProvider != accountcredentials.IdentityProviderDevelopment || !account.Administrator || account.Username != "local-admin" {
-		return accountcredentials.Account{}, fmt.Errorf("development administrator creation returned an inconsistent identity")
+	actualRole, err := account.DevelopmentRole()
+	if err != nil || actualRole != role {
+		return accountcredentials.Account{}, fmt.Errorf("development %s account creation returned an inconsistent identity", role)
 	}
 	return account, nil
 }
 
-func developmentAdministrator(ctx context.Context, queries accountstatesqlc.Querier) (accountcredentials.Account, bool, error) {
-	row, err := queries.GetDevelopmentAdministrator(ctx)
+func developmentAccount(ctx context.Context, queries accountstatesqlc.Querier, role accountcredentials.DevelopmentRole) (accountcredentials.Account, bool, error) {
+	var row accountstatesqlc.AthenaAccount
+	var err error
+	switch role {
+	case accountcredentials.DevelopmentRoleMember:
+		row, err = queries.GetDevelopmentMember(ctx)
+	case accountcredentials.DevelopmentRoleAdministrator:
+		row, err = queries.GetDevelopmentAdministrator(ctx)
+	default:
+		return accountcredentials.Account{}, false, fmt.Errorf("unsupported development role %q", role)
+	}
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accountcredentials.Account{}, false, nil
 	}
 	if err != nil {
-		return accountcredentials.Account{}, false, fmt.Errorf("get development administrator: %w", err)
+		return accountcredentials.Account{}, false, fmt.Errorf("get development %s account: %w", role, err)
 	}
 	account, err := credentialAccountFromAthenaRow(row)
 	if err != nil {
 		return accountcredentials.Account{}, false, err
+	}
+	actualRole, err := account.DevelopmentRole()
+	if err != nil || actualRole != role {
+		return accountcredentials.Account{}, false, fmt.Errorf("persisted development %s account has an inconsistent identity", role)
 	}
 	return account, true, nil
 }
@@ -767,7 +801,12 @@ func credentialAccountFromFields(accountID pgtype.UUID, username, identityProvid
 			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid username: %w", id, err)
 		}
 	case accountcredentials.IdentityProviderDevelopment:
-		if !administrator || username != "local-admin" || subject != "" || email != "" {
+		developmentAccount := accountcredentials.Account{
+			ID: id, Username: username, IdentityProvider: provider,
+			IdentitySubject: subject, VerifiedEmail: email,
+			Administrator: administrator, CreatedAt: created, LastLoginAt: lastLogin,
+		}
+		if _, err := developmentAccount.DevelopmentRole(); err != nil {
 			return accountcredentials.Account{}, fmt.Errorf("account %q has an invalid development identity", id)
 		}
 	default:

@@ -33,15 +33,54 @@ export default [
         files: ['./src/**/*.{ts,tsx}']
     },
     {
-        ignores: [
-            'dist',
-            'assets',
-            '**/*.config.js',
-            '__mocks__',
-            'coverage',
-            'playwright-report',
-            'test-results',
-            '**/*.test.{ts,tsx}'
-        ]
+        files: ['./src/app/member/**/*.{ts,tsx}'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['../admin/**', '../../admin/**', '../../../admin/**'],
+                            message: 'The member application must not import administrator modules.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['./src/app/admin/**/*.{ts,tsx}'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['../member/**', '../../member/**', '../../../member/**'],
+                            message: 'The administrator application must not import member modules.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['./src/app/shared/**/*.{ts,tsx}', './src/app/session/**/*.{ts,tsx}', './src/app/components/**/*.{ts,tsx}'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['../member/**', '../../member/**', '../../../member/**', '../admin/**', '../../admin/**', '../../../admin/**'],
+                            message: 'Shared and session modules must not import either application realm.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        ignores: ['dist', 'assets', '**/*.config.js', '__mocks__', 'coverage', 'playwright-report', 'test-results', '**/*.test.{ts,tsx}']
     }
 ];

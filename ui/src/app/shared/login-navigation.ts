@@ -13,6 +13,8 @@ export const readLoginReturnTo = (search: string, fallback = '/account/access') 
             target.origin !== expectedOrigin ||
             decodedPath === '/login' ||
             decodedPath.startsWith('/login/') ||
+            decodedPath === '/admin/login' ||
+            decodedPath.startsWith('/admin/login/') ||
             decodedPath === '/register' ||
             decodedPath.startsWith('/register/')
         ) {
@@ -22,6 +24,11 @@ export const readLoginReturnTo = (search: string, fallback = '/account/access') 
     } catch {
         return fallback;
     }
+};
+
+export const readAdminLoginReturnTo = (search: string, fallback = '/admin/accounts') => {
+    const returnTo = readLoginReturnTo(search, fallback);
+    return returnTo === '/admin' || returnTo.startsWith('/admin/') ? returnTo : fallback;
 };
 
 export const loginPathFor = (pathname: string, search = '', hash = '') => {

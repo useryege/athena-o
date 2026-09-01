@@ -2,11 +2,13 @@
 
 ## Scope
 
-Google OIDC Login owns Athena's browser Authorization Code flow, PKCE, one-time
-OAuth transactions, Google ID-token verification, administrator candidacy, and
-the handoff of a verified Google identity to either Athena session issuance or
-shared anonymous username registration. Any Google identity with a fully
-verified ID token and `email_verified=true` may start registration.
+Google OIDC Login owns Athena's browser Authorization Code flow for both
+frontend realms, PKCE, one-time OAuth transactions, Google ID-token
+verification, administrator candidacy, and the handoff of a verified Google
+identity to either Athena session issuance or shared anonymous username
+registration. Any Google identity with a fully verified ID token and
+`email_verified=true` may start registration. Google is the only provider
+offered by the administrator login page; the member login also offers Phantom.
 The same OIDC client and callback also provide independent fresh proofs for
 wallet private-key reveal, Worm API-credential management, and one immutable
 Worm live-execution Run. The first two state machines issue separate short
@@ -25,17 +27,17 @@ logout are outside this capability.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Client and administrator-candidate configuration | [internal/googleoidc/config.go](../../../internal/googleoidc/config.go) | `Config`, `LoadConfigFromEnv` |
+| Client, callback, and administrator-candidate configuration | [internal/googleoidc/config.go](../../../internal/googleoidc/config.go) | `Config`, `LoadConfigFromEnv(baseHRef)` |
 | One-time OAuth state | [internal/googleoidc/store.go](../../../internal/googleoidc/store.go) | `TransactionStore`, `Create`, `Consume`, `transactionTTL` |
 | Google HTTP flow | [internal/googleoidc/handler.go](../../../internal/googleoidc/handler.go) | `Handler`, `Login`, `Callback` |
 | Wallet-secret reauthentication | [internal/googleoidc/wallet_secret_reauth.go](../../../internal/googleoidc/wallet_secret_reauth.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go) | `WalletSecretReauthentication`, `walletSecretReauthentication.callback`, `walletSecretTransactionStore` |
 | Worm execution authorization | [internal/googleoidc/worm_execution_authorization.go](../../../internal/googleoidc/worm_execution_authorization.go), [internal/googleoidc/worm_execution_store.go](../../../internal/googleoidc/worm_execution_store.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `WormExecutionAuthorization`, `wex.` state, exact Run command/session binding, durable authorizer callback |
 | Wallet-secret provider-state limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
-| Shared registration state and HTTP resource | [internal/authregistration/store.go](../../../internal/authregistration/store.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Store`, `Handler`, `Begin`, `Registration`, `UsernameAvailability`, `ValidateReturnTo` |
+| Shared registration state and HTTP resource | [internal/authregistration/store.go](../../../internal/authregistration/store.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Store`, `Handler`, `Begin`, `Registration`, `ValidateReturnTo`, `DeploymentPath`, `AdministratorDefaultReturnTo` |
 | Durable identity and session boundary | [internal/accountcredentials/manager.go](../../../internal/accountcredentials/manager.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `GetByIdentity`, `RegisterExternalAccount`, `CreateExternalLogin` |
 | Session cookie and logout | [util/http/http.go](../../../util/http/http.go), [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `SetTokenCookie`, `Handler.ServeHTTP` |
-| Anonymous browser surfaces | [ui/src/app/pages/login.tsx](../../../ui/src/app/pages/login.tsx), [ui/src/app/pages/register.tsx](../../../ui/src/app/pages/register.tsx), [ui/src/app/shared/services/registration-service.ts](../../../ui/src/app/shared/services/registration-service.ts) | `LoginPage`, `RegisterPage`, `RegistrationService` |
-| Route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [ui/src/app/app.tsx](../../../ui/src/app/app.tsx) | `newHTTPServer`, `AppEntry`, `RegistrationBootstrap` |
+| Anonymous browser surfaces | [ui/src/app/member/pages/login.tsx](../../../ui/src/app/member/pages/login.tsx), [ui/src/app/admin/login.tsx](../../../ui/src/app/admin/login.tsx), [ui/src/app/member/pages/register.tsx](../../../ui/src/app/member/pages/register.tsx), [ui/src/app/shared/services/registration-service.ts](../../../ui/src/app/shared/services/registration-service.ts) | member `LoginPage`, `AdminLoginPage`, shared `RegisterPage`, `RegistrationService` |
+| Route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx) | `newHTTPServer`, member/admin login and registration bootstrap boundaries |
 
 ## Architecture
 
@@ -87,19 +89,26 @@ change the Athena cookie, or start the Run.
    secret, exact callback URI, and `ATHENA_ADMIN_GOOGLE_EMAIL`. It performs no
    Google network request. Disabled-auth loopback development registers none of
    the external authentication handlers.
-2. `GET /auth/google/login` validates `returnTo`, generates independent 32-byte
+2. The member `/login` and administrator `/admin/login` pages both start
+   `GET /auth/google/login` with a realm-local `returnTo`. The handler validates
+   that value, generates independent 32-byte
    state and nonce values plus a PKCE S256 verifier, and stores
    `{nonce, verifier, returnTo, createdAt}` in Redis for five minutes. A
-   HttpOnly, SameSite=Lax state cookie binds the callback to the browser.
+   HttpOnly, SameSite=Lax state cookie binds the callback to the browser. A
+   second HttpOnly entry cookie records only `member` or `admin`, so a callback
+   that cannot recover Redis state still returns to the initiating realm's
+   login surface.
    The Redis script atomically limits creation to 20 starts per hashed client
    identity and 120 deployment-wide in each one-minute window.
 3. Athena redirects to Google with scopes `openid email`,
    `prompt=select_account`, nonce, and the PKCE challenge. It neither requests
    offline access nor stores a refresh token.
-4. `GET /auth/google/callback` clears the state cookie and atomically consumes
+4. `GET /auth/google/callback` clears both login cookies and atomically consumes
    the Redis transaction before exchange. It checks opaque-state shape, browser
    cookie equality, freshness, and the server-stored return target. Every
-   callback outcome therefore makes the state unusable for replay.
+   callback outcome therefore makes the state unusable for replay. If state is
+   missing or cannot be consumed, the entry cookie selects `/login` or
+   `/admin/login` without granting a return path.
 5. The original verifier and fixed redirect URI exchange the code. The ID token
    must pass signature, Google issuer, client audience, expiry, issue-time,
    nonce, non-empty subject, and verified non-empty email checks.
@@ -124,8 +133,11 @@ change the Athena cookie, or start the Run.
    constraints remain the final username and administrator decision.
 10. The shared handler consumes the ticket, clears its cookie, signs a v3 login
     token through `CreateExternalLogin`, updates verified email and last-login
-    audit data, writes the HttpOnly Athena cookie, and returns
-    `/account/access`. A registration ticket cannot mint a second session.
+    audit data, writes the HttpOnly Athena cookie, and returns a role-aware
+    redirect. An administrator candidate resumes its validated `/admin/*`
+    target or uses `/admin/accounts`; every ordinary registration uses
+    `/account/access`.
+    A registration ticket cannot mint a second session.
 11. Deleting a Google registration validates the CSRF header and atomically
     removes the ticket only when no submission claim is active. A concurrent
     submission wins with `409 registration_unavailable`; otherwise deletion
@@ -158,8 +170,8 @@ change the Athena cookie, or start the Run.
     revisioned command. It stores no Google token in the Run, issues no lease,
     and redirects without starting execution.
 16. `/auth/logout` revokes and clears the Athena login credential and clears the
-    wallet-secret lease cookie. It never attempts to log the browser out of the
-    global Google session.
+    wallet-secret and Worm-credential lease cookies. It never attempts to log
+    the browser out of the global Google session.
 
 ## State / Data
 
@@ -171,17 +183,19 @@ Successful completion deletes both keys.
 
 Wallet-secret Google state is an additional five-minute, single-use Redis
 transaction. It stores no Google token or raw JTI. Its dedicated state cookie is
-HttpOnly, SameSite=Lax, Secure in production, and scoped to `/auth/google`, so
-the existing callback can validate the browser binding. Its success and failure
-responses use the wallet-secret no-store policy.
+HttpOnly, SameSite=Lax, Secure in production, and scoped to the deployment-
+relative `/auth/google` path, so the existing callback can validate the browser
+binding. Its success and failure responses use the wallet-secret no-store
+policy.
 
 Worm execution Google state is another five-minute, single-use Redis
-transaction and dedicated HttpOnly, SameSite=Lax `/auth/google` state cookie.
-It stores protocol material plus Run/command/revision, account, Session-JTI
-digest, access revision, and return path, never a Google token. The transaction
-is not the durable authorization: completion stores only proof kind and the
-verified bindings in Worm Trading PostgreSQL. The browser retains only
-`{runId}` in execution-specific `sessionStorage` across the redirect.
+transaction and dedicated HttpOnly, SameSite=Lax state cookie scoped to the
+deployment-relative `/auth/google` path. It stores protocol material plus
+Run/command/revision, account, Session-JTI digest, access revision, and return
+path, never a Google token. The transaction is not the durable authorization:
+completion stores only proof kind and the verified bindings in Worm Trading
+PostgreSQL. The browser retains only `{runId}` in execution-specific
+`sessionStorage` across the redirect.
 
 Google and Solana wallet-secret provider states share a dedicated fixed-window
 Redis budget of 120 creations globally and 20 per authenticated account per
@@ -189,16 +203,26 @@ minute. These counters do not reuse primary-login counters. The account counter
 key contains a SHA-256 digest rather than the raw account UUID, and the counter
 checks and transaction write are one atomic operation.
 
-The OAuth state cookie is scoped to `/auth/google`, SameSite=Lax, HttpOnly, and
-Secure for HTTPS deployments. The shared registration cookie is scoped to
-`/auth/registration`, SameSite=Strict, HttpOnly, and likewise Secure in
+The OAuth state and entry cookies are scoped to the deployment-relative
+`/auth/google` path, SameSite=Lax, HttpOnly, and Secure for HTTPS deployments.
+The entry cookie contains only the initiating realm and exists solely for
+failure routing when the authoritative Redis transaction is unavailable. The
+shared registration cookie is scoped to the deployment-relative
+`/auth/registration` path, SameSite=Strict, HttpOnly, and likewise Secure in
 production. Handler responses are non-cacheable and use a no-referrer policy.
 
 `authregistration.ValidateReturnTo` accepts at most 2,048 bytes and only a
 same-origin absolute path beginning with one `/`. It rejects external origins,
-`//`, backslashes, control characters, malformed escapes, and `/login` or
-`/register` loops. Only the server-stored value survives the callback;
-successful first registration always enters `/account/access`.
+`//`, backslashes, control characters, malformed escapes, and `/login`,
+`/admin/login`, or `/register` loops. Only the server-stored value survives the
+callback. The registration handler chooses the result from the ticket's
+server-computed administrator-candidate flag and server-held return target; the
+browser cannot claim administrator routing.
+
+Return targets remain logical paths relative to Athena's deployment root.
+Server-issued HTTP redirects and Cookie paths apply the configured base href;
+registration and Phantom JSON `redirectTo` fields keep the logical path so the
+browser applies the deployment base exactly once.
 
 Google access and ID tokens exist only in callback memory. Public registration
 responses never return the Google subject, ticket ID, Google token, JTI, or
@@ -214,7 +238,7 @@ Solana identity as its public `solanaAddress`.
 | `ATHENA_GOOGLE_OIDC_CLIENT_ID` | Required Google Web OAuth client ID and ID-token audience. |
 | `ATHENA_GOOGLE_OIDC_CLIENT_SECRET` | Direct secret input, intended for local development. A non-empty direct value takes precedence. |
 | `ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE` | Secret-file input. Production mounts a `0600` file read-only only into `athena-server`. |
-| `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Exact `/auth/google/callback` URI. Production requires HTTPS; HTTP is accepted only on `localhost`. It is never inferred from request headers. Its scheme and authority also define the trusted SIWS origin. |
+| `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Exact deployment-relative `/auth/google/callback` URI. Its path must include the configured Athena base href. Production requires HTTPS; HTTP is accepted only on `localhost`. It is never inferred from request headers. Its scheme and authority also define the trusted SIWS origin. |
 | `ATHENA_ADMIN_GOOGLE_EMAIL` | Required candidate email. Comparison trims surrounding whitespace and ignores case, without Gmail dot or alias normalization. It cannot alter an existing subject or replace an administrator. |
 | `ATHENA_SESSION_DURATION` | Athena login-session lifetime; default 24 hours. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Skips external authentication and administrator-email requirements for the loopback-only development identity. |
@@ -240,6 +264,10 @@ namespace and are not shared with primary login or either sensitive lease.
 - Provider plus subject lookup precedes email-based administrator candidacy.
 - Administrator role is derived only from the Google server ticket and
   persisted role; the browser cannot submit it and Solana cannot claim it.
+- Administrator-candidate registration returns to `/admin/*`; ordinary
+  registration returns to `/account/access`. Known-account login preserves
+  only a validated same-origin target and each frontend applies its own role
+  guard. Both use the same deployment-root cookie and callback.
 - Username availability is advisory; PostgreSQL case-insensitive uniqueness is
   final.
 - OAuth state and successful registration tickets are one-time and browser-
@@ -315,6 +343,7 @@ coordinator token, Worm JWT, transaction, and signature.
 - [ ] Unknown-subject handoff uses the shared registration resource.
 - [ ] Registration cookie, CSRF, claim, and one-time consumption semantics remain current.
 - [ ] Administrator candidacy and subject-first identity rules remain current.
+- [ ] Member and administrator login, registration, and return-target routing remain isolated.
 - [ ] Public/browser boundaries still exclude Google tokens and subjects.
 - [ ] Wallet-secret transaction creation retains its independent atomic global
       and account rate limits.

@@ -62,12 +62,17 @@ var administratorGRPCMethods = map[string]bool{
 	"/profitsharing.ProfitSharingService/CloseBallot":  true,
 }
 
-// profitSharingAuthenticatedGRPCMethods require the independently administered
-// Profit Sharing entitlement. Round membership and participant-only writes are
-// additionally enforced by the Profit Sharing domain service.
-var profitSharingAuthenticatedGRPCMethods = map[string]bool{
-	"/profitsharing.ProfitSharingService/ListRounds":     true,
-	"/profitsharing.ProfitSharingService/GetRound":       true,
+// profitSharingReadGRPCMethods admit either the administrator workspace or an
+// entitled member. The facade forwards the persisted role so the domain can
+// project the appropriate round view.
+var profitSharingReadGRPCMethods = map[string]bool{
+	"/profitsharing.ProfitSharingService/ListRounds": true,
+	"/profitsharing.ProfitSharingService/GetRound":   true,
+}
+
+// profitSharingParticipantGRPCMethods require the independently administered
+// member entitlement. Administrators cannot submit participant commands.
+var profitSharingParticipantGRPCMethods = map[string]bool{
 	"/profitsharing.ProfitSharingService/UpdateProposal": true,
 	"/profitsharing.ProfitSharingService/SubmitProposal": true,
 	"/profitsharing.ProfitSharingService/ReopenProposal": true,
@@ -209,10 +214,6 @@ func (s *authenticatedServerStream) Context() context.Context {
 }
 
 func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string, srv any, req any) (context.Context, error) {
-	if server.DisableAuth {
-		return withDisabledAuthClaims(ctx, server.developmentAccountID), nil
-	}
-
 	if publicGRPCMethods[fullMethod] {
 		if overrideSrv, ok := srv.(serviceAuthFuncOverride); ok {
 			return overrideSrv.AuthFuncOverride(ctx, fullMethod)
@@ -232,7 +233,10 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	if isReflectionMethod(fullMethod) || administratorGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccount(accountID, accountaccess.RequirementAdministrator)
 	}
-	if profitSharingAuthenticatedGRPCMethods[fullMethod] {
+	if profitSharingReadGRPCMethods[fullMethod] {
+		return authCtx, server.authorizeProfitSharingRead(accountID)
+	}
+	if profitSharingParticipantGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccount(accountID, accountaccess.RequirementProfitSharing)
 	}
 	if accountAuthenticatedGRPCMethods[fullMethod] {
@@ -261,6 +265,20 @@ func (server *AthenaServer) authorizeAccount(accountID string, requirement accou
 		return status.Error(codes.Internal, "account access controller is not configured")
 	}
 	return server.accessController.Authorize(accountID, requirement)
+}
+
+func (server *AthenaServer) authorizeProfitSharingRead(accountID string) error {
+	if server.accessController == nil {
+		return status.Error(codes.Internal, "account access controller is not configured")
+	}
+	access, err := server.accessController.Get(accountID)
+	if err != nil {
+		return err
+	}
+	if access.Administrator || access.ProfitSharingEnabled {
+		return nil
+	}
+	return accountaccess.ErrProfitSharingAccessDenied
 }
 
 func (server *AthenaServer) authorizeAccountSelfService(accountID, fullMethod string, req any) error {

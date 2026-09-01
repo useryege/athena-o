@@ -6,8 +6,9 @@ Wallet Ownership and Custody owns Athena-managed EVM and Solana keypairs,
 UUID-account ownership, required wallet remarks, avatar metadata, encrypted
 private-key persistence, and the safe Wallet API projection. Every wallet
 belongs to exactly one account. Application administrators have no cross-user
-Wallet read or write path; their role only gives them module access and they may
-manage wallets owned by their own account UUID.
+Wallet read or write path and no own-account Wallet path: their fixed access
+aggregate gives Wallet `NONE`, and the administrator application constructs no
+Wallet service or route.
 
 [Wallet Secret Reauthentication](wallet-secret-reauthentication.md) owns the
 independent browser proofs required before a stored private key is revealed or
@@ -43,7 +44,7 @@ deletion, and blockchain RPC calls remain outside this capability.
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
 | Owner-scoped Worm Trading projection, preview resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `completeWormConnection` |
-| Browser management surface | [ui/src/app/pages/wallets.tsx](../../../ui/src/app/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
+| Browser management surface | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
 | Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, general internal token, independent Worm execution-signer token and clientset |
 
 ## Architecture

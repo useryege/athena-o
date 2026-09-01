@@ -162,8 +162,8 @@ for variable_name in "${required_oidc_variables[@]}"; do
     exit 1
   fi
 done
-if [[ ! "${ATHENA_GOOGLE_OIDC_REDIRECT_URI}" =~ ^https://[^/?#]+/auth/google/callback$ ]]; then
-  echo "ATHENA_GOOGLE_OIDC_REDIRECT_URI must be an explicit HTTPS URI ending exactly in /auth/google/callback."
+if [[ ! "${ATHENA_GOOGLE_OIDC_REDIRECT_URI}" =~ ^https://[^/?#]+(/[^/?#[:space:]]+)*/auth/google/callback$ ]]; then
+  echo "ATHENA_GOOGLE_OIDC_REDIRECT_URI must be an explicit HTTPS URI ending exactly in the deployment path plus /auth/google/callback."
   exit 1
 fi
 

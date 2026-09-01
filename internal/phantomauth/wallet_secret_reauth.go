@@ -228,7 +228,7 @@ func (h *walletSecretReauthentication) setChallengeCookie(w http.ResponseWriter,
 	http.SetCookie(w, &http.Cookie{
 		Name:     walletSecretChallengeCookieName,
 		Value:    value,
-		Path:     walletSecretChallengeCookiePath,
+		Path:     h.phantom.deploymentPath(walletSecretChallengeCookiePath),
 		MaxAge:   int(challengeTTL / time.Second),
 		Expires:  expiresAt,
 		HttpOnly: true,
@@ -241,7 +241,7 @@ func (h *walletSecretReauthentication) clearChallengeCookie(w http.ResponseWrite
 	http.SetCookie(w, &http.Cookie{
 		Name:     walletSecretChallengeCookieName,
 		Value:    "",
-		Path:     walletSecretChallengeCookiePath,
+		Path:     h.phantom.deploymentPath(walletSecretChallengeCookiePath),
 		MaxAge:   -1,
 		Expires:  time.Unix(1, 0),
 		HttpOnly: true,

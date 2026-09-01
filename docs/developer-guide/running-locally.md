@@ -42,14 +42,17 @@ the UI displays `@username` instead.
 
 When the verified email matches `ATHENA_ADMIN_GOOGLE_EMAIL`, the registration ticket marks
 that identity as the administrator candidate. Its submitted account is created with
-`administrator=true` and fixed maximum module access; no username confers the role. The
+`administrator=true`, login enabled, and no member modules, API Key, or Profit Sharing
+entitlement; no username confers the role. The
 persisted Google subject is permanent after registration. A Phantom account similarly keeps
 one permanent canonical Solana address, with no merge, rebind, transfer, or recovery path.
 Email comparison trims surrounding whitespace and ignores case, but does not normalize
 Gmail dots or `+alias` values. When
 authentication is enabled, missing OIDC settings or administrator email prevent the API
 Server from listening. Setting `ATHENA_SERVER_DISABLE_AUTH=true` creates the isolated
-`local-admin` development identity and does not require Google configuration. That mode is
+development identity selected by `ATHENA_SERVER_DISABLE_AUTH_ROLE=member|administrator`
+and does not require Google configuration. The default `member` role uses `local-user`
+with maximum member grants; `administrator` uses management-only `local-admin`. That mode is
 accepted only when the API Server listens on `localhost`, `127.0.0.0/8`, or `::1`; reset all
 local state before switching back to OIDC. The local Procfile defaults to `127.0.0.1`.
 
