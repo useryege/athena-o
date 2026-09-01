@@ -236,9 +236,8 @@ func (s *Service) constructExecutionPlanSnapshot(
 		return nil, failExecutionPlanBuild(executionPlanFailurePreviewInvalid, err)
 	}
 	previewInput := ExecutionPreviewInput{
-		Wallets:         make([]ExecutionPreviewWalletInput, 0, len(wallets)),
-		Items:           make([]ExecutionPreviewItemInput, 0, len(catalogItems)),
-		PreflightChecks: plan.PreflightChecks,
+		Wallets: make([]ExecutionPreviewWalletInput, 0, len(wallets)),
+		Items:   make([]ExecutionPreviewItemInput, 0, len(catalogItems)),
 	}
 	for _, wallet := range wallets {
 		previewInput.Wallets = append(previewInput.Wallets, wallet.input)
@@ -263,7 +262,7 @@ func (s *Service) constructExecutionPlanSnapshot(
 	for _, wallet := range wallets {
 		walletObservations = append(walletObservations, wallet.observation)
 	}
-	itemObservations, err := executionPlanItemObservations(catalogItems, result.Estimates, plan.PreflightChecks)
+	itemObservations, err := executionPlanItemObservations(catalogItems, result.Estimates)
 	if err != nil {
 		return nil, failExecutionPlanBuild(executionPlanFailurePreviewInvalid, err)
 	}
@@ -652,7 +651,6 @@ func executionPlanUnsignedInteger(value string) bool {
 func executionPlanItemObservations(
 	items []executionPlanCatalogItem,
 	estimates []ExecutionPreviewMarketEstimate,
-	checks wormstore.ExecutionPreflightChecks,
 ) ([]wormstore.ExecutionPlanItemObservation, error) {
 	if len(items) != len(estimates) {
 		return nil, errors.New("execution preview estimate count mismatch")
@@ -671,9 +669,6 @@ func executionPlanItemObservations(
 		case estimate.RejectionCode != "":
 			observation.State = ExecutionPreviewOutcomeEstimateRejected
 			observation.ReasonCode = ExecutionPreviewOutcomeEstimateRejected
-		case !estimate.IsFullyFilled && checks.RequireFullLiquidity:
-			observation.State = ExecutionPreviewOutcomeLiquidityInsufficient
-			observation.ReasonCode = ExecutionPreviewOutcomeLiquidityInsufficient
 		default:
 			observation.State = ExecutionPreviewOutcomeReady
 			observation.ReasonCode = ""
@@ -737,7 +732,6 @@ func executionPlanStepsAndTotals(
 			ReasonCode:          reasonCode,
 			ProjectedUSDCBefore: step.USDCBalanceBefore,
 			ProjectedUSDCAfter:  step.USDCBalanceAfter,
-			AdvisoryCodes:       append([]string(nil), step.AdvisoryCodes...),
 		})
 	}
 	return steps, totalCollateral.String(), totalOpeningFee.String(), totalUserFundsNeeded.String(), nil

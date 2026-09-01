@@ -115,7 +115,6 @@ type WormExecutionPlan struct {
 	RetentionUntil       pgtype.Timestamptz
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
-	RequireFullLiquidity bool
 }
 
 type WormExecutionPlanItem struct {
@@ -154,7 +153,6 @@ type WormExecutionPlanStep struct {
 	ReasonCode          string
 	ProjectedUsdcBefore string
 	ProjectedUsdcAfter  string
-	AdvisoryCodes       []string
 }
 
 type WormExecutionPlanWallet struct {
@@ -223,7 +221,6 @@ type WormExecutionRun struct {
 	CompletedAt          pgtype.Timestamptz
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
-	RequireFullLiquidity bool
 }
 
 type WormExecutionRunItem struct {
@@ -290,7 +287,6 @@ type WormExecutionRunStep struct {
 	CompletedAt                     pgtype.Timestamptz
 	CreatedAt                       pgtype.Timestamptz
 	UpdatedAt                       pgtype.Timestamptz
-	AdvisoryCodes                   []string
 	CompletionSource                string
 	CompletionPositionPubkey        string
 	CompletionPositionRequestPubkey string

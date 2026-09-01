@@ -33,13 +33,32 @@ var (
 	webStableSlugPattern      = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}$`)
 )
 
-// WebMarketPositionSubmitClient is the narrow Worm Web protocol required by
-// SubmitWebMarketPosition.
+// WebMarketPositionOpenClient is the single-mutation surface required to
+// dispatch one prepared Worm Web market-position Open.
+type WebMarketPositionOpenClient interface {
+	OpenMarketPosition(ctx context.Context, accessToken string, request WebMarketPositionOpenRequest) (*WebPositionRequest, error)
+}
+
+// WebPositionFinalizeClient is the single-mutation surface required to
+// dispatch one prepared Worm Web Finalize.
+type WebPositionFinalizeClient interface {
+	FinalizePosition(ctx context.Context, accessToken string, request WebPositionFinalizeRequest) (*WebPositionRequest, error)
+}
+
+// WebPositionRequestClient is the read-only surface used to observe one Worm
+// Web request after a durable caller has recorded its numeric identity.
+type WebPositionRequestClient interface {
+	GetPositionRequest(ctx context.Context, accessToken string, requestID int64) (*WebPositionRequest, error)
+}
+
+// WebMarketPositionSubmitClient is the complete narrow protocol required by
+// the convenience SubmitWebMarketPosition orchestration. Durable production
+// execution may instead depend on the individual stage interfaces above.
 type WebMarketPositionSubmitClient interface {
 	WebSignInClient
-	OpenMarketPosition(ctx context.Context, accessToken string, request WebMarketPositionOpenRequest) (*WebPositionRequest, error)
-	FinalizePosition(ctx context.Context, accessToken string, request WebPositionFinalizeRequest) (*WebPositionRequest, error)
-	GetPositionRequest(ctx context.Context, accessToken string, requestID int64) (*WebPositionRequest, error)
+	WebMarketPositionOpenClient
+	WebPositionFinalizeClient
+	WebPositionRequestClient
 }
 
 // WebMarginPositionCashOutClient is the narrow Worm Web protocol required by
@@ -404,7 +423,14 @@ func (c *webClient) OpenMarketPosition(ctx context.Context, accessToken string, 
 		return nil, err
 	}
 	var response WebPositionRequest
-	if err := c.do(ctx, http.MethodPost, "/margin/positions/open/", nil, request, accessToken, &response); err != nil {
+	err := c.doWithDecoder(ctx, http.MethodPost, "/margin/positions/open/", nil, request, accessToken,
+		func(statusCode int, rawBody []byte) error {
+			return decodeWebPositionRequestResponse(statusCode, rawBody, &response)
+		})
+	if err != nil {
+		if response.ID > 0 {
+			return &response, err
+		}
 		return nil, err
 	}
 	if response.ID <= 0 {
@@ -450,7 +476,14 @@ func (c *webClient) FinalizePosition(ctx context.Context, accessToken string, re
 	}
 
 	var response WebPositionRequest
-	if err := c.do(ctx, http.MethodPost, "/margin/positions/open/finalize/", nil, body, accessToken, &response); err != nil {
+	err := c.doWithDecoder(ctx, http.MethodPost, "/margin/positions/open/finalize/", nil, body, accessToken,
+		func(statusCode int, rawBody []byte) error {
+			return decodeWebPositionRequestResponse(statusCode, rawBody, &response)
+		})
+	if err != nil {
+		if response.ID > 0 {
+			return &response, err
+		}
 		return nil, err
 	}
 	if int64(response.ID) != request.PositionRequestID {
@@ -470,7 +503,14 @@ func (c *webClient) GetPositionRequest(ctx context.Context, accessToken string, 
 	query := make(url.Values)
 	query.Set("position_request_id", strconv.FormatInt(requestID, 10))
 	var response WebPositionRequest
-	if err := c.do(ctx, http.MethodGet, "/margin/positions/open/", query, nil, accessToken, &response); err != nil {
+	err := c.doWithDecoder(ctx, http.MethodGet, "/margin/positions/open/", query, nil, accessToken,
+		func(statusCode int, rawBody []byte) error {
+			return decodeWebPositionRequestResponse(statusCode, rawBody, &response)
+		})
+	if err != nil {
+		if response.ID > 0 {
+			return &response, err
+		}
 		return nil, err
 	}
 	if int64(response.ID) != requestID {
@@ -664,6 +704,61 @@ func decodeWebResponse(statusCode int, rawBody []byte, out any) error {
 		return &WebResponseError{err: fmt.Errorf("decode direct response: %w", err)}
 	}
 	return nil
+}
+
+// decodeWebPositionRequestResponse preserves only a valid request identity
+// when the remaining DTO is malformed. Durable callers can checkpoint that
+// identity and reconcile with safe reads without trusting partially decoded
+// provider state or replaying the mutation.
+func decodeWebPositionRequestResponse(
+	statusCode int,
+	rawBody []byte,
+	out *WebPositionRequest,
+) error {
+	if out == nil {
+		return &WebResponseError{err: errors.New("position request response target is missing")}
+	}
+	if err := decodeWebResponse(statusCode, rawBody, out); err != nil {
+		requestID, ok := extractWebPositionRequestID(rawBody)
+		*out = WebPositionRequest{}
+		if ok {
+			out.ID = requestID
+		}
+		return err
+	}
+	return nil
+}
+
+func extractWebPositionRequestID(rawBody []byte) (WebRequestID, bool) {
+	payload := bytes.TrimSpace(rawBody)
+	if len(payload) == 0 || bytes.Equal(payload, []byte("null")) || payload[0] == '[' {
+		return 0, false
+	}
+
+	var envelope struct {
+		Success *bool              `json:"success"`
+		Result  *webEnvelopeResult `json:"result"`
+		Error   json.RawMessage    `json:"error"`
+	}
+	if err := json.Unmarshal(payload, &envelope); err != nil {
+		return 0, false
+	}
+	if envelope.Result != nil {
+		payload = bytes.TrimSpace(envelope.Result.Data)
+		if len(payload) == 0 || bytes.Equal(payload, []byte("null")) {
+			return 0, false
+		}
+	} else if envelope.Success != nil || len(bytes.TrimSpace(envelope.Error)) != 0 {
+		return 0, false
+	}
+
+	var identity struct {
+		ID WebRequestID `json:"id"`
+	}
+	if err := json.Unmarshal(payload, &identity); err != nil || identity.ID <= 0 {
+		return 0, false
+	}
+	return identity.ID, true
 }
 
 func decodeWebAcknowledgement(statusCode int, rawBody []byte) error {

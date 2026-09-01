@@ -87,7 +87,6 @@ type wormExecutionRunResponse struct {
 	State            string                        `json:"state"`
 	Revision         int64                         `json:"revision"`
 	PlanVersion      int64                         `json:"planVersion"`
-	PreflightChecks  wormExecutionPreflightChecks  `json:"preflightChecks"`
 	Counts           wormExecutionCounts           `json:"counts"`
 	NextStepOrdinal  int64                         `json:"nextStepOrdinal"`
 	CurrentStep      *wormExecutionRunStepResponse `json:"currentStep,omitempty"`
@@ -141,7 +140,6 @@ type wormExecutionRunStepResponse struct {
 	Leverage                        string                        `json:"leverage"`
 	State                           string                        `json:"state"`
 	ReasonCode                      string                        `json:"reasonCode"`
-	AdvisoryCodes                   []string                      `json:"advisoryCodes"`
 	PositionRequestID               string                        `json:"positionRequestId"`
 	ProviderState                   string                        `json:"providerState"`
 	ProviderOrderState              string                        `json:"providerOrderState"`
@@ -999,10 +997,6 @@ func projectWormExecutionRunWithBinding(
 	if int64(len(run.GetWallets())) != run.GetWalletCount() || int64(len(run.GetItems())) != run.GetItemCount() {
 		return wormExecutionRunResponse{}, status.Error(codes.Internal, "Worm Trading returned incomplete execution run snapshots")
 	}
-	preflightChecks, err := projectWormExecutionPreflightChecks(run.GetPreflightChecks())
-	if err != nil {
-		return wormExecutionRunResponse{}, err
-	}
 	pauseCode := strings.TrimSpace(run.GetPauseCode())
 	failureCode := strings.TrimSpace(run.GetFailureCode())
 	blockCode := strings.TrimSpace(run.GetBlockCode())
@@ -1028,7 +1022,6 @@ func projectWormExecutionRunWithBinding(
 		State:            state,
 		Revision:         run.GetRevision(),
 		PlanVersion:      run.GetPlanVersion(),
-		PreflightChecks:  preflightChecks,
 		Counts:           counts,
 		NextStepOrdinal:  run.GetNextStepOrdinal(),
 		PauseCode:        pauseCode,
@@ -1310,10 +1303,6 @@ func projectWormExecutionRunStep(
 	}
 	state := strings.TrimSpace(step.GetState())
 	reasonCode := strings.TrimSpace(step.GetReasonCode())
-	advisoryCodes, err := projectWormExecutionAdvisoryCodes(step.GetAdvisoryCodes())
-	if err != nil {
-		return wormExecutionRunStepResponse{}, err
-	}
 	if state != step.GetState() || !validWormExecutionStepState(state) || reasonCode != step.GetReasonCode() ||
 		!validOptionalWormExecutionReasonCode(reasonCode) {
 		return wormExecutionRunStepResponse{}, status.Error(codes.Internal, "Worm Trading returned an invalid execution step state")
@@ -1383,7 +1372,6 @@ func projectWormExecutionRunStep(
 		Leverage:                        item.Leverage,
 		State:                           state,
 		ReasonCode:                      reasonCode,
-		AdvisoryCodes:                   advisoryCodes,
 		PositionRequestID:               wormExecutionPositionRequestID(step.GetPositionRequestId()),
 		ProviderState:                   providerState,
 		ProviderOrderState:              providerOrderState,

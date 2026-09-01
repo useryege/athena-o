@@ -176,18 +176,6 @@ const (
 	ExecutionPlanStepDispositionSkipped ExecutionPlanStepDisposition = "SKIPPED"
 )
 
-// ExecutionPreflightChecks freezes the only user-configurable preview rule.
-// Position and in-flight request guards are always mandatory.
-type ExecutionPreflightChecks struct {
-	RequireFullLiquidity bool
-}
-
-func DefaultExecutionPreflightChecks() ExecutionPreflightChecks {
-	return ExecutionPreflightChecks{
-		RequireFullLiquidity: true,
-	}
-}
-
 // ExecutionPlanWalletInput is a caller-verified, non-secret wallet identity
 // snapshot. Wallet order is the requested execution order.
 type ExecutionPlanWalletInput struct {
@@ -257,7 +245,6 @@ type ExecutionPlanStep struct {
 	ReasonCode          string
 	ProjectedUSDCBefore string
 	ProjectedUSDCAfter  string
-	AdvisoryCodes       []string
 }
 
 // ExecutionPlanReasonCount is an authoritative aggregate of terminal preview
@@ -298,8 +285,6 @@ type ExecutionPlan struct {
 	Wallets              []ExecutionPlanWallet
 	Items                []ExecutionPlanItem
 	ReasonCounts         []ExecutionPlanReasonCount
-	PreflightChecks      ExecutionPreflightChecks
-	AdvisoryCounts       []ExecutionPlanReasonCount
 }
 
 type CreateExecutionPlanRequest struct {
@@ -307,7 +292,6 @@ type CreateExecutionPlanRequest struct {
 	CombinationID               string
 	ExpectedCombinationRevision int64
 	Wallets                     []ExecutionPlanWalletInput
-	PreflightChecks             ExecutionPreflightChecks
 	Now                         time.Time
 }
 
@@ -540,7 +524,6 @@ type ExecutionRunStep struct {
 	ProjectedUSDCAfter              string
 	State                           ExecutionStepState
 	ReasonCode                      string
-	AdvisoryCodes                   []string
 	PositionRequestID               int64
 	FinalizeMode                    string
 	TransactionMessageSHA256        []byte
@@ -612,7 +595,6 @@ type ExecutionRun struct {
 	Coordinator          *ExecutionCoordinator
 	CurrentStep          *ExecutionRunStep
 	AllowedActions       []ExecutionRunAction
-	PreflightChecks      ExecutionPreflightChecks
 }
 
 type CreateExecutionRunRequest struct {
@@ -703,15 +685,14 @@ type RecoverExecutionStepRequest struct {
 }
 
 type CompleteExecutionPreflightRequest struct {
-	RunID         string
-	StepOrdinal   int64
-	CommandID     string
-	ClaimID       string
-	NextState     ExecutionStepState
-	ReasonCode    string
-	AdvisoryCodes []string
-	SkipScope     ExecutionStepScope
-	Now           time.Time
+	RunID       string
+	StepOrdinal int64
+	CommandID   string
+	ClaimID     string
+	NextState   ExecutionStepState
+	ReasonCode  string
+	SkipScope   ExecutionStepScope
+	Now         time.Time
 }
 
 type PrepareExecutionMutationRequest struct {
@@ -874,7 +855,6 @@ func (r ExecutionRun) Clone() ExecutionRun {
 
 func (s ExecutionRunStep) Clone() ExecutionRunStep {
 	s.TransactionMessageSHA256 = append([]byte(nil), s.TransactionMessageSHA256...)
-	s.AdvisoryCodes = append([]string(nil), s.AdvisoryCodes...)
 	s.Attempts = append([]ExecutionMutationAttempt(nil), s.Attempts...)
 	for index := range s.Attempts {
 		s.Attempts[index].RequestSHA256 = append([]byte(nil), s.Attempts[index].RequestSHA256...)

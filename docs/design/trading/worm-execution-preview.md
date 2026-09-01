@@ -7,9 +7,10 @@ one saved Worm market combination and an explicitly ordered set of custodial
 Solana Wallets. It freezes the source combination revision, Wallet order, market
 order, current connection and balance observations, authoritative market
 eligibility, public Worm estimates, complete current Worm exposure, cumulative
-USDC simulation, two mandatory exposure guards, one user-selected full-liquidity
-rule, its ignored-condition advisory, and one Wallet-major classification for
-every Wallet/market pair.
+USDC simulation, two mandatory exposure guards, and one Wallet-major
+classification for every Wallet/market pair. Worm's raw `is_fully_filled`
+estimate observation is retained for diagnosis but never changes whether a
+valid market order is actionable.
 
 The API Server owns interactive authentication, current-account derivation,
 exact-origin creation, and owner-scoped Wallet resolution. Worm Trading owns the
@@ -42,9 +43,9 @@ belongs to the Executions route.
 | Authoritative Event catalogs | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go), [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `GetOrderEventCatalog`, `OrderEventCatalogMarket`, `OrderEventCatalogOutcome` |
 | Confirmed balance adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter.BatchGetBalances`, native SOL and Circle USDC observations |
 | Durable model and transactions | [internal/wormtrading/store/execution_plans.go](../../../internal/wormtrading/store/execution_plans.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `CreateExecutionPlan`, `ClaimExecutionPlan`, `UpdateExecutionPlanBuildProgress`, `MarkExecutionPlanReady`, `MarkExecutionPlanFailed`, `DeleteExpiredExecutionPlans` |
-| Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql](../../../internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, frozen full-liquidity policy, Step advisories, leased claim, owner reads, terminal writes, reason/advisory aggregation, retention cleanup |
+| Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, development-data reset for the mandatory-guard contract, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
 | Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, Worm Markets clientset, graceful cancellation |
-| Browser workflow, normalization, and responsive presentation | [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-execution-preflight.ts](../../../ui/src/app/member/pages/worm-execution-preflight.ts), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/styles/member-features.css](../../../ui/src/app/styles/member-features.css) | `WormTradingExecutionPreviewPage`, `PreflightChecksEditor`, `ChecksStep`, `PlanChecksSummary`, strict plan/check/advisory normalizers, contextual route/breadcrumb, `worm-preview-*` rules |
+| Browser workflow, normalization, and responsive presentation | [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-execution-preflight.ts](../../../ui/src/app/member/pages/worm-execution-preflight.ts), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/styles/member-features.css](../../../ui/src/app/styles/member-features.css) | `WormTradingExecutionPreviewPage`, `ChecksStep`, `PlanChecksSummary`, `wormExecutionMandatoryGuardDefinitions`, strict plan normalization, contextual route/breadcrumb, `worm-preview-*` rules |
 | Live-Run handoff boundary | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx) | `CreateExecutionRun`, `Prepare live execution`, usable READY guard, immutable snapshot handoff |
 
 ## Architecture
@@ -53,8 +54,7 @@ belongs to the Executions route.
 interactive READ_WRITE browser
   -> POST /api/v1/worm-trading/execution-plans
        -> API Server derives account and resolves ordered Solana Wallet IDs
-       -> strict full-liquidity policy defaults to enabled when omitted
-       -> Worm Trading transaction freezes source revision, Wallets, items, and policy
+       -> Worm Trading transaction freezes source revision, Wallets, and items
        -> HTTP 202 BUILDING + Location
 
 single Worm Trading preview worker
@@ -76,11 +76,9 @@ interactive READ_WRITE browser + usable READY plan
 ```
 
 The browser can submit only `combinationId`, its positive expected revision,
-ordered positive `walletIds`, and `preflightChecks.requireFullLiquidity`. A
-missing policy safely defaults that rule to enabled; a present policy must
-contain the boolean and no unknown field. The target-market position and
-wallet-global request guards are unconditional and therefore are not request
-fields. The browser cannot submit an owner, Wallet address,
+and ordered positive `walletIds`. The target-market position and wallet-global
+request guards are unconditional and therefore are not request fields. The
+browser cannot submit an owner, Wallet address,
 credential, current market fields, side, funds, leverage, balance, estimate, or
 step result. The API Server resolves up to eight Wallet lookups concurrently,
 requires every result to be the current account's canonical Solana Wallet, and
@@ -114,18 +112,17 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
    then presents an Execution guards editor. Its two read-only mandatory cards
    state that any-direction Open Position in the target market blocks the
    Wallet and that any uncovered in-flight market or limit request anywhere in
-   that Wallet blocks it. The only checkbox is enabled-by-default Full
-   liquidity; disabling it explains that a partial-fill estimate may remain
-   actionable. The editor uses two columns on desktop and one column on narrow
-   screens.
+   that Wallet blocks it. The cards use two columns on desktop and one column
+   on narrow screens, followed by the fixed market-order, fixed-funds, `1x`
+   execution disclosure.
 3. POST validates one JSON object of at most 1 MiB, rejects unknown fields,
-   duplicate/nonpositive Wallet IDs, an invalid UUID, a nonpositive revision,
-   or a present but incomplete/non-boolean full-liquidity policy, and resolves every
+   duplicate/nonpositive Wallet IDs, an invalid UUID, or a nonpositive revision,
+   and resolves every
    Wallet through owner-scoped `GetWallet` while retaining input order.
 4. `CreateExecutionPlan` locks the owner-scoped source combination, compares the
    expected revision, loads its contiguous items, calculates the Wallet/item
    Cartesian size with overflow protection, and commits the plan header,
-   full-liquidity policy, ordered safe Wallet, and trusted combination-item
+   ordered safe Wallet, and trusted combination-item
    snapshots in one transaction.
    The response is HTTP 202 with state BUILDING and a resource `Location`.
 5. One process worker polls every second. `ClaimExecutionPlan` selects the oldest
@@ -180,14 +177,13 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     A mismatch is an invalid provider response and cannot produce READY.
     Classification order is target-market Open Position, wallet-global
     uncovered in-flight request, unavailable market, rejected estimate,
-    incomplete fill, insufficient USDC, then READY. The first two are mandatory:
+    insufficient USDC, then READY. The first two are mandatory:
     `MARKET_POSITION_EXISTS` matches either YES or NO in the current target
     market, while `WALLET_REQUEST_IN_FLIGHT` matches any remaining market or
     limit request across every market and direction. Either match skips the
-    current Step and all later Steps for that Wallet. Incomplete fill is the
-    only configurable condition: it is `LIQUIDITY_INSUFFICIENT` and SKIPPED when
-    full liquidity is required, or the same one-time advisory while
-    classification continues when the rule is disabled. Market validity,
+    current Step and all later Steps for that Wallet. The raw
+    `is_fully_filled` value remains in the Estimate snapshot for diagnosis;
+    either boolean follows the same classification path. Market validity,
     Estimate validity, and USDC remain mandatory. After the first
     insufficient-USDC Step, the remaining markets for that Wallet are skipped
     for the same reason. The next Wallet starts independently from its own
@@ -199,11 +195,10 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     of those aggregates. The browser labels them `Actionable collateral`,
     `Actionable opening fees`, and `Actionable USDC needed`, labels the READY
     count `Actionable`, and states that collateral, opening fee, and USDC totals
-    include actionable steps only. In particular, a partial-fill Estimate is
-    included when `requireFullLiquidity` is disabled. Ordered reason counts
-    include a `READY` key and every stable blocking category; advisory counts
-    independently aggregate ignored `LIQUIDITY_INSUFFICIENT` conditions and
-    never contribute to skip counts.
+    include actionable steps only. A valid partial-fill Estimate contributes
+    through the same exact `user_funds_needed` arithmetic as any other
+    actionable Estimate. Ordered reason counts include a `READY` key and every
+    stable blocking category.
 15. `MarkExecutionPlanReady` locks the plan and source combination, rechecks the
     exact combination revision, then locks connection and ACTIVE credential rows
     in global Wallet-ID order before validating them in user ordinal order. This
@@ -225,25 +220,21 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     render as unavailable rather than synthetic zero; READY/EXPIRED retain the
     frozen actionable-only aggregates. Step detail is paged at 20, 50, or 100
     rows with an explicit retry. The Review begins with a visible summary of
-    both mandatory guards and the frozen full-liquidity choice, disabled-rule
-    disclosure, and advisory counts. `Change checks`
-    returns to the Checks step while preserving Wallet order only when the
-    source Combination revision still matches; otherwise it returns to the
-    Combination step for renewed review. `Re-run checks`
-    always opens a confirmation editor seeded from the current plan and creates
-    a distinct immutable plan with the same source revision and Wallet order; it
+    both mandatory guards. `Re-run preview` creates a distinct
+    immutable plan with the same frozen source revision and Wallet order; it
     replaces `planId` only after success and never overwrites the old snapshot.
-    A failed rerun leaves both the old Review and the edited modal policy intact.
+    A failed rerun leaves the old Review intact.
     The first accepted Plan projection establishes a browser-side immutable
-    intent baseline for Combination ID/revision, Wallet ID order, and the
-    full-liquidity check; later polls or mutation responses that drift from it are rejected
+    intent baseline for Combination ID/revision and Wallet ID order; later polls
+    or mutation responses that drift from it are rejected
     without replacing visible data. Account or access-revision changes abort
     pending creation and preparation responses.
 17. A write-capable Review exposes `Prepare live execution` only while READY is
     unexpired, has no usability code, and contains at least one actionable
     Step. It posts only the plan UUID, a fresh command UUID, and the frozen
-    source revision. Run creation copies the immutable preview and returns a Run
-    route; it performs no Worm provider call or Wallet signing. The Review
+    source revision. Run creation copies the immutable preview, calculates its
+    version-four SHA-256 plan digest, and returns a Run route; it performs no
+    Worm provider call or Wallet signing. The Review
     explicitly remains read-only until the user separately authorizes and
     starts that Run.
 18. Every hour the worker deletes at most 100 terminal plans whose retention
@@ -257,8 +248,7 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
 `worm_execution_plans` stores the UUID plan, owner account UUID, frozen source
 combination UUID/name/revision, state, build stage, bounded failure code, worker
 lease, Wallet/item/step counts, exact-decimal aggregate fields, request and
-completion timestamps, optional READY expiry, retention deadline, and the
-frozen `require_full_liquidity` boolean. Durable
+completion timestamps, optional READY expiry, and retention deadline. Durable
 states are BUILDING, READY, and FAILED. Expiry does not rewrite the row; owner
 reads derive usability `EXPIRED`, and the HTTP facade projects state EXPIRED
 once current time reaches the READY deadline.
@@ -280,12 +270,16 @@ leverage authority.
 a READY plan. `(plan_id,ordinal)` is primary, `(plan_id,wallet_ordinal,
 item_ordinal)` is unique, and composite foreign keys enforce frozen Wallet/item
 membership. Each row is READY with no reason or SKIPPED with a reason, plus
-projected USDC before and after and zero or more canonical ignored-condition
-advisory codes. Count and page queries join the parent and
+projected USDC before and after. Count and page queries join the parent and
 return rows only after READY; page numbers translate to `ordinal > offset`
-keyset reads. Terminal reason and advisory counts are derived independently from
-the durable steps in stable code order rather than requiring the browser to scan
-all pages.
+keyset reads. Terminal reason counts are derived from the durable steps in
+stable code order rather than requiring the browser to scan all pages.
+
+[Migration `000008_execution_mandatory_guards.sql`](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql)
+defines the current development-data boundary: its Up migration truncates the
+complete plan graph with `CASCADE` and removes the superseded policy/warning
+columns from Preview and Run tables. Its Down migration restores only an empty
+schema shape and cannot restore the truncated plans or Runs.
 
 READY lifetime begins at completion and lasts 15 minutes. A BUILDING row first
 receives a creation-time seven-day retention deadline; READY or FAILED
@@ -352,11 +346,10 @@ the operational bounds.
   are covered and excluded from the request guard. Either blocker skips the
   matching Step and every remaining Step for that Wallet. Only actionable Steps
   consume projected USDC.
-- `isFullyFilled=false` is a skip when full liquidity is required and an
-  advisory when that rule is disabled. Estimate still runs in both cases, and an
-  advisory-only actionable Step uses its exact `user_funds_needed` in cumulative
-  USDC. One insufficient step always skips that Wallet's remaining markets
-  without changing another Wallet.
+- `is_fully_filled` is a diagnostic Estimate observation. A valid partial-fill
+  response remains actionable and uses its exact `user_funds_needed` in
+  cumulative USDC. One insufficient-USDC Step always skips that Wallet's
+  remaining markets without changing another Wallet.
 - Target-market position absence, wallet-global uncovered-request absence,
   USDC, market availability, Estimate integrity, Wallet
   connection/ownership, fixed funds and leverage, permissions, Plan lifetime,
@@ -378,7 +371,7 @@ the operational bounds.
 Invalid JSON, origin, access, UUID, revision, Wallet ownership/type, duplicates,
 or a source revision conflict fail before or during the atomic creation
 transaction. No partial plan header or child set commits. A created BUILDING plan
-is immutable input; `Re-run checks` creates a new resource.
+is immutable input; `Re-run preview` creates a new resource.
 
 The worker uses bounded stable failure codes:
 `STORE_UNAVAILABLE`, `WORM_MARKETS_UNAVAILABLE`,
@@ -387,9 +380,8 @@ The worker uses bounded stable failure codes:
 `USDC_BALANCE_UNAVAILABLE`, `WORM_READ_UNAVAILABLE`,
 `WORM_INVALID_RESPONSE`, `PLAN_SOURCE_CHANGED`, and `PREVIEW_INVALID`.
 An ordinary unavailable market, deterministic Estimate rejection, mandatory
-exposure guard, enabled full-liquidity skip, or insufficient USDC is a Step
-classification rather than a failed plan; a partial fill with full liquidity
-disabled is an advisory and continues classification.
+exposure guard, or insufficient USDC is a Step classification rather than a
+failed plan. A valid partial fill continues through normal classification.
 
 Lease renewal failure cancels the build. If the worker cannot commit FAILED
 because it no longer owns the lease, the row remains BUILDING and another claim
@@ -423,9 +415,9 @@ Native responses set `Cache-Control: no-store, private` and vary by Cookie and
 Authorization. Creation returns HTTP 202 and `Location`. Plan detail exposes
 state, build stage, completed/total count, stable failure and usability codes,
 expiry/retention timestamps, safe frozen Wallet/item snapshots, exact-decimal
-totals and estimates, the complete frozen policy, ordered reason counts, and
-advisory counts. Step pages expose stable Wallet/item ordinals, READY/SKIPPED,
-reason, advisory codes, and projected USDC.
+totals and estimates, and ordered reason counts. Step pages expose stable
+Wallet/item ordinals, READY/SKIPPED, reason, and projected USDC. Item Estimates
+include the raw `isFullyFilled` provider observation for diagnosis.
 
 Worker warnings contain bounded plan ID and failure code. Claim, store, Worm
 Markets, Solana, and Worm capability failures remain diagnosable through their
@@ -437,9 +429,9 @@ backlog or a particular provider snapshot.
 Responses and logs exclude owner UUID, worker ID/lease, credential ID/version,
 API key, secret, ciphertext, HMAC headers, Wallet private key, exposure pubkeys,
 raw provider bodies, signable messages, drafts, signatures, transactions, and
-orders. The UI uses text, progress, terminal alerts, aggregate reason/advisory counts,
+orders. The UI uses text, progress, terminal alerts, aggregate reason counts,
 actionable-only aggregate labels, and paged details. One polite live region
-announces BUILDING progress, READY actionable/skipped/advisory counts, or the
+announces BUILDING progress, READY actionable/skipped counts, or the
 EXPIRED/FAILED terminal outcome without using color as the only state signal.
 Stable provider and classification codes are humanized while preserving
 technical acronyms such as USDC, SOL, API, RPC, and ID.
@@ -452,9 +444,9 @@ provider-write observability belongs to the separate execution detail.
 - [ ] Interactive READ/READ_WRITE, exact-origin, API-Key denial, current-owner, and Wallet-resolution boundaries remain current.
 - [ ] BUILDING claim, stage heartbeat, READY/FAILED atomicity, 15-minute TTL, seven-day retention, Run-reference exclusion, and cleanup remain current.
 - [ ] Catalog, connection, credential, balance, Estimate, complete exposure, and final revalidation flows remain current.
-- [ ] Both mandatory exposure guards, the frozen enabled-by-default full-liquidity rule, its canonical advisory, fixed backend funds, `1x`, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and independent reason/advisory aggregates remain current.
+- [ ] Both mandatory exposure guards, fixed backend funds, `1x`, partial-fill acceptance, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and reason aggregates remain current.
 - [ ] SOL remains informational and USDC remains an authoritative READY prerequisite.
-- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, responsive two-column/one-column guards editor, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, confirmed immutable Re-run, responsive review, prepare-Run handoff, and no-Start behavior remain current.
+- [ ] Browser routing, direct READ review, connected-only write selection, explicit ordering, responsive two-column/one-column guards editor, resilient BUILDING/expiry polling, derived presentation status, actionable-only aggregate labels, immutable Re-run preview, responsive review, prepare-Run handoff, and no-Start behavior remain current.
 - [ ] Preview construction remains free of Worm mutation and Wallet signing; the distinct Run handoff freezes only a usable preview and delegates authorization/control to Executions.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

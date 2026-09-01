@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	utilworm "github.com/useryege/athena/util/worm"
 	"google.golang.org/grpc/codes"
@@ -27,7 +25,6 @@ const (
 	executionWorkerClaimLease   = 45 * time.Second
 	executionWorkerClaimRenewal = 10 * time.Second
 	executionWorkerRecoverySize = int32(100)
-	executionWorkerMaxTxBytes   = 64 << 10
 
 	executionWorkerReasonInsufficientSOL         = "INSUFFICIENT_SOL"
 	executionWorkerReasonMarketChanged           = "MARKET_CHANGED"
@@ -107,14 +104,6 @@ type executionWebError struct {
 	definiteClient bool
 	temporary      bool
 	ambiguous      bool
-}
-
-type executionSignedPayload struct {
-	mode               utilworm.WebFinalizeMode
-	value              string
-	transactionVersion string
-	requiredSignatures int32
-	signerIndex        int32
 }
 
 func (s *Service) wakeExecutionWorker() {
@@ -215,7 +204,7 @@ func (s *Service) processRecoverableExecutionStep(
 		code := executionWorkerFailureCode(taskErr)
 		logExecutionWorkerFailure(recovery.RunID, step.Ordinal, step.State, code)
 	}
-	s.clearExecutionWebJWTIfRunTerminal(ctx, recovery.OwnerAccountID, recovery.RunID)
+	s.clearExecutionWebSessionIfRunTerminal(ctx, recovery.OwnerAccountID, recovery.RunID)
 }
 
 func (s *Service) loadExecutionWorkerTask(
@@ -531,8 +520,7 @@ func (s *Service) executeFreshPreflight(
 		return s.pauseClaimedExecution(guard, task, executionPlanFailurePreviewInvalid, err)
 	}
 	result, err := builder.Build(ctx, ExecutionPreviewInput{
-		Wallets:         []ExecutionPreviewWalletInput{wallets[0].input},
-		PreflightChecks: task.run.PreflightChecks,
+		Wallets: []ExecutionPreviewWalletInput{wallets[0].input},
 		Items: []ExecutionPreviewItemInput{{
 			EventConditionID: task.item.EventConditionID, MarketConditionID: task.item.MarketConditionID,
 			IsYes: task.item.IsYes, Backend: task.item.Backend, Funds: task.item.Funds,
@@ -557,20 +545,17 @@ func (s *Service) executeFreshPreflight(
 	switch previewStep.Outcome {
 	case ExecutionPreviewOutcomeMarketPositionExists, ExecutionPreviewOutcomeWalletRequestInFlight:
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			previewStep.Outcome, wormstore.ExecutionStepScopeRemainingWallet, previewStep.AdvisoryCodes...)
-	case ExecutionPreviewOutcomeLiquidityInsufficient:
-		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			ExecutionPreviewOutcomeLiquidityInsufficient, wormstore.ExecutionStepScopeCurrent, previewStep.AdvisoryCodes...)
+			previewStep.Outcome, wormstore.ExecutionStepScopeRemainingWallet)
 	case ExecutionPreviewOutcomeMarketUnavailable, ExecutionPreviewOutcomeEstimateRejected:
 		reason := previewStep.ReasonCode
 		if reason == "" {
 			reason = previewStep.Outcome
 		}
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			reason, wormstore.ExecutionStepScopeRemainingMarket, previewStep.AdvisoryCodes...)
+			reason, wormstore.ExecutionStepScopeRemainingMarket)
 	case ExecutionPreviewOutcomeInsufficientUSDC, ExecutionPreviewOutcomeSkippedAfterInsufficientUSDC:
 		return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-			ExecutionPreviewOutcomeInsufficientUSDC, wormstore.ExecutionStepScopeRemainingWallet, previewStep.AdvisoryCodes...)
+			ExecutionPreviewOutcomeInsufficientUSDC, wormstore.ExecutionStepScopeRemainingWallet)
 	case ExecutionPreviewOutcomeReady:
 	default:
 		return s.pauseClaimedExecution(guard, task, executionPlanFailureWormResponseInvalid,
@@ -581,11 +566,11 @@ func (s *Service) executeFreshPreflight(
 	// lets a definite sign-in rejection remain a preflight Wallet result. On
 	// restart, an OPENING Step may log in again, but it is never allowed to
 	// replay a dispatched Open attempt.
-	if _, err := s.executionWebJWT(ctx, task); err != nil {
+	if _, err := s.executionWebSession(ctx, task); err != nil {
 		code := executionWorkerFailureCode(err)
 		if executionWorkerFailureIsDeterministic(err) {
 			return s.completeExecutionPreflight(guard, task, wormstore.ExecutionStepStateSkipped,
-				code, wormstore.ExecutionStepScopeRemainingWallet, previewStep.AdvisoryCodes...)
+				code, wormstore.ExecutionStepScopeRemainingWallet)
 		}
 		return s.pauseClaimedExecution(guard, task, code, err)
 	}
@@ -604,7 +589,6 @@ func (s *Service) executeFreshPreflight(
 			wormstore.ExecutionStepStateSkipped,
 			reason,
 			wormstore.ExecutionStepScopeRemainingWallet,
-			previewStep.AdvisoryCodes...,
 		)
 	}
 	return s.completeExecutionPreflight(
@@ -613,7 +597,6 @@ func (s *Service) executeFreshPreflight(
 		wormstore.ExecutionStepStateOpening,
 		"",
 		"",
-		previewStep.AdvisoryCodes...,
 	)
 }
 
@@ -687,7 +670,6 @@ func (s *Service) completeExecutionPreflight(
 	nextState wormstore.ExecutionStepState,
 	reason string,
 	scope wormstore.ExecutionStepScope,
-	advisoryCodes ...string,
 ) (*wormstore.ExecutionRunStep, error) {
 	if nextState != wormstore.ExecutionStepStateOpening {
 		if err := guard.stopRenewal(); err != nil {
@@ -697,7 +679,7 @@ func (s *Service) completeExecutionPreflight(
 	step, err := s.credentialStore.CompleteExecutionPreflight(guard.context(), wormstore.CompleteExecutionPreflightRequest{
 		RunID: task.run.ID, StepOrdinal: task.step.Ordinal, CommandID: task.recovery.CommandID,
 		ClaimID: task.claimID, NextState: nextState, ReasonCode: reason, SkipScope: scope,
-		AdvisoryCodes: append([]string(nil), advisoryCodes...), Now: timeNowUTC(),
+		Now: timeNowUTC(),
 	})
 	s.recordCredentialStoreResult(err)
 	if err != nil {
@@ -740,93 +722,70 @@ func executionWorkerFailureIsDeterministic(err error) bool {
 	return false
 }
 
-func (s *Service) executionWebJWT(ctx context.Context, task *executionWorkerTask) (string, error) {
-	key := executionWebJWTKey(task.run.ID, task.wallet.WalletID)
-	s.wormWebJWTMu.Lock()
-	cached := strings.TrimSpace(s.wormWebJWT[key])
-	s.wormWebJWTMu.Unlock()
-	if cached != "" {
+func (s *Service) executionWebSession(
+	ctx context.Context,
+	task *executionWorkerTask,
+) (*utilworm.WebAuthenticatedSession, error) {
+	key := executionWebSessionKey(task.run.ID, task.wallet.WalletID)
+	s.wormWebSessionMu.Lock()
+	cached := s.wormWebSessions[key]
+	s.wormWebSessionMu.Unlock()
+	if cached != nil {
 		return cached, nil
 	}
 
-	challenge, err := s.wormWebClient.GetSignInChallenge(ctx, task.wallet.Address)
+	signer, err := newExecutionWebSigner(s, task)
 	if err != nil {
-		return "", executionWorkerWebFailure(err)
+		return nil, &executionWorkerFailure{code: executionWorkerReasonWalletSignerInvalid, cause: err}
 	}
-	if challenge == nil || strings.TrimSpace(challenge.Nonce) == "" {
-		return "", &executionWorkerFailure{code: executionWorkerReasonWebResponseInvalid}
-	}
-	message := utilworm.BuildWebSignInMessage(task.wallet.Address, challenge.Nonce, timeNowUTC())
-	messageDigest := sha256.Sum256([]byte(message))
-	signerCtx, cancel := context.WithTimeout(ctx, s.wormPositionBudget)
-	signed, err := s.walletSignerClientset.Signer().SignWormWebSignInMessage(
-		signerCtx,
-		&walletapiclient.SignWormWebSignInMessageRequest{
-			Id: task.wallet.WalletID, RequesterAccountId: task.run.OwnerAccountID,
-			ExpectedAddress: task.wallet.Address, Nonce: challenge.Nonce, Message: message,
-			ExpectedMessageSha256: messageDigest[:], ExecutionRunId: task.run.ID,
-			ExecutionStepId: task.step.ID, IntentSha256: append([]byte(nil), task.intent...),
-		},
-	)
-	cancel()
+	session, err := utilworm.AuthenticateWebWallet(ctx, s.wormWebClient, signer, task.wallet.Address)
 	if err != nil {
-		return "", executionWorkerSignerFailure(err)
+		return nil, executionWebProtocolFailure(err)
 	}
-	if signed == nil || strings.TrimSpace(signed.GetSignature()) == "" ||
-		!bytes.Equal(signed.GetMessageSha256(), messageDigest[:]) ||
-		signed.GetExecutionRunId() != task.run.ID || signed.GetExecutionStepId() != task.step.ID ||
-		!bytes.Equal(signed.GetIntentSha256(), task.intent) {
-		return "", &executionWorkerFailure{code: executionWorkerReasonWalletSignerInvalid}
+	if session == nil {
+		return nil, &executionWorkerFailure{code: executionWorkerReasonWebResponseInvalid}
 	}
-	response, err := s.wormWebClient.SignIn(ctx, utilworm.WebSignInRequest{
-		Message: message, Signature: signed.GetSignature(), Address: task.wallet.Address,
-		Nonce: challenge.Nonce,
-	})
-	if err != nil {
-		return "", executionWorkerWebFailure(err)
-	}
-	if response == nil || strings.TrimSpace(response.AccessToken) == "" {
-		return "", &executionWorkerFailure{code: executionWorkerReasonWebResponseInvalid}
-	}
-	token := strings.TrimSpace(response.AccessToken)
-	s.wormWebJWTMu.Lock()
-	if existing := strings.TrimSpace(s.wormWebJWT[key]); existing != "" {
-		token = existing
+	s.wormWebSessionMu.Lock()
+	if existing := s.wormWebSessions[key]; existing != nil {
+		session = existing
 	} else {
-		s.wormWebJWT[key] = token
+		s.wormWebSessions[key] = session
 	}
-	s.wormWebJWTMu.Unlock()
-	return token, nil
+	s.wormWebSessionMu.Unlock()
+	return session, nil
 }
 
-func executionWebJWTKey(runID string, walletID int64) string {
+func executionWebSessionKey(runID string, walletID int64) string {
 	return fmt.Sprintf("%s:%d", runID, walletID)
 }
 
-func (s *Service) clearExecutionWebJWT(task *executionWorkerTask, token string) {
-	key := executionWebJWTKey(task.run.ID, task.wallet.WalletID)
-	s.wormWebJWTMu.Lock()
-	if strings.TrimSpace(s.wormWebJWT[key]) == strings.TrimSpace(token) {
-		delete(s.wormWebJWT, key)
+func (s *Service) clearExecutionWebSession(
+	task *executionWorkerTask,
+	session *utilworm.WebAuthenticatedSession,
+) {
+	key := executionWebSessionKey(task.run.ID, task.wallet.WalletID)
+	s.wormWebSessionMu.Lock()
+	if s.wormWebSessions[key] == session {
+		delete(s.wormWebSessions, key)
 	}
-	s.wormWebJWTMu.Unlock()
+	s.wormWebSessionMu.Unlock()
 }
 
-func (s *Service) clearExecutionWebJWTRun(runID string) {
+func (s *Service) clearExecutionWebSessionsForRun(runID string) {
 	prefix := strings.TrimSpace(runID) + ":"
 	if prefix == ":" {
 		return
 	}
-	s.wormWebJWTMu.Lock()
-	for key := range s.wormWebJWT {
+	s.wormWebSessionMu.Lock()
+	for key := range s.wormWebSessions {
 		if strings.HasPrefix(key, prefix) {
-			delete(s.wormWebJWT, key)
+			delete(s.wormWebSessions, key)
 		}
 	}
-	s.wormWebJWTMu.Unlock()
+	s.wormWebSessionMu.Unlock()
 }
 
-func (s *Service) clearExecutionWebJWTIfRunTerminal(ctx context.Context, ownerAccountID string, runID string) {
+func (s *Service) clearExecutionWebSessionIfRunTerminal(ctx context.Context, ownerAccountID string, runID string) {
 	run, err := s.credentialStore.GetExecutionRun(ctx, ownerAccountID, runID)
 	s.recordCredentialStoreResult(err)
 	if err != nil || run == nil {
@@ -836,7 +795,7 @@ func (s *Service) clearExecutionWebJWTIfRunTerminal(ctx context.Context, ownerAc
 	case wormstore.ExecutionRunStateCompleted,
 		wormstore.ExecutionRunStateTerminated,
 		wormstore.ExecutionRunStateFailed:
-		s.clearExecutionWebJWTRun(run.ID)
+		s.clearExecutionWebSessionsForRun(run.ID)
 	}
 }
 
@@ -854,9 +813,25 @@ func executionWorkerSignerFailure(err error) error {
 	}
 }
 
+func executionPositionSigningFailure(err error) error {
+	var workerFailure *executionWorkerFailure
+	if errors.As(err, &workerFailure) {
+		return workerFailure
+	}
+	return &executionWorkerFailure{code: executionWorkerReasonWalletSignerInvalid, cause: err}
+}
+
 func executionWorkerWebFailure(err error) error {
 	metadata := classifyExecutionWebError(err)
 	return &executionWorkerFailure{code: metadata.code, cause: err}
+}
+
+func executionWebProtocolFailure(err error) error {
+	var workerFailure *executionWorkerFailure
+	if errors.As(err, &workerFailure) {
+		return workerFailure
+	}
+	return executionWorkerWebFailure(err)
 }
 
 func classifyExecutionWebError(err error) executionWebError {
@@ -920,16 +895,17 @@ func (s *Service) executeWormOpen(
 	guard *executionWorkerClaimGuard,
 	task *executionWorkerTask,
 ) (*wormstore.ExecutionRunStep, error) {
-	request := utilworm.WebMarketPositionOpenRequest{
+	command, err := utilworm.PrepareWebMarketPositionOpen(utilworm.WebMarketPositionSubmitRequest{
+		WalletAddress:     task.wallet.Address,
 		MarketConditionID: task.item.MarketConditionID,
 		Funds:             task.item.Funds,
 		IsYes:             task.item.IsYes,
-		Leverage:          1,
-	}
-	requestDigest, err := executionWorkerDigest(request)
+	})
 	if err != nil {
 		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid, cause: err}
 	}
+	requestDigestValue := command.RequestSHA256()
+	requestDigest := requestDigestValue[:]
 	attempt := executionMutationAttempt(task.step, wormstore.ExecutionMutationKindOpen)
 	if attempt != nil && !bytes.Equal(attempt.RequestSHA256, requestDigest) {
 		return s.pauseClaimedExecution(guard, task, executionWorkerReasonPlanInvalid,
@@ -974,7 +950,7 @@ func (s *Service) executeWormOpen(
 		}
 	}
 
-	token, err := s.executionWebJWT(guard.context(), task)
+	session, err := s.executionWebSession(guard.context(), task)
 	if err != nil {
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
@@ -1018,11 +994,32 @@ func (s *Service) executeWormOpen(
 	}
 	attempt = dispatched
 
-	opened, openErr := s.wormWebClient.OpenMarketPosition(guard.context(), token, request)
+	opened, openErr := utilworm.DispatchWebMarketPositionOpen(
+		guard.context(), s.wormWebClient, session, command,
+	)
 	if openErr != nil {
 		metadata := classifyExecutionWebError(openErr)
 		if metadata.structured401 {
-			s.clearExecutionWebJWT(task, token)
+			s.clearExecutionWebSession(task, session)
+		}
+		if opened != nil && opened.PositionRequestID > 0 {
+			providerState, orderState, fundingTxID, refundTxID := executionObservationFields(opened)
+			resolved, resolveErr := s.resolveExecutionMutation(
+				guard.context(), *attempt, wormstore.ExecutionMutationStateOutcomeUnknown,
+				opened.PositionRequestID, metadata, executionWorkerReasonOpenOutcomeUnknown,
+			)
+			if resolveErr != nil {
+				return nil, resolveErr
+			}
+			if step, handled, observeErr := s.observeExecutionOpenPosition(
+				guard, task, resolved, providerState, orderState, fundingTxID, refundTxID,
+			); handled {
+				return step, observeErr
+			}
+			return s.markExecutionOutcomeUnknownWithProvider(
+				guard, task, *resolved, executionWorkerReasonOpenOutcomeUnknown, metadata,
+				providerState, orderState, fundingTxID, refundTxID,
+			)
 		}
 		if metadata.definiteClient && !metadata.temporary {
 			resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
@@ -1057,7 +1054,7 @@ func (s *Service) executeWormOpen(
 		return s.markExecutionOutcomeUnknown(guard, task, *resolved,
 			executionWorkerReasonOpenOutcomeUnknown, metadata)
 	}
-	if opened == nil || int64(opened.ID) <= 0 {
+	if opened == nil || opened.PositionRequestID <= 0 {
 		metadata := executionWebError{code: executionWorkerReasonWebResponseInvalid, ambiguous: true}
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
 			wormstore.ExecutionMutationStateOutcomeUnknown, 0, metadata, metadata.code)
@@ -1073,26 +1070,11 @@ func (s *Service) executeWormOpen(
 		return s.markExecutionOutcomeUnknown(guard, task, *resolved,
 			executionWorkerReasonOpenOutcomeUnknown, metadata)
 	}
-	providerState, orderState, fundingTxID, refundTxID, responseErr := normalizedExecutionProviderRequest(opened)
-	if responseErr != nil {
-		metadata := executionWebError{code: executionWorkerReasonWebResponseInvalid, ambiguous: true}
-		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
-			wormstore.ExecutionMutationStateOutcomeUnknown, int64(opened.ID), metadata, metadata.code)
-		if resolveErr != nil {
-			return nil, resolveErr
-		}
-		if step, handled, observeErr := s.observeExecutionOpenPosition(
-			guard, task, resolved, providerState, orderState, fundingTxID, refundTxID,
-		); handled {
-			return step, observeErr
-		}
-		return s.markExecutionOutcomeUnknownWithProvider(guard, task, *resolved,
-			executionWorkerReasonOpenOutcomeUnknown, metadata, providerState, orderState, fundingTxID, refundTxID)
-	}
-	if executionProviderTerminalFailure(providerState) {
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(opened)
+	if opened.IsTerminalFailure() {
 		metadata := executionWebError{code: executionWorkerReasonProviderFailed, httpStatus: http.StatusOK}
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
-			wormstore.ExecutionMutationStateDefiniteFailure, int64(opened.ID), metadata, metadata.code)
+			wormstore.ExecutionMutationStateDefiniteFailure, opened.PositionRequestID, metadata, metadata.code)
 		if resolveErr != nil {
 			return nil, resolveErr
 		}
@@ -1104,11 +1086,11 @@ func (s *Service) executeWormOpen(
 		return s.recordExecutionProviderFailure(guard, task, task.step.State, *resolved,
 			executionWorkerReasonProviderFailed, wormstore.ExecutionStepScopeCurrent, opened)
 	}
-	transactionDigest, transactionErr := executionTransactionDigest(opened.Message)
+	transactionMetadata, transactionErr := utilworm.InspectWebPositionRequestTransaction(opened)
 	if transactionErr != nil {
 		metadata := executionWebError{code: executionWorkerReasonWebResponseInvalid, httpStatus: http.StatusOK, ambiguous: true}
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
-			wormstore.ExecutionMutationStateOutcomeUnknown, int64(opened.ID), metadata, metadata.code)
+			wormstore.ExecutionMutationStateOutcomeUnknown, opened.PositionRequestID, metadata, metadata.code)
 		if resolveErr != nil {
 			return nil, resolveErr
 		}
@@ -1124,8 +1106,9 @@ func (s *Service) executeWormOpen(
 	// its request ID and transaction digest in one database transaction.
 	step, err := s.credentialStore.RecordExecutionStepOpened(guard.context(), wormstore.RecordExecutionStepOpenedRequest{
 		AttemptID: attempt.ID, RunID: task.run.ID, StepOrdinal: task.step.Ordinal, ClaimID: task.claimID,
-		PositionRequestID: int64(opened.ID), TransactionMessageSHA256: transactionDigest,
-		ProviderState: providerState, ProviderOrderState: orderState, HTTPStatus: http.StatusOK,
+		PositionRequestID:        opened.PositionRequestID,
+		TransactionMessageSHA256: transactionMetadata.TransactionSHA256[:],
+		ProviderState:            providerState, ProviderOrderState: orderState, HTTPStatus: http.StatusOK,
 		Now: timeNowUTC(),
 	})
 	s.recordCredentialStoreResult(err)
@@ -1138,7 +1121,7 @@ func (s *Service) executeWormOpen(
 	task.step = step.Clone()
 	openedAttempt := executionMutationAttempt(task.step, wormstore.ExecutionMutationKindOpen)
 	if openedAttempt == nil || openedAttempt.State != wormstore.ExecutionMutationStateSucceeded ||
-		openedAttempt.PositionRequestID != int64(opened.ID) {
+		openedAttempt.PositionRequestID != opened.PositionRequestID {
 		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid}
 	}
 	if observed, handled, observeErr := s.observeExecutionOpenPosition(
@@ -1146,7 +1129,7 @@ func (s *Service) executeWormOpen(
 	); handled {
 		return observed, observeErr
 	}
-	if executionProviderCompleted(providerState) {
+	if opened.IsCompleted() {
 		return s.recordExecutionAwaiting(
 			guard, task, task.step.State, providerState, orderState, fundingTxID, refundTxID,
 		)
@@ -1171,28 +1154,25 @@ func (s *Service) recoverSuccessfulOpen(
 			executionWebError{code: executionWorkerReasonOpenOutcomeUnknown},
 		)
 	}
-	request, err := s.getExecutionPositionRequest(guard.context(), task, attempt.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, attempt.PositionRequestID)
 	if err != nil {
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
-	providerState, orderState, fundingTxID, refundTxID, normalizeErr := normalizedExecutionProviderRequest(request)
-	if normalizeErr != nil {
-		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid, normalizeErr)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if step, handled, observeErr := s.observeExecutionOpenPosition(
 		guard, task, &attempt, providerState, orderState, fundingTxID, refundTxID,
 	); handled {
 		return step, observeErr
 	}
-	if executionProviderTerminalFailure(providerState) {
+	if observation.IsTerminalFailure() {
 		return s.recordExecutionRecoveredOpenObservation(
 			guard, task, attempt.PositionRequestID, executionWorkerReasonProviderFailed,
 			providerState, orderState, fundingTxID, refundTxID,
 		)
 	}
-	transactionDigest, digestErr := executionTransactionDigest(request.Message)
+	transactionMetadata, digestErr := utilworm.InspectWebPositionRequestTransaction(observation)
 	if digestErr != nil {
-		if executionProviderCompleted(providerState) {
+		if observation.IsCompleted() {
 			return s.markExecutionOutcomeUnknownWithProvider(
 				guard, task, attempt, executionWorkerReasonOpenOutcomeUnknown,
 				executionWebError{code: executionWorkerReasonOpenOutcomeUnknown},
@@ -1203,8 +1183,9 @@ func (s *Service) recoverSuccessfulOpen(
 	}
 	step, err := s.credentialStore.RecordExecutionStepOpened(guard.context(), wormstore.RecordExecutionStepOpenedRequest{
 		AttemptID: attempt.ID, RunID: task.run.ID, StepOrdinal: task.step.Ordinal, ClaimID: task.claimID,
-		PositionRequestID: attempt.PositionRequestID, TransactionMessageSHA256: transactionDigest,
-		ProviderState: providerState, ProviderOrderState: orderState,
+		PositionRequestID:        attempt.PositionRequestID,
+		TransactionMessageSHA256: transactionMetadata.TransactionSHA256[:],
+		ProviderState:            providerState, ProviderOrderState: orderState,
 		HTTPStatus: executionHTTPStatusOrOK(attempt.HTTPStatus), ProviderCode: attempt.ProviderCode,
 		ProviderSlug: attempt.ProviderSlug, Now: timeNowUTC(),
 	})
@@ -1229,26 +1210,23 @@ func (s *Service) recoverDefiniteOpen(
 			wormstore.ExecutionStepScopeCurrent, nil,
 		)
 	}
-	request, err := s.getExecutionPositionRequest(guard.context(), task, attempt.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, attempt.PositionRequestID)
 	if err != nil {
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
-	providerState, orderState, fundingTxID, refundTxID, normalizeErr := normalizedExecutionProviderRequest(request)
-	if normalizeErr != nil {
-		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid, normalizeErr)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if step, handled, observeErr := s.observeExecutionOpenPosition(
 		guard, task, &attempt, providerState, orderState, fundingTxID, refundTxID,
 	); handled {
 		return step, observeErr
 	}
-	if executionProviderTerminalFailure(providerState) {
+	if observation.IsTerminalFailure() {
 		return s.recordExecutionRecoveredOpenObservation(
 			guard, task, attempt.PositionRequestID, executionWorkerReasonProviderFailed,
 			providerState, orderState, fundingTxID, refundTxID,
 		)
 	}
-	if executionProviderCompleted(providerState) {
+	if observation.IsCompleted() {
 		return s.markExecutionOutcomeUnknownWithProvider(
 			guard, task, attempt, executionWorkerReasonOpenOutcomeUnknown,
 			executionWebError{code: executionWorkerReasonOpenOutcomeUnknown},
@@ -1270,32 +1248,6 @@ func executionMutationAttempt(
 		}
 	}
 	return nil
-}
-
-func executionWorkerDigest(value any) ([]byte, error) {
-	encoded, err := json.Marshal(value)
-	if err != nil {
-		return nil, err
-	}
-	digest := sha256.Sum256(encoded)
-	return digest[:], nil
-}
-
-func executionTransactionDigest(transactionHex string) ([]byte, error) {
-	encoded := strings.TrimSpace(transactionHex)
-	if strings.HasPrefix(encoded, "0x") || strings.HasPrefix(encoded, "0X") {
-		encoded = encoded[2:]
-	}
-	if encoded == "" || len(encoded) > executionWorkerMaxTxBytes*2 {
-		return nil, errors.New("Worm transaction is missing or too large")
-	}
-	decoded, err := hex.DecodeString(encoded)
-	if err != nil || len(decoded) == 0 {
-		return nil, errors.New("Worm transaction is not valid hexadecimal")
-	}
-	defer clear(decoded)
-	digest := sha256.Sum256(decoded)
-	return digest[:], nil
 }
 
 func executionHTTPStatusOrOK(value int32) int32 {
@@ -1332,7 +1284,7 @@ func (s *Service) recordExecutionProviderFailure(
 	attempt wormstore.ExecutionMutationAttempt,
 	reason string,
 	scope wormstore.ExecutionStepScope,
-	provider *utilworm.WebPositionRequest,
+	observation *utilworm.WebPositionRequestObservation,
 ) (*wormstore.ExecutionRunStep, error) {
 	if attempt.State != wormstore.ExecutionMutationStateDefiniteFailure {
 		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid}
@@ -1342,12 +1294,8 @@ func (s *Service) recordExecutionProviderFailure(
 	fundingTxID := task.step.FundingTxID
 	refundTxID := task.step.RefundTxID
 	positionRequestID := int64(0)
-	if provider != nil {
-		var err error
-		providerState, orderState, fundingTxID, refundTxID, err = normalizedExecutionProviderRequest(provider)
-		if err != nil {
-			return nil, &executionWorkerFailure{code: executionWorkerReasonWebResponseInvalid, cause: err}
-		}
+	if observation != nil {
+		providerState, orderState, fundingTxID, refundTxID = executionObservationFields(observation)
 		if expectedState == wormstore.ExecutionStepStateOpening &&
 			executionProviderTerminalFailure(providerState) && attempt.PositionRequestID > 0 {
 			positionRequestID = attempt.PositionRequestID
@@ -1430,46 +1378,21 @@ func (s *Service) markExecutionOutcomeUnknownWithProvider(
 	return step, nil
 }
 
-func normalizedExecutionProviderRequest(
-	request *utilworm.WebPositionRequest,
-) (string, string, string, string, error) {
-	if request == nil || int64(request.ID) <= 0 {
-		return "", "", "", "", errors.New("provider request identity is invalid")
+func executionObservationFields(
+	observation *utilworm.WebPositionRequestObservation,
+) (providerState string, providerOrderState string, fundingTxID string, refundTxID string) {
+	if observation == nil {
+		return "", "", "", ""
 	}
-	state := strings.ToLower(strings.TrimSpace(request.State))
-	orderState := strings.ToLower(strings.TrimSpace(request.OrderState))
-	if len(state) > 100 || len(orderState) > 100 || containsExecutionControl(state) || containsExecutionControl(orderState) {
-		return "", "", "", "", errors.New("provider request state is invalid")
+	providerState = observation.ProviderState
+	providerOrderState = observation.ProviderOrderState
+	if observation.FundingTxID != nil {
+		fundingTxID = *observation.FundingTxID
 	}
-	fundingTxID, err := normalizedExecutionProviderTxID(request.FundingTxID)
-	if err != nil {
-		return "", "", "", "", err
+	if observation.RefundTxID != nil {
+		refundTxID = *observation.RefundTxID
 	}
-	refundTxID, err := normalizedExecutionProviderTxID(request.RefundTxID)
-	if err != nil {
-		return "", "", "", "", err
-	}
-	return state, orderState, fundingTxID, refundTxID, nil
-}
-
-func normalizedExecutionProviderTxID(value *string) (string, error) {
-	if value == nil {
-		return "", nil
-	}
-	normalized := strings.TrimSpace(*value)
-	if len(normalized) > 200 || containsExecutionControl(normalized) {
-		return "", errors.New("provider transaction identity is invalid")
-	}
-	return normalized, nil
-}
-
-func containsExecutionControl(value string) bool {
-	for _, character := range value {
-		if character < 0x20 || character == 0x7f {
-			return true
-		}
-	}
-	return false
+	return providerState, providerOrderState, fundingTxID, refundTxID
 }
 
 func executionProviderTerminalFailure(state string) bool {
@@ -1571,6 +1494,9 @@ func matchExecutionOpenPosition(
 	position := positions[0]
 	leverage, leverageErr := parseExecutionPreviewDecimal(position.leverage)
 	if openAttempt == nil || openAttempt.Kind != wormstore.ExecutionMutationKindOpen ||
+		(openAttempt.State != wormstore.ExecutionMutationStateSucceeded &&
+			openAttempt.State != wormstore.ExecutionMutationStateOutcomeUnknown &&
+			openAttempt.State != wormstore.ExecutionMutationStateDefiniteFailure) ||
 		openAttempt.DispatchedAt.IsZero() || position.isYes != task.item.IsYes ||
 		leverageErr != nil || leverage.Compare(executionPreviewOne()) != 0 ||
 		!position.hasCreatedAt || !validExecutionPreviewConditionID(position.pubkey) ||
@@ -1691,33 +1617,37 @@ func (s *Service) getExecutionPositionRequest(
 	ctx context.Context,
 	task *executionWorkerTask,
 	requestID int64,
-) (*utilworm.WebPositionRequest, error) {
+) (*utilworm.WebPositionRequestObservation, error) {
 	if requestID <= 0 {
 		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid}
 	}
-	token, err := s.executionWebJWT(ctx, task)
+	session, err := s.executionWebSession(ctx, task)
 	if err != nil {
 		return nil, err
 	}
-	request, err := s.wormWebClient.GetPositionRequest(ctx, token, requestID)
+	observation, err := utilworm.ObserveWebPositionRequest(
+		ctx, s.wormWebClient, session, requestID,
+	)
 	if err != nil {
 		metadata := classifyExecutionWebError(err)
 		if metadata.structured401 {
-			s.clearExecutionWebJWT(task, token)
-			token, err = s.executionWebJWT(ctx, task)
+			s.clearExecutionWebSession(task, session)
+			session, err = s.executionWebSession(ctx, task)
 			if err != nil {
 				return nil, err
 			}
-			request, err = s.wormWebClient.GetPositionRequest(ctx, token, requestID)
+			observation, err = utilworm.ObserveWebPositionRequest(
+				ctx, s.wormWebClient, session, requestID,
+			)
 		}
 	}
 	if err != nil {
-		return nil, executionWorkerWebFailure(err)
+		return nil, executionWebProtocolFailure(err)
 	}
-	if request == nil || int64(request.ID) != requestID {
+	if observation == nil || observation.PositionRequestID != requestID {
 		return nil, &executionWorkerFailure{code: executionWorkerReasonWebResponseInvalid}
 	}
-	return request, nil
+	return observation, nil
 }
 
 func (s *Service) executeWormSigning(
@@ -1735,7 +1665,7 @@ func (s *Service) executeWormSigning(
 		return s.pauseClaimedExecution(guard, task, executionWorkerReasonPlanInvalid,
 			errors.New("opened step has incomplete durable transaction metadata"))
 	}
-	provider, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
 	if err != nil {
 		if step, handled, observeErr := s.observeExecutionOpenPosition(
 			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
@@ -1745,35 +1675,26 @@ func (s *Service) executeWormSigning(
 		}
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
-	providerState, orderState, fundingTxID, refundTxID, err := normalizedExecutionProviderRequest(provider)
-	if err != nil {
-		if step, handled, observeErr := s.observeExecutionOpenPosition(
-			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
-			task.step.FundingTxID, task.step.RefundTxID,
-		); handled {
-			return step, observeErr
-		}
-		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid, err)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if step, handled, observeErr := s.observeExecutionOpenPosition(
 		guard, task, openAttempt, providerState, orderState, fundingTxID, refundTxID,
 	); handled {
 		return step, observeErr
 	}
-	if executionProviderCompleted(providerState) {
+	if observation.IsCompleted() {
 		return s.recordExecutionAwaiting(
 			guard, task, task.step.State, providerState, orderState, fundingTxID, refundTxID,
 		)
 	}
-	if executionProviderTerminalFailure(providerState) {
+	if observation.IsTerminalFailure() {
 		return s.recordExecutionDirectObservation(
 			guard, task, task.step.State, wormstore.ExecutionStepStateFailed,
 			executionWorkerReasonProviderFailed, wormstore.ExecutionStepScopeCurrent,
 			providerState, orderState, fundingTxID, refundTxID,
 		)
 	}
-	transactionDigest, err := executionTransactionDigest(provider.Message)
-	if err != nil || !bytes.Equal(transactionDigest, task.step.TransactionMessageSHA256) {
+	transactionMetadata, err := utilworm.InspectWebPositionRequestTransaction(observation)
+	if err != nil || !bytes.Equal(transactionMetadata.TransactionSHA256[:], task.step.TransactionMessageSHA256) {
 		attempt := executionMutationAttempt(task.step, wormstore.ExecutionMutationKindOpen)
 		if attempt == nil || attempt.State != wormstore.ExecutionMutationStateSucceeded {
 			return s.pauseClaimedExecution(guard, task, executionWorkerReasonTransactionChanged, err)
@@ -1797,8 +1718,17 @@ func (s *Service) executeWormSigning(
 		}
 		task.step = advanced.Clone()
 	}
-	signed, err := s.signExecutionPositionTransaction(guard.context(), task, provider.Message)
+	signer, err := newExecutionWebSigner(s, task)
 	if err != nil {
+		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWalletSignerInvalid, err)
+	}
+	var expectedTransactionDigest [sha256.Size]byte
+	copy(expectedTransactionDigest[:], task.step.TransactionMessageSHA256)
+	finalizeCommand, err := utilworm.PrepareWebPositionFinalize(
+		guard.context(), signer, observation, expectedTransactionDigest,
+	)
+	if err != nil {
+		err = executionPositionSigningFailure(err)
 		if executionWorkerFailureIsDeterministic(err) {
 			return s.recordExecutionDirectObservation(
 				guard, task, task.step.State, wormstore.ExecutionStepStateFailed,
@@ -1808,71 +1738,19 @@ func (s *Service) executeWormSigning(
 		}
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
+	metadata := finalizeCommand.TransactionMetadata()
 	step, err := s.credentialStore.RecordExecutionStepSigned(guard.context(), wormstore.RecordExecutionStepSignedRequest{
 		AdvanceExecutionStepRequest: wormstore.AdvanceExecutionStepRequest{
 			RunID: task.run.ID, StepOrdinal: task.step.Ordinal, ClaimID: task.claimID, Now: timeNowUTC(),
 		},
-		FinalizeMode: string(signed.mode), TransactionVersion: signed.transactionVersion,
-		RequiredSignatureCount: signed.requiredSignatures, WalletSignerIndex: signed.signerIndex,
+		FinalizeMode: string(finalizeCommand.FinalizeMode()), TransactionVersion: metadata.TransactionVersion,
+		RequiredSignatureCount: int32(metadata.RequiredSignatures), WalletSignerIndex: int32(metadata.WalletSignerIndex),
 	})
 	s.recordCredentialStoreResult(err)
 	if err != nil {
 		return nil, err
 	}
 	return step, nil
-}
-
-func (s *Service) signExecutionPositionTransaction(
-	ctx context.Context,
-	task *executionWorkerTask,
-	transactionHex string,
-) (*executionSignedPayload, error) {
-	transactionDigest, err := executionTransactionDigest(transactionHex)
-	if err != nil || !bytes.Equal(transactionDigest, task.step.TransactionMessageSHA256) {
-		return nil, &executionWorkerFailure{code: executionWorkerReasonTransactionChanged, cause: err}
-	}
-	signerCtx, cancel := context.WithTimeout(ctx, s.wormPositionBudget)
-	response, err := s.walletSignerClientset.Signer().SignWormPositionRequestTransaction(
-		signerCtx,
-		&walletapiclient.SignWormPositionRequestTransactionRequest{
-			Id: task.wallet.WalletID, RequesterAccountId: task.run.OwnerAccountID,
-			ExpectedAddress: task.wallet.Address, PositionRequestId: task.step.PositionRequestID,
-			TransactionHex: transactionHex, ExpectedTransactionSha256: transactionDigest,
-			ExecutionRunId: task.run.ID, ExecutionStepId: task.step.ID,
-			IntentSha256: append([]byte(nil), task.intent...),
-		},
-	)
-	cancel()
-	if err != nil {
-		return nil, executionWorkerSignerFailure(err)
-	}
-	if response == nil || !bytes.Equal(response.GetTransactionSha256(), transactionDigest) ||
-		response.GetExecutionRunId() != task.run.ID || response.GetExecutionStepId() != task.step.ID ||
-		!bytes.Equal(response.GetIntentSha256(), task.intent) ||
-		response.GetPositionRequestId() != task.step.PositionRequestID ||
-		strings.TrimSpace(response.GetTransactionVersion()) == "" ||
-		response.GetRequiredSignatures() <= 0 || response.GetSignerIndex() < 0 ||
-		response.GetSignerIndex() >= response.GetRequiredSignatures() {
-		return nil, &executionWorkerFailure{code: executionWorkerReasonWalletSignerInvalid}
-	}
-	result := &executionSignedPayload{
-		transactionVersion: strings.TrimSpace(response.GetTransactionVersion()),
-		requiredSignatures: response.GetRequiredSignatures(), signerIndex: response.GetSignerIndex(),
-	}
-	switch payload := response.GetFinalizePayload().(type) {
-	case *walletapiclient.SignWormPositionRequestTransactionResponse_Signature:
-		result.mode = utilworm.WebFinalizeModeSignature
-		result.value = strings.TrimSpace(payload.Signature)
-	case *walletapiclient.SignWormPositionRequestTransactionResponse_SignedTransaction:
-		result.mode = utilworm.WebFinalizeModeSignedTransaction
-		result.value = strings.TrimSpace(payload.SignedTransaction)
-	default:
-		return nil, &executionWorkerFailure{code: executionWorkerReasonWalletSignerInvalid}
-	}
-	if result.value == "" || containsExecutionControl(result.value) {
-		return nil, &executionWorkerFailure{code: executionWorkerReasonWalletSignerInvalid}
-	}
-	return result, nil
 }
 
 func (s *Service) recordExecutionDirectObservation(
@@ -1967,7 +1845,7 @@ func (s *Service) executeWormFinalize(
 			errors.New("finalizing step has incomplete durable metadata"))
 	}
 
-	provider, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
 	if err != nil {
 		if step, handled, observeErr := s.observeExecutionOpenPosition(
 			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
@@ -1977,23 +1855,14 @@ func (s *Service) executeWormFinalize(
 		}
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
-	providerState, orderState, fundingTxID, refundTxID, err := normalizedExecutionProviderRequest(provider)
-	if err != nil {
-		if step, handled, observeErr := s.observeExecutionOpenPosition(
-			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
-			task.step.FundingTxID, task.step.RefundTxID,
-		); handled {
-			return step, observeErr
-		}
-		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid, err)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if step, handled, observeErr := s.observeExecutionOpenPosition(
 		guard, task, openAttempt, providerState, orderState, fundingTxID, refundTxID,
 	); handled {
 		return step, observeErr
 	}
-	if executionProviderCompleted(providerState) || executionProviderTerminalFailure(providerState) {
-		if executionProviderCompleted(providerState) {
+	if observation.IsCompleted() || observation.IsTerminalFailure() {
+		if observation.IsCompleted() {
 			return s.recordExecutionAwaiting(
 				guard, task, task.step.State, providerState, orderState, fundingTxID, refundTxID,
 			)
@@ -2004,12 +1873,21 @@ func (s *Service) executeWormFinalize(
 			providerState, orderState, fundingTxID, refundTxID,
 		)
 	}
-	transactionDigest, err := executionTransactionDigest(provider.Message)
-	if err != nil || !bytes.Equal(transactionDigest, task.step.TransactionMessageSHA256) {
+	transactionMetadata, err := utilworm.InspectWebPositionRequestTransaction(observation)
+	if err != nil || !bytes.Equal(transactionMetadata.TransactionSHA256[:], task.step.TransactionMessageSHA256) {
 		return s.pauseClaimedExecution(guard, task, executionWorkerReasonTransactionChanged, err)
 	}
-	signed, err := s.signExecutionPositionTransaction(guard.context(), task, provider.Message)
+	signer, err := newExecutionWebSigner(s, task)
 	if err != nil {
+		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWalletSignerInvalid, err)
+	}
+	var expectedTransactionDigest [sha256.Size]byte
+	copy(expectedTransactionDigest[:], task.step.TransactionMessageSHA256)
+	finalizeCommand, err := utilworm.PrepareWebPositionFinalize(
+		guard.context(), signer, observation, expectedTransactionDigest,
+	)
+	if err != nil {
+		err = executionPositionSigningFailure(err)
 		if executionWorkerFailureIsDeterministic(err) {
 			return s.recordExecutionDirectObservation(
 				guard, task, task.step.State, wormstore.ExecutionStepStateFailed,
@@ -2019,21 +1897,16 @@ func (s *Service) executeWormFinalize(
 		}
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
-	if string(signed.mode) != task.step.FinalizeMode ||
-		signed.transactionVersion != task.step.TransactionVersion ||
-		signed.requiredSignatures != task.step.RequiredSignatureCount ||
-		signed.signerIndex != task.step.WalletSignerIndex {
+	finalizeMetadata := finalizeCommand.TransactionMetadata()
+	if string(finalizeCommand.FinalizeMode()) != task.step.FinalizeMode ||
+		finalizeMetadata.TransactionVersion != task.step.TransactionVersion ||
+		int32(finalizeMetadata.RequiredSignatures) != task.step.RequiredSignatureCount ||
+		int32(finalizeMetadata.WalletSignerIndex) != task.step.WalletSignerIndex {
 		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWalletSignerInvalid,
 			errors.New("Wallet signer metadata changed before finalize"))
 	}
-	request := utilworm.WebPositionFinalizeRequest{
-		PositionRequestID: task.step.PositionRequestID,
-		Payload:           utilworm.WebPositionFinalizePayload{Mode: signed.mode, Value: signed.value},
-	}
-	requestDigest, err := executionWorkerDigest(request)
-	if err != nil {
-		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid, cause: err}
-	}
+	requestDigestValue := finalizeCommand.RequestSHA256()
+	requestDigest := requestDigestValue[:]
 	if attempt != nil && !bytes.Equal(attempt.RequestSHA256, requestDigest) {
 		return s.pauseClaimedExecution(guard, task, executionWorkerReasonTransactionChanged,
 			errors.New("durable finalize request digest changed"))
@@ -2055,7 +1928,7 @@ func (s *Service) executeWormFinalize(
 		}
 		attempt = prepared
 	}
-	token, err := s.executionWebJWT(guard.context(), task)
+	session, err := s.executionWebSession(guard.context(), task)
 	if err != nil {
 		return s.pauseClaimedExecution(guard, task, executionWorkerFailureCode(err), err)
 	}
@@ -2071,23 +1944,25 @@ func (s *Service) executeWormFinalize(
 		return nil, &executionWorkerFailure{code: executionWorkerReasonPlanInvalid}
 	}
 	attempt = dispatched
-	finalized, finalizeErr := s.wormWebClient.FinalizePosition(guard.context(), token, request)
+	finalized, finalizeErr := utilworm.DispatchWebPositionFinalize(
+		guard.context(), s.wormWebClient, session, finalizeCommand,
+	)
 	if finalizeErr != nil {
 		metadata := classifyExecutionWebError(finalizeErr)
 		if metadata.code == executionWorkerReasonOpenRejected {
 			metadata.code = executionWorkerReasonFinalizeRejected
 		}
 		if metadata.structured401 {
-			s.clearExecutionWebJWT(task, token)
+			s.clearExecutionWebSession(task, session)
 		}
 		return s.reconcileAmbiguousFinalize(guard, task, *attempt, metadata)
 	}
-	providerState, orderState, fundingTxID, refundTxID, err = normalizedExecutionProviderRequest(finalized)
-	if err != nil || int64(finalized.ID) != task.step.PositionRequestID {
+	if finalized == nil || finalized.PositionRequestID != task.step.PositionRequestID {
 		return s.reconcileAmbiguousFinalize(guard, task, *attempt,
 			executionWebError{code: executionWorkerReasonWebResponseInvalid, httpStatus: http.StatusOK, ambiguous: true})
 	}
-	if executionProviderTerminalFailure(providerState) {
+	providerState, orderState, fundingTxID, refundTxID = executionObservationFields(finalized)
+	if finalized.IsTerminalFailure() {
 		metadata := executionWebError{code: executionWorkerReasonProviderFailed, httpStatus: http.StatusOK}
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), *attempt,
 			wormstore.ExecutionMutationStateDefiniteFailure, task.step.PositionRequestID, metadata, metadata.code)
@@ -2140,7 +2015,7 @@ func (s *Service) recoverFinalizingExecution(
 		return s.recordExecutionProviderFailure(guard, task, task.step.State, attempt,
 			executionWorkerReasonFinalizeRejected, wormstore.ExecutionStepScopeCurrent, nil)
 	}
-	provider, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
 	if err != nil {
 		if attempt.State == wormstore.ExecutionMutationStateDispatched {
 			metadata := classifyExecutionWebError(errors.Unwrap(err))
@@ -2170,27 +2045,7 @@ func (s *Service) recoverFinalizingExecution(
 			task.step.FundingTxID, task.step.RefundTxID, executionWorkerFailureCode(err),
 		)
 	}
-	providerState, orderState, fundingTxID, refundTxID, normalizeErr := normalizedExecutionProviderRequest(provider)
-	if normalizeErr != nil {
-		if attempt.State == wormstore.ExecutionMutationStateDispatched {
-			metadata := executionWebError{code: executionWorkerReasonWebResponseInvalid, ambiguous: true}
-			resolved, resolveErr := s.resolveExecutionMutation(
-				guard.context(), attempt, wormstore.ExecutionMutationStateOutcomeUnknown,
-				task.step.PositionRequestID, metadata, metadata.code,
-			)
-			if resolveErr != nil {
-				return nil, resolveErr
-			}
-			attempt = *resolved
-		}
-		if step, handled, observeErr := s.observeExecutionOpenPosition(
-			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
-			task.step.FundingTxID, task.step.RefundTxID,
-		); handled {
-			return step, observeErr
-		}
-		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid, normalizeErr)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if attempt.State == wormstore.ExecutionMutationStateDispatched {
 		if executionProviderTerminalFailure(providerState) {
 			metadata := executionWebError{code: executionWorkerReasonProviderFailed}
@@ -2205,7 +2060,7 @@ func (s *Service) recoverFinalizingExecution(
 				return step, observeErr
 			}
 			return s.recordExecutionProviderFailure(guard, task, task.step.State, *resolved,
-				executionWorkerReasonProviderFailed, wormstore.ExecutionStepScopeCurrent, provider)
+				executionWorkerReasonProviderFailed, wormstore.ExecutionStepScopeCurrent, observation)
 		}
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
 			wormstore.ExecutionMutationStateOutcomeUnknown, task.step.PositionRequestID,
@@ -2257,7 +2112,7 @@ func (s *Service) reconcileAmbiguousFinalize(
 			return step, observeErr
 		}
 	}
-	provider, getErr := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
+	observation, getErr := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
 	if getErr != nil {
 		if metadata.definiteClient && !metadata.temporary {
 			resolved, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
@@ -2299,48 +2154,7 @@ func (s *Service) reconcileAmbiguousFinalize(
 			task.step.FundingTxID, task.step.RefundTxID, metadata.code,
 		)
 	}
-	providerState, orderState, fundingTxID, refundTxID, normalizeErr := normalizedExecutionProviderRequest(provider)
-	if normalizeErr != nil {
-		if metadata.definiteClient && !metadata.temporary {
-			resolved, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
-				wormstore.ExecutionMutationStateDefiniteFailure, task.step.PositionRequestID,
-				metadata, executionWorkerReasonFinalizeRejected)
-			if resolveErr != nil {
-				return nil, resolveErr
-			}
-			if step, handled, observeErr := s.observeExecutionOpenPosition(
-				guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
-				task.step.FundingTxID, task.step.RefundTxID,
-			); handled {
-				return step, observeErr
-			}
-			return s.recordExecutionProviderFailure(
-				guard, task, task.step.State, *resolved,
-				executionWorkerReasonFinalizeRejected, wormstore.ExecutionStepScopeCurrent, nil,
-			)
-		}
-		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
-			wormstore.ExecutionMutationStateOutcomeUnknown, task.step.PositionRequestID,
-			metadata, executionWorkerReasonFinalizeOutcomeUnknown)
-		if resolveErr != nil {
-			return nil, resolveErr
-		}
-		attempt = *resolved
-		if step, handled, observeErr := s.observeExecutionOpenPosition(
-			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
-			task.step.FundingTxID, task.step.RefundTxID,
-		); handled {
-			return step, observeErr
-		}
-		providerState := task.step.ProviderState
-		if providerState == "" {
-			providerState = "unknown"
-		}
-		return s.recordExecutionAwaitingAfterProviderFailure(
-			guard, task, task.step.State, providerState, task.step.ProviderOrderState,
-			task.step.FundingTxID, task.step.RefundTxID, executionWorkerReasonWebResponseInvalid,
-		)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if executionProviderTerminalFailure(providerState) {
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
 			wormstore.ExecutionMutationStateDefiniteFailure, task.step.PositionRequestID,
@@ -2354,7 +2168,7 @@ func (s *Service) reconcileAmbiguousFinalize(
 			return step, observeErr
 		}
 		return s.recordExecutionProviderFailure(guard, task, task.step.State, *resolved,
-			executionWorkerReasonProviderFailed, wormstore.ExecutionStepScopeCurrent, provider)
+			executionWorkerReasonProviderFailed, wormstore.ExecutionStepScopeCurrent, observation)
 	}
 	if metadata.definiteClient && !metadata.temporary && !executionProviderCompleted(providerState) {
 		resolved, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
@@ -2370,7 +2184,7 @@ func (s *Service) reconcileAmbiguousFinalize(
 		}
 		return s.recordExecutionProviderFailure(
 			guard, task, task.step.State, *resolved,
-			executionWorkerReasonFinalizeRejected, wormstore.ExecutionStepScopeCurrent, provider,
+			executionWorkerReasonFinalizeRejected, wormstore.ExecutionStepScopeCurrent, observation,
 		)
 	}
 	_, resolveErr := s.resolveExecutionMutation(guard.context(), attempt,
@@ -2493,7 +2307,7 @@ func (s *Service) pollWormPositionRequest(
 		return s.pauseClaimedExecution(guard, task, executionWorkerReasonPlanInvalid,
 			errors.New("awaiting step has no request id"))
 	}
-	provider, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
 	if err != nil {
 		if step, handled, observeErr := s.observeExecutionOpenPosition(
 			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
@@ -2531,15 +2345,16 @@ func (s *Service) pollWormPositionRequest(
 		}
 		return step, nil
 	}
-	providerState, orderState, fundingTxID, refundTxID, err := normalizedExecutionProviderRequest(provider)
-	if err != nil || providerState == "" {
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
+	if providerState == "" {
 		if step, handled, observeErr := s.observeExecutionOpenPosition(
 			guard, task, openAttempt, task.step.ProviderState, task.step.ProviderOrderState,
 			task.step.FundingTxID, task.step.RefundTxID,
 		); handled {
 			return step, observeErr
 		}
-		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid, err)
+		return s.pauseClaimedExecution(guard, task, executionWorkerReasonWebResponseInvalid,
+			errors.New("Worm Web provider state is missing"))
 	}
 	if step, handled, observeErr := s.observeExecutionOpenPosition(
 		guard, task, openAttempt, providerState, orderState, fundingTxID, refundTxID,
@@ -2586,7 +2401,7 @@ func (s *Service) reconcileWormExecutionStep(
 			task.step.FundingTxID, task.step.RefundTxID, "",
 		)
 	}
-	provider, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
+	observation, err := s.getExecutionPositionRequest(guard.context(), task, task.step.PositionRequestID)
 	if err != nil {
 		return s.recordExecutionReconciliation(
 			guard, task, wormstore.ExecutionStepStateOutcomeUnknown,
@@ -2595,15 +2410,7 @@ func (s *Service) reconcileWormExecutionStep(
 			task.step.FundingTxID, task.step.RefundTxID, "",
 		)
 	}
-	providerState, orderState, fundingTxID, refundTxID, normalizeErr := normalizedExecutionProviderRequest(provider)
-	if normalizeErr != nil {
-		return s.recordExecutionReconciliation(
-			guard, task, wormstore.ExecutionStepStateOutcomeUnknown,
-			executionWorkerReasonReconcileInconclusive,
-			task.step.ProviderState, task.step.ProviderOrderState,
-			task.step.FundingTxID, task.step.RefundTxID, "",
-		)
-	}
+	providerState, orderState, fundingTxID, refundTxID := executionObservationFields(observation)
 	if step, handled, observeErr := s.observeExecutionOpenPosition(
 		guard, task, openAttempt, providerState, orderState, fundingTxID, refundTxID,
 	); handled {

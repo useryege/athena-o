@@ -7,8 +7,7 @@ import {
     PlayCircleOutlined,
     ReloadOutlined,
     SafetyCertificateOutlined,
-    StopOutlined,
-    WarningOutlined
+    StopOutlined
 } from '@ant-design/icons';
 import {Alert, Button, Card, Descriptions, Empty, Progress, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
@@ -27,12 +26,11 @@ import {
     WormExecutionRun,
     WormExecutionRunState,
     WormExecutionRunStep,
-    WormExecutionPreflightChecks,
     WormExecutionStepState
 } from '../../shared/services/worm-trading-service';
 import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {short, usePagedParams} from '../../shared/pages/shared';
-import {disabledWormExecutionPreflightChecks, wormExecutionMandatoryGuardDefinitions, wormExecutionPreflightCheckDefinitions} from './worm-execution-preflight';
+import {wormExecutionMandatoryGuardDefinitions} from './worm-execution-preflight';
 
 const runPageSizes = [20, 50, 100];
 const stepPageSizes = [20, 50, 100];
@@ -101,15 +99,12 @@ const StepStatusTag = ({step}: {step: WormExecutionRunStep}) => <Tag color={step
 const runProgress = (run: WormExecutionRun) => (run.counts.total > 0 ? Math.round((run.counts.terminal / run.counts.total) * 100) : 0);
 const sideLabel = (step: WormExecutionRunStep) => step.side;
 
-const executionPreflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) => left.requireFullLiquidity === right.requireFullLiquidity;
-
 interface ExecutionRunIntent {
     accountId: string;
     id: string;
     planId: string;
     combinationId: string;
     combinationRevision: number;
-    preflightChecks: WormExecutionPreflightChecks;
 }
 
 interface ExecutionDriverInterruption {
@@ -122,27 +117,11 @@ const executionRunIntent = (run: WormExecutionRun, accountId: string): Execution
     id: run.id,
     planId: run.planId,
     combinationId: run.combinationId,
-    combinationRevision: run.combinationRevision,
-    preflightChecks: {...run.preflightChecks}
+    combinationRevision: run.combinationRevision
 });
 
 const executionRunMatchesIntent = (run: WormExecutionRun, intent: ExecutionRunIntent) =>
-    run.id === intent.id &&
-    run.planId === intent.planId &&
-    run.combinationId === intent.combinationId &&
-    run.combinationRevision === intent.combinationRevision &&
-    executionPreflightChecksEqual(run.preflightChecks, intent.preflightChecks);
-
-const RunStepAdvisories = ({codes}: {codes: string[]}) =>
-    codes.length > 0 ? (
-        <div className='worm-execution-step-advisories' aria-label='Ignored execution warnings'>
-            {codes.map(code => (
-                <Typography.Text type='warning' key={code}>
-                    <WarningOutlined aria-hidden='true' /> Ignored: {displayCode(code)}
-                </Typography.Text>
-            ))}
-        </div>
-    ) : null;
+    run.id === intent.id && run.planId === intent.planId && run.combinationId === intent.combinationId && run.combinationRevision === intent.combinationRevision;
 
 const RunListCard = ({run, onOpen}: {run: WormExecutionRun; onOpen: () => void}) => (
     <Card size='small' className='worm-execution-list-card'>
@@ -363,7 +342,6 @@ const CurrentStepPanel = ({step}: {step?: WormExecutionRunStep}) => {
                 <Tag>{step.funds} USDC</Tag>
                 <Tag>{step.leverage}×</Tag>
             </Space>
-            <RunStepAdvisories codes={step.advisoryCodes} />
             <Descriptions size='small' column={{xs: 1, sm: 2, lg: 4}}>
                 <Descriptions.Item label='Worm request ID'>{step.positionRequestId || 'Not assigned'}</Descriptions.Item>
                 <Descriptions.Item label='Provider state'>{displayCode(step.providerState, 'Not observed')}</Descriptions.Item>
@@ -389,16 +367,12 @@ const StepCard = ({step}: {step: WormExecutionRunStep}) => (
         {(step.reasonCode || step.providerState) && (
             <Typography.Text type='secondary'>{step.reasonCode ? displayCode(step.reasonCode) : `Provider: ${displayCode(step.providerState)}`}</Typography.Text>
         )}
-        <RunStepAdvisories codes={step.advisoryCodes} />
     </Card>
 );
 
 const ExecutionSteps = ({run}: {run: WormExecutionRun}) => {
     const {page, pageSize, setPage} = usePagedParams(50, stepPageSizes);
-    const data = useAsyncData(
-        () => services.wormTrading.listExecutionRunSteps(run.id, run.preflightChecks, page, pageSize),
-        [run.id, run.preflightChecks, run.updatedAt, page, pageSize]
-    );
+    const data = useAsyncData(() => services.wormTrading.listExecutionRunSteps(run.id, page, pageSize), [run.id, run.updatedAt, page, pageSize]);
     const columns: ColumnsType<WormExecutionRunStep> = [
         {title: '#', dataIndex: 'ordinal', width: 70},
         {title: 'Wallet', width: 190, render: step => step.wallet.remark || short(step.wallet.address, 8, 6)},
@@ -407,7 +381,6 @@ const ExecutionSteps = ({run}: {run: WormExecutionRun}) => {
         {title: 'Funds', width: 120, render: step => `${step.funds} USDC`},
         {title: 'State', width: 190, render: step => <StepStatusTag step={step} />},
         {title: 'Reason', width: 220, render: step => displayCode(step.reasonCode)},
-        {title: 'Ignored warnings', width: 240, render: step => <RunStepAdvisories codes={step.advisoryCodes} />},
         {title: 'Worm request ID', width: 170, render: step => step.positionRequestId || '—'}
     ];
     return (
@@ -433,7 +406,7 @@ const ExecutionSteps = ({run}: {run: WormExecutionRun}) => {
                 pageSize={pageSize}
                 pageSizeOptions={stepPageSizes}
                 onPageChange={setPage}
-                scrollX={1490}
+                scrollX={1250}
                 compactRender={step => <StepCard step={step} />}
                 compactEmptyDescription='No steps on this page'
             />
@@ -483,39 +456,21 @@ const RunSummary = ({run}: {run: WormExecutionRun}) => (
     </Card>
 );
 
-const RunPreflightChecks = ({run}: {run: WormExecutionRun}) => {
-    const disabledChecks = disabledWormExecutionPreflightChecks(run.preflightChecks);
-    return (
-        <div className='worm-execution-preflight-checks'>
-            <div>
-                <Typography.Text strong={true}>Frozen guards and fill rule</Typography.Text>
-                <Typography.Text type='secondary'>
-                    The target-market position guard and wallet-wide request guard always apply; the reviewed full-liquidity choice is frozen for this Run.
-                </Typography.Text>
-            </div>
-            <div className='worm-execution-preflight-checks__tags'>
-                {wormExecutionMandatoryGuardDefinitions.map(definition => (
-                    <Tag key={definition.key} color='blue'>
-                        Always on · {definition.title}
-                    </Tag>
-                ))}
-                {wormExecutionPreflightCheckDefinitions.map(definition => (
-                    <Tag key={definition.key} color={run.preflightChecks[definition.key] ? 'green' : 'gold'}>
-                        {run.preflightChecks[definition.key] ? 'Checked' : 'Ignored'} · {definition.title}
-                    </Tag>
-                ))}
-            </div>
-            {disabledChecks.length > 0 && (
-                <Alert
-                    type='warning'
-                    showIcon={true}
-                    title='Full liquidity is not required for this Run'
-                    description='A partial-fill estimate is recorded as an ignored liquidity warning instead of blocking an otherwise actionable 1× order. Mandatory exposure guards remain active.'
-                />
-            )}
+const RunMandatoryGuards = () => (
+    <div className='worm-execution-preflight-checks'>
+        <div>
+            <Typography.Text strong={true}>Mandatory execution guards</Typography.Text>
+            <Typography.Text type='secondary'>Both guards are always applied during fresh preflight and immediately before Worm Open.</Typography.Text>
         </div>
-    );
-};
+        <div className='worm-execution-preflight-checks__tags'>
+            {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                <Tag key={definition.key} color='blue'>
+                    Always on · {definition.title}
+                </Tag>
+            ))}
+        </div>
+    </div>
+);
 
 const stateAlert = (run: WormExecutionRun) => {
     if (run.blockCode) {
@@ -875,7 +830,6 @@ export const WormTradingExecutionDetailPage = () => {
     const confirmAuthorize = () => {
         const current = runRef.current;
         if (!current) return;
-        const disabledChecks = disabledWormExecutionPreflightChecks(current.preflightChecks);
         ctx.modal.confirm({
             title: 'Authorize this live Worm execution?',
             content: (
@@ -890,22 +844,6 @@ export const WormTradingExecutionDetailPage = () => {
                         Immediately before Open, Athena always checks for any-direction Open Position in the target market and any remaining uncovered wallet-wide in-flight market
                         or limit request across all markets and directions. Either match skips this order and every remaining order for that Wallet.
                     </p>
-                    {disabledChecks.length > 0 && (
-                        <Alert
-                            type='warning'
-                            showIcon={true}
-                            title='Full liquidity is not required in this frozen Run'
-                            description={
-                                <ul>
-                                    {disabledChecks.map(definition => (
-                                        <li key={definition.key}>
-                                            <strong>{definition.title}:</strong> {definition.ignoredDescription}
-                                        </li>
-                                    ))}
-                                </ul>
-                            }
-                        />
-                    )}
                 </div>
             ),
             okText: 'Authorize frozen run',
@@ -983,8 +921,7 @@ export const WormTradingExecutionDetailPage = () => {
                     <div className='worm-execution-live-region' aria-live='polite'>
                         {driverActive
                             ? `Execution driver active. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`
-                            : `${displayCode(run.state)}. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`}{' '}
-                        {run.currentStep?.advisoryCodes.length ? `Current step ignored warnings: ${run.currentStep.advisoryCodes.map(code => displayCode(code)).join(', ')}.` : ''}
+                            : `${displayCode(run.state)}. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`}
                     </div>
                     {alert && <Alert type={alert.type} showIcon={true} title={alert.title} description={alert.description} />}
                     {recoveryAlert && <Alert type='warning' showIcon={true} title={recoveryAlert.title} description={recoveryAlert.description} />}
@@ -996,7 +933,7 @@ export const WormTradingExecutionDetailPage = () => {
                             title='Worm transaction trust boundary'
                             description='Athena signs the exact Solana transaction returned by Worm. The frozen funds request is capped at 10 USDC per step, but the signer does not inspect programs, accounts, instructions, or independently prove the actual chain spend.'
                         />
-                        <RunPreflightChecks run={run} />
+                        <RunMandatoryGuards />
                         <Descriptions size='small' column={{xs: 1, sm: 2, lg: 3}}>
                             <Descriptions.Item label='Authorization'>
                                 {run.authorization.requiresReauthorization ? 'Fresh proof required' : displayCode(run.authorization.state)}

@@ -40,8 +40,8 @@ type Service struct {
 	wormWebClient         utilworm.WebClient
 	walletSignerClientset walletapiclient.WormExecutionSignerClientset
 	walletOperationLocks  sync.Map
-	wormWebJWTMu          sync.Mutex
-	wormWebJWT            map[string]string
+	wormWebSessionMu      sync.Mutex
+	wormWebSessions       map[string]*utilworm.WebAuthenticatedSession
 	executionWorkerWake   chan struct{}
 
 	startStopMu sync.Mutex
@@ -106,7 +106,7 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 		wormMarketsClientset:  opts.WormMarketsClientset,
 		wormWebClient:         opts.WormWebClient,
 		walletSignerClientset: opts.WalletSignerClientset,
-		wormWebJWT:            make(map[string]string),
+		wormWebSessions:       make(map[string]*utilworm.WebAuthenticatedSession),
 		executionWorkerWake:   make(chan struct{}, 1),
 	}
 	service.wormCapabilities.configureStore(true)
@@ -190,9 +190,9 @@ func (s *Service) Stop() error {
 		cancel()
 	}
 	s.runWG.Wait()
-	s.wormWebJWTMu.Lock()
-	clear(s.wormWebJWT)
-	s.wormWebJWTMu.Unlock()
+	s.wormWebSessionMu.Lock()
+	clear(s.wormWebSessions)
+	s.wormWebSessionMu.Unlock()
 	return nil
 }
 

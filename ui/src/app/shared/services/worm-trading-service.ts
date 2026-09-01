@@ -251,10 +251,6 @@ export interface UpdateWormMarketCombinationInput extends CreateWormMarketCombin
 export type WormExecutionPlanState = 'BUILDING' | 'READY' | 'FAILED' | 'EXPIRED';
 export type WormExecutionPlanStepDisposition = 'READY' | 'SKIPPED';
 
-export interface WormExecutionPreflightChecks {
-    requireFullLiquidity: boolean;
-}
-
 export interface WormExecutionPlanAssetBalance {
     atomicAmount: string;
     amount: string;
@@ -311,8 +307,6 @@ export interface WormExecutionPlan {
     readyStepCount: number;
     skippedStepCount: number;
     reasonCounts: Record<string, number>;
-    advisoryCounts: Record<string, number>;
-    preflightChecks: WormExecutionPreflightChecks;
     maximumCollateral: string;
     openingFeeEstimate: string;
     totalUSDCNeeded: string;
@@ -330,7 +324,6 @@ export interface CreateWormExecutionPlanInput {
     combinationId: string;
     expectedCombinationRevision: number;
     walletIds: number[];
-    preflightChecks: WormExecutionPreflightChecks;
 }
 
 export interface WormExecutionPlanStep {
@@ -339,7 +332,6 @@ export interface WormExecutionPlanStep {
     itemOrdinal: number;
     disposition: WormExecutionPlanStepDisposition;
     reasonCode: string;
-    advisoryCodes: string[];
     projectedUsdcBefore: string;
     projectedUsdcAfter: string;
 }
@@ -423,7 +415,6 @@ export interface WormExecutionRunStep {
     leverage: string;
     state: WormExecutionStepState;
     reasonCode: string;
-    advisoryCodes: string[];
     positionRequestId: string;
     providerState: string;
     providerOrderState: string;
@@ -444,7 +435,6 @@ export interface WormExecutionRun {
     combinationRevision: number;
     state: WormExecutionRunState;
     revision: number;
-    preflightChecks: WormExecutionPreflightChecks;
     counts: WormExecutionRunCounts;
     nextStepOrdinal: number;
     currentStep?: WormExecutionRunStep;
@@ -889,22 +879,6 @@ const optionalExactBoolean = (item: unknown, name: string, fallback = false): bo
     return value;
 };
 
-const normalizeExecutionPreflightChecks = (value: unknown): WormExecutionPreflightChecks => {
-    const item = requireRecord(value);
-    return {
-        requireFullLiquidity: requireExactBoolean(item, 'requireFullLiquidity')
-    };
-};
-
-const executionPreflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) => left.requireFullLiquidity === right.requireFullLiquidity;
-
-const executionAdvisoryCodeOrder = ['LIQUIDITY_INSUFFICIENT'] as const;
-type WormExecutionAdvisoryCode = (typeof executionAdvisoryCodeOrder)[number];
-const executionAdvisoryCheck: Record<WormExecutionAdvisoryCode, keyof WormExecutionPreflightChecks> = {
-    LIQUIDITY_INSUFFICIENT: 'requireFullLiquidity'
-};
-const executionAdvisoryOrder = new Map<string, number>(executionAdvisoryCodeOrder.map((code, index) => [code, index]));
-
 const executionCodePattern = /^[A-Z][A-Z0-9_]{0,127}$/;
 
 const normalizeExecutionCodeCounts = (value: unknown): Record<string, number> => {
@@ -918,44 +892,6 @@ const normalizeExecutionCodeCounts = (value: unknown): Record<string, number> =>
             return invalidWormTradingResponse();
         }
         result[code] = Number(count);
-    }
-    return result;
-};
-
-const normalizeExecutionAdvisoryCodes = (item: unknown, name: string, checks: WormExecutionPreflightChecks): string[] => {
-    const values = readRepeatedArray(item, name).map(value => {
-        if (typeof value !== 'string' || !executionAdvisoryOrder.has(value)) {
-            return invalidWormTradingResponse();
-        }
-        return value;
-    });
-    let previousOrder = -1;
-    for (const value of values) {
-        const order = executionAdvisoryOrder.get(value);
-        const check = executionAdvisoryCheck[value as WormExecutionAdvisoryCode];
-        if (order === undefined || order <= previousOrder || checks[check]) {
-            return invalidWormTradingResponse();
-        }
-        previousOrder = order;
-    }
-    return values;
-};
-
-const normalizeExecutionAdvisoryCounts = (value: unknown, checks: WormExecutionPreflightChecks): Record<string, number> => {
-    if (value === undefined || value === null) {
-        return {};
-    }
-    const record = requireRecord(value);
-    const result: Record<string, number> = {};
-    for (const [code, count] of Object.entries(record)) {
-        const check = executionAdvisoryCheck[code as WormExecutionAdvisoryCode];
-        if (!executionAdvisoryOrder.has(code) || check === undefined || checks[check] || !Number.isSafeInteger(count) || Number(count) <= 0) {
-            return invalidWormTradingResponse();
-        }
-        result[code] = Number(count);
-    }
-    if (Object.keys(result).length > executionAdvisoryCodeOrder.length) {
-        return invalidWormTradingResponse();
     }
     return result;
 };
@@ -1242,7 +1178,6 @@ const normalizeExecutionPlan = (value: unknown, expectedPlanID?: string): WormEx
     const combination = requireRecord(item.combination);
     const id = requireExactString(item, 'id');
     const state = normalizeExecutionPlanState(item.state);
-    const preflightChecks = normalizeExecutionPreflightChecks(item.preflightChecks);
     const wallets = readRepeatedArray(item, 'wallets').map(wallet => normalizeExecutionPlanWallet(wallet, state === 'BUILDING' || state === 'FAILED'));
     const items = readRepeatedArray(item, 'items').map(normalizeExecutionPlanItem);
     const walletCount = requireInteger(item, 1, 'walletCount');
@@ -1252,7 +1187,6 @@ const normalizeExecutionPlan = (value: unknown, expectedPlanID?: string): WormEx
     const readyStepCount = optionalInteger(item, 0, 0, 'readyStepCount');
     const skippedStepCount = optionalInteger(item, 0, 0, 'skippedStepCount');
     const reasonCounts = normalizeExecutionCodeCounts(item.reasonCounts);
-    const advisoryCounts = normalizeExecutionAdvisoryCounts(item.advisoryCounts, preflightChecks);
     const classifiedReasonCount = Object.values(reasonCounts).reduce((sum, count) => sum + count, 0);
     if (
         (expectedPlanID && id !== expectedPlanID) ||
@@ -1269,7 +1203,6 @@ const normalizeExecutionPlan = (value: unknown, expectedPlanID?: string): WormEx
         ((state === 'READY' || state === 'EXPIRED') && (completedStepCount !== totalStepCount || readyStepCount + skippedStepCount !== totalStepCount)) ||
         classifiedReasonCount > readyStepCount + skippedStepCount ||
         ((state === 'READY' || state === 'EXPIRED') && classifiedReasonCount !== readyStepCount + skippedStepCount) ||
-        Object.values(advisoryCounts).some(count => count > totalStepCount) ||
         (state === 'FAILED' && optionalExactString(item, 'failureCode') === '')
     ) {
         return invalidWormTradingResponse();
@@ -1290,8 +1223,6 @@ const normalizeExecutionPlan = (value: unknown, expectedPlanID?: string): WormEx
         readyStepCount,
         skippedStepCount,
         reasonCounts,
-        advisoryCounts,
-        preflightChecks,
         maximumCollateral: optionalExactDecimal(item, 'maximumCollateral'),
         openingFeeEstimate: optionalExactDecimal(item, 'openingFeeEstimate'),
         totalUSDCNeeded: optionalExactDecimal(item, 'totalUSDCNeeded'),
@@ -1313,8 +1244,7 @@ const validateCreatedExecutionPlan = (plan: WormExecutionPlan, input: CreateWorm
         plan.combinationId !== input.combinationId.trim() ||
         plan.combinationRevision !== input.expectedCombinationRevision ||
         walletIDs.length !== input.walletIds.length ||
-        walletIDs.some((walletID, index) => walletID !== input.walletIds[index]) ||
-        !executionPreflightChecksEqual(plan.preflightChecks, input.preflightChecks)
+        walletIDs.some((walletID, index) => walletID !== input.walletIds[index])
     ) {
         return invalidWormTradingResponse();
     }
@@ -1328,7 +1258,7 @@ const normalizeExecutionPlanStepDisposition = (value: unknown): WormExecutionPla
     return invalidWormTradingResponse();
 };
 
-const normalizeExecutionPlanStep = (value: unknown, checks: WormExecutionPreflightChecks): WormExecutionPlanStep => {
+const normalizeExecutionPlanStep = (value: unknown): WormExecutionPlanStep => {
     const item = requireRecord(value);
     const disposition = normalizeExecutionPlanStepDisposition(item.disposition);
     const reasonCode = optionalExactString(item, 'reasonCode');
@@ -1341,7 +1271,6 @@ const normalizeExecutionPlanStep = (value: unknown, checks: WormExecutionPreflig
         itemOrdinal: requireInteger(item, 1, 'itemOrdinal'),
         disposition,
         reasonCode,
-        advisoryCodes: normalizeExecutionAdvisoryCodes(item, 'advisoryCodes', checks),
         projectedUsdcBefore: optionalExactDecimal(item, 'projectedUSDCBefore'),
         projectedUsdcAfter: optionalExactDecimal(item, 'projectedUSDCAfter')
     };
@@ -1414,7 +1343,7 @@ const optionalUnsignedIntegerText = (item: unknown, name: string): string => {
     return normalized;
 };
 
-const normalizeExecutionRunStep = (value: unknown, checks: WormExecutionPreflightChecks): WormExecutionRunStep => {
+const normalizeExecutionRunStep = (value: unknown): WormExecutionRunStep => {
     const item = requireRecord(value);
     const wallet = normalizeWalletSummary(item.wallet);
     const marketValue = requireRecord(item.market);
@@ -1454,7 +1383,6 @@ const normalizeExecutionRunStep = (value: unknown, checks: WormExecutionPrefligh
         leverage: optionalExactDecimal(item, 'leverage'),
         state,
         reasonCode,
-        advisoryCodes: normalizeExecutionAdvisoryCodes(item, 'advisoryCodes', checks),
         positionRequestId: optionalUnsignedIntegerText(item, 'positionRequestId'),
         providerState,
         providerOrderState: optionalExactString(item, 'providerOrderState'),
@@ -1476,7 +1404,6 @@ const normalizeExecutionRun = (value: unknown, expectedRunID?: string): WormExec
     const coordinatorValue = requireRecord(item.coordinator);
     const id = requireExactString(item, 'id');
     const state = normalizeExecutionRunState(item.state);
-    const preflightChecks = normalizeExecutionPreflightChecks(item.preflightChecks);
     const counts: WormExecutionRunCounts = {
         total: requireInteger(countsValue, 1, 'total'),
         actionable: requireInteger(countsValue, 1, 'actionable'),
@@ -1504,7 +1431,7 @@ const normalizeExecutionRun = (value: unknown, expectedRunID?: string): WormExec
         return invalidWormTradingResponse();
     }
     const currentStepValue = item.currentStep;
-    const currentStep = currentStepValue === undefined || currentStepValue === null ? undefined : normalizeExecutionRunStep(currentStepValue, preflightChecks);
+    const currentStep = currentStepValue === undefined || currentStepValue === null ? undefined : normalizeExecutionRunStep(currentStepValue);
     if (currentStep && currentStep.ordinal > counts.total) {
         return invalidWormTradingResponse();
     }
@@ -1516,7 +1443,6 @@ const normalizeExecutionRun = (value: unknown, expectedRunID?: string): WormExec
         combinationRevision: requireInteger(combination, 1, 'revision'),
         state,
         revision: requireInteger(item, 1, 'revision'),
-        preflightChecks,
         counts,
         nextStepOrdinal,
         currentStep,
@@ -1759,16 +1685,11 @@ export class WormTradingService {
         return abortableRequest(request, body => normalizeExecutionPlan(requireRecord(body).plan || body, expectedPlanID));
     }
 
-    public listExecutionPlanSteps(
-        id: string,
-        preflightChecks: WormExecutionPreflightChecks,
-        page = 1,
-        pageSize = 50
-    ): AbortableWormTradingPromise<ListWormExecutionPlanStepsResult> {
+    public listExecutionPlanSteps(id: string, page = 1, pageSize = 50): AbortableWormTradingPromise<ListWormExecutionPlanStepsResult> {
         const request = requests.get(`/worm-trading/execution-plans/${encodeURIComponent(id)}/steps`, readScope).query({page, pageSize});
         return abortableRequest(request, value => {
             const body = requireRecord(value);
-            const items = readRepeatedArray(body, 'items').map(step => normalizeExecutionPlanStep(step, preflightChecks));
+            const items = readRepeatedArray(body, 'items').map(normalizeExecutionPlanStep);
             const total = optionalInteger(body, 0, 0, 'total');
             const responsePage = requireInteger(body, 1, 'page');
             const responsePageSize = requireInteger(body, 1, 'pageSize');
@@ -1832,7 +1753,7 @@ export class WormTradingService {
         );
     }
 
-    public listExecutionRunSteps(id: string, preflightChecks: WormExecutionPreflightChecks, page = 1, pageSize = 50): AbortableWormTradingPromise<ListWormExecutionRunStepsResult> {
+    public listExecutionRunSteps(id: string, page = 1, pageSize = 50): AbortableWormTradingPromise<ListWormExecutionRunStepsResult> {
         const query = new URLSearchParams({page: String(page), pageSize: String(pageSize)});
         return rawSameOriginRequest(
             'GET',
@@ -1841,7 +1762,7 @@ export class WormTradingService {
             'Worm execution steps could not be loaded',
             value => {
                 const body = requireRecord(value);
-                const items = readRepeatedArray(body, 'items').map(step => normalizeExecutionRunStep(step, preflightChecks));
+                const items = readRepeatedArray(body, 'items').map(normalizeExecutionRunStep);
                 const total = optionalInteger(body, 0, 0, 'total');
                 const responsePage = requireInteger(body, 1, 'page');
                 const responsePageSize = requireInteger(body, 1, 'pageSize');

@@ -1,7 +1,6 @@
 package worm
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
@@ -20,10 +19,7 @@ const (
 
 type WebMarketPositionSigner interface {
 	WebSignInSigner
-	SignWebPositionTransaction(
-		ctx context.Context,
-		request WebPositionTransactionSigningRequest,
-	) (WebPositionTransactionSigningResponse, error)
+	WebPositionTransactionSigner
 }
 
 type WebPositionTransactionSigningRequest struct {
@@ -159,23 +155,12 @@ func SubmitWebMarketPosition(
 			errors.New("Worm Web market position signer is required"),
 		)
 	}
-	if _, err := canonicalWebSolanaPublicKey(request.WalletAddress, "wallet address"); err != nil {
-		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageAuthenticating, "", 0, err)
-	}
-	if _, err := canonicalWebSolanaPublicKey(request.MarketConditionID, "market condition id"); err != nil {
-		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageOpening, "", 0, err)
-	}
-	openRequest := WebMarketPositionOpenRequest{
-		MarketConditionID: request.MarketConditionID,
-		Funds:             request.Funds,
-		IsYes:             request.IsYes,
-		Leverage:          1,
-	}
-	if err := validateWebMarketPositionOpenRequest(openRequest); err != nil {
+	openCommand, err := PrepareWebMarketPositionOpen(request)
+	if err != nil {
 		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageOpening, "", 0, err)
 	}
 
-	accessToken, err := authenticateWebWallet(ctx, client, signer, request.WalletAddress)
+	session, err := AuthenticateWebWallet(ctx, client, signer, request.WalletAddress)
 	if err != nil {
 		return nil, newWebMarketPositionSubmitError(WebMarketPositionSubmitStageAuthenticating, "", 0, err)
 	}
@@ -185,7 +170,8 @@ func SubmitWebMarketPosition(
 		OpenOutcome:     WebMutationOutcomeUnknown,
 		FinalizeOutcome: WebMutationOutcomeNotDispatched,
 	}
-	opened, err := client.OpenMarketPosition(ctx, accessToken, openRequest)
+	opened, err := DispatchWebMarketPositionOpen(ctx, client, session, openCommand)
+	applyWebPositionObservation(result, opened)
 	if err != nil {
 		if webMutationExplicitlyRejected(err) {
 			result.Status = WebMarketPositionSubmitStatusOpenRejected
@@ -193,15 +179,15 @@ func SubmitWebMarketPosition(
 		} else {
 			result.Status = WebMarketPositionSubmitStatusOpenOutcomeUnknown
 		}
-		return result, newWebMarketPositionSubmitError(result.Stage, result.Status, 0, err)
+		return result, newWebMarketPositionSubmitError(
+			result.Stage,
+			result.Status,
+			result.PositionRequestID,
+			err,
+		)
 	}
 	result.OpenOutcome = WebMutationOutcomeAcknowledged
-	if err := applyWebPositionRequest(result, opened, 0); err != nil {
-		result.Status = WebMarketPositionSubmitStatusOpenOutcomeUnknown
-		result.OpenOutcome = WebMutationOutcomeUnknown
-		return result, newWebMarketPositionSubmitError(result.Stage, result.Status, result.PositionRequestID, err)
-	}
-	if webPositionRequestTerminalFailure(opened) {
+	if opened.IsTerminalFailure() {
 		result.Status = WebMarketPositionSubmitStatusProviderFailed
 		return result, newWebMarketPositionSubmitError(
 			result.Stage,
@@ -210,47 +196,40 @@ func SubmitWebMarketPosition(
 			errors.New("Worm Web position request reached terminal failure"),
 		)
 	}
-	if normalizedWebProviderState(opened.State) == "completed" {
+	if opened.IsCompleted() {
 		result.Status = WebMarketPositionSubmitStatusAccepted
 		result.Stage = WebMarketPositionSubmitStageObserving
 		return result, nil
 	}
 
 	result.Stage = WebMarketPositionSubmitStageSigning
-	descriptor, err := inspectWebPositionTransaction(request.WalletAddress, opened.Message)
+	metadata, err := InspectWebPositionRequestTransaction(opened)
 	if err != nil {
 		result.Status = WebMarketPositionSubmitStatusOpenedNotFinalized
 		return result, newWebMarketPositionSubmitError(result.Stage, result.Status, result.PositionRequestID, err)
 	}
-	result.TransactionSHA256 = bytes.Clone(descriptor.digest[:])
-	result.TransactionVersion = descriptor.versionName
-	result.RequiredSignatures = descriptor.requiredSignatures
-	result.WalletSignerIndex = descriptor.signerIndex
-	result.SignerPublicKey = descriptor.signerPublicKey.String()
+	result.TransactionSHA256 = append([]byte(nil), metadata.TransactionSHA256[:]...)
+	result.TransactionVersion = metadata.TransactionVersion
+	result.RequiredSignatures = metadata.RequiredSignatures
+	result.WalletSignerIndex = metadata.WalletSignerIndex
+	result.SignerPublicKey = metadata.SignerPublicKey
 
-	signedTransaction, err := signer.SignWebPositionTransaction(ctx, WebPositionTransactionSigningRequest{
-		WalletAddress:     request.WalletAddress,
-		PositionRequestID: result.PositionRequestID,
-		TransactionHex:    opened.Message,
-		TransactionSHA256: descriptor.digest,
-	})
+	finalizeCommand, err := PrepareWebPositionFinalize(
+		ctx,
+		signer,
+		opened,
+		metadata.TransactionSHA256,
+	)
 	if err != nil {
 		result.Status = WebMarketPositionSubmitStatusOpenedNotFinalized
 		return result, newWebMarketPositionSubmitError(result.Stage, result.Status, result.PositionRequestID, err)
 	}
-	finalizePayload, err := validateWebPositionFinalizePayload(descriptor, signedTransaction.Payload)
-	if err != nil {
-		result.Status = WebMarketPositionSubmitStatusOpenedNotFinalized
-		return result, newWebMarketPositionSubmitError(result.Stage, result.Status, result.PositionRequestID, err)
-	}
-	result.FinalizeMode = finalizePayload.Mode
+	result.FinalizeMode = finalizeCommand.FinalizeMode()
 
 	result.Stage = WebMarketPositionSubmitStageFinalizing
 	result.FinalizeOutcome = WebMutationOutcomeUnknown
-	finalized, finalizeErr := client.FinalizePosition(ctx, accessToken, WebPositionFinalizeRequest{
-		PositionRequestID: result.PositionRequestID,
-		Payload:           finalizePayload,
-	})
+	finalized, finalizeErr := DispatchWebPositionFinalize(ctx, client, session, finalizeCommand)
+	applyWebPositionObservation(result, finalized)
 	fallbackStatus := WebMarketPositionSubmitStatusPending
 	var fallbackErr error
 	if finalizeErr != nil {
@@ -264,14 +243,10 @@ func SubmitWebMarketPosition(
 		}
 	} else {
 		result.FinalizeOutcome = WebMutationOutcomeAcknowledged
-		if err := applyWebPositionRequest(result, finalized, result.PositionRequestID); err != nil {
-			result.FinalizeOutcome = WebMutationOutcomeUnknown
-			fallbackStatus = WebMarketPositionSubmitStatusFinalizeOutcomeUnknown
-			fallbackErr = err
-		} else if webPositionRequestTerminalFailure(finalized) {
+		if finalized.IsTerminalFailure() {
 			fallbackStatus = WebMarketPositionSubmitStatusProviderFailed
 			fallbackErr = errors.New("Worm Web position request reached terminal failure")
-		} else if webPositionRequestAccepted(finalized) {
+		} else if finalized.IsAccepted() {
 			fallbackStatus = WebMarketPositionSubmitStatusAccepted
 		}
 	}
@@ -280,7 +255,7 @@ func SubmitWebMarketPosition(
 	return observeWebMarketPositionSubmission(
 		ctx,
 		client,
-		accessToken,
+		session,
 		result,
 		resolvedOptions,
 		fallbackStatus,
@@ -309,7 +284,7 @@ func resolveWebMarketPositionSubmitOptions(
 func observeWebMarketPositionSubmission(
 	ctx context.Context,
 	client WebMarketPositionSubmitClient,
-	accessToken string,
+	session *WebAuthenticatedSession,
 	result *WebMarketPositionSubmitResult,
 	options WebMarketPositionSubmitOptions,
 	fallbackStatus WebMarketPositionSubmitStatus,
@@ -321,30 +296,28 @@ func observeWebMarketPositionSubmission(
 	var lastObservationErr error
 	observedNonTerminal := false
 	for {
-		positionRequest, err := client.GetPositionRequest(
+		observation, err := ObserveWebPositionRequest(
 			pollContext,
-			accessToken,
+			client,
+			session,
 			result.PositionRequestID,
 		)
+		applyWebPositionObservation(result, observation)
 		if err == nil {
-			if applyErr := applyWebPositionRequest(result, positionRequest, result.PositionRequestID); applyErr != nil {
-				err = applyErr
-			} else {
-				lastObservationErr = nil
-				observedNonTerminal = true
-				if webPositionRequestAccepted(positionRequest) {
-					result.Status = WebMarketPositionSubmitStatusAccepted
-					return result, nil
-				}
-				if webPositionRequestTerminalFailure(positionRequest) {
-					result.Status = WebMarketPositionSubmitStatusProviderFailed
-					return result, newWebMarketPositionSubmitError(
-						result.Stage,
-						result.Status,
-						result.PositionRequestID,
-						errors.New("Worm Web position request reached terminal failure"),
-					)
-				}
+			lastObservationErr = nil
+			observedNonTerminal = true
+			if observation.IsAccepted() {
+				result.Status = WebMarketPositionSubmitStatusAccepted
+				return result, nil
+			}
+			if observation.IsTerminalFailure() {
+				result.Status = WebMarketPositionSubmitStatusProviderFailed
+				return result, newWebMarketPositionSubmitError(
+					result.Stage,
+					result.Status,
+					result.PositionRequestID,
+					errors.New("Worm Web position request reached terminal failure"),
+				)
 			}
 		}
 		if err != nil {
@@ -413,70 +386,33 @@ func finishWebMarketPositionObservation(
 	)
 }
 
-func applyWebPositionRequest(
+func applyWebPositionObservation(
 	result *WebMarketPositionSubmitResult,
-	request *WebPositionRequest,
-	expectedID int64,
-) error {
-	if result == nil || request == nil || request.ID <= 0 {
-		return errors.New("Worm Web position request response is invalid")
+	observation *WebPositionRequestObservation,
+) {
+	if result == nil || observation == nil {
+		return
 	}
-	requestID := int64(request.ID)
-	if expectedID > 0 && requestID != expectedID {
-		return fmt.Errorf("Worm Web position request id mismatch: got %d, want %d", requestID, expectedID)
+	if result.PositionRequestID > 0 && observation.PositionRequestID != result.PositionRequestID {
+		return
 	}
-	result.PositionRequestID = requestID
-	result.ProviderState = normalizedWebProviderState(request.State)
-	result.ProviderOrderState = normalizedWebProviderState(request.OrderState)
-	if fundingTxID := normalizedWebOptionalDiagnostic(request.FundingTxID); fundingTxID != nil {
-		result.FundingTxID = fundingTxID
+	if observation.PositionRequestID > 0 {
+		result.PositionRequestID = observation.PositionRequestID
 	}
-	if refundTxID := normalizedWebOptionalDiagnostic(request.RefundTxID); refundTxID != nil {
-		result.RefundTxID = refundTxID
+	result.ProviderState = observation.ProviderState
+	result.ProviderOrderState = observation.ProviderOrderState
+	if observation.FundingTxID != nil {
+		fundingTxID := *observation.FundingTxID
+		result.FundingTxID = &fundingTxID
 	}
-	return nil
-}
-
-func webPositionRequestAccepted(request *WebPositionRequest) bool {
-	if request == nil {
-		return false
-	}
-	state := normalizedWebProviderState(request.State)
-	if state == "completed" {
-		return true
-	}
-	if state != "processing" {
-		return false
-	}
-	orderState := normalizedWebProviderState(request.OrderState)
-	return orderState == "created" || orderState == "opened"
-}
-
-func webPositionRequestTerminalFailure(request *WebPositionRequest) bool {
-	if request == nil {
-		return false
-	}
-	switch normalizedWebProviderState(request.State) {
-	case "failed", "cancelled":
-		return true
-	default:
-		return false
+	if observation.RefundTxID != nil {
+		refundTxID := *observation.RefundTxID
+		result.RefundTxID = &refundTxID
 	}
 }
 
 func normalizedWebProviderState(value string) string {
 	return strings.ToLower(normalizedWebDiagnostic(value, 100))
-}
-
-func normalizedWebOptionalDiagnostic(value *string) *string {
-	if value == nil {
-		return nil
-	}
-	normalized := normalizedWebDiagnostic(*value, 256)
-	if normalized == "" {
-		return nil
-	}
-	return &normalized
 }
 
 func normalizedWebDiagnostic(value string, maximumBytes int) string {

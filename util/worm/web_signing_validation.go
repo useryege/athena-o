@@ -309,18 +309,18 @@ func signWebPositionTransactionWithPrivateKey(
 	if !solana.PrivateKey(privateKey).PublicKey().Equals(wallet) {
 		return WebPositionTransactionSigningResponse{}, errors.New("Solana private key does not match wallet address")
 	}
-	descriptor, err := inspectWebPositionTransaction(request.WalletAddress, request.TransactionHex)
+	response, _, err := BuildWebPositionTransactionSigningResponse(
+		request,
+		func(message []byte) ([]byte, error) {
+			signature := ed25519.Sign(privateKey, message)
+			if !ed25519.Verify(privateKey.Public().(ed25519.PublicKey), message, signature) {
+				return nil, errors.New("Worm Web transaction private-key signature verification failed")
+			}
+			return signature, nil
+		},
+	)
 	if err != nil {
 		return WebPositionTransactionSigningResponse{}, err
 	}
-	if descriptor.digest != request.TransactionSHA256 {
-		return WebPositionTransactionSigningResponse{}, errors.New("Worm Web transaction digest changed before signing")
-	}
-	signatureBytes := ed25519.Sign(privateKey, descriptor.message)
-	signature := solana.SignatureFromBytes(signatureBytes)
-	payload, err := buildWebPositionFinalizePayload(descriptor, signature)
-	if err != nil {
-		return WebPositionTransactionSigningResponse{}, err
-	}
-	return WebPositionTransactionSigningResponse{Payload: payload}, nil
+	return response, nil
 }

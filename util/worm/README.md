@@ -39,12 +39,46 @@ typed API, transport, response, and HTML-403 edge-block errors. In particular,
 callers must never retry an `OpenMarketPosition`, `FinalizePosition`, or
 `CloseMarginPosition` call whose outcome is ambiguous.
 
+### Resumable Web market-position stages
+
+Durable production execution uses the same protocol implementation as the
+single-entry live probe through these stateless stages:
+
+1. `AuthenticateWebWallet` performs Challenge and SignIn and returns an opaque
+   in-memory `WebAuthenticatedSession`; the JWT has no public accessor.
+2. `PrepareWebMarketPositionOpen` freezes one market/`1x` Open and exposes only
+   its stable request SHA-256 for a caller checkpoint.
+3. `DispatchWebMarketPositionOpen` sends that Open exactly once and returns a
+   normalized `WebPositionRequestObservation`.
+4. `ObserveWebPositionRequest` performs one safe numeric request GET;
+   higher-level code owns reauthentication, retry timing, and recovery.
+5. `InspectWebPositionRequestTransaction` applies the 1,232-byte Solana wire
+   limit, canonical encoding, legacy/v0, signer-slot, and existing-signature
+   checks and returns only safe transaction metadata.
+6. `PrepareWebPositionFinalize` invokes a capability-scoped signer, validates
+   its response, fixes the Finalize mode, and exposes the Finalize request
+   digest. `DispatchWebPositionFinalize` sends that exact mutation once.
+
+Provider/order states are normalized into bounded lowercase values, while
+funding/refund transaction IDs are validated as optional values of at most 200
+bytes. A malformed response that still has a positive request ID returns that
+partial identity alongside an error so a durable caller can preserve it and
+reconcile without replaying Open. Raw provider transactions, signatures,
+Finalize payloads, and JWTs remain transient package-private values.
+
+`BuildWebPositionTransactionSigningResponse` is the shared Wallet-side signing
+constructor. It accepts only a callback that signs canonical Solana message
+bytes, independently verifies the signature, and chooses the validated
+Finalize payload. Custody services therefore keep private keys locally while
+sharing the exact same transaction rules as the Web stages and live probe.
+
 ### Single-entry Web market submission
 
 `SubmitWebMarketPosition` is the high-level Web market-position protocol
-entrypoint. It performs challenge retrieval, sign-in, and one market-position
-open. Unless that Open response is already complete, it signs the returned
-transaction, finalizes once, and performs bounded request-status observation.
+entrypoint composed entirely from the resumable stages above. It performs
+challenge retrieval, sign-in, and one market-position open. Unless that Open
+response is already complete, it signs the returned transaction, finalizes
+once, and performs bounded request-status observation.
 Its request intentionally exposes only the wallet address, market condition
 ID, funds, and YES/NO side. It always submits a market position at `1x`; callers
 cannot select an order type, price, shares, or leverage. Funds must be a

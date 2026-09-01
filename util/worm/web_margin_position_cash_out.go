@@ -142,7 +142,7 @@ func CashOutWebMarginPosition(
 		)
 	}
 
-	accessToken, err := authenticateWebWallet(ctx, client, signer, request.WalletAddress)
+	session, err := AuthenticateWebWallet(ctx, client, signer, request.WalletAddress)
 	if err != nil {
 		return nil, newWebMarginPositionCashOutError(
 			WebMarginPositionCashOutStageAuthenticating,
@@ -159,7 +159,7 @@ func CashOutWebMarginPosition(
 		MarketConditionID: request.MarketConditionID,
 		IsYes:             request.IsYes,
 	}
-	position, err := getExactWebMarginPosition(ctx, client, accessToken, request)
+	position, err := getExactWebMarginPosition(ctx, client, session.accessToken, request)
 	if err != nil {
 		status := WebMarginPositionCashOutStatusLookupFailed
 		switch {
@@ -182,7 +182,7 @@ func CashOutWebMarginPosition(
 		return observeWebMarginPositionCashOut(
 			ctx,
 			client,
-			accessToken,
+			session.accessToken,
 			request,
 			result,
 			resolvedOptions,
@@ -202,7 +202,7 @@ func CashOutWebMarginPosition(
 
 	result.Stage = WebMarginPositionCashOutStageClosing
 	result.CloseOutcome = WebMutationOutcomeUnknown
-	closeErr := client.CloseMarginPosition(ctx, accessToken, WebMarginPositionCloseRequest{
+	closeErr := client.CloseMarginPosition(ctx, session.accessToken, WebMarginPositionCloseRequest{
 		MarketConditionID: request.MarketConditionID,
 		IsYes:             request.IsYes,
 		PositionID:        request.PositionID,
@@ -217,7 +217,7 @@ func CashOutWebMarginPosition(
 	return observeWebMarginPositionCashOut(
 		ctx,
 		client,
-		accessToken,
+		session.accessToken,
 		request,
 		result,
 		resolvedOptions,

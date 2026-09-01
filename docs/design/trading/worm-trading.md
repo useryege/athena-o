@@ -14,8 +14,9 @@ responsible for interactive authorization and authoritative market-catalog
 validation before those snapshots reach this store. Worm Trading also owns
 durable, asynchronous read-only execution previews that freeze one combination
 revision, ordered owner Wallets, current market/estimate observations, complete
-Worm exposure, confirmed balances, two mandatory exposure guards, one optional
-full-liquidity rule, its advisory, and Wallet-major Step classifications.
+Worm exposure, confirmed balances, two mandatory exposure guards, and
+Wallet-major Step classifications. Worm's raw partial-fill observation is
+retained for diagnosis but never changes execution eligibility.
 Usable previews can be consumed exactly once into durable live execution Runs.
 Worm Trading owns the frozen Run/Step/attempt state, Run authorization binding,
 single-driver coordinator, fresh preflight, Worm Web JWT session, one-Step-at-a-
@@ -34,10 +35,10 @@ intent and non-secret Worm request identity/state, but never a Wallet private
 key, Worm Web JWT, raw or signed transaction, or signature.
 
 The read/connection/preview integration is fixed to Worm's official HMAC
-protocol. Production live execution uses the official Web JWT flow established
-by the live-test reference under `util/worm`: sign-in challenge and custodial
-message signature, market-position Open, custodial transaction signature,
-finalize, authoritative request GET, and HMAC Open Position completion reads.
+protocol. Production live execution uses `util/worm`'s stateless Web JWT stages:
+authenticate, prepare/checkpoint/dispatch a market-position Open, inspect and
+sign the returned transaction, prepare/checkpoint/dispatch Finalize, perform
+safe request GETs, and separately read HMAC Open Positions for completion.
 Athena deliberately trusts and signs the exact
 Solana transaction returned by Worm; the at-most-10-USDC `funds` value limits
 Athena's Open request but is not a cryptographic on-chain spend limit. This
@@ -52,8 +53,7 @@ fresh Event Condition ID catalogs. The Combinations surface never requests a
 wallet, estimate, credential lease, signature, draft, or Worm mutation while
 editing a template. A write-capable saved row may open the contextual
 `/{id}/execute` Execution Preview workflow. That route selects connected
-Wallets, reviews mandatory guards, configures the enabled-by-default Full
-liquidity rule, and performs only GET, List,
+Wallets, reviews the two mandatory guards, and performs only GET, List,
 balance, catalog, and Estimate work while building a plan. A usable plan can be frozen into a Run without placing an
 order. `/worm-trading/executions` and `/{runId}` provide permanent history,
 Run-bound authorization, explicit serial control, and read-only reconciliation.
@@ -66,7 +66,7 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | Internal authenticated server | [internal/wormtrading/server.go](../../../internal/wormtrading/server.go), [internal/wormtrading/apiclient](../../../internal/wormtrading/apiclient) | `Server`, `ServerOpts`, internal Bearer interceptors, gRPC health |
 | Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands, one-Step worker and recovery |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
-| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql](../../../internal/wormtrading/store/migrations/000006_execution_preflight_checks.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, frozen check/advisory data, immutable Run snapshots, Open Position completion evidence, and Step/attempt/command/coordinator/authorization/isolation state |
+| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, mandatory-guard schema reset, immutable Run snapshots, Open Position completion evidence, and Step/attempt/command/coordinator/authorization/isolation state |
 | Credential encryption and official client | [internal/wormtrading/credential_crypto.go](../../../internal/wormtrading/credential_crypto.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `CredentialEncryptionKeyFromPassphrase`, `credentialCipher`, `NewOfficialWormAPIClientFactory`, HMAC headers |
 | Connection and revocation lifecycle | [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/store/connections.go](../../../internal/wormtrading/store/connections.go), [internal/wormtrading/store/credentials.go](../../../internal/wormtrading/store/credentials.go), [internal/wormtrading/store/maintenance.go](../../../internal/wormtrading/store/maintenance.go) | `PrepareWormWalletConnection`, `CompleteWormWalletConnection`, `DisconnectWormWallet`, `revokeStoredCredential`, `revokePendingCredentials`, `MarkReconnectRequired`, `MarkCredentialRevocationFailed`, `ExpireConnectionAttempts` |
 | Position aggregation | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go) | `BatchGetWalletPositionSnapshots`, `fetchOpenPositions`, `fetchInFlightRequests`, `suppressPositionBackedRequests` |
@@ -77,7 +77,7 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | Native live-execution facade and proof | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go), [internal/googleoidc/worm_execution_authorization.go](../../../internal/googleoidc/worm_execution_authorization.go), [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go) | Run/Step routes, command idempotency, Google/Phantom/development Run authorization |
 | Read-only preview classification | [internal/wormtrading/execution_preview_builder.go](../../../internal/wormtrading/execution_preview_builder.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go) | `ExecutionPreviewBuilder`, `Build`, full exposure pagination, exact-decimal cumulative USDC simulation, shared provider rate limiters |
 | Purpose-bound Wallet signers | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go) | `SignWormAuthChallenge`, `WormExecutionSignerService`, exact sign-in and transaction bindings |
-| Worm Web execution adapter | [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/worm_web_position_open_live_test.go](../../../util/worm/worm_web_position_open_live_test.go) | `WebClient`, `OpenMarketPosition`, challenge/sign-in/finalize/request GET, production flow reference |
+| Worm Web execution protocol | [util/worm/web_market_position_stages.go](../../../util/worm/web_market_position_stages.go), [util/worm/web_signing_validation.go](../../../util/worm/web_signing_validation.go), [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/README.md](../../../util/worm/README.md) | `AuthenticateWebWallet`, staged market/`1x` Open and Finalize commands, safe request observation, transaction inspection, shared signer validation |
 | Independent reauthentication lease | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go) | `NewWormCredentialManager`, `EnableWormCredentialReauthentication`, Worm-only Google and Solana proof flows |
 | Browser navigation and pages | [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-trading-executions.tsx](../../../ui/src/app/member/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets/Combinations/Preview pages, execution history/detail and explicit driver, strict Run/Step normalizers |
 | Process graph and production secrets | [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql), [tools/prod-env-reset/main.go](../../../tools/prod-env-reset/main.go) | port `8090`, `worm_trading` database, independent encryption key and internal token |
@@ -185,7 +185,7 @@ Execution Preview is a separate native facade and asynchronous store workflow:
 interactive login + worm_trading READ_WRITE + exact origin
   -> API Server resolves ordered owner-scoped Solana Wallet IDs
   -> Worm Trading atomically freezes combination revision, Wallet order,
-     market order, the Full liquidity rule, and trusted display snapshots as BUILDING
+     market order, and trusted display snapshots as BUILDING
   -> background worker
        -> Worm Markets GetOrderEventCatalog for current market authority
        -> credential store + decrypt active per-Wallet HMAC credentials
@@ -199,10 +199,9 @@ interactive login + worm_trading READ
   -> owner-scoped plan detail and paged step reads
 ```
 
-Preview creation accepts only the combination/revision, ordered Wallet IDs, and
-`preflightChecks.requireFullLiquidity`; a missing policy defaults that rule on.
+Preview creation accepts only the combination/revision and ordered Wallet IDs.
 Target-market any-direction Open Position and wallet-global uncovered in-flight
-request guards are unconditional and are not browser policy fields.
+request guards are unconditional and are not browser fields.
 It accepts no owner, address, market, side, funds, leverage, or provider payload
 from the browser. It requires neither Wallet module access nor
 a Wallet/Worm step-up lease. The worker uses the already connected credential
@@ -221,14 +220,14 @@ interactive READ_WRITE browser + exact origin
   -> explicit Start or Continue acquires one 30-second coordinator
   -> browser asks for one expected Wallet-major Step
   -> Worm Trading worker performs fresh preflight and mandatory exposure guards
-  -> Worm Web challenge -> Wallet sign-in RPC -> Web JWT
-  -> Worm market-position Open(frozen market, side, funds, 1x)
+  -> util/worm AuthenticateWebWallet -> opaque Web session
+  -> prepare/checkpoint/dispatch market-position Open(frozen market, side, funds, 1x)
   -> atomically persist successful Open attempt + OPENED recovery evidence
   -> immediate HMAC Open Position matcher
        -> matched: COMPLETED
        -> ambiguous: OUTCOME_UNKNOWN
        -> absent + Web completed: AWAITING_COMPLETION
-       -> absent + Web non-terminal: Wallet signs transaction -> Finalize once
+       -> absent + Web non-terminal: inspect -> Wallet signs -> checkpoint -> Finalize once
   -> Web request GET plus the same HMAC matcher while awaiting
   -> only unique matching Open Position evidence completes the Step
   -> browser must explicitly ask before another Step
@@ -242,11 +241,19 @@ driving the same Run but is not transaction authorization. Run authorization is
 durable and Run-specific, while current account/Session/access checks still
 gate every control call.
 
-Worm Trading holds Web JWTs only in process memory, scoped to Run and Wallet.
+Worm Trading holds opaque `WebAuthenticatedSession` values only in process
+memory, scoped to Run and Wallet. `util/worm` owns protocol-only stages:
+`AuthenticateWebWallet`, Open preparation and one-shot dispatch, safe request
+observation, transaction inspection, Finalize preparation, and one-shot
+dispatch. Prepared Open and Finalize commands expose stable SHA-256 request
+digests for the Worker's durable checkpoints. The package owns no database,
+HMAC guard, Open Position matcher, Run transition, or business retry.
 The dedicated Wallet signer uses an independent internal Bearer unavailable to
 the API Server and general Wallet clients. It validates owner, Wallet/address,
-Run/Step/intent/request/transaction digests, parseable legacy or v0 Solana
-serialization, required signer slot, and signature self-verification. Under the
+Run/Step/intent/request/transaction digests. The shared `util/worm` signing
+helper enforces the 1,232-byte limit, canonical hexadecimal and Solana
+serialization, `Sanitize`, legacy or v0, the required signer slot, existing
+signature rules, Ed25519 verification, and the exact Finalize payload. Under the
 accepted Worm trust model it intentionally does not inspect program IDs,
 accounts, instructions, or actual spend. Open and Finalize are each dispatched
 at most once per durable attempt and are never automatically retried. The full
@@ -483,16 +490,14 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     `/worm-trading/combinations/{id}/execute` route. The four browser steps
     confirm the committed combination, select and explicitly order only
     CONNECTED Wallets from the complete inventory, review two read-only
-    mandatory exposure guards, choose Full liquidity, and review one read-only
-    plan. Full liquidity defaults enabled; disabling it converts only an
-    incomplete-fill observation into an advisory. The editor is two-column on
-    desktop and one-column on narrow screens. POST sends the exact source
-    revision, ordered Wallet IDs, and one-boolean policy. The API
+    mandatory exposure guards, and review one read-only plan. The guard cards
+    are two-column on desktop and one-column on narrow screens. POST sends the
+    exact source revision and ordered Wallet IDs. The API
     Server resolves each ID through the current owner's Solana Wallet boundary,
     and Worm Trading atomically creates the complete BUILDING header, Wallet,
-    item, and policy input snapshot. HTTP returns 202 and a resource Location.
+    item input snapshot. HTTP returns 202 and a resource Location.
     A read-capable user may inspect a direct owner plan URL but cannot select
-    Wallets, Build, Change checks, or Re-run checks.
+    Wallets, Build, or Re-run preview.
 23. The single execution-plan worker polls each second, claims the oldest
     available BUILDING row with a two-minute SQL lease, and renews every 20
     seconds. It refetches each unique Event catalog, requires each Wallet's
@@ -509,9 +514,9 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     limit request across every market and direction. Requests linked from an
     observed position's `position_request_pubkey` are covered and excluded from
     the request guard. Either mandatory guard skips the current and all
-    remaining Steps for that Wallet. Market, estimate, liquidity, and
-    cumulative USDC checks follow. Full liquidity is the only optional rule: a
-    disabled rule records `LIQUIDITY_INSUFFICIENT` as an advisory and continues.
+    remaining Steps for that Wallet. Market, Estimate, and cumulative USDC
+    checks follow. Worm's raw `is_fully_filled` Estimate field is diagnostic;
+    a valid partial-fill response continues through normal classification.
     Market, Estimate, connection, and USDC validity remain mandatory. Every successful Estimate must satisfy exact
     `user_funds_needed = funds + fee_amount` and omit a 1x liquidation price.
     Steps are Wallet-major, exact decimal, and complete. SOL remains an
@@ -519,22 +524,22 @@ secret remain inside Worm Trading memory and its encrypted database columns.
 25. Finalization rechecks the source revision, then locks every connection and
     active credential in global Wallet-ID order before ordinal validation. It
     bulk-imports the validated step set with PostgreSQL `COPY` and commits all
-    observations, reason/advisory counts, totals, and the 15-minute READY expiry in one
+    observations, reason counts, totals, and the 15-minute READY expiry in one
     transaction. Any incomplete authority becomes terminal FAILED rather than
     partial READY. READY-gated step pages use ordinal keyset reads. The UI polls
     BUILDING at 1.5 seconds with capped failure backoff and refreshes authority at
-    the READY expiry boundary. Review shows the frozen policy and advisories;
-    Change checks returns to the Checks editor, while confirmed Re-run creates a
-    new plan and updates the URL only after success. Hourly cleanup deletes at most
+    the READY expiry boundary. Review shows both mandatory guards; Re-run
+    preview creates a new plan with the frozen revision and Wallet order,
+    then updates the URL only after success. Hourly cleanup deletes at most
     100 unreferenced terminal records past their seven-day retention deadline;
     plans consumed by a live Run are retained. Shutdown
     cancels the worker and leaves an interrupted leased plan reclaimable.
 26. `POST /api/v1/worm-trading/executions` requires interactive
     `READ_WRITE`, exact origin, a command UUID, the plan ID, and expected source-
-    combination revision. One transaction consumes a usable READY plan, copies its Wallet,
-    market, policy, advisory, and wallet-major Step snapshots, maps preview READY to `PENDING` and
+    combination revision. One transaction consumes a usable READY plan, copies
+    its Wallet, market, and wallet-major Step snapshots, maps preview READY to `PENDING` and
     every preview terminal classification to `SKIPPED`, computes a
-    version-three plan digest, and creates `AWAITING_AUTHORIZATION`. One plan creates
+    version-four plan digest, and creates `AWAITING_AUTHORIZATION`. One plan creates
     at most one Run and one account has at most one non-terminal Run.
 27. Google, Phantom, or disabled-auth development proof records authorization
     for the exact Run, plan digest, account, Session-JTI digest, and current
@@ -547,26 +552,32 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     completes it independently of the browser request. The service never
     selects another Step automatically.
 29. Fresh preflight rereads current position/request exposure, market authority,
-    estimate, and Wallet balance using the Run-frozen policy. The same mandatory
+    Estimate, and Wallet balance. The same mandatory
     target-market position and wallet-global uncovered-request guards skip the
-    current and remaining Wallet Steps. Full liquidity alone is optional;
-    disabling it retains partial fill as an actionable advisory. Preview and
-    fresh advisories are canonically unioned. Insufficient USDC/SOL or a deterministic Wallet failure skips the
+    current and remaining Wallet Steps. A valid partial-fill Estimate remains
+    actionable; `is_fully_filled` does not alter the Step outcome. Insufficient
+    USDC/SOL or a deterministic Wallet failure skips the
     remaining Steps for that Wallet, while deterministic market failure skips
     that market for later Wallets. The Step always uses the frozen 1x and funds
     and never increases the request. After Web login and immediately before
     `OPENING`, a second authoritative exposure read repeats both mandatory
     guards; recovery repeats them for a still-undispatched Open.
 30. For a Step that still requires execution, Worm Trading obtains or reuses an
-    in-memory Run+Wallet Web JWT. It fetches the official sign-in challenge,
-    asks Wallet's capability signer to sign the exact message, and exchanges it
-    for the JWT. The Open mutation is durably marked dispatched before one POST.
-    `OpenMarketPosition` fixes `network_type=2`, market, side, `funds`, and `1x`;
+    in-memory Run+Wallet session through `AuthenticateWebWallet`. The
+    Run-bound adapter asks Wallet's capability signer to sign the exact message.
+    `PrepareWebMarketPositionOpen` validates the fixed command and exposes its
+    digest; the Worker persists `PREPARED -> DISPATCHED` before
+    `DispatchWebMarketPositionOpen` sends one POST. `WebClient` fixes
+    `network_type=2`, while the command fixes market, side, `funds`, and `1x`;
     it accepts no order-type selector, limit price, or shares and is therefore
     market-only. The frozen backend was already revalidated during preflight.
 31. A positive Open response can be persisted as successful only when it has a
-    numeric position-request ID, normalized bounded provider state, and a valid
-    transaction. `RecordExecutionStepOpened` is the sole successful Open store
+    numeric position-request ID, normalized bounded provider state, and a
+    transaction accepted by `InspectWebPositionRequestTransaction`.
+    A valid request ID survives later response or transaction validation
+    failure: the Worker records it on an `OUTCOME_UNKNOWN` attempt, invokes the
+    Open Position matcher, and never replays Open.
+    `RecordExecutionStepOpened` is the sole successful Open store
     entry point. In one database transaction it resolves the dispatched attempt
     as `SUCCEEDED` with the request ID and bounded HTTP/provider metadata, stores
     the same request ID, transaction digest, provider request/order state on the
@@ -580,9 +591,12 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     `AWAITING_COMPLETION` without signing or Finalize. Only no position plus a
     non-terminal Web state continues: Worm Trading binds the digest to the Run,
     Step, intent, request ID, Wallet, and address and calls the dedicated Wallet
-    transaction signer. It stores no raw transaction or signature. One finalize
-    mode is selected and Finalize is durably marked dispatched before its sole
-    POST; the representation cannot switch after dispatch.
+    transaction signer through `PrepareWebPositionFinalize`. It stores no raw
+    transaction, signature, or Finalize payload. The returned immutable command
+    exposes the exact request digest and one validated mode; Finalize is durably
+    marked `PREPARED -> DISPATCHED` before
+    `DispatchWebPositionFinalize` sends its sole POST. The representation cannot
+    switch after dispatch.
 32. The worker runs the same HMAC Open Position matcher immediately after the
     atomic Open commit and again at later Web GET, signing, Finalize, and polling
     checkpoints. Only one Open Position in the target market, matching the
@@ -654,8 +668,7 @@ Execution previews add four owner-scoped, cascading tables:
 
 - `worm_execution_plans` freezes source combination identity/revision, BUILDING,
   READY, or FAILED state, worker lease, progress/counts, exact-decimal totals,
-  request/completion/expiry timestamps, `require_full_liquidity`, and seven-
-  day retention.
+  request/completion/expiry timestamps, and seven-day retention.
 - `worm_execution_plan_wallets` freezes ordered safe Wallet identity and later
   records the authoritative connection, active credential version, SOL/USDC
   observations, and stable status/reason.
@@ -663,23 +676,28 @@ Execution previews add four owner-scoped, cascading tables:
   fields and later records current backend, fixed funds, `1x`, availability,
   reason, and public estimate fields.
 - `worm_execution_plan_steps` stores one wallet-major READY or SKIPPED row for
-  each Wallet/item pair with stable reason, canonical ignored-condition
-  advisories, and projected USDC before/after.
+  each Wallet/item pair with stable reason and projected USDC before/after.
 
 Plan creation, worker claim, terminal completion, and cleanup are independent
 transactions. READY completion rechecks the exact source revision plus each
 Wallet address, CONNECTED state, and active credential version while locking
 the relevant rows, then commits all Wallet/item observations, every step,
-reason/advisory aggregates, totals, and expiry atomically. A preview does not lock the
+reason aggregates, totals, and expiry atomically. A preview does not lock the
 source template after creation. READY usability is derived at read time from
 expiry, actionable-step count, and current source presence/revision.
+
+[Migration `000008_execution_mandatory_guards.sql`](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql)
+defines the current development-data boundary. Its Up migration truncates the
+execution-plan graph with `CASCADE` and removes superseded policy/warning
+columns from Preview and Run tables. Its Down migration restores only empty
+column structure; it cannot restore the truncated Preview or Run records.
 
 Live execution adds permanent account-owned tables:
 
 - `worm_execution_runs`, `_wallets`, `_items`, and `_steps` freeze the consumed
   plan, versioned SHA-256 plan digest, Wallet/item order, exact requested funds
-  and market-only 1x leverage, the full-liquidity boolean, source and fresh-preflight advisories,
-  source preview disposition, lifecycle state, numeric request identity, safe
+  and market-only 1x leverage, source preview disposition, lifecycle state,
+  numeric request identity, safe
   provider state, completion-position evidence, digests, counts, and timestamps.
 - `worm_execution_authorizations` records one Run-scoped
   `WORM_POSITION_EXECUTE` proof kind plus Session-JTI digest, access revision,
@@ -887,8 +905,7 @@ setting because they are memory-only by design.
   credential, signature, draft, submit, or other Worm mutation APIs.
 - Execution-plan native routes are interactive-only and owner-scoped. GET
   detail/steps requires `READ`; POST requires `READ_WRITE`, exact origin, exact
-  source revision, API-Server-resolved ordered Solana Wallets, and either a
-  complete `requireFullLiquidity` boolean or its enabled default. API Keys and
+  source revision, and API-Server-resolved ordered Solana Wallets. API Keys and
   caller-selected owners, addresses, markets, sides, funds, or leverage are
   rejected.
 - Preview item order is the frozen combination order and Wallet order is the
@@ -903,8 +920,9 @@ setting because they are memory-only by design.
 - Any-direction Open Position in the target market and any wallet-global
   uncovered in-flight market or limit request are mandatory guards. Requests
   linked from an observed position's `position_request_pubkey` are covered.
-  Either guard skips the matching and remaining Wallet Steps. Only incomplete
-  fill can be retained as an advisory by disabling Full liquidity. Market and
+  Either guard skips the matching and remaining Wallet Steps. A valid partial
+  fill remains actionable and its raw `is_fully_filled` value is diagnostic.
+  Market and
   Estimate validity, connection/ownership, USDC, fixed amount/market-only `1x`,
   permission, expiry, locking, isolation, authorization, and mutation safety
   cannot be disabled.
@@ -917,8 +935,8 @@ setting because they are memory-only by design.
   order, position, or credential mutation.
 - One execution plan can create at most one permanent Run, one account can own
   at most one non-terminal Run, and a non-terminal Run locks its source
-  combination. The Run and version-three digest freeze the Preview policy and
-  advisories. Only source-preview actionable Steps can mutate Worm.
+  combination. The Run and version-four digest freeze the immutable Preview
+  intent. Only source-preview actionable Steps can mutate Worm.
 - Every live Run mutation is interactive `READ_WRITE`, exact-origin,
   current-account/revision bound, and unavailable to API Keys. Run authorization
   is bound to its immutable plan digest, Session-JTI digest, and access revision;
@@ -1034,7 +1052,7 @@ Estimate, or internal response data fails the entire plan rather than exposing
 a partial READY result. Final source revision, Wallet connection, and active-
 credential drift prevent READY with distinct stable failure codes; a true lease
 loss leaves BUILDING for safe read-only reclaim. A terminal FAILED plan is immutable and retained for diagnosis;
-confirmed Re-run checks creates a new plan. READY is consumable for 15 minutes, then reads
+Re-run preview creates a new plan. READY is consumable for 15 minutes, then reads
 project it as EXPIRED. Deleted/changed sources and no-actionable-step plans
 remain readable with stable non-consumable codes. A bounded cleanup removes
 plans and cascading children after seven days.
@@ -1045,9 +1063,9 @@ Phantom, or development proof leaves the Run awaiting authorization. Session,
 access, permission, coordinator, or optimistic-revision failure prevents a new
 Step without changing a provider mutation already in progress.
 
-Fresh preflight reclassifies deterministic current authority under the frozen
-Full liquidity policy and both mandatory exposure guards before Open, then
-unions new liquidity advisories with the Preview snapshot. A second exposure
+Fresh preflight reclassifies deterministic current authority and applies both
+mandatory exposure guards before Open. A valid partial-fill Estimate remains
+executable; the raw fill flag remains diagnostic. A second exposure
 read after Web login closes the final pre-Open guard window. A
 temporary provider/network/429/5xx failure pauses the Run; it does not consume
 the next Step. A positive Open response is not durable success until
@@ -1104,9 +1122,9 @@ Trading service health/logs.
 
 Execution Preview responses expose owner-safe frozen Wallet and market
 presentation, state/build stage, stable failure/usability codes, ordered reason
-and advisory counts, the complete check policy, exact-decimal totals and
-estimates, balance observations, lifecycle timestamps, and paged step
-classifications/advisories. They never expose the owner UUID,
+counts, exact-decimal totals and Estimates including raw `isFullyFilled`,
+balance observations, lifecycle timestamps, and paged step classifications.
+They never expose the owner UUID,
 worker lease, credential version, credential material, provider exposure
 pubkeys, raw payload, draft, signature, or transaction. Worker claim/build/
 terminal failures are logged with bounded plan stage and code. Preview backlog
@@ -1115,7 +1133,7 @@ and provider freshness do not add a separate health or readiness signal.
 Execution projections expose Run/Step UUIDs and ordinals, frozen safe Wallet
 and market display, direction, funds and leverage, lifecycle/counts, allowed
 actions, authorization/coordinator summaries, numeric Worm request ID,
-provider state, frozen checks, Step advisories, bounded reason/failure codes,
+provider state, bounded reason/failure codes,
 timestamps, and completed-position evidence. Completed Steps expose
 `completionSource=OPEN_POSITION`, required `completionPositionPubkey`, optional
 `completionPositionRequestPubkey`, and Unix-second
@@ -1140,9 +1158,9 @@ submitted as part of implementation validation.
 - [ ] Runtime database, health/status, process wiring, production configuration, and reset guidance remain current.
 - [ ] Assets at `/worm-trading` keeps paced full-account automatic connection bootstrap responsive and free of order or position-mutation actions.
 - [ ] Combinations routes remain interactive-only, owner-scoped, catalog-validated, exact-complement-priced, revisioned, and free of Wallet, estimate, signature, draft, or Worm mutation calls.
-- [ ] Execution Preview remains interactive-only, owner-scoped, asynchronously complete-or-failed, exact-revisioned, policy-frozen, advisory-aware, Wallet-major, 15-minute-expiring, seven-day-retained, and free of provider mutations or signing.
-- [ ] Execution Runs remain permanent, plan/policy/owner/session/access bound, advisory-aware, one-per-active-account, coordinator-exclusive, Wallet-major, and explicit-next-step only.
-- [ ] Production execution keeps official challenge/sign-in/market-only 1x Open/sign/finalize/GET ordering, mandatory pre-Open exposure guards, HMAC Open Position-only completion, and the disclosed Worm transaction trust model.
+- [ ] Execution Preview remains interactive-only, owner-scoped, asynchronously complete-or-failed, exact-revisioned, mandatory-guarded, partial-fill-tolerant, Wallet-major, 15-minute-expiring, seven-day-retained, and free of provider mutations or signing.
+- [ ] Execution Runs remain permanent, plan/owner/session/access bound, one-per-active-account, coordinator-exclusive, Wallet-major, and explicit-next-step only.
+- [ ] Production execution uses the shared stateless `util/worm` authentication/Open/inspection/signing/Finalize/GET stages, fixed market-only `1x`, mandatory pre-Open exposure guards, HMAC Open Position-only completion, and the disclosed Worm transaction trust model.
 - [ ] Wallet execution signing retains owner/address/parser/signer-slot/digest/self-verification checks without claiming a program/instruction/spend policy.
 - [ ] Positive Open persistence remains atomic through `RecordExecutionStepOpened`; its returned `OPENED` Step immediately enters the shared position matcher before any signing or Finalize, and Open/Finalize dispatch markers, unknown-outcome isolation, restart recovery, and read-only reconciliation never replay a mutation.
 - [ ] The [design index](../README.md) contains the correct entry.

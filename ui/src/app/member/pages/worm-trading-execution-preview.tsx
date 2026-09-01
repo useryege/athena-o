@@ -7,10 +7,9 @@ import {
     FileSearchOutlined,
     ReloadOutlined,
     SafetyCertificateOutlined,
-    SearchOutlined,
-    WarningOutlined
+    SearchOutlined
 } from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Checkbox, Drawer, Empty, Input, Modal, Progress, Space, Steps, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Avatar, Button, Card, Checkbox, Drawer, Empty, Input, Progress, Space, Steps, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {Navigate, useNavigate, useParams, useSearchParams} from 'react-router-dom';
@@ -26,18 +25,12 @@ import {
     WormExecutionPlanItem,
     WormExecutionPlanStep,
     WormExecutionPlanWallet,
-    WormExecutionPreflightChecks,
     WormMarketCombination,
     WormTradingWalletConnectionItem,
     WormTradingWalletSummary
 } from '../../shared/services/worm-trading-service';
 import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
-import {
-    createDefaultWormExecutionPreflightChecks,
-    disabledWormExecutionPreflightChecks,
-    wormExecutionMandatoryGuardDefinitions,
-    wormExecutionPreflightCheckDefinitions
-} from './worm-execution-preflight';
+import {wormExecutionMandatoryGuardDefinitions} from './worm-execution-preflight';
 import {short} from '../../shared/pages/shared';
 
 const connectionPageSize = 100;
@@ -79,17 +72,7 @@ const marketEstimateSummary = (item?: WormExecutionPlanItem) => {
     ];
     return parts.filter(Boolean).join(' · ');
 };
-const reasonPriority = [
-    'MARKET_POSITION_EXISTS',
-    'WALLET_REQUEST_IN_FLIGHT',
-    'MARKET_UNAVAILABLE',
-    'ESTIMATE_REJECTED',
-    'LIQUIDITY_INSUFFICIENT',
-    'INSUFFICIENT_USDC',
-    'SKIPPED_AFTER_INSUFFICIENT_USDC'
-];
-
-const preflightChecksEqual = (left: WormExecutionPreflightChecks, right: WormExecutionPreflightChecks) => left.requireFullLiquidity === right.requireFullLiquidity;
+const reasonPriority = ['MARKET_POSITION_EXISTS', 'WALLET_REQUEST_IN_FLIGHT', 'MARKET_UNAVAILABLE', 'ESTIMATE_REJECTED', 'INSUFFICIENT_USDC', 'SKIPPED_AFTER_INSUFFICIENT_USDC'];
 
 interface ExecutionPlanIntent {
     accountId: string;
@@ -97,7 +80,6 @@ interface ExecutionPlanIntent {
     combinationId: string;
     combinationRevision: number;
     walletIds: number[];
-    preflightChecks: WormExecutionPreflightChecks;
 }
 
 const executionPlanIntent = (plan: WormExecutionPlan, accountId: string): ExecutionPlanIntent => ({
@@ -105,8 +87,7 @@ const executionPlanIntent = (plan: WormExecutionPlan, accountId: string): Execut
     id: plan.id,
     combinationId: plan.combinationId,
     combinationRevision: plan.combinationRevision,
-    walletIds: plan.wallets.map(wallet => wallet.wallet.walletId),
-    preflightChecks: {...plan.preflightChecks}
+    walletIds: plan.wallets.map(wallet => wallet.wallet.walletId)
 });
 
 const executionPlanMatchesIntent = (plan: WormExecutionPlan, intent: ExecutionPlanIntent) => {
@@ -116,8 +97,7 @@ const executionPlanMatchesIntent = (plan: WormExecutionPlan, intent: ExecutionPl
         plan.combinationId === intent.combinationId &&
         plan.combinationRevision === intent.combinationRevision &&
         walletIds.length === intent.walletIds.length &&
-        walletIds.every((walletId, index) => walletId === intent.walletIds[index]) &&
-        preflightChecksEqual(plan.preflightChecks, intent.preflightChecks)
+        walletIds.every((walletId, index) => walletId === intent.walletIds[index])
     );
 };
 
@@ -481,107 +461,52 @@ const WalletsStep = (props: {
     );
 };
 
-const PreflightChecksEditor = (props: {checks: WormExecutionPreflightChecks; onChange: (checks: WormExecutionPreflightChecks) => void; disabled?: boolean; idPrefix: string}) => {
-    const disabledChecks = disabledWormExecutionPreflightChecks(props.checks);
-    return (
-        <div className='worm-preview-checks-editor'>
-            <div className='worm-preview-checks-editor__heading'>
-                <div>
-                    <Typography.Text strong={true}>Execution guards</Typography.Text>
-                    <Typography.Text type='secondary'>Exposure guards are mandatory. Full liquidity is the only configurable preview rule.</Typography.Text>
-                </div>
+const MandatoryGuards = (props: {idPrefix: string}) => (
+    <div className='worm-preview-checks-editor'>
+        <div className='worm-preview-checks-editor__heading'>
+            <div>
+                <Typography.Text id={`${props.idPrefix}-mandatory-heading`} strong={true}>
+                    Mandatory execution guards
+                </Typography.Text>
+                <Typography.Text type='secondary'>Both guards are always enforced again immediately before Athena sends a Worm Open request.</Typography.Text>
             </div>
-            <div className='worm-preview-guard-layout'>
-                <section className='worm-preview-guard-group' aria-labelledby={`${props.idPrefix}-mandatory-heading`}>
-                    <div className='worm-preview-guard-group__heading'>
-                        <Typography.Text id={`${props.idPrefix}-mandatory-heading`} strong={true}>
-                            Mandatory guards
-                        </Typography.Text>
+            <Tag color='blue'>Always on</Tag>
+        </div>
+        <section className='worm-preview-guard-group' aria-labelledby={`${props.idPrefix}-mandatory-heading`}>
+            <div className='worm-preview-guard-list'>
+                {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                    <div className='worm-preview-check-card worm-preview-check-card--mandatory' key={definition.key}>
+                        <SafetyCertificateOutlined aria-hidden='true' />
+                        <span>
+                            <Typography.Text strong={true}>{definition.title}</Typography.Text>
+                            <Typography.Text type='secondary'>{definition.description}</Typography.Text>
+                        </span>
                         <Tag color='blue'>Always on</Tag>
                     </div>
-                    <div className='worm-preview-guard-list'>
-                        {wormExecutionMandatoryGuardDefinitions.map(definition => (
-                            <div className='worm-preview-check-card worm-preview-check-card--mandatory' key={definition.key}>
-                                <SafetyCertificateOutlined aria-hidden='true' />
-                                <span>
-                                    <Typography.Text strong={true}>{definition.title}</Typography.Text>
-                                    <Typography.Text type='secondary'>{definition.description}</Typography.Text>
-                                </span>
-                                <Tag color='blue'>Guarded</Tag>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-                <section className='worm-preview-guard-group' aria-labelledby={`${props.idPrefix}-optional-heading`}>
-                    <div className='worm-preview-guard-group__heading'>
-                        <Typography.Text id={`${props.idPrefix}-optional-heading`} strong={true}>
-                            Optional fill rule
-                        </Typography.Text>
-                        <Tag>1× estimate</Tag>
-                    </div>
-                    <div className='worm-preview-guard-list'>
-                        {wormExecutionPreflightCheckDefinitions.map(definition => {
-                            const descriptionID = `${props.idPrefix}-${definition.key}-description`;
-                            return (
-                                <label
-                                    className={`worm-preview-check-card${props.checks[definition.key] ? ' worm-preview-check-card--enabled' : ' worm-preview-check-card--disabled'}`}
-                                    key={definition.key}>
-                                    <Checkbox
-                                        checked={props.checks[definition.key]}
-                                        disabled={props.disabled}
-                                        aria-describedby={descriptionID}
-                                        onChange={event => props.onChange({...props.checks, [definition.key]: event.target.checked})}
-                                    />
-                                    <span>
-                                        <Typography.Text strong={true}>{definition.title}</Typography.Text>
-                                        <Typography.Text id={descriptionID} type='secondary'>
-                                            {props.checks[definition.key] ? definition.description : definition.ignoredDescription}
-                                        </Typography.Text>
-                                    </span>
-                                    <Tag color={props.checks[definition.key] ? 'green' : 'gold'}>{props.checks[definition.key] ? 'Checked' : 'Ignored'}</Tag>
-                                </label>
-                            );
-                        })}
-                    </div>
-                </section>
+                ))}
             </div>
-            {disabledChecks.length > 0 && (
-                <Alert
-                    type='warning'
-                    showIcon={true}
-                    title='Full liquidity is not required'
-                    description='A partial-fill estimate becomes an ignored liquidity warning. Both mandatory exposure guards still skip deterministically.'
-                />
-            )}
-            <Alert
-                type='info'
-                showIcon={true}
-                title='Market intent and 1× are fixed'
-                description='The selected target market, side, backend funds, and 1× leverage come from the saved combination and server policy. Wallet authority, market validity, Estimate integrity, balances, permissions, and mutation protections also remain mandatory.'
-            />
-        </div>
-    );
-};
+        </section>
+        <Alert
+            type='info'
+            showIcon={true}
+            title='Market order and 1× leverage are fixed'
+            description='The selected target market, side, funds, and 1× leverage come from the saved combination and server policy. Wallet authority, market and Estimate validity, balances, permissions, and mutation protections remain mandatory.'
+        />
+    </div>
+);
 
-const ChecksStep = (props: {
-    checks: WormExecutionPreflightChecks;
-    creating: boolean;
-    selectedWalletCount: number;
-    onChange: (checks: WormExecutionPreflightChecks) => void;
-    onBack: () => void;
-    onCreate: () => void;
-}) => (
+const ChecksStep = (props: {creating: boolean; selectedWalletCount: number; onBack: () => void; onCreate: () => void}) => (
     <section className='worm-preview-checks' aria-labelledby='worm-preview-checks-heading'>
         <div className='worm-preview-section-heading'>
             <div>
                 <Typography.Title id='worm-preview-checks-heading' level={2}>
                     Preview checks
                 </Typography.Title>
-                <Typography.Text type='secondary'>Review the always-on exposure guards and choose whether the fixed 1× order requires a full estimated fill.</Typography.Text>
+                <Typography.Text type='secondary'>Review the two always-on exposure guards for the fixed market-order, 1× execution flow.</Typography.Text>
             </div>
             <Tag color='processing'>{props.selectedWalletCount} Wallets</Tag>
         </div>
-        <PreflightChecksEditor checks={props.checks} onChange={props.onChange} disabled={props.creating} idPrefix='worm-preview-checks' />
+        <MandatoryGuards idPrefix='worm-preview-checks' />
         <div className='worm-preview-step-actions worm-preview-step-actions--split worm-preview-check-actions'>
             <Button icon={<ArrowLeftOutlined />} disabled={props.creating} onClick={props.onBack}>
                 Wallets
@@ -661,75 +586,41 @@ const planPresentationStatus = (plan: WormExecutionPlan) => {
     }
     return plan.usabilityCode ? {label: 'Preview built', color: 'gold'} : {label: 'Preview ready', color: 'green'};
 };
-const planLiveStatus = (plan: WormExecutionPlan) => {
-    const status =
-        plan.state === 'BUILDING'
-            ? `Building execution preview. ${plan.completedStepCount} of ${plan.totalStepCount} steps classified.`
-            : plan.state === 'READY'
-              ? plan.usabilityCode
-                  ? `Execution preview built and not consumable. ${plan.readyStepCount} actionable steps and ${plan.skippedStepCount} skipped.`
-                  : `Execution preview ready. ${plan.readyStepCount} actionable steps and ${plan.skippedStepCount} skipped.`
-              : plan.state === 'EXPIRED'
-                ? 'Execution preview expired.'
-                : `Execution preview failed. ${displayCode(plan.failureCode)}.`;
-    const advisoryEntries = Object.entries(plan.advisoryCounts).filter(([, count]) => count > 0);
-    const advisoryTotal = advisoryEntries.reduce((total, [, count]) => total + count, 0);
-    return advisoryTotal > 0 ? `${status} ${advisoryTotal} ignored warnings observed: ${advisoryEntries.map(([code]) => displayCode(code)).join(', ')}.` : status;
-};
+const planLiveStatus = (plan: WormExecutionPlan) =>
+    plan.state === 'BUILDING'
+        ? `Building execution preview. ${plan.completedStepCount} of ${plan.totalStepCount} steps classified.`
+        : plan.state === 'READY'
+          ? plan.usabilityCode
+              ? `Execution preview built and not consumable. ${plan.readyStepCount} actionable steps and ${plan.skippedStepCount} skipped.`
+              : `Execution preview ready. ${plan.readyStepCount} actionable steps and ${plan.skippedStepCount} skipped.`
+          : plan.state === 'EXPIRED'
+            ? 'Execution preview expired.'
+            : `Execution preview failed. ${displayCode(plan.failureCode)}.`;
 
-const PlanChecksSummary = (props: {plan: WormExecutionPlan; canChange: boolean; changing: boolean; disabled: boolean; onChange: () => void; onRerun: () => void}) => {
-    const disabledChecks = disabledWormExecutionPreflightChecks(props.plan.preflightChecks);
-    const advisoryEntries = Object.entries(props.plan.advisoryCounts)
-        .filter(([, count]) => count > 0)
-        .sort(([left], [right]) => left.localeCompare(right));
-    return (
-        <Card
-            size='small'
-            className='worm-preview-checks-summary'
-            title='Guards and fill rule'
-            extra={
-                props.canChange ? (
-                    <Space wrap={true} className='worm-preview-review-check-actions'>
-                        <Button size='small' disabled={props.disabled} onClick={props.onChange}>
-                            Change checks
-                        </Button>
-                        <Button size='small' type='primary' icon={<ReloadOutlined />} loading={props.changing} disabled={props.disabled} onClick={props.onRerun}>
-                            Re-run checks
-                        </Button>
-                    </Space>
-                ) : undefined
-            }>
-            <div className='worm-preview-checks-summary__body'>
-                <div className='worm-preview-checks-summary__rules' aria-label='Frozen preview checks'>
-                    {wormExecutionMandatoryGuardDefinitions.map(definition => (
-                        <Tag key={definition.key} color='blue'>
-                            Always on · {definition.title}
-                        </Tag>
-                    ))}
-                    {wormExecutionPreflightCheckDefinitions.map(definition => (
-                        <Tag key={definition.key} color={props.plan.preflightChecks[definition.key] ? 'green' : 'gold'}>
-                            {props.plan.preflightChecks[definition.key] ? 'Checked' : 'Ignored'} · {definition.title}
-                        </Tag>
-                    ))}
-                </div>
-                <Typography.Text type='secondary'>
-                    {disabledChecks.length === 0
-                        ? 'Full estimated liquidity was required for each otherwise actionable 1× order.'
-                        : 'Partial-fill estimates were allowed to continue as liquidity advisories; mandatory exposure guards still applied.'}
-                </Typography.Text>
-                {advisoryEntries.length > 0 && (
-                    <div className='worm-preview-advisory-counts' aria-label='Ignored warning counts'>
-                        {advisoryEntries.map(([code, count]) => (
-                            <span key={code}>
-                                <WarningOutlined aria-hidden='true' /> Ignored: {displayCode(code)} <strong>{count}</strong>
-                            </span>
-                        ))}
-                    </div>
-                )}
+const PlanChecksSummary = (props: {canRerun: boolean; changing: boolean; disabled: boolean; onRerun: () => void}) => (
+    <Card
+        size='small'
+        className='worm-preview-checks-summary'
+        title='Mandatory execution guards'
+        extra={
+            props.canRerun ? (
+                <Button size='small' type='primary' icon={<ReloadOutlined />} loading={props.changing} disabled={props.disabled} onClick={props.onRerun}>
+                    Re-run preview
+                </Button>
+            ) : undefined
+        }>
+        <div className='worm-preview-checks-summary__body'>
+            <div className='worm-preview-checks-summary__rules' aria-label='Mandatory execution guards'>
+                {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                    <Tag key={definition.key} color='blue'>
+                        Always on · {definition.title}
+                    </Tag>
+                ))}
             </div>
-        </Card>
-    );
-};
+            <Typography.Text type='secondary'>Athena submits only market orders at fixed 1× leverage. Both exposure guards remain active during live execution.</Typography.Text>
+        </div>
+    </Card>
+);
 
 const PlanSummary = (props: {plan: WormExecutionPlan}) => {
     const totalsAvailable = props.plan.state === 'READY' || props.plan.state === 'EXPIRED';
@@ -841,17 +732,6 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
     );
 };
 
-const StepAdvisories = ({codes}: {codes: string[]}) =>
-    codes.length > 0 ? (
-        <div className='worm-preview-step-advisories' aria-label='Ignored preview warnings'>
-            {codes.map(code => (
-                <Typography.Text type='warning' key={code}>
-                    <WarningOutlined aria-hidden='true' /> Ignored: {displayCode(code)}
-                </Typography.Text>
-            ))}
-        </div>
-    ) : null;
-
 const PlanStepCard = (props: {step: WormExecutionPlanStep; wallet?: WormExecutionPlanWallet; item?: WormExecutionPlanItem}) => (
     <Card className='worm-preview-step-card' size='small'>
         <div className='worm-preview-step-card__heading'>
@@ -869,7 +749,6 @@ const PlanStepCard = (props: {step: WormExecutionPlanStep; wallet?: WormExecutio
             </span>
             {props.item && <Typography.Text type='secondary'>{marketEstimateSummary(props.item)}</Typography.Text>}
         </div>
-        <StepAdvisories codes={props.step.advisoryCodes} />
         <div className='worm-preview-step-card__balance'>
             <span>Projected USDC</span>
             <strong>
@@ -886,10 +765,7 @@ const PlanSteps = (props: {plan: WormExecutionPlan}) => {
         setPage(1);
         setPageSize(50);
     }, [props.plan.id]);
-    const data = useAsyncData(
-        () => services.wormTrading.listExecutionPlanSteps(props.plan.id, props.plan.preflightChecks, page, pageSize),
-        [props.plan.id, props.plan.preflightChecks, page, pageSize, props.plan.updatedAt]
-    );
+    const data = useAsyncData(() => services.wormTrading.listExecutionPlanSteps(props.plan.id, page, pageSize), [props.plan.id, page, pageSize, props.plan.updatedAt]);
     const walletByOrdinal = (ordinal: number) => props.plan.wallets.find(wallet => wallet.ordinal === ordinal);
     const itemByOrdinal = (ordinal: number) => props.plan.items.find(item => item.ordinal === ordinal);
     const columns: ColumnsType<WormExecutionPlanStep> = [
@@ -925,7 +801,6 @@ const PlanSteps = (props: {plan: WormExecutionPlan}) => {
                 <div className='worm-preview-step-result'>
                     <Tag color={step.disposition === 'READY' ? 'green' : 'default'}>{step.disposition === 'READY' ? 'Actionable' : 'Skipped'}</Tag>
                     <Typography.Text type='secondary'>{step.disposition === 'READY' ? 'Actionable at preview funds' : displayCode(step.reasonCode)}</Typography.Text>
-                    <StepAdvisories codes={step.advisoryCodes} />
                 </div>
             )
         },
@@ -989,12 +864,11 @@ const ReviewStep = (props: {
     error?: Error;
     creating: boolean;
     preparing: boolean;
-    canChangeChecks: boolean;
+    canWrite: boolean;
     canRerun: boolean;
     canPrepare: boolean;
     onRetryStatus: () => void;
     onBack: () => void;
-    onChangeChecks: () => void;
     onRerun: () => void;
     onPrepare: () => void;
 }) => {
@@ -1037,11 +911,9 @@ const ReviewStep = (props: {
                 />
             )}
             <PlanChecksSummary
-                plan={props.plan}
-                canChange={props.canChangeChecks}
+                canRerun={props.canRerun}
                 changing={props.creating}
                 disabled={!props.canRerun || props.plan.state === 'BUILDING' || props.preparing}
-                onChange={props.onChangeChecks}
                 onRerun={props.onRerun}
             />
             <PlanSummary plan={props.plan} />
@@ -1058,7 +930,7 @@ const ReviewStep = (props: {
                     Saved combinations
                 </Button>
                 <Space wrap={true}>
-                    {props.canChangeChecks && (
+                    {props.canWrite && (
                         <Button
                             type='primary'
                             icon={<SafetyCertificateOutlined />}
@@ -1084,9 +956,6 @@ export const WormTradingExecutionPreviewPage = () => {
     const planID = (searchParams.get('planId') || '').trim();
     const [workflowStep, setWorkflowStep] = React.useState(planID ? 3 : 0);
     const [selectedIDs, setSelectedIDs] = React.useState<number[]>([]);
-    const [preflightChecks, setPreflightChecks] = React.useState<WormExecutionPreflightChecks>(createDefaultWormExecutionPreflightChecks);
-    const [rerunOpen, setRerunOpen] = React.useState(false);
-    const [rerunChecks, setRerunChecks] = React.useState<WormExecutionPreflightChecks>(createDefaultWormExecutionPreflightChecks);
     const [creating, setCreating] = React.useState(false);
     const [preparing, setPreparing] = React.useState(false);
     const [plan, setPlan] = React.useState<WormExecutionPlan>();
@@ -1123,9 +992,6 @@ export const WormTradingExecutionPreviewPage = () => {
         setPreparing(false);
         setWorkflowStep(planID ? 3 : 0);
         setSelectedIDs([]);
-        setPreflightChecks(createDefaultWormExecutionPreflightChecks());
-        setRerunChecks(createDefaultWormExecutionPreflightChecks());
-        setRerunOpen(false);
         setPlan(undefined);
         setPlanError(undefined);
         initializedPlanIDRef.current = '';
@@ -1189,7 +1055,6 @@ export const WormTradingExecutionPreviewPage = () => {
                 if (initializedPlanIDRef.current !== next.id && next.wallets.length > 0) {
                     initializedPlanIDRef.current = next.id;
                     setSelectedIDs(next.wallets.map(wallet => wallet.wallet.walletId));
-                    setPreflightChecks(next.preflightChecks);
                 }
                 if (next.state === 'BUILDING') {
                     schedulePoll(planPollIntervalMS);
@@ -1231,8 +1096,6 @@ export const WormTradingExecutionPreviewPage = () => {
             prepareRequestRef.current = undefined;
             setCreating(false);
             setPreparing(false);
-            setRerunOpen(false);
-            setRerunChecks(createDefaultWormExecutionPreflightChecks());
         }
     }, [canWrite]);
 
@@ -1240,7 +1103,7 @@ export const WormTradingExecutionPreviewPage = () => {
         return <Navigate replace={true} to='/worm-trading/combinations' />;
     }
 
-    const createPlan = async (walletIDs = selectedIDs, checks = preflightChecks, replacedPlanID = ''): Promise<'created' | 'conflict' | 'failed'> => {
+    const createPlan = async (walletIDs = selectedIDs, replacedPlanID = ''): Promise<'created' | 'conflict' | 'failed'> => {
         const source = combination.data;
         if (!source || creating || createRequestRef.current || walletIDs.length === 0) {
             return 'failed';
@@ -1251,8 +1114,7 @@ export const WormTradingExecutionPreviewPage = () => {
         const request = services.wormTrading.createExecutionPlan({
             combinationId: source.id,
             expectedCombinationRevision: source.revision,
-            walletIds: walletIDs,
-            preflightChecks: checks
+            walletIds: walletIDs
         });
         createRequestRef.current = request;
         try {
@@ -1273,7 +1135,6 @@ export const WormTradingExecutionPreviewPage = () => {
             initializedPlanIDRef.current = created.id;
             planIntentRef.current = executionPlanIntent(created, operationAccountID);
             setSelectedIDs(walletIDs);
-            setPreflightChecks(created.preflightChecks);
             setWorkflowStep(3);
             const next = new URLSearchParams(searchParams);
             next.set('planId', created.id);
@@ -1308,31 +1169,16 @@ export const WormTradingExecutionPreviewPage = () => {
         }
     };
 
-    const openRerun = () => {
-        if (!plan || !combination.data || combination.data.revision !== plan.combinationRevision) {
-            setWorkflowStep(0);
-            combination.reload();
-            ctx.notifications.warning('Review the combination', 'The saved combination changed after this preview was created.');
-            return;
-        }
-        setRerunChecks({...plan.preflightChecks});
-        setRerunOpen(true);
-    };
-
     const rerunPlan = async () => {
         const current = plan;
         if (!current || !combination.data || combination.data.revision !== current.combinationRevision) {
-            setRerunOpen(false);
             setWorkflowStep(0);
             combination.reload();
             ctx.notifications.warning('Review the combination', 'The saved combination changed after this preview was created.');
             return;
         }
         const walletIDs = current.wallets.map(wallet => wallet.wallet.walletId);
-        const result = await createPlan(walletIDs.length > 0 ? walletIDs : selectedIDs, rerunChecks, current.id);
-        if (result !== 'failed') {
-            setRerunOpen(false);
-        }
+        await createPlan(walletIDs.length > 0 ? walletIDs : selectedIDs, current.id);
     };
 
     const prepareLiveExecution = async () => {
@@ -1362,8 +1208,7 @@ export const WormTradingExecutionPreviewPage = () => {
                 created.planId !== current.id ||
                 created.combinationId !== current.combinationId ||
                 created.combinationRevision !== current.combinationRevision ||
-                created.state !== 'AWAITING_AUTHORIZATION' ||
-                !preflightChecksEqual(created.preflightChecks, current.preflightChecks)
+                created.state !== 'AWAITING_AUTHORIZATION'
             ) {
                 throw new Error('Worm Trading returned a live execution for different immutable preview inputs.');
             }
@@ -1436,14 +1281,7 @@ export const WormTradingExecutionPreviewPage = () => {
                 />
             )}
             {workflowStep === 2 && (
-                <ChecksStep
-                    checks={preflightChecks}
-                    creating={creating}
-                    selectedWalletCount={selectedIDs.length}
-                    onChange={setPreflightChecks}
-                    onBack={() => setWorkflowStep(1)}
-                    onCreate={() => void createPlan(selectedIDs, preflightChecks)}
-                />
+                <ChecksStep creating={creating} selectedWalletCount={selectedIDs.length} onBack={() => setWorkflowStep(1)} onCreate={() => void createPlan(selectedIDs)} />
             )}
             {workflowStep === 3 && (
                 <ReviewStep
@@ -1452,52 +1290,15 @@ export const WormTradingExecutionPreviewPage = () => {
                     error={planError}
                     creating={creating}
                     preparing={preparing}
-                    canChangeChecks={canWrite}
+                    canWrite={canWrite}
                     canRerun={canWrite && Boolean(combination.data && (plan?.wallets.length || selectedIDs.length))}
                     canPrepare={canWrite && plan?.state === 'READY' && !plan.usabilityCode && plan.readyStepCount > 0 && plan.expiresAt * 1_000 > Date.now()}
                     onRetryStatus={() => setPlanReload(value => value + 1)}
                     onBack={() => navigate('/worm-trading/combinations')}
-                    onChangeChecks={() => {
-                        if (!plan || !combination.data || combination.data.revision !== plan.combinationRevision) {
-                            setWorkflowStep(0);
-                            combination.reload();
-                            ctx.notifications.warning('Review the combination', 'The saved combination changed or could not be confirmed for this preview.');
-                            return;
-                        }
-                        setPreflightChecks({...plan.preflightChecks});
-                        if (plan.wallets.length > 0) {
-                            setSelectedIDs(plan.wallets.map(wallet => wallet.wallet.walletId));
-                        }
-                        setWorkflowStep(2);
-                    }}
-                    onRerun={openRerun}
+                    onRerun={() => void rerunPlan()}
                     onPrepare={() => void prepareLiveExecution()}
                 />
             )}
-            <Modal
-                className='worm-preview-rerun-modal'
-                title='Re-run preview checks'
-                width={820}
-                open={rerunOpen}
-                okText='Re-run checks'
-                cancelText='Cancel'
-                confirmLoading={creating}
-                closable={!creating}
-                keyboard={!creating}
-                maskClosable={!creating}
-                cancelButtonProps={{disabled: creating}}
-                okButtonProps={{disabled: !plan || plan.state === 'BUILDING' || preparing}}
-                onCancel={() => {
-                    if (!creating) {
-                        setRerunOpen(false);
-                    }
-                }}
-                onOk={() => void rerunPlan()}>
-                <Typography.Paragraph type='secondary'>
-                    A new immutable preview will use the same Combination revision and Wallet order. The existing preview remains unchanged.
-                </Typography.Paragraph>
-                <PreflightChecksEditor checks={rerunChecks} onChange={setRerunChecks} disabled={creating} idPrefix='worm-preview-rerun-checks' />
-            </Modal>
         </AppPage>
     );
 };

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gagliardetto/solana-go"
-	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"github.com/useryege/athena/util/worm"
 )
 
@@ -20,7 +19,6 @@ const (
 	ExecutionPreviewOutcomeWalletRequestInFlight        = "WALLET_REQUEST_IN_FLIGHT"
 	ExecutionPreviewOutcomeMarketUnavailable            = "MARKET_UNAVAILABLE"
 	ExecutionPreviewOutcomeEstimateRejected             = "ESTIMATE_REJECTED"
-	ExecutionPreviewOutcomeLiquidityInsufficient        = "LIQUIDITY_INSUFFICIENT"
 	ExecutionPreviewOutcomeInsufficientUSDC             = "INSUFFICIENT_USDC"
 	ExecutionPreviewOutcomeSkippedAfterInsufficientUSDC = "SKIPPED_AFTER_INSUFFICIENT_USDC"
 	ExecutionPreviewOutcomeReady                        = "READY"
@@ -71,9 +69,8 @@ type ExecutionPreviewItemInput struct {
 }
 
 type ExecutionPreviewInput struct {
-	Wallets         []ExecutionPreviewWalletInput
-	Items           []ExecutionPreviewItemInput
-	PreflightChecks wormstore.ExecutionPreflightChecks
+	Wallets []ExecutionPreviewWalletInput
+	Items   []ExecutionPreviewItemInput
 }
 
 type ExecutionPreviewMarketEstimate struct {
@@ -109,7 +106,6 @@ type ExecutionPreviewStep struct {
 	FeeAmount         string
 	USDCBalanceBefore string
 	USDCBalanceAfter  string
-	AdvisoryCodes     []string
 }
 
 type ExecutionPreviewResult struct {
@@ -238,7 +234,7 @@ func (b *ExecutionPreviewBuilder) Build(ctx context.Context, input ExecutionPrev
 		}
 	}
 
-	steps, err := buildExecutionPreviewSteps(wallets, items, estimates, exposures, input.PreflightChecks)
+	steps, err := buildExecutionPreviewSteps(wallets, items, estimates, exposures)
 	if err != nil {
 		return nil, err
 	}
@@ -631,7 +627,6 @@ func buildExecutionPreviewSteps(
 	items []normalizedExecutionPreviewItem,
 	estimates []ExecutionPreviewMarketEstimate,
 	exposures []executionPreviewWalletExposure,
-	checks wormstore.ExecutionPreflightChecks,
 ) ([]ExecutionPreviewStep, error) {
 	if len(estimates) != len(items) || len(exposures) != len(wallets) {
 		return nil, errors.New("execution preview builder received mismatched observations")
@@ -663,11 +658,6 @@ func buildExecutionPreviewSteps(
 				USDCBalanceAfter:  remaining.String(),
 			}
 			marketExposure := exposures[walletIndex].market(item.MarketConditionID)
-			step.AdvisoryCodes = executionPreviewIgnoredAdvisoryCodes(
-				item,
-				estimate,
-				checks,
-			)
 			if blockedForWalletReason != "" {
 				step.Outcome = blockedForWalletReason
 				step.ReasonCode = blockedForWalletReason
@@ -710,14 +700,6 @@ func buildExecutionPreviewSteps(
 				steps = append(steps, step)
 				continue
 			}
-			if !estimate.IsFullyFilled {
-				if checks.RequireFullLiquidity {
-					step.Outcome = ExecutionPreviewOutcomeLiquidityInsufficient
-					step.ReasonCode = ExecutionPreviewOutcomeLiquidityInsufficient
-					steps = append(steps, step)
-					continue
-				}
-			}
 			needed, err := parseExecutionPreviewDecimal(estimate.UserFundsNeeded)
 			if err != nil {
 				return nil, fmt.Errorf("market %d normalized estimate is invalid", itemIndex+1)
@@ -736,27 +718,6 @@ func buildExecutionPreviewSteps(
 		}
 	}
 	return steps, nil
-}
-
-func executionPreviewIgnoredAdvisoryCodes(
-	item normalizedExecutionPreviewItem,
-	estimate ExecutionPreviewMarketEstimate,
-	checks wormstore.ExecutionPreflightChecks,
-) []string {
-	var codes []string
-	if !checks.RequireFullLiquidity && item.Selectable && estimate.RejectionCode == "" && !estimate.IsFullyFilled {
-		codes = appendExecutionPreviewAdvisory(codes, ExecutionPreviewOutcomeLiquidityInsufficient)
-	}
-	return codes
-}
-
-func appendExecutionPreviewAdvisory(codes []string, code string) []string {
-	for _, existing := range codes {
-		if existing == code {
-			return codes
-		}
-	}
-	return append(codes, code)
 }
 
 func ensureExecutionPreviewExposure(exposure *executionPreviewWalletExposure, marketConditionID string) *executionPreviewExposure {

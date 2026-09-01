@@ -85,5 +85,5 @@ func authenticateWebWallet(
 	if signIn == nil || strings.TrimSpace(signIn.AccessToken) == "" {
 		return "", errors.New("Worm Web sign-in returned no access token")
 	}
-	return signIn.AccessToken, nil
+	return strings.TrimSpace(signIn.AccessToken), nil
 }

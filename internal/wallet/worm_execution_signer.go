@@ -14,7 +14,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	solana "github.com/gagliardetto/solana-go"
 	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/wallet/apiclient"
 	utilcrypto "github.com/useryege/athena/util/crypto"
@@ -24,9 +23,8 @@ import (
 )
 
 const (
-	maximumWormWebTransactionBytes = 64 << 10
-	wormWebIssuedAtPrefix          = "\nIssued At: "
-	wormWebIssuedAtLayout          = "2006-01-02T15:04:05.000Z"
+	wormWebIssuedAtPrefix = "\nIssued At: "
+	wormWebIssuedAtLayout = "2006-01-02T15:04:05.000Z"
 )
 
 func (s *Service) SignWormWebSignInMessage(
@@ -92,15 +90,11 @@ func (s *Service) SignWormPositionRequestTransaction(
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	transactionBytes, err := decodeWormWebTransaction(req.GetTransactionHex())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	if len(req.GetExpectedTransactionSha256()) != sha256.Size {
+		return nil, status.Error(codes.InvalidArgument, "expected_transaction_sha256 must contain exactly 32 bytes")
 	}
-	defer clear(transactionBytes)
-	transactionDigest := sha256.Sum256(transactionBytes)
-	if err := validateExpectedSHA256(req.GetExpectedTransactionSha256(), transactionDigest); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "expected_transaction_sha256 does not match transaction")
-	}
+	var expectedTransactionDigest [sha256.Size]byte
+	copy(expectedTransactionDigest[:], req.GetExpectedTransactionSha256())
 	privateKey, _, err := s.executionSolanaPrivateKey(
 		ctx,
 		req.GetId(),
@@ -112,28 +106,42 @@ func (s *Service) SignWormPositionRequestTransaction(
 	}
 	defer clear(privateKey)
 
-	result, err := signWormWebTransaction(privateKey, transactionBytes)
+	signed, metadata, err := utilworm.BuildWebPositionTransactionSigningResponse(
+		utilworm.WebPositionTransactionSigningRequest{
+			WalletAddress:     req.GetExpectedAddress(),
+			PositionRequestID: req.GetPositionRequestId(),
+			TransactionHex:    req.GetTransactionHex(),
+			TransactionSHA256: expectedTransactionDigest,
+		},
+		func(message []byte) ([]byte, error) {
+			signature := ed25519.Sign(privateKey, message)
+			if !ed25519.Verify(privateKey.Public().(ed25519.PublicKey), message, signature) {
+				return nil, errors.New("failed to verify Worm Web transaction signature")
+			}
+			return signature, nil
+		},
+	)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	response := &apiclient.SignWormPositionRequestTransactionResponse{
-		TransactionSha256:  bytes.Clone(transactionDigest[:]),
-		TransactionVersion: result.transactionVersion,
-		RequiredSignatures: int32(result.requiredSignatures),
-		SignerIndex:        int32(result.signerIndex),
+		TransactionSha256:  bytes.Clone(metadata.TransactionSHA256[:]),
+		TransactionVersion: metadata.TransactionVersion,
+		RequiredSignatures: int32(metadata.RequiredSignatures),
+		SignerIndex:        int32(metadata.WalletSignerIndex),
 		ExecutionRunId:     runID,
 		ExecutionStepId:    stepID,
 		IntentSha256:       intentDigest,
 		PositionRequestId:  req.GetPositionRequestId(),
 	}
-	switch result.finalizeMode {
+	switch signed.Payload.Mode {
 	case utilworm.WebFinalizeModeSignature:
 		response.FinalizePayload = &apiclient.SignWormPositionRequestTransactionResponse_Signature{
-			Signature: result.payload,
+			Signature: signed.Payload.Value,
 		}
 	case utilworm.WebFinalizeModeSignedTransaction:
 		response.FinalizePayload = &apiclient.SignWormPositionRequestTransactionResponse_SignedTransaction{
-			SignedTransaction: result.payload,
+			SignedTransaction: signed.Payload.Value,
 		}
 	default:
 		return nil, status.Error(codes.Internal, "Worm Web transaction selected an invalid finalize mode")
@@ -244,134 +252,4 @@ func validateExpectedSHA256(expected []byte, actual [sha256.Size]byte) error {
 		return errors.New("expected digest does not match")
 	}
 	return nil
-}
-
-func decodeWormWebTransaction(transactionHex string) ([]byte, error) {
-	encoded := strings.TrimSpace(transactionHex)
-	if encoded == "" {
-		return nil, errors.New("transaction_hex is required")
-	}
-	if strings.HasPrefix(encoded, "0x") || strings.HasPrefix(encoded, "0X") {
-		encoded = encoded[2:]
-	}
-	if len(encoded) > maximumWormWebTransactionBytes*2 {
-		return nil, fmt.Errorf("transaction_hex exceeds %d bytes", maximumWormWebTransactionBytes)
-	}
-	transactionBytes, err := hex.DecodeString(encoded)
-	if err != nil {
-		return nil, errors.New("transaction_hex must be hexadecimal")
-	}
-	if len(transactionBytes) == 0 {
-		return nil, errors.New("transaction_hex is required")
-	}
-	return transactionBytes, nil
-}
-
-type signedWormWebTransaction struct {
-	finalizeMode       utilworm.WebFinalizeMode
-	payload            string
-	transactionVersion string
-	requiredSignatures int
-	signerIndex        int
-}
-
-func signWormWebTransaction(privateKey ed25519.PrivateKey, transactionBytes []byte) (*signedWormWebTransaction, error) {
-	transaction, err := solana.TransactionFromBytes(transactionBytes)
-	if err != nil {
-		return nil, errors.New("transaction_hex is not a valid Solana transaction")
-	}
-	version := transaction.Message.GetVersion()
-	transactionVersion := ""
-	switch version {
-	case solana.MessageVersionLegacy:
-		transactionVersion = "legacy"
-	case solana.MessageVersionV0:
-		transactionVersion = "v0"
-	default:
-		return nil, errors.New("transaction uses an unsupported Solana message version")
-	}
-
-	solanaPrivateKey := solana.PrivateKey(privateKey)
-	signerPublicKey := solanaPrivateKey.PublicKey()
-	requiredSignatures := int(transaction.Message.Header.NumRequiredSignatures)
-	if requiredSignatures <= 0 || requiredSignatures > len(transaction.Message.AccountKeys) {
-		return nil, errors.New("transaction contains an invalid required signer set")
-	}
-	signerIndex := -1
-	for index, accountKey := range transaction.Message.AccountKeys[:requiredSignatures] {
-		if accountKey.Equals(signerPublicKey) {
-			signerIndex = index
-			break
-		}
-	}
-	if signerIndex < 0 {
-		return nil, errors.New("wallet is not a required signer for transaction")
-	}
-
-	signatures, err := transaction.PartialSign(func(candidate solana.PublicKey) *solana.PrivateKey {
-		if candidate.Equals(signerPublicKey) {
-			return &solanaPrivateKey
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, errors.New("failed to sign Solana transaction")
-	}
-	if len(signatures) != requiredSignatures || signerIndex >= len(signatures) {
-		return nil, errors.New("signed transaction contains an invalid signature set")
-	}
-	messageBytes, err := transaction.Message.MarshalBinary()
-	if err != nil {
-		return nil, errors.New("failed to marshal Solana transaction message")
-	}
-	defer clear(messageBytes)
-	walletSignature := signatures[signerIndex]
-	if walletSignature.IsZero() || !signerPublicKey.Verify(messageBytes, walletSignature) {
-		return nil, errors.New("Worm Web transaction wallet signature verification failed")
-	}
-
-	result := &signedWormWebTransaction{
-		transactionVersion: transactionVersion,
-		requiredSignatures: requiredSignatures,
-		signerIndex:        signerIndex,
-	}
-	if version == solana.MessageVersionLegacy {
-		complete, err := wormWebLegacySignaturesComplete(transaction, messageBytes, requiredSignatures)
-		if err != nil {
-			return nil, err
-		}
-		if !complete {
-			result.finalizeMode = utilworm.WebFinalizeModeSignature
-			result.payload = hex.EncodeToString(walletSignature[:])
-			return result, nil
-		}
-	}
-
-	signedTransactionBytes, err := transaction.MarshalBinary()
-	if err != nil {
-		return nil, errors.New("failed to marshal signed Solana transaction")
-	}
-	defer clear(signedTransactionBytes)
-	result.finalizeMode = utilworm.WebFinalizeModeSignedTransaction
-	result.payload = hex.EncodeToString(signedTransactionBytes)
-	return result, nil
-}
-
-func wormWebLegacySignaturesComplete(
-	transaction *solana.Transaction,
-	messageBytes []byte,
-	requiredSignatures int,
-) (bool, error) {
-	if len(transaction.Signatures) != requiredSignatures {
-		return false, errors.New("legacy transaction contains an invalid signature count")
-	}
-	for index, signature := range transaction.Signatures {
-		if signature.IsZero() {
-			return false, nil
-		}
-		if index >= len(transaction.Message.AccountKeys) || !transaction.Message.AccountKeys[index].Verify(messageBytes, signature) {
-			return false, errors.New("legacy transaction contains an invalid required signature")
-		}
-	}
-	return true, nil
 }

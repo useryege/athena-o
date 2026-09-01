@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	executionPlanDigestVersion     = int64(3)
+	executionPlanDigestVersion     = int64(4)
 	executionCoordinatorTokenBytes = 32
 	executionCoordinatorLease      = 30 * time.Second
 	maxExecutionRunPageSize        = 100
@@ -143,7 +143,6 @@ func (s *SQLStore) CreateExecutionRun(
 		CombinationID:        planRow.CombinationID,
 		CombinationName:      planRow.CombinationName,
 		CombinationRevision:  planRow.CombinationRevision,
-		RequireFullLiquidity: plan.PreflightChecks.RequireFullLiquidity,
 		NextStepOrdinal:      nextStepOrdinal,
 		WalletCount:          planRow.WalletCount,
 		ItemCount:            planRow.ItemCount,
@@ -1302,12 +1301,8 @@ func (s *SQLStore) CompleteExecutionPreflight(
 	if err != nil {
 		return nil, fmt.Errorf("lock execution preflight step: %w", err)
 	}
-	advisoryCodes, err := normalizeExecutionPlanAdvisoryCodes(prior.AdvisoryCodes, req.AdvisoryCodes)
-	if err != nil {
-		return nil, invalidExecutionRun(err)
-	}
 	row, err := queries.CompleteExecutionStepPreflight(ctx, wormtradingsqlc.CompleteExecutionStepPreflightParams{
-		NextState: string(req.NextState), ReasonCode: reasonCode, AdvisoryCodes: advisoryCodes, Now: timestampParam(now),
+		NextState: string(req.NextState), ReasonCode: reasonCode, Now: timestampParam(now),
 		RunID: runID, StepOrdinal: req.StepOrdinal, ClaimID: claimID,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -2456,7 +2451,6 @@ func mapExecutionRun(row wormtradingsqlc.WormExecutionRun) ExecutionRun {
 		CompletedAt:          timestampValue(row.CompletedAt),
 		CreatedAt:            timestampValue(row.CreatedAt),
 		UpdatedAt:            timestampValue(row.UpdatedAt),
-		PreflightChecks:      ExecutionPreflightChecks{RequireFullLiquidity: row.RequireFullLiquidity},
 	}
 }
 
@@ -2505,7 +2499,7 @@ func mapExecutionRunStep(row wormtradingsqlc.WormExecutionRunStep) ExecutionRunS
 		SourceDisposition: ExecutionPlanStepDisposition(row.SourceDisposition),
 		SourceReasonCode:  row.SourceReasonCode, ProjectedUSDCBefore: row.ProjectedUsdcBefore,
 		ProjectedUSDCAfter: row.ProjectedUsdcAfter, State: ExecutionStepState(row.State),
-		ReasonCode: row.ReasonCode, AdvisoryCodes: append([]string(nil), row.AdvisoryCodes...),
+		ReasonCode:        row.ReasonCode,
 		PositionRequestID: nullableInt64(row.PositionRequestID),
 		FinalizeMode:      row.FinalizeMode, TransactionMessageSHA256: append([]byte(nil), row.TransactionMessageSha256...),
 		TransactionVersion: row.TransactionVersion, RequiredSignatureCount: row.RequiredSignatureCount,

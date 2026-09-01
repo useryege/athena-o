@@ -403,6 +403,9 @@ message ExecutionPlanItem {
 
 // ExecutionPlanStep is one preview-only wallet-major execution step.
 message ExecutionPlanStep {
+  reserved 8;
+  reserved "advisory_codes";
+
   int64 ordinal = 1;
   int32 wallet_ordinal = 2;
   int32 item_ordinal = 3;
@@ -410,7 +413,6 @@ message ExecutionPlanStep {
   string reason_code = 5;
   string projected_usdc_before = 6;
   string projected_usdc_after = 7;
-  repeated string advisory_codes = 8;
 }
 
 // ExecutionPlanReasonCount is a server-side aggregate of preview step
@@ -420,16 +422,13 @@ message ExecutionPlanReasonCount {
   int64 count = 2;
 }
 
-// ExecutionPreflightChecks freezes the only optional preview rule. Existing
-// positions and in-flight requests are always mandatory wallet guards.
-message ExecutionPreflightChecks {
-  bool require_full_liquidity = 1;
-}
-
 // ExecutionPlan is the immutable preflight record. BUILDING plans expose
 // progress; READY plans expire fifteen minutes after completion; FAILED plans
 // preserve their non-secret diagnostic code for the retention interval.
 message ExecutionPlan {
+  reserved 28, 29;
+  reserved "preflight_checks", "advisory_counts";
+
   string id = 1;
   string owner_account_id = 2;
   string combination_id = 3;
@@ -457,16 +456,16 @@ message ExecutionPlan {
   repeated ExecutionPlanItem items = 25;
   string usability_code = 26;
   repeated ExecutionPlanReasonCount reason_counts = 27;
-  ExecutionPreflightChecks preflight_checks = 28;
-  repeated ExecutionPlanReasonCount advisory_counts = 29;
 }
 
 message CreateExecutionPlanRequest {
+  reserved 5;
+  reserved "preflight_checks";
+
   string owner_account_id = 1;
   string combination_id = 2;
   int64 expected_combination_revision = 3;
   repeated ExecutionPlanWalletInput wallets = 4;
-  ExecutionPreflightChecks preflight_checks = 5;
 }
 
 message CreateExecutionPlanResponse {
@@ -557,6 +556,9 @@ message ExecutionStepIsolation {
 // No JWT, wallet signature, or serialized transaction is stored in this
 // projection. COMPLETED always means a matching open position was observed.
 message ExecutionRunStep {
+  reserved 33;
+  reserved "advisory_codes";
+
   int64 ordinal = 1;
   int64 plan_step_ordinal = 2;
   int32 wallet_ordinal = 3;
@@ -589,7 +591,6 @@ message ExecutionRunStep {
   int64 next_poll_at = 30;
   int32 poll_count = 31;
   string id = 32;
-  repeated string advisory_codes = 33;
   string completion_source = 34;
   string completion_position_pubkey = 35;
   string completion_position_request_pubkey = 36;
@@ -599,6 +600,9 @@ message ExecutionRunStep {
 // ExecutionRun is the permanent, owner-scoped live execution record. Steps
 // remain wallet-major and the source plan can be consumed by only one run.
 message ExecutionRun {
+  reserved 39;
+  reserved "preflight_checks";
+
   string id = 1;
   string owner_account_id = 2;
   string plan_id = 3;
@@ -637,7 +641,6 @@ message ExecutionRun {
   repeated string allowed_actions = 36;
   int64 next_step_ordinal = 37;
   ExecutionRunStep current_step = 38;
-  ExecutionPreflightChecks preflight_checks = 39;
 }
 
 message CreateExecutionRunRequest {

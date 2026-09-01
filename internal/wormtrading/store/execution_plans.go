@@ -26,12 +26,7 @@ const (
 	maxExecutionPlanCleanupLimit   = 100
 	maxExecutionPlanWorkerIDLength = 200
 	maxExecutionPlanCodeLength     = 100
-	executionPlanAdvisoryLiquidity = "LIQUIDITY_INSUFFICIENT"
 )
-
-var executionPlanAdvisoryOrder = []string{
-	executionPlanAdvisoryLiquidity,
-}
 
 func (s *SQLStore) CreateExecutionPlan(
 	ctx context.Context,
@@ -90,17 +85,16 @@ func (s *SQLStore) CreateExecutionPlan(
 	planID := uuid.New()
 	planUUID := pgtype.UUID{Bytes: [16]byte(planID), Valid: true}
 	row, err := queries.CreateExecutionPlan(ctx, wormtradingsqlc.CreateExecutionPlanParams{
-		ID:                   planUUID,
-		OwnerAccountID:       ownerUUID,
-		CombinationID:        combinationID,
-		CombinationName:      combination.Name,
-		CombinationRevision:  combination.Revision,
-		WalletCount:          int64(len(wallets)),
-		ItemCount:            int64(len(combination.Items)),
-		TotalStepCount:       totalSteps,
-		RequireFullLiquidity: req.PreflightChecks.RequireFullLiquidity,
-		Now:                  timestampParam(now),
-		RetentionUntil:       timestampParam(now.Add(executionPlanRetention)),
+		ID:                  planUUID,
+		OwnerAccountID:      ownerUUID,
+		CombinationID:       combinationID,
+		CombinationName:     combination.Name,
+		CombinationRevision: combination.Revision,
+		WalletCount:         int64(len(wallets)),
+		ItemCount:           int64(len(combination.Items)),
+		TotalStepCount:      totalSteps,
+		Now:                 timestampParam(now),
+		RetentionUntil:      timestampParam(now.Add(executionPlanRetention)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create execution plan: %w", err)
@@ -553,20 +547,6 @@ func loadExecutionPlan(
 				Count:      reasonRow.Count,
 			})
 		}
-		advisoryRows, err := queries.ListExecutionPlanAdvisoryCounts(ctx, row.ID)
-		if err != nil {
-			return ExecutionPlan{}, fmt.Errorf("list execution plan advisory counts: %w", err)
-		}
-		plan.AdvisoryCounts = make([]ExecutionPlanReasonCount, 0, len(advisoryRows))
-		for _, advisoryRow := range advisoryRows {
-			if advisoryRow.ReasonCode == "" || advisoryRow.Count <= 0 {
-				return ExecutionPlan{}, fmt.Errorf("execution plan advisory count is invalid")
-			}
-			plan.AdvisoryCounts = append(plan.AdvisoryCounts, ExecutionPlanReasonCount{
-				ReasonCode: advisoryRow.ReasonCode,
-				Count:      advisoryRow.Count,
-			})
-		}
 		plan.UsabilityCode = executionPlanUsability(ctx, queries, row, canonicalNow(now))
 	}
 	return plan, nil
@@ -631,7 +611,6 @@ func mapExecutionPlan(row wormtradingsqlc.WormExecutionPlan) ExecutionPlan {
 		RetentionUntil:       timestampValue(row.RetentionUntil),
 		CreatedAt:            timestampValue(row.CreatedAt),
 		UpdatedAt:            timestampValue(row.UpdatedAt),
-		PreflightChecks:      ExecutionPreflightChecks{RequireFullLiquidity: row.RequireFullLiquidity},
 	}
 }
 
@@ -710,7 +689,6 @@ func mapExecutionPlanStep(row wormtradingsqlc.WormExecutionPlanStep) ExecutionPl
 		ReasonCode:          row.ReasonCode,
 		ProjectedUSDCBefore: row.ProjectedUsdcBefore,
 		ProjectedUSDCAfter:  row.ProjectedUsdcAfter,
-		AdvisoryCodes:       append([]string(nil), row.AdvisoryCodes...),
 	}
 }
 
@@ -1143,9 +1121,6 @@ func persistExecutionPlanSteps(
 		if !validExecutionPlanDecimal(step.ProjectedUSDCBefore) || !validExecutionPlanDecimal(step.ProjectedUSDCAfter) {
 			return invalidExecutionPlan(fmt.Errorf("step %d projected USDC is invalid", index+1))
 		}
-		if _, err := normalizeExecutionPlanAdvisoryCodes(step.AdvisoryCodes); err != nil {
-			return invalidExecutionPlan(fmt.Errorf("step %d advisories are invalid: %w", index+1, err))
-		}
 	}
 	if err := queries.DeleteExecutionPlanSteps(ctx, planID); err != nil {
 		return fmt.Errorf("delete stale execution plan steps: %w", err)
@@ -1162,15 +1137,10 @@ func persistExecutionPlanSteps(
 			"reason_code",
 			"projected_usdc_before",
 			"projected_usdc_after",
-			"advisory_codes",
 		},
 		pgx.CopyFromSlice(len(steps), func(index int) ([]any, error) {
 			step := steps[index]
 			reasonCode, err := normalizeExecutionPlanCode(step.ReasonCode, "step reason")
-			if err != nil {
-				return nil, err
-			}
-			advisoryCodes, err := normalizeExecutionPlanAdvisoryCodes(step.AdvisoryCodes)
 			if err != nil {
 				return nil, err
 			}
@@ -1183,7 +1153,6 @@ func persistExecutionPlanSteps(
 				reasonCode,
 				step.ProjectedUSDCBefore,
 				step.ProjectedUSDCAfter,
-				advisoryCodes,
 			}, nil
 		}),
 	)
@@ -1194,31 +1163,6 @@ func persistExecutionPlanSteps(
 		return fmt.Errorf("copy execution plan steps: wrote %d of %d rows", written, len(steps))
 	}
 	return nil
-}
-
-func normalizeExecutionPlanAdvisoryCodes(values ...[]string) ([]string, error) {
-	seen := make(map[string]struct{}, len(executionPlanAdvisoryOrder))
-	for _, group := range values {
-		for _, value := range group {
-			code, err := normalizeExecutionPlanCode(value, "advisory code")
-			if err != nil || code == "" {
-				return nil, fmt.Errorf("advisory code is invalid")
-			}
-			switch code {
-			case executionPlanAdvisoryLiquidity:
-				seen[code] = struct{}{}
-			default:
-				return nil, fmt.Errorf("advisory code %q is not supported", code)
-			}
-		}
-	}
-	result := make([]string, 0, len(seen))
-	for _, code := range executionPlanAdvisoryOrder {
-		if _, exists := seen[code]; exists {
-			result = append(result, code)
-		}
-	}
-	return result, nil
 }
 
 func executionPlanStepCounts(steps []ExecutionPlanStep) (int64, int64) {
