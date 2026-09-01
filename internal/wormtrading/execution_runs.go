@@ -557,6 +557,8 @@ func executionRunRPCError(err error) error {
 		return status.Error(codes.FailedPrecondition, "execution run authorization is required")
 	case errors.Is(err, wormstore.ErrExecutionRunConflict), errors.Is(err, wormstore.ErrExecutionRunIsolation):
 		return status.Error(codes.FailedPrecondition, "execution run conflicts with current state")
+	case errors.Is(err, wormstore.ErrExecutionRunWalletCashOutActive):
+		return status.Error(codes.FailedPrecondition, "WALLET_CASH_OUT_ACTIVE")
 	case errors.Is(err, wormstore.ErrExecutionPlanRevision), errors.Is(err, wormstore.ErrExecutionPlanCombinationChanged):
 		return status.Error(codes.Aborted, "execution plan source changed")
 	case errors.Is(err, wormstore.ErrExecutionPlanWalletConnectionChanged), errors.Is(err, wormstore.ErrExecutionPlanCredentialChanged):

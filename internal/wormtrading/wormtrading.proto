@@ -207,6 +207,19 @@ message WormOpenPosition {
   bool is_liquidated = 14;
   bool is_claimed = 15;
   int64 created_at = 16;
+  WormPositionCashOutSummary cash_out = 17;
+}
+
+// WormPositionCashOutSummary is the safe durable operation state projected
+// beside one HMAC-backed Open Position. It contains no credential, signature,
+// request body, or account identity.
+message WormPositionCashOutSummary {
+  string operation_id = 1;
+  string state = 2;
+  string reason_code = 3;
+  string allowed_action = 4;
+  int64 revision = 5;
+  int64 updated_at = 6;
 }
 
 message WormInFlightPositionRequest {
@@ -242,6 +255,7 @@ message WalletPositionSnapshot {
 
 message BatchGetWalletPositionSnapshotsRequest {
   repeated WalletPositionReference refs = 1;
+  string owner_account_id = 2;
 }
 
 message BatchGetWalletPositionSnapshotsResponse {
@@ -798,6 +812,86 @@ message ReconcileExecutionStepResponse {
   ExecutionRunStep step = 2;
 }
 
+// PositionCashOut is one permanent owner-scoped whole-position market exit.
+// The target is frozen from an authoritative HMAC position read; browser input
+// never supplies its market, side, or timestamps.
+message PositionCashOut {
+  string id = 1;
+  string owner_account_id = 2;
+  int64 wallet_id = 3;
+  string wallet_address = 4;
+  string position_pubkey = 5;
+  string position_request_pubkey = 6;
+  string market_condition_id = 7;
+  bool is_yes = 8;
+  int64 position_created_at = 9;
+  string state = 10;
+  string stage = 11;
+  string reason_code = 12;
+  int64 revision = 13;
+  bytes intent_sha256 = 14;
+  string proof_kind = 15;
+  string provider_state = 16;
+  bool observed_closed = 17;
+  bool observed_liquidated = 18;
+  string completion_source = 19;
+  int64 authorization_expires_at = 20;
+  int64 dispatch_expires_at = 21;
+  int64 requested_at = 22;
+  int64 authorized_at = 23;
+  int64 dispatched_at = 24;
+  int64 completed_at = 25;
+  int64 updated_at = 26;
+  repeated string allowed_actions = 27;
+  string total_shares = 28;
+}
+
+message CreatePositionCashOutRequest {
+  string owner_account_id = 1;
+  string command_id = 2;
+  int64 wallet_id = 3;
+  string wallet_address = 4;
+  string position_pubkey = 5;
+}
+
+message CreatePositionCashOutResponse {
+  PositionCashOut cash_out = 1;
+}
+
+message GetPositionCashOutRequest {
+  string owner_account_id = 1;
+  string id = 2;
+}
+
+message GetPositionCashOutResponse {
+  PositionCashOut cash_out = 1;
+}
+
+message AuthorizePositionCashOutRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  string proof_kind = 5;
+  bytes session_jti_digest = 6;
+  int64 access_revision = 7;
+}
+
+message AuthorizePositionCashOutResponse {
+  PositionCashOut cash_out = 1;
+}
+
+message ReconcilePositionCashOutRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+}
+
+message ReconcilePositionCashOutResponse {
+  PositionCashOut cash_out = 1;
+}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
@@ -826,4 +920,8 @@ service WormTradingService {
   rpc HeartbeatExecutionCoordinator(HeartbeatExecutionCoordinatorRequest) returns (HeartbeatExecutionCoordinatorResponse);
   rpc ExecuteNextExecutionStep(ExecuteNextExecutionStepRequest) returns (ExecuteNextExecutionStepResponse);
   rpc ReconcileExecutionStep(ReconcileExecutionStepRequest) returns (ReconcileExecutionStepResponse);
+  rpc CreatePositionCashOut(CreatePositionCashOutRequest) returns (CreatePositionCashOutResponse);
+  rpc GetPositionCashOut(GetPositionCashOutRequest) returns (GetPositionCashOutResponse);
+  rpc AuthorizePositionCashOut(AuthorizePositionCashOutRequest) returns (AuthorizePositionCashOutResponse);
+  rpc ReconcilePositionCashOut(ReconcilePositionCashOutRequest) returns (ReconcilePositionCashOutResponse);
 }

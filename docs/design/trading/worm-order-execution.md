@@ -38,7 +38,10 @@ side, funds, leverage, provider endpoint, JWT, transaction, signature, or
 finalize representation. It does not cancel a submitted request, close a
 position, set TP/SL, claim a settlement, or delete execution history. The
 implementation has not placed a real order as part of repository validation;
-live orders begin only through an explicitly authorized Run.
+live orders begin only through an explicitly authorized Run. Independently,
+[Worm Position Cash Out](worm-position-cash-out.md) closes one exact HMAC
+position from Assets. Its non-terminal operations and Runs exclude each other
+per Wallet before either can create a new provider mutation.
 
 ## Source Locations
 
@@ -52,7 +55,7 @@ live orders begin only through an explicitly authorized Run.
 | One-Step execution worker | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/execution_web_signer.go](../../../internal/wormtrading/execution_web_signer.go) | `runExecutionWorker`, `processRecoverableExecutionSteps`, `executeClaimedExecutionStep`, `executeFreshPreflight`, `executionWebSession`, `executeWormOpen`, `executeWormSigning`, `executeWormFinalize`, `executionWebSigner` |
 | No-replay recovery, position completion, polling, and reconciliation | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go) | `recoverSuccessfulOpen`, `recoverFinalizingExecution`, `observeExecutionOpenPosition`, `matchExecutionOpenPosition`, `recordExecutionOpenPositionCompletion`, `reconcileAmbiguousFinalize`, `recordExecutionAwaiting`, `reconcileWormExecutionStep` |
 | Durable state and transitions | [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | Run/Step lifecycle operations, `RecordExecutionStepOpened`, commands, coordinator leases, mutation attempts, isolation, recovery claims |
-| Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, mandatory-guard schema reset, Open Position completion evidence, one-active-Run constraint, Combination and Wallet locks, recovery selection, consumed-plan retention |
+| Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/position_cash_outs.sql](../../../internal/wormtrading/store/queries/position_cash_outs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, mandatory-guard schema reset, Open Position completion evidence, one-active-Run constraint, sorted Wallet advisory locks, Cash-Out interlock, recovery selection, consumed-plan retention |
 | Stateless Worm Web protocol stages | [util/worm/web_market_position_stages.go](../../../util/worm/web_market_position_stages.go), [util/worm/web_signing_validation.go](../../../util/worm/web_signing_validation.go), [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/README.md](../../../util/worm/README.md) | `AuthenticateWebWallet`, `PrepareWebMarketPositionOpen`, `DispatchWebMarketPositionOpen`, `ObserveWebPositionRequest`, `InspectWebPositionRequestTransaction`, `PrepareWebPositionFinalize`, `DispatchWebPositionFinalize`, typed transport/API/edge errors |
 | Capability-scoped Wallet signer | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `WormExecutionSignerService`, `SignWormWebSignInMessage`, `SignWormPositionRequestTransaction`, independent Bearer dispatch |
 | Process construction and secrets | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | fixed Web client, signer-only Wallet clientset, dedicated signer token, service lifecycle |
@@ -67,6 +70,7 @@ interactive Worm Trading READ_WRITE browser
   -> Worm Trading transaction
        -> freeze Plan v4 digest + Wallets + items + every Step
        -> lock source Combination and selected Wallets
+       -> sorted per-Wallet advisory locks reject active Cash Out
        -> AWAITING_AUTHORIZATION
 
 fresh Google / Phantom / development proof
@@ -131,6 +135,14 @@ application Origin. The browser supplies a UUID `commandId` and positive
 `expectedRevision` for optimistic command application. It supplies an exact
 expected Step ordinal and coordinator token only for execute-next.
 
+Run creation and Assets Cash-Out creation share a PostgreSQL advisory-lock
+namespace keyed by numeric Wallet ID. Run creation sorts every frozen Wallet
+ID, acquires those locks in order, and rejects any non-terminal Cash Out before
+copying the plan. Cash-Out creation acquires the same one-Wallet lock and
+rejects an execution Wallet lock. `RECONCILIATION_REQUIRED` remains active on
+both sides, so an uncertain Close cannot race a new Open Run and an unfinished
+Run cannot race a Close.
+
 The execution-history page loads only owner-scoped Runs until the authoritative
 Run total is zero. Its empty state then performs one owner-scoped, one-row
 Combination list read so the guidance can distinguish an existing reusable
@@ -158,9 +170,11 @@ empty state and does not replace the successfully loaded empty Run history.
    `SATISFIED` as an exposure-success shortcut.
 3. The same transaction acquires the source Combination lock and each selected
    Wallet lock after confirming its saved connection snapshot is still valid.
-   It rejects an unresolved Wallet-market isolation. A unique partial index
-   admits at most one non-terminal Run per owner, and the plan UUID can belong
-   to only one Run. The resulting state is `AWAITING_AUTHORIZATION`.
+   It sorts the selected Wallet IDs, acquires their transaction advisory locks,
+   and rejects any non-terminal position Cash Out while those locks are held.
+   It also rejects an unresolved Wallet-market isolation. A unique partial
+   index admits at most one non-terminal Run per owner, and the plan UUID can
+   belong to only one Run. The resulting state is `AWAITING_AUTHORIZATION`.
 4. Authorization is one explicit Run action. A Google login starts a distinct
    `wex.` five-minute PKCE/nonce transaction, requires
    `prompt=select_account`, `max_age=0`, fresh `auth_time`, and the same durable
@@ -368,7 +382,10 @@ request ID, transaction digest, provider state, and `OPENED` lifecycle state.
 Wallet-market uncertainty so a terminated Run cannot clear it.
 `worm_execution_combination_locks` and `worm_execution_wallet_locks` protect
 the active Run's frozen source and Wallet use; they are released only when the
-Run reaches a safe terminal boundary.
+Run reaches a safe terminal boundary. The Wallet-lock rows are also the durable
+Cash-Out conflict signal. Creation uses sorted Wallet-ID advisory transaction
+locks shared with `worm_position_cash_outs`, so checking those durable rows and
+creating the Run is race-free without holding a long-lived database lock.
 
 [Migration `000008_execution_mandatory_guards.sql`](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql)
 defines the current development-data boundary: Up truncates the execution plan
@@ -409,7 +426,7 @@ terminal or blocking: SATISFIED / SKIPPED / FAILED / NOT_EXECUTED /
 
 | Setting | Behavior |
 | --- | --- |
-| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Owns Runs, snapshots, Steps, authorizations, coordinator leases, commands, mutation attempts, locks, and isolations. |
+| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Owns Runs, snapshots, Steps, authorizations, coordinator leases, commands, mutation attempts, locks, isolations, and the Cash-Out rows checked during Run admission. |
 | `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | Authenticates API Server calls to the internal Worm Trading execution RPCs. |
 | `ATHENA_WALLET_SERVER_ADDRESS` | Worm Trading target for the capability-scoped custodial signer. |
 | `ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` | Independent Wallet/Worm Trading Bearer accepted only by the two execution signer RPCs. It must differ from the general Wallet token and Worm Trading token. |
@@ -442,7 +459,9 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
   result. Every execution intent comes from the immutable server-side plan.
 - One plan creates at most one permanent Run, one owner has at most one
   non-terminal Run, and an active Run locks its source Combination and selected
-  Wallets.
+  Wallets. A selected Wallet with a non-terminal position Cash Out cannot enter
+  the Run; the shared advisory-lock transaction prevents a create race. The
+  reciprocal Cash-Out boundary rejects every Wallet held by an unfinished Run.
 - Wallet and item order never change after Run creation. Only the next
   server-projected Wallet-major `PENDING` ordinal can be claimed, and the
   backend never automatically claims the following Step.
@@ -483,9 +502,11 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
 
 Invalid UUIDs, JSON, Origin, access, owner, revision, stale/expired plan,
 zero-actionable preview, already consumed plan, active owner Run, changed Wallet
-connection, locked Combination/Wallet, or unresolved isolation fail before a
-partial Run commits. The creation command is idempotent only for the same owner
-and exact request digest; reuse with different input is a conflict.
+connection, locked Combination/Wallet, non-terminal Cash Out on any selected
+Wallet, or unresolved isolation fail before a partial Run commits. Sorted
+Wallet advisory locks make the Cash-Out check and Run creation atomic against a
+concurrent Cash-Out create. The creation command is idempotent only for the same
+owner and exact request digest; reuse with different input is a conflict.
 
 Google and Phantom proof state is one-time and consumed before later provider,
 identity, signature, or Run authorization checks. Missing, expired, replayed,
@@ -583,7 +604,7 @@ logs and the durable Run projection.
 
 ## Change Checklist
 
-- [ ] Plan consumption, version-four digest, immutable snapshots, one-Run constraints, and Combination/Wallet locks remain current.
+- [ ] Plan consumption, version-four digest, immutable snapshots, one-Run constraints, Combination/Wallet locks, and the bidirectional Cash-Out Wallet interlock remain current.
 - [ ] Interactive READ/READ_WRITE, exact-origin, owner, Session, access-revision, and API-Key boundaries remain current.
 - [ ] Google, Phantom, and development proof bindings and trust disclosure remain current.
 - [ ] Coordinator token/heartbeat and explicit browser-led Wallet-major scheduling remain current.

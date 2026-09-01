@@ -105,6 +105,28 @@ export interface WormMarketReference {
     eventLogo: string;
 }
 
+export type WormPositionCashOutState =
+    | 'AWAITING_AUTHORIZATION'
+    | 'QUEUED'
+    | 'PREFLIGHTING'
+    | 'CLOSING'
+    | 'AWAITING_COMPLETION'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'RECONCILIATION_REQUIRED'
+    | 'EXPIRED';
+
+export type WormPositionCashOutAllowedAction = 'CASH_OUT' | 'AUTHORIZE_CASH_OUT' | 'CHECK_STATUS' | 'NONE';
+
+export interface WormPositionCashOutProjection {
+    operationId: string;
+    state: WormPositionCashOutState | '';
+    reasonCode: string;
+    allowedAction: WormPositionCashOutAllowedAction;
+    revision: number;
+    updatedAt: number;
+}
+
 export interface WormOpenPosition {
     pubkey: string;
     positionRequestPubkey: string;
@@ -122,6 +144,7 @@ export interface WormOpenPosition {
     isLiquidated: boolean;
     isClaimed: boolean;
     createdAt: number;
+    cashOut: WormPositionCashOutProjection;
 }
 
 export interface WormInFlightRequest {
@@ -485,6 +508,53 @@ export interface WormExecutionAuthorizationChallenge {
     expiresAt: number;
 }
 
+export type WormPositionCashOutOperationAllowedAction = 'AUTHORIZE_CASH_OUT' | 'CHECK_STATUS';
+
+export interface WormPositionCashOutOperation {
+    id: string;
+    walletId: number;
+    walletAddress: string;
+    positionPubkey: string;
+    positionRequestPubkey: string;
+    marketConditionId: string;
+    isYes: boolean;
+    positionCreatedAt: number;
+    totalShares: string;
+    state: WormPositionCashOutState;
+    stage: string;
+    reasonCode: string;
+    revision: number;
+    proofKind: string;
+    providerState: string;
+    observedClosed: boolean;
+    observedLiquidated: boolean;
+    completionSource: string;
+    authorizationExpiresAt: number;
+    dispatchExpiresAt: number;
+    requestedAt: number;
+    authorizedAt: number;
+    dispatchedAt: number;
+    completedAt: number;
+    updatedAt: number;
+    allowedActions: WormPositionCashOutOperationAllowedAction[];
+}
+
+export interface CreateWormPositionCashOutInput {
+    commandId: string;
+    walletId: number;
+    positionPubkey: string;
+}
+
+export interface WormPositionCashOutCommandInput {
+    commandId: string;
+    expectedRevision: number;
+}
+
+export interface WormPositionCashOutAuthorizationChallenge {
+    message: string;
+    expiresAt: number;
+}
+
 const readValue = (item: any, ...names: string[]) => {
     for (const name of names) {
         if (item?.[name] !== undefined && item?.[name] !== null) {
@@ -694,6 +764,61 @@ const normalizeSide = (item: any): 'YES' | 'NO' | string => {
     return isYes === undefined || isYes === null ? '' : readBoolean(item, 'isYes', 'is_yes') ? 'YES' : 'NO';
 };
 
+const normalizePositionCashOutState = (value: unknown): WormPositionCashOutState => {
+    switch (value) {
+        case 'AWAITING_AUTHORIZATION':
+        case 'QUEUED':
+        case 'PREFLIGHTING':
+        case 'CLOSING':
+        case 'AWAITING_COMPLETION':
+        case 'COMPLETED':
+        case 'FAILED':
+        case 'RECONCILIATION_REQUIRED':
+        case 'EXPIRED':
+            return value;
+        default:
+            return invalidWormTradingResponse();
+    }
+};
+
+const normalizePositionCashOutAllowedAction = (value: unknown): WormPositionCashOutAllowedAction => {
+    switch (value) {
+        case 'CASH_OUT':
+        case 'AUTHORIZE_CASH_OUT':
+        case 'CHECK_STATUS':
+        case 'NONE':
+            return value;
+        default:
+            return invalidWormTradingResponse();
+    }
+};
+
+const normalizePositionCashOutProjection = (value: unknown): WormPositionCashOutProjection => {
+    const item = requireRecord(value);
+    const operationId = readString(item, 'operationId');
+    const rawState = readValue(item, 'state');
+    const state = rawState === '' || rawState === undefined || rawState === null ? '' : normalizePositionCashOutState(rawState);
+    const reasonCode = readString(item, 'reasonCode');
+    const allowedAction = normalizePositionCashOutAllowedAction(item.allowedAction);
+    const revision = optionalInteger(item, 0, 0, 'revision');
+    const updatedAt = optionalInteger(item, 0, 0, 'updatedAt');
+    if (
+        (reasonCode && !/^[A-Z][A-Z0-9_]{0,127}$/.test(reasonCode)) ||
+        (!operationId && (state !== '' || revision !== 0 || updatedAt !== 0 || (allowedAction !== 'CASH_OUT' && allowedAction !== 'NONE'))) ||
+        (operationId && (state === '' || revision < 1 || updatedAt < 1 || allowedAction === 'CASH_OUT'))
+    ) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        operationId,
+        state,
+        reasonCode,
+        allowedAction,
+        revision,
+        updatedAt
+    };
+};
+
 const normalizeOpenPosition = (value: unknown): WormOpenPosition => {
     const item = requireRecord(value);
     const side = normalizeSide(item);
@@ -716,7 +841,8 @@ const normalizeOpenPosition = (value: unknown): WormOpenPosition => {
         isClosed: readBoolean(item, 'isClosed', 'is_closed'),
         isLiquidated: readBoolean(item, 'isLiquidated', 'is_liquidated'),
         isClaimed: readBoolean(item, 'isClaimed', 'is_claimed'),
-        createdAt: optionalInteger(item, 0, 0, 'createdAt', 'created_at')
+        createdAt: optionalInteger(item, 0, 0, 'createdAt', 'created_at'),
+        cashOut: normalizePositionCashOutProjection(readValue(item, 'cashOut'))
     };
 };
 
@@ -789,7 +915,8 @@ const rawSameOriginRequest = <T>(
     path: string,
     body: Record<string, unknown> | undefined,
     fallbackError: string,
-    map: (value: Record<string, unknown>) => T
+    map: (value: Record<string, unknown>) => T,
+    scope = method === 'GET' ? readScope : writeScope
 ): AbortableWormTradingPromise<T> => {
     const request = requests.scopedFetch(
         requests.toAbsURL(path),
@@ -801,7 +928,7 @@ const rawSameOriginRequest = <T>(
             headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
             body: body ? JSON.stringify(body) : undefined
         },
-        method === 'GET' ? readScope : writeScope
+        scope
     );
     const promise = request.then(async response => {
         const parsedBody = await parseJSONResponse(response);
@@ -880,6 +1007,59 @@ const optionalExactBoolean = (item: unknown, name: string, fallback = false): bo
 };
 
 const executionCodePattern = /^[A-Z][A-Z0-9_]{0,127}$/;
+
+const normalizePositionCashOutOperationAllowedAction = (value: unknown): WormPositionCashOutOperationAllowedAction => {
+    if (value === 'AUTHORIZE_CASH_OUT' || value === 'CHECK_STATUS') {
+        return value;
+    }
+    return invalidWormTradingResponse();
+};
+
+const normalizePositionCashOutOperation = (value: unknown, expected?: {id?: string; walletId?: number; positionPubkey?: string}): WormPositionCashOutOperation => {
+    const item = requireRecord(value);
+    const id = requireExactString(item, 'id');
+    const walletId = requireInteger(item, 1, 'walletId');
+    const positionPubkey = requireExactString(item, 'positionPubkey');
+    const reasonCode = optionalExactString(item, 'reasonCode');
+    const allowedActions = requireExactArray(item, 'allowedActions').map(normalizePositionCashOutOperationAllowedAction);
+    if (
+        (expected?.id && id !== expected.id) ||
+        (expected?.walletId && walletId !== expected.walletId) ||
+        (expected?.positionPubkey && positionPubkey !== expected.positionPubkey) ||
+        (reasonCode && !executionCodePattern.test(reasonCode)) ||
+        new Set(allowedActions).size !== allowedActions.length
+    ) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        id,
+        walletId,
+        walletAddress: requireExactString(item, 'walletAddress'),
+        positionPubkey,
+        positionRequestPubkey: optionalExactString(item, 'positionRequestPubkey'),
+        marketConditionId: requireExactString(item, 'marketConditionId'),
+        isYes: requireExactBoolean(item, 'isYes'),
+        positionCreatedAt: requireInteger(item, 1, 'positionCreatedAt'),
+        totalShares: requireExactString(item, 'totalShares'),
+        state: normalizePositionCashOutState(item.state),
+        stage: requireExactString(item, 'stage'),
+        reasonCode,
+        revision: requireInteger(item, 1, 'revision'),
+        proofKind: optionalExactString(item, 'proofKind'),
+        providerState: optionalExactString(item, 'providerState'),
+        observedClosed: requireExactBoolean(item, 'observedClosed'),
+        observedLiquidated: requireExactBoolean(item, 'observedLiquidated'),
+        completionSource: optionalExactString(item, 'completionSource'),
+        authorizationExpiresAt: optionalInteger(item, 0, 0, 'authorizationExpiresAt'),
+        dispatchExpiresAt: optionalInteger(item, 0, 0, 'dispatchExpiresAt'),
+        requestedAt: requireInteger(item, 1, 'requestedAt'),
+        authorizedAt: optionalInteger(item, 0, 0, 'authorizedAt'),
+        dispatchedAt: optionalInteger(item, 0, 0, 'dispatchedAt'),
+        completedAt: optionalInteger(item, 0, 0, 'completedAt'),
+        updatedAt: requireInteger(item, 1, 'updatedAt'),
+        allowedActions
+    };
+};
 
 const normalizeExecutionCodeCounts = (value: unknown): Record<string, number> => {
     if (value === undefined || value === null) {
@@ -1536,6 +1716,69 @@ export class WormTradingService {
                 status: normalizeBalanceStatus(readValue(body, 'status'))
             };
         });
+    }
+
+    public createPositionCashOut(input: CreateWormPositionCashOutInput): AbortableWormTradingPromise<WormPositionCashOutOperation> {
+        return rawSameOriginRequest('POST', '/api/v1/worm-trading/position-cash-outs', {...input}, 'Worm position Cash Out could not be prepared', body =>
+            normalizePositionCashOutOperation(body, {walletId: input.walletId, positionPubkey: input.positionPubkey})
+        );
+    }
+
+    public getPositionCashOut(id: string): AbortableWormTradingPromise<WormPositionCashOutOperation> {
+        const expectedID = id.trim();
+        return rawSameOriginRequest(
+            'GET',
+            `/api/v1/worm-trading/position-cash-outs/${encodeURIComponent(expectedID)}`,
+            undefined,
+            'Worm position Cash Out status could not be loaded',
+            body => normalizePositionCashOutOperation(body, {id: expectedID})
+        );
+    }
+
+    public reconcilePositionCashOut(id: string, command: WormPositionCashOutCommandInput): AbortableWormTradingPromise<WormPositionCashOutOperation> {
+        const expectedID = id.trim();
+        return rawSameOriginRequest(
+            'POST',
+            `/api/v1/worm-trading/position-cash-outs/${encodeURIComponent(expectedID)}:reconcile`,
+            {...command},
+            'Worm position Cash Out status could not be reconciled',
+            body => normalizePositionCashOutOperation(body, {id: expectedID})
+        );
+    }
+
+    public googlePositionCashOutAuthorizationURL(id: string, command: WormPositionCashOutCommandInput, returnTo: string): string {
+        const query = new URLSearchParams({
+            cashOutId: id,
+            commandId: command.commandId,
+            expectedRevision: String(command.expectedRevision),
+            returnTo,
+            [APPLICATION_REALM_QUERY]: 'member'
+        });
+        return `${requests.toAbsURL('/auth/worm-trading/position-cash-outs/google')}?${query.toString()}`;
+    }
+
+    public createSolanaPositionCashOutAuthorizationChallenge(
+        id: string,
+        command: WormPositionCashOutCommandInput
+    ): AbortableWormTradingPromise<WormPositionCashOutAuthorizationChallenge> {
+        return rawReauthenticationPost(`/auth/worm-trading/position-cash-outs/${encodeURIComponent(id)}/solana/challenge`, {...command}, body => ({
+            message: requireExactString(body, 'message'),
+            expiresAt: requireInteger(body, 1, 'expiresAt')
+        }));
+    }
+
+    public verifySolanaPositionCashOutAuthorization(id: string, signature: string): AbortableWormTradingPromise<WormPositionCashOutOperation> {
+        const expectedID = id.trim();
+        return rawReauthenticationPost(`/auth/worm-trading/position-cash-outs/${encodeURIComponent(expectedID)}/solana/verify`, {signature}, body =>
+            normalizePositionCashOutOperation(body, {id: expectedID})
+        );
+    }
+
+    public authorizeDevelopmentPositionCashOut(id: string, command: WormPositionCashOutCommandInput): AbortableWormTradingPromise<WormPositionCashOutOperation> {
+        const expectedID = id.trim();
+        return rawReauthenticationPost(`/auth/worm-trading/position-cash-outs/${encodeURIComponent(expectedID)}/development`, {...command}, body =>
+            normalizePositionCashOutOperation(body, {id: expectedID})
+        );
     }
 
     public listWalletConnections(page = 1, pageSize = 100): AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult> {

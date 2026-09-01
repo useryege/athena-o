@@ -1,4 +1,14 @@
-import {ApiOutlined, CopyOutlined, DisconnectOutlined, LinkOutlined, SyncOutlined, WalletOutlined} from '@ant-design/icons';
+import {
+    ApiOutlined,
+    CloseCircleOutlined,
+    CopyOutlined,
+    DisconnectOutlined,
+    LinkOutlined,
+    ReloadOutlined,
+    SafetyCertificateOutlined,
+    SyncOutlined,
+    WalletOutlined
+} from '@ant-design/icons';
 import {Alert, Avatar, Button, Card, Empty, Pagination, Progress, Result, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
@@ -14,6 +24,9 @@ import type {
     WormActivityStreamState,
     WormInFlightRequest,
     WormOpenPosition,
+    WormPositionCashOutAllowedAction,
+    WormPositionCashOutOperation,
+    WormPositionCashOutProjection,
     WormTradingAssetBalance,
     WormTradingStatus,
     WormTradingTokenAssetBalance,
@@ -33,7 +46,42 @@ const wormTradingPageSizes = [wormTradingPageSize];
 const wormConnectionInventoryPageSize = 100;
 const wormConnectionStartIntervalMS = 12_000;
 const pendingConnectionActionKey = 'athena.member.worm-trading.pending-connection-action';
+const pendingPositionCashOutKey = 'athena.member.worm-trading.pending-position-cash-out';
+const positionCashOutReasonQuery = 'wormPositionCashOutReason';
+const positionCashOutPollIntervalMS = 2_000;
+const maximumRememberedPositionCashOuts = 100;
+const canonicalPositionCashOutIDPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const connectOutcomeUnknownWarning = 'CONNECT_OUTCOME_UNKNOWN';
+
+const rememberedPositionCashOutIDs = (): string[] => {
+    try {
+        const value = JSON.parse(window.sessionStorage.getItem(pendingPositionCashOutKey) || '[]');
+        if (!Array.isArray(value)) {
+            return [];
+        }
+        return Array.from(new Set(value.filter(item => typeof item === 'string' && canonicalPositionCashOutIDPattern.test(item)))).slice(-maximumRememberedPositionCashOuts);
+    } catch {
+        return [];
+    }
+};
+
+const rememberPositionCashOutID = (id: string) => {
+    if (!canonicalPositionCashOutIDPattern.test(id)) {
+        throw new Error('Athena returned an invalid Cash Out operation ID.');
+    }
+    const ids = rememberedPositionCashOutIDs().filter(item => item !== id);
+    ids.push(id);
+    window.sessionStorage.setItem(pendingPositionCashOutKey, JSON.stringify(ids.slice(-maximumRememberedPositionCashOuts)));
+};
+
+const forgetPositionCashOutID = (id: string) => {
+    const ids = rememberedPositionCashOutIDs().filter(item => item !== id);
+    if (ids.length === 0) {
+        window.sessionStorage.removeItem(pendingPositionCashOutKey);
+        return;
+    }
+    window.sessionStorage.setItem(pendingPositionCashOutKey, JSON.stringify(ids));
+};
 
 const walletPresetGlyphs: Record<string, string> = {
     'star-violet': '★',
@@ -1277,7 +1325,7 @@ const MarketIdentity = (props: {market: WormOpenPosition['market']}) => (
 
 const SideTag = (props: {side: string}) => <Tag color={props.side === 'YES' ? 'green' : props.side === 'NO' ? 'red' : 'default'}>{props.side || 'Unknown'}</Tag>;
 
-const PositionCard = (props: {row: PositionRow; onCopy: () => void}) => {
+const PositionCard = (props: {row: PositionRow; onCopy: () => void; cashOutManager?: PositionCashOutManager}) => {
     const position = props.row.position;
     return (
         <Card className='worm-trading-activity-card' size='small'>
@@ -1319,6 +1367,11 @@ const PositionCard = (props: {row: PositionRow; onCopy: () => void}) => {
                 <code title={position.pubkey}>{shortAddress(position.pubkey, 7, 7)}</code>
                 <span>{formatBeijingUnixSeconds(position.createdAt) || '-'}</span>
             </div>
+            {props.cashOutManager && (
+                <div className='worm-position-cash-out-card-action'>
+                    <PositionCashOutButton row={props.row} manager={props.cashOutManager} compact={true} />
+                </div>
+            )}
         </Card>
     );
 };
@@ -1391,6 +1444,610 @@ const StreamNotice = (props: {label: string; streams: WormActivityStreamState[]}
     );
 };
 
+interface PositionCashOutView {
+    operationId: string;
+    state: WormPositionCashOutProjection['state'];
+    reasonCode: string;
+    allowedAction: WormPositionCashOutAllowedAction;
+    revision: number;
+    updatedAt: number;
+}
+
+interface PositionCashOutManager {
+    busyKey: string;
+    viewFor(row: PositionRow): PositionCashOutView;
+    confirm(row: PositionRow): void;
+    authorize(row: PositionRow, view: PositionCashOutView): void;
+    reconcile(row: PositionRow, view: PositionCashOutView): void;
+    alerts: React.ReactNode;
+}
+
+const positionCashOutRowKey = (row: PositionRow) => `${row.wallet.walletId}:${row.position.pubkey}`;
+const cashOutPollStates = new Set<WormPositionCashOutProjection['state']>([
+    'AWAITING_AUTHORIZATION',
+    'QUEUED',
+    'PREFLIGHTING',
+    'CLOSING',
+    'AWAITING_COMPLETION',
+    'RECONCILIATION_REQUIRED'
+]);
+const cashOutExecutionPendingStates = new Set<WormPositionCashOutProjection['state']>(['QUEUED', 'PREFLIGHTING', 'CLOSING', 'AWAITING_COMPLETION']);
+const terminalCashOutStates = new Set<WormPositionCashOutProjection['state']>(['COMPLETED', 'FAILED', 'EXPIRED']);
+
+const cashOutReasonMessage = (reasonCode: string) => {
+    switch (reasonCode) {
+        case 'WALLET_EXECUTION_ACTIVE':
+            return 'This wallet has an unfinished execution Run. Finish or terminate that Run before cashing out a position.';
+        case 'WALLET_CASH_OUT_ACTIVE':
+        case 'WALLET_POSITION_CASH_OUT_ACTIVE':
+            return 'Another position in this wallet already has an unfinished Cash Out.';
+        case 'POSITION_NOT_FOUND':
+            return 'Worm no longer returns this exact position. Refresh positions before taking another action.';
+        case 'POSITION_LIQUIDATED':
+        case 'POSITION_NOT_CLOSABLE':
+            return 'This position is no longer eligible for Cash Out.';
+        default:
+            return titleCase(reasonCode) || 'Cash Out is not available for this position.';
+    }
+};
+
+const cashOutViewFromOperation = (operation: WormPositionCashOutOperation): PositionCashOutView => ({
+    operationId: operation.id,
+    state: operation.state,
+    reasonCode: operation.reasonCode,
+    allowedAction: operation.allowedActions.includes('CHECK_STATUS') ? 'CHECK_STATUS' : operation.allowedActions.includes('AUTHORIZE_CASH_OUT') ? 'AUTHORIZE_CASH_OUT' : 'NONE',
+    revision: operation.revision,
+    updatedAt: operation.updatedAt
+});
+
+const cashOutOperationMatchesRow = (operation: WormPositionCashOutOperation, row: PositionRow) =>
+    operation.walletId === row.wallet.walletId &&
+    operation.walletAddress === row.wallet.address &&
+    operation.positionPubkey === row.position.pubkey &&
+    operation.positionRequestPubkey === row.position.positionRequestPubkey &&
+    operation.marketConditionId === row.position.market.conditionId &&
+    operation.isYes === (row.position.side === 'YES') &&
+    (row.position.createdAt <= 0 || operation.positionCreatedAt === row.position.createdAt);
+
+const PositionCashOutButton = (props: {row: PositionRow; manager: PositionCashOutManager; compact?: boolean}) => {
+    const view = props.manager.viewFor(props.row);
+    const rowKey = positionCashOutRowKey(props.row);
+    const busy = props.manager.busyKey === rowKey;
+    const interactionBlocked = Boolean(props.manager.busyKey) && !busy;
+    const buttonProps = props.compact ? {block: true as const} : {size: 'small' as const};
+    if (view.allowedAction === 'CASH_OUT') {
+        return (
+            <Button
+                {...buttonProps}
+                danger={true}
+                icon={<CloseCircleOutlined />}
+                loading={busy}
+                disabled={interactionBlocked}
+                aria-label={`Cash out ${props.row.position.side} position in ${props.row.position.market.title}`}
+                onClick={() => props.manager.confirm(props.row)}>
+                Cash out
+            </Button>
+        );
+    }
+    if (view.allowedAction === 'AUTHORIZE_CASH_OUT') {
+        return (
+            <Button
+                {...buttonProps}
+                type='primary'
+                danger={true}
+                icon={<SafetyCertificateOutlined />}
+                loading={busy}
+                disabled={interactionBlocked}
+                onClick={() => props.manager.authorize(props.row, view)}>
+                Authorize cash out
+            </Button>
+        );
+    }
+    if (view.allowedAction === 'CHECK_STATUS') {
+        return (
+            <Button {...buttonProps} icon={<ReloadOutlined />} loading={busy} disabled={interactionBlocked} onClick={() => props.manager.reconcile(props.row, view)}>
+                Check status
+            </Button>
+        );
+    }
+    const active = cashOutPollStates.has(view.state) && view.reasonCode !== 'WALLET_CASH_OUT_ACTIVE' && view.reasonCode !== 'WALLET_POSITION_CASH_OUT_ACTIVE';
+    const label = active ? (view.state === 'RECONCILIATION_REQUIRED' ? 'Checking…' : 'Closing…') : view.state === 'COMPLETED' ? 'Closed' : 'Cash out unavailable';
+    const button = (
+        <Button {...buttonProps} danger={active} loading={active || busy} disabled={true}>
+            {label}
+        </Button>
+    );
+    return view.reasonCode ? <Tooltip title={cashOutReasonMessage(view.reasonCode)}>{button}</Tooltip> : button;
+};
+
+const PositionCashOutManagement = (props: {
+    rows: PositionRow[];
+    activityFetchedAt: number;
+    onRefreshAssets: () => void;
+    children: (manager: PositionCashOutManager) => React.ReactNode;
+}) => {
+    const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
+    const location = useLocation();
+    const lease = useSensitiveWriteLease();
+    const [operations, setOperations] = React.useState<Map<string, WormPositionCashOutOperation>>(() => new Map());
+    const [busyKey, setBusyKey] = React.useState('');
+    const [pollError, setPollError] = React.useState('');
+    const notifiedRef = React.useRef(new Set<string>());
+
+    const runSensitive = React.useCallback(
+        async <T,>(start: () => Promise<T> & {abort?: () => void}) => {
+            const result = await lease.runTask(start);
+            if (result.status === 'fulfilled') {
+                return result.value;
+            }
+            if (result.status === 'rejected') {
+                throw result.error;
+            }
+            throw new DOMException('The Cash Out request is no longer current.', 'AbortError');
+        },
+        [lease]
+    );
+
+    const publishOperation = React.useCallback(
+        (operation: WormPositionCashOutOperation) => {
+            const key = `${operation.walletId}:${operation.positionPubkey}`;
+            setOperations(current => {
+                const previous = current.get(key);
+                if (previous && previous.id === operation.id && previous.revision > operation.revision) {
+                    return current;
+                }
+                const next = new Map(current);
+                next.set(key, operation);
+                return next;
+            });
+            setPollError('');
+            if (terminalCashOutStates.has(operation.state) && !notifiedRef.current.has(operation.id)) {
+                notifiedRef.current.add(operation.id);
+                forgetPositionCashOutID(operation.id);
+                if (operation.state === 'COMPLETED') {
+                    ctx.notifications.success('Position cashed out', 'Worm has confirmed that the exact position is closed.');
+                } else {
+                    ctx.notifications.error(
+                        operation.state === 'EXPIRED' ? 'Cash Out authorization expired' : 'Cash Out was not completed',
+                        operation.reasonCode ? cashOutReasonMessage(operation.reasonCode) : 'No additional Close request was sent.'
+                    );
+                }
+                props.onRefreshAssets();
+            }
+        },
+        [ctx.notifications, props.onRefreshAssets]
+    );
+
+    const viewFor = React.useCallback(
+        (row: PositionRow): PositionCashOutView => {
+            const projection = row.position.cashOut;
+            const tracked = operations.get(positionCashOutRowKey(row));
+            if (!tracked || (projection.operationId && (projection.operationId !== tracked.id || projection.revision >= tracked.revision))) {
+                return projection;
+            }
+            return cashOutViewFromOperation(tracked);
+        },
+        [operations]
+    );
+
+    const authorizeOperation = React.useCallback(
+        async (row: PositionRow, operation: PositionCashOutView) => {
+            if (!operation.operationId || operation.revision < 1 || operation.allowedAction !== 'AUTHORIZE_CASH_OUT') {
+                throw new Error('Athena did not return a durable Cash Out operation. No Close request was sent.');
+            }
+            const command = {commandId: window.crypto.randomUUID(), expectedRevision: operation.revision};
+            const identity = authorization.user.identity;
+            rememberPositionCashOutID(operation.operationId);
+            if (identity.provider === AccountIdentityProvider.Google) {
+                const returnTo = `${location.pathname}${location.search}`;
+                const authorizationURL = new URL(services.wormTrading.googlePositionCashOutAuthorizationURL(operation.operationId, command, returnTo), window.location.origin);
+                if (authorizationURL.origin !== window.location.origin) {
+                    throw new Error('Athena returned an invalid Cash Out authorization route.');
+                }
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = authorizationURL.toString();
+                form.hidden = true;
+                document.body.appendChild(form);
+                form.submit();
+                form.remove();
+                return;
+            }
+            let authorized: WormPositionCashOutOperation;
+            if (identity.provider === AccountIdentityProvider.SolanaWallet) {
+                const provider = phantomProvider();
+                if (!provider) {
+                    throw new Error('Phantom is required to authorize this Cash Out.');
+                }
+                const connected = provider.publicKey ? {publicKey: provider.publicKey} : await provider.connect();
+                if (connected.publicKey.toString() !== identity.solanaAddress) {
+                    throw new Error('Phantom is connected to a different login address.');
+                }
+                const challenge = await runSensitive(() => services.wormTrading.createSolanaPositionCashOutAuthorizationChallenge(operation.operationId, command));
+                const signed = await provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8');
+                authorized = await runSensitive(() => services.wormTrading.verifySolanaPositionCashOutAuthorization(operation.operationId, rawBase64URL(signed.signature)));
+            } else if (identity.provider === AccountIdentityProvider.Development) {
+                authorized = await runSensitive(() => services.wormTrading.authorizeDevelopmentPositionCashOut(operation.operationId, command));
+            } else {
+                throw new Error('This login identity cannot authorize a Cash Out.');
+            }
+            if (!cashOutOperationMatchesRow(authorized, row)) {
+                throw new Error('Athena returned a Cash Out for a different position. Existing state was not replaced.');
+            }
+            publishOperation(authorized);
+            props.onRefreshAssets();
+        },
+        [authorization.user.identity, location.pathname, location.search, props.onRefreshAssets, publishOperation, runSensitive]
+    );
+
+    const authorize = React.useCallback(
+        async (row: PositionRow, operation: PositionCashOutView) => {
+            const key = positionCashOutRowKey(row);
+            if (busyKey) {
+                return;
+            }
+            setBusyKey(key);
+            try {
+                await authorizeOperation(row, operation);
+            } catch (reason) {
+                if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+                    ctx.notifications.error('Could not authorize Cash Out', requestErrorMessage(reason, 'No Close request was replayed.'));
+                    try {
+                        publishOperation(await runSensitive(() => services.wormTrading.getPositionCashOut(operation.operationId)));
+                    } catch {
+                        props.onRefreshAssets();
+                    }
+                }
+            } finally {
+                setBusyKey('');
+            }
+        },
+        [authorizeOperation, busyKey, ctx.notifications, props.onRefreshAssets, publishOperation, runSensitive]
+    );
+
+    const createAndAuthorize = React.useCallback(
+        async (row: PositionRow) => {
+            const key = positionCashOutRowKey(row);
+            if (busyKey) {
+                return;
+            }
+            setBusyKey(key);
+            try {
+                const operation = await runSensitive(() =>
+                    services.wormTrading.createPositionCashOut({
+                        commandId: window.crypto.randomUUID(),
+                        walletId: row.wallet.walletId,
+                        positionPubkey: row.position.pubkey
+                    })
+                );
+                if (!cashOutOperationMatchesRow(operation, row)) {
+                    throw new Error('Athena returned a Cash Out for a different position. No authorization was sent.');
+                }
+                publishOperation(operation);
+                if (terminalCashOutStates.has(operation.state)) {
+                    return;
+                }
+                await authorizeOperation(row, cashOutViewFromOperation(operation));
+            } catch (reason) {
+                if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+                    ctx.notifications.error('Could not prepare Cash Out', requestErrorMessage(reason, 'No Close request was replayed.'));
+                    props.onRefreshAssets();
+                }
+            } finally {
+                setBusyKey('');
+            }
+        },
+        [authorizeOperation, busyKey, ctx.notifications, props.onRefreshAssets, publishOperation, runSensitive]
+    );
+
+    const confirm = React.useCallback(
+        (row: PositionRow) => {
+            ctx.modal.confirm({
+                title: 'Cash out this Worm position?',
+                content: (
+                    <div className='worm-position-cash-out-confirmation'>
+                        <dl>
+                            <div>
+                                <dt>Wallet</dt>
+                                <dd>{row.wallet.remark || shortAddress(row.wallet.address)}</dd>
+                            </div>
+                            <div>
+                                <dt>Market</dt>
+                                <dd>{row.position.market.title || row.position.market.conditionId}</dd>
+                            </div>
+                            <div>
+                                <dt>Position</dt>
+                                <dd>
+                                    {row.position.side} · {optionalValue(row.position.totalShares)} shares
+                                </dd>
+                            </div>
+                        </dl>
+                        <Alert
+                            type='warning'
+                            showIcon={true}
+                            title='Full-position market exit'
+                            description='This closes the entire position at the available market price. The final execution price is not guaranteed, and partial Cash Out is not supported.'
+                        />
+                        <Typography.Paragraph type='secondary'>
+                            You will confirm your identity next. Phantom signs only an identity message; it does not submit a transaction or charge a network fee.
+                        </Typography.Paragraph>
+                        <Typography.Paragraph type='secondary'>
+                            Pending does not mean Closed. If the result becomes unknown, use Check status and do not submit another Cash Out.
+                        </Typography.Paragraph>
+                    </div>
+                ),
+                okText: 'Continue to authorization',
+                cancelText: 'Keep position open',
+                onOk: () => createAndAuthorize(row)
+            });
+        },
+        [createAndAuthorize, ctx.modal]
+    );
+
+    const reconcileByKey = React.useCallback(
+        async (key: string, operation: PositionCashOutView) => {
+            if (!operation.operationId || operation.revision < 1 || busyKey) {
+                return;
+            }
+            setBusyKey(key);
+            try {
+                const current = await runSensitive(() => services.wormTrading.getPositionCashOut(operation.operationId));
+                publishOperation(current);
+                if (current.state !== 'RECONCILIATION_REQUIRED' || !current.allowedActions.includes('CHECK_STATUS')) {
+                    props.onRefreshAssets();
+                    return;
+                }
+                const next = await runSensitive(() =>
+                    services.wormTrading.reconcilePositionCashOut(current.id, {
+                        commandId: window.crypto.randomUUID(),
+                        expectedRevision: current.revision
+                    })
+                );
+                publishOperation(next);
+                props.onRefreshAssets();
+            } catch (reason) {
+                if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+                    ctx.notifications.error('Could not check Cash Out status', requestErrorMessage(reason, 'Athena did not resend Close.'));
+                    try {
+                        publishOperation(await runSensitive(() => services.wormTrading.getPositionCashOut(operation.operationId)));
+                    } catch {
+                        props.onRefreshAssets();
+                    }
+                }
+            } finally {
+                setBusyKey('');
+            }
+        },
+        [busyKey, ctx.notifications, props.onRefreshAssets, publishOperation, runSensitive]
+    );
+
+    const reconcile = React.useCallback((row: PositionRow, operation: PositionCashOutView) => reconcileByKey(positionCashOutRowKey(row), operation), [reconcileByKey]);
+
+    React.useEffect(() => {
+        const pendingIDs = rememberedPositionCashOutIDs();
+        const url = new URL(window.location.href);
+        const reason = url.searchParams.get(positionCashOutReasonQuery) || '';
+        if (reason) {
+            ctx.notifications.error('Could not authorize Cash Out', cashOutReasonMessage(reason));
+            url.searchParams.delete(positionCashOutReasonQuery);
+            window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+        }
+        if (pendingIDs.length === 0) {
+            return;
+        }
+        let active = true;
+        void (async () => {
+            for (const id of pendingIDs) {
+                try {
+                    const operation = await runSensitive(() => services.wormTrading.getPositionCashOut(id));
+                    if (!active) {
+                        return;
+                    }
+                    publishOperation(operation);
+                    props.onRefreshAssets();
+                } catch (error) {
+                    if (active && !(error instanceof DOMException && error.name === 'AbortError')) {
+                        const status = requestErrorDetails(error).status;
+                        if (status === 403 || status === 404) {
+                            forgetPositionCashOutID(id);
+                        }
+                        setPollError(requestErrorMessage(error, 'Cash Out status could not be restored after authorization.'));
+                    }
+                }
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [authorization.revision, authorization.user.accountId, ctx.notifications, props.onRefreshAssets, publishOperation, runSensitive]);
+
+    const pollingKey = React.useMemo(() => {
+        const ids = new Set<string>();
+        const trackedIDs = new Set<string>();
+        props.rows.forEach(row => {
+            if (row.position.cashOut.operationId && cashOutPollStates.has(row.position.cashOut.state)) {
+                ids.add(row.position.cashOut.operationId);
+            }
+        });
+        operations.forEach(operation => {
+            trackedIDs.add(operation.id);
+            if (cashOutPollStates.has(operation.state)) {
+                ids.add(operation.id);
+            }
+        });
+        rememberedPositionCashOutIDs().forEach(id => {
+            if (!trackedIDs.has(id)) {
+                ids.add(id);
+            }
+        });
+        return Array.from(ids).sort().join('|');
+    }, [operations, props.rows]);
+
+    React.useEffect(() => {
+        if (!pollingKey) {
+            return;
+        }
+        const pollingIDs = pollingKey.split('|');
+        let active = true;
+        let timer: number | undefined;
+        const poll = async () => {
+            for (const id of pollingIDs) {
+                try {
+                    const operation = await runSensitive(() => services.wormTrading.getPositionCashOut(id));
+                    if (!active) {
+                        return;
+                    }
+                    publishOperation(operation);
+                } catch (reason) {
+                    if (active && !(reason instanceof DOMException && reason.name === 'AbortError')) {
+                        const status = requestErrorDetails(reason).status;
+                        if (status === 403 || status === 404) {
+                            forgetPositionCashOutID(id);
+                        }
+                        setPollError(requestErrorMessage(reason, 'Cash Out status could not be refreshed. No Close request was replayed.'));
+                    }
+                }
+            }
+            if (active) {
+                timer = window.setTimeout(poll, positionCashOutPollIntervalMS);
+            }
+        };
+        timer = window.setTimeout(poll, positionCashOutPollIntervalMS);
+        return () => {
+            active = false;
+            if (timer !== undefined) {
+                window.clearTimeout(timer);
+            }
+        };
+    }, [pollingKey, publishOperation, runSensitive]);
+
+    React.useEffect(() => {
+        if (props.activityFetchedAt <= 0) {
+            return;
+        }
+        const currentRows = new Map(props.rows.map(row => [positionCashOutRowKey(row), row]));
+        setOperations(current => {
+            let changed = false;
+            const next = new Map(current);
+            current.forEach((operation, key) => {
+                const row = currentRows.get(key);
+                const projection = row?.position.cashOut;
+                if ((!row && operation.state === 'COMPLETED') || (projection?.operationId && projection.operationId !== operation.id)) {
+                    next.delete(key);
+                    changed = true;
+                } else if (
+                    projection &&
+                    !projection.operationId &&
+                    (operation.state === 'FAILED' || operation.state === 'EXPIRED') &&
+                    props.activityFetchedAt > operation.updatedAt
+                ) {
+                    next.delete(key);
+                    changed = true;
+                }
+            });
+            return changed ? next : current;
+        });
+    }, [props.activityFetchedAt, props.rows]);
+
+    const exactVisibleOperationIDs = new Set<string>();
+    operations.forEach(operation => {
+        if (props.rows.some(row => cashOutOperationMatchesRow(operation, row))) {
+            exactVisibleOperationIDs.add(operation.id);
+        }
+    });
+    const unknownRows = props.rows
+        .map(row => ({row, view: viewFor(row)}))
+        .filter(item => item.view.state === 'RECONCILIATION_REQUIRED' && item.view.operationId && item.view.allowedAction === 'CHECK_STATUS');
+    const visibleUnknownIDs = new Set(unknownRows.map(item => item.view.operationId));
+    const orphanUnknownOperations = Array.from(operations.values()).filter(operation => operation.state === 'RECONCILIATION_REQUIRED' && !visibleUnknownIDs.has(operation.id));
+    const orphanPendingOperations = Array.from(operations.values()).filter(
+        operation => cashOutExecutionPendingStates.has(operation.state) && !exactVisibleOperationIDs.has(operation.id)
+    );
+    const alerts = (
+        <>
+            {pollError && (
+                <Alert
+                    className='worm-position-cash-out-alert'
+                    type='warning'
+                    showIcon={true}
+                    title='Cash Out status could not be refreshed'
+                    description={`${pollError} Refreshing status never resends Close.`}
+                />
+            )}
+            {orphanPendingOperations.map(operation => (
+                <Alert
+                    className='worm-position-cash-out-alert'
+                    key={operation.id}
+                    type='info'
+                    showIcon={true}
+                    title='Cash Out is still pending'
+                    description={`Worm has not yet confirmed that wallet ${shortAddress(operation.walletAddress)} position ${shortAddress(
+                        operation.positionPubkey,
+                        7,
+                        7
+                    )} is closed. Its position row may disappear while Close is processing; Pending does not mean Closed, and Athena will not resend Close.`}
+                />
+            ))}
+            {unknownRows.map(({row, view}) => (
+                <Alert
+                    className='worm-position-cash-out-alert'
+                    key={view.operationId}
+                    type='error'
+                    showIcon={true}
+                    title='Cash Out outcome requires attention'
+                    description={`Athena cannot yet prove whether ${row.wallet.remark || shortAddress(row.wallet.address)} position ${shortAddress(
+                        row.position.pubkey,
+                        7,
+                        7
+                    )} is closed. Do not submit another Cash Out; Check status performs read-only reconciliation.`}
+                    action={
+                        view.allowedAction === 'CHECK_STATUS' ? (
+                            <Button icon={<ReloadOutlined />} loading={busyKey === positionCashOutRowKey(row)} onClick={() => reconcile(row, view)}>
+                                Check status
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            ))}
+            {orphanUnknownOperations.map(operation => {
+                const view = cashOutViewFromOperation(operation);
+                const key = `${operation.walletId}:${operation.positionPubkey}`;
+                return (
+                    <Alert
+                        className='worm-position-cash-out-alert'
+                        key={operation.id}
+                        type='error'
+                        showIcon={true}
+                        title='Cash Out outcome requires attention'
+                        description={`Athena cannot yet prove whether wallet ${shortAddress(operation.walletAddress)} position ${shortAddress(
+                            operation.positionPubkey,
+                            7,
+                            7
+                        )} is closed. Do not submit another Cash Out; Check status performs read-only reconciliation.`}
+                        action={
+                            operation.allowedActions.includes('CHECK_STATUS') ? (
+                                <Button icon={<ReloadOutlined />} loading={busyKey === key} onClick={() => void reconcileByKey(key, view)}>
+                                    Check status
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                );
+            })}
+        </>
+    );
+    const manager: PositionCashOutManager = {
+        busyKey,
+        viewFor,
+        confirm,
+        authorize: (row, view) => void authorize(row, view),
+        reconcile: (row, view) => void reconcile(row, view),
+        alerts
+    };
+    return <>{props.children(manager)}</>;
+};
+
 export const WormTradingPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
@@ -1427,6 +2084,7 @@ export const WormTradingPage = () => {
     React.useEffect(() => {
         if (!canManageConnections) {
             window.sessionStorage.removeItem(pendingConnectionActionKey);
+            window.sessionStorage.removeItem(pendingPositionCashOutKey);
         }
     }, [accountID, authorization.revision, canManageConnections]);
 
@@ -1447,6 +2105,10 @@ export const WormTradingPage = () => {
         balances.reload();
         activity.reload();
     }, [activity, balances, runtime]);
+    const refreshAssets = React.useCallback(() => {
+        balances.reload();
+        activity.reload();
+    }, [activity.reload, balances.reload]);
     const reloadConnections = React.useCallback(() => {
         runtime.reload();
         balances.reload();
@@ -1465,7 +2127,7 @@ export const WormTradingPage = () => {
         .sort((left, right) => right.request.createdAt - left.request.createdAt);
     const total = Math.max(balances.data?.total || 0, activity.data?.total || 0);
 
-    const renderContent = (manager?: ConnectionManager) => {
+    const renderContent = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager) => {
         const connectionFor = (walletId: number) => manager?.connections.get(walletId) || activityByWallet.get(walletId)?.connection;
         const balanceColumns: ColumnsType<WormTradingWalletBalanceItem> = [
             {
@@ -1553,6 +2215,16 @@ export const WormTradingPage = () => {
                 )
             }
         ];
+        if (cashOutManager) {
+            positionColumns.push({
+                title: 'Actions',
+                key: 'actions',
+                fixed: 'right',
+                width: 185,
+                className: 'worm-position-cash-out-table-action',
+                render: (_, row) => <PositionCashOutButton row={row} manager={cashOutManager} />
+            });
+        }
         const requestColumns: ColumnsType<RequestRow> = [
             {title: 'Wallet', key: 'wallet', width: 245, render: (_, row) => <WalletIdentity wallet={row.wallet} onCopy={() => void copyAddress(row.wallet)} />},
             {title: 'Market', key: 'market', width: 330, render: (_, row) => <MarketIdentity market={row.request.market} />},
@@ -1700,6 +2372,8 @@ export const WormTradingPage = () => {
                     />
                 )}
 
+                {cashOutManager?.alerts}
+
                 <section className='worm-trading-activity' aria-labelledby='worm-trading-positions-heading'>
                     <div className='worm-trading-balances__heading'>
                         <div>
@@ -1723,8 +2397,8 @@ export const WormTradingPage = () => {
                                 items={positionRows}
                                 loading={activity.loading && !activity.data}
                                 columns={positionColumns}
-                                scrollX={1395}
-                                compactRender={row => <PositionCard row={row} onCopy={() => void copyAddress(row.wallet)} />}
+                                scrollX={cashOutManager ? 1580 : 1395}
+                                compactRender={row => <PositionCard row={row} cashOutManager={cashOutManager} onCopy={() => void copyAddress(row.wallet)} />}
                                 compactEmptyDescription='No open positions are available for the connected wallets on this page.'
                             />
                         </>
@@ -1792,7 +2466,7 @@ export const WormTradingPage = () => {
         );
     };
 
-    const renderPage = (manager?: ConnectionManager) => (
+    const renderPage = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager) => (
         <AppPage
             title='Worm Trading Assets'
             subtitle='Review confirmed wallet balances and official Worm position activity. Balances are not Worm collateral or available-to-order limits.'
@@ -1804,13 +2478,19 @@ export const WormTradingPage = () => {
                 refresh();
                 manager?.refreshInventory();
             }}>
-            {renderContent(manager)}
+            {renderContent(manager, cashOutManager)}
         </AppPage>
     );
 
     return canManageConnections ? (
         <SensitiveWriteScope module={AccountDataModule.WormTrading}>
-            <ConnectionManagement onReload={reloadConnections}>{manager => renderPage(manager)}</ConnectionManagement>
+            <ConnectionManagement onReload={reloadConnections}>
+                {manager => (
+                    <PositionCashOutManagement rows={positionRows} activityFetchedAt={activity.data?.fetchedAt || 0} onRefreshAssets={refreshAssets}>
+                        {cashOutManager => renderPage(manager, cashOutManager)}
+                    </PositionCashOutManagement>
+                )}
+            </ConnectionManagement>
         </SensitiveWriteScope>
     ) : (
         renderPage()

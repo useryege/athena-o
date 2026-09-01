@@ -18,7 +18,10 @@ and account UUID. [Account and Wallet Avatar Storage](account-avatar-storage.md)
 the shared private S3-compatible storage boundary and image validation used by
 both account and wallet avatars. Worm Trading owns Solana balance and Worm
 position reads plus its owner-scoped summary projection; it consumes only safe
-Wallet metadata selected by the API Server. Worm execution-preview creation
+Wallet metadata selected by the API Server. Assets position Cash Out repeats an
+owner-scoped Wallet lookup for the submitted Wallet ID, requires Solana type and
+canonical address, and then uses Worm Trading's HMAC credential; Wallet does not
+reveal or sign anything for that Close. Worm execution-preview creation
 also resolves every selected Wallet through this owner-scoped safe boundary and
 freezes only its ID, address, remark, and avatar presentation; preview building
 does not ask Wallet to reveal or sign anything. Wallet additionally owns two
@@ -43,7 +46,7 @@ deletion, and blockchain RPC calls remain outside this capability.
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
-| Owner-scoped Worm Trading projection, preview resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `completeWormConnection` |
+| Owner-scoped Worm Trading projection, preview/Cash-Out resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `resolveOwnedPositionCashOutWallet`, `completeWormConnection` |
 | Browser management surface | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
 | Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, general internal token, independent Worm execution-signer token and clientset |
 
@@ -73,13 +76,24 @@ avatar presentation, revision, and timestamps. Private keys appear only in the
 one-time create response or the separately protected native HTTP reveal
 response. Import never echoes submitted material.
 
-Worm Trading balance and activity reads accept no owner UUID or wallet address.
-The API Server derives the authenticated account UUID, lists that owner's
+Public Worm Trading balance and activity reads accept no browser-supplied owner
+UUID or wallet address. The API Server derives the authenticated account UUID, lists that owner's
 Solana wallets through the internal Wallet API, and reduces each item to wallet
 ID, address, remark, and avatar presentation before attaching SOL/USDC balances,
 Worm connection state, open positions, and in-flight requests. These paths
 require Worm Trading `READ` but do not grant the public Wallet list or detail
-APIs.
+APIs. The internal activity call carries the derived owner only to join active
+Cash-Out and Run conflicts into safe per-position actions.
+
+The native position-Cash-Out create path accepts one Wallet ID and HMAC position
+pubkey only after an interactive Worm Trading `READ_WRITE` request. The API
+Server calls owner-scoped `GetWallet`, requires the returned row to be that
+exact ID, Solana type, and canonical address, and forwards only the derived
+owner, ID, address, and position pubkey to Worm Trading. Worm Trading then reads
+the position and submits Close with its separate HMAC credential. This path
+never calls private-key reveal, `SignWormAuthChallenge`, or
+`WormExecutionSignerService`; Phantom proof signs the persisted login identity,
+which is independent from the selected custodial Wallet.
 
 The native Worm connection inventory applies the same server-derived owner and
 fixed Solana filter across pages of at most 100 wallets. It is restricted to an
@@ -206,6 +220,15 @@ this is a server-custodied design.
     only the bounded signature/finalize payload plus digests and signer
     metadata. Neither signer RPC creates a Solana RPC request or submits a
     transaction.
+12. An Assets Cash-Out create calls owner-scoped `GetWallet` once for the
+    submitted positive Wallet ID and current account. The API Server requires
+    an exact Solana row and canonical address before forwarding it to Worm
+    Trading with the HMAC position pubkey. Worm Trading fresh-reads and freezes
+    the provider position, then later uses only its HMAC credential for the
+    whole-position Close. Google, Phantom, or development proof binds the
+    operation identity; it does not ask the selected custody Wallet to reveal or
+    sign. A missing, foreign, non-Solana, mismatched, or malformed Wallet fails
+    before the operation or Close can proceed.
 
 ## State / Data
 
@@ -234,6 +257,13 @@ Live-execution Wallet snapshots also live in Worm Trading and remain copies of
 the safe preview identity; they do not establish ownership. Run/Step/intent and
 transaction digests are request-time signer bindings, not Wallet database
 columns.
+
+Position-Cash-Out rows likewise live only in Worm Trading. They freeze the
+API-Server-resolved Wallet ID/address and the current HMAC credential version
+beside provider-derived position identity; those fields are operation evidence,
+not a second ownership source. Fresh proof binds the login Session and operation
+intent, while the selected custodial Wallet's ciphertext and revision remain in
+Wallet and no Cash-Out signer record is created there.
 
 Private-key canonical forms are `0x` plus 64 lowercase hexadecimal digits for
 EVM and Base58 of the complete 64-byte Ed25519 keypair for Solana. Ciphertext is
@@ -294,6 +324,13 @@ signed transaction, Run binding, or digest in the Wallet database.
 - Execution-preview Wallet selection is interactive, owner-scoped, Solana-only,
   ordered, and safe-metadata-only. Preview building cannot call Wallet secret
   reveal or either signing path.
+- Position Cash Out resolves one current-account Wallet ID through owner-scoped
+  `GetWallet`, requires exact Solana type/address, and forwards no ciphertext or
+  private key. Its HMAC Close and provider proof cannot call reveal,
+  `SignWormAuthChallenge`, or either execution-signer RPC.
+- A Phantom Cash-Out proof uses the account's persisted external login address,
+  not the selected custodial Wallet, and signs only an identity statement with
+  no transaction or fee.
 
 ## Failure Recovery
 
@@ -324,6 +361,15 @@ malformed Wallet causes execution-plan creation to fail before the durable plan
 is accepted. Once creation succeeds, preview-worker failures remain in Worm
 Trading and do not cause a Wallet secret operation or mutate the Wallet row.
 
+The same unavailable, missing, foreign-owned, non-Solana, or mismatched Wallet
+causes Cash-Out creation to fail before a durable authorized mutation exists.
+A later Wallet address or pre-dispatch Worm credential-version mismatch fails
+fresh preflight without asking Wallet to sign or revealing its key. After a
+Close is dispatched, provider reconciliation remains entirely in Worm Trading
+and cannot fall back to a Wallet signing or secret-reveal path. It may use the
+latest active HMAC credential only for an exact read of the same frozen Wallet
+address; this does not grant Wallet authority or permit another Close.
+
 Avatar object-store failure affects only avatar upload or delivery. Wallet
 listing, metadata editing, and secret access remain available, and the UI falls
 back to the deterministic avatar. Candidate-write ambiguity is reconciled
@@ -345,6 +391,10 @@ Live-execution logs and projections may additionally identify a Run, Step,
 request ID, signer slot, transaction version, and non-secret digest. They never
 contain the Worm JWT, sign-in message, raw or signed transaction, private key,
 signature bytes, finalize payload, or execution-signer Bearer.
+Position-Cash-Out projections may identify the same safe Wallet ID/address and
+the exact HMAC position pubkey, but never Wallet revision/source/ciphertext,
+private key, external-identity signature, HMAC credential/header, or raw Close
+response. Wallet logs receive no Cash-Out signing request because none exists.
 
 ## Change Checklist
 
@@ -356,6 +406,7 @@ signature bytes, finalize payload, or execution-signer Bearer.
 - [ ] Worm Trading summary reads, interactive management inventory, and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
 - [ ] The Worm challenge signer remains internal, owner scoped, Solana-only, exact-message-bound, and unavailable to API Keys.
 - [ ] Execution-preview Wallet resolution remains owner-scoped, Solana-only, ordered, safe-metadata-only, and free of reveal or signing calls.
+- [ ] Position-Cash-Out Wallet resolution remains current-account, exact-ID, Solana-only, canonical-address, and free of every Wallet secret/signing path.
 - [ ] The independent execution-signer token reaches only Wallet and Worm Trading, differs from the general Wallet token, and exposes only its two purpose-bound RPCs.
 - [ ] Live signing keeps Run/Step/intent/request/transaction bindings, required-signer validation, signature self-verification, and the documented Worm transaction trust boundary aligned with the implementation.
 - [ ] UI secret state remains memory-only and is cleared on close, route, account, or permission change.

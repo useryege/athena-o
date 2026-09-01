@@ -272,7 +272,10 @@ func (s *Server) ListWalletTradingActivity(ctx context.Context, req *wormtrading
 		refs[i] = &wormtradingapiclient.WalletPositionReference{WalletId: wallet.ID, Address: wallet.Address}
 	}
 
-	snapshots, err := s.wormTradingClientSet.WormTrading().BatchGetWalletPositionSnapshots(ctx, &wormtradingapiclient.BatchGetWalletPositionSnapshotsRequest{Refs: refs})
+	snapshots, err := s.wormTradingClientSet.WormTrading().BatchGetWalletPositionSnapshots(ctx, &wormtradingapiclient.BatchGetWalletPositionSnapshotsRequest{
+		Refs:           refs,
+		OwnerAccountId: accountID,
+	})
 	if err != nil {
 		return nil, sanitizeWormTradingDependencyError(err)
 	}
@@ -374,7 +377,22 @@ func publicOpenPosition(position *wormtradingapiclient.WormOpenPosition) (*wormt
 		IsLiquidated:          position.GetIsLiquidated(),
 		IsClaimed:             position.GetIsClaimed(),
 		CreatedAt:             position.GetCreatedAt(),
+		CashOut:               publicPositionCashOutSummary(position.GetCashOut()),
 	}, nil
+}
+
+func publicPositionCashOutSummary(summary *wormtradingapiclient.WormPositionCashOutSummary) *wormtradingpkg.WormPositionCashOutSummary {
+	if summary == nil {
+		return nil
+	}
+	return &wormtradingpkg.WormPositionCashOutSummary{
+		OperationId:   summary.GetOperationId(),
+		State:         summary.GetState(),
+		ReasonCode:    summary.GetReasonCode(),
+		AllowedAction: summary.GetAllowedAction(),
+		Revision:      summary.GetRevision(),
+		UpdatedAt:     summary.GetUpdatedAt(),
+	}
 }
 
 func publicInFlightRequest(positionRequest *wormtradingapiclient.WormInFlightPositionRequest) (*wormtradingpkg.WormInFlightRequest, error) {

@@ -44,6 +44,10 @@ func (s *Service) BatchGetWalletPositionSnapshots(
 	if req == nil || len(req.GetRefs()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "refs must contain at least one wallet")
 	}
+	ownerAccountID, err := normalizeMarketCombinationAccountID(req.GetOwnerAccountId())
+	if err != nil {
+		return nil, err
+	}
 	if len(req.GetRefs()) > maxWalletBalanceReferences {
 		return nil, status.Errorf(codes.InvalidArgument, "refs must contain at most %d wallets", maxWalletBalanceReferences)
 	}
@@ -195,6 +199,9 @@ func (s *Service) BatchGetWalletPositionSnapshots(
 	if allConnectedStreamsTemporarilyUnavailable {
 		return nil, status.Error(codes.Unavailable, "Worm position provider is unavailable")
 	}
+	if err := s.projectPositionCashOutAvailability(pageCtx, ownerAccountID, items); err != nil {
+		return nil, err
+	}
 
 	return &apiclient.BatchGetWalletPositionSnapshotsResponse{
 		Items:                items,
@@ -203,6 +210,95 @@ func (s *Service) BatchGetWalletPositionSnapshots(
 		InFlightRequestCount: inFlightRequestCount,
 		Status:               pageStatus,
 	}, nil
+}
+
+func (s *Service) projectPositionCashOutAvailability(
+	ctx context.Context,
+	ownerAccountID string,
+	items []*apiclient.WalletPositionSnapshot,
+) error {
+	walletIDs := make([]int64, 0, len(items))
+	for _, item := range items {
+		if item != nil && len(item.GetOpenPositions()) > 0 {
+			walletIDs = append(walletIDs, item.GetWalletId())
+		}
+	}
+	if len(walletIDs) == 0 {
+		return nil
+	}
+	activeCashOuts, err := s.credentialStore.ListActivePositionCashOuts(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return status.Error(codes.Unavailable, "Worm position Cash Out store is unavailable")
+	}
+	executionWalletIDs, err := s.credentialStore.ListActiveExecutionRunWalletIDs(ctx, ownerAccountID, walletIDs)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return status.Error(codes.Unavailable, "Worm execution guard store is unavailable")
+	}
+	activeByWallet := make(map[int64]wormstore.PositionCashOut, len(activeCashOuts))
+	for _, cashOut := range activeCashOuts {
+		activeByWallet[cashOut.WalletID] = cashOut
+	}
+	executionWallets := make(map[int64]struct{}, len(executionWalletIDs))
+	for _, walletID := range executionWalletIDs {
+		executionWallets[walletID] = struct{}{}
+	}
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		cashOut, hasCashOut := activeByWallet[item.GetWalletId()]
+		_, executionActive := executionWallets[item.GetWalletId()]
+		for _, position := range item.GetOpenPositions() {
+			if position == nil {
+				continue
+			}
+			summary := &apiclient.WormPositionCashOutSummary{AllowedAction: "CASH_OUT"}
+			switch {
+			case position.GetIsLiquidated():
+				summary.ReasonCode = "POSITION_LIQUIDATED"
+				summary.AllowedAction = "NONE"
+			case position.GetIsClosed():
+				summary.ReasonCode = "POSITION_NOT_CLOSABLE"
+				summary.AllowedAction = "NONE"
+			case hasCashOut && cashOut.PositionPubkey == position.GetPubkey():
+				summary = positionCashOutSummaryToProto(cashOut)
+			case hasCashOut:
+				summary.OperationId = cashOut.ID
+				summary.State = string(cashOut.State)
+				summary.Revision = cashOut.Revision
+				summary.ReasonCode = "WALLET_CASH_OUT_ACTIVE"
+				summary.UpdatedAt = cashOut.UpdatedAt.Unix()
+				summary.AllowedAction = "NONE"
+			case executionActive:
+				summary.ReasonCode = "WALLET_EXECUTION_ACTIVE"
+				summary.AllowedAction = "NONE"
+			}
+			position.CashOut = summary
+		}
+	}
+	return nil
+}
+
+func positionCashOutSummaryToProto(cashOut wormstore.PositionCashOut) *apiclient.WormPositionCashOutSummary {
+	allowedAction := "NONE"
+	switch cashOut.State {
+	case wormstore.PositionCashOutStateAwaitingAuthorization:
+		allowedAction = "AUTHORIZE_CASH_OUT"
+	case wormstore.PositionCashOutStateReconciliationRequired:
+		if cashOut.ClaimID == "" && cashOut.ReconcileRequestedAt.IsZero() {
+			allowedAction = "CHECK_STATUS"
+		}
+	}
+	return &apiclient.WormPositionCashOutSummary{
+		OperationId:   cashOut.ID,
+		State:         string(cashOut.State),
+		ReasonCode:    cashOut.ReasonCode,
+		AllowedAction: allowedAction,
+		Revision:      cashOut.Revision,
+		UpdatedAt:     cashOut.UpdatedAt.Unix(),
+	}
 }
 
 func (s *Service) fetchOpenPositions(ctx context.Context, client WormAPIClient) positionStreamResult {

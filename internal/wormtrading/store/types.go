@@ -825,6 +825,246 @@ type RecoverableExecutionStep struct {
 	Step                  ExecutionRunStep
 }
 
+// PositionCashOutState is the durable lifecycle of one owner-authorized,
+// whole-position HMAC market Close. RECONCILIATION_REQUIRED remains active and
+// continues to isolate its Wallet because a dispatched mutation may have taken
+// effect remotely.
+type PositionCashOutState string
+
+const (
+	PositionCashOutStateAwaitingAuthorization  PositionCashOutState = "AWAITING_AUTHORIZATION"
+	PositionCashOutStateQueued                 PositionCashOutState = "QUEUED"
+	PositionCashOutStatePreflighting           PositionCashOutState = "PREFLIGHTING"
+	PositionCashOutStateClosing                PositionCashOutState = "CLOSING"
+	PositionCashOutStateAwaitingCompletion     PositionCashOutState = "AWAITING_COMPLETION"
+	PositionCashOutStateCompleted              PositionCashOutState = "COMPLETED"
+	PositionCashOutStateFailed                 PositionCashOutState = "FAILED"
+	PositionCashOutStateReconciliationRequired PositionCashOutState = "RECONCILIATION_REQUIRED"
+	PositionCashOutStateExpired                PositionCashOutState = "EXPIRED"
+)
+
+type PositionCashOutAuthorizationState string
+
+const (
+	PositionCashOutAuthorizationStateAuthorized PositionCashOutAuthorizationState = "AUTHORIZED"
+	PositionCashOutAuthorizationStateConsumed   PositionCashOutAuthorizationState = "CONSUMED"
+	PositionCashOutAuthorizationStateRevoked    PositionCashOutAuthorizationState = "REVOKED"
+)
+
+type PositionCashOutAttemptState string
+
+const (
+	PositionCashOutAttemptStatePrepared       PositionCashOutAttemptState = "PREPARED"
+	PositionCashOutAttemptStateDispatched     PositionCashOutAttemptState = "DISPATCHED"
+	PositionCashOutAttemptStateAcknowledged   PositionCashOutAttemptState = "ACKNOWLEDGED"
+	PositionCashOutAttemptStateRejected       PositionCashOutAttemptState = "REJECTED"
+	PositionCashOutAttemptStateOutcomeUnknown PositionCashOutAttemptState = "OUTCOME_UNKNOWN"
+)
+
+type PositionCashOutCommandKind string
+
+const (
+	PositionCashOutCommandKindCreate    PositionCashOutCommandKind = "CREATE"
+	PositionCashOutCommandKindAuthorize PositionCashOutCommandKind = "AUTHORIZE"
+	PositionCashOutCommandKindReconcile PositionCashOutCommandKind = "RECONCILE"
+)
+
+type PositionCashOutAuthorization struct {
+	ID                 string
+	State              PositionCashOutAuthorizationState
+	Scope              string
+	ProofKind          string
+	SessionJTIDigest   []byte
+	AccessRevision     int64
+	IntentDigestSHA256 []byte
+	AuthorizedAt       time.Time
+	EndedAt            time.Time
+	EndReasonCode      string
+}
+
+type PositionCashOutAttempt struct {
+	ID            string
+	State         PositionCashOutAttemptState
+	RequestSHA256 []byte
+	HTTPStatus    int32
+	ProviderCode  int32
+	ProviderSlug  string
+	ProviderState string
+	ErrorCode     string
+	PreparedAt    time.Time
+	DispatchedAt  time.Time
+	CompletedAt   time.Time
+}
+
+type PositionCashOut struct {
+	ID                     string
+	OwnerAccountID         string
+	WalletID               int64
+	WalletAddress          string
+	CredentialVersion      int64
+	PositionPubkey         string
+	MarketConditionID      string
+	IsYes                  bool
+	PositionCreatedAt      time.Time
+	PositionRequestPubkey  string
+	Shares                 string
+	IntentDigestSHA256     []byte
+	State                  PositionCashOutState
+	Revision               int64
+	ReasonCode             string
+	ProviderState          string
+	ProviderIsClosed       bool
+	ProviderIsLiquidated   bool
+	AuthorizationExpiresAt time.Time
+	ExecutionExpiresAt     time.Time
+	AuthorizedAt           time.Time
+	NextPollAt             time.Time
+	PollCount              int32
+	ReconcileRequestedAt   time.Time
+	ClaimID                string
+	ClaimOwner             string
+	ClaimExpiresAt         time.Time
+	CompletedAt            time.Time
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+	Authorization          *PositionCashOutAuthorization
+	Attempt                *PositionCashOutAttempt
+}
+
+func (c PositionCashOut) Clone() PositionCashOut {
+	c.IntentDigestSHA256 = append([]byte(nil), c.IntentDigestSHA256...)
+	if c.Authorization != nil {
+		authorization := *c.Authorization
+		authorization.SessionJTIDigest = append([]byte(nil), authorization.SessionJTIDigest...)
+		authorization.IntentDigestSHA256 = append([]byte(nil), authorization.IntentDigestSHA256...)
+		c.Authorization = &authorization
+	}
+	if c.Attempt != nil {
+		attempt := *c.Attempt
+		attempt.RequestSHA256 = append([]byte(nil), attempt.RequestSHA256...)
+		c.Attempt = &attempt
+	}
+	return c
+}
+
+type CreatePositionCashOutRequest struct {
+	OwnerAccountID         string
+	CommandID              string
+	WalletID               int64
+	WalletAddress          string
+	CredentialVersion      int64
+	PositionPubkey         string
+	MarketConditionID      string
+	IsYes                  bool
+	PositionCreatedAt      time.Time
+	PositionRequestPubkey  string
+	Shares                 string
+	ProviderState          string
+	ProviderIsClosed       bool
+	ProviderIsLiquidated   bool
+	AuthorizationExpiresAt time.Time
+	Now                    time.Time
+}
+
+// GetPositionCashOutCreationRequest is the stable browser-supplied identity
+// of a CREATE command. It intentionally excludes provider observations and
+// generated expiry timestamps so an acknowledged-but-lost response can be
+// replayed without another Worm request.
+type GetPositionCashOutCreationRequest struct {
+	OwnerAccountID string
+	CommandID      string
+	WalletID       int64
+	WalletAddress  string
+	PositionPubkey string
+}
+
+type PositionCashOutCommandRequest struct {
+	OwnerAccountID   string
+	CashOutID        string
+	CommandID        string
+	ExpectedRevision int64
+	Now              time.Time
+}
+
+type AuthorizePositionCashOutRequest struct {
+	PositionCashOutCommandRequest
+	ProofKind          string
+	SessionJTIDigest   []byte
+	AccessRevision     int64
+	ExecutionExpiresAt time.Time
+}
+
+type PositionCashOutClaimRequest struct {
+	CashOutID      string
+	ClaimID        string
+	WorkerID       string
+	LeaseExpiresAt time.Time
+	Now            time.Time
+}
+
+type BeginPositionCashOutClosingRequest struct {
+	CashOutID     string
+	ClaimID       string
+	ProviderState string
+	Now           time.Time
+}
+
+type PreparePositionCashOutAttemptRequest struct {
+	AttemptID     string
+	CashOutID     string
+	ClaimID       string
+	RequestSHA256 []byte
+	Now           time.Time
+}
+
+type DispatchPositionCashOutAttemptRequest struct {
+	AttemptID string
+	CashOutID string
+	ClaimID   string
+	Now       time.Time
+}
+
+type ResolvePositionCashOutAttemptRequest struct {
+	AttemptID     string
+	CashOutID     string
+	State         PositionCashOutAttemptState
+	HTTPStatus    int32
+	ProviderCode  int32
+	ProviderSlug  string
+	ProviderState string
+	ErrorCode     string
+	Now           time.Time
+}
+
+// CompletePositionCashOutDispatchRequest atomically records a validated
+// closed response echo, resolves the one dispatched attempt, and completes
+// the operation. This prevents a crash between those durable facts from
+// discarding authoritative completion evidence.
+type CompletePositionCashOutDispatchRequest struct {
+	AttemptID     string
+	CashOutID     string
+	ClaimID       string
+	HTTPStatus    int32
+	ProviderCode  int32
+	ProviderSlug  string
+	ProviderState string
+	ErrorCode     string
+	Now           time.Time
+}
+
+type RecordPositionCashOutObservationRequest struct {
+	CashOutID            string
+	ClaimID              string
+	ExpectedState        PositionCashOutState
+	NextState            PositionCashOutState
+	ReasonCode           string
+	ProviderState        string
+	ProviderIsClosed     bool
+	ProviderIsLiquidated bool
+	NextPollAt           time.Time
+	Now                  time.Time
+}
+
 func (l ExecutionCoordinatorLease) Clone() ExecutionCoordinatorLease {
 	l.Run = l.Run.Clone()
 	l.Token = append([]byte(nil), l.Token...)
@@ -928,5 +1168,22 @@ type Store interface {
 	CreateExecutionStepIsolation(context.Context, CreateExecutionStepIsolationRequest) (*ExecutionStepIsolation, error)
 	ResolveExecutionStepIsolation(context.Context, ResolveExecutionStepIsolationRequest) (*ExecutionStepIsolation, error)
 	ListRecoverableExecutionSteps(context.Context, time.Time, int32) ([]RecoverableExecutionStep, error)
+	ListActiveExecutionRunWalletIDs(context.Context, string, []int64) ([]int64, error)
+	GetPositionCashOutCreation(context.Context, GetPositionCashOutCreationRequest) (*PositionCashOut, bool, error)
+	CreatePositionCashOut(context.Context, CreatePositionCashOutRequest) (*PositionCashOut, error)
+	GetPositionCashOut(context.Context, string, string) (*PositionCashOut, error)
+	ListActivePositionCashOuts(context.Context, string) ([]PositionCashOut, error)
+	AuthorizePositionCashOut(context.Context, AuthorizePositionCashOutRequest) (*PositionCashOut, error)
+	ClaimPositionCashOut(context.Context, PositionCashOutClaimRequest) (*PositionCashOut, error)
+	RenewPositionCashOutClaim(context.Context, PositionCashOutClaimRequest) (*PositionCashOut, error)
+	BeginPositionCashOutClosing(context.Context, BeginPositionCashOutClosingRequest) (*PositionCashOut, error)
+	PreparePositionCashOutAttempt(context.Context, PreparePositionCashOutAttemptRequest) (*PositionCashOutAttempt, error)
+	DispatchPositionCashOutAttempt(context.Context, DispatchPositionCashOutAttemptRequest) (*PositionCashOutAttempt, error)
+	ResolvePositionCashOutAttempt(context.Context, ResolvePositionCashOutAttemptRequest) (*PositionCashOutAttempt, error)
+	CompletePositionCashOutDispatch(context.Context, CompletePositionCashOutDispatchRequest) (*PositionCashOut, error)
+	RecordPositionCashOutObservation(context.Context, RecordPositionCashOutObservationRequest) (*PositionCashOut, error)
+	RequestPositionCashOutReconciliation(context.Context, PositionCashOutCommandRequest) (*PositionCashOut, error)
+	ListRecoverablePositionCashOuts(context.Context, time.Time, int32) ([]PositionCashOut, error)
+	ExpirePositionCashOuts(context.Context, time.Time, int32) (int64, error)
 	Close() error
 }

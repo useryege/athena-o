@@ -2,12 +2,15 @@
 
 ## Scope
 
-This capability owns three independent additional identity-proof boundaries.
+This capability owns four independent additional identity-proof boundaries.
 Wallet private-key reveal and Athena-created Worm API-credential management use
 separate fixed five-minute authorization leases. A live Worm order Execution
 instead records one durable authorization for one immutable Run and plan digest;
 its short-lived Google or Solana provider state is not a lease and the durable
-authorization has no time TTL. All three distinguish an interactive login
+authorization has no time TTL. An Assets position Cash Out records a separate
+durable authorization for one immutable HMAC-position intent; its proof state,
+pre-authorization window, and post-authorization pre-dispatch window are each
+five minutes, and successful proof queues work without a Start action. All four distinguish an interactive login
 session from an API Key through server-side typed credential metadata and bind
 proof to the current account, login JTI, and access revision. Their cookies,
 Redis namespaces, routes, stable errors, and persisted scopes are independent,
@@ -26,6 +29,8 @@ session, authorize an API Key, reveal a private key to Worm Trading, or expose
 any sensitive operation through public gRPC or Swagger. [Worm Order
 Execution](../trading/worm-order-execution.md) owns the authorized Run state,
 coordinator, Web JWT mutation flow, and terminal reconciliation.
+[Worm Position Cash Out](../trading/worm-position-cash-out.md) owns the exact-
+position HMAC Close, durable attempt, observation, and Run/Cash-Out isolation.
 
 ## Source Locations
 
@@ -40,8 +45,11 @@ coordinator, Web JWT mutation flow, and terminal reconciliation.
 | Run-bound Google proof | [internal/googleoidc/worm_execution_authorization.go](../../../internal/googleoidc/worm_execution_authorization.go), [internal/googleoidc/worm_execution_store.go](../../../internal/googleoidc/worm_execution_store.go) | `WormExecutionAuthorization`, `wex.` state, fresh OIDC transaction, durable-authorizer callback |
 | Run-bound Solana proof | [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go), [internal/phantomauth/worm_execution_store.go](../../../internal/phantomauth/worm_execution_store.go) | `WormExecutionChallenge`, `WormExecutionVerify`, plan-digest SIWS statement, single-use challenge |
 | Run-bound development proof and projection | [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `developmentWormExecutionAuthorization`, `authorizeWormExecutionProof`, stable execution-auth errors and route wiring |
+| Position-Cash-Out Google proof | [internal/googleoidc/worm_position_cash_out_authorization.go](../../../internal/googleoidc/worm_position_cash_out_authorization.go), [internal/googleoidc/worm_position_cash_out_store.go](../../../internal/googleoidc/worm_position_cash_out_store.go) | `WormPositionCashOutAuthorization`, `wco.` state, intent-bound five-minute OIDC transaction |
+| Position-Cash-Out Phantom proof | [internal/phantomauth/worm_position_cash_out_authorization.go](../../../internal/phantomauth/worm_position_cash_out_authorization.go), [internal/phantomauth/worm_position_cash_out_store.go](../../../internal/phantomauth/worm_position_cash_out_store.go) | `WormPositionCashOutChallenge`, `WormPositionCashOutVerify`, identity-only SIWS statement, single-use challenge |
+| Position-Cash-Out development proof and projection | [internal/server/worm_position_cash_out_authorization.go](../../../internal/server/worm_position_cash_out_authorization.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `developmentWormPositionCashOutAuthorization`, `authorizeWormPositionCashOutProof`, stable Cash-Out proof errors and route wiring |
 | Logout invalidation | [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `Handler.ServeHTTP`, `clearSensitiveCookies` |
-| Browser flow and cleanup | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, intent-only redirect recovery |
+| Browser flow and cleanup | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, Run and position-Cash-Out intent-only redirect recovery |
 | Process and route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/authz.go](../../../internal/server/authz.go) | `NewServer`, `newHTTPServer`, `interactiveLoginGRPCMethods` |
 
 ## Architecture
@@ -52,6 +60,7 @@ flowchart LR
     P --> R1["wallet.private_key.reveal lease"]
     P --> R2["worm.api_credential.manage lease"]
     P --> R3["one durable Run + plan-digest authorization"]
+    P --> R4["one durable position Cash Out + intent authorization"]
     B --> H1["Same-origin reveal handler"]
     B --> I["Native lease-free owner Worm inventory"]
     B --> H2["Same-origin Worm mutation handler"]
@@ -59,10 +68,13 @@ flowchart LR
     H2 --> R2
     B --> H3["Run-bound authorization endpoint"]
     H3 --> R3
+    B --> H4["Position-Cash-Out authorization endpoint"]
+    H4 --> R4
     H1 -->|"Wallet READ_WRITE + service Bearer"| W1["RevealWalletPrivateKey"]
     I -->|"Interactive + Worm Trading READ_WRITE"| W2["Owner-scoped Solana refs + connection projection"]
     H2 -->|"Worm Trading READ_WRITE + lease + service Bearers"| W3["Owner lookup + purpose-bound signer"]
     R3 -->|"Run command + Session/access binding"| E["Worm Trading execution state"]
+    R4 -->|"Cash-Out command + Session/access/intent binding"| C["Worm Trading Cash-Out state"]
 ```
 
 `SessionManager.AuthenticateToken` returns both ordinary JWT claims and an
@@ -111,6 +123,17 @@ changed Session, account, or access revision prevents control and requires a
 new proof before continuation. It never authorizes a different Run, changes the
 frozen wallets, markets, directions, or funds, or grants Worm credential
 management.
+
+Position Cash Out uses a fourth namespace and scope rather than either Worm
+lease or Run proof. Its fresh provider state binds one operation UUID, command
+UUID, expected revision, current account, Session-JTI digest, access revision,
+and immutable position-intent digest. Worm Trading stores scope
+`WORM_POSITION_CASH_OUT` with proof kind and the same binding, then atomically
+queues that exact operation. The durable authorization has a five-minute
+pre-dispatch window: it cannot authorize another position, another operation,
+credential management, Run execution, or Wallet secret reveal. Phantom signs
+only the proof's SIWS identity message; the HMAC Close needs no custodial
+private-key signature and no network fee.
 
 ## Runtime Flow
 
@@ -288,6 +311,45 @@ management.
     Phantom signature exists only for the verification request, and the browser
     never receives the custodial Wallet sign-in message, Worm JWT, raw
     transaction, transaction signature, or signed transaction.
+24. A write-capable Assets user first creates one durable position Cash Out
+    from the exact HMAC position pubkey. Creation freezes the fresh provider-
+    derived Wallet, market, side, shares, creation time, optional request pubkey,
+    and intent digest and returns `AWAITING_AUTHORIZATION` with a five-minute
+    deadline. The operation exposes `AUTHORIZE_CASH_OUT`; API Keys cannot begin,
+    complete, read, or consume its proof.
+25. Google Cash-Out authorization begins through a hidden same-origin
+    `POST /auth/worm-trading/position-cash-outs/google` with
+    `athenaRealm=member`, operation and command UUIDs, expected revision, and a
+    safe Assets return path as query bindings. The handler accepts only POST and
+    requires `Origin` to exactly match the configured public origin before it
+    creates state. It uses dedicated `wco.` state, cookie, Redis keys, PKCE and
+    nonce, five-minute lifetime, and 120-global/20-account fixed-minute creation
+    limits. The shared callback consumes state before exchange, repeats account,
+    member Session, access revision, provider identity, fresh `auth_time`, and
+    intent/revision descriptor checks, then authorizes only that operation.
+26. Phantom uses
+    `POST /auth/worm-trading/position-cash-outs/{id}/solana/challenge` and
+    `/verify`. Challenge creation reloads the operation descriptor and returns a
+    dedicated five-minute SIWS message for the persisted login address. The
+    statement identifies the operation and intent digest and says explicitly
+    that it is identity confirmation only, not a blockchain transaction or
+    network-fee authorization. Verify consumes the challenge, repeats every
+    owner/Session/access/revision/intent/identity binding, and checks the
+    canonical raw-base64url Ed25519 signature.
+27. Disabled-auth mode registers only the loopback exact-origin
+    `POST /auth/worm-trading/position-cash-outs/{id}/development` proof.
+    Successful Google, Phantom, or development proof atomically stores scope
+    `WORM_POSITION_CASH_OUT`, proof kind, Session-JTI digest, access revision,
+    and intent digest and changes the operation to `QUEUED`. A service worker
+    begins automatically; there is no Start action. The authorization permits
+    preflight and one at-most-once HMAC Close only for five minutes.
+28. Google navigation stores only a bounded, deduplicated list of at most 100
+    Cash-Out operation UUIDs under its own `sessionStorage` key. Return reloads
+    every durable resource so Pending or Unknown work from different Wallets
+    can recover together; terminal, HTTP 403, and HTTP 404 entries are removed
+    individually. No target, proof material, HMAC request, or mutation is
+    restored or replayed by the browser. Expired/cancelled proof sends no Close,
+    and manual `Check status` after an unknown mutation is read-only.
 
 ## State / Data
 
@@ -358,11 +420,34 @@ needed to refresh after Google returns. It does not contain the plan, coordinato
 token, proof transaction, SIWS signature, Worm JWT, transaction, Wallet
 signature, or mutation result.
 
+Position-Cash-Out Google transactions and Phantom challenges use another pair
+of five-minute, single-use Redis namespaces, cookies, and 120-global/20-account
+fixed-minute counters. They bind operation UUID, command UUID, expected
+revision, account, Session-JTI digest, access revision, safe Assets return path,
+intent digest, and provider protocol material. The `wco.` Google state and the
+Cash-Out Solana challenge cookie cannot be consumed by Run, Wallet-secret, or
+Worm-credential flows. State is deleted on consume and is not authorization.
+
+The durable Cash-Out authorization lives in Worm Trading PostgreSQL with scope
+`WORM_POSITION_CASH_OUT`, proof kind, Session-JTI digest, access revision,
+intent digest, active/end state, and timestamps. It is attached to exactly one
+operation and ends on completion, failure, or pre-dispatch expiry. The operation
+has five minutes to await proof and, after proof, five minutes to reach a safe
+dispatch checkpoint. Neither record contains Google tokens/codes, SIWS message
+or signature, Wallet private key, Worm HMAC credential, or provider Close body.
+
+The Cash-Out-specific browser `sessionStorage` value contains only a bounded,
+deduplicated list of at most 100 operation UUIDs needed to recover different
+Wallets after Google navigation. Terminal, forbidden, and missing operations
+are pruned individually. It contains no Wallet or position snapshot, expected
+revision, command, intent digest, provider proof, HMAC credential, request, or
+result.
+
 ## Configuration
 
 | Setting | Behavior |
 | --- | --- |
-| Redis client configuration | Required for both leases and for the three scopes' Google transactions or Solana challenges. Failure closes private-key reveal, Worm credential mutations, and new execution provider proofs without deleting an already durable Run authorization or disabling safe reads. |
+| Redis client configuration | Required for both leases and for Wallet, Worm-credential, Run, and position-Cash-Out Google transactions or Solana challenges. Failure closes private-key reveal, Worm credential mutations, and new Run/Cash-Out provider proofs without deleting an already durable authorization or disabling safe reads. |
 | `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | Supplies the exact shared Google callback, trusted public origin, and Secure-cookie decision. |
 | `ATHENA_GOOGLE_OIDC_CLIENT_ID` and client secret settings | Reused for the fresh Google Authorization Code + PKCE exchange. |
 | `ATHENA_SERVER_DISABLE_AUTH` | Replaces external reauthentication routes with separate loopback-only development lease endpoints. Worm credential mutations additionally fix their accepted Origin to `http://localhost:4000`. |
@@ -375,6 +460,10 @@ provider-state rate limits and window are fixed implementation constants rather
 than environment settings. A Run authorization deliberately has no independent
 TTL; its scope and usable lifetime derive from the immutable Run and current
 Session/access binding.
+Cash-Out provider state, its initial authorization window, and its authorized
+pre-dispatch window are each fixed to five minutes. Unlike a Run proof, the
+Cash-Out durable authorization therefore ends if its exact mutation has not
+been safely dispatched within that second window.
 
 ## Invariants
 
@@ -426,9 +515,25 @@ Session/access binding.
 - The Phantom execution statement and UI disclose the Worm transaction trust
   boundary and the difference between the requested 10-USDC funds cap and an
   independently verified on-chain spending limit.
+- Position Cash Out proof is exact-operation and intent scoped, persists no
+  provider secret, and is accepted as neither sensitive lease nor Run
+  authorization. Its proof and authorized pre-dispatch windows are fixed to
+  five minutes, never slide, and cannot change the provider-derived Wallet,
+  HMAC pubkey, market, side, creation time, or request pubkey. Shares remain a
+  creation-time confirmation/display snapshot and are not a subsequent
+  provider-identity invariant or Close quantity.
+- Google Cash-Out proof state can be created only by same-origin POST after an
+  exact server-side `Origin` comparison.
+- Cash-Out Phantom proof signs only the persisted login identity message. It
+  cannot expose or use an Athena-managed Wallet private key, sign a transaction,
+  produce a fee, dispatch HMAC Close, or authorize a different position.
+- Google, Phantom, and development Cash-Out proof atomically queue the durable
+  operation. Browser navigation and `sessionStorage` recover only a bounded list
+  of operation UUIDs and can never act as mutation authorization or replay Close.
 - Redis unavailability fails closed for lease issue and validation while leaving
   non-secret Wallet operations, the connection inventory, and already connected
-  read-only Worm activity independent.
+  read-only Worm activity independent. It also blocks new Run/Cash-Out provider
+  proofs without erasing their existing PostgreSQL operations.
 
 ## Failure Recovery
 
@@ -449,6 +554,21 @@ requires a new explicit proof. Its stable errors are
 creates a partial Run authorization, falls back to the general Worm lease, or
 starts execution. Redis loss prevents a new provider proof but does not erase a
 durable Run authorization already stored in PostgreSQL.
+
+Cash-Out Google or Phantom state follows the same consume-before-exchange or
+consume-before-signature rule in its own namespace. Missing, expired, replayed,
+rate-limited, provider-mismatched, Session/access-mismatched, revision-stale, or
+intent-stale proof returns
+`WORM_POSITION_CASH_OUT_LOGIN_SESSION_REQUIRED`,
+`WORM_POSITION_CASH_OUT_AUTHORIZATION_REQUIRED`, or
+`WORM_POSITION_CASH_OUT_AUTHORIZATION_UNAVAILABLE` and leaves Close
+undispatched. It cannot fall back to the Worm credential lease or Run proof.
+The durable operation expires after five minutes without proof. Successful
+proof queues it atomically even when the browser loses the response; the
+operation GET is the recovery path. If exact preflight cannot safely dispatch
+within the next five minutes, the authorization ends and the operation fails
+without Close. Once a durable attempt is dispatched, proof expiry cannot permit
+another mutation and all recovery is exact-position GET only.
 
 Missing or invalid internal service authentication fails before private-key
 lookup, purpose-bound signing, or Worm connection work and does not fall back to
@@ -498,6 +618,13 @@ repeat Open or Finalize, or discard a mutation whose outcome is still being
 reconciled. Termination ends remaining work but cannot clear a wallet-market
 isolation created by an unknown mutation result.
 
+For a position Cash Out, the current Session/access binding is checked while
+creating and consuming proof, but the service-owned worker executes the queued
+immutable operation independently of browser lifetime. Session loss after proof
+does not cancel an already dispatched Close. It also cannot authorize a second
+Close: durable attempt state and Wallet isolation remain authoritative through
+restart, and user `Check status` performs only read-only reconciliation.
+
 ## Observability
 
 Wallet-secret Google and Solana completion logs identify provider, bounded
@@ -517,12 +644,21 @@ projections expose proof kind, authorization state, and safe timestamps but not
 the Session JTI digest, access binding, Google transaction, SIWS message or
 signature, coordinator token, Worm JWT, raw transaction, or custodial
 signature.
+Cash-Out proof logs likewise expose only provider and bounded stage/reason.
+Public operation projections may show proof kind and safe authorization/
+execution times, but never Session-JTI or intent digests, access binding,
+Google state/code/token, Phantom message/signature, HMAC credential/header, or
+raw Close response. Its stable proof reasons are the three
+`WORM_POSITION_CASH_OUT_*` values above. Proof dependencies do not change
+Wallet or Worm Trading health.
 
 ## Change Checklist
 
 - [ ] Typed credential capability remains the login/API Key decision boundary.
 - [ ] Both leases' account, JTI, revision, distinct scope/cookie/path, and fixed-expiry bindings remain current.
 - [ ] Run authorization remains separate from both leases and stays bound to one immutable Run, plan digest, account, Session JTI digest, and access revision.
+- [ ] Position Cash Out authorization remains separate from both leases and Run proof, exact-operation/intent/session/access bound, and limited to its five-minute pre-dispatch window.
+- [ ] Google Cash-Out proof start remains a same-origin POST with exact server-side Origin validation.
 - [ ] Google `sub`/`auth_time` and Solana persisted-address proof remain current.
 - [ ] Shared provider-state limits stay atomic, sensitive-proof-only, and keyed by
       an account digest rather than a raw UUID.
@@ -533,5 +669,7 @@ signature.
 - [ ] Secret responses and browser state preserve no-store and cleanup semantics.
 - [ ] Execution Google and Solana proof state remains single-use, five-minute, provider-specific, rate-limited, and free of durable provider secrets.
 - [ ] Execution proof disclosure, stable errors, and no-TTL durable authorization match the Run state machine.
+- [ ] Cash-Out Google/Solana proof state remains single-use, five-minute, independently namespaced and rate-limited, while development proof stays loopback/exact-origin only.
+- [ ] Cash-Out Phantom disclosure remains identity-only with no transaction, fee, Wallet key, or HMAC Close dispatch in the proof handler.
 - [ ] Member-only realm restoration, dual-login-cookie isolation, current-realm logout, revocation, access changes, and Redis failure still fail closed.
 - [ ] The [design index](../README.md) contains the current summary.

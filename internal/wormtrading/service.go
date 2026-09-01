@@ -43,6 +43,7 @@ type Service struct {
 	wormWebSessionMu      sync.Mutex
 	wormWebSessions       map[string]*utilworm.WebAuthenticatedSession
 	executionWorkerWake   chan struct{}
+	positionCashOutWake   chan struct{}
 
 	startStopMu sync.Mutex
 	started     bool
@@ -108,6 +109,7 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 		walletSignerClientset: opts.WalletSignerClientset,
 		wormWebSessions:       make(map[string]*utilworm.WebAuthenticatedSession),
 		executionWorkerWake:   make(chan struct{}, 1),
+		positionCashOutWake:   make(chan struct{}, 1),
 	}
 	service.wormCapabilities.configureStore(true)
 
@@ -170,6 +172,8 @@ func (s *Service) Start() error {
 		go s.runExecutionPlanWorker(runCtx)
 		s.runWG.Add(1)
 		go s.runExecutionWorker(runCtx)
+		s.runWG.Add(1)
+		go s.runPositionCashOutWorker(runCtx)
 	}
 	return nil
 }

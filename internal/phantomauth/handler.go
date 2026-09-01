@@ -57,16 +57,17 @@ type errorResponse struct {
 // Handler implements wallet-standard Sign-In With Solana verification. The
 // proof authenticates a Solana public key; it does not attest a wallet brand.
 type Handler struct {
-	store           *challengeStore
-	backend         authregistration.Backend
-	registrations   *authregistration.Handler
-	publicOrigin    string
-	domain          string
-	secureCookie    bool
-	baseHRef        string
-	walletSecrets   *walletSecretReauthentication
-	wormCredentials *wormCredentialReauthentication
-	wormExecutions  *wormExecutionAuthorization
+	store                *challengeStore
+	backend              authregistration.Backend
+	registrations        *authregistration.Handler
+	publicOrigin         string
+	domain               string
+	secureCookie         bool
+	baseHRef             string
+	walletSecrets        *walletSecretReauthentication
+	wormCredentials      *wormCredentialReauthentication
+	wormExecutions       *wormExecutionAuthorization
+	wormPositionCashOuts *wormPositionCashOutAuthorization
 }
 
 func NewHandler(redisClient *redis.Client, backend authregistration.Backend, registrations *authregistration.Handler, publicOrigin, baseHRef string) (*Handler, error) {

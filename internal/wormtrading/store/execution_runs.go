@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -104,6 +105,27 @@ func (s *SQLStore) CreateExecutionRun(
 	plan, err := loadExecutionPlan(ctx, queries, planRow, now)
 	if err != nil {
 		return nil, err
+	}
+	walletIDs, err := queries.ListExecutionRunSourcePlanWalletIDs(ctx, planID)
+	if err != nil {
+		return nil, fmt.Errorf("list execution Run source Wallet IDs: %w", err)
+	}
+	if int64(len(walletIDs)) != planRow.WalletCount {
+		return nil, ErrExecutionRunConflict
+	}
+	sort.Slice(walletIDs, func(left, right int) bool { return walletIDs[left] < walletIDs[right] })
+	for index, walletID := range walletIDs {
+		if walletID <= 0 || (index > 0 && walletIDs[index-1] == walletID) {
+			return nil, ErrExecutionRunConflict
+		}
+		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1::bigint)", walletID); err != nil {
+			return nil, fmt.Errorf("lock execution Run Wallet %d: %w", walletID, err)
+		}
+	}
+	if count, err := queries.CountActivePositionCashOutsForWallets(ctx, walletIDs); err != nil {
+		return nil, fmt.Errorf("count active position Cash Outs for execution Run: %w", err)
+	} else if count != 0 {
+		return nil, ErrExecutionRunWalletCashOutActive
 	}
 	stepRows, err := queries.ListExecutionRunSourcePlanSteps(ctx, planID)
 	if err != nil {

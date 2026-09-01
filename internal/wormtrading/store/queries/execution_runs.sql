@@ -19,6 +19,20 @@ FROM worm_execution_plan_steps
 WHERE plan_id = sqlc.arg(plan_id)::uuid
 ORDER BY ordinal;
 
+-- name: ListExecutionRunSourcePlanWalletIDs :many
+SELECT wallet_id
+FROM worm_execution_plan_wallets
+WHERE plan_id = sqlc.arg(plan_id)::uuid
+ORDER BY wallet_id;
+
+-- name: ListActiveExecutionRunWalletIDs :many
+SELECT locks.wallet_id
+FROM worm_execution_wallet_locks AS locks
+JOIN worm_execution_runs AS runs ON runs.id = locks.run_id
+WHERE runs.owner_account_id = sqlc.arg(owner_account_id)::uuid
+  AND locks.wallet_id = ANY(sqlc.arg(wallet_ids)::bigint[])
+ORDER BY locks.wallet_id;
+
 -- name: GetExecutionRunByCreationKey :one
 SELECT *
 FROM worm_execution_runs

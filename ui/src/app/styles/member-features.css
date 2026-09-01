@@ -1216,6 +1216,67 @@
     white-space: nowrap;
 }
 
+.worm-position-cash-out-table-action {
+    text-align: right;
+}
+
+.worm-position-cash-out-table-action .ant-btn {
+    min-width: 148px;
+}
+
+.worm-position-cash-out-card-action {
+    padding-top: 2px;
+}
+
+.worm-position-cash-out-card-action .ant-btn {
+    min-height: 44px;
+}
+
+.worm-position-cash-out-alert.ant-alert {
+    margin-bottom: 12px;
+}
+
+.worm-position-cash-out-confirmation {
+    display: grid;
+    gap: 14px;
+    padding-top: 4px;
+}
+
+.worm-position-cash-out-confirmation dl {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+.worm-position-cash-out-confirmation dl > div {
+    display: grid;
+    grid-template-columns: minmax(88px, 0.32fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 9px 10px;
+    border: 1px solid var(--athena-border);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 58%, var(--athena-panel-solid));
+}
+
+.worm-position-cash-out-confirmation dt {
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.worm-position-cash-out-confirmation dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--athena-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.worm-position-cash-out-confirmation .ant-typography {
+    margin: 0;
+}
+
 .worm-trading-pagination.ant-pagination {
     justify-content: flex-end;
     margin-top: 18px;
@@ -1332,6 +1393,28 @@
 
     .worm-trading-activity-card__facts {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-position-cash-out-confirmation dl > div {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 3px;
+    }
+
+    .worm-position-cash-out-alert.ant-alert {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .worm-position-cash-out-alert .ant-alert-action {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin-inline-start: 0;
+        padding-top: 12px;
+    }
+
+    .worm-position-cash-out-alert .ant-alert-action .ant-btn {
+        width: 100%;
+        min-height: 44px;
     }
 
     .worm-trading-empty {

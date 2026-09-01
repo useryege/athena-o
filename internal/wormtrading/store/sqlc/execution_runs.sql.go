@@ -2246,6 +2246,40 @@ func (q *Queries) InvalidateExecutionAuthorization(ctx context.Context, arg Inva
 	return result.RowsAffected(), nil
 }
 
+const listActiveExecutionRunWalletIDs = `-- name: ListActiveExecutionRunWalletIDs :many
+SELECT locks.wallet_id
+FROM worm_execution_wallet_locks AS locks
+JOIN worm_execution_runs AS runs ON runs.id = locks.run_id
+WHERE runs.owner_account_id = $1::uuid
+  AND locks.wallet_id = ANY($2::bigint[])
+ORDER BY locks.wallet_id
+`
+
+type ListActiveExecutionRunWalletIDsParams struct {
+	OwnerAccountID pgtype.UUID
+	WalletIds      []int64
+}
+
+func (q *Queries) ListActiveExecutionRunWalletIDs(ctx context.Context, arg ListActiveExecutionRunWalletIDsParams) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listActiveExecutionRunWalletIDs, arg.OwnerAccountID, arg.WalletIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var wallet_id int64
+		if err := rows.Scan(&wallet_id); err != nil {
+			return nil, err
+		}
+		items = append(items, wallet_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExecutionRunItems = `-- name: ListExecutionRunItems :many
 SELECT run_id, ordinal, event_condition_id, event_title, event_logo, market_condition_id, market_title, market_logo, is_yes, outcome_label, backend, funds, leverage, preview_state, preview_reason_code, estimate_average_price, estimate_total_shares, estimate_total_cost, estimate_best_ask, estimate_worst_fill_price, estimate_is_fully_filled, estimate_fee_amount, estimate_user_funds_needed, estimate_liquidation_price
 FROM worm_execution_run_items
@@ -2327,6 +2361,33 @@ func (q *Queries) ListExecutionRunSourcePlanSteps(ctx context.Context, planID pg
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listExecutionRunSourcePlanWalletIDs = `-- name: ListExecutionRunSourcePlanWalletIDs :many
+SELECT wallet_id
+FROM worm_execution_plan_wallets
+WHERE plan_id = $1::uuid
+ORDER BY wallet_id
+`
+
+func (q *Queries) ListExecutionRunSourcePlanWalletIDs(ctx context.Context, planID pgtype.UUID) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listExecutionRunSourcePlanWalletIDs, planID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var wallet_id int64
+		if err := rows.Scan(&wallet_id); err != nil {
+			return nil, err
+		}
+		items = append(items, wallet_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

@@ -21,6 +21,10 @@ Usable previews can be consumed exactly once into durable live execution Runs.
 Worm Trading owns the frozen Run/Step/attempt state, Run authorization binding,
 single-driver coordinator, fresh preflight, Worm Web JWT session, one-Step-at-a-
 time Open/finalize/reconciliation workflow, and permanent execution history.
+It also owns the independent Assets Cash-Out operation: one exact HMAC position
+pubkey, a fresh operation-bound proof, one whole-position market Close, durable
+at-most-once dispatch, exact-position observation, and Run/Cash-Out Wallet
+isolation.
 
 Wallet owns account-scoped custody records and all private-key operations. The
 API Server owns authentication, `worm_trading` authorization, current-account
@@ -42,12 +46,17 @@ safe request GETs, and separately read HMAC Open Positions for completion.
 Athena deliberately trusts and signs the exact
 Solana transaction returned by Worm; the at-most-10-USDC `funds` value limits
 Athena's Open request but is not a cryptographic on-chain spend limit. This
-capability does not expose cancel, close, TP/SL, or claim operations.
+Run capability does not expose cancel, close, TP/SL, or claim operations.
+Assets separately uses `util/worm`'s HMAC Cash-Out stages to freeze one exact
+position pubkey, prepare a price-free whole-position market Close, dispatch one
+DELETE after a durable checkpoint, and observe only that pubkey for completion.
+It does not use the numeric Worm Web `position_id`, Web JWT, or Wallet signing.
 
 The browser exposes Worm Trading as one parent navigation item with Assets,
 Combinations, and Executions children. `/worm-trading` is the Assets observation page for
-balances, full-account automatic connection bootstrap, open positions, and
-in-flight requests. `/worm-trading/combinations` lists the current account's
+balances, full-account automatic connection bootstrap, open positions,
+in-flight requests, and individually confirmed whole-position Cash Out for
+write-capable interactive users. `/worm-trading/combinations` lists the current account's
 saved templates; `/new` and `/{id}/edit` build or inspect one template from
 fresh Event Condition ID catalogs. The Combinations surface never requests a
 wallet, estimate, credential lease, signature, draft, or Worm mutation while
@@ -64,22 +73,24 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | --- | --- | --- |
 | Process entry and configuration | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [cmd/main.go](../../../cmd/main.go) | `NewCommand`, `athena-worm-trading` dispatch |
 | Internal authenticated server | [internal/wormtrading/server.go](../../../internal/wormtrading/server.go), [internal/wormtrading/apiclient](../../../internal/wormtrading/apiclient) | `Server`, `ServerOpts`, internal Bearer interceptors, gRPC health |
-| Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands, one-Step worker and recovery |
+| Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/position_cash_outs.go](../../../internal/wormtrading/position_cash_outs.go), [internal/wormtrading/position_cash_out_worker.go](../../../internal/wormtrading/position_cash_out_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands and worker, position Cash-Out commands and worker recovery |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
-| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, mandatory-guard schema reset, immutable Run snapshots, Open Position completion evidence, and Step/attempt/command/coordinator/authorization/isolation state |
+| Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/position_cash_outs.go](../../../internal/wormtrading/store/position_cash_outs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, immutable Run state, Cash-Out operation/authorization/command/attempt state, Wallet advisory locking, and bidirectional Run/Cash-Out isolation |
 | Credential encryption and official client | [internal/wormtrading/credential_crypto.go](../../../internal/wormtrading/credential_crypto.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `CredentialEncryptionKeyFromPassphrase`, `credentialCipher`, `NewOfficialWormAPIClientFactory`, HMAC headers |
 | Connection and revocation lifecycle | [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/store/connections.go](../../../internal/wormtrading/store/connections.go), [internal/wormtrading/store/credentials.go](../../../internal/wormtrading/store/credentials.go), [internal/wormtrading/store/maintenance.go](../../../internal/wormtrading/store/maintenance.go) | `PrepareWormWalletConnection`, `CompleteWormWalletConnection`, `DisconnectWormWallet`, `revokeStoredCredential`, `revokePendingCredentials`, `MarkReconnectRequired`, `MarkCredentialRevocationFailed`, `ExpireConnectionAttempts` |
-| Position aggregation | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go) | `BatchGetWalletPositionSnapshots`, `fetchOpenPositions`, `fetchInFlightRequests`, `suppressPositionBackedRequests` |
+| Position aggregation and Cash-Out action overlay | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go) | `BatchGetWalletPositionSnapshots`, `fetchOpenPositions`, `fetchInFlightRequests`, `suppressPositionBackedRequests`, `projectPositionCashOutAvailability` |
 | Public account facade and contracts | [internal/server/wormtrading/wormtrading.go](../../../internal/server/wormtrading/wormtrading.go), [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto) | `ListWalletBalances`, `ListWalletTradingActivity`, strict wallet/result correlation |
 | Native connection inventory and management | [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `listWormWalletConnections`, `manageWormConnection`, `completeWormConnection`, `authenticateWormConnectionHTTP`, route registration |
 | Native combination facade | [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `registerWormCombinationHandlers`, `getWormOrderEventCatalog`, combination CRUD handlers, `resolveWormCombinationItems` |
 | Native execution-preview facade | [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `registerWormExecutionPlanHandlers`, `createWormExecutionPlan`, `getWormExecutionPlan`, `listWormExecutionPlanSteps`, `resolveWormExecutionPlanWallets` |
 | Native live-execution facade and proof | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go), [internal/googleoidc/worm_execution_authorization.go](../../../internal/googleoidc/worm_execution_authorization.go), [internal/phantomauth/worm_execution_authorization.go](../../../internal/phantomauth/worm_execution_authorization.go) | Run/Step routes, command idempotency, Google/Phantom/development Run authorization |
+| Native position Cash-Out facade and proof | [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/worm_position_cash_out_authorization.go](../../../internal/server/worm_position_cash_out_authorization.go), [internal/googleoidc/worm_position_cash_out_authorization.go](../../../internal/googleoidc/worm_position_cash_out_authorization.go), [internal/phantomauth/worm_position_cash_out_authorization.go](../../../internal/phantomauth/worm_position_cash_out_authorization.go) | create/get/reconcile routes, strict operation projection, Google/Phantom/development exact-position authorization |
 | Read-only preview classification | [internal/wormtrading/execution_preview_builder.go](../../../internal/wormtrading/execution_preview_builder.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go) | `ExecutionPreviewBuilder`, `Build`, full exposure pagination, exact-decimal cumulative USDC simulation, shared provider rate limiters |
 | Purpose-bound Wallet signers | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go) | `SignWormAuthChallenge`, `WormExecutionSignerService`, exact sign-in and transaction bindings |
 | Worm Web execution protocol | [util/worm/web_market_position_stages.go](../../../util/worm/web_market_position_stages.go), [util/worm/web_signing_validation.go](../../../util/worm/web_signing_validation.go), [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/README.md](../../../util/worm/README.md) | `AuthenticateWebWallet`, staged market/`1x` Open and Finalize commands, safe request observation, transaction inspection, shared signer validation |
+| Worm HMAC Cash-Out protocol | [util/worm/margin_position_cash_out_stages.go](../../../util/worm/margin_position_cash_out_stages.go), [util/worm/worm.go](../../../util/worm/worm.go), [util/worm/README.md](../../../util/worm/README.md) | exact-position inspection, immutable whole-position market Close, one-shot dispatch, exact GET observation |
 | Independent reauthentication lease | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go) | `NewWormCredentialManager`, `EnableWormCredentialReauthentication`, Worm-only Google and Solana proof flows |
-| Browser navigation and pages | [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-trading-executions.tsx](../../../ui/src/app/member/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets/Combinations/Preview pages, execution history/detail and explicit driver, strict Run/Step normalizers |
+| Browser navigation and pages | [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-trading-executions.tsx](../../../ui/src/app/member/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets position Cash-Out controls and polling, Combinations/Preview pages, execution history/detail and explicit driver, strict response normalizers |
 | Process graph and production secrets | [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql), [tools/prod-env-reset/main.go](../../../tools/prod-env-reset/main.go) | port `8090`, `worm_trading` database, independent encryption key and internal token |
 
 ## Architecture
@@ -87,13 +98,16 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 For Assets observations and credential management, Wallet remains the only
 ownership source. Worm Trading trusts only ordered `{wallet_id,address}`
 references supplied by the API Server and has no duplicated Wallet account
-model:
+model. The activity request now also carries the API-Server-derived current
+account UUID solely to join owner-scoped active Cash-Out/Run state into the
+position action projection; credential and provider activity rows remain keyed
+by Wallet ID/address and persist no owner:
 
 ```text
 login session / enabled API Key
   -> API Server: authenticate + require worm_trading READ
   -> Wallet: ListWallets(owner=current account, type=SOLANA, requested page)
-  -> Worm Trading
+  -> Worm Trading(owner=current account only for Cash-Out action overlay)
        -> Solana mainnet RPC: SOL + fixed-mint USDC
        -> credential store: connection + encrypted active HMAC credential
        -> https://api.worm.wtf: open positions + in-flight requests
@@ -259,6 +273,42 @@ accounts, instructions, or actual spend. Open and Finalize are each dispatched
 at most once per durable attempt and are never automatically retried. The full
 state machine is maintained in [Worm Order Execution](worm-order-execution.md).
 
+Assets position Cash Out is a separate HMAC and authorization state machine:
+
+```text
+interactive READ_WRITE browser + exact origin
+  -> select one exact Open Position HMAC pubkey
+  -> API Server resolves the current owner's Solana Wallet
+  -> look up CREATE command
+       matching replay -> return existing operation, no provider request
+       new command -> fresh HMAC GET freezes market, side, shares,
+                      created time, request pubkey
+  -> create five-minute AWAITING_AUTHORIZATION operation
+  -> fresh Google / Phantom / development proof binds operation intent
+  -> QUEUED; background worker starts without a separate Start action
+  -> exact HMAC preflight GET
+  -> checkpoint PREPARED -> DISPATCHED
+  -> one whole-position market DELETE with no price
+  -> exact-pubkey GET until closed evidence or reconciliation is required
+```
+
+The same numeric Wallet advisory-lock namespace serializes Cash-Out creation
+with Run creation. A non-terminal Run blocks Cash Out for its Wallets, and a
+non-terminal Cash Out blocks a new Run that selects its Wallet;
+`RECONCILIATION_REQUIRED` remains active. The Close dispatch marker is durable
+before the provider call, so recovery, automatic polling, and manual
+`Check status` perform only exact GETs after dispatch. Only non-liquidated
+`is_closed=true` evidence completes the operation; HTTP success, 404, and
+liquidation do not. The complete state machine is maintained in
+[Worm Position Cash Out](worm-position-cash-out.md).
+
+A recovered `CLOSING` operation that has no dispatched attempt repeats the
+exact GET immediately before Close. After dispatch, exact-GET-only recovery may
+use the latest active HMAC credential when it still belongs to the frozen
+Wallet address; credential rotation never permits another Close. A validated
+closed Close response acknowledges the attempt and completes the operation in
+one database transaction.
+
 `NewOfficialWormAPIClientFactory` exposes no configurable base URL and always
 constructs `util/worm` clients for `https://api.worm.wtf`. Authenticated calls
 use `WORM-API-KEY`, `WORM-TIMESTAMP`, and `WORM-SIGNATURE`. The API key and
@@ -283,8 +333,9 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    catalogs; service construction fails when that dependency is absent. Standard gRPC
    health starts `NOT_SERVING`; the Solana identity probe changes it to `SERVING`
    only after mainnet, Circle USDC, confirmed-slot, and JSON-RPC batch checks
-   succeed. Credential maintenance, the single preview worker, and live-Run
-   recovery start beside the probe. Worm HMAC, Web, signer, and preview
+   succeed. Credential maintenance, the single preview worker, live-Run
+   recovery, and the position Cash-Out recovery worker start beside the probe.
+   Worm HMAC, Web, signer, and preview
    dependency availability are observed lazily
    and do not control Solana balance health.
 3. A background maintenance loop runs every 30 seconds. It expires abandoned
@@ -380,8 +431,10 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     close a position.
 12. `GET /api/v1/worm-trading/wallet-activity` paginates current-account Solana
     wallets with default and maximum page size 20. The API Server sends the page
-    as ordered references and applies the same strict correlation checks used
-    for balances. A wallet with no connection returns `NOT_CONNECTED` without a
+    as ordered references plus the server-derived account UUID and applies the
+    same strict correlation checks used for balances. Worm Trading uses that
+    owner value only to project active Cash-Out/Run conflicts onto returned Open
+    Positions. A wallet with no connection returns `NOT_CONNECTED` without a
     Worm provider request.
 13. Every connected wallet starts two independent HMAC GETs under one 20-second
     page budget and a process-wide concurrency limit of four. Each provider
@@ -446,8 +499,36 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     Reconnect, regeneration, and cleanup are disabled. A completed or paused
     batch reloads the inventory and current activity once instead of performing
     a position read after every wallet. Successful regeneration reloads the
-    connection inventory, balances, and activity. Assets contains no order
-    control.
+    connection inventory, balances, and activity.
+    Assets also projects one safe Cash-Out action per Open Position only for an
+    interactive `READ_WRITE` user. Desktop fixes an Actions column at the right;
+    compact cards use a full-width footer action. The confirmation freezes no
+    browser-supplied market data: it displays Wallet, market, side, and shares
+    and discloses whole-position market execution, price uncertainty, no partial
+    close, Pending versus Closed, and the no-replay rule.
+    `POST /api/v1/worm-trading/position-cash-outs` accepts only command UUID,
+    Wallet ID, and exact HMAC position pubkey. The API Server resolves current-
+    account Solana ownership and Worm Trading performs a fresh exact GET before
+    persisting the provider-derived target. An exact replayed CREATE command
+    returns its existing operation before provider access. An active execution Run or another
+    non-terminal Cash Out disables that Wallet before any provider mutation.
+    The detail GET is interactive `READ`; create and Reconcile require
+    interactive `READ_WRITE` and exact Origin. API Keys cannot call them.
+    A five-minute fresh Google, Phantom, or development proof binds the
+    operation revision and immutable intent; proof atomically queues background
+    work without a second Start action. Google starts through a same-origin form
+    POST and the server compares `Origin` exactly with its public origin before
+    creating OIDC state. Phantom signs only an identity message.
+    The worker has five minutes to complete exact preflight and durably dispatch
+    one HMAC whole-position market DELETE. `QUEUED`, `PREFLIGHTING`, `CLOSING`,
+    and `AWAITING_COMPLETION` render `Closing…`; an unknown outcome renders a
+    persistent Alert and `Check status`, which schedules only an exact GET.
+    Google redirect recovery stores only a bounded, deduplicated list of at most
+    100 operation UUIDs, allowing pending operations from different Wallets to
+    recover together; terminal, forbidden, and missing entries are removed
+    individually. Closed evidence refreshes balance/activity and removes the
+    row; browser refresh, timeout, 5xx, restart, or manual status checking never
+    resends Close.
 17. The saved-combination list uses one-based pagination with a maximum page
     size of 100. New builders accept a direct Event Condition ID or an HTTPS
     `worm.wtf/market/{eventConditionId}` URL. The browser rejects a different
@@ -730,6 +811,35 @@ Run state is `AWAITING_AUTHORIZATION`, `AUTHORIZED`, `RUNNING`,
 position-request pubkey, and a positive position-created timestamp. Web provider
 state is diagnostic and cannot independently map to `COMPLETED`.
 
+Position Cash Out adds four durable tables through
+[migration `000009_position_cash_outs.sql`](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql):
+
+- `worm_position_cash_outs` freezes owner, Wallet/address and credential
+  version, exact HMAC pubkey, provider-derived market/side/shares/created and
+  optional request pubkey, intent digest, revision, provider evidence, proof and
+  execution deadlines, poll schedule, worker claim, and completion time.
+- `worm_position_cash_out_authorizations` stores one
+  `WORM_POSITION_CASH_OUT` proof with kind, Session-JTI digest, access revision,
+  intent digest, and active/end state.
+- `worm_position_cash_out_commands` stores request-digested, revisioned
+  `CREATE`, `AUTHORIZE`, and `RECONCILE` command UUIDs. A matching CREATE is
+  looked up before Worm access and returns its committed operation without a
+  new provider request.
+- `worm_position_cash_out_attempts` admits one Close attempt and records its
+  request digest, `PREPARED`, `DISPATCHED`, `ACKNOWLEDGED`, `REJECTED`, or
+  `OUTCOME_UNKNOWN` state, bounded provider metadata, and times.
+
+Operation state is `AWAITING_AUTHORIZATION`, `QUEUED`, `PREFLIGHTING`,
+`CLOSING`, `AWAITING_COMPLETION`, `COMPLETED`, `FAILED`,
+`RECONCILIATION_REQUIRED`, or `EXPIRED`. Partial unique indexes admit one
+non-terminal Cash Out per Wallet and per position. The unknown state remains
+non-terminal and retains Wallet isolation. Completed state requires
+non-liquidated closed evidence and projects completion source
+`HMAC_POSITION_OBSERVED`. The five-minute pre-authorization deadline produces
+`EXPIRED`; the five-minute post-authorization deadline can fail only work whose
+Close has not been dispatched. A dispatched marker is never expired into a new
+mutation opportunity.
+
 Create, full replacement, and delete are explicit SQL transactions. Get and
 list use repeatable-read, read-only transactions so each returned header and
 ordered item list comes from one database snapshot. The persisted titles and
@@ -779,6 +889,13 @@ credentials, provider read clients, catalogs, balances, exposure, and estimates.
 It may also hold capability-bounded Run workers and Run+Wallet Web JWTs; those
 are cleared on process shutdown and never serialized.
 
+Cash Out intentionally retains only the provider-derived immutable target,
+intent/request digests, proof kind and binding digests, bounded attempt
+metadata, and closed/liquidated evidence. It persists neither a raw position
+body nor HMAC key, HMAC signature/header, proof message/signature, or raw Close
+response. Its worker decrypts the HMAC credential only for the current exact
+GET or DELETE and retains no Web session.
+
 Public balance amounts remain decimal strings with independent availability.
 Activity amounts, prices, leverage, shares, funds, liquidity, and PnL also
 remain decimal strings. Optional Worm values remain empty when absent and are
@@ -801,7 +918,10 @@ contains its pubkey, optional position-request pubkey, market condition ID,
 title, logo, event, and optional latest-price summary, YES/NO side, leverage,
 shares, entry price, optional liquidation price, user/total liquidity, optional
 unrealized PnL, realized PnL, created time, and closed/liquidated/claimed flags.
-An absent liquidation price is not numeric zero and does not remove the row. An
+An absent liquidation price is not numeric zero and does not remove the row.
+Each row also carries a safe Cash-Out summary: operation UUID, state, reason,
+allowed action, revision, and update time. It never contains owner, credential,
+proof, or provider mutation material. An
 in-flight row contains its request pubkey, market-or-limit type, request and
 optional order state, the same market summary, side, leverage, funds, optional
 price/shares, and created time.
@@ -820,7 +940,7 @@ position/request counts, and aggregate status.
 | `ATHENA_WORM_TRADING_LISTEN_ADDRESS` | Listener address; default `127.0.0.1`, Compose `0.0.0.0`. |
 | `ATHENA_WORM_TRADING_PORT` / `--port` | gRPC port; default `8090`. |
 | `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | API Server/service credential; required, whitespace-free, at least 32 bytes, and independent from Wallet credentials. |
-| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Worm-Trading-owned PostgreSQL database containing connection/credential lifecycle state, saved market combinations, execution previews, and permanent execution Runs. |
+| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Worm-Trading-owned PostgreSQL database containing connection/credential lifecycle state, saved market combinations, execution previews, permanent execution Runs, and position Cash-Out operations. |
 | `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY` | Required passphrase of at least 32 bytes used only to derive the Worm credential encryption key. Changing it makes stored credentials unreadable. |
 | `ATHENA_WORM_TRADING_SOLANA_RPC_URL` / `--solana-rpc-url` | Solana balance endpoint. Local command default is the official mainnet endpoint; Compose requires a deployment value. |
 | `ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT` / `--rpc-attempt-timeout` | Solana per-attempt timeout; default `4s`. |
@@ -846,6 +966,11 @@ The Web execution API, Origin, Referer, and `network_type=2` are also fixed to
 the official Worm service. Coordinator lease is 30 seconds; live execution Web
 JWTs, raw transactions, signatures, and signed transactions have no persistence
 setting because they are memory-only by design.
+Position Cash Out fixes each proof transaction, authorization wait, and
+post-authorization pre-dispatch window to five minutes; its worker polls once
+per second with a 45-second claim lease and sends only an HMAC whole-position
+Close whose price is absent. It has no Web endpoint, numeric position ID,
+Wallet-signing, price, shares, or partial-close setting.
 
 ## Invariants
 
@@ -853,9 +978,11 @@ setting because they are memory-only by design.
   Worm endpoint, credential, or provider cursor.
 - Wallet remains the sole owner source; every public internal result must match
   the requested wallet ID, address, uniqueness, count, and order before use.
-- Observation and credential RPCs receive no account UUID; combination,
-  preview, and execution RPCs receive only the API-Server-derived current
-  account UUID. Worm Trading never receives a custodial private key. Wallet's
+- Balance and credential RPCs receive no account UUID. Position activity
+  receives only the API-Server-derived current account UUID for its Cash-Out
+  action overlay; combination, preview, execution, and Cash-Out RPCs likewise
+  receive only that trusted owner value. Worm Trading never receives a
+  custodial private key. Wallet's
   separate signer services accept only their purpose-bound credential or live-
   execution calls after repeating owner and address checks.
 - Every connection credential mutation requires an interactive credential,
@@ -960,7 +1087,25 @@ setting because they are memory-only by design.
 - Unknown mutation outcome creates durable wallet-market isolation and blocks
   progression. Explicit Reconcile performs only authoritative GET/List reads;
   Terminate cannot clear isolation or cancel a submitted Worm request.
-- Live execution exposes no cancel, close, TP/SL, claim, browser-selected
+- One Wallet admits at most one non-terminal Cash Out. Run and Cash-Out
+  creation use the same sorted Wallet advisory-lock namespace and reject each
+  other's active durable rows; `RECONCILIATION_REQUIRED` retains isolation.
+- Cash Out accepts only the API-Server-resolved owner Wallet and exact HMAC
+  position pubkey. Provider-derived market, side, creation time, and optional
+  request pubkey are immutable. Shares are the confirmation-time display
+  snapshot, not a Close quantity; the operation exposes no Web numeric position
+  ID, price, partial shares, limit mode, JWT, or Wallet signature.
+- Google Cash-Out proof begins only through same-origin POST and exact
+  server-side `Origin` comparison.
+- Cash-Out Close is checkpointed `PREPARED -> DISPATCHED` before its sole HMAC
+  DELETE. Only exact non-liquidated closed evidence completes it. Pending,
+  unknown, 404, timeout, 5xx, browser refresh, service restart, and Check status
+  never replay Close; post-dispatch recovery is exact-GET-only.
+- Recovery of `CLOSING` without dispatch repeats the exact GET before Close. A
+  validated closed Close response resolves its attempt and completes the
+  operation atomically. Post-dispatch observation may use the latest active
+  credential only for the same frozen Wallet address.
+- Live Run execution exposes no cancel, close, TP/SL, claim, browser-selected
   transaction, or arbitrary Wallet-signing route.
 
 ## Failure Recovery
@@ -1091,6 +1236,32 @@ request ID remains unknown. Shutdown waits for owned workers to settle or leave
 recoverable durable state; it never promotes an in-progress provider state to
 success.
 
+Cash-Out creation fails before mutation for foreign/non-Solana ownership,
+connection or credential drift, invalid exact-position data, an active Run, or
+another non-terminal Cash Out. Cancelled, expired, replayed, Session/access-
+mismatched, or intent-mismatched proof leaves Close undispatched; the
+authorization operation expires after five minutes. Successful proof atomically
+queues the operation, and browser response loss is recovered through its GET.
+Temporary exact-position reads before dispatch may retry only inside the second
+five-minute window. A recovered `CLOSING` state with no dispatched attempt
+repeats that exact GET before it can send Close. If that window expires before a
+dispatched attempt, the operation fails and the proof ends without provider
+mutation. A matching CREATE command replay is resolved before provider access,
+so response loss never causes another position GET or mutation.
+
+A durable Cash-Out `DISPATCHED` marker permanently forbids another Close for
+that operation. Timeout, transport loss, 5xx, malformed response, process
+interruption, or an unavailable post-dispatch GET becomes read-only recovery or
+`RECONCILIATION_REQUIRED`, never replay. Exact non-liquidated closed evidence
+may complete after restart; a definite rejection plus open evidence fails;
+acknowledged-but-open evidence remains pending. A 404 cannot prove closure and
+liquidation cannot masquerade as Cash-Out completion. Provider 401/403 CAS-
+marks only the still-current HMAC credential `RECONNECT_REQUIRED`; before
+dispatch that fails the operation, while after dispatch the unknown outcome
+retains Wallet isolation and permits only observation. That observation may use
+the latest active HMAC credential after rotation only when the Wallet address
+still matches the frozen operation.
+
 Solana probe and balance recovery retain their independent behavior: transient
 initial failure keeps health `NOT_SERVING` and retries, verified identity enables
 reads, later transient failure is degraded, and a network/mint/decimal/batch
@@ -1147,6 +1318,18 @@ identify Run, Step, Wallet ID, request ID, lifecycle stage, provider state, and
 non-secret digests but follow the same exclusions. A real Worm order was not
 submitted as part of implementation validation.
 
+Open Position projections add only the Cash-Out operation UUID, state, bounded
+reason, allowed action, revision, and update time. Operation detail GET adds the
+frozen safe Wallet/position identity, proof kind, stage, provider state,
+closed/liquidated flags, completion source, deadlines, and lifecycle times. It
+omits owner UUID, credential version/material, intent and request digests,
+Session-JTI digest, proof message/signature, HMAC headers, and raw response. The
+Assets action is `Cash out`, `Authorize cash out`, `Closing…`, `Check status`,
+or a disabled reason. Unknown outcomes use a persistent Alert stating that
+status checks never resend Close. Worker logs may identify bounded operation
+UUID, state, stage, and error code only; Cash-Out backlog and upstream failures
+do not alter Solana-driven health.
+
 ## Change Checklist
 
 - [ ] Wallet ownership, purpose-bound signing, and public correlation checks remain at their current trust boundaries.
@@ -1156,11 +1339,12 @@ submitted as part of implementation validation.
 - [ ] Activity filters, first-page limit, concurrency, budget, deduplication, optional decimal-string values, and partial-failure semantics remain current.
 - [ ] Challenge, credential, signable message, raw response, and log exclusion boundaries remain current.
 - [ ] Runtime database, health/status, process wiring, production configuration, and reset guidance remain current.
-- [ ] Assets at `/worm-trading` keeps paced full-account automatic connection bootstrap responsive and free of order or position-mutation actions.
+- [ ] Assets at `/worm-trading` keeps paced full-account automatic connection bootstrap responsive while exposing only exact-position, whole-position Cash Out to interactive write-capable users.
 - [ ] Combinations routes remain interactive-only, owner-scoped, catalog-validated, exact-complement-priced, revisioned, and free of Wallet, estimate, signature, draft, or Worm mutation calls.
 - [ ] Execution Preview remains interactive-only, owner-scoped, asynchronously complete-or-failed, exact-revisioned, mandatory-guarded, partial-fill-tolerant, Wallet-major, 15-minute-expiring, seven-day-retained, and free of provider mutations or signing.
 - [ ] Execution Runs remain permanent, plan/owner/session/access bound, one-per-active-account, coordinator-exclusive, Wallet-major, and explicit-next-step only.
 - [ ] Production execution uses the shared stateless `util/worm` authentication/Open/inspection/signing/Finalize/GET stages, fixed market-only `1x`, mandatory pre-Open exposure guards, HMAC Open Position-only completion, and the disclosed Worm transaction trust model.
 - [ ] Wallet execution signing retains owner/address/parser/signer-slot/digest/self-verification checks without claiming a program/instruction/spend policy.
 - [ ] Positive Open persistence remains atomic through `RecordExecutionStepOpened`; its returned `OPENED` Step immediately enters the shared position matcher before any signing or Finalize, and Open/Finalize dispatch markers, unknown-outcome isolation, restart recovery, and read-only reconciliation never replay a mutation.
+- [ ] Position Cash Out remains exact-HMAC-pubkey, fresh-proof-bound, whole-position market-only, one-per-Wallet, Run-isolated, durably at-most-once, and exact-GET-only after dispatch.
 - [ ] The [design index](../README.md) contains the correct entry.

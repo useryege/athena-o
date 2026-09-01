@@ -42,17 +42,19 @@ type googleVerificationError struct {
 
 // Handler implements the browser Google Authorization Code + PKCE flow.
 type Handler struct {
-	oauth2Config    oauth2.Config
-	verifier        *oidc.IDTokenVerifier
-	store           *TransactionStore
-	backend         authregistration.Backend
-	registrations   *authregistration.Handler
-	secureCookie    bool
-	baseHRef        string
-	adminEmail      string
-	walletSecrets   *walletSecretReauthentication
-	wormCredentials *wormCredentialReauthentication
-	wormExecutions  *wormExecutionAuthorization
+	oauth2Config         oauth2.Config
+	verifier             *oidc.IDTokenVerifier
+	store                *TransactionStore
+	backend              authregistration.Backend
+	registrations        *authregistration.Handler
+	secureCookie         bool
+	publicOrigin         string
+	baseHRef             string
+	adminEmail           string
+	walletSecrets        *walletSecretReauthentication
+	wormCredentials      *wormCredentialReauthentication
+	wormExecutions       *wormExecutionAuthorization
+	wormPositionCashOuts *wormPositionCashOutAuthorization
 }
 
 // NewHandler constructs the flow without contacting Google. Remote JWKS are
@@ -96,6 +98,7 @@ func NewHandler(
 		backend:       backend,
 		registrations: registrations,
 		secureCookie:  config.secureCookie,
+		publicOrigin:  config.PublicOrigin(),
 		baseHRef:      baseHRef,
 		adminEmail:    config.AdminEmail,
 	}, nil
@@ -150,6 +153,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Callback consumes the transaction, verifies Google identity, and either
 // begins shared username registration or issues an Athena-only browser session.
 func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
+	if h.wormPositionCashOuts != nil && h.wormPositionCashOuts.ownsCallback(r) {
+		h.wormPositionCashOuts.callback(w, r)
+		return
+	}
 	if h.wormExecutions != nil && h.wormExecutions.ownsCallback(r) {
 		h.wormExecutions.callback(w, r)
 		return

@@ -368,6 +368,87 @@ type WormMarketCombinationItem struct {
 	OutcomeLabel      string
 }
 
+type WormPositionCashOut struct {
+	ID                     pgtype.UUID
+	OwnerAccountID         pgtype.UUID
+	WalletID               int64
+	WalletAddress          string
+	CredentialVersion      int64
+	PositionPubkey         string
+	MarketConditionID      string
+	IsYes                  bool
+	PositionCreatedAt      pgtype.Timestamptz
+	PositionRequestPubkey  string
+	Shares                 string
+	IntentDigestSha256     []byte
+	State                  string
+	Revision               int64
+	ReasonCode             string
+	ProviderState          string
+	ProviderIsClosed       bool
+	ProviderIsLiquidated   bool
+	AuthorizationExpiresAt pgtype.Timestamptz
+	ExecutionExpiresAt     pgtype.Timestamptz
+	AuthorizedAt           pgtype.Timestamptz
+	NextPollAt             pgtype.Timestamptz
+	PollCount              int32
+	ReconcileRequestedAt   pgtype.Timestamptz
+	ClaimID                pgtype.UUID
+	ClaimOwner             string
+	ClaimExpiresAt         pgtype.Timestamptz
+	CompletedAt            pgtype.Timestamptz
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
+type WormPositionCashOutAttempt struct {
+	ID            pgtype.UUID
+	CashOutID     pgtype.UUID
+	State         string
+	RequestSha256 []byte
+	HttpStatus    pgtype.Int4
+	ProviderCode  pgtype.Int4
+	ProviderSlug  string
+	ProviderState string
+	ErrorCode     string
+	PreparedAt    pgtype.Timestamptz
+	DispatchedAt  pgtype.Timestamptz
+	CompletedAt   pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
+type WormPositionCashOutAuthorization struct {
+	ID                 pgtype.UUID
+	CashOutID          pgtype.UUID
+	OwnerAccountID     pgtype.UUID
+	Scope              string
+	ProofKind          string
+	SessionJtiDigest   []byte
+	AccessRevision     int64
+	IntentDigestSha256 []byte
+	State              string
+	AuthorizedAt       pgtype.Timestamptz
+	EndedAt            pgtype.Timestamptz
+	EndReasonCode      string
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
+}
+
+type WormPositionCashOutCommand struct {
+	ID                   pgtype.UUID
+	CashOutID            pgtype.UUID
+	OwnerAccountID       pgtype.UUID
+	Kind                 string
+	State                string
+	RequestSha256        []byte
+	CashOutRevisionAfter int64
+	ResultCode           string
+	CompletedAt          pgtype.Timestamptz
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
 type WormWalletConnection struct {
 	WalletID    int64
 	Address     string

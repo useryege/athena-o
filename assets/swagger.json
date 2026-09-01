@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1099-gbed33971-dirty"
+    "version": "v1.0.0-1100-g598f6108-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -8749,6 +8749,9 @@
     "wormtradingWormOpenPosition": {
       "type": "object",
       "properties": {
+        "cash_out": {
+          "$ref": "#/definitions/wormtradingWormPositionCashOutSummary"
+        },
         "leverage": {
           "type": "string"
         },
@@ -8795,6 +8798,31 @@
           "type": "boolean"
         },
         "createdAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "wormtradingWormPositionCashOutSummary": {
+      "type": "object",
+      "properties": {
+        "allowed_action": {
+          "type": "string"
+        },
+        "operation_id": {
+          "type": "string"
+        },
+        "reason_code": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "state": {
+          "type": "string"
+        },
+        "updated_at": {
           "type": "integer",
           "format": "int64"
         }

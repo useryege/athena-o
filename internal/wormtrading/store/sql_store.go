@@ -59,7 +59,16 @@ var (
 	ErrExecutionRunCoordinator              = fmt.Errorf("%w: execution coordinator", ErrConflict)
 	ErrExecutionRunAuthorization            = fmt.Errorf("%w: execution authorization", ErrConflict)
 	ErrExecutionRunIsolation                = fmt.Errorf("%w: wallet-market execution isolation", ErrConflict)
+	ErrExecutionRunWalletCashOutActive      = fmt.Errorf("%w: execution wallet has an active position Cash Out", ErrConflict)
 	ErrInvalidExecutionRun                  = fmt.Errorf("%w: invalid execution run", ErrInvalidState)
+	ErrPositionCashOutNotFound              = fmt.Errorf("%w: position Cash Out", ErrNotFound)
+	ErrPositionCashOutRevision              = fmt.Errorf("%w: position Cash Out revision", ErrConflict)
+	ErrPositionCashOutCommandConflict       = fmt.Errorf("%w: position Cash Out command", ErrConflict)
+	ErrPositionCashOutWalletActive          = fmt.Errorf("%w: Wallet already has an active position Cash Out", ErrConflict)
+	ErrPositionCashOutExecutionActive       = fmt.Errorf("%w: Wallet has an active execution Run", ErrConflict)
+	ErrPositionCashOutConnectionChanged     = fmt.Errorf("%w: position Cash Out Wallet connection changed", ErrConflict)
+	ErrPositionCashOutClaim                 = fmt.Errorf("%w: position Cash Out worker claim", ErrConflict)
+	ErrInvalidPositionCashOut               = fmt.Errorf("%w: invalid position Cash Out", ErrInvalidState)
 )
 
 type SQLStore struct {

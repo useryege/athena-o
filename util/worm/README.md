@@ -119,6 +119,39 @@ position-completion authority. HMAC exposure guards, authoritative Open
 Position matching, durable mutation checkpoints, and business recovery remain
 the responsibility of higher-level execution code.
 
+### Resumable HMAC margin-position cash-out stages
+
+Production cash out uses the official HMAC margin-position pubkey and the
+stateless stages in `margin_position_cash_out_stages.go`:
+
+1. `InspectMarginPositionCashOutTarget` strictly extracts the position pubkey,
+   market, side, positive canonical total shares, creation time, optional
+   backing-request pubkey, and lifecycle flags from a fresh provider position.
+2. `PrepareMarginPositionCashOut` freezes one open position as a full-position
+   market Close and exposes the stable SHA-256 digest of its exact pubkey and
+   `price:null` request shape. It has no price, shares, limit, or partial-close
+   input.
+3. After the caller has durably checkpointed dispatch,
+   `DispatchMarginPositionCashOut` sends exactly one HMAC DELETE with a nil
+   price. It validates the returned position-pubkey echo and accepts only the
+   documented `zero` or `order` close types. It never retries or observes.
+4. `ObserveMarginPositionCashOut` performs one safe GET for the exact frozen
+   pubkey and rejects market, side, creation-time, or request-pubkey drift.
+   Shares remain a required positive provider value but are not an identity
+   invariant because they may change while a whole-position Close is settling.
+
+The package intentionally owns no database checkpoint, authorization proof,
+poll schedule, Wallet-level serialization, or recovery state machine. A
+durable caller must never dispatch Close again after a dispatched attempt has
+an ambiguous outcome; only `ObserveMarginPositionCashOut` may be repeated.
+A strictly validated Close echo with `is_closed=true`, or closed evidence from
+the exact GET, can establish completion. A successful Close response with
+`is_closed=false` means only that the close order was accepted.
+
+The HMAC position pubkey used by these stages is not the numeric Worm Web
+`position_id` used by `CashOutWebMarginPosition`. The HMAC stages do not perform
+Web sign-in, request a Wallet signature, or use a Web JWT.
+
 ### Single-entry Web margin-position cash out
 
 `CashOutWebMarginPosition` is the high-level entrypoint for closing an entire

@@ -39,7 +39,7 @@ const (
 )
 
 // WormAPIClient is the deliberately small portion of util/worm needed by the
-// credential, position-read, and read-only execution-preview boundaries.
+// credential, position-read, execution-preview, and position Cash Out boundaries.
 // util/worm remains the source of the HMAC wire protocol and response DTOs.
 type WormAPIClient interface {
 	CreateAuthChallenge(context.Context, worm.CreateAuthChallengeRequest) (*worm.AuthChallenge, error)
@@ -48,6 +48,8 @@ type WormAPIClient interface {
 	EstimateMarginPosition(context.Context, worm.EstimateMarginPositionOptions) (*worm.MarginPositionEstimate, error)
 	ListPositionRequests(context.Context, worm.ListPositionRequestsOptions) (*worm.ListPositionRequestsResponse, error)
 	ListMarginPositions(context.Context, worm.ListMarginPositionsOptions) (*worm.ListMarginPositionsResponse, error)
+	GetMarginPosition(context.Context, string) (*worm.MarginPosition, error)
+	CloseMarginPosition(context.Context, string, worm.CloseMarginPositionOptions) (*worm.CloseMarginPositionResult, error)
 }
 
 // WormAPIClientFactory never accepts a base URL. Every production client is

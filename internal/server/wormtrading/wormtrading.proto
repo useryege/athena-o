@@ -127,6 +127,16 @@ message WormOpenPosition {
   bool is_liquidated = 14 [(gogoproto.jsontag) = "isLiquidated"];
   bool is_claimed = 15 [(gogoproto.jsontag) = "isClaimed"];
   int64 created_at = 16 [(gogoproto.jsontag) = "createdAt,omitempty"];
+  WormPositionCashOutSummary cash_out = 17 [(gogoproto.jsontag) = "cashOut,omitempty"];
+}
+
+message WormPositionCashOutSummary {
+  string operation_id = 1 [(gogoproto.jsontag) = "operationId,omitempty"];
+  string state = 2;
+  string reason_code = 3 [(gogoproto.jsontag) = "reasonCode,omitempty"];
+  string allowed_action = 4 [(gogoproto.jsontag) = "allowedAction,omitempty"];
+  int64 revision = 5 [(gogoproto.jsontag) = "revision,omitempty"];
+  int64 updated_at = 6 [(gogoproto.jsontag) = "updatedAt,omitempty"];
 }
 
 message WormInFlightRequest {
