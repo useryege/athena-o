@@ -70,7 +70,10 @@ func NewCommand() *cobra.Command {
 
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
-				notificationClientset, err = notificationapiclient.NewNotificationClientset(notificationServerAddress)
+				notificationClientset, err = notificationapiclient.NewNotificationClientset(
+					notificationServerAddress,
+					env.StringFromEnv(notificationapiclient.InternalAuthTokenEnv, ""),
+				)
 				if err != nil {
 					return fmt.Errorf("create notification clientset: %w", err)
 				}

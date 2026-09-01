@@ -21,7 +21,6 @@ const (
 	ModuleWorldCupCorners Module = "world_cup_corners"
 	ModuleToken           Module = "token"
 	ModuleWallet          Module = "wallet"
-	ModuleNotifications   Module = "notifications"
 )
 
 var allModules = [...]Module{
@@ -34,7 +33,6 @@ var allModules = [...]Module{
 	ModuleWorldCupCorners,
 	ModuleToken,
 	ModuleWallet,
-	ModuleNotifications,
 }
 
 // AccessLevel is the hierarchical data-access level for one module.
@@ -58,7 +56,7 @@ func MaxAccessLevel(module Module) (AccessLevel, bool) {
 	switch module {
 	case ModuleMarketRadar, ModuleSportsLive, ModuleWormMarkets, ModuleWorldCupCorners:
 		return AccessLevelRead, true
-	case ModuleSportsHistory, ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet, ModuleNotifications:
+	case ModuleSportsHistory, ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet:
 		return AccessLevelReadWrite, true
 	default:
 		return "", false

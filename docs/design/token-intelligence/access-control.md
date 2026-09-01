@@ -52,7 +52,7 @@ The active account's Token matrix entry is the sole product-level input:
   application contains no Token navigation, routes, service construction, or
   cache namespace.
 
-A Token grant does not grant Wallet, Notifications, or any market module. The
+A Token grant does not grant Wallet or any market module. The
 UI access level controls presentation, while the API Server remains the security
 boundary for direct HTTP and gRPC callers.
 

@@ -1,6 +1,6 @@
 # Athena Modules and Permissions
 
-Athena evaluates authorization on the server for every protected operation. Product access is represented by ten independent module entries with the ordered levels `NONE < READ < READ_WRITE`.
+Athena evaluates authorization on the server for every protected operation. Product access is represented by nine independent module entries with the ordered levels `NONE < READ < READ_WRITE`.
 
 `READ_WRITE` includes `READ`. A module whose maximum is `READ` rejects `READ_WRITE`; this means the module has no public mutation boundary. Athena's server-side authorization rules determine the required level. Use [the Swagger specification](/swagger.json) for the operation's path, method, and schema.
 
@@ -15,9 +15,8 @@ Athena evaluates authorization on the server for every protected operation. Prod
 | `world_cup_corners` | World Cup corners dataset | `READ` |
 | `token` | Token projects, reports, observations, swaps, research and operations data; policy and checkpoint mutations | `READ_WRITE` |
 | `wallet` | Owner-scoped EVM and Solana wallets; metadata and avatar reads; remark and avatar writes; session-only create, import, and private-key reveal operations | `READ_WRITE` |
-| `notifications` | Notification status and delivery records; test-notification sends | `READ_WRITE` |
 
-Grants do not flow between modules. For example, Worm Trading access does not grant Wallet management or private-key access, Worm Markets access does not grant World Cup Corners access, and Token access does not grant Notifications access.
+Grants do not flow between modules. For example, Worm Trading access does not grant Wallet management or private-key access, Worm Markets access does not grant World Cup Corners access, and Token access does not grant Wallet access.
 
 ## Account-Level Credentials
 
@@ -27,9 +26,11 @@ Complete current authority does not bypass authorization. Disabling login or API
 
 ## Separate Authorization Boundaries
 
-Administrator is a persisted role, not a module. Administrator-only account management, service operations, and Profit Sharing lifecycle methods require that role. The fixed administrator account has maximum module access but API Key access disabled, so administrator authority is unavailable through the API Key and AI-access path.
+Administrator is a persisted role, not a module. Administrator-only account management, service operations, and Profit Sharing lifecycle methods require that role. Administrator accounts have every member module set to `NONE` and API Key access disabled, so administrator authority is unavailable through the API Key and AI-access path.
 
-Profit Sharing is an independent entitlement, not one of the ten modules. Member operations also require membership in the relevant round, while lifecycle operations require the administrator role. Enabling Profit Sharing does not grant any product module, and a product module does not grant Profit Sharing. An ordinary account's entitlement and membership are evaluated normally when its API Key is used; administrator-only lifecycle operations remain unavailable.
+Profit Sharing is an independent entitlement, not one of the nine modules. Member operations also require membership in the relevant round, while lifecycle operations require the administrator role. Enabling Profit Sharing does not grant any product module, and a product module does not grant Profit Sharing. An ordinary account's entitlement and membership are evaluated normally when its API Key is used; administrator-only lifecycle operations remain unavailable.
+
+Telegram notification binding is also independent from the module matrix. Its browser endpoints require an ordinary interactive login, accept no target account ID, and reject API Keys and administrator credentials. System notification delivery records and test sends are administrator-only operations.
 
 Resource-level checks can further restrict an authorized module operation. Wallet access is always limited to the current account's own wallets, with no administrator bypass. An API Key with Wallet `READ` may list and inspect metadata and read avatars; Wallet `READ_WRITE` additionally permits remark and avatar mutations. Wallet creation and import require an interactive browser login and Wallet `READ_WRITE`. Private-key reveal requires that same level and ownership, rejects API Keys, and also requires a fresh five-minute wallet reauthentication lease.
 

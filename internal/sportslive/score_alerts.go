@@ -58,14 +58,14 @@ func (s *Service) updateSportsLiveScoreAlerts(ctx context.Context) {
 		return
 	}
 
-	client := s.notificationClientset.Notification()
+	client := s.notificationClientset.System()
 
 	for _, candidate := range candidates {
 		if ctx.Err() != nil {
 			return
 		}
 		sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
-		response, err := client.SendNotification(sendCtx, s.renderSportsLiveScoreAlertNotification(candidate))
+		response, err := client.SendSystemNotification(sendCtx, s.renderSportsLiveScoreAlertNotification(candidate))
 		cancel()
 		if err != nil {
 			if ctx.Err() == nil {
@@ -98,7 +98,7 @@ func (s *Service) updateSportsLiveScoreAlerts(ctx context.Context) {
 	}
 }
 
-func (s *Service) renderSportsLiveScoreAlertNotification(candidate sportslivestore.SportsLiveScoreAlertCandidate) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderSportsLiveScoreAlertNotification(candidate sportslivestore.SportsLiveScoreAlertCandidate) *notificationapiclient.SendSystemNotificationRequest {
 	eventTitle := firstNonEmpty(candidate.Title, candidate.Slug, candidate.EventKey)
 	sportLabel, topic, link := sportsLiveScoreAlertPresentation(candidate)
 	bodyLines := []string{
@@ -112,7 +112,7 @@ func (s *Service) renderSportsLiveScoreAlertNotification(candidate sportslivesto
 		bodyLines = append(bodyLines, fmt.Sprintf("Updated at: %s", candidate.FetchedAt.UTC().Format(time.RFC3339)))
 	}
 
-	return &notificationapiclient.SendNotificationRequest{
+	return &notificationapiclient.SendSystemNotificationRequest{
 		Source:       sportsLiveScoreAlertSource,
 		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 		Title:        truncateRunes(fmt.Sprintf("%s score update: %s %s", sportLabel, eventTitle, candidate.Score), defaultSportsLiveScoreAlertTitleMaxRunes),

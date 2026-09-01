@@ -33,6 +33,7 @@
 | `MINIO_IMAGE` | `athena-minio:9e49d5e7a648` | 从固定 MinIO Server commit 构建的镜像名。 |
 | `MINIO_MC_IMAGE` | `athena-minio-mc:7394ce0dd2a8` | 从固定 mc commit 构建的一次性初始化镜像名。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | 无 | API Server、系统通知生产者与 Notification gRPC 之间共享的独立 Bearer；至少 32 字节且不得与其他内部凭证相同。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |
 | `ATHENA_TASK_NOTIFICATION_EMAIL_SMTP_USERNAME` | 无 | 任务完成通知使用的腾讯企业邮箱账号，同时作为邮件发件人。 |
 | `ATHENA_TASK_NOTIFICATION_EMAIL_SMTP_PASSWORD` | 无 | 腾讯企业邮箱的客户端专用密码，仅用于任务完成通知的 SMTP 认证。 |
@@ -202,6 +203,11 @@ GET 和 EventSource 等无法设置请求头的浏览器传输可使用 `athenaR
 非 API Server 容器中显式覆盖为空；只有 `athena-server` 能签发 Athena JWT、访问
 持久账号目录或访问认证 Redis。`ATHENA_WALLET_INTERNAL_AUTH_TOKEN` 也会在无关容器
 中覆盖为空，仅 `athena-wallet` 和 `athena-server` 获得同一个 required 值。
+`ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` 仅注入 `athena-notification`、
+`athena-server` 以及 Market Radar、Sports Live、Managed OO、Worm Markets
+四个系统通知生产者；其他容器中的同名值会被覆盖为空。Telegram Bot Token 与
+测试/生产群组 ID 则只注入 `athena-notification`，API Server、生产者和其他容器中的
+同名值都会被覆盖为空。
 远端上传后的 `.env` 同样改为当前部署用户持有且权限为 `0600`。
 
 ## 代码生成
@@ -276,7 +282,7 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 | `make prod-start-local` | 创建本地 PostgreSQL/Redis/MinIO volume、执行 migration、初始化私有 bucket 并启动生产 compose 服务。 | `make prod-start-local` |
 | `make prod-stop-local` | 停止本机生产 compose 服务并删除 PostgreSQL/Redis/MinIO volume。 | `make prod-stop-local` |
 | `make prod-logs-local` | 查看本机生产 compose 日志。 | `make prod-logs-local` |
-| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis、MinIO root、头像应用凭据、JWT secret 和 Wallet 内部服务 token。 | `make prod-reset-secrets` |
+| `make prod-reset-secrets` | 更新生产 env 中的 PostgreSQL、Redis、MinIO root、头像应用凭据、JWT secret、Notification 与 Wallet 内部服务 token。 | `make prod-reset-secrets` |
 | `make prod-deploy-remote` | 自动轮换凭据、构建镜像、清空远程数据库并完成全新部署。 | `make prod-deploy-remote` |
 | `make prod-hot-deploy-remote` | 构建镜像并热部署后端服务，保留远程 PostgreSQL、Redis 和 MinIO 数据。 | `make prod-hot-deploy-remote` |
 | `make prod-destroy-remote` | 删除远程 Athena 运行资源及 PostgreSQL/Redis/MinIO volume。 | `make prod-destroy-remote` |
@@ -298,6 +304,7 @@ MINIO_ROOT_PASSWORD=your_minio_root_password
 ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=your_avatar_access_key
 ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=your_avatar_secret_key
 ATHENA_JWT_SECRET=your_at_least_32_byte_jwt_secret
+ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN=your_at_least_32_byte_notification_internal_token
 ATHENA_WALLET_ENCRYPTION_KEY=your_wallet_encryption_key
 ATHENA_WALLET_INTERNAL_AUTH_TOKEN=your_at_least_32_byte_wallet_internal_token
 ATHENA_GOOGLE_OIDC_CLIENT_ID=your_production_web_client_id
@@ -321,6 +328,12 @@ Bearer，不是钱包加密主密钥。Wallet 与 API Server 必须配置同一�
 40 位字母数字 token。缺失或不匹配时 Wallet health 仍可探测，但所有非 health RPC
 都会被拒绝。
 
+`ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` 采用相同的最小长度和独立性要求，
+但只用于 Notification gRPC。Notification、API Server 和四个系统通知生产者必须使用
+同一个值；健康检查不携带该凭证，其他内部 RPC 缺失或不匹配时会被拒绝。
+`make prod-reset-secrets` 会同时生成一个与 Wallet、Wallet signer 和 Worm Trading
+内部 token 均不相同的 40 位值。
+
 推荐预演流程：
 
 ```bash
@@ -339,8 +352,8 @@ Pending 普通账号，不需要预先提取 `sub` 或配置 Solana 地址。Pha
 `/auth/wallet-secrets/solana/*`；钱包私钥查看依赖 Redis 中固定 5 分钟的重新认证
 lease，Redis 不可用时该能力会关闭。
 Compose 会同时使用 `$(PROD_ENV_FILE)` 做变量插值和容器 `env_file` 注入，不会回退
-读取仓库根目录的 `.env`。`prod-reset-secrets` 会轮换 Wallet 内部服务 token，并把该
-文件权限收紧为 `0600`。
+读取仓库根目录的 `.env`。`prod-reset-secrets` 会轮换 Notification 与 Wallet 内部服务
+token，并把该文件权限收紧为 `0600`。
 
 生产 compose 中各后端服务设置了 `ATHENA_POSTGRES_AUTO_MIGRATE=false`。`prod-start-local` 会在启动业务服务前自动执行 `athena up --module $(PROD_MIGRATE_MODULE)`，默认迁移全部模块；迁移失败时命令会终止并保留 PostgreSQL 容器，便于排查。
 

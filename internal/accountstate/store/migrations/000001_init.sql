@@ -159,8 +159,7 @@ CREATE TABLE account_module_access (
       'worm_trading',
       'world_cup_corners',
       'token',
-      'wallet',
-      'notifications'
+      'wallet'
     )),
   CONSTRAINT account_module_access_level_check
     CHECK (access_level IN ('none', 'read', 'read_write')),
@@ -171,8 +170,7 @@ CREATE TABLE account_module_access (
       'managed_oo',
       'worm_trading',
       'token',
-      'wallet',
-      'notifications'
+      'wallet'
     )
   )
 );

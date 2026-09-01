@@ -14,14 +14,15 @@ import (
 )
 
 type Sender interface {
-	CreateTopic(ctx context.Context, telegramChat string, label string) (int, error)
+	CreateSystemTopic(ctx context.Context, telegramChat string, label string) (int, error)
 	Send(ctx context.Context, request SendRequest) (string, error)
 }
 
 type SendRequest struct {
-	TelegramChat    string
-	MessageThreadID int
-	Text            string
+	SystemTelegramChat string
+	TelegramChatID     int64
+	MessageThreadID    int
+	Text               string
 }
 
 type RateLimitError struct {
@@ -41,19 +42,20 @@ func (e *RateLimitError) Unwrap() error {
 }
 
 type TelegramSender struct {
-	clients map[string]utiltelegram.Client
+	client        utiltelegram.Client
+	systemChatIDs map[string]string
 }
 
-func NewTelegramSender(clients map[string]utiltelegram.Client) *TelegramSender {
-	return &TelegramSender{clients: copyTelegramClients(clients)}
+func NewTelegramSender(client utiltelegram.Client, systemChatIDs map[string]string) *TelegramSender {
+	return &TelegramSender{client: client, systemChatIDs: copySystemChatIDs(systemChatIDs)}
 }
 
-func (s *TelegramSender) CreateTopic(ctx context.Context, telegramChat string, label string) (int, error) {
-	client, err := telegramClientForChat(s.clients, telegramChat)
+func (s *TelegramSender) CreateSystemTopic(ctx context.Context, telegramChat string, label string) (int, error) {
+	chatID, err := s.systemChatID(telegramChat)
 	if err != nil {
 		return 0, err
 	}
-	topic, err := client.CreateForumTopic(ctx, utiltelegram.CreateForumTopicRequest{Name: label})
+	topic, err := s.client.CreateForumTopic(ctx, utiltelegram.CreateForumTopicRequest{ChatID: chatID, Name: label})
 	if err != nil {
 		return 0, fmt.Errorf("failed to create %s telegram topic %q: %w", telegramChat, label, err)
 	}
@@ -64,14 +66,24 @@ func (s *TelegramSender) CreateTopic(ctx context.Context, telegramChat string, l
 }
 
 func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string, error) {
-	client, err := telegramClientForChat(s.clients, request.TelegramChat)
-	if err != nil {
-		return "", err
+	if s.client == nil {
+		return "", errors.New("telegram client is required")
 	}
-	if request.MessageThreadID <= 0 {
-		return "", fmt.Errorf("telegram message thread id is required")
+	chatID := ""
+	if request.TelegramChatID > 0 {
+		chatID = strconv.FormatInt(request.TelegramChatID, 10)
+	} else {
+		var err error
+		chatID, err = s.systemChatID(request.SystemTelegramChat)
+		if err != nil {
+			return "", err
+		}
+		if request.MessageThreadID <= 0 {
+			return "", errors.New("system telegram message thread id is required")
+		}
 	}
-	resp, err := client.SendMessage(ctx, utiltelegram.SendMessageRequest{
+	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{
+		ChatID:          chatID,
 		Text:            request.Text,
 		MessageThreadID: request.MessageThreadID,
 		ParseMode:       models.ParseModeHTML,
@@ -86,27 +98,28 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string,
 	return strconv.Itoa(resp.MessageID), nil
 }
 
-func copyTelegramClients(clients map[string]utiltelegram.Client) map[string]utiltelegram.Client {
-	out := make(map[string]utiltelegram.Client, len(clients))
-	for key, client := range clients {
+func (s *TelegramSender) systemChatID(telegramChat string) (string, error) {
+	telegramChat = strings.TrimSpace(strings.ToLower(telegramChat))
+	if telegramChat == "" {
+		return "", errors.New("telegram_chat is required")
+	}
+	chatID := strings.TrimSpace(s.systemChatIDs[telegramChat])
+	if chatID == "" {
+		return "", fmt.Errorf("%s telegram chat id is required", telegramChat)
+	}
+	return chatID, nil
+}
+
+func copySystemChatIDs(chatIDs map[string]string) map[string]string {
+	out := make(map[string]string, len(chatIDs))
+	for key, chatID := range chatIDs {
 		key = strings.TrimSpace(strings.ToLower(key))
-		if key != "" {
-			out[key] = client
+		chatID = strings.TrimSpace(chatID)
+		if key != "" && chatID != "" {
+			out[key] = chatID
 		}
 	}
 	return out
-}
-
-func telegramClientForChat(clients map[string]utiltelegram.Client, telegramChat string) (utiltelegram.Client, error) {
-	telegramChat = strings.TrimSpace(strings.ToLower(telegramChat))
-	if telegramChat == "" {
-		return nil, fmt.Errorf("telegram_chat is required")
-	}
-	client := clients[telegramChat]
-	if client == nil {
-		return nil, fmt.Errorf("%s telegram client is required", telegramChat)
-	}
-	return client, nil
 }
 
 func RetryAfterFromError(err error) (time.Duration, bool) {
@@ -115,4 +128,15 @@ func RetryAfterFromError(err error) (time.Duration, bool) {
 		return rateLimitErr.RetryAfter, true
 	}
 	return 0, false
+}
+
+func IsTelegramRecipientUnreachable(err error) bool {
+	if errors.Is(err, utiltelegram.ErrRecipientUnreachable) ||
+		errors.Is(err, tgbot.ErrorForbidden) || errors.Is(err, tgbot.ErrorNotFound) {
+		return true
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "chat not found") ||
+		strings.Contains(message, "bot was blocked by the user") ||
+		strings.Contains(message, "user is deactivated")
 }

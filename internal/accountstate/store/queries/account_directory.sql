@@ -134,8 +134,7 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
-      ('wallet'),
-      ('notifications')
+      ('wallet')
   ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (
@@ -165,7 +164,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
@@ -220,8 +219,7 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
-      ('wallet'),
-      ('notifications')
+      ('wallet')
   ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (
@@ -251,7 +249,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
@@ -299,8 +297,7 @@ WITH inserted_account AS (
       ('worm_trading', 'read_write'),
       ('world_cup_corners', 'read'),
       ('token', 'read_write'),
-      ('wallet', 'read_write'),
-      ('notifications', 'read_write')
+      ('wallet', 'read_write')
   ) AS module(name, access_level)
   RETURNING account_id
 ), inserted_profile AS (
@@ -330,7 +327,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
@@ -378,8 +375,7 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
-      ('wallet'),
-      ('notifications')
+      ('wallet')
   ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (
@@ -409,7 +405,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 9
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 

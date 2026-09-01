@@ -24,7 +24,6 @@ export const WorldCupCornersPage = React.lazy(() => import('./pages/world-cup-co
 export const ManagedOOProposalsPage = React.lazy(() => import('./pages/managed-oo').then(module => ({default: module.ManagedOOProposalsPage})));
 export const ManagedOODisputesPage = React.lazy(() => import('./pages/managed-oo').then(module => ({default: module.ManagedOODisputesPage})));
 export const NotificationsPage = React.lazy(() => import('./pages/notifications').then(module => ({default: module.NotificationsPage})));
-export const NotificationsDetailPage = React.lazy(() => import('./pages/notification-detail').then(module => ({default: module.NotificationsDetailPage})));
 export const ProfitSharingRoundsPage = React.lazy(() => import('./pages/profit-sharing').then(module => ({default: module.ProfitSharingRoundsPage})));
 export const ProfitSharingRoundPage = React.lazy(() => import('./pages/profit-sharing').then(module => ({default: module.ProfitSharingRoundPage})));
 export const ProjectsPage = React.lazy(() => import('./pages/projects').then(module => ({default: module.ProjectsPage})));

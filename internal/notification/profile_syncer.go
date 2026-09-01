@@ -9,22 +9,21 @@ import (
 )
 
 type TelegramProfileSyncer struct {
-	clients   map[string]utiltelegram.Client
+	client    utiltelegram.Client
 	botConfig utiltelegram.BotProfileConfig
 }
 
-func NewTelegramProfileSyncer(clients map[string]utiltelegram.Client, botConfig utiltelegram.BotProfileConfig) *TelegramProfileSyncer {
-	return &TelegramProfileSyncer{clients: copyTelegramClients(clients), botConfig: botConfig}
+func NewTelegramProfileSyncer(client utiltelegram.Client, botConfig utiltelegram.BotProfileConfig) *TelegramProfileSyncer {
+	return &TelegramProfileSyncer{client: client, botConfig: botConfig}
 }
 
-func (s *TelegramProfileSyncer) SyncProfile(ctx context.Context) error {
-	botClient, err := telegramClientForChat(s.clients, TelegramChatTest)
-	if err != nil {
-		return err
+func (s *TelegramProfileSyncer) SyncProfile(ctx context.Context) (*utiltelegram.BotIdentity, error) {
+	if s.client == nil {
+		return nil, fmt.Errorf("telegram client is required")
 	}
-	botResult, err := botClient.EnsureBotProfile(ctx, s.botConfig)
+	botResult, err := s.client.EnsureBotProfile(ctx, s.botConfig)
 	if err != nil {
-		return fmt.Errorf("failed to ensure telegram bot profile: %w", err)
+		return nil, fmt.Errorf("failed to ensure telegram bot profile: %w", err)
 	}
 	log.WithFields(log.Fields{
 		"bot_id":                    botResult.Bot.ID,
@@ -34,5 +33,5 @@ func (s *TelegramProfileSyncer) SyncProfile(ctx context.Context) error {
 		"short_description_updated": botResult.ShortDescriptionUpdated,
 		"profile_photo_updated":     botResult.ProfilePhotoUpdated,
 	}).Info("telegram bot profile synchronized")
-	return nil
+	return &botResult.Bot, nil
 }

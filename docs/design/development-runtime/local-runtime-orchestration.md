@@ -7,12 +7,13 @@ the Foreman process graph; reusable PostgreSQL, Redis, and MinIO containers; and
 the local configuration boundary used by the API Server and business services.
 Google OIDC and Phantom Solana authentication remain API Server behavior, while
 the local runtime supplies the fixed public origin, Redis OAuth/challenge/shared-
-registration plus Wallet/Worm step-up and execution-proof stores, durable account, Wallet, and
-Worm Trading databases, private account/wallet avatar storage, and reset
-boundary required by the two realm-selected disabled-auth identities. The runtime
-also supplies Worm Trading's independent internal Bearer, credential-encryption key,
-mainnet Solana RPC endpoint, and a second Wallet capability Bearer used only by
-the live-execution signer.
+registration plus Wallet/Worm step-up and execution-proof stores, durable
+account, Notification, Wallet, and Worm Trading databases, private
+account/wallet avatar storage, and reset boundary required by the two realm-
+selected disabled-auth identities. The runtime also supplies independent
+internal Bearers for Notification and Worm Trading, the Worm credential-
+encryption key, mainnet Solana RPC endpoint, and a second Wallet capability
+Bearer used only by the live-execution signer.
 
 ## Source Locations
 
@@ -29,6 +30,8 @@ the live-execution signer.
 | Transient authentication state | [internal/googleoidc/store.go](../../../internal/googleoidc/store.go), [internal/phantomauth/store.go](../../../internal/phantomauth/store.go), [internal/authregistration/store.go](../../../internal/authregistration/store.go) | five-minute OAuth transactions, five-minute SIWS challenges, 15-minute shared registrations |
 | Sensitive transient state | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go), [internal/googleoidc/worm_credential_store.go](../../../internal/googleoidc/worm_credential_store.go), [internal/googleoidc/worm_execution_store.go](../../../internal/googleoidc/worm_execution_store.go), [internal/phantomauth/wallet_secret_store.go](../../../internal/phantomauth/wallet_secret_store.go), [internal/phantomauth/worm_credential_store.go](../../../internal/phantomauth/worm_credential_store.go), [internal/phantomauth/worm_execution_store.go](../../../internal/phantomauth/worm_execution_store.go) | independent five-minute Wallet/Worm leases and Run-bound provider proof state |
 | Account-state migration | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql) | durable identity, access, profile, preferences, API Keys |
+| Notification runtime and durable state | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [internal/notification](../../../internal/notification), [internal/notification/store/migrations/000001_init.sql](../../../internal/notification/store/migrations/000001_init.sql), [internal/notification/notification.proto](../../../internal/notification/notification.proto) | `SystemNotificationService`, `AccountNotificationService`, `TelegramPoller`, `telegram_polling_state` |
+| Notification internal transport | [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `Clientset.System`, `Clientset.Account`, `InternalAuthTokenEnv` |
 | Production disabled-auth guard | [hack/prod-remote-deploy.sh](../../../hack/prod-remote-deploy.sh), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | production deployment rejection and fixed authentication-enabled container value |
 | Wallet current-state migration | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql) | UUID-owned EVM/Solana custody and avatar metadata |
 | Worm Trading runtime and durable state | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [internal/wormtrading](../../../internal/wormtrading), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | loopback/Compose listener, internal Bearers, `worm_trading` database, credential encryption, official HMAC/Web clients, mainnet Solana adapter, durable live Runs |
@@ -52,6 +55,15 @@ registered local callback `http://localhost:4000/auth/google/callback`. The
 callback's fixed `http://localhost:4000` origin is also the trusted local SIWS
 domain and URI; it is never inferred from request headers.
 
+The `notification` PostgreSQL database belongs only to the Notification
+process. It stores system deliveries and Telegram topics separately from
+account bindings, binding attempts, and account deliveries, plus the durable
+next Telegram update ID. One process hosts both internal gRPC domains:
+`SystemNotificationService` for administrative system delivery and
+`AccountNotificationService` for account binding and account-addressed
+delivery. The same process owns exactly one Telegram long-poll consumer; it
+does not combine webhook and polling ingestion.
+
 The runtime is deliberately resettable. This pre-launch project initializes the
 complete current account schema from empty infrastructure state.
 
@@ -69,6 +81,7 @@ are:
 | `sports-history` | 8104 | `sports_history` |
 | `managed-oo` | 8106 | `managed_oo` |
 | `profit-sharing` | 8108 | `profit_sharing` |
+| `notification` | 8086 | `notification` |
 | `wallet` | 8088 | `wallet` |
 
 The API Server owns UUID account state in the `athena` database. Internal
@@ -78,6 +91,14 @@ authenticated: both Procfile processes receive the same explicit development
 `ATHENA_WALLET_INTERNAL_AUTH_TOKEN`, the API Server attaches it as a Bearer to
 every call, and Wallet rejects every non-health RPC that does not match. Wallet
 itself defaults to a loopback listener.
+
+Notification uses a separate internal Bearer. The Notification process, API
+Server, Market Radar, Sports Live, Managed OO, and Worm Markets receive the same
+`ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN`; clients attach it to calls in both
+notification domains, and Notification rejects every non-health RPC without an
+exact match. The API Server consumes the account domain, while the four existing
+market-intelligence producers consume only the system domain. Standard gRPC
+health remains the unauthenticated lifecycle probe.
 
 Disabled-auth startup always creates or reuses both complete development
 aggregates: member realm `local-user` and administrator realm `local-admin`.
@@ -121,14 +142,15 @@ HMAC credential, Web JWT, transaction, or Wallet execution-signer token.
    signing key in `.env`. No user subject is preconfigured. Phantom desktop
    authentication reuses the callback origin and adds no environment variable.
 2. Before first use of the current UUID-account schema, run `make run-reset`.
-   The initial account access matrix contains exactly ten module rows,
+   The initial account access matrix contains exactly nine module rows,
    including `worm_trading`. The command stops the current graph and deletes the
    local PostgreSQL, Redis, and MinIO state plus default runtime scratch state;
    it does not restart services. Wallet and Worm Trading both use current-state
    initial schemas, so incompatible local databases require an operator-invoked
    reset rather than an in-place upgrade.
 3. `make run` creates/reuses fixed named dependency volumes, applies current
-   migrations, starts the API Server and business services, and serves the
+   migrations including the independently owned Notification schema, starts the
+   API Server and business services, and serves the
    member UI at `http://localhost:4000/` and administrator UI at
    `http://localhost:4000/admin/`. With disabled authentication, both are
    directly usable at the same time: each frontend sends its own application
@@ -173,14 +195,23 @@ HMAC credential, Web JWT, transaction, or Wallet execution-signer token.
    Redis loss drops only pending provider proof; a completed Run authorization
    remains in Worm Trading PostgreSQL and still requires a current Session and
    access-revision binding before execution progression resumes.
-9. The Procfile gives Wallet and the API Server the same fixed development-only
+9. The Procfile gives Notification, the API Server, Market Radar, Sports Live,
+   Managed OO, and Worm Markets the same fixed development-only Notification
+   Bearer. The Notification command opens and migrates its database, validates
+   the Bearer, verifies and synchronizes the single Telegram bot, rejects any
+   configured webhook, then starts the system and account gRPC domains, outbound
+   delivery processing, and exactly one long-poll consumer. Each processed
+   Telegram update advances durable `next_update_id` to `update_id + 1` only
+   after binding work succeeds; a processing or database failure leaves the
+   offset unchanged for retry.
+10. The Procfile gives Wallet and the API Server the same fixed development-only
    internal Bearer. An explicit `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` override
    replaces that value for both processes. A missing, short, or mismatched token
    prevents Wallet RPC use rather than trusting the caller-supplied account UUID.
    It separately gives Wallet and Worm Trading the same fixed execution-signer
    token. Wallet refuses startup if the two Wallet tokens are equal. The
    API Server is launched with the signer token unset.
-10. The Procfile independently gives Worm Trading and the API Server the same
+11. The Procfile independently gives Worm Trading and the API Server the same
     Worm-Trading-specific development Bearer. Worm Trading starts on
     `127.0.0.1:8090`, migrates and pings the local `worm_trading` database,
     derives its dedicated credential-encryption key, validates the configured
@@ -188,7 +219,7 @@ HMAC credential, Web JWT, transaction, or Wallet execution-signer token.
     probe succeeds. It never obtains the Wallet encryption key. Official Worm
     HMAC reachability is recorded independently when a connection or activity
     call occurs and does not disable Solana balance health.
-11. Worm Trading starts the preview worker and live-Run recovery alongside
+12. Worm Trading starts the preview worker and live-Run recovery alongside
     credential maintenance. It owns the Wallet execution-signer client and
     official fixed-origin Web client. Run+Wallet Web JWTs exist only in process
     memory. Open/Finalize dispatch markers, Run/Step state, coordinator hashes,
@@ -215,8 +246,11 @@ and Solana proof state, Worm-management Google and Solana proof state, both
 sensitive leases, Worm-execution Google and Solana proof state, Worm wallet
 connection attempts, encrypted HMAC credentials, combinations, previews,
 execution Runs, authorization/coordinator/command/mutation-attempt rows, locks,
-isolations, and both avatar object prefixes in the owned local volumes. The next unknown
-verified login starts fresh username registration.
+isolations, Notification system topics and deliveries, Telegram account
+bindings and binding attempts, account deliveries, the long-poll offset, and
+both avatar object prefixes in the owned local volumes. The next unknown
+verified login starts fresh username registration, and Telegram polling starts
+again from the new Notification database's initial offset.
 
 Reset also removes the default `/tmp/athena-local` tree, known Athena coverage
 directories, and the repository runtime-control state. Custom temporary paths
@@ -251,6 +285,11 @@ isolation, so the operator must inspect and reconcile Worm first.
 | `ATHENA_SERVER_DISABLE_AUTH` | Optional loopback-only mode. With `true`, OIDC and administrator-email settings are not required; startup creates/reuses both `local-user` and `local-admin`, and explicit request realm selects between them. |
 | `ATHENA_SERVER_POSTGRES_DSN` | Shared account-state PostgreSQL connection used by the API Server. |
 | Redis configuration | Supplies revocation, one-time login/scoped reauthentication/Run-proof state, independent fixed Wallet/Worm leases, and username-registration tickets. |
+| `ATHENA_NOTIFICATION_POSTGRES_DSN` | Notification process connection to its independent `notification` database. The local PostgreSQL helper supplies the development connection; Compose supplies the private-network production DSN. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification/API Server/system-producer Bearer for both internal domains. It must contain at least 32 non-whitespace bytes. Procfile supplies one development default; production requires and independently generates it. |
+| `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN` | Single Telegram bot token used for startup identity/profile verification, outbound sends, and the one long-poll consumer. Production Compose exposes it only to the Notification container. |
+| `ATHENA_NOTIFICATION_TELEGRAM_API_URL`, `ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS` | Telegram Bot API endpoint and request timeout. The default endpoint is Telegram's public Bot API. |
+| `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID`, `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | Fixed administrative system-notification destinations exposed only to the production Notification container; account deliveries instead use the bound private chat stored in the Notification database. |
 | `ATHENA_WALLET_ENCRYPTION_KEY` | Required Wallet process passphrase used by the custodial encryption boundary; changing it makes existing Wallet ciphertext unreadable. |
 | `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` | Shared Wallet/API Server service credential, at least 32 bytes. The Procfile supplies the same development default to both processes; an override must remain identical. |
 | `ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` | Separate Wallet/Worm Trading capability Bearer, at least 32 bytes and different from the general Wallet token. Procfile supplies it only to those two processes; production reset generates it independently. |
@@ -267,14 +306,18 @@ isolation, so the operator must inspect and reconcile Worm first.
 | `ATHENA_WORM_TRADING_POSITION_BUDGET`, `--worm-position-budget` | One current-wallet-page position/request budget; default `20s`. |
 | `ATHENA_WORM_TRADING_POSITION_CONCURRENCY`, `--worm-position-concurrency` | Shared official Worm position/request concurrency; default `4`, maximum `32`. |
 
-Production secret reset generates the Wallet Bearer, Wallet execution-signer
-Bearer, Worm Trading Bearer, and Worm credential-encryption passphrase
-independently. Deployment preflight
-rejects short or whitespace-bearing secrets and rejects equality among the
-Wallet general Bearer, Wallet execution-signer Bearer, Worm Trading Bearer,
-Wallet encryption passphrase, and Worm credential-encryption passphrase as
-defined by the process boundaries. It also requires the Worm Trading Solana RPC
-value to be an absolute HTTP(S) URL with a host.
+Telegram long-poll timeout and bounded retry backoff are implementation
+constants. The next update ID is durable Notification database state and has no
+environment override.
+
+Production secret reset generates the Notification Bearer, Wallet Bearer,
+Wallet execution-signer Bearer, Worm Trading Bearer, and Worm credential-
+encryption passphrase independently. Deployment preflight rejects short or
+whitespace-bearing secrets. The Notification Bearer must differ from the Wallet
+general Bearer, Wallet execution-signer Bearer, and Worm Trading Bearer. The
+existing Wallet and Worm checks keep signer, service, and encryption secrets
+distinct according to their process boundaries. Preflight also requires the
+Worm Trading Solana RPC value to be an absolute HTTP(S) URL with a host.
 
 Phantom login itself has no App ID, client secret, RPC URL, callback, or
 per-wallet configuration. Local development requires a desktop browser with
@@ -300,12 +343,12 @@ production use different Web application clients.
 - Account IDs are PostgreSQL-generated UUIDs. Users choose username during the
   ticket-bound registration page; no username environment variable exists.
 - The redirect URI is fixed and never inferred from proxy headers.
-- PostgreSQL is the durable identity/API Key/Wallet/Worm-credential/Run source;
-  Redis is transient protocol and revocation/lease/proof state; MinIO is private
-  account/wallet avatar state.
+- PostgreSQL is the durable identity/API Key/Notification/Wallet/Worm-
+  credential/Run source; Redis is transient protocol and revocation/lease/proof
+  state; MinIO is private account/wallet avatar state.
 - The current Wallet migration is initialized from empty state; local reset or a
   fresh deployment replaces incompatible durable state instead of upgrading it.
-- The current account migration initializes exactly ten access-module rows;
+- The current account migration initializes exactly nine access-module rows;
   `make run` and `make stop` never reset or delete persistent volumes.
 - `make stop` preserves volumes and only the operator-invoked `make run-reset`
   deletes the complete local current-state deployment.
@@ -318,6 +361,13 @@ production use different Web application clients.
 - Wallet defaults to `127.0.0.1`, and all non-health internal Wallet RPCs require
   the Procfile's shared service Bearer even when browser authentication is
   disabled.
+- Notification owns one database, one bot, one long-poll consumer, and same-
+  process system/account gRPC domains. Every non-health RPC in either domain
+  requires the shared Notification Bearer; the four existing producers call
+  only `SystemNotificationService.SendSystemNotification`.
+- The Telegram polling offset advances only after the corresponding update is
+  handled successfully. A webhook and the long-poll consumer never operate at
+  the same time.
 - The Wallet execution-signer Bearer is different from its general Bearer,
   reaches only Wallet and Worm Trading, and authorizes only the two registered
   signer RPCs. The API Server and all unrelated processes have it unset.
@@ -361,6 +411,22 @@ If the Wallet and API Server internal tokens differ, Wallet health remains
 probeable but business and secret RPCs return unauthenticated. Correct the shared
 environment value and restart both processes; no database or Redis reset is
 required.
+
+Notification fails startup before health becomes `SERVING` when its database
+cannot connect or migrate, its internal token is missing or invalid, Telegram
+bot identity/profile initialization fails, or Telegram reports a configured
+webhook. After startup, a transient Telegram polling failure is retried with
+background backoff without exiting the process. Standard health remains
+`SERVING`, while runtime status exposes `poller_active=false` and retains the
+last successful update time until polling recovers. Binding-processing or
+poll-offset persistence failure stops the current poll pass without advancing
+`next_update_id`, so the same update is retried.
+
+If the Notification token differs among the Notification process, API Server,
+or a system producer, standard health remains probeable but every affected
+system or account RPC returns unauthenticated. Correct the shared environment
+value and restart the mismatched processes; no PostgreSQL, Redis, or Telegram
+reset is required.
 
 If the Wallet execution-signer token is missing, short, equal to the general
 Wallet token, or mismatched between Wallet and Worm Trading, one or both
@@ -421,7 +487,11 @@ choose or invoke this destructive path automatically.
 `make run` keeps the process group in the foreground and streams service logs.
 Container status and individual service logs diagnose dependency startup.
 Google and Phantom external-authentication providers remain absent from
-readiness/health probes. Worm Trading is included in aggregate service status;
+readiness/health probes. Notification standard health reports successful
+startup and process lifecycle. Its runtime status separately reports bot
+identity, poller activity, last inbound-update time, system/account queue
+counts, and unreachable bindings without exposing the Bot token or internal
+Bearer. Worm Trading is included in aggregate service status;
 its standard gRPC health switches to `SERVING` only after its dedicated Solana
 mainnet probe succeeds. A later transient provider failure reports `degraded`
 while retaining serving process health; an initial failure or permanent identity
@@ -443,6 +513,7 @@ was performed as part of implementation validation.
 - [ ] Local lifecycle and named-volume semantics match the scripts.
 - [ ] OIDC, SIWS, realm-bound username registration, administrator-realm admission, realm-selected disabled auth, and reset guidance remain current.
 - [ ] Wallet database, both sensitive leases, Run-proof state, private avatar, and fresh-deployment boundaries remain current.
+- [ ] Notification database ownership, system/account domains, single long-poll consumer, internal Bearer, status projection, and complete reset state remain current.
 - [ ] Worm Trading listener, database, encryption key, internal tokens, fixed official HMAC/Web services, service-only mainnet RPC, health/status, and port/coverage cleanup remain current.
 - [ ] The capability-scoped Wallet signer token remains different from the general token and reaches only Wallet and Worm Trading.
 - [ ] Normal stop/restart preserves dispatch/isolation and never replays Open/Finalize; reset guidance warns that no remote cancellation or reconciliation occurs.

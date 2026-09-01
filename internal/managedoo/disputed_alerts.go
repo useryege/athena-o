@@ -61,12 +61,12 @@ func (s *Service) sendManagedOODisputePriceAlerts(ctx context.Context) {
 		return
 	}
 
-	client := s.notificationClientset.Notification()
+	client := s.notificationClientset.System()
 
 	for _, candidate := range candidates {
 		request := s.renderManagedOODisputePriceAlertNotification(candidate)
 		sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
-		response, err := client.SendNotification(sendCtx, request)
+		response, err := client.SendSystemNotification(sendCtx, request)
 		cancel()
 		if err != nil {
 			if ctx.Err() == nil {
@@ -93,7 +93,7 @@ func (s *Service) sendManagedOODisputePriceAlerts(ctx context.Context) {
 	}
 }
 
-func (s *Service) renderManagedOODisputePriceAlertNotification(candidate managedoostore.ManagedOODisputePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderManagedOODisputePriceAlertNotification(candidate managedoostore.ManagedOODisputePriceAlertCandidate) *notificationapiclient.SendSystemNotificationRequest {
 	question := firstNonEmpty(candidate.Question, managedOOAncillaryTitle(candidate.AncillaryDataText))
 	titleSubject := firstNonEmpty(question, candidate.MarketID, candidate.TxHash)
 	bodyLines := []string{
@@ -107,7 +107,7 @@ func (s *Service) renderManagedOODisputePriceAlertNotification(candidate managed
 		fmt.Sprintf("Request timestamp: %s", formatManagedOOAlertTimestamp(candidate.RequestTimestamp)),
 	}
 
-	return &notificationapiclient.SendNotificationRequest{
+	return &notificationapiclient.SendSystemNotificationRequest{
 		Source:       managedOODisputedAlertSource,
 		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:        fmt.Sprintf("UMA Disputed: %s", truncateRunes(titleSubject, defaultManagedOODisputedAlertTitleQuestionRunes)),

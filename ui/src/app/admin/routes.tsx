@@ -7,4 +7,6 @@ export const ProfitSharingAdminRoundsPage = React.lazy(() => import('./pages/pro
 export const ProfitSharingAdminRoundPage = React.lazy(() => import('./pages/profit-sharing-admin').then(module => ({default: module.ProfitSharingAdminRoundPage})));
 export const ServiceStatusPage = React.lazy(() => import('./pages/service-status').then(module => ({default: module.ServiceStatusPage})));
 export const EtherscanGatewaysPage = React.lazy(() => import('./pages/etherscan-gateways').then(module => ({default: module.EtherscanGatewaysPage})));
+export const SystemNotificationsPage = React.lazy(() => import('./pages/system-notifications').then(module => ({default: module.SystemNotificationsPage})));
+export const SystemNotificationDetailPage = React.lazy(() => import('./pages/system-notification-detail').then(module => ({default: module.SystemNotificationDetailPage})));
 export const HelpPage = React.lazy(() => import('../shared/pages/help').then(module => ({default: module.HelpPage})));

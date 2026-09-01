@@ -4,7 +4,7 @@
 
 Account Access Control owns Athena's durable role-aware authorization model:
 external sign-in availability, independent API Key and Profit Sharing
-entitlements, a complete ten-module access matrix, optimistic revision updates,
+entitlements, a complete nine-module access matrix, optimistic revision updates,
 Pending/Active/Blocked status, RPC authorization, and the hard boundary between
 the member and administrator applications. Every access aggregate and
 authorization lookup is keyed by stable account UUID. It also owns credential-
@@ -36,6 +36,7 @@ after this layer authorizes the request.
 | Account directory | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CountAccountDirectory`, `ListAccountDirectoryPage` |
 | Public Account contract | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/account/account.go](../../../internal/server/account/account.go) | `AccountAccess`, `AccountStatus`, `ListAccounts`, `UpdateAccountAccess` |
 | RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC`, `authorizeAccountSelfService` |
+| Telegram notification binding authorization | [internal/server/authz.go](../../../internal/server/authz.go), [internal/server/notification/notification.go](../../../internal/server/notification/notification.go) | ordinary-member interactive method boundary, Telegram binding RPC handlers, server-injected account UUID |
 | Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_wallet_selection.go](../../../internal/server/worm_wallet_selection.go), [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/worm_position_cash_out_batches.go](../../../internal/server/worm_position_cash_out_batches.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `authenticateWalletSecretHTTP`, `authenticateInteractiveWormTradingHTTP`, `authenticateWalletAvatarHTTP`, Wallet-selection, combination, Preview, Run, and Cash-Out route registration, exact-origin and proof boundaries |
 | Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
 | Realm transport and cookie authentication | [internal/server/application_realm.go](../../../internal/server/application_realm.go), [util/http/http.go](../../../util/http/http.go), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | `applicationRealmFromIncomingContext`, `authenticateRealmLoginCookie`, `RealmAuthCookieName`, `configureAuthorizationRealm` |
@@ -45,7 +46,7 @@ after this layer authorizes the request.
 ## Architecture
 
 `Access` contains the persisted `Administrator` projection, `LoginEnabled`,
-`APIKeyEnabled`, `ProfitSharingEnabled`, ten module levels, and a positive
+`APIKeyEnabled`, `ProfitSharingEnabled`, nine module levels, and a positive
 `Revision`. PostgreSQL is authoritative. `Controller` holds detached snapshots
 for the single API Server and publishes only committed, validated aggregates.
 `Register(accountID)` idempotently introduces a newly committed registration.
@@ -66,6 +67,15 @@ client-controlled realm can select a cookie slot but cannot promote a member
 token. Both cookies may coexist so the same browser can use the two independent
 personas at the same time.
 
+Telegram notification binding is account self-service outside the product-
+module matrix. Its API Server facade accepts only an ordinary member's
+interactive credential, resolves the canonical account UUID from the
+authenticated context, and injects that UUID into the internal notification
+request; browser input cannot select an account. Pending members and the
+isolated `local-user` development credential may use the flow. Administrator
+credentials and API Keys are rejected, and no product-module or Profit Sharing
+grant is required.
+
 The following maxima apply to ordinary member grants and to the `local-user`
 development account; they are not administrator defaults.
 
@@ -80,7 +90,6 @@ development account; they are not administrator defaults.
 | `world_cup_corners` | `READ` |
 | `token` | `READ_WRITE` |
 | `wallet` | `READ_WRITE` |
-| `notifications` | `READ_WRITE` |
 
 `NONE < READ < READ_WRITE`; read-only modules reject `READ_WRITE`. Grants do not
 flow between modules or into API Key and Profit Sharing entitlements.
@@ -169,19 +178,19 @@ Run route, and the browser cannot submit Wallet addresses, markets, directions,
 funds, Worm credentials, transactions, or signatures.
 
 The persisted administrator receives no member module access and cannot enter
-Wallet, Worm Trading, Token, Notifications, market, or Profit Sharing member
+Wallet, Worm Trading, Token, market, Profit Sharing, or Telegram-binding member
 operations. Administrator-only account, governance, service-status, and
 Etherscan operations use explicit administrator rules. The public Wallet
 contract does not carry role or a caller-selected owner.
 
 ## Runtime Flow
 
-1. Startup loads every persisted access head, its database role, and all ten
+1. Startup loads every persisted access head, its database role, and all nine
    module rows. Zero accounts is valid. Any durable account with a missing,
    duplicate, unknown, incomplete, or invalid aggregate fails startup closed.
 2. Realm-bound username registration commits a member Google or Solana-wallet
    access head with login enabled, API Key and Profit Sharing disabled, revision
-   one, and ten `NONE` rows. Only an admitted Google identity in the `admin`
+   one, and nine `NONE` rows. Only an admitted Google identity in the `admin`
    realm can commit the fixed isolated administrator aggregate. The configured
    administrator email entering the `member` realm still creates an ordinary
    Pending persona. The controller learns either independent UUID only after
@@ -222,15 +231,20 @@ contract does not carry role or a caller-selected owner.
    `READ_WRITE`; native JSON mutations additionally require exact origin,
    command UUID, expected Run revision, and current owner/session/access
    binding. API Keys cannot call any live-execution route.
+   Telegram binding instead requires only an ordinary-member interactive
+   credential. The API Server supplies the credential's canonical UUID, so the
+   browser cannot bind for another account. Pending members are admitted;
+   administrators and API Keys are denied.
 4. An administrator may replace one ordinary account's three flags and full
    module matrix in one expected-revision CAS. The SQL transaction advances the
-   revision and replaces all ten rows together. Administrator aggregates cannot
+   revision and replaces all nine rows together. Administrator aggregates cannot
    be edited through this path.
 5. Status derives as `BLOCKED` when login is disabled, `PENDING` for a
    non-administrator whose login is enabled while all modules are `NONE` and
    Profit Sharing is disabled, and `ACTIVE` otherwise. The fixed administrator
    is Active despite having no member business grant. API Key access alone does
-   not make an ordinary account Active.
+   not make an ordinary account Active. Telegram binding state and in-progress
+   binding attempts do not participate in this derivation.
 6. The administrator directory searches username, verified Google email,
    Solana address, profile display name, and an exact UUID. It supports
    All/Pending/Active/Blocked, one-based pagination defaulting to 50 and capped
@@ -244,17 +258,18 @@ contract does not carry role or a caller-selected owner.
    administrator browser independently fixes `admin`. Each bootstrap reads only
    its own cookie and rejects a role mismatch before constructing realm-specific
    services; the other realm's live session is not treated as its fallback.
-8. Pending members can use Profile, Appearance, Access, Help, and Logout without
-   starting business requests. Security appears only when API Key access is
-   enabled. The first UI-backed module grant routes to the first canonical
-   readable module; Profit Sharing-only access routes to `/profit-sharing`.
-   The administrator application creates only administrator and self-account
-   services and rejects an ordinary account before any management request.
+8. Pending members can use Profile, Appearance, Access, Telegram notification
+   setup, Help, and Logout without starting business requests. Security appears
+   only when API Key access is enabled. The first UI-backed module grant routes
+   to the first canonical readable module; Profit Sharing-only access routes to
+   `/profit-sharing`. The administrator application creates only administrator
+   and self-account services and rejects an ordinary account before any
+   management request.
 
 ## State / Data
 
 `account_access.account_id UUID` owns the three flags and revision.
-`account_module_access` has primary key `(account_id, module)` and exactly ten
+`account_module_access` has primary key `(account_id, module)` and exactly nine
 rows per account. Both reference the UUID account parent. The role is stored on
 that parent and joined into every access aggregate; username is absent from
 authorization tables.
@@ -302,9 +317,13 @@ configuration reject or fix the setting to false.
 
 ## Invariants
 
-- Every durable account has one positive-revision access head and exactly ten
+- Every durable account has one positive-revision access head and exactly nine
   module rows, all keyed by the same UUID.
 - Ordinary first-registration state is Pending and cannot read business APIs.
+- Telegram binding is not business-module access: an ordinary-member
+  interactive credential may use it while Pending, the API Server always
+  injects the authenticated UUID, and administrator or API Key credentials
+  cannot enter the flow. Binding state never changes Pending/Active derivation.
 - Role comes only from the persisted administrator boolean; username has no
   authorization meaning.
 - A Google-backed member and administrator persona may share provider subject
@@ -427,9 +446,10 @@ raw or signed transaction, Wallet signature, and provider credentials.
 
 ## Change Checklist
 
-- [ ] Persisted role, three entitlements, ten-module matrix, and administrator-aware status derivation remain current.
+- [ ] Persisted role, three entitlements, nine-module matrix, and administrator-aware status derivation remain current.
 - [ ] UUID registration, CAS, and controller publication boundaries remain current.
 - [ ] RPC rules and Pending browser behavior remain synchronized.
+- [ ] Telegram binding remains server-UUID-injected, ordinary-member interactive, Pending-capable, unavailable to administrators and API Keys, and independent of Pending/Active derivation.
 - [ ] Wallet/Worm Trading read composition and credential restrictions remain synchronized with the member-only boundary.
 - [ ] Worm management inventory remains interactive, `READ_WRITE`, owner-scoped, and lease-free; mutations remain same-origin/Worm-lease-only and unavailable to API Keys.
 - [ ] Worm selection GET remains interactive `READ`; replacement remains

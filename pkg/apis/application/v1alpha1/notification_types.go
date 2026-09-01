@@ -1,11 +1,6 @@
 package v1alpha1
 
-type NotificationStatus struct {
-	Started bool   `protobuf:"varint,1,opt,name=started" json:"started"`
-	Status  string `protobuf:"bytes,2,opt,name=status" json:"status"`
-}
-
-type NotificationDeliveryItem struct {
+type SystemNotificationDeliveryItem struct {
 	ID                int64  `protobuf:"varint,1,opt,name=id" json:"id"`
 	Source            string `protobuf:"bytes,2,opt,name=source" json:"source"`
 	Severity          string `protobuf:"bytes,3,opt,name=severity" json:"severity"`
@@ -22,7 +17,7 @@ type NotificationDeliveryItem struct {
 	TelegramChat      string `protobuf:"bytes,14,opt,name=telegram_chat,json=telegramChat" json:"telegramChat"`
 }
 
-type NotificationDeliveryDetail struct {
+type SystemNotificationDeliveryDetail struct {
 	ID                int64  `protobuf:"varint,1,opt,name=id" json:"id"`
 	Source            string `protobuf:"bytes,2,opt,name=source" json:"source"`
 	Severity          string `protobuf:"bytes,3,opt,name=severity" json:"severity"`

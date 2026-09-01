@@ -61,12 +61,12 @@ func (s *Service) sendManagedOOProposePriceAlerts(ctx context.Context) {
 		return
 	}
 
-	client := s.notificationClientset.Notification()
+	client := s.notificationClientset.System()
 
 	for _, candidate := range candidates {
 		request := s.renderManagedOOProposePriceAlertNotification(candidate)
 		sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
-		response, err := client.SendNotification(sendCtx, request)
+		response, err := client.SendSystemNotification(sendCtx, request)
 		cancel()
 		if err != nil {
 			if ctx.Err() == nil {
@@ -93,7 +93,7 @@ func (s *Service) sendManagedOOProposePriceAlerts(ctx context.Context) {
 	}
 }
 
-func (s *Service) renderManagedOOProposePriceAlertNotification(candidate managedoostore.ManagedOOProposePriceAlertCandidate) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderManagedOOProposePriceAlertNotification(candidate managedoostore.ManagedOOProposePriceAlertCandidate) *notificationapiclient.SendSystemNotificationRequest {
 	titleSubject := firstNonEmpty(candidate.Question, candidate.MarketID)
 	bodyLines := []string{
 		fmt.Sprintf("Market ID: %s", firstNonEmpty(candidate.MarketID, "-")),
@@ -105,7 +105,7 @@ func (s *Service) renderManagedOOProposePriceAlertNotification(candidate managed
 		fmt.Sprintf("Expiration timestamp: %s", formatManagedOOAlertTimestamp(candidate.ExpirationTimestamp)),
 	}
 
-	return &notificationapiclient.SendNotificationRequest{
+	return &notificationapiclient.SendSystemNotificationRequest{
 		Source:       managedOOProposedAlertSource,
 		Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING,
 		Title:        fmt.Sprintf("UMA Proposed: %s", truncateRunes(titleSubject, defaultManagedOOProposedAlertTitleQuestionRunes)),

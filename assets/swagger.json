@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1103-gd8b762e1-dirty"
+    "version": "v1.0.0-1104-gc311e74e-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -327,6 +327,157 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountAccountProfile"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notification-runtime/status": {
+      "get": {
+        "tags": [
+          "NotificationService"
+        ],
+        "operationId": "NotificationService_GetNotificationRuntimeStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationNotificationRuntimeStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system-notification-deliveries": {
+      "get": {
+        "tags": [
+          "NotificationService"
+        ],
+        "operationId": "NotificationService_ListSystemNotificationDeliveries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "severity",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "source",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "keyword",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "topic_label",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "telegram_chat",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationListSystemNotificationDeliveriesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system-notification-deliveries/{id}": {
+      "get": {
+        "tags": [
+          "NotificationService"
+        ],
+        "operationId": "NotificationService_GetSystemNotificationDelivery",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "int64",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationGetSystemNotificationDeliveryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system-notification-tests": {
+      "post": {
+        "tags": [
+          "NotificationService"
+        ],
+        "operationId": "NotificationService_SendSystemNotificationTest",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/notificationSendSystemNotificationTestRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationSendSystemNotificationTestResponse"
             }
           },
           "default": {
@@ -725,18 +876,37 @@
         }
       }
     },
-    "/api/v1/notification/status": {
+    "/api/v1/notification-bindings/telegram": {
       "get": {
         "tags": [
           "NotificationService"
         ],
-        "summary": "GetNotificationStatus returns the notification service runtime status.",
-        "operationId": "NotificationService_GetNotificationStatus",
+        "operationId": "NotificationService_GetTelegramBinding",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1alpha1NotificationStatus"
+              "$ref": "#/definitions/notificationGetTelegramBindingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "NotificationService"
+        ],
+        "operationId": "NotificationService_DeleteTelegramBinding",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/notificationDeleteTelegramBindingResponse"
             }
           },
           "default": {
@@ -748,93 +918,17 @@
         }
       }
     },
-    "/api/v1/notifications": {
-      "get": {
-        "tags": [
-          "NotificationService"
-        ],
-        "summary": "ListNotificationDeliveries returns notification delivery records.",
-        "operationId": "NotificationService_ListNotificationDeliveries",
-        "parameters": [
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "type": "integer",
-            "format": "int32",
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "status",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "severity",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "source",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "keyword",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "topic_label",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "telegram_chat",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/notificationListNotificationDeliveriesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/notifications/test/{topic_label}": {
+    "/api/v1/notification-bindings/telegram/attempt": {
       "post": {
         "tags": [
           "NotificationService"
         ],
-        "summary": "SendTestNotification sends a fixed test notification from the UI.",
-        "operationId": "NotificationService_SendTestNotification",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "topic_label",
-            "in": "path",
-            "required": true
-          }
-        ],
+        "operationId": "NotificationService_CreateTelegramBindingAttempt",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/notificationSendTestNotificationResponse"
+              "$ref": "#/definitions/notificationCreateTelegramBindingAttemptResponse"
             }
           },
           "default": {
@@ -844,29 +938,17 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/notifications/{id}": {
-      "get": {
+      },
+      "delete": {
         "tags": [
           "NotificationService"
         ],
-        "summary": "GetNotificationDelivery returns one notification delivery record.",
-        "operationId": "NotificationService_GetNotificationDelivery",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "int64",
-            "name": "id",
-            "in": "path",
-            "required": true
-          }
-        ],
+        "operationId": "NotificationService_DeleteTelegramBindingAttempt",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/notificationGetNotificationDeliveryResponse"
+              "$ref": "#/definitions/notificationDeleteTelegramBindingAttemptResponse"
             }
           },
           "default": {
@@ -3346,7 +3428,6 @@
         "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
         "ACCOUNT_DATA_MODULE_TOKEN",
         "ACCOUNT_DATA_MODULE_WALLET",
-        "ACCOUNT_DATA_MODULE_NOTIFICATIONS",
         "ACCOUNT_DATA_MODULE_WORM_TRADING"
       ]
     },
@@ -3916,23 +3997,71 @@
         }
       }
     },
-    "notificationGetNotificationDeliveryResponse": {
-      "description": "GetNotificationDeliveryResponse returns one notification delivery record.",
+    "notificationCreateTelegramBindingAttemptResponse": {
       "type": "object",
       "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1NotificationDeliveryDetail"
+        "attempt": {
+          "$ref": "#/definitions/notificationTelegramNotificationBindingAttempt"
+        },
+        "bot_username": {
+          "type": "string"
+        },
+        "deep_link": {
+          "type": "string"
+        },
+        "fallback_command": {
+          "type": "string"
         }
       }
     },
-    "notificationListNotificationDeliveriesResponse": {
-      "description": "ListNotificationDeliveriesResponse returns a page of notification delivery records.",
+    "notificationDeleteTelegramBindingAttemptResponse": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notificationDeleteTelegramBindingResponse": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notificationGetSystemNotificationDeliveryResponse": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1SystemNotificationDeliveryDetail"
+        }
+      }
+    },
+    "notificationGetTelegramBindingResponse": {
+      "type": "object",
+      "properties": {
+        "attempt": {
+          "$ref": "#/definitions/notificationTelegramNotificationBindingAttempt"
+        },
+        "binding": {
+          "$ref": "#/definitions/notificationTelegramNotificationBinding"
+        },
+        "bot_available": {
+          "type": "boolean"
+        },
+        "bot_username": {
+          "type": "string"
+        }
+      }
+    },
+    "notificationListSystemNotificationDeliveriesResponse": {
       "type": "object",
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1NotificationDeliveryItem"
+            "$ref": "#/definitions/v1alpha1SystemNotificationDeliveryItem"
           }
         },
         "page": {
@@ -3949,8 +4078,73 @@
         }
       }
     },
-    "notificationSendTestNotificationResponse": {
-      "description": "SendTestNotificationResponse returns the fixed test notification delivery result.",
+    "notificationNotificationRuntimeStatus": {
+      "type": "object",
+      "properties": {
+        "account_failed_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "account_pending_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "account_retry_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "bot_available": {
+          "type": "boolean"
+        },
+        "bot_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "bot_username": {
+          "type": "string"
+        },
+        "last_poll_at": {
+          "type": "string"
+        },
+        "last_update_at": {
+          "type": "string"
+        },
+        "poller_active": {
+          "type": "boolean"
+        },
+        "started": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        },
+        "system_failed_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "system_pending_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "system_retry_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "unreachable_binding_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "notificationSendSystemNotificationTestRequest": {
+      "type": "object",
+      "properties": {
+        "topic_label": {
+          "type": "string"
+        }
+      }
+    },
+    "notificationSendSystemNotificationTestResponse": {
       "type": "object",
       "properties": {
         "error_message": {
@@ -3961,6 +4155,44 @@
           "format": "int64"
         },
         "provider_message_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "notificationTelegramNotificationBinding": {
+      "type": "object",
+      "properties": {
+        "bound_at": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "status": {
+          "type": "string"
+        },
+        "telegram_display_name": {
+          "type": "string"
+        },
+        "telegram_username": {
+          "type": "string"
+        }
+      }
+    },
+    "notificationTelegramNotificationBindingAttempt": {
+      "type": "object",
+      "properties": {
+        "expires_at": {
+          "type": "string"
+        },
+        "failure_reason": {
+          "type": "string"
+        },
+        "id": {
           "type": "string"
         },
         "status": {
@@ -5828,113 +6060,6 @@
         }
       }
     },
-    "v1alpha1NotificationDeliveryDetail": {
-      "type": "object",
-      "properties": {
-        "body": {
-          "type": "string"
-        },
-        "channel": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string"
-        },
-        "error_message": {
-          "type": "string"
-        },
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "link": {
-          "type": "string"
-        },
-        "provider_message_id": {
-          "type": "string"
-        },
-        "sent_at": {
-          "type": "string"
-        },
-        "severity": {
-          "type": "string"
-        },
-        "source": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
-        },
-        "telegram_chat": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "topic_label": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1NotificationDeliveryItem": {
-      "type": "object",
-      "properties": {
-        "body": {
-          "type": "string"
-        },
-        "channel": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string"
-        },
-        "error_message": {
-          "type": "string"
-        },
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "link": {
-          "type": "string"
-        },
-        "provider_message_id": {
-          "type": "string"
-        },
-        "sent_at": {
-          "type": "string"
-        },
-        "severity": {
-          "type": "string"
-        },
-        "source": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
-        },
-        "telegram_chat": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "topic_label": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1NotificationStatus": {
-      "type": "object",
-      "properties": {
-        "started": {
-          "type": "boolean"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
     "v1alpha1SportsHistoryEventCardItem": {
       "type": "object",
       "properties": {
@@ -6210,6 +6335,102 @@
           "type": "string"
         },
         "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1SystemNotificationDeliveryDetail": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "link": {
+          "type": "string"
+        },
+        "provider_message_id": {
+          "type": "string"
+        },
+        "sent_at": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "telegram_chat": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "topic_label": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1SystemNotificationDeliveryItem": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "link": {
+          "type": "string"
+        },
+        "provider_message_id": {
+          "type": "string"
+        },
+        "sent_at": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "telegram_chat": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "topic_label": {
           "type": "string"
         }
       }

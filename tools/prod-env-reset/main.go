@@ -19,6 +19,7 @@ var targetKeys = []string{
 	"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID",
 	"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY",
 	"ATHENA_JWT_SECRET",
+	"ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN",
 	"ATHENA_WALLET_INTERNAL_AUTH_TOKEN",
 	"ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN",
 	"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN",
@@ -83,10 +84,19 @@ func newSecretValues() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	notificationInternalAuthToken, err := randomStringDifferentFrom(
+		40,
+		servicePasswordAlphabet,
+		walletInternalAuthToken,
+	)
+	if err != nil {
+		return nil, err
+	}
 	walletWormExecutionSignerToken, err := randomStringDifferentFrom(
 		40,
 		servicePasswordAlphabet,
 		walletInternalAuthToken,
+		notificationInternalAuthToken,
 	)
 	if err != nil {
 		return nil, err
@@ -95,6 +105,7 @@ func newSecretValues() (map[string]string, error) {
 		40,
 		servicePasswordAlphabet,
 		walletInternalAuthToken,
+		notificationInternalAuthToken,
 		walletWormExecutionSignerToken,
 	)
 	if err != nil {
@@ -112,6 +123,7 @@ func newSecretValues() (map[string]string, error) {
 		"ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID":        minioAccessKey,
 		"ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY":    minioSecretKey,
 		"ATHENA_JWT_SECRET":                             base64.StdEncoding.EncodeToString(jwtSecretBytes),
+		"ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN":       notificationInternalAuthToken,
 		"ATHENA_WALLET_INTERNAL_AUTH_TOKEN":             walletInternalAuthToken,
 		"ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN":     walletWormExecutionSignerToken,
 		"ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN":       wormTradingInternalAuthToken,

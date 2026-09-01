@@ -7,12 +7,14 @@ import {VersionService} from '../shared/services/version-service';
 import {ViewPreferencesService} from '../shared/services/view-preferences-service';
 import type {SelfAccountServices} from '../session/services';
 import {AdminAccountsService} from './accounts-service';
+import {AdminNotificationService} from './notification-service';
 import {AdminProfitSharingService} from './profit-sharing-service';
 
 export interface AdminServices extends SelfAccountServices {
     adminAccounts: AdminAccountsService;
     serviceStatus: ServiceStatusService;
     adminProfitSharing: AdminProfitSharingService;
+    adminNotifications: AdminNotificationService;
 }
 
 let businessServicesConfigured = false;
@@ -36,6 +38,7 @@ export const ensureAdminBusinessServices = () => {
         accounts: new SelfAccountService(),
         adminAccounts: new AdminAccountsService(),
         serviceStatus: new ServiceStatusService(),
-        adminProfitSharing: new AdminProfitSharingService()
+        adminProfitSharing: new AdminProfitSharingService(),
+        adminNotifications: new AdminNotificationService()
     });
 };

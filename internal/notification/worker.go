@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -32,12 +33,9 @@ type WorkerConfig struct {
 
 func DefaultWorkerConfig() WorkerConfig {
 	return WorkerConfig{
-		SendInterval: defaultWorkerSendInterval,
-		PollInterval: defaultWorkerPollInterval,
-		BatchSize:    defaultWorkerBatchSize,
-		MaxAttempts:  defaultWorkerMaxAttempts,
-		LockTimeout:  defaultWorkerLockTimeout,
-		WorkerID:     defaultWorkerID,
+		SendInterval: defaultWorkerSendInterval, PollInterval: defaultWorkerPollInterval,
+		BatchSize: defaultWorkerBatchSize, MaxAttempts: defaultWorkerMaxAttempts,
+		LockTimeout: defaultWorkerLockTimeout, WorkerID: defaultWorkerID,
 	}
 }
 
@@ -90,23 +88,16 @@ func (s *Service) stopWorkerLocked() {
 	s.workerCancel = nil
 }
 
+type claimedNotification struct {
+	system  *notificationstore.ClaimedSystemNotificationDelivery
+	account *notificationstore.ClaimedAccountNotificationDelivery
+}
+
 func (s *Service) runWorker(ctx context.Context) {
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-		claimed, err := s.store.ClaimPendingDeliveries(ctx, notificationstore.ClaimDeliveriesOptions{
-			Limit:       s.workerConfig.BatchSize,
-			LockedBy:    s.workerConfig.WorkerID,
-			LockTimeout: s.workerConfig.LockTimeout,
-		})
-		if err != nil {
-			log.WithError(err).Warn("failed to claim notification deliveries")
-			if !sleepWorker(ctx, s.workerConfig.PollInterval) {
-				return
-			}
-			continue
-		}
+	preferAccount := false
+	for ctx.Err() == nil {
+		claimed := s.claimFairNotificationBatch(ctx, preferAccount)
+		preferAccount = !preferAccount
 		if len(claimed) == 0 {
 			if !sleepWorker(ctx, s.workerConfig.PollInterval) {
 				return
@@ -117,7 +108,11 @@ func (s *Service) runWorker(ctx context.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			s.processClaimedDelivery(ctx, delivery)
+			if delivery.system != nil {
+				s.processClaimedSystemNotification(ctx, *delivery.system)
+			} else if delivery.account != nil {
+				s.processClaimedAccountNotification(ctx, *delivery.account)
+			}
 			if !sleepWorker(ctx, s.workerConfig.SendInterval) {
 				return
 			}
@@ -125,41 +120,130 @@ func (s *Service) runWorker(ctx context.Context) {
 	}
 }
 
-func (s *Service) processClaimedDelivery(ctx context.Context, delivery notificationstore.ClaimedDelivery) {
+func (s *Service) claimFairNotificationBatch(ctx context.Context, preferAccount bool) []claimedNotification {
+	batchSize := s.workerConfig.BatchSize
+	accountLimit := batchSize / 2
+	systemLimit := batchSize - accountLimit
+	if preferAccount {
+		accountLimit, systemLimit = systemLimit, accountLimit
+	}
+	claimOptions := func(limit int) notificationstore.ClaimDeliveriesOptions {
+		return notificationstore.ClaimDeliveriesOptions{
+			Limit: limit, LockedBy: s.workerConfig.WorkerID, LockTimeout: s.workerConfig.LockTimeout,
+		}
+	}
+	var systemItems []notificationstore.ClaimedSystemNotificationDelivery
+	if systemLimit > 0 {
+		items, err := s.store.ClaimPendingSystemNotificationDeliveries(ctx, claimOptions(systemLimit))
+		if err != nil {
+			log.WithError(err).Warn("failed to claim system notification deliveries")
+		} else {
+			systemItems = items
+		}
+	}
+	var accountItems []notificationstore.ClaimedAccountNotificationDelivery
+	if accountLimit > 0 {
+		items, err := s.store.ClaimPendingAccountNotificationDeliveries(ctx, claimOptions(accountLimit))
+		if err != nil {
+			log.WithError(err).Warn("failed to claim account notification deliveries")
+		} else {
+			accountItems = items
+		}
+	}
+	return interleaveClaimedNotifications(systemItems, accountItems, preferAccount)
+}
+
+func interleaveClaimedNotifications(
+	systemItems []notificationstore.ClaimedSystemNotificationDelivery,
+	accountItems []notificationstore.ClaimedAccountNotificationDelivery,
+	preferAccount bool,
+) []claimedNotification {
+	items := make([]claimedNotification, 0, len(systemItems)+len(accountItems))
+	for systemIndex, accountIndex := 0, 0; systemIndex < len(systemItems) || accountIndex < len(accountItems); {
+		if preferAccount && accountIndex < len(accountItems) {
+			item := accountItems[accountIndex]
+			items = append(items, claimedNotification{account: &item})
+			accountIndex++
+		}
+		if systemIndex < len(systemItems) {
+			item := systemItems[systemIndex]
+			items = append(items, claimedNotification{system: &item})
+			systemIndex++
+		}
+		if !preferAccount && accountIndex < len(accountItems) {
+			item := accountItems[accountIndex]
+			items = append(items, claimedNotification{account: &item})
+			accountIndex++
+		}
+	}
+	return items
+}
+
+func (s *Service) processClaimedSystemNotification(ctx context.Context, delivery notificationstore.ClaimedSystemNotificationDelivery) {
 	message := renderNotificationMessage(sendNotificationParams{
-		source:       delivery.Source,
-		severity:     delivery.Severity,
-		title:        delivery.Title,
-		body:         delivery.Body,
-		link:         delivery.Link,
-		telegramChat: delivery.TelegramChat,
-		topicLabel:   delivery.TopicLabel,
+		source: delivery.Source, severity: delivery.Severity, title: delivery.Title,
+		body: delivery.Body, link: delivery.Link, telegramChat: delivery.TelegramChat,
+		topicLabel: delivery.TopicLabel,
 	})
-	providerMessageID, err := s.sender.Send(ctx, SendRequest{TelegramChat: delivery.TelegramChat, MessageThreadID: delivery.MessageThreadID, Text: message.Text})
+	providerMessageID, err := s.sender.Send(ctx, SendRequest{
+		SystemTelegramChat: delivery.TelegramChat, MessageThreadID: delivery.MessageThreadID,
+		Text: message.Text,
+	})
 	if err == nil {
-		if markErr := s.store.MarkDeliverySent(ctx, delivery.ID, providerMessageID); markErr != nil {
-			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark notification delivery sent")
+		if markErr := s.store.MarkSystemNotificationDeliverySent(ctx, delivery.ID, providerMessageID); markErr != nil {
+			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark system notification delivery sent")
 		}
 		return
 	}
-
 	if delivery.Attempts >= s.workerConfig.MaxAttempts {
-		if markErr := s.store.MarkDeliveryFailed(ctx, delivery.ID, err.Error()); markErr != nil {
-			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark notification delivery failed")
+		if markErr := s.store.MarkSystemNotificationDeliveryFailed(ctx, delivery.ID, err.Error()); markErr != nil {
+			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark system notification delivery failed")
 		}
 		return
 	}
-
 	nextAttemptAt := time.Now().UTC().Add(retryDelay(delivery.Attempts, err))
-	if retryErr := s.store.ScheduleDeliveryRetry(ctx, delivery.ID, err.Error(), nextAttemptAt); retryErr != nil {
-		log.WithError(retryErr).WithField("notification_id", delivery.ID).Warn("failed to schedule notification delivery retry")
+	if retryErr := s.store.ScheduleSystemNotificationDeliveryRetry(ctx, delivery.ID, err.Error(), nextAttemptAt); retryErr != nil {
+		log.WithError(retryErr).WithField("notification_id", delivery.ID).Warn("failed to schedule system notification retry")
+	}
+}
+
+func (s *Service) processClaimedAccountNotification(ctx context.Context, delivery notificationstore.ClaimedAccountNotificationDelivery) {
+	message := renderNotificationMessage(sendNotificationParams{
+		source: delivery.Source, severity: delivery.Severity, title: delivery.Title,
+		body: delivery.Body, link: delivery.Link,
+	})
+	_, err := s.store.SendAccountNotificationWithBindingLock(
+		ctx, delivery.AccountID, delivery.TelegramChatID, delivery.BindingRevision, delivery.ID,
+		func(sendCtx context.Context) (string, error) {
+			return s.sender.Send(sendCtx, SendRequest{
+				TelegramChatID: delivery.TelegramChatID, Text: message.Text,
+			})
+		},
+	)
+	if errors.Is(err, notificationstore.ErrAccountNotificationBindingChanged) {
 		return
 	}
-	log.WithError(err).WithFields(log.Fields{
-		"notification_id": delivery.ID,
-		"attempts":        delivery.Attempts,
-		"next_attempt_at": nextAttemptAt.Format(time.RFC3339),
-	}).Warn("scheduled notification delivery retry")
+	if err == nil {
+		return
+	}
+	if IsTelegramRecipientUnreachable(err) {
+		if bindingErr := s.store.MarkTelegramBindingUnreachable(
+			ctx, delivery.AccountID, delivery.TelegramChatID, delivery.BindingRevision, delivery.ID, err.Error(),
+		); bindingErr != nil {
+			log.WithError(bindingErr).WithField("notification_id", delivery.ID).Warn("failed to mark telegram binding unreachable")
+		}
+		return
+	}
+	if delivery.Attempts >= s.workerConfig.MaxAttempts {
+		if markErr := s.store.MarkAccountNotificationDeliveryFailed(ctx, delivery, err.Error()); markErr != nil {
+			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark account notification delivery failed")
+		}
+		return
+	}
+	nextAttemptAt := time.Now().UTC().Add(retryDelay(delivery.Attempts, err))
+	if retryErr := s.store.ScheduleAccountNotificationDeliveryRetry(ctx, delivery, err.Error(), nextAttemptAt); retryErr != nil {
+		log.WithError(retryErr).WithField("notification_id", delivery.ID).Warn("failed to schedule account notification retry")
+	}
 }
 
 func retryDelay(attempts int, err error) time.Duration {

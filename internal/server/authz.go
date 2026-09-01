@@ -60,6 +60,22 @@ var administratorGRPCMethods = map[string]bool{
 	"/profitsharing.ProfitSharingService/OpenRound":    true,
 	"/profitsharing.ProfitSharingService/PublishRound": true,
 	"/profitsharing.ProfitSharingService/CloseBallot":  true,
+
+	"/notification.NotificationService/GetNotificationRuntimeStatus":     true,
+	"/notification.NotificationService/ListSystemNotificationDeliveries": true,
+	"/notification.NotificationService/GetSystemNotificationDelivery":    true,
+	"/notification.NotificationService/SendSystemNotificationTest":       true,
+}
+
+// ordinaryMemberInteractiveGRPCMethods expose account-owned browser
+// capabilities that deliberately sit outside the product-module matrix. They
+// admit Pending and active ordinary accounts, but never API Keys or an
+// administrator login.
+var ordinaryMemberInteractiveGRPCMethods = map[string]bool{
+	"/notification.NotificationService/GetTelegramBinding":           true,
+	"/notification.NotificationService/CreateTelegramBindingAttempt": true,
+	"/notification.NotificationService/DeleteTelegramBindingAttempt": true,
+	"/notification.NotificationService/DeleteTelegramBinding":        true,
 }
 
 // profitSharingReadGRPCMethods admit either the administrator workspace or an
@@ -107,11 +123,6 @@ func moduleWrite(module accountaccess.Module) grpcModuleRule {
 // moduleGRPCRules is the explicit product-module authorization boundary for
 // every public business RPC. Methods missing from every boundary fail closed.
 var moduleGRPCRules = map[string]grpcModuleRule{
-	"/notification.NotificationService/GetNotificationStatus":      moduleRead(accountaccess.ModuleNotifications),
-	"/notification.NotificationService/ListNotificationDeliveries": moduleRead(accountaccess.ModuleNotifications),
-	"/notification.NotificationService/GetNotificationDelivery":    moduleRead(accountaccess.ModuleNotifications),
-	"/notification.NotificationService/SendTestNotification":       moduleWrite(accountaccess.ModuleNotifications),
-
 	"/wallet.WalletService/GetWalletStatus":          moduleRead(accountaccess.ModuleWallet),
 	"/wallet.WalletService/ListWallets":              moduleRead(accountaccess.ModuleWallet),
 	"/wallet.WalletService/GetWallet":                moduleRead(accountaccess.ModuleWallet),
@@ -233,6 +244,9 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	if isReflectionMethod(fullMethod) || administratorGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeAccount(accountID, accountaccess.RequirementAdministrator)
 	}
+	if ordinaryMemberInteractiveGRPCMethods[fullMethod] {
+		return authCtx, server.authorizeOrdinaryInteractiveAccount(authCtx, accountID)
+	}
 	if profitSharingReadGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeProfitSharingRead(accountID)
 	}
@@ -258,6 +272,24 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 		return authCtx, nil
 	}
 	return authCtx, status.Errorf(codes.PermissionDenied, "permission denied: no account-access rule configured for %s", fullMethod)
+}
+
+func (server *AthenaServer) authorizeOrdinaryInteractiveAccount(ctx context.Context, accountID string) error {
+	credential, ok := util_session.AuthenticatedCredentialFromContext(ctx)
+	if !ok || !credential.IsInteractiveLogin() {
+		return status.Error(codes.PermissionDenied, "ordinary interactive account login required")
+	}
+	if server.accessController == nil {
+		return status.Error(codes.Internal, "account access controller is not configured")
+	}
+	access, err := server.accessController.Get(accountID)
+	if err != nil {
+		return err
+	}
+	if access.Administrator {
+		return status.Error(codes.PermissionDenied, "ordinary member account required")
+	}
+	return nil
 }
 
 func (server *AthenaServer) authorizeAccount(accountID string, requirement accountaccess.Requirement) error {

@@ -64,7 +64,7 @@ type moverAlertCandidate struct {
 	severity  string
 	score     float64
 	change1m  float64
-	request   *notificationapiclient.SendNotificationRequest
+	request   *notificationapiclient.SendSystemNotificationRequest
 	condition string
 }
 
@@ -242,7 +242,7 @@ func moverAlertKey(item *v1alpha1.MarketRadarMoverMarketItem, leader *v1alpha1.M
 	return conditionID + ":" + tokenID + ":" + direction
 }
 
-func (s *Service) renderMoverAlertNotification(item *v1alpha1.MarketRadarMoverMarketItem, severity string) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderMoverAlertNotification(item *v1alpha1.MarketRadarMoverMarketItem, severity string) *notificationapiclient.SendSystemNotificationRequest {
 	leader := item.Leader
 	title := fmt.Sprintf("Polymarket mover %s %s %.1f%%: %s",
 		strings.ToUpper(leader.Direction),
@@ -265,7 +265,7 @@ func (s *Service) renderMoverAlertNotification(item *v1alpha1.MarketRadarMoverMa
 		fmt.Sprintf("Liquidity: %.2f", item.LiquidityNum),
 	}, "\n")
 
-	return &notificationapiclient.SendNotificationRequest{
+	return &notificationapiclient.SendSystemNotificationRequest{
 		Source:       moverAlertSource,
 		Severity:     notificationSeverityForMoverAlert(severity),
 		Title:        title,
@@ -280,7 +280,7 @@ func (s *Service) sendMoverAlerts(ctx context.Context, alerts []moverAlertCandid
 	if len(alerts) == 0 || s.notificationClientset == nil {
 		return
 	}
-	client := s.notificationClientset.Notification()
+	client := s.notificationClientset.System()
 
 	config := normalizeMoverAlertsConfig(s.moverAlertsConfig)
 	for _, alert := range alerts {
@@ -288,7 +288,7 @@ func (s *Service) sendMoverAlerts(ctx context.Context, alerts []moverAlertCandid
 			continue
 		}
 		sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
-		_, err := client.SendNotification(sendCtx, alert.request)
+		_, err := client.SendSystemNotification(sendCtx, alert.request)
 		cancel()
 		if err != nil {
 			log.WithError(err).WithField("condition_id", alert.condition).Warn("failed to send polymarket mover notification")

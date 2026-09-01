@@ -37,7 +37,15 @@ const onError = new Subject<agent.ResponseError>();
 let requestErrorGeneration = 0;
 
 export type AuthorizationRequestMode = 'read' | 'write';
-export type AuthorizationRequestFeature = 'api-key' | 'profit-sharing' | 'self-account' | 'admin-accounts' | 'admin-service-status' | 'admin-etherscan';
+export type AuthorizationRequestFeature =
+    | 'api-key'
+    | 'profit-sharing'
+    | 'self-account'
+    | 'member-notifications'
+    | 'admin-accounts'
+    | 'admin-service-status'
+    | 'admin-etherscan'
+    | 'admin-notifications';
 export type AuthorizationRequestRealm = 'member' | 'admin';
 
 export const APPLICATION_REALM_HEADER = 'X-Athena-Application-Realm';

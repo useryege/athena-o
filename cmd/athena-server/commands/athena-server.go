@@ -122,7 +122,10 @@ func NewCommand() *cobra.Command {
 				contentTypesList = strings.Split(contentTypes, ";")
 			}
 
-			notificationclientset, err := notificationapiclient.NewNotificationClientset(notificationServerAddress)
+			notificationclientset, err := notificationapiclient.NewNotificationClientset(
+				notificationServerAddress,
+				env.StringFromEnv(notificationapiclient.InternalAuthTokenEnv, ""),
+			)
 			if err != nil {
 				return fmt.Errorf("create notification clientset: %w", err)
 			}

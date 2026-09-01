@@ -47,6 +47,7 @@ import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {AccountAvatar, accountTierLabel} from '../shared/account-presentation';
 import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
 import {configureMemberSessionServices, ensureMemberBusinessServices, memberServices as services} from './services';
+import {clearTelegramBindingInstructions} from './notification-storage';
 import {loadAppBootstrapWithRetry, SessionBootstrap} from '../session/bootstrap';
 import {
     AccountCenterPage,
@@ -58,7 +59,6 @@ import {
     ContractCodesPage,
     HelpPage,
     NodeStatusesPage,
-    NotificationsDetailPage,
     NotificationsPage,
     MarketRadarHotPage,
     MarketRadarMoversPage,
@@ -270,7 +270,7 @@ const navSections: NavSection[] = [
         label: 'Operations',
         children: [
             {key: '/profit-sharing', label: 'Profit Sharing', path: '/profit-sharing', icon: <PieChartOutlined />, availability: 'profit-sharing'},
-            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />, module: AccountDataModule.Notifications}
+            {key: '/notifications', label: 'Notifications', path: '/notifications', icon: <BellOutlined />}
         ]
     }
 ];
@@ -390,8 +390,7 @@ const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
     [AccountDataModule.WormTrading]: '/worm-trading',
     [AccountDataModule.WorldCupCorners]: '/world-cup-corners',
     [AccountDataModule.Token]: '/token/projects',
-    [AccountDataModule.Wallet]: '/wallet',
-    [AccountDataModule.Notifications]: '/notifications'
+    [AccountDataModule.Wallet]: '/wallet'
 };
 
 const firstAuthorizedBusinessPath = (access: AccessState): string | undefined => {
@@ -510,8 +509,7 @@ const AppRoutes = (props: {
                 <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
                 <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
                 <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
-                <Route path='/notifications' element={moduleRoute(AccountDataModule.Notifications, <NotificationsPage />)} />
-                <Route path='/notifications/:id' element={moduleRoute(AccountDataModule.Notifications, <NotificationsDetailPage />)} />
+                <Route path='/notifications' element={<NotificationsPage />} />
                 <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
                 <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountCenterProps} />} />
                 <Route path='/account/security' element={props.access.user.access.apiKeyEnabled ? <AccountSecurityPage /> : <Navigate replace={true} to='/account/access' />} />
@@ -581,6 +579,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         setSession(status === 'maintenance' ? {status: 'maintenance'} : {status: 'anonymous'});
         clearAsyncDataCache();
         clearProjectsReturnSnapshots();
+        clearTelegramBindingInstructions();
     }, []);
 
     const startAccessRefresh = React.useCallback((): Promise<boolean> => {
@@ -627,6 +626,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         requests.abortAuthorizationRequests();
                         clearAsyncDataCache();
                         clearProjectsReturnSnapshots();
+                        clearTelegramBindingInstructions();
                     } else {
                         if (priorAccess.user.access.apiKeyEnabled && !next.user.access.apiKeyEnabled) {
                             requests.abortAuthorizationFeatureRequests('api-key');

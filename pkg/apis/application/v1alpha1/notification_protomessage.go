@@ -3,6 +3,5 @@
 
 package v1alpha1
 
-func (*NotificationStatus) ProtoMessage()         {}
-func (*NotificationDeliveryItem) ProtoMessage()   {}
-func (*NotificationDeliveryDetail) ProtoMessage() {}
+func (*SystemNotificationDeliveryItem) ProtoMessage()   {}
+func (*SystemNotificationDeliveryDetail) ProtoMessage() {}

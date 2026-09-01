@@ -1,26 +1,26 @@
--- name: CreateDelivery :one
-INSERT INTO notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label)
+-- name: CreateSystemNotificationDelivery :one
+INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at;
 
--- name: LockTopic :exec
+-- name: LockSystemNotificationTopic :exec
 SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg('telegram_chat') || ':' || sqlc.arg('label'), 0));
 
--- name: GetTopic :one
+-- name: GetSystemNotificationTopic :one
 SELECT telegram_chat, label, message_thread_id, created_at
-FROM notification_topics
+FROM system_notification_topics
 WHERE telegram_chat = $1
   AND label = $2;
 
--- name: CreateTopic :one
-INSERT INTO notification_topics (telegram_chat, label, message_thread_id)
+-- name: CreateSystemNotificationTopic :one
+INSERT INTO system_notification_topics (telegram_chat, label, message_thread_id)
 VALUES ($1, $2, $3)
 RETURNING telegram_chat, label, message_thread_id, created_at;
 
--- name: ClaimPendingDeliveries :many
+-- name: ClaimPendingSystemNotificationDeliveries :many
 WITH ready AS (
   SELECT id
-  FROM notification_deliveries
+  FROM system_notification_deliveries
   WHERE status = 'pending'
     AND next_attempt_at <= NOW()
     AND (locked_at IS NULL OR locked_at < NOW() - sqlc.arg('lock_timeout')::interval)
@@ -28,18 +28,23 @@ WITH ready AS (
   LIMIT $1
   FOR UPDATE SKIP LOCKED
 )
-UPDATE notification_deliveries AS d
+UPDATE system_notification_deliveries AS delivery
 SET locked_at = NOW(),
     locked_by = $2,
-    attempts = d.attempts + 1,
+    attempts = delivery.attempts + 1,
     last_attempt_at = NOW()
 FROM ready
-WHERE d.id = ready.id
-RETURNING d.id, d.source, d.severity, COALESCE(d.title, '') AS title, d.body, COALESCE(d.link, '') AS link, d.channel, d.status, d.telegram_chat, d.topic_label, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts,
-  (SELECT t.message_thread_id FROM notification_topics AS t WHERE t.telegram_chat = d.telegram_chat AND t.label = d.topic_label) AS message_thread_id;
+WHERE delivery.id = ready.id
+RETURNING delivery.id, delivery.source, delivery.severity, COALESCE(delivery.title, '') AS title,
+  delivery.body, COALESCE(delivery.link, '') AS link, delivery.channel, delivery.status,
+  delivery.telegram_chat, delivery.topic_label, delivery.attempts,
+  (SELECT topic.message_thread_id
+   FROM system_notification_topics AS topic
+   WHERE topic.telegram_chat = delivery.telegram_chat
+     AND topic.label = delivery.topic_label) AS message_thread_id;
 
--- name: MarkDeliverySent :exec
-UPDATE notification_deliveries
+-- name: MarkSystemNotificationDeliverySent :exec
+UPDATE system_notification_deliveries
 SET status = 'sent',
     provider_message_id = $2,
     error_message = NULL,
@@ -48,25 +53,25 @@ SET status = 'sent',
     locked_by = NULL
 WHERE id = $1;
 
--- name: ScheduleDeliveryRetry :exec
-UPDATE notification_deliveries
+-- name: ScheduleSystemNotificationDeliveryRetry :exec
+UPDATE system_notification_deliveries
 SET error_message = $2,
     next_attempt_at = $3,
     locked_at = NULL,
     locked_by = NULL
 WHERE id = $1;
 
--- name: MarkDeliveryFailed :exec
-UPDATE notification_deliveries
+-- name: MarkSystemNotificationDeliveryFailed :exec
+UPDATE system_notification_deliveries
 SET status = 'failed',
     error_message = $2,
     locked_at = NULL,
     locked_by = NULL
 WHERE id = $1;
 
--- name: CountDeliveries :one
+-- name: CountSystemNotificationDeliveries :one
 SELECT COUNT(*)::bigint
-FROM notification_deliveries
+FROM system_notification_deliveries
 WHERE (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status'))
   AND (sqlc.narg('severity')::text IS NULL OR severity = sqlc.narg('severity'))
   AND (sqlc.narg('source')::text IS NULL OR source = sqlc.narg('source'))
@@ -80,9 +85,10 @@ WHERE (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status'))
     OR provider_message_id ILIKE sqlc.narg('keyword')
   );
 
--- name: ListDeliveries :many
-SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
-FROM notification_deliveries
+-- name: ListSystemNotificationDeliveries :many
+SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link,
+  channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
+FROM system_notification_deliveries
 WHERE (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status'))
   AND (sqlc.narg('severity')::text IS NULL OR severity = sqlc.narg('severity'))
   AND (sqlc.narg('source')::text IS NULL OR source = sqlc.narg('source'))
@@ -98,7 +104,15 @@ WHERE (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status'))
 ORDER BY created_at DESC, id DESC
 LIMIT $1 OFFSET $2;
 
--- name: GetDelivery :one
-SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
-FROM notification_deliveries
+-- name: GetSystemNotificationDelivery :one
+SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link,
+  channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
+FROM system_notification_deliveries
 WHERE id = $1;
+
+-- name: GetSystemNotificationDeliveryCounts :one
+SELECT
+  COUNT(*) FILTER (WHERE status = 'pending')::bigint AS pending_count,
+  COUNT(*) FILTER (WHERE status = 'pending' AND attempts > 0)::bigint AS retry_count,
+  COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed_count
+FROM system_notification_deliveries;

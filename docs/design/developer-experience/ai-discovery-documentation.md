@@ -201,9 +201,12 @@ inside Markdown or Swagger for an arbitrary reverse-proxy subpath.
   credentials, internal implementation details, or claims that unavailable
   MCP, OAuth-delegation, scoped-key, or AI-specific-operation capabilities
   exist.
-- The public module catalog contains the current ten-module matrix, including
+- The public module catalog contains the current nine-module matrix, including
   API-Key-eligible Worm Trading `READ` wallet-summary and balance access without
   implying Wallet management or secret authority.
+- The public module guidance keeps interactive ordinary-account Telegram
+  binding and administrator-only system-notification operations outside the API
+  Key module contract.
 - Existing API Keys are described as full-account bearer credentials for
   ordinary users. The account holder may hand one directly to a local,
   self-hosted, or third-party AI, which receives the ordinary account's complete

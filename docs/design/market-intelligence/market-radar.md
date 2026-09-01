@@ -5,15 +5,17 @@
 Market Radar owns the process-local Polymarket market-discovery read model used
 by the hot-market, realtime, and mover views. It polls Gamma for active markets,
 keeps one shared candidate cache, samples token prices into short rolling
-windows, ranks movers, and optionally enqueues mover notifications. The Athena
-API Server publishes the capability under the `/api/v1/market-radar` HTTP
-namespace. All four public methods belong only to the read-only Market Radar
-account-access module.
+windows, ranks movers, and optionally enqueues mover system-management
+notifications. The Athena API Server publishes the capability under the
+`/api/v1/market-radar` HTTP namespace. All four public methods belong only to
+the read-only Market Radar account-access module.
 
 The capability does not persist data and does not own live sports, completed
 sports history, Managed Optimistic Oracle logs, or Worm markets.
-`util/polymarket` remains the external-provider adapter. Notification delivery
-after `SendNotification` is accepted belongs to Athena Notification.
+`util/polymarket` remains the external-provider adapter. Delivery after
+`SystemNotificationService.SendSystemNotification` is accepted belongs to
+Athena Notification. Market Radar never selects an account or sends an account
+notification.
 
 ## Source Locations
 
@@ -32,6 +34,7 @@ after `SendNotification` is accepted belongs to Athena Notification.
 | Internal gRPC connection ownership | [internal/marketradar/apiclient/apiclient.go](../../../internal/marketradar/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewMarketRadarClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `MarketRadarHotMarketItem`, `MarketRadarRealtimeMarketItem`, `MarketRadarMoverMarketItem` |
 | Provider adapter | [util/polymarket](../../../util/polymarket) | `GammaClient`, `ListMarketsKeyset` |
+| System notification contract and authenticated client | [internal/notification/notification.proto](../../../internal/notification/notification.proto), [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go) | `SystemNotificationService`, `SendSystemNotification`, `Clientset.System`, `InternalAuthTokenEnv` |
 | Web routes and client pagination | [ui/src/app/member/pages/market-radar.tsx](../../../ui/src/app/member/pages/market-radar.tsx), [ui/src/app/components/resource-table.tsx](../../../ui/src/app/components/resource-table.tsx) | `MarketRadarPage`, `ResourceTable` |
 
 ## Architecture
@@ -44,7 +47,7 @@ flowchart LR
     L["One discovery loop"] --> P["Polymarket Gamma"]
     L --> C
     C --> N["Mover selection"]
-    N --> T["Athena Notification gRPC"]
+    N --> T["Athena Notification system domain"]
 ```
 
 One `Service` owns the candidate list, per-token current state, rolling samples,
@@ -64,8 +67,9 @@ so its account-access maximum is `READ` and it has no public write rule.
 
 ## Runtime Flow
 
-1. `athena-market-radar` creates an optional Notification clientset, binds the
-   gRPC listener on port `8092`, and creates one Market Radar server.
+1. `athena-market-radar` creates an optional authenticated Notification
+   clientset, binds the gRPC listener on port `8092`, and creates one Market
+   Radar server.
 2. `Server.Start` calls `Service.Start`. The service creates the default Gamma
    client when none was injected, launches one cancellable discovery goroutine,
    and then standard gRPC health changes from `NOT_SERVING` to `SERVING`.
@@ -94,7 +98,8 @@ so its account-access maximum is `READ` and it has no public write rule.
 9. When enabled, each successful refresh evaluates mover alerts. Warning and
    critical thresholds, volume filtering, cooldown, severity escalation, and a
    maximum of three notifications per refresh are applied before enqueueing
-   requests to Athena Notification.
+   requests through `Clientset.System().SendSystemNotification`. These records
+   are administrative system notifications and never resolve a user binding.
 10. On process cancellation, gRPC stops gracefully, health becomes
     `NOT_SERVING`, the discovery context is cancelled, and `Service.Stop`
     waits for its goroutine to return. The command closes its optional
@@ -132,6 +137,7 @@ notification cooldowns.
 | `ATHENA_MARKET_RADAR_LISTEN_PORT` / `--port` | gRPC port; default `8092`. The local Procfile uses `ATHENA_MARKET_RADAR_PORT` to supply this flag. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_ENABLED` / `--notification-enabled` | Creates the Notification clientset and enables mover alerts; default `true`. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket notification links; default empty. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 
@@ -158,6 +164,8 @@ refresh.
   not that a snapshot exists or is current.
 - Status, Hot Markets, Realtime, and Movers all require only Market Radar
   `READ`; access to another module never grants these methods.
+- Mover alerts use only the authenticated Notification system domain; Market
+  Radar never sends an account notification or chooses an account UUID.
 
 ## Failure Recovery
 
@@ -172,12 +180,15 @@ A caller without Market Radar `READ` is rejected by the API Server before the
 Market Radar dependency is called. Granting the module permits the next request
 without restarting either process.
 
-An invalid Notification target prevents command startup. Temporary Notification
-unavailability does not: the nonblocking client connection reconnects in the
-background, and send failure is logged without failing market refresh or read
-APIs. Alert cooldown state is reserved before the send attempt, so a failed
-enqueue is suppressed until the cooldown expires unless a warning escalates to
-critical. The cooldown is not durable and resets on restart.
+An invalid Notification target or missing, short, or whitespace-bearing
+`ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` prevents command startup when alerts
+are enabled. Temporary Notification unavailability or a mismatched valid token
+does not stop Market Radar: the nonblocking client reconnects in the background,
+and an unavailable or unauthenticated system send is logged without failing
+market refresh or read APIs. Alert cooldown state is reserved before the send
+attempt, so a failed enqueue is suppressed until the cooldown expires unless a
+warning escalates to critical. The cooldown is not durable and resets on
+restart.
 
 Cancellation propagates to an active Gamma request and notification send.
 Graceful shutdown waits for the single discovery goroutine. There is no
@@ -205,6 +216,7 @@ and where applicable connection and last-observation fields. Logs distinguish
 initial and periodic discovery failures and include condition IDs for
 notification failures. There are no capability-specific metrics, durable
 refresh history, or freshness-based readiness probe.
+The Notification internal Bearer is never included in logs or response data.
 
 Each of the Hot Markets, Realtime Markets, and Movers web routes requests the
 first 100 items and paginates that in-memory result locally. Routes start on
@@ -222,6 +234,7 @@ view to `/account/access`; changes to another module retain this view's state.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
 - [ ] Failure recovery, health checks, and observability are current.
+- [ ] Mover alerts still use authenticated `SendSystemNotification` only and never enter the account domain.
 - [ ] All public methods and browser routes remain scoped to read-only Market Radar `READ`.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

@@ -29,8 +29,9 @@ name.
 | Durable account adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `ListCredentialAccounts`, `GetCredentialAccountByIdentity`, `RegisterExternalAccount`, `RecordLogin`, `EnsureDevelopmentAccount` |
 | Schema and generated-query sources | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql), [internal/accountstate/store/queries/account_api_key.sql](../../../internal/accountstate/store/queries/account_api_key.sql) | `athena_account`, `account_api_key`, external-account creation, `GetDevelopmentMember`, `CreateDevelopmentMember`, administrator development queries |
 | Shared registration boundary | [internal/authregistration/types.go](../../../internal/authregistration/types.go), [internal/authregistration/handler.go](../../../internal/authregistration/handler.go) | `Identity`, `Backend`, `Handler`, `Begin`, `Registration`, `UsernameAvailability` |
-| Session validation, typed context, and revocation | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/state.go](../../../util/session/state.go) | `SessionManager`, `AuthenticateToken`, `WithAuthenticatedCredential`, `AuthenticatedCredentialFromContext`, `ParseLoginForRevocation`, `UserStateStorage` |
+| Session validation, typed context, and revocation | [util/session/sessionmanager.go](../../../util/session/sessionmanager.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/state.go](../../../util/session/state.go) | `SessionManager`, `AuthenticateToken`, `GetUserIdentifier`, `WithAuthenticatedCredential`, `AuthenticatedCredentialFromContext`, `ParseLoginForRevocation`, `UserStateStorage` |
 | Account and Session API projections | [internal/server/account/account.proto](../../../internal/server/account/account.proto), [internal/server/session/session.proto](../../../internal/server/session/session.proto) | `Account.id`, `Account.username`, `Account.identity`, `GetUserInfoResponse.accountId` |
+| Telegram notification binding identity boundary | [internal/server/notification/notification.go](../../../internal/server/notification/notification.go), [internal/server/authz.go](../../../internal/server/authz.go) | Telegram binding RPC handlers, `GetUserIdentifier`, ordinary-member interactive authorization |
 | Member-only API Key browser boundary | [ui/src/app/member/security-service.ts](../../../ui/src/app/member/security-service.ts), [ui/src/app/member/pages/account-security.tsx](../../../ui/src/app/member/pages/account-security.tsx), [ui/src/app/member/services.ts](../../../ui/src/app/member/services.ts) | `MemberSecurityService`, `AccountSecurityPage`, member-only service construction |
 | Realm transport, process wiring, and production guard | [internal/server/application_realm.go](../../../internal/server/application_realm.go), [cmd/athena-server/commands/athena-server.go](../../../cmd/athena-server/commands/athena-server.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go), [hack/prod-remote-deploy.sh](../../../hack/prod-remote-deploy.sh), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | `applicationRealmFromIncomingContext`, `authenticateRealmLoginCookie`, `developmentAccountIDs`, production disabled-auth rejection |
 
@@ -80,6 +81,14 @@ the server-resolved account UUID, capability, JTI, identity binding, and current
 access revision. Middleware attaches this typed value to the request context;
 security-sensitive handlers do not infer credential kind from browser headers.
 
+The Telegram notification-binding facade treats the authenticated account UUID
+as the only owner identity. The API Server obtains it from the authenticated
+request context and injects it into the internal notification request; no public
+binding request carries a caller-selected account UUID. This self-service
+boundary accepts ordinary-member interactive login and `local-user` development
+credentials, including while the member is Pending. It rejects administrator
+and API Key credentials.
+
 The browser exposes API Key metadata and issue/revoke commands only through the
 member application's `MemberSecurityService` and lazy `AccountSecurityPage`.
 The administrator registry does not construct that service, and the fixed
@@ -94,7 +103,7 @@ administrator account-directory commands use separate facades.
 2. A cryptographically verified but unknown Google subject or Solana address in
    an explicit application realm remains outside PostgreSQL until the browser
    submits an acceptable username through the shared registration handler.
-   `RegisterExternalAccount` creates identity, access, ten module rows, profile,
+   `RegisterExternalAccount` creates identity, access, nine module rows, profile,
    and preferences in one transaction. Member accounts start Pending. The admin
    realm accepts only the configured verified Google email and can create only
    the single fixed administrator aggregate; the same email entering through
@@ -123,6 +132,11 @@ administrator account-directory commands use separate facades.
    `IsInteractiveLogin`; login and isolated loopback development credentials
    qualify, while API Keys do not. Wallet creation, import, reauthentication,
    and private-key reveal use this distinction independently of module level.
+   Telegram binding additionally requires the credential to represent an
+   ordinary member. The API Server injects the authenticated context's UUID into
+   every internal binding command; Pending does not prevent the flow, while
+   administrator and API Key credentials cannot enter it. Binding does not
+   change access status or make a Pending account Active.
    Worm Trading wallet-summary, balance, connection-state, open-position, and
    in-flight-request reads, including uploaded-wallet-avatar GET, accept either
    login sessions or enabled API Keys after current Worm Trading `READ`
@@ -209,6 +223,12 @@ admitted the request. Its capability is derived from the verified JWT subject
 shape, never from whether the request arrived through an Authorization header
 or Cookie header.
 
+Telegram's chat identity and binding attempts are notification-domain state,
+not account credentials or secondary login bindings. They refer to an Athena
+account only through the canonical UUID supplied by the API Server and do not
+alter provider identity, Session claims, access revision, or Pending/Active
+status.
+
 ## Configuration
 
 | Setting | Behavior |
@@ -245,6 +265,9 @@ entitlements, and API Key metadata are database state.
   credential membership or binding, and revocation checks.
 - Sensitive handlers distinguish login, API Key, and isolated development
   credentials through the typed authenticated context, never client headers.
+- Telegram binding uses only the API Server-injected canonical UUID and accepts
+  ordinary-member interactive credentials, including Pending members; it
+  rejects administrators and API Keys and never changes access status.
 - API Key UI and commands exist only in the member dependency graph; the
   administrator aggregate and service registry expose neither.
 - A disabled-auth server contains both `local-user` and `local-admin`; the
@@ -295,6 +318,7 @@ providers are not part of API Server health.
 - [ ] Registration and API Key commit/publication ordering remain current.
 - [ ] JWT v3 claims and mutable credential checks remain current.
 - [ ] Typed credential capability and access-revision projection remain current.
+- [ ] Telegram binding remains ordinary-member interactive, API Server UUID-injected, Pending-capable, unavailable to administrators and API Keys, and authorization-status neutral.
 - [ ] API-Key Worm reads, interactive lease-free management inventory, and lease-bound credential mutations remain distinct.
 - [ ] Public projections still exclude private identity and bearer material.
 - [ ] Realm-aware identity lookup, binding digest, and dual cookie selection remain current.

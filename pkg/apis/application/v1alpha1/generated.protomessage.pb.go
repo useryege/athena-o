@@ -25,12 +25,6 @@ func (*MarketRadarRealtimeTokenItem) ProtoMessage() {}
 
 func (*MarketRadarRealtimeWindowItem) ProtoMessage() {}
 
-func (*NotificationDeliveryDetail) ProtoMessage() {}
-
-func (*NotificationDeliveryItem) ProtoMessage() {}
-
-func (*NotificationStatus) ProtoMessage() {}
-
 func (*SportsHistoryEventCardItem) ProtoMessage() {}
 
 func (*SportsHistoryPriceHistorySeriesItem) ProtoMessage() {}
@@ -44,6 +38,10 @@ func (*SportsLiveMarketCardItem) ProtoMessage() {}
 func (*SportsLivePriceHistorySeriesItem) ProtoMessage() {}
 
 func (*SportsTeamItem) ProtoMessage() {}
+
+func (*SystemNotificationDeliveryDetail) ProtoMessage() {}
+
+func (*SystemNotificationDeliveryItem) ProtoMessage() {}
 
 func (*TokenAveObservation) ProtoMessage() {}
 

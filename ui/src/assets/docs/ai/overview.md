@@ -9,10 +9,10 @@ Athena's public API covers:
 - Polymarket discovery, realtime price windows, movers, live sports, recently completed tennis events, and price histories.
 - Managed Optimistic Oracle proposals and disputes, Worm sports markets, and a World Cup corners dataset.
 - Token projects, research state, reports, market and swap activity, collection diagnostics, policy lists, and chain-processing state.
-- Account-owned operational wallets, live Solana SOL and Circle native USDC balances, and notification-delivery records.
+- Account-owned operational wallets plus live Solana SOL and Circle native USDC balances.
 - Profit Sharing rounds, proposals, ballots, and votes under a separate entitlement and membership model.
 
-Product access is split across ten independently granted modules. Profit Sharing and administrator operations are separate authorization boundaries. See [Modules and Permissions](/docs/ai/modules.md).
+Product access is split across nine independently granted modules. Profit Sharing, interactive Telegram binding, and administrator operations are separate authorization boundaries. See [Modules and Permissions](/docs/ai/modules.md).
 
 ## HTTP API
 

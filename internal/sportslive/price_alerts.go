@@ -102,7 +102,7 @@ func (s *Service) updateSportsLivePriceAlerts(ctx context.Context) {
 		return
 	}
 
-	client := s.notificationClientset.Notification()
+	client := s.notificationClientset.System()
 
 	for _, candidate := range candidates {
 		token := candidate.token
@@ -159,14 +159,14 @@ func (s *Service) clearSportsLivePriceAlertState(ctx context.Context, token spor
 	}
 }
 
-func (s *Service) sendSportsLivePriceAlert(ctx context.Context, client notificationapiclient.NotificationServiceClient, config SportsLivePriceAlertsConfig, token sportslivestore.SportsLivePriceAlertToken, band string) error {
+func (s *Service) sendSportsLivePriceAlert(ctx context.Context, client notificationapiclient.SystemNotificationServiceClient, config SportsLivePriceAlertsConfig, token sportslivestore.SportsLivePriceAlertToken, band string) error {
 	request := s.renderSportsLivePriceAlertNotification(token, band)
 	if request == nil {
 		return fmt.Errorf("notification request is nil")
 	}
 	sendCtx, cancel := context.WithTimeout(ctx, config.SendTimeout)
 	defer cancel()
-	_, err := client.SendNotification(sendCtx, request)
+	_, err := client.SendSystemNotification(sendCtx, request)
 	return err
 }
 
@@ -221,7 +221,7 @@ func sportsLivePriceAlertBandRank(band string) int {
 	}
 }
 
-func (s *Service) renderSportsLivePriceAlertNotification(token sportslivestore.SportsLivePriceAlertToken, band string) *notificationapiclient.SendNotificationRequest {
+func (s *Service) renderSportsLivePriceAlertNotification(token sportslivestore.SportsLivePriceAlertToken, band string) *notificationapiclient.SendSystemNotificationRequest {
 	topic := sportsLivePriceAlert85Topic
 	source := sportsLivePriceAlert85Source
 	severity := notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_WARNING
@@ -280,7 +280,7 @@ func (s *Service) renderSportsLivePriceAlertNotification(token sportslivestore.S
 		fmt.Sprintf("Liquidity: %.2f", token.Liquidity),
 	)
 
-	return &notificationapiclient.SendNotificationRequest{
+	return &notificationapiclient.SendSystemNotificationRequest{
 		Source:       source,
 		Severity:     severity,
 		Title:        fmt.Sprintf("%s: %s %.2f%%", titlePrefix, outcome, token.Price*100),

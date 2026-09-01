@@ -34,7 +34,7 @@ const (
 
 type wormNotification struct {
 	eventConditionID string
-	request          *notificationapiclient.SendNotificationRequest
+	request          *notificationapiclient.SendSystemNotificationRequest
 }
 
 type wormNotificationResult struct {
@@ -61,7 +61,7 @@ func newWormEventNotifications(events map[string]wormmarketsstore.WormMarket) []
 		}, "\n")
 		notifications = append(notifications, wormNotification{
 			eventConditionID: eventConditionID,
-			request: &notificationapiclient.SendNotificationRequest{
+			request: &notificationapiclient.SendSystemNotificationRequest{
 				Source:       wormNewEventNotificationSource,
 				Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 				Title:        fmt.Sprintf("Worm new event: %s", eventTitle),
@@ -86,7 +86,7 @@ func newWormLiveNotification(change wormmarketsstore.WormMarketLivePriceChange) 
 	}, "\n")
 	return wormNotification{
 		eventConditionID: change.EventConditionID,
-		request: &notificationapiclient.SendNotificationRequest{
+		request: &notificationapiclient.SendSystemNotificationRequest{
 			Source:       wormLiveEventNotificationSource,
 			Severity:     notificationapiclient.NotificationSeverity_NOTIFICATION_SEVERITY_INFO,
 			Title:        fmt.Sprintf("Worm event is live: %s", eventTitle),
@@ -129,7 +129,7 @@ func newWormPriceAlertNotification(market wormmarketsstore.WormMarket, band stri
 	}, "\n")
 	return wormNotification{
 		eventConditionID: market.EventConditionID,
-		request: &notificationapiclient.SendNotificationRequest{
+		request: &notificationapiclient.SendSystemNotificationRequest{
 			Source:       source,
 			Severity:     severity,
 			Title:        fmt.Sprintf("%s: %s", titlePrefix, marketTitle),
@@ -163,7 +163,7 @@ func (s *Service) sendWormNotifications(ctx context.Context, notifications []wor
 		}
 		return results
 	}
-	client := s.notificationClientset.Notification()
+	client := s.notificationClientset.System()
 
 	for _, item := range notifications {
 		result := wormNotificationResult{notification: item}
@@ -173,7 +173,7 @@ func (s *Service) sendWormNotifications(ctx context.Context, notifications []wor
 			continue
 		}
 		sendCtx, cancel := context.WithTimeout(ctx, wormNotificationSendTimeout)
-		_, result.err = client.SendNotification(sendCtx, item.request)
+		_, result.err = client.SendSystemNotification(sendCtx, item.request)
 		cancel()
 		if result.err != nil {
 			log.WithError(result.err).

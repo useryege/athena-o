@@ -1,8 +1,7 @@
 syntax = "proto3";
 
-// Notification Service
-//
-// Notification Service API returns notification-level workload status.
+// Notification Service exposes member Telegram binding and administrator
+// system-notification operations.
 package notification;
 
 import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
@@ -10,11 +9,72 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/useryege/athena/pkg/apiclient/notification";
 
-// GetNotificationStatusRequest queries the notification service runtime status.
-message GetNotificationStatusRequest {}
+message TelegramNotificationBinding {
+  string status = 1;
+  string telegram_username = 2;
+  string telegram_display_name = 3;
+  string bound_at = 4;
+  int64 revision = 5;
+}
 
-// ListNotificationDeliveriesRequest queries notification delivery records.
-message ListNotificationDeliveriesRequest {
+message TelegramNotificationBindingAttempt {
+  string id = 1;
+  string status = 2;
+  string expires_at = 3;
+  string failure_reason = 4;
+}
+
+message GetTelegramBindingRequest {}
+
+message GetTelegramBindingResponse {
+  bool bot_available = 1;
+  string bot_username = 2;
+  TelegramNotificationBinding binding = 3;
+  TelegramNotificationBindingAttempt attempt = 4;
+}
+
+message CreateTelegramBindingAttemptRequest {}
+
+message CreateTelegramBindingAttemptResponse {
+  TelegramNotificationBindingAttempt attempt = 1;
+  string bot_username = 2;
+  string deep_link = 3;
+  string fallback_command = 4;
+}
+
+message DeleteTelegramBindingAttemptRequest {}
+
+message DeleteTelegramBindingAttemptResponse {
+  bool deleted = 1;
+}
+
+message DeleteTelegramBindingRequest {}
+
+message DeleteTelegramBindingResponse {
+  bool deleted = 1;
+}
+
+message GetNotificationRuntimeStatusRequest {}
+
+message NotificationRuntimeStatus {
+  bool started = 1;
+  string status = 2;
+  bool bot_available = 3;
+  int64 bot_id = 4;
+  string bot_username = 5;
+  bool poller_active = 6;
+  string last_poll_at = 7;
+  string last_update_at = 8;
+  int64 system_pending_count = 9;
+  int64 system_retry_count = 10;
+  int64 system_failed_count = 11;
+  int64 account_pending_count = 12;
+  int64 account_retry_count = 13;
+  int64 account_failed_count = 14;
+  int64 unreachable_binding_count = 15;
+}
+
+message ListSystemNotificationDeliveriesRequest {
   int32 page = 1;
   int32 page_size = 2;
   string status = 3;
@@ -25,31 +85,26 @@ message ListNotificationDeliveriesRequest {
   string telegram_chat = 8;
 }
 
-// ListNotificationDeliveriesResponse returns a page of notification delivery records.
-message ListNotificationDeliveriesResponse {
-  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationDeliveryItem items = 1;
+message ListSystemNotificationDeliveriesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.SystemNotificationDeliveryItem items = 1;
   int64 total = 2;
   int32 page = 3;
   int32 page_size = 4;
 }
 
-// GetNotificationDeliveryRequest queries one notification delivery record.
-message GetNotificationDeliveryRequest {
+message GetSystemNotificationDeliveryRequest {
   int64 id = 1;
 }
 
-// GetNotificationDeliveryResponse returns one notification delivery record.
-message GetNotificationDeliveryResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationDeliveryDetail item = 1;
+message GetSystemNotificationDeliveryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.SystemNotificationDeliveryDetail item = 1;
 }
 
-// SendTestNotificationRequest sends a fixed notification for manual connectivity testing.
-message SendTestNotificationRequest {
+message SendSystemNotificationTestRequest {
   string topic_label = 1;
 }
 
-// SendTestNotificationResponse returns the fixed test notification delivery result.
-message SendTestNotificationResponse {
+message SendSystemNotificationTestResponse {
   int64 notification_id = 1;
   string status = 2;
   string provider_message_id = 3;
@@ -57,23 +112,38 @@ message SendTestNotificationResponse {
 }
 
 service NotificationService {
-  // GetNotificationStatus returns the notification service runtime status.
-  rpc GetNotificationStatus(GetNotificationStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.NotificationStatus) {
-    option (google.api.http) = {get: "/api/v1/notification/status"};
+  rpc GetTelegramBinding(GetTelegramBindingRequest) returns (GetTelegramBindingResponse) {
+    option (google.api.http) = {get: "/api/v1/notification-bindings/telegram"};
   }
 
-  // ListNotificationDeliveries returns notification delivery records.
-  rpc ListNotificationDeliveries(ListNotificationDeliveriesRequest) returns (ListNotificationDeliveriesResponse) {
-    option (google.api.http) = {get: "/api/v1/notifications"};
+  rpc CreateTelegramBindingAttempt(CreateTelegramBindingAttemptRequest) returns (CreateTelegramBindingAttemptResponse) {
+    option (google.api.http) = {post: "/api/v1/notification-bindings/telegram/attempt"};
   }
 
-  // GetNotificationDelivery returns one notification delivery record.
-  rpc GetNotificationDelivery(GetNotificationDeliveryRequest) returns (GetNotificationDeliveryResponse) {
-    option (google.api.http) = {get: "/api/v1/notifications/{id}"};
+  rpc DeleteTelegramBindingAttempt(DeleteTelegramBindingAttemptRequest) returns (DeleteTelegramBindingAttemptResponse) {
+    option (google.api.http) = {delete: "/api/v1/notification-bindings/telegram/attempt"};
   }
 
-  // SendTestNotification sends a fixed test notification from the UI.
-  rpc SendTestNotification(SendTestNotificationRequest) returns (SendTestNotificationResponse) {
-    option (google.api.http) = {post: "/api/v1/notifications/test/{topic_label}"};
+  rpc DeleteTelegramBinding(DeleteTelegramBindingRequest) returns (DeleteTelegramBindingResponse) {
+    option (google.api.http) = {delete: "/api/v1/notification-bindings/telegram"};
+  }
+
+  rpc GetNotificationRuntimeStatus(GetNotificationRuntimeStatusRequest) returns (NotificationRuntimeStatus) {
+    option (google.api.http) = {get: "/api/v1/admin/notification-runtime/status"};
+  }
+
+  rpc ListSystemNotificationDeliveries(ListSystemNotificationDeliveriesRequest) returns (ListSystemNotificationDeliveriesResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/system-notification-deliveries"};
+  }
+
+  rpc GetSystemNotificationDelivery(GetSystemNotificationDeliveryRequest) returns (GetSystemNotificationDeliveryResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/system-notification-deliveries/{id}"};
+  }
+
+  rpc SendSystemNotificationTest(SendSystemNotificationTestRequest) returns (SendSystemNotificationTestResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/system-notification-tests"
+      body: "*"
+    };
   }
 }

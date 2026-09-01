@@ -5,6 +5,7 @@ import '../styles/admin.css';
 
 import {
     ApiOutlined,
+    BellOutlined,
     CheckOutlined,
     DesktopOutlined,
     HeartOutlined,
@@ -43,7 +44,9 @@ import {
     HelpPage,
     ProfitSharingAdminRoundPage,
     ProfitSharingAdminRoundsPage,
-    ServiceStatusPage
+    ServiceStatusPage,
+    SystemNotificationDetailPage,
+    SystemNotificationsPage
 } from './routes';
 import {adminServices as services, configureAdminSessionServices, ensureAdminBusinessServices} from './services';
 
@@ -61,7 +64,8 @@ const adminSections: MenuProps['items'] = [
         label: 'System',
         children: [
             {key: '/service-status', label: 'Service Status', icon: <HeartOutlined />},
-            {key: '/etherscan-gateways', label: 'Etherscan Gateways', icon: <ApiOutlined />}
+            {key: '/etherscan-gateways', label: 'Etherscan Gateways', icon: <ApiOutlined />},
+            {key: '/notifications', label: 'Notifications', icon: <BellOutlined />}
         ]
     }
 ];
@@ -71,6 +75,7 @@ const routeMetadata = [
     {path: '/profit-sharing', section: 'Governance', label: 'Profit Sharing'},
     {path: '/service-status', section: 'System', label: 'Service Status'},
     {path: '/etherscan-gateways', section: 'System', label: 'Etherscan Gateways'},
+    {path: '/notifications', section: 'System', label: 'Notifications'},
     {path: '/account/profile', section: 'Account', label: 'Profile'},
     {path: '/account/appearance', section: 'Account', label: 'Appearance'},
     {path: '/account/access', section: 'Account', label: 'Access & session'},
@@ -157,6 +162,8 @@ const AdminRoutes = (props: {
                 <Route path='/profit-sharing/:slug' element={<ProfitSharingAdminRoundPage />} />
                 <Route path='/service-status' element={<ServiceStatusPage />} />
                 <Route path='/etherscan-gateways' element={<EtherscanGatewaysPage />} />
+                <Route path='/notifications' element={<SystemNotificationsPage />} />
+                <Route path='/notifications/:id' element={<SystemNotificationDetailPage />} />
                 <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountProps} />} />
                 <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountProps} />} />
                 <Route path='/account/access' element={<AccountCenterPage section='access' {...accountProps} />} />

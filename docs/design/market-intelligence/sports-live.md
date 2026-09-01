@@ -6,13 +6,14 @@ Sports Live owns the durable read model for current Polymarket sports events,
 their moneyline price histories, price-band alert state, and score-change alert
 state. It continuously synchronizes upstream event snapshots and CLOB price
 samples, exposes event and history reads, and optionally enqueues price and score
-notifications. The Athena API Server publishes the capability under the
-`/api/v1/sports-live` HTTP namespace.
+system-management notifications. The Athena API Server publishes the capability
+under the `/api/v1/sports-live` HTTP namespace.
 
 Completed-event history belongs to [Sports History](sports-history.md). Generic
 market discovery belongs to [Market Radar](market-radar.md), Managed Optimistic
 Oracle logs belong to [Managed OO](managed-oo.md), and Telegram delivery after a
-notification is accepted belongs to Athena Notification. The Polymarket Gamma
+system notification is accepted belongs to Athena Notification. Sports Live
+never selects an account or sends an account notification. The Polymarket Gamma
 and CLOB clients in `util/polymarket` remain provider adapters.
 
 ## Source Locations
@@ -31,6 +32,7 @@ and CLOB clients in `util/polymarket` remain provider adapters.
 | Internal service contract | [internal/sportslive/sports_live.proto](../../../internal/sportslive/sports_live.proto) | `SportsLiveService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/sportslive/sportslive.proto](../../../internal/server/sportslive/sportslive.proto), [internal/server/sportslive/sportslive.go](../../../internal/server/sportslive/sportslive.go) | `SportsLiveService`, `Server` |
 | Internal gRPC connection ownership | [internal/sportslive/apiclient/apiclient.go](../../../internal/sportslive/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewSportsLiveClientset`, `ClientConnection` |
+| System notification contract and authenticated client | [internal/notification/notification.proto](../../../internal/notification/notification.proto), [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go) | `SystemNotificationService`, `SendSystemNotification`, `Clientset.System`, `InternalAuthTokenEnv` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `SportsLiveEventCardItem`, `SportsLivePriceHistorySeriesItem`, `SportsTeamItem` |
 | Provider adapters | [util/polymarket](../../../util/polymarket) | `GammaClient`, `CLOBClient` |
 
@@ -47,7 +49,7 @@ flowchart LR
     D --> S
     E --> N["Score alerts"]
     H --> B["Price-band alerts"]
-    N --> T["Athena Notification gRPC"]
+    N --> T["Athena Notification system domain"]
     B --> T
 ```
 
@@ -59,8 +61,9 @@ point and price-alert state writes instead reacquire their current parent market
 rows with short, statement-scoped key-share locks before inserting child rows.
 
 Read RPCs are served only from `sports_live` PostgreSQL. Gamma and CLOB are not
-called on the request path. Notification is an optional process-owned gRPC
-channel that is reused by both alert loops; no
+called on the request path. Notification is an optional authenticated process-
+owned gRPC channel that is reused by both alert loops through the system domain;
+no
 Sports Live implementation code is imported into Notification or another
 capability.
 
@@ -68,7 +71,8 @@ capability.
 
 1. `athena-sports-live` connects to the `sports_live` database, applies its
    embedded migration when automatic migration is enabled, optionally creates a
-   Notification clientset, binds port `8094`, and creates the service.
+   Notification clientset with the internal Bearer, binds port `8094`, and
+   creates the service.
 2. `Service.Start` requires the store, creates default Gamma and CLOB clients
    when they were not injected, and launches the event and price-history loops.
    Standard gRPC health becomes `SERVING` after both goroutines launch; startup
@@ -81,9 +85,10 @@ capability.
    markets, removes rows not seen after the current sync boundary, and updates
    `sports_live_sync_state`. Readers see all of those transitions together.
 5. After the event transaction commits, the service evaluates score changes for
-   FIFWC, MLB, and NHL. A successful notification enqueue is followed by a
-   durable update of the event's last score, notification ID, and notification
-   time.
+   FIFWC, MLB, and NHL. It calls
+   `Clientset.System().SendSystemNotification`; a successful enqueue is followed
+   by a durable update of the event's last score, notification ID, and
+   notification time.
 6. The price-history loop runs immediately and every 15 seconds. It selects
    moneyline markets with token IDs, backfills six hours for a new token, or
    resumes two minutes before its latest point. Token requests sharing a start
@@ -101,9 +106,10 @@ capability.
    of each token. Alert bands correspond to prices below 0.15, 0.10, 0.05, 0.03,
    and 0.01. Moving to a more extreme band bypasses cooldown; repeating the same
    band requires the configured cooldown. Returning to the middle range removes
-   the token's alert state. After Notification accepts an alert, its state is
-   conditionally upserted with the same parent-market lock rule; a market already
-   being removed makes the state write an expected skip.
+   the token's alert state. Price alerts use the same system-only method. After
+   Notification accepts an alert, its state is conditionally upserted with the
+   same parent-market lock rule; a market already being removed makes the state
+   write an expected skip.
 9. Event reads default to 200 items and accept at most 1,000. They include the
    durable last-success time and are stale when that time is absent or older
    than two event-sync intervals. Price-history reads deduplicate requested
@@ -155,6 +161,7 @@ state is limited to lifecycle cancellation and goroutine tracking.
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_ENABLED` / `--notification-enabled` | Enables both price and score notifications; default `true`. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket links; default empty. |
 | `ATHENA_SPORTS_LIVE_PRICE_ALERT_COOLDOWN` / `--price-alert-cooldown` | Same-band repeat cooldown; default 15 minutes, accepted range one second through 24 hours. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
@@ -181,15 +188,21 @@ are implementation constants.
   score changes on first observation.
 - Price and score alert state is advanced only after Notification accepts the
   corresponding request.
+- Price and score alerts use only authenticated
+  `SystemNotificationService.SendSystemNotification`; Sports Live never enters
+  the account domain or supplies an account UUID.
 - Health and lifecycle status report owned goroutines, not upstream freshness.
 
 ## Failure Recovery
 
 Database connection, migration, or missing store failure prevents startup.
 Failure to construct either default provider client also prevents the service
-from becoming healthy. An invalid Notification target prevents command startup;
-temporary Notification unavailability does not, because the process-owned
-channel reconnects in the background.
+from becoming healthy. An invalid Notification target or missing, short, or
+whitespace-bearing `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` prevents command
+startup when notifications are enabled. Temporary Notification unavailability
+or a mismatched valid token does not stop Sports Live; the process-owned channel
+reconnects and later unavailable or unauthenticated system sends follow normal
+alert failure handling.
 
 A Gamma fetch or event transaction failure leaves the previous complete
 snapshot and last-success timestamp intact. The event loop logs the failure and
@@ -237,6 +250,7 @@ report deduplicated price-point counts at debug level. Debug logs also report
 price points skipped for stale or deleting markets and alert-state writes
 skipped for a stale or deleting parent market. There are no capability-specific
 metrics, price-sync success timestamp, or freshness-dependent readiness probe.
+The Notification internal Bearer is never included in logs or response data.
 
 ## Change Checklist
 
@@ -244,5 +258,6 @@ metrics, price-sync success timestamp, or freshness-dependent readiness probe.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
 - [ ] Failure recovery, health checks, and observability are current.
+- [ ] Price and score alerts still use authenticated `SendSystemNotification` only and never enter the account domain.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

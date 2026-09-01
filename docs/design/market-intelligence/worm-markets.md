@@ -5,8 +5,9 @@
 Worm Markets owns the continuously synchronized read model for open Worm sports
 leverage markets. It polls the Worm API, stores market snapshots and a rolling
 price window, fills missing market rules, derives one-way live state, emits new
-event, live-event, and extreme-price notifications, and exposes event reads over
-its internal gRPC API. It also exposes a fresh, read-only combination catalog
+event, live-event, and extreme-price system-management notifications, and
+exposes event reads over its internal gRPC API. It also exposes a fresh,
+read-only combination catalog
 for one Worm event. That catalog preserves every child market, marks each market
 and YES/NO outcome with stable selectability reasons, and projects an optional
 pair of complementary last-trade prices. It performs no margin estimate or
@@ -19,6 +20,8 @@ backend, and `1x` eligibility before estimating a plan.
 The service does not own user wallets or the presentation of Worm data in a
 page. The generic Worm HTTP client in `util/worm` remains an external-provider
 adapter rather than part of this capability's application state.
+Athena Notification owns delivery after a system notification is accepted.
+Worm Markets never selects an account or sends an account notification.
 
 ## Source Locations
 
@@ -34,6 +37,7 @@ adapter rather than part of this capability's application state.
 | Public HTTP/gRPC contract | [internal/server/wormmarkets/wormmarkets.proto](../../../internal/server/wormmarkets/wormmarkets.proto) | `WormMarketsService` HTTP annotations |
 | Public proxy | [internal/server/wormmarkets/wormmarkets.go](../../../internal/server/wormmarkets/wormmarkets.go) | `Server`, `GetWormEvent`, `ListWormEvents` |
 | Internal gRPC connection ownership | [internal/wormmarkets/apiclient/apiclient.go](../../../internal/wormmarkets/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewWormMarketsClientset`, `ClientConnection` |
+| System notification contract and authenticated client | [internal/notification/notification.proto](../../../internal/notification/notification.proto), [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go) | `SystemNotificationService`, `SendSystemNotification`, `Clientset.System`, `InternalAuthTokenEnv` |
 | Provider adapter | [util/worm/worm.go](../../../util/worm/worm.go) | `Client`, `NewClient`, `DefaultBaseURL` |
 | PostgreSQL connection and migrations | [internal/wormmarkets/store/sql_store.go](../../../internal/wormmarkets/store/sql_store.go) | `SQLStore`, `NewSQLStoreSource`, `Migrations` |
 | Durable store operations | [internal/wormmarkets/store/worm_markets_store.go](../../../internal/wormmarkets/store/worm_markets_store.go) | `BatchUpsertWormMarkets`, `ListWormEventsPage`, `UpdateWormMarketLiveState` |
@@ -47,18 +51,20 @@ flowchart LR
     C["athena-worm-markets"] --> S["Worm Markets Service"]
     S --> W["Worm API"]
     S --> P["worm_markets PostgreSQL"]
-    S --> N["Athena Notification gRPC"]
+    S --> N["Athena Notification system domain"]
     A["Athena API Server"] --> G["Worm Markets internal gRPC"]
     T["Worm Trading preview worker"] --> G
     G --> S
 ```
 
 `NewCommand` creates one PostgreSQL store, one Worm provider client, and an
-optional Notification clientset, then gives them to one `Service`. The service
-owns three independent background goroutines: the complete market sync, missing
-rule enrichment, and live-state derivation. All three use the same store and
-provider client. `syncMu` prevents overlapping complete market synchronizations;
-the rule and live-state loops may execute concurrently with that sync.
+optional authenticated Notification clientset, then gives them to one
+`Service`. The service owns three independent background goroutines: the
+complete market sync, missing rule enrichment, and live-state derivation. All
+three use the same store and provider client. `syncMu` prevents overlapping
+complete market synchronizations; the rule and live-state loops may execute
+concurrently with that sync. Alerts use only the Notification system domain;
+Worm Markets never calls `AccountNotificationService`.
 
 The internal API has four unary methods. `ListWormEvents` reads the PostgreSQL
 snapshot. `GetWormEvent` intentionally reads the selected event directly from
@@ -88,7 +94,8 @@ reach the same stateless catalog RPC.
 
 1. `athena-worm-markets` connects to the `worm_markets` database, optionally
    applies embedded migrations, builds the Worm API client and Notification
-   clientset, binds the gRPC listener, and constructs the server.
+   clientset with the internal Bearer, binds the gRPC listener, and constructs
+   the server.
 2. `Server.Start` calls `Service.Start`. Startup fails if the store or Worm
    client is absent. A cancellable process context is created, the market-sync,
    rule, and live-state goroutines are launched, and only then does standard
@@ -102,7 +109,8 @@ reach the same stateless catalog RPC.
    succeeds does it delete markets whose `last_seen_at` predates that boundary.
    Deletion cascades to their price samples. An empty database suppresses the
    initial flood of new-event notifications; later inserts are grouped by event
-   and produce at most one new-event notification per newly observed event.
+   and produce at most one new-event system notification per newly observed
+   event through `Clientset.System().SendSystemNotification`.
 5. The rule loop runs immediately and every minute. It lists markets whose
    `rules` column is null, fetches each market detail sequentially, and writes
    the returned rules only while that column remains null.
@@ -110,11 +118,13 @@ reach the same stateless catalog RPC.
    older than 30 minutes, calculates each not-yet-live market's sample count and
    max-minus-min range, and classifies it as `live` when at least two samples
    span more than `0.05`. Otherwise it is `not_live` with two samples or remains
-   `unknown`. A first live market for an event produces one live notification.
+   `unknown`. A first live market for an event produces one live system
+   notification through the same method.
 7. After a market sync, live open markets are classified into durable price
    alert bands: `a` for 80/20, `b` for 90/10, and `c` for 95/5. Entering a
-   non-`none` band sends a notification before a compare-and-set update of the
-   stored band. Returning to the middle range resets the band without an alert.
+   non-`none` band submits a system notification before a compare-and-set update
+   of the stored band. Returning to the middle range resets the band without an
+   alert.
 8. `ListWormEvents` validates a limit from 1 through 100, accepts only the fixed
    `leverage` sort and `sports` category, interprets the cursor as a nonnegative
    integer offset, and returns event aggregates ordered live-first and then by
@@ -203,6 +213,7 @@ execution guarantee.
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED` / `--notification-enabled` | Creates the Notification clientset when true; default `true`. Disabling it does not disable synchronization or reads. |
 | `ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / `--logformat`, `--loglevel` | Shared process log format and level; defaults `json` and `info`. |
 
 The one-minute loop intervals, 100-market upstream page size, 30-minute live
@@ -225,8 +236,11 @@ constants rather than runtime configuration.
 - At least two samples inside the rolling window and a price range greater than
   `0.05` are required for live classification.
 - Initial database population never emits new-event notifications.
-- A non-`none` price alert band is committed only after its notification is
-  delivered successfully; the expected old band must still match.
+- A non-`none` price alert band is committed only after its system notification
+  is accepted; the expected old band must still match.
+- New-event, live-event, and price alerts use only authenticated
+  `SystemNotificationService.SendSystemNotification`; Worm Markets never enters
+  the account domain or supplies an account UUID.
 - `ListWormEvents` is served from owned PostgreSQL state, while `GetWormEvent`
   is a fresh provider read. Callers must not assume both responses share one
   snapshot.
@@ -248,10 +262,13 @@ constants rather than runtime configuration.
 
 Invalid Worm client configuration, Notification target, database connection or
 migration failure, listener failure, or missing required service dependencies
-prevents startup. Temporary Notification unavailability does not prevent
-startup because its nonblocking channel reconnects in the background. The
-command starts neither gRPC health serving nor background work after a local
-construction failure.
+prevents startup. A missing, short, or whitespace-bearing
+`ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` also prevents startup when alerts are
+enabled. Temporary Notification unavailability or a mismatched valid token does
+not prevent startup because the nonblocking channel reconnects and later
+unavailable or unauthenticated system sends follow normal alert failure
+handling. The command starts neither gRPC health serving nor background work
+after a local construction failure.
 
 Background-loop failures are logged and retried at the next one-minute tick.
 Because a complete sync has no encompassing transaction, successfully written
@@ -292,6 +309,7 @@ the number of synchronized markets, enriched rules, and evaluated live states.
 Warnings identify failed syncs, rule fetches, live-state operations,
 notifications, and concurrent alert-band changes with condition or event IDs
 where available.
+The Notification internal Bearer is never included in logs or response data.
 
 The server registers standard gRPC health, Version, and Worm Markets services.
 Health is `NOT_SERVING` before `Service.Start` and after `Server.Stop`, and
@@ -316,5 +334,6 @@ provider's last trade. The catalog adds no separate metric or readiness signal.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
 - [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, exact-complement-priced, and free of extra reads, owned persistence, estimates, and mutations for both combination and preview consumers.
 - [ ] Failure recovery, health checks, and observability are current.
+- [ ] New-event, live-event, and price alerts still use authenticated `SendSystemNotification` only and never enter the account domain.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

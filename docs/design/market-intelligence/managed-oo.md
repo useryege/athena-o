@@ -8,10 +8,11 @@ proposal and dispute reads, manual block scans, and proposal/dispute alert
 eligibility. It runs as the independent `athena-managed-oo` process and the
 Athena API Server publishes it under the `/api/v1/managed-oo` HTTP namespace.
 
-Athena Notification owns delivery after a request is accepted. Market Radar,
-Sports Live, and Sports History own their separate Polymarket-derived workloads.
-The Polygon client and `util/polymarket` Gamma client are external-provider
-dependencies, not shared capability implementation state.
+Athena Notification owns delivery after a system-management request is accepted.
+Managed OO never selects an account or sends an account notification. Market
+Radar, Sports Live, and Sports History own their separate Polymarket-derived
+workloads. The Polygon client and `util/polymarket` Gamma client are external-
+provider dependencies, not shared capability implementation state.
 
 ## Source Locations
 
@@ -30,6 +31,7 @@ dependencies, not shared capability implementation state.
 | Internal service contract | [internal/managedoo/managed_oo.proto](../../../internal/managedoo/managed_oo.proto) | `ManagedOOService` |
 | Public HTTP/gRPC contract and proxy | [internal/server/managedoo/managedoo.proto](../../../internal/server/managedoo/managedoo.proto), [internal/server/managedoo/managedoo.go](../../../internal/server/managedoo/managedoo.go) | `ManagedOOService`, `Server` |
 | Internal gRPC connection ownership | [internal/managedoo/apiclient/apiclient.go](../../../internal/managedoo/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewManagedOOClientset`, `ClientConnection` |
+| System notification contract and authenticated client | [internal/notification/notification.proto](../../../internal/notification/notification.proto), [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go) | `SystemNotificationService`, `SendSystemNotification`, `Clientset.System`, `InternalAuthTokenEnv` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `ManagedOOProposalItem`, `ManagedOODisputeItem` |
 
 ## Architecture
@@ -41,7 +43,7 @@ flowchart LR
     S --> P["Polygon JSON-RPC"]
     S --> M["Polymarket Gamma"]
     S --> D["managed_oo PostgreSQL"]
-    S --> N["Athena Notification gRPC"]
+    S --> N["Athena Notification system domain"]
     B["Periodic pipeline"] --> S
     X["Manual block scan"] --> S
 ```
@@ -56,12 +58,14 @@ Proposal and dispute cursors are independent. Log rows and the corresponding
 cursor advance share a transaction. A successful market upsert replaces its
 labels in the same transaction. Notification enqueue and the following
 alert-state write are separate cross-service operations.
+All proposal and dispute alerts use the authenticated system domain; the
+capability never calls `AccountNotificationService`.
 
 ## Runtime Flow
 
 1. `athena-managed-oo` connects to the `managed_oo` database, optionally
-   applies embedded migrations, creates one optional long-lived Notification
-   clientset,
+   applies embedded migrations, creates one optional long-lived authenticated
+   Notification clientset,
    binds port `8106`, and constructs the service with the configured Polygon
    RPC URL.
 2. `Service.Start` requires the store, creates a default Gamma client when none
@@ -70,7 +74,7 @@ alert-state write are separate cross-service operations.
 3. The pipeline runs immediately and every two seconds while holding
    `managedOOPipelineMu`. It synchronizes proposal logs, synchronizes dispute
    logs, enriches pending market IDs, then evaluates proposal and dispute
-   notifications. An earlier phase failure stops the current pass.
+   system notifications. An earlier phase failure stops the current pass.
 4. On the first pass for a log type, the service initializes its cursor to the
    current Polygon head and does not backfill earlier blocks automatically.
    Later passes scan from `last_block_number + 1` through the latest head in
@@ -87,7 +91,9 @@ alert-state write are separate cross-service operations.
    `Politics`, `Iran`, or `Geopolitics` labels. Dispute candidates require
    a usable market slug but no specific label. Each query returns at most 100
    unsent source logs in chain order.
-8. After Notification accepts a request, the service writes the source
+8. The service submits every alert with
+   `Clientset.System().SendSystemNotification`. After Notification accepts a
+   request, the service writes the source
    `(tx_hash, log_index)`, notification ID, and notification time to the
    corresponding alert-state table.
 9. `ScanManagedOOBlock` validates a positive supported block number, verifies
@@ -139,6 +145,7 @@ and pipeline serialization.
 | `ATHENA_MANAGED_OO_POLYGON_RPC_URL` / `--polygon-rpc-url` | Polygon JSON-RPC endpoint for chain head and log queries; default `https://polygon-rpc.com`. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_ENABLED` / `--notification-enabled` | Enables proposal and dispute enqueueing; default `true`. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket links; default empty. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 
@@ -161,16 +168,21 @@ notification deadlines are implementation constants.
   slug is optional.
 - Proposal alerts require a configured label, while dispute alerts do not.
 - Alert-state is committed only after Notification accepts the request.
+- Proposal and dispute alerts use only authenticated
+  `SystemNotificationService.SendSystemNotification`; Managed OO never enters
+  the account domain or supplies an account UUID.
 - Health reports process lifecycle, not cursor lag, enrichment backlog, or
   Notification availability.
 
 ## Failure Recovery
 
 Database connection, migration, missing store, failure to construct Gamma, or an
-invalid listener or Notification target prevents startup. Polygon and
-Notification availability are not probed before health becomes serving; a
-temporarily unavailable Notification service is handled by background gRPC
-reconnection.
+invalid listener or Notification target prevents startup. A missing, short, or
+whitespace-bearing `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` also prevents
+startup when alerts are enabled. Polygon and Notification availability are not
+probed before health becomes serving; a temporarily unavailable Notification
+service or mismatched valid token is handled as a later unavailable or
+unauthenticated system send while the gRPC channel reconnects in the background.
 
 A Polygon RPC, decoding, or log-ingest failure stops the current pass before its
 cursor advances and before enrichment or alerts. A proposal-phase failure also
@@ -211,6 +223,7 @@ Status and lists require `managed-oo:get`; block scan requires
 a sanitized RPC endpoint. Enrichment logs requested, fetched, and
 not-found counts. Pipeline warnings identify the failed phase, and alert warnings
 include source transaction hash and log index.
+The Notification internal Bearer is never included in logs or response data.
 
 There are no capability-specific metrics, cursor-lag readiness check, enrichment
 backlog counter, or durable end-to-end delivery diagnostic. Operational state
@@ -222,5 +235,6 @@ is inferred from logs, list results, cursor data, and notification records.
 - [ ] Runtime, concurrency, and transaction flows are current.
 - [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
 - [ ] Failure recovery, health checks, and observability are current.
+- [ ] Proposal and dispute alerts still use authenticated `SendSystemNotification` only and never enter the account domain.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

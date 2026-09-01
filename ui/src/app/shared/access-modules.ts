@@ -13,11 +13,10 @@ export enum AccountDataModule {
     WorldCupCorners = 7,
     Token = 8,
     Wallet = 9,
-    Notifications = 10,
     WormTrading = 11
 }
 
-export type AccountDataModuleGroup = 'markets' | 'token-risk' | 'operations';
+export type AccountDataModuleGroup = 'markets' | 'token-risk';
 
 export interface AccountDataModuleDefinition {
     module: AccountDataModule;
@@ -31,8 +30,7 @@ export interface AccountDataModuleDefinition {
 
 export const accountDataModuleGroups: Array<{key: AccountDataModuleGroup; label: string}> = [
     {key: 'markets', label: 'Markets'},
-    {key: 'token-risk', label: 'Token & Risk'},
-    {key: 'operations', label: 'Operations'}
+    {key: 'token-risk', label: 'Token & Risk'}
 ];
 
 export const accountDataModules: AccountDataModuleDefinition[] = [
@@ -107,14 +105,6 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         label: 'Wallet',
         description: 'Wallet inventory, creation, import, aliases, and sensitive secret access.',
         group: 'token-risk',
-        maxAccess: AccountDataAccess.ReadWrite
-    },
-    {
-        module: AccountDataModule.Notifications,
-        id: 'notifications',
-        label: 'Notifications',
-        description: 'Notification delivery history, details, and test delivery.',
-        group: 'operations',
         maxAccess: AccountDataAccess.ReadWrite
     }
 ];

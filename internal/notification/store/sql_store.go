@@ -3,17 +3,15 @@ package store
 import (
 	"context"
 	"embed"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	notificationsqlc "github.com/useryege/athena/internal/notification/store/sqlc"
-	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	"github.com/useryege/athena/util/db/postgres"
 )
 
@@ -27,50 +25,6 @@ func Migrations() embed.FS {
 type SQLStore struct {
 	pool    *pgxpool.Pool
 	queries notificationsqlc.Querier
-}
-
-type CreateDeliveryRequest struct {
-	Source       string
-	Severity     string
-	Title        string
-	Body         string
-	Link         string
-	Channel      string
-	Status       string
-	TelegramChat string
-	TopicLabel   string
-}
-
-type ListDeliveriesOptions struct {
-	Page         int
-	PageSize     int
-	Status       string
-	Severity     string
-	Source       string
-	TelegramChat string
-	TopicLabel   string
-	Keyword      string
-}
-
-type ClaimDeliveriesOptions struct {
-	Limit       int
-	LockedBy    string
-	LockTimeout time.Duration
-}
-
-type ClaimedDelivery struct {
-	ID              int64
-	Source          string
-	Severity        string
-	Title           string
-	Body            string
-	Link            string
-	Channel         string
-	Status          string
-	TelegramChat    string
-	TopicLabel      string
-	MessageThreadID int
-	Attempts        int
 }
 
 func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
@@ -102,322 +56,47 @@ func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 }
 
 func (s *SQLStore) Close() error {
-	if s.pool == nil {
-		return nil
+	if s.pool != nil {
+		s.pool.Close()
 	}
-	s.pool.Close()
 	return nil
 }
 
-func (s *SQLStore) CreateDelivery(ctx context.Context, req CreateDeliveryRequest) (*v1alpha1.NotificationDeliveryDetail, error) {
+func (s *SQLStore) configured() error {
 	if s.queries == nil {
-		return nil, fmt.Errorf("notification postgres database is not configured")
+		return fmt.Errorf("notification postgres database is not configured")
 	}
-	row, err := s.queries.CreateDelivery(ctx, notificationsqlc.CreateDeliveryParams{
-		Source:       req.Source,
-		Severity:     req.Severity,
-		Title:        textValue(req.Title),
-		Body:         req.Body,
-		Link:         textValue(req.Link),
-		Channel:      req.Channel,
-		Status:       req.Status,
-		TelegramChat: req.TelegramChat,
-		TopicLabel:   req.TopicLabel,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create notification delivery: %w", err)
-	}
-	item := deliveryDetailFromRow(deliveryRow{
-		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, TelegramChat: row.TelegramChat, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
-	})
-	return item, nil
+	return nil
 }
 
-func (s *SQLStore) EnsureTopic(ctx context.Context, telegramChat string, label string, create func(context.Context) (int, error)) (int, error) {
+func (s *SQLStore) transactional() error {
 	if s.pool == nil || s.queries == nil {
-		return 0, fmt.Errorf("notification postgres database is not configured")
-	}
-	topicParams := notificationsqlc.GetTopicParams{TelegramChat: telegramChat, Label: label}
-	topic, err := s.queries.GetTopic(ctx, topicParams)
-	if err == nil {
-		return int(topic.MessageThreadID), nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return 0, fmt.Errorf("failed to get notification topic: %w", err)
-	}
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to begin notification topic transaction: %w", err)
-	}
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
-	queries := notificationsqlc.New(tx)
-	if err := queries.LockTopic(ctx, notificationsqlc.LockTopicParams{TelegramChat: textValue(telegramChat), Label: textValue(label)}); err != nil {
-		return 0, fmt.Errorf("failed to lock notification topic label: %w", err)
-	}
-	topic, err = queries.GetTopic(ctx, topicParams)
-	if err == nil {
-		if err := tx.Commit(ctx); err != nil {
-			return 0, fmt.Errorf("failed to commit notification topic lookup: %w", err)
-		}
-		return int(topic.MessageThreadID), nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return 0, fmt.Errorf("failed to get notification topic: %w", err)
-	}
-
-	messageThreadID, err := create(ctx)
-	if err != nil {
-		return 0, err
-	}
-	if messageThreadID <= 0 {
-		return 0, fmt.Errorf("notification topic returned invalid message thread id")
-	}
-	if _, err := queries.CreateTopic(ctx, notificationsqlc.CreateTopicParams{
-		TelegramChat:    telegramChat,
-		Label:           label,
-		MessageThreadID: int32(messageThreadID),
-	}); err != nil {
-		return 0, fmt.Errorf("failed to create notification topic record: %w", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return 0, fmt.Errorf("failed to commit notification topic: %w", err)
-	}
-	return messageThreadID, nil
-}
-
-func (s *SQLStore) ClaimPendingDeliveries(ctx context.Context, opts ClaimDeliveriesOptions) ([]ClaimedDelivery, error) {
-	if s.queries == nil {
-		return nil, fmt.Errorf("notification postgres database is not configured")
-	}
-	limit := opts.Limit
-	if limit < 1 {
-		limit = 1
-	}
-	lockTimeout := opts.LockTimeout
-	if lockTimeout <= 0 {
-		lockTimeout = time.Minute
-	}
-	rows, err := s.queries.ClaimPendingDeliveries(ctx, notificationsqlc.ClaimPendingDeliveriesParams{
-		Limit:       int32(limit),
-		LockedBy:    textValue(opts.LockedBy),
-		LockTimeout: intervalValue(lockTimeout),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to claim pending notification deliveries: %w", err)
-	}
-	items := make([]ClaimedDelivery, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, ClaimedDelivery{
-			ID:              row.ID,
-			Source:          row.Source,
-			Severity:        row.Severity,
-			Title:           row.Title,
-			Body:            row.Body,
-			Link:            row.Link,
-			Channel:         row.Channel,
-			Status:          row.Status,
-			TelegramChat:    row.TelegramChat,
-			TopicLabel:      row.TopicLabel,
-			MessageThreadID: int(row.MessageThreadID),
-			Attempts:        int(row.Attempts),
-		})
-	}
-	return items, nil
-}
-
-func (s *SQLStore) MarkDeliverySent(ctx context.Context, id int64, providerMessageID string) error {
-	if s.queries == nil {
 		return fmt.Errorf("notification postgres database is not configured")
-	}
-	if err := s.queries.MarkDeliverySent(ctx, notificationsqlc.MarkDeliverySentParams{ID: id, ProviderMessageID: textValue(providerMessageID)}); err != nil {
-		return fmt.Errorf("failed to mark notification delivery sent: %w", err)
 	}
 	return nil
 }
 
-func (s *SQLStore) MarkDeliveryFailed(ctx context.Context, id int64, errorMessage string) error {
-	if s.queries == nil {
-		return fmt.Errorf("notification postgres database is not configured")
-	}
-	if err := s.queries.MarkDeliveryFailed(ctx, notificationsqlc.MarkDeliveryFailedParams{ID: id, ErrorMessage: textValue(errorMessage)}); err != nil {
-		return fmt.Errorf("failed to mark notification delivery failed: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) ScheduleDeliveryRetry(ctx context.Context, id int64, errorMessage string, nextAttemptAt time.Time) error {
-	if s.queries == nil {
-		return fmt.Errorf("notification postgres database is not configured")
-	}
-	if err := s.queries.ScheduleDeliveryRetry(ctx, notificationsqlc.ScheduleDeliveryRetryParams{
-		ID:            id,
-		ErrorMessage:  textValue(errorMessage),
-		NextAttemptAt: pgtype.Timestamptz{Time: nextAttemptAt.UTC(), Valid: true},
-	}); err != nil {
-		return fmt.Errorf("failed to schedule notification delivery retry: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) ListDeliveries(ctx context.Context, opts ListDeliveriesOptions) ([]*v1alpha1.NotificationDeliveryItem, int64, error) {
-	if s.queries == nil {
-		return nil, 0, fmt.Errorf("notification postgres database is not configured")
-	}
-	params := deliveryFilterParams(opts)
-	total, err := s.queries.CountDeliveries(ctx, notificationsqlc.CountDeliveriesParams{
-		Status:       params.Status,
-		Severity:     params.Severity,
-		Source:       params.Source,
-		TelegramChat: params.TelegramChat,
-		TopicLabel:   params.TopicLabel,
-		Keyword:      params.Keyword,
-	})
+func uuidValue(value string) (pgtype.UUID, error) {
+	parsed, err := uuid.Parse(strings.TrimSpace(value))
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count notification deliveries: %w", err)
+		return pgtype.UUID{}, fmt.Errorf("invalid uuid: %w", err)
 	}
-
-	page := opts.Page
-	if page < 1 {
-		page = 1
-	}
-	pageSize := opts.PageSize
-	if pageSize < 1 {
-		pageSize = 20
-	}
-	rows, err := s.queries.ListDeliveries(ctx, notificationsqlc.ListDeliveriesParams{
-		Limit:        int32(pageSize),
-		Offset:       int32((page - 1) * pageSize),
-		Status:       params.Status,
-		Severity:     params.Severity,
-		Source:       params.Source,
-		TelegramChat: params.TelegramChat,
-		TopicLabel:   params.TopicLabel,
-		Keyword:      params.Keyword,
-	})
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to list notification deliveries: %w", err)
-	}
-
-	items := []*v1alpha1.NotificationDeliveryItem{}
-	for _, row := range rows {
-		items = append(items, deliveryItemFromRow(deliveryRow{
-			ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-			Status: row.Status, TelegramChat: row.TelegramChat, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
-		}))
-	}
-	return items, total, nil
+	return pgtype.UUID{Bytes: [16]byte(parsed), Valid: true}, nil
 }
 
-func (s *SQLStore) GetDelivery(ctx context.Context, id int64) (*v1alpha1.NotificationDeliveryDetail, error) {
-	if s.queries == nil {
-		return nil, fmt.Errorf("notification postgres database is not configured")
+func uuidString(value pgtype.UUID) string {
+	if !value.Valid {
+		return ""
 	}
-	row, err := s.queries.GetDelivery(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, err
-		}
-		return nil, fmt.Errorf("failed to get notification delivery: %w", err)
-	}
-	return deliveryDetailFromRow(deliveryRow{
-		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body, Link: row.Link, Channel: row.Channel,
-		Status: row.Status, TelegramChat: row.TelegramChat, TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage, CreatedAt: row.CreatedAt, SentAt: row.SentAt,
-	}), nil
-}
-
-type deliveryFilter struct {
-	Status       pgtype.Text
-	Severity     pgtype.Text
-	Source       pgtype.Text
-	TelegramChat pgtype.Text
-	TopicLabel   pgtype.Text
-	Keyword      pgtype.Text
-}
-
-func deliveryFilterParams(opts ListDeliveriesOptions) deliveryFilter {
-	return deliveryFilter{
-		Status:       nullableText(strings.TrimSpace(opts.Status)),
-		Severity:     nullableText(strings.TrimSpace(opts.Severity)),
-		Source:       nullableText(strings.TrimSpace(opts.Source)),
-		TelegramChat: nullableText(strings.TrimSpace(opts.TelegramChat)),
-		TopicLabel:   nullableText(strings.TrimSpace(opts.TopicLabel)),
-		Keyword:      nullableKeyword(opts.Keyword),
-	}
-}
-
-type deliveryRow struct {
-	ID                int64
-	Source            string
-	Severity          string
-	Title             string
-	Body              string
-	Link              string
-	Channel           string
-	Status            string
-	TelegramChat      string
-	TopicLabel        string
-	ProviderMessageID pgtype.Text
-	ErrorMessage      pgtype.Text
-	CreatedAt         pgtype.Timestamptz
-	SentAt            pgtype.Timestamptz
-}
-
-func deliveryItemFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryItem {
-	item := &v1alpha1.NotificationDeliveryItem{
-		ID:                row.ID,
-		Source:            row.Source,
-		Severity:          row.Severity,
-		Title:             row.Title,
-		Body:              row.Body,
-		Link:              row.Link,
-		Channel:           row.Channel,
-		Status:            row.Status,
-		TelegramChat:      row.TelegramChat,
-		TopicLabel:        row.TopicLabel,
-		ProviderMessageID: row.ProviderMessageID.String,
-		ErrorMessage:      row.ErrorMessage.String,
-		CreatedAt:         formatTime(row.CreatedAt.Time),
-	}
-	if row.SentAt.Valid {
-		item.SentAt = formatTime(row.SentAt.Time)
-	}
-	return item
-}
-
-func deliveryDetailFromRow(row deliveryRow) *v1alpha1.NotificationDeliveryDetail {
-	item := deliveryItemFromRow(row)
-	return &v1alpha1.NotificationDeliveryDetail{
-		ID:                item.ID,
-		Source:            item.Source,
-		Severity:          item.Severity,
-		Title:             item.Title,
-		Body:              item.Body,
-		Link:              item.Link,
-		Channel:           item.Channel,
-		Status:            item.Status,
-		TelegramChat:      item.TelegramChat,
-		TopicLabel:        item.TopicLabel,
-		ProviderMessageID: item.ProviderMessageID,
-		ErrorMessage:      item.ErrorMessage,
-		CreatedAt:         item.CreatedAt,
-		SentAt:            item.SentAt,
-	}
+	return uuid.UUID(value.Bytes).String()
 }
 
 func textValue(value string) pgtype.Text {
 	return pgtype.Text{String: value, Valid: true}
 }
 
-func intervalValue(value time.Duration) pgtype.Interval {
-	return pgtype.Interval{Microseconds: value.Microseconds(), Valid: true}
-}
-
 func nullableText(value string) pgtype.Text {
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return pgtype.Text{}
 	}
@@ -430,6 +109,14 @@ func nullableKeyword(value string) pgtype.Text {
 		return pgtype.Text{}
 	}
 	return textValue("%" + value + "%")
+}
+
+func intervalValue(value time.Duration) pgtype.Interval {
+	return pgtype.Interval{Microseconds: value.Microseconds(), Valid: true}
+}
+
+func timestamptzValue(value time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: value.UTC(), Valid: true}
 }
 
 func formatTime(value time.Time) string {
