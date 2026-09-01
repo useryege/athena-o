@@ -20,6 +20,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
 	httputil "github.com/useryege/athena/util/http"
 )
@@ -93,7 +94,7 @@ func (h *Handler) Begin(ctx context.Context, w http.ResponseWriter, identity Ide
 	}
 	if err := h.store.Create(ctx, ticketID, Ticket{
 		Identity:   identity,
-		ReturnTo:   ValidateReturnTo(returnTo),
+		ReturnTo:   ReturnToForRealm(returnTo, identity.Realm),
 		CSRFSecret: csrfSecret,
 		CreatedAt:  time.Now().UTC(),
 	}); err != nil {
@@ -133,11 +134,16 @@ func (h *Handler) UsernameAvailability(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := accountcredentials.ValidateUsername(r.URL.Query().Get("username"), ticket.Identity.AdministratorCandidate); err != nil {
+	administrator, err := ticket.Identity.Realm.Administrator()
+	if err != nil {
+		h.writeError(w, http.StatusUnauthorized, "registration_expired")
+		return
+	}
+	if err := accountcredentials.ValidateUsername(r.URL.Query().Get("username"), administrator); err != nil {
 		h.writeJSON(w, http.StatusOK, availabilityResponse{Status: "invalid"})
 		return
 	}
-	available, err := h.backend.UsernameAvailable(r.Context(), r.URL.Query().Get("username"), ticket.Identity.AdministratorCandidate)
+	available, err := h.backend.UsernameAvailable(r.Context(), r.URL.Query().Get("username"), ticket.Identity.Realm)
 	if err != nil {
 		h.writeError(w, http.StatusServiceUnavailable, "registration_unavailable")
 		return
@@ -151,8 +157,8 @@ func (h *Handler) UsernameAvailability(w http.ResponseWriter, r *http.Request) {
 
 // SetAthenaSessionCookie is shared by provider handlers and the final
 // registration step, so all browser sessions use identical cookie policy.
-func (h *Handler) SetAthenaSessionCookie(w http.ResponseWriter, token string) error {
-	return httputil.SetTokenCookie(token, h.baseHRef, h.secureCookie, w)
+func (h *Handler) SetAthenaSessionCookie(w http.ResponseWriter, realm accountcredentials.ApplicationRealm, token string) error {
+	return httputil.SetTokenCookie(token, realm, h.baseHRef, h.secureCookie, w)
 }
 
 // ClearCookie removes a stale or consumed shared registration binding.
@@ -173,7 +179,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 		Provider:      ticket.Identity.Provider,
 		VerifiedEmail: ticket.Identity.VerifiedEmail,
 		SolanaAddress: solanaAddress,
-		Administrator: ticket.Identity.AdministratorCandidate,
+		Administrator: ticket.Identity.Realm == accountcredentials.ApplicationRealmAdmin,
 		ExpiresAt:     ticket.CreatedAt.Add(registrationTTL).Unix(),
 		CSRFToken:     ticket.CSRFSecret,
 	})
@@ -193,7 +199,12 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		h.failed(w, http.StatusForbidden, "registration_expired", "registration_csrf", ticket.Identity.Provider, nil)
 		return
 	}
-	if err := accountcredentials.ValidateUsername(input.Username, ticket.Identity.AdministratorCandidate); err != nil {
+	administrator, realmErr := ticket.Identity.Realm.Administrator()
+	if realmErr != nil {
+		h.failed(w, http.StatusUnauthorized, "registration_expired", "registration_realm", ticket.Identity.Provider, realmErr)
+		return
+	}
+	if err := accountcredentials.ValidateUsername(input.Username, administrator); err != nil {
 		h.failed(w, http.StatusBadRequest, "username_invalid", "username_validate", ticket.Identity.Provider, err)
 		return
 	}
@@ -259,7 +270,7 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		h.failed(w, statusCode, reason, "session_issue", ticket.Identity.Provider, err)
 		return
 	}
-	if err := h.SetAthenaSessionCookie(w, token); err != nil {
+	if err := h.SetAthenaSessionCookie(w, ticket.Identity.Realm, token); err != nil {
 		h.failed(w, http.StatusServiceUnavailable, "registration_unavailable", "cookie_issue", ticket.Identity.Provider, err)
 		return
 	}
@@ -267,12 +278,10 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{
 		"stage":      "registration_complete",
 		"provider":   ticket.Identity.Provider,
+		"realm":      ticket.Identity.Realm,
 		"account_id": registered.ID,
 	}).Info("External identity registration succeeded")
-	redirectTo := DefaultReturnTo
-	if ticket.Identity.AdministratorCandidate {
-		redirectTo = administratorReturnTo(ticket.ReturnTo)
-	}
+	redirectTo := ReturnToForRealm(ticket.ReturnTo, ticket.Identity.Realm)
 	h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: redirectTo})
 }
 
@@ -299,7 +308,10 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.clearCookie(w)
-	query := url.Values{"returnTo": []string{ValidateReturnTo(ticket.ReturnTo)}}
+	query := url.Values{
+		"returnTo":                            []string{ReturnToForRealm(ticket.ReturnTo, ticket.Identity.Realm)},
+		common.ApplicationRealmQueryParameter: []string{string(ticket.Identity.Realm)},
+	}
 	redirectTo := "/login?" + query.Encode()
 	if ticket.Identity.Provider == accountcredentials.IdentityProviderGoogle {
 		redirectTo = "/auth/google/login?" + query.Encode()
@@ -411,6 +423,11 @@ func ValidateReturnTo(raw string) string {
 	if err != nil || parsed.IsAbs() || parsed.Host != "" || parsed.Path == "" || !strings.HasPrefix(parsed.Path, "/") || strings.HasPrefix(parsed.Path, "//") || strings.Contains(parsed.Path, "\\") {
 		return DefaultReturnTo
 	}
+	for _, segment := range strings.Split(parsed.Path, "/") {
+		if segment == "." || segment == ".." {
+			return DefaultReturnTo
+		}
+	}
 	for _, value := range parsed.Path + parsed.Fragment {
 		if unicode.IsControl(value) {
 			return DefaultReturnTo
@@ -432,6 +449,25 @@ func administratorReturnTo(raw string) string {
 		return AdministratorDefaultReturnTo
 	}
 	return validated
+}
+
+// ReturnToForRealm keeps provider and registration redirects inside the
+// application that initiated authentication. The realm is server-held state;
+// a return target cannot switch it after identity verification.
+func ReturnToForRealm(raw string, realm accountcredentials.ApplicationRealm) string {
+	validated := ValidateReturnTo(raw)
+	switch realm {
+	case accountcredentials.ApplicationRealmAdmin:
+		return administratorReturnTo(validated)
+	case accountcredentials.ApplicationRealmMember:
+		parsed, err := url.Parse(validated)
+		if err != nil || parsed.Path == "/admin" || strings.HasPrefix(parsed.Path, "/admin/") {
+			return DefaultReturnTo
+		}
+		return validated
+	default:
+		return DefaultReturnTo
+	}
 }
 
 // DeploymentPath resolves one validated, deployment-root-relative Athena path

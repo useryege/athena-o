@@ -25,7 +25,7 @@ import type {
     WormWalletConnectionState
 } from '../../shared/services/worm-trading-service';
 import {WORM_TRADING_LOGIN_SESSION_REQUIRED, WORM_TRADING_REAUTH_REQUIRED, WORM_TRADING_REAUTH_UNAVAILABLE} from '../../shared/services/worm-trading-service';
-import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
+import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {usePagedParams} from '../../shared/pages/shared';
 
 const wormTradingPageSize = 20;
@@ -96,7 +96,7 @@ const connectionWasQueried = (state: WormWalletConnectionState) => state === 'CO
 const WormTradingWalletAvatar = (props: {wallet: WormTradingWalletSummary; size?: number}) => {
     const presetGlyph = walletPresetGlyphs[props.wallet.avatarPresetId];
     const palette = defaultAvatarPalettes[hashWalletAddress(props.wallet.address) % defaultAvatarPalettes.length];
-    const uploaded = props.wallet.avatarKind.toLowerCase() === 'upload' && props.wallet.avatarUrl;
+    const uploaded = props.wallet.avatarKind.toLowerCase() === 'upload' && realmBoundResourceURL(props.wallet.avatarUrl);
     const className = ['wallet-avatar', presetGlyph ? `wallet-avatar--${props.wallet.avatarPresetId}` : 'wallet-avatar--generated'].join(' ');
     const style = presetGlyph ? undefined : {background: `linear-gradient(145deg, ${palette[0]}, ${palette[1]})`};
     return (

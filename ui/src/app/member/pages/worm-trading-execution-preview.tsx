@@ -31,7 +31,7 @@ import {
     WormTradingWalletConnectionItem,
     WormTradingWalletSummary
 } from '../../shared/services/worm-trading-service';
-import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
+import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {
     createDefaultWormExecutionPreflightChecks,
     disabledWormExecutionPreflightChecks,
@@ -155,7 +155,7 @@ const walletPaletteIndex = (address: string) => {
 const ExecutionWalletAvatar = (props: {wallet: WormTradingWalletSummary; size?: number}) => {
     const glyph = walletPresetGlyphs[props.wallet.avatarPresetId];
     const palette = avatarPalettes[walletPaletteIndex(props.wallet.address)];
-    const uploaded = props.wallet.avatarKind.toLowerCase() === 'upload' && props.wallet.avatarUrl;
+    const uploaded = props.wallet.avatarKind.toLowerCase() === 'upload' && realmBoundResourceURL(props.wallet.avatarUrl);
     return (
         <Avatar
             aria-hidden='true'

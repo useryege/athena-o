@@ -1,5 +1,5 @@
 import {AccountDataModule} from '../access-modules';
-import requests from './requests';
+import requests, {APPLICATION_REALM_QUERY} from './requests';
 
 const readScope = {module: AccountDataModule.WormTrading, mode: 'read' as const};
 const writeScope = {module: AccountDataModule.WormTrading, mode: 'write' as const};
@@ -1680,7 +1680,7 @@ export class WormTradingService {
     }
 
     public googleCredentialReauthenticationURL(returnTo: string): string {
-        const query = new URLSearchParams({returnTo});
+        const query = new URLSearchParams({returnTo, [APPLICATION_REALM_QUERY]: 'member'});
         return `${requests.toAbsURL('/auth/worm-trading/google')}?${query.toString()}`;
     }
 
@@ -1903,7 +1903,8 @@ export class WormTradingService {
             runId,
             commandId: command.commandId,
             expectedRevision: String(command.expectedRevision),
-            returnTo
+            returnTo,
+            [APPLICATION_REALM_QUERY]: 'member'
         });
         return `${requests.toAbsURL('/auth/worm-trading/executions/google')}?${query.toString()}`;
     }

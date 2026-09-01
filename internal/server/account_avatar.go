@@ -8,7 +8,6 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountavatar"
@@ -75,14 +74,10 @@ func stringEnv(name, fallback string) string {
 }
 
 func (server *AthenaServer) authenticateAccountAvatarHTTP(request *http.Request, targetAccountID string) (context.Context, error) {
-	md := metadata.MD{}
-	if authorization := request.Header.Get("Authorization"); authorization != "" {
-		md.Set("authorization", authorization)
+	ctx, err := authenticationContextFromHTTPRequest(request, request.Method == http.MethodGet)
+	if err != nil {
+		return request.Context(), err
 	}
-	if cookie := request.Header.Get("Cookie"); cookie != "" {
-		md.Set("grpcgateway-cookie", cookie)
-	}
-	ctx := metadata.NewIncomingContext(request.Context(), md)
 	authenticated, err := server.Authenticate(ctx)
 	if err != nil {
 		return authenticated, err

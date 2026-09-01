@@ -40,6 +40,9 @@ export type AuthorizationRequestMode = 'read' | 'write';
 export type AuthorizationRequestFeature = 'api-key' | 'profit-sharing' | 'self-account' | 'admin-accounts' | 'admin-service-status' | 'admin-etherscan';
 export type AuthorizationRequestRealm = 'member' | 'admin';
 
+export const APPLICATION_REALM_HEADER = 'X-Athena-Application-Realm';
+export const APPLICATION_REALM_QUERY = 'athenaRealm';
+
 export type AuthorizationRequestScope =
     | {
           session: true;
@@ -201,6 +204,34 @@ function toAbsURL(val: string): string {
     return result === '/' ? '/' : result;
 }
 
+const appendApplicationRealmQuery = (url: string): string => {
+    if (!authorizationRealm) {
+        return url;
+    }
+    const parsed = new URL(url, 'https://athena.local');
+    parsed.searchParams.set(APPLICATION_REALM_QUERY, authorizationRealm);
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+};
+
+// Private API resources rendered directly by the browser (for example, an
+// uploaded avatar in an <img>) cannot carry the application-realm header.
+// Bind only Athena-owned relative API URLs; external and browser-owned URLs
+// must remain byte-for-byte unchanged.
+export const realmBoundResourceURL = (url: string): string => {
+    if (!url || !authorizationRealm || /^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//')) {
+        return url;
+    }
+    const logicalURL = url.startsWith('/') ? url : `/${url}`;
+    if (logicalURL.startsWith('/api/')) {
+        return appendApplicationRealmQuery(toAbsURL(logicalURL));
+    }
+    const deploymentRoot = `/${(baseHRef || '/').replace(/^\/+|\/+$/g, '')}`.replace(/^\/$/, '');
+    if (!deploymentRoot || !logicalURL.startsWith(`${deploymentRoot}/api/`)) {
+        return url;
+    }
+    return appendApplicationRealmQuery(logicalURL);
+};
+
 function apiRoot(): string {
     return toAbsURL('/api/v1');
 }
@@ -223,6 +254,9 @@ const trackScopedRequest = (request: AbortableRequest, scope?: AuthorizationRequ
 
 function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
     const generation = requestErrorGeneration;
+    if (authorizationRealm) {
+        req.set(APPLICATION_REALM_HEADER, authorizationRealm);
+    }
     trackScopedRequest(req, scope);
     const removeScope = () => scopedRequests.delete(req);
     req.on('error', err => {
@@ -260,13 +294,15 @@ export default {
     setBaseHRef(val: string) {
         baseHRef = val;
     },
-    agent,
     toAbsURL,
     onError: onError.asObservable(),
     invalidatePendingRequestErrors() {
         requestErrorGeneration++;
     },
     configureAuthorizationRealm(realm: AuthorizationRequestRealm) {
+        if (realm !== 'member' && realm !== 'admin') {
+            throw new Error(`Unsupported Athena application realm: ${String(realm)}`);
+        }
         if (authorizationRealm && authorizationRealm !== realm) {
             throw new Error(`Authorization requests are already configured for the ${authorizationRealm} realm`);
         }
@@ -292,6 +328,10 @@ export default {
     abortAuthorizationFeatureRequests,
     get(url: string, scope?: AuthorizationRequestScope) {
         return initHandlers(agent.get(`${apiRoot()}${url}`), scope);
+    },
+
+    rawGet(url: string, scope?: AuthorizationRequestScope) {
+        return initHandlers(agent.get(toAbsURL(url)), scope);
     },
 
     post(url: string, scope?: AuthorizationRequestScope) {
@@ -332,7 +372,11 @@ export default {
             upstreamSignal?.removeEventListener('abort', tracked.abort);
             scopedRequests.delete(tracked);
         };
-        const promise = fetch(url, {...init, signal: controller.signal}) as Promise<Response> & {abort?: () => void};
+        const headers = new Headers(init.headers);
+        if (authorizationRealm) {
+            headers.set(APPLICATION_REALM_HEADER, authorizationRealm);
+        }
+        const promise = fetch(url, {...init, headers, signal: controller.signal}) as Promise<Response> & {abort?: () => void};
         promise.abort = tracked.abort;
         void promise.then(cleanup, cleanup);
         return promise;
@@ -340,13 +384,14 @@ export default {
 
     loadEventSource(url: string): Observable<string> {
         return Observable.create((observer: Observer<any>) => {
-            const fullUrl = `${apiRoot()}${url}`;
+            const fullUrl = appendApplicationRealmQuery(`${apiRoot()}${url}`);
             const generation = requestErrorGeneration;
 
             const abortController = new AbortController();
 
             // If there is an error, show it beforehand
-            fetch(fullUrl, {signal: abortController.signal})
+            const headers = authorizationRealm ? {[APPLICATION_REALM_HEADER]: authorizationRealm} : undefined;
+            fetch(fullUrl, {headers, signal: abortController.signal})
                 .then(response => {
                     if (!response.ok) {
                         return response.text().then(text => {

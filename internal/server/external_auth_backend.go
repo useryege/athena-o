@@ -37,14 +37,18 @@ func (backend *externalAuthBackend) GetByIdentity(ctx context.Context, identity 
 	if err := identity.Validate(); err != nil {
 		return authregistration.Account{}, false, fmt.Errorf("%w: %v", authregistration.ErrIdentityNotAllowed, err)
 	}
-	account, found, err := backend.credentials.GetByIdentity(ctx, identity.Provider, identity.Subject)
+	account, found, err := backend.credentials.GetByIdentity(ctx, identity.Provider, identity.Subject, identity.Realm)
 	if err != nil || !found {
 		return authregistration.Account{}, found, err
 	}
 	return authregistration.Account{ID: account.ID}, true, nil
 }
 
-func (backend *externalAuthBackend) UsernameAvailable(ctx context.Context, username string, administrator bool) (bool, error) {
+func (backend *externalAuthBackend) UsernameAvailable(ctx context.Context, username string, realm accountcredentials.ApplicationRealm) (bool, error) {
+	administrator, err := realm.Administrator()
+	if err != nil {
+		return false, fmt.Errorf("%w: %v", authregistration.ErrIdentityNotAllowed, err)
+	}
 	return backend.credentials.UsernameAvailable(ctx, username, administrator)
 }
 
@@ -55,7 +59,7 @@ func (backend *externalAuthBackend) RegisterExternalAccount(ctx context.Context,
 		identity.Subject,
 		identity.VerifiedEmail,
 		username,
-		identity.AdministratorCandidate,
+		identity.Realm,
 	)
 	if err != nil {
 		switch {
@@ -84,6 +88,7 @@ func (backend *externalAuthBackend) CreateExternalLogin(ctx context.Context, acc
 	token, err := backend.sessions.CreateExternalLogin(
 		ctx,
 		accountID,
+		identity.Realm,
 		identity.Provider,
 		identity.Subject,
 		identity.VerifiedEmail,

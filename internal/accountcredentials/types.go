@@ -60,8 +60,41 @@ const (
 	IdentityProviderDevelopment  IdentityProvider = "development"
 )
 
-// DevelopmentRole selects the exact isolated identity injected while browser
-// authentication is disabled on a loopback API Server.
+// ApplicationRealm identifies the frontend authorization realm selected for an
+// interactive login. A realm is part of the durable external-identity lookup
+// key; it is not inferred from a return path after provider verification.
+type ApplicationRealm string
+
+const (
+	ApplicationRealmMember ApplicationRealm = "member"
+	ApplicationRealmAdmin  ApplicationRealm = "admin"
+)
+
+// ParseApplicationRealm accepts only the two canonical realm values. In
+// particular, it does not accept aliases or normalize caller-controlled text.
+func ParseApplicationRealm(value string) (ApplicationRealm, error) {
+	realm := ApplicationRealm(value)
+	switch realm {
+	case ApplicationRealmMember, ApplicationRealmAdmin:
+		return realm, nil
+	default:
+		return "", fmt.Errorf("unsupported application realm %q; expected member or admin", value)
+	}
+}
+
+// Administrator returns the persisted role dimension represented by the
+// realm, rejecting invalid typed values instead of silently treating them as
+// member access.
+func (realm ApplicationRealm) Administrator() (bool, error) {
+	parsed, err := ParseApplicationRealm(string(realm))
+	if err != nil {
+		return false, err
+	}
+	return parsed == ApplicationRealmAdmin, nil
+}
+
+// DevelopmentRole identifies one of the two isolated accounts created while
+// browser authentication is disabled on a loopback API Server.
 type DevelopmentRole string
 
 const (
@@ -71,18 +104,6 @@ const (
 	DevelopmentMemberUsername        = "local-user"
 	DevelopmentAdministratorUsername = "local-admin"
 )
-
-// ParseDevelopmentRole validates the disabled-auth role without accepting
-// aliases that could silently select a more privileged identity.
-func ParseDevelopmentRole(value string) (DevelopmentRole, error) {
-	role := DevelopmentRole(strings.TrimSpace(value))
-	switch role {
-	case DevelopmentRoleMember, DevelopmentRoleAdministrator:
-		return role, nil
-	default:
-		return "", fmt.Errorf("unsupported disabled-auth role %q; expected member or administrator", value)
-	}
-}
 
 // Account is the internal, bearer-secret-free projection of one durable
 // Athena account. IdentitySubject is authentication state and must not be
@@ -135,8 +156,12 @@ func NormalizeIdentitySubject(provider IdentityProvider, subject string) (string
 }
 
 // NormalizeExternalIdentity validates and canonicalizes a complete login
-// identity before it is written to PostgreSQL.
-func NormalizeExternalIdentity(provider IdentityProvider, subject, verifiedEmail string, administrator bool) (string, string, error) {
+// identity for one explicit application realm before it is written to
+// PostgreSQL.
+func NormalizeExternalIdentity(provider IdentityProvider, subject, verifiedEmail string, realm ApplicationRealm) (string, string, error) {
+	if _, err := ParseApplicationRealm(string(realm)); err != nil {
+		return "", "", err
+	}
 	subject, err := NormalizeIdentitySubject(provider, subject)
 	if err != nil {
 		return "", "", err
@@ -148,8 +173,8 @@ func NormalizeExternalIdentity(provider IdentityProvider, subject, verifiedEmail
 			return "", "", fmt.Errorf("verified Google email is required")
 		}
 	case IdentityProviderSolanaWallet:
-		if administrator {
-			return "", "", fmt.Errorf("Solana wallet identities cannot be administrators")
+		if realm != ApplicationRealmMember {
+			return "", "", fmt.Errorf("Solana wallet identities cannot authenticate the administrator realm")
 		}
 		if verifiedEmail != "" {
 			return "", "", fmt.Errorf("Solana wallet identities cannot have a verified email")
@@ -158,13 +183,22 @@ func NormalizeExternalIdentity(provider IdentityProvider, subject, verifiedEmail
 	return subject, verifiedEmail, nil
 }
 
+// ApplicationRealm derives the account's immutable frontend realm from its
+// persisted administrator role.
+func (a Account) ApplicationRealm() ApplicationRealm {
+	if a.Administrator {
+		return ApplicationRealmAdmin
+	}
+	return ApplicationRealmMember
+}
+
 // HasExternalIdentity reports whether the account can resolve a supported
 // external login identity.
 func (a Account) HasExternalIdentity() bool {
 	if a.IdentityProvider != IdentityProviderGoogle && a.IdentityProvider != IdentityProviderSolanaWallet {
 		return false
 	}
-	_, _, err := NormalizeExternalIdentity(a.IdentityProvider, a.IdentitySubject, a.VerifiedEmail, a.Administrator)
+	_, _, err := NormalizeExternalIdentity(a.IdentityProvider, a.IdentitySubject, a.VerifiedEmail, a.ApplicationRealm())
 	return err == nil
 }
 

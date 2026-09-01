@@ -40,21 +40,31 @@ with login enabled and no business, API Key, or Profit Sharing access. The UUID 
 internal identity used by sessions, authorization, API Keys, Wallet, and Profit Sharing;
 the UI displays `@username` instead.
 
-When the verified email matches `ATHENA_ADMIN_GOOGLE_EMAIL`, the registration ticket marks
-that identity as the administrator candidate. Its submitted account is created with
+The Google entry selects the account realm before provider verification. The member entry
+always resolves or creates an ordinary Pending persona, including for the configured
+administrator email. The administrator entry accepts an unknown identity only when its
+verified email matches `ATHENA_ADMIN_GOOGLE_EMAIL`; its submitted account is created with
 `administrator=true`, login enabled, and no member modules, API Key, or Profit Sharing
-entitlement; no username confers the role. The
-persisted Google subject is permanent after registration. A Phantom account similarly keeps
-one permanent canonical Solana address, with no merge, rebind, transfer, or recovery path.
+entitlement. The same Google subject may therefore own two independent UUIDs and globally
+unique usernames. No username confers a role. A Phantom account is member-only and keeps one
+permanent canonical Solana address, with no merge, rebind, transfer, or recovery path.
 Email comparison trims surrounding whitespace and ignores case, but does not normalize
 Gmail dots or `+alias` values. When
 authentication is enabled, missing OIDC settings or administrator email prevent the API
-Server from listening. Setting `ATHENA_SERVER_DISABLE_AUTH=true` creates the isolated
-development identity selected by `ATHENA_SERVER_DISABLE_AUTH_ROLE=member|administrator`
-and does not require Google configuration. The default `member` role uses `local-user`
-with maximum member grants; `administrator` uses management-only `local-admin`. That mode is
-accepted only when the API Server listens on `localhost`, `127.0.0.0/8`, or `::1`; reset all
-local state before switching back to OIDC. The local Procfile defaults to `127.0.0.1`.
+Server from listening. Setting `ATHENA_SERVER_DISABLE_AUTH=true` creates or reuses both
+isolated development identities and does not require Google configuration. Requests from
+the member application use `local-user` with maximum member grants; requests from the
+administrator application use management-only `local-admin`. There is no disabled-auth
+role selector. This mode is accepted only when the API Server listens on `localhost`,
+`127.0.0.0/8`, or `::1`; reset all local state before switching back to OIDC. The local
+Procfile defaults to `127.0.0.1`.
+
+Every request that needs an identity carries exactly one
+`X-Athena-Application-Realm: member|admin` header. The two browser applications add it
+automatically. Private image GETs and EventSource connections, whose browser APIs cannot
+set that header, use `athenaRealm=member|admin`; if a request supplies both transports they
+must agree. Missing, duplicated, invalid, or conflicting values never fall back to a
+default identity.
 
 The direct client-secret variable is permitted only for local development. To exercise the
 file-based path instead, leave it empty, write the secret to a separate `0600` file, and set
@@ -103,6 +113,19 @@ and username availability. The callback URI must continue to use port `4000`; it
 `http://localhost:4000` origin is also the trusted SIWS domain/URI. Athena never derives
 either trust boundary from `Host` or forwarded headers.
 
+With `ATHENA_SERVER_DISABLE_AUTH=true`, both local applications are immediately usable:
+
+- Member: `http://localhost:4000/`
+- Administrator: `http://localhost:4000/admin/`
+
+They may remain open at the same time because each request selects its own development
+identity. For direct API calls, include the matching header, for example:
+
+```bash
+curl -H 'X-Athena-Application-Realm: member' http://localhost:4000/api/v1/app/bootstrap
+curl -H 'X-Athena-Application-Realm: admin' http://localhost:4000/api/v1/app/bootstrap
+```
+
 An unknown identity first lands on `/register`. Google registrations display verified
 email; Phantom registrations display a copyable Solana address. After the user chooses an
 available permanent username and account creation succeeds, the new account lands on
@@ -129,6 +152,8 @@ next startup; the application never performs that destructive reset automaticall
 
 Supported variables:
 
+- `ATHENA_SERVER_DISABLE_AUTH` default in the Procfile: `false`; set `true` only for the
+  loopback dual-identity development mode described above
 - `ATHENA_REDIS_PORT` default: `6379`
 - `ATHENA_REDIS_IMAGE_TAG` default: `8.2.3`
 - `ATHENA_POSTGRES_PORT` default: `5432`

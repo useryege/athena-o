@@ -520,7 +520,7 @@ func validateWormExecutionReturnTo(raw, runID string) string {
 	if raw == "" {
 		return fallback
 	}
-	validated := authregistration.ValidateReturnTo(raw)
+	validated := authregistration.ReturnToForRealm(raw, accountcredentials.ApplicationRealmMember)
 	if validated == authregistration.DefaultReturnTo && raw != authregistration.DefaultReturnTo {
 		return fallback
 	}

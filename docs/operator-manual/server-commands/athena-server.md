@@ -35,7 +35,6 @@ athena-server [flags]
       --content-security-policy value                  Set Content-Security-Policy header in HTTP responses to value. To disable, set to "". (default "frame-ancestors 'self';")
       --default-cache-expiration duration              Cache expiration default (default 24h0m0s)
       --disable-auth                                   Disable client authentication
-      --disable-auth-role string                       Development identity role used when authentication is disabled (member or administrator) (default "member")
       --enable-gzip                                    Enable GZIP compression (default true)
       --etherscan-api-keys string                      Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs
       --etherscan-gateway-auth-token string            Bearer token for Etherscan Gateway gRPC status calls
@@ -68,6 +67,27 @@ athena-server [flags]
       --worm-markets-server-address string             Athena Worm Markets server address (default "127.0.0.1:8084")
       --x-frame-options value                          Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
 ```
+
+### Disabled-auth development mode
+
+`--disable-auth` is restricted to non-Compose development processes listening on a
+loopback address. At startup, the server creates or reuses both isolated development
+accounts: `local-user` for the member application and `local-admin` for the
+administrator application. There is no role-selection flag or environment variable.
+
+Every disabled-auth request must select its application realm explicitly with
+`X-Athena-Application-Realm: member` or
+`X-Athena-Application-Realm: admin`. Browser transports that cannot set headers use
+the `athenaRealm` query parameter for private avatar GETs and EventSource requests.
+When both forms are present they must agree. Missing, invalid, repeated, or conflicting
+realm values do not fall back to either identity.
+
+With disabled auth enabled, `make run` serves the member application at `/` and the
+administrator application at `/admin/` at the same time; each frontend supplies its
+own realm. Before returning to normal authentication, run `make run-reset` so the
+persisted development identities cannot conflict with the authenticated account
+directory. Production Compose keeps authentication enabled, and deployment tooling
+rejects attempts to enable disabled-auth mode.
 
 ### SEE ALSO
 

@@ -5,7 +5,7 @@ import googleMark from '../../../assets/images/google-g.svg';
 import phantomMark from '../../../assets/images/phantom-mark.svg';
 import {BrandMark} from '../../components';
 import {readLoginReturnTo} from '../../shared/login-navigation';
-import requests, {ACCOUNT_MAINTENANCE_MESSAGE} from '../../shared/services/requests';
+import requests, {ACCOUNT_MAINTENANCE_MESSAGE, APPLICATION_REALM_HEADER, APPLICATION_REALM_QUERY} from '../../shared/services/requests';
 
 type LoginMethod = 'google' | 'phantom';
 type PhantomLoginReason =
@@ -88,7 +88,7 @@ const postPhantom = async (path: string, body: Record<string, unknown>, signal: 
     const response = await fetch(requests.toAbsURL(path), {
         method: 'POST',
         credentials: 'same-origin',
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json', [APPLICATION_REALM_HEADER]: 'member'},
         body: JSON.stringify(body),
         signal
     });
@@ -141,7 +141,7 @@ export const LoginPage = () => {
         setLocalReason(undefined);
         setPhantomStage('');
         setLoadingMethod('google');
-        const query = new URLSearchParams({returnTo: readLoginReturnTo(location.search)});
+        const query = new URLSearchParams({returnTo: readLoginReturnTo(location.search), [APPLICATION_REALM_QUERY]: 'member'});
         window.location.assign(`${requests.toAbsURL('/auth/google/login')}?${query.toString()}`);
     };
 

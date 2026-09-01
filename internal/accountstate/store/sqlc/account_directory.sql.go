@@ -108,7 +108,7 @@ WITH inserted_account AS (
     $4::text,
     TRUE
   )
-  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject, administrator) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
@@ -454,7 +454,7 @@ WITH inserted_account AS (
     $4::text,
     FALSE
   )
-  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject, administrator) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
@@ -579,15 +579,17 @@ SELECT account_id,
 FROM athena_account
 WHERE identity_provider = $1::text
   AND identity_subject = $2::text
+  AND administrator = $3::boolean
 `
 
 type GetAccountByIdentityParams struct {
 	IdentityProvider string
 	IdentitySubject  string
+	Administrator    bool
 }
 
 func (q *Queries) GetAccountByIdentity(ctx context.Context, arg GetAccountByIdentityParams) (AthenaAccount, error) {
-	row := q.db.QueryRow(ctx, getAccountByIdentity, arg.IdentityProvider, arg.IdentitySubject)
+	row := q.db.QueryRow(ctx, getAccountByIdentity, arg.IdentityProvider, arg.IdentitySubject, arg.Administrator)
 	var i AthenaAccount
 	err := row.Scan(
 		&i.AccountID,
@@ -888,6 +890,7 @@ SET verified_email = $1::text,
 WHERE account_id = $2::uuid
   AND identity_provider = $3::text
   AND identity_subject = $4::text
+  AND administrator = $5::boolean
   AND EXISTS (
     SELECT 1
     FROM account_access
@@ -910,6 +913,7 @@ type RecordAccountLoginParams struct {
 	AccountID        pgtype.UUID
 	IdentityProvider string
 	IdentitySubject  string
+	Administrator    bool
 }
 
 func (q *Queries) RecordAccountLogin(ctx context.Context, arg RecordAccountLoginParams) (AthenaAccount, error) {
@@ -918,6 +922,7 @@ func (q *Queries) RecordAccountLogin(ctx context.Context, arg RecordAccountLogin
 		arg.AccountID,
 		arg.IdentityProvider,
 		arg.IdentitySubject,
+		arg.Administrator,
 	)
 	var i AthenaAccount
 	err := row.Scan(

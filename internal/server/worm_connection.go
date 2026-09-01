@@ -15,13 +15,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
-	httputil "github.com/useryege/athena/util/http"
 	utilsession "github.com/useryege/athena/util/session"
 )
 
@@ -443,7 +441,11 @@ func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
 		if !requestIsLoopback(request) {
 			return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrWormLoginSessionRequired
 		}
-		ctx := withDisabledAuthClaims(request.Context(), server.developmentAccountID)
+		developmentAccountID, err := server.developmentAccountIDFromHTTPRequest(request, false)
+		if err != nil {
+			return request.Context(), accountcredentials.AuthenticatedCredential{}, err
+		}
+		ctx := withDisabledAuthClaims(request.Context(), developmentAccountID)
 		credential, ok := utilsession.AuthenticatedCredentialFromContext(ctx)
 		if !ok || !credential.IsInteractiveLogin() {
 			return ctx, accountcredentials.AuthenticatedCredential{}, walletsecret.ErrWormLoginSessionRequired
@@ -460,11 +462,7 @@ func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
 		return ctx, credential, nil
 	}
 
-	token, err := httputil.JoinCookies(common.AuthCookieName, request.Cookies())
-	if err != nil || token == "" {
-		return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrWormLoginSessionRequired
-	}
-	claims, credential, err := server.sessionMgr.AuthenticateToken(token)
+	claims, credential, err := server.authenticateRealmLoginCookie(request, false)
 	if err != nil || !credential.IsInteractiveLogin() {
 		return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrWormLoginSessionRequired
 	}

@@ -5,7 +5,9 @@
 Solana Wallet Authentication is a member-application identity provider. It is
 offered at `/login` and participates in the shared `/register` username flow;
 the administrator application exposes Google only and never loads, connects,
-or signs through Phantom.
+or signs through Phantom. Every Phantom identity, registration ticket, durable
+lookup, login session, return target, and cookie is fixed to the `member`
+application realm.
 
 Solana Wallet Authentication lets an anonymous browser prove control of one
 Solana public key through the injected Phantom extension and then enter Athena's
@@ -72,7 +74,10 @@ prefix.
 Every verified address is an independent external identity. It cannot be
 merged with a Google account, bound as a second credential, or used to recover
 another account. Athena account UUID remains the only key for authorization,
-API Keys, profiles, Wallet ownership, and Profit Sharing relationships.
+API Keys, profiles, Wallet ownership, and Profit Sharing relationships. Its
+durable lookup key is `(solana_wallet, canonical address, member)`, represented
+by `(identity_provider, identity_subject, administrator=false)` in PostgreSQL;
+no Solana lookup or ticket can enter the administrator realm.
 
 The wallet-secret branch is available only after an Athena login cookie and
 Wallet `READ_WRITE` authorization. It obtains the Solana address from the
@@ -117,12 +122,15 @@ management lease nor asks Phantom to sign a transaction.
    times and compares it with the stored text. It then requires canonical raw-
    base64url for exactly 64 signature bytes, decodes exactly 32 public-key bytes,
    and verifies the saved UTF-8 message with Ed25519.
-6. A known ordinary identity passes current login-access checks and receives an Athena
-   JWT cookie plus the saved return path. An unknown address receives only a
-   shared 15-minute registration ticket and is sent to `/register`.
-7. Username submission creates the complete Pending account aggregate. Only
-   after PostgreSQL commit and runtime publication does Athena consume the
-   registration ticket and issue a login cookie.
+6. A known member identity passes current login-access checks and receives an
+   Athena JWT in `athena.token.member` plus the saved non-admin return path. An
+   unknown address receives only a 15-minute registration ticket whose identity
+   realm is `member` and is sent to `/register?athenaRealm=member`. The query is
+   only an anonymous restart hint; the ticket remains authoritative.
+7. Username submission creates the complete Pending member account aggregate.
+   Only after PostgreSQL commit and runtime publication does Athena consume the
+   registration ticket and issue `athena.token.member`; it never writes or
+   replaces `athena.token.admin`.
 8. For private-key access, the logged-in browser posts an empty object to
    `/auth/wallet-secrets/solana/challenge`. Athena repeats login and Wallet
    `READ_WRITE` authorization, loads the persisted identity address, and creates
@@ -164,12 +172,12 @@ client key is a SHA-256 digest of the canonical client network address; neither
 the raw client address nor wallet identity becomes a Redis rate-key suffix or
 metric label.
 
-The shared 15-minute registration ticket contains provider, identity subject,
-verified email, administrator-candidate flag, return path, CSRF secret, and
-creation time. Solana tickets always have an empty email and a false
-administrator candidate. The registration handler derives `solanaAddress` from
-the server-held subject for the anonymous setup response. PostgreSQL stores the
-canonical address as the `solana_wallet` identity subject; Account and Session
+The 15-minute registration ticket contains provider, identity subject, verified
+email, application realm, return path, CSRF secret, and creation time. Solana
+tickets always have an empty email and the fixed `member` realm. The
+registration handler derives `solanaAddress` from the server-held subject for
+the anonymous setup response. PostgreSQL stores the canonical address as the
+`solana_wallet` identity subject with `administrator=false`; Account and Session
 APIs expose it through the provider-specific `solanaAddress` projection only to
 the account owner or administrators. Successful Solana registration always
 creates an ordinary member account and returns to `/account/access`.
@@ -226,6 +234,9 @@ and both lease-producing proof flows.
   wallet-secret namespace, with no raw account UUID in its counter key.
 - Google and Solana identities never resolve to or create the same account.
 - A Solana identity can never create or become the administrator.
+- Phantom fixes identity lookup, registration, session issuance, return routing,
+  and `athena.token.member` cookie selection to the member realm. It never reads,
+  writes, or clears the administrator login cookie.
 - The administrator login and bundle never expose or initialize Phantom.
 - The address is permanent and cannot be replaced, recovered, or transferred.
 - Wallet signatures and opaque challenge identifiers never enter an Athena JWT

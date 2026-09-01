@@ -9,9 +9,8 @@ Google OIDC and Phantom Solana authentication remain API Server behavior, while
 the local runtime supplies the fixed public origin, Redis OAuth/challenge/shared-
 registration plus Wallet/Worm step-up and execution-proof stores, durable account, Wallet, and
 Worm Trading databases, private account/wallet avatar storage, and reset
-boundary required by the two role-selected disabled-auth identities. The runtime
-also
-supplies Worm Trading's independent internal Bearer, credential-encryption key,
+boundary required by the two realm-selected disabled-auth identities. The runtime
+also supplies Worm Trading's independent internal Bearer, credential-encryption key,
 mainnet Solana RPC endpoint, and a second Wallet capability Bearer used only by
 the live-execution signer.
 
@@ -21,7 +20,8 @@ the live-execution signer.
 | --- | --- | --- |
 | User entry points | [Makefile](../../../Makefile) | `run`, `stop`, `run-reset` |
 | Process graph | [Procfile](../../../Procfile) | `athena-server`, migrations, UI, business services |
-| Dual frontend development entry | [ui/vite.config.ts](../../../ui/vite.config.ts), [ui/src/app/index.html](../../../ui/src/app/index.html), [ui/src/app/admin/index.html](../../../ui/src/app/admin/index.html) | member `/`, administrator `/admin`, realm-aware history fallback |
+| Dual frontend development entry | [ui/vite.config.ts](../../../ui/vite.config.ts), [ui/src/app/index.html](../../../ui/src/app/index.html), [ui/src/app/admin/index.html](../../../ui/src/app/admin/index.html), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | member `/`, administrator `/admin`, realm-aware history fallback and request transport |
+| Disabled-auth realm selection | [internal/server/application_realm.go](../../../internal/server/application_realm.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | strict header/query parsing, gateway adaptation, native HTTP projection, realm-to-development-account lookup |
 | Runtime controller | [hack/local-runtime.sh](../../../hack/local-runtime.sh) | local lifecycle, stop/reset, and exclusion handling |
 | PostgreSQL and Redis helpers | [hack/start-postgres-with-password.sh](../../../hack/start-postgres-with-password.sh), [hack/start-redis-with-password.sh](../../../hack/start-redis-with-password.sh) | persistent local containers and config fingerprints |
 | MinIO runtime | [hack/start-minio.sh](../../../hack/start-minio.sh) | private avatar bucket and application credential |
@@ -79,12 +79,16 @@ authenticated: both Procfile processes receive the same explicit development
 every call, and Wallet rejects every non-health RPC that does not match. Wallet
 itself defaults to a loopback listener.
 
-Disabled-auth startup parses `ATHENA_SERVER_DISABLE_AUTH_ROLE` only when
-authentication is disabled. `member` injects `local-user`; `administrator`
-injects `local-admin`. Both complete development aggregates may coexist, and a
-server restart can select the other one without rewriting either row. Returning
-to external authentication still requires a clean account-state database
-because normal mode rejects every development identity.
+Disabled-auth startup always creates or reuses both complete development
+aggregates: member realm `local-user` and administrator realm `local-admin`.
+Every browser/API request selects one of those identities with the exact
+`X-Athena-Application-Realm: member|admin` header. Private image GETs and
+EventSource requests that cannot attach a custom header carry the same value in
+`athenaRealm`; duplicate, missing, invalid, or conflicting realm transports do
+not authenticate. The API gateway removes the EventSource-only query before
+protobuf query decoding, while native account and Wallet avatar GETs validate
+it directly. Returning to external authentication still requires a clean
+account-state database because normal mode rejects every development identity.
 
 The API Server independently refuses disabled authentication on a non-loopback
 listener. Production deployment adds a second boundary:
@@ -126,24 +130,29 @@ HMAC credential, Web JWT, transaction, or Wallet execution-signer token.
 3. `make run` creates/reuses fixed named dependency volumes, applies current
    migrations, starts the API Server and business services, and serves the
    member UI at `http://localhost:4000/` and administrator UI at
-   `http://localhost:4000/admin/`. `ATHENA_RUN_EXCLUDE` produces a filtered
-   process graph when a component is run separately in an IDE. This normal run path
-   never invokes `make run-reset`, deletes a volume, or silently replaces
-   incompatible state; it fails until the operator performs the explicit reset.
-4. A known Google subject or verified Solana address logs into its own persisted
-   UUID account. An unknown identity receives only a shared 15-minute
+   `http://localhost:4000/admin/`. With disabled authentication, both are
+   directly usable at the same time: each frontend sends its own application
+   realm and receives the matching local identity. `ATHENA_RUN_EXCLUDE`
+   produces a filtered process graph when a component is run separately in an
+   IDE. This normal run path never invokes `make run-reset`, deletes a volume,
+   or silently replaces incompatible state; it fails until the operator
+   performs the explicit reset.
+4. A known provider subject in the selected application realm logs into its own
+   persisted UUID account. An unknown identity receives only a shared 15-minute
    registration ticket and visits `/register` to choose a permanent username.
    PostgreSQL generates the UUID and commits the complete account aggregate only
    after that username is submitted. Google and Solana identities never merge.
    Wallet create/import subsequently stores rows in the separate `wallet`
    database under that account UUID; no role or seed row creates a cross-user or
    system wallet.
-5. If a verified Google email matches `ATHENA_ADMIN_GOOGLE_EMAIL`, its ticket
-   marks the administrator candidate. Successful username submission creates
-   the sole `administrator=true` account with login enabled and every member
-   entitlement and module disabled. Phantom tickets
-   are always ordinary and, like other registrations, create Pending accounts.
-   The empty normal database contains no precreated identity.
+5. The member entry always creates an ordinary Pending ticket, even for the
+   configured administrator email. The admin entry admits an unknown Google
+   identity only when its verified email matches `ATHENA_ADMIN_GOOGLE_EMAIL`;
+   successful username submission creates the sole `administrator=true`
+   account with login enabled and every member entitlement and module disabled.
+   Phantom tickets are always member-realm Pending accounts. The same Google
+   subject may own independent member and admin UUIDs and usernames. The empty
+   normal database contains no precreated identity.
 6. `make stop` terminates the process graph and containers while preserving
    dependency volumes for the next run. `make run-reset` is required when a
    storage initialization fingerprint or current-state schema requires a clean
@@ -237,10 +246,9 @@ isolation, so the operator must inspect and reconcile Worm first.
 | `ATHENA_GOOGLE_OIDC_CLIENT_SECRET` | Direct local-development client secret. |
 | `ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE` | Alternative secret-file input. The direct value takes precedence when both are present. |
 | `ATHENA_GOOGLE_OIDC_REDIRECT_URI` | `http://localhost:4000/auth/google/callback`; it must exactly match Google Cloud. |
-| `ATHENA_ADMIN_GOOGLE_EMAIL` | Verified email marked as the administrator candidate only for an unknown subject's registration ticket. It creates the sole role-bearing account when username setup commits. |
+| `ATHENA_ADMIN_GOOGLE_EMAIL` | Verified email allowed to create the sole administrator persona when an unknown Google subject enters through the admin realm. It does not restrict or promote the subject's independent member persona. |
 | `ATHENA_JWT_SECRET` | Stable local HS256 key; rotation invalidates all cookies and API Keys. |
-| `ATHENA_SERVER_DISABLE_AUTH` | Optional loopback-only mode. With `true`, OIDC and administrator-email settings are not required; startup creates/reuses the development identity selected by `ATHENA_SERVER_DISABLE_AUTH_ROLE`. |
-| `ATHENA_SERVER_DISABLE_AUTH_ROLE`, `--disable-auth-role` | Selects `member` (`local-user`, maximum member grants) or `administrator` (`local-admin`, management-only). Default `member`; any other value fails startup. |
+| `ATHENA_SERVER_DISABLE_AUTH` | Optional loopback-only mode. With `true`, OIDC and administrator-email settings are not required; startup creates/reuses both `local-user` and `local-admin`, and explicit request realm selects between them. |
 | `ATHENA_SERVER_POSTGRES_DSN` | Shared account-state PostgreSQL connection used by the API Server. |
 | Redis configuration | Supplies revocation, one-time login/scoped reauthentication/Run-proof state, independent fixed Wallet/Worm leases, and username-registration tickets. |
 | `ATHENA_WALLET_ENCRYPTION_KEY` | Required Wallet process passphrase used by the custodial encryption boundary; changing it makes existing Wallet ciphertext unreadable. |
@@ -303,9 +311,9 @@ production use different Web application clients.
   deletes the complete local current-state deployment.
 - Disabled-auth identities are development-only and loopback-only. Normal
   external-authentication startup rejects either identity, so switching modes
-  requires `make run-reset`. Only the selected identity is injected into
-  requests, and it still passes normal role/module authorization. Its Worm-
-  management HTTP boundary additionally requires the
+  requires `make run-reset`. Every request explicitly selects its member or
+  administrator development identity, and that identity still passes normal
+  role/module authorization. Its Worm-management HTTP boundary additionally requires the
   exact `http://localhost:4000` Origin.
 - Wallet defaults to `127.0.0.1`, and all non-health internal Wallet RPCs require
   the Procfile's shared service Bearer even when browser authentication is
@@ -327,13 +335,14 @@ production use different Web application clients.
 
 ## Failure Recovery
 
-An invalid disabled-auth role fails startup before account injection. A
-non-loopback listener also fails before development identity use, while the
-production deployment guard rejects disabled authentication before Compose
-startup. Selecting `administrator` additionally fails if the database already
-contains the unique Google administrator. Select `member` or reset the
-development account-state database; the runtime never converts or demotes an
-existing account.
+Disabled-auth startup fails if either complete development identity cannot be
+created or loaded. In particular, `local-admin` cannot be created beside an
+existing unique Google administrator; reset the development account-state
+database instead of converting or demoting an existing account. A request with
+no realm, an unsupported value, duplicate values, or mismatched header/query
+values receives no development identity. A non-loopback listener also fails
+before development identity use, while the production deployment guard rejects
+disabled authentication before Compose startup.
 
 A Redis outage blocks new OAuth transactions, Phantom challenges, registration-
 ticket reads, registration submission, wallet-secret proof, and private-key
@@ -432,7 +441,7 @@ was performed as part of implementation validation.
 ## Change Checklist
 
 - [ ] Local lifecycle and named-volume semantics match the scripts.
-- [ ] OIDC, SIWS, shared username registration, administrator candidacy, role-selected disabled auth, and reset guidance remain current.
+- [ ] OIDC, SIWS, realm-bound username registration, administrator-realm admission, realm-selected disabled auth, and reset guidance remain current.
 - [ ] Wallet database, both sensitive leases, Run-proof state, private avatar, and fresh-deployment boundaries remain current.
 - [ ] Worm Trading listener, database, encryption key, internal tokens, fixed official HMAC/Web services, service-only mainnet RPC, health/status, and port/coverage cleanup remain current.
 - [ ] The capability-scoped Wallet signer token remains different from the general token and reaches only Wallet and Worm Trading.

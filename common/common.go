@@ -74,8 +74,15 @@ const (
 const (
 	// AthenaUserAgentName is the default user-agent name used by the gRPC API client library and grpc-gateway
 	AthenaUserAgentName = "athena-client"
-	// AuthCookieName is the HTTP cookie name where we store our auth token
-	AuthCookieName = "athena.token"
+	// MemberAuthCookieName stores the ordinary-account browser session.
+	MemberAuthCookieName = "athena.token.member"
+	// AdministratorAuthCookieName stores the administrator browser session.
+	AdministratorAuthCookieName = "athena.token.admin"
+	// ApplicationRealmHeader selects the browser application realm for a request.
+	ApplicationRealmHeader = "X-Athena-Application-Realm"
+	// ApplicationRealmQueryParameter carries the realm for browser APIs such as
+	// EventSource and private images that cannot attach custom headers.
+	ApplicationRealmQueryParameter = "athenaRealm"
 )
 
 // Auth endpoint constants

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/internal/accountaccess"
@@ -38,14 +37,10 @@ func newWalletAvatarHandler(ctx context.Context, server *AthenaServer) (*walleta
 }
 
 func (server *AthenaServer) authenticateWalletAvatarHTTP(request *http.Request, write bool) (context.Context, string, error) {
-	md := metadata.MD{}
-	if authorization := request.Header.Get("Authorization"); authorization != "" {
-		md.Set("authorization", authorization)
+	ctx, err := authenticationContextFromHTTPRequest(request, request.Method == http.MethodGet)
+	if err != nil {
+		return request.Context(), "", err
 	}
-	if cookie := request.Header.Get("Cookie"); cookie != "" {
-		md.Set("grpcgateway-cookie", cookie)
-	}
-	ctx := metadata.NewIncomingContext(request.Context(), md)
 	authenticated, err := server.Authenticate(ctx)
 	if err != nil {
 		return authenticated, "", err

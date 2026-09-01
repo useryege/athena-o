@@ -148,6 +148,10 @@ func (h *wormExecutionAuthorization) begin(w http.ResponseWriter, r *http.Reques
 		h.redirectFailure(w, r, returnTo, WormExecutionAuthorizationRequiredReason, "expected_revision")
 		return
 	}
+	if err := bindMemberApplicationRealmFromQuery(r); err != nil {
+		h.redirectFailure(w, r, returnTo, WormExecutionLoginSessionRequiredReason, "application_realm")
+		return
+	}
 	_, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
@@ -214,6 +218,7 @@ func (h *wormExecutionAuthorization) callback(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	bindMemberApplicationRealm(r)
 	state := r.URL.Query().Get("state")
 	cookie, cookieErr := r.Cookie(wormExecutionStateCookieName)
 	h.clearStateCookie(w)
@@ -363,7 +368,7 @@ func validateWormExecutionReturnTo(raw, runID string) string {
 	if raw == "" {
 		return fallback
 	}
-	validated := authregistration.ValidateReturnTo(raw)
+	validated := authregistration.ReturnToForRealm(raw, accountcredentials.ApplicationRealmMember)
 	if validated == authregistration.DefaultReturnTo && raw != authregistration.DefaultReturnTo {
 		return fallback
 	}

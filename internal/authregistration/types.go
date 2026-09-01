@@ -11,7 +11,7 @@ import (
 const (
 	// DefaultReturnTo is the safe fallback after authentication and registration.
 	DefaultReturnTo = "/account/access"
-	// AdministratorDefaultReturnTo is the safe landing for administrator candidates.
+	// AdministratorDefaultReturnTo is the safe landing for the administrator realm.
 	AdministratorDefaultReturnTo = "/admin/accounts"
 
 	LoginSuccess = "success"
@@ -35,10 +35,10 @@ var (
 // by the registration HTTP API; a Solana subject is separately exposed as its
 // public wallet address where presentation requires it.
 type Identity struct {
-	Provider               accountcredentials.IdentityProvider `json:"provider"`
-	Subject                string                              `json:"subject"`
-	VerifiedEmail          string                              `json:"verifiedEmail"`
-	AdministratorCandidate bool                                `json:"administratorCandidate"`
+	Provider      accountcredentials.IdentityProvider `json:"provider"`
+	Subject       string                              `json:"subject"`
+	VerifiedEmail string                              `json:"verifiedEmail"`
+	Realm         accountcredentials.ApplicationRealm `json:"realm"`
 }
 
 // Validate checks the identity invariant before it enters a Redis ticket or a
@@ -48,7 +48,7 @@ func (identity Identity) Validate() error {
 		identity.Provider,
 		identity.Subject,
 		identity.VerifiedEmail,
-		identity.AdministratorCandidate,
+		identity.Realm,
 	)
 	if err != nil {
 		return fmt.Errorf("invalid external identity: %w", err)
@@ -59,8 +59,8 @@ func (identity Identity) Validate() error {
 	return nil
 }
 
-// Account is the minimum durable projection needed at the authentication
-// boundary. Username and role never participate in login resolution.
+// Account is the minimum durable projection needed after realm-aware identity
+// resolution. Username never participates in login resolution.
 type Account struct {
 	ID string
 }
@@ -70,7 +70,7 @@ type Account struct {
 // RegisterExternalAccount and publish access before registration is consumed.
 type Backend interface {
 	GetByIdentity(ctx context.Context, identity Identity) (Account, bool, error)
-	UsernameAvailable(ctx context.Context, username string, administrator bool) (bool, error)
+	UsernameAvailable(ctx context.Context, username string, realm accountcredentials.ApplicationRealm) (bool, error)
 	RegisterExternalAccount(ctx context.Context, identity Identity, username string) (Account, error)
 	RegisterCommittedAccess(ctx context.Context, accountID string) error
 	CreateExternalLogin(ctx context.Context, accountID string, identity Identity) (string, error)

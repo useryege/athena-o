@@ -28,6 +28,7 @@ endpoint, bucket name, or object key.
 | Account HTTP resource | [internal/server/accountavatarhttp/handler.go](../../../internal/server/accountavatarhttp/handler.go), [internal/server/accountavatarhttp/garbage_collector.go](../../../internal/server/accountavatarhttp/garbage_collector.go) | `Handler.Upload`, `Handler.Download`, `Handler.Delete`, `RunGarbageCollector` |
 | Wallet HTTP resource | [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go), [internal/server/walletavatarhttp/garbage_collector.go](../../../internal/server/walletavatarhttp/garbage_collector.go) | `Handler.Upload`, `Handler.Download`, `Handler.Delete`, `DeleteObjectBestEffort`, `RunGarbageCollector` |
 | Authentication and process wiring | [internal/server/account_avatar.go](../../../internal/server/account_avatar.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go) | `newPrivateAvatarStore`, `authenticateAccountAvatarHTTP`, `authenticateWalletAvatarHTTP`, route registration |
+| Browser realm-bound presentation | [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/shared/account-presentation.tsx](../../../ui/src/app/shared/account-presentation.tsx), [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx) | `realmBoundResourceURL`, `AccountAvatar`, uploaded Wallet and Worm avatar rendering |
 | Pinned object-store images | [deploy/minio/Dockerfile.server](../../../deploy/minio/Dockerfile.server), [deploy/minio/Dockerfile.mc](../../../deploy/minio/Dockerfile.mc) | MinIO commit `9e49d5e7a648`, mc commit `7394ce0dd2a8` |
 | Private bucket initialization | [deploy/minio/init-avatar-bucket.sh](../../../deploy/minio/init-avatar-bucket.sh) | bucket creation, anonymous-access removal, application IAM policy |
 | Local runtime | [hack/start-minio.sh](../../../hack/start-minio.sh), [hack/local-runtime.sh](../../../hack/local-runtime.sh) | pinned image bootstrap, `athena-local-minio-data`, stop/reset ownership checks |
@@ -63,6 +64,18 @@ derive the authenticated account UUID, and invoke trusted owner-scoped Wallet
 metadata methods. Wallet-avatar reads require Wallet `READ` or Worm Trading
 `READ`; writes require Wallet `READ_WRITE`. Neither route accepts an object key
 or owner UUID from public input.
+
+Interactive browser API requests attach
+`X-Athena-Application-Realm: member|admin`. Authentication-enabled servers use
+it to select the exact HttpOnly `athena.token.member` or `athena.token.admin`
+cookie; loopback disabled-auth selects the matching isolated development
+identity. Direct `<img>` requests cannot attach that header, so `AccountAvatar`,
+Wallet, Worm Trading, and Worm execution preview pass Athena-owned relative
+uploaded-avatar URLs through `realmBoundResourceURL`, which adds
+`athenaRealm=member|admin` and leaves external resources unchanged. Header and
+query values must agree when both are present. A realm selects a credential
+slot but does not change avatar ownership or module authorization. API Key
+bearers are authenticated directly and do not require a realm header or query.
 
 ## Runtime Flow
 
@@ -104,7 +117,12 @@ or owner UUID from public input.
    avatar without granting Wallet list, detail, or mutation access. Both stream
    persisted content type, size, ETag, `nosniff`, and private revalidation cache
    headers; matching `If-None-Match` returns 304. Missing wallet image bytes are
-   presented by the UI as the deterministic default avatar.
+   presented by the UI as the deterministic default avatar. Frontend API reads
+   use the realm header; browser-rendered AccountAvatar, Wallet, Worm page, and
+   Worm preview images use the `athenaRealm` query. Missing, duplicate, invalid,
+   or disagreeing realm selection fails authentication before object lookup and
+   never falls back to the other realm cookie. API Key reads require neither
+   transport.
 8. Account-avatar deletion clears the profile reference through profile CAS. Wallet
    avatar reset requires Wallet `READ_WRITE`, clears uploaded metadata and any
    preset through Wallet CAS, and returns the deterministic default state.
@@ -139,6 +157,12 @@ owner-scoped `wallets` row and are mutually exclusive with an avatar preset. An
 object-store write alone is only a candidate. MinIO data lives in
 `athena-local-minio-data` locally and `PROD_MINIO_VOLUME` in production.
 
+Avatar metadata exposes an Athena relative API URL, not a storage URL. The
+current frontend entry binds that relative resource to its realm only while
+rendering it. The persisted profile or Wallet row does not store
+`athenaRealm`, and external or browser-owned image URLs remain byte-for-byte
+unchanged.
+
 ## Configuration
 
 | Setting | Behavior |
@@ -171,7 +195,16 @@ The repository images build MinIO Server from commit
   grants an administrator bypass.
 - Wallet avatar reads require Wallet `READ` or Worm Trading `READ`; uploads,
   preset replacement, and reset require Wallet `READ_WRITE`. API Keys may use
-  these safe metadata operations when their account entitlements allow them.
+  these safe metadata operations when their account entitlements allow them and
+  do not require an application realm.
+- Interactive frontend avatar uploads, deletes, and header-capable reads carry
+  `X-Athena-Application-Realm`; direct browser image GETs carry `athenaRealm`.
+- The only accepted realm values are `member` and `admin`. Header/query
+  disagreement fails authentication, and the selected realm never grants
+  avatar access or permits fallback to the opposite HttpOnly cookie.
+- `AccountAvatar`, Wallet, Worm Trading, and Worm execution preview bind only
+  Athena-owned relative private resources; external, `data:`, and `blob:` URLs
+  are not modified.
 - Stored bytes have passed format, animation, byte, edge-dimension, at-most
   16,000,000-pixel, and full-decode validation.
 - A PostgreSQL CAS is the live-reference commit point. Compensation and
@@ -187,6 +220,11 @@ remark or preset edits, private-key reveal, Account Center metadata, or other
 API capabilities. Avatar reads and writes return an unavailable or not-found
 response as appropriate; wallet presentation falls back to its deterministic
 default.
+
+An interactive request with no valid application realm, or with mismatched
+header and query values, is rejected before private-object resolution. It does
+not inspect the opposite realm's cookie. This failure does not apply to a valid
+API Key bearer, which is authenticated without realm selection.
 
 A failed candidate write leaves PostgreSQL unchanged. A failed metadata update
 is reconciled before compensation so an ambiguous commit does not cause a live

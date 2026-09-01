@@ -77,6 +77,10 @@ func (h *walletSecretReauthentication) begin(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	if err := bindMemberApplicationRealmFromQuery(r); err != nil {
+		h.redirectFailure(w, r, returnTo, walletsecret.LoginSessionRequiredReason, "application_realm")
+		return
+	}
 	_, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		h.redirectFailure(w, r, returnTo, walletsecret.LoginSessionRequiredReason, "login_session")
@@ -133,6 +137,7 @@ func (h *walletSecretReauthentication) callback(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	bindMemberApplicationRealm(r)
 	state := r.URL.Query().Get("state")
 	cookie, cookieErr := r.Cookie(walletSecretStateCookieName)
 	h.clearStateCookie(w)
@@ -228,7 +233,7 @@ func (h *walletSecretReauthentication) redirectFailure(w http.ResponseWriter, r 
 }
 
 func validateWalletSecretReturnTo(raw string) string {
-	validated := authregistration.ValidateReturnTo(raw)
+	validated := authregistration.ReturnToForRealm(raw, accountcredentials.ApplicationRealmMember)
 	if raw == "" || validated == authregistration.DefaultReturnTo {
 		return walletSecretDefaultReturnTo
 	}

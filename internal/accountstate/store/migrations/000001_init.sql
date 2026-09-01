@@ -117,7 +117,7 @@ CREATE UNIQUE INDEX athena_account_username_lower_uidx
   ON athena_account (lower(username));
 
 CREATE UNIQUE INDEX athena_account_identity_uidx
-  ON athena_account (identity_provider, identity_subject)
+  ON athena_account (identity_provider, identity_subject, administrator)
   WHERE identity_subject IS NOT NULL;
 
 CREATE UNIQUE INDEX athena_account_single_administrator_uidx

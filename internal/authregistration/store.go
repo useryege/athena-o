@@ -224,7 +224,7 @@ func validateTicket(ticket Ticket) error {
 	if err := ticket.Identity.Validate(); err != nil {
 		return fmt.Errorf("registration ticket has an invalid identity: %w", err)
 	}
-	if ticket.ReturnTo == "" || ticket.ReturnTo != ValidateReturnTo(ticket.ReturnTo) || ticket.CSRFSecret == "" || ticket.CreatedAt.IsZero() {
+	if ticket.ReturnTo == "" || ticket.ReturnTo != ReturnToForRealm(ticket.ReturnTo, ticket.Identity.Realm) || ticket.CSRFSecret == "" || ticket.CreatedAt.IsZero() {
 		return fmt.Errorf("registration ticket is incomplete")
 	}
 	return nil

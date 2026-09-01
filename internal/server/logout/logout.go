@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/walletsecret"
 	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
@@ -20,7 +21,7 @@ import (
 type Handler struct {
 	settingsMgr           *settings.SettingsManager
 	rootPath              string
-	parseToken            func(tokenString string) (jwt.Claims, error)
+	parseToken            func(tokenString string) (jwt.Claims, accountcredentials.ApplicationRealm, error)
 	revokeToken           func(ctx context.Context, id string, expiringAt time.Duration) error
 	baseHRef              string
 	clearSensitiveCookies func(http.ResponseWriter)
@@ -51,10 +52,31 @@ func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.Sessi
 
 // ServeHTTP clears the Athena auth cookie, revokes the local session token when possible, and redirects to Athena.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.clearSensitiveCookies(w)
+	realmValues := r.Header.Values(common.ApplicationRealmHeader)
+	if len(realmValues) != 1 {
+		http.Error(w, "application realm is required exactly once", http.StatusBadRequest)
+		return
+	}
+	if _, present := r.URL.Query()[common.ApplicationRealmQueryParameter]; present {
+		http.Error(w, "application realm query is not accepted", http.StatusBadRequest)
+		return
+	}
+	realm, err := accountcredentials.ParseApplicationRealm(realmValues[0])
+	if err != nil {
+		http.Error(w, "application realm is required", http.StatusBadRequest)
+		return
+	}
+	cookieName, err := httputil.RealmAuthCookieName(realm)
+	if err != nil {
+		http.Error(w, "application realm is invalid", http.StatusBadRequest)
+		return
+	}
+	if realm == accountcredentials.ApplicationRealmMember {
+		h.clearSensitiveCookies(w)
+	}
 	cookies := r.Cookies()
 	for _, cookie := range cookies {
-		if !strings.HasPrefix(cookie.Name, common.AuthCookieName) {
+		if cookie.Name != cookieName && !strings.HasPrefix(cookie.Name, cookieName+"-") {
 			continue
 		}
 
@@ -91,14 +113,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	logoutRedirectURL := strings.TrimRight(strings.TrimLeft(athenaURL, "/"), "/")
 
-	tokenString, err := httputil.JoinCookies(common.AuthCookieName, cookies)
+	tokenString, err := httputil.JoinCookies(cookieName, cookies)
 	if tokenString == "" || err != nil {
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
 	}
 
-	claims, err := h.parseToken(tokenString)
-	if err != nil {
+	claims, tokenRealm, err := h.parseToken(tokenString)
+	if err != nil || tokenRealm != realm {
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
 	}

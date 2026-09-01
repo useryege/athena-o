@@ -5,6 +5,7 @@ import googleMark from '../../assets/images/google-g.svg';
 import {BrandMark} from '../components';
 import {readAdminLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath} from '../shared/runtime-base';
+import {APPLICATION_REALM_QUERY} from '../shared/services/requests';
 
 const alerts: Record<string, {type: 'error' | 'warning'; message: string}> = {
     google_cancelled: {type: 'warning', message: 'Google sign-in was cancelled. Try again when you are ready.'},
@@ -26,7 +27,7 @@ export const AdminLoginPage = () => {
         }
         setLoading(true);
         const returnTo = readAdminLoginReturnTo(location.search);
-        const query = new URLSearchParams({returnTo});
+        const query = new URLSearchParams({returnTo, [APPLICATION_REALM_QUERY]: 'admin'});
         window.location.assign(`${deploymentPath('auth/google/login')}?${query.toString()}`);
     };
 

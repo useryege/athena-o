@@ -3,7 +3,7 @@ import {Alert, Button, Card, Input, Spin, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {BrandMark} from '../../components';
 import {Registration, registrationService, RegistrationRequestError, UsernameAvailability} from '../../shared/services/registration-service';
-import requests, {ACCOUNT_MAINTENANCE_MESSAGE} from '../../shared/services/requests';
+import requests, {ACCOUNT_MAINTENANCE_MESSAGE, APPLICATION_REALM_QUERY} from '../../shared/services/requests';
 
 type AvailabilityState = 'idle' | 'checking' | UsernameAvailability | 'error';
 
@@ -171,7 +171,8 @@ export const RegisterPage = () => {
         setSubmitError('');
         try {
             const created = await registrationService.create(username, registration.csrfToken);
-            window.location.replace(requests.toAbsURL(created.redirectTo || '/account/access'));
+            const fallbackReturnTo = registration.administrator ? '/admin/accounts' : '/account/access';
+            window.location.replace(requests.toAbsURL(created.redirectTo || fallbackReturnTo));
         } catch (error) {
             setSubmitError(registrationErrorMessage(error, 'Unable to create your account. Please try again.'));
             if (error instanceof RegistrationRequestError && error.reason === 'username_unavailable') {
@@ -190,7 +191,14 @@ export const RegisterPage = () => {
         setCancelling(true);
         setSubmitError('');
         try {
-            let redirectTo = registration?.provider === 'google' ? '/auth/google/login?returnTo=%2Faccount%2Faccess' : '/login';
+            const requestedRealm = new URLSearchParams(location.search).get(APPLICATION_REALM_QUERY);
+            const registrationRealm = registration ? (registration.administrator ? 'admin' : 'member') : requestedRealm === 'admin' ? 'admin' : 'member';
+            const fallbackReturnTo = registrationRealm === 'admin' ? '/admin/accounts' : '/account/access';
+            const googleQuery = new URLSearchParams({returnTo: fallbackReturnTo, [APPLICATION_REALM_QUERY]: registrationRealm});
+            let redirectTo = registrationRealm === 'admin' ? '/admin/login' : '/login';
+            if (registration?.provider === 'google') {
+                redirectTo = `/auth/google/login?${googleQuery.toString()}`;
+            }
             if (registration?.csrfToken) {
                 try {
                     const cancelled = await registrationService.cancel(registration.csrfToken);

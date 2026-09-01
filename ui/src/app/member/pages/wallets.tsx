@@ -42,7 +42,7 @@ import {
     walletAvatarPresets,
     walletTypeOptions
 } from '../../shared/services/wallet-service';
-import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
+import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {useKeywordParam, usePagedParams} from '../../shared/pages/shared';
 
 const walletPageSizes = [12, 24, 48];
@@ -133,7 +133,7 @@ const WalletAvatar = (props: {item: Pick<WalletItem, 'walletType' | 'address' | 
     const fallback = props.item.walletType === 'SOLANA' ? 'S' : 'E';
     const className = ['wallet-avatar', preset ? `wallet-avatar--${props.item.avatarPresetId}` : 'wallet-avatar--generated'].join(' ');
     const style = preset ? undefined : {background: `linear-gradient(145deg, ${palette[0]}, ${palette[1]})`};
-    const uploaded = props.item.avatarKind === 'upload' && props.item.avatarUrl;
+    const uploaded = props.item.avatarKind === 'upload' && realmBoundResourceURL(props.item.avatarUrl);
     return (
         <Avatar className={className} size={props.size || 52} src={uploaded || undefined} style={style}>
             {preset?.glyph || fallback}

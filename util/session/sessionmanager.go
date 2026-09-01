@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,10 +11,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
-	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
 )
 
@@ -91,13 +88,13 @@ func (mgr *SessionManager) RegisterCommittedAccountAccess(ctx context.Context, a
 
 // CreateExternalLogin validates current account state and issues a session
 // bound to the provider identity that completed external authentication.
-func (mgr *SessionManager) CreateExternalLogin(ctx context.Context, accountID string, verifiedProvider accountcredentials.IdentityProvider, verifiedSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
+func (mgr *SessionManager) CreateExternalLogin(ctx context.Context, accountID string, realm accountcredentials.ApplicationRealm, verifiedProvider accountcredentials.IdentityProvider, verifiedSubject, verifiedEmail string, secondsBeforeExpiry int64, id string) (string, error) {
 	account, err := mgr.credentials.Get(accountID)
 	if err != nil {
 		return "", err
 	}
-	subject, email, err := accountcredentials.NormalizeExternalIdentity(verifiedProvider, verifiedSubject, verifiedEmail, account.Administrator)
-	if err != nil || !account.HasExternalIdentity() || account.IdentityProvider != verifiedProvider || account.IdentitySubject != subject {
+	subject, email, err := accountcredentials.NormalizeExternalIdentity(verifiedProvider, verifiedSubject, verifiedEmail, realm)
+	if err != nil || account.ApplicationRealm() != realm || !account.HasExternalIdentity() || account.IdentityProvider != verifiedProvider || account.IdentitySubject != subject {
 		return "", status.Error(codes.PermissionDenied, "external identity is not authorized for login")
 	}
 	access, err := mgr.accessController.Register(ctx, accountID)
@@ -107,11 +104,11 @@ func (mgr *SessionManager) CreateExternalLogin(ctx context.Context, accountID st
 	if !access.LoginEnabled {
 		return "", AccountMaintenanceErr
 	}
-	token, err := mgr.credentials.IssueLoginSession(accountID, verifiedProvider, subject, id, secondsBeforeExpiry)
+	token, err := mgr.credentials.IssueLoginSession(accountID, realm, verifiedProvider, subject, id, secondsBeforeExpiry)
 	if err != nil {
 		return "", err
 	}
-	if _, err := mgr.credentials.RecordLogin(ctx, accountID, verifiedProvider, subject, email); err != nil {
+	if _, err := mgr.credentials.RecordLogin(ctx, accountID, realm, verifiedProvider, subject, email); err != nil {
 		if errors.Is(err, accountcredentials.ErrLoginDisabled) {
 			return "", AccountMaintenanceErr
 		}
@@ -160,59 +157,25 @@ func (mgr *SessionManager) Parse(tokenString string) (jwt.Claims, string, error)
 	return claims, "", err
 }
 
-// AuthMiddlewareFunc returns authentication middleware for direct HTTP handlers.
-func (mgr *SessionManager) AuthMiddlewareFunc(disabled bool) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return WithAuthMiddleware(disabled, mgr, h)
-	}
-}
-
-// TokenVerifier defines token verification used by HTTP middleware.
-type TokenVerifier interface {
-	VerifyToken(ctx context.Context, token string) (jwt.Claims, string, error)
-}
-
-// WithAuthMiddleware authenticates an Athena cookie before invoking next.
-func WithAuthMiddleware(disabled bool, authn TokenVerifier, next http.Handler) http.Handler {
-	if disabled {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { next.ServeHTTP(w, r) })
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tokenString, err := httputil.JoinCookies(common.AuthCookieName, r.Cookies())
-		if err != nil {
-			http.Error(w, "Auth cookie not found", http.StatusBadRequest)
-			return
-		}
-		claims, _, err := authn.VerifyToken(r.Context(), tokenString)
-		if err != nil {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-		//nolint:staticcheck // existing context claim boundary shared with gRPC.
-		ctx := context.WithValue(r.Context(), "claims", claims)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-// VerifyToken verifies Athena-issued session and API credentials.
-func (mgr *SessionManager) VerifyToken(_ context.Context, tokenString string) (jwt.Claims, string, error) {
-	return mgr.Parse(tokenString)
-}
-
 // ParseLoginForRevocation validates the signed shape of a current login token
-// without consulting mutable account or revocation state. This deliberately
+// and resolves its account's immutable application realm without consulting
+// mutable access, identity-binding, or revocation state. This deliberately
 // narrow boundary lets logout revoke a session after its account is disabled or
-// its external identity binding changes.
-func (mgr *SessionManager) ParseLoginForRevocation(tokenString string) (jwt.Claims, error) {
+// its external identity binding changes while preventing a token copied into
+// the opposite realm's cookie slot from revoking that other session.
+func (mgr *SessionManager) ParseLoginForRevocation(tokenString string) (jwt.Claims, accountcredentials.ApplicationRealm, error) {
 	parsed, err := mgr.jwtCodec.Parse(tokenString)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if parsed.Capability != accountcredentials.CapabilityLogin {
-		return nil, fmt.Errorf("logout requires a login token")
+		return nil, "", fmt.Errorf("logout requires a login token")
 	}
-	return parsed.Claims, nil
+	account, err := mgr.credentials.Get(parsed.Account)
+	if err != nil {
+		return nil, "", fmt.Errorf("resolve logout account realm: %w", err)
+	}
+	return parsed.Claims, account.ApplicationRealm(), nil
 }
 
 func (mgr *SessionManager) RevokeToken(ctx context.Context, id string, expiringAt time.Duration) error {

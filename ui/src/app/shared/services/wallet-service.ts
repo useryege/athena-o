@@ -1,5 +1,5 @@
 import {AccountDataModule} from '../access-modules';
-import requests from './requests';
+import requests, {APPLICATION_REALM_QUERY} from './requests';
 
 const readScope = {module: AccountDataModule.Wallet, mode: 'read' as const};
 const writeScope = {module: AccountDataModule.Wallet, mode: 'write' as const};
@@ -277,7 +277,7 @@ export class WalletService {
     }
 
     public googleWalletSecretReauthenticationURL(returnTo: string): string {
-        const query = new URLSearchParams({returnTo});
+        const query = new URLSearchParams({returnTo, [APPLICATION_REALM_QUERY]: 'member'});
         return `${requests.toAbsURL('/auth/wallet-secrets/google')}?${query.toString()}`;
     }
 

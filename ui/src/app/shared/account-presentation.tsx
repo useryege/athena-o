@@ -1,6 +1,6 @@
 import {Avatar} from 'antd';
 import {AccountIdentity, AccountIdentityProvider, AccountProfile, AccountTier} from './models';
-import requests from './services/requests';
+import {realmBoundResourceURL} from './services/requests';
 
 export const accountTierLabel = (tier: AccountTier) => (tier === AccountTier.Pro ? 'Pro' : 'Standard');
 
@@ -10,7 +10,7 @@ const avatarURL = (url: string) => {
     if (!url) {
         return undefined;
     }
-    return url.startsWith('/api/') ? requests.toAbsURL(url) : url;
+    return realmBoundResourceURL(url);
 };
 
 export const AccountAvatar = (props: {profile: AccountProfile; username: string; size?: number; className?: string}) => (

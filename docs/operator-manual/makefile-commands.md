@@ -188,10 +188,14 @@ install -m 0600 /secure/source/google-oidc-client-secret secrets/google-oidc-cli
 `/run/secrets/google-oidc-client-secret`；migration 和其他业务容器不会获得文件
 内容。本地生产预演让 `athena-server` 使用当前宿主机 UID 读取该用户自己的 `0600`
 文件；远程部署脚本把上传副本改为容器 UID/GID `999` 持有并保持 `0600`。设置
-`ATHENA_SERVER_DISABLE_AUTH=true` 时使用隔离的开发身份，不要求外部认证配置；
-`ATHENA_SERVER_DISABLE_AUTH_ROLE=member|administrator` 选择普通成员或管理员，默认
-`member`，两种身份仍执行各自的持久权限。该模式只允许非 Compose 的开发进程监听
-loopback 地址。生产 Compose 固定启用认证，部署脚本会拒绝该模式。
+`ATHENA_SERVER_DISABLE_AUTH=true` 时会同时创建或复用两个隔离的开发身份：用户端
+使用 `local-user`，管理端使用 `local-admin`，不要求外部认证配置，也不再提供角色
+选择环境变量或命令行参数。用户端和管理端请求分别携带精确的
+`X-Athena-Application-Realm: member` 或 `X-Athena-Application-Realm: admin`；私有图片
+GET 和 EventSource 等无法设置请求头的浏览器传输可使用 `athenaRealm` 查询参数。
+请求头与查询参数同时存在时必须一致，缺失、非法、重复或冲突的 realm 不会默认映射
+到任何身份。该模式只允许非 Compose 的开发进程监听 loopback 地址。生产 Compose
+固定启用认证，部署脚本会拒绝该模式。
 
 虽然其他生产服务仍复用选定的部署 env 文件读取各自业务配置，Compose 会把
 `ATHENA_JWT_SECRET`、全部 Google OIDC/管理员邮箱输入以及 `REDIS_PASSWORD` 在所有
@@ -240,11 +244,14 @@ MinIO 首次运行会从固定源码 commit 构建 Server/mc 镜像，并初始�
 默认只绑定 `127.0.0.1:9000` 和 `127.0.0.1:9001`。
 Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首次使用
 包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
-默认启用 API Server 认证。普通用户完成 username 注册后创建 Pending 账号，管理员
-授予独立 Profit Sharing 权限并把账号加入轮次后，用户才能提交方案或投票。账号间
-引用使用 UUID `account_id`，界面显示不可修改的 `@username`；普通参与者可以绑定
-Google 或 Solana 外部身份，管理员身份仍只来自持久化 `administrator` 字段并按
-Google `sub` 登录。
+读取 `ATHENA_SERVER_DISABLE_AUTH`，未设置时默认为 `false`。设置为 `true` 后，一次
+`make run` 会同时提供可直接访问的用户端 `http://localhost:4000/` 和管理端
+`http://localhost:4000/admin/`，两个前端会自动携带各自的 application realm。切回
+正常认证前必须执行 `make run-reset`，因为正常认证会拒绝持久化的开发身份。普通用户
+完成 username 注册后创建 Pending 账号，管理员授予独立 Profit Sharing 权限并把
+账号加入轮次后，用户才能提交方案或投票。账号间引用使用 UUID `account_id`，界面
+显示不可修改的 `@username`；普通参与者可以绑定 Google 或 Solana 外部身份，管理员
+身份仍只来自持久化 `administrator` 字段并按 Google `sub` 登录。
 
 `make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
 `/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量

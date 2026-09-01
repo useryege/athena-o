@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/authregistration"
 )
 
 const (
@@ -139,7 +142,7 @@ return value
 }
 
 func validateChallenge(value challenge) error {
-	if value.Address == "" || value.Message == "" || value.Nonce == "" || value.ReturnTo == "" || value.CreatedAt.IsZero() || value.ExpiresAt.IsZero() {
+	if value.Address == "" || value.Message == "" || value.Nonce == "" || value.ReturnTo == "" || value.ReturnTo != authregistration.ReturnToForRealm(value.ReturnTo, accountcredentials.ApplicationRealmMember) || value.CreatedAt.IsZero() || value.ExpiresAt.IsZero() {
 		return fmt.Errorf("Phantom challenge is incomplete")
 	}
 	nonce, err := hex.DecodeString(value.Nonce)

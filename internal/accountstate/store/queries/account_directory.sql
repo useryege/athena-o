@@ -36,7 +36,8 @@ SELECT account_id,
        last_login_at
 FROM athena_account
 WHERE identity_provider = sqlc.arg(identity_provider)::text
-  AND identity_subject = sqlc.arg(identity_subject)::text;
+  AND identity_subject = sqlc.arg(identity_subject)::text
+  AND administrator = sqlc.arg(administrator)::boolean;
 
 -- name: GetDevelopmentAdministrator :one
 SELECT account_id,
@@ -98,7 +99,7 @@ WITH inserted_account AS (
     sqlc.arg(verified_email)::text,
     FALSE
   )
-  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject, administrator) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
@@ -184,7 +185,7 @@ WITH inserted_account AS (
     sqlc.arg(verified_email)::text,
     TRUE
   )
-  ON CONFLICT (identity_provider, identity_subject) WHERE identity_subject IS NOT NULL DO NOTHING
+  ON CONFLICT (identity_provider, identity_subject, administrator) WHERE identity_subject IS NOT NULL DO NOTHING
   RETURNING account_id,
             username,
             identity_provider,
@@ -420,6 +421,7 @@ SET verified_email = sqlc.arg(verified_email)::text,
 WHERE account_id = sqlc.arg(account_id)::uuid
   AND identity_provider = sqlc.arg(identity_provider)::text
   AND identity_subject = sqlc.arg(identity_subject)::text
+  AND administrator = sqlc.arg(administrator)::boolean
   AND EXISTS (
     SELECT 1
     FROM account_access

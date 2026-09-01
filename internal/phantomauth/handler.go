@@ -19,6 +19,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
 )
@@ -100,6 +101,10 @@ func (h *Handler) Challenge(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	if err := requireMemberApplicationRealm(r); err != nil {
+		h.fail(w, http.StatusBadRequest, "phantom_state_invalid", "application_realm", err)
+		return
+	}
 	if !h.validOrigin(r) {
 		h.fail(w, http.StatusForbidden, "phantom_state_invalid", "origin_verify", nil)
 		return
@@ -135,7 +140,7 @@ func (h *Handler) Challenge(w http.ResponseWriter, r *http.Request) {
 		Address:   address,
 		Message:   message,
 		Nonce:     nonce,
-		ReturnTo:  authregistration.ValidateReturnTo(input.ReturnTo),
+		ReturnTo:  authregistration.ReturnToForRealm(input.ReturnTo, accountcredentials.ApplicationRealmMember),
 		CreatedAt: issuedAt,
 		ExpiresAt: expiresAt,
 	}); err != nil {
@@ -159,6 +164,10 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if err := requireMemberApplicationRealm(r); err != nil {
+		h.fail(w, http.StatusBadRequest, "phantom_state_invalid", "application_realm", err)
 		return
 	}
 	if !h.validOrigin(r) {
@@ -210,6 +219,7 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 	identity := authregistration.Identity{
 		Provider: accountcredentials.IdentityProviderSolanaWallet,
 		Subject:  stored.Address,
+		Realm:    accountcredentials.ApplicationRealmMember,
 	}
 	account, found, err := h.backend.GetByIdentity(r.Context(), identity)
 	if err != nil {
@@ -222,7 +232,8 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.WithField("stage", "registration_required").Info("Verified Solana wallet requires Athena username registration")
-		h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: "/register"})
+		registrationQuery := url.Values{common.ApplicationRealmQueryParameter: []string{string(accountcredentials.ApplicationRealmMember)}}
+		h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: "/register?" + registrationQuery.Encode()})
 		return
 	}
 	token, err := h.backend.CreateExternalLogin(r.Context(), account.ID, identity)
@@ -241,13 +252,24 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.registrations.ClearCookie(w)
-	if err := h.registrations.SetAthenaSessionCookie(w, token); err != nil {
+	if err := h.registrations.SetAthenaSessionCookie(w, accountcredentials.ApplicationRealmMember, token); err != nil {
 		h.fail(w, http.StatusServiceUnavailable, "phantom_unavailable", "cookie_issue", err)
 		return
 	}
 	h.backend.RecordLoginResult(authregistration.LoginSuccess)
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderSolanaWallet, "account_id": account.ID}).Info("Solana wallet login succeeded")
-	h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: authregistration.ValidateReturnTo(stored.ReturnTo)})
+	h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: authregistration.ReturnToForRealm(stored.ReturnTo, accountcredentials.ApplicationRealmMember)})
+}
+
+func requireMemberApplicationRealm(r *http.Request) error {
+	values := r.Header.Values(common.ApplicationRealmHeader)
+	if len(values) != 1 || values[0] != string(accountcredentials.ApplicationRealmMember) {
+		return fmt.Errorf("member application realm header is required exactly once")
+	}
+	if _, present := r.URL.Query()[common.ApplicationRealmQueryParameter]; present {
+		return fmt.Errorf("application realm query is not accepted")
+	}
+	return nil
 }
 
 func (h *Handler) siwsMessage(address, nonce string, issuedAt, expiresAt time.Time) string {

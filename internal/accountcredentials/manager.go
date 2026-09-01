@@ -25,10 +25,10 @@ var (
 // mutations before exposing them to the process-local registry.
 type Store interface {
 	ListCredentialAccounts(ctx context.Context) (map[string]Account, error)
-	GetCredentialAccountByIdentity(ctx context.Context, provider IdentityProvider, subject string) (Account, bool, error)
+	GetCredentialAccountByIdentity(ctx context.Context, provider IdentityProvider, subject string, realm ApplicationRealm) (Account, bool, error)
 	UsernameExists(ctx context.Context, username string) (bool, error)
-	RegisterExternalAccount(ctx context.Context, provider IdentityProvider, subject, verifiedEmail, username string, administrator bool) (Account, bool, error)
-	RecordLogin(ctx context.Context, accountID string, provider IdentityProvider, subject, verifiedEmail string) (Account, error)
+	RegisterExternalAccount(ctx context.Context, provider IdentityProvider, subject, verifiedEmail, username string, realm ApplicationRealm) (Account, bool, error)
+	RecordLogin(ctx context.Context, accountID string, realm ApplicationRealm, provider IdentityProvider, subject, verifiedEmail string) (Account, error)
 	CreateAPIKeyMetadata(ctx context.Context, accountID string, token Token) error
 	DeleteAPIKeyMetadata(ctx context.Context, accountID, id string) error
 }
@@ -41,6 +41,7 @@ type accountRecord struct {
 type identityKey struct {
 	provider IdentityProvider
 	subject  string
+	realm    ApplicationRealm
 }
 
 // CredentialManager is keyed exclusively by canonical account UUID. Username
@@ -115,12 +116,15 @@ func (m *CredentialManager) List() map[string]Account {
 
 // GetByIdentity resolves only an already-registered external identity. Unknown
 // identities must complete their provider's separate username registration flow.
-func (m *CredentialManager) GetByIdentity(ctx context.Context, provider IdentityProvider, subject string) (Account, bool, error) {
+func (m *CredentialManager) GetByIdentity(ctx context.Context, provider IdentityProvider, subject string, realm ApplicationRealm) (Account, bool, error) {
+	if _, err := realm.Administrator(); err != nil {
+		return Account{}, false, err
+	}
 	subject, err := NormalizeIdentitySubject(provider, subject)
 	if err != nil {
 		return Account{}, false, nil
 	}
-	key := identityKey{provider: provider, subject: subject}
+	key := identityKey{provider: provider, subject: subject, realm: realm}
 	m.mutex.RLock()
 	accountID := m.identityAccounts[key]
 	m.mutex.RUnlock()
@@ -128,9 +132,12 @@ func (m *CredentialManager) GetByIdentity(ctx context.Context, provider Identity
 		account, err := m.Get(accountID)
 		return account, err == nil, err
 	}
-	account, found, err := m.store.GetCredentialAccountByIdentity(ctx, provider, subject)
+	account, found, err := m.store.GetCredentialAccountByIdentity(ctx, provider, subject, realm)
 	if err != nil || !found {
 		return Account{}, found, err
+	}
+	if account.IdentityProvider != provider || account.IdentitySubject != subject || account.ApplicationRealm() != realm {
+		return Account{}, false, fmt.Errorf("durable external identity lookup returned an inconsistent realm binding")
 	}
 	if err := m.publish(account); err != nil {
 		return Account{}, false, err
@@ -150,26 +157,31 @@ func (m *CredentialManager) UsernameAvailable(ctx context.Context, username stri
 }
 
 // RegisterExternalAccount atomically creates a complete account aggregate or
-// converges on an account concurrently created for the same provider identity.
-func (m *CredentialManager) RegisterExternalAccount(ctx context.Context, provider IdentityProvider, subject, verifiedEmail, username string, administrator bool) (Account, bool, error) {
-	subject, verifiedEmail, err := NormalizeExternalIdentity(provider, subject, verifiedEmail, administrator)
+// converges on an account concurrently created for the same provider identity
+// and application realm.
+func (m *CredentialManager) RegisterExternalAccount(ctx context.Context, provider IdentityProvider, subject, verifiedEmail, username string, realm ApplicationRealm) (Account, bool, error) {
+	administrator, err := realm.Administrator()
+	if err != nil {
+		return Account{}, false, err
+	}
+	subject, verifiedEmail, err = NormalizeExternalIdentity(provider, subject, verifiedEmail, realm)
 	if err != nil {
 		return Account{}, false, status.Error(codes.PermissionDenied, "verified external identity is required")
 	}
 	if administrator && provider != IdentityProviderGoogle {
 		return Account{}, false, status.Error(codes.PermissionDenied, "administrator registration requires Google")
 	}
-	if existing, found, err := m.GetByIdentity(ctx, provider, subject); err != nil || found {
+	if existing, found, err := m.GetByIdentity(ctx, provider, subject, realm); err != nil || found {
 		return existing, false, err
 	}
 	if err := ValidateUsername(username, administrator); err != nil {
 		return Account{}, false, err
 	}
-	account, created, err := m.store.RegisterExternalAccount(ctx, provider, subject, verifiedEmail, username, administrator)
+	account, created, err := m.store.RegisterExternalAccount(ctx, provider, subject, verifiedEmail, username, realm)
 	if err != nil {
 		return Account{}, false, err
 	}
-	if account.IdentitySubject != subject || account.IdentityProvider != provider {
+	if account.IdentitySubject != subject || account.IdentityProvider != provider || account.ApplicationRealm() != realm {
 		return Account{}, false, fmt.Errorf("durable external registration returned an inconsistent identity")
 	}
 	if err := m.publish(account); err != nil {
@@ -179,16 +191,16 @@ func (m *CredentialManager) RegisterExternalAccount(ctx context.Context, provide
 	return snapshot, created, err
 }
 
-func (m *CredentialManager) RecordLogin(ctx context.Context, accountID string, provider IdentityProvider, subject, verifiedEmail string) (Account, error) {
-	subject, verifiedEmail, err := NormalizeExternalIdentity(provider, subject, verifiedEmail, false)
+func (m *CredentialManager) RecordLogin(ctx context.Context, accountID string, realm ApplicationRealm, provider IdentityProvider, subject, verifiedEmail string) (Account, error) {
+	subject, verifiedEmail, err := NormalizeExternalIdentity(provider, subject, verifiedEmail, realm)
 	if err != nil {
 		return Account{}, status.Error(codes.PermissionDenied, "verified external identity is required")
 	}
-	account, err := m.store.RecordLogin(ctx, accountID, provider, subject, verifiedEmail)
+	account, err := m.store.RecordLogin(ctx, accountID, realm, provider, subject, verifiedEmail)
 	if err != nil {
 		return Account{}, err
 	}
-	if account.ID != accountID || account.IdentityProvider != provider || account.IdentitySubject != subject {
+	if account.ID != accountID || account.IdentityProvider != provider || account.IdentitySubject != subject || account.ApplicationRealm() != realm {
 		return Account{}, fmt.Errorf("record external login returned an inconsistent account")
 	}
 	if err := m.publish(account); err != nil {
@@ -230,7 +242,10 @@ func (m *CredentialManager) IssueAPIKey(ctx context.Context, accountID, id strin
 // IssueLoginSession binds an Athena session to the currently persisted
 // external provider identity. Changing either half of that identity invalidates
 // the session on its next request.
-func (m *CredentialManager) IssueLoginSession(accountID string, verifiedProvider IdentityProvider, verifiedSubject, id string, expiresIn int64) (string, error) {
+func (m *CredentialManager) IssueLoginSession(accountID string, realm ApplicationRealm, verifiedProvider IdentityProvider, verifiedSubject, id string, expiresIn int64) (string, error) {
+	if _, err := realm.Administrator(); err != nil {
+		return "", status.Error(codes.PermissionDenied, "application realm is invalid")
+	}
 	verifiedSubject, err := NormalizeIdentitySubject(verifiedProvider, verifiedSubject)
 	if err != nil {
 		return "", status.Error(codes.PermissionDenied, "external identity binding changed")
@@ -241,11 +256,11 @@ func (m *CredentialManager) IssueLoginSession(accountID string, verifiedProvider
 	}
 	record.mutex.RLock()
 	defer record.mutex.RUnlock()
-	if !record.account.HasExternalIdentity() || record.account.IdentityProvider != verifiedProvider || record.account.IdentitySubject != verifiedSubject {
+	if !record.account.HasExternalIdentity() || record.account.IdentityProvider != verifiedProvider || record.account.IdentitySubject != verifiedSubject || record.account.ApplicationRealm() != realm {
 		return "", status.Error(codes.PermissionDenied, "external identity binding changed")
 	}
 	now := time.Now().UTC()
-	tokenString, _, err := m.jwtCodec.Issue(record.account.ID, CapabilityLogin, id, expiresIn, now, identityBinding(record.account.IdentityProvider, record.account.IdentitySubject))
+	tokenString, _, err := m.jwtCodec.Issue(record.account.ID, CapabilityLogin, id, expiresIn, now, identityBinding(record.account.ApplicationRealm(), record.account.IdentityProvider, record.account.IdentitySubject))
 	return tokenString, err
 }
 
@@ -276,7 +291,7 @@ func (m *CredentialManager) ValidateCredential(accountID string, capability Capa
 	defer record.mutex.RUnlock()
 	switch capability {
 	case CapabilityLogin:
-		if !record.account.HasExternalIdentity() || tokenIdentityBinding != identityBinding(record.account.IdentityProvider, record.account.IdentitySubject) {
+		if !record.account.HasExternalIdentity() || tokenIdentityBinding != identityBinding(record.account.ApplicationRealm(), record.account.IdentityProvider, record.account.IdentitySubject) {
 			return fmt.Errorf("account external identity binding has changed")
 		}
 	case CapabilityAPIKey:
@@ -316,7 +331,7 @@ func (m *CredentialManager) publishLocked(account Account) error {
 	}
 	switch account.IdentityProvider {
 	case IdentityProviderGoogle, IdentityProviderSolanaWallet:
-		subject, email, err := NormalizeExternalIdentity(account.IdentityProvider, account.IdentitySubject, account.VerifiedEmail, account.Administrator)
+		subject, email, err := NormalizeExternalIdentity(account.IdentityProvider, account.IdentitySubject, account.VerifiedEmail, account.ApplicationRealm())
 		if err != nil || subject != account.IdentitySubject || email != account.VerifiedEmail {
 			return fmt.Errorf("credential account %q has an invalid external identity", account.ID)
 		}
@@ -331,7 +346,7 @@ func (m *CredentialManager) publishLocked(account Account) error {
 		return fmt.Errorf("credential account %q has unsupported identity provider %q", account.ID, account.IdentityProvider)
 	}
 	if account.HasExternalIdentity() {
-		key := identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject}
+		key := identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject, realm: account.ApplicationRealm()}
 		if existing := m.identityAccounts[key]; existing != "" && existing != account.ID {
 			return fmt.Errorf("external identity is assigned to multiple accounts")
 		}
@@ -340,7 +355,7 @@ func (m *CredentialManager) publishLocked(account Account) error {
 	if !exists {
 		m.accounts[account.ID] = &accountRecord{account: cloneAccount(account)}
 		if account.HasExternalIdentity() {
-			m.identityAccounts[identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject}] = account.ID
+			m.identityAccounts[identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject, realm: account.ApplicationRealm()}] = account.ID
 		}
 		return nil
 	}
@@ -353,13 +368,13 @@ func (m *CredentialManager) publishLocked(account Account) error {
 	account.Tokens = append([]Token(nil), previous.Tokens...)
 	record.account = cloneAccount(account)
 	if account.HasExternalIdentity() {
-		m.identityAccounts[identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject}] = account.ID
+		m.identityAccounts[identityKey{provider: account.IdentityProvider, subject: account.IdentitySubject, realm: account.ApplicationRealm()}] = account.ID
 	}
 	return nil
 }
 
-func identityBinding(provider IdentityProvider, subject string) string {
-	digest := sha256.Sum256([]byte(string(provider) + "\x00" + subject))
+func identityBinding(realm ApplicationRealm, provider IdentityProvider, subject string) string {
+	digest := sha256.Sum256([]byte(string(realm) + "\x00" + string(provider) + "\x00" + subject))
 	return hex.EncodeToString(digest[:])
 }
 

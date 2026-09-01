@@ -11,14 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
 	"github.com/useryege/athena/internal/server/walletsecrethttp"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
-	httputil "github.com/useryege/athena/util/http"
 	utilsession "github.com/useryege/athena/util/session"
 )
 
@@ -59,7 +57,11 @@ func (server *AthenaServer) authenticateWalletSecretHTTP(request *http.Request) 
 		if !requestIsLoopback(request) {
 			return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrLoginSessionRequired
 		}
-		ctx := withDisabledAuthClaims(request.Context(), server.developmentAccountID)
+		developmentAccountID, err := server.developmentAccountIDFromHTTPRequest(request, false)
+		if err != nil {
+			return request.Context(), accountcredentials.AuthenticatedCredential{}, err
+		}
+		ctx := withDisabledAuthClaims(request.Context(), developmentAccountID)
 		credential, ok := utilsession.AuthenticatedCredentialFromContext(ctx)
 		if !ok {
 			return ctx, accountcredentials.AuthenticatedCredential{}, walletsecret.ErrLoginSessionRequired
@@ -76,12 +78,8 @@ func (server *AthenaServer) authenticateWalletSecretHTTP(request *http.Request) 
 		return ctx, credential, nil
 	}
 
-	token, err := httputil.JoinCookies(common.AuthCookieName, request.Cookies())
-	if err != nil || token == "" {
-		return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrLoginSessionRequired
-	}
-	claims, credential, err := server.sessionMgr.AuthenticateToken(token)
-	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
+	claims, credential, err := server.authenticateRealmLoginCookie(request, false)
+	if err != nil {
 		return request.Context(), accountcredentials.AuthenticatedCredential{}, walletsecret.ErrLoginSessionRequired
 	}
 	if err := server.accessController.Authorize(credential.AccountID, accountaccess.RequireModule(accountaccess.ModuleWallet, accountaccess.AccessLevelReadWrite)); err != nil {

@@ -78,6 +78,10 @@ func (h *wormCredentialReauthentication) begin(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	if err := bindMemberApplicationRealmFromQuery(r); err != nil {
+		h.redirectFailure(w, r, returnTo, walletsecret.WormLoginSessionRequiredReason, "application_realm")
+		return
+	}
 	_, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		h.redirectFailure(w, r, returnTo, walletsecret.WormLoginSessionRequiredReason, "login_session")
@@ -134,6 +138,7 @@ func (h *wormCredentialReauthentication) callback(w http.ResponseWriter, r *http
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	bindMemberApplicationRealm(r)
 	state := r.URL.Query().Get("state")
 	cookie, cookieErr := r.Cookie(wormCredentialStateCookieName)
 	h.clearStateCookie(w)
@@ -229,7 +234,7 @@ func (h *wormCredentialReauthentication) redirectFailure(w http.ResponseWriter, 
 }
 
 func validateWormCredentialReturnTo(raw string) string {
-	validated := authregistration.ValidateReturnTo(raw)
+	validated := authregistration.ReturnToForRealm(raw, accountcredentials.ApplicationRealmMember)
 	if raw == "" || validated == authregistration.DefaultReturnTo {
 		return wormCredentialDefaultReturnTo
 	}

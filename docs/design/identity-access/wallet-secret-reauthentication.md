@@ -11,7 +11,9 @@ authorization has no time TTL. All three distinguish an interactive login
 session from an API Key through server-side typed credential metadata and bind
 proof to the current account, login JTI, and access revision. Their cookies,
 Redis namespaces, routes, stable errors, and persisted scopes are independent,
-so none authorizes either of the other operations.
+so none authorizes either of the other operations. They are member-application
+capabilities: normal authentication always selects `athena.token.member`, and an
+administrator persona or `athena.token.admin` cannot enter them.
 
 [Wallet Ownership and Custody](wallet-ownership.md) owns key encryption,
 owner-scoped retrieval, and canonical private-key formats. [Google OIDC
@@ -29,7 +31,7 @@ coordinator, Web JWT mutation flow, and terminal reconciliation.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Typed request credential | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `AuthenticatedCredential`, `Capability`, `IsInteractiveLogin`, `WithAuthenticatedCredential`, `AuthenticateToken` |
+| Typed request credential and realm selection | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go), [internal/server/application_realm.go](../../../internal/server/application_realm.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `ApplicationRealmMember`, `authenticateRealmLoginCookie`, `AuthenticatedCredential`, `Capability`, `IsInteractiveLogin`, `WithAuthenticatedCredential`, `AuthenticateToken` |
 | Independent lease state and stable errors | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/walletsecret/errors.go](../../../internal/walletsecret/errors.go) | `NewManager`, `NewWormCredentialManager`, `Manager.Issue`, `Manager.Validate`, `Manager.ClearCookie`, `LeaseTTL`, stable Wallet and Worm reasons |
 | Provider-state creation limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
 | Sensitive boundaries and Worm inventory | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/walletsecrethttp/handler.go](../../../internal/server/walletsecrethttp/handler.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateWalletSecretHTTP`, `authenticateWormConnectionHTTP`, `validWalletSecretOrigin`, `validWormConnectionOrigin`, `Handler.Reveal`, `listWormWalletConnections`, `manageWormConnection` |
@@ -46,7 +48,7 @@ coordinator, Web JWT mutation flow, and terminal reconciliation.
 
 ```mermaid
 flowchart LR
-    B["Logged-in browser"] --> P["Fresh Google, Solana, or development proof"]
+    B["Logged-in member browser"] --> P["Fresh Google, Solana, or development proof"]
     P --> R1["wallet.private_key.reveal lease"]
     P --> R2["worm.api_credential.manage lease"]
     P --> R3["one durable Run + plan-digest authorization"]
@@ -70,6 +72,13 @@ identity binding, and current access revision. Security-sensitive handlers use
 that value instead of inferring credential type from request headers. API Keys
 therefore cannot cross either reauthentication or native management boundary
 even when their account has Wallet or Worm Trading `READ_WRITE`.
+
+The member application sends `X-Athena-Application-Realm: member` on native
+requests; provider-start GETs additionally carry the validated
+`athenaRealm=member` query required by their browser navigation boundary. The
+server selects only `athena.token.member` and verifies that its account is not an
+administrator. The independent `athena.token.admin` cookie may coexist but is
+never a fallback for these capabilities.
 
 Each opaque lease cookie is only a pointer to its own Redis namespace. Stored
 state binds exactly one scope to the current login session and authorization
@@ -106,7 +115,8 @@ management.
 ## Runtime Flow
 
 1. `POST /api/v1/wallets/{id}:revealPrivateKey` requires the configured exact
-   same origin, an Athena login cookie, Wallet `READ_WRITE`, and a valid lease.
+   same origin, the member realm and `athena.token.member`, Wallet `READ_WRITE`,
+   and a valid lease.
    It never accepts an account UUID from the browser. A missing login session or
    API Key returns `WALLET_LOGIN_SESSION_REQUIRED`; a missing, expired, or stale
    lease returns `WALLET_REAUTH_REQUIRED`. That 401 response is an interactive
@@ -115,20 +125,24 @@ management.
    scope, obtains the provider-specific lease, and retries the reveal; global
    session-expiry handling must not log out or unmount the Wallet flow for this
    stable reason.
-2. A Google account starts `GET /auth/wallet-secrets/google?returnTo=/wallet`.
-   The server validates the current login, provider, Wallet permission, and safe
-   return path, then stores a one-time five-minute transaction containing PKCE,
-   nonce, return path, account UUID, Session JTI digest, access revision, and
-   creation time. One Lua operation first enforces the shared wallet-secret
-   provider-state limits and then creates the transaction. Its `ws.` state and
-   dedicated browser cookie distinguish the transaction from primary login
-   while reusing `/auth/google/callback`.
-3. Google receives `prompt=select_account` and `max_age=0`. The callback consumes
-   the state before exchange, repeats the session binding checks, verifies the
-   ID token through the shared OIDC primitive, requires a fresh `auth_time`, and
-   compares the verified stable `sub` with the same persisted Google identity.
-   Success issues only the wallet-secret lease and returns to the saved path; it
-   does not issue or replace the Athena login cookie.
+2. A Google member account starts
+   `GET /auth/wallet-secrets/google?athenaRealm=member&returnTo=/wallet`.
+   The server validates the fixed realm, current member login, provider, Wallet
+   permission, and safe member-application return path, then stores a one-time five-minute
+   transaction containing PKCE, nonce, return path, account UUID, Session JTI
+   digest, access revision, and creation time. One Lua operation first enforces
+   the shared wallet-secret provider-state limits and then creates the
+   transaction. Its `ws.` state and dedicated browser cookie distinguish the
+   transaction from primary login while reusing `/auth/google/callback`.
+3. Google receives `prompt=select_account` and `max_age=0`. The full-page callback
+   cannot retain the initiating request header, so it restores the fixed
+   `member` realm from the scoped flow before selecting `athena.token.member`.
+   It consumes the state before exchange, repeats the session binding checks,
+   verifies the ID token through the shared OIDC primitive, requires a fresh
+   `auth_time`, and compares the verified stable `sub` with the same persisted
+   member Google identity. Success issues only the wallet-secret lease and
+   returns to the saved path; it does not issue or replace either Athena login
+   cookie.
 4. A Solana-wallet account posts an empty object to
    `/auth/wallet-secrets/solana/challenge`. The server obtains the address from
    the persisted identity rather than request input and stores a one-time
@@ -183,11 +197,13 @@ management.
     `WORM_TRADING_REAUTH_REQUIRED` remain local step-up reasons rather than
     global session-expiry signals.
 12. A Google Worm proof begins at
-    `GET /auth/worm-trading/google?returnTo=/worm-trading`. It uses a separate
+    `GET /auth/worm-trading/google?athenaRealm=member&returnTo=/worm-trading`.
+    It validates the member realm and uses a separate
     `wc.` state value, cookie, and five-minute Redis transaction while sharing
     the normal callback and verified OIDC primitive. `prompt=select_account`,
     `max_age=0`, fresh `auth_time`, stable persisted `sub`, account, Session JTI
-    digest, and access revision must all match. Success issues only the Worm
+    digest, and access revision must all match. Its callback restores the member
+    realm before authenticating the member cookie. Success issues only the Worm
     lease and returns to the saved page.
 13. A Solana Worm proof uses
     `/auth/worm-trading/solana/challenge` and `/verify`. The server accepts no
@@ -220,8 +236,9 @@ management.
     `{kind: "regenerate", walletId}`, or `{kind: "cleanup", walletId}` and
     rebuilds an automatic queue from
     authoritative inventory after return. It never stores a queue or retries a
-    mutation automatically. Logout clears both lease cookies before revoking
-    the login token; an access revision change
+    mutation automatically. Member-realm logout clears both lease cookies before
+    revoking the member login token; admin-realm logout leaves the member session
+    and leases untouched. An access revision change
     invalidates both Redis records on their next validation and aborts browser
     continuation.
 17. A live Run in `AWAITING_AUTHORIZATION` exposes `AUTHORIZE` only to an
@@ -231,17 +248,17 @@ management.
     already-frozen plan digest. API Keys cannot begin, finish, or consume this
     proof.
 18. Google authorization begins at
-    `GET /auth/worm-trading/executions/google` with `runId`, `commandId`,
-    `expectedRevision`, and a Run-detail `returnTo`. The server stores a
-    single-use five-minute PKCE/nonce transaction under a `wex.` state, applies
-    a provider-specific 120-global/20-account fixed-minute creation limit, and
-    requests `prompt=select_account` with `max_age=0`.
-19. The shared Google callback recognizes the `wex.` namespace, consumes the
-    state before exchange, repeats the login, account, Session, access-revision,
-    provider, stable `sub`, and fresh `auth_time` checks, and sends only the
-    verified non-secret binding to the Run authorizer. Success persists the Run
-    authorization and redirects back; it neither issues a lease nor changes the
-    Athena login cookie.
+    `GET /auth/worm-trading/executions/google` with `athenaRealm=member`,
+    `runId`, `commandId`, `expectedRevision`, and a Run-detail `returnTo`. The
+    server stores a single-use five-minute PKCE/nonce transaction under a `wex.`
+    state, applies a provider-specific 120-global/20-account fixed-minute
+    creation limit, and requests `prompt=select_account` with `max_age=0`.
+19. The shared Google callback recognizes the `wex.` namespace, restores the
+    fixed member realm, consumes the state before exchange, repeats the member
+    login, account, Session, access-revision, provider, stable `sub`, and fresh
+    `auth_time` checks, and sends only the verified non-secret binding to the Run
+    authorizer. Success persists the Run authorization and redirects back; it
+    neither issues a lease nor changes either Athena login cookie.
 20. Phantom authorization uses
     `POST /auth/worm-trading/executions/{runId}/solana/challenge` and `/verify`.
     The challenge handler performs a fresh owner-scoped Run lookup, rejects a
@@ -290,6 +307,13 @@ SameSite=Lax Google state cookie under the deployment-relative `/auth/google`
 path and a separate SameSite=Strict Solana challenge cookie under its own
 deployment-relative auth route. Provider transactions and challenges are five-
 minute, single-use Redis records with distinct key prefixes.
+
+These lease and proof cookies belong to the member realm but are separate from
+the deployment-root login cookie. `athena.token.member` authenticates the
+account and Session to which they bind; `athena.token.admin` is neither read nor
+changed. Scoped Google transactions do not need to store a caller-controlled
+realm because their entry query must be `member` and their callbacks restore
+that fixed realm before login-cookie authentication.
 
 Wallet and Worm Google transactions and Solana challenges share one sensitive-
 proof Redis rate counter: at most 120 provider-state creations globally and 20 for one
@@ -370,6 +394,11 @@ Session/access binding.
   `READ_WRITE`, and current-account Solana ownership, but no lease or Origin
   header; it cannot mutate a connection or invoke the purpose-bound signer.
 - Administrator role never bypasses wallet ownership or lease validation.
+- Every proof and sensitive operation authenticates the member realm and exact
+  member cookie. A coexisting administrator session cannot obtain or consume a
+  lease, and its logout cannot clear member leases.
+- Provider and Solana proof return targets are restricted to non-admin member
+  paths; success or failure cannot cross into `/admin/*`.
 - The reveal adapter can reach Wallet custody only through the authenticated
   internal client; a network caller cannot substitute an account UUID without
   also proving the service Bearer.
@@ -429,9 +458,11 @@ call.
 
 Session revocation blocks normal login validation even while either old lease
 record exists. Any access update changes the revision and invalidates both old
-leases immediately. Logout clears both browser cookies; unreferenced Redis
-records expire naturally. A Wallet-service or decryption failure returns no
-partial private key or Worm signature and does not extend a lease. Failure after
+leases immediately. Member-realm logout clears both lease cookies and revokes
+only `athena.token.member`; unreferenced Redis records expire naturally.
+Admin-realm logout revokes only `athena.token.admin` and does not clear or revoke
+the member session or its leases. A Wallet-service or decryption failure returns
+no partial private key or Worm signature and does not extend a lease. Failure after
 the Worm lease has admitted an operation follows Worm Trading's durable
 connection and revocation state machine rather than issuing another lease or
 automatically retrying credential creation. Full-account bootstrap pauses when
@@ -502,5 +533,5 @@ signature.
 - [ ] Secret responses and browser state preserve no-store and cleanup semantics.
 - [ ] Execution Google and Solana proof state remains single-use, five-minute, provider-specific, rate-limited, and free of durable provider secrets.
 - [ ] Execution proof disclosure, stable errors, and no-TTL durable authorization match the Run state machine.
-- [ ] Logout, revocation, access changes, and Redis failure still fail closed.
+- [ ] Member-only realm restoration, dual-login-cookie isolation, current-realm logout, revocation, access changes, and Redis failure still fail closed.
 - [ ] The [design index](../README.md) contains the current summary.

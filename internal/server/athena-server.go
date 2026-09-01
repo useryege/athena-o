@@ -176,7 +176,7 @@ type AthenaServer struct {
 	wormCredentialMgr        *walletsecret.Manager
 	walletSecretHTTP         *walletsecrethttp.Handler
 	walletSecretPublicOrigin string
-	developmentAccountID     string
+	developmentAccountIDs    map[accountcredentials.ApplicationRealm]string
 	// db db.AthenaDB
 
 	// stopCh is the channel which when closed, will shutdown the Athena server
@@ -197,7 +197,6 @@ type AthenaServer struct {
 
 type AthenaServerOpts struct {
 	DisableAuth     bool
-	DisableAuthRole accountcredentials.DevelopmentRole
 	ContentTypes    []string
 	EnableGZip      bool
 	StaticAssetsDir string
@@ -240,28 +239,33 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	if opts.DisableAuth && !isLoopbackListenHost(opts.ListenHost) {
 		errorsutil.CheckError(fmt.Errorf("disabled authentication is allowed only on a loopback listen address"))
 	}
-	if opts.DisableAuthRole == "" {
-		opts.DisableAuthRole = accountcredentials.DevelopmentRoleMember
-	}
-	if opts.DisableAuth {
-		developmentRole, err := accountcredentials.ParseDevelopmentRole(string(opts.DisableAuthRole))
-		errorsutil.CheckError(err)
-		opts.DisableAuthRole = developmentRole
-	}
 	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
 	errorsutil.CheckError(err)
 	settings, err := settingsMgr.GetSettings()
 	errorsutil.CheckError(err)
 	accountStateStore, err := accountstatestore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
-	developmentAccountID := ""
+	developmentAccountIDs := make(map[accountcredentials.ApplicationRealm]string, 2)
 	if opts.DisableAuth {
-		developmentAccount, ensureErr := accountStateStore.EnsureDevelopmentAccount(ctx, opts.DisableAuthRole)
-		if ensureErr != nil {
-			_ = accountStateStore.Close()
-			errorsutil.CheckError(ensureErr)
+		developmentIdentities := []struct {
+			role  accountcredentials.DevelopmentRole
+			realm accountcredentials.ApplicationRealm
+		}{
+			{role: accountcredentials.DevelopmentRoleMember, realm: accountcredentials.ApplicationRealmMember},
+			{role: accountcredentials.DevelopmentRoleAdministrator, realm: accountcredentials.ApplicationRealmAdmin},
 		}
-		developmentAccountID = developmentAccount.ID
+		for _, identity := range developmentIdentities {
+			developmentAccount, ensureErr := accountStateStore.EnsureDevelopmentAccount(ctx, identity.role)
+			if ensureErr != nil {
+				_ = accountStateStore.Close()
+				errorsutil.CheckError(ensureErr)
+			}
+			if actualRealm := developmentAccount.ApplicationRealm(); actualRealm != identity.realm {
+				_ = accountStateStore.Close()
+				errorsutil.CheckError(fmt.Errorf("development %s identity resolved to application realm %q", identity.role, actualRealm))
+			}
+			developmentAccountIDs[identity.realm] = developmentAccount.ID
+		}
 	}
 	jwtSigningKey, err := accountcredentials.LoadJWTSigningKey()
 	if err != nil {
@@ -369,7 +373,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		walletSecretMgr:          walletSecretMgr,
 		wormCredentialMgr:        wormCredentialMgr,
 		walletSecretPublicOrigin: walletSecretPublicOrigin,
-		developmentAccountID:     developmentAccountID,
+		developmentAccountIDs:    developmentAccountIDs,
 		userStateStorage:         userStateStorage,
 		staticAssets:             http.FS(staticFS),
 		Shutdown:                 noopShutdown,
@@ -684,14 +688,14 @@ func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w ht
 	switch resp.(type) {
 	case *appbootstrappkg.GetAppBootstrapResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
-		w.Header().Set("Vary", "Cookie, Authorization")
+		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
 	case *walletpkg.CreateWalletResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Pragma", "no-cache")
-		w.Header().Set("Vary", "Cookie, Authorization")
+		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
 	case *wormtradingpkg.ListWalletBalancesResponse, *wormtradingpkg.ListWalletTradingActivityResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
-		w.Header().Set("Vary", "Cookie, Authorization")
+		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
 	}
 	return nil
 }
@@ -967,9 +971,10 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// we use our own Marshaler
 	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
 	gwResponseHeaderOpts := runtime.WithForwardResponseOption(server.translateGRPCResponseHeaders)
-	gwmux := runtime.NewServeMux(gwMuxOpts, gwResponseHeaderOpts)
+	gwApplicationRealmOpts := runtime.WithIncomingHeaderMatcher(applicationRealmHeaderMatcher)
+	gwmux := runtime.NewServeMux(gwMuxOpts, gwResponseHeaderOpts, gwApplicationRealmOpts)
 
-	var handler http.Handler = gwmux
+	var handler http.Handler = adaptApplicationRealmQuery(gwmux)
 	if server.EnableGZip {
 		handler = compressHandler(handler)
 	}
@@ -1245,11 +1250,16 @@ func (server *AthenaServer) checkServeErr(name string, err error) {
 
 // Authenticate checks for the presence of a valid token when accessing server-side resources.
 func (server *AthenaServer) Authenticate(ctx context.Context) (context.Context, error) {
-	// If authentication is disabled, present the request as the selected local
-	// development identity. Authorization still evaluates its persisted access.
+	// If authentication is disabled, present the request as the local
+	// development identity for its explicit application realm. Authorization
+	// still evaluates that identity's persisted access.
 	if server.DisableAuth {
-		ctx = withDisabledAuthClaims(ctx, server.developmentAccountID)
-		access, err := server.accessController.Get(server.developmentAccountID)
+		developmentAccountID, err := server.developmentAccountIDFromIncomingContext(ctx)
+		if err != nil {
+			return ctx, err
+		}
+		ctx = withDisabledAuthClaims(ctx, developmentAccountID)
+		access, err := server.accessController.Get(developmentAccountID)
 		if err != nil {
 			return ctx, err
 		}
@@ -1288,7 +1298,10 @@ func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, accountc
 	if !ok {
 		return nil, accountcredentials.AuthenticatedCredential{}, "", ErrNoSession
 	}
-	tokenString := getToken(md)
+	tokenString, cookieRealm, realmBound, tokenErr := getToken(md)
+	if tokenErr != nil {
+		return nil, accountcredentials.AuthenticatedCredential{}, "", tokenErr
+	}
 	if tokenString == "" {
 		return nil, accountcredentials.AuthenticatedCredential{}, "", ErrNoSession
 	}
@@ -1299,17 +1312,23 @@ func (server *AthenaServer) getClaims(ctx context.Context) (jwt.Claims, accountc
 		}
 		return claims, credential, "", status.Errorf(codes.Unauthenticated, "invalid session: %v", err)
 	}
+	if realmBound {
+		account, err := server.credentialMgr.Get(credential.AccountID)
+		if err != nil || account.ApplicationRealm() != cookieRealm {
+			return nil, accountcredentials.AuthenticatedCredential{}, "", status.Error(codes.Unauthenticated, "session does not match the application realm")
+		}
+	}
 
 	return claims, credential, "", nil
 }
 
 // getToken extracts the token from gRPC metadata or cookie headers
-func getToken(md metadata.MD) string {
+func getToken(md metadata.MD) (string, accountcredentials.ApplicationRealm, bool, error) {
 	// check the "token" metadata
 	{
 		tokens, ok := md[apiclient.MetaDataTokenKey]
 		if ok && len(tokens) > 0 {
-			return tokens[0]
+			return tokens[0], "", false, nil
 		}
 	}
 
@@ -1318,20 +1337,36 @@ func getToken(md metadata.MD) string {
 	for _, t := range md["authorization"] {
 		token := strings.TrimPrefix(t, "Bearer ")
 		if strings.HasPrefix(t, "Bearer ") && jwtutil.IsValid(token) {
-			return token
+			return token, "", false, nil
 		}
+	}
+
+	cookieHeaders := md["grpcgateway-cookie"]
+	if len(cookieHeaders) == 0 {
+		return "", "", false, nil
+	}
+	realm, present, err := parseApplicationRealmValues(md.Get(common.ApplicationRealmHeader))
+	if err != nil {
+		return "", "", false, err
+	}
+	if !present {
+		return "", "", false, applicationRealmRequiredError()
+	}
+	cookieName, err := httputil.RealmAuthCookieName(realm)
+	if err != nil {
+		return "", "", false, status.Error(codes.Unauthenticated, "application realm is invalid")
 	}
 
 	// check the HTTP cookie
-	for _, t := range md["grpcgateway-cookie"] {
+	for _, t := range cookieHeaders {
 		header := http.Header{}
 		header.Add("Cookie", t)
 		request := http.Request{Header: header}
-		token, err := httputil.JoinCookies(common.AuthCookieName, request.Cookies())
+		token, err := httputil.JoinCookies(cookieName, request.Cookies())
 		if err == nil && jwtutil.IsValid(token) {
-			return token
+			return token, realm, true, nil
 		}
 	}
 
-	return ""
+	return "", realm, true, nil
 }

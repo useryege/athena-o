@@ -11,6 +11,13 @@ authorization lookup is keyed by stable account UUID. It also owns credential-
 capability restrictions layered on Wallet operations; the Wallet service
 separately enforces exact row ownership.
 
+`member` and `admin` are explicit application realms, not two modes of one
+account aggregate. One Google subject may own two independent personas: an
+ordinary member UUID with its own username and business data, and the sole
+administrator UUID with a different globally unique username and isolated
+administrator data. Authorization never combines their roles, access, profiles,
+preferences, API Keys, Wallets, or domain relationships.
+
 [Account Credentials](account-credentials.md) owns UUID identity, immutable
 username, JWT validation, and the persisted administrator fact. [Google OIDC
 Login](google-oidc-login.md) and [Solana Wallet
@@ -31,6 +38,7 @@ after this layer authorizes the request.
 | RPC authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `moduleGRPCRules`, `authorizeGRPC`, `authorizeAccountSelfService` |
 | Native sensitive and Worm-management authorization | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/server/worm_execution_authorization.go](../../../internal/server/worm_execution_authorization.go) | `authenticateWalletSecretHTTP`, `authenticateInteractiveWormTradingHTTP`, `authenticateWalletAvatarHTTP`, Worm combination/preview/Run route registration, exact-origin and Run-proof boundaries |
 | Session projection | [internal/server/session/session.go](../../../internal/server/session/session.go), [internal/server/appbootstrap/appbootstrap.go](../../../internal/server/appbootstrap/appbootstrap.go) | `ProjectUserInfo`, `GetAppBootstrap` |
+| Realm transport and cookie authentication | [internal/server/application_realm.go](../../../internal/server/application_realm.go), [util/http/http.go](../../../util/http/http.go), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | `applicationRealmFromIncomingContext`, `authenticateRealmLoginCookie`, `RealmAuthCookieName`, `configureAuthorizationRealm` |
 | Browser routing and refresh | [ui/src/app/shared/account-access.ts](../../../ui/src/app/shared/account-access.ts), [ui/src/app/shared/context.ts](../../../ui/src/app/shared/context.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx) | member module refresh, administrator role guard, `AuthorizationCtx`, `canRead`, `canWrite` |
 | Administrator workspace | [ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx), [ui/src/app/admin/pages/admin-accounts.tsx](../../../ui/src/app/admin/pages/admin-accounts.tsx) | administrator route graph, `AdminAccountsPage`, `AccountAccessEditor` |
 
@@ -48,6 +56,15 @@ or request input. `Access.Validate` fixes an administrator at login enabled,
 API Key disabled, Profit Sharing disabled, and `NONE` for every member product
 module. Administrator capability is available only through explicit
 `RequirementAdministrator` rules; it does not imply member capability.
+
+Every authenticated browser request declares `member` or `admin` through
+`X-Athena-Application-Realm`; browser GET transports that cannot set a header
+use the validated `athenaRealm` query. The realm selects exactly one of
+`athena.token.member` and `athena.token.admin`, after which the server verifies
+that the signed account's persisted role maps to the same realm. A
+client-controlled realm can select a cookie slot but cannot promote a member
+token. Both cookies may coexist so the same browser can use the two independent
+personas at the same time.
 
 The following maxima apply to ordinary member grants and to the `local-user`
 development account; they are not administrator defaults.
@@ -155,11 +172,13 @@ contract does not carry role or a caller-selected owner.
 1. Startup loads every persisted access head, its database role, and all ten
    module rows. Zero accounts is valid. Any durable account with a missing,
    duplicate, unknown, incomplete, or invalid aggregate fails startup closed.
-2. Shared username registration commits an ordinary Google or Solana-wallet
+2. Realm-bound username registration commits a member Google or Solana-wallet
    access head with login enabled, API Key and Profit Sharing disabled, revision
-   one, and ten `NONE` rows. Only a Google administrator-candidate registration
-   can commit the fixed isolated administrator aggregate. The controller learns
-   either by UUID only after database commit.
+   one, and ten `NONE` rows. Only an admitted Google identity in the `admin`
+   realm can commit the fixed isolated administrator aggregate. The configured
+   administrator email entering the `member` realm still creates an ordinary
+   Pending persona. The controller learns either independent UUID only after
+   database commit.
 3. Every login session and API Key checks `LoginEnabled` on each request. API
    Keys additionally check `APIKeyEnabled`; ordinary Profit Sharing RPCs check
    `ProfitSharingEnabled`; product RPCs check their explicit module and level.
@@ -205,12 +224,14 @@ contract does not carry role or a caller-selected owner.
    All/Pending/Active/Blocked, one-based pagination defaulting to 50 and capped
    at 100, total count, and a Profit-Sharing-eligible filter. Pending sorts
    first, then most recent login, username, and UUID.
-7. The member browser refreshes authorization at most every 15 seconds while
-   visible, on focus or visibility return, on manual Pending-page refresh, and
-   after a stable access denial. Module loss cancels affected work, clears the
-   member/account/session cache namespace, and redirects an inaccessible route
-   to `/account/access`. An administrator bootstrap leaves the member
-   application before member services are created.
+7. The member browser fixes its request realm to `member` and refreshes
+   authorization at most every 15 seconds while visible, on focus or visibility
+   return, on manual Pending-page refresh, and after a stable access denial.
+   Module loss cancels affected work, clears the member/account/session cache
+   namespace, and redirects an inaccessible route to `/account/access`. The
+   administrator browser independently fixes `admin`. Each bootstrap reads only
+   its own cookie and rejects a role mismatch before constructing realm-specific
+   services; the other realm's live session is not treated as its fallback.
 8. Pending members can use Profile, Appearance, Access, Help, and Logout without
    starting business requests. Security appears only when API Key access is
    enabled. The first UI-backed module grant routes to the first canonical
@@ -232,6 +253,13 @@ merge, or transfer API.
 The sole administrator is created by registration and protected by the role
 unique index plus fixed-access validation.
 
+External identity resolution includes the realm, stored as the
+`administrator` dimension of `(identity_provider, identity_subject,
+administrator)`. The same Google subject can therefore reference one ordinary
+row and the sole administrator row, but those UUID parents and every dependent
+aggregate remain independent. Username uniqueness remains global across both
+realms.
+
 Stable denials distinguish maintenance, administrator-required, module access,
 API Key access, Profit Sharing access, and access-revision conflict.
 Authorization completes before domain service code receives the request.
@@ -251,15 +279,14 @@ cannot rely on a stale access snapshot.
 
 Access has no per-account environment variables. Identities, roles, and access
 aggregates come from PostgreSQL. `ATHENA_SERVER_DISABLE_AUTH=true` creates or
-reuses exactly one selected loopback development aggregate and synthesizes its
-UUID in request claims. `ATHENA_SERVER_DISABLE_AUTH_ROLE=member` selects
-`local-user` with maximum member module access plus API Key and Profit Sharing
-enabled; `administrator` selects `local-admin` with the fixed isolated
-administrator aggregate. The matching `--disable-auth-role` flag has the same
-two values and the default is `member`. Normal external-authentication mode
-rejects either development identity. The API Server rejects disabled
-authentication on non-loopback listeners, and the production deployment
-scripts and Compose configuration reject or fix the setting to false.
+reuses both loopback development aggregates: `local-user` has maximum member
+module access plus API Key and Profit Sharing enabled, while `local-admin` has
+the fixed isolated administrator aggregate. Each request realm selects the
+corresponding UUID in synthetic claims, so both local applications are usable
+without a startup role choice. Normal external-authentication mode rejects
+either development identity. The API Server rejects disabled authentication on
+non-loopback listeners, and the production deployment scripts and Compose
+configuration reject or fix the setting to false.
 
 ## Invariants
 
@@ -268,8 +295,18 @@ scripts and Compose configuration reject or fix the setting to false.
 - Ordinary first-registration state is Pending and cannot read business APIs.
 - Role comes only from the persisted administrator boolean; username has no
   authorization meaning.
+- A Google-backed member and administrator persona may share provider subject
+  but never UUID, username, access, profile, preference, credential, Wallet, or
+  domain state.
 - The administrator aggregate remains login-only, contains no member grant,
-  and is uneditable.
+  and is uneditable. Its human owner uses the member application only through a
+  separate ordinary member aggregate.
+- Realm selection reads only the matching login cookie and must agree with the
+  persisted role; it is transport context, never authorization authority.
+- Logout clears only the current realm and revokes a selected token only when
+  its account's persisted realm agrees with that slot. Member logout clears
+  member-sensitive leases, while admin logout preserves the member session and
+  those leases.
 - Administrator capability never satisfies a module or Profit Sharing member
   requirement; every management operation has an explicit administrator rule.
 - Worm Trading `READ` exposes only the current account's Solana wallet summaries,

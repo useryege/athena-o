@@ -4,10 +4,12 @@
 
 The shared Web UI Application Shell owns Athena's two-application bootstrap and
 deployment boundary. It explains how the member and administrator HTML entries
-share one API origin and HttpOnly login cookie while keeping separate React
-roots, route trees, business dependencies, and role guards. It also owns the
-distinction between the deployment base used by API and authentication requests
-and the application base used by browser routing and asset resolution.
+share one API origin while selecting the independent HttpOnly
+`athena.token.member` and `athena.token.admin` login cookies. The applications
+keep separate React roots, route trees, business dependencies, and role guards.
+The shell also owns the distinction between the deployment base used by API and
+authentication requests and the application base used by browser routing and
+asset resolution.
 
 [Member Application Shell](member-application-shell.md) owns member navigation,
 module authorization, Pending access, and business features. [Administrator
@@ -23,7 +25,7 @@ verification and durable authorization remain server responsibilities.
 | Administrator HTML and React entry | [ui/src/app/admin/index.html](../../../ui/src/app/admin/index.html), [ui/src/app/entry/admin.tsx](../../../ui/src/app/entry/admin.tsx) | administrator root, `AdminApp` mount |
 | Runtime base helpers | [ui/src/app/shared/runtime-base.ts](../../../ui/src/app/shared/runtime-base.ts) | `readApplicationBaseHRef`, `readDeploymentBaseHRef`, `deploymentPath` |
 | Shared session bootstrap | [ui/src/app/session/bootstrap.tsx](../../../ui/src/app/session/bootstrap.tsx), [ui/src/app/shared/models.ts](../../../ui/src/app/shared/models.ts) | `SessionBootstrap`, `loadAppBootstrapWithRetry`, `AppBootstrap` |
-| Realm service registries and transport | [ui/src/app/shared/services/registry.ts](../../../ui/src/app/shared/services/registry.ts), [ui/src/app/session/services.ts](../../../ui/src/app/session/services.ts), [ui/src/app/member/services.ts](../../../ui/src/app/member/services.ts), [ui/src/app/admin/services.ts](../../../ui/src/app/admin/services.ts), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | neutral `serviceProjection`, `sessionServices`, realm-owned `memberServices` and `adminServices`, business-service activation, `configureAuthorizationRealm`, `beginAuthorizationSession`, `endAuthorizationSession` |
+| Realm service registries and transport | [ui/src/app/shared/services/registry.ts](../../../ui/src/app/shared/services/registry.ts), [ui/src/app/session/services.ts](../../../ui/src/app/session/services.ts), [ui/src/app/member/services.ts](../../../ui/src/app/member/services.ts), [ui/src/app/admin/services.ts](../../../ui/src/app/admin/services.ts), [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts) | neutral `serviceProjection`, `sessionServices`, realm-owned `memberServices` and `adminServices`, business-service activation, `configureAuthorizationRealm`, `APPLICATION_REALM_HEADER`, `APPLICATION_REALM_QUERY`, `realmBoundResourceURL`, `beginAuthorizationSession`, `endAuthorizationSession` |
 | Import-boundary enforcement | [ui/eslint.config.mjs](../../../ui/eslint.config.mjs) | member-to-admin, admin-to-member, and shared/session-to-realm restrictions |
 | Style layers | [ui/src/app/styles/shared.css](../../../ui/src/app/styles/shared.css), [ui/src/app/styles/member.css](../../../ui/src/app/styles/member.css), [ui/src/app/styles/member-features.css](../../../ui/src/app/styles/member-features.css), [ui/src/app/styles/admin.css](../../../ui/src/app/styles/admin.css), [ui/src/app/styles/admin-features.css](../../../ui/src/app/styles/admin-features.css) | neutral tokens/components plus isolated member and administrator feature/shell rules |
 | Multi-page development and build | [ui/vite.config.ts](../../../ui/vite.config.ts) | `dualApplicationHistoryFallback`, member/admin Rollup inputs |
@@ -47,6 +49,24 @@ guard accepts the session, it activates that realm's business registry; missing
 services fail immediately instead of falling through to the other realm. A role
 mismatch therefore constructs no wrong-realm business service and starts no
 wrong-realm request.
+
+Each entry fixes its authorization realm to exactly `member` or `admin` before
+bootstrap. All Athena API requests issued by the configured frontend transport,
+including bootstrap, scoped and raw fetches, uploads, deletes, and logout, carry
+`X-Athena-Application-Realm`. With authentication enabled, the API Server uses
+that value only to select the matching HttpOnly cookie slot and then validates
+the signed session and its persisted account realm. Loopback disabled-auth uses
+the same realm to select the isolated `local-user` or `local-admin` development
+identity. Selecting `admin` cannot reinterpret a member session as
+administrator authority.
+
+Browser APIs that cannot attach a request header use the strict
+`athenaRealm=member|admin` query transport. `EventSource` URLs and Athena-owned
+relative private resource URLs, including uploaded account and wallet avatars,
+receive that query. `realmBoundResourceURL` leaves external, `data:`, `blob:`,
+and other non-Athena URLs unchanged. If both the header and query are present,
+they must match or authentication fails. Bearer API Keys are self-contained
+credentials and do not require an application realm.
 
 Every HTML file carries two path values:
 
@@ -87,24 +107,38 @@ components keep one neutral class contract.
    same exact-segment classification, selects the corresponding cached HTML,
    and injects normalized application and deployment bases.
 3. The selected entry configures the shared request client with
-   `readDeploymentBaseHRef`, installs only its session/bootstrap service core,
-   mounts exactly one React root, and requests the shared `SessionBootstrap`.
-4. Anonymous bootstrap state renders the realm's login surface. Authenticated
-   bootstrap state is checked by the realm role guard. Only an accepted role
-   activates the corresponding member or administrator business service graph.
+   `readDeploymentBaseHRef` and its fixed `member` or `admin` realm, installs
+   only its session/bootstrap service core, mounts exactly one React root, and
+   requests the shared `SessionBootstrap` with the realm header.
+4. With authentication enabled, the API Server selects `athena.token.member` or
+   `athena.token.admin` from the realm header and validates that the signed
+   session belongs to the same persisted account realm. In loopback
+   disabled-auth, the same header selects `local-user` for `member` and
+   `local-admin` for `admin`, so both application roots bootstrap directly.
+   Anonymous or authenticated bootstrap state is still checked by the existing
+   frontend role guard. Only an accepted role activates the corresponding
+   member or administrator business service graph.
 5. The member guard sends an administrator to the deployment-relative `/admin`
    through full-document replacement. The administrator guard renders a local
    403 for an ordinary account and offers a full-document path back to the
    member application root.
-6. Logout clears the shared server session and returns to `/login` for the
-   member realm or `/admin/login` for the administrator realm. A new bootstrap
-   constructs a new session generation and no realm reuses authenticated state
-   from the ended session.
+6. Direct browser resources and `EventSource` connections use the realm query
+   when the browser API cannot set the header. The server rejects malformed,
+   duplicate, or disagreeing realm transports before selecting a cookie.
+7. Logout carries the current entry's realm header, revokes and clears only its
+   matching session cookie, and returns to `/login` for the member realm or
+   `/admin/login` for the administrator realm. The opposite realm's session and
+   tab remain authenticated. A new bootstrap constructs a new generation only
+   for the realm whose session changed.
 
 ## State / Data
 
-The two applications share the server-owned HttpOnly session cookie and the
-bootstrap wire model. The browser cannot inspect or copy that cookie. Each
+The two applications share the bootstrap wire model but own separate
+server-issued HttpOnly session cookies: `athena.token.member` and
+`athena.token.admin`. The browser cannot inspect or copy either credential. Both
+cookies can coexist on the same origin, so a member persona and an administrator
+persona can remain active in simultaneous tabs. The realm transport selects a
+cookie slot; it does not grant a role or transfer identity between slots. Each
 runtime owns its React tree, request subscriptions, asynchronous data cache, and
 authorization projection for the current account and session generation.
 
@@ -131,14 +165,29 @@ request `Host`, `Forwarded`, or browser-supplied return target.
 | `ATHENA_API_URL` | Development-only Vite proxy origin; both applications use the same target and the external deployment prefix is removed before proxying. |
 | `ATHENA_SERVER_PORT` | Supplies the default development API proxy port when `ATHENA_API_URL` is absent. |
 
+Loopback disabled-auth has no runtime role toggle. The fixed realm sent by each
+entry selects its matching development identity, while production authentication
+uses the two realm cookies and the same role guards.
+
 ## Invariants
 
 - Exactly one HTML and React entry handles a browser navigation.
 - Only an exact `/admin` path segment selects the administrator document.
 - Application base controls routing and assets; deployment base controls API,
   authentication, callback, and cross-realm URLs.
-- Member and administrator applications share a cookie but not a business
-  service graph, route graph, request registry, or realm cache namespace.
+- Member and administrator applications use the exact HttpOnly cookies
+  `athena.token.member` and `athena.token.admin`; neither application may fall
+  back to the other cookie.
+- Every API request emitted by a configured frontend entry carries
+  `X-Athena-Application-Realm: member|admin`.
+- `athenaRealm` is reserved for browser-native `EventSource` and Athena-owned
+  relative private GET resources that cannot attach the header. If header and
+  query are both present, their values must match.
+- API Key authentication does not require either realm transport.
+- Disabled-auth realm selection changes only the development identity source;
+  it does not bypass either frontend role guard or backend authorization.
+- The applications do not share a business service graph, route graph, request
+  registry, or realm cache namespace.
 - A role mismatch is resolved before realm business work starts.
 - Cross-realm movement is a full-document navigation; no persistent switcher is
   rendered in either shell.
@@ -154,8 +203,10 @@ asset remains an asset failure rather than returning HTML.
 
 Bootstrap and session failures remain inside the selected realm's anonymous,
 maintenance, or retry boundary. A role mismatch never falls back to constructing
-the wrong realm. Because both applications use one cookie, a successful logout
-or credential invalidation ends access from both on their next request.
+the wrong realm. A missing, invalid, duplicate, or mismatched realm transport
+fails authentication instead of trying the opposite cookie. Logout and session
+invalidation affect only the selected realm; the other realm continues until
+its own credential expires, is revoked, or is logged out.
 
 ## Observability
 

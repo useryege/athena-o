@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/authregistration"
 )
 
 const (
@@ -27,10 +30,11 @@ var (
 )
 
 type transaction struct {
-	Nonce     string    `json:"nonce"`
-	Verifier  string    `json:"verifier"`
-	ReturnTo  string    `json:"returnTo"`
-	CreatedAt time.Time `json:"createdAt"`
+	Nonce     string                              `json:"nonce"`
+	Verifier  string                              `json:"verifier"`
+	ReturnTo  string                              `json:"returnTo"`
+	Realm     accountcredentials.ApplicationRealm `json:"realm"`
+	CreatedAt time.Time                           `json:"createdAt"`
 }
 
 // TransactionStore owns short-lived, one-time Google OAuth transactions.
@@ -122,7 +126,7 @@ return value
 	if err := json.Unmarshal([]byte(value), &decoded); err != nil {
 		return transaction{}, fmt.Errorf("decode Google OIDC transaction: %w", err)
 	}
-	if decoded.Nonce == "" || decoded.Verifier == "" || decoded.ReturnTo == "" || decoded.CreatedAt.IsZero() {
+	if _, err := accountcredentials.ParseApplicationRealm(string(decoded.Realm)); err != nil || decoded.Nonce == "" || decoded.Verifier == "" || decoded.ReturnTo == "" || decoded.ReturnTo != authregistration.ReturnToForRealm(decoded.ReturnTo, decoded.Realm) || decoded.CreatedAt.IsZero() {
 		return transaction{}, fmt.Errorf("Google OIDC transaction is incomplete")
 	}
 	return decoded, nil

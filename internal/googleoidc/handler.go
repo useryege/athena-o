@@ -14,13 +14,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
+	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
 )
 
 const (
-	stateCookieName = "athena.google.state"
-	entryCookieName = "athena.google.entry"
+	stateCookieNamePrefix = "athena.google.state."
+	entryCookieName       = "athena.google.entry"
 )
 
 type googleClaims struct {
@@ -108,15 +109,21 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	returnTo := authregistration.ValidateReturnTo(r.URL.Query().Get("returnTo"))
+	realm, err := applicationRealmFromQuery(r)
+	if err != nil {
+		h.backend.RecordLoginResult(authregistration.LoginFailure)
+		http.Error(w, "application realm is required", http.StatusBadRequest)
+		return
+	}
+	returnTo := authregistration.ReturnToForRealm(r.URL.Query().Get("returnTo"), realm)
 	state, err := authregistration.RandomOpaqueValue()
 	if err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "state_generation", err)
+		h.fail(w, r, "google_unavailable", realm, returnTo, "state_generation", err)
 		return
 	}
 	nonce, err := authregistration.RandomOpaqueValue()
 	if err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "nonce_generation", err)
+		h.fail(w, r, "google_unavailable", realm, returnTo, "nonce_generation", err)
 		return
 	}
 	verifier := oauth2.GenerateVerifier()
@@ -124,12 +131,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Nonce:     nonce,
 		Verifier:  verifier,
 		ReturnTo:  returnTo,
+		Realm:     realm,
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "transaction_create", err)
+		h.fail(w, r, "google_unavailable", realm, returnTo, "transaction_create", err)
 		return
 	}
-	h.setStateCookies(w, state, returnTo)
+	h.setStateCookies(w, state, realm)
 	authorizationURL := h.oauth2Config.AuthCodeURL(
 		state,
 		oauth2.S256ChallengeOption(verifier),
@@ -161,59 +169,64 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	state := r.URL.Query().Get("state")
-	cookie, cookieErr := r.Cookie(stateCookieName)
-	entryCookie, _ := r.Cookie(entryCookieName)
-	fallbackReturnTo := ""
-	if entryCookie != nil && entryCookie.Value == "admin" {
-		fallbackReturnTo = "/admin"
-	}
-	h.clearStateCookie(w)
+	fallbackRealm, stateCookieMatched := h.primaryCallbackFallbackRealm(r, state)
 	if !authregistration.ValidOpaqueValue(state) {
-		h.fail(w, r, "google_state_invalid", fallbackReturnTo, "state_missing", nil)
+		h.fail(w, r, "google_state_invalid", fallbackRealm, "", "state_missing", nil)
 		return
 	}
 	transaction, err := h.store.Consume(r.Context(), state)
 	if err != nil {
+		if stateCookieMatched {
+			h.clearPrimaryStateCookie(w, fallbackRealm)
+		}
 		reason := "google_state_invalid"
 		if errors.Is(err, errTransactionUnavailable) {
 			reason = "google_unavailable"
 		}
-		h.fail(w, r, reason, fallbackReturnTo, "transaction_consume", err)
+		h.fail(w, r, reason, fallbackRealm, "", "transaction_consume", err)
 		return
 	}
-	returnTo := authregistration.ValidateReturnTo(transaction.ReturnTo)
+	realm := transaction.Realm
+	returnTo := authregistration.ReturnToForRealm(transaction.ReturnTo, realm)
+	cookie, cookieErr := r.Cookie(primaryStateCookieName(realm))
+	h.clearPrimaryStateCookies(w, realm)
 	if cookieErr != nil || !authregistration.ConstantTimeEqual(cookie.Value, state) || !transactionFresh(transaction.CreatedAt) {
-		h.fail(w, r, "google_state_invalid", returnTo, "state_binding", cookieErr)
+		h.fail(w, r, "google_state_invalid", realm, returnTo, "state_binding", cookieErr)
 		return
 	}
 	if r.URL.Query().Get("error") == "access_denied" {
-		h.fail(w, r, "google_cancelled", returnTo, "authorization_cancelled", nil)
+		h.fail(w, r, "google_cancelled", realm, returnTo, "authorization_cancelled", nil)
 		return
 	}
 	if r.URL.Query().Get("error") != "" || r.URL.Query().Get("code") == "" {
-		h.fail(w, r, "google_unavailable", returnTo, "authorization_response", nil)
+		h.fail(w, r, "google_unavailable", realm, returnTo, "authorization_response", nil)
 		return
 	}
 
 	verified, verificationErr := h.exchangeAndVerify(r.Context(), r.URL.Query().Get("code"), transaction.Verifier, transaction.Nonce, time.Time{})
 	if verificationErr != nil {
-		h.fail(w, r, verificationErr.reason, returnTo, verificationErr.stage, verificationErr.err)
+		h.fail(w, r, verificationErr.reason, realm, returnTo, verificationErr.stage, verificationErr.err)
 		return
 	}
 	identity := verified.identity
+	identity.Realm = realm
 	account, found, err := h.backend.GetByIdentity(r.Context(), identity)
 	if err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "identity_lookup", err)
+		h.fail(w, r, "google_unavailable", realm, returnTo, "identity_lookup", err)
 		return
 	}
 	if !found {
-		identity.AdministratorCandidate = strings.EqualFold(identity.VerifiedEmail, h.adminEmail)
+		if realm == accountcredentials.ApplicationRealmAdmin && !strings.EqualFold(identity.VerifiedEmail, h.adminEmail) {
+			h.fail(w, r, "google_not_allowed", realm, returnTo, "administrator_identity_rejected", nil)
+			return
+		}
 		if err := h.registrations.Begin(r.Context(), w, identity, returnTo); err != nil {
-			h.fail(w, r, "google_unavailable", returnTo, "registration_ticket_create", err)
+			h.fail(w, r, "google_unavailable", realm, returnTo, "registration_ticket_create", err)
 			return
 		}
 		log.WithField("stage", "registration_required").Info("Verified Google identity requires Athena username registration")
-		http.Redirect(w, r, h.deploymentPath("/register"), http.StatusSeeOther)
+		registrationQuery := url.Values{common.ApplicationRealmQueryParameter: []string{string(realm)}}
+		http.Redirect(w, r, h.deploymentPath("/register?"+registrationQuery.Encode()), http.StatusSeeOther)
 		return
 	}
 	h.completeLogin(w, r, account, identity, returnTo)
@@ -274,24 +287,24 @@ func (h *Handler) completeLogin(w http.ResponseWriter, r *http.Request, account 
 	token, err := h.backend.CreateExternalLogin(r.Context(), account.ID, identity)
 	if err != nil {
 		if errors.Is(err, authregistration.ErrMaintenance) {
-			h.fail(w, r, "maintenance", returnTo, "account_maintenance", err)
+			h.fail(w, r, "maintenance", identity.Realm, returnTo, "account_maintenance", err)
 			return
 		}
 		reason := "google_unavailable"
 		if errors.Is(err, authregistration.ErrIdentityNotAllowed) {
 			reason = "google_not_allowed"
 		}
-		h.fail(w, r, reason, returnTo, "session_issue", err)
+		h.fail(w, r, reason, identity.Realm, returnTo, "session_issue", err)
 		return
 	}
 	h.registrations.ClearCookie(w)
-	if err := h.registrations.SetAthenaSessionCookie(w, token); err != nil {
-		h.fail(w, r, "google_unavailable", returnTo, "cookie_issue", err)
+	if err := h.registrations.SetAthenaSessionCookie(w, identity.Realm, token); err != nil {
+		h.fail(w, r, "google_unavailable", identity.Realm, returnTo, "cookie_issue", err)
 		return
 	}
 	h.backend.RecordLoginResult(authregistration.LoginSuccess)
-	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle, "account_id": account.ID}).Info("Google OIDC login succeeded")
-	http.Redirect(w, r, h.deploymentPath(authregistration.ValidateReturnTo(returnTo)), http.StatusSeeOther)
+	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle, "realm": identity.Realm, "account_id": account.ID}).Info("Google OIDC login succeeded")
+	http.Redirect(w, r, h.deploymentPath(authregistration.ReturnToForRealm(returnTo, identity.Realm)), http.StatusSeeOther)
 }
 
 func transactionFresh(createdAt time.Time) bool {
@@ -299,9 +312,79 @@ func transactionFresh(createdAt time.Time) bool {
 	return !createdAt.After(now.Add(time.Minute)) && now.Sub(createdAt) <= transactionTTL
 }
 
-func (h *Handler) setStateCookies(w http.ResponseWriter, value, returnTo string) {
+func primaryStateCookieName(realm accountcredentials.ApplicationRealm) string {
+	return stateCookieNamePrefix + string(realm)
+}
+
+func (h *Handler) primaryCallbackFallbackRealm(r *http.Request, state string) (accountcredentials.ApplicationRealm, bool) {
+	if authregistration.ValidOpaqueValue(state) {
+		matchedRealm := accountcredentials.ApplicationRealm("")
+		for _, realm := range []accountcredentials.ApplicationRealm{accountcredentials.ApplicationRealmMember, accountcredentials.ApplicationRealmAdmin} {
+			cookie, err := r.Cookie(primaryStateCookieName(realm))
+			if err != nil || !authregistration.ConstantTimeEqual(cookie.Value, state) {
+				continue
+			}
+			if matchedRealm != "" {
+				matchedRealm = ""
+				break
+			}
+			matchedRealm = realm
+		}
+		if matchedRealm != "" {
+			return matchedRealm, true
+		}
+	}
+	entryCookie, _ := r.Cookie(entryCookieName)
+	if entryCookie != nil {
+		if realm, err := accountcredentials.ParseApplicationRealm(entryCookie.Value); err == nil {
+			return realm, false
+		}
+	}
+	return accountcredentials.ApplicationRealmMember, false
+}
+
+// Scoped Google callbacks are full-page provider redirects and therefore
+// cannot preserve the request header that began the member-only proof flow.
+// Their one-time server transaction already binds the account and Session, so
+// restore the fixed member realm before the normal cookie authenticator runs.
+func bindMemberApplicationRealm(r *http.Request) {
+	r.Header.Set(common.ApplicationRealmHeader, string(accountcredentials.ApplicationRealmMember))
+}
+
+func bindMemberApplicationRealmFromQuery(r *http.Request) error {
+	realm, err := applicationRealmFromQuery(r)
+	if err != nil || realm != accountcredentials.ApplicationRealmMember {
+		return fmt.Errorf("member application realm is invalid")
+	}
+	r.Header.Set(common.ApplicationRealmHeader, string(realm))
+	query := r.URL.Query()
+	query.Del(common.ApplicationRealmQueryParameter)
+	adaptedURL := *r.URL
+	adaptedURL.RawQuery = query.Encode()
+	r.URL = &adaptedURL
+	return nil
+}
+
+func applicationRealmFromQuery(r *http.Request) (accountcredentials.ApplicationRealm, error) {
+	values := r.URL.Query()[common.ApplicationRealmQueryParameter]
+	if len(values) != 1 {
+		return "", fmt.Errorf("application realm query is required exactly once")
+	}
+	realm, err := accountcredentials.ParseApplicationRealm(values[0])
+	if err != nil {
+		return "", fmt.Errorf("application realm query is invalid")
+	}
+	if headerValues := r.Header.Values(common.ApplicationRealmHeader); len(headerValues) > 0 {
+		if len(headerValues) != 1 || headerValues[0] != string(realm) {
+			return "", fmt.Errorf("application realm transports do not match")
+		}
+	}
+	return realm, nil
+}
+
+func (h *Handler) setStateCookies(w http.ResponseWriter, value string, realm accountcredentials.ApplicationRealm) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     stateCookieName,
+		Name:     primaryStateCookieName(realm),
 		Value:    value,
 		Path:     h.deploymentPath("/auth/google"),
 		MaxAge:   int(transactionTTL.Seconds()),
@@ -310,14 +393,9 @@ func (h *Handler) setStateCookies(w http.ResponseWriter, value, returnTo string)
 		Secure:   h.secureCookie,
 		SameSite: http.SameSiteLaxMode,
 	})
-	entry := "member"
-	validatedReturnTo := authregistration.ValidateReturnTo(returnTo)
-	if validatedReturnTo == "/admin" || strings.HasPrefix(validatedReturnTo, "/admin/") {
-		entry = "admin"
-	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     entryCookieName,
-		Value:    entry,
+		Value:    string(realm),
 		Path:     h.deploymentPath("/auth/google"),
 		MaxAge:   int(transactionTTL.Seconds()),
 		Expires:  time.Now().Add(transactionTTL),
@@ -327,9 +405,14 @@ func (h *Handler) setStateCookies(w http.ResponseWriter, value, returnTo string)
 	})
 }
 
-func (h *Handler) clearStateCookie(w http.ResponseWriter) {
+func (h *Handler) clearPrimaryStateCookies(w http.ResponseWriter, realm accountcredentials.ApplicationRealm) {
+	h.clearPrimaryStateCookie(w, realm)
+	h.clearEntryCookie(w)
+}
+
+func (h *Handler) clearPrimaryStateCookie(w http.ResponseWriter, realm accountcredentials.ApplicationRealm) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     stateCookieName,
+		Name:     primaryStateCookieName(realm),
 		Value:    "",
 		Path:     h.deploymentPath("/auth/google"),
 		MaxAge:   -1,
@@ -338,6 +421,9 @@ func (h *Handler) clearStateCookie(w http.ResponseWriter) {
 		Secure:   h.secureCookie,
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func (h *Handler) clearEntryCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     entryCookieName,
 		Value:    "",
@@ -350,8 +436,8 @@ func (h *Handler) clearStateCookie(w http.ResponseWriter) {
 	})
 }
 
-func (h *Handler) fail(w http.ResponseWriter, r *http.Request, reason, returnTo, stage string, err error) {
-	fields := log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle}
+func (h *Handler) fail(w http.ResponseWriter, r *http.Request, reason string, realm accountcredentials.ApplicationRealm, returnTo, stage string, err error) {
+	fields := log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle, "realm": realm}
 	if err != nil {
 		fields["error_type"] = fmt.Sprintf("%T", err)
 	}
@@ -359,11 +445,10 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, reason, returnTo,
 	h.backend.RecordLoginResult(authregistration.LoginFailure)
 	query := url.Values{"reason": []string{reason}}
 	if returnTo != "" {
-		query.Set("returnTo", authregistration.ValidateReturnTo(returnTo))
+		query.Set("returnTo", authregistration.ReturnToForRealm(returnTo, realm))
 	}
 	loginPath := "/login"
-	validatedReturnTo := authregistration.ValidateReturnTo(returnTo)
-	if validatedReturnTo == "/admin" || strings.HasPrefix(validatedReturnTo, "/admin/") {
+	if realm == accountcredentials.ApplicationRealmAdmin {
 		loginPath = "/admin/login"
 	}
 	http.Redirect(w, r, h.deploymentPath(loginPath)+"?"+query.Encode(), http.StatusSeeOther)

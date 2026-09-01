@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/transport"
 
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/util/env"
 )
 
@@ -36,7 +37,7 @@ var maxCookieNumber = env.ParseNumFromEnv(common.EnvMaxCookieNumber, 20, 0, math
 func MakeCookieMetadata(key, value string, flags ...string) ([]string, error) {
 	attributes := strings.Join(flags, "; ")
 
-	// cookie: name=value; attributes and key: key-(i) e.g. athena.token-1
+	// cookie: name=value; attributes and additional chunks: key-(i)
 	maxValueLength := maxCookieValueLength(key, attributes)
 	numberOfCookies := int(math.Ceil(float64(len(value)) / float64(maxValueLength)))
 	if numberOfCookies > maxCookieNumber {
@@ -48,11 +49,11 @@ func MakeCookieMetadata(key, value string, flags ...string) ([]string, error) {
 
 // browser has limit on size of cookie, currently 4kb. In order to
 // support cookies longer than 4kb, we split cookie into multiple 4kb chunks.
-// first chunk will be of format athena.token=<numberOfChunks>:token; attributes
+// first chunk is key=<numberOfChunks>:value; attributes
 func splitCookie(key, value, attributes string) []string {
 	var cookies []string
 	valueLength := len(value)
-	// cookie: name=value; attributes and key: key-(i) e.g. athena.token-1
+	// cookie: name=value; attributes and additional chunks: key-(i)
 	maxValueLength := maxCookieValueLength(key, attributes)
 	numberOfChunks := int(math.Ceil(float64(valueLength) / float64(maxValueLength)))
 
@@ -82,7 +83,7 @@ func splitCookie(key, value, attributes string) []string {
 
 // JoinCookies combines chunks of cookie based on key as prefix. It returns cookie
 // value as string. cookieString is of format key1=value1; key2=value2; key3=value3
-// first chunk will be of format athena.token=<numberOfChunks>:token; attributes
+// first chunk is key=<numberOfChunks>:value; attributes
 func JoinCookies(key string, cookieList []*http.Cookie) (string, error) {
 	cookies := make(map[string]string)
 	for _, cookie := range cookieList {
@@ -242,7 +243,22 @@ func drainBody(body io.ReadCloser) {
 	}
 }
 
-func SetTokenCookie(token string, baseHRef string, isSecure bool, w http.ResponseWriter) error {
+// RealmAuthCookieName returns the exact browser-session cookie selected by a
+// validated application realm. The caller-controlled realm never changes the
+// permissions carried by the signed token; it only selects one isolated
+// browser session slot.
+func RealmAuthCookieName(realm accountcredentials.ApplicationRealm) (string, error) {
+	switch realm {
+	case accountcredentials.ApplicationRealmMember:
+		return common.MemberAuthCookieName, nil
+	case accountcredentials.ApplicationRealmAdmin:
+		return common.AdministratorAuthCookieName, nil
+	default:
+		return "", fmt.Errorf("invalid application realm %q", realm)
+	}
+}
+
+func SetTokenCookie(token string, realm accountcredentials.ApplicationRealm, baseHRef string, isSecure bool, w http.ResponseWriter) error {
 	var path string
 	if baseHRef != "" {
 		path = strings.TrimRight(strings.TrimLeft(baseHRef, "/"), "/")
@@ -252,7 +268,11 @@ func SetTokenCookie(token string, baseHRef string, isSecure bool, w http.Respons
 	if isSecure {
 		flags = append(flags, "Secure")
 	}
-	cookies, err := MakeCookieMetadata(common.AuthCookieName, token, flags...)
+	cookieName, err := RealmAuthCookieName(realm)
+	if err != nil {
+		return err
+	}
+	cookies, err := MakeCookieMetadata(cookieName, token, flags...)
 	if err != nil {
 		return fmt.Errorf("error creating cookie metadata: %w", err)
 	}
