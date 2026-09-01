@@ -3,12 +3,13 @@
 ## Scope
 
 Wallet Ownership and Custody owns Athena-managed EVM and Solana keypairs,
-UUID-account ownership, required wallet remarks, avatar metadata, encrypted
-private-key persistence, and the safe Wallet API projection. Every wallet
-belongs to exactly one account. Application administrators have no cross-user
-Wallet read or write path and no own-account Wallet path: their fixed access
-aggregate gives Wallet `NONE`, and the administrator application constructs no
-Wallet service or route.
+UUID-account ownership, optional create/import remark input with persistently
+non-empty wallet remarks, avatar metadata, encrypted private-key persistence,
+and the safe Wallet API projection. Every wallet belongs to exactly one
+account. Application administrators have no cross-user Wallet read or write
+path and no own-account Wallet path: their fixed access aggregate gives Wallet
+`NONE`, and the administrator application constructs no Wallet service or
+route.
 
 [Wallet Secret Reauthentication](wallet-secret-reauthentication.md) owns the
 independent browser proofs required before a stored private key is revealed or
@@ -163,29 +164,39 @@ this is a server-custodied design.
    pages the same safe Solana projection without granting the public Wallet list
    API or requiring a Worm management lease.
 2. `CreateWallet` requires a login-session credential plus Wallet
-   `READ_WRITE`. It validates a trimmed 1–50-rune remark and optional fixed
-   avatar preset, generates a random secp256k1 or Ed25519 keypair, encrypts the
-   canonical private-key text, and commits the wallet. The private key is
-   returned once beside the safe item.
+   `READ_WRITE`. It trims an optional remark, accepts either empty input or
+   1–50 runes, validates the optional fixed avatar preset, generates a random
+   secp256k1 or Ed25519 keypair, encrypts the canonical private-key text, and
+   commits the wallet. The private key is returned once beside the safe item.
 3. `ImportWallet` has the same credential and metadata requirements. EVM accepts
    one 32-byte hexadecimal scalar with optional `0x`. Solana accepts canonical
    Base58, a JSON byte array, or hexadecimal for a 32-byte seed or verified
    64-byte keypair. Import derives and canonicalizes the address before insert
    and returns no private key.
-4. EVM addresses are displayed with EIP-55 checksum casing and indexed through
+4. Every create/import insert opens a transaction and acquires an advisory lock
+   scoped to the owner UUID and wallet type, including requests with a custom
+   remark. An empty or whitespace-only remark is assigned `EVM-<n>` for EVM or
+   `SOL-<n>` for Solana, where `<n>` is one plus the committed wallet count for
+   that owner and type. Custom-remark wallets participate in the same count, so
+   the default name describes creation order within that owner/type scope rather
+   than the number of previously generated defaults. The count, generated
+   remark, and insert share the transaction, serializing concurrent allocations
+   without making remarks unique.
+5. EVM addresses are displayed with EIP-55 checksum casing and indexed through
    lowercase `address_key`. Solana addresses and duplicate keys use canonical
    Base58. Duplicate `(owner, wallet_type, address_key)` inserts return already
    exists without exposing another record.
-5. Remark and preset updates require Wallet `READ_WRITE` and an exact positive
-   `expectedRevision`. Setting a preset clears uploaded-object metadata; an
-   empty preset selects the deterministic default. The committed revision is
-   advanced atomically.
-6. Wallet avatar upload validates the owner and revision before storing a
+6. Remark and preset updates require Wallet `READ_WRITE` and an exact positive
+   `expectedRevision`. Remark updates continue to require a trimmed 1–50-rune
+   value and never invoke default-name allocation. Setting a preset clears
+   uploaded-object metadata; an empty preset selects the deterministic default.
+   The committed revision is advanced atomically.
+7. Wallet avatar upload validates the owner and revision before storing a
    candidate under `wallet-avatars/<sha256(account UUID)>/<random UUID>`. The
    metadata CAS is the live-reference commit point. Replacement commits before
    the previous object is deleted best effort. Reset clears both preset and
    upload metadata and restores the deterministic default.
-7. Uploaded-avatar delivery repeats authentication and owner lookup before
+8. Uploaded-avatar delivery repeats authentication and owner lookup before
    streaming. GET accepts Wallet `READ` or Worm Trading `READ`, allowing either
    the Wallet page or an owner-scoped Worm Trading summary to render the same
    uploaded object. Upload, preset replacement, and reset remain exclusive to
@@ -193,11 +204,11 @@ this is a server-custodied design.
    bundled UI definitions; only uploaded avatars use the authenticated endpoint.
    A daily collector deletes unreferenced wallet-avatar objects only after a
    24-hour grace period.
-8. `RevealWalletPrivateKey` exists only on the authenticated internal service.
+9. `RevealWalletPrivateKey` exists only on the authenticated internal service.
    The native API Server HTTP handler calls it after login-only authorization and
    a valid wallet-secret lease; the Wallet service additionally requires the
    shared internal Bearer. Public gRPC and Swagger do not expose this RPC.
-9. `SignWormAuthChallenge` also exists only on the authenticated internal
+10. `SignWormAuthChallenge` also exists only on the authenticated internal
    service. The native Worm connection handler calls it only after interactive
    login, Worm Trading `READ_WRITE`, exact-origin, Worm-only lease, and owner-
    scoped Solana Wallet checks. Wallet independently repeats owner, type,
@@ -205,14 +216,14 @@ this is a server-custodied design.
    The private key never leaves Wallet, and the challenge never reaches the
    browser; only signature and digest return to the API Server for comparison
    and Worm Trading verification.
-10. Execution-preview creation requires an interactive Worm Trading
+11. Execution-preview creation requires an interactive Worm Trading
     `READ_WRITE` request and exact origin. For each ordered Wallet ID, the API
     Server calls owner-scoped `GetWallet`, verifies Solana type and canonical
     address, and snapshots only safe fields. The later asynchronous preview
     worker reads balances and existing Worm exposure through Worm Trading's
     own adapters and credentials. Wallet receives no estimate, market, plan,
     draft, transaction, or signing request.
-11. A separately authorized live Run may call the capability-scoped execution
+12. A separately authorized live Run may call the capability-scoped execution
     signer. Worm Trading supplies the server-frozen owner, Wallet ID/address,
     Run and Step UUIDs, intent digest, and either Worm's exact sign-in message or
     returned position-request transaction. Wallet decrypts the key only for the
@@ -220,7 +231,7 @@ this is a server-custodied design.
     only the bounded signature/finalize payload plus digests and signer
     metadata. Neither signer RPC creates a Solana RPC request or submits a
     transaction.
-12. An Assets Cash-Out create calls owner-scoped `GetWallet` once for the
+13. An Assets Cash-Out create calls owner-scoped `GetWallet` once for the
     submitted positive Wallet ID and current account. The API Server requires
     an exact Solana row and canonical address before forwarding it to Worm
     Trading with the HMAC position pubkey. Worm Trading fresh-reads and freezes
@@ -234,11 +245,15 @@ this is a server-custodied design.
 
 `wallets` has a positive `BIGSERIAL` ID, non-null UUID `owner_account_id`,
 `wallet_type` restricted to `EVM` or `SOLANA`, canonical display and lookup
-addresses, required remark, source (`created` or `imported`), encrypted private
-key, mutually exclusive preset/upload avatar metadata, positive revision, and
-timestamps. A check constraint requires uploaded object key, content type,
-ETag, and positive size to be either complete or all empty. A preset and upload
-cannot coexist.
+addresses, non-null 1–50-rune remark, source (`created` or `imported`), encrypted
+private key, mutually exclusive preset/upload avatar metadata, positive
+revision, and timestamps. Create/import input may omit the remark, but the
+transaction resolves it before insertion, so `WalletItem.remark` and every
+durable row remain non-empty. Default-name allocation uses no counter table or
+remark uniqueness constraint; it derives the next suffix from the committed
+owner/type wallet count while holding the transaction-scoped advisory lock. A
+check constraint requires uploaded object key, content type, ETag, and positive
+size to be either complete or all empty. A preset and upload cannot coexist.
 
 The table contains no chain, business-purpose type, system-wallet flag,
 nullable owner, mnemonic, derivation path, or repository seed. There is no
@@ -300,6 +315,16 @@ signed transaction, Run binding, or digest in the Wallet database.
   Wallet operations. API Keys cannot list the Worm management inventory, invoke
   the Worm challenge signer, or manage a connection.
 - Create/import require login or isolated development-session capability.
+- Create/import remark input may be omitted, empty, or whitespace-only; the
+  persisted safe item still has a non-empty remark. A supplied non-empty remark
+  is trimmed and limited to 50 runes, while remark updates require an explicit
+  trimmed 1–50-rune value.
+- Every create/import insert, including one with a custom remark, holds the
+  owner-and-wallet-type advisory lock through insertion. Empty-remark requests
+  count and allocate while holding that lock; committed custom-remark wallets
+  therefore consume positions in later counts. EVM and Solana scopes allocate
+  `EVM-<n>` and `SOL-<n>` independently, and duplicate remark text remains
+  allowed.
 - Public safe models never contain owner UUID, ciphertext, object key, private
   key, mnemonic, or role.
 - Create reveals the canonical private key once; import never echoes it.
@@ -340,9 +365,12 @@ mismatched RPC Bearer returns unauthenticated before any Wallet handler executes
 standard gRPC health checks remain credential-free.
 
 Invalid input fails before encryption or SQL. Encryption or insert failure
-leaves no wallet row; duplicate constraints preserve the original record.
-Decryption failure returns no partial secret. PostgreSQL transaction failure
-preserves the previous remark/avatar revision.
+leaves no wallet row; duplicate constraints preserve the original record. The
+owner/type advisory lock, count, default-name assignment, and insert share one
+transaction, so concurrent create/import requests receive distinct committed
+suffixes while a duplicate-address or failed insert rolls back without
+consuming a suffix. Decryption failure returns no partial secret. PostgreSQL
+transaction failure preserves the previous remark/avatar revision.
 
 Worm challenge validation fails before decrypting the key. A decryption,
 keypair, derived-address, signing, or response-validation failure returns no

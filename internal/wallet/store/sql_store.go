@@ -118,19 +118,51 @@ func (s *SQLStore) Close() error {
 }
 
 func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordRequest) (*WalletRecord, error) {
-	if s.queries == nil {
+	if s.pool == nil || s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
 	ownerAccountID, err := requiredUUID(req.OwnerAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
 	}
-	row, err := s.queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
+
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		return nil, fmt.Errorf("begin wallet creation transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := walletsqlc.New(tx)
+	if err := queries.LockWalletCreationSequence(ctx, walletsqlc.LockWalletCreationSequenceParams{
+		OwnerAccountID: ownerAccountID,
+		WalletType:     req.WalletType,
+	}); err != nil {
+		return nil, fmt.Errorf("lock wallet creation sequence: %w", err)
+	}
+
+	remark := req.Remark
+	if remark == "" {
+		total, err := queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
+			OwnerAccountID: ownerAccountID,
+			WalletType:     nullableTrimmedText(req.WalletType),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("count wallets for default remark: %w", err)
+		}
+		remark, err = defaultWalletRemark(req.WalletType, total)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	row, err := queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
 		OwnerAccountID:       ownerAccountID,
 		WalletType:           req.WalletType,
 		Address:              req.Address,
 		AddressKey:           req.AddressKey,
-		Remark:               req.Remark,
+		Remark:               remark,
 		Source:               req.Source,
 		PrivateKeyCiphertext: req.PrivateKeyCiphertext,
 		AvatarPresetID:       req.AvatarPresetID,
@@ -141,7 +173,29 @@ func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordReque
 		}
 		return nil, fmt.Errorf("create wallet: %w", err)
 	}
+	if err := tx.Commit(ctx); err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrWalletAlreadyExists
+		}
+		return nil, fmt.Errorf("commit wallet creation: %w", err)
+	}
 	return walletRecordFromSQLC(row), nil
+}
+
+func defaultWalletRemark(walletType string, currentTotal int64) (string, error) {
+	if currentTotal < 0 || currentTotal == math.MaxInt64 {
+		return "", fmt.Errorf("wallet default remark sequence is exhausted")
+	}
+	prefix := ""
+	switch walletType {
+	case "EVM":
+		prefix = "EVM"
+	case "SOLANA":
+		prefix = "SOL"
+	default:
+		return "", fmt.Errorf("wallet type %q does not support a default remark", walletType)
+	}
+	return fmt.Sprintf("%s-%d", prefix, currentTotal+1), nil
 }
 
 func (s *SQLStore) ListWallets(ctx context.Context, opts ListWalletsOptions) ([]*v1alpha1.WalletItem, int64, error) {

@@ -73,10 +73,10 @@ const defaultAvatarPalettes = [
 
 const unicodeCharacterCount = (value: string) => Array.from(value).length;
 
-const remarkValidationMessage = (value: string) => {
+const remarkValidationMessage = (value: string, required = true) => {
     const remark = value.trim();
     if (!remark) {
-        return 'A wallet remark is required.';
+        return required ? 'A wallet remark is required.' : '';
     }
     if (unicodeCharacterCount(remark) > 50) {
         return 'Use 50 Unicode characters or fewer.';
@@ -174,7 +174,7 @@ const AvatarPresetPicker = (props: {value?: string; onChange?: (value: string) =
 
 interface WalletFormValues {
     walletType: WalletType;
-    remark: string;
+    remark?: string;
     avatarPresetId?: string;
     privateKey?: string;
 }
@@ -217,16 +217,16 @@ const WalletCreateImportModal = (props: {
                     validateTrigger={['onChange', 'onBlur']}
                     rules={[
                         {
-                            validator: (_, value: string) => {
-                                const message = remarkValidationMessage(value || '');
+                            validator: (_, value?: string) => {
+                                const message = remarkValidationMessage(value || '', false);
                                 return message ? Promise.reject(new Error(message)) : Promise.resolve();
                             }
                         }
                     ]}
-                    extra='Required. You can edit this later.'>
+                    extra='Optional. Leave blank to use the next default name, such as EVM-1 or SOL-1. You can edit it later.'>
                     <Input
                         autoFocus={true}
-                        placeholder='e.g. Treasury operations'
+                        placeholder='Optional custom remark'
                         disabled={props.submitting}
                         showCount={{formatter: info => `${unicodeCharacterCount(info.value)}/50`}}
                     />
@@ -849,7 +849,7 @@ const WalletWriteSurface = React.forwardRef<
         setSubmitting(true);
         const input: CreateWalletInput = {
             walletType: values.walletType,
-            remark: values.remark.trim(),
+            remark: values.remark?.trim() || '',
             avatarPresetId: values.avatarPresetId || ''
         };
         const result =

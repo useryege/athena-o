@@ -248,6 +248,25 @@ func (q *Queries) ListWallets(ctx context.Context, arg ListWalletsParams) ([]Lis
 	return items, nil
 }
 
+const lockWalletCreationSequence = `-- name: LockWalletCreationSequence :exec
+SELECT pg_advisory_xact_lock(
+  hashtextextended(
+    $1::uuid::text || ':' || $2::text,
+    0
+  )
+)
+`
+
+type LockWalletCreationSequenceParams struct {
+	OwnerAccountID pgtype.UUID
+	WalletType     string
+}
+
+func (q *Queries) LockWalletCreationSequence(ctx context.Context, arg LockWalletCreationSequenceParams) error {
+	_, err := q.db.Exec(ctx, lockWalletCreationSequence, arg.OwnerAccountID, arg.WalletType)
+	return err
+}
+
 const replaceWalletAvatarMetadata = `-- name: ReplaceWalletAvatarMetadata :one
 WITH current AS (
   SELECT id, avatar_object_key

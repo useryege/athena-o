@@ -1,3 +1,11 @@
+-- name: LockWalletCreationSequence :exec
+SELECT pg_advisory_xact_lock(
+  hashtextextended(
+    sqlc.arg('owner_account_id')::uuid::text || ':' || sqlc.arg('wallet_type')::text,
+    0
+  )
+);
+
 -- name: CreateWallet :one
 INSERT INTO wallets (
   owner_account_id,

@@ -167,7 +167,7 @@ func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletR
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	remark, err := normalizeWalletRemark(req.GetRemark())
+	remark, err := normalizeOptionalWalletRemark(req.GetRemark())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -198,7 +198,7 @@ func (s *Service) ImportWallet(ctx context.Context, req *apiclient.ImportWalletR
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	remark, err := normalizeWalletRemark(req.GetRemark())
+	remark, err := normalizeOptionalWalletRemark(req.GetRemark())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -499,13 +499,24 @@ func requireWalletRequester(accountID string) (string, error) {
 }
 
 func normalizeWalletRemark(input string) (string, error) {
+	remark, err := normalizeOptionalWalletRemark(input)
+	if err != nil {
+		return "", err
+	}
+	if remark == "" {
+		return "", fmt.Errorf("remark must contain between 1 and %d characters", maxWalletRemarkRunes)
+	}
+	return remark, nil
+}
+
+func normalizeOptionalWalletRemark(input string) (string, error) {
 	if !utf8.ValidString(input) {
 		return "", errors.New("remark must be valid UTF-8")
 	}
 	remark := strings.TrimSpace(input)
 	runeCount := utf8.RuneCountInString(remark)
-	if runeCount < 1 || runeCount > maxWalletRemarkRunes {
-		return "", fmt.Errorf("remark must contain between 1 and %d characters", maxWalletRemarkRunes)
+	if runeCount > maxWalletRemarkRunes {
+		return "", fmt.Errorf("remark must contain at most %d characters", maxWalletRemarkRunes)
 	}
 	return remark, nil
 }

@@ -49,7 +49,7 @@ export interface ListWalletsResult {
 
 export interface CreateWalletInput {
     walletType: WalletType;
-    remark: string;
+    remark?: string;
     avatarPresetId?: string;
 }
 
@@ -229,7 +229,7 @@ export class WalletService {
     public createWallet(input: CreateWalletInput): AbortablePromise<CreateWalletResult> {
         const req = requests.post('/wallets', writeScope).send({
             walletType: input.walletType,
-            remark: input.remark,
+            remark: input.remark?.trim() || '',
             avatarPresetId: input.avatarPresetId || ''
         });
         return abortableRequest(req, response => ({
@@ -242,7 +242,7 @@ export class WalletService {
         const req = requests.post('/wallets:import', writeScope).send({
             walletType: input.walletType,
             privateKey: input.privateKey,
-            remark: input.remark,
+            remark: input.remark?.trim() || '',
             avatarPresetId: input.avatarPresetId || ''
         });
         return abortableRequest(req, response => normalizeWallet((response.body || {}).item || {}));

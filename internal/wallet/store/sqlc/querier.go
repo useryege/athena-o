@@ -14,6 +14,7 @@ type Querier interface {
 	GetWallet(ctx context.Context, arg GetWalletParams) (Wallet, error)
 	ListWalletAvatarObjectKeys(ctx context.Context) ([]string, error)
 	ListWallets(ctx context.Context, arg ListWalletsParams) ([]ListWalletsRow, error)
+	LockWalletCreationSequence(ctx context.Context, arg LockWalletCreationSequenceParams) error
 	ReplaceWalletAvatarMetadata(ctx context.Context, arg ReplaceWalletAvatarMetadataParams) (ReplaceWalletAvatarMetadataRow, error)
 	ResetWalletAvatarMetadata(ctx context.Context, arg ResetWalletAvatarMetadataParams) (ResetWalletAvatarMetadataRow, error)
 	UpdateWalletAvatarPreset(ctx context.Context, arg UpdateWalletAvatarPresetParams) (UpdateWalletAvatarPresetRow, error)
