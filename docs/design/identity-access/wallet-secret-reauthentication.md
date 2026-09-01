@@ -43,6 +43,7 @@ owns ordered batch execution, balance gates, and batch Wallet locks.
 | --- | --- | --- |
 | Typed request credential and realm selection | [internal/accountcredentials/types.go](../../../internal/accountcredentials/types.go), [internal/server/application_realm.go](../../../internal/server/application_realm.go), [util/session/credential.go](../../../util/session/credential.go), [util/session/sessionmanager.go](../../../util/session/sessionmanager.go) | `ApplicationRealmMember`, `authenticateRealmLoginCookie`, `AuthenticatedCredential`, `Capability`, `IsInteractiveLogin`, `WithAuthenticatedCredential`, `AuthenticateToken` |
 | Independent lease state and stable errors | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/walletsecret/errors.go](../../../internal/walletsecret/errors.go) | `NewManager`, `NewWormCredentialManager`, `Manager.Issue`, `Manager.Validate`, `Manager.ClearCookie`, `LeaseTTL`, stable Wallet and Worm reasons |
+| Lease-free selection and lease-bound reconciliation | [internal/server/worm_wallet_selection.go](../../../internal/server/worm_wallet_selection.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/wormtrading/wallet_selections.go](../../../internal/wormtrading/wallet_selections.go), [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go) | owner selection GET/replace, `InspectWalletSelectionCandidates`, selected-only connect, retirement-only disconnect, 20-slot admission |
 | Provider-state creation limits | [internal/walletsecret/state_rate_limit.go](../../../internal/walletsecret/state_rate_limit.go) | `CreateRateLimitedState` |
 | Sensitive boundaries and Worm inventory | [internal/server/wallet_secret.go](../../../internal/server/wallet_secret.go), [internal/server/walletsecrethttp/handler.go](../../../internal/server/walletsecrethttp/handler.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateWalletSecretHTTP`, `authenticateWormConnectionHTTP`, `validWalletSecretOrigin`, `validWormConnectionOrigin`, `Handler.Reveal`, `listWormWalletConnections`, `manageWormConnection` |
 | Google reauthentication | [internal/googleoidc/wallet_secret_reauth.go](../../../internal/googleoidc/wallet_secret_reauth.go), [internal/googleoidc/wallet_secret_store.go](../../../internal/googleoidc/wallet_secret_store.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/googleoidc/worm_credential_store.go](../../../internal/googleoidc/worm_credential_store.go) | `WalletSecretReauthentication`, `WormCredentialReauthentication`, `exchangeAndVerify`, separate transaction stores |
@@ -55,7 +56,7 @@ owns ordered batch execution, balance gates, and batch Wallet locks.
 | Position-Cash-Out development proof and projection | [internal/server/worm_position_cash_out_authorization.go](../../../internal/server/worm_position_cash_out_authorization.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `developmentWormPositionCashOutAuthorization`, `authorizeWormPositionCashOutProof`, stable Cash-Out proof errors and route wiring |
 | Batch-Cash-Out proof and projection | [internal/googleoidc/worm_position_cash_out_batch_authorization.go](../../../internal/googleoidc/worm_position_cash_out_batch_authorization.go), [internal/phantomauth/worm_position_cash_out_batch_authorization.go](../../../internal/phantomauth/worm_position_cash_out_batch_authorization.go), [internal/server/worm_position_cash_out_batch_authorization.go](../../../internal/server/worm_position_cash_out_batch_authorization.go), [internal/server/worm_position_cash_out_batches.go](../../../internal/server/worm_position_cash_out_batches.go) | independent Google/Phantom/development state, `WORM_POSITION_CASH_OUT_BATCH`, intent-bound authorization, credential-bound Continue admission |
 | Logout invalidation | [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `Handler.ServeHTTP`, `clearSensitiveCookies` |
-| Browser flow and cleanup | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, Run and position-Cash-Out intent-only redirect recovery |
+| Browser flow and cleanup | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, persisted Worm-selection reconciliation, Run and position-Cash-Out intent-only redirect recovery |
 | Process and route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/authz.go](../../../internal/server/authz.go) | `NewServer`, `newHTTPServer`, `interactiveLoginGRPCMethods` |
 
 ## Architecture
@@ -69,7 +70,7 @@ flowchart LR
     P --> R4["one durable position Cash Out + intent authorization"]
     P --> R5["one durable Cash Out batch + ordered-intent authorization"]
     B --> H1["Same-origin reveal handler"]
-    B --> I["Native lease-free owner Worm inventory"]
+    B --> I["Native lease-free owner Worm inventory and selection"]
     B --> H2["Same-origin Worm mutation handler"]
     H1 --> R1
     H2 --> R2
@@ -110,15 +111,23 @@ connections, but every operation repeats typed-login validation, the appropriate
 module requirement, lease validation, and owner-scoped Wallet retrieval. Cookie
 path and scope mismatch prevent either manager from accepting the other lease.
 
-The native Worm connection collection GET is a management discovery boundary,
-not a lease consumer. It requires an interactive credential and Worm Trading
-`READ_WRITE`, derives the current account and Solana filter server-side, and
-requires neither a Worm lease nor the mutation Origin header. It returns only
-safe connection state and cannot obtain a provider challenge,
-invoke Wallet signing, decrypt a Worm credential, or mutate connection state.
-The subsequent connect, reconnect, acknowledged regenerate, and DELETE forms
-remain the only lease-authorized Worm credential operations. Assets exposes
-DELETE only as exceptional cleanup for an already incomplete revocation. The
+The native Worm connection collection and owner selection GET/PUT are management
+boundaries, not lease consumers. They require an interactive credential; selection
+GET requires Worm Trading `READ`, while inventory and selection replacement
+require `READ_WRITE`. Each derives the current account and Solana filter
+server-side and requires no Worm lease; selection replacement alone requires
+exact Origin because it mutates durable desired state. Reads return only safe
+connection/selection state and cannot obtain a provider challenge, invoke
+Wallet signing, or mutate connection state. Inventory removal inspection may
+decrypt an active Worm credential only inside Worm Trading for complete,
+read-only HMAC exposure checks; plaintext never reaches the API Server or browser.
+The subsequent selected-Wallet connect/reconnect, acknowledged regenerate, and
+retirement disconnect forms remain the only lease-authorized Worm credential
+operations. DELETE is admitted only for a durable retirement, including retry
+of an incomplete revocation. The first revocation dispatch follows a fresh
+provider exposure inspection. A retry from durable `DISCONNECTING` or
+`REVOCATION_REQUIRED` resumes stored credential cleanup without trying to reuse
+the no-longer-active HMAC credential for that inspection. The
 regenerate form is narrower still: it is admitted only for
 `RECONNECT_REQUIRED` plus `CONNECT_OUTCOME_UNKNOWN`, creates a new credential,
 and deliberately does not list or revoke the unknown remote key.
@@ -269,14 +278,15 @@ supersedes the prior authorization for the unchanged batch intent.
     browser. After Worm Trading dispatches credential creation, it completes the
     provider call and local persistence under its own bounded context; loss of
     the browser request does not cancel that already-issued provider mutation.
-16. Assets uses one Worm proof for its serial full-account connection batch. A
+16. Assets uses one Worm proof for serial reconciliation of the persisted
+    zero-through-20 Wallet selection. A
     valid lease admits successive owned-wallet mutations until its fixed expiry;
     an expired lease pauses before the next mutation and requires another
     explicit page-level proof. Google navigation stores only
-    `{kind: "auto-connect"}`, `{kind: "reconnect", walletId}`,
+    `{kind: "reconcile-selection"}`, `{kind: "reconnect", walletId}`,
     `{kind: "regenerate", walletId}`, or `{kind: "cleanup", walletId}` and
-    rebuilds an automatic queue from
-    authoritative inventory after return. It never stores a queue or retries a
+    rebuilds removal-first work from the authoritative selection, retirements,
+    and inventory after return. It never stores a queue or retries a
     mutation automatically. Member-realm logout clears both lease cookies before
     revoking the member login token; admin-realm logout leaves the member session
     and leases untouched. An access revision change
@@ -429,10 +439,10 @@ sensitive-operation responses set
 `Cache-Control: no-store, private`, `Pragma: no-cache`,
 `Vary: Cookie, Authorization`, and `Referrer-Policy: no-referrer`.
 
-The browser holds an automatic connection queue only in the mounted Assets
+The browser holds selection-reconciliation progress only in the mounted Assets
 page. The Worm-specific `sessionStorage` record is an intent-only discriminated
-value for full-account automatic connection, one manual reconnect, one
-confirmed outcome-unknown regenerate, or one exceptional cleanup; it never
+value for current-selection reconciliation, one manual reconnect, one
+confirmed outcome-unknown regenerate, or one retirement cleanup; it never
 contains the risk acknowledgement, inventory, credentials, lease, proof, or
 connection result and is consumed once after Google returns. Regenerate asks
 for a fresh confirmation after every failure before the browser sends its
@@ -516,13 +526,17 @@ been safely dispatched within that second window.
   Solana wallet, exact origin, a valid current login session, and the matching
   non-expired Worm-only lease. Disabled-auth Worm management accepts only
   `http://localhost:4000` as that Origin.
-- Automatic bootstrap and ordinary connect, reconnect, disconnect, and cleanup
+- Automatic selection reconciliation and ordinary connect, reconnect, disconnect, and cleanup
   cannot clear `CONNECT_OUTCOME_UNKNOWN`. Only the dedicated regenerate form may
   proceed, and only after an interactive user explicitly acknowledges that the
   unknown remote credential may remain active and will not be listed or revoked.
 - Worm connection inventory requires an interactive credential, Worm Trading
   `READ_WRITE`, and current-account Solana ownership, but no lease or Origin
   header; it cannot mutate a connection or invoke the purpose-bound signer.
+- Reading or revision-CAS replacing the zero-through-20 desired selection does
+  not consume a Worm lease. Applying it does: every credential creation or
+  revocation still requires the current Worm-only lease, exact origin, selected
+  or retiring membership, and owner-scoped Solana validation.
 - Administrator role never bypasses wallet ownership or lease validation.
 - Every proof and sensitive operation authenticates the member realm and exact
   member cookie. A coexisting administrator session cannot obtain or consume a
@@ -626,9 +640,10 @@ the member session or its leases. A Wallet-service or decryption failure returns
 no partial private key or Worm signature and does not extend a lease. Failure after
 the Worm lease has admitted an operation follows Worm Trading's durable
 connection and revocation state machine rather than issuing another lease or
-automatically retrying credential creation. Full-account bootstrap pauses when
-the lease expires and requires one explicit new proof before rebuilding its
-remaining work from authoritative inventory; it never stores or blindly
+automatically retrying credential creation. Selection reconciliation pauses
+when the lease expires and requires one explicit new proof before rebuilding
+its removal-first work from authoritative selection, retirements, and inventory;
+it never stores or blindly
 replays the prior queue. A failed connect or reconnect
 attempt restores its prior connection state but recomputes the warning across
 all retained credentials: `REVOCATION_REQUIRED` takes priority, otherwise any
@@ -641,7 +656,7 @@ is `CONNECTED` and it has remained stale for one Worm attempt timeout. An
 explicit cleanup that remains `DISCONNECTING` or `REVOCATION_REQUIRED`,
 including its `REVOKING` credential, is retried only when the user confirms
 `Retry credential cleanup`. `CONNECT_OUTCOME_UNKNOWN` blocks automatic
-bootstrap and ordinary connect, reconnect, and disconnect. A confirmed
+selection reconciliation and ordinary connect, reconnect, and disconnect. A confirmed
 regenerate uses the same lease and owner/signing boundary to create and store a
 new key while accepting that the unknown remote key may remain active. A
 cancelled or failed proof leaves the lock untouched. Every prepared regenerate
@@ -707,6 +722,9 @@ Wallet or Worm Trading health.
 - [ ] Native Worm inventory stays interactive, `READ_WRITE`, owner scoped,
       lease-free, and outside public gRPC/Swagger; every mutation remains
       Worm-lease-only.
+- [ ] Selection GET/replace remains lease-free and revisioned, while removal-first
+      credential revocation and selected-Wallet connection consume only the
+      Worm-specific lease and never exceed 20 managed connections.
 - [ ] Secret responses and browser state preserve no-store and cleanup semantics.
 - [ ] Execution Google and Solana proof state remains single-use, five-minute, provider-specific, rate-limited, and free of durable provider secrets.
 - [ ] Execution proof disclosure, stable errors, and no-TTL durable authorization match the Run state machine.

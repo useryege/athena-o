@@ -71,16 +71,27 @@ type wormConnectionInventoryConnection struct {
 }
 
 type wormConnectionInventoryItem struct {
-	Wallet     wormConnectionInventoryWallet     `json:"wallet"`
-	Connection wormConnectionInventoryConnection `json:"connection"`
+	Wallet            wormConnectionInventoryWallet     `json:"wallet"`
+	Connection        wormConnectionInventoryConnection `json:"connection"`
+	Selected          bool                              `json:"selected"`
+	SelectionOrdinal  int32                             `json:"selectionOrdinal"`
+	RetirementPending bool                              `json:"retirementPending"`
+	RemovalAllowed    bool                              `json:"removalAllowed"`
+	RemovalReasonCode string                            `json:"removalReasonCode"`
+	PendingState      string                            `json:"pendingState"`
+	NeedsAttention    bool                              `json:"needsAttention"`
 }
 
 type wormConnectionInventoryResponse struct {
-	Items     []wormConnectionInventoryItem `json:"items"`
-	Total     int64                         `json:"total"`
-	Page      int32                         `json:"page"`
-	PageSize  int32                         `json:"pageSize"`
-	FetchedAt int64                         `json:"fetchedAt"`
+	Items               []wormConnectionInventoryItem `json:"items"`
+	Total               int64                         `json:"total"`
+	Page                int32                         `json:"page"`
+	PageSize            int32                         `json:"pageSize"`
+	FetchedAt           int64                         `json:"fetchedAt"`
+	SelectionConfigured bool                          `json:"selectionConfigured"`
+	SelectionRevision   int64                         `json:"selectionRevision"`
+	SelectionUpdatedAt  int64                         `json:"selectionUpdatedAt"`
+	MaximumWallets      int32                         `json:"maximumWallets"`
 }
 
 func registerWormConnectionHandlers(mux *http.ServeMux, server *AthenaServer) {
@@ -108,6 +119,11 @@ func (server *AthenaServer) listWormWalletConnections(w http.ResponseWriter, req
 		walletsecret.WriteError(w, err)
 		return
 	}
+	selection, err := server.loadWormWalletSelection(ctx, credential.AccountID)
+	if err != nil {
+		walletsecret.WriteError(w, err)
+		return
+	}
 
 	wallets, err := server.WalletClientset.Wallet().ListWallets(ctx, &walletapiclient.ListWalletsRequest{
 		WalletType:         "SOLANA",
@@ -125,11 +141,15 @@ func (server *AthenaServer) listWormWalletConnections(w http.ResponseWriter, req
 	}
 
 	response := wormConnectionInventoryResponse{
-		Items:     make([]wormConnectionInventoryItem, 0, len(wallets.GetItems())),
-		Total:     wallets.GetTotal(),
-		Page:      wallets.GetPage(),
-		PageSize:  wallets.GetPageSize(),
-		FetchedAt: time.Now().Unix(),
+		Items:               make([]wormConnectionInventoryItem, 0, len(wallets.GetItems())),
+		Total:               wallets.GetTotal(),
+		Page:                wallets.GetPage(),
+		PageSize:            wallets.GetPageSize(),
+		FetchedAt:           time.Now().Unix(),
+		SelectionConfigured: selection.Configured,
+		SelectionRevision:   selection.Revision,
+		SelectionUpdatedAt:  selection.UpdatedAt,
+		MaximumWallets:      selection.MaximumWallets,
 	}
 	if len(wallets.GetItems()) == 0 {
 		writeWormConnectionInventory(w, response)
@@ -160,10 +180,33 @@ func (server *AthenaServer) listWormWalletConnections(w http.ResponseWriter, req
 		}
 	}
 
+	inspection, err := server.WormTradingClientset.WormTrading().InspectWalletSelectionCandidates(ctx, &wormtradingapiclient.InspectWalletSelectionCandidatesRequest{
+		OwnerAccountId: credential.AccountID,
+		Refs:           walletSelectionInputsFromConnectionRefs(refs),
+	})
+	if err != nil {
+		walletsecret.WriteError(w, sanitizeWormConnectionInventoryDependencyError(err, "Worm Trading"))
+		return
+	}
+	if inspection == nil || len(inspection.GetItems()) != len(refs) || inspection.GetSelectionRevision() != selection.Revision || inspection.GetInspectedAt() <= 0 {
+		walletsecret.WriteError(w, status.Error(codes.Internal, "Worm Trading returned an incomplete wallet selection inspection"))
+		return
+	}
+	// Provider inspection can atomically mark a credential reconnect-required.
+	// Read connection projections afterwards so this response reflects that
+	// state transition instead of exposing a self-stale CONNECTED snapshot.
 	connections, err := server.WormTradingClientset.WormTrading().BatchGetWalletConnections(ctx, &wormtradingapiclient.BatchGetWalletConnectionsRequest{Refs: refs})
 	if err != nil {
 		walletsecret.WriteError(w, sanitizeWormConnectionInventoryDependencyError(err, "Worm Trading"))
 		return
+	}
+	selectedByID := make(map[int64]wormWalletSelectionItemResponse, len(selection.SelectedItems))
+	for _, item := range selection.SelectedItems {
+		selectedByID[item.WalletID] = item
+	}
+	retiringByID := make(map[int64]wormWalletRetirementResponse, len(selection.Retirements))
+	for _, item := range selection.Retirements {
+		retiringByID[item.WalletID] = item
 	}
 	if connections == nil || len(connections.GetItems()) != len(refs) || connections.GetFetchedAt() <= 0 {
 		walletsecret.WriteError(w, status.Error(codes.Internal, "Worm Trading returned an incomplete wallet connection inventory"))
@@ -188,6 +231,30 @@ func (server *AthenaServer) listWormWalletConnections(w http.ResponseWriter, req
 		}
 		seenConnectionIDs[connection.GetWalletId()] = struct{}{}
 		seenConnectionAddresses[connection.GetAddress()] = struct{}{}
+		candidate := inspection.GetItems()[index]
+		if candidate == nil || candidate.GetWalletId() != wallet.ID || candidate.GetAddress() != wallet.Address ||
+			candidate.GetReasonCode() != strings.TrimSpace(candidate.GetReasonCode()) ||
+			(candidate.GetReasonCode() != "" && !validWormExecutionReasonCode(candidate.GetReasonCode())) ||
+			(candidate.GetRemovalAllowed() && candidate.GetReasonCode() != "") || (!candidate.GetRemovalAllowed() && candidate.GetReasonCode() == "") {
+			walletsecret.WriteError(w, status.Error(codes.Internal, "Worm Trading returned an invalid wallet selection inspection"))
+			return
+		}
+		selectedItem, selected := selectedByID[wallet.ID]
+		if selected && selectedItem.Address != wallet.Address {
+			walletsecret.WriteError(w, status.Error(codes.Internal, "Worm Trading returned a mismatched selected wallet"))
+			return
+		}
+		retirement, retiring := retiringByID[wallet.ID]
+		if retiring && retirement.Address != wallet.Address {
+			walletsecret.WriteError(w, status.Error(codes.Internal, "Worm Trading returned a mismatched retiring wallet"))
+			return
+		}
+		pendingState := ""
+		if retiring {
+			pendingState = "DISCONNECT_PENDING"
+		} else if selected && connection.GetState() != "CONNECTED" {
+			pendingState = "CONNECT_PENDING"
+		}
 		response.Items = append(response.Items, wormConnectionInventoryItem{
 			Wallet: wormConnectionInventoryWallet{
 				WalletID:       wallet.ID,
@@ -202,6 +269,13 @@ func (server *AthenaServer) listWormWalletConnections(w http.ResponseWriter, req
 				WarningCode: connection.GetWarningCode(),
 				ConnectedAt: connection.GetConnectedAt(),
 			},
+			Selected:          selected,
+			SelectionOrdinal:  selectedItem.Ordinal,
+			RetirementPending: retiring,
+			RemovalAllowed:    candidate.GetRemovalAllowed(),
+			RemovalReasonCode: candidate.GetReasonCode(),
+			PendingState:      pendingState,
+			NeedsAttention:    retiring || candidate.GetReasonCode() != "" || connection.GetWarningCode() != "" || (selected && connection.GetState() != "CONNECTED"),
 		})
 	}
 	response.FetchedAt = connections.GetFetchedAt()
@@ -255,6 +329,14 @@ func validWormConnectionInventoryProjection(connection *wormtradingapiclient.Wor
 	default:
 		return false
 	}
+}
+
+func walletSelectionInputsFromConnectionRefs(refs []*wormtradingapiclient.WalletConnectionReference) []*wormtradingapiclient.WalletSelectionInput {
+	items := make([]*wormtradingapiclient.WalletSelectionInput, len(refs))
+	for index, ref := range refs {
+		items[index] = &wormtradingapiclient.WalletSelectionInput{WalletId: ref.GetWalletId(), Address: ref.GetAddress()}
+	}
+	return items
 }
 
 func writeWormConnectionInventory(w http.ResponseWriter, response wormConnectionInventoryResponse) {
@@ -323,8 +405,9 @@ func (server *AthenaServer) manageWormConnection(w http.ResponseWriter, request 
 	var connection *wormtradingapiclient.WormWalletConnection
 	if action == wormConnectionDisconnect {
 		response, callErr := server.WormTradingClientset.WormTrading().DisconnectWormWallet(ctx, &wormtradingapiclient.DisconnectWormWalletRequest{
-			WalletId: walletID,
-			Address:  wallet.Address,
+			WalletId:       walletID,
+			Address:        wallet.Address,
+			OwnerAccountId: credential.AccountID,
 		})
 		if callErr != nil {
 			walletsecret.WriteError(w, sanitizeWormConnectionDependencyError(callErr, "Worm Trading"))
@@ -365,6 +448,7 @@ func (server *AthenaServer) completeWormConnection(
 		Address:                     address,
 		Reconnect:                   action == wormConnectionReconnect,
 		RegenerateUnknownCredential: action == wormConnectionRegenerate,
+		OwnerAccountId:              accountID,
 	})
 	if err != nil {
 		return nil, sanitizeWormConnectionDependencyError(err, "Worm Trading")
@@ -394,11 +478,12 @@ func (server *AthenaServer) completeWormConnection(
 	}
 
 	completed, err := server.WormTradingClientset.WormTrading().CompleteWormWalletConnection(ctx, &wormtradingapiclient.CompleteWormWalletConnectionRequest{
-		AttemptId:     prepared.GetAttemptId(),
-		WalletId:      walletID,
-		Address:       address,
-		MessageSha256: messageDigest,
-		Signature:     signature,
+		AttemptId:      prepared.GetAttemptId(),
+		WalletId:       walletID,
+		Address:        address,
+		MessageSha256:  messageDigest,
+		Signature:      signature,
+		OwnerAccountId: accountID,
 	})
 	if err != nil {
 		return nil, sanitizeWormConnectionDependencyError(err, "Worm Trading")

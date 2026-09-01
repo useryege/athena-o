@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	executionPlanDigestVersion     = int64(4)
+	executionPlanDigestVersion     = int64(5)
 	executionCoordinatorTokenBytes = 32
 	executionCoordinatorLease      = 30 * time.Second
 	maxExecutionRunPageSize        = 100
@@ -121,6 +121,22 @@ func (s *SQLStore) CreateExecutionRun(
 	}
 	if err := lockWalletOperations(ctx, tx, walletIDs); err != nil {
 		return nil, fmt.Errorf("lock execution Run Wallets: %w", err)
+	}
+	selectionWalletIDs := make([]int64, len(plan.Wallets))
+	selectionAddresses := make([]string, len(plan.Wallets))
+	for index, wallet := range plan.Wallets {
+		selectionWalletIDs[index] = wallet.WalletID
+		selectionAddresses[index] = wallet.Address
+	}
+	invalidSelectionWallets, err := queries.CountInvalidSelectedWalletReferencesAtRevision(ctx, wormtradingsqlc.CountInvalidSelectedWalletReferencesAtRevisionParams{
+		WalletIds: selectionWalletIDs, Addresses: selectionAddresses,
+		OwnerAccountID: ownerUUID, ExpectedRevision: planRow.WalletSelectionRevision,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("validate execution Run Wallet selection: %w", err)
+	}
+	if invalidSelectionWallets != 0 {
+		return nil, ErrExecutionRunWalletSelectionChanged
 	}
 	if count, err := queries.CountActivePositionCashOutsForWallets(ctx, walletIDs); err != nil {
 		return nil, fmt.Errorf("count active position Cash Outs for execution Run: %w", err)

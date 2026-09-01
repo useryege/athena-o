@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1102-gd54a4993-dirty"
+    "version": "v1.0.0-1103-gd8b762e1-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -8544,6 +8544,9 @@
         "fetchedAt": {
           "type": "integer",
           "format": "int64"
+        },
+        "walletSelection": {
+          "$ref": "#/definitions/wormtradingWormWalletSelectionSummary"
         }
       }
     },
@@ -8582,6 +8585,9 @@
         "inFlightRequestCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "walletSelection": {
+          "$ref": "#/definitions/wormtradingWormWalletSelectionSummary"
         }
       }
     },
@@ -8877,6 +8883,31 @@
           "type": "string"
         },
         "connectedAt": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "wormtradingWormWalletSelectionSummary": {
+      "description": "WormWalletSelectionSummary distinguishes an account that has not configured\nWorm Trading from an explicitly configured empty selection. The selected\nWallet identities themselves remain available only through owner-scoped\nbalance/activity items and the interactive management resource.",
+      "type": "object",
+      "properties": {
+        "configured": {
+          "type": "boolean"
+        },
+        "revision": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "selectedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "maximumWallets": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "updatedAt": {
           "type": "integer",
           "format": "int64"
         }

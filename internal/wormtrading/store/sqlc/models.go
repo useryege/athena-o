@@ -89,32 +89,33 @@ type WormExecutionMutationAttempt struct {
 }
 
 type WormExecutionPlan struct {
-	ID                   pgtype.UUID
-	OwnerAccountID       pgtype.UUID
-	CombinationID        pgtype.UUID
-	CombinationName      string
-	CombinationRevision  int64
-	State                string
-	BuildStage           string
-	FailureCode          string
-	WorkerID             string
-	LockedAt             pgtype.Timestamptz
-	LeaseExpiresAt       pgtype.Timestamptz
-	WalletCount          int64
-	ItemCount            int64
-	TotalStepCount       int64
-	CompletedStepCount   int64
-	ReadyStepCount       int64
-	SkippedStepCount     int64
-	TotalCollateral      string
-	TotalOpeningFee      string
-	TotalUserFundsNeeded string
-	RequestedAt          pgtype.Timestamptz
-	CompletedAt          pgtype.Timestamptz
-	ExpiresAt            pgtype.Timestamptz
-	RetentionUntil       pgtype.Timestamptz
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
+	ID                      pgtype.UUID
+	OwnerAccountID          pgtype.UUID
+	CombinationID           pgtype.UUID
+	CombinationName         string
+	CombinationRevision     int64
+	State                   string
+	BuildStage              string
+	FailureCode             string
+	WorkerID                string
+	LockedAt                pgtype.Timestamptz
+	LeaseExpiresAt          pgtype.Timestamptz
+	WalletCount             int64
+	ItemCount               int64
+	TotalStepCount          int64
+	CompletedStepCount      int64
+	ReadyStepCount          int64
+	SkippedStepCount        int64
+	TotalCollateral         string
+	TotalOpeningFee         string
+	TotalUserFundsNeeded    string
+	RequestedAt             pgtype.Timestamptz
+	CompletedAt             pgtype.Timestamptz
+	ExpiresAt               pgtype.Timestamptz
+	RetentionUntil          pgtype.Timestamptz
+	CreatedAt               pgtype.Timestamptz
+	UpdatedAt               pgtype.Timestamptz
+	WalletSelectionRevision int64
 }
 
 type WormExecutionPlanItem struct {
@@ -569,6 +570,32 @@ type WormPositionCashOutCommand struct {
 	CompletedAt          pgtype.Timestamptz
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
+}
+
+type WormTradingWalletRetirement struct {
+	OwnerAccountID      pgtype.UUID
+	WalletID            int64
+	Address             string
+	PriorOrdinal        int32
+	RetiredFromRevision int64
+	RetiredAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+}
+
+type WormTradingWalletSelection struct {
+	OwnerAccountID      pgtype.UUID
+	Revision            int64
+	SelectedWalletCount int32
+	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+}
+
+type WormTradingWalletSelectionItem struct {
+	OwnerAccountID pgtype.UUID
+	Ordinal        int32
+	WalletID       int64
+	Address        string
+	SelectedAt     pgtype.Timestamptz
 }
 
 type WormWalletConnection struct {

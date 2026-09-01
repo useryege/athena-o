@@ -3,7 +3,7 @@
 ## Scope
 
 Worm Position Cash Out owns the durable, owner-scoped operation that closes one
-open Worm margin position from the Assets page. The user selects the exact
+open Worm margin position from the selected-Wallet Assets page. The user selects the exact
 position row, identified by Worm's HMAC position `pubkey`; Athena freezes the
 provider-derived Wallet, market, side, shares, creation time, and optional
 backing-request pubkey, obtains one fresh identity proof, and submits a
@@ -32,6 +32,11 @@ The same operation can also be created as the single active child of a
 case the batch freezes the target and owns user authorization, Wallet locks,
 ordering, and the post-Close USDC gate. This worker still owns the only Close
 dispatch; it atomically binds the batch baseline to its `DISPATCHED` attempt.
+
+New Cash-Out operations are admitted only for Wallets in the owner's current
+persisted Worm Wallet selection. A later selection revision does not delete or
+hide an already-created operation: owner-scoped detail, authorization state,
+recovery, and terminal evidence remain readable from durable history.
 
 ## Source Locations
 
@@ -102,13 +107,15 @@ requires an interactive `READ` credential. The Google proof also starts through
 a same-origin POST whose `Origin` must exactly equal the configured public
 origin. API Keys are rejected. The browser supplies no owner, address, market,
 side, shares, creation time, provider state, or HMAC material. The API Server
-derives the owner from the login and resolves the Wallet ID to one owned
+derives the owner from the login, requires the Wallet ID to belong to the
+current persisted Worm Wallet selection, and resolves it to one owned
 canonical Solana address before forwarding it.
 
 ## Runtime Flow
 
 1. An Open Positions response includes a safe `cashOut` projection on every
-   row. With interactive `READ_WRITE`, no active operation for the Wallet, and
+   selected-Wallet row. With interactive `READ_WRITE`, current selection
+   membership, no active operation for the Wallet, and
    no unfinished execution Run using it, the action is `CASH_OUT`. The selected
    operation instead projects its durable state; other positions in the same
    Wallet are disabled with `WALLET_CASH_OUT_ACTIVE`. An active Run disables
@@ -128,9 +135,10 @@ canonical Solana address before forwarding it.
 4. Worm Trading first looks up the owner-scoped `CREATE` command using a digest
    of the browser-supplied Wallet and position identity. An exact replay returns
    the already committed operation without any new Worm GET or DELETE; reuse of
-   the command UUID with different input is a conflict. Only a new command loads
-   the exact connected Wallet and active credential, decrypts it in memory, and
-   calls HMAC `GetMarginPosition` for the exact pubkey.
+   the command UUID with different input is a conflict. Only a new command
+   requires current persisted-selection membership, then loads the exact
+   connected Wallet and active credential, decrypts it in memory, and calls
+   HMAC `GetMarginPosition` for the exact pubkey.
    `InspectMarginPositionCashOutTarget` requires canonical pubkeys, positive
    creation time and shares, and preserves closed/liquidated state. The
    operation freezes the Wallet/address, credential version, pubkey, market,
@@ -139,7 +147,9 @@ canonical Solana address before forwarding it.
    authorization deadline and HTTP returns `202 Accepted` with a `Location` for
    the durable resource.
 5. One Wallet-keyed PostgreSQL advisory transaction lock serializes the new-
-   operation conflict checks. A Wallet with an execution Wallet lock returns
+   operation conflict checks. While holding it, the store repeats current
+   selection membership so a concurrent selection replacement cannot admit an
+   unselected Cash Out. A Wallet with an execution Wallet lock returns
    `WALLET_EXECUTION_ACTIVE`; a non-terminal Cash Out returns
    `WALLET_CASH_OUT_ACTIVE`. A fresh GET that already reports closed commits an
    idempotent `COMPLETED` operation without proof or DELETE. A liquidated target
@@ -310,8 +320,9 @@ leverage, provider URL, Web JWT, or signing configuration.
 
 ## Invariants
 
-- Every Cash Out is bound to the current account's exact owned Solana Wallet
-  and an exact canonical HMAC position pubkey. A numeric Web `position_id` is
+- Every Cash Out is bound to the current account's exact selected and owned
+  Solana Wallet at creation and an exact canonical HMAC position pubkey. A
+  numeric Web `position_id` is
   neither accepted nor inferred.
 - Market, side, creation time, and optional request pubkey come only from a
   fresh Worm GET and remain immutable across authorization and dispatch. Shares
@@ -332,6 +343,9 @@ leverage, provider URL, Web JWT, or signing configuration.
 - One Wallet has at most one non-terminal Cash Out. A Wallet in an unfinished
   Run cannot begin Cash Out, and a non-terminal Cash Out prevents creation of a
   new Run using that Wallet. Unknown outcomes retain both locks.
+- Current selection membership is checked when a new operation is admitted. A
+  later selection revision cannot erase, hide, or prevent owner-scoped reads
+  and recovery for an existing durable operation.
 - The Close attempt becomes durably `DISPATCHED` before Worm is called. Close is
   never replayed after that marker, including after timeout, 5xx, disconnect,
   malformed response, browser refresh, manual reconciliation, or process
@@ -351,7 +365,7 @@ leverage, provider URL, Web JWT, or signing configuration.
 
 ## Failure Recovery
 
-Create fails before durable intent when the Wallet is foreign, non-Solana,
+Create fails before durable intent when the Wallet is unselected, foreign, non-Solana,
 disconnected, has no current credential, is used by a Run, already has an
 active Cash Out, or the provider position cannot be strictly inspected. UUID
 command replay returns the same committed operation only for the same owner and
@@ -406,6 +420,7 @@ gRPC health.
 ## Change Checklist
 
 - [ ] Exact HMAC pubkey identity, owner-scoped Wallet resolution, and frozen provider fields remain current.
+- [ ] New operations remain current-selection-only, while existing operation detail and recovery remain owner-readable after selection changes.
 - [ ] Native routes preserve interactive READ/READ_WRITE, exact-Origin mutation, API-Key exclusion, and safe projection boundaries.
 - [ ] Google, Phantom, and development proof remain independent, single-use, five-minute, and bound to operation revision and intent.
 - [ ] Google proof start remains a same-origin POST with exact server-side Origin validation.

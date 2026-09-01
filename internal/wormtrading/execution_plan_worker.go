@@ -31,21 +31,22 @@ const (
 	executionPlanStagePreview     = "BUILDING_PREVIEW"
 	executionPlanStageFinalizing  = "FINALIZING"
 
-	executionPlanFailureStoreUnavailable      = "STORE_UNAVAILABLE"
-	executionPlanFailureMarketsUnavailable    = "WORM_MARKETS_UNAVAILABLE"
-	executionPlanFailureMarketsInvalid        = "WORM_MARKETS_INVALID_RESPONSE"
-	executionPlanFailureWalletNotConnected    = "WALLET_NOT_CONNECTED"
-	executionPlanFailureCredentialUnavailable = "WALLET_CREDENTIAL_UNAVAILABLE"
-	executionPlanFailureBalanceUnavailable    = "SOLANA_BALANCE_UNAVAILABLE"
-	executionPlanFailureUSDCUnavailable       = "USDC_BALANCE_UNAVAILABLE"
-	executionPlanFailureWormReadUnavailable   = "WORM_READ_UNAVAILABLE"
-	executionPlanFailureWormResponseInvalid   = "WORM_INVALID_RESPONSE"
-	executionPlanFailureSourceChanged         = "PLAN_SOURCE_CHANGED"
-	executionPlanFailurePreviewInvalid        = "PREVIEW_INVALID"
-	executionPlanUnknownBackend               = "unknown"
-	executionPlanMarketMissing                = "MARKET_NOT_FOUND"
-	executionPlanMarketUnavailable            = "MARKET_UNAVAILABLE"
-	executionPlanOutcomeUnavailable           = "OUTCOME_UNAVAILABLE"
+	executionPlanFailureStoreUnavailable       = "STORE_UNAVAILABLE"
+	executionPlanFailureMarketsUnavailable     = "WORM_MARKETS_UNAVAILABLE"
+	executionPlanFailureMarketsInvalid         = "WORM_MARKETS_INVALID_RESPONSE"
+	executionPlanFailureWalletNotConnected     = "WALLET_NOT_CONNECTED"
+	executionPlanFailureCredentialUnavailable  = "WALLET_CREDENTIAL_UNAVAILABLE"
+	executionPlanFailureBalanceUnavailable     = "SOLANA_BALANCE_UNAVAILABLE"
+	executionPlanFailureUSDCUnavailable        = "USDC_BALANCE_UNAVAILABLE"
+	executionPlanFailureWormReadUnavailable    = "WORM_READ_UNAVAILABLE"
+	executionPlanFailureWormResponseInvalid    = "WORM_INVALID_RESPONSE"
+	executionPlanFailureSourceChanged          = "PLAN_SOURCE_CHANGED"
+	executionPlanFailureWalletSelectionChanged = "WALLET_SELECTION_CHANGED"
+	executionPlanFailurePreviewInvalid         = "PREVIEW_INVALID"
+	executionPlanUnknownBackend                = "unknown"
+	executionPlanMarketMissing                 = "MARKET_NOT_FOUND"
+	executionPlanMarketUnavailable             = "MARKET_UNAVAILABLE"
+	executionPlanOutcomeUnavailable            = "OUTCOME_UNAVAILABLE"
 )
 
 type executionPlanBuildFailure struct {
@@ -160,6 +161,8 @@ func (s *Service) buildClaimedExecutionPlan(parent context.Context, workerID str
 			return
 		case errors.Is(markErr, wormstore.ErrExecutionPlanRevision), errors.Is(markErr, wormstore.ErrExecutionPlanCombinationChanged):
 			buildErr = failExecutionPlanBuild(executionPlanFailureSourceChanged, markErr)
+		case errors.Is(markErr, wormstore.ErrExecutionPlanWalletSelectionChanged):
+			buildErr = failExecutionPlanBuild(executionPlanFailureWalletSelectionChanged, markErr)
 		case errors.Is(markErr, wormstore.ErrExecutionPlanWalletConnectionChanged):
 			buildErr = failExecutionPlanBuild(executionPlanFailureWalletNotConnected, markErr)
 		case errors.Is(markErr, wormstore.ErrExecutionPlanCredentialChanged):

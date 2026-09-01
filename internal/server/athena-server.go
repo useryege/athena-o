@@ -1001,6 +1001,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	registerAccountAvatarHandlers(mux, server.accountAvatarHTTP)
 	registerWalletAvatarHandlers(mux, server.walletAvatarHTTP)
 	registerWalletSecretHandlers(mux, server.walletSecretHTTP)
+	registerWormWalletSelectionHandlers(mux, server)
 	registerWormConnectionHandlers(mux, server)
 	registerWormCombinationHandlers(mux, server)
 	registerWormExecutionPlanHandlers(mux, server)

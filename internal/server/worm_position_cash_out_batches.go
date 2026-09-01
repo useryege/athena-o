@@ -27,7 +27,7 @@ const (
 	wormPositionCashOutBatchItemsPath      = wormPositionCashOutBatchCollectionPath + "/{batchId}/items"
 	wormPositionCashOutBatchMutationPath   = wormPositionCashOutBatchCollectionPath + "/{batchMutationResource}"
 
-	wormPositionCashOutBatchMaxWallets = 100
+	wormPositionCashOutBatchMaxWallets = 20
 	wormPositionCashOutBatchPageSize   = int32(100)
 )
 
@@ -156,7 +156,24 @@ func (server *AthenaServer) createWormPositionCashOutBatch(w http.ResponseWriter
 		}
 		selected[walletID] = struct{}{}
 	}
-	wallets, err := server.resolveOwnedPositionCashOutBatchWallets(ctx, credential.AccountID, selected)
+	selection, err := server.loadWormWalletSelection(ctx, credential.AccountID)
+	if err != nil {
+		walletsecret.WriteError(w, err)
+		return
+	}
+	orderedWalletIDs := make([]int64, 0, len(selected))
+	for _, item := range selection.SelectedItems {
+		if _, included := selected[item.WalletID]; included {
+			orderedWalletIDs = append(orderedWalletIDs, item.WalletID)
+		}
+	}
+	// New batches use the durable selection order. If the request no longer
+	// belongs to the current selection, preserve all caller IDs so the service
+	// can still resolve an exact idempotent replay before rejecting a new batch.
+	if len(orderedWalletIDs) != len(selected) {
+		orderedWalletIDs = append([]int64(nil), input.WalletIDs...)
+	}
+	wallets, err := server.resolveOwnedPositionCashOutBatchWallets(ctx, credential.AccountID, orderedWalletIDs)
 	if err != nil {
 		walletsecret.WriteError(w, err)
 		return
@@ -389,12 +406,16 @@ func (server *AthenaServer) mutateWormPositionCashOutBatch(w http.ResponseWriter
 func (server *AthenaServer) resolveOwnedPositionCashOutBatchWallets(
 	ctx context.Context,
 	ownerAccountID string,
-	selected map[int64]struct{},
+	orderedWalletIDs []int64,
 ) ([]*wormtradingapiclient.PositionCashOutBatchWalletInput, error) {
 	if server.WalletClientset == nil || server.WalletClientset.Wallet() == nil {
 		return nil, status.Error(codes.Unavailable, "Wallet is unavailable")
 	}
-	output := make([]*wormtradingapiclient.PositionCashOutBatchWalletInput, 0, len(selected))
+	remaining := make(map[int64]struct{}, len(orderedWalletIDs))
+	for _, walletID := range orderedWalletIDs {
+		remaining[walletID] = struct{}{}
+	}
+	resolved := make(map[int64]*wormtradingapiclient.PositionCashOutBatchWalletInput, len(orderedWalletIDs))
 	for page := int32(1); ; page++ {
 		result, err := server.WalletClientset.Wallet().ListWallets(ctx, &walletapiclient.ListWalletsRequest{
 			WalletType: "SOLANA", Page: page, PageSize: wormPositionCashOutBatchPageSize, RequesterAccountId: ownerAccountID,
@@ -409,25 +430,33 @@ func (server *AthenaServer) resolveOwnedPositionCashOutBatchWallets(
 			if wallet == nil || wallet.ID <= 0 || wallet.WalletType != "SOLANA" {
 				return nil, status.Error(codes.Internal, "Wallet returned an invalid Cash Out Batch wallet")
 			}
-			if _, wanted := selected[wallet.ID]; !wanted {
+			if _, wanted := remaining[wallet.ID]; !wanted {
 				continue
 			}
 			address, addressErr := canonicalWormConditionID(wallet.Address, "wallet address")
 			if addressErr != nil || address != wallet.Address {
 				return nil, status.Error(codes.Internal, "Wallet returned an invalid Cash Out Batch address")
 			}
-			output = append(output, &wormtradingapiclient.PositionCashOutBatchWalletInput{
+			resolved[wallet.ID] = &wormtradingapiclient.PositionCashOutBatchWalletInput{
 				WalletId: wallet.ID, Address: wallet.Address, Remark: wallet.Remark,
 				AvatarKind: wallet.AvatarKind, AvatarPresetId: wallet.AvatarPresetID, AvatarUrl: wallet.AvatarURL,
-			})
-			delete(selected, wallet.ID)
+			}
+			delete(remaining, wallet.ID)
 		}
-		if len(selected) == 0 {
+		if len(remaining) == 0 {
 			break
 		}
 		if int64(page)*int64(wormPositionCashOutBatchPageSize) >= result.GetTotal() || len(result.GetItems()) == 0 {
 			return nil, status.Error(codes.NotFound, "one or more selected Wallets were not found")
 		}
+	}
+	output := make([]*wormtradingapiclient.PositionCashOutBatchWalletInput, 0, len(orderedWalletIDs))
+	for _, walletID := range orderedWalletIDs {
+		wallet := resolved[walletID]
+		if wallet == nil {
+			return nil, status.Error(codes.Internal, "Wallet returned an incomplete Cash Out Batch wallet inventory")
+		}
+		output = append(output, wallet)
 	}
 	return output, nil
 }

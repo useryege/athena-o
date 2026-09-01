@@ -4,7 +4,8 @@
 
 Worm Execution Preview owns durable, owner-scoped, read-only preflight plans for
 one saved Worm market combination and an explicitly ordered set of custodial
-Solana Wallets. It freezes the source combination revision, Wallet order, market
+Solana Wallets from the owner's current persisted Worm Wallet selection. It
+freezes the source combination revision, Wallet-selection revision, Wallet order, market
 order, current connection and balance observations, authoritative market
 eligibility, public Worm estimates, complete current Worm exposure, cumulative
 USDC simulation, two mandatory exposure guards, and one Wallet-major
@@ -43,7 +44,7 @@ belongs to the Executions route.
 | Authoritative Event catalogs | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go), [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `GetOrderEventCatalog`, `OrderEventCatalogMarket`, `OrderEventCatalogOutcome` |
 | Confirmed balance adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter.BatchGetBalances`, native SOL and Circle USDC observations |
 | Durable model and transactions | [internal/wormtrading/store/execution_plans.go](../../../internal/wormtrading/store/execution_plans.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `CreateExecutionPlan`, `ClaimExecutionPlan`, `UpdateExecutionPlanBuildProgress`, `MarkExecutionPlanReady`, `MarkExecutionPlanFailed`, `DeleteExpiredExecutionPlans` |
-| Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, development-data reset for the mandatory-guard contract, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
+| Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000011_wallet_selections.sql](../../../internal/wormtrading/store/migrations/000011_wallet_selections.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, exact Wallet-selection revision, current development-data reset, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
 | Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, Worm Markets clientset, graceful cancellation |
 | Browser workflow, normalization, and responsive presentation | [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-execution-preflight.ts](../../../ui/src/app/member/pages/worm-execution-preflight.ts), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/styles/member-features.css](../../../ui/src/app/styles/member-features.css) | `WormTradingExecutionPreviewPage`, `ChecksStep`, `PlanChecksSummary`, `wormExecutionMandatoryGuardDefinitions`, strict plan normalization, contextual route/breadcrumb, `worm-preview-*` rules |
 | Live-Run handoff boundary | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx) | `CreateExecutionRun`, `Prepare live execution`, usable READY guard, immutable snapshot handoff |
@@ -53,7 +54,8 @@ belongs to the Executions route.
 ```text
 interactive READ_WRITE browser
   -> POST /api/v1/worm-trading/execution-plans
-       -> API Server derives account and resolves ordered Solana Wallet IDs
+       -> API Server derives account, loads the current selection revision,
+          and resolves an ordered subset of at most 20 selected Solana Wallet IDs
        -> Worm Trading transaction freezes source revision, Wallets, and items
        -> HTTP 202 BUILDING + Location
 
@@ -76,7 +78,8 @@ interactive READ_WRITE browser + usable READY plan
 ```
 
 The browser can submit only `combinationId`, its positive expected revision,
-and ordered positive `walletIds`. The target-market position and wallet-global
+the positive current Wallet-selection revision, and one through 20 ordered
+positive `walletIds` drawn from that selection. The target-market position and wallet-global
 request guards are unconditional and therefore are not request fields. The
 browser cannot submit an owner, Wallet address,
 credential, current market fields, side, funds, leverage, balance, estimate, or
@@ -105,10 +108,11 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
    Combinations and adds Execution Preview to the breadcrumb and browser title;
    Executions remains a separate history/control navigation child.
 2. Combination loads the owner-scoped saved template and displays its exact
-   revision and market order. Wallets pages the complete owner Solana connection
-   inventory in groups of 100. It starts with no selection, shows non-CONNECTED
+   revision and market order. Wallets loads the persisted owner selection and
+   its revision. It starts with no execution subset, shows selected but non-CONNECTED
    rows as disabled, and preserves click order. Move earlier, move later, remove,
-   Select all connected, and Clear are explicit local ordering controls. Checks
+   Select all connected, and Clear are explicit local ordering controls; no
+   unselected custodial Wallet is a candidate. Checks
    then presents an Execution guards editor. Its two read-only mandatory cards
    state that any-direction Open Position in the target market blocks the
    Wallet and that any uncovered in-flight market or limit request anywhere in
@@ -116,11 +120,13 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
    on narrow screens, followed by the fixed market-order, fixed-funds, `1x`
    execution disclosure.
 3. POST validates one JSON object of at most 1 MiB, rejects unknown fields,
-   duplicate/nonpositive Wallet IDs, an invalid UUID, or a nonpositive revision,
-   and resolves every
+   an empty or over-20 Wallet set, duplicate/nonpositive Wallet IDs, an invalid
+   UUID, or a nonpositive source/selection revision. It requires the exact
+   current owner selection revision and membership before resolving every
    Wallet through owner-scoped `GetWallet` while retaining input order.
-4. `CreateExecutionPlan` locks the owner-scoped source combination, compares the
-   expected revision, loads its contiguous items, calculates the Wallet/item
+4. `CreateExecutionPlan` locks the owner-scoped source combination and Wallet
+   selection, compares both expected revisions, loads their contiguous items,
+   calculates the Wallet/item
    Cartesian size with overflow protection, and commits the plan header,
    ordered safe Wallet, and trusted combination-item
    snapshots in one transaction.
@@ -142,8 +148,9 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
    items freeze `1` USDC. Every item uses exactly `1x`, and the fixed funds are
    below the 10 USDC per-step ceiling. Unsupported backends use zero funds and a
    stable unavailable reason rather than an Estimate.
-9. Connection reading fetches snapshots in Wallet order. Every Wallet must still
-   be CONNECTED with the exact address and a positive ACTIVE credential version.
+9. Connection reading fetches snapshots in Wallet order. Every Wallet must be
+   CONNECTED with the exact address and a positive ACTIVE credential version;
+   finalization separately rechecks the frozen selection revision and membership.
    The worker decrypts credentials only long enough to construct its internal
    read client. No credential field reaches the plan response.
 10. One balance batch obtains confirmed native SOL and Circle native USDC.
@@ -199,8 +206,9 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     through the same exact `user_funds_needed` arithmetic as any other
     actionable Estimate. Ordered reason counts include a `READY` key and every
     stable blocking category.
-15. `MarkExecutionPlanReady` locks the plan and source combination, rechecks the
-    exact combination revision, then locks connection and ACTIVE credential rows
+15. `MarkExecutionPlanReady` locks the plan, source combination, and owner
+    Wallet selection, rechecks both exact revisions and Wallet membership, then
+    locks connection and ACTIVE credential rows
     in global Wallet-ID order before validating them in user ordinal order. This
     prevents opposite Wallet orders in concurrent plans from deadlocking. One
     transaction writes Wallet/item observations, validates the complete
@@ -221,19 +229,24 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
     frozen actionable-only aggregates. Step detail is paged at 20, 50, or 100
     rows with an explicit retry. The Review begins with a visible summary of
     both mandatory guards. `Re-run preview` creates a distinct
-    immutable plan with the same frozen source revision and Wallet order; it
+    immutable plan only after reloading the current selection revision, while
+    preserving the same frozen source revision and Wallet order when still selected; it
     replaces `planId` only after success and never overwrites the old snapshot.
     A failed rerun leaves the old Review intact.
     The first accepted Plan projection establishes a browser-side immutable
-    intent baseline for Combination ID/revision and Wallet ID order; later polls
+    intent baseline for Combination ID/revision, Wallet-selection revision, and
+    Wallet ID order; later polls
     or mutation responses that drift from it are rejected
-    without replacing visible data. Account or access-revision changes abort
+    without replacing visible data. Account, Wallet-selection, or access-revision changes abort
     pending creation and preparation responses.
 17. A write-capable Review exposes `Prepare live execution` only while READY is
     unexpired, has no usability code, and contains at least one actionable
     Step. It posts only the plan UUID, a fresh command UUID, and the frozen
-    source revision. Run creation copies the immutable preview, calculates its
-    version-four SHA-256 plan digest, and returns a Run route; it performs no
+    source-combination revision. Run creation loads the plan's frozen
+    Wallet-selection revision and first requires that its frozen selection
+    revision is still current, then copies the immutable preview and calculates
+    its selection-bound version-five SHA-256 plan digest, and returns a Run
+    route; it performs no
     Worm provider call or Wallet signing. The Review
     explicitly remains read-only until the user separately authorizes and
     starts that Run.
@@ -246,7 +259,8 @@ limiters, so selecting more Wallets cannot multiply the process allowance.
 ## State / Data
 
 `worm_execution_plans` stores the UUID plan, owner account UUID, frozen source
-combination UUID/name/revision, state, build stage, bounded failure code, worker
+combination UUID/name/revision, frozen Wallet-selection revision, state, build
+stage, bounded failure code, worker
 lease, Wallet/item/step counts, exact-decimal aggregate fields, request and
 completion timestamps, optional READY expiry, and retention deadline. Durable
 states are BUILDING, READY, and FAILED. Expiry does not rewrite the row; owner
@@ -281,6 +295,11 @@ complete plan graph with `CASCADE` and removes the superseded policy/warning
 columns from Preview and Run tables. Its Down migration restores only an empty
 schema shape and cannot restore the truncated plans or Runs.
 
+[Migration `000011_wallet_selections.sql`](../../../internal/wormtrading/store/migrations/000011_wallet_selections.sql)
+defines the current selection-bound plan contract. It creates owner selections
+and retirements, clears the development execution-plan graph, and adds required
+positive `wallet_selection_revision`; its Down path cannot restore cleared plans.
+
 READY lifetime begins at completion and lasts 15 minutes. A BUILDING row first
 receives a creation-time seven-day retention deadline; READY or FAILED
 finalization resets that deadline to seven days after terminal completion. Only
@@ -288,8 +307,11 @@ READY and FAILED rows are eligible for retention cleanup; cascading foreign
 keys remove every child, except that a plan referenced by a permanent live Run
 is retained. Execution plans do not lock their source combination.
 READY owner reads derive `COMBINATION_DELETED`,
-`COMBINATION_CHANGED`, `COMBINATION_UNAVAILABLE`, or `NO_ACTIONABLE_STEPS` when
-applicable, so a stale snapshot remains inspectable without appearing usable.
+`COMBINATION_CHANGED`, `WALLET_SELECTION_CHANGED`,
+`WALLET_SELECTION_UNAVAILABLE`, `COMBINATION_UNAVAILABLE`, or
+`NO_ACTIONABLE_STEPS` when applicable, so a stale
+snapshot remains inspectable without appearing usable. Selection changes never
+delete or hide owner-scoped plan Review or step detail.
 
 No execution-preview table contains a Wallet private key, Worm plaintext credential, complete
 provider response, exposure pubkey, signable message, draft, signature,
@@ -317,22 +339,24 @@ and provider page size 100 are also fixed. Unauthenticated calls share 100
 requests/minute with burst two; authenticated calls share 240/minute with burst
 four. The UI BUILDING poll is 1.5 seconds and step-page maximum is 100.
 
-There is no business Wallet, market, or step-count limit. The 1 MiB request,
-integer overflow checks, owner Wallet resolution, provider paging/rate limits,
-balance-batch capabilities, gRPC message limit, and database constraints remain
-the operational bounds.
+One through 20 current selected Wallets may enter a plan. There is no additional
+business market or step-count limit. The 1 MiB request, integer overflow checks,
+owner Wallet resolution, provider paging/rate limits, balance-batch capabilities,
+gRPC message limit, and database constraints remain the operational bounds.
 
 ## Invariants
 
 - Every native request is interactive and current-account scoped. API Keys are
   denied. Plan/step GET requires `READ`; creation requires `READ_WRITE`, exact
-  origin, exact combination revision, and ordered server-resolved Solana Wallets.
+  origin, exact combination and Wallet-selection revisions, and one through 20
+  ordered server-resolved selected Solana Wallets.
 - A caller cannot choose an owner, Wallet address, market, side, backend, funds,
   leverage, balance, estimate, provider cursor, or result.
 - Wallet and item ordinals are immutable. READY steps are a complete contiguous
   Wallet-major Cartesian product and ordered reason counts exactly cover them.
-- A READY snapshot commits only while its source revision and every Wallet's
-  address, CONNECTED state, and ACTIVE credential version still match the build.
+- A READY snapshot commits only while its source revision, Wallet-selection
+  revision and membership, and every Wallet's address, CONNECTED state, and
+  ACTIVE credential version still match the build.
 - Polymarket uses 5 USDC, Hyperliquid uses 1 USDC, every selectable item uses
   `1x`, and no configured step exceeds the 10 USDC funds ceiling.
 - At `1x`, `user_funds_needed` exactly equals funds plus opening fee and
@@ -368,8 +392,9 @@ the operational bounds.
 
 ## Failure Recovery
 
-Invalid JSON, origin, access, UUID, revision, Wallet ownership/type, duplicates,
-or a source revision conflict fail before or during the atomic creation
+Invalid JSON, origin, access, UUID, revision, Wallet ownership/type or current
+selection membership, duplicates, an empty/over-20 set, or a source/selection
+revision conflict fail before or during the atomic creation
 transaction. No partial plan header or child set commits. A created BUILDING plan
 is immutable input; `Re-run preview` creates a new resource.
 
@@ -378,7 +403,8 @@ The worker uses bounded stable failure codes:
 `WORM_MARKETS_INVALID_RESPONSE`, `WALLET_NOT_CONNECTED`,
 `WALLET_CREDENTIAL_UNAVAILABLE`, `SOLANA_BALANCE_UNAVAILABLE`,
 `USDC_BALANCE_UNAVAILABLE`, `WORM_READ_UNAVAILABLE`,
-`WORM_INVALID_RESPONSE`, `PLAN_SOURCE_CHANGED`, and `PREVIEW_INVALID`.
+`WORM_INVALID_RESPONSE`, `PLAN_SOURCE_CHANGED`, `WALLET_SELECTION_CHANGED`, and
+`PREVIEW_INVALID`.
 An ordinary unavailable market, deterministic Estimate rejection, mandatory
 exposure guard, or insufficient USDC is a Step classification rather than a
 failed plan. A valid partial fill continues through normal classification.
@@ -388,9 +414,10 @@ because it no longer owns the lease, the row remains BUILDING and another claim
 may rebuild after expiry. Process cancellation follows the same recoverable
 path. Read-only repetition is safe because no provider mutation occurs.
 
-READY completion is all-or-nothing. A source edit/delete, connection change, or
-credential change between observation and finalization rolls back every child
-observation and step write and records `PLAN_SOURCE_CHANGED`,
+READY completion is all-or-nothing. A source edit/delete, Wallet-selection
+change, connection change, or credential change between observation and
+finalization rolls back every child observation and step write and records
+`PLAN_SOURCE_CHANGED`, `WALLET_SELECTION_CHANGED`,
 `WALLET_NOT_CONNECTED`, or `WALLET_CREDENTIAL_UNAVAILABLE` respectively while
 the claim remains valid. A true worker/lease loss leaves BUILDING for the next
 owner and is never mislabeled FAILED. FAILED plans retain only bounded
@@ -398,7 +425,7 @@ diagnostic state. READY plans become non-consumable after 15 minutes or when
 source usability changes, but remain readable until retention cleanup.
 
 Prepare-live rejects an expired or otherwise unusable READY plan, zero
-actionable Steps, a changed source revision or Wallet connection, an already
+actionable Steps, a changed source or Wallet-selection revision or Wallet connection, an already
 consumed plan, a conflicting active Run, or an unresolved Wallet-market
 isolation before any provider mutation. Failure leaves the immutable preview
 visible and creates no partial Run. Once a Run references the plan, preview
@@ -442,6 +469,9 @@ provider-write observability belongs to the separate execution detail.
 ## Change Checklist
 
 - [ ] Interactive READ/READ_WRITE, exact-origin, API-Key denial, current-owner, and Wallet-resolution boundaries remain current.
+- [ ] Preview admission remains an ordered subset of one through 20 current
+  selected Wallets, and the exact Wallet-selection revision gates finalization
+  and Run preparation without hiding historical Review.
 - [ ] BUILDING claim, stage heartbeat, READY/FAILED atomicity, 15-minute TTL, seven-day retention, Run-reference exclusion, and cleanup remain current.
 - [ ] Catalog, connection, credential, balance, Estimate, complete exposure, and final revalidation flows remain current.
 - [ ] Both mandatory exposure guards, fixed backend funds, `1x`, partial-fill acceptance, classification precedence, exact-decimal cumulative USDC, Wallet-major order, and reason aggregates remain current.

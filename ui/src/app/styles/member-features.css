@@ -943,6 +943,248 @@
     border: 0;
 }
 
+.worm-wallet-selection-summary {
+    display: grid;
+    min-width: 0;
+    gap: 13px;
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border: 1px solid var(--athena-border);
+    border-radius: 12px;
+    background: var(--athena-panel);
+    box-shadow: var(--athena-shadow-surface);
+}
+
+.worm-wallet-selection-summary__heading {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.worm-wallet-selection-summary__heading > span {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+}
+
+.worm-wallet-selection-summary__heading .anticon {
+    color: var(--athena-primary);
+}
+
+.worm-wallet-selection-summary dl {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+.worm-wallet-selection-summary dl > div {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 52%, var(--athena-panel-solid));
+}
+
+.worm-wallet-selection-summary dt {
+    color: var(--athena-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.worm-wallet-selection-summary dd {
+    margin: 0;
+    color: var(--athena-text);
+    font-family: var(--athena-data-font);
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.worm-wallet-selection-summary__attention {
+    border-color: color-mix(in srgb, var(--athena-amber) 42%, var(--athena-border)) !important;
+    background: color-mix(in srgb, var(--athena-amber) 7%, var(--athena-panel)) !important;
+}
+
+.worm-wallet-selection-summary > .ant-typography {
+    font-size: 12px;
+}
+
+.worm-wallet-selection-guide.ant-result,
+.worm-wallet-selection-guide-loading {
+    min-height: 360px;
+    padding: 42px 24px;
+    border: 1px dashed var(--athena-border-strong);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--athena-panel) 78%, transparent);
+}
+
+.worm-wallet-selection-guide .ant-result-icon > .anticon {
+    color: var(--athena-primary);
+}
+
+.worm-wallet-selection-guide-loading {
+    display: grid;
+    align-items: center;
+}
+
+.worm-wallet-selection-modal__title,
+.worm-wallet-selection-modal__footer,
+.worm-wallet-selection-modal__footer > div {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.worm-wallet-selection-modal__title {
+    justify-content: space-between;
+    padding-right: 8px;
+}
+
+.worm-wallet-selection-modal__title .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-wallet-selection-modal .ant-modal-body {
+    min-height: 0;
+}
+
+.worm-wallet-selection-modal__body {
+    display: grid;
+    min-height: 0;
+    gap: 12px;
+}
+
+.worm-wallet-selection-modal__tools {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) auto;
+    gap: 12px;
+}
+
+.worm-wallet-selection-modal__tools .ant-input-affix-wrapper {
+    min-height: 40px;
+}
+
+.worm-wallet-selection-modal__tools .ant-segmented {
+    align-self: center;
+}
+
+.worm-wallet-selection-modal__grid {
+    display: grid;
+    max-height: min(49vh, 540px);
+    min-height: 180px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 10px;
+    padding: 2px 4px 2px 2px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.worm-wallet-selection-modal__grid > .ant-empty {
+    grid-column: 1 / -1;
+    align-self: center;
+    padding: 34px 16px;
+}
+
+.worm-wallet-selection-card {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 84px;
+    padding: 12px;
+    border: 1px solid var(--athena-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--athena-bg-soft) 44%, var(--athena-panel));
+    cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.worm-wallet-selection-card:hover {
+    border-color: color-mix(in srgb, var(--athena-primary) 52%, var(--athena-border));
+}
+
+.worm-wallet-selection-card:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--athena-primary) 76%, transparent);
+    outline-offset: 2px;
+}
+
+.worm-wallet-selection-card--selected {
+    border-color: var(--athena-primary);
+    background: color-mix(in srgb, var(--athena-primary) 7%, var(--athena-panel));
+    box-shadow: inset 3px 0 0 var(--athena-primary);
+}
+
+.worm-wallet-selection-card--disabled {
+    cursor: not-allowed;
+    opacity: 0.68;
+}
+
+.worm-wallet-selection-card__identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.worm-wallet-selection-card__identity > span {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.worm-wallet-selection-card__identity .ant-typography {
+    min-width: 0;
+    color: var(--athena-text);
+}
+
+.worm-wallet-selection-card__identity code {
+    overflow: hidden;
+    color: var(--athena-muted);
+    font-family: var(--athena-data-font);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.worm-wallet-selection-card__status {
+    display: flex;
+    max-width: 132px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.worm-wallet-selection-card__status .ant-tag {
+    margin-inline-end: 0;
+}
+
+.worm-wallet-selection-card > small {
+    grid-column: 2 / -1;
+    color: var(--athena-amber);
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.worm-wallet-selection-modal__footer {
+    justify-content: space-between;
+    text-align: left;
+}
+
+.worm-wallet-selection-modal__footer > .ant-typography {
+    font-size: 12px;
+}
+
 .worm-trading-balances {
     min-width: 0;
 }
@@ -1777,6 +2019,14 @@
         min-height: 44px;
     }
 
+    .worm-wallet-selection-summary dl {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .worm-wallet-selection-summary .ant-btn {
+        min-height: 44px;
+    }
+
     .worm-position-cash-out-batch-selection {
         align-items: stretch;
         flex-direction: column;
@@ -1813,6 +2063,79 @@
     }
 }
 
+@media (max-width: 768px) {
+    .worm-wallet-selection-modal.ant-modal {
+        top: 0;
+        width: 100% !important;
+        max-width: 100%;
+        height: 100dvh;
+        margin: 0;
+        padding-bottom: 0;
+    }
+
+    .worm-wallet-selection-modal .ant-modal-content {
+        display: flex;
+        height: 100dvh;
+        flex-direction: column;
+        border-radius: 0;
+    }
+
+    .worm-wallet-selection-modal .ant-modal-body {
+        display: flex;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .worm-wallet-selection-modal__body {
+        display: flex;
+        width: 100%;
+        min-height: 0;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .worm-wallet-selection-modal__tools {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-wallet-selection-modal__tools .ant-segmented {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .worm-wallet-selection-modal__tools .ant-segmented-group {
+        min-width: max-content;
+    }
+
+    .worm-wallet-selection-modal__grid {
+        max-height: none;
+        min-height: 0;
+        flex: 1;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-wallet-selection-card {
+        min-height: 88px;
+    }
+
+    .worm-wallet-selection-modal__footer {
+        align-items: stretch;
+        flex-direction: column;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .worm-wallet-selection-modal__footer > div,
+    .worm-wallet-selection-modal__footer .ant-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .worm-wallet-selection-modal__footer > div .ant-btn {
+        flex: 1;
+    }
+}
+
 @media (max-width: 520px) {
     .worm-trading-connection-setup.ant-alert {
         display: grid;
@@ -1830,6 +2153,30 @@
 
     .worm-trading-connection-setup .ant-alert-action .ant-btn {
         width: 100%;
+    }
+
+    .worm-wallet-selection-summary__heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .worm-wallet-selection-summary__heading .ant-btn {
+        width: 100%;
+    }
+
+    .worm-wallet-selection-summary dl {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .worm-wallet-selection-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .worm-wallet-selection-card__status,
+    .worm-wallet-selection-card > small {
+        grid-column: 2;
+        max-width: none;
+        justify-content: flex-start;
     }
 
     .worm-trading-runtime__heading,

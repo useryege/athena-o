@@ -43,6 +43,9 @@ func (s *SQLStore) CreateExecutionPlan(
 	if req.ExpectedCombinationRevision <= 0 {
 		return nil, invalidExecutionPlan(fmt.Errorf("expected combination revision must be positive"))
 	}
+	if req.WalletSelectionRevision <= 0 {
+		return nil, invalidExecutionPlan(fmt.Errorf("Wallet selection revision must be positive"))
+	}
 	wallets, err := normalizeExecutionPlanWallets(req.Wallets)
 	if err != nil {
 		return nil, err
@@ -78,6 +81,24 @@ func (s *SQLStore) CreateExecutionPlan(
 	if len(combination.Items) == 0 {
 		return nil, invalidExecutionPlan(fmt.Errorf("market combination has no items"))
 	}
+	walletIDs, addresses := executionPlanWalletReferences(wallets)
+	lockIDs := append([]int64(nil), walletIDs...)
+	sort.Slice(lockIDs, func(left, right int) bool { return lockIDs[left] < lockIDs[right] })
+	if err := lockWalletOperations(ctx, tx, lockIDs); err != nil {
+		return nil, fmt.Errorf("lock execution plan Wallets: %w", err)
+	}
+	invalidWallets, err := queries.CountInvalidSelectedWalletReferencesAtRevision(ctx, wormtradingsqlc.CountInvalidSelectedWalletReferencesAtRevisionParams{
+		WalletIds:        walletIDs,
+		Addresses:        addresses,
+		OwnerAccountID:   ownerUUID,
+		ExpectedRevision: req.WalletSelectionRevision,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("validate execution plan Wallet selection: %w", err)
+	}
+	if invalidWallets != 0 {
+		return nil, ErrExecutionPlanWalletSelectionChanged
+	}
 	if int64(len(wallets)) > math.MaxInt64/int64(len(combination.Items)) {
 		return nil, invalidExecutionPlan(fmt.Errorf("execution plan step count overflows"))
 	}
@@ -85,16 +106,17 @@ func (s *SQLStore) CreateExecutionPlan(
 	planID := uuid.New()
 	planUUID := pgtype.UUID{Bytes: [16]byte(planID), Valid: true}
 	row, err := queries.CreateExecutionPlan(ctx, wormtradingsqlc.CreateExecutionPlanParams{
-		ID:                  planUUID,
-		OwnerAccountID:      ownerUUID,
-		CombinationID:       combinationID,
-		CombinationName:     combination.Name,
-		CombinationRevision: combination.Revision,
-		WalletCount:         int64(len(wallets)),
-		ItemCount:           int64(len(combination.Items)),
-		TotalStepCount:      totalSteps,
-		Now:                 timestampParam(now),
-		RetentionUntil:      timestampParam(now.Add(executionPlanRetention)),
+		ID:                      planUUID,
+		OwnerAccountID:          ownerUUID,
+		CombinationID:           combinationID,
+		CombinationName:         combination.Name,
+		CombinationRevision:     combination.Revision,
+		WalletSelectionRevision: req.WalletSelectionRevision,
+		WalletCount:             int64(len(wallets)),
+		ItemCount:               int64(len(combination.Items)),
+		TotalStepCount:          totalSteps,
+		Now:                     timestampParam(now),
+		RetentionUntil:          timestampParam(now.Add(executionPlanRetention)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create execution plan: %w", err)
@@ -394,6 +416,24 @@ func (s *SQLStore) MarkExecutionPlanReady(
 	if err != nil {
 		return nil, fmt.Errorf("list execution plan wallets for ready: %w", err)
 	}
+	walletIDs, addresses := executionPlanStoredWalletReferences(walletRows)
+	lockIDs := append([]int64(nil), walletIDs...)
+	sort.Slice(lockIDs, func(left, right int) bool { return lockIDs[left] < lockIDs[right] })
+	if err := lockWalletOperations(ctx, tx, lockIDs); err != nil {
+		return nil, fmt.Errorf("lock execution plan Wallets for ready: %w", err)
+	}
+	invalidWallets, err := queries.CountInvalidSelectedWalletReferencesAtRevision(ctx, wormtradingsqlc.CountInvalidSelectedWalletReferencesAtRevisionParams{
+		WalletIds:        walletIDs,
+		Addresses:        addresses,
+		OwnerAccountID:   row.OwnerAccountID,
+		ExpectedRevision: row.WalletSelectionRevision,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("validate ready execution plan Wallet selection: %w", err)
+	}
+	if invalidWallets != 0 {
+		return nil, ErrExecutionPlanWalletSelectionChanged
+	}
 	if err := validateAndPersistExecutionPlanWalletObservations(ctx, queries, id, walletRows, req.Wallets); err != nil {
 		return nil, err
 	}
@@ -580,37 +620,53 @@ func executionPlanUsability(
 	if err != nil {
 		return "COMBINATION_UNAVAILABLE"
 	}
+	walletRows, walletErr := queries.ListExecutionPlanWallets(ctx, row.ID)
+	if walletErr != nil {
+		return "WALLET_SELECTION_UNAVAILABLE"
+	}
+	walletIDs, addresses := executionPlanStoredWalletReferences(walletRows)
+	invalidWallets, walletErr := queries.CountInvalidSelectedWalletReferencesAtRevision(ctx, wormtradingsqlc.CountInvalidSelectedWalletReferencesAtRevisionParams{
+		WalletIds: walletIDs, Addresses: addresses, OwnerAccountID: row.OwnerAccountID,
+		ExpectedRevision: row.WalletSelectionRevision,
+	})
+	if walletErr != nil {
+		return "WALLET_SELECTION_UNAVAILABLE"
+	}
+	if invalidWallets != 0 {
+		return ExecutionPlanUsabilityWalletSelectionChanged
+	}
 	return ""
 }
 
 func mapExecutionPlan(row wormtradingsqlc.WormExecutionPlan) ExecutionPlan {
 	return ExecutionPlan{
-		ID:                   uuidValue(row.ID),
-		OwnerAccountID:       uuidValue(row.OwnerAccountID),
-		CombinationID:        uuidValue(row.CombinationID),
-		CombinationName:      row.CombinationName,
-		CombinationRevision:  row.CombinationRevision,
-		State:                ExecutionPlanState(row.State),
-		BuildStage:           row.BuildStage,
-		FailureCode:          row.FailureCode,
-		WorkerID:             row.WorkerID,
-		LockedAt:             timestampValue(row.LockedAt),
-		LeaseExpiresAt:       timestampValue(row.LeaseExpiresAt),
-		WalletCount:          row.WalletCount,
-		ItemCount:            row.ItemCount,
-		TotalStepCount:       row.TotalStepCount,
-		CompletedStepCount:   row.CompletedStepCount,
-		ReadyStepCount:       row.ReadyStepCount,
-		SkippedStepCount:     row.SkippedStepCount,
-		TotalCollateral:      row.TotalCollateral,
-		TotalOpeningFee:      row.TotalOpeningFee,
-		TotalUserFundsNeeded: row.TotalUserFundsNeeded,
-		RequestedAt:          timestampValue(row.RequestedAt),
-		CompletedAt:          timestampValue(row.CompletedAt),
-		ExpiresAt:            timestampValue(row.ExpiresAt),
-		RetentionUntil:       timestampValue(row.RetentionUntil),
-		CreatedAt:            timestampValue(row.CreatedAt),
-		UpdatedAt:            timestampValue(row.UpdatedAt),
+		ID:                      uuidValue(row.ID),
+		OwnerAccountID:          uuidValue(row.OwnerAccountID),
+		CombinationID:           uuidValue(row.CombinationID),
+		CombinationName:         row.CombinationName,
+		CombinationRevision:     row.CombinationRevision,
+		WalletSelectionRevision: row.WalletSelectionRevision,
+		State:                   ExecutionPlanState(row.State),
+		BuildStage:              row.BuildStage,
+		FailureCode:             row.FailureCode,
+		WorkerID:                row.WorkerID,
+		LockedAt:                timestampValue(row.LockedAt),
+		LeaseExpiresAt:          timestampValue(row.LeaseExpiresAt),
+		WalletCount:             row.WalletCount,
+		ItemCount:               row.ItemCount,
+		TotalStepCount:          row.TotalStepCount,
+		CompletedStepCount:      row.CompletedStepCount,
+		ReadyStepCount:          row.ReadyStepCount,
+		SkippedStepCount:        row.SkippedStepCount,
+		TotalCollateral:         row.TotalCollateral,
+		TotalOpeningFee:         row.TotalOpeningFee,
+		TotalUserFundsNeeded:    row.TotalUserFundsNeeded,
+		RequestedAt:             timestampValue(row.RequestedAt),
+		CompletedAt:             timestampValue(row.CompletedAt),
+		ExpiresAt:               timestampValue(row.ExpiresAt),
+		RetentionUntil:          timestampValue(row.RetentionUntil),
+		CreatedAt:               timestampValue(row.CreatedAt),
+		UpdatedAt:               timestampValue(row.UpdatedAt),
 	}
 }
 
@@ -693,8 +749,8 @@ func mapExecutionPlanStep(row wormtradingsqlc.WormExecutionPlanStep) ExecutionPl
 }
 
 func normalizeExecutionPlanWallets(values []ExecutionPlanWalletInput) ([]ExecutionPlanWalletInput, error) {
-	if len(values) == 0 || len(values) > math.MaxInt32 {
-		return nil, invalidExecutionPlan(fmt.Errorf("at least one wallet is required"))
+	if len(values) == 0 || len(values) > MaximumWalletSelectionItems {
+		return nil, invalidExecutionPlan(fmt.Errorf("execution plan must contain between 1 and %d Wallets", MaximumWalletSelectionItems))
 	}
 	result := make([]ExecutionPlanWalletInput, 0, len(values))
 	walletIDs := make(map[int64]struct{}, len(values))
@@ -723,6 +779,26 @@ func normalizeExecutionPlanWallets(values []ExecutionPlanWalletInput) ([]Executi
 		result = append(result, value)
 	}
 	return result, nil
+}
+
+func executionPlanWalletReferences(values []ExecutionPlanWalletInput) ([]int64, []string) {
+	walletIDs := make([]int64, len(values))
+	addresses := make([]string, len(values))
+	for index, value := range values {
+		walletIDs[index] = value.WalletID
+		addresses[index] = value.Address
+	}
+	return walletIDs, addresses
+}
+
+func executionPlanStoredWalletReferences(values []wormtradingsqlc.WormExecutionPlanWallet) ([]int64, []string) {
+	walletIDs := make([]int64, len(values))
+	addresses := make([]string, len(values))
+	for index, value := range values {
+		walletIDs[index] = value.WalletID
+		addresses[index] = value.Address
+	}
+	return walletIDs, addresses
 }
 
 func normalizeExecutionPlanWorkerID(value string) (string, error) {

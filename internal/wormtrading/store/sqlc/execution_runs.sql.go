@@ -1932,7 +1932,7 @@ func (q *Queries) GetExecutionRunForOwnerUpdate(ctx context.Context, arg GetExec
 }
 
 const getExecutionRunSourcePlanForUpdate = `-- name: GetExecutionRunSourcePlanForUpdate :one
-SELECT plans.id, plans.owner_account_id, plans.combination_id, plans.combination_name, plans.combination_revision, plans.state, plans.build_stage, plans.failure_code, plans.worker_id, plans.locked_at, plans.lease_expires_at, plans.wallet_count, plans.item_count, plans.total_step_count, plans.completed_step_count, plans.ready_step_count, plans.skipped_step_count, plans.total_collateral, plans.total_opening_fee, plans.total_user_funds_needed, plans.requested_at, plans.completed_at, plans.expires_at, plans.retention_until, plans.created_at, plans.updated_at
+SELECT plans.id, plans.owner_account_id, plans.combination_id, plans.combination_name, plans.combination_revision, plans.state, plans.build_stage, plans.failure_code, plans.worker_id, plans.locked_at, plans.lease_expires_at, plans.wallet_count, plans.item_count, plans.total_step_count, plans.completed_step_count, plans.ready_step_count, plans.skipped_step_count, plans.total_collateral, plans.total_opening_fee, plans.total_user_funds_needed, plans.requested_at, plans.completed_at, plans.expires_at, plans.retention_until, plans.created_at, plans.updated_at, plans.wallet_selection_revision
 FROM worm_execution_plans AS plans
 JOIN worm_market_combinations AS combinations
   ON combinations.id = plans.combination_id
@@ -1989,6 +1989,7 @@ func (q *Queries) GetExecutionRunSourcePlanForUpdate(ctx context.Context, arg Ge
 		&i.RetentionUntil,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.WalletSelectionRevision,
 	)
 	return i, err
 }

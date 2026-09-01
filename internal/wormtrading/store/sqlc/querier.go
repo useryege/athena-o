@@ -46,6 +46,8 @@ type Querier interface {
 	CountExecutionRunSteps(ctx context.Context, arg CountExecutionRunStepsParams) (int64, error)
 	CountExecutionRuns(ctx context.Context, ownerAccountID pgtype.UUID) (int64, error)
 	CountInvalidExecutionRunWalletSnapshots(ctx context.Context, runID pgtype.UUID) (int64, error)
+	CountInvalidSelectedWalletReferencesAtRevision(ctx context.Context, arg CountInvalidSelectedWalletReferencesAtRevisionParams) (int64, error)
+	CountManagedWalletConnections(ctx context.Context, ownerAccountID pgtype.UUID) (int64, error)
 	CountMarketCombinations(ctx context.Context, ownerAccountID pgtype.UUID) (int64, error)
 	CountPositionCashOutBatchItems(ctx context.Context, batchID pgtype.UUID) (int64, error)
 	CreateActiveCredential(ctx context.Context, arg CreateActiveCredentialParams) (WormWalletCredential, error)
@@ -75,6 +77,8 @@ type Querier interface {
 	CreatePositionCashOutBatchWalletLock(ctx context.Context, arg CreatePositionCashOutBatchWalletLockParams) error
 	CreatePositionCashOutCommand(ctx context.Context, arg CreatePositionCashOutCommandParams) (WormPositionCashOutCommand, error)
 	CreateWalletConnectionIfMissing(ctx context.Context, arg CreateWalletConnectionIfMissingParams) error
+	CreateWalletSelection(ctx context.Context, arg CreateWalletSelectionParams) (WormTradingWalletSelection, error)
+	CreateWalletSelectionItem(ctx context.Context, arg CreateWalletSelectionItemParams) error
 	DeferPositionCashOutBatchCheck(ctx context.Context, arg DeferPositionCashOutBatchCheckParams) (WormPositionCashOutBatch, error)
 	DeferPositionCashOutBatchPreflight(ctx context.Context, arg DeferPositionCashOutBatchPreflightParams) (WormPositionCashOutBatch, error)
 	DeleteCredential(ctx context.Context, arg DeleteCredentialParams) (int64, error)
@@ -82,6 +86,9 @@ type Querier interface {
 	DeleteExpiredExecutionPlans(ctx context.Context, arg DeleteExpiredExecutionPlansParams) ([]pgtype.UUID, error)
 	DeleteMarketCombination(ctx context.Context, arg DeleteMarketCombinationParams) (pgtype.UUID, error)
 	DeleteMarketCombinationItems(ctx context.Context, combinationID pgtype.UUID) error
+	DeleteWalletRetirement(ctx context.Context, arg DeleteWalletRetirementParams) (int64, error)
+	DeleteWalletRetirementForReselection(ctx context.Context, arg DeleteWalletRetirementForReselectionParams) error
+	DeleteWalletSelectionItems(ctx context.Context, ownerAccountID pgtype.UUID) error
 	DispatchExecutionMutationAttempt(ctx context.Context, arg DispatchExecutionMutationAttemptParams) (WormExecutionMutationAttempt, error)
 	DispatchPositionCashOutAttempt(ctx context.Context, arg DispatchPositionCashOutAttemptParams) (WormPositionCashOutAttempt, error)
 	EndExecutionRunAuthorization(ctx context.Context, arg EndExecutionRunAuthorizationParams) (int64, error)
@@ -139,6 +146,11 @@ type Querier interface {
 	GetPositionCashOutCommand(ctx context.Context, id pgtype.UUID) (WormPositionCashOutCommand, error)
 	GetPositionCashOutForUpdate(ctx context.Context, arg GetPositionCashOutForUpdateParams) (WormPositionCashOut, error)
 	GetWalletConnectionForUpdate(ctx context.Context, walletID int64) (WormWalletConnection, error)
+	GetWalletRetirement(ctx context.Context, arg GetWalletRetirementParams) (WormTradingWalletRetirement, error)
+	GetWalletRetirementByWalletID(ctx context.Context, arg GetWalletRetirementByWalletIDParams) (WormTradingWalletRetirement, error)
+	GetWalletSelection(ctx context.Context, ownerAccountID pgtype.UUID) (WormTradingWalletSelection, error)
+	GetWalletSelectionForUpdate(ctx context.Context, ownerAccountID pgtype.UUID) (WormTradingWalletSelection, error)
+	GetWalletSelectionItem(ctx context.Context, arg GetWalletSelectionItemParams) (WormTradingWalletSelectionItem, error)
 	HeartbeatExecutionCoordinator(ctx context.Context, arg HeartbeatExecutionCoordinatorParams) (WormExecutionCoordinator, error)
 	IncrementPositionCashOutBatchWalletCompleted(ctx context.Context, arg IncrementPositionCashOutBatchWalletCompletedParams) (int64, error)
 	InvalidateExecutionAuthorization(ctx context.Context, arg InvalidateExecutionAuthorizationParams) (int64, error)
@@ -167,6 +179,9 @@ type Querier interface {
 	ListRecoverablePositionCashOutBatchKeys(ctx context.Context, arg ListRecoverablePositionCashOutBatchKeysParams) ([]pgtype.UUID, error)
 	ListRecoverablePositionCashOutKeys(ctx context.Context, arg ListRecoverablePositionCashOutKeysParams) ([]pgtype.UUID, error)
 	ListWalletConnectionSnapshots(ctx context.Context, arg ListWalletConnectionSnapshotsParams) ([]ListWalletConnectionSnapshotsRow, error)
+	ListWalletRetirementBlockers(ctx context.Context, arg ListWalletRetirementBlockersParams) ([]ListWalletRetirementBlockersRow, error)
+	ListWalletRetirements(ctx context.Context, ownerAccountID pgtype.UUID) ([]WormTradingWalletRetirement, error)
+	ListWalletSelectionItems(ctx context.Context, ownerAccountID pgtype.UUID) ([]WormTradingWalletSelectionItem, error)
 	MarkActiveCredentialPendingRevocation(ctx context.Context, arg MarkActiveCredentialPendingRevocationParams) (int64, error)
 	MarkConnectionAttemptCompleting(ctx context.Context, arg MarkConnectionAttemptCompletingParams) (WormWalletConnectionAttempt, error)
 	MarkConnectionAttemptTerminal(ctx context.Context, arg MarkConnectionAttemptTerminalParams) (WormWalletConnectionAttempt, error)
@@ -230,6 +245,11 @@ type Querier interface {
 	UpdateExecutionPlanWalletObservation(ctx context.Context, arg UpdateExecutionPlanWalletObservationParams) error
 	UpdateMarketCombination(ctx context.Context, arg UpdateMarketCombinationParams) (WormMarketCombination, error)
 	UpdateWalletConnectionState(ctx context.Context, arg UpdateWalletConnectionStateParams) (WormWalletConnection, error)
+	UpdateWalletSelection(ctx context.Context, arg UpdateWalletSelectionParams) (WormTradingWalletSelection, error)
+	UpsertWalletRetirement(ctx context.Context, arg UpsertWalletRetirementParams) error
+	WalletNeedsRetirement(ctx context.Context, arg WalletNeedsRetirementParams) (bool, error)
+	WalletOccupiesManagedConnectionSlot(ctx context.Context, arg WalletOccupiesManagedConnectionSlotParams) (bool, error)
+	WalletRetirementReselectionBlocked(ctx context.Context, arg WalletRetirementReselectionBlockedParams) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

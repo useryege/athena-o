@@ -8,11 +8,13 @@ import {
     PlayCircleOutlined,
     ReloadOutlined,
     SafetyCertificateOutlined,
+    SearchOutlined,
+    SettingOutlined,
     StopOutlined,
     SyncOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Checkbox, Empty, Pagination, Progress, Result, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Avatar, Button, Card, Checkbox, Empty, Input, Modal, Pagination, Progress, Result, Segmented, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
@@ -41,11 +43,17 @@ import type {
     WormTradingWalletActivityItem,
     WormTradingWalletBalanceItem,
     WormTradingWalletConnectionItem,
+    WormTradingWalletSelection,
     WormTradingWalletSummary,
     WormWalletConnection,
     WormWalletConnectionState
 } from '../../shared/services/worm-trading-service';
-import {WORM_TRADING_LOGIN_SESSION_REQUIRED, WORM_TRADING_REAUTH_REQUIRED, WORM_TRADING_REAUTH_UNAVAILABLE} from '../../shared/services/worm-trading-service';
+import {
+    MAXIMUM_WORM_TRADING_WALLETS,
+    WORM_TRADING_LOGIN_SESSION_REQUIRED,
+    WORM_TRADING_REAUTH_REQUIRED,
+    WORM_TRADING_REAUTH_UNAVAILABLE
+} from '../../shared/services/worm-trading-service';
 import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {usePagedParams} from '../../shared/pages/shared';
 
@@ -60,7 +68,7 @@ const positionCashOutReasonQuery = 'wormPositionCashOutReason';
 const positionCashOutBatchReasonQuery = 'wormPositionCashOutBatchReason';
 const positionCashOutPollIntervalMS = 2_000;
 const positionCashOutBatchItemPageSize = 20;
-const maximumSelectedPositionCashOutBatchWallets = 100;
+const maximumSelectedPositionCashOutBatchWallets = MAXIMUM_WORM_TRADING_WALLETS;
 const maximumRememberedPositionCashOuts = 100;
 const canonicalPositionCashOutIDPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const connectOutcomeUnknownWarning = 'CONNECT_OUTCOME_UNKNOWN';
@@ -311,7 +319,7 @@ const RuntimeSummary = (props: {status?: WormTradingStatus; loading: boolean; er
 };
 
 type ManagedConnectionAction = 'reconnect' | 'regenerate' | 'cleanup';
-type PendingConnectionIntent = {kind: 'auto-connect'} | {kind: ManagedConnectionAction; walletId: number};
+type PendingConnectionIntent = {kind: 'reconcile-selection'} | {kind: ManagedConnectionAction; walletId: number};
 
 const readPendingConnectionIntent = (): PendingConnectionIntent | undefined => {
     const raw = window.sessionStorage.getItem(pendingConnectionActionKey);
@@ -321,8 +329,8 @@ const readPendingConnectionIntent = (): PendingConnectionIntent | undefined => {
     window.sessionStorage.removeItem(pendingConnectionActionKey);
     try {
         const value = JSON.parse(raw) as Partial<PendingConnectionIntent>;
-        if (value.kind === 'auto-connect') {
-            return {kind: 'auto-connect'};
+        if (value.kind === 'reconcile-selection') {
+            return {kind: 'reconcile-selection'};
         }
         const walletId = Number(value.walletId);
         return (value.kind === 'reconnect' || value.kind === 'regenerate' || value.kind === 'cleanup') && Number.isSafeInteger(walletId) && walletId > 0
@@ -411,7 +419,7 @@ const ConnectionSetupPanel = (props: {manager: ConnectionManager}) => {
             : setup.phase === 'authorization-required'
               ? 'Authorize Worm wallet connections'
               : setup.phase === 'connecting'
-                ? 'Connecting wallets to Worm'
+                ? 'Applying Worm wallet selection'
                 : setup.phase === 'partial'
                   ? 'Some Worm wallets are not connected'
                   : setup.phase === 'blocked'
@@ -423,7 +431,7 @@ const ConnectionSetupPanel = (props: {manager: ConnectionManager}) => {
     const action =
         setup.phase === 'authorization-required' ? (
             <Button type='primary' icon={<LinkOutlined />} disabled={props.manager.operationBusy} onClick={props.manager.authorize}>
-                {setup.processed > 0 ? 'Authorize and continue' : 'Authorize and connect'}
+                {setup.processed > 0 ? 'Authorize and continue' : 'Authorize and apply'}
             </Button>
         ) : (setup.phase === 'partial' || setup.phase === 'paused') && setup.retryable ? (
             <Button type='primary' icon={<SyncOutlined />} disabled={props.manager.operationBusy} onClick={props.manager.retry}>
@@ -443,7 +451,7 @@ const ConnectionSetupPanel = (props: {manager: ConnectionManager}) => {
                         <div className='worm-trading-connection-setup__progress'>
                             <Progress percent={percent} status={progressStatus} showInfo={false} />
                             <span>
-                                {setup.processed}/{setup.total} processed · {setup.succeeded} connected · {setup.failed} failed · {setup.remaining} remaining
+                                {setup.processed}/{setup.total} processed · {setup.succeeded} applied · {setup.failed} failed · {setup.remaining} remaining
                             </span>
                         </div>
                     )}
@@ -460,6 +468,244 @@ const ConnectionSetupPanel = (props: {manager: ConnectionManager}) => {
     );
 };
 
+type WalletSelectionFilter = 'all' | 'selected' | 'attention';
+
+const sameWalletSelection = (left: number[], right: number[]) => {
+    if (left.length !== right.length) {
+        return false;
+    }
+    const rightSet = new Set(right);
+    return left.every(walletID => rightSet.has(walletID));
+};
+
+const WalletSelectionModal = (props: {
+    open: boolean;
+    inventory: WormTradingWalletConnectionItem[];
+    selection: WormTradingWalletSelection;
+    saving: boolean;
+    error?: Error;
+    onCancel: () => void;
+    onSave: (walletIDs: number[]) => void;
+}) => {
+    const [query, setQuery] = React.useState('');
+    const [filter, setFilter] = React.useState<WalletSelectionFilter>('all');
+    const [draftWalletIDs, setDraftWalletIDs] = React.useState<number[]>([]);
+    React.useEffect(() => {
+        if (!props.open) {
+            return;
+        }
+        setQuery('');
+        setFilter('all');
+        setDraftWalletIDs(props.selection.selectedItems.map(item => item.walletId));
+    }, [props.open, props.selection]);
+
+    const authoritativeWalletIDs = props.selection.selectedItems.map(item => item.walletId);
+    const authoritativeSet = new Set(authoritativeWalletIDs);
+    const draftSet = new Set(draftWalletIDs);
+    const inventoryWalletIDs = new Set(props.inventory.map(item => item.wallet.walletId));
+    const normalizedDraftWalletIDs = [
+        ...props.inventory.filter(item => draftSet.has(item.wallet.walletId)).map(item => item.wallet.walletId),
+        ...draftWalletIDs.filter(walletID => !inventoryWalletIDs.has(walletID))
+    ];
+    const retirementSet = new Set(props.selection.retirements.map(item => item.walletId));
+    const inventoryByWalletID = new Map(props.inventory.map(item => [item.wallet.walletId, item]));
+    const attentionSet = new Set(props.inventory.filter(item => item.needsAttention).map(item => item.wallet.walletId));
+    props.selection.retirements.forEach(item => attentionSet.add(item.walletId));
+    const normalizedQuery = query.trim().toLowerCase();
+    const visibleItems = props.inventory.filter(item => {
+        const walletID = item.wallet.walletId;
+        if (filter === 'selected' && !draftSet.has(walletID)) {
+            return false;
+        }
+        if (filter === 'attention' && !attentionSet.has(walletID)) {
+            return false;
+        }
+        return [item.wallet.remark, item.wallet.address, String(walletID)].some(value => value.toLowerCase().includes(normalizedQuery));
+    });
+    const additions = draftWalletIDs.filter(walletID => !authoritativeSet.has(walletID)).length;
+    const removals = authoritativeWalletIDs.filter(walletID => !draftSet.has(walletID)).length;
+    const selectionChanged = !props.selection.configured || !sameWalletSelection(authoritativeWalletIDs, normalizedDraftWalletIDs);
+    const atLimit = draftWalletIDs.length >= props.selection.maximumWallets;
+    const blockingLegacyItems = props.selection.configured
+        ? []
+        : props.inventory.filter(item => !draftSet.has(item.wallet.walletId) && !item.retirementPending && !item.removalAllowed);
+    const toggleWallet = (walletID: number, selected: boolean) => {
+        const inventoryItem = inventoryByWalletID.get(walletID);
+        if (selected) {
+            if (draftSet.has(walletID) || atLimit) {
+                return;
+            }
+            setDraftWalletIDs(current => [...current, walletID]);
+            return;
+        }
+        if (props.selection.configured && authoritativeSet.has(walletID) && inventoryItem && !inventoryItem.removalAllowed) {
+            return;
+        }
+        setDraftWalletIDs(current => current.filter(item => item !== walletID));
+    };
+    const saveLabel = `Save and apply${additions > 0 || removals > 0 ? ` (+${additions} / −${removals})` : ''}`;
+    return (
+        <Modal
+            className='worm-wallet-selection-modal'
+            centered={true}
+            destroyOnHidden={true}
+            maskClosable={!props.saving}
+            closable={!props.saving}
+            open={props.open}
+            width={960}
+            title={
+                <div className='worm-wallet-selection-modal__title'>
+                    <span>Manage Worm Trading wallets</span>
+                    <Tag color={atLimit ? 'gold' : 'blue'}>
+                        {draftWalletIDs.length}/{props.selection.maximumWallets}
+                    </Tag>
+                </div>
+            }
+            onCancel={props.onCancel}
+            footer={
+                <div className='worm-wallet-selection-modal__footer'>
+                    <Typography.Text type={atLimit ? 'warning' : 'secondary'} role='status' aria-live='polite'>
+                        {blockingLegacyItems.length > 0
+                            ? `${blockingLegacyItems.length} existing ${blockingLegacyItems.length === 1 ? 'wallet must be selected or have its blocker' : 'wallets must be selected or have their blockers'} resolved.`
+                            : atLimit
+                              ? `Maximum ${props.selection.maximumWallets} wallets selected. Deselect one to choose another.`
+                              : `${props.selection.maximumWallets - draftWalletIDs.length} slots available.`}
+                    </Typography.Text>
+                    <div>
+                        <Button disabled={props.saving} onClick={props.onCancel}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type='primary'
+                            loading={props.saving}
+                            disabled={Boolean(props.error) || !selectionChanged || draftWalletIDs.length > props.selection.maximumWallets || blockingLegacyItems.length > 0}
+                            onClick={() => props.onSave(normalizedDraftWalletIDs)}>
+                            {saveLabel}
+                        </Button>
+                    </div>
+                </div>
+            }>
+            <div className='worm-wallet-selection-modal__body'>
+                <Alert
+                    type='info'
+                    showIcon={true}
+                    title='This selection controls Worm credentials and future execution previews.'
+                    description='Saving does not place or cancel orders, close positions, sign a transaction, or move funds. Athena disconnects removed wallets before connecting additions.'
+                />
+                {props.error && (
+                    <Alert
+                        type='error'
+                        showIcon={true}
+                        title='The complete Solana wallet inventory is unavailable'
+                        description='Saving is disabled because Athena cannot safely evaluate every existing Worm wallet. Close this dialog and retry the inventory refresh.'
+                    />
+                )}
+                {removals > 0 && (
+                    <Alert
+                        type='warning'
+                        showIcon={true}
+                        title={`${removals} ${removals === 1 ? 'wallet' : 'wallets'} will be removed`}
+                        description='Credential cleanup can remain visible under Needs attention if Worm does not confirm revocation immediately.'
+                    />
+                )}
+                {blockingLegacyItems.length > 0 && (
+                    <Alert
+                        type='error'
+                        showIcon={true}
+                        title={`${blockingLegacyItems.length} existing ${blockingLegacyItems.length === 1 ? 'wallet cannot' : 'wallets cannot'} be removed yet`}
+                        description='Select each blocked wallet or resolve the reason shown on its card before saving the first Worm Trading configuration.'
+                    />
+                )}
+                <div className='worm-wallet-selection-modal__tools'>
+                    <Input
+                        allowClear={true}
+                        prefix={<SearchOutlined />}
+                        placeholder='Search wallet name, address, or ID'
+                        value={query}
+                        onChange={event => setQuery(event.target.value)}
+                    />
+                    <Segmented<WalletSelectionFilter>
+                        value={filter}
+                        options={[
+                            {value: 'all', label: `All (${props.inventory.length})`},
+                            {value: 'selected', label: `Selected (${draftWalletIDs.length})`},
+                            {value: 'attention', label: `Needs attention (${attentionSet.size})`}
+                        ]}
+                        onChange={setFilter}
+                    />
+                </div>
+                <div className='worm-wallet-selection-modal__grid' aria-busy={props.saving || undefined}>
+                    {visibleItems.length === 0 ? (
+                        <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={
+                                filter === 'attention' ? 'No wallets need attention.' : normalizedQuery ? 'No wallets match this search.' : 'No Solana wallets are available.'
+                            }
+                        />
+                    ) : (
+                        visibleItems.map(item => {
+                            const walletID = item.wallet.walletId;
+                            const selected = draftSet.has(walletID);
+                            const willAdd = selected && !authoritativeSet.has(walletID);
+                            const willRemove = !selected && authoritativeSet.has(walletID);
+                            const retiring = retirementSet.has(walletID) && !selected;
+                            const removalLocked = props.selection.configured && authoritativeSet.has(walletID) && !item.removalAllowed;
+                            const legacyRemovalBlocked = !props.selection.configured && !selected && !item.retirementPending && !item.removalAllowed;
+                            const disabled = props.saving || Boolean(props.error) || removalLocked || (!selected && atLimit);
+                            return (
+                                <label
+                                    className={`worm-wallet-selection-card${selected ? ' worm-wallet-selection-card--selected' : ''}${disabled ? ' worm-wallet-selection-card--disabled' : ''}`}
+                                    key={walletID}>
+                                    <Checkbox checked={selected} disabled={disabled} onChange={event => toggleWallet(walletID, event.target.checked)} />
+                                    <div className='worm-wallet-selection-card__identity'>
+                                        <WormTradingWalletAvatar wallet={item.wallet} size={42} />
+                                        <span>
+                                            <Typography.Text strong={true} ellipsis={{tooltip: item.wallet.remark || 'Solana wallet'}}>
+                                                {item.wallet.remark || 'Solana wallet'}
+                                            </Typography.Text>
+                                            <Tooltip title={item.wallet.address}>
+                                                <code>{shortAddress(item.wallet.address)}</code>
+                                            </Tooltip>
+                                        </span>
+                                    </div>
+                                    <div className='worm-wallet-selection-card__status'>
+                                        {willAdd ? (
+                                            <Tag color='blue'>Will add</Tag>
+                                        ) : willRemove ? (
+                                            <Tag color='gold'>Will remove</Tag>
+                                        ) : retiring ? (
+                                            <Tag color='gold'>Retiring</Tag>
+                                        ) : null}
+                                        {item.pendingState && <Tag color='blue'>{titleCase(item.pendingState)}</Tag>}
+                                        <ConnectionStatusTag state={item.connection.state} />
+                                    </div>
+                                    {(removalLocked || legacyRemovalBlocked) && (
+                                        <small>
+                                            {removalLocked ? 'This selected wallet cannot be removed' : 'Select this existing wallet or resolve its removal blocker'}:{' '}
+                                            {titleCase(item.removalReasonCode) || 'Worm Trading state requires attention'}.
+                                        </small>
+                                    )}
+                                    {!removalLocked && !legacyRemovalBlocked && item.connection.warningCode === connectOutcomeUnknownWarning && (
+                                        <small>Connection outcome is unknown and requires review.</small>
+                                    )}
+                                </label>
+                            );
+                        })
+                    )}
+                </div>
+                {props.selection.retirements.some(retirement => !props.inventory.some(item => item.wallet.walletId === retirement.walletId)) && (
+                    <Alert
+                        type='warning'
+                        showIcon={true}
+                        title='Some retired wallets are no longer in the current inventory'
+                        description='Their durable cleanup state remains recorded. Refresh after the wallet inventory is available again.'
+                    />
+                )}
+            </div>
+        </Modal>
+    );
+};
+
 const ConnectionManagement = (props: {onReload: () => void; children: (manage: ConnectionManager) => React.ReactNode}) => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
@@ -468,8 +714,11 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
     const [busyWalletId, setBusyWalletId] = React.useState<number>();
     const [stage, setStage] = React.useState('');
     const [operationBusy, setOperationBusy] = React.useState(false);
-    const [setup, setSetup] = React.useState<ConnectionSetupState>({...hiddenConnectionSetupState, phase: 'discovering', message: 'Checking every Solana wallet in this account.'});
+    const [setup, setSetup] = React.useState<ConnectionSetupState>({...hiddenConnectionSetupState, phase: 'discovering', message: 'Loading your Worm wallet selection.'});
     const [connectionItems, setConnectionItems] = React.useState<WormTradingWalletConnectionItem[]>([]);
+    const [selection, setSelection] = React.useState<WormTradingWalletSelection>();
+    const [selectionError, setSelectionError] = React.useState<Error>();
+    const [selectionModalOpen, setSelectionModalOpen] = React.useState(false);
     const [walletProgress, setWalletProgress] = React.useState<Map<number, string>>(() => new Map());
     const resumedRef = React.useRef(false);
     const operationEpochRef = React.useRef(0);
@@ -477,10 +726,12 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
     const cancelDelayRef = React.useRef<(() => void) | undefined>();
     const lastAutoStartAtRef = React.useRef(0);
     const targetWalletIDsRef = React.useRef(new Set<number>());
+    const retirementWalletIDsRef = React.useRef(new Set<number>());
     const attemptedWalletIDsRef = React.useRef(new Set<number>());
     const succeededWalletIDsRef = React.useRef(new Set<number>());
     const failedWalletIDsRef = React.useRef(new Set<number>());
     const blockedWalletIDsRef = React.useRef(new Set<number>());
+    const inventorySelectionRef = React.useRef<{configured: boolean; revision: number; updatedAt: number; maximumWallets: number}>();
     const onReloadRef = React.useRef(props.onReload);
     onReloadRef.current = props.onReload;
 
@@ -488,7 +739,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
 
     const progressState = React.useCallback(
         (phase: ConnectionSetupPhase, message: string, options?: {currentWallet?: WormTradingWalletSummary; retryable?: boolean}): ConnectionSetupState => {
-            const total = targetWalletIDsRef.current.size;
+            const total = targetWalletIDsRef.current.size + retirementWalletIDsRef.current.size;
             const processed = attemptedWalletIDsRef.current.size;
             return {
                 phase,
@@ -556,12 +807,29 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         });
     }, []);
 
+    const fetchWalletSelection = React.useCallback(
+        async (epoch: number): Promise<WormTradingWalletSelection | undefined> => {
+            const result = await lease.runTask(() => services.wormTrading.getWalletSelection());
+            if (!isCurrent(epoch) || result.status === 'discarded') {
+                return undefined;
+            }
+            if (result.status === 'rejected') {
+                throw result.error;
+            }
+            setSelection(result.value);
+            setSelectionError(undefined);
+            return result.value;
+        },
+        [isCurrent, lease]
+    );
+
     const fetchConnectionInventory = React.useCallback(
         async (epoch: number): Promise<WormTradingWalletConnectionItem[] | undefined> => {
             const items: WormTradingWalletConnectionItem[] = [];
             const seenWalletIDs = new Set<number>();
             let page = 1;
             let expectedTotal: number | undefined;
+            let expectedSelection: {configured: boolean; revision: number; updatedAt: number; maximumWallets: number} | undefined;
             while (true) {
                 const result = await lease.runTask(() => services.wormTrading.listWalletConnections(page, wormConnectionInventoryPageSize));
                 if (!isCurrent(epoch) || result.status === 'discarded') {
@@ -572,8 +840,23 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 }
                 if (expectedTotal === undefined) {
                     expectedTotal = result.value.total;
+                    expectedSelection = {
+                        configured: result.value.selectionConfigured,
+                        revision: result.value.selectionRevision,
+                        updatedAt: result.value.selectionUpdatedAt,
+                        maximumWallets: result.value.maximumWallets
+                    };
                 } else if (result.value.total !== expectedTotal) {
                     throw new Error('The Solana wallet inventory changed while Worm connections were being checked. Refresh before continuing.');
+                }
+                if (
+                    !expectedSelection ||
+                    result.value.selectionConfigured !== expectedSelection.configured ||
+                    result.value.selectionRevision !== expectedSelection.revision ||
+                    result.value.selectionUpdatedAt !== expectedSelection.updatedAt ||
+                    result.value.maximumWallets !== expectedSelection.maximumWallets
+                ) {
+                    throw new Error('The saved Worm wallet selection changed while the connection inventory was loading. Refresh before continuing.');
                 }
                 for (const item of result.value.items) {
                     if (seenWalletIDs.has(item.wallet.walletId)) {
@@ -586,6 +869,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                     if (items.length !== expectedTotal) {
                         throw new Error('Worm Trading returned an inconsistent wallet total. Existing connection data was not replaced.');
                     }
+                    inventorySelectionRef.current = expectedSelection;
                     return items;
                 }
                 if (result.value.items.length === 0) {
@@ -720,17 +1004,103 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         [fetchConnectionInventory, isCurrent, publishInventory]
     );
 
+    const runRetirementQueue = React.useCallback(
+        async (epoch: number, inventory: WormTradingWalletConnectionItem[]): Promise<WormTradingWalletConnectionItem[] | undefined> => {
+            const candidates = inventory.filter(item => retirementWalletIDsRef.current.has(item.wallet.walletId));
+            if (candidates.length === 0) {
+                return inventory;
+            }
+            setWalletProgress(current => {
+                const next = new Map(current);
+                candidates.forEach(item => next.set(item.wallet.walletId, 'Queued for credential retirement.'));
+                return next;
+            });
+            for (const item of candidates) {
+                if (!isCurrent(epoch)) {
+                    return undefined;
+                }
+                const walletID = item.wallet.walletId;
+                setBusyWalletId(walletID);
+                setSetup(progressState('connecting', 'Disconnecting removed wallets before connecting additions.', {currentWallet: item.wallet}));
+                setOperationStage('Revoking the removed wallet credential…');
+                setWalletProgress(current => new Map(current).set(walletID, 'Retiring Worm credential…'));
+                const result = await lease.runTask(() => services.wormTrading.disconnectWallet(walletID));
+                if (!isCurrent(epoch) || result.status === 'discarded') {
+                    return undefined;
+                }
+                if (result.status === 'fulfilled') {
+                    attemptedWalletIDsRef.current.add(walletID);
+                    succeededWalletIDsRef.current.add(walletID);
+                    setWalletProgress(current => new Map(current).set(walletID, 'Credential retirement requested; refreshing authoritative state…'));
+                    continue;
+                }
+                const details = requestErrorDetails(result.error);
+                if (details.reason === WORM_TRADING_REAUTH_REQUIRED) {
+                    const callbackReason = new URLSearchParams(location.search).get('wormTradingReason') || new URLSearchParams(location.search).get('wormCredentialReason') || '';
+                    setWalletProgress(current => new Map(current).set(walletID, 'Waiting for Worm credential authorization.'));
+                    setSetup(
+                        progressState(
+                            'authorization-required',
+                            callbackReason
+                                ? `Google authorization did not complete (${callbackReason}). Authorize once to continue cleanup.`
+                                : 'Confirm your identity once to retire removed credentials before connecting additions.'
+                        )
+                    );
+                    return undefined;
+                }
+                attemptedWalletIDsRef.current.add(walletID);
+                failedWalletIDsRef.current.add(walletID);
+                setWalletProgress(current => new Map(current).set(walletID, 'Credential cleanup still needs attention.'));
+                setSetup(
+                    progressState(
+                        'partial',
+                        wormConnectionErrorMessage(result.error, 'A removed wallet could not be disconnected. Additions remain paused to preserve the 20-wallet limit.'),
+                        {
+                            retryable: details.status !== 401 && details.status !== 403
+                        }
+                    )
+                );
+                return undefined;
+            }
+            setBusyWalletId(undefined);
+            setOperationStage('Refreshing wallet retirement state…');
+            const refreshed = await refreshAuthoritativeState(epoch);
+            if (!refreshed || !isCurrent(epoch)) {
+                return undefined;
+            }
+            const refreshedSelection = await fetchWalletSelection(epoch);
+            if (!refreshedSelection || !isCurrent(epoch)) {
+                return undefined;
+            }
+            const outstandingRetirements = new Set(refreshedSelection.retirements.map(item => item.walletId));
+            const incomplete = candidates.find(item => outstandingRetirements.has(item.wallet.walletId));
+            if (incomplete) {
+                setSetup(
+                    progressState(
+                        'partial',
+                        `${incomplete.wallet.remark || shortAddress(incomplete.wallet.address)} still requires credential cleanup. Additions remain paused until retirement completes.`,
+                        {retryable: true}
+                    )
+                );
+                return undefined;
+            }
+            return refreshed;
+        },
+        [fetchWalletSelection, isCurrent, lease, location.search, progressState, refreshAuthoritativeState, setOperationStage]
+    );
+
     const runAutoConnectionQueue = React.useCallback(
         async (epoch: number, inventory: WormTradingWalletConnectionItem[]) => {
             const candidates = inventory.filter(
                 item =>
+                    targetWalletIDsRef.current.has(item.wallet.walletId) &&
                     item.connection.state === 'NOT_CONNECTED' &&
                     item.connection.warningCode !== connectOutcomeUnknownWarning &&
                     !attemptedWalletIDsRef.current.has(item.wallet.walletId) &&
                     !blockedWalletIDsRef.current.has(item.wallet.walletId)
             );
             if (candidates.length === 0) {
-                const unknown = inventory.find(item => item.connection.warningCode === connectOutcomeUnknownWarning);
+                const unknown = inventory.find(item => targetWalletIDsRef.current.has(item.wallet.walletId) && item.connection.warningCode === connectOutcomeUnknownWarning);
                 if (unknown) {
                     setSetup(
                         progressState(
@@ -808,7 +1178,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                         ? `Google authorization did not complete (${callbackReason}). Authorize once to continue the remaining wallets.`
                         : succeededWalletIDsRef.current.size > 0
                           ? 'The Worm authorization lease expired. Authorize once to continue the remaining wallets.'
-                          : 'Confirm your identity once to connect every eligible Solana wallet. No transaction or network fee is involved.';
+                          : 'Confirm your identity once to apply the selected Worm wallets. No transaction or network fee is involved.';
                     break;
                 }
 
@@ -851,7 +1221,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             if (!isCurrent(epoch)) {
                 return;
             }
-            const unknown = refreshedInventory?.find(item => item.connection.warningCode === connectOutcomeUnknownWarning);
+            const unknown = refreshedInventory?.find(item => targetWalletIDsRef.current.has(item.wallet.walletId) && item.connection.warningCode === connectOutcomeUnknownWarning);
             if (unknown) {
                 blockedWalletIDsRef.current.add(unknown.wallet.walletId);
                 setWalletProgress(current => new Map(current).set(unknown.wallet.walletId, 'Connection outcome is unknown; automatic retry is blocked.'));
@@ -879,11 +1249,12 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             const connectedCount = succeededWalletIDsRef.current.size;
             if (connectedCount > 0) {
                 ctx.notifications.success(
-                    connectedCount === 1 ? 'Worm wallet connected' : `${connectedCount} Worm wallets connected`,
-                    'The authoritative connection and activity state has been refreshed.'
+                    connectedCount === 1 ? 'Worm wallet selection applied' : `${connectedCount} Worm wallet changes applied`,
+                    'The authoritative connection and asset state has been refreshed.'
                 );
             }
             targetWalletIDsRef.current.clear();
+            retirementWalletIDsRef.current.clear();
             attemptedWalletIDsRef.current.clear();
             succeededWalletIDsRef.current.clear();
             failedWalletIDsRef.current.clear();
@@ -896,36 +1267,94 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
 
     const discoverAndRun = React.useCallback(
         async (epoch: number, resetBatch: boolean, runConnections: boolean) => {
-            setSetup(current => ({...current, phase: 'discovering', message: 'Checking every Solana wallet in this account.', currentWallet: undefined}));
+            setSetup(current => ({...current, phase: 'discovering', message: 'Loading your Worm wallet selection and current credentials.', currentWallet: undefined}));
+            const currentSelection = await fetchWalletSelection(epoch);
+            if (!currentSelection || !isCurrent(epoch)) {
+                return;
+            }
             const inventory = await fetchConnectionInventory(epoch);
             if (!inventory || !isCurrent(epoch)) {
                 return;
             }
+            const inventorySelection = inventorySelectionRef.current;
+            if (
+                !inventorySelection ||
+                inventorySelection.configured !== currentSelection.configured ||
+                inventorySelection.revision !== currentSelection.revision ||
+                inventorySelection.updatedAt !== currentSelection.updatedAt ||
+                inventorySelection.maximumWallets !== currentSelection.maximumWallets
+            ) {
+                throw new Error('The saved Worm wallet selection changed while its connection inventory was loading. Refresh before continuing.');
+            }
+            const selectedByWalletID = new Map(currentSelection.selectedItems.map(item => [item.walletId, item]));
+            const retiringByWalletID = new Map(currentSelection.retirements.map(item => [item.walletId, item]));
+            if (
+                inventory.some(item => {
+                    const selectedItem = selectedByWalletID.get(item.wallet.walletId);
+                    const retirement = retiringByWalletID.get(item.wallet.walletId);
+                    return (
+                        item.selected !== Boolean(selectedItem) ||
+                        item.selectionOrdinal !== (selectedItem?.ordinal || 0) ||
+                        (selectedItem !== undefined && selectedItem.address !== item.wallet.address) ||
+                        item.retirementPending !== Boolean(retirement) ||
+                        (retirement !== undefined && retirement.address !== item.wallet.address)
+                    );
+                })
+            ) {
+                throw new Error('Worm Trading returned a connection inventory for a different saved wallet selection.');
+            }
             publishInventory(inventory);
             if (resetBatch) {
                 targetWalletIDsRef.current.clear();
+                retirementWalletIDsRef.current.clear();
                 attemptedWalletIDsRef.current.clear();
                 succeededWalletIDsRef.current.clear();
                 failedWalletIDsRef.current.clear();
                 blockedWalletIDsRef.current.clear();
                 setWalletProgress(new Map());
             }
+            if (!currentSelection.configured) {
+                targetWalletIDsRef.current.clear();
+                retirementWalletIDsRef.current.clear();
+                setSetup(hiddenConnectionSetupState);
+                return;
+            }
+            const selectedWalletIDs = new Set(currentSelection.selectedItems.map(item => item.walletId));
+            const retiredWalletIDs = new Set(currentSelection.retirements.map(item => item.walletId));
+            const inventoryWalletIDs = new Set(inventory.map(item => item.wallet.walletId));
+            const missingRetirement = currentSelection.retirements.find(item => !inventoryWalletIDs.has(item.walletId));
+            targetWalletIDsRef.current = new Set([...targetWalletIDsRef.current].filter(walletID => selectedWalletIDs.has(walletID)));
+            retirementWalletIDsRef.current = new Set([...retirementWalletIDsRef.current].filter(walletID => retiredWalletIDs.has(walletID)));
             for (const item of inventory) {
+                const walletID = item.wallet.walletId;
+                if (retiredWalletIDs.has(walletID)) {
+                    retirementWalletIDsRef.current.add(walletID);
+                }
+                if (!selectedWalletIDs.has(walletID)) {
+                    continue;
+                }
                 if (item.connection.warningCode === connectOutcomeUnknownWarning) {
                     blockedWalletIDsRef.current.add(item.wallet.walletId);
+                    targetWalletIDsRef.current.add(item.wallet.walletId);
                 } else if (item.connection.state === 'NOT_CONNECTED' && !attemptedWalletIDsRef.current.has(item.wallet.walletId)) {
                     targetWalletIDsRef.current.add(item.wallet.walletId);
                 }
             }
-            const unknown = inventory.find(item => item.connection.warningCode === connectOutcomeUnknownWarning);
-            if (unknown) {
+            if (missingRetirement) {
                 setSetup(
-                    progressState('blocked', `${unknown.wallet.remark || shortAddress(unknown.wallet.address)} has an unknown connection outcome. Automatic retry remains blocked.`)
+                    progressState(
+                        'blocked',
+                        `Retired wallet ${shortAddress(missingRetirement.address)} is no longer in the current Solana wallet inventory. Credential additions remain blocked until cleanup can be resolved.`
+                    )
                 );
                 return;
             }
             if (runConnections) {
-                await runAutoConnectionQueue(epoch, inventory);
+                const afterRetirements = await runRetirementQueue(epoch, inventory);
+                if (!afterRetirements || !isCurrent(epoch)) {
+                    return;
+                }
+                await runAutoConnectionQueue(epoch, afterRetirements);
                 return;
             }
             if (failedWalletIDsRef.current.size > 0) {
@@ -934,7 +1363,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 setSetup(hiddenConnectionSetupState);
             }
         },
-        [fetchConnectionInventory, isCurrent, progressState, publishInventory, runAutoConnectionQueue]
+        [fetchConnectionInventory, fetchWalletSelection, isCurrent, progressState, publishInventory, runAutoConnectionQueue, runRetirementQueue]
     );
 
     const startDiscovery = React.useCallback(
@@ -947,6 +1376,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 await discoverAndRun(epoch, resetBatch, runConnections);
             } catch (error) {
                 if (isCurrent(epoch)) {
+                    setSelectionError(error instanceof Error ? error : new Error(String(error)));
                     setSetup(progressState('paused', wormConnectionErrorMessage(error, 'Could not check the Worm connection inventory.'), {retryable: true}));
                 }
             } finally {
@@ -966,7 +1396,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             let established = false;
             switch (authorization.user.identity.provider) {
                 case AccountIdentityProvider.Google:
-                    beginGoogleReauthentication({kind: 'auto-connect'});
+                    beginGoogleReauthentication({kind: 'reconcile-selection'});
                     return;
                 case AccountIdentityProvider.SolanaWallet:
                     established = await establishSolanaLease();
@@ -1083,6 +1513,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                         blockedWalletIDsRef.current.delete(walletId);
                         succeededWalletIDsRef.current.delete(walletId);
                         targetWalletIDsRef.current.delete(walletId);
+                        retirementWalletIDsRef.current.delete(walletId);
                         setWalletProgress(current => {
                             const next = new Map(current);
                             next.delete(walletId);
@@ -1144,7 +1575,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         }
         resumedRef.current = true;
         const pending = readPendingConnectionIntent();
-        if (pending && pending.kind !== 'auto-connect') {
+        if (pending && pending.kind !== 'reconcile-selection') {
             void runManagedAction(pending.kind, pending.walletId, true);
             return;
         }
@@ -1185,14 +1616,128 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         [ctx.modal, runManagedAction]
     );
 
+    const saveWalletSelection = React.useCallback(
+        async (walletIDs: number[]) => {
+            const currentSelection = selection;
+            if (!currentSelection) {
+                return;
+            }
+            const epoch = beginOperation();
+            if (epoch === undefined) {
+                return;
+            }
+            setSetup(progressState('connecting', 'Saving your Worm wallet selection before applying credential changes.'));
+            setOperationStage('Saving Worm wallet selection…');
+            try {
+                const result = await lease.runTask(() => services.wormTrading.replaceWalletSelection({expectedRevision: currentSelection.revision, walletIds: walletIDs}));
+                if (!isCurrent(epoch) || result.status === 'discarded') {
+                    return;
+                }
+                if (result.status === 'rejected') {
+                    const errorDetails = requestErrorDetails(result.error);
+                    const errorMessage = `${errorDetails.message || ''} ${errorDetails.reason || ''}`.toLowerCase();
+                    const revisionConflict = errorDetails.status === 409 && errorDetails.code === 10 && errorMessage.includes('wallet selection revision');
+                    if (revisionConflict) {
+                        const authoritative = await fetchWalletSelection(epoch);
+                        if (authoritative && isCurrent(epoch)) {
+                            const inventory = await fetchConnectionInventory(epoch);
+                            if (inventory && isCurrent(epoch)) {
+                                publishInventory(inventory);
+                            }
+                            setSelectionModalOpen(true);
+                        }
+                        ctx.notifications.warning('Wallet selection changed', 'The latest saved selection is now shown. Review it before saving again.');
+                    } else {
+                        const message = wormConnectionErrorMessage(result.error, 'The previous wallet selection remains unchanged.');
+                        ctx.notifications.error('Could not save Worm wallets', message);
+                        setSetup(progressState('paused', message, {retryable: true}));
+                        const inventory = await fetchConnectionInventory(epoch);
+                        if (inventory && isCurrent(epoch)) {
+                            publishInventory(inventory);
+                        }
+                    }
+                    if (revisionConflict) {
+                        setSetup(hiddenConnectionSetupState);
+                    }
+                    return;
+                }
+                setSelection(result.value);
+                setSelectionError(undefined);
+                setSelectionModalOpen(false);
+                ctx.notifications.success(
+                    'Worm wallet selection saved',
+                    walletIDs.length === 0
+                        ? 'No wallets are selected. Any retired credentials will continue cleanup.'
+                        : `${walletIDs.length} ${walletIDs.length === 1 ? 'wallet is' : 'wallets are'} selected. Credential changes are now being applied.`
+                );
+                onReloadRef.current();
+                await discoverAndRun(epoch, true, true);
+            } catch (error) {
+                if (isCurrent(epoch)) {
+                    ctx.notifications.error(
+                        'Could not apply Worm wallets',
+                        wormConnectionErrorMessage(error, 'The saved selection remains authoritative. Refresh to review its status.')
+                    );
+                    setSetup(progressState('paused', wormConnectionErrorMessage(error, 'Could not apply the saved Worm wallet selection.'), {retryable: true}));
+                }
+            } finally {
+                finishOperation(epoch);
+            }
+        },
+        [
+            beginOperation,
+            ctx.notifications,
+            discoverAndRun,
+            fetchConnectionInventory,
+            fetchWalletSelection,
+            finishOperation,
+            isCurrent,
+            lease,
+            progressState,
+            publishInventory,
+            selection,
+            setOperationStage
+        ]
+    );
+
     const refreshInventory = React.useCallback(() => void startDiscovery(false, true), [startDiscovery]);
     const retry = React.useCallback(() => void startDiscovery(true, true), [startDiscovery]);
     const connections = React.useMemo(() => new Map(connectionItems.map(item => [item.wallet.walletId, item.connection])), [connectionItems]);
     const manager = React.useMemo<ConnectionManager>(
-        () => ({busyWalletId, stage, operationBusy, setup, connections, walletProgress, authorize: () => void authorize(), retry, refreshInventory, confirm}),
-        [authorize, busyWalletId, confirm, connections, operationBusy, refreshInventory, retry, setup, stage, walletProgress]
+        () => ({
+            busyWalletId,
+            stage,
+            operationBusy,
+            setup,
+            connections,
+            inventory: connectionItems,
+            selection,
+            selectionError,
+            walletProgress,
+            authorize: () => void authorize(),
+            retry,
+            refreshInventory,
+            openSelection: () => setSelectionModalOpen(true),
+            confirm
+        }),
+        [authorize, busyWalletId, confirm, connectionItems, connections, operationBusy, refreshInventory, retry, selection, selectionError, setup, stage, walletProgress]
     );
-    return <>{props.children(manager)}</>;
+    return (
+        <>
+            {props.children(manager)}
+            {selection && (
+                <WalletSelectionModal
+                    open={selectionModalOpen}
+                    inventory={connectionItems}
+                    selection={selection}
+                    saving={operationBusy}
+                    error={selectionError}
+                    onCancel={() => setSelectionModalOpen(false)}
+                    onSave={walletIDs => void saveWalletSelection(walletIDs)}
+                />
+            )}
+        </>
+    );
 };
 
 interface ConnectionManager {
@@ -1201,12 +1746,119 @@ interface ConnectionManager {
     operationBusy: boolean;
     setup: ConnectionSetupState;
     connections: Map<number, WormWalletConnection>;
+    inventory: WormTradingWalletConnectionItem[];
+    selection?: WormTradingWalletSelection;
+    selectionError?: Error;
     walletProgress: Map<number, string>;
     authorize(): void;
     retry(): void;
     refreshInventory(): void;
+    openSelection(): void;
     confirm(action: ManagedConnectionAction, walletId: number, walletLabel: string): void;
 }
+
+const WalletSelectionSummary = (props: {manager: ConnectionManager}) => {
+    const selection = props.manager.selection;
+    if (!selection?.configured) {
+        return null;
+    }
+    const selectedWalletIDs = new Set(selection.selectedItems.map(item => item.walletId));
+    const selectedConnections = props.manager.inventory.filter(item => selectedWalletIDs.has(item.wallet.walletId));
+    const connected = selectedConnections.filter(item => item.connection.state === 'CONNECTED').length;
+    const waiting = selection.selectedItems.filter(selected => {
+        const inventoryItem = props.manager.inventory.find(item => item.wallet.walletId === selected.walletId);
+        return !inventoryItem || inventoryItem.pendingState === 'CONNECT_PENDING' || inventoryItem.connection.state !== 'CONNECTED';
+    }).length;
+    const retiring = selection.retirements.length;
+    const attentionWalletIDs = new Set(props.manager.inventory.filter(item => item.needsAttention).map(item => item.wallet.walletId));
+    selection.retirements.forEach(item => attentionWalletIDs.add(item.walletId));
+    selection.selectedItems.forEach(item => {
+        if (!props.manager.inventory.some(inventoryItem => inventoryItem.wallet.walletId === item.walletId)) {
+            attentionWalletIDs.add(item.walletId);
+        }
+    });
+    const attention = attentionWalletIDs.size;
+    return (
+        <section className='worm-wallet-selection-summary' aria-label='Worm Trading wallet selection status'>
+            <div className='worm-wallet-selection-summary__heading'>
+                <span>
+                    <SettingOutlined aria-hidden='true' />
+                    <Typography.Text strong={true}>Worm wallets</Typography.Text>
+                </span>
+                <Button size='small' disabled={props.manager.operationBusy || Boolean(props.manager.selectionError)} onClick={props.manager.openSelection}>
+                    Manage selection
+                </Button>
+            </div>
+            <dl>
+                <div>
+                    <dt>Selected</dt>
+                    <dd>{selection.selectedItems.length}</dd>
+                </div>
+                <div>
+                    <dt>Connected</dt>
+                    <dd>{connected}</dd>
+                </div>
+                <div>
+                    <dt>Waiting</dt>
+                    <dd>{waiting}</dd>
+                </div>
+                <div className={attention > 0 ? 'worm-wallet-selection-summary__attention' : undefined}>
+                    <dt>Needs attention</dt>
+                    <dd>{attention}</dd>
+                </div>
+            </dl>
+            {retiring > 0 && (
+                <Typography.Text type='secondary' role='status'>
+                    {retiring} removed {retiring === 1 ? 'wallet is' : 'wallets are'} retained for credential cleanup and {retiring === 1 ? 'remains' : 'remain'} available under
+                    Needs attention.
+                </Typography.Text>
+            )}
+        </section>
+    );
+};
+
+const WalletSelectionGuide = (props: {manager: ConnectionManager}) => {
+    if (!props.manager.selection || props.manager.selectionError) {
+        return props.manager.selectionError ? (
+            <Result
+                status='error'
+                title='Worm wallet settings are unavailable'
+                subTitle={requestErrorMessage(props.manager.selectionError, 'No wallet was connected automatically.')}
+                extra={
+                    <Button type='primary' icon={<ReloadOutlined />} disabled={props.manager.operationBusy} onClick={props.manager.retry}>
+                        Try again
+                    </Button>
+                }
+            />
+        ) : (
+            <div className='worm-wallet-selection-guide-loading' aria-label='Loading Worm wallet settings'>
+                <Skeleton active={true} paragraph={{rows: 4}} />
+            </div>
+        );
+    }
+    return (
+        <Result
+            className='worm-wallet-selection-guide'
+            icon={<WalletOutlined />}
+            title='Choose wallets for Worm Trading'
+            subTitle={`Athena will not connect any wallet until you save a selection. Choose up to ${props.manager.selection.maximumWallets}; your selection is restored the next time you open this page.`}
+            extra={
+                <Button type='primary' icon={<SettingOutlined />} disabled={props.manager.operationBusy} onClick={props.manager.openSelection}>
+                    Choose Worm wallets
+                </Button>
+            }
+        />
+    );
+};
+
+const ReadOnlyWalletSelectionGuide = () => (
+    <Result
+        className='worm-wallet-selection-guide'
+        icon={<WalletOutlined />}
+        title='Worm Trading wallets are not configured'
+        subTitle='No wallet is connected automatically. A user with Worm Trading write access must choose and save the wallets for this account.'
+    />
+);
 
 const ConnectionCell = (props: {
     wallet: WormTradingWalletSummary;
@@ -2684,8 +3336,13 @@ const PositionCashOutBatchManagement = (props: {
     const selectionSummary = selectedWalletIDs.size > 0 && !activeBatch && (
         <div className='worm-position-cash-out-batch-selection' role='region' aria-label='Cash Out batch wallet selection'>
             <div>
-                <strong>{selectedWalletIDs.size} wallets selected</strong>
-                <span>The backend will scan and freeze every Open Position in these wallets, including positions not visible on this page.</span>
+                <strong>
+                    {selectedWalletIDs.size}/{maximumSelectedPositionCashOutBatchWallets} wallets selected
+                </strong>
+                <span>
+                    The backend will scan and freeze every Open Position in these wallets, including positions not visible on this page.
+                    {selectedWalletIDs.size >= maximumSelectedPositionCashOutBatchWallets ? ' The Worm Trading wallet limit is reached.' : ''}
+                </span>
             </div>
             <Space wrap={true}>
                 <Button disabled={Boolean(busyAction)} onClick={() => setSelectedWalletIDs(new Set())}>
@@ -3050,8 +3707,15 @@ export const WormTradingPage = () => {
         .flatMap(item => item.inFlightRequests.map(request => ({wallet: item.wallet, request})))
         .sort((left, right) => right.request.createdAt - left.request.createdAt);
     const total = Math.max(balances.data?.total || 0, activity.data?.total || 0);
+    const walletSelectionSummary = balances.data?.walletSelection || activity.data?.walletSelection;
 
     const renderContent = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager, batchManager?: PositionCashOutBatchManager) => {
+        if (manager && !manager.selection?.configured) {
+            return <WalletSelectionGuide manager={manager} />;
+        }
+        if (!manager && walletSelectionSummary && !walletSelectionSummary.configured) {
+            return <ReadOnlyWalletSelectionGuide />;
+        }
         const connectionFor = (walletId: number) => manager?.connections.get(walletId) || activityByWallet.get(walletId)?.connection;
         const balanceColumns: ColumnsType<WormTradingWalletBalanceItem> = [
             {
@@ -3221,6 +3885,7 @@ export const WormTradingPage = () => {
 
         return (
             <>
+                {manager && <WalletSelectionSummary manager={manager} />}
                 {manager && <ConnectionSetupPanel manager={manager} />}
 
                 <RuntimeSummary
@@ -3243,7 +3908,29 @@ export const WormTradingPage = () => {
                         }
                     />
                 ) : balances.data && balances.data.total === 0 ? (
-                    <EmptyWalletBalances />
+                    (manager?.selection?.configured && manager.selection.selectedItems.length === 0) ||
+                    (!manager && walletSelectionSummary?.configured && walletSelectionSummary.selectedCount === 0) ? (
+                        <div className='worm-trading-empty'>
+                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No wallets are selected for Worm Trading.'>
+                                <Typography.Paragraph type='secondary'>
+                                    {manager
+                                        ? `Choose up to ${manager.selection?.maximumWallets || MAXIMUM_WORM_TRADING_WALLETS} wallets to show their Assets and make them eligible for execution previews.`
+                                        : 'A user with Worm Trading write access can add wallets to this saved selection.'}
+                                </Typography.Paragraph>
+                                {manager && (
+                                    <Button
+                                        type='primary'
+                                        icon={<SettingOutlined />}
+                                        disabled={manager.operationBusy || Boolean(manager.selectionError)}
+                                        onClick={manager.openSelection}>
+                                        Manage Worm wallets
+                                    </Button>
+                                )}
+                            </Empty>
+                        </div>
+                    ) : (
+                        <EmptyWalletBalances />
+                    )
                 ) : (
                     <section className='worm-trading-balances' aria-labelledby='worm-trading-balances-heading'>
                         <div className='worm-trading-balances__heading'>
@@ -3415,6 +4102,13 @@ export const WormTradingPage = () => {
             title='Worm Trading Assets'
             subtitle='Review confirmed wallet balances and official Worm position activity. Balances are not Worm collateral or available-to-order limits.'
             loading={loading || manager?.operationBusy}
+            extra={
+                manager?.selection ? (
+                    <Button icon={<SettingOutlined />} disabled={manager.operationBusy || Boolean(manager.selectionError)} onClick={manager.openSelection}>
+                        Manage Worm wallets {manager.selection.selectedItems.length}/{manager.selection.maximumWallets}
+                    </Button>
+                ) : undefined
+            }
             onRefresh={() => {
                 if (manager?.operationBusy) {
                     return;
@@ -3429,19 +4123,23 @@ export const WormTradingPage = () => {
     return canManageConnections ? (
         <SensitiveWriteScope module={AccountDataModule.WormTrading}>
             <ConnectionManagement onReload={reloadConnections}>
-                {manager => (
-                    <PositionCashOutBatchManagement visibleWallets={balanceItems} onRefreshAssets={refreshAssets}>
-                        {batchManager => (
-                            <PositionCashOutManagement
-                                rows={positionRows}
-                                activityFetchedAt={activity.data?.fetchedAt || 0}
-                                onRefreshAssets={refreshAssets}
-                                batchManager={batchManager}>
-                                {cashOutManager => renderPage(manager, cashOutManager, batchManager)}
-                            </PositionCashOutManagement>
-                        )}
-                    </PositionCashOutBatchManagement>
-                )}
+                {manager =>
+                    manager.selection?.configured ? (
+                        <PositionCashOutBatchManagement visibleWallets={balanceItems} onRefreshAssets={refreshAssets}>
+                            {batchManager => (
+                                <PositionCashOutManagement
+                                    rows={positionRows}
+                                    activityFetchedAt={activity.data?.fetchedAt || 0}
+                                    onRefreshAssets={refreshAssets}
+                                    batchManager={batchManager}>
+                                    {cashOutManager => renderPage(manager, cashOutManager, batchManager)}
+                                </PositionCashOutManagement>
+                            )}
+                        </PositionCashOutBatchManagement>
+                    ) : (
+                        renderPage(manager)
+                    )
+                }
             </ConnectionManagement>
         </SensitiveWriteScope>
     ) : (

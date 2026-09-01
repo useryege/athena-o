@@ -43,6 +43,18 @@ message ListWalletBalancesRequest {
   int32 page_size = 2 [(gogoproto.jsontag) = "pageSize,omitempty"];
 }
 
+// WormWalletSelectionSummary distinguishes an account that has not configured
+// Worm Trading from an explicitly configured empty selection. The selected
+// Wallet identities themselves remain available only through owner-scoped
+// balance/activity items and the interactive management resource.
+message WormWalletSelectionSummary {
+  bool configured = 1 [(gogoproto.jsontag) = "configured"];
+  int64 revision = 2 [(gogoproto.jsontag) = "revision"];
+  int32 selected_count = 3 [(gogoproto.jsontag) = "selectedCount"];
+  int32 maximum_wallets = 4 [(gogoproto.jsontag) = "maximumWallets"];
+  int64 updated_at = 5 [(gogoproto.jsontag) = "updatedAt"];
+}
+
 message TradingWalletSummary {
   int64 wallet_id = 1 [(gogoproto.jsontag) = "walletId"];
   string address = 2;
@@ -87,6 +99,7 @@ message ListWalletBalancesResponse {
   string network = 5;
   string commitment = 6;
   int64 fetched_at = 7 [(gogoproto.jsontag) = "fetchedAt"];
+  WormWalletSelectionSummary wallet_selection = 8 [(gogoproto.jsontag) = "walletSelection"];
 }
 
 message ListWalletTradingActivityRequest {
@@ -183,6 +196,7 @@ message ListWalletTradingActivityResponse {
   int32 open_position_count = 6 [(gogoproto.jsontag) = "openPositionCount"];
   int32 in_flight_request_count = 7 [(gogoproto.jsontag) = "inFlightRequestCount"];
   string status = 8;
+  WormWalletSelectionSummary wallet_selection = 9 [(gogoproto.jsontag) = "walletSelection"];
 }
 
 service WormTradingService {

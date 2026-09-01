@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -52,6 +53,81 @@ const (
 type WalletReference struct {
 	WalletID int64
 	Address  string
+}
+
+const MaximumWalletSelectionItems = 20
+
+// WalletSelectionInput is a Wallet reference whose owner and Solana type were
+// verified by the API Server. Input order is persisted as selection order.
+type WalletSelectionInput struct {
+	WalletID int64
+	Address  string
+}
+
+// WalletRetirementInput retains one pre-existing managed connection during
+// first configuration. It never adds the Wallet to the selected set.
+type WalletRetirementInput struct {
+	WalletID     int64
+	Address      string
+	PriorOrdinal int32
+}
+
+type WalletSelectionItem struct {
+	Ordinal  int32
+	WalletID int64
+	Address  string
+}
+
+type WalletRetirement struct {
+	WalletID            int64
+	Address             string
+	PriorOrdinal        int32
+	RetiredFromRevision int64
+	RetiredAt           time.Time
+}
+
+type WalletSelection struct {
+	OwnerAccountID string
+	Configured     bool
+	Revision       int64
+	SelectedItems  []WalletSelectionItem
+	Retirements    []WalletRetirement
+	UpdatedAt      time.Time
+}
+
+func (s WalletSelection) Clone() WalletSelection {
+	s.SelectedItems = append([]WalletSelectionItem(nil), s.SelectedItems...)
+	s.Retirements = append([]WalletRetirement(nil), s.Retirements...)
+	return s
+}
+
+type ReplaceWalletSelectionRequest struct {
+	OwnerAccountID   string
+	ExpectedRevision int64
+	SelectedItems    []WalletSelectionInput
+	RetiringWallets  []WalletRetirementInput
+	Now              time.Time
+}
+
+type WalletRetirementBlocker struct {
+	WalletID   int64
+	ReasonCode string
+}
+
+type WalletSelectionRetirementBlockedError struct {
+	WalletID   int64
+	ReasonCode string
+}
+
+func (e *WalletSelectionRetirementBlockedError) Error() string {
+	if e == nil {
+		return ErrWalletSelectionRetirementBlocked.Error()
+	}
+	return fmt.Sprintf("Wallet %d has removal blocker %s", e.WalletID, e.ReasonCode)
+}
+
+func (e *WalletSelectionRetirementBlockedError) Unwrap() error {
+	return ErrWalletSelectionRetirementBlocked
 }
 
 type StoredCredential struct {
@@ -108,6 +184,7 @@ func (a ConnectionAttempt) Clone() ConnectionAttempt {
 
 type PrepareConnectionAttemptRequest struct {
 	AttemptID        string
+	OwnerAccountID   string
 	WalletID         int64
 	Address          string
 	Kind             ConnectionAttemptKind
@@ -118,8 +195,19 @@ type PrepareConnectionAttemptRequest struct {
 	Now              time.Time
 }
 
+type BeginConnectionAttemptCompletionRequest struct {
+	OwnerAccountID string
+	AttemptID      string
+	WalletID       int64
+	Address        string
+	Now            time.Time
+}
+
 type ActivateCredentialRequest struct {
+	OwnerAccountID      string
 	AttemptID           string
+	WalletID            int64
+	Address             string
 	APIKeyCiphertext    []byte
 	APISecretCiphertext []byte
 	Now                 time.Time
@@ -163,10 +251,11 @@ const (
 )
 
 const (
-	ExecutionPlanUsabilityCombinationDeleted = "COMBINATION_DELETED"
-	ExecutionPlanUsabilityCombinationChanged = "COMBINATION_CHANGED"
-	ExecutionPlanUsabilityExpired            = "EXPIRED"
-	ExecutionPlanUsabilityNoActionableSteps  = "NO_ACTIONABLE_STEPS"
+	ExecutionPlanUsabilityCombinationDeleted     = "COMBINATION_DELETED"
+	ExecutionPlanUsabilityCombinationChanged     = "COMBINATION_CHANGED"
+	ExecutionPlanUsabilityExpired                = "EXPIRED"
+	ExecutionPlanUsabilityNoActionableSteps      = "NO_ACTIONABLE_STEPS"
+	ExecutionPlanUsabilityWalletSelectionChanged = "WALLET_SELECTION_CHANGED"
 )
 
 type ExecutionPlanStepDisposition string
@@ -255,42 +344,44 @@ type ExecutionPlanReasonCount struct {
 }
 
 type ExecutionPlan struct {
-	ID                   string
-	OwnerAccountID       string
-	CombinationID        string
-	CombinationName      string
-	CombinationRevision  int64
-	State                ExecutionPlanState
-	BuildStage           string
-	FailureCode          string
-	UsabilityCode        string
-	WorkerID             string
-	LockedAt             time.Time
-	LeaseExpiresAt       time.Time
-	WalletCount          int64
-	ItemCount            int64
-	TotalStepCount       int64
-	CompletedStepCount   int64
-	ReadyStepCount       int64
-	SkippedStepCount     int64
-	TotalCollateral      string
-	TotalOpeningFee      string
-	TotalUserFundsNeeded string
-	RequestedAt          time.Time
-	CompletedAt          time.Time
-	ExpiresAt            time.Time
-	RetentionUntil       time.Time
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
-	Wallets              []ExecutionPlanWallet
-	Items                []ExecutionPlanItem
-	ReasonCounts         []ExecutionPlanReasonCount
+	ID                      string
+	OwnerAccountID          string
+	CombinationID           string
+	CombinationName         string
+	CombinationRevision     int64
+	WalletSelectionRevision int64
+	State                   ExecutionPlanState
+	BuildStage              string
+	FailureCode             string
+	UsabilityCode           string
+	WorkerID                string
+	LockedAt                time.Time
+	LeaseExpiresAt          time.Time
+	WalletCount             int64
+	ItemCount               int64
+	TotalStepCount          int64
+	CompletedStepCount      int64
+	ReadyStepCount          int64
+	SkippedStepCount        int64
+	TotalCollateral         string
+	TotalOpeningFee         string
+	TotalUserFundsNeeded    string
+	RequestedAt             time.Time
+	CompletedAt             time.Time
+	ExpiresAt               time.Time
+	RetentionUntil          time.Time
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	Wallets                 []ExecutionPlanWallet
+	Items                   []ExecutionPlanItem
+	ReasonCounts            []ExecutionPlanReasonCount
 }
 
 type CreateExecutionPlanRequest struct {
 	OwnerAccountID              string
 	CombinationID               string
 	ExpectedCombinationRevision int64
+	WalletSelectionRevision     int64
 	Wallets                     []ExecutionPlanWalletInput
 	Now                         time.Time
 }
@@ -1456,9 +1547,13 @@ func (s ExecutionRunStep) Clone() ExecutionRunStep {
 // custodial private keys, login credentials, or Worm transaction signatures.
 type Store interface {
 	Ping(context.Context) error
+	GetWalletSelection(context.Context, string) (*WalletSelection, error)
+	ReplaceWalletSelection(context.Context, ReplaceWalletSelectionRequest) (*WalletSelection, error)
+	ListWalletRetirementBlockers(context.Context, string, []int64) ([]WalletRetirementBlocker, error)
+	CompleteWalletRetirement(context.Context, string, int64, string) error
 	PrepareConnectionAttempt(context.Context, PrepareConnectionAttemptRequest) (*ConnectionAttempt, error)
 	GetConnectionAttempt(context.Context, string) (*ConnectionAttempt, error)
-	BeginConnectionAttemptCompletion(context.Context, string, time.Time) (*ConnectionAttempt, error)
+	BeginConnectionAttemptCompletion(context.Context, BeginConnectionAttemptCompletionRequest) (*ConnectionAttempt, error)
 	FailConnectionAttempt(context.Context, string, string, time.Time) error
 	MarkConnectionAttemptOutcomeUnknown(context.Context, string, string, time.Time) error
 	RecoverConnectionAttempts(context.Context, time.Time, int32) (int64, error)
@@ -1466,7 +1561,7 @@ type Store interface {
 	ActivateCredential(context.Context, ActivateCredentialRequest) (*WalletConnectionSnapshot, error)
 	ListWalletConnectionSnapshots(context.Context, []WalletReference) ([]WalletConnectionSnapshot, error)
 	GetWalletConnectionSnapshot(context.Context, int64, string) (*WalletConnectionSnapshot, error)
-	BeginDisconnect(context.Context, int64, string, time.Time) (*StoredCredential, error)
+	BeginDisconnect(context.Context, string, int64, string, time.Time) (*StoredCredential, error)
 	BeginCredentialRevocation(context.Context, int64, int64, time.Time) (*StoredCredential, error)
 	ListCredentialsNeedingRevocation(context.Context, time.Time, int32) ([]StoredCredential, error)
 	MarkCredentialRevoked(context.Context, int64, int64, time.Time) error

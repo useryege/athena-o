@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	maxPositionCashOutBatchWallets       = 100
+	maxPositionCashOutBatchWallets       = 20
 	maxPositionCashOutBatchItems         = 1000
 	maxPositionCashOutBatchPageSize      = 100
 	maxPositionCashOutBatchRecoveryLimit = 100
@@ -51,8 +51,8 @@ func (s *SQLStore) CreatePositionCashOutBatch(
 	requestDigest, err := positionCashOutDigest(struct {
 		OwnerAccountID string
 		CommandID      string
-		Wallets        []PositionCashOutBatchWalletInput
-	}{ownerAccountID, commandID, wallets})
+		WalletIDs      []int64
+	}{ownerAccountID, commandID, walletIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +78,15 @@ func (s *SQLStore) CreatePositionCashOutBatch(
 		return &batch, nil
 	} else if !errors.Is(getErr, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("get position Cash Out batch creation command: %w", getErr)
+	}
+	for _, wallet := range wallets {
+		if _, err := queries.GetWalletSelectionItem(ctx, wormtradingsqlc.GetWalletSelectionItemParams{
+			OwnerAccountID: ownerUUID, WalletID: wallet.WalletID, Address: wallet.Address,
+		}); errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrWalletNotSelected
+		} else if err != nil {
+			return nil, fmt.Errorf("get selected Wallet for position Cash Out batch: %w", err)
+		}
 	}
 
 	if count, err := queries.CountActiveExecutionWalletLocksForCashOutBatch(ctx, walletIDs); err != nil {

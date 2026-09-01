@@ -3,7 +3,7 @@
 ## Scope
 
 Worm Position Cash Out Batches owns one owner-scoped, Wallet-major operation
-that freezes and closes every open Worm margin position for up to 100 selected
+that freezes and closes every open Worm margin position for up to 20 selected
 Solana Wallets. It reads every provider page before authorization, freezes at
 most 1,000 exact HMAC position identities, and executes one whole-position
 market Close at a time. Wallet order is the Assets display order supplied by
@@ -46,8 +46,8 @@ private-key signature in this production path.
 
 ```text
 interactive READ_WRITE Assets browser
-  -> select <= 100 Wallet IDs in the current Assets order
-  -> POST batch; API Server re-resolves all owned Solana Wallets
+  -> select <= 20 Wallet IDs in the persisted Worm Wallet-selection order
+  -> POST batch; API Server re-resolves the submitted selected Solana Wallets
   -> BUILDING worker, Wallet by Wallet
        -> connected HMAC credential
        -> complete cursor pagination of open positions
@@ -69,8 +69,12 @@ for each frozen item, strictly serial
 ```
 
 The API Server accepts only Wallet IDs and command metadata from the browser.
-It derives the current owner, pages the authoritative Wallet service inventory,
-preserves that inventory's display order, and forwards safe Wallet snapshots.
+It derives the current owner, loads the current persisted Worm Wallet selection,
+requires every submitted Wallet to remain in that selection, resolves those
+Wallets through the authoritative Wallet service, preserves selection order,
+and forwards safe Wallet snapshots. Historical batch resources remain readable
+after a later selection revision; current selection is an admission boundary,
+not a filter over durable history.
 Worm Trading derives every market, side, creation time, request pubkey, shares,
 credential version, and provider state from fresh HMAC reads.
 
@@ -90,18 +94,23 @@ sends no request and is recovered from database state.
 
 ## Runtime Flow
 
-1. Assets Wallet rows expose an in-memory checkbox to interactive
+1. Selected Assets Wallet rows expose an in-memory checkbox to interactive
    `worm_trading:READ_WRITE` users. Selection survives Assets pagination only
    while the page and account context remain mounted and is cleared on route,
-   account, or permission change. At most 100 unique Wallets are accepted.
+   account, selection revision, or permission change. At most 20 unique Wallets
+   are accepted.
 2. `POST /api/v1/worm-trading/position-cash-out-batches` requires exact Origin,
    a unique command UUID, and unique positive Wallet IDs. The API Server fully
-   pages the current account's Solana Wallet inventory, rejects missing IDs,
-   and sends the selected rows in authoritative display order. Creation
-   acquires sorted Wallet advisory locks, rejects an owner with another active
-   batch, and rejects any selected Wallet used by an active Run, non-terminal
-   single Cash Out, or another batch. It commits `BUILDING` and durable Wallet
-   locks before returning `202 Accepted` and `Location`.
+   loads the current account's persisted Worm Wallet selection and resolves the
+   Wallets through the owner-scoped Wallet service. A matching owner/command/
+   Wallet-ID-set replay returns the existing durable batch before current
+   selection admission; changing that ID set conflicts. A new request sends
+   rows in persisted selection order, acquires sorted Wallet advisory locks,
+   rechecks every owner/Wallet/address selection row under those locks, rejects
+   a no-longer-selected Wallet or an owner with another active batch, and
+   rejects any selected Wallet used by an active Run, non-terminal single Cash
+   Out, or another batch. It commits `BUILDING` and durable Wallet locks before
+   returning `202 Accepted` and `Location`.
 3. The service worker claims `BUILDING` and processes Wallets in stored ordinal
    order. Every Wallet must still have the same canonical address, a connected
    active HMAC credential, and a positive credential version. It requests open
@@ -239,14 +248,14 @@ state, provider signature, or raw response.
 | Solana RPC settings | Supply `confirmed` native USDC observations through `SolanaBalanceAdapter`; fixed mainnet genesis, mint, and decimals validation still applies. |
 | Redis and Google/Phantom settings | Store independent, five-minute, one-use batch proof state and enforce the configured same-origin browser boundary. |
 
-The 100-Wallet and 1,000-position caps, page size 100, five-minute build/proof
+The 20-Wallet and 1,000-position caps, page size 100, five-minute build/proof
 window, one-second recovery cadence, 45-second claim lease, two-second balance
 poll, two-minute balance deadline, native USDC mint, and six decimals are code
 constants. There is no configurable Close concurrency: it is always one.
 
 ## Invariants
 
-- Wallet execution order is the API-Server-resolved Assets display order;
+- Wallet execution order is the API-Server-resolved persisted selection order;
   advisory-lock acquisition order is sorted Wallet ID. These orders serve
   different purposes and must not be conflated.
 - The complete provider position set is frozen before proof. An incomplete,
@@ -265,6 +274,9 @@ constants. There is no configurable Close concurrency: it is always one.
 - `PAUSED` and `RECONCILIATION_REQUIRED` retain every selected Wallet lock.
 - Run, single Cash Out, and batch admission use one advisory-lock namespace and
   reject every selected Wallet locked by either of the other capabilities.
+- Batch creation admits only Wallets in the current owner selection and never
+  more than 20. A later selection revision does not hide or invalidate an
+  already-created batch, its items, or recovery controls.
 - Browser and Native JSON never receive HMAC credentials, proof state, intent
   digests, raw responses, or permission to retry Close.
 
@@ -307,6 +319,8 @@ status remain the dependency-level diagnostics.
 ## Change Checklist
 
 - [ ] Wallet/display order and sorted advisory-lock order remain distinct.
+- [ ] Creation remains current-selection-only with a hard 20-Wallet limit, while
+  previously created batch detail remains owner-readable after selection changes.
 - [ ] Full pagination, caps, immutable identity, and one-child serialization remain enforced.
 - [ ] Baseline plus `DISPATCHED` remains one transaction before Close.
 - [ ] Exact closed evidence and strict newer/higher USDC evidence both gate advancement.

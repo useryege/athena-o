@@ -62,6 +62,14 @@ func (s *Service) CreatePositionCashOut(
 	if err := s.requireCredentialCapability(); err != nil {
 		return nil, err
 	}
+	selection, err := s.credentialStore.GetWalletSelection(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return nil, walletSelectionRPCError(err)
+	}
+	if !walletSelectionContains(selection, walletID, walletAddress) {
+		return nil, status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
+	}
 
 	target, credentialVersion, providerState, err := s.readPositionCashOutTarget(
 		ctx,
@@ -378,6 +386,8 @@ func positionCashOutRPCError(err error) error {
 		return status.Error(codes.FailedPrecondition, "WALLET_CASH_OUT_ACTIVE")
 	case errors.Is(err, wormstore.ErrPositionCashOutConnectionChanged):
 		return status.Error(codes.FailedPrecondition, "WORM_CONNECTION_CHANGED")
+	case errors.Is(err, wormstore.ErrWalletNotSelected):
+		return status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
 	case errors.Is(err, wormstore.ErrExpired):
 		return status.Error(codes.FailedPrecondition, "AUTHORIZATION_EXPIRED")
 	case errors.Is(err, wormstore.ErrPositionCashOutClaim):

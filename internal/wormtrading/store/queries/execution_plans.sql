@@ -1,12 +1,13 @@
 -- name: CreateExecutionPlan :one
 INSERT INTO worm_execution_plans (
   id, owner_account_id, combination_id, combination_name, combination_revision,
-  state, build_stage, wallet_count, item_count, total_step_count,
+  wallet_selection_revision, state, build_stage, wallet_count, item_count, total_step_count,
   requested_at, retention_until, created_at, updated_at
 ) VALUES (
   sqlc.arg(id)::uuid, sqlc.arg(owner_account_id)::uuid, sqlc.arg(combination_id)::uuid,
   sqlc.arg(combination_name)::text, sqlc.arg(combination_revision)::bigint,
-  'BUILDING', 'QUEUED', sqlc.arg(wallet_count)::bigint, sqlc.arg(item_count)::bigint,
+  sqlc.arg(wallet_selection_revision)::bigint, 'BUILDING', 'QUEUED',
+  sqlc.arg(wallet_count)::bigint, sqlc.arg(item_count)::bigint,
   sqlc.arg(total_step_count)::bigint,
   sqlc.arg(now)::timestamptz,
   sqlc.arg(retention_until)::timestamptz, sqlc.arg(now)::timestamptz,

@@ -20,6 +20,10 @@ func (s *SQLStore) PrepareConnectionAttempt(ctx context.Context, req PrepareConn
 	if err := validatePrepareConnectionAttemptRequest(req); err != nil {
 		return nil, err
 	}
+	ownerUUID, _, err := walletSelectionOwner(req.OwnerAccountID)
+	if err != nil {
+		return nil, err
+	}
 	now := canonicalNow(req.Now)
 	if !req.ExpiresAt.After(now) {
 		return nil, ErrConnectionAttemptExpired
@@ -38,6 +42,37 @@ func (s *SQLStore) PrepareConnectionAttempt(ctx context.Context, req PrepareConn
 		return nil, err
 	}
 	defer rollbackWalletTransaction(tx)
+	if _, err := queries.GetWalletSelectionForUpdate(ctx, ownerUUID); err != nil {
+		if isNoRows(err) {
+			return nil, ErrWalletNotSelected
+		}
+		return nil, fmt.Errorf("lock Wallet selection for connection attempt: %w", err)
+	}
+	if _, err := queries.GetWalletSelectionItem(ctx, wormtradingsqlc.GetWalletSelectionItemParams{
+		OwnerAccountID: ownerUUID,
+		WalletID:       req.WalletID,
+		Address:        req.Address,
+	}); err != nil {
+		if isNoRows(err) {
+			return nil, ErrWalletNotSelected
+		}
+		return nil, fmt.Errorf("get selected Wallet for connection attempt: %w", err)
+	}
+	managedCount, err := queries.CountManagedWalletConnections(ctx, ownerUUID)
+	if err != nil {
+		return nil, fmt.Errorf("count managed Wallet connections for connection attempt: %w", err)
+	}
+	targetOccupiesSlot, err := queries.WalletOccupiesManagedConnectionSlot(ctx, wormtradingsqlc.WalletOccupiesManagedConnectionSlotParams{
+		OwnerAccountID: ownerUUID,
+		WalletID:       req.WalletID,
+		Address:        req.Address,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("check Wallet connection capacity slot: %w", err)
+	}
+	if managedCount >= MaximumWalletSelectionItems && !targetOccupiesSlot {
+		return nil, ErrWalletConnectionCapacityPending
+	}
 
 	if err := queries.CreateWalletConnectionIfMissing(ctx, wormtradingsqlc.CreateWalletConnectionIfMissingParams{
 		WalletID: req.WalletID,
@@ -165,12 +200,25 @@ func (s *SQLStore) GetConnectionAttempt(ctx context.Context, attemptID string) (
 	return &result, nil
 }
 
-func (s *SQLStore) BeginConnectionAttemptCompletion(ctx context.Context, attemptID string, at time.Time) (*ConnectionAttempt, error) {
-	attempt, err := s.GetConnectionAttempt(ctx, attemptID)
+func (s *SQLStore) BeginConnectionAttemptCompletion(
+	ctx context.Context,
+	req BeginConnectionAttemptCompletionRequest,
+) (*ConnectionAttempt, error) {
+	ownerUUID, _, err := walletSelectionOwner(req.OwnerAccountID)
 	if err != nil {
 		return nil, err
 	}
-	now := canonicalNow(at)
+	if err := validateCanonicalWalletSelectionReference(req.WalletID, req.Address); err != nil {
+		return nil, err
+	}
+	attempt, err := s.GetConnectionAttempt(ctx, req.AttemptID)
+	if err != nil {
+		return nil, err
+	}
+	if attempt.WalletID != req.WalletID || attempt.Address != req.Address {
+		return nil, ErrWalletAddressMismatch
+	}
+	now := canonicalNow(req.Now)
 	tx, queries, err := s.beginWalletTransaction(ctx, attempt.WalletID)
 	if err != nil {
 		return nil, err
@@ -186,6 +234,18 @@ func (s *SQLStore) BeginConnectionAttemptCompletion(ctx context.Context, attempt
 	}
 	if locked.State != string(ConnectionAttemptStatePrepared) {
 		return nil, ErrConnectionAttemptState
+	}
+	if locked.WalletID != req.WalletID || locked.Address != req.Address {
+		return nil, ErrWalletAddressMismatch
+	}
+	if _, err := queries.GetWalletSelectionItem(ctx, wormtradingsqlc.GetWalletSelectionItemParams{
+		OwnerAccountID: ownerUUID,
+		WalletID:       req.WalletID,
+		Address:        req.Address,
+	}); isNoRows(err) {
+		return nil, ErrWalletNotSelected
+	} else if err != nil {
+		return nil, fmt.Errorf("get selected Wallet for connection completion: %w", err)
 	}
 	if !timestampValue(locked.ExpiresAt).After(now) {
 		if err := failConnectionAttemptInTransaction(ctx, queries, locked, expiredChallengeWarning, now); err != nil {
@@ -305,6 +365,9 @@ func failConnectionAttemptInTransaction(ctx context.Context, queries *wormtradin
 }
 
 func validatePrepareConnectionAttemptRequest(req PrepareConnectionAttemptRequest) error {
+	if _, _, err := walletSelectionOwner(req.OwnerAccountID); err != nil {
+		return err
+	}
 	if err := validateWalletReference(req.WalletID, req.Address); err != nil {
 		return err
 	}

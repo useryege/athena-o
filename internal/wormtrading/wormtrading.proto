@@ -99,6 +99,7 @@ message PrepareWormWalletConnectionRequest {
   // be created without attempting to discover or revoke the possible remote
   // credential.
   bool regenerate_unknown_credential = 4;
+  string owner_account_id = 5;
 }
 
 // PrepareWormWalletConnectionResponse contains only the bounded challenge data
@@ -121,6 +122,7 @@ message CompleteWormWalletConnectionRequest {
   string address = 3;
   bytes message_sha256 = 4;
   bytes signature = 5;
+  string owner_account_id = 6;
 }
 
 // WormWalletConnection is a non-secret connection projection.
@@ -152,6 +154,90 @@ message BatchGetWalletConnectionsResponse {
   int64 fetched_at = 2;
 }
 
+// WalletSelectionInput is an owner- and Solana-validated Wallet reference from
+// the API Server. The API Server supplies Wallet's authoritative display order,
+// which becomes the durable selection order.
+message WalletSelectionInput {
+  int64 wallet_id = 1;
+  string address = 2;
+}
+
+// WalletRetirementInput retains one legacy managed connection supplied by the
+// API Server during first configuration. It is not part of the selected set.
+message WalletRetirementInput {
+  int64 wallet_id = 1;
+  string address = 2;
+  int32 prior_ordinal = 3;
+}
+
+message WalletSelectionItem {
+  int32 ordinal = 1;
+  int64 wallet_id = 2;
+  string address = 3;
+}
+
+message WalletRetirement {
+  int64 wallet_id = 1;
+  string address = 2;
+  int32 prior_ordinal = 3;
+  int64 retired_from_revision = 4;
+  int64 retired_at = 5;
+}
+
+// WalletSelection distinguishes a missing configuration from an explicitly
+// saved empty selection. Retirements remain managed and consume connection
+// capacity until their credential lifecycle reaches NOT_CONNECTED.
+message WalletSelection {
+  bool configured = 1;
+  int64 revision = 2;
+  repeated WalletSelectionItem selected_items = 3;
+  repeated WalletRetirement retirements = 4;
+  int64 updated_at = 5;
+  int32 maximum_wallets = 6;
+}
+
+message GetWalletSelectionRequest {
+  string owner_account_id = 1;
+}
+
+message GetWalletSelectionResponse {
+  WalletSelection selection = 1;
+}
+
+message ReplaceWalletSelectionRequest {
+  string owner_account_id = 1;
+  // Zero is valid only while the owner has no saved configuration.
+  int64 expected_revision = 2;
+  repeated WalletSelectionInput selected_items = 3;
+  repeated WalletRetirementInput retiring_wallets = 4;
+}
+
+message ReplaceWalletSelectionResponse {
+  WalletSelection selection = 1;
+}
+
+// InspectWalletSelectionCandidatesRequest performs the expensive, explicit
+// removal-safety check for up to 100 owner-validated Wallet references,
+// including legacy connections before the first selection is saved. Ordinary
+// selection reads deliberately do not contact Worm.
+message InspectWalletSelectionCandidatesRequest {
+  string owner_account_id = 1;
+  repeated WalletSelectionInput refs = 2;
+}
+
+message WalletSelectionCandidateInspection {
+  int64 wallet_id = 1;
+  string address = 2;
+  bool removal_allowed = 3;
+  string reason_code = 4;
+}
+
+message InspectWalletSelectionCandidatesResponse {
+  repeated WalletSelectionCandidateInspection items = 1;
+  int64 selection_revision = 2;
+  int64 inspected_at = 3;
+}
+
 message CompleteWormWalletConnectionResponse {
   WormWalletConnection connection = 1;
 }
@@ -159,6 +245,7 @@ message CompleteWormWalletConnectionResponse {
 message DisconnectWormWalletRequest {
   int64 wallet_id = 1;
   string address = 2;
+  string owner_account_id = 3;
 }
 
 message DisconnectWormWalletResponse {
@@ -474,6 +561,7 @@ message ExecutionPlan {
   repeated ExecutionPlanItem items = 25;
   string usability_code = 26;
   repeated ExecutionPlanReasonCount reason_counts = 27;
+  int64 wallet_selection_revision = 30;
 }
 
 message CreateExecutionPlanRequest {
@@ -484,6 +572,7 @@ message CreateExecutionPlanRequest {
   string combination_id = 2;
   int64 expected_combination_revision = 3;
   repeated ExecutionPlanWalletInput wallets = 4;
+  int64 wallet_selection_revision = 6;
 }
 
 message CreateExecutionPlanResponse {
@@ -1060,6 +1149,9 @@ service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
   rpc BatchGetWalletConnections(BatchGetWalletConnectionsRequest) returns (BatchGetWalletConnectionsResponse);
+  rpc GetWalletSelection(GetWalletSelectionRequest) returns (GetWalletSelectionResponse);
+  rpc ReplaceWalletSelection(ReplaceWalletSelectionRequest) returns (ReplaceWalletSelectionResponse);
+  rpc InspectWalletSelectionCandidates(InspectWalletSelectionCandidatesRequest) returns (InspectWalletSelectionCandidatesResponse);
   rpc PrepareWormWalletConnection(PrepareWormWalletConnectionRequest) returns (PrepareWormWalletConnectionResponse);
   rpc CompleteWormWalletConnection(CompleteWormWalletConnectionRequest) returns (CompleteWormWalletConnectionResponse);
   rpc DisconnectWormWallet(DisconnectWormWalletRequest) returns (DisconnectWormWalletResponse);

@@ -9,12 +9,22 @@ import (
 )
 
 func (s *SQLStore) ActivateCredential(ctx context.Context, req ActivateCredentialRequest) (*WalletConnectionSnapshot, error) {
+	ownerUUID, _, err := walletSelectionOwner(req.OwnerAccountID)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCanonicalWalletSelectionReference(req.WalletID, req.Address); err != nil {
+		return nil, err
+	}
 	if len(req.APIKeyCiphertext) == 0 || len(req.APISecretCiphertext) == 0 {
 		return nil, fmt.Errorf("encrypted Worm credential fields must not be empty")
 	}
 	attempt, err := s.GetConnectionAttempt(ctx, req.AttemptID)
 	if err != nil {
 		return nil, err
+	}
+	if attempt.WalletID != req.WalletID || attempt.Address != req.Address {
+		return nil, ErrWalletAddressMismatch
 	}
 	now := canonicalNow(req.Now)
 	tx, queries, err := s.beginWalletTransaction(ctx, attempt.WalletID)
@@ -31,6 +41,18 @@ func (s *SQLStore) ActivateCredential(ctx context.Context, req ActivateCredentia
 	}
 	if locked.State != string(ConnectionAttemptStateCompleting) {
 		return nil, ErrConnectionAttemptState
+	}
+	if locked.WalletID != req.WalletID || locked.Address != req.Address {
+		return nil, ErrWalletAddressMismatch
+	}
+	if _, err := queries.GetWalletSelectionItem(ctx, wormtradingsqlc.GetWalletSelectionItemParams{
+		OwnerAccountID: ownerUUID,
+		WalletID:       req.WalletID,
+		Address:        req.Address,
+	}); isNoRows(err) {
+		return nil, ErrWalletNotSelected
+	} else if err != nil {
+		return nil, fmt.Errorf("get selected Wallet for credential activation: %w", err)
 	}
 	if _, err := queries.MarkActiveCredentialPendingRevocation(ctx, wormtradingsqlc.MarkActiveCredentialPendingRevocationParams{
 		Now:      timestampParam(now),
@@ -79,7 +101,17 @@ func (s *SQLStore) ActivateCredential(ctx context.Context, req ActivateCredentia
 	return &snapshot, nil
 }
 
-func (s *SQLStore) BeginDisconnect(ctx context.Context, walletID int64, address string, at time.Time) (*StoredCredential, error) {
+func (s *SQLStore) BeginDisconnect(
+	ctx context.Context,
+	ownerAccountID string,
+	walletID int64,
+	address string,
+	at time.Time,
+) (*StoredCredential, error) {
+	ownerUUID, _, err := walletSelectionOwner(ownerAccountID)
+	if err != nil {
+		return nil, err
+	}
 	if err := validateWalletReference(walletID, address); err != nil {
 		return nil, err
 	}
@@ -89,6 +121,15 @@ func (s *SQLStore) BeginDisconnect(ctx context.Context, walletID int64, address 
 		return nil, err
 	}
 	defer rollbackWalletTransaction(tx)
+	if _, err := queries.GetWalletRetirement(ctx, wormtradingsqlc.GetWalletRetirementParams{
+		OwnerAccountID: ownerUUID,
+		WalletID:       walletID,
+		Address:        address,
+	}); isNoRows(err) {
+		return nil, ErrWalletNotRetiring
+	} else if err != nil {
+		return nil, fmt.Errorf("get Wallet retirement for disconnect: %w", err)
+	}
 	connection, err := queries.GetWalletConnectionForUpdate(ctx, walletID)
 	if err != nil {
 		if isNoRows(err) {

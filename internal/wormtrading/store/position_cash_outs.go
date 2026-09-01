@@ -151,6 +151,13 @@ func (s *SQLStore) CreatePositionCashOut(
 	} else if !errors.Is(getErr, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("get position Cash Out creation command: %w", getErr)
 	}
+	if _, err := queries.GetWalletSelectionItem(ctx, wormtradingsqlc.GetWalletSelectionItemParams{
+		OwnerAccountID: ownerUUID, WalletID: req.WalletID, Address: req.WalletAddress,
+	}); errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrWalletNotSelected
+	} else if err != nil {
+		return nil, fmt.Errorf("get selected Wallet for position Cash Out: %w", err)
+	}
 
 	connection, err := queries.GetWalletConnectionForUpdate(ctx, req.WalletID)
 	if err != nil || connection.Address != req.WalletAddress || connection.State != string(ConnectionStateConnected) {

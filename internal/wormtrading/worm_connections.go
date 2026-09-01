@@ -38,6 +38,18 @@ func (s *Service) PrepareWormWalletConnection(
 	if err != nil {
 		return nil, err
 	}
+	ownerAccountID, err := normalizeMarketCombinationAccountID(req.GetOwnerAccountId())
+	if err != nil {
+		return nil, err
+	}
+	selection, err := s.credentialStore.GetWalletSelection(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return nil, walletSelectionRPCError(err)
+	}
+	if !walletSelectionContains(selection, walletID, address) {
+		return nil, status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
+	}
 	if req.GetReconnect() && req.GetRegenerateUnknownCredential() {
 		return nil, status.Error(codes.InvalidArgument, "reconnect and regenerate_unknown_credential are mutually exclusive")
 	}
@@ -70,6 +82,7 @@ func (s *Service) PrepareWormWalletConnection(
 	now := timeNowUTC()
 	attempt, err := s.credentialStore.PrepareConnectionAttempt(ctx, wormstore.PrepareConnectionAttemptRequest{
 		AttemptID:        uuid.NewString(),
+		OwnerAccountID:   ownerAccountID,
 		WalletID:         walletID,
 		Address:          address,
 		Kind:             kind,
@@ -117,6 +130,18 @@ func (s *Service) CompleteWormWalletConnection(
 	if err != nil {
 		return nil, err
 	}
+	ownerAccountID, err := normalizeMarketCombinationAccountID(req.GetOwnerAccountId())
+	if err != nil {
+		return nil, err
+	}
+	selection, err := s.credentialStore.GetWalletSelection(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return nil, walletSelectionRPCError(err)
+	}
+	if !walletSelectionContains(selection, walletID, address) {
+		return nil, status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
+	}
 	if len(req.GetMessageSha256()) != sha256.Size {
 		return nil, status.Error(codes.InvalidArgument, "message_sha256 must contain 32 bytes")
 	}
@@ -128,7 +153,13 @@ func (s *Service) CompleteWormWalletConnection(
 
 	now := timeNowUTC()
 	completionCtx, completionCancel := s.persistenceContext()
-	attempt, err := s.credentialStore.BeginConnectionAttemptCompletion(completionCtx, attemptID, now)
+	attempt, err := s.credentialStore.BeginConnectionAttemptCompletion(completionCtx, wormstore.BeginConnectionAttemptCompletionRequest{
+		OwnerAccountID: ownerAccountID,
+		AttemptID:      attemptID,
+		WalletID:       walletID,
+		Address:        address,
+		Now:            now,
+	})
 	completionCancel()
 	s.recordCredentialStoreResult(err)
 	if err != nil {
@@ -195,7 +226,10 @@ func (s *Service) CompleteWormWalletConnection(
 	}
 	persistCtx, persistCancel := s.persistenceContext()
 	snapshot, err := s.credentialStore.ActivateCredential(persistCtx, wormstore.ActivateCredentialRequest{
+		OwnerAccountID:      ownerAccountID,
 		AttemptID:           attemptID,
+		WalletID:            walletID,
+		Address:             address,
 		APIKeyCiphertext:    apiKeyCiphertext,
 		APISecretCiphertext: apiSecretCiphertext,
 		Now:                 timeNowUTC(),
@@ -234,17 +268,58 @@ func (s *Service) DisconnectWormWallet(
 	if err != nil {
 		return nil, err
 	}
+	ownerAccountID, err := normalizeMarketCombinationAccountID(req.GetOwnerAccountId())
+	if err != nil {
+		return nil, err
+	}
+	selection, err := s.credentialStore.GetWalletSelection(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return nil, walletSelectionRPCError(err)
+	}
+	if !walletSelectionContainsRetirement(selection, walletID, address) {
+		return nil, status.Error(codes.FailedPrecondition, "WALLET_NOT_RETIRING")
+	}
 	unlock := s.walletOperationLock(walletID)
 	defer unlock()
 
+	snapshot, err := s.credentialStore.GetWalletConnectionSnapshot(ctx, walletID, address)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return nil, connectionStoreRPCError("inspect Worm wallet retirement", err)
+	}
+	// A provider exposure check is mandatory immediately before the first
+	// revocation dispatch. Once durable cleanup has entered DISCONNECTING or
+	// REVOCATION_REQUIRED, later retries must resume that lifecycle: the active
+	// credential has already moved out of ACTIVE and can no longer perform the
+	// same HMAC read, while replaying the provider revocation remains governed by
+	// the credential's durable state.
+	if snapshot.State != wormstore.ConnectionStateDisconnecting && snapshot.State != wormstore.ConnectionStateRevocationRequired {
+		if err := s.ensureWalletSelectionRemovalAllowed(
+			ctx,
+			ownerAccountID,
+			[]wormstore.WalletReference{{WalletID: walletID, Address: address}},
+			selection.Revision,
+		); err != nil {
+			return nil, err
+		}
+	}
+
 	for {
-		credential, beginErr := s.credentialStore.BeginDisconnect(ctx, walletID, address, timeNowUTC())
+		credential, beginErr := s.credentialStore.BeginDisconnect(ctx, ownerAccountID, walletID, address, timeNowUTC())
 		s.recordCredentialStoreResult(beginErr)
 		if errors.Is(beginErr, wormstore.ErrConnectionNotConnected) || errors.Is(beginErr, wormstore.ErrCredentialNotFound) {
 			snapshot, snapshotErr := s.credentialStore.GetWalletConnectionSnapshot(ctx, walletID, address)
 			s.recordCredentialStoreResult(snapshotErr)
 			if snapshotErr != nil {
 				return nil, connectionStoreRPCError("load disconnected Worm wallet", snapshotErr)
+			}
+			if snapshot.State != wormstore.ConnectionStateNotConnected || snapshot.ActiveCredential != nil {
+				return nil, status.Error(codes.FailedPrecondition, "WALLET_RETIREMENT_INCOMPLETE")
+			}
+			if completeErr := s.credentialStore.CompleteWalletRetirement(ctx, ownerAccountID, walletID, address); completeErr != nil {
+				s.recordCredentialStoreResult(completeErr)
+				return nil, walletSelectionRPCError(completeErr)
 			}
 			return &apiclient.DisconnectWormWalletResponse{Connection: wormWalletConnectionFromStore(*snapshot)}, nil
 		}
@@ -506,6 +581,12 @@ func connectionStoreRPCError(operation string, err error) error {
 		return status.Error(codes.DeadlineExceeded, operation+": connection challenge expired")
 	case errors.Is(err, wormstore.ErrCredentialOutcomeUnknown), errors.Is(err, wormstore.ErrTransactionOutcomeUnknown):
 		return status.Error(codes.Aborted, "Worm credential creation outcome is unknown")
+	case errors.Is(err, wormstore.ErrWalletNotSelected):
+		return status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
+	case errors.Is(err, wormstore.ErrWalletNotRetiring):
+		return status.Error(codes.FailedPrecondition, "WALLET_NOT_RETIRING")
+	case errors.Is(err, wormstore.ErrWalletConnectionCapacityPending):
+		return status.Error(codes.FailedPrecondition, "WALLET_CONNECTION_CAPACITY_PENDING")
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return status.FromContextError(err).Err()
 	default:

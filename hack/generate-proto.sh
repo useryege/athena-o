@@ -256,6 +256,9 @@ EOF
           rename_definition_property("wormtradingTradingWalletSummary"; "avatar_kind"; "avatarKind") |
           rename_definition_property("wormtradingTradingWalletSummary"; "avatar_preset_id"; "avatarPresetId") |
           rename_definition_property("wormtradingTradingWalletSummary"; "avatar_url"; "avatarUrl") |
+          rename_definition_property("wormtradingWormWalletSelectionSummary"; "selected_count"; "selectedCount") |
+          rename_definition_property("wormtradingWormWalletSelectionSummary"; "maximum_wallets"; "maximumWallets") |
+          rename_definition_property("wormtradingWormWalletSelectionSummary"; "updated_at"; "updatedAt") |
           rename_definition_property("wormtradingAssetBalance"; "atomic_amount"; "atomicAmount") |
           rename_definition_property("wormtradingAssetBalance"; "observed_slot"; "observedSlot") |
           rename_definition_property("wormtradingAssetBalance"; "error_code"; "errorCode") |
@@ -265,6 +268,7 @@ EOF
           rename_definition_property("wormtradingTokenAssetBalance"; "token_account_count"; "tokenAccountCount") |
           rename_definition_property("wormtradingListWalletBalancesResponse"; "page_size"; "pageSize") |
           rename_definition_property("wormtradingListWalletBalancesResponse"; "fetched_at"; "fetchedAt") |
+          rename_definition_property("wormtradingListWalletBalancesResponse"; "wallet_selection"; "walletSelection") |
           rename_definition_property("wormtradingWormWalletConnection"; "warning_code"; "warningCode") |
           rename_definition_property("wormtradingWormWalletConnection"; "connected_at"; "connectedAt") |
           rename_definition_property("wormtradingWormMarketReference"; "condition_id"; "conditionId") |
@@ -294,6 +298,7 @@ EOF
           rename_definition_property("wormtradingListWalletTradingActivityResponse"; "fetched_at"; "fetchedAt") |
           rename_definition_property("wormtradingListWalletTradingActivityResponse"; "open_position_count"; "openPositionCount") |
           rename_definition_property("wormtradingListWalletTradingActivityResponse"; "in_flight_request_count"; "inFlightRequestCount") |
+          rename_definition_property("wormtradingListWalletTradingActivityResponse"; "wallet_selection"; "walletSelection") |
           rename_query_parameter("/api/v1/worm-trading/wallet-balances"; "get"; "page_size"; "pageSize") |
           rename_query_parameter("/api/v1/worm-trading/wallet-activity"; "get"; "page_size"; "pageSize") |
           mark_public_get("/api/version") |

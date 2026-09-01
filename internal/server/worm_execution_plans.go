@@ -32,40 +32,43 @@ const (
 	wormExecutionPlanMaximumPageSize  = int32(100)
 	wormExecutionPlanMaximumBodyBytes = int64(1024 * 1024)
 	wormExecutionWalletLookupLimit    = 8
+	wormExecutionMaximumWallets       = 20
 	wormExecutionDecimalMaximumLength = 128
 )
 
 type wormExecutionPlanInput struct {
-	CombinationID               string  `json:"combinationId"`
-	ExpectedCombinationRevision int64   `json:"expectedCombinationRevision"`
-	WalletIDs                   []int64 `json:"walletIds"`
+	CombinationID                   string  `json:"combinationId"`
+	ExpectedCombinationRevision     int64   `json:"expectedCombinationRevision"`
+	ExpectedWalletSelectionRevision int64   `json:"expectedWalletSelectionRevision"`
+	WalletIDs                       []int64 `json:"walletIds"`
 }
 
 type wormExecutionPlanResponse struct {
-	ID                 string                       `json:"id"`
-	Combination        wormExecutionPlanCombination `json:"combination"`
-	State              string                       `json:"state"`
-	BuildStage         string                       `json:"buildStage"`
-	FailureCode        string                       `json:"failureCode"`
-	UsabilityCode      string                       `json:"usabilityCode"`
-	WalletCount        int64                        `json:"walletCount"`
-	ItemCount          int64                        `json:"itemCount"`
-	TotalStepCount     int64                        `json:"totalStepCount"`
-	CompletedStepCount int64                        `json:"completedStepCount"`
-	ReadyStepCount     int64                        `json:"readyStepCount"`
-	SkippedStepCount   int64                        `json:"skippedStepCount"`
-	ReasonCounts       map[string]int64             `json:"reasonCounts"`
-	MaximumCollateral  string                       `json:"maximumCollateral"`
-	OpeningFeeEstimate string                       `json:"openingFeeEstimate"`
-	TotalUSDCNeeded    string                       `json:"totalUSDCNeeded"`
-	RequestedAt        int64                        `json:"requestedAt"`
-	CompletedAt        int64                        `json:"completedAt"`
-	ExpiresAt          int64                        `json:"expiresAt"`
-	RetentionUntil     int64                        `json:"retentionUntil"`
-	CreatedAt          int64                        `json:"createdAt"`
-	UpdatedAt          int64                        `json:"updatedAt"`
-	Wallets            []wormExecutionPlanWallet    `json:"wallets"`
-	Items              []wormExecutionPlanItem      `json:"items"`
+	ID                      string                       `json:"id"`
+	Combination             wormExecutionPlanCombination `json:"combination"`
+	WalletSelectionRevision int64                        `json:"walletSelectionRevision"`
+	State                   string                       `json:"state"`
+	BuildStage              string                       `json:"buildStage"`
+	FailureCode             string                       `json:"failureCode"`
+	UsabilityCode           string                       `json:"usabilityCode"`
+	WalletCount             int64                        `json:"walletCount"`
+	ItemCount               int64                        `json:"itemCount"`
+	TotalStepCount          int64                        `json:"totalStepCount"`
+	CompletedStepCount      int64                        `json:"completedStepCount"`
+	ReadyStepCount          int64                        `json:"readyStepCount"`
+	SkippedStepCount        int64                        `json:"skippedStepCount"`
+	ReasonCounts            map[string]int64             `json:"reasonCounts"`
+	MaximumCollateral       string                       `json:"maximumCollateral"`
+	OpeningFeeEstimate      string                       `json:"openingFeeEstimate"`
+	TotalUSDCNeeded         string                       `json:"totalUSDCNeeded"`
+	RequestedAt             int64                        `json:"requestedAt"`
+	CompletedAt             int64                        `json:"completedAt"`
+	ExpiresAt               int64                        `json:"expiresAt"`
+	RetentionUntil          int64                        `json:"retentionUntil"`
+	CreatedAt               int64                        `json:"createdAt"`
+	UpdatedAt               int64                        `json:"updatedAt"`
+	Wallets                 []wormExecutionPlanWallet    `json:"wallets"`
+	Items                   []wormExecutionPlanItem      `json:"items"`
 }
 
 type wormExecutionPlanCombination struct {
@@ -171,8 +174,25 @@ func (server *AthenaServer) createWormExecutionPlan(w http.ResponseWriter, reque
 		walletsecret.WriteError(w, err)
 		return
 	}
+	selection, err := server.loadWormWalletSelection(ctx, credential.AccountID)
+	if err != nil {
+		walletsecret.WriteError(w, err)
+		return
+	}
+	if !selection.Configured || selection.Revision != input.ExpectedWalletSelectionRevision {
+		walletsecret.WriteError(w, status.Error(codes.Aborted, "WALLET_SELECTION_CHANGED"))
+		return
+	}
+	if err := requireSelectedWormExecutionWallets(selection, input.WalletIDs); err != nil {
+		walletsecret.WriteError(w, err)
+		return
+	}
 	wallets, err := server.resolveWormExecutionPlanWallets(ctx, credential.AccountID, input.WalletIDs)
 	if err != nil {
+		walletsecret.WriteError(w, err)
+		return
+	}
+	if err := server.requireConnectedWormExecutionWallets(ctx, wallets); err != nil {
 		walletsecret.WriteError(w, err)
 		return
 	}
@@ -186,6 +206,7 @@ func (server *AthenaServer) createWormExecutionPlan(w http.ResponseWriter, reque
 		CombinationId:               input.CombinationID,
 		ExpectedCombinationRevision: input.ExpectedCombinationRevision,
 		Wallets:                     wallets,
+		WalletSelectionRevision:     input.ExpectedWalletSelectionRevision,
 	})
 	if err != nil {
 		walletsecret.WriteError(w, sanitizeWormExecutionPlanStoreError(err))
@@ -296,8 +317,11 @@ func decodeWormExecutionPlanInput(w http.ResponseWriter, request *http.Request) 
 	if input.ExpectedCombinationRevision <= 0 || input.ExpectedCombinationRevision == math.MaxInt64 {
 		return wormExecutionPlanInput{}, status.Error(codes.InvalidArgument, "expectedCombinationRevision must be a positive incrementable integer")
 	}
-	if len(input.WalletIDs) == 0 {
-		return wormExecutionPlanInput{}, status.Error(codes.InvalidArgument, "walletIds must contain at least one wallet")
+	if input.ExpectedWalletSelectionRevision <= 0 || input.ExpectedWalletSelectionRevision == math.MaxInt64 {
+		return wormExecutionPlanInput{}, status.Error(codes.InvalidArgument, "expectedWalletSelectionRevision must be a positive incrementable integer")
+	}
+	if len(input.WalletIDs) == 0 || len(input.WalletIDs) > wormExecutionMaximumWallets {
+		return wormExecutionPlanInput{}, status.Errorf(codes.InvalidArgument, "walletIds must contain between 1 and %d wallets", wormExecutionMaximumWallets)
 	}
 	seen := make(map[int64]struct{}, len(input.WalletIDs))
 	for _, walletID := range input.WalletIDs {
@@ -380,6 +404,53 @@ func (server *AthenaServer) resolveWormExecutionPlanWallets(
 	return result, nil
 }
 
+func requireSelectedWormExecutionWallets(selection wormWalletSelectionResponse, walletIDs []int64) error {
+	return requireWormWalletSelectionMembership(selection, walletIDs, "execution preview")
+}
+
+func requireWormWalletSelectionMembership(selection wormWalletSelectionResponse, walletIDs []int64, purpose string) error {
+	if !selection.Configured || selection.Revision <= 0 {
+		return status.Errorf(codes.FailedPrecondition, "Worm wallets must be selected before creating a %s", purpose)
+	}
+	selected := make(map[int64]struct{}, len(selection.SelectedItems))
+	for _, item := range selection.SelectedItems {
+		selected[item.WalletID] = struct{}{}
+	}
+	for _, walletID := range walletIDs {
+		if _, exists := selected[walletID]; !exists {
+			return status.Errorf(codes.FailedPrecondition, "every %s wallet must belong to the current Worm wallet selection", purpose)
+		}
+	}
+	return nil
+}
+
+func (server *AthenaServer) requireConnectedWormExecutionWallets(
+	ctx context.Context,
+	wallets []*wormtradingapiclient.ExecutionPlanWalletInput,
+) error {
+	refs := make([]*wormtradingapiclient.WalletConnectionReference, len(wallets))
+	for index, wallet := range wallets {
+		refs[index] = &wormtradingapiclient.WalletConnectionReference{WalletId: wallet.GetWalletId(), Address: wallet.GetAddress()}
+	}
+	result, err := server.WormTradingClientset.WormTrading().BatchGetWalletConnections(ctx, &wormtradingapiclient.BatchGetWalletConnectionsRequest{Refs: refs})
+	if err != nil {
+		return sanitizeWormConnectionInventoryDependencyError(err, "Worm Trading")
+	}
+	if result == nil || len(result.GetItems()) != len(refs) {
+		return status.Error(codes.Internal, "Worm Trading returned an incomplete execution wallet connection result")
+	}
+	for index, connection := range result.GetItems() {
+		wallet := wallets[index]
+		if !validWormConnectionInventoryProjection(connection, wallet.GetWalletId(), wallet.GetAddress()) {
+			return status.Error(codes.Internal, "Worm Trading returned a mismatched execution wallet connection")
+		}
+		if connection.GetState() != "CONNECTED" {
+			return status.Error(codes.FailedPrecondition, "every execution preview wallet must be connected to Worm Trading")
+		}
+	}
+	return nil
+}
+
 func projectWormExecutionPlan(
 	plan *wormtradingapiclient.ExecutionPlan,
 	expectedOwnerAccountID string,
@@ -399,7 +470,7 @@ func projectWormExecutionPlan(
 	combinationID, err := canonicalWormCombinationID(plan.GetCombinationId())
 	combinationName := strings.TrimSpace(plan.GetCombinationName())
 	if err != nil || combinationID != plan.GetCombinationId() || validateWormCombinationName(combinationName) != nil ||
-		combinationName != plan.GetCombinationName() || plan.GetCombinationRevision() <= 0 {
+		combinationName != plan.GetCombinationName() || plan.GetCombinationRevision() <= 0 || plan.GetWalletSelectionRevision() <= 0 {
 		return wormExecutionPlanResponse{}, status.Error(codes.Internal, "Worm Trading returned an invalid execution plan combination")
 	}
 	state := strings.TrimSpace(plan.GetState())
@@ -448,30 +519,31 @@ func projectWormExecutionPlan(
 		return wormExecutionPlanResponse{}, status.Error(codes.Internal, "Worm Trading returned incomplete execution plan snapshots")
 	}
 	response := wormExecutionPlanResponse{
-		ID:                 planID,
-		Combination:        wormExecutionPlanCombination{ID: combinationID, Name: combinationName, Revision: plan.GetCombinationRevision()},
-		State:              state,
-		BuildStage:         buildStage,
-		FailureCode:        failureCode,
-		UsabilityCode:      usabilityCode,
-		WalletCount:        plan.GetWalletCount(),
-		ItemCount:          plan.GetItemCount(),
-		TotalStepCount:     plan.GetTotalStepCount(),
-		CompletedStepCount: plan.GetCompletedStepCount(),
-		ReadyStepCount:     plan.GetReadyStepCount(),
-		SkippedStepCount:   plan.GetSkippedStepCount(),
-		ReasonCounts:       make(map[string]int64, len(plan.GetReasonCounts())),
-		MaximumCollateral:  plan.GetTotalCollateral(),
-		OpeningFeeEstimate: plan.GetTotalOpeningFee(),
-		TotalUSDCNeeded:    plan.GetTotalUserFundsNeeded(),
-		RequestedAt:        plan.GetRequestedAt(),
-		CompletedAt:        plan.GetCompletedAt(),
-		ExpiresAt:          plan.GetExpiresAt(),
-		RetentionUntil:     plan.GetRetentionUntil(),
-		CreatedAt:          plan.GetCreatedAt(),
-		UpdatedAt:          plan.GetUpdatedAt(),
-		Wallets:            make([]wormExecutionPlanWallet, 0, len(plan.GetWallets())),
-		Items:              make([]wormExecutionPlanItem, 0, len(plan.GetItems())),
+		ID:                      planID,
+		Combination:             wormExecutionPlanCombination{ID: combinationID, Name: combinationName, Revision: plan.GetCombinationRevision()},
+		WalletSelectionRevision: plan.GetWalletSelectionRevision(),
+		State:                   state,
+		BuildStage:              buildStage,
+		FailureCode:             failureCode,
+		UsabilityCode:           usabilityCode,
+		WalletCount:             plan.GetWalletCount(),
+		ItemCount:               plan.GetItemCount(),
+		TotalStepCount:          plan.GetTotalStepCount(),
+		CompletedStepCount:      plan.GetCompletedStepCount(),
+		ReadyStepCount:          plan.GetReadyStepCount(),
+		SkippedStepCount:        plan.GetSkippedStepCount(),
+		ReasonCounts:            make(map[string]int64, len(plan.GetReasonCounts())),
+		MaximumCollateral:       plan.GetTotalCollateral(),
+		OpeningFeeEstimate:      plan.GetTotalOpeningFee(),
+		TotalUSDCNeeded:         plan.GetTotalUserFundsNeeded(),
+		RequestedAt:             plan.GetRequestedAt(),
+		CompletedAt:             plan.GetCompletedAt(),
+		ExpiresAt:               plan.GetExpiresAt(),
+		RetentionUntil:          plan.GetRetentionUntil(),
+		CreatedAt:               plan.GetCreatedAt(),
+		UpdatedAt:               plan.GetUpdatedAt(),
+		Wallets:                 make([]wormExecutionPlanWallet, 0, len(plan.GetWallets())),
+		Items:                   make([]wormExecutionPlanItem, 0, len(plan.GetItems())),
 	}
 	var reasonCountTotal int64
 	var skippedReasonCount int64

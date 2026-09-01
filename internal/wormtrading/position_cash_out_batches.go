@@ -15,7 +15,7 @@ import (
 
 const (
 	positionCashOutBatchAuthorizationTTL = 5 * time.Minute
-	positionCashOutBatchMaximumWallets   = 100
+	positionCashOutBatchMaximumWallets   = 20
 	positionCashOutBatchMaximumPositions = 1000
 	positionCashOutBatchMaximumPageSize  = int32(100)
 )
@@ -371,6 +371,8 @@ func positionCashOutBatchRPCError(err error) error {
 		return status.Error(codes.FailedPrecondition, "WALLET_CASH_OUT_ACTIVE")
 	case errors.Is(err, wormstore.ErrPositionCashOutBatchWalletActive):
 		return status.Error(codes.FailedPrecondition, "WALLET_BATCH_CASH_OUT_ACTIVE")
+	case errors.Is(err, wormstore.ErrWalletNotSelected):
+		return status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
 	case errors.Is(err, wormstore.ErrPositionCashOutBatchClaim):
 		return status.Error(codes.Aborted, "position Cash Out Batch worker claim changed")
 	case errors.Is(err, wormstore.ErrExpired):

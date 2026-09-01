@@ -29,6 +29,9 @@ func (s *Service) CreateExecutionPlan(
 	if req.GetExpectedCombinationRevision() <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "expected_combination_revision must be positive")
 	}
+	if req.GetWalletSelectionRevision() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "wallet_selection_revision must be positive")
+	}
 	wallets, err := executionPlanWalletInputsFromProto(req.GetWallets())
 	if err != nil {
 		return nil, err
@@ -36,11 +39,25 @@ func (s *Service) CreateExecutionPlan(
 	if err := s.requireMarketCombinationStore(); err != nil {
 		return nil, err
 	}
+	selection, err := s.credentialStore.GetWalletSelection(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(err)
+	if err != nil {
+		return nil, walletSelectionRPCError(err)
+	}
+	if !selection.Configured || selection.Revision != req.GetWalletSelectionRevision() {
+		return nil, status.Error(codes.FailedPrecondition, "WALLET_SELECTION_CHANGED")
+	}
+	for _, wallet := range wallets {
+		if !walletSelectionContains(selection, wallet.WalletID, wallet.Address) {
+			return nil, status.Error(codes.FailedPrecondition, "WALLET_NOT_SELECTED")
+		}
+	}
 
 	plan, err := s.credentialStore.CreateExecutionPlan(ctx, wormstore.CreateExecutionPlanRequest{
 		OwnerAccountID:              ownerAccountID,
 		CombinationID:               combinationID,
 		ExpectedCombinationRevision: req.GetExpectedCombinationRevision(),
+		WalletSelectionRevision:     req.GetWalletSelectionRevision(),
 		Wallets:                     wallets,
 		Now:                         timeNowUTC(),
 	})
@@ -183,33 +200,34 @@ func executionPlanToProto(plan *wormstore.ExecutionPlan) *apiclient.ExecutionPla
 		})
 	}
 	return &apiclient.ExecutionPlan{
-		Id:                   plan.ID,
-		OwnerAccountId:       plan.OwnerAccountID,
-		CombinationId:        plan.CombinationID,
-		CombinationName:      plan.CombinationName,
-		CombinationRevision:  plan.CombinationRevision,
-		State:                string(plan.State),
-		BuildStage:           plan.BuildStage,
-		FailureCode:          plan.FailureCode,
-		WalletCount:          plan.WalletCount,
-		ItemCount:            plan.ItemCount,
-		TotalStepCount:       plan.TotalStepCount,
-		CompletedStepCount:   plan.CompletedStepCount,
-		ReadyStepCount:       plan.ReadyStepCount,
-		SkippedStepCount:     plan.SkippedStepCount,
-		TotalCollateral:      plan.TotalCollateral,
-		TotalOpeningFee:      plan.TotalOpeningFee,
-		TotalUserFundsNeeded: plan.TotalUserFundsNeeded,
-		RequestedAt:          executionPlanUnix(plan.RequestedAt),
-		CompletedAt:          executionPlanUnix(plan.CompletedAt),
-		ExpiresAt:            executionPlanUnix(plan.ExpiresAt),
-		RetentionUntil:       executionPlanUnix(plan.RetentionUntil),
-		CreatedAt:            executionPlanUnix(plan.CreatedAt),
-		UpdatedAt:            executionPlanUnix(plan.UpdatedAt),
-		Wallets:              wallets,
-		Items:                items,
-		UsabilityCode:        plan.UsabilityCode,
-		ReasonCounts:         reasonCounts,
+		Id:                      plan.ID,
+		OwnerAccountId:          plan.OwnerAccountID,
+		CombinationId:           plan.CombinationID,
+		CombinationName:         plan.CombinationName,
+		CombinationRevision:     plan.CombinationRevision,
+		WalletSelectionRevision: plan.WalletSelectionRevision,
+		State:                   string(plan.State),
+		BuildStage:              plan.BuildStage,
+		FailureCode:             plan.FailureCode,
+		WalletCount:             plan.WalletCount,
+		ItemCount:               plan.ItemCount,
+		TotalStepCount:          plan.TotalStepCount,
+		CompletedStepCount:      plan.CompletedStepCount,
+		ReadyStepCount:          plan.ReadyStepCount,
+		SkippedStepCount:        plan.SkippedStepCount,
+		TotalCollateral:         plan.TotalCollateral,
+		TotalOpeningFee:         plan.TotalOpeningFee,
+		TotalUserFundsNeeded:    plan.TotalUserFundsNeeded,
+		RequestedAt:             executionPlanUnix(plan.RequestedAt),
+		CompletedAt:             executionPlanUnix(plan.CompletedAt),
+		ExpiresAt:               executionPlanUnix(plan.ExpiresAt),
+		RetentionUntil:          executionPlanUnix(plan.RetentionUntil),
+		CreatedAt:               executionPlanUnix(plan.CreatedAt),
+		UpdatedAt:               executionPlanUnix(plan.UpdatedAt),
+		Wallets:                 wallets,
+		Items:                   items,
+		UsabilityCode:           plan.UsabilityCode,
+		ReasonCounts:            reasonCounts,
 	}
 }
 
@@ -334,6 +352,8 @@ func executionPlanRPCError(err error) error {
 		return status.Error(codes.FailedPrecondition, "execution plan wallet connection changed")
 	case errors.Is(err, wormstore.ErrExecutionPlanCredentialChanged):
 		return status.Error(codes.FailedPrecondition, "execution plan wallet credential changed")
+	case errors.Is(err, wormstore.ErrExecutionPlanWalletSelectionChanged):
+		return status.Error(codes.FailedPrecondition, "WALLET_SELECTION_CHANGED")
 	case errors.Is(err, wormstore.ErrExecutionPlanBuildLease):
 		return status.Error(codes.Aborted, "execution plan build lease was lost")
 	case errors.Is(err, wormstore.ErrInvalidExecutionPlan):

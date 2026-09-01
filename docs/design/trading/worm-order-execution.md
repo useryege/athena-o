@@ -3,10 +3,11 @@
 ## Scope
 
 Worm Order Execution owns permanent, owner-scoped live-execution Runs created
-from a still-usable [Worm Execution Preview](worm-execution-preview.md). A Run
-freezes the preview's exact Wallet order, market order, directions, backend,
+from a still-usable [Worm Execution Preview](worm-execution-preview.md). Run
+admission requires the preview's frozen Wallet-selection revision and membership
+to remain current. A Run then freezes the preview's exact Wallet order, market order, directions, backend,
 funds, `1x` leverage, classifications, and raw Estimate observations under a
-version-four SHA-256 plan digest.
+selection-bound version-five SHA-256 plan digest.
 It executes only the preview steps that were actionable when the Run was
 created, one Wallet-by-market Step at a time in Wallet-major order.
 
@@ -45,6 +46,11 @@ holds durable locks for every selected Wallet. Runs, single Cash Outs, and
 batches exclude each other per Wallet before any can create a new provider
 mutation.
 
+Current Wallet selection is an admission boundary only. Once a Run is created,
+its immutable Wallet snapshot, control, reconciliation, and owner-scoped history
+remain available after later selection changes. An active Run's durable Wallet
+locks prevent those Wallets from being safely retired in the meantime.
+
 ## Source Locations
 
 | Concern | Source | Key symbols |
@@ -57,7 +63,7 @@ mutation.
 | One-Step execution worker | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/execution_web_signer.go](../../../internal/wormtrading/execution_web_signer.go) | `runExecutionWorker`, `processRecoverableExecutionSteps`, `executeClaimedExecutionStep`, `executeFreshPreflight`, `executionWebSession`, `executeWormOpen`, `executeWormSigning`, `executeWormFinalize`, `executionWebSigner` |
 | No-replay recovery, position completion, polling, and reconciliation | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go) | `recoverSuccessfulOpen`, `recoverFinalizingExecution`, `observeExecutionOpenPosition`, `matchExecutionOpenPosition`, `recordExecutionOpenPositionCompletion`, `reconcileAmbiguousFinalize`, `recordExecutionAwaiting`, `reconcileWormExecutionStep` |
 | Durable state and transitions | [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | Run/Step lifecycle operations, `RecordExecutionStepOpened`, commands, coordinator leases, mutation attempts, isolation, recovery claims |
-| Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/position_cash_outs.sql](../../../internal/wormtrading/store/queries/position_cash_outs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, mandatory-guard schema reset, Open Position completion evidence, one-active-Run constraint, sorted Wallet advisory locks, Cash-Out interlock, recovery selection, consumed-plan retention |
+| Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/migrations/000011_wallet_selections.sql](../../../internal/wormtrading/store/migrations/000011_wallet_selections.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/position_cash_outs.sql](../../../internal/wormtrading/store/queries/position_cash_outs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, source-plan Wallet-selection revision, Open Position completion evidence, one-active-Run constraint, sorted Wallet advisory locks, Cash-Out interlock, recovery selection, consumed-plan retention |
 | Batch Wallet admission | [internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql](../../../internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql), [internal/wormtrading/store/queries/position_cash_out_batches.sql](../../../internal/wormtrading/store/queries/position_cash_out_batches.sql) | durable batch Wallet locks and the reciprocal Run admission check in the shared advisory-lock namespace |
 | Stateless Worm Web protocol stages | [util/worm/web_market_position_stages.go](../../../util/worm/web_market_position_stages.go), [util/worm/web_signing_validation.go](../../../util/worm/web_signing_validation.go), [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/README.md](../../../util/worm/README.md) | `AuthenticateWebWallet`, `PrepareWebMarketPositionOpen`, `DispatchWebMarketPositionOpen`, `ObserveWebPositionRequest`, `InspectWebPositionRequestTransaction`, `PrepareWebPositionFinalize`, `DispatchWebPositionFinalize`, typed transport/API/edge errors |
 | Capability-scoped Wallet signer | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `WormExecutionSignerService`, `SignWormWebSignInMessage`, `SignWormPositionRequestTransaction`, independent Bearer dispatch |
@@ -71,7 +77,8 @@ interactive Worm Trading READ_WRITE browser
   -> usable READY preview: Prepare live execution
   -> API Server derives account/session/access binding
   -> Worm Trading transaction
-       -> freeze Plan v4 digest + Wallets + items + every Step
+       -> under sorted Wallet locks require the current selection revision/membership
+       -> freeze selection-bound Plan v5 digest + Wallets + items + every Step
        -> lock source Combination and selected Wallets
        -> sorted per-Wallet advisory locks reject active Cash Out
        -> AWAITING_AUTHORIZATION
@@ -160,12 +167,15 @@ empty state and does not replace the successfully loaded empty Run history.
 1. A write-capable Preview Review exposes `Prepare live execution` only for a
    non-expired READY plan with no usability code and at least one actionable
    Step. The POST sends the plan UUID, a fresh command UUID, and the frozen
-   combination revision. It performs no provider call, login, signing, Open, or
+   combination revision. The store loads the plan's frozen Wallet-selection
+   revision. Creation performs no provider call, login, signing, Open, or
    Finalize.
-2. `CreateExecutionRun` locks the owner plan, requires the exact READY source,
-   current expiry and revision, verifies its complete Wallet-major Step set,
+2. `CreateExecutionRun` locks the owner plan, then uses the shared sorted Wallet
+   locks to require the exact READY source, current expiry, combination revision, and
+   frozen selection revision/membership, verifies its complete Wallet-major Step set,
    and rejects a plan already consumed by another Run. It computes the
-   version-four plan digest from the immutable plan and steps, snapshots
+   version-five plan digest from the immutable plan, frozen Wallet-selection
+   revision, and steps, snapshots
    Wallets and items, and creates one
    Run Step per preview Step. Preview actionable Steps become `PENDING`; every
    preview blocker, including `MARKET_POSITION_EXISTS` and
@@ -396,7 +406,7 @@ defines the current development-data boundary: Up truncates the execution plan
 graph with `CASCADE` and removes the superseded policy/warning columns from
 Preview and Run tables. Down recreates only empty column structure and cannot
 recover the truncated Preview or Run records. New Runs therefore always use the
-mandatory-guard contract and plan digest version four.
+mandatory-guard contract and selection-bound plan digest version five.
 
 No execution table stores a Wallet private key, Worm HMAC plaintext, Web JWT,
 Google token/code, Phantom signature, sign-in signature, transaction bytes,
@@ -444,7 +454,8 @@ Worm Web execution is fixed to `https://api.worm.wtf/api`, Origin and Referer
 environment variable. The Web client bounds responses to 64 KiB and does not
 retry. Coordinator lease length is 30 seconds; the UI heartbeat cadence is 10
 seconds and its Run polling cadence is 1.5 seconds. Execution list/Step pages
-accept at most 100 rows. Plan v4 binds the immutable plan and Steps, fixes
+accept at most 100 rows. Plan v5 binds the immutable plan, frozen
+Wallet-selection revision, and Steps, fixes
 Polymarket at 5 USDC, Hyperliquid at 1
 USDC, all Steps at `1x`, and every request at no more than 10 USDC funds.
 
@@ -467,6 +478,10 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
   batch Wallet lock cannot enter the Run; the shared advisory-lock transaction
   prevents a create race. The reciprocal single- and batch-Cash-Out boundaries
   reject every Wallet held by an unfinished Run.
+- Run creation consumes only a preview whose Wallet-selection revision and
+  membership remain current. After creation, later selection changes neither
+  hide nor invalidate the immutable Run; active Run Wallet locks prevent unsafe
+  removal, and terminal history remains owner-readable.
 - Wallet and item order never change after Run creation. Only the next
   server-projected Wallet-major `PENDING` ordinal can be claimed, and the
   backend never automatically claims the following Step.
@@ -505,7 +520,8 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
 
 ## Failure Recovery
 
-Invalid UUIDs, JSON, Origin, access, owner, revision, stale/expired plan,
+Invalid UUIDs, JSON, Origin, access, owner, revision, changed Wallet selection,
+stale/expired plan,
 zero-actionable preview, already consumed plan, active owner Run, changed Wallet
 connection, locked Combination/Wallet, non-terminal single Cash Out or batch
 Wallet lock on any selected Wallet, or unresolved isolation fail before a
@@ -569,6 +585,8 @@ include Run/Step UUIDs, frozen safe Wallet and market presentation, state,
 revision, counts, allowed actions, current and next ordinals, proof kind,
 coordinator state/expiry, bounded reason codes, numeric Worm request ID,
 provider/order state, lifecycle timestamps, and completed-position evidence.
+They remain readable after later Wallet-selection revisions because the frozen
+Run is durable history rather than a projection of the current Assets set.
 Completion projection is
 `completionSource=OPEN_POSITION`, required `completionPositionPubkey`, optional
 `completionPositionRequestPubkey`, and required Unix-second
@@ -610,7 +628,10 @@ logs and the durable Run projection.
 
 ## Change Checklist
 
-- [ ] Plan consumption, version-four digest, immutable snapshots, one-Run constraints, Combination/Wallet locks, and the bidirectional Cash-Out Wallet interlock remain current.
+- [ ] Plan consumption, selection-bound version-five digest, immutable snapshots, one-Run constraints, Combination/Wallet locks, and the bidirectional Cash-Out Wallet interlock remain current.
+- [ ] Run admission requires the preview's current Wallet-selection revision;
+  later selection changes cannot hide immutable Run detail or bypass active
+  Wallet locks.
 - [ ] Interactive READ/READ_WRITE, exact-origin, owner, Session, access-revision, and API-Key boundaries remain current.
 - [ ] Google, Phantom, and development proof bindings and trust disclosure remain current.
 - [ ] Coordinator token/heartbeat and explicit browser-led Wallet-major scheduling remain current.

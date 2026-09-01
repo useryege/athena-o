@@ -2,9 +2,11 @@
 
 ## Scope
 
-Worm Trading owns the process boundary that observes the current account's
-custodial Solana wallets, projects their connection inventory, and connects
-those wallets to Worm's official HMAC API.
+Worm Trading owns the process boundary that persists each account's ordered
+desired set of zero through 20 custodial Solana Wallets, observes only that
+selected set on the main Assets surface, and reconciles those Wallets with
+Worm's official HMAC API. The complete owner Solana inventory remains available
+only inside interactive selection management.
 It returns confirmed native SOL and Circle native USDC balances, stores
 revocable Worm API credentials, reads open margin positions and non-terminal
 position requests, and exposes independent Solana, credential-store, and Worm
@@ -24,7 +26,7 @@ time Open/finalize/reconciliation workflow, and permanent execution history.
 It also owns the independent Assets Cash-Out operation: one exact HMAC position
 pubkey, a fresh operation-bound proof, one whole-position market Close, durable
 at-most-once dispatch, exact-position observation, and Run/Cash-Out Wallet
-isolation. Assets can additionally freeze all positions for up to 100 selected
+isolation. Assets can additionally freeze all positions for up to 20 selected
 Wallets into one durable batch, execute those existing single-position
 operations strictly Wallet-major, and require a newer, strictly higher
 confirmed native-USDC observation before advancing.
@@ -56,10 +58,12 @@ DELETE after a durable checkpoint, and observe only that pubkey for completion.
 It does not use the numeric Worm Web `position_id`, Web JWT, or Wallet signing.
 
 The browser exposes Worm Trading as one parent navigation item with Assets,
-Combinations, and Executions children. `/worm-trading` is the Assets observation page for
-balances, full-account automatic connection bootstrap, open positions,
+Combinations, and Executions children. `/worm-trading` is the selected-Wallet
+Assets observation page for balances, desired-selection reconciliation, open positions,
 in-flight requests, and individually confirmed whole-position Cash Out for
-write-capable interactive users. It also provides cross-page Wallet selection,
+write-capable interactive users. An account without persisted configuration sees
+only a setup explanation and the selection-management action; no Wallet is
+implicitly selected or connected. Assets also provides cross-page Wallet selection,
 authoritative batch review, serial progress, balance evidence, and manual
 Pause/Continue/Terminate/Check controls. `/worm-trading/combinations` lists the current account's
 saved templates; `/new` and `/{id}/edit` build or inspect one template from
@@ -81,6 +85,7 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/position_cash_outs.go](../../../internal/wormtrading/position_cash_outs.go), [internal/wormtrading/position_cash_out_worker.go](../../../internal/wormtrading/position_cash_out_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands and worker, position Cash-Out commands and worker recovery |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
 | Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/position_cash_outs.go](../../../internal/wormtrading/store/position_cash_outs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, immutable Run state, Cash-Out operation/authorization/command/attempt state, Wallet advisory locking, and bidirectional Run/Cash-Out isolation |
+| Owner Wallet selection and retirement | [internal/server/worm_wallet_selection.go](../../../internal/server/worm_wallet_selection.go), [internal/wormtrading/wallet_selections.go](../../../internal/wormtrading/wallet_selections.go), [internal/wormtrading/store/wallet_selections.go](../../../internal/wormtrading/store/wallet_selections.go), [internal/wormtrading/store/migrations/000011_wallet_selections.sql](../../../internal/wormtrading/store/migrations/000011_wallet_selections.sql), [internal/wormtrading/store/queries/wallet_selections.sql](../../../internal/wormtrading/store/queries/wallet_selections.sql) | `registerWormWalletSelectionHandlers`, `GetWalletSelection`, `ReplaceWalletSelection`, `InspectWalletSelectionCandidates`, `worm_trading_wallet_selections`, ordered selection items and retirements, zero-through-20 constraint, revision CAS, removal-first reconciliation |
 | Batch Cash-Out state and worker | [internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql](../../../internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql), [internal/wormtrading/store/position_cash_out_batches.go](../../../internal/wormtrading/store/position_cash_out_batches.go), [internal/wormtrading/position_cash_out_batches.go](../../../internal/wormtrading/position_cash_out_batches.go), [internal/wormtrading/position_cash_out_batch_worker.go](../../../internal/wormtrading/position_cash_out_batch_worker.go) | ordered freeze, durable Wallet locks, serial child activation, atomic baseline/dispatch, confirmed-USDC gate and recovery |
 | Credential encryption and official client | [internal/wormtrading/credential_crypto.go](../../../internal/wormtrading/credential_crypto.go), [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `CredentialEncryptionKeyFromPassphrase`, `credentialCipher`, `NewOfficialWormAPIClientFactory`, HMAC headers |
 | Connection and revocation lifecycle | [internal/wormtrading/worm_connections.go](../../../internal/wormtrading/worm_connections.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/store/connections.go](../../../internal/wormtrading/store/connections.go), [internal/wormtrading/store/credentials.go](../../../internal/wormtrading/store/credentials.go), [internal/wormtrading/store/maintenance.go](../../../internal/wormtrading/store/maintenance.go) | `PrepareWormWalletConnection`, `CompleteWormWalletConnection`, `DisconnectWormWallet`, `revokeStoredCredential`, `revokePendingCredentials`, `MarkReconnectRequired`, `MarkCredentialRevocationFailed`, `ExpireConnectionAttempts` |
@@ -103,18 +108,21 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 ## Architecture
 
 For Assets observations and credential management, Wallet remains the only
-ownership source. Worm Trading trusts only ordered `{wallet_id,address}`
-references supplied by the API Server and has no duplicated Wallet account
-model. The activity request now also carries the API-Server-derived current
-account UUID solely to join owner-scoped active Cash-Out/Run state into the
-position action projection; credential and provider activity rows remain keyed
-by Wallet ID/address and persist no owner:
+ownership source. Worm Trading persists only an owner-scoped desired selection,
+its revision, ordered safe Wallet identities, and retirement work; that snapshot
+does not replace Wallet ownership. Assets trusts the selection rows only after
+the API Server resolves them against the current owner. The activity request
+also carries the API-Server-derived current account UUID to join owner-scoped
+active Cash-Out/Run state into the position action projection:
 
 ```text
 login session / enabled API Key
   -> API Server: authenticate + require worm_trading READ
-  -> Wallet: ListWallets(owner=current account, type=SOLANA, requested page)
-  -> Worm Trading(owner=current account only for Cash-Out action overlay)
+  -> Worm Trading: GetWalletSelection(owner=current account)
+       -> not configured: selection summary only; no Wallet/provider reads
+       -> configured: ordered selected IDs/addresses, maximum 20
+  -> Wallet: resolve selected Wallets for the current owner and require SOLANA
+  -> Worm Trading(owner=current account)
        -> Solana mainnet RPC: SOL + fixed-mint USDC
        -> credential store: connection + encrypted active HMAC credential
        -> https://api.worm.wtf: open positions + in-flight requests
@@ -123,8 +131,9 @@ login session / enabled API Key
 ```
 
 The browser cannot supply an owner, wallet address, Worm endpoint, credential,
-or cursor. The API Server rejects any missing, duplicated, reordered, or
-mismatched internal result before attaching remark and avatar presentation.
+or selection membership to these reads. The API Server rejects any missing,
+duplicated, reordered, no-longer-owned, non-Solana, or mismatched internal result
+before attaching remark and avatar presentation.
 `worm_trading:READ` grants this owner-scoped projection to an interactive login
 or enabled Athena API Key.
 
@@ -141,11 +150,35 @@ interactive login + worm_trading READ_WRITE + exact origin + Worm-only lease
 ```
 
 An outcome-unknown connection stays outside ordinary management. Automatic
-bootstrap and the normal connect, reconnect, and disconnect forms cannot clear
+selection reconciliation and the normal connect, reconnect, and disconnect forms cannot clear
 its lock. An interactive write-capable owner may instead acknowledge that an
 untracked remote key might still be active and call the dedicated regenerate
 form. Regeneration creates and activates a new credential without listing or
 revoking the unknown remote key.
+
+Before a selection replacement commits, the Worm Trading selection service
+explicitly inspects every requested removal. `InspectWalletSelectionCandidates` combines durable
+Run, Cash-Out, isolation, and connection blockers with complete HMAC position
+and request pagination. Any blocker, unavailable or ambiguous result, or
+revision/correlation drift rejects the whole PUT and leaves the prior selection
+unchanged. Under the same sorted Wallet advisory-lock namespace used by Run and
+Cash Out, the store repeats durable blockers before the selection CAS.
+Successfully admitted removals that still own managed connection, credential,
+or attempt state become durable retirements. The reconciler disconnects and
+revokes those retirements before connecting additions; a failed cleanup leaves
+the retirement visible and occupying a managed slot. Selected plus retiring
+managed connections therefore never exceed 20. New Preview, Run,
+position-open, and Cash-Out admission is current-selection-only; durable
+historical detail remains owner-readable after revisions change.
+
+Removal inspection returns one stable reason when it cannot admit a Wallet:
+`EXECUTION_RUN_ACTIVE`, `POSITION_CASH_OUT_ACTIVE`,
+`POSITION_CASH_OUT_BATCH_ACTIVE`, `EXECUTION_ISOLATION_ACTIVE`,
+`CONNECTION_ATTEMPT_ACTIVE`, `CONNECT_OUTCOME_UNKNOWN`,
+`OPEN_POSITION_ACTIVE`, `IN_FLIGHT_REQUEST_ACTIVE`,
+`CREDENTIAL_UNAVAILABLE`, `RECONNECT_REQUIRED`, or
+`REMOVAL_CHECK_UNAVAILABLE`. Only an item with `removal_allowed=true` and no
+reason may leave the selected set.
 
 The management handlers are outside public gRPC, grpc-gateway generation, and
 Swagger. API Keys can read connection and activity projections but cannot
@@ -156,24 +189,29 @@ Solana SIWS primitives. External-auth mode uses the configured public origin;
 disabled-auth Worm management fixes the accepted Origin to
 `http://localhost:4000`.
 
-Before mutation, the Assets browser obtains the complete management inventory
-through paged
+Selection management obtains the complete owner Solana inventory through paged
 `GET /api/v1/worm-trading/wallet-connections?page={page}&pageSize={pageSize}`
 requests. This native collection resource requires an interactive credential
-and Worm Trading `READ_WRITE`, accepts no owner, wallet reference, address, or
-type from the browser, and needs neither a Worm lease nor the mutation Origin
-header because it is read-only. The API Server pages only the current owner's
-Solana wallets through Wallet and sends
+and Worm Trading `READ_WRITE`, accepts no owner, address, or type from the
+browser, and needs neither a Worm lease nor the mutation Origin header because
+it is read-only. The API Server pages only the current owner's Solana wallets
+through Wallet and sends
 at most 100 ordered `{wallet_id,address}` references to internal
-`BatchGetWalletConnections`. Worm Trading uses the existing connection-snapshot
-store projection, synthesizes `NOT_CONNECTED` for missing rows, and performs no
-Worm provider request, credential decryption, or database write. The SQL
-snapshot may load encrypted active-credential columns as part of that existing
-store model, but this RPC never decrypts, returns, or otherwise exposes them.
-The API Server rejects mismatched count, order, ID, address, state, or
-duplicates before attaching safe Wallet presentation. This inventory resource
+`BatchGetWalletConnections` and `InspectWalletSelectionCandidates`.
+`BatchGetWalletConnections` is store-only and synthesizes `NOT_CONNECTED` for
+missing rows without decrypting credentials or writing the database. The
+explicit inspection combines durable blockers with complete provider exposure
+reads; for an active credential, Worm Trading decrypts it only around those
+bounded HMAC reads and performs no provider mutation. The API Server rejects
+mismatched count, order, ID, address, state, inspection revision/result, or
+duplicates before attaching safe Wallet presentation and removal status. This inventory resource
 and every mutation handler remain outside public gRPC, grpc-gateway generation,
-and Swagger.
+and Swagger. The adjacent owner-scoped selection resource distinguishes an
+absent configuration (`configured=false`, revision zero) from an explicitly
+saved empty selection, exposes selected items and outstanding retirements, and
+replaces the ordered set only through an expected-revision CAS. Saving zero
+through 20 unique owned Solana Wallet IDs is the sole way to change desired
+connection membership.
 
 Saved combinations use an independent, interactive-only native facade:
 
@@ -364,12 +402,31 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    serialize connect, reconnect, disconnect, and cleanup work. Database partial
    unique indexes additionally allow only one active credential and one active
    connection attempt for a wallet.
-4. `GET /api/v1/worm-trading/wallet-balances` lists one owner-scoped Solana
-   Wallet page and sends only ordered wallet references to Worm Trading. An
-   empty page returns without a service or provider call. The adapter preserves
+4. `GET /api/v1/worm-trading/wallet-balances` loads the owner-scoped persisted
+   selection and lists one page from its ordered zero-through-20 Wallet set. An
+   unconfigured or empty selection returns its selection summary and no
+   Wallet/provider observations. Otherwise the API Server re-resolves the
+   selected identities as current owned Solana Wallets and sends only those
+   ordered references to Worm Trading. The adapter preserves
    its fixed mainnet, Circle USDC, per-asset failure, retry, concurrency,
    singleflight, zero-balance, and 12-second aggregate semantics.
-5. `GET /api/v1/worm-trading/wallet-connections` accepts one-based pagination
+5. `GET /api/v1/worm-trading/wallet-selection` returns `configured`, revision,
+   ordered selected items, outstanding retirements, update time, and fixed
+   maximum 20 to an interactive `READ` credential. Same-origin interactive
+   `READ_WRITE` `PUT` accepts `expectedRevision` and zero through 20 unique
+   Wallet IDs, resolves every ID through the current owner's Solana inventory,
+   and identifies removed Wallets. Worm Trading invokes
+   `InspectWalletSelectionCandidates`, which returns
+   one correlated `WalletSelectionCandidateInspection` per removal after the
+   durable blocker and complete HMAC exposure checks; any denied or incomplete
+   inspection rejects the whole replacement. The store repeats durable blockers
+   under sorted Wallet advisory locks, then atomically creates or CAS-replaces
+   the ordered selection. Removed connected/credential-bearing items become
+   retirements and reselected items leave retirement. On the first save, the API
+   Server also scans the complete owner inventory and records any pre-existing
+   managed but unselected connection as a retirement; no legacy connection is
+   silently adopted into the desired set. The separate
+   `GET /api/v1/worm-trading/wallet-connections` accepts one-based pagination
    with default and maximum page size 100. It requires an interactive login and
    Worm Trading `READ_WRITE`, but no Worm lease or Origin header. The API Server
    lists the current owner's Solana Wallet page and calls
@@ -377,7 +434,9 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    That RPC validates a non-empty, unique set of at most 100 references and
    returns store-only snapshots in request order, including synthetic
    `NOT_CONNECTED` items for wallets without connection rows. The API Server
-   repeats strict count, ID, address, state, and order validation and returns
+   also calls `InspectWalletSelectionCandidates` for the same ordered page to
+   project fail-closed removal availability and reason. It repeats strict count,
+   ID, address, state, inspection revision/result, and order validation and returns
    explicit `items`, `total`, `page`, `pageSize`, and `fetchedAt` JSON fields
    under `Cache-Control: no-store, private`. An empty owner page returns an
    explicit empty array without an internal service call.
@@ -385,7 +444,8 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    form, and its `:regenerate` form require an exact same-origin interactive
    request,
    `worm_trading:READ_WRITE`, an unexpired `worm.api_credential.manage` lease,
-   and an owner-scoped Solana Wallet row. The browser sends only the wallet ID;
+   current selection membership, and an owner-scoped Solana Wallet row. The
+   browser sends only the wallet ID;
    address and account UUID come from server-side state. Regenerate additionally
    requires JSON `{"acknowledgeUnknownCredentialMayRemain":true}` and is valid
    only for `RECONNECT_REQUIRED` with `CONNECT_OUTCOME_UNKNOWN`; it does not
@@ -396,8 +456,13 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    `Create Worm API credential | Wallet: {address} | Nonce: {nonce}`, and stores
    the challenge, SHA-256 digest, expiry, previous connection state, and
    `CONNECT`, `RECONNECT`, or `REGENERATE` attempt kind before returning it
-   internally to the API Server. A regenerate attempt changes the connection to
-   `CONNECTING` while retaining the outcome-unknown warning.
+   internally to the API Server. Attempt admission takes the Wallet advisory
+   lock and locks the owner selection header, then repeats current membership
+   and managed-slot counting in the same transaction. This serializes prepares
+   for different Wallets of one owner; a new target cannot take a twenty-first
+   slot and receives `WALLET_CONNECTION_CAPACITY_PENDING` until retirement frees
+   capacity. A regenerate attempt changes the connection to `CONNECTING` while
+   retaining the outcome-unknown warning.
 8. `SignWormAuthChallenge` repeats Wallet owner lookup, requires `SOLANA`, checks
    the expected address, validates the exact message, decrypts the key, verifies
    its derived address, and returns only the hexadecimal Ed25519 signature and
@@ -413,7 +478,7 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    retried. For connect and ordinary reconnect, a transport timeout,
    unavailable or invalid response, empty returned credential, or indeterminate
    local activation commit is recorded as `CONNECT_OUTCOME_UNKNOWN`. The warning
-   durably blocks automatic bootstrap and ordinary connect, reconnect, and
+   durably blocks automatic selection reconciliation and ordinary connect, reconnect, and
    disconnect. Only the acknowledged regenerate form may proceed from that
    locked state.
 10. A returned API key and secret are independently encrypted before the active
@@ -435,18 +500,36 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    provider or commit result, restores `RECONNECT_REQUIRED` with
    `CONNECT_OUTCOME_UNKNOWN`; the original `OUTCOME_UNKNOWN` attempt remains as
    an audit record.
-11. `DELETE /api/v1/worm-trading/wallet-connections/{walletId}` marks the
-    connection `DISCONNECTING` and revokes every stored credential. A successful
+11. A removed Wallet is reconciled as a durable retirement before any newly
+    selected Wallet is connected. Under the shared sorted Wallet advisory-lock
+    namespace, retirement rejects an active Run, non-terminal single Cash Out,
+    batch Wallet lock, unresolved execution isolation, active connection
+    attempt, or outcome-unknown credential. It then completely pages HMAC
+    positions and non-terminal requests; any exposure, incomplete read, or
+    provider ambiguity keeps retirement pending. Only a clean retirement invokes
+    credential disconnection, marks the connection `DISCONNECTING`, and revokes
+    every stored credential. A successful
     response or remote 404 deletes that credential; only after none remain does
     the connection become `NOT_CONNECTED`. Temporary failures retain ciphertext
     for retry. Authentication rejection preserves the credential and exposes
     `REVOCATION_REQUIRED`; it never pretends the remote key was removed. The
-    browser must explicitly retry DELETE for disconnect failures; background
-    cleanup does not resolve them. This operation does not cancel a request or
-    close a position.
-12. `GET /api/v1/worm-trading/wallet-activity` paginates current-account Solana
-    wallets with default and maximum page size 20. The API Server sends the page
-    as ordered references plus the server-derived account UUID and applies the
+    retirement remains visible for retry until every credential is gone and the
+    connection becomes `NOT_CONNECTED`. Provider exposure is checked again
+    immediately before the first revocation dispatch; an explicit retry from
+    durable `DISCONNECTING` or `REVOCATION_REQUIRED` resumes stored credential
+    revocation rather than attempting an HMAC read with a credential that has
+    already left `ACTIVE`. Only after cleanup completes may reconciliation
+    consume the released slot for an addition. This operation does not cancel a
+    request or close a position.
+    A terminal connection attempt may leave a diagnostic warning on an otherwise
+    clean `NOT_CONNECTED` row. When no active credential, active attempt,
+    outcome-unknown marker, or other durable blocker remains, removal treats
+    that warning as local cleanup residue; retirement clears it without
+    pretending that provider exposure was queried.
+12. `GET /api/v1/worm-trading/wallet-activity` paginates the current persisted
+    selected Wallet set with default and maximum page size 20. The API Server
+    re-resolves and sends the selected page as ordered references plus the
+    server-derived account UUID and applies the
     same strict correlation checks used for balances. Worm Trading uses that
     owner value only to project active Cash-Out/Run conflicts onto returned Open
     Positions. A wallet with no connection returns `NOT_CONNECTED` without a
@@ -483,26 +566,37 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     Combinations at `/worm-trading/combinations`, and Executions at
     `/worm-trading/executions`. All require Worm Trading
     `READ`; the Combinations native APIs additionally require an interactive
-    login. Assets loads status, balance, and activity snapshots independently.
+    login. Assets first loads the owner Wallet-selection summary. When
+    `configured=false`, the main surface renders only the setup explanation,
+    zero-through-20 limit, and `Choose wallets` action; it does not list or
+    connect every custodial Wallet. Once configured, Assets loads balances and
+    activity only for the ordered selected set. An explicitly saved empty set
+    remains configured and renders the normal Assets shell with `No wallets
+    selected` rather than reverting to first-use guidance.
     An open position without a liquidation price remains visible: Assets shows
     `No liquidation (1×)` when leverage is numerically one and `-` when leverage
-    is greater than one; a present price is shown unchanged. An interactive
-    `READ_WRITE` session additionally pages the complete connection inventory
-    into React memory on entry. Manual Refresh rediscovers that inventory
-    without itself replaying credential failures. Automatic bootstrap selects
-    only `NOT_CONNECTED` wallets and processes them in the stable Wallet order
-    with one credential creation in flight and a maximum start rate of five
-    wallets per minute. A valid existing Worm lease
+    is greater than one; a present price is shown unchanged. `Manage wallets`
+    opens an interactive modal that pages the complete owner Solana connection
+    inventory into React memory, supports search and All/Selected/Needs-attention
+    filters, and enforces the 20-Wallet count before the revision-CAS save.
+    Selection reconciliation handles pending removals first, then connects only
+    selected `NOT_CONNECTED` Wallets in stable selection order with one
+    credential creation in flight and a maximum start rate of five Wallets per
+    minute. A valid existing Worm lease
     permits silent continuation. A missing or expired lease pauses before the
     next mutation and presents one page-level Google, Solana, or development
-    authorization action; the queue is rebuilt from authoritative inventory
+    authorization action; the queue is rebuilt from authoritative selection and inventory
     after proof rather than stored in the browser. No prompt or redirect opens
     automatically.
-16. The Assets connection panel reports discovery, authorization, progress,
+16. The Assets connection panel reports selection revision, retirement,
+    authorization, progress,
     completion, pause, and partial-failure state above the balance surface. It
-    uses one polite live region, non-color status, responsive progress, and one
+    summarizes Selected, Connected, Waiting, and Needs attention, and uses one
+    polite live region, non-color status, responsive progress, and one
     context-appropriate action. Normal row-level Connect and Disconnect actions
-    do not exist. A `RECONNECT_REQUIRED` row retains confirmed manual Reconnect;
+    do not exist; desired membership changes only through `Manage wallets`.
+    A pending retirement remains under Needs attention until safe disconnect and
+    confirmed revocation complete. A `RECONNECT_REQUIRED` selected row retains confirmed manual Reconnect;
     `DISCONNECTING` and `REVOCATION_REQUIRED` retain confirmed credential
     cleanup through DELETE. `CONNECT_OUTCOME_UNKNOWN` stops automatic work and
     suppresses ordinary connect, reconnect, disconnect, and cleanup, but exposes
@@ -510,12 +604,12 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     confirmation explains that a new key will be created and used, the unknown
     remote key may remain active, Athena will neither list nor revoke that key,
     and no transaction or funds transfer is authorized; only the confirmed
-    action calls `:regenerate`. While the automatic queue runs, Refresh,
+    action calls `:regenerate`. While selection reconciliation runs, Refresh,
     Reconnect, regeneration, and cleanup are disabled. A completed or paused
     batch reloads the inventory and current activity once instead of performing
     a position read after every wallet. Successful regeneration reloads the
-    connection inventory, balances, and activity.
-    Assets also projects one safe Cash-Out action per Open Position only for an
+    connection inventory, selection, balances, and activity.
+    Assets also projects one safe Cash-Out action per selected-Wallet Open Position only for an
     interactive `READ_WRITE` user. Desktop fixes an Actions column at the right;
     compact cards use a full-width footer action. The confirmation freezes no
     browser-supplied market data: it displays Wallet, market, side, and shares
@@ -523,7 +617,8 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     close, Pending versus Closed, and the no-replay rule.
     `POST /api/v1/worm-trading/position-cash-outs` accepts only command UUID,
     Wallet ID, and exact HMAC position pubkey. The API Server resolves current-
-    account Solana ownership and Worm Trading performs a fresh exact GET before
+    account Solana ownership and current selection membership, and Worm Trading
+    performs a fresh exact GET before
     persisting the provider-derived target. An exact replayed CREATE command
     returns its existing operation before provider access. An active execution Run or another
     non-terminal Cash Out disables that Wallet before any provider mutation.
@@ -635,7 +730,8 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     combination revision. One transaction consumes a usable READY plan, copies
     its Wallet, market, and wallet-major Step snapshots, maps preview READY to `PENDING` and
     every preview terminal classification to `SKIPPED`, computes a
-    version-four plan digest, and creates `AWAITING_AUTHORIZATION`. One plan creates
+    selection-bound version-five plan digest, and creates
+    `AWAITING_AUTHORIZATION`. One plan creates
     at most one Run and one account has at most one non-terminal Run.
 27. Google, Phantom, or disabled-auth development proof records authorization
     for the exact Run, plan digest, account, Session-JTI digest, and current
@@ -727,6 +823,26 @@ secret remain inside Worm Trading memory and its encrypted database columns.
 
 ## State / Data
 
+Wallet-selection state is account-owned in the `worm_trading` database:
+
+- `worm_trading_wallet_selections` distinguishes absent configuration from an explicitly
+  saved empty set and stores owner UUID, positive CAS revision, selected count
+  constrained to zero through 20, and timestamps.
+- `worm_trading_wallet_selection_items` stores contiguous ordinals from one through 20,
+  unique owner/Wallet IDs and addresses, and selection time. These are safe
+  identity snapshots; Wallet remains ownership authority.
+- `worm_trading_wallet_retirements` stores removed Wallet/address snapshots, prior
+  ordinal, the revision that retired them, and timestamps until safe disconnect
+  and confirmed credential revocation finish. Reselecting the same Wallet
+  removes its retirement.
+
+Selection replacement is atomic, but remote provider revocation is not. The
+durable retirement bridge makes removal-first reconciliation restartable and
+prevents additions from exceeding the 20 managed-connection slots while old
+credentials remain active. A missing header means no desired Wallets, while the
+first explicit save imports any pre-existing managed-but-unselected connection
+only as retirement work, never as implicitly selected membership.
+
 The connection and credential tables in the `worm_trading` database contain no
 account UUID. Their durable correlation key is the globally assigned Wallet ID
 plus its canonical Solana address:
@@ -762,7 +878,8 @@ Saved combinations use two account-owned tables in the same database:
 
 Execution previews add four owner-scoped, cascading tables:
 
-- `worm_execution_plans` freezes source combination identity/revision, BUILDING,
+- `worm_execution_plans` freezes source combination identity/revision, exact
+  Wallet-selection revision, BUILDING,
   READY, or FAILED state, worker lease, progress/counts, exact-decimal totals,
   request/completion/expiry timestamps, and seven-day retention.
 - `worm_execution_plan_wallets` freezes ordered safe Wallet identity and later
@@ -775,12 +892,15 @@ Execution previews add four owner-scoped, cascading tables:
   each Wallet/item pair with stable reason and projected USDC before/after.
 
 Plan creation, worker claim, terminal completion, and cleanup are independent
-transactions. READY completion rechecks the exact source revision plus each
-Wallet address, CONNECTED state, and active credential version while locking
+transactions. READY completion rechecks the exact source and Wallet-selection
+revisions and membership plus each Wallet address, CONNECTED state, and active credential version while locking
 the relevant rows, then commits all Wallet/item observations, every step,
 reason aggregates, totals, and expiry atomically. A preview does not lock the
 source template after creation. READY usability is derived at read time from
-expiry, actionable-step count, and current source presence/revision.
+expiry, actionable-step count, current source presence/revision, and the current
+Wallet-selection revision. Selection drift yields `WALLET_SELECTION_CHANGED`;
+an unavailable selection authority yields `WALLET_SELECTION_UNAVAILABLE`. Both
+leave the plan readable but not usable.
 
 [Migration `000008_execution_mandatory_guards.sql`](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql)
 defines the current development-data boundary. Its Up migration truncates the
@@ -864,21 +984,25 @@ current availability. Last-trade prices and catalog fetch times are never stored
 in either combination table and never affect template revision.
 
 `CONNECT_OUTCOME_UNKNOWN` is also latched on the connection row. While present,
-the store rejects automatic prepare and ordinary connect, reconnect, and
+the store rejects automatic selection reconciliation and ordinary connect, reconnect, and
 disconnect mutations. It accepts only an explicitly flagged `REGENERATE`
 prepare from `RECONNECT_REQUIRED`, after the native API has recorded the user's
 risk acknowledgement. Success clears the warning by activating a newly created
 credential; every failure restores it. The unknown remote key remains outside
 Athena's credential store and is neither listed nor revoked.
 
-The native connection inventory is a transient owner-scoped projection, not a
-new durable model. Every item contains safe Wallet presentation plus connection
-state, bounded warning, and optional connection time. The response always
-materializes `items` and pagination fields, including `items=[]` and `total=0`
-for an account without Solana wallets. The browser retains the assembled
-inventory, per-batch attempted IDs, successes, failures, remaining count, and
-current wallet only in the mounted Assets page. It never persists the queue
-across a Google redirect or account, access, or route transition.
+The native connection inventory is a transient owner-scoped management
+projection over every owned Solana Wallet, distinct from the durable selection.
+Every item contains safe Wallet presentation plus connection state, bounded
+warning, and optional connection time. The selection resource separately
+returns the current revision, ordered members, and retirements. Each inventory
+item also carries the provider-backed, fail-closed removal availability/reason.
+Responses always materialize `items` and pagination fields, including
+`items=[]` and `total=0`
+for an account without Solana wallets. The browser retains only the assembled
+inventory and current reconciliation progress in the mounted Assets page. The
+desired set and retirement work live in PostgreSQL; browser state never becomes
+selection authority across a Google redirect or account, access, or route transition.
 
 For a connected wallet that retains an active credential, the public connection
 warning is an aggregate of all older credential rows, not merely the latest
@@ -943,9 +1067,15 @@ price/shares, and created time.
 No provider `message` or other signable payload is represented by either the
 internal or public contract.
 
+Balance and activity responses additionally expose the safe
+`WormWalletSelectionSummary`: configured flag, revision, selected count, fixed
+maximum 20, and update time. They do not expose owner UUID, retirements, or the
+full unselected inventory. Only the interactive selection resource projects
+ordered members and pending retirements.
+
 A wallet activity item is `COMPLETE` when both streams are available,
 `PARTIAL` when one is available, and `UNAVAILABLE` when neither is available.
-The page response returns the Wallet inventory total, page, fetch time, visible
+The page response returns the selected-Wallet total, page, fetch time, visible
 position/request counts, and aggregate status.
 
 ## Configuration
@@ -955,7 +1085,7 @@ position/request counts, and aggregate status.
 | `ATHENA_WORM_TRADING_LISTEN_ADDRESS` | Listener address; default `127.0.0.1`, Compose `0.0.0.0`. |
 | `ATHENA_WORM_TRADING_PORT` / `--port` | gRPC port; default `8090`. |
 | `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | API Server/service credential; required, whitespace-free, at least 32 bytes, and independent from Wallet credentials. |
-| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Worm-Trading-owned PostgreSQL database containing connection/credential lifecycle state, saved market combinations, execution previews, permanent execution Runs, and position Cash-Out operations. |
+| `ATHENA_WORM_TRADING_POSTGRES_DSN` | Worm-Trading-owned PostgreSQL database containing owner Wallet selections/retirements, connection/credential lifecycle state, saved market combinations, execution previews, permanent execution Runs, and position Cash-Out operations. |
 | `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY` | Required passphrase of at least 32 bytes used only to derive the Worm credential encryption key. Changing it makes stored credentials unreadable. |
 | `ATHENA_WORM_TRADING_SOLANA_RPC_URL` / `--solana-rpc-url` | Solana balance endpoint. Local command default is the official mainnet endpoint; Compose requires a deployment value. |
 | `ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT` / `--rpc-attempt-timeout` | Solana per-attempt timeout; default `4s`. |
@@ -1004,12 +1134,23 @@ Wallet-signing, price, shares, or partial-close setting.
   `READ_WRITE`, exact same origin, owner scope, and the independent five-minute
   Worm lease.
   API Keys are read-only for this capability.
-- The native full-account connection inventory requires an interactive
+- The full-account connection inventory exists only for interactive selection
+  management, requires an interactive
   credential and Worm Trading `READ_WRITE`, is owner-scoped and Solana-only,
-  and requires no Worm lease or Origin header because it never mutates or calls
-  the provider. API Keys and `READ`-only sessions cannot call it.
-- Automatic bootstrap has one credential mutation in flight, starts no more
-  than five wallets per minute, and never persists or blindly replays its queue.
+  and requires no Worm lease or Origin header. Its explicit provider-backed
+  removal inspection is read-only and never prepares, dispatches, or signs a
+  mutation. API Keys and `READ`-only sessions cannot call it.
+- Selection GET is interactive owner-scoped `READ`; replacement is interactive
+  `READ_WRITE`, exact-origin, owner-resolved, expected-revision CAS, and
+  zero-through-20. Neither consumes a Worm lease, and API Keys cannot call them.
+- The owner-scoped desired selection is explicit, revisioned, ordered, and
+  constrained to zero through 20. Missing configuration selects and connects
+  nothing; main Assets, Preview, new Run, and Cash-Out admission use only the
+  current selected set.
+- Selection reconciliation retires removed Wallets before connecting additions,
+  keeps no more than 20 managed connections, has one credential mutation in
+  flight, starts no more than five Wallets per minute, and never bypasses a
+  durable retirement or blindly replays browser state.
 - The official HMAC credential is encrypted before connection success is
   reported. Plain credentials, challenge, signature, and signable position
   message never enter browser state, public APIs, logs, or metrics.
@@ -1047,14 +1188,15 @@ Wallet-signing, price, shares, or partial-close setting.
   credential, signature, draft, submit, or other Worm mutation APIs.
 - Execution-plan native routes are interactive-only and owner-scoped. GET
   detail/steps requires `READ`; POST requires `READ_WRITE`, exact origin, exact
-  source revision, and API-Server-resolved ordered Solana Wallets. API Keys and
+  source and Wallet-selection revisions, and one through 20 API-Server-resolved
+  ordered currently selected Solana Wallets. API Keys and
   caller-selected owners, addresses, markets, sides, funds, or leverage are
   rejected.
 - Preview item order is the frozen combination order and Wallet order is the
   submitted order. Their Cartesian product is persisted strictly Wallet-major,
   with no business step-count limit beyond request, integer, provider, and
   storage bounds.
-- Only a current `CONNECTED` Wallet with the same active credential version may
+- Only a current selected `CONNECTED` Wallet with the same active credential version may
   enter a READY plan. Every market is refetched authoritatively and uses fixed
   backend funds no greater than 10 USDC at exactly `1x`.
 - At `1x`, Estimate user funds exactly equal collateral plus opening fee and
@@ -1077,8 +1219,12 @@ Wallet-signing, price, shares, or partial-close setting.
   order, position, or credential mutation.
 - One execution plan can create at most one permanent Run, one account can own
   at most one non-terminal Run, and a non-terminal Run locks its source
-  combination. The Run and version-four digest freeze the immutable Preview
+  combination. The Run and selection-bound version-five digest freeze the
+  immutable Preview
   intent. Only source-preview actionable Steps can mutate Worm.
+- Changing the selection makes an older Preview non-consumable but never hides
+  its owner-scoped detail. A Run already created from a valid Preview and all
+  Cash-Out/Batch history remain readable and recoverable from durable IDs.
 - Every live Run mutation is interactive `READ_WRITE`, exact-origin,
   current-account/revision bound, and unavailable to API Keys. Run authorization
   is bound to its immutable plan digest, Session-JTI digest, and access revision;
@@ -1152,7 +1298,7 @@ produces `CREDENTIAL_REVOCATION_PENDING`; only when no cleanup row remains does
 the attempt failure code become the fallback warning. An
 ambiguous create or activation-commit result moves the attempt to
 `OUTCOME_UNKNOWN` and the connection to `RECONNECT_REQUIRED` with the locked
-`CONNECT_OUTCOME_UNKNOWN` warning. Automatic bootstrap and ordinary connect,
+`CONNECT_OUTCOME_UNKNOWN` warning. Automatic selection reconciliation and ordinary connect,
 reconnect, and disconnect cannot clear or overwrite that state; only the
 acknowledged regenerate path may replace local credential authority while
 accepting that the unknown remote key may remain valid. A credential returned
@@ -1163,6 +1309,10 @@ credential.
 
 Disconnect preserves credentials across transport, timeout, rate-limit, server,
 and authentication failures and requires another explicit disconnect attempt.
+That retry resumes an existing `DISCONNECTING` or `REVOCATION_REQUIRED`
+retirement without repeating provider exposure inspection; the first dispatch
+already crossed the provider-backed safety boundary and the credential is no
+longer `ACTIVE`.
 Background cleanup handles reconnect-created `PENDING_REVOCATION` rows and stale
 `REVOKING` rows only while the connection is `CONNECTED`; the latter must be
 older than one Worm attempt timeout. It never selects explicit-disconnect
@@ -1176,15 +1326,28 @@ fresh risk confirmation and lease. A Redis outage blocks new management leases
 but does not erase stored credentials or prevent authorized read-only activity
 if the login/API Key request remains valid.
 
-Automatic bootstrap treats a missing or expired Worm lease as a local pause and
+Selection replacement never treats a requested removal as proof that it is safe
+to revoke credentials. A Run/Cash-Out/batch lock, unresolved isolation, open
+position, uncovered in-flight request, incomplete provider page, provider
+failure, or credential ambiguity rejects the whole replacement and preserves
+the previous selection. After a successful CAS, a disconnect or revocation
+failure preserves the retirement and blocks additions that would consume its
+connection slot. Restart reloads the retirement and continues removal-first
+reconciliation; it does not reconnect the removed Wallet or exceed 20 managed
+connections.
+The selection service rejects a replacement when inspection revision or item
+correlation drifts before the CAS, so a stale successful inspection cannot
+authorize removal from a newer selection.
+
+Automatic selection reconciliation treats a missing or expired Worm lease as a local pause and
 offers one new provider proof; it does not treat that stable reason as an
 expired Athena session. A definite wallet-local client error is recorded and
 the batch may continue to the next unattempted wallet. Login loss, permission or
 access-revision change, rate limiting, transport failure, or server/dependency
-failure stops the remaining queue to avoid a request storm. An explicit Retry
-first reloads the authoritative inventory and selects only wallets that are
-still `NOT_CONNECTED`; there is no automatic retry. An ambiguous credential
-creation stops the queue and is never retried by it.
+failure stops the remaining reconciliation to avoid a request storm. An explicit
+Retry first reloads the authoritative selection, retirements, and inventory and
+acts only on current work; there is no automatic retry. An ambiguous credential
+creation stops reconciliation and is never retried by it.
 `CONNECT_OUTCOME_UNKNOWN` remains locked against automatic work and ordinary
 connection controls until a write-capable interactive user explicitly confirms
 regeneration. Route, account, or permission transitions abort discovery and
@@ -1203,22 +1366,25 @@ the current combination. An edit-time catalog refresh failure retains the saved
 display snapshots for inspection; any subsequent save still undergoes complete
 server-side catalog refetch and validation.
 
-Execution-plan creation rejects stale combination revisions, foreign or invalid
-Wallets, and malformed order before committing BUILDING. A worker crash leaves
+Execution-plan creation rejects stale combination or Wallet-selection revisions,
+unselected, foreign, or invalid Wallets, more than 20 Wallets, and malformed
+order before committing BUILDING. A worker crash leaves
 the durable plan claimable after its lease expires; another worker may repeat
 only read-only preflight work. A completed provider rejection may classify one
 step, but incomplete catalog, connection, credential, balance, exposure page,
 Estimate, or internal response data fails the entire plan rather than exposing
-a partial READY result. Final source revision, Wallet connection, and active-
-credential drift prevent READY with distinct stable failure codes; a true lease
+a partial READY result. Final source and Wallet-selection revisions, Wallet
+connection, and active-credential drift prevent READY with distinct stable
+failure codes; a true lease
 loss leaves BUILDING for safe read-only reclaim. A terminal FAILED plan is immutable and retained for diagnosis;
 Re-run preview creates a new plan. READY is consumable for 15 minutes, then reads
 project it as EXPIRED. Deleted/changed sources and no-actionable-step plans
 remain readable with stable non-consumable codes. A bounded cleanup removes
 plans and cascading children after seven days.
 
-Run creation rejects an expired, unusable, stale, already-consumed, or owner-
-mismatched plan and leaves no partial snapshots or locks. Failed Google,
+Run creation rejects an expired, unusable, stale, selection-revision-changed,
+already-consumed, or owner-mismatched plan and leaves no partial snapshots or
+locks. Failed Google,
 Phantom, or development proof leaves the Run awaiting authorization. Session,
 access, permission, coordinator, or optimistic-revision failure prevents a new
 Step without changing a provider mutation already in progress.
@@ -1251,7 +1417,7 @@ request ID remains unknown. Shutdown waits for owned workers to settle or leave
 recoverable durable state; it never promotes an in-progress provider state to
 success.
 
-Cash-Out creation fails before mutation for foreign/non-Solana ownership,
+Cash-Out creation fails before mutation for unselected or foreign/non-Solana ownership,
 connection or credential drift, invalid exact-position data, an active Run, or
 another non-terminal Cash Out. Cancelled, expired, replayed, Session/access-
 mismatched, or intent-mismatched proof leaves Close undispatched; the
@@ -1354,7 +1520,14 @@ do not alter Solana-driven health.
 - [ ] Activity filters, first-page limit, concurrency, budget, deduplication, optional decimal-string values, and partial-failure semantics remain current.
 - [ ] Challenge, credential, signable message, raw response, and log exclusion boundaries remain current.
 - [ ] Runtime database, health/status, process wiring, production configuration, and reset guidance remain current.
-- [ ] Assets at `/worm-trading` keeps paced full-account automatic connection bootstrap responsive while exposing only exact-position, whole-position Cash Out to interactive write-capable users.
+- [ ] Owner selection remains explicit, persisted, revision-CAS, ordered, and
+  bounded to zero through 20; unconfigured Assets is guidance-only, while
+  configured Assets, Preview, new Runs, and Cash Out are selected-only.
+- [ ] Retirement checks all execution/Cash-Out locks, unresolved isolation, and
+  complete provider exposure; disconnect finishes before additions connect, and
+  actual managed connections never exceed 20.
+- [ ] Historical Preview, Run, single-Cash-Out, and batch detail remains
+  owner-readable after a selection revision, while stale Preview cannot create a Run.
 - [ ] Combinations routes remain interactive-only, owner-scoped, catalog-validated, exact-complement-priced, revisioned, and free of Wallet, estimate, signature, draft, or Worm mutation calls.
 - [ ] Execution Preview remains interactive-only, owner-scoped, asynchronously complete-or-failed, exact-revisioned, mandatory-guarded, partial-fill-tolerant, Wallet-major, 15-minute-expiring, seven-day-retained, and free of provider mutations or signing.
 - [ ] Execution Runs remain permanent, plan/owner/session/access bound, one-per-active-account, coordinator-exclusive, Wallet-major, and explicit-next-step only.

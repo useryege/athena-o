@@ -27,8 +27,10 @@ import {
     WormExecutionPlanWallet,
     WormMarketCombination,
     WormTradingWalletConnectionItem,
+    WormTradingWalletSelection,
     WormTradingWalletSummary
 } from '../../shared/services/worm-trading-service';
+import {MAXIMUM_WORM_TRADING_WALLETS} from '../../shared/services/worm-trading-service';
 import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {wormExecutionMandatoryGuardDefinitions} from './worm-execution-preflight';
 import {short} from '../../shared/pages/shared';
@@ -79,6 +81,7 @@ interface ExecutionPlanIntent {
     id: string;
     combinationId: string;
     combinationRevision: number;
+    walletSelectionRevision: number;
     walletIds: number[];
 }
 
@@ -87,6 +90,7 @@ const executionPlanIntent = (plan: WormExecutionPlan, accountId: string): Execut
     id: plan.id,
     combinationId: plan.combinationId,
     combinationRevision: plan.combinationRevision,
+    walletSelectionRevision: plan.walletSelectionRevision,
     walletIds: plan.wallets.map(wallet => wallet.wallet.walletId)
 });
 
@@ -96,6 +100,7 @@ const executionPlanMatchesIntent = (plan: WormExecutionPlan, intent: ExecutionPl
         plan.id === intent.id &&
         plan.combinationId === intent.combinationId &&
         plan.combinationRevision === intent.combinationRevision &&
+        plan.walletSelectionRevision === intent.walletSelectionRevision &&
         walletIds.length === intent.walletIds.length &&
         walletIds.every((walletId, index) => walletId === intent.walletIds[index])
     );
@@ -162,29 +167,115 @@ const WalletIdentity = (props: {wallet: WormTradingWalletSummary; compact?: bool
     </div>
 );
 
-const loadConnectionInventory = (): AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult> => {
+interface ConfiguredConnectionInventory extends ListWormTradingWalletConnectionsResult {
+    configured: boolean;
+    selectedWalletCount: number;
+    unavailableSelectedWalletCount: number;
+    selection: WormTradingWalletSelection;
+}
+
+const emptyWalletSelection = (): WormTradingWalletSelection => ({
+    configured: false,
+    revision: 0,
+    selectedItems: [],
+    retirements: [],
+    updatedAt: 0,
+    maximumWallets: MAXIMUM_WORM_TRADING_WALLETS
+});
+
+const loadConnectionInventory = (): AbortableWormTradingPromise<ConfiguredConnectionInventory> => {
+    let selectionRequest: AbortableWormTradingPromise<WormTradingWalletSelection> | undefined;
     let currentRequest: AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult> | undefined;
     let aborted = false;
-    const promise = (async () => {
+    const promise = (async (): Promise<ConfiguredConnectionInventory> => {
+        selectionRequest = services.wormTrading.getWalletSelection();
+        const selection = await selectionRequest;
+        if (aborted) {
+            throw new DOMException('The request was aborted.', 'AbortError');
+        }
+        if (!selection.configured || selection.selectedItems.length === 0) {
+            return {
+                items: [],
+                total: 0,
+                page: 1,
+                pageSize: connectionPageSize,
+                fetchedAt: 0,
+                selectionConfigured: selection.configured,
+                selectionRevision: selection.revision,
+                selectionUpdatedAt: selection.updatedAt,
+                maximumWallets: selection.maximumWallets,
+                configured: selection.configured,
+                selectedWalletCount: selection.selectedItems.length,
+                unavailableSelectedWalletCount: 0,
+                selection
+            };
+        }
         const items: WormTradingWalletConnectionItem[] = [];
+        const seenWalletIDs = new Set<number>();
+        const seenWalletAddresses = new Set<string>();
         let page = 1;
         let expectedTotal: number | undefined;
         let fetchedAt = 0;
         while (!aborted) {
             currentRequest = services.wormTrading.listWalletConnections(page, connectionPageSize);
             const response = await currentRequest;
+            if (
+                response.selectionConfigured !== selection.configured ||
+                response.selectionRevision !== selection.revision ||
+                response.selectionUpdatedAt !== selection.updatedAt ||
+                response.maximumWallets !== selection.maximumWallets
+            ) {
+                throw new Error('The saved Wallet selection changed while the connection inventory was loading. Refresh and try again.');
+            }
             if (expectedTotal === undefined) {
                 expectedTotal = response.total;
                 fetchedAt = response.fetchedAt;
             } else if (response.total !== expectedTotal) {
                 throw new Error('The Wallet inventory changed while it was loading. Refresh and try again.');
             }
-            items.push(...response.items);
+            for (const item of response.items) {
+                if (seenWalletIDs.has(item.wallet.walletId) || seenWalletAddresses.has(item.wallet.address)) {
+                    throw new Error('Worm Trading returned the same Wallet more than once. Refresh and try again.');
+                }
+                seenWalletIDs.add(item.wallet.walletId);
+                seenWalletAddresses.add(item.wallet.address);
+                items.push(item);
+            }
             if (items.length >= response.total) {
                 if (items.length !== response.total) {
                     throw new Error('Worm Trading returned an invalid Wallet inventory.');
                 }
-                return {items, total: response.total, page: 1, pageSize: connectionPageSize, fetchedAt};
+                const inventoryByWalletID = new Map(items.map(item => [item.wallet.walletId, item]));
+                const projectedSelectedItems = items.filter(item => item.selected).sort((left, right) => left.selectionOrdinal - right.selectionOrdinal);
+                if (
+                    projectedSelectedItems.length !== selection.selectedItems.length ||
+                    projectedSelectedItems.some((item, index) => {
+                        const selected = selection.selectedItems[index];
+                        return item.wallet.walletId !== selected.walletId || item.wallet.address !== selected.address || item.selectionOrdinal !== selected.ordinal;
+                    })
+                ) {
+                    throw new Error('Worm Trading returned a Wallet inventory that does not match the saved selection. Refresh and try again.');
+                }
+                const selectedItems = selection.selectedItems.flatMap(selected => {
+                    const item = inventoryByWalletID.get(selected.walletId);
+                    return item?.wallet.address === selected.address && item.selected && item.selectionOrdinal === selected.ordinal ? [item] : [];
+                });
+                const eligibleItems = selectedItems.filter(item => item.connection.state === 'CONNECTED');
+                return {
+                    items: eligibleItems,
+                    total: eligibleItems.length,
+                    page: 1,
+                    pageSize: connectionPageSize,
+                    fetchedAt,
+                    selectionConfigured: selection.configured,
+                    selectionRevision: selection.revision,
+                    selectionUpdatedAt: selection.updatedAt,
+                    maximumWallets: selection.maximumWallets,
+                    configured: selection.configured,
+                    selectedWalletCount: selection.selectedItems.length,
+                    unavailableSelectedWalletCount: selection.selectedItems.length - eligibleItems.length,
+                    selection
+                };
             }
             if (response.items.length === 0) {
                 throw new Error('Worm Trading returned an incomplete Wallet inventory.');
@@ -192,22 +283,32 @@ const loadConnectionInventory = (): AbortableWormTradingPromise<ListWormTradingW
             page += 1;
         }
         throw new DOMException('The request was aborted.', 'AbortError');
-    })() as AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult>;
+    })() as AbortableWormTradingPromise<ConfiguredConnectionInventory>;
     promise.abort = () => {
         aborted = true;
+        selectionRequest?.abort?.();
         currentRequest?.abort?.();
     };
     return promise;
 };
 
-const emptyConnectionInventory = (): AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult> => {
+const emptyConnectionInventory = (): AbortableWormTradingPromise<ConfiguredConnectionInventory> => {
+    const selection = emptyWalletSelection();
     const promise = Promise.resolve({
         items: [],
         total: 0,
         page: 1,
         pageSize: connectionPageSize,
-        fetchedAt: 0
-    }) as AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult>;
+        fetchedAt: 0,
+        selectionConfigured: false,
+        selectionRevision: 0,
+        selectionUpdatedAt: 0,
+        maximumWallets: selection.maximumWallets,
+        configured: false,
+        selectedWalletCount: 0,
+        unavailableSelectedWalletCount: 0,
+        selection
+    }) as AbortableWormTradingPromise<ConfiguredConnectionInventory>;
     promise.abort = () => undefined;
     return promise;
 };
@@ -245,14 +346,16 @@ const CombinationStep = (props: {combination: WormMarketCombination; onContinue:
     </section>
 );
 
-const WalletChoiceCard = (props: {item: WormTradingWalletConnectionItem; selected: boolean; onChange: (selected: boolean) => void}) => {
+const WalletChoiceCard = (props: {item: WormTradingWalletConnectionItem; selected: boolean; limitReached: boolean; onChange: (selected: boolean) => void}) => {
     const connected = props.item.connection.state === 'CONNECTED';
+    const disabled = !connected || (!props.selected && props.limitReached);
     return (
-        <label className={`worm-preview-wallet-choice${props.selected ? ' worm-preview-wallet-choice--selected' : ''}${connected ? '' : ' worm-preview-wallet-choice--disabled'}`}>
-            <Checkbox checked={props.selected} disabled={!connected} onChange={event => props.onChange(event.target.checked)} />
+        <label className={`worm-preview-wallet-choice${props.selected ? ' worm-preview-wallet-choice--selected' : ''}${disabled ? ' worm-preview-wallet-choice--disabled' : ''}`}>
+            <Checkbox checked={props.selected} disabled={disabled} onChange={event => props.onChange(event.target.checked)} />
             <WalletIdentity wallet={props.item.wallet} />
             <Tag color={connected ? 'green' : 'default'}>{connectionLabel(props.item.connection.state)}</Tag>
             {!connected && <small>Connect this Wallet on Assets before creating a preview.</small>}
+            {connected && !props.selected && props.limitReached && <small>Deselect another Wallet before adding this one.</small>}
         </label>
     );
 };
@@ -315,6 +418,10 @@ const SelectedWallets = (props: {items: WormTradingWalletConnectionItem[]; onMov
 
 const WalletsStep = (props: {
     inventory: WormTradingWalletConnectionItem[];
+    configured: boolean;
+    selectedWalletCount: number;
+    unavailableSelectedWalletCount: number;
+    maximumWallets: number;
     loading: boolean;
     error?: Error;
     selectedIDs: number[];
@@ -332,13 +439,14 @@ const WalletsStep = (props: {
         return item ? [item] : [];
     });
     const connectedItems = props.inventory.filter(item => item.connection.state === 'CONNECTED');
+    const limitReached = props.selectedIDs.length >= props.maximumWallets;
     const normalizedQuery = query.trim().toLowerCase();
     const visibleItems = props.inventory.filter(item =>
         [item.wallet.remark, item.wallet.address, String(item.wallet.walletId)].some(value => value.toLowerCase().includes(normalizedQuery))
     );
     const toggleWallet = (walletID: number, selected: boolean) => {
         if (selected) {
-            if (!selectedSet.has(walletID)) {
+            if (!selectedSet.has(walletID) && props.selectedIDs.length < props.maximumWallets) {
                 props.onSelectedIDsChange([...props.selectedIDs, walletID]);
             }
             return;
@@ -362,9 +470,9 @@ const WalletsStep = (props: {
                     <div className='worm-preview-section-heading'>
                         <div>
                             <Typography.Title id='worm-preview-wallets-heading' level={2}>
-                                Connected Wallets
+                                Selected and connected Wallets
                             </Typography.Title>
-                            <Typography.Text type='secondary'>Selection order becomes the Wallet execution order.</Typography.Text>
+                            <Typography.Text type='secondary'>Only Wallets saved on Assets are eligible. Selection order becomes the execution order.</Typography.Text>
                         </div>
                         <Space wrap={true}>
                             <Button
@@ -373,10 +481,13 @@ const WalletsStep = (props: {
                                 onClick={() =>
                                     props.onSelectedIDsChange([
                                         ...props.selectedIDs,
-                                        ...connectedItems.filter(item => !selectedSet.has(item.wallet.walletId)).map(item => item.wallet.walletId)
+                                        ...connectedItems
+                                            .filter(item => !selectedSet.has(item.wallet.walletId))
+                                            .slice(0, Math.max(0, props.maximumWallets - props.selectedIDs.length))
+                                            .map(item => item.wallet.walletId)
                                     ])
                                 }>
-                                Select all connected
+                                Select all eligible
                             </Button>
                             <Button size='small' disabled={props.selectedIDs.length === 0} onClick={() => props.onSelectedIDsChange([])}>
                                 Clear
@@ -403,15 +514,41 @@ const WalletsStep = (props: {
                             }
                         />
                     )}
-                    {!props.loading && !props.error && connectedItems.length === 0 && props.inventory.length > 0 && (
+                    {!props.loading && !props.error && props.selectedWalletCount === 0 && (
                         <Alert
                             type='warning'
                             showIcon={true}
-                            title='No connected Wallets'
-                            description='Connect at least one Solana Wallet on Assets before creating an execution preview.'
+                            title={props.configured ? 'No Worm Trading Wallets selected' : 'Worm Trading Wallets are not configured'}
+                            description='Choose and save at least one Wallet on Assets before creating an execution preview.'
                             action={
                                 <Button size='small' onClick={props.onOpenAssets}>
-                                    Go to Assets
+                                    Manage on Assets
+                                </Button>
+                            }
+                        />
+                    )}
+                    {!props.loading && !props.error && props.selectedWalletCount > 0 && connectedItems.length === 0 && (
+                        <Alert
+                            type='warning'
+                            showIcon={true}
+                            title='Selected Wallets need attention'
+                            description='None of the saved Wallets is currently connected. Review connection status on Assets.'
+                            action={
+                                <Button size='small' onClick={props.onOpenAssets}>
+                                    Review on Assets
+                                </Button>
+                            }
+                        />
+                    )}
+                    {!props.loading && !props.error && connectedItems.length > 0 && props.unavailableSelectedWalletCount > 0 && (
+                        <Alert
+                            type='info'
+                            showIcon={true}
+                            title={`${props.unavailableSelectedWalletCount} selected ${props.unavailableSelectedWalletCount === 1 ? 'Wallet is' : 'Wallets are'} unavailable`}
+                            description='Only selected Wallets with a confirmed connection are shown below.'
+                            action={
+                                <Button size='small' onClick={props.onOpenAssets}>
+                                    Review on Assets
                                 </Button>
                             }
                         />
@@ -420,18 +557,27 @@ const WalletsStep = (props: {
                         {props.loading ? (
                             Array.from({length: 4}, (_, index) => <Card key={index} loading={true} />)
                         ) : visibleItems.length === 0 ? (
-                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={props.inventory.length === 0 ? 'No Solana Wallets found.' : 'No Wallets match this search.'} />
+                            <Empty
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                description={props.inventory.length === 0 ? 'No selected and connected Wallets are eligible.' : 'No Wallets match this search.'}
+                            />
                         ) : (
                             visibleItems.map(item => (
                                 <WalletChoiceCard
                                     key={item.wallet.walletId}
                                     item={item}
                                     selected={selectedSet.has(item.wallet.walletId)}
+                                    limitReached={limitReached}
                                     onChange={selected => toggleWallet(item.wallet.walletId, selected)}
                                 />
                             ))
                         )}
                     </div>
+                    <Typography.Text className='worm-preview-live-status' role='status' aria-live='polite'>
+                        {limitReached
+                            ? `Maximum ${props.maximumWallets} Wallets selected. Deselect one before adding another.`
+                            : `${props.selectedIDs.length} of ${props.maximumWallets} Wallets selected.`}
+                    </Typography.Text>
                 </section>
                 <aside className='worm-preview-wallet-order-desktop'>{selectedSummary}</aside>
             </div>
@@ -439,7 +585,11 @@ const WalletsStep = (props: {
                 <Button icon={<ArrowLeftOutlined />} onClick={props.onBack}>
                     Combination
                 </Button>
-                <Button type='primary' icon={<ArrowRightOutlined />} disabled={props.selectedIDs.length === 0 || props.loading || Boolean(props.error)} onClick={props.onContinue}>
+                <Button
+                    type='primary'
+                    icon={<ArrowRightOutlined />}
+                    disabled={props.selectedIDs.length === 0 || props.selectedIDs.length > props.maximumWallets || props.loading || Boolean(props.error)}
+                    onClick={props.onContinue}>
                     Continue to checks
                 </Button>
             </div>
@@ -450,7 +600,10 @@ const WalletsStep = (props: {
                     <small>Wallets selected</small>
                 </span>
                 <Button onClick={() => setOrderOpen(true)}>Review order</Button>
-                <Button type='primary' disabled={props.selectedIDs.length === 0 || props.loading || Boolean(props.error)} onClick={props.onContinue}>
+                <Button
+                    type='primary'
+                    disabled={props.selectedIDs.length === 0 || props.selectedIDs.length > props.maximumWallets || props.loading || Boolean(props.error)}
+                    onClick={props.onContinue}>
                     Checks
                 </Button>
             </div>
@@ -631,7 +784,7 @@ const PlanSummary = (props: {plan: WormExecutionPlan}) => {
                 <div>
                     <Typography.Title level={2}>{props.plan.combinationName}</Typography.Title>
                     <Typography.Text type='secondary'>
-                        Revision {props.plan.combinationRevision} · Plan {short(props.plan.id, 10, 8)}
+                        Combination revision {props.plan.combinationRevision} · Wallet selection revision {props.plan.walletSelectionRevision} · Plan {short(props.plan.id, 10, 8)}
                     </Typography.Text>
                 </div>
                 <Tag color={presentationStatus.color}>{presentationStatus.label}</Tag>
@@ -867,6 +1020,7 @@ const ReviewStep = (props: {
     canWrite: boolean;
     canRerun: boolean;
     canPrepare: boolean;
+    walletSelectionChanged: boolean;
     onRetryStatus: () => void;
     onBack: () => void;
     onRerun: () => void;
@@ -908,6 +1062,14 @@ const ReviewStep = (props: {
                             Retry
                         </Button>
                     }
+                />
+            )}
+            {props.walletSelectionChanged && (
+                <Alert
+                    type='warning'
+                    showIcon={true}
+                    title='The saved Wallet selection changed after this preview was created'
+                    description='This immutable preview remains available for review, but it cannot be prepared as a live execution. Re-run it against the current saved Wallet selection.'
                 />
             )}
             <PlanChecksSummary
@@ -1105,7 +1267,13 @@ export const WormTradingExecutionPreviewPage = () => {
 
     const createPlan = async (walletIDs = selectedIDs, replacedPlanID = ''): Promise<'created' | 'conflict' | 'failed'> => {
         const source = combination.data;
-        if (!source || creating || createRequestRef.current || walletIDs.length === 0) {
+        const walletSelectionRevision = inventory.data?.selection.revision || 0;
+        if (!source || creating || createRequestRef.current || walletIDs.length === 0 || walletSelectionRevision < 1) {
+            return 'failed';
+        }
+        if (walletIDs.length > MAXIMUM_WORM_TRADING_WALLETS) {
+            ctx.notifications.error('Too many Wallets selected', `Execution Preview supports at most ${MAXIMUM_WORM_TRADING_WALLETS} Wallets.`);
+            setWorkflowStep(1);
             return 'failed';
         }
         setCreating(true);
@@ -1114,6 +1282,7 @@ export const WormTradingExecutionPreviewPage = () => {
         const request = services.wormTrading.createExecutionPlan({
             combinationId: source.id,
             expectedCombinationRevision: source.revision,
+            expectedWalletSelectionRevision: walletSelectionRevision,
             walletIds: walletIDs
         });
         createRequestRef.current = request;
@@ -1150,7 +1319,17 @@ export const WormTradingExecutionPreviewPage = () => {
                 return 'failed';
             }
             const details = requestErrorDetails(error);
-            if (details.status === 409) {
+            if (details.status === 409 && (details.message === 'WALLET_SELECTION_CHANGED' || details.reason === 'WALLET_SELECTION_CHANGED')) {
+                setWorkflowStep(1);
+                inventory.reload();
+                ctx.notifications.error('Worm wallet selection changed', 'Review the latest selected and connected Wallets before building another preview.');
+                return 'conflict';
+            } else if (details.status === 409 && details.code === 9) {
+                setWorkflowStep(1);
+                inventory.reload();
+                ctx.notifications.error('Wallets are no longer eligible', 'Review the latest selected and connected Wallets before building another preview.');
+                return 'conflict';
+            } else if (details.status === 409 && details.code === 10) {
                 setWorkflowStep(0);
                 combination.reload();
                 ctx.notifications.error('Combination changed', 'Review the latest combination revision before building another preview.');
@@ -1244,7 +1423,7 @@ export const WormTradingExecutionPreviewPage = () => {
             title='Worm Trading Execution Preview'
             subtitle={
                 canWrite
-                    ? 'Select connected Wallets and build a read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
+                    ? 'Select configured and connected Wallets and build a read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
                     : 'Review this read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
             }
             loading={workflowStep === 0 && combination.loading}
@@ -1270,6 +1449,10 @@ export const WormTradingExecutionPreviewPage = () => {
             {workflowStep === 1 && (
                 <WalletsStep
                     inventory={inventory.data?.items || []}
+                    configured={inventory.data?.configured || false}
+                    selectedWalletCount={inventory.data?.selectedWalletCount || 0}
+                    unavailableSelectedWalletCount={inventory.data?.unavailableSelectedWalletCount || 0}
+                    maximumWallets={inventory.data?.maximumWallets || MAXIMUM_WORM_TRADING_WALLETS}
                     loading={inventory.loading}
                     error={inventory.error}
                     selectedIDs={selectedIDs}
@@ -1292,7 +1475,15 @@ export const WormTradingExecutionPreviewPage = () => {
                     preparing={preparing}
                     canWrite={canWrite}
                     canRerun={canWrite && Boolean(combination.data && (plan?.wallets.length || selectedIDs.length))}
-                    canPrepare={canWrite && plan?.state === 'READY' && !plan.usabilityCode && plan.readyStepCount > 0 && plan.expiresAt * 1_000 > Date.now()}
+                    canPrepare={
+                        canWrite &&
+                        plan?.state === 'READY' &&
+                        !plan.usabilityCode &&
+                        plan.readyStepCount > 0 &&
+                        plan.expiresAt * 1_000 > Date.now() &&
+                        inventory.data?.selection.revision === plan.walletSelectionRevision
+                    }
+                    walletSelectionChanged={Boolean(canWrite && plan && inventory.data?.selection.configured && inventory.data.selection.revision !== plan.walletSelectionRevision)}
                     onRetryStatus={() => setPlanReload(value => value + 1)}
                     onBack={() => navigate('/worm-trading/combinations')}
                     onRerun={() => void rerunPlan()}

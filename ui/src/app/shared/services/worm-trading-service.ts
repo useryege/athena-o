@@ -8,10 +8,12 @@ export type AbortableWormTradingPromise<T> = Promise<T> & {abort?: () => void};
 export type WormTradingWalletBalanceStatus = 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
 export type WormTradingActivityStatus = 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
 export type WormWalletConnectionState = 'NOT_CONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECT_REQUIRED' | 'DISCONNECTING' | 'REVOCATION_REQUIRED';
+export type WormWalletConnectionPendingState = '' | 'CONNECT_PENDING' | 'DISCONNECT_PENDING';
 
 export const WORM_TRADING_LOGIN_SESSION_REQUIRED = 'WORM_TRADING_LOGIN_SESSION_REQUIRED';
 export const WORM_TRADING_REAUTH_REQUIRED = 'WORM_TRADING_REAUTH_REQUIRED';
 export const WORM_TRADING_REAUTH_UNAVAILABLE = 'WORM_TRADING_REAUTH_UNAVAILABLE';
+export const MAXIMUM_WORM_TRADING_WALLETS = 20;
 
 export interface WormTradingStatus {
     started: boolean;
@@ -74,6 +76,7 @@ export interface ListWormTradingWalletBalancesResult {
     network: string;
     commitment: string;
     fetchedAt: number;
+    walletSelection: WormTradingWalletSelectionSummary;
 }
 
 export interface WormWalletConnection {
@@ -85,6 +88,13 @@ export interface WormWalletConnection {
 export interface WormTradingWalletConnectionItem {
     wallet: WormTradingWalletSummary;
     connection: WormWalletConnection;
+    selected: boolean;
+    selectionOrdinal: number;
+    retirementPending: boolean;
+    removalAllowed: boolean;
+    removalReasonCode: string;
+    pendingState: WormWalletConnectionPendingState;
+    needsAttention: boolean;
 }
 
 export interface ListWormTradingWalletConnectionsResult {
@@ -93,6 +103,46 @@ export interface ListWormTradingWalletConnectionsResult {
     page: number;
     pageSize: number;
     fetchedAt: number;
+    selectionConfigured: boolean;
+    selectionRevision: number;
+    selectionUpdatedAt: number;
+    maximumWallets: number;
+}
+
+export interface WormTradingWalletSelectionSummary {
+    configured: boolean;
+    revision: number;
+    selectedCount: number;
+    maximumWallets: number;
+    updatedAt: number;
+}
+
+export interface WormTradingWalletSelectionItem {
+    ordinal: number;
+    walletId: number;
+    address: string;
+}
+
+export interface WormTradingWalletRetirement {
+    walletId: number;
+    address: string;
+    priorOrdinal: number;
+    retiredFromRevision: number;
+    retiredAt: number;
+}
+
+export interface WormTradingWalletSelection {
+    configured: boolean;
+    revision: number;
+    selectedItems: WormTradingWalletSelectionItem[];
+    retirements: WormTradingWalletRetirement[];
+    updatedAt: number;
+    maximumWallets: number;
+}
+
+export interface ReplaceWormTradingWalletSelectionInput {
+    expectedRevision: number;
+    walletIds: number[];
 }
 
 export interface WormMarketReference {
@@ -191,6 +241,7 @@ export interface ListWormTradingWalletActivityResult {
     openPositionCount: number;
     inFlightRequestCount: number;
     status: WormTradingActivityStatus;
+    walletSelection: WormTradingWalletSelectionSummary;
 }
 
 export interface WormTradingReauthenticationChallenge {
@@ -323,6 +374,7 @@ export interface WormExecutionPlan {
     combinationId: string;
     combinationName: string;
     combinationRevision: number;
+    walletSelectionRevision: number;
     state: WormExecutionPlanState;
     buildStage: string;
     failureCode: string;
@@ -350,6 +402,7 @@ export interface WormExecutionPlan {
 export interface CreateWormExecutionPlanInput {
     combinationId: string;
     expectedCombinationRevision: number;
+    expectedWalletSelectionRevision: number;
     walletIds: number[];
 }
 
@@ -855,9 +908,39 @@ const normalizeConnection = (value: unknown): WormWalletConnection => {
 
 const normalizeWalletConnection = (value: unknown): WormTradingWalletConnectionItem => {
     const item = requireRecord(value);
+    const connection = normalizeConnection(readValue(item, 'connection'));
+    const selected = requireExactBoolean(item, 'selected');
+    const selectionOrdinal = requireInteger(item, 0, 'selectionOrdinal');
+    const retirementPending = requireExactBoolean(item, 'retirementPending');
+    const removalAllowed = requireExactBoolean(item, 'removalAllowed');
+    const removalReasonCode = readString(item, 'removalReasonCode');
+    const rawPendingState = readString(item, 'pendingState');
+    const pendingState: WormWalletConnectionPendingState =
+        rawPendingState === '' || rawPendingState === 'CONNECT_PENDING' || rawPendingState === 'DISCONNECT_PENDING' ? rawPendingState : invalidWormTradingResponse();
+    const needsAttention = requireExactBoolean(item, 'needsAttention');
+    const expectedPendingState: WormWalletConnectionPendingState = retirementPending ? 'DISCONNECT_PENDING' : selected && connection.state !== 'CONNECTED' ? 'CONNECT_PENDING' : '';
+    const expectedNeedsAttention = retirementPending || removalReasonCode !== '' || connection.warningCode !== '' || (selected && connection.state !== 'CONNECTED');
+    if (
+        selected !== selectionOrdinal > 0 ||
+        selectionOrdinal > MAXIMUM_WORM_TRADING_WALLETS ||
+        (selected && retirementPending) ||
+        (removalReasonCode !== '' && !/^[A-Z][A-Z0-9_]{0,127}$/.test(removalReasonCode)) ||
+        removalAllowed !== (removalReasonCode === '') ||
+        pendingState !== expectedPendingState ||
+        needsAttention !== expectedNeedsAttention
+    ) {
+        return invalidWormTradingResponse();
+    }
     return {
         wallet: normalizeWalletSummary(readValue(item, 'wallet')),
-        connection: normalizeConnection(readValue(item, 'connection'))
+        connection,
+        selected,
+        selectionOrdinal,
+        retirementPending,
+        removalAllowed,
+        removalReasonCode,
+        pendingState,
+        needsAttention
     };
 };
 
@@ -1046,7 +1129,7 @@ const parseJSONResponse = async (response: Response): Promise<unknown> => {
 };
 
 const rawSameOriginRequest = <T>(
-    method: 'GET' | 'POST' | 'DELETE',
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     path: string,
     body: Record<string, unknown> | undefined,
     fallbackError: string,
@@ -1151,6 +1234,81 @@ const optionalExactBoolean = (item: unknown, name: string, fallback = false): bo
         return invalidWormTradingResponse();
     }
     return value;
+};
+
+const normalizeWalletSelection = (value: unknown): WormTradingWalletSelection => {
+    const item = requireRecord(value);
+    const configured = requireExactBoolean(item, 'configured');
+    const revision = requireInteger(item, 0, 'revision');
+    const updatedAt = requireInteger(item, 0, 'updatedAt');
+    const maximumWallets = requireInteger(item, 1, 'maximumWallets');
+    const selectedItems = requireExactArray(item, 'selectedItems').map(candidate => {
+        const selected = requireRecord(candidate);
+        return {
+            ordinal: requireInteger(selected, 1, 'ordinal'),
+            walletId: requireInteger(selected, 1, 'walletId'),
+            address: requireExactString(selected, 'address')
+        };
+    });
+    const retirements = requireExactArray(item, 'retirements').map(candidate => {
+        const retirement = requireRecord(candidate);
+        return {
+            walletId: requireInteger(retirement, 1, 'walletId'),
+            address: requireExactString(retirement, 'address'),
+            priorOrdinal: requireInteger(retirement, 1, 'priorOrdinal'),
+            retiredFromRevision: requireInteger(retirement, 1, 'retiredFromRevision'),
+            retiredAt: requireInteger(retirement, 1, 'retiredAt')
+        };
+    });
+    const selectedWalletIDs = selectedItems.map(selected => selected.walletId);
+    const selectedAddresses = selectedItems.map(selected => selected.address);
+    const retirementWalletIDs = retirements.map(retirement => retirement.walletId);
+    const retirementAddresses = retirements.map(retirement => retirement.address);
+    if (
+        maximumWallets !== MAXIMUM_WORM_TRADING_WALLETS ||
+        selectedItems.length > maximumWallets ||
+        selectedItems.some((selected, index) => selected.ordinal !== index + 1) ||
+        selectedItems.some(selected => selected.address !== selected.address.trim()) ||
+        new Set(selectedWalletIDs).size !== selectedWalletIDs.length ||
+        new Set(selectedAddresses).size !== selectedAddresses.length ||
+        new Set(retirementWalletIDs).size !== retirementWalletIDs.length ||
+        new Set(retirementAddresses).size !== retirementAddresses.length ||
+        retirements.some(retirement => retirement.address !== retirement.address.trim() || retirement.retiredFromRevision > revision) ||
+        retirementWalletIDs.some(walletID => selectedWalletIDs.includes(walletID)) ||
+        retirementAddresses.some(address => selectedAddresses.includes(address)) ||
+        configured !== revision > 0 ||
+        (!configured && (updatedAt !== 0 || selectedItems.length !== 0 || retirements.length !== 0)) ||
+        (configured && updatedAt === 0)
+    ) {
+        return invalidWormTradingResponse();
+    }
+    return {
+        configured,
+        revision,
+        selectedItems,
+        retirements,
+        updatedAt,
+        maximumWallets
+    };
+};
+
+const normalizeWalletSelectionSummary = (value: unknown): WormTradingWalletSelectionSummary => {
+    const item = requireRecord(value);
+    const configured = requireExactBoolean(item, 'configured');
+    const revision = requireInteger(item, 0, 'revision');
+    const selectedCount = requireInteger(item, 0, 'selectedCount');
+    const maximumWallets = requireInteger(item, 1, 'maximumWallets');
+    const updatedAt = requireInteger(item, 0, 'updatedAt');
+    if (
+        maximumWallets !== MAXIMUM_WORM_TRADING_WALLETS ||
+        selectedCount > maximumWallets ||
+        configured !== revision > 0 ||
+        (!configured && (selectedCount !== 0 || updatedAt !== 0)) ||
+        (configured && updatedAt === 0)
+    ) {
+        return invalidWormTradingResponse();
+    }
+    return {configured, revision, selectedCount, maximumWallets, updatedAt};
 };
 
 const executionCodePattern = /^[A-Z][A-Z0-9_]{0,127}$/;
@@ -1754,6 +1912,7 @@ const normalizeExecutionPlan = (value: unknown, expectedPlanID?: string): WormEx
         combinationId: requireExactString(combination, 'id'),
         combinationName: requireExactString(combination, 'name'),
         combinationRevision: requireInteger(combination, 1, 'revision'),
+        walletSelectionRevision: requireInteger(item, 1, 'walletSelectionRevision'),
         state,
         buildStage: optionalExactString(item, 'buildStage'),
         failureCode: optionalExactString(item, 'failureCode'),
@@ -1785,6 +1944,7 @@ const validateCreatedExecutionPlan = (plan: WormExecutionPlan, input: CreateWorm
         plan.state !== 'BUILDING' ||
         plan.combinationId !== input.combinationId.trim() ||
         plan.combinationRevision !== input.expectedCombinationRevision ||
+        plan.walletSelectionRevision !== input.expectedWalletSelectionRevision ||
         walletIDs.length !== input.walletIds.length ||
         walletIDs.some((walletID, index) => walletID !== input.walletIds[index])
     ) {
@@ -2058,7 +2218,8 @@ export class WormTradingService {
                 pageSize: requireInteger(body, 1, 'pageSize', 'page_size'),
                 network: requireString(body, 'network'),
                 commitment: requireString(body, 'commitment'),
-                fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at')
+                fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at'),
+                walletSelection: normalizeWalletSelectionSummary(readValue(body, 'walletSelection', 'wallet_selection'))
             };
         });
     }
@@ -2075,7 +2236,8 @@ export class WormTradingService {
                 fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at'),
                 openPositionCount: requireInteger(body, 0, 'openPositionCount', 'open_position_count'),
                 inFlightRequestCount: requireInteger(body, 0, 'inFlightRequestCount', 'in_flight_request_count'),
-                status: normalizeBalanceStatus(readValue(body, 'status'))
+                status: normalizeBalanceStatus(readValue(body, 'status')),
+                walletSelection: normalizeWalletSelectionSummary(readValue(body, 'walletSelection', 'wallet_selection'))
             };
         });
     }
@@ -2147,11 +2309,11 @@ export class WormTradingService {
         if (
             !canonicalWormTradingUUIDPattern.test(input.commandId) ||
             input.walletIds.length < 1 ||
-            input.walletIds.length > 100 ||
+            input.walletIds.length > MAXIMUM_WORM_TRADING_WALLETS ||
             input.walletIds.some(walletId => !Number.isSafeInteger(walletId) || walletId < 1) ||
             new Set(input.walletIds).size !== input.walletIds.length
         ) {
-            throw new Error('A Cash Out batch requires between 1 and 100 unique wallets.');
+            throw new Error(`A Cash Out batch requires between 1 and ${MAXIMUM_WORM_TRADING_WALLETS} unique selected wallets.`);
         }
         return rawSameOriginRequest(
             'POST',
@@ -2256,33 +2418,77 @@ export class WormTradingService {
 
     public listWalletConnections(page = 1, pageSize = 100): AbortableWormTradingPromise<ListWormTradingWalletConnectionsResult> {
         const query = new URLSearchParams({page: String(page), pageSize: String(pageSize)});
-        return rawSameOriginRequest('GET', `/api/v1/worm-trading/wallet-connections?${query.toString()}`, undefined, 'Worm wallet connection inventory failed', value => {
-            const body = requireRecord(value);
-            const items = readRepeatedArray(body, 'items').map(normalizeWalletConnection);
-            const responsePage = requireInteger(body, 1, 'page');
-            const responsePageSize = requireInteger(body, 1, 'pageSize', 'page_size');
-            const total = requireInteger(body, 0, 'total');
-            const walletIDs = new Set(items.map(item => item.wallet.walletId));
-            const walletAddresses = new Set(items.map(item => item.wallet.address));
-            const firstItemOffset = (responsePage - 1) * responsePageSize;
-            if (
-                responsePage !== page ||
-                responsePageSize !== pageSize ||
-                items.length > responsePageSize ||
-                walletIDs.size !== items.length ||
-                walletAddresses.size !== items.length ||
-                (items.length > 0 && firstItemOffset + items.length > total)
-            ) {
-                return invalidWormTradingResponse();
-            }
-            return {
-                items,
-                total,
-                page: responsePage,
-                pageSize: responsePageSize,
-                fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at')
-            };
-        });
+        return rawSameOriginRequest(
+            'GET',
+            `/api/v1/worm-trading/wallet-connections?${query.toString()}`,
+            undefined,
+            'Worm wallet connection inventory failed',
+            value => {
+                const body = requireRecord(value);
+                const items = readRepeatedArray(body, 'items').map(normalizeWalletConnection);
+                const responsePage = requireInteger(body, 1, 'page');
+                const responsePageSize = requireInteger(body, 1, 'pageSize', 'page_size');
+                const total = requireInteger(body, 0, 'total');
+                const selectionConfigured = requireExactBoolean(body, 'selectionConfigured');
+                const selectionRevision = requireInteger(body, 0, 'selectionRevision');
+                const selectionUpdatedAt = requireInteger(body, 0, 'selectionUpdatedAt');
+                const maximumWallets = requireInteger(body, 1, 'maximumWallets');
+                const walletIDs = new Set(items.map(item => item.wallet.walletId));
+                const walletAddresses = new Set(items.map(item => item.wallet.address));
+                const firstItemOffset = (responsePage - 1) * responsePageSize;
+                if (
+                    responsePage !== page ||
+                    responsePageSize !== pageSize ||
+                    items.length > responsePageSize ||
+                    walletIDs.size !== items.length ||
+                    walletAddresses.size !== items.length ||
+                    maximumWallets !== MAXIMUM_WORM_TRADING_WALLETS ||
+                    selectionConfigured !== selectionRevision > 0 ||
+                    (!selectionConfigured && selectionUpdatedAt !== 0) ||
+                    (selectionConfigured && selectionUpdatedAt === 0) ||
+                    (!selectionConfigured && items.some(item => item.selected || item.retirementPending)) ||
+                    (items.length > 0 && firstItemOffset + items.length > total)
+                ) {
+                    return invalidWormTradingResponse();
+                }
+                return {
+                    items,
+                    total,
+                    page: responsePage,
+                    pageSize: responsePageSize,
+                    fetchedAt: requireInteger(body, 0, 'fetchedAt', 'fetched_at'),
+                    selectionConfigured,
+                    selectionRevision,
+                    selectionUpdatedAt,
+                    maximumWallets
+                };
+            },
+            writeScope
+        );
+    }
+
+    public getWalletSelection(): AbortableWormTradingPromise<WormTradingWalletSelection> {
+        return rawSameOriginRequest('GET', '/api/v1/worm-trading/wallet-selection', undefined, 'Worm wallet selection could not be loaded', normalizeWalletSelection, readScope);
+    }
+
+    public replaceWalletSelection(input: ReplaceWormTradingWalletSelectionInput): AbortableWormTradingPromise<WormTradingWalletSelection> {
+        if (
+            !Number.isSafeInteger(input.expectedRevision) ||
+            input.expectedRevision < 0 ||
+            input.walletIds.length > MAXIMUM_WORM_TRADING_WALLETS ||
+            input.walletIds.some(walletID => !Number.isSafeInteger(walletID) || walletID < 1) ||
+            new Set(input.walletIds).size !== input.walletIds.length
+        ) {
+            throw new Error(`Select between 0 and ${MAXIMUM_WORM_TRADING_WALLETS} unique Worm Trading wallets.`);
+        }
+        return rawSameOriginRequest(
+            'PUT',
+            '/api/v1/worm-trading/wallet-selection',
+            {expectedRevision: input.expectedRevision, walletIds: [...input.walletIds]},
+            'Worm wallet selection could not be saved',
+            normalizeWalletSelection,
+            writeScope
+        );
     }
 
     public connectWallet(walletId: number): AbortableWormTradingPromise<WormWalletConnection> {
@@ -2391,7 +2597,22 @@ export class WormTradingService {
     }
 
     public createExecutionPlan(input: CreateWormExecutionPlanInput): AbortableWormTradingPromise<WormExecutionPlan> {
-        const request = requests.post('/worm-trading/execution-plans', writeScope).send(input);
+        if (
+            !Number.isSafeInteger(input.expectedWalletSelectionRevision) ||
+            input.expectedWalletSelectionRevision < 1 ||
+            input.walletIds.length < 1 ||
+            input.walletIds.length > MAXIMUM_WORM_TRADING_WALLETS ||
+            input.walletIds.some(walletID => !Number.isSafeInteger(walletID) || walletID < 1) ||
+            new Set(input.walletIds).size !== input.walletIds.length
+        ) {
+            throw new Error(`An execution preview requires between 1 and ${MAXIMUM_WORM_TRADING_WALLETS} unique selected wallets.`);
+        }
+        const request = requests.post('/worm-trading/execution-plans', writeScope).send({
+            combinationId: input.combinationId,
+            expectedCombinationRevision: input.expectedCombinationRevision,
+            expectedWalletSelectionRevision: input.expectedWalletSelectionRevision,
+            walletIds: input.walletIds
+        });
         return abortableRequest(request, body => validateCreatedExecutionPlan(normalizeExecutionPlan(requireRecord(body).plan || body), input));
     }
 

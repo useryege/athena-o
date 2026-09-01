@@ -555,6 +555,8 @@ func executionRunRPCError(err error) error {
 		return status.Error(codes.Aborted, "execution coordinator is unavailable")
 	case errors.Is(err, wormstore.ErrExecutionRunAuthorization):
 		return status.Error(codes.FailedPrecondition, "execution run authorization is required")
+	case errors.Is(err, wormstore.ErrExecutionRunWalletSelectionChanged):
+		return status.Error(codes.FailedPrecondition, "WALLET_SELECTION_CHANGED")
 	case errors.Is(err, wormstore.ErrExecutionRunConflict), errors.Is(err, wormstore.ErrExecutionRunIsolation):
 		return status.Error(codes.FailedPrecondition, "execution run conflicts with current state")
 	case errors.Is(err, wormstore.ErrExecutionRunWalletCashOutActive):
